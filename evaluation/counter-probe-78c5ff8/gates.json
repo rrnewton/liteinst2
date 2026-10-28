@@ -1,0 +1,233 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 5.959618396125734,
+        "start_utc": "2026-10-28T07:15:07.204363+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "cargo_groups": 0,
+        "excluded_nested": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "terminal_groups": 0
+      },
+      "name": "fmt",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985",
+        "reaped_descendants": 0,
+        "seconds": 0.12267088983207941,
+        "start_utc": "2026-10-28T07:15:13.179713+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "cargo_groups": 0,
+        "excluded_nested": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "terminal_groups": 0
+      },
+      "name": "clippy",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "09ef476d14f18df3c17e079b8a0038bfb11e2025e8bcd4c814ec307587edde72",
+        "reaped_descendants": 0,
+        "seconds": 3.0310501779895276,
+        "start_utc": "2026-10-28T07:15:13.326767+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "cargo_groups": 0,
+        "excluded_nested": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "terminal_groups": 0
+      },
+      "name": "check",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f7fa1d74da397e8a3e8e6c9d647b438addc5ef8c2f05d9e837e5021027675576",
+        "reaped_descendants": 0,
+        "seconds": 339.8384672331158,
+        "start_utc": "2026-10-28T07:15:16.373709+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "cargo_groups": 103,
+        "excluded_nested": 5,
+        "failed": 0,
+        "ignored": 11,
+        "passed": 2741,
+        "terminal_groups": 101
+      },
+      "name": "workspace-default",
+      "wall_limit_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "ae8f83372a0c67d47019074ac6f775d146c84a13189b1a0e812554094fe5abf1",
+        "reaped_descendants": 0,
+        "seconds": 128.96376838814467,
+        "start_utc": "2026-10-28T07:20:56.229984+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "cargo_groups": 29,
+        "excluded_nested": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1039,
+        "terminal_groups": 28
+      },
+      "name": "serial-launch",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c7a0309fa752fe2294488359f0238eab13a32f68c96855caca68147abd463a0a",
+        "reaped_descendants": 0,
+        "seconds": 0.03599849808961153,
+        "start_utc": "2026-10-28T07:23:05.213005+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "cargo_groups": 1,
+        "excluded_nested": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 3,
+        "terminal_groups": 1
+      },
+      "name": "staged-allocation",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "23a5b1df4e0a32de301bc586df6a02437704c3349cfaf1cf128f09c3cab9e8db",
+        "reaped_descendants": 0,
+        "seconds": 1.319905315991491,
+        "start_utc": "2026-10-28T07:23:05.265108+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "cargo_groups": 1,
+        "excluded_nested": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 36,
+        "terminal_groups": 1
+      },
+      "name": "prefixed-pun",
+      "wall_limit_seconds": 180
+    }
+  ],
+  "compiler_jobs": 4,
+  "count_policy": "Last libtest terminal per Cargo Running/Doc-tests group. Nested summaries excluded. Custom cleanup harness has no libtest terminal. Failed or incomplete runs are not complete workspace totals.",
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "kernel_version": "7.1.3",
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "private_receipt_sha256": "888dfee27e334b4b0fd73c791a62b734caeced22bc254eec0cf153414dff4f9e",
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+  "revision": "78c5ff8ab0e27555ba6e0d3d091db9cc0fc6e639",
+  "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Functional validation. Seconds are command wall durations, not throughput or profiler accuracy. Seven merge checks only; no repeated issue-specific campaign.",
+  "status": "PASS"
+}

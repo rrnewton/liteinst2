@@ -56,22 +56,34 @@ def client_bytes(rows):
 
 
 class NativeProjection(unittest.TestCase):
+    def test_literal_lf_is_required_in_both_reference_projections(self):
+        pairs = encode(pair_rows(), CHECK.PAIR_HEADER)
+        client = client_bytes(call_rows())
+        for data, parse in ((pairs, lambda b: CHECK.pairs(b, CHECK.PAIR_PASS.encode('ascii'), b'')),
+                            (client, lambda b: CHECK.functional(b, b''))):
+            positions = [index for index, byte in enumerate(data) if byte == 10]
+            for separator in (b'\x0b', b'\x0c', b'\x1c', b'\x1d', b'\x1e'):
+                for index in positions:
+                    bad = data[:index]+separator+data[index+1:]
+                    with self.subTest(separator=separator, index=index), self.assertRaises((AssertionError, csv.Error)):
+                        parse(bad)
+
     def test_full_calibration_population_no_ignored_or_duplicate_names(self):
         def transcript(order):
-            return ('\nrunning 43 tests\n'+''.join(
+            return ('\nrunning 58 tests\n'+''.join(
                 f'test {name}{" - should panic" if panic else ""} ... ok\n' for name, panic in order)+
-                '\ntest result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
+                '\ntest result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
         items = list(CHECK.CALIBRATION_TESTS.items())
         data = transcript(items)
         CHECK.calibrations(data, b'')
         CHECK.calibrations(transcript(reversed(items)), b'')
         for index, (name, panic) in enumerate(items):
-            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 43]):
+            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 58]):
                 bad = items.copy(); bad[index] = changed
                 with self.subTest(name=name, changed=changed), self.assertRaises(AssertionError):
                     CHECK.calibrations(transcript(bad), b'')
         for bad in (data[:-1], data+b'\n', transcript(items[:-1]), transcript(items+items[:1]),
-                    data.replace(b'43 passed', b'42 passed'), data.replace(b'0 ignored', b'1 ignored'),
+                    data.replace(b'58 passed', b'57 passed'), data.replace(b'0 ignored', b'1 ignored'),
                     data.replace(b' ... ok', b' ... ignored', 1), data.replace(b' ... ok', b' ... FAILED', 1)):
             with self.assertRaises(AssertionError):
                 CHECK.calibrations(bad, b'')
@@ -176,6 +188,18 @@ class ClientProjection(unittest.TestCase):
 
 
 class RecipeAdmission(unittest.TestCase):
+    def test_cache_requires_exact_work_before_creating_output(self):
+        repo = Path(__file__).resolve().parents[3]
+        script = repo/'tools/rapid-profiler/verify_ordinary_interval.py'
+        with tempfile.TemporaryDirectory(prefix='cache-parser-', dir=repo/'ignored') as temporary:
+            raw = Path(temporary)/'must-not-exist'
+            argv = [sys.executable, '-B', str(script), '--revision', '0'*40, '--raw', str(raw),
+                '--toolchain', str(repo), '--user-home', str(repo), '--cargo-home', str(repo), '--cache-work']
+            result = subprocess.run(argv, capture_output=True, timeout=10, check=False)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b'assert not a.cache_work or a.exact_work', result.stderr)
+            self.assertFalse(raw.exists())
+
     def test_reference_requires_all_prior_modes_before_creating_output(self):
         repo = Path(__file__).resolve().parents[3]
         script = repo/'tools/rapid-profiler/verify_ordinary_interval.py'

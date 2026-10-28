@@ -1,0 +1,249 @@
+{
+  "artifacts": {
+    "loaded-cache-dso": {
+      "bytes": 13360,
+      "sha256": "8c7419a2aac3ae89e1d9335013b2ae63350e4906b6deb528965f9cbf9210dd1c"
+    },
+    "ordinary-interval": {
+      "binary": {
+        "bytes": 4569672,
+        "sha256": "1acf371821fad11e31a38c5ec794b17cbd62d25baf9a5d78592a6344e608e9c5"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    }
+  },
+  "bounds": {
+    "counter_cpu_seconds": 20,
+    "counter_output_bytes": 1048576,
+    "counter_wall_seconds": 30,
+    "outer_log_bytes": 1048576,
+    "outer_wall_seconds": 1200
+  },
+  "claim": 4,
+  "closure": {
+    "all_sources_and_tools_unchanged": true,
+    "helper_echild": 40,
+    "normal_outer_parent": true,
+    "normal_stage_parents": 40,
+    "rescues": 0,
+    "source_inputs": 123,
+    "stage_names": [
+      "build",
+      "c-build",
+      "cache-build",
+      "cache-calibration-build",
+      "cache-calibrations",
+      "cache-oracle",
+      "concurrent-native",
+      "concurrent-oracle",
+      "concurrent-test-build",
+      "counter-probe",
+      "drain-native",
+      "exact-alternating-k1",
+      "exact-alternating-k10",
+      "exact-alternating-k24",
+      "exact-build",
+      "exact-late-long-k1",
+      "exact-late-long-k10",
+      "exact-late-long-k24",
+      "exact-long-k1",
+      "exact-long-k10",
+      "exact-long-k24",
+      "exact-oracle",
+      "exact-short-k1",
+      "exact-short-k10",
+      "exact-short-k24",
+      "history-native",
+      "native",
+      "optional-backoff-native",
+      "optional-fast-state",
+      "optional-functional",
+      "optional-slow-state",
+      "oracle",
+      "reference-calibration-build",
+      "reference-calibrations",
+      "reference-native",
+      "reference-oracle",
+      "retirement-function-closed",
+      "retirement-sixteen-epochs",
+      "streamed-native",
+      "timed-native"
+    ],
+    "stage_receipt_index_sha256": "89dacb8d979865909b02295fe76d9538fec1643953d183583f5103acb2c4a89e",
+    "stages": 40
+  },
+  "command": [
+    "$CPUSET_ALLOC",
+    "run",
+    "--cores",
+    "4",
+    "--tag",
+    "li2core-counter",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_ordinary_interval.py",
+    "--revision",
+    "78c5ff8ab0e27555ba6e0d3d091db9cc0fc6e639",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--exact-work",
+    "--concurrent-epochs",
+    "--retire-epochs",
+    "--drain-completed",
+    "--streamed-epochs",
+    "--stream-history",
+    "--optional-frontend",
+    "--optional-backoff-control",
+    "--reference-timing",
+    "--cache-work",
+    "--counter-probe"
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "streamed_controller_affinity_cpus": 1,
+    "streamed_total_active_cpus": 2,
+    "streamed_worker_affinity_cpus": 1,
+    "timed_controller_affinity_cpus": 1,
+    "timed_total_active_cpus": 2,
+    "timed_worker_affinity_cpus": 1,
+    "vendor": "AuthenticAMD"
+  },
+  "launcher_environment": {
+    "AGENT_UTILS_ENGINE": "python",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1"
+  },
+  "numerical_files": {
+    "counters.csv": {
+      "bytes": 8531,
+      "sha256": "9616e44294fa7ac886dacd516ed24b2b536014a42bae913bd458e489ab565eac"
+    },
+    "operations.csv": {
+      "bytes": 3452,
+      "sha256": "224a17862ccb6ac6e5b18edcf6629ba9c6821b6ed19b4d1f3793bd941d60ed25"
+    },
+    "population.csv": {
+      "bytes": 1695,
+      "sha256": "e5688643fcf8a52f8cf4be5554779265afb59a8cf345ee00c5914e369a9400c4"
+    }
+  },
+  "parser_controls": {
+    "executed_base_revision": "fe784aa4cb65d69ca2fc0d09e9e9f662c2c2bd46",
+    "execution_scope": "precommit working source; exact parser/control input hashes match the native revision",
+    "failed": 0,
+    "ignored": 0,
+    "passed": 8,
+    "receipt": {
+      "bytes": 52898,
+      "sha256": "78fc3541c1457428a5244acfc8e493415d3ac1a52a5f9df2473ebc97f9421f29"
+    },
+    "source_sha256": {
+      "tools/rapid-profiler/counter-work/check_output.py": "571aa27ac2630d71b79fbba9ecd9a068d266adf678f9e43460b9bd0f7ead66bb",
+      "tools/rapid-profiler/counter-work/test_recipe.py": "c91e739cf1b9f6caaf18710cd91db79d639ba0ec9c4edf5ef8ffc0e5119f0a7a"
+    }
+  },
+  "prerequisites": {
+    "cache_children": 24,
+    "cache_model_events": 1368,
+    "cache_model_hits": 1040,
+    "cache_model_misses": 328,
+    "cache_pairs": 12,
+    "cache_state_comparisons": 3564,
+    "stages": 39,
+    "status": "PASS"
+  },
+  "private_receipts": {
+    "campaign": {
+      "bytes": 83688,
+      "sha256": "3f514172737473ac4802774fcc9ffb4bf1f2645266288ef500dd9e5d406ccb97"
+    },
+    "outer": {
+      "bytes": 3682,
+      "sha256": "a5f7fe645e6bd814beff193c5b04fe0e6fccf874d69cbe350dd3a9916b4c6d0f"
+    },
+    "sources_after": {
+      "bytes": 20440,
+      "sha256": "217468f46b78db3c2fe7842253dd2bc96a5d655da9515f9cecb1ba032a09039a"
+    },
+    "sources_before": {
+      "bytes": 20440,
+      "sha256": "217468f46b78db3c2fe7842253dd2bc96a5d655da9515f9cecb1ba032a09039a"
+    }
+  },
+  "raw_counts": {
+    "interpretation": "unscaled whole-API event counts; no event accuracy, cache-model or body-only attribution",
+    "maximum": 1931,
+    "minimum": 992,
+    "sum": 18539
+  },
+  "reproduction": "Tracked verify_ordinary_interval.py produces all three numerical CSVs and exact revision/tool/process receipts. Existing cache/model/full-state qualifications remain separate. All historical failed campaigns retain their status. No hardware accuracy, exact-model semantics, performance or complete-A5 claim.",
+  "result": {
+    "attempted": 12,
+    "hardware_accuracy": "unqualified",
+    "invoked": 12,
+    "model11h_semantics": "unqualified",
+    "observed_full_running": 12,
+    "raw_event": 2404,
+    "required": 12,
+    "scope": "whole original API invocation including owner checks and observer dispatch; no scaling or reset",
+    "stage": "complete",
+    "status": "OBSERVED",
+    "tables": {
+      "counters.csv": {
+        "bytes": 8531,
+        "sha256": "9616e44294fa7ac886dacd516ed24b2b536014a42bae913bd458e489ab565eac"
+      },
+      "operations.csv": {
+        "bytes": 3452,
+        "sha256": "224a17862ccb6ac6e5b18edcf6629ba9c6821b6ed19b4d1f3793bd941d60ed25"
+      },
+      "population.csv": {
+        "bytes": 1695,
+        "sha256": "e5688643fcf8a52f8cf4be5554779265afb59a8cf345ee00c5914e369a9400c4"
+      }
+    },
+    "unrun": 0
+  },
+  "revision": "78c5ff8ab0e27555ba6e0d3d091db9cc0fc6e639",
+  "schema": 1,
+  "scope": "whole original API invocation including owner checks and observer dispatch; no scaling or reset",
+  "status": "PASS",
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}

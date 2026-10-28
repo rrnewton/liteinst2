@@ -3,6 +3,7 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
 mod branch;
+mod cache;
 #[path = "../exact-work/truth.rs"]
 mod exact_truth;
 mod optional;
@@ -858,6 +859,21 @@ fn permission_refusals(leaf: &mut LoadedLeaf, output: &Path) {
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("cache-state") {
+        assert_eq!(
+            args.len(),
+            5,
+            "cache-state CANDIDATE_ELF TRUSTED_EXPECTED_ELF NEW_OUTPUT_DIRECTORY"
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[4]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        cache::run(&subject, &expected, &output);
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("exact-reference-state") {
         assert_eq!(
             args.len(),

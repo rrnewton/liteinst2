@@ -116,6 +116,24 @@ fn child(
     );
 }
 
+pub(super) fn child_cache(
+    candidate: bool,
+    context: ChildContext<'_>,
+    subject: &Path,
+    expected_elf: &[u8],
+) {
+    assert!(context.cache_case().is_some());
+    child_profile(
+        candidate,
+        context,
+        subject,
+        expected_elf,
+        c"cache_work_linked",
+        false,
+        oracle::native_ordinary::Profile::Legacy,
+    );
+}
+
 pub(super) fn child_reference(
     candidate: bool,
     context: ChildContext<'_>,
@@ -153,11 +171,22 @@ fn child_profile(
     let mut returned = None;
     current_single_main();
     // SAFETY: independently pinned exact fixed C/assembly DSO output.
-    // The selected symbol is one of the two nonempty checksum implementations. Child-local load precedes any application call; no constructors,
+    // A closed checksum/cache symbol and its complete input are selected below.
+    // Child-local load precedes any application call; no constructors,
     // foreign callers, CET, signal/nonlocal entry, unload or source writer.
     let owner =
         unsafe { LoadedIntegerLeaf::load(subject, expected_elf, symbol, CONTRACT) }.unwrap();
-    if symbol == c"exact_work_nonempty" {
+    let cache_case = context.cache_case();
+    if let Some((case, seed)) = cache_case {
+        assert_eq!(symbol, c"cache_work_linked");
+        assert_eq!(profile, Profile::Legacy);
+        assert!(!concurrent);
+        oracle::native_ordinary::cache::truth::check_bytes(owner.code()).unwrap();
+        assert_eq!(
+            context.input(),
+            &oracle::native_ordinary::cache::truth::input(case, seed)
+        );
+    } else if symbol == c"exact_work_nonempty" {
         truth::check_bytes(owner.code()).unwrap();
     } else {
         assert_eq!(symbol, c"ordinary_checksum_nonempty");
@@ -230,12 +259,16 @@ fn child_profile(
     };
     let data = context.input().as_ptr();
     let length = context.input().len();
-    let expected = context
-        .input()
-        .iter()
-        .map(|b| u64::from(b ^ 0x5a))
-        .sum::<u64>()
-        ^ 0x9e37_79b9_7f4a_7c15;
+    let expected = if let Some((case, seed)) = cache_case {
+        oracle::native_ordinary::cache::truth::scalar(case, seed)
+    } else {
+        context
+            .input()
+            .iter()
+            .map(|b| u64::from(b ^ 0x5a))
+            .sum::<u64>()
+            ^ 0x9e37_79b9_7f4a_7c15
+    };
     let gate_rsp = context.gate_rsp();
     let (start, end) = context.stack_range();
     // SAFETY: the ptrace qualification boundary moves only the actual armed
@@ -283,7 +316,7 @@ fn child_profile(
             unsampled: 0,
         };
         context.ready(&ready);
-        // SAFETY: live inherited immutable input, 1/64 nonempty scalar leaf,
+        // SAFETY: live inherited immutable input, exact closed nonempty scalar leaf,
         // exact attached gate and controlled stack; the tracer restores only
         // the outer harness context AFTER complete application comparisons.
         let result = match profile {

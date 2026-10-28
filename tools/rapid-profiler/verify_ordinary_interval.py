@@ -203,6 +203,8 @@ def main():
     sys.dont_write_bytecode = True
     ap = argparse.ArgumentParser(description=__doc__); ap.add_argument('--revision', required=True)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+name, type=Path, required=True)
+    ap.add_argument('--cache-work', action='store_true', help='also require twelve loaded cache-model state pairs; requires --exact-work')
+    ap.add_argument('--counter-probe', action='store_true', help='also require twelve raw whole-original-API counter observations; requires --cache-work')
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
     ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
@@ -218,6 +220,8 @@ def main():
     for p in (repo, a.toolchain, a.user_home, a.cargo_home): assert p.is_absolute() and p.resolve(strict=True) == p and p.is_dir()
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists()
     assert raw.parent.resolve(strict=True) == raw.parent
+    assert not a.cache_work or a.exact_work
+    assert not a.counter_probe or a.cache_work
     assert not a.concurrent_epochs or a.exact_work
     assert not a.retire_epochs or a.concurrent_epochs
     assert not a.drain_completed or a.retire_epochs
@@ -236,6 +240,15 @@ def main():
     result['optional_frontend_requested'] = a.optional_frontend
     result['optional_backoff_control_requested'] = a.optional_backoff_control
     result['reference_timing_requested'] = a.reference_timing
+    result['cache_work_requested'] = a.cache_work
+    result['counter_probe_requested'] = a.counter_probe
+    if a.counter_probe:
+        result['counter_probe'] = dict(status='UNRUN', stage='UNRUN',
+            hardware_accuracy='unqualified', model11h_semantics='unqualified',
+            scope='raw event availability and full-running reads around the whole original API; no cache-model equality')
+    if a.cache_work:
+        result['cache_work'] = dict(status='UNRUN', stage='UNRUN',
+            scope='exact original architectural operand reads replayed through a declared virtual-address cache model; no hardware-cache, timing-accuracy or performance claim')
     if a.reference_timing:
         result['reference_timing'] = dict(status='UNRUN', native_state='UNRUN', untraced='UNRUN',
             scope='separate real-CALL enclosing TSC endpoints and inner callback endpoints, with exact invocation/work joins; no frequency, calibration, accuracy or performance claim')
@@ -275,8 +288,15 @@ def main():
         def command(argv): return subprocess.check_output(argv, cwd=repo, env=env, timeout=15).decode('ascii')
         def git(*argv): return command([str(tools['git']), '-C', str(repo), *argv])
         names = ['Cargo.toml', 'Cargo.lock', 'tools/rapid-profiler/Cargo.toml', 'tools/rapid-profiler/ordinary-interval/main.rs',
+            'tools/rapid-profiler/src/counter_probe.rs', 'tools/rapid-profiler/src/counter_probe/tests.rs',
+            'tools/rapid-profiler/src/counter_reading.rs', 'tools/rapid-profiler/src/lib.rs',
+            'tools/rapid-profiler/ordinary-interval/counter.rs',
             'tools/rapid-profiler/native-interval/main.rs', 'tools/rapid-profiler/native-interval/ordinary.rs',
             'tests/support/native_ordinary.rs', 'tests/support/native_interval_oracle.rs',
+            'tests/support/native_cache.rs', 'tools/rapid-profiler/native-interval/cache.rs',
+            'tools/rapid-profiler/cache-work/truth.rs', 'tools/rapid-profiler/cache-work/model.rs',
+            'tools/rapid-profiler/cache-work/cache_work.S', 'tools/rapid-profiler/cache-work/README.md',
+            'tools/rapid-profiler/cache-work/check_output.py', 'tools/rapid-profiler/cache-work/test_recipe.py',
             'tools/rapid-profiler/native-interval/ordinary_checksum.c', 'tools/rapid-profiler/src/generation.rs',
             'tools/rapid-profiler/src/frontend.rs', 'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
             'tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs',
@@ -352,7 +372,7 @@ def main():
                 'tools/rapid-profiler/optional-backoff-work/check_output.py',
                 'tools/rapid-profiler/optional-backoff-work/test_recipe.py',
                 'tools/rapid-profiler/optional-backoff-work/README.md'])
-        if a.reference_timing:
+        if a.reference_timing or a.cache_work:
             names.extend(['tools/rapid-profiler/src/frontend_native/always_on/gate/reference.rs',
                 'tools/rapid-profiler/src/frontend_native/always_on/gate/reference/hardware.rs',
                 'tools/rapid-profiler/src/frontend_native/always_on/gate/reference/tests.rs',
@@ -366,6 +386,9 @@ def main():
                 'tools/rapid-profiler/reference-work/check_output.py',
                 'tools/rapid-profiler/reference-work/test_recipe.py',
                 'tools/rapid-profiler/reference-work/README.md'])
+        if a.counter_probe:
+            names.extend(['tools/rapid-profiler/counter-work/check_output.py',
+                'tools/rapid-profiler/counter-work/test_recipe.py', 'tools/rapid-profiler/counter-work/README.md'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -684,7 +707,7 @@ def main():
             observed = stage('reference-calibrations', [str(calibration_binary)], 20, 30, MIB)
             checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
             assert digest(calibration_binary) == calibration_hash
-            reference['calibrations'] = dict(status='PASS', passed=43, failed=0, ignored=0,
+            reference['calibrations'] = dict(status='PASS', passed=58, failed=0, ignored=0,
                 scope='actual state-validator mutation controls, including all inherited controls; not clock calibration')
             exact_stable(); assert digest(test_binary) == test_hash
             directory = raw/'reference-oracle-output'; reference['native_state'] = dict(status='FAILED')
@@ -711,6 +734,83 @@ def main():
                 detached=True, input_unchanged=True, affinity_cpus=1, csv='reference-rows.csv', csv_digest=digest(raw/'reference-rows.csv'),
                 scope='48 serial real CALLs with distinct legs, exact IDs/work/Report joins and uncalibrated enclosing/inner TSC endpoints; no accuracy, frequency or performance claim')
             reference['status'] = 'PASS'
+        if a.cache_work:
+            cache = result['cache_work']; cache.update(status='FAILED', stage='calibration-build')
+            exact_stable()
+            spec = importlib.util.spec_from_file_location('cache_check', repo/'tools/rapid-profiler/cache-work/check_output.py')
+            cache_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(cache_checker)
+            spec = importlib.util.spec_from_file_location('cache_calibrations', repo/'tools/rapid-profiler/reference-work/check_output.py')
+            calibration_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(calibration_checker)
+            args = ['test', '--locked', '--offline', '--release', '--jobs', '4', '-p', 'rapid-profiler',
+                '--test', 'frontend-native-calibrations', '--no-run', '--message-format=json-render-diagnostics']
+            result['commands'].append(['$CARGO', *args])
+            built = stage('cache-calibration-build', [str(tools['cargo']), *args], 120, 180, 128*MIB)
+            messages = [json.loads(line) for line in (built/'stdout.txt').read_text().splitlines()]
+            assert messages[-1] == dict(reason='build-finished', success=True)
+            products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'frontend-native-calibrations']
+            assert len(products) == 1; product = products[0]
+            cache_calibration = Path(product['executable']); assert cache_calibration.resolve(strict=True) == cache_calibration
+            assert cache_calibration.parent == repo/'target/release/deps' and re.fullmatch('frontend_native_calibrations-[0-9a-f]+', cache_calibration.name)
+            assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml')
+            assert product['target']['src_path'] == str(repo/'tools/rapid-profiler/native-interval/calibrations.rs')
+            assert product['target']['kind'] == ['test'] and product['target']['crate_types'] == ['bin']
+            assert product['profile'] == dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True)
+            assert type(product['profile']['debuginfo']) is int and type(product['fresh']) is bool
+            assert all(product['profile'][key] is True for key in ('test', 'debug_assertions', 'overflow_checks'))
+            cache_calibration_hash = digest(cache_calibration)
+            cache['calibration_artifact'] = dict(binary=cache_calibration_hash, profile=product['profile'], cargo_fresh=product['fresh'])
+            cache['stage'] = 'calibrations'
+            result['commands'].append(['$CACHE_CALIBRATIONS'])
+            observed = stage('cache-calibrations', [str(cache_calibration)], 20, 30, MIB)
+            calibration_checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            assert digest(cache_calibration) == cache_calibration_hash
+            cache['calibrations'] = dict(status='PASS', passed=58, failed=0, ignored=0,
+                scope='complete inherited and new validator/model controls; no hardware-cache calibration')
+            cache.update(stage='assembly-build')
+            cache_trusted, cache_candidate = raw/'cache-trusted.so', raw/'cache-candidate.so'
+            assembly = repo/'tools/rapid-profiler/cache-work/cache_work.S'
+            result['commands'].append(['$GCC', *CFLAGS, '$REPO/tools/rapid-profiler/cache-work/cache_work.S', '-o', '$RAW/cache-trusted.so'])
+            stage('cache-build', [str(tools['gcc']), *CFLAGS, str(assembly), '-o', str(cache_trusted)], 20, 30, MIB)
+            cache_hash = digest(cache_trusted); assert 0 < cache_hash['bytes'] <= MIB
+            with cache_trusted.open('rb') as inp, cache_candidate.open('xb') as out: out.write(inp.read(MIB+1))
+            assert (cache_trusted.stat().st_dev, cache_trusted.stat().st_ino) != (cache_candidate.stat().st_dev, cache_candidate.stat().st_ino)
+            def cache_stable():
+                exact_stable()
+                assert digest(cache_calibration) == cache_calibration_hash
+                assert digest(cache_trusted) == digest(cache_candidate) == cache_hash and cache_trusted.read_bytes() == cache_candidate.read_bytes()
+            cache_stable(); cache.update(dso=cache_hash, stage='oracle')
+            directory = raw/'cache-oracle-output'
+            result['commands'].append(['$REPO/target/release/frontend-native-oracle', 'cache-state', '$RAW/cache-candidate.so', '$RAW/cache-trusted.so', '$RAW/cache-oracle-output'])
+            observed = stage('cache-oracle', [str(binaries['frontend-native-oracle']), 'cache-state', str(cache_candidate), str(cache_trusted), str(directory)], 90, 90, MIB)
+            table = (directory/'cache-pairs.csv').read_bytes()
+            rows = cache_checker.pairs(table, (observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            cache_stable(); (raw/'cache-state-pairs.csv').write_bytes(table)
+            cache.update(status='PASS', stage='complete', pairs=12, children=24, comparisons=3564,
+                instructions=3432, conditional_branches=672, taken_branches=660, input_reads=1356, return_reads=12,
+                model_events=1368, model_hits=1040, model_misses=328, real_outer_returns=24,
+                rows=rows, csv='cache-state-pairs.csv', csv_digest=digest(raw/'cache-state-pairs.csv'),
+                model=dict(line_bytes=64, sets=4, ways=2, replacement='true LRU', initial='all invalid per invocation',
+                    addressing='actual virtual line number; set = floor(address/64) modulo 4',
+                    events='all original subject demand operand reads including count and RET; no instruction fetch or observer accesses'),
+                source_attested='exact whole input/source and ordered original PCs, actual load operands/results, DEC/JNZ and return/stack; shared full-state candidate comparison and exact gate/Report joins; simulator and independent reuse-distance agree per event')
+        if a.counter_probe:
+            probe = result['counter_probe']; probe.update(status='FAILED', stage='untraced')
+            spec = importlib.util.spec_from_file_location('counter_check', repo/'tools/rapid-profiler/counter-work/check_output.py')
+            counter_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(counter_checker)
+            directory = raw/'counter-probe-output'
+            result['commands'].append(['$REPO/target/release/ordinary-interval', 'counter-cache-probe', '$RAW/cache-candidate.so', '$RAW/cache-trusted.so', '$RAW/counter-probe-output'])
+            try:
+                observed = stage('counter-probe', [str(binary), 'counter-cache-probe', str(cache_candidate), str(cache_trusted), str(directory)], 20, 30, MIB)
+            finally:
+                # A refusal remains a failed required stage. Preserve its finite
+                # raw export without changing stage's existing exit/closure gates.
+                table_names = ('population.csv', 'counters.csv', 'operations.csv')
+                if all((directory/name).is_file() for name in table_names):
+                    terminal = raw/'counter-probe'
+                    parsed = counter_checker.directory(directory, (terminal/'stdout.txt').read_bytes(), (terminal/'stderr.txt').read_bytes())
+                    probe.update(parsed, tables={name: digest(directory/name) for name in table_names})
+            assert probe['status'] == 'OBSERVED' and probe['observed_full_running'] == 12
+            cache_stable(); probe['stage'] = 'complete'
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:

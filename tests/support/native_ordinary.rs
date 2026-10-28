@@ -288,11 +288,22 @@ fn harness_resume_flags(saved: u64, after_ret: u64) -> u64 {
     after_ret & !TF
 }
 
+// Subject input is closed independently of the immutable CALL-gate profile.
+#[derive(Clone, Copy)]
+enum Subject {
+    Checksum,
+    Cache {
+        case: cache::truth::Case,
+        deadline: Instant,
+    },
+}
+
 /// Parent-owned mappings inherited at the same addresses, live until both reap.
 pub struct OrdinaryOracle {
     data: Mapping,
     stack: Mapping,
     seed: u64,
+    subject: Subject,
 }
 
 /// Passed only to the child-local fixture. No gate private state is exposed.
@@ -303,6 +314,13 @@ pub struct ChildContext<'a> {
     length: usize,
 }
 impl ChildContext<'_> {
+    /// Closed cache identity; no caller-supplied result, mask or address map.
+    pub fn cache_case(&self) -> Option<(cache::truth::Case, u64)> {
+        match self.oracle.subject {
+            Subject::Checksum => None,
+            Subject::Cache { case, .. } => Some((case, self.oracle.seed)),
+        }
+    }
     pub fn input(&self) -> &[u8] {
         &self.oracle.data.bytes()[128..128 + self.length]
     }
@@ -484,8 +502,46 @@ impl OrdinaryOracle {
             },
             0
         );
-        Self { data, stack, seed }
+        Self {
+            data,
+            stack,
+            seed,
+            subject: Subject::Checksum,
+        }
     }
+
+    /// Starts the one absolute child deadline BEFORE mappings/input allocation.
+    /// Bytes outside this input retain the old complete-page seeded pattern.
+    pub fn new_cache(case: cache::truth::Case, seed: u64) -> Self {
+        let deadline = Instant::now() + CHILD_BUDGET;
+        let mut oracle = Self::new(seed);
+        oracle
+            .data
+            .initialize(128, &cache::truth::input(case, seed));
+        oracle.subject = Subject::Cache { case, deadline };
+        assert!(Instant::now() < deadline, "cache mapping/input deadline");
+        oracle
+    }
+
+    pub fn cache_deadline(&self) -> Instant {
+        match self.subject {
+            Subject::Cache { deadline, .. } => deadline,
+            Subject::Checksum => panic!("not a cache subject"),
+        }
+    }
+
+    /// Fixed full input and Legacy gate. Every old state/return/cleanup check
+    /// below remains in the common engine; inspection follows both real reaps.
+    pub fn pair_cache<F, O>(&self, setup: F, inspect: O) -> PairResult
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+        O: for<'a> FnOnce(OriginalObservation<'a>),
+    {
+        assert!(matches!(self.subject, Subject::Cache { .. }));
+        self.pair_profile(cache::truth::INPUT_BYTES, setup, inspect, None)
+            .0
+    }
+
     fn gate_rsp(&self) -> u64 {
         self.stack.address() + STACK_BYTES as u64 - 8
     }
@@ -619,6 +675,7 @@ impl OrdinaryOracle {
         F: for<'a> Fn(bool, ChildContext<'a>),
         O: for<'a> FnOnce(OriginalObservation<'a>),
     {
+        assert!(matches!(self.subject, Subject::Checksum));
         self.pair_profile(length, setup, inspect, None).0
     }
 
@@ -633,7 +690,16 @@ impl OrdinaryOracle {
         F: for<'a> Fn(bool, ChildContext<'a>),
         O: for<'a> FnOnce(OriginalObservation<'a>),
     {
-        assert!(matches!(length, 1 | 64));
+        match self.subject {
+            Subject::Checksum => {
+                assert!(matches!(length, 1 | 64));
+            }
+            Subject::Cache { deadline, .. } => {
+                assert_eq!(length, cache::truth::INPUT_BYTES);
+                assert!(reference.is_none(), "cache uses only the Legacy gate");
+                assert!(Instant::now() < deadline, "cache pre-fork deadline");
+            }
+        }
         if let Some((deadline, _)) = reference {
             assert!(Instant::now() < deadline);
         }
@@ -644,7 +710,10 @@ impl OrdinaryOracle {
         assert_eq!(std::fs::read_dir("/proc/self/task").unwrap().count(), 1);
         let mut pipes = [Pipe::new(), Pipe::new()];
         let mut outputs = reference.map(|_| [Pipe::new(), Pipe::new()]);
-        let deadline = reference.map_or_else(|| Instant::now() + CHILD_BUDGET, |r| r.0);
+        let deadline = match self.subject {
+            Subject::Checksum => reference.map_or_else(|| Instant::now() + CHILD_BUDGET, |r| r.0),
+            Subject::Cache { deadline, .. } => deadline,
+        };
         let mut pids = [0; 2];
         for index in 0..2 {
             let pid = unsafe { libc::fork() };
@@ -826,11 +895,22 @@ impl OrdinaryOracle {
         assert_eq!(returns.len(), 1, "one real subject RET per call");
         self.frame_after(a.child, &ar, &original, &af, None);
         self.frame_after(b.child, &br, &candidate, &bf, returns.first().copied());
-        let value = self.data.bytes()[128..128 + length]
-            .iter()
-            .map(|b| u64::from(b ^ 0x5a))
-            .sum::<u64>()
-            ^ 0x9e37_79b9_7f4a_7c15;
+        let value = match self.subject {
+            Subject::Checksum => {
+                self.data.bytes()[128..128 + length]
+                    .iter()
+                    .map(|b| u64::from(b ^ 0x5a))
+                    .sum::<u64>()
+                    ^ 0x9e37_79b9_7f4a_7c15
+            }
+            Subject::Cache { case, .. } => {
+                assert_eq!(
+                    &self.data.bytes()[128..128 + length],
+                    &cache::truth::input(case, self.seed)
+                );
+                cache::truth::scalar(case, self.seed)
+            }
+        };
         let expected_records = witnesses.as_ref().map(|w| {
             [
                 w[0].record(value, None),
@@ -911,6 +991,9 @@ impl OrdinaryOracle {
                 Some(libc::ECHILD)
             );
         }
+        if matches!(self.subject, Subject::Cache { .. }) {
+            assert!(Instant::now() < deadline, "cache complete reaps deadline");
+        }
         let reference_stats = expected_records.map(|expected| {
             let pipes = outputs.as_ref().expect("owned reference result pipes");
             for index in 0..2 {
@@ -941,6 +1024,12 @@ impl OrdinaryOracle {
         });
         if reference_stats.is_some() {
             assert!(Instant::now() < deadline, "reference inspection deadline");
+        }
+        if matches!(self.subject, Subject::Cache { .. }) {
+            assert!(
+                Instant::now() < deadline,
+                "cache trace/model inspection deadline"
+            );
         }
         (
             PairResult {
@@ -1058,3 +1147,7 @@ pub mod optional_frontend;
 
 #[path = "native_reference.rs"]
 pub mod reference;
+
+// Closed loaded linked-memory subject and source-independent observation checks.
+#[path = "native_cache.rs"]
+pub mod cache;
