@@ -18,7 +18,7 @@ def output(rf=2, tf=0):
     return ('\nrunning 1 test\ntest '+hardware.NATIVE+' ... '
         f'tree-hardware-stop PASS children=1 stops=2 steps=2 rf_observed={rf} step_tf_bits={tf} '
         'rf_clear_after_steps=true debug_restored=true state_unchanged=true exit=0 reaped=1 echild=1\n'
-        'ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 90 filtered out; finished in 0.02s\n\n').encode('ascii')
+        'ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 94 filtered out; finished in 0.02s\n\n').encode('ascii')
 
 
 class HardwareProtocol(unittest.TestCase):
@@ -34,7 +34,7 @@ class HardwareProtocol(unittest.TestCase):
 
     def test_pure_requires_every_named_control_once(self):
         good = ('\nrunning 8 tests\n'+''.join('test '+n+' ... ok\n' for n in hardware.PURE)+
-            '\ntest result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 83 filtered out; finished in 0.01s\n\n').encode('ascii')
+            '\ntest result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 87 filtered out; finished in 0.01s\n\n').encode('ascii')
         self.assertEqual(hardware.parse_pure(good, b'')['passed'], 8)
         for index, name in enumerate(hardware.PURE):
             for changed in (b'foreign', hardware.PURE[(index+1) % 8].encode('ascii')):
@@ -42,8 +42,8 @@ class HardwareProtocol(unittest.TestCase):
                     hardware.parse_pure(good.replace(name.encode('ascii'), changed, 1), b'')
         for bad in (good[:-1], good+b'\n', good.replace(b'0 ignored', b'1 ignored'),
                 good.replace(b' ... ok', b' ... ignored', 1), good.replace(b'8 passed', b'7 passed'),
-                good.replace(b'83 filtered out', b'82 filtered out'),
-                good.replace(b'83 filtered out', b'84 filtered out')):
+                good.replace(b'87 filtered out', b'86 filtered out'),
+                good.replace(b'87 filtered out', b'88 filtered out')):
             with self.assertRaises(AssertionError):
                 hardware.parse_pure(bad, b'')
         with self.assertRaises(AssertionError):
@@ -60,12 +60,12 @@ class HardwareProtocol(unittest.TestCase):
         for field in (b'children=1', b'stops=2', b'steps=2', b'PASS', b'rf_observed=2',
                 b'step_tf_bits=0', b'rf_clear_after_steps=true', b'debug_restored=true',
                 b'state_unchanged=true', b'exit=0', b'reaped=1', b'echild=1',
-                b'1 passed', b'0 failed', b'0 ignored', b'90 filtered out', hardware.NATIVE.encode('ascii')):
+                b'1 passed', b'0 failed', b'0 ignored', b'94 filtered out', hardware.NATIVE.encode('ascii')):
             with self.assertRaises(AssertionError):
                 hardware.parse_native(good.replace(field, field+b'X', 1), b'')
         for bad in (b'', good[:-1], good+b'\n', good.replace(b'\n', b'\r\n'), output(3), output(2, 4),
-                good.replace(b'90 filtered out', b'89 filtered out'),
-                good.replace(b'90 filtered out', b'91 filtered out')):
+                good.replace(b'94 filtered out', b'93 filtered out'),
+                good.replace(b'94 filtered out', b'95 filtered out')):
             with self.assertRaises(AssertionError):
                 hardware.parse_native(bad, b'')
         with self.assertRaises(AssertionError):

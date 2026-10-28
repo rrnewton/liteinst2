@@ -31,7 +31,7 @@ single-step cause. This tests the stop/restore/step/stop sequence on the actual
 kernel; it supplies no SDK result or performance number.
 
 The broader calibration target retains all 82 inherited tests and adds eight
-pure controls. The new native prerequisite is its only newly ignored test and
+hardware controls and four batch controls. The new native prerequisite is its only newly ignored test and
 is qualified separately by this runner. No inherited test becomes ignored.
 
 `result.json` records the exact revision, hardware, commands, tool/artifact

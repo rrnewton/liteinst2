@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release prerequisite for the fixture's owned execution breakpoint; no SDK/timing claim."""
+"""Release hardware prerequisite and optional eight-call batch state qualification."""
 import argparse
 import hashlib
 import importlib.util
@@ -37,7 +37,7 @@ def parse_native(stdout, stderr):
     terminal = (r'tree-hardware-stop PASS children=1 stops=2 steps=2 rf_observed=([0-2]) '
         r'step_tf_bits=([0-3]) rf_clear_after_steps=true debug_restored=true '
         r'state_unchanged=true exit=0 reaped=1 echild=1\nok\n\n')
-    end = r'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; 90 filtered out; finished in [0-9]+\.[0-9]+s\n\n'
+    end = r'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; 94 filtered out; finished in [0-9]+\.[0-9]+s\n\n'
     match = re.fullmatch(re.escape(start)+terminal+end, stdout.decode('ascii'))
     assert match is not None
     return dict(status='PASS', children=1, hardware_stops=2, single_steps=2,
@@ -49,7 +49,7 @@ def parse_native(stdout, stderr):
 def parse_pure(stdout, stderr):
     assert stderr == b'' and 0 < len(stdout) <= MIB
     match = re.fullmatch(r'\nrunning 8 tests\n((?:test [A-Za-z0-9_:]+ \.\.\. ok\n){8})\n'
-        r'test result: ok\. 8 passed; 0 failed; 0 ignored; 0 measured; 83 filtered out; finished in [0-9]+\.[0-9]+s\n\n',
+        r'test result: ok\. 8 passed; 0 failed; 0 ignored; 0 measured; 87 filtered out; finished in [0-9]+\.[0-9]+s\n\n',
         stdout.decode('ascii'))
     assert match is not None
     names = [line.split()[1] for line in match[1].splitlines()]
@@ -67,6 +67,8 @@ def load(path):
 def main():
     sys.dont_write_bytecode = True
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--batch-state', action='store_true',
+        help='also qualify four eight-call SDK pairs; first/last full state, middle transfers/functional only')
     parser.add_argument('--revision', required=True)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'):
         parser.add_argument('--'+name, type=Path, required=True)
@@ -83,6 +85,12 @@ def main():
         command=['python3', '-B', 'tools/rapid-profiler/tree-work/verify_hardware_stop.py',
             '--revision', a.revision, '--raw', '$RAW', '--toolchain', '$TOOLCHAIN',
             '--user-home', '$USER_HOME', '--cargo-home', '$CARGO_HOME'], stages=[])
+    if a.batch_state:
+        result['command'].append('--batch-state')
+        result['scope'] = ('Hardware prerequisite plus four eight-call original/installed pairs. '
+            'Only calls 1 and 8 receive full state/operand comparison; middle calls receive '
+            'physical-transfer and functional checks. No performance or clock-accuracy result.')
+        result['batch_state'] = dict(status='UNRUN')
 
     def save(path, value):
         with path.open('x') as stream:
@@ -113,10 +121,17 @@ def main():
 
         required = {'Cargo.toml', 'Cargo.lock', 'README.md',
             'tests/support/native_tree_hardware.rs', 'tests/support/native_tree_hardware_control.rs',
+            'tests/support/native_tree_batch.rs', 'tools/rapid-profiler/native-interval/tree/batch.rs',
             'tools/rapid-profiler/tree-work/verify_hardware_stop.py',
             'tools/rapid-profiler/tree-work/test_hardware_stop.py',
             'tools/rapid-profiler/build.rs', 'tools/rapid-profiler/native-interval/calibrations.rs',
             'evaluation/admission/processes.py', 'tools/unwind-oracle/bounded_command.py'}
+        if a.batch_state:
+            required.update({'tools/rapid-profiler/tree-work/check_batch.py',
+                'tools/rapid-profiler/tree-work/test_batch_recipe.py',
+                'tools/rapid-profiler/tree-work/tree_work.S',
+                'tools/rapid-profiler/verify_ordinary_interval.py',
+                'tools/rapid-profiler/native-interval/main.rs'})
         names = git('ls-files', '-z', '--', 'src', 'tests/support', 'tools/rapid-profiler',
             ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
         assert len(names) == len(set(names)) and all(names) and required.issubset(names)
@@ -237,13 +252,72 @@ def main():
         observed = stage('hardware-native', [str(binary), NATIVE, '--exact', '--ignored', '--nocapture', '--test-threads=1'], 10, 15, MIB)
         result['native'] = parse_native((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
         unchanged()
+        if a.batch_state:
+            # This branch starts only after the actual same-build hardware
+            # control passed. It neither retries nor substitutes a stop method.
+            checker_path = 'tools/rapid-profiler/tree-work/check_batch.py'
+            shared_path = 'tools/rapid-profiler/verify_ordinary_interval.py'
+            for name in (checker_path, shared_path):
+                assert (repo/name).read_bytes() == git('show', a.revision+':'+name)
+            checker, shared = load(repo/checker_path), load(repo/shared_path)
+            stage('batch-parser-controls', [str(tools['python']), '-B',
+                str(repo/'tools/rapid-profiler/tree-work/test_batch_recipe.py')], 10, 15, MIB)
+            pure = stage('batch-pure-controls', [str(binary), 'oracle::native_ordinary::tree_batch::tests::',
+                '--test-threads=1'], 10, 15, MIB)
+            result['batch_controls'] = checker.parse_controls(
+                (pure/'stdout.txt').read_bytes(), (pure/'stderr.txt').read_bytes())
+            trusted, candidate = a.raw/'trusted.so', a.raw/'candidate.so'
+            stage('tree-build', [str(tools['gcc']), *shared.CFLAGS,
+                str(repo/'tools/rapid-profiler/tree-work/tree_work.S'), '-o', str(trusted)], 20, 30, MIB)
+            dso = digest(trusted)
+            assert 0 < dso['bytes'] <= MIB
+            candidate.write_bytes(trusted.read_bytes())
+            assert candidate.read_bytes() == trusted.read_bytes() and digest(candidate) == dso
+            assert (trusted.stat().st_dev, trusted.stat().st_ino) != (candidate.stat().st_dev, candidate.stat().st_ino)
+            artifacts.update({trusted: dso, candidate: dso})
+            args = ['build', '--locked', '--offline', '--release', '--jobs', '4', '-p', 'rapid-profiler',
+                '--bin', 'frontend-native-oracle', '--message-format=json-render-diagnostics']
+            built = stage('batch-build', [str(tools['cargo']), *args], 120, 180, 128*MIB)
+            messages = [json.loads(line) for line in (built/'stdout.txt').read_text().splitlines()]
+            assert messages[-1] == dict(reason='build-finished', success=True)
+            products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'frontend-native-oracle']
+            assert len(products) == 1
+            product = products[0]
+            batch_binary = Path(product['executable'])
+            assert batch_binary.resolve(strict=True) == batch_binary == repo/'target/release/frontend-native-oracle'
+            assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml')
+            assert product['target']['src_path'] == str(repo/'tools/rapid-profiler/native-interval/main.rs')
+            assert product['target']['kind'] == product['target']['crate_types'] == ['bin']
+            assert product['profile'] == dict(opt_level='3', debuginfo=0, test=False, debug_assertions=True, overflow_checks=True)
+            assert type(product['profile']['debuginfo']) is int and type(product['fresh']) is bool
+            assert product['profile']['test'] is False
+            assert all(product['profile'][key] is True for key in ('debug_assertions', 'overflow_checks'))
+            artifacts[batch_binary] = digest(batch_binary)
+            result['batch_artifacts'] = dict(binary=artifacts[batch_binary], dso=dso,
+                profile=product['profile'], cargo_fresh=product['fresh'])
+            directory = a.raw/'batch-output'
+            assert not directory.exists()
+            result['batch_state']['status'] = 'FAILED'
+            observed = stage('batch-native', [str(batch_binary), 'tree-batch-state',
+                str(candidate), str(trusted), str(directory)], 90, 90, MIB)
+            assert directory.resolve(strict=True) == directory and directory.is_dir()
+            assert {p.name for p in directory.iterdir()} == {'tree-batch-pairs.csv'}
+            table = (directory/'tree-batch-pairs.csv').read_bytes()
+            result['batch_state'] = checker.parse(table,
+                (observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            assert result['batch_state']['summary']['status'] == 'PASS'
+            (a.raw/'tree-batch-pairs.csv').write_bytes(table)
+            result['batch_state']['csv'] = 'tree-batch-pairs.csv'
+            result['batch_state']['csv_digest'] = digest(a.raw/'tree-batch-pairs.csv')
+            unchanged()
         result.update(status='PASS', stage='complete')
     except BaseException as error:
         result['error_type'] = type(error).__name__
         (a.raw/'failure.txt').write_text(traceback.format_exc())
     finally:
         save(a.raw/'result.json', result)
-    print('tree-hardware-stop '+result['status']+' stage='+result['stage'], flush=True)
+    print(('tree-batch-state' if a.batch_state else 'tree-hardware-stop')+
+        ' '+result['status']+' stage='+result['stage'], flush=True)
     return 0 if result['status'] == 'PASS' else 1
 
 

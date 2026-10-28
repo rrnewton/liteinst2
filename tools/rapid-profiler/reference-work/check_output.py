@@ -16,6 +16,10 @@ ORIGINAL_EMPTY = frozenset(('ordinal', 'generation', 'invocation', 'raw_start_ti
 
 # Exact transitive frontend-native-calibrations inventory, including expected panics.
 CALIBRATION_TESTS = {
+    'oracle::native_ordinary::tree_batch::tests::batch_armed_all_fields_and_retained_lifetime_refuse_corruption': False,
+    'oracle::native_ordinary::tree_batch::tests::batch_checkpoint_exact_idle_refuses_missing_or_early_return': False,
+    'oracle::native_ordinary::tree_batch::tests::batch_checkpoint_requires_exact_self_thread_signal': False,
+    'oracle::native_ordinary::tree_batch::tests::batch_outer_call_checks_actual_instruction_successor_word_and_rf': False,
     'oracle::native_ordinary::hardware::tests::hardware_event_requires_exact_owned_trap': False,
     'oracle::native_ordinary::hardware::tests::hardware_initial_owner_and_offsets_are_closed': False,
     'oracle::native_ordinary::hardware::tests::hardware_peek_preserves_valid_minus_one': False,
@@ -149,7 +153,7 @@ def pairs(data, terminal, stderr):
 
 
 # This newly added native prerequisite runs only in its own bounded process.
-# None of the 82 inherited controls is ignored; eight new pure controls are added.
+# None of the 82 inherited controls is ignored; eight hardware and four batch pure controls are added.
 HARDWARE_IGNORED = ('test oracle::native_ordinary::hardware::control::'
     'owned_execution_breakpoint_restores_then_steps_then_stops ... ignored, '
     'requires explicit fresh-process release hardware-stop prerequisite')
@@ -158,8 +162,8 @@ HARDWARE_IGNORED = ('test oracle::native_ordinary::hardware::control::'
 def calibrations(stdout, stderr):
     assert stderr == b'' and 0 < len(stdout) <= 1048576
     text = stdout.decode('ascii')
-    pattern = (r'\nrunning 91 tests\n((?:test [^\n]+\n){91})\n'
-        r'test result: ok\. 90 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
+    pattern = (r'\nrunning 95 tests\n((?:test [^\n]+\n){95})\n'
+        r'test result: ok\. 94 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
     match = re.fullmatch(pattern, text)
     assert match is not None
     lines = match.group(1).splitlines()
@@ -167,7 +171,7 @@ def calibrations(stdout, stderr):
     lines.remove(HARDWARE_IGNORED)
     assert all(re.fullmatch(r'test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok', line) for line in lines)
     names = [line.split()[1] for line in lines]
-    assert len(names) == len(set(names)) == 90
+    assert len(names) == len(set(names)) == 94
     observed = {line.split()[1]: ' - should panic ... ok' in line for line in lines}
     assert observed == CALIBRATION_TESTS
 

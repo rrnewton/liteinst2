@@ -1401,3 +1401,7 @@ pub mod native_call;
 // Fixed private hardware-stop ownership; old traversal and cleanup stay literal.
 #[path = "native_tree_hardware.rs"]
 mod hardware;
+
+// Opt-in eight-request API route; old traversal and populations stay literal.
+#[path = "native_tree_batch.rs"]
+pub mod tree_batch;
