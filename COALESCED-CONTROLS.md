@@ -28,6 +28,30 @@ direct branches under its existing caller contract. A branch to a logical action
 visits that control on every visit, including backedges. This does not certify
 the branch-containing region as a basic block for `plan_coalesced`.
 
+## Complete scalar functions
+
+The explicit unsafe `plan_whole_function_controlled_detailed` API accepts a
+`WholeFunctionRequest` for one complete read-only scalar function of 5..=80
+bytes. Its actions are the entry followed by every reachable ordinary `RET`,
+with distinct controls. It checks a closed CFG with direct internal branches,
+no calls, no entry backedge, no falloff, and only original NOPs in unreachable
+padding. It relocates the complete function into one image, retaining all
+internal entry routes and source obligations. The existing 256-candidate,
+one-mapping and 8192-byte limits apply.
+
+The caller must independently authenticate the complete function and sole
+external entry, exclude saved or foreign interior entries, and satisfy the
+existing callback, signal, lifetime and quiescence contracts. Decoding cannot
+prove those premises or termination. The `_after` variant authenticates the
+predecessor's original bytes and current overlay before searching. Internal
+branches enter the generated destination before its control; returns execute
+their original `C3`. The appended end stub is retained and checked unreachable
+from the admitted entry. The basic-block APIs retain their original refusals.
+
+For an admitted profiler owner, `OrdinarySitePreparation::new_whole_function`
+selects this policy and supplies permanent entry/RET observers. The constructor
+retains the same complete source-page, gate, publication and ownership checks.
+
 ## Enable state and completion
 
 `set_enabled` performs a release store; dispatch reads the Boolean with acquire

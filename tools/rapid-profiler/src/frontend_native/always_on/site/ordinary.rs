@@ -15,11 +15,20 @@ use liteinst2::contracts::*;
 use liteinst2::controls::{ControlledAction, ProbeControl};
 use liteinst2::planner::HookSemantics;
 use liteinst2::quiescent::{
-    InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed_after,
+    InstallRequest, SearchPolicy, TacticPolicy, WholeFunctionRequest,
+    plan_coalesced_detailed_after, plan_whole_function_controlled_detailed_after,
 };
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::Arc;
+
+mod whole;
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum PreparationPolicy {
+    CertifiedBlocks,
+    WholeFunction,
+}
 
 /// Owns one admitted DSO and all mandatory entry/RET plans. No publication occurs
 /// here. A single unpatchable RET refuses the complete preparation.
@@ -244,6 +253,39 @@ impl OrdinarySitePreparation {
         gate: Arc<CallGate>,
         identity: CodeIdentity,
     ) -> Result<Self, SiteError> {
+        Self::prepare(owner, gate, identity, PreparationPolicy::CertifiedBlocks)
+    }
+
+    /// Relocate one complete admitted 5..=80-byte scalar function in one image.
+    ///
+    /// This explicit profile installs one permanent observing control at entry
+    /// and at every original RET, including RETs in blocks shorter than five bytes.
+    /// Internal edges back to entry still refuse. The ordinary constructor's
+    /// certified-block policy and short-block refusals are unchanged.
+    ///
+    /// The encapsulated loaded owner supplies the full original CFG, complete
+    /// function/source extent and its unsafe sole-entry/no-saved-resume contract;
+    /// this factory supplies only the existing managed observing callbacks. It
+    /// exposes no unchecked range, action or executable pointer. Planning does
+    /// not publish or call code. The same 8192-byte allocation cap, defensive
+    /// entry routing, signal/quiescence/publication and process-lived ownership
+    /// requirements remain on `plan`, `seal` and the existing call APIs. The
+    /// emitted end stub is not a return observation: the closed CFG must make it
+    /// unreachable. Named and selected loaded owners use this identical path.
+    pub fn new_whole_function(
+        owner: &'static mut LoadedIntegerLeaf,
+        gate: Arc<CallGate>,
+        identity: CodeIdentity,
+    ) -> Result<Self, SiteError> {
+        Self::prepare(owner, gate, identity, PreparationPolicy::WholeFunction)
+    }
+
+    fn prepare(
+        owner: &'static mut LoadedIntegerLeaf,
+        gate: Arc<CallGate>,
+        identity: CodeIdentity,
+        policy: PreparationPolicy,
+    ) -> Result<Self, SiteError> {
         if !timing::supported() {
             return Err(SiteError::ClockUnsupported);
         }
@@ -269,12 +311,20 @@ impl OrdinarySitePreparation {
         {
             return Err(SiteError::Correspondence);
         }
-        let groups = groups(
-            entry,
-            certificate.returns(),
-            certificate.blocks(),
-            certificate.edges(),
-        )?;
+        let groups = match policy {
+            PreparationPolicy::CertifiedBlocks => groups(
+                entry,
+                certificate.returns(),
+                certificate.blocks(),
+                certificate.edges(),
+            )?,
+            PreparationPolicy::WholeFunction => whole::groups(
+                scope,
+                certificate.returns(),
+                certificate.blocks(),
+                certificate.edges(),
+            )?,
+        };
         let pcs: Vec<_> = std::iter::once(entry)
             .chain(certificate.returns().iter().copied())
             .collect();
@@ -344,28 +394,54 @@ impl OrdinarySitePreparation {
             for &prior in &reserved {
                 exclude(&mut allocation.ranges, prior)?;
             }
-            let member = plan_coalesced_detailed_after(
-                &InstallRequest {
-                    identity,
-                    code: owner.code(),
-                    base_address: entry,
-                    function: scope,
-                    block: group.block,
-                    logical_pc: logical,
-                    entries: &entries,
-                    hook: impossible_ordinary_dispatch,
-                    semantics: HookSemantics::Observe,
-                    allocation: &allocation,
-                    search: SearchPolicy {
-                        tactics: TacticPolicy::RelocationOnly,
-                        max_upstream_bytes: if logical == entry { 0 } else { 64 },
-                        max_displaced_bytes: 80,
-                        max_sites: if logical == entry { 1 } else { 65 },
+            let member = match policy {
+                PreparationPolicy::CertifiedBlocks => plan_coalesced_detailed_after(
+                    &InstallRequest {
+                        identity,
+                        code: owner.code(),
+                        base_address: entry,
+                        function: scope,
+                        block: group.block,
+                        logical_pc: logical,
+                        entries: &entries,
+                        hook: impossible_ordinary_dispatch,
+                        semantics: HookSemantics::Observe,
+                        allocation: &allocation,
+                        search: SearchPolicy {
+                            tactics: TacticPolicy::RelocationOnly,
+                            max_upstream_bytes: if logical == entry { 0 } else { 64 },
+                            max_displaced_bytes: 80,
+                            max_sites: if logical == entry { 1 } else { 65 },
+                        },
                     },
-                },
-                &actions,
-                &predecessor,
-            )
+                    &actions,
+                    &predecessor,
+                ),
+                PreparationPolicy::WholeFunction => {
+                    // SAFETY: the exclusive admitted owner authenticates the
+                    // exact complete scalar CFG, sole external entry, no saved
+                    // resumes/foreign transfers and continuous source lifetime.
+                    // The permanent distinct controls above are our managed
+                    // non-unwinding state-preserving entry/RET observers. The
+                    // core independently checks complete leaders, every C3 and
+                    // exact whole extent, using this original source and the
+                    // authenticated predecessor overlay. Publication/execution
+                    // still require the unchanged explicit unsafe contracts.
+                    unsafe {
+                        plan_whole_function_controlled_detailed_after(
+                            &WholeFunctionRequest {
+                                identity,
+                                code: owner.code(),
+                                base_address: entry,
+                                entries: &entries,
+                                allocation: &allocation,
+                            },
+                            &actions,
+                            &predecessor,
+                        )
+                    }
+                }
+            }
             .map_err(SiteError::Planning)?;
             let p = member.plan().parts();
             if p.kind != PlanKind::Relocation
@@ -403,6 +479,12 @@ impl OrdinarySitePreparation {
                 || actions.iter().any(|a| !p.displaced.contains(a.logical_pc))
             {
                 return Err(SiteError::Correspondence);
+            }
+            if policy == PreparationPolicy::WholeFunction {
+                if groups.len() != 1 || index != 0 || group.block != scope {
+                    return Err(SiteError::Correspondence);
+                }
+                whole::check_plan(scope, certificate.heads(), &member)?;
             }
             predecessor.append(member.plan())?;
             for request in &p.allocations {
