@@ -14,13 +14,14 @@ from page_selected_process import invoke
 from page_selected_components import plain_executable
 from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
+from page_selected_vmovdqu128_promotions import promotions
 
 ROOT=Path(__file__).resolve().parents[2]
 HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/vmovdqu128'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='1b69d455443f7d1b3e5c2b36c2ab47cdc136decb301437cf85721b0036c132ef'
+OUTCOMES_SHA='32997cb695507d73c29e0e4e037db8bf608605876620398346b918fb2c566572'
 CASES_SHA='fce4b61b9ad405bc3bb29c940e0b68483da4eb23d81bb6a3cadc555221127e9a'
 MASK=(1<<64)-1
 NAMES=('magic','version','header_bytes','sample_bytes','pairs','completed','control','xcr0','xsave_bytes',
@@ -141,6 +142,8 @@ def queries(data,header,rows,kind):
 
 
 def record(data,expected,sample_bytes,rows):
+    need(len(data)>3520 and len(data)<16<<20,'complete record plus typed-promotion trailer within old cap')
+    promoted=promotions(data[-3520:]);data=data[:-3520]
     need(len(data)>=136,'complete retained header')
     h=dict(zip(NAMES,struct.unpack_from('<17Q',data)))
     need(all(h[k]==v for k,v in expected['header_equals'].items()),'exact finite outcome; failed operations stay failed')
@@ -157,6 +160,7 @@ def record(data,expected,sample_bytes,rows):
     failed=fault_observations(data[-9120:-9024],kind,h)
     footprint=queries(data[-9024:],h,rows,kind)
     return dict(operation='completed'if positive else 'failed_memory_read',
+        promotions=promoted,typed_promotions=12,supplied_none_queries=12,
         pairs=13 if positive else 0,new_pairs=12 if positive else 0,startup_pairs=1,
         verified_memory_failures=int(not positive),refusals=h['refusals'],actual_before_queries=footprint['actual_before_queries'],
         ending_pairs=3 if positive else 0,crossing_pairs=9 if positive else 0,
@@ -196,12 +200,12 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile='page-selected-vmovdqu128-v1',status='failed',
-        scope='Exact VEX.128 VMOVDQU XMM0,[RSI]c5fa6f06/Code1598 only.12 loads plus startup across all four fetch geometries; three literal inputs at guarded data-page edges/unaligned offset; ZMM0 upper384 bits zero. Two genuine full/cross-page failed16-byte reads. Complete GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/stack/data comparisons,28 actual-before NONE queries;146 supplied refusals per process. No general VEX, real-program completion or performance claim.',
+        scope='Exact VEX.128 VMOVDQU XMM0,[RSI]c5fa6f06/Code1598 only.12 loads plus startup across all four fetch geometries; three literal inputs at guarded data-page edges/unaligned offset; ZMM0 upper384 bits zero. Two genuine full/cross-page failed16-byte reads. Complete GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/stack/data comparisons,28 actual-before NONE queries;134 supplied refusals plus12 explicit typed/NONE promotions per process. No general VEX, real-program completion or performance claim.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vmovdqu128.py','--expect-revision',args.expect_revision],
         commands=[],cases=[],error=None,final_errors=[],
         totals=dict(pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
-                    refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0))
+                    refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0,typed_promotions=0,supplied_none_queries=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
         lexical=str(Path(path).absolute());p=Path(path).resolve(strict=True);value=fact(p)
@@ -261,7 +265,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'samples','negative_sample','result','refused_last','vpb_observations','v64_fault','vpc_queries'}
+            need(not err,'actual symbol inspection stderr');roots={'samples','negative_sample','result','refused_last','vpb_observations','v64_fault','vpc_queries','v128_promotions'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -277,10 +281,10 @@ def main():
             state['symbols']=symbols;sample=symbols['negative_sample']['bytes']
             need(symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
                 symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5000 and symbols['v64_fault']['bytes']==96 and
-                symbols['vpc_queries']['bytes']==9024 and 136+22*sample+40+5000+96+9024<16<<20,
+                symbols['vpc_queries']['bytes']==9024 and symbols['v128_promotions']['bytes']==3520 and 136+22*sample+40+5000+96+9024+3520<16<<20,
                 'actual ELF-sized complete sample array/trailers below unchanged cap');samples[name]=sample
             r['fixture_build'][name]=dict(artifact=state['artifact'],elf=state['elf'],symbols_sha256=digest(symbols),
-                record_bytes=136+22*sample+40+5000+96+9024,headers_sha256=digest(state['headers']))
+                record_bytes=136+22*sample+40+5000+96+9024+3520,headers_sha256=digest(state['headers']))
         for expected in commands:
             item=dict(name=expected['name'],status='failed',environment_delta=expected['environment_delta'],actual_exit=None);r['cases'].append(item)
             row,out,err=run(expected['name'],[output/expected['argv'][0]],expected['exit'],env=dict(ENV,**expected['environment_delta']))
@@ -293,7 +297,7 @@ def main():
             for key in r['totals']:r['totals'][key]+=value[key]
             item.update(status='accepted_observation',outcome=value)
         need(r['totals']==dict(pairs=13,new_pairs=12,startup_pairs=3,verified_memory_failures=2,
-            refusals=438,actual_before_queries=28,ending_pairs=3,crossing_pairs=9) and
+            refusals=402,actual_before_queries=28,ending_pairs=3,crossing_pairs=9,typed_promotions=36,supplied_none_queries=36) and
             len(r['cases'])==3 and all(c['status']=='accepted_observation'for c in r['cases']),
             'one complete13-pair cohort and two genuine failed-read controls')
         r['status']='passed'
