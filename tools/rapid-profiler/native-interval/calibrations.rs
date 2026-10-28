@@ -5,3 +5,9 @@ mod normal_check;
 #[allow(dead_code)]
 #[path = "../../../tests/support/native_interval_oracle.rs"]
 mod oracle;
+
+// Exact37 body predicates share the one truth instance in this test target.
+#[path = "ordinary/exact_body.rs"]
+mod exact_body;
+#[path = "../exact-work/truth.rs"]
+mod exact_truth;

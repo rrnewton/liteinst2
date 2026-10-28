@@ -44,6 +44,15 @@ def reap(child, deadline):
     return code
 
 
+def refusal(mode, code, transcript, errors):
+    """Accept only the declared normal exit, never a competing fatal exit."""
+    assert mode in ('duplicate', 'eof')
+    assert type(code) is int and code == 1
+    assert b'DONE,' not in transcript and b'normal-session FAILED:' in errors
+    assert (b'duplicate request ID' if mode == 'duplicate' else b'overlong or unterminated request') in errors
+    return dict(control=mode, expected_refusal=True, exit_code=code)
+
+
 def integer(s):
     assert s.isascii() and s.isdecimal() and (s == '0' or not s.startswith('0'))
     n = int(s)
@@ -250,9 +259,13 @@ def main():
     failure = None
     selector = None
     summary = dict(status='FAILED', mode=a.mode, k=a.k, error='child setup incomplete')
+    # The child inherits all four CPUs before only this producer is narrowed.
+    assert os.sched_getaffinity(0) == set(cpus), 'child inheritance affinity'
     child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
         # The successful Popen is immediately guarded, including all fd/selector setup.
+        os.sched_setaffinity(0, {cpus[3]})
+        assert os.sched_getaffinity(0) == {cpus[3]}, 'producer singleton affinity'
         remaining(deadline)
         selector = selectors.DefaultSelector()
         for pipe, name in ((child.stdout, 'out'), (child.stderr, 'err')):
@@ -284,9 +297,7 @@ def main():
         code = reap(child, deadline)
         assert not buffer
         if a.mode in ('duplicate', 'eof'):
-            assert code != 0 and b'DONE,' not in transcript and b'normal-session FAILED:' in errors
-            assert (b'duplicate request ID' if a.mode == 'duplicate' else b'overlong or unterminated request') in errors
-            summary = dict(control=a.mode, expected_refusal=True, exit_code=code)
+            summary = refusal(a.mode, code, transcript, errors)
         else:
             assert code == 0 and not errors and not outgoing
             summary = check(transcript.decode('ascii'), expected, a.k, epochs,

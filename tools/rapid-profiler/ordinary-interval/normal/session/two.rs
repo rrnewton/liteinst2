@@ -6,8 +6,10 @@ use rapid_profiler::frontend_native::{
     TwoCallerNormalLeafContract, TwoCallerNormalSitePreparation,
 };
 mod check;
+mod exact;
 mod worker;
 use check::Ledger;
+use exact::Subject;
 
 struct Engine {
     controller: IntervalController,
@@ -324,7 +326,48 @@ pub(crate) fn run(
         std::process::exit(1);
     }
 }
+pub(crate) fn run_exact(
+    candidate: &Path,
+    trusted: &Path,
+    elf_va: u64,
+    length: u64,
+    k: usize,
+    epochs: u32,
+) {
+    if let Err(error) = run_subject(
+        Subject::Exact37,
+        candidate,
+        trusted,
+        elf_va,
+        length,
+        k,
+        epochs,
+    ) {
+        eprintln!("normal-session-two-exact FAILED: {error}");
+        // Identical fail-stop ownership: no partial population or join credit.
+        std::process::exit(1);
+    }
+}
 fn run_checked(
+    candidate: &Path,
+    trusted: &Path,
+    elf_va: u64,
+    length: u64,
+    k: usize,
+    epochs: u32,
+) -> Result<(), String> {
+    run_subject(
+        Subject::Strnlen41,
+        candidate,
+        trusted,
+        elf_va,
+        length,
+        k,
+        epochs,
+    )
+}
+fn run_subject(
+    subject: Subject,
     candidate: &Path,
     trusted: &Path,
     elf_va: u64,
@@ -335,19 +378,24 @@ fn run_checked(
     single_main();
     let cpus = cpus();
     let policy = Policy::ten_ms(k, epochs, protocol::COMMANDS as u64).map_err(failure)?;
-    assert_eq!(
-        length, 41,
-        "qualified strnlen extent, not arbitrary discovery"
-    );
+    match subject {
+        Subject::Strnlen41 => {
+            assert_eq!(
+                length, 41,
+                "qualified strnlen extent, not arbitrary discovery"
+            );
+        }
+        Subject::Exact37 => exact::extent(length),
+    }
     let bytes = expected_file(candidate, trusted);
     let selection = TrustedFunctionSelection::new(
         &bytes,
         elf_va,
         usize::try_from(length).map_err(failure)?,
-        LABEL,
+        subject.label(),
     )
     .map_err(failure)?;
-    // SAFETY: independently authenticated unchanged strnlen ELF/extent, exact ABI,
+    // SAFETY: independently authenticated closed-subject ELF/extent, exact ABI,
     // read-only input and sole entry. Publication is globally quiescent; both
     // actual workers attach before dispatch. No signal/reentry/unwind/CET/writer,
     // unload/fork or code reclamation; all installed owners are process-lived.
@@ -365,7 +413,16 @@ fn run_checked(
     .map_err(failure)?;
     let entry = owner.entry();
     let returns: BTreeSet<_> = owner.certificate().returns().iter().copied().collect();
-    assert_eq!(returns, [entry + 34, entry + 40].into());
+    match subject {
+        Subject::Strnlen41 => assert_eq!(returns, [entry + 34, entry + 40].into()),
+        Subject::Exact37 => exact::geometry(
+            entry,
+            owner.certificate().range(),
+            owner.code(),
+            owner.certificate().heads(),
+            &returns,
+        ),
+    }
     owner.verify_original().map_err(failure)?;
     let prep = TwoCallerNormalSitePreparation::new_whole_function(owner, identity(entry))
         .map_err(failure)?;
@@ -424,218 +481,331 @@ fn run_checked(
         let client = client.clone();
         let spans = Arc::clone(&spans);
         let handle = thread::spawn(move || {
-            worker::run(entry, client, spans, rx, events, cpus[i + 1], i as u64 + 1)
+            worker::run(
+                (entry, subject),
+                client,
+                spans,
+                rx,
+                events,
+                cpus[i + 1],
+                i as u64 + 1,
+            )
         });
         (tx, replies, Some(handle))
     });
     let tx = [first.0, second.0];
     let replies = [first.1, second.1];
     let mut handles = [first.2, second.2];
-    pin(Some(cpus[0]));
-    let mut tids = [0; 2];
-    for (i, replies) in replies.iter().enumerate() {
-        let now = Instant::now();
-        if now >= setup_limit {
-            return Err("worker setup deadline".into());
+    // This borrowing boundary leaves engine, I/O, channels and join handles
+    // alive when a recoverable controller error selects process fail-stop.
+    // Returning Err from their owner scope would disconnect attached workers
+    // and close epochs before the outer wrapper could choose exit(1).
+    let mut loop_trace = loop_trace::Trace::default();
+    let outcome = (|| -> Result<(), String> {
+        pin(Some(cpus[0]));
+        let mut tids = [0; 2];
+        for (i, replies) in replies.iter().enumerate() {
+            let now = Instant::now();
+            if now >= setup_limit {
+                return Err("worker setup deadline".into());
+            }
+            let worker::Event::Ready { tid } = replies
+                .recv_timeout(setup_limit.duration_since(now))
+                .map_err(failure)?
+            else {
+                return Err("worker attachment handshake".into());
+            };
+            if Instant::now() >= setup_limit {
+                return Err("worker setup completion deadline".into());
+            }
+            tids[i] = tid;
         }
-        let worker::Event::Ready { tid } = replies
-            .recv_timeout(setup_limit.duration_since(now))
-            .map_err(failure)?
-        else {
-            return Err("worker attachment handshake".into());
+        let mut ledger = match subject {
+            Subject::Strnlen41 => Ledger::new(tids, entry, returns, stream, k),
+            Subject::Exact37 => Ledger::new_exact(tids, entry, returns, stream, k),
         };
-        if Instant::now() >= setup_limit {
-            return Err("worker setup completion deadline".into());
+        let mut ids = protocol::Ids::default();
+        let mut dispatch = Dispatch::default();
+        let mut requested = false;
+        let mut finished = [None; 2];
+        let mut prefer = 0;
+        let mut final_output = false;
+        match subject {
+            Subject::Strnlen41 => io.emit(format!(
+                "READY,normal-two-session-v1,{k},{epochs},10,2,4096,4096,2,1,2,1,4,2,4096\n"
+            ))?,
+            Subject::Exact37 => io.emit(format!(
+                "READY,normal-two-exact-v1,{k},{epochs},10,2,4096,4096,2,1,2,1,4,2,4096\n"
+            ))?,
         }
-        tids[i] = tid;
-    }
-    let mut ledger = Ledger::new(tids, entry, returns, stream, k);
-    let mut ids = protocol::Ids::default();
-    let mut dispatch = Dispatch::default();
-    let mut requested = false;
-    let mut finished = [None; 2];
-    let mut prefer = 0;
-    let mut final_output = false;
-    io.emit(format!(
-        "READY,normal-two-session-v1,{k},{epochs},10,2,4096,4096,2,1,2,1,4,2,4096\n"
-    ))?;
-    for (i, tid) in tids.into_iter().enumerate() {
-        io.emit(format!("WORKER,{},{},{tid}\n", i + 1, i + 1))?;
-    }
-    let started = Instant::now();
-    let mut schedule = Schedule::new(started, policy).map_err(failure)?;
-    let mut previous_poll = started;
-    let mut last_wait: Option<(Duration, Duration)> = None;
-    loop {
-        let mut progress = false;
-        let observed = Instant::now();
-        let waited = last_wait.take();
-        match schedule.poll(observed, requested).map_err(|e| {
-            format!(
-                "{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}",
-                clock_failure(e, "poll", engine.committed_arms, &schedule),
-                observed.duration_since(started).as_nanos(),
-                observed.duration_since(previous_poll).as_nanos(),
-                waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))
-            )
-        })? {
-            ScheduleDecision::Arm { .. } => {
-                if let Err(error) = engine.arm(&mut io) {
-                    return Err(format!(
-                        "arm/history failed: committed={} completed={} {error}",
-                        engine.committed_arms,
-                        schedule.armed()
-                    ));
-                }
-                schedule.arm_completed(Instant::now()).map_err(|e| {
-                    clock_failure(e, "arm-completed", engine.committed_arms, &schedule)
-                })?;
-                progress = true;
-            }
-            ScheduleDecision::Stop => {
-                engine.stop(&mut io)?;
-                progress = true;
-            }
-            ScheduleDecision::Wait => (),
+        for (i, tid) in tids.into_iter().enumerate() {
+            io.emit(format!("WORKER,{},{},{tid}\n", i + 1, i + 1))?;
         }
-        previous_poll = observed;
-        // At most one reply, rotating preference. Metadata/timer never wait on a queue.
-        let mut event = None;
-        for offset in 0..2 {
-            let i = (prefer + offset) % 2;
-            match replies[i].try_recv() {
-                Ok(value) => {
-                    event = Some((i, value));
-                    prefer = (i + 1) % 2;
-                    break;
-                }
-                Err(TryRecvError::Disconnected) if finished[i].is_none() => {
-                    return Err("worker disconnected before completion".into());
-                }
-                Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),
-            }
-        }
-        if let Some((i, event)) = event {
-            match event {
-                worker::Event::Batch { calls, native } => {
-                    assert!(finished[i].is_none());
-                    engine.history(&mut io)?;
-                    ledger.batch(i, calls, *native, &engine.history, &mut io)?;
-                }
-                worker::Event::Flushed { id, totals } => {
-                    ledger.totals(i, totals);
-                    if dispatch.flushed(i, id, totals)? {
-                        ledger.flushed(id, &mut io)?;
-                    }
-                }
-                worker::Event::Finished(totals) => {
-                    ledger.totals(i, totals);
-                    dispatch.finished(i, totals)?;
-                    assert!(finished[i].replace(totals).is_none());
-                }
-                worker::Event::Ready { .. } => return Err("duplicate worker handshake".into()),
-            }
-            progress = true;
-        }
-        engine.retire(&mut io)?;
-        if !schedule.is_stopping() && !requested && dispatch.pending.is_none() {
-            if let Some(command) = io.command()? {
-                if command == Command::Stop {
-                    requested = true;
-                } else {
-                    ids.accept(&command).map_err(str::to_string)?;
-                    dispatch.pending = Some(ledger.accept(command));
-                }
-                progress = true;
-            } else if io.eof() {
-                return Err("EOF before STOP or scheduled shutdown".into());
-            }
-        }
-        progress |= dispatch.advance(&tx, schedule.is_stopping(), ledger.prefixes())?;
-        if !final_output
-            && finished.iter().all(Option::is_some)
-            && handles
-                .iter()
-                .all(|h| h.as_ref().is_some_and(|h| h.is_finished()))
-        {
-            assert!(schedule.is_stopping() && dispatch.complete());
-            for handle in &mut handles {
-                handle.take().unwrap().join().map_err(|_| "worker panic")?;
-            }
-            engine.retire(&mut io)?;
-            engine.history(&mut io)?;
-            assert!(engine.epochs.iter().all(Option::is_none));
-            assert_eq!(engine.reports.len(), schedule.armed() as usize);
-            assert_eq!(engine.committed_arms, schedule.armed());
-            assert_eq!(
-                engine.history.last().unwrap().range().end,
-                u64::from(schedule.armed()) + 1
+        let started = Instant::now();
+        let mut schedule = Schedule::new(started, policy).map_err(failure)?;
+        let mut previous_poll = started;
+        let mut last_wait: Option<(Duration, Duration)> = None;
+        loop {
+            let mut progress = false;
+            let observed = Instant::now();
+            let waited = last_wait.take();
+            let decision = schedule.poll(observed, requested).map_err(|e| {
+                loop_trace.refused_poll(
+                    observed,
+                    loop_trace::State {
+                        pending: match dispatch.pending.as_ref() {
+                            None => 0,
+                            Some(Pending::Call { .. }) => 1,
+                            Some(Pending::Flush(_)) => 2,
+                        },
+                        requested,
+                        stopping: schedule.is_stopping(),
+                        accepted: ledger.accepted.len(),
+                        history: engine.history.last().map_or(0, |h| h.range().end),
+                        reports: engine.reports.len(),
+                        finished: u8::from(finished[0].is_some())
+                            | (u8::from(finished[1].is_some()) << 1),
+                        write_blocked: io.write_blocked(),
+                        output_drained: io.drained(),
+                    },
+                );
+                format!(
+                    "{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}",
+                    clock_failure(e, "poll", engine.committed_arms, &schedule),
+                    observed.duration_since(started).as_nanos(),
+                    observed.duration_since(previous_poll).as_nanos(),
+                    waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))
+                )
+            })?;
+            loop_trace.begin(
+                observed,
+                loop_trace::State {
+                    pending: match dispatch.pending.as_ref() {
+                        None => 0,
+                        Some(Pending::Call { .. }) => 1,
+                        Some(Pending::Flush(_)) => 2,
+                    },
+                    requested,
+                    stopping: schedule.is_stopping(),
+                    accepted: ledger.accepted.len(),
+                    history: engine.history.last().map_or(0, |h| h.range().end),
+                    reports: engine.reports.len(),
+                    finished: u8::from(finished[0].is_some())
+                        | (u8::from(finished[1].is_some()) << 1),
+                    write_blocked: io.write_blocked(),
+                    output_drained: io.drained(),
+                },
             );
-            let counts = ledger.finish(&engine.reports, &mut io)?;
-            assert!(output_bound(ledger.calls, ledger.flushes, schedule.armed()) < 4 * 1024 * 1024);
-            assert_eq!(ids.len(), ledger.accepted.len());
-            single_main();
-            unsafe { immutable(&spans) };
-            for (i, totals) in finished.iter().enumerate() {
-                let t = totals.unwrap();
-                ledger.totals(i, t);
-                io.emit(format!(
-                    "WORKER_DONE,{},{},{},{},{},{},{},1,1\n",
-                    i + 1,
-                    ledger.local[i].batches,
-                    t.entered,
-                    t.ret_observed,
-                    t.confirmed,
-                    t.completed,
-                    t.unsampled
-                ))?;
-            }
-            io.emit(format!("IO,{}\n", io.write_blocked()))?;
-            io.emit(format!(
-                "DONE,{:?},{},{},{},{},{},{},{},{},{},{},0,0,2,2\n",
-                schedule.stop_reason().unwrap(),
-                schedule.armed(),
-                engine.history.last().unwrap().range().end,
-                ledger.accepted.len(),
-                ledger.calls,
-                counts.admitted,
-                counts.retained,
-                counts.dropped,
-                ledger.local.iter().map(|c| c.totals.unsampled).sum::<u64>(),
-                ledger.local.iter().map(|c| c.batches).sum::<u64>(),
-                ledger.flushes
-            ))?;
-            final_output = true;
-        }
-        io.write()?;
-        if final_output && io.drained() {
-            schedule
-                .check_completion(Instant::now())
-                .map_err(|e| clock_failure(e, "final-output", engine.committed_arms, &schedule))?;
-            return Ok(());
-        }
-        let observed = Instant::now();
-        let bound = schedule
-            .wait_bound(observed)
-            .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
-        if !progress {
-            let wait = guarded_wait(started, observed, policy, &schedule, bound);
-            if wait.is_zero() {
-                std::hint::spin_loop();
-            } else {
-                let before = Instant::now();
-                if schedule.is_stopping() {
-                    thread::sleep(wait);
-                } else {
-                    let until = observed.checked_add(wait).ok_or("idle wait extent")?;
-                    while Instant::now() < until {
-                        std::hint::spin_loop();
+            match decision {
+                ScheduleDecision::Arm { .. } => {
+                    loop_trace.decision("arm");
+                    if let Err(error) = engine.arm(&mut io) {
+                        return Err(format!(
+                            "arm/history failed: committed={} completed={} {error}",
+                            engine.committed_arms,
+                            schedule.armed()
+                        ));
                     }
+                    schedule.arm_completed(Instant::now()).map_err(|e| {
+                        clock_failure(e, "arm-completed", engine.committed_arms, &schedule)
+                    })?;
+                    progress = true;
                 }
-                last_wait = Some((wait, before.elapsed()));
+                ScheduleDecision::Stop => {
+                    loop_trace.decision("stop");
+                    engine.stop(&mut io)?;
+                    progress = true;
+                }
+                ScheduleDecision::Wait => loop_trace.decision("wait"),
             }
+            previous_poll = observed;
+            loop_trace.mark(loop_trace::Phase::PollArm);
+            // At most one reply, rotating preference. Metadata/timer never wait on a queue.
+            let mut event = None;
+            for offset in 0..2 {
+                let i = (prefer + offset) % 2;
+                match replies[i].try_recv() {
+                    Ok(value) => {
+                        event = Some((i, value));
+                        prefer = (i + 1) % 2;
+                        break;
+                    }
+                    Err(TryRecvError::Disconnected) if finished[i].is_none() => {
+                        return Err("worker disconnected before completion".into());
+                    }
+                    Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),
+                }
+            }
+            if let Some((i, event)) = event {
+                match event {
+                    worker::Event::Batch { calls, native } => {
+                        loop_trace.reply("batch", i + 1, calls.len());
+                        assert!(finished[i].is_none());
+                        engine.history(&mut io)?;
+                        ledger.batch(i, calls, *native, &engine.history, &mut io)?;
+                    }
+                    worker::Event::Flushed { id, totals } => {
+                        loop_trace.reply("flushed", i + 1, 0);
+                        ledger.totals(i, totals);
+                        if dispatch.flushed(i, id, totals)? {
+                            ledger.flushed(id, &mut io)?;
+                        }
+                    }
+                    worker::Event::Finished(totals) => {
+                        loop_trace.reply("finished", i + 1, 0);
+                        ledger.totals(i, totals);
+                        dispatch.finished(i, totals)?;
+                        assert!(finished[i].replace(totals).is_none());
+                    }
+                    worker::Event::Ready { .. } => return Err("duplicate worker handshake".into()),
+                }
+                progress = true;
+            }
+            loop_trace.progress(progress);
+            loop_trace.mark(loop_trace::Phase::ReplyHistory);
+            engine.retire(&mut io)?;
+            loop_trace.mark(loop_trace::Phase::Retire);
+            if !schedule.is_stopping() && !requested && dispatch.pending.is_none() {
+                if let Some(command) = io.command()? {
+                    loop_trace.command(match &command {
+                        Command::Call { .. } => "call",
+                        Command::Flush { .. } => "flush",
+                        Command::Stop => "stop",
+                    });
+                    if command == Command::Stop {
+                        requested = true;
+                    } else {
+                        subject.accept(&mut ids, &command)?;
+                        dispatch.pending = Some(ledger.accept(command));
+                    }
+                    progress = true;
+                } else if io.eof() {
+                    return Err("EOF before STOP or scheduled shutdown".into());
+                }
+            }
+            loop_trace.progress(progress);
+            loop_trace.mark(loop_trace::Phase::Input);
+            progress |= dispatch.advance(&tx, schedule.is_stopping(), ledger.prefixes())?;
+            loop_trace.progress(progress);
+            loop_trace.mark(loop_trace::Phase::Dispatch);
+            if !final_output
+                && finished.iter().all(Option::is_some)
+                && handles
+                    .iter()
+                    .all(|h| h.as_ref().is_some_and(|h| h.is_finished()))
+            {
+                assert!(schedule.is_stopping() && dispatch.complete());
+                for handle in &mut handles {
+                    handle.take().unwrap().join().map_err(|_| "worker panic")?;
+                }
+                engine.retire(&mut io)?;
+                engine.history(&mut io)?;
+                assert!(engine.epochs.iter().all(Option::is_none));
+                assert_eq!(engine.reports.len(), schedule.armed() as usize);
+                assert_eq!(engine.committed_arms, schedule.armed());
+                assert_eq!(
+                    engine.history.last().unwrap().range().end,
+                    u64::from(schedule.armed()) + 1
+                );
+                let counts = ledger.finish(&engine.reports, &mut io)?;
+                assert!(
+                    subject.output_bound(ledger.calls, ledger.flushes, schedule.armed())
+                        < 4 * 1024 * 1024
+                );
+                assert_eq!(ids.len(), ledger.accepted.len());
+                single_main();
+                unsafe { immutable(&spans) };
+                for (i, totals) in finished.iter().enumerate() {
+                    let t = totals.unwrap();
+                    ledger.totals(i, t);
+                    io.emit(format!(
+                        "WORKER_DONE,{},{},{},{},{},{},{},1,1\n",
+                        i + 1,
+                        ledger.local[i].batches,
+                        t.entered,
+                        t.ret_observed,
+                        t.confirmed,
+                        t.completed,
+                        t.unsampled
+                    ))?;
+                }
+                io.emit(format!("IO,{}\n", io.write_blocked()))?;
+                io.emit(format!(
+                    "DONE,{:?},{},{},{},{},{},{},{},{},{},{},0,0,2,2\n",
+                    schedule.stop_reason().unwrap(),
+                    schedule.armed(),
+                    engine.history.last().unwrap().range().end,
+                    ledger.accepted.len(),
+                    ledger.calls,
+                    counts.admitted,
+                    counts.retained,
+                    counts.dropped,
+                    ledger.local.iter().map(|c| c.totals.unsampled).sum::<u64>(),
+                    ledger.local.iter().map(|c| c.batches).sum::<u64>(),
+                    ledger.flushes
+                ))?;
+                final_output = true;
+            }
+            loop_trace.mark(loop_trace::Phase::Finalize);
+            io.write()?;
+            loop_trace.mark(loop_trace::Phase::Write);
+            if final_output && io.drained() {
+                schedule.check_completion(Instant::now()).map_err(|e| {
+                    clock_failure(e, "final-output", engine.committed_arms, &schedule)
+                })?;
+                return Ok(());
+            }
+            let observed = Instant::now();
+            let bound = schedule
+                .wait_bound(observed)
+                .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
+            loop_trace.mark(loop_trace::Phase::WaitBound);
+            if !progress {
+                let wait = guarded_wait(started, observed, policy, &schedule, bound);
+                if wait.is_zero() {
+                    std::hint::spin_loop();
+                } else {
+                    let before = Instant::now();
+                    if schedule.is_stopping() {
+                        thread::sleep(wait);
+                    } else {
+                        let until = observed.checked_add(wait).ok_or("idle wait extent")?;
+                        while Instant::now() < until {
+                            std::hint::spin_loop();
+                        }
+                    }
+                    last_wait = Some((wait, before.elapsed()));
+                }
+            }
+            loop_trace.mark(loop_trace::Phase::Wait);
+            loop_trace.complete(loop_trace::State {
+                pending: match dispatch.pending.as_ref() {
+                    None => 0,
+                    Some(Pending::Call { .. }) => 1,
+                    Some(Pending::Flush(_)) => 2,
+                },
+                requested,
+                stopping: schedule.is_stopping(),
+                accepted: ledger.accepted.len(),
+                history: engine.history.last().map_or(0, |h| h.range().end),
+                reports: engine.reports.len(),
+                finished: u8::from(finished[0].is_some()) | (u8::from(finished[1].is_some()) << 1),
+                write_blocked: io.write_blocked(),
+                output_drained: io.drained(),
+            });
         }
+    })();
+    if let Err(error) = outcome {
+        let details = loop_trace.failure();
+        match subject {
+            Subject::Strnlen41 => eprintln!("normal-session-two FAILED: {error}{details}"),
+            Subject::Exact37 => eprintln!("normal-session-two-exact FAILED: {error}{details}"),
+        }
+        // No cancellation, checkpoint, detach or join is fabricated on failure.
+        // Independent worker/callback failures keep their original fail-stop.
+        std::process::exit(1);
     }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -11,7 +11,12 @@ use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::Path;
 use std::rc::Rc;
 
-use super::caller_bytes as bytes;
+use super::caller_bytes;
+use caller_bytes as bytes;
+// Both binary parents provide this closed registration. Ordinary production
+// consumes the same modules as its existing tests; native registration is
+// unchanged and test-only, with its separate canonical oracle alias in production.
+register_reference_fixture!();
 pub use bytes::{
     BYTES, CALLS, CONTINUATIONS, HEADS, OUTER_RET, PROTECTED_STACK_BELOW_CALLER, Request,
     SUBJECT_RSP_DELTA, SYMBOL,
@@ -25,10 +30,10 @@ pub enum CallerError {
     OperatingSystem,
     Cet,
 }
-type Result<T> = std::result::Result<T, CallerError>;
+pub(super) type Result<T> = std::result::Result<T, CallerError>;
 const PAGE: u64 = 4096;
 const LIMIT: usize = 1024 * 1024;
-fn require(ok: bool, error: CallerError) -> Result<()> {
+pub(super) fn require(ok: bool, error: CallerError) -> Result<()> {
     if ok { Ok(()) } else { Err(error) }
 }
 fn slice(b: &[u8], at: u64, len: u64) -> Result<&[u8]> {
@@ -140,12 +145,54 @@ struct Load {
     size: u64,
     flags: u32,
 }
-struct Parsed {
+pub(super) struct Parsed {
     entry: u64,
     page_offset: u64,
     source: Vec<u8>,
 }
+// Fixture-private sealed implementation mechanics, not a public configurable
+// symbol/body/ABI validator. Only the two concrete source-defined wrappers
+// implement this trait. Ordinary production instantiates Legacy alone.
+pub(super) mod sealed {
+    pub trait Sealed {}
+}
+pub(super) trait FixtureSpec: sealed::Sealed + Sized {
+    fn name() -> &'static str;
+    fn symbol() -> &'static CStr;
+    fn bytes() -> &'static [u8];
+    fn body(code: &[u8]) -> Result<()>;
+    fn symbols(trusted: &[u8], entry: u64, file_offset: u64) -> Result<()>;
+    fn parse(trusted: &[u8]) -> Result<Parsed>;
+}
+struct Legacy;
+impl sealed::Sealed for Legacy {}
+impl FixtureSpec for Legacy {
+    fn name() -> &'static str {
+        SYMBOL
+    }
+    fn symbol() -> &'static CStr {
+        c"normal_caller"
+    }
+    fn bytes() -> &'static [u8] {
+        BYTES
+    }
+    fn body(code: &[u8]) -> Result<()> {
+        body(code)
+    }
+    fn symbols(_: &[u8], _: u64, _: u64) -> Result<()> {
+        Ok(())
+    }
+    fn parse(trusted: &[u8]) -> Result<Parsed> {
+        self::parse(trusted)
+    }
+}
 fn parse(trusted: &[u8]) -> Result<Parsed> {
+    parse_spec::<Legacy>(trusted)
+}
+pub(super) fn parse_spec<S: FixtureSpec>(trusted: &[u8]) -> Result<Parsed> {
+    // Exact closed identities only; no user-supplied symbol, body, ABI or validator.
+    let symbol = S::name();
+    let expected = S::bytes();
     require(
         trusted.len() <= LIMIT
             && trusted.get(..7) == Some(b"\x7fELF\x02\x01\x01")
@@ -282,10 +329,10 @@ fn parse(trusted: &[u8]) -> Result<Parsed> {
             continue;
         }
         require(
-            s.name() == Ok(SYMBOL)
+            s.name() == Ok(symbol)
                 && s.is_definition()
                 && s.kind() == SymbolKind::Text
-                && s.size() == BYTES.len() as u64
+                && s.size() == expected.len() as u64
                 && matches!(
                     s.flags(),
                     SymbolFlags::Elf {
@@ -310,10 +357,10 @@ fn parse(trusted: &[u8]) -> Result<Parsed> {
             && rx[0].address == entry
             && entry % PAGE == 0
             && rx[0].offset % PAGE == 0
-            && rx[0].size == BYTES.len() as u64,
+            && rx[0].size == expected.len() as u64,
         CallerError::Format,
     )?;
-    body(slice(trusted, rx[0].offset, rx[0].size)?)?;
+    S::body(slice(trusted, rx[0].offset, rx[0].size)?)?;
     for s in file.symbols() {
         require(
             !matches!(s.flags(),SymbolFlags::Elf {st_info,..} if st_info & 15 == 10),
@@ -321,11 +368,12 @@ fn parse(trusted: &[u8]) -> Result<Parsed> {
         )?;
         if s.is_definition() && s.kind() == SymbolKind::Text {
             require(
-                s.name() == Ok(SYMBOL) && s.address() == entry && s.size() == BYTES.len() as u64,
+                s.name() == Ok(symbol) && s.address() == entry && s.size() == expected.len() as u64,
                 CallerError::SymbolOwner,
             )?;
         }
     }
+    S::symbols(trusted, entry, rx[0].offset)?;
     let start = usize::try_from(rx[0].offset).map_err(|_| CallerError::Format)?;
     let available = (trusted.len() - start).min(PAGE as usize);
     let mut source = vec![0; PAGE as usize];
@@ -453,12 +501,17 @@ struct Retained {
     device: (u32, u32),
     pid: u32,
 }
-/// Local fixture handle; its fd and loader reference remain retained even on later refusal/Drop.
-pub struct CallerOwner {
+// Private shared custody; only the two closed wrappers select a sealed spec.
+pub(super) struct FixtureOwner<S: FixtureSpec> {
     retained: &'static mut Retained,
     parsed: Parsed,
     entry: u64,
+    _spec: PhantomData<S>,
     _local: PhantomData<Rc<()>>,
+}
+/// Local three-argument fixture owner. Its public ABI and unsafe contract are unchanged.
+pub struct CallerOwner {
+    inner: FixtureOwner<Legacy>,
 }
 impl CallerOwner {
     /// Authenticate independent complete compiler output before dlopen; no caller executes here.
@@ -471,7 +524,52 @@ impl CallerOwner {
     /// loader, its code and dependencies themselves are trusted. No constructors/dependencies
     /// or relocations are admitted in this helper DSO. This is a fixture, not a public SDK owner.
     pub unsafe fn load(candidate: &Path, trusted: &[u8]) -> Result<Self> {
-        let parsed = parse(trusted)?;
+        // SAFETY: the unchanged caller.c load contract selects only the legacy spec.
+        Ok(Self {
+            inner: unsafe { FixtureOwner::<Legacy>::load(candidate, trusted) }?,
+        })
+    }
+    pub fn entry(&self) -> u64 {
+        self.inner.entry()
+    }
+    /// Complete independently expected RX page, never candidate self-authority.
+    pub fn source(&self) -> (u64, &[u8]) {
+        self.inner.source()
+    }
+    /// Same whole-file/mapping/source checks as the original fixture owner.
+    pub fn verify(&mut self) -> Result<()> {
+        self.inner.verify()
+    }
+    /// Execute the same actual C helper used by the separate state qualification.
+    ///
+    /// # Safety
+    /// All load contracts remain true. `target` is a retained admitted normal leaf with
+    /// exactly the declared SysV ABI and normal returns. Both request pointers remain
+    /// valid/readable for their full bounds; requests/results/input are disjoint, immutable
+    /// where read and live through both returns. Adequate writable callback stack is present.
+    /// Publication/attachment/checkpoint authority belongs to the surrounding consumer.
+    /// No SDK invoke, source scan, automatic checkpoint or native eligibility proof is supplied.
+    pub unsafe fn invoke(
+        &mut self,
+        target: u64,
+        requests: &[Request; 2],
+        results: &mut [u64; 2],
+    ) -> u64 {
+        assert_eq!(self.inner.pid(), std::process::id());
+        assert_ne!(target, 0);
+        let caller: bytes::Caller = unsafe { std::mem::transmute(self.inner.entry() as usize) };
+        let target: bytes::Target = unsafe { std::mem::transmute(target as usize) };
+        let value = unsafe { caller(target, requests.as_ptr(), results.as_mut_ptr()) };
+        // Real post-call work prevents a tail transfer into the helper. The
+        // oracle separately authenticates the actual CALL and its pushed word.
+        assert_eq!(value, results[0].wrapping_add(results[1]));
+        value
+    }
+}
+
+impl<S: FixtureSpec> FixtureOwner<S> {
+    pub(super) unsafe fn load(candidate: &Path, trusted: &[u8]) -> Result<Self> {
+        let parsed = S::parse(trusted)?;
         let mut file = OpenOptions::new()
             .read(true)
             .custom_flags(libc::O_CLOEXEC | libc::O_NOFOLLOW)
@@ -515,6 +613,7 @@ impl CallerOwner {
             retained,
             parsed,
             entry: 0,
+            _spec: PhantomData,
             _local: PhantomData,
         };
         owner.entry = owner.resolve()?;
@@ -522,7 +621,7 @@ impl CallerOwner {
         Ok(owner)
     }
     fn resolve(&self) -> Result<u64> {
-        let name = c"normal_caller";
+        let name = S::symbol();
         let address = unsafe { libc::dlsym(self.retained.handle, name.as_ptr()) } as usize as u64;
         let bias = address
             .checked_sub(self.parsed.entry)
@@ -545,6 +644,9 @@ impl CallerOwner {
             CallerError::SymbolOwner,
         )?;
         Ok(address)
+    }
+    pub fn pid(&self) -> u32 {
+        self.retained.pid
     }
     pub fn entry(&self) -> u64 {
         self.entry
@@ -581,31 +683,6 @@ impl CallerOwner {
                 == self.parsed.source,
             CallerError::SourceBytes,
         )
-    }
-    /// Execute the same actual C helper used by the separate state qualification.
-    ///
-    /// # Safety
-    /// All load contracts remain true. `target` is a retained admitted normal leaf with
-    /// exactly the declared SysV ABI and normal returns. Both request pointers remain
-    /// valid/readable for their full bounds; requests/results/input are disjoint, immutable
-    /// where read and live through both returns. Adequate writable callback stack is present.
-    /// Publication/attachment/checkpoint authority belongs to the surrounding consumer.
-    /// No SDK invoke, source scan, automatic checkpoint or native eligibility proof is supplied.
-    pub unsafe fn invoke(
-        &mut self,
-        target: u64,
-        requests: &[Request; 2],
-        results: &mut [u64; 2],
-    ) -> u64 {
-        assert_eq!(self.retained.pid, std::process::id());
-        assert_ne!(target, 0);
-        let caller: bytes::Caller = unsafe { std::mem::transmute(self.entry as usize) };
-        let target: bytes::Target = unsafe { std::mem::transmute(target as usize) };
-        let value = unsafe { caller(target, requests.as_ptr(), results.as_mut_ptr()) };
-        // Real post-call work prevents a tail transfer into the helper. The
-        // oracle separately authenticates the actual CALL and its pushed word.
-        assert_eq!(value, results[0].wrapping_add(results[1]));
-        value
     }
 }
 
@@ -691,7 +768,7 @@ mod tests {
         assert!(maps_match(good, 0x1000, 0, (0, 1), 7, 0x1000).is_err());
         assert!(maps_match(good, 0x1000, 8192, (0, 1), 7, u64::MAX).is_err());
     }
-    fn elf() -> Vec<u8> {
+    pub(super) fn elf() -> Vec<u8> {
         let mut b = vec![0_u8; 0x3300];
         fn w(b: &mut [u8], at: usize, n: u64, size: usize) {
             b[at..at + size].copy_from_slice(&n.to_le_bytes()[..size]);

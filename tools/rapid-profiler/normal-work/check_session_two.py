@@ -8,6 +8,8 @@ import collections
 CAP = 4 * 1024 * 1024
 U64 = (1 << 64) - 1
 READY = ['10', '2', '4096', '4096', '2', '1', '2', '1', '4', '2', '4096']
+JoinedCall = collections.namedtuple('JoinedCall',
+    'id worker ordinal bound data owner generation invocation sequence prefix disposition')
 
 
 def integer(s):
@@ -25,6 +27,16 @@ def checksum(data):
 
 
 def check(text, expected, k, epochs, reason):
+    return _check(text, expected, k, epochs, reason, False)[0]
+
+
+def check_exact(text, expected, k, epochs, reason):
+    """Return the summary and immutable calls only after every common join passes."""
+    return _check(text, expected, k, epochs, reason, True)
+
+
+def _check(text, expected, k, epochs, reason, exact):
+    assert type(exact) is bool
     assert type(k) is int and k in (10, 1000)
     assert type(epochs) is int and 1 <= epochs <= 4096
     assert reason in ('EpochLimit', 'Requested')
@@ -33,7 +45,10 @@ def check(text, expected, k, epochs, reason):
     lines = text[:-1].split('\n')
     assert len(lines) <= 16392 and all(0 < len(line)+1 <= 350 for line in lines)
     rows = [line.split(',') for line in lines]
-    assert rows[0] == ['READY', 'normal-two-session-v1', str(k), str(epochs)] + READY
+    if exact:
+        assert rows[0] == ['READY', 'normal-two-exact-v1', str(k), str(epochs)] + READY
+    else:
+        assert rows[0] == ['READY', 'normal-two-session-v1', str(k), str(epochs)] + READY
     assert 1 <= len(expected) <= 4096
     by_id, assignment, barriers = {}, {1: [], 2: []}, []
     for command in expected:
@@ -44,6 +59,7 @@ def check(text, expected, k, epochs, reason):
             assert len(command) == 4
             bound, data = command[2:]
             assert type(bound) is int and isinstance(data, bytes) and 0 <= bound <= len(data) <= 4096
+            if exact: assert bound == len(data) and bound in (1, 64)
             worker = 1 + sum(map(len, assignment.values())) % 2
             assignment[worker].append(id_)
             by_id[id_] = (worker, len(assignment[worker]), command)
@@ -102,9 +118,14 @@ def check(text, expected, k, epochs, reason):
                 assert ordinal <= barriers[flush_index][worker]
             _, _, wanted_bound, data = by_id[id_][2]
             assert (bound, length, digest) == (wanted_bound, len(data), checksum(data))
-            zero = data[:bound].find(b'\0')
-            assert value == (bound if zero < 0 else zero)
-            assert ret == (34 if bound == 0 or zero >= 0 else 40)
+            if exact:
+                assert bound == len(data) and bound in (1, 64)
+                assert value == (sum(byte ^ 0x5a for byte in data) ^ 0x9e3779b97f4a7c15)
+                assert ret == 36
+            else:
+                zero = data[:bound].find(b'\0')
+                assert value == (bound if zero < 0 else zero)
+                assert ret == (34 if bound == 0 or zero >= 0 else 40)
             assert owner in ('sampled', 'closed', 'removed', 'initial')
             assert start_aux < 1 << 32 and end_aux < 1 << 32
             assert ack in ('next', 'checkpoint') and batch > 0 and batch in (s['batch'], s['batch']+1)
@@ -213,7 +234,7 @@ def check(text, expected, k, epochs, reason):
     assert batches == sum(s['batch'] for s in local.values())
     assert all(set(s['sizes']) == set(range(1, s['batch']+1)) for s in local.values())
     assert flushes == flush_index == len(barriers)
-    return dict(arms=arms, actions=actions, accepted=accepted, calls=calls, admitted=admitted,
+    summary = dict(arms=arms, actions=actions, accepted=accepted, calls=calls, admitted=admitted,
         retained=retained, dropped=dropped, unsampled=unsampled, batches=batches, flushes=flushes,
         cancelled=cancelled, unfinished=unfinished, detaches=detaches, joins=joins,
         workers=[dict(worker=w, registration=w, tid=workers[w], calls=local[w]['count'],
@@ -223,3 +244,8 @@ def check(text, expected, k, epochs, reason):
         maximum_entry_prefix=max((r['prefix'] for r in results.values()), default=0),
         maximum_batch_calls=max((n for s in local.values() for n in s['sizes'].values()), default=0),
         stop_reason=reason, write_blocked_at_finalize=write_blocked)
+    joined = tuple(JoinedCall(r['id'], r['worker'], r['ordinal'], *by_id[r['id']][2][2:],
+        r['owner'], r['generation'], r['invocation'], r['sequence'], r['prefix'],
+        samples[r['generation'], r['invocation']][5] if r['owner'] == 'sampled' else 'unsampled')
+        for worker in (1, 2) for id_ in assignment[worker] for r in (results[id_],))
+    return summary, joined

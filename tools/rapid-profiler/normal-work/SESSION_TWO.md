@@ -82,3 +82,40 @@ duplicate journal pages are serialized. Six pure controls exercise real
 validators/dispatchers without native credit. Fresh two-worker SDK/native and
 external producer qualification remain separate prerequisites; prior failures,
 old populations, comparators and limits are not rewritten.
+
+## Exact original work and selection error
+
+`normal-session-two-exact` accepts the same CLI arguments with a separately
+authenticated Exact37 ELF. Its fixed 37 bytes, all 11 instruction heads and sole
+RET at offset 36 are checked before publication. Each request requires bound
+equal to input length, either 1 or 64 bytes. The complete input determines the
+full u64 checksum. This branch uses the same two workers, controller, ledger and
+ownership checks; its READY label is `normal-two-exact-v1`. Full u64 RESULT values
+raise the derived total output bound to 1,814,905 bytes, within the existing caps.
+
+Run `verify_normal_session_two.py` with its existing revision, raw-directory and
+toolchain arguments plus `--exact-work` to require the additive qualification.
+It first runs all existing prerequisites and six external cohorts. It then
+authenticates a fresh assembly build before copying the candidate, executes four
+original/installed ordinary-call state pairs, and drives eight fresh processes:
+short, long, alternating and late-long inputs, each at K=10 and K=1000. Each has
+48 preassigned calls, 24 per worker, and one FLUSH. Inputs and IDs are fixed
+before process creation. The burst starts after first publication; the process
+continues through 520 arms and 521 actions with both worker joins required.
+
+For length n, the original body performs `(6n+5, n, n-1, n, 1, 8)` instructions,
+conditional branches, taken branches, input-byte reads, return-word reads and
+return-read bytes. These are semantic work counts for the original body,
+including RET and excluding caller/instrumentation. They are neither measured
+hardware events nor counterfactual duration. The native pairs separately check
+those counts against complete original traces; they do not cover every
+concurrent external interleaving.
+
+`exact-work.csv` retains all five partitions—population, admitted, retained,
+dropped and unsampled—for each worker and combined. For population N with P
+instructions and retained R with S instructions, signed mean selection error is
+`(S*N-P*R)/(R*N)`. R=0 remains an unresolved row with absent ratio. Mixed-work
+errors have no acceptance threshold; homogeneous cohorts require algebraic
+zero, and K=1000 requires all 48 calls retained. All eight cohorts and all
+24 summary rows are required. This finite experiment makes no calibrated timing,
+performance, statistical generalization or full-A5 claim.

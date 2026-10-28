@@ -15,6 +15,8 @@ from check_session_two import CAP, READY, check, integer
 # Exact existing fixed-ELF authentication and absolute deadline helpers only.
 # The old main/check and every old route are unchanged and are never called here.
 from session_driver import authenticate, remaining, reap
+from exact_fixture import authenticate as authenticate_exact
+from exact_session import SCHEDULES, commands as exact_commands, measure, encode
 
 
 def cohort(summary, mode):
@@ -43,15 +45,33 @@ def main():
     parser.add_argument('--elf-va', type=int, required=True)
     parser.add_argument('--length', type=int, required=True)
     parser.add_argument('--k', type=int, choices=(10, 1000), required=True)
-    parser.add_argument('--mode', choices=('full', 'stop', 'duplicate', 'eof', 'backpressure'), required=True)
+    parser.add_argument('--mode', choices=('full', 'stop', 'duplicate', 'eof', 'backpressure', 'exact'), required=True)
+    parser.add_argument('--schedule', choices=SCHEDULES)
+    parser.add_argument('--selection', type=Path)
+    parser.add_argument('--selection-sha256')
     a = parser.parse_args()
     deadline = time.monotonic()+15
     assert not a.output.exists(); a.output.mkdir()
     cpus = sorted(os.sched_getaffinity(0))[:4]
     assert len(cpus) == 4; os.sched_setaffinity(0, cpus)
-    authenticate(a.candidate, a.trusted, a.elf_va, a.length)
+    def authenticate_subject():
+        if a.mode == 'exact':
+            assert a.schedule is not None and a.selection is not None and a.selection_sha256 is not None
+            authenticate_exact(a.candidate, a.trusted, a.elf_va, a.length, a.selection, a.selection_sha256)
+        else:
+            assert a.schedule is a.selection is a.selection_sha256 is None
+            authenticate(a.candidate, a.trusted, a.elf_va, a.length)
+    authenticate_subject()
     epochs = 520
-    argv = [str(a.binary), 'normal-session-two', str(a.candidate), str(a.trusted), str(a.elf_va), str(a.length), str(a.k), str(epochs)]
+    route = 'normal-session-two-exact' if a.mode == 'exact' else 'normal-session-two'
+    argv = [str(a.binary), route, str(a.candidate), str(a.trusted), str(a.elf_va), str(a.length), str(a.k), str(epochs)]
+    planned = exact_commands(a.schedule, a.k) if a.mode == 'exact' else None
+    intended, work_data = None, None
+    if planned is not None:
+        intended = (json.dumps([list(c[:3]) + [c[3].hex()] if c[0] == 'CALL' else list(c)
+            for c in planned], separators=(',', ':'))+'\n').encode('ascii')
+        assert 0 < len(intended) <= 16384
+        (a.output/'intended.json').write_bytes(intended)
     expected, outgoing, transcript, errors, buffer = [], bytearray(), bytearray(), bytearray(), bytearray()
     sent, phase, prefix = 0, 0, 0
     flush_seen = set()
@@ -66,6 +86,11 @@ def main():
         if command[0] != 'STOP': expected.append(command)
     def advance():
         nonlocal phase
+        if a.mode == 'exact':
+            if phase == 1 and prefix >= 1:
+                for command in planned: enqueue(command)
+                phase = 2
+            return
         if a.mode != 'full': return
         if phase == 1 and 100 in flush_seen:
             enqueue(('CALL', 42, 0, b''))
@@ -84,8 +109,13 @@ def main():
         assert len(raw)+1 <= 350 and all(32 <= byte <= 126 for byte in raw)
         row = raw.decode('ascii').split(',')
         if row[0] == 'READY':
-            assert phase == 0 and row == ['READY', 'normal-two-session-v1', str(a.k), '520']+READY
-            if a.mode == 'duplicate':
+            if a.mode == 'exact':
+                assert phase == 0 and row == ['READY', 'normal-two-exact-v1', str(a.k), '520']+READY
+            else:
+                assert phase == 0 and row == ['READY', 'normal-two-session-v1', str(a.k), '520']+READY
+            if a.mode == 'exact':
+                pass  # The preassigned burst waits for the first actual publication.
+            elif a.mode == 'duplicate':
                 enqueue(('CALL', 42, 0, b'')); outgoing.extend(b'FLUSH 42\n')
             elif a.mode == 'eof':
                 outgoing.extend(b'CALL 42 1 0')
@@ -109,13 +139,18 @@ def main():
         elif row[0] == 'HISTORY':
             assert len(row) == 5
             observed = integer(row[2]); assert observed == prefix+1
+            if a.mode == 'exact' and phase == 1: assert observed == 1 and row[3] == 'published'
             prefix = observed
         advance()
     rescue, failure, selector = False, None, None
     summary = dict(status='FAILED', mode=a.mode, k=a.k, error='child setup incomplete')
+    # The child inherits all four CPUs before only this producer is narrowed.
+    assert os.sched_getaffinity(0) == set(cpus), 'child inheritance affinity'
     child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
         # A successful Popen is immediately guarded, including fd/selector setup.
+        os.sched_setaffinity(0, {cpus[3]})
+        assert os.sched_getaffinity(0) == {cpus[3]}, 'producer singleton affinity'
         remaining(deadline)
         selector = selectors.DefaultSelector()
         for pipe, name in ((child.stdout, 'out'), (child.stderr, 'err')):
@@ -156,11 +191,22 @@ def main():
             summary = refusal(code, transcript, errors, a.mode)
         else:
             assert code == 0 and not errors and not outgoing
-            summary = check(transcript.decode('ascii'), expected, a.k, epochs,
-                'Requested' if a.mode == 'stop' else 'EpochLimit')
-            cohort(summary, a.mode)
-            if a.mode == 'full': assert phase == 4 and flush_seen == {100, 101, 102, 103, 104}
-        authenticate(a.candidate, a.trusted, a.elf_va, a.length)
+            if a.mode == 'exact':
+                assert tuple(expected) == planned and phase == 2 and flush_seen == {planned[-1][1]}
+                summary, rows = measure(transcript.decode('ascii'), a.schedule, a.k, epochs)
+                assert (summary['calls'], summary['accepted'], summary['flushes']) == (48, 49, 1)
+                assert (summary['arms'], summary['actions'], summary['detaches'], summary['joins']) == (520, 521, 2, 2)
+                assert [w['calls'] for w in summary['workers']] == [24, 24]
+                work_data = encode(rows)
+                summary.update(schedule=a.schedule, work_rows=rows,
+                    work_bytes=len(work_data), work_sha256=hashlib.sha256(work_data).hexdigest(),
+                    intended_bytes=len(intended), intended_sha256=hashlib.sha256(intended).hexdigest())
+            else:
+                summary = check(transcript.decode('ascii'), expected, a.k, epochs,
+                    'Requested' if a.mode == 'stop' else 'EpochLimit')
+                cohort(summary, a.mode)
+                if a.mode == 'full': assert phase == 4 and flush_seen == {100, 101, 102, 103, 104}
+        authenticate_subject()
         remaining(deadline)
         summary.update(status='PASS', mode=a.mode, k=a.k, input_bytes=sent, normal_reaps=1,
             absence='ECHILD', rescues=0, transcript_sha256=hashlib.sha256(transcript).hexdigest(),
@@ -178,6 +224,7 @@ def main():
         summary.update(child_exit=child.returncode, rescue=rescue)
         (a.output/'stdout.txt').write_bytes(transcript)
         (a.output/'stderr.txt').write_bytes(errors)
+        if work_data is not None: (a.output/'work.csv').write_bytes(work_data)
         if failure is None and time.monotonic() >= deadline:
             failure = 'producer absolute wall bound at final acceptance'
             summary.update(status='FAILED', error=failure)

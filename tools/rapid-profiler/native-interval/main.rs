@@ -997,6 +997,68 @@ fn main() {
         }
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-reference-state") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            9,
+            "normal-reference-state CANDIDATE FINAL ELF_VA LENGTH CALLER_CANDIDATE CALLER_FINAL OUTPUT"
+        );
+        let arguments = oracle::native_ordinary::strnlen::Arguments::parse(
+            args[4].to_str().unwrap(),
+            args[5].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let caller = PathBuf::from(&args[6]).canonicalize().unwrap();
+        let caller_expected = PathBuf::from(&args[7]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[8]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::reference::run(
+            &subject,
+            &expected,
+            arguments,
+            &caller,
+            &caller_expected,
+            &output,
+            deadline,
+        );
+        return;
+    }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-exact-state") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            9,
+            "normal-exact-state CANDIDATE FINAL ELF_VA LENGTH CALLER_CANDIDATE CALLER_FINAL OUTPUT"
+        );
+        let arguments = oracle::native_ordinary::strnlen::Arguments::parse(
+            args[4].to_str().unwrap(),
+            args[5].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let caller = PathBuf::from(&args[6]).canonicalize().unwrap();
+        let caller_expected = PathBuf::from(&args[7]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[8]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::exact::run(
+            &subject,
+            &expected,
+            arguments,
+            &caller,
+            &caller_expected,
+            &output,
+            deadline,
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-state") {
         let deadline = oracle::native_ordinary::strnlen::Deadline::start();
         assert_eq!(

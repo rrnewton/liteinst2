@@ -1,0 +1,9 @@
+ordinal,case,bound,value,owner,generation,invocation,history_prefix,ret_offset,caller_continuation,ack,start_ticks,end_ticks,start_aux,end_aux
+1,zero-bound,0,0,sampled,1,0,1,34,30,next-entry,2031771639047795,2031771639054584,23,23
+2,single-empty,1,0,sampled,1,1,1,34,48,next-entry,2031771639055964,2031771639060691,23,23
+3,single-nonzero,1,1,sampled,2,0,3,40,30,next-entry,2031771640098339,2031771640100369,23,23
+4,last-of-two,2,1,sampled,2,1,3,34,48,next-entry,2031771640101299,2031771640102694,23,23
+5,interior,17,8,closed,2,,3,34,30,next-entry,2031771641105141,2031771641107156,23,23
+6,long-empty,64,0,closed,2,,3,34,48,next-entry,2031771641107978,2031771641109559,23,23
+7,long-last,64,63,removed,2,,4,34,30,next-entry,2031771642107743,2031771642109417,23,23
+8,full-bound,64,64,removed,2,,4,40,48,checkpoint,2031771642110270,2031771642111649,23,23

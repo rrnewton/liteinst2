@@ -1,0 +1,432 @@
+{
+  "checks": {
+    "all_seven_named_regressions_passed": true,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/admission/check_exec_identity.py",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--output",
+      "$RAW",
+      "--checks-only"
+    ],
+    "default_test_affinity_cpus": 316,
+    "receipt_sha256": "d5abd0d85d65b831dad596f14b85dd64d64232ca4a28492f7e5562c96988698b",
+    "revision": "6d031ea62ad463073c49d6ea36a8f6642109e4ae",
+    "scope": "Pre-merge6d031ea checks only; no merged794307f or29c90d1 workspace-test claim."
+  },
+  "claims_supported": [
+    4
+  ],
+  "diagnostics": {
+    "earlier": {
+      "accounting_involuntary_switch_delta": 1,
+      "accounting_system_delta_us": 120,
+      "accounting_user_delta_us": 696,
+      "accounting_voluntary_switch_delta": 0,
+      "binary": {
+        "bytes": 5741912,
+        "sha256": "2c05c23e2da5c1001dba388fb16306e6e54436dd7eff7a274c6b937a2e6aef11"
+      },
+      "cases": 4,
+      "failed": 1,
+      "failure_poll_gap_ns": 3191582,
+      "failure_wait_span_ns": 3189298,
+      "interpretation": "A scheduler event occurred within the independently bracketed accounting interval around the prior iteration. Most measured wall time lies around guarded_wait and a single spin hint; no metadata publication, I/O, sleep or worker reply occurred there. Supports scheduling delay for this observation, not exclusive cause, exact off-CPU time, earlier failure cause, qualification or a real-time guarantee.",
+      "original_command": [
+        "$PYTHON",
+        "-B",
+        "$PRIVATE/diagnose-loop-v3.py"
+      ],
+      "original_protocol_sha256": "84d00796b35ef7903661a65b12850bab0e48b182f0f6a53c5584a7ce67433488",
+      "original_script_sha256": "f83c658356b6a4299a7a48f8162341c4c4341d1984205bc42ffdd66ce072f8c4",
+      "outer_receipt_sha256": "b13b93ea4b6243d13ef0ccdc1e2fb19b08ee789b0c933c133e8627ebd6c5659f",
+      "reproducer": "tools/rapid-profiler/diagnose_normal_session.py at29c90d1cda9e161279aa73bf83391c9b4381788f; fresh authority setup, identical consumer binary",
+      "result_sha256": "d375cf127ffd3f7467b1a5af71745cd7312c4a085071b51a4474554ff70973c0",
+      "revision": "6d031ea62ad463073c49d6ea36a8f6642109e4ae",
+      "status": "FAILURE_REPRODUCED",
+      "successful": 3
+    },
+    "fixed_policy": "At most10 late-long K10 sessions; stop first failure, never first pass; original producer15s and20CPU/30wall/4MiB plus55s1MiB owner bounds.",
+    "portable": {
+      "actions": 5210,
+      "arms": 5200,
+      "binary": {
+        "cargo_fresh": true,
+        "content": {
+          "bytes": 5741912,
+          "sha256": "2c05c23e2da5c1001dba388fb16306e6e54436dd7eff7a274c6b937a2e6aef11"
+        },
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      "calls": 480,
+      "cases": 10,
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/diagnose_normal_session.py",
+        "--revision",
+        "29c90d1cda9e161279aa73bf83391c9b4381788f",
+        "--raw",
+        "$RAW",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "cpu_reservation": {
+        "cores": 4,
+        "excludes_unrelated_host_work": false,
+        "hard_allowed_cpus": true,
+        "revision": "d0c2867be75b495eb64239e664c6306af9747783",
+        "sample_seconds": 1,
+        "sources": {
+          "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+          "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+          "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+        }
+      },
+      "detaches": 20,
+      "interpretation": "No failure reproduced in this fixed diagnostic. Earlier failed whole campaigns remain FAILED; this does not qualify missing cohorts.",
+      "joins": 20,
+      "outer_receipt": {
+        "bytes": 1680,
+        "sha256": "d5d0698e4a4429aac9b199a59a479f467fea6a3c6fa60711cc3e6cb1ac453d2e"
+      },
+      "outer_seconds": 63.17152073699981,
+      "owned_stages": 12,
+      "owner_rescues": 0,
+      "producer_rescues": 0,
+      "result": {
+        "bytes": 34422,
+        "sha256": "ad6f22f74a7175979424c4f450dd44c92ba997530b9f132b7653786acf9c7ead"
+      },
+      "revision": "29c90d1cda9e161279aa73bf83391c9b4381788f",
+      "status": "NO_FAILURE_REPRODUCED",
+      "tools": {
+        "as": {
+          "bytes": 727360,
+          "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+        },
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "cc1": {
+          "bytes": 28991152,
+          "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+        },
+        "collect2": {
+          "bytes": 349536,
+          "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "ld": {
+          "bytes": 1791600,
+          "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+        },
+        "python": {
+          "bytes": 13542408,
+          "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        }
+      }
+    }
+  },
+  "files": {
+    "checks.csv": {
+      "bytes": 636,
+      "sha256": "1762c5851320483e1935b6901847176221e6802bcd511d5998f8c244138f6929"
+    },
+    "diagnostic-cases.csv": {
+      "bytes": 1594,
+      "sha256": "f1f5336013cf478c90129850008e020b5a4971375ff987f80020b7a62699d6af"
+    },
+    "native-pairs.csv": {
+      "bytes": 856,
+      "sha256": "ec04492be24ee3064339422605313ed568379cae7c983ce6b7b348d8216e53ab"
+    },
+    "partial-work.csv": {
+      "bytes": 3431,
+      "sha256": "c65ba5cefacef965f7dcbc022244f98f0566c636047f59b501ebebd889b8b2b0"
+    },
+    "whole-attempts.csv": {
+      "bytes": 486,
+      "sha256": "7aad3706f373adf0c05e62c5c4351e0a87a4dfb85d1dca86c45749bf72e4eb81"
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "qualification_affinity_cpus": 4,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "native": {
+    "binary": {
+      "binary": {
+        "bytes": 6212344,
+        "sha256": "15d9da2ca283301b8bac44195d5a6df6af836b1727efce00a52dcbf6725303e3"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "children": 8,
+    "comparisons": 1696,
+    "conditional_branches": 260,
+    "input_reads": 260,
+    "mismatches": 0,
+    "normal_reaps": 8,
+    "original_semantic_instructions": 1600,
+    "outer_returns": 8,
+    "pairs": 4,
+    "per_child_steps": 20000,
+    "per_pair_seconds": 15,
+    "return_read_bytes": 64,
+    "return_reads": 8,
+    "revision": "abe8b945795ceed5ce36b5b826a943f94543999c",
+    "status": "FUNCTIONAL_PASS",
+    "taken_branches": 252,
+    "target_calls": 16,
+    "target_returns": 16
+  },
+  "schema": 1,
+  "scope": "Partial Exact37 ordinary-call semantic-work validation and deadline diagnostics; no complete eight-cohort, timing-accuracy, performance or A5 qualification.",
+  "status": "UNQUALIFIED",
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  },
+  "whole_campaign": {
+    "all_four_attempts": "FAILED",
+    "attempts": [
+      {
+        "failure_summary": {
+          "bytes": 1154,
+          "sha256": "6ed57461e543098b03dba0d7dec5f0c772916551dd5be1f921d6dea60324cba7"
+        },
+        "prerequisite_binary": {
+          "content": {
+            "bytes": 5735288,
+            "sha256": "28882b5ee320c65b77c4486cf7e0314e288aa614b8f98675dc0cbd00a79a6cb0"
+          },
+          "profile": {
+            "debug_assertions": true,
+            "debuginfo": 0,
+            "opt_level": "3",
+            "overflow_checks": true,
+            "test": false
+          }
+        },
+        "prerequisite_result": {
+          "bytes": 23391,
+          "sha256": "cc1f0c433734d930e6c1379d0f6954c22ebf07824e6096f8dd686762f61de7f5"
+        },
+        "prerequisite_worker_cpus": 1,
+        "result": {
+          "bytes": 6339,
+          "sha256": "3845e7a8d08ce89e0be3e5e9d4fc6650628c3a87e971b2400988229d1a98996f"
+        },
+        "revision": "45b466ddfa98344ec66de433093a81a92ca80bf5"
+      },
+      {
+        "failure_summary": {
+          "bytes": 1038,
+          "sha256": "99f8fa98275564a3b181acbe50708d68f9f4d60b6ab3de7a1d912f7d1445d09d"
+        },
+        "prerequisite_binary": {
+          "content": {
+            "bytes": 5736976,
+            "sha256": "67a285ddbbe0257e4ecea5b6cc207edfc9cba951481a43ea25c5f3b42e30ca6d"
+          },
+          "profile": {
+            "debug_assertions": true,
+            "debuginfo": 0,
+            "opt_level": "3",
+            "overflow_checks": true,
+            "test": false
+          }
+        },
+        "prerequisite_result": {
+          "bytes": 14438,
+          "sha256": "f9ccbe290cacecb8bd22c1e8baf087dffb41d829feb398486e6a44d7c440f604"
+        },
+        "prerequisite_worker_cpus": 1,
+        "result": {
+          "bytes": 6339,
+          "sha256": "2d126cab064a84429f6a0d78f9584ad51c4ae9f16a01a6a28edd08ed8b19211b"
+        },
+        "revision": "58418ee9a3a8a5aed81e625abe2c7776e1451035"
+      },
+      {
+        "failure_summary": {
+          "bytes": 974,
+          "sha256": "21f2a21e14fb0f73a418acaa21f54b2de33023df3c7f243eaf7f639b33112e58"
+        },
+        "prerequisite_binary": {
+          "content": {
+            "bytes": 5736976,
+            "sha256": "67a285ddbbe0257e4ecea5b6cc207edfc9cba951481a43ea25c5f3b42e30ca6d"
+          },
+          "profile": {
+            "debug_assertions": true,
+            "debuginfo": 0,
+            "opt_level": "3",
+            "overflow_checks": true,
+            "test": false
+          }
+        },
+        "prerequisite_result": {
+          "bytes": 29833,
+          "sha256": "20bf98ee8fc18de7f8133d5f8bb7aa959e15cefb016182669dbed91b16b96115"
+        },
+        "prerequisite_worker_cpus": 1,
+        "result": {
+          "bytes": 76087,
+          "sha256": "cc2a48b8bda7173c9034b3a62e35a702d43f80ada880104a19e55b65227fd0c8"
+        },
+        "revision": "abe8b945795ceed5ce36b5b826a943f94543999c"
+      },
+      {
+        "failure_summary": {
+          "bytes": 1406,
+          "sha256": "453bbbd6570c748d0e5ca5a57b4e6072a39830fdcbb8d03f60bfd93043363b67"
+        },
+        "prerequisite_binary": {
+          "content": {
+            "bytes": 5741912,
+            "sha256": "2c05c23e2da5c1001dba388fb16306e6e54436dd7eff7a274c6b937a2e6aef11"
+          },
+          "profile": {
+            "debug_assertions": true,
+            "debuginfo": 0,
+            "opt_level": "3",
+            "overflow_checks": true,
+            "test": false
+          }
+        },
+        "prerequisite_result": {
+          "bytes": 19336,
+          "sha256": "892a503c3434e3a3a04261315c6278ba52911440b3ab84f00fdaec6923202887"
+        },
+        "prerequisite_worker_cpus": 1,
+        "result": {
+          "bytes": 6339,
+          "sha256": "81e4449be0d4bbdc0c227d663de213508cc7c45382112aa47a9b9163cc2df68c"
+        },
+        "revision": "6d031ea62ad463073c49d6ea36a8f6642109e4ae"
+      }
+    ],
+    "cohort_status_at_abe8b94": [
+      {
+        "k": 10,
+        "name": "exact-short-k10",
+        "schedule": "short",
+        "status": "PASS"
+      },
+      {
+        "k": 1000,
+        "name": "exact-short-k1000",
+        "schedule": "short",
+        "status": "PASS"
+      },
+      {
+        "k": 10,
+        "name": "exact-long-k10",
+        "schedule": "long",
+        "status": "PASS"
+      },
+      {
+        "k": 1000,
+        "name": "exact-long-k1000",
+        "schedule": "long",
+        "status": "PASS"
+      },
+      {
+        "k": 10,
+        "name": "exact-alternating-k10",
+        "schedule": "alternating",
+        "status": "PASS"
+      },
+      {
+        "k": 1000,
+        "name": "exact-alternating-k1000",
+        "schedule": "alternating",
+        "status": "PASS"
+      },
+      {
+        "k": 10,
+        "name": "exact-late-long-k10",
+        "schedule": "late-long",
+        "status": "FAILED"
+      },
+      {
+        "k": 1000,
+        "name": "exact-late-long-k1000",
+        "schedule": "late-long",
+        "status": "UNRUN"
+      }
+    ],
+    "command_template": [
+      "$PYTHON",
+      "-B",
+      "$REPO/tools/rapid-profiler/verify_normal_session_two.py",
+      "--revision",
+      "$REVISION",
+      "--raw",
+      "$RAW",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--exact-work"
+    ],
+    "deadline_tolerance_ns": 2000000,
+    "required_cohorts": 8
+  }
+}

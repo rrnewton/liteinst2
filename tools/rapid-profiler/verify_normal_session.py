@@ -19,7 +19,7 @@ import traceback
 
 MIB = 1048576
 # Exact CLOSED source-v3 census and whole-ELF authority; a successor is explicit.
-PYTHON_CONTROLS = 11
+PYTHON_CONTROLS = 12
 SUBJECT_SHA256 = '8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d'
 SESSION_PREFIX = 'normal::session::'
 SESSION = tuple(SESSION_PREFIX + name for name in (
@@ -33,6 +33,10 @@ SESSION = tuple(SESSION_PREFIX + name for name in (
     'protocol::tests::duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers',
     'tests::accepted_full_queue_retains_pending_before_stop_and_disconnect',
     'tests::guarded_wait_preserves_original_due_end_and_shutdown_boundaries'))
+TRACE_PREFIX = SESSION_PREFIX+'loop_trace::'
+TRACE = tuple(TRACE_PREFIX+'tests::'+name for name in (
+    'failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage',
+    'accounting_units_unavailable_and_regression_never_become_off_cpu_claims'))
 SCHEDULE_PREFIX = 'frontend_native::backoff::driver::schedule::tests::'
 SCHEDULE = tuple(SCHEDULE_PREFIX + name for name in (
     'pending_arm_refuses_another_poll_without_count_or_deadline_reset',
@@ -47,7 +51,7 @@ NORMAL_STAGES = ('parser-controls', 'runtime-controls', 'caller-controls', 'stat
 TRIALS = (('full-k10', 'full', 10), ('full-k1000', 'full', 1000),
     ('stop-k10', 'stop', 10), ('duplicate-k10', 'duplicate', 10),
     ('eof-k10', 'eof', 10), ('backpressure-k10', 'backpressure', 10))
-STAGES = ('parser-controls', 'session-controls', 'schedule-controls', *(r[0] for r in TRIALS))
+STAGES = ('parser-controls', 'session-controls', 'trace-controls', 'schedule-controls', *(r[0] for r in TRIALS))
 PROFILE = dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True)
 CSV_FIELDS = ('case', 'outcome', 'k', 'epochs', 'arms', 'actions', 'accepted', 'calls',
     'sampled', 'unsampled', 'batches', 'flushes', 'detach', 'joins', 'maximum_entry_prefix',
@@ -134,6 +138,7 @@ def main():
         'tools/rapid-profiler/ordinary-interval/normal/session.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/check.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/io.rs',
+        'tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/protocol.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/worker.rs',
         'tools/rapid-profiler/src/frontend_native/backoff/driver/schedule.rs',
@@ -381,9 +386,10 @@ def main():
             pin(listing/'stderr.txt', record['stderr'])
             inventory = census.census((listing/'stdout.txt').read_bytes(), (listing/'stderr.txt').read_bytes())
             if name == 'session':
-                # Only the new two:: namespace has its own separate exact qualification.
+                # Old ten are exact; two:: and diagnostics each have separate exact qualification.
                 assert {n for n in inventory if n.startswith(prefix)
-                    and not n.startswith(prefix+'two::')} == set(methods)
+                    and not n.startswith((prefix+'two::', TRACE_PREFIX))} == set(methods)
+                assert {n for n in inventory if n.startswith(TRACE_PREFIX)} == set(TRACE)
                 argv = [test_binary, *methods, '--exact', '--test-threads=1']
             else:
                 assert set(n for n in inventory if n.startswith(prefix)) == set(methods)
@@ -391,6 +397,10 @@ def main():
             d, row = stage(name+'-controls', argv)
             row.update(census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(), methods, inventory),
                 binary=digest(test_binary), profile=PROFILE, full_census=len(inventory), cargo_fresh=p['fresh'])
+            if name == 'session':
+                d, row = stage('trace-controls', [test_binary, *TRACE, '--exact', '--test-threads=1'])
+                row.update(census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(), TRACE, inventory),
+                    binary=digest(test_binary), profile=PROFILE, full_census=len(inventory), cargo_fresh=p['fresh'])
         numeric = []
         for trial, (name, mode, k) in zip(result['trials'], TRIALS):
             trial['status'] = 'FAILED'
