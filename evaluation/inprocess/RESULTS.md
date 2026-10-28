@@ -892,3 +892,7 @@ All six [required checks](results/20261028T132732.576877Z-checks-130b64d135bb.js
 The [earlier complete CPUID-NX run](results/20261028T130345.138873Z-page-selected-cpuid-nx-f59600ce70bc.json) also passed at `f59600ce70bc1b140fac499c08abe2ba855c5a72`. The fresh run above qualifies the merged inventory source; the earlier measurement keeps its original revision.
 
 A final metadata audit corrected one descriptive ordinary-test module prefix and its JSON hash in `3ac1ff400b4132b036cfff8360b8d224420ed8e1`. The actual test had already passed under its correct name; counts, guards, runtime, fixtures and native evaluators are unchanged. Fresh [required checks](results/20261028T134059.652272Z-checks-3ac1ff400b41.json) at that correction also pass with the same complete counts and cleanup, in 329.699/128.372 seconds for workspace/serial. Native results above remain attributed to `130b64d`; no whole-source byte identity is claimed across the metadata correction.
+
+## Deterministic clock/syscall effects and seven-class reference (claims 2 and 4)
+
+[Native results and reproducing commands](builtins-reference-3a3cc4fe.md) qualify deterministic RDTSC/RDTSCP and tagged getpid/gettid through in-process NX and restored one-shot entry. Fresh merged-source runs retain the finite all-seven reference and all required failures; final checks pass 2,931 workspace and 1,039 serial launch tests. The report states the remaining rseq, lifecycle and application-performance limits.

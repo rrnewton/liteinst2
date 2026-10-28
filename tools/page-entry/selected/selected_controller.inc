@@ -372,6 +372,12 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
 static void selected_builtin(ucontext_t *context) {
     greg_t *g=context->uc_mcontext.gregs;
     checked(!selected_step_pending && li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY,646,0);
+    #ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    if(selected_provider_builtins_enabled &&
+       (selected_decoded.kind==LI2_RDTSC || selected_decoded.kind==LI2_RDTSCP)) {
+        selected_provider_clock(context);return;
+    }
+    #endif
     struct selected_builtin_prefix *p=&selected_builtin_prefix;
     *p=(struct selected_builtin_prefix){.kind=selected_decoded.kind};
     uint32_t a,d,c=0,b=0;
@@ -447,6 +453,9 @@ static void selected_owned_syscall(ucontext_t *context,uint64_t flags) {
     checked(!selected_step_pending && li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY &&
             selected_decoded.kind==LI2_SYSCALL,1560,0);
     long number=g[REG_RAX];
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    if(selected_provider_builtins_enabled)selected_provider_syscall_prepare(context,flags);
+#endif
     g[REG_RIP]=(greg_t)selected_decoded.next_pc;g[REG_RCX]=g[REG_RIP];
     g[REG_EFL]=(greg_t)flags;g[REG_R11]=(greg_t)flags;
     selected_release();++selected_source_syscalls;dispatch_operation(number,context);

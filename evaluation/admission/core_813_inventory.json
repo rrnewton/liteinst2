@@ -167,6 +167,1443 @@
     ]
   },
   "listing_revision": "18f8c106fe4167dce41b77956917f8e45c583b42",
+  "main0a8": {
+    "added_methods": {
+      "src/quiescent/whole_function/tests.rs": [
+        "whole_two_short_returns_keep_nops_controls_and_composition",
+        "whole_final_branch_after_last_action_forces_full_end",
+        "whole_first_five_head_routes_and_legacy_short_ret_refusal",
+        "whole_cfg_refuses_escape_falloff_entry_reentry_and_non_scalar_shapes",
+        "whole_entry_roles_and_finite_bounds_are_exact",
+        "whole_overlay_authentication_precedes_image_search",
+        "whole_actual_image_validator_refuses_branch_ret_maps_and_control_mutations"
+      ],
+      "tests/support/native_strnlen.rs": [
+        "strnlen_cases_preserve_zero_early_last_and_nonzero_bytes",
+        "strnlen_arguments_and_deadline_preserve_exact_bounds",
+        "strnlen_operand_validator_joins_real_base_index_width_and_domain",
+        "strnlen_cfg_refuses_unknown_transfers_and_nonpadding_unreachable_code",
+        "strnlen_trace_refuses_wrong_arguments_successor_return_and_input",
+        "strnlen_population_refuses_order_scalar_steps_and_incomplete_coverage"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/whole.rs": [
+        "whole_group_keeps_entry_and_two_one_byte_return_roles_once",
+        "whole_extent_includes_padding_and_branch_after_last_action",
+        "whole_extent_keeps_exact_five_through_eighty_bound",
+        "whole_missing_duplicate_unsorted_and_outside_roles_refuse",
+        "whole_entry_backedge_escape_and_bad_block_geometry_refuse",
+        "whole_support_does_not_change_old_valid_groups_or_old_short_refusal"
+      ]
+    },
+    "base": "d058549715fec9a4a02423b197350fccae9042d8",
+    "current_corpus_sha256": "74deb63f1356005367179bc9b0b648459c7d765aa4c2300da5a6880efc57fb57",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 19,
+      "rust_tests": 26
+    },
+    "doctests": {},
+    "instances": {
+      "src/quiescent/whole_function/tests.rs": {
+        "unit/liteinst2/lib": "quiescent::whole_function::tests::"
+      },
+      "tests/support/native_strnlen.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::strnlen::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": {
+        "unit/ordinary_interval/main": "strnlen::check::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/whole.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::site::ordinary::whole::tests::"
+      }
+    },
+    "macros": {},
+    "methods": {
+      "src/quiescent/whole_function/tests.rs": {
+        "all": [
+          "whole_two_short_returns_keep_nops_controls_and_composition",
+          "whole_final_branch_after_last_action_forces_full_end",
+          "whole_first_five_head_routes_and_legacy_short_ret_refusal",
+          "whole_cfg_refuses_escape_falloff_entry_reentry_and_non_scalar_shapes",
+          "whole_entry_roles_and_finite_bounds_are_exact",
+          "whole_overlay_authentication_precedes_image_search",
+          "whole_actual_image_validator_refuses_branch_ret_maps_and_control_mutations"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_strnlen.rs": {
+        "all": [
+          "strnlen_cases_preserve_zero_early_last_and_nonzero_bytes",
+          "strnlen_arguments_and_deadline_preserve_exact_bounds",
+          "strnlen_operand_validator_joins_real_base_index_width_and_domain",
+          "strnlen_cfg_refuses_unknown_transfers_and_nonpadding_unreachable_code",
+          "strnlen_trace_refuses_wrong_arguments_successor_return_and_input",
+          "strnlen_population_refuses_order_scalar_steps_and_incomplete_coverage"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": {
+        "all": [
+          "selected_canonical_cli_numbers",
+          "selected_exact_population_and_real_reports",
+          "selected_call_owner_and_return_refusals",
+          "selected_whole_journal_prefix_and_tail_refusals",
+          "selected_batch_identity_ranges_and_counts_refusals",
+          "selected_report_full_identity_sequence_and_payload_refusals",
+          "selected_history_requires_all_four_actual_actions"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/whole.rs": {
+        "all": [
+          "whole_group_keeps_entry_and_two_one_byte_return_roles_once",
+          "whole_extent_includes_padding_and_branch_after_last_action",
+          "whole_extent_keeps_exact_five_through_eighty_bound",
+          "whole_missing_duplicate_unsorted_and_outside_roles_refuse",
+          "whole_entry_backedge_escape_and_bad_block_geometry_refuse",
+          "whole_support_does_not_change_old_valid_groups_or_old_short_refusal"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "0a8fb30d7ac98cc47b62ba16eccab0b5bfd6a368",
+    "predecessor": "29b7b9e46044b451306a98307b3bfbbc1f6c70bf",
+    "previous_corpus_sha256": "5f50b167cb465bb9770c318ab94b135d5b1fc40d019d24e5184d411f06cfdedb",
+    "projections": {
+      "src/quiescent.rs": {
+        "current_sha256": "8e639cca9d0cc8bbc2b35acdd422002b68cab2223e2290a05c7cd86c3c0ac8e6",
+        "edits": [
+          [
+            732,
+            900,
+            ""
+          ],
+          [
+            51223,
+            52538,
+            ""
+          ],
+          [
+            56876,
+            57131,
+            ""
+          ]
+        ],
+        "previous_sha256": "de3b725b46a839dd83009b0a8420c13c8d25524ba573b87e67bb1a945a8f32d4"
+      },
+      "tests/support/native_ordinary.rs": {
+        "current_sha256": "bee9dfccf5700d443344ca6781c2495771325542184981fbe454b5a5380e96a4",
+        "edits": [
+          [
+            10396,
+            10483,
+            ""
+          ],
+          [
+            11297,
+            11385,
+            "            Subject::Checksum | Subject::Tree { .. } => None,\n"
+          ],
+          [
+            11735,
+            12088,
+            "            Subject::Checksum | Subject::Cache { .. } => None,\n"
+          ],
+          [
+            17921,
+            18475,
+            ""
+          ],
+          [
+            20156,
+            21583,
+            ""
+          ],
+          [
+            22293,
+            22437,
+            "            Subject::Checksum | Subject::Tree { .. } => panic!(\"not a cache subject\"),\n"
+          ],
+          [
+            31312,
+            31485,
+            ""
+          ],
+          [
+            32958,
+            33104,
+            ""
+          ],
+          [
+            35709,
+            35748,
+            ""
+          ],
+          [
+            35897,
+            35936,
+            ""
+          ],
+          [
+            36086,
+            36125,
+            ""
+          ],
+          [
+            36306,
+            36349,
+            ""
+          ],
+          [
+            38083,
+            38350,
+            ""
+          ],
+          [
+            42284,
+            42327,
+            ""
+          ],
+          [
+            44516,
+            44559,
+            ""
+          ],
+          [
+            46733,
+            46927,
+            ""
+          ],
+          [
+            49187,
+            49230,
+            ""
+          ],
+          [
+            50335,
+            50378,
+            ""
+          ],
+          [
+            51744,
+            51783,
+            ""
+          ],
+          [
+            53349,
+            53388,
+            ""
+          ],
+          [
+            58616,
+            58663,
+            ""
+          ]
+        ],
+        "previous_sha256": "d5934eb623ec7dd54d6908228c8c1f787de9483b32c59f7fb25b998ca5da4a86"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "3fd4d210741c4eb3ca3fce1a7c0b6c2435639f56da16beda3a22f9fc8c5de2ab",
+        "edits": [
+          [
+            39628,
+            40561,
+            ""
+          ]
+        ],
+        "previous_sha256": "db213127c7d627b49a4f5e545e9f5b49b2562a9b782d5e8cf5a4e0070c8ddb23"
+      },
+      "tools/rapid-profiler/native-interval/ordinary.rs": {
+        "current_sha256": "7c2b2f7b9d48ef45bf72e0c0c35e3292229ee6431cff8983c2ad62851398d22a",
+        "edits": [
+          [
+            4974,
+            5054,
+            ""
+          ],
+          [
+            6320,
+            6367,
+            ""
+          ],
+          [
+            6414,
+            7373,
+            ""
+          ],
+          [
+            8509,
+            8856,
+            "    if let Some((case, seed)) = cache_case {\n"
+          ],
+          [
+            10615,
+            10849,
+            "    let mut prep = OrdinarySitePreparation::new(owner, gate, identity(entry)).unwrap();\n"
+          ],
+          [
+            12292,
+            12460,
+            "    let expected = if let Some((case, seed)) = cache_case {\n"
+          ],
+          [
+            14358,
+            14443,
+            "        // SAFETY: live inherited immutable input, exact closed nonempty scalar leaf,\n"
+          ],
+          [
+            31068,
+            31092,
+            ""
+          ]
+        ],
+        "previous_sha256": "346c0ca31fb04c87f0ca1a9560d969f1a19300f09af3edd219192902721b4747"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "e9d9c77dcaa782da356d1b659ca4cb9049f3e38cd14530e2e48afa841854caa0",
+        "edits": [
+          [
+            868,
+            919,
+            ""
+          ],
+          [
+            971,
+            984,
+            ""
+          ],
+          [
+            12233,
+            13182,
+            ""
+          ]
+        ],
+        "previous_sha256": "5f6505fb840a2fa760b8d8ce4a37ab930e9d1925c4b105fb876be3ec33dc4938"
+      },
+      "tools/rapid-profiler/ordinary-interval/selected.rs": {
+        "current_sha256": "62fd3316f6e4fb5ab22fcd160b4d4ecd8bb4354e452cb211a9e61aac0721a685",
+        "edits": [
+          [
+            176,
+            237,
+            "mod check;\n"
+          ]
+        ],
+        "previous_sha256": "d675ff6b1fac962e54ee76984f562905ff8755937179e97a4ce58041c453ce74"
+      },
+      "tools/rapid-profiler/ordinary-interval/selected/check.rs": {
+        "current_sha256": "4725683677e8f464588c250eea0f144b5d807b0b9543bc0b9792fe655c72f4a5",
+        "edits": [
+          [
+            83,
+            398,
+            "use super::*;\nuse rapid_profiler::frontend::{ActionKind, ControllerSnapshot, ControllerStatus};\n"
+          ],
+          [
+            399,
+            10516,
+            "#[derive(Clone, Copy, Debug, Eq, PartialEq)]\npub(super) enum Error {\n    Call,\n    Owner,\n    Batch,\n    Report,\n    History,\n"
+          ],
+          [
+            10518,
+            10549,
+            "\npub(super) struct Expected {\n    pub originals: [u64; 8],\n    pub entry: u64,\n    pub returns: BTreeSet<u64>,\n    pub continuation: u64,\n    pub pid: u32,\n    pub tid: u64,\n    pub generations: [u64; 2],\n}\n\n#[derive(Clone)]\npub(super) struct Batch<'a> {\n    pub identity: (u32, u64, u64, u64, FunctionId),\n    pub number: u64,\n    pub totals: (PairTotals, PairTotals),\n    pub sequences: (u64, u64),\n    pub next: u64,\n    pub gate: u64,\n    pub raw: std::ops::Range<u64>,\n    pub events: std::ops::Range<u64>,\n    pub legacy: bool,\n    pub rows: &'a [RawInterval],\n    pub journal: &'a [u64],\n}\nimpl<'a> From<&'a IntervalBatch> for Batch<'a> {\n    fn from(b: &'a IntervalBatch) -> Self {\n        Self {\n            identity: (\n                b.pid(),\n                b.tid(),\n                b.registration(),\n                b.install(),\n                b.function(),\n            ),\n            number: b.number(),\n            totals: b.totals(),\n            sequences: b.completed_sequences(),\n            next: b.next_ordinal(),\n            gate: b.gate_sequence(),\n            raw: b.raw_range(),\n            events: b.event_range(),\n            legacy: b.history_stream().is_none() && b.history_high_water().is_none(),\n            rows: b.rows(),\n            journal: b.journal(),\n        }\n    }\n}\n\npub(super) fn prefix(index: usize) -> u64 {\n    match index {\n        0..=3 => 1,\n        4 => 2,\n        5..=7 => 3,\n        _ => unreachable!(),\n    }\n}\npub(super) fn totals(n: usize) -> Result<PairTotals, Error> {\n    let completed = *[0, 1, 2, 2, 2, 2, 3, 4, 4].get(n).ok_or(Error::Call)?;\n    Ok(PairTotals {\n        entries: n as u64,\n        returns: n as u64,\n        completed,\n        unsampled: n as u64 - completed,\n    })\n}\npub(super) fn returned(\n    index: usize,\n    c: &CallResult,\n    value: u64,\n    returns: &BTreeSet<u64>,\n    actual: PairTotals,\n) -> Result<(), Error> {\n    if index >= 8\n        || c.value != value\n        || !returns.contains(&c.return_pc)\n        || c.pre_call_rsp % 16 != 0\n        || c.pre_call_rsp.checked_sub(8) != Some(c.entry_rsp)\n        || c.pre_call_rsp != c.resumed_rsp\n        || actual != totals(index + 1)?\n    {\n        return Err(Error::Call);\n    }\n    Ok(())\n}\n\npub(super) fn population(\n    calls: &[CallResult],\n    rows: &[RawInterval],\n    b: &Batch<'_>,\n    e: &Expected,\n) -> Result<(), Error> {\n    if calls.len() != 8\n        || rows.len() != 8\n        || e.entry == 0\n        || e.continuation == 0\n        || e.pid == 0\n        || e.tid == 0\n        || e.tid == u64::from(e.pid)\n        || e.returns.is_empty()\n        || e.generations[0] == 0\n        || e.generations[0] >= e.generations[1]\n    {\n        return Err(Error::Call);\n    }\n    if b.identity != (e.pid, e.tid, 1, INSTALL, FUNCTION)\n        || b.number != 1\n        || b.totals != (PairTotals::default(), totals(8)?)\n        || b.sequences != (0, 4)\n        || b.next != 9\n        || b.gate != 8\n        || b.raw != (0..8)\n        || b.events != (0..16)\n        || !b.legacy\n        || b.rows != rows\n        || b.journal.len() != 512\n    {\n        return Err(Error::Batch);\n    }\n    let mut page = [0_u64; 512];\n    page[0] = 16;\n    page[2] = e.tid;\n    let mut seen = BTreeSet::new();\n    for (i, (c, r)) in calls.iter().zip(rows).enumerate() {\n        returned(i, c, e.originals[i], &e.returns, totals(i + 1)?)?;\n        if r.ordinal != i as u64 + 1\n            || r.entry_pc != e.entry\n            || r.return_pc != c.return_pc\n            || r.elapsed_ticks().is_none()\n        {\n            return Err(Error::Call);\n        }\n        seen.insert(r.return_pc);\n        let (generation, invocation, kind, reason) = match i {\n            0 | 1 => (e.generations[0], Some(i), 1, 0),\n            2 | 3 => (e.generations[0], None, 3, 3),\n            4 => (e.generations[0], None, 3, 2),\n            5 | 6 => (e.generations[1], Some(i - 5), 1, 0),\n            7 => (e.generations[1], None, 3, 3),\n            _ => unreachable!(),\n        };\n        let owner = match invocation {\n            Some(invocation) => RawIntervalOwner::Sampled {\n                generation,\n                invocation,\n            },\n            None if i == 4 => RawIntervalOwner::Removed { generation },\n            None => RawIntervalOwner::FunctionClosed { generation },\n        };\n        if r.owner != owner {\n            return Err(Error::Owner);\n        }\n        let packed = invocation.map_or(0, |n| n as u64 + 1) | (prefix(i) << 13) | (reason << 22);\n        for side in 0..2 {\n            let at = 4 + (2 * i + side) * 7;\n            page[at..at + 7].copy_from_slice(&[\n                kind + side as u64,\n                r.ordinal,\n                if side == 0 { e.entry } else { c.return_pc },\n                c.entry_rsp,\n                e.continuation,\n                generation,\n                packed,\n            ]);\n        }\n    }\n    if seen != e.returns {\n        return Err(Error::Call);\n    }\n    if b.journal != page {\n        return Err(Error::Batch);\n    }\n    Ok(())\n}\n\npub(super) fn records(\n    rows: &[RawInterval],\n    generation: u64,\n    first_sequence: u64,\n    records: &[RecordObservation],\n) -> Result<(), Error> {\n    if rows.len() != 8 || generation == 0 || records.len() != 2 || !matches!(first_sequence, 0 | 2)\n    {\n        return Err(Error::Report);\n    }\n    let (mut rank, mut sequence) = (0, 0);\n    for row in rows {\n        if let RawIntervalOwner::Sampled {\n            generation: g,\n            invocation,\n        } = row.owner\n        {\n            if g == generation {\n                let r = records.get(rank).ok_or(Error::Report)?;\n                let a = r.record.admission;\n                let p = r.payload.ok_or(Error::Report)?;\n                if invocation != rank\n                    || a.generation.get() != generation\n                    || a.function != FUNCTION\n                    || a.invocation != rank\n                    || a.entry_value != row.start.ticks\n                    || p.admission != a\n                    || p.thread != 1\n                    || sequence != first_sequence + rank as u64\n                    || p.start_sequence != sequence\n                    || r.record.terminal\n                        != Some(Terminal::Completed {\n                            value: rank as u64,\n                            disposition: Disposition::Retained { rank },\n                        })\n                    || p.outcome\n                        != (PayloadOutcome::Completed {\n                            end: Observation::Value(row.end.ticks),\n                            completed_children: 0,\n                        })\n                {\n                    return Err(Error::Report);\n                }\n                rank += 1;\n            }\n            sequence += 1;\n        }\n    }\n    if rank != 2 || sequence != 4 {\n        return Err(Error::Report);\n    }\n    Ok(())\n}\n\npub(super) fn history(h: &ControllerSnapshot, g: [u64; 2]) -> Result<(), Error> {\n    if g[0] == 0\n        || g[0] >= g[1]\n        || h.status != ControllerStatus::Ready\n        || h.current.is_some()\n        || h.enabled != [true]\n        || h.retained_failed_generation.is_some()\n        || h.actions.len() != 4\n    {\n        return Err(Error::History);\n    }\n    for (i, a) in h.actions.iter().enumerate() {\n        if a.kind\n            != if i % 2 == 0 {\n                ActionKind::Published\n            } else {\n                ActionKind::Removed\n            }\n            || a.generation.get() != g[i / 2]\n            || a.current.map(|n| n.get()) != if i % 2 == 0 { Some(g[i / 2]) } else { None }\n            || a.function.is_some()\n            || a.group.is_some()\n        {\n            return Err(Error::History);\n        }\n    }\n    Ok(())\n}\n\n"
+          ],
+          [
+            10562,
+            10661,
+            "mod tests;\n"
+          ]
+        ],
+        "previous_sha256": "dd141943b556667b4dc84f66c0e9c52e1c09b42f85c9b218e24e5e67f56f80c5"
+      },
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": {
+        "current_sha256": "87e50fb134dfeac05a9309de9a51f841e8134af1c0de1e9516a6252e66ce10cf",
+        "edits": [
+          [
+            0,
+            320,
+            "use super::*;\nuse rapid_profiler::frontend::{FailurePoint, FunctionSpec, GroupSpec, ModelReturnSlot, Session};\nuse rapid_profiler::frontend_native::RawTimestamp;\n"
+          ],
+          [
+            321,
+            4770,
+            "struct Fixture {\n    e: Expected,\n    calls: Vec<CallResult>,\n    rows: Vec<RawInterval>,\n    page: [u64; 512],\n    records: [Vec<RecordObservation>; 2],\n    history: ControllerSnapshot,\n}\nfn fixture() -> Fixture {\n    // Actual metadata engine supplies generations, payloads and Reports. These\n    // controls never claim that the fabricated call/frame fields executed.\n    let session = Session::new(\n        INSTALL,\n        &[FunctionSpec {\n            function: FUNCTION,\n            group: 0,\n        }],\n        &[GroupSpec { mandatory: true }],\n        Limits {\n            epochs: 2,\n            threads: 1,\n            depth: 1,\n            records_per_epoch: 8,\n            actions: 4,\n        },\n    )\n    .unwrap();\n    let mut thread = session.register_thread(1).unwrap();\n    let a = session.stage(CONFIG).unwrap();\n    let b = session.stage(CONFIG).unwrap();\n    let g = [a.generation().get(), b.generation().get()];\n    let e = Expected {\n        originals: [11, 12, 13, 14, 15, 16, 17, 18],\n        entry: 0x1000,\n        returns: BTreeSet::from([0x1020, 0x1030]),\n        continuation: 0x4000,\n        pid: 11,\n        tid: 12,\n        generations: g,\n    };\n    let owners = [\n        RawIntervalOwner::Sampled {\n            generation: g[0],\n            invocation: 0,\n        },\n        RawIntervalOwner::Sampled {\n            generation: g[0],\n            invocation: 1,\n        },\n        RawIntervalOwner::FunctionClosed { generation: g[0] },\n        RawIntervalOwner::FunctionClosed { generation: g[0] },\n        RawIntervalOwner::Removed { generation: g[0] },\n        RawIntervalOwner::Sampled {\n            generation: g[1],\n            invocation: 0,\n        },\n        RawIntervalOwner::Sampled {\n            generation: g[1],\n            invocation: 1,\n        },\n        RawIntervalOwner::FunctionClosed { generation: g[1] },\n    ];\n    let (mut calls, mut rows) = (Vec::new(), Vec::new());\n    session.publish(&a, FailurePoint::None).unwrap();\n    for (i, owner) in owners.into_iter().enumerate() {\n        if i == 4 {\n"
+          ],
+          [
+            4817,
+            6265,
+            ""
+          ],
+          [
+            6275,
+            7062,
+            "        if i == 5 {\n            session.publish(&b, FailurePoint::None).unwrap();\n        }\n        let start = 100 + 10 * i as u64;\n        if let RawIntervalOwner::Sampled {\n            generation,\n            invocation,\n        } = owner\n        {\n            let mut slot = ModelReturnSlot {\n                identity: i as u64 + 1,\n                word: e.continuation,\n            };\n            let admitted = thread.enter(INSTALL, FUNCTION, start, &mut slot).unwrap();\n            assert_eq!(\n                (admitted.generation.get(), admitted.invocation),\n                (generation, invocation)\n            );\n            thread\n                .finish(&mut slot, Observation::Value(start + 3))\n                .unwrap();\n            assert_eq!(slot.word, e.continuation);\n        }\n        let ret = if i == 0 { 0x1020 } else { 0x1030 };\n        calls.push(CallResult {\n            value: e.originals[i],\n            pre_call_rsp: 0x3000,\n            entry_rsp: 0x2ff8,\n            resumed_rsp: 0x3000,\n            return_pc: ret,\n        });\n        rows.push(RawInterval {\n            ordinal: i as u64 + 1,\n            entry_pc: e.entry,\n            return_pc: ret,\n            owner,\n            start: RawTimestamp {\n                ticks: start,\n                aux: 7,\n            },\n            end: RawTimestamp {\n                ticks: start + 3,\n                aux: 7,\n            },\n        });\n    }\n    session.remove_current().unwrap();\n    let records = [\n        a.try_report().unwrap().records().collect(),\n        b.try_report().unwrap().records().collect(),\n    ];\n    let history = session.snapshot().unwrap();\n    // Literal wire expectations: no call to the production prefix/packing code.\n    let packed = [\n        0x2001, 0x2002, 0xc02000, 0xc02000, 0x804000, 0x6001, 0x6002, 0xc06000,\n    ];\n    let entry_kinds = [1, 1, 3, 3, 3, 1, 1, 3];\n    let mut page = [0; 512];\n    page[..4].copy_from_slice(&[16, 0, 12, 0]);\n    for (i, packed) in packed.into_iter().enumerate() {\n        let generation = g[usize::from(i >= 5)];\n        let at = 4 + i * 14;\n        page[at..at + 14].copy_from_slice(&[\n            entry_kinds[i],\n            i as u64 + 1,\n            0x1000,\n            0x2ff8,\n            0x4000,\n            generation,\n            packed,\n            entry_kinds[i] + 1,\n            i as u64 + 1,\n            rows[i].return_pc,\n            0x2ff8,\n            0x4000,\n            generation,\n            packed,\n        ]);\n    }\n    Fixture {\n        e,\n        calls,\n        rows,\n        page,\n        records,\n        history,\n    }\n}\nimpl Fixture {\n    fn batch(&self) -> Batch<'_> {\n        Batch {\n            identity: (11, 12, 1, INSTALL, FUNCTION),\n            number: 1,\n            totals: (\n                PairTotals::default(),\n                PairTotals {\n                    entries: 8,\n                    returns: 8,\n                    completed: 4,\n                    unsampled: 4,\n                },\n            ),\n            sequences: (0, 4),\n            next: 9,\n            gate: 8,\n            raw: 0..8,\n            events: 0..16,\n            legacy: true,\n            rows: &self.rows,\n            journal: &self.page,\n        }\n    }\n    fn valid(&self) -> Result<(), Error> {\n        population(&self.calls, &self.rows, &self.batch(), &self.e)\n    }\n}\n\n#[test]\nfn selected_canonical_cli_numbers() {\n    for (text, value) in [(\"0\", 0), (\"1\", 1), (\"18446744073709551615\", u64::MAX)] {\n        assert_eq!(number(text), value);\n    }\n    for bad in [\n        \"\",\n        \"+1\",\n        \"-1\",\n        \"01\",\n        \"00\",\n        \" 1\",\n        \"1 \",\n        \"0x10\",\n        \"18446744073709551616\",\n    ] {\n        assert!(std::panic::catch_unwind(|| number(bad)).is_err(), \"{bad}\");\n    }\n}\n\n#[test]\nfn selected_exact_population_and_real_reports() {\n    let f = fixture();\n    assert_eq!(f.valid(), Ok(()));\n    assert_eq!(history(&f.history, f.e.generations), Ok(()));\n    for (i, observed) in f.records.iter().enumerate() {\n        assert_eq!(\n            records(&f.rows, f.e.generations[i], 2 * i as u64, observed),\n            Ok(())\n        );\n    }\n    for (n, completed) in [0, 1, 2, 2, 2, 2, 3, 4, 4].into_iter().enumerate() {\n        assert_eq!(\n            totals(n).unwrap(),\n            PairTotals {\n                entries: n as u64,\n                returns: n as u64,\n                completed,\n                unsampled: n as u64 - completed\n            }\n        );\n    }\n    assert_eq!(totals(9), Err(Error::Call));\n    assert_eq!(\n        std::array::from_fn::<_, 8, _>(prefix),\n        [1, 1, 1, 1, 2, 3, 3, 3]\n    );\n}\n\n#[test]\nfn selected_call_owner_and_return_refusals() {\n    let f = fixture();\n    assert_eq!(f.valid(), Ok(()));\n    assert!(population(&f.calls[..7], &f.rows, &f.batch(), &f.e).is_err());\n    let mut extra = f.calls.clone();\n    extra.push(f.calls[0]);\n    assert!(population(&extra, &f.rows, &f.batch(), &f.e).is_err());\n    let mut swapped = f.calls.clone();\n    swapped.swap(0, 1);\n    assert!(population(&swapped, &f.rows, &f.batch(), &f.e).is_err());\n    for field in 0..5 {\n        let mut c = f.calls[0];\n        match field {\n            0 => c.value ^= 1,\n            1 => c.return_pc += 1,\n            2 => c.entry_rsp += 8,\n            3 => c.pre_call_rsp += 1,\n            _ => c.resumed_rsp += 16,\n        }\n        assert_eq!(\n            returned(0, &c, 11, &f.e.returns, totals(1).unwrap()),\n            Err(Error::Call)\n        );\n    }\n    for field in 0..4 {\n        let mut t = totals(1).unwrap();\n        match field {\n            0 => t.entries += 1,\n            1 => t.returns += 1,\n            2 => t.completed += 1,\n            _ => t.unsampled += 1,\n        }\n        assert_eq!(\n            returned(0, &f.calls[0], 11, &f.e.returns, t),\n            Err(Error::Call)\n        );\n    }\n    for field in 0..8 {\n        let mut bad = fixture();\n        match field {\n            0 => bad.rows[0].ordinal = 2,\n            1 => bad.rows[0].entry_pc += 1,\n            2 => bad.rows[0].return_pc += 1,\n            3 => bad.rows[0].end.aux += 1,\n            4 => bad.rows[0].end.ticks = bad.rows[0].start.ticks - 1,\n            5 => {\n                bad.rows[0].owner = RawIntervalOwner::Sampled {\n                    generation: bad.e.generations[1],\n                    invocation: 0,\n"
+          ],
+          [
+            7094,
+            9767,
+            "            6 => {\n                bad.rows[0].owner = RawIntervalOwner::Sampled {\n                    generation: bad.e.generations[0],\n                    invocation: 1,\n"
+          ],
+          [
+            9785,
+            9944,
+            ""
+          ],
+          [
+            9958,
+            17433,
+            "            _ => {\n                bad.rows[4].owner = RawIntervalOwner::FunctionClosed {\n                    generation: bad.e.generations[0],\n"
+          ],
+          [
+            17475,
+            18627,
+            "        assert!(bad.valid().is_err());\n    }\n    let mut bad = fixture();\n    bad.e.returns.insert(0x1040);\n    assert_eq!(bad.valid(), Err(Error::Call));\n"
+          ],
+          [
+            18629,
+            18660,
+            "\n#[test]\nfn selected_whole_journal_prefix_and_tail_refusals() {\n    let f = fixture();\n    assert_eq!(f.valid(), Ok(()));\n    for word in 0..512 {\n        let mut page = f.page;\n        page[word] ^= 1;\n        let mut b = f.batch();\n        b.journal = &page;\n        assert_eq!(\n            population(&f.calls, &f.rows, &b, &f.e),\n            Err(Error::Batch),\n            \"word {word}\"\n        );\n    }\n    // Change both endpoints consistently to a plausible older prefix: the\n    // decoder's entry/exit equality alone would not detect this association.\n    let mut page = f.page;\n    page[4 + 5 * 14 + 6] = 0x2001;\n    page[4 + 5 * 14 + 13] = 0x2001;\n    let mut b = f.batch();\n    b.journal = &page;\n    assert_eq!(population(&f.calls, &f.rows, &b, &f.e), Err(Error::Batch));\n}\n\n#[test]\nfn selected_batch_identity_ranges_and_counts_refusals() {\n    let f = fixture();\n    assert_eq!(f.valid(), Ok(()));\n    for field in 0..17 {\n        let mut b = f.batch();\n        match field {\n            0 => b.identity.0 += 1,\n            1 => b.identity.1 += 1,\n            2 => b.identity.2 += 1,\n            3 => b.identity.3 += 1,\n            4 => b.identity.4 = FunctionId(2),\n            5 => b.number += 1,\n            6 => b.totals.0.entries = 1,\n            7 => b.totals.1.unsampled = 3,\n            8 => b.sequences.0 = 1,\n            9 => b.sequences.1 = 8,\n            10 => b.next = 8,\n            11 => b.gate = 16,\n            12 => b.raw = 1..9,\n            13 => b.events = 0..15,\n            14 => b.legacy = false,\n            15 => b.rows = &f.rows[..7],\n            _ => b.journal = &f.page[..511],\n        }\n        assert_eq!(\n            population(&f.calls, &f.rows, &b, &f.e),\n            Err(Error::Batch),\n            \"field {field}\"\n        );\n    }\n}\n\n#[test]\nfn selected_report_full_identity_sequence_and_payload_refusals() {\n    let f = fixture();\n    for (epoch, good) in f.records.iter().enumerate() {\n        let g = f.e.generations[epoch];\n        let sequence = 2 * epoch as u64;\n        assert_eq!(records(&f.rows, g, sequence, good), Ok(()));\n        assert_eq!(\n            records(&f.rows, g, sequence, &good[..1]),\n            Err(Error::Report)\n        );\n        let mut extra = good.clone();\n        extra.push(good[0]);\n        assert_eq!(records(&f.rows, g, sequence, &extra), Err(Error::Report));\n        let mut reverse = good.clone();\n        reverse.swap(0, 1);\n        assert_eq!(records(&f.rows, g, sequence, &reverse), Err(Error::Report));\n        assert_eq!(records(&f.rows, g, sequence + 1, good), Err(Error::Report));\n        assert_eq!(records(&f.rows, g, u64::MAX, good), Err(Error::Report));\n        for field in 0..12 {\n            let mut bad = good.clone();\n            match field {\n                0 => {\n                    bad[0].record.admission.generation =\n                        f.records[1 - epoch][0].record.admission.generation\n                }\n                1 => bad[0].record.admission.function = FunctionId(2),\n                2 => bad[0].record.admission.invocation = 1,\n                3 => bad[0].record.admission.entry_value += 1,\n                4 => {\n                    bad[0].record.terminal = Some(Terminal::Completed {\n                        value: 1,\n                        disposition: Disposition::Retained { rank: 0 },\n                    })\n                }\n                5 => {\n                    bad[0].record.terminal = Some(Terminal::Completed {\n                        value: 0,\n                        disposition: Disposition::Retained { rank: 1 },\n                    })\n                }\n                6 => bad[0].payload = None,\n                7 => bad[0].payload.as_mut().unwrap().admission.invocation = 1,\n                8 => bad[0].payload.as_mut().unwrap().thread = 2,\n                9 => bad[0].payload.as_mut().unwrap().start_sequence += 1,\n                10 => {\n                    bad[0].payload.as_mut().unwrap().outcome = PayloadOutcome::Completed {\n                        end: Observation::Value(999),\n                        completed_children: 0,\n                    }\n                }\n                _ => {\n                    let p = bad[0].payload.as_mut().unwrap();\n                    let PayloadOutcome::Completed { end, .. } = p.outcome else {\n                        unreachable!()\n                    };\n                    p.outcome = PayloadOutcome::Completed {\n                        end,\n                        completed_children: 1,\n                    };\n                }\n            }\n            assert_eq!(\n                records(&f.rows, g, sequence, &bad),\n                Err(Error::Report),\n                \"field {field}\"\n            );\n        }\n    }\n}\n\n#[test]\nfn selected_history_requires_all_four_actual_actions() {\n    let f = fixture();\n    assert_eq!(history(&f.history, f.e.generations), Ok(()));\n    for field in 0..11 {\n        let mut h = f.history.clone();\n        match field {\n            0 => h.status = ControllerStatus::TerminalFailure,\n            1 => h.current = Some(h.actions[2].generation),\n            2 => h.enabled[0] = false,\n            3 => h.retained_failed_generation = Some(h.actions[0].generation),\n            4 => {\n                h.actions.pop();\n            }\n            5 => h.actions.push(h.actions[3]),\n            6 => h.actions.swap(0, 2),\n            7 => h.actions[3].kind = ActionKind::Deferred,\n            8 => h.actions[3].current = Some(h.actions[3].generation),\n            9 => h.actions[0].function = Some(FUNCTION),\n            _ => h.actions[0].group = Some(0),\n        }\n        assert_eq!(history(&h, f.e.generations), Err(Error::History));\n    }\n}\n"
+          ]
+        ],
+        "previous_sha256": "fd2e620d6ac8d6c270952c1ee725ea638792ab799354b93be652d445099c59dc"
+      },
+      "tools/rapid-profiler/selected-work/provenance.py": {
+        "current_sha256": "17e375a54497d99610189ea13c02cae8bd6985524c572609623fa35898a0ea5f",
+        "edits": [
+          [
+            447,
+            650,
+            ""
+          ],
+          [
+            5683,
+            5777,
+            "def readelf_symbols(text, parsed):\n"
+          ],
+          [
+            6066,
+            6176,
+            "        header = re.fullmatch(r\"Symbol table '(\\.dynsym|\\.symtab)' contains ([0-9]+) entries:\", line)\n"
+          ],
+          [
+            6313,
+            6394,
+            ""
+          ],
+          [
+            7328,
+            7493,
+            "            if binary[0] == NAME or name == NAME:\n                assert name == binary[0] == NAME and kind == 'FUNC' and bind == 'LOCAL'\n"
+          ],
+          [
+            7601,
+            7714,
+            "def validate(prestrip, final, pre_symbols, final_symbols):\n"
+          ],
+          [
+            7756,
+            7853,
+            "    readelf_symbols(pre_symbols, pre)\n    readelf_symbols(final_symbols, post)\n"
+          ],
+          [
+            8114,
+            8374,
+            "        assert not any(s[0] == NAME for s in p['tables']['.dynsym'])\n    selected = [s for s in pre['tables']['.symtab'] if s[0] == NAME]\n"
+          ],
+          [
+            9457,
+            9547,
+            "    return dict(schema=1, label=LABEL, name=NAME, elf_va=address, length=size,\n"
+          ],
+          [
+            9987,
+            10319,
+            "def main():\n"
+          ],
+          [
+            10696,
+            10817,
+            "    result = validate(bounded(a.prestrip), bounded(a.final), bounded(a.pre_symbols), bounded(a.final_symbols))\n"
+          ],
+          [
+            10962,
+            11040,
+            ""
+          ]
+        ],
+        "previous_sha256": "b98b803b2b9ea4e12e969ddecd10c67c39f1589a46fd3f388cb25ed94b6ad2f0"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+        "current_sha256": "887ca7384812e85af272515d0a46f7ad088fd32ff05f46807cbde13fec59e7a5",
+        "edits": [
+          [
+            738,
+            890,
+            "    InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed_after,\n"
+          ],
+          [
+            960,
+            1078,
+            ""
+          ],
+          [
+            9678,
+            11352,
+            ""
+          ],
+          [
+            12479,
+            12953,
+            "        let groups = groups(\n            entry,\n            certificate.returns(),\n            certificate.blocks(),\n            certificate.edges(),\n        )?;\n"
+          ],
+          [
+            15671,
+            16657,
+            "            let member = plan_coalesced_detailed_after(\n                &InstallRequest {\n                    identity,\n                    code: owner.code(),\n                    base_address: entry,\n                    function: scope,\n                    block: group.block,\n                    logical_pc: logical,\n                    entries: &entries,\n                    hook: impossible_ordinary_dispatch,\n                    semantics: HookSemantics::Observe,\n                    allocation: &allocation,\n                    search: SearchPolicy {\n                        tactics: TacticPolicy::RelocationOnly,\n                        max_upstream_bytes: if logical == entry { 0 } else { 64 },\n                        max_displaced_bytes: 80,\n                        max_sites: if logical == entry { 1 } else { 65 },\n"
+          ],
+          [
+            16680,
+            18126,
+            "                },\n                &actions,\n                &predecessor,\n            )\n"
+          ],
+          [
+            19706,
+            20007,
+            ""
+          ]
+        ],
+        "previous_sha256": "c4ebe60e9f07e43394bf8f652623f31b13813e1aea72620c96a788ea93455204"
+      }
+    },
+    "python_metadata": {
+      "assignments": {
+        "CORE_PREFIX": "quiescent::whole_function::tests::",
+        "FRONT_PREFIX": "frontend_native::always_on::site::ordinary::whole::tests::",
+        "GROUPS": [
+          "whole-core",
+          "whole-front",
+          "state-validator",
+          "work-validator"
+        ],
+        "STATE_PREFIX": "oracle::native_ordinary::strnlen::tests::",
+        "WORK_PREFIX": "strnlen::check::tests::"
+      },
+      "path": "tools/rapid-profiler/verify_strnlen_interval.py",
+      "qualification_facts": {
+        "tools/rapid-profiler/verify_strnlen_interval.py": [
+          "tuple(CORE_PREFIX + name for name in (\n    'whole_two_short_returns_keep_nops_controls_and_composition',\n    'whole_final_branch_after_last_action_forces_full_end',\n    'whole_first_five_head_routes_and_legacy_short_ret_refusal',\n    'whole_cfg_refuses_escape_falloff_entry_reentry_and_non_scalar_shapes',\n    'whole_entry_roles_and_finite_bounds_are_exact',\n    'whole_overlay_authentication_precedes_image_search',\n    'whole_actual_image_validator_refuses_branch_ret_maps_and_control_mutations'))",
+          "tuple(STATE_PREFIX + name for name in (\n    'strnlen_cases_preserve_zero_early_last_and_nonzero_bytes',\n    'strnlen_arguments_and_deadline_preserve_exact_bounds',\n    'strnlen_operand_validator_joins_real_base_index_width_and_domain',\n    'strnlen_cfg_refuses_unknown_transfers_and_nonpadding_unreachable_code',\n    'strnlen_trace_refuses_wrong_arguments_successor_return_and_input',\n    'strnlen_population_refuses_order_scalar_steps_and_incomplete_coverage'))",
+          "tuple(FRONT_PREFIX + name for name in (\n    'whole_group_keeps_entry_and_two_one_byte_return_roles_once',\n    'whole_extent_includes_padding_and_branch_after_last_action',\n    'whole_extent_keeps_exact_five_through_eighty_bound',\n    'whole_missing_duplicate_unsorted_and_outside_roles_refuse',\n    'whole_entry_backedge_escape_and_bad_block_geometry_refuse',\n    'whole_support_does_not_change_old_valid_groups_or_old_short_refusal'))",
+          "tuple(WORK_PREFIX + name for name in (\n    'selected_canonical_cli_numbers', 'selected_exact_population_and_real_reports',\n    'selected_call_owner_and_return_refusals', 'selected_whole_journal_prefix_and_tail_refusals',\n    'selected_batch_identity_ranges_and_counts_refusals',\n    'selected_report_full_identity_sequence_and_payload_refusals',\n    'selected_history_requires_all_four_actual_actions'))"
+        ]
+      },
+      "tuple_assignments": [
+        "GROUPS"
+      ]
+    },
+    "scope": "19 new Rust declarations plus seven new strnlen macro instances; all seven old selected checker instances remain. No old test removed or newly ignored. Existing docs, Cargo targets, native protocols, recorder identities and bounds remain exact. The only parser addition is the exact core262/ignored1 child tuple; no execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/precontext/verify.py": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+      "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+      "src/quiescent.rs": "8e639cca9d0cc8bbc2b35acdd422002b68cab2223e2290a05c7cd86c3c0ac8e6",
+      "src/quiescent/whole_function.rs": "9601853fc3c6f6ad0f61706dc1806ea67f1d099933c07881cb5f62c3f2494c1f",
+      "src/quiescent/whole_function/tests.rs": "a9d594f674664504d2131e854392d5fa963eedcd4e9ed167f536263f579825f3",
+      "src/trampoline.rs": "65607ba6462f96e1b582ee9238337aca698be754ed87e0912e7b5e72f246cdd7",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_ordinary.rs": "bee9dfccf5700d443344ca6781c2495771325542184981fbe454b5a5380e96a4",
+      "tests/support/native_strnlen.rs": "1f2654f0589f65bd9e8151f20a7bc2785e59f0822101e73ddac3b67b08cc85fc",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "f9c7f96424095442e28c541a38196800f1481482237e9f2739aba2392d811e1f",
+      "tools/rapid-profiler/native-interval/main.rs": "3fd4d210741c4eb3ca3fce1a7c0b6c2435639f56da16beda3a22f9fc8c5de2ab",
+      "tools/rapid-profiler/native-interval/ordinary.rs": "7c2b2f7b9d48ef45bf72e0c0c35e3292229ee6431cff8983c2ad62851398d22a",
+      "tools/rapid-profiler/native-interval/ordinary/strnlen.rs": "d041eead72ad8edc975686adf7f9143afe2eeea93543c75bd69b4503845447f3",
+      "tools/rapid-profiler/native-point/main.rs": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "e9d9c77dcaa782da356d1b659ca4cb9049f3e38cd14530e2e48afa841854caa0",
+      "tools/rapid-profiler/ordinary-interval/selected.rs": "62fd3316f6e4fb5ab22fcd160b4d4ecd8bb4354e452cb211a9e61aac0721a685",
+      "tools/rapid-profiler/ordinary-interval/selected/check.rs": "4725683677e8f464588c250eea0f144b5d807b0b9543bc0b9792fe655c72f4a5",
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": "87e50fb134dfeac05a9309de9a51f841e8134af1c0de1e9516a6252e66ce10cf",
+      "tools/rapid-profiler/ordinary-interval/strnlen.rs": "12ac54a854d1c89cb0d2348459645a50fc6d185b5f4ffa36e0fbe263dbc4c303",
+      "tools/rapid-profiler/selected-work/provenance.py": "17e375a54497d99610189ea13c02cae8bd6985524c572609623fa35898a0ea5f",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "1da7f27fe39af03e8061e91b7b8b89975b455f4b4e965cb507415ede6d158130",
+      "tools/rapid-profiler/src/frontend_native/always_on/site.rs": "57f2d311eeebf659918916dcba6d1a776fd7e4bf62efb3ddae1208d27dbadf55",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "887ca7384812e85af272515d0a46f7ad088fd32ff05f46807cbde13fec59e7a5",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/whole.rs": "7606d8c69b72259df0c1a7c8b83e565056d4c701f7691f997e5e81a581578670",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
+      "tools/rapid-profiler/strnlen-work/cases.rs": "896a689ace49993adf3d964f5bdcece1e28831c304ffb9bd1ce989f8da84807b",
+      "tools/rapid-profiler/strnlen-work/check_output.py": "ef1ecb82be5beb998af9c10aef385866a35131648bab067b5c10aaac28954812",
+      "tools/rapid-profiler/strnlen-work/provenance.py": "fda9503e9067cdf4b1519d83edbcff120b56e63c8fefd676373124c37fd470a6",
+      "tools/rapid-profiler/strnlen-work/strnlen.c": "969eb826cd618ff799cdc4fcc9d61edd044a314bd39208479787eda622c4f336",
+      "tools/rapid-profiler/strnlen-work/test_provenance.py": "0f8fbff3ac1d3cfe2e655b7ffcb9dc1fad44b610fe2ed763f9bd7bfd9b61a8aa",
+      "tools/rapid-profiler/strnlen-work/test_recipe.py": "4879930244c4bf635924723b1c89baf8e8391ab15508b426dd1787c26cd95917",
+      "tools/rapid-profiler/verify_selected_interval.py": "de602e2b4ea36b3806f7fea822736417319a39fd332ede1a4cf8ad53bd862132",
+      "tools/rapid-profiler/verify_strnlen_interval.py": "9a37fa20311984d5ba755458e7858578165e0d7a2df583599a1b2057e50e6126"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 105
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 99
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 262
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 255
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 78
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 71
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 28,
+          "tests": 397
+        },
+        "previous": {
+          "ignored": 28,
+          "tests": 391
+        }
+      }
+    }
+  },
+  "main0df8": {
+    "added_methods": {
+      "tests/support/native_selected.rs": [
+        "selected_arguments_require_canonical_complete_extent",
+        "selected_population_requires_order_counts_and_scalar",
+        "selected_ret_union_requires_all_declared_and_stable_ownership",
+        "selected_deadline_never_renews_or_accepts_other_profiles"
+      ],
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": [
+        "selected_canonical_cli_numbers",
+        "selected_exact_population_and_real_reports",
+        "selected_call_owner_and_return_refusals",
+        "selected_whole_journal_prefix_and_tail_refusals",
+        "selected_batch_identity_ranges_and_counts_refusals",
+        "selected_report_full_identity_sequence_and_payload_refusals",
+        "selected_history_requires_all_four_actual_actions"
+      ],
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/batch.rs": [
+        "source_batch_modes_are_distinct_from_every_historical_route",
+        "source_batch_requests_preserve_all_ids_and_mixed_chunk_inputs",
+        "source_batch_requests_refuse_out_of_population_before_indexing",
+        "source_batch_finish_accounting_requires_eight_and_bounds_every_increment"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": [
+        "installed_totals_first_error"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": [
+        "source_batch_observation_preserves_every_count_and_call_finish_threshold",
+        "source_batch_observation_refuses_closed_busy_and_invalid_counts",
+        "source_batch_observation_completion_requires_the_same_busy_count",
+        "source_batch_observation_retains_first_error_through_repeat_and_drop",
+        "source_batch_observation_caught_unwind_never_reopens_owner"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests/selection.rs": [
+        "selection_binds_final_bytes_and_rejects_invalid_descriptor_geometry",
+        "hidden_and_stripped_selection_do_not_change_named_admission",
+        "selection_uses_elf_va_and_complete_rx_file_extent",
+        "known_overlap_and_legacy_refusal_order_remain_strict",
+        "range_selection_keeps_elf_and_complete_cfg_refusals",
+        "missing_symbols_do_not_prove_function_completeness",
+        "resolver_checks_handle_bias_and_containing_object_without_symbol_fallback"
+      ]
+    },
+    "base": "0a4a072770a0758afede492cf4bfbee50c005097",
+    "current_corpus_sha256": "5f50b167cb465bb9770c318ab94b135d5b1fc40d019d24e5184d411f06cfdedb",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 1,
+      "rust_tests": 28
+    },
+    "doctests": {},
+    "instances": {
+      "tests/support/native_selected.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::selected::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": {
+        "unit/ordinary_interval/main": "selected::check::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/batch.rs": {
+        "unit/ordinary_interval/main": "tree::throughput::batch::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tests::concurrent_native::tree_native::batch_owner_native::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tree::batch::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests/selection.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::module::ordinary::tests::selection::"
+      }
+    },
+    "macros": {
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": {
+        "ignored": [
+          "original_drop_0",
+          "original_drop_1",
+          "original_forget_0",
+          "original_forget_1",
+          "original_first_error",
+          "original_caller_unwind",
+          "original_early_finish",
+          "original_extra_call",
+          "installed_drop_0",
+          "installed_drop_1",
+          "installed_forget_0",
+          "installed_forget_1",
+          "installed_first_error",
+          "installed_caller_unwind",
+          "installed_early_finish",
+          "installed_extra_call"
+        ],
+        "literal": "macro_rules! failure_tests {\n    ($runner:ident; $($name:ident => $mode:expr),+ $(,)?) => {$(\n        #[test]\n        #[ignore = \"requires release tree batch fixture reproducer; one fresh process\"]\n        fn $name() { $runner(stringify!($name), $mode); }\n    )+};\n}\nfailure_tests!(original_failure;\n    original_drop_0 => Failure::Drop(0), original_drop_1 => Failure::Drop(1),\n    original_forget_0 => Failure::Forget(0), original_forget_1 => Failure::Forget(1),\n    original_first_error => Failure::First, original_caller_unwind => Failure::Unwind,\n    original_early_finish => Failure::Early, original_extra_call => Failure::Extra,\n);\nfailure_tests!(installed_failure;\n    installed_drop_0 => Failure::Drop(0), installed_drop_1 => Failure::Drop(1),\n    installed_forget_0 => Failure::Forget(0), installed_forget_1 => Failure::Forget(1),\n    installed_first_error => Failure::First, installed_caller_unwind => Failure::Unwind,\n    installed_early_finish => Failure::Early, installed_extra_call => Failure::Extra,\n);\n",
+        "names": [
+          "original_drop_0",
+          "original_drop_1",
+          "original_forget_0",
+          "original_forget_1",
+          "original_first_error",
+          "original_caller_unwind",
+          "original_early_finish",
+          "original_extra_call",
+          "installed_drop_0",
+          "installed_drop_1",
+          "installed_forget_0",
+          "installed_forget_1",
+          "installed_first_error",
+          "installed_caller_unwind",
+          "installed_early_finish",
+          "installed_extra_call"
+        ],
+        "test_attributes": 1
+      }
+    },
+    "methods": {
+      "tests/support/native_selected.rs": {
+        "all": [
+          "selected_arguments_require_canonical_complete_extent",
+          "selected_population_requires_order_counts_and_scalar",
+          "selected_ret_union_requires_all_declared_and_stable_ownership",
+          "selected_deadline_never_renews_or_accepts_other_profiles"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": {
+        "all": [
+          "selected_canonical_cli_numbers",
+          "selected_exact_population_and_real_reports",
+          "selected_call_owner_and_return_refusals",
+          "selected_whole_journal_prefix_and_tail_refusals",
+          "selected_batch_identity_ranges_and_counts_refusals",
+          "selected_report_full_identity_sequence_and_payload_refusals",
+          "selected_history_requires_all_four_actual_actions"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/batch.rs": {
+        "all": [
+          "source_batch_modes_are_distinct_from_every_historical_route",
+          "source_batch_requests_preserve_all_ids_and_mixed_chunk_inputs",
+          "source_batch_requests_refuse_out_of_population_before_indexing",
+          "source_batch_finish_accounting_requires_eight_and_bounds_every_increment"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": {
+        "all": [
+          "finish_reuse_capacity",
+          "sampled_abc",
+          "closed_abc",
+          "installed_totals_first_error"
+        ],
+        "ignored": [
+          "finish_reuse_capacity",
+          "sampled_abc",
+          "closed_abc",
+          "installed_totals_first_error"
+        ]
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": {
+        "all": [
+          "source_batch_latch_requires_exact_count_and_cannot_reenter_busy",
+          "source_batch_first_failure_retains_exact_error_across_abandonment",
+          "source_batch_caught_unwind_leaves_owner_busy_until_abandoned",
+          "source_batch_input_snapshots_reject_every_changed_byte_extent_and_alignment",
+          "source_batch_cumulative_delta_preserves_sampled_and_closed_partitions",
+          "source_batch_observation_preserves_every_count_and_call_finish_threshold",
+          "source_batch_observation_refuses_closed_busy_and_invalid_counts",
+          "source_batch_observation_completion_requires_the_same_busy_count",
+          "source_batch_observation_retains_first_error_through_repeat_and_drop",
+          "source_batch_observation_caught_unwind_never_reopens_owner"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests/selection.rs": {
+        "all": [
+          "selection_binds_final_bytes_and_rejects_invalid_descriptor_geometry",
+          "hidden_and_stripped_selection_do_not_change_named_admission",
+          "selection_uses_elf_va_and_complete_rx_file_extent",
+          "known_overlap_and_legacy_refusal_order_remain_strict",
+          "range_selection_keeps_elf_and_complete_cfg_refusals",
+          "missing_symbols_do_not_prove_function_completeness",
+          "resolver_checks_handle_bias_and_containing_object_without_symbol_fallback"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "0df8d85c051ffbbae3295d314a294e642d590c3a",
+    "predecessor": "85f2d439df4097c25ebb928c43dbe612c604ddcf",
+    "previous_corpus_sha256": "480d690a4900a576a49cf37fa851ac5ff5fe761f347a6bbfa2710c8feb27e96d",
+    "projections": {
+      "tests/support/native_ordinary.rs": {
+        "current_sha256": "d5934eb623ec7dd54d6908228c8c1f787de9483b32c59f7fb25b998ca5da4a86",
+        "edits": [
+          [
+            10747,
+            10798,
+            ""
+          ],
+          [
+            16814,
+            17518,
+            ""
+          ],
+          [
+            18379,
+            18416,
+            ""
+          ],
+          [
+            18426,
+            19192,
+            ""
+          ],
+          [
+            28403,
+            28588,
+            ""
+          ],
+          [
+            29902,
+            30358,
+            "        let deadline = match self.subject {\n            Subject::Checksum => reference.map_or_else(|| Instant::now() + CHILD_BUDGET, |r| r.0),\n            Subject::Cache { deadline, .. } => deadline,\n            Subject::Tree { deadline, .. } => deadline,\n"
+          ],
+          [
+            32852,
+            32949,
+            ""
+          ],
+          [
+            33001,
+            33098,
+            ""
+          ],
+          [
+            33151,
+            33248,
+            ""
+          ],
+          [
+            33320,
+            33429,
+            ""
+          ],
+          [
+            34909,
+            35366,
+            "        let ar = a.reach_gate(&original, \"reach_original_gate\");\n        let br = b.reach_gate(&candidate, \"reach_candidate_gate\");\n"
+          ],
+          [
+            38988,
+            39097,
+            ""
+          ],
+          [
+            41177,
+            41286,
+            ""
+          ],
+          [
+            45611,
+            45720,
+            ""
+          ],
+          [
+            46716,
+            46825,
+            ""
+          ],
+          [
+            48084,
+            48181,
+            ""
+          ],
+          [
+            49660,
+            49757,
+            ""
+          ],
+          [
+            54854,
+            54985,
+            ""
+          ]
+        ],
+        "previous_sha256": "c5603b8780f8a992d09311ad5b95dab6c0a50ddfb957e8a52058e022d0172328"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "db213127c7d627b49a4f5e545e9f5b49b2562a9b782d5e8cf5a4e0070c8ddb23",
+        "edits": [
+          [
+            39628,
+            40453,
+            ""
+          ]
+        ],
+        "previous_sha256": "1fe86d81af9df2626efdadb4d6760769e8d4b97a6cf7859b2c1173d3f6580f29"
+      },
+      "tools/rapid-profiler/native-interval/ordinary.rs": {
+        "current_sha256": "346c0ca31fb04c87f0ca1a9560d969f1a19300f09af3edd219192902721b4747",
+        "edits": [
+          [
+            4707,
+            4977,
+            ""
+          ],
+          [
+            4995,
+            5418,
+            ""
+          ],
+          [
+            5494,
+            5528,
+            "    expected_elf: &[u8],\n    symbol: &std::ffi::CStr,\n"
+          ],
+          [
+            6240,
+            7380,
+            "    let owner =\n        unsafe { LoadedIntegerLeaf::load(subject, expected_elf, symbol, CONTRACT) }.unwrap();\n"
+          ],
+          [
+            29327,
+            29427,
+            ""
+          ]
+        ],
+        "previous_sha256": "6bfcab1e2b2c36761504113eed7f98d76a753ecabeef490b393ff26ed681ea5e"
+      },
+      "tools/rapid-profiler/native-interval/tree/batch.rs": {
+        "current_sha256": "1aaf67433438b2fdd122255f09a901f011c45a23cb1b161824a6d654bc92c7c8",
+        "edits": [
+          [
+            7570,
+            7672,
+            ""
+          ],
+          [
+            8815,
+            9285,
+            ""
+          ]
+        ],
+        "previous_sha256": "d6bc80ce68b37d16990da6db01721fea83792890d2bc2f0cf353653148967062"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "5f6505fb840a2fa760b8d8ce4a37ab930e9d1925c4b105fb876be3ec33dc4938",
+        "edits": [
+          [
+            892,
+            906,
+            ""
+          ],
+          [
+            12169,
+            13530,
+            ""
+          ]
+        ],
+        "previous_sha256": "c4254b218af1a48aca71e3bea4460f0f1e3cabb672bcdfb3eba464fa946d6804"
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/throughput.rs": {
+        "current_sha256": "b196cb0c04690fb77af4480b6d67ddc497ee0363b3e44463b04a9b6297d89722",
+        "edits": [
+          [
+            16625,
+            16729,
+            ""
+          ]
+        ],
+        "previous_sha256": "1ccaf3baab3e0e5d5de46cce89acb111b91412afb9f4d3d4e60c30122c302c67"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": {
+        "current_sha256": "605876a91629699b2ec766089b7a55a05b617f53127addbc5f72a215585afde4",
+        "edits": [
+          [
+            0,
+            88,
+            "//! Nineteen fresh-process public-owner controls, separate from the state oracle.\n"
+          ],
+          [
+            232,
+            377,
+            "    OriginalTreeCallResult, TreeBatch, TreeCallResult, TreeError, TreeSourceBatchError,\n    TreeSourceBatchRequest, TreeThread,\n"
+          ],
+          [
+            7163,
+            7665,
+            ""
+          ],
+          [
+            8334,
+            8381,
+            ""
+          ],
+          [
+            8587,
+            8649,
+            ""
+          ],
+          [
+            10729,
+            10843,
+            ""
+          ],
+          [
+            10916,
+            10973,
+            ""
+          ],
+          [
+            13927,
+            13961,
+            ""
+          ],
+          [
+            14124,
+            14169,
+            ""
+          ],
+          [
+            14388,
+            14528,
+            ""
+          ],
+          [
+            24749,
+            25056,
+            "    let mut calls = finished_calls(&mut attached, &input, &before, 1, root);\n    calls.extend(finished_calls(&mut attached, &input, &before, 9, root));\n"
+          ],
+          [
+            26499,
+            26547,
+            ""
+          ],
+          [
+            26758,
+            26810,
+            ""
+          ],
+          [
+            27636,
+            27788,
+            "    let calls = finished_calls(&mut attached, &input, &before, 25, root);\n"
+          ],
+          [
+            34324,
+            34371,
+            ""
+          ],
+          [
+            34650,
+            34773,
+            ""
+          ],
+          [
+            35311,
+            35388,
+            ""
+          ],
+          [
+            39096,
+            42358,
+            ""
+          ]
+        ],
+        "previous_sha256": "84c4b5b832a7889226c09e74d6217274bac3a65e42dd5eb7130c9364a90c7498"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": {
+        "current_sha256": "409de14402010f864972f6eabe4c5cfca723636081fcfb3d7b3ed0e27faef5b4",
+        "edits": [
+          [
+            2417,
+            3394,
+            ""
+          ],
+          [
+            15215,
+            16640,
+            ""
+          ],
+          [
+            25098,
+            32131,
+            ""
+          ]
+        ],
+        "previous_sha256": "9472327c65f11f38c5e6f7affc7a406c2ab5be83a107ed7af7632c8e30c3a02f"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "59184e39c8868fe35af0073c16a1b79d7bde01262fda6b6562efd1ec7730cc5b",
+        "edits": [
+          [
+            4312,
+            4448,
+            ""
+          ]
+        ],
+        "previous_sha256": "0e593cd242be9a3a7876ab157710ba9eb4779603c677eab4c37054bee2065889"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+        "current_sha256": "d071a7cde1b1017a250e19e9578b380c2b514dc1c861cc1f524a4d385891d8c3",
+        "edits": [
+          [
+            548,
+            563,
+            ""
+          ],
+          [
+            573,
+            618,
+            ""
+          ],
+          [
+            5343,
+            5758,
+            ""
+          ],
+          [
+            9476,
+            9550,
+            "    // selected dynamic symbol below remains the only admitted callable entry.\n"
+          ],
+          [
+            11484,
+            12729,
+            "    let rows: Vec<_> = file\n        .dynamic_symbols()\n        .filter(|s| s.name() == Ok(name) && s.is_definition())\n        .collect();\n    if rows.len() != 1\n        || rows[0].kind() != SymbolKind::Text\n        || !(1..=256).contains(&rows[0].size())\n        || !matches!(\n            rows[0].flags(),\n            SymbolFlags::Elf {\n                st_info: 0x12,\n                st_other: 0 | 3\n            }\n        )\n    {\n        return Err(SetupRefusal::SymbolOwner);\n    }\n    let entry = rows[0].address();\n    let length = usize::try_from(rows[0].size()).map_err(|_| SetupRefusal::Format)?;\n"
+          ],
+          [
+            13354,
+            13757,
+            "        let selected = s.name() == Ok(name)\n            && s.address() == entry\n            && s.size() == length as u64\n            && s.kind() == SymbolKind::Text;\n"
+          ]
+        ],
+        "previous_sha256": "9f60eef5c7f49ecf204ff1d5ec87c230c1c000623e90eb6629041a03a6469f28"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": {
+        "current_sha256": "f7e8c9bf42a5873c0133bdfede7bde8f78dc51a1a3bca6a44be046820d2ccb81",
+        "edits": [
+          [
+            82,
+            97,
+            ""
+          ]
+        ],
+        "previous_sha256": "7c88ddd971361be6d2023446f14dc88c954e090fcfd04fd2aa1a41c0d21487c1"
+      },
+      "tools/rapid-profiler/tree-work/comparison_runner.py": {
+        "current_sha256": "666b5eb7e5bf6645242f988a1781f4a9741445e1bee655e3ffc510c498fd8985",
+        "edits": [
+          [
+            6091,
+            6225,
+            "        r'\\ntest result: ok\\. 4 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in [0-9]+\\.[0-9]+s\\n\\n', terminal)\n"
+          ]
+        ],
+        "previous_sha256": "024fe8eaca5189792209ac4629df965b5b8757b38da554276d1694cf15251a10"
+      },
+      "tools/rapid-profiler/tree-work/test_batch_owners.py": {
+        "current_sha256": "d90696d64f93ca417c7db30ad1b17190080b1f5e7860be616cc31a9c9b361d79",
+        "edits": [
+          [
+            590,
+            858,
+            ""
+          ],
+          [
+            2031,
+            5211,
+            ""
+          ]
+        ],
+        "previous_sha256": "57a85af874133c58f1a168342e942da536f562197d97cef5d13e2a20aa989bd0"
+      },
+      "tools/rapid-profiler/tree-work/verify_batch_owners.py": {
+        "current_sha256": "ba314f2f3d1682f099cd8e8d2b3a3a07fcaefc251305d8752e0026f83b24ab9a",
+        "edits": [
+          [
+            23,
+            121,
+            "\"\"\"Release qualification of nineteen real source-batch owners; no timing claim.\"\"\"\n"
+          ],
+          [
+            304,
+            1123,
+            ""
+          ],
+          [
+            1947,
+            2068,
+            ""
+          ],
+          [
+            2391,
+            2465,
+            "    assert case in CASES and stderr == b'' and 0 < len(stdout) <= MIB\n"
+          ],
+          [
+            2975,
+            3643,
+            ""
+          ],
+          [
+            4825,
+            5101,
+            "        scope='Nineteen fresh-process public-owner controls, plus the unchanged one-call owner prerequisite. No full-register-state, performance, Busy-unwind or abandoned-original seal-runtime claim.',\n"
+          ],
+          [
+            5502,
+            5581,
+            "        stages=[], cases=[dict(case=c[0], status='UNRUN') for c in CASES])\n"
+          ],
+          [
+            16845,
+            17069,
+            ""
+          ],
+          [
+            17547,
+            17596,
+            "        for index, case in enumerate(CASES):\n"
+          ],
+          [
+            17910,
+            18282,
+            "        assert len(result['cases']) == 19 and all(c['status'] == 'PASS' for c in result['cases'])\n        counts = {key: sum(c[key] for c in result['cases']) for key in ('original_roots', 'installed_roots', 'successful_batch_finishes', 'helper_joins')}\n"
+          ],
+          [
+            18396,
+            18754,
+            "        result.update(status='PASS', stage='complete', totals=counts)\n"
+          ]
+        ],
+        "previous_sha256": "203504d764d197c6a85d430c2ba0c7989d26ca266f943fc469c40219dcab9247"
+      },
+      "tools/rapid-profiler/verify_ordinary_interval.py": {
+        "current_sha256": "2626fd35aa6e2e447629b10ac5a693909eaa86872a127783b1c4f91a733e2902",
+        "edits": [
+          [
+            16105,
+            16295,
+            ""
+          ],
+          [
+            18706,
+            18903,
+            ""
+          ],
+          [
+            20993,
+            21065,
+            ""
+          ],
+          [
+            29810,
+            29980,
+            ""
+          ],
+          [
+            38967,
+            39720,
+            ""
+          ],
+          [
+            41120,
+            41227,
+            ""
+          ],
+          [
+            93101,
+            93296,
+            ""
+          ]
+        ],
+        "previous_sha256": "40d7b01652bf6f412f3e1fe2a1efa2bbc5d807959e40f9f3f6a58532eaa9f8be"
+      }
+    },
+    "python_metadata": {
+      "assignments": {
+        "ADMISSION": [
+          "frontend_native::module::ordinary::tests::complete_scalar_cfg_has_both_returns_and_explicit_padding",
+          "frontend_native::module::ordinary::tests::control_edges_must_land_on_local_heads",
+          "frontend_native::module::ordinary::tests::stack_system_call_and_noninteger_forms_refuse",
+          "frontend_native::module::ordinary::tests::bounds_and_unreachable_code_are_not_coverage_exemptions",
+          "frontend_native::module::ordinary::tests::explicit_external_contract_refusals_remain_separate",
+          "frontend_native::module::ordinary::tests::complete_elf_symbol_parser_accepts_bounded_synthetic_owner",
+          "frontend_native::module::ordinary::tests::elf_owner_symbol_and_runtime_loading_extensions_refuse",
+          "frontend_native::module::ordinary::tests::aligned_empty_load_has_no_file_symbol_or_mapping_ownership",
+          "frontend_native::module::ordinary::tests::empty_load_fields_and_real_overlaps_still_refuse",
+          "frontend_native::module::ordinary::tests::elf_entry_metadata_does_not_replace_selected_symbol_authority",
+          "frontend_native::module::ordinary::tests::elf_entry_requires_one_nonempty_executable_file_interval",
+          "frontend_native::module::ordinary::tests::full_live_page_comparison_rejects_every_mutation_without_masks",
+          "frontend_native::module::ordinary::tests::selection::selection_binds_final_bytes_and_rejects_invalid_descriptor_geometry",
+          "frontend_native::module::ordinary::tests::selection::hidden_and_stripped_selection_do_not_change_named_admission",
+          "frontend_native::module::ordinary::tests::selection::selection_uses_elf_va_and_complete_rx_file_extent",
+          "frontend_native::module::ordinary::tests::selection::known_overlap_and_legacy_refusal_order_remain_strict",
+          "frontend_native::module::ordinary::tests::selection::range_selection_keeps_elf_and_complete_cfg_refusals",
+          "frontend_native::module::ordinary::tests::selection::missing_symbols_do_not_prove_function_completeness",
+          "frontend_native::module::ordinary::tests::selection::resolver_checks_handle_bias_and_containing_object_without_symbol_fallback",
+          "frontend_native::module::ordinary::tree::tests::tree_admission_exact_original_call_and_resume_geometry",
+          "frontend_native::module::ordinary::tree::tests::tree_admission_changed_call_stack_ret_or_callee_refuses",
+          "frontend_native::module::ordinary::tree::tests::tree_admission_complete_elf_owns_both_protected_symbols_and_page",
+          "frontend_native::module::ordinary::tree::tests::tree_admission_elf_visibility_alias_geometry_and_envelope_refuse",
+          "frontend_native::module::ordinary::tree::tests::tree_admission_external_contract_is_not_inferred_from_bytes"
+        ],
+        "ADMISSION_PREFIX": "frontend_native::module::ordinary::",
+        "STATE_CONTROLS": [
+          "oracle::native_ordinary::selected::tests::selected_arguments_require_canonical_complete_extent",
+          "oracle::native_ordinary::selected::tests::selected_population_requires_order_counts_and_scalar",
+          "oracle::native_ordinary::selected::tests::selected_ret_union_requires_all_declared_and_stable_ownership",
+          "oracle::native_ordinary::selected::tests::selected_deadline_never_renews_or_accepts_other_profiles"
+        ],
+        "STATE_PREFIX": "oracle::native_ordinary::selected::tests::",
+        "WORK_CONTROLS": [
+          "selected::check::tests::selected_canonical_cli_numbers",
+          "selected::check::tests::selected_exact_population_and_real_reports",
+          "selected::check::tests::selected_call_owner_and_return_refusals",
+          "selected::check::tests::selected_whole_journal_prefix_and_tail_refusals",
+          "selected::check::tests::selected_batch_identity_ranges_and_counts_refusals",
+          "selected::check::tests::selected_report_full_identity_sequence_and_payload_refusals",
+          "selected::check::tests::selected_history_requires_all_four_actual_actions"
+        ],
+        "WORK_PREFIX": "selected::check::tests::"
+      },
+      "path": "tools/rapid-profiler/verify_selected_interval.py",
+      "qualification_facts": {},
+      "tuple_assignments": [
+        "ADMISSION",
+        "STATE_CONTROLS",
+        "WORK_CONTROLS"
+      ]
+    },
+    "scope": "28 new compiled Rust tests, one explicitly ignored; no old test removed or newly ignored. Existing docs, Cargo targets, native protocols and recorder identities remain exact. Selected verifier literal name sets are bound; unrelated optional verifier historical counters are not rewritten. No execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/precontext/verify.py": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_ordinary.rs": "d5934eb623ec7dd54d6908228c8c1f787de9483b32c59f7fb25b998ca5da4a86",
+      "tests/support/native_selected.rs": "f0aaa7bedbe5040ccd9016e52117e14dd58dc155060c45711b9dbb36cfc3213b",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "f9c7f96424095442e28c541a38196800f1481482237e9f2739aba2392d811e1f",
+      "tools/rapid-profiler/native-interval/main.rs": "db213127c7d627b49a4f5e545e9f5b49b2562a9b782d5e8cf5a4e0070c8ddb23",
+      "tools/rapid-profiler/native-interval/ordinary.rs": "346c0ca31fb04c87f0ca1a9560d969f1a19300f09af3edd219192902721b4747",
+      "tools/rapid-profiler/native-interval/ordinary/selected.rs": "64df56102a2b493c296c28ace8059bf2a56490d094dc7145c1015794d6d39949",
+      "tools/rapid-profiler/native-interval/tree/batch.rs": "1aaf67433438b2fdd122255f09a901f011c45a23cb1b161824a6d654bc92c7c8",
+      "tools/rapid-profiler/native-point/main.rs": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "5f6505fb840a2fa760b8d8ce4a37ab930e9d1925c4b105fb876be3ec33dc4938",
+      "tools/rapid-profiler/ordinary-interval/selected.rs": "d675ff6b1fac962e54ee76984f562905ff8755937179e97a4ce58041c453ce74",
+      "tools/rapid-profiler/ordinary-interval/selected/check.rs": "dd141943b556667b4dc84f66c0e9c52e1c09b42f85c9b218e24e5e67f56f80c5",
+      "tools/rapid-profiler/ordinary-interval/selected/check/tests.rs": "fd2e620d6ac8d6c270952c1ee725ea638792ab799354b93be652d445099c59dc",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput.rs": "b196cb0c04690fb77af4480b6d67ddc497ee0363b3e44463b04a9b6297d89722",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/batch.rs": "3ad0150f22fe0e838dd66b70a59a534698c2d25ee8919eced4408c5c384978c8",
+      "tools/rapid-profiler/reference-work/check_output.py": "a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189",
+      "tools/rapid-profiler/selected-work/check_output.py": "e4572a81cfae73d7b814296295f7f222ee37f7b8fb5d0edb15fd8a96c572309e",
+      "tools/rapid-profiler/selected-work/provenance.py": "b98b803b2b9ea4e12e969ddecd10c67c39f1589a46fd3f388cb25ed94b6ad2f0",
+      "tools/rapid-profiler/selected-work/test_provenance.py": "f04bd78305f7c4a055ad45c71638eb4f4d0c1d3f609ed70769dc74fae45baa24",
+      "tools/rapid-profiler/selected-work/test_recipe.py": "f70afe46e2311099fb607fad511827b3598e1c3fe41b5545a1cfae22c8dc447b",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "1da7f27fe39af03e8061e91b7b8b89975b455f4b4e965cb507415ede6d158130",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests.rs": "54634cad5b01f867ff48f077509d0c31d0b2dbf2921f70b2989d3773b099580f",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native.rs": "8205e69cbfbedd9d98545f27cb2a9f877a8bef418a5ac71116ef2267d80399dc",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs": "19c58f2c1326b36ecefc7113aff602e5e4be8effa025524ec12dc912508d35ea",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": "605876a91629699b2ec766089b7a55a05b617f53127addbc5f72a215585afde4",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": "409de14402010f864972f6eabe4c5cfca723636081fcfb3d7b3ed0e27faef5b4",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs": "3204bc3d76dcdbd0b583c3ca49c2df670fe463593af489c95918a466eca85bfc",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "59184e39c8868fe35af0073c16a1b79d7bde01262fda6b6562efd1ec7730cc5b",
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "d071a7cde1b1017a250e19e9578b380c2b514dc1c861cc1f524a4d385891d8c3",
+      "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs": "ffec649467101aec4a69a8c554012127f0652dd1ccd87335705a2ebc84a7f569",
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": "f7e8c9bf42a5873c0133bdfede7bde8f78dc51a1a3bca6a44be046820d2ccb81",
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests/selection.rs": "5a57e990bfef3d5b9e73d5dc159094f576980ba6cb531a1c3b5e36b6617d8fd4",
+      "tools/rapid-profiler/src/frontend_tls/tests.rs": "d6d4ae9181285748eb9bf3a91ddeb6e0714d78809b8fa8b4728a7ed539af4778",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
+      "tools/rapid-profiler/tree-work/batch_comparison_runner.py": "cee4d02c64db7798ee95103f28cf94627f000fbd53f3bf3feb29019a4c625964",
+      "tools/rapid-profiler/tree-work/batch_comparison_stats.py": "e422d20fac080280532f1cacd5538601cbf1251981439d56cd484d1bef96b0c9",
+      "tools/rapid-profiler/tree-work/check_batch_comparison.py": "ac1b5286005630749f850fd969f2396c56e9f3162fe2bffbb6521a687a1d5d04",
+      "tools/rapid-profiler/tree-work/comparison_runner.py": "666b5eb7e5bf6645242f988a1781f4a9741445e1bee655e3ffc510c498fd8985",
+      "tools/rapid-profiler/tree-work/test_batch_comparison.py": "45f21d02a6964c6f6ba116e98915c2d3d80775c7f91cda528fe37b36884a325d",
+      "tools/rapid-profiler/tree-work/test_batch_comparison_stats.py": "77d364935faa0141318bd245da2a87d51c29d79aca97443c87478db5a95340b3",
+      "tools/rapid-profiler/tree-work/test_batch_owners.py": "d90696d64f93ca417c7db30ad1b17190080b1f5e7860be616cc31a9c9b361d79",
+      "tools/rapid-profiler/tree-work/verify_batch_owners.py": "ba314f2f3d1682f099cd8e8d2b3a3a07fcaefc251305d8752e0026f83b24ab9a",
+      "tools/rapid-profiler/verify_ordinary_interval.py": "2626fd35aa6e2e447629b10ac5a693909eaa86872a127783b1c4f91a733e2902",
+      "tools/rapid-profiler/verify_selected_interval.py": "de602e2b4ea36b3806f7fea822736417319a39fd332ede1a4cf8ad53bd862132"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 99
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 95
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 71
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 60
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 28,
+          "tests": 391
+        },
+        "previous": {
+          "ignored": 27,
+          "tests": 378
+        }
+      }
+    }
+  },
   "main43d7": {
     "added_methods": {
       "tests/support/native_tree_batch.rs": [
