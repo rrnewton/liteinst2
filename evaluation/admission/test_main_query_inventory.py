@@ -10,6 +10,7 @@ from unittest.mock import patch
 import backing_cleanup as old_cleanup
 import backing_cleanup_query as cleanup
 import core_cc846_inventory as inventory
+import core_5cda_inventory as main5c
 import parsing
 import run
 from test_backing_cleanup import (HEADER, OLD, records as old_records,
@@ -55,6 +56,55 @@ class MainQueryInventoryTests(unittest.TestCase):
     def test_exact_sources_catalog_and_historical_denominators(self):
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
+        # Exact additive main5c boundary precedes every historical assertion.
+        self.assertEqual(declared['recorder_tests'], 345)
+        rows = declared['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows), sum(r['tests'] for r in rows.values()),
+                          sum(r['ignored'] for r in rows.values())), (100, 2617, 9))
+        self.assertEqual(rows['unit/rapid_profiler/lib'], {'tests': 252, 'ignored': 5})
+        self.assertEqual(sum(len(r['all']) for r in main5c.DATA['methods'].values()), 38)
+        self.assertEqual(sum(len(r['ignored']) for r in main5c.DATA['methods'].values()), 1)
+        for cohort, expected in (('serial_launch', (27, 1039, 0)),):
+            rows = declared['harness_test_counts'][cohort]
+            self.assertEqual((len(rows), sum(r['tests'] for r in rows.values()),
+                              sum(r['ignored'] for r in rows.values())), expected)
+        identities = main5c.python_identities(Path(__file__).parent)
+        self.assertEqual(len(identities), 345)
+        self.assertEqual(len(main5c.peel_python(identities)), 340)
+        for identity in main5c.DATA['python_added']:
+            self.assertEqual(identities.count(identity), 1)
+        previous = main5c.before_current(declared)
+        self.assertEqual(main5c.digest(previous), main5c.PREVIOUS)
+        for key in declared:
+            changed = copy.deepcopy(declared); changed[key] = None
+            with self.subTest(main5c_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main5c.before_current(changed)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, 252.0, 999):
+                changed = copy.deepcopy(declared)
+                changed['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
+                with self.subTest(main5c_count=(field, value)), self.assertRaises(parsing.InvalidEvidence):
+                    main5c.before_current(changed)
+        read_bytes = Path.read_bytes
+        for path in main5c.DATA['sources']:
+            for missing in (False, True):
+                def changed_source(candidate):
+                    if candidate == main5c.ROOT / path:
+                        if missing: raise OSError('PRIVATE_SENTINEL')
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main5c_source=(path, missing)), patch.object(Path, 'read_bytes', changed_source):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main5c_source_inventory_differs$'):
+                        main5c.before_current(declared)
+        for path, row in main5c.DATA['projections'].items():
+            data = (main5c.ROOT / path).read_bytes()
+            self.assertEqual(hashlib.sha256(main5c.source_before(path, data, 'changed')).hexdigest(), row['previous_sha256'])
+            for bad in (data + b'\n', data[:-1], main5c.source_before(path, data, 'changed')):
+                with self.subTest(main5c_projection=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main5c.source_before(path, bad, 'changed')
+        for changed in (identities[:-1], identities + [identities[0]], list(reversed(identities))):
+            self.assertEqual(main5c.peel_python(changed), changed)
+        declared = previous
         current = copy.deepcopy(declared)
         for cohort, harnesses, total, ignored in [('workspace_tests', 100, 2579, 8),
                                                   ('serial_launch', 27, 1039, 0)]:
@@ -65,7 +115,7 @@ class MainQueryInventoryTests(unittest.TestCase):
         self.assertEqual(sum(len(row['ignored']) for row in inventory.AC0963['methods'].values()), 4)
         declared = inventory.before_ac0963(declared)
         self.assertEqual(inventory.digest(declared), inventory.CURRENT)
-        self.assertEqual(current, json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
+        self.assertEqual(current, main5c.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))
         for name in set(declared) - {'harness_test_counts'}:
             self.assertEqual(declared[name], current[name])
         old = inventory.before_cc846(declared)
@@ -87,6 +137,7 @@ class MainQueryInventoryTests(unittest.TestCase):
 
     def test_catalog_source_and_python_mutations_cannot_enter_history(self):
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        declared = main5c.before_current(declared)
         historical = inventory.before_ac0963(declared)
         for changed in (historical, inventory.before_cc846(declared)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):

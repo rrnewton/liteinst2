@@ -6486,8 +6486,8 @@
         "tests": 27
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 4,
-        "tests": 214
+        "ignored": 5,
+        "tests": 252
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
@@ -7553,6 +7553,6 @@
       "test": "b3_exec::self_maps_parser_tests::self_capture_uses_actual_rows_but_child_still_refuses_513"
     }
   ],
-  "recorder_tests": 340,
+  "recorder_tests": 345,
   "schema_version": 1
 }
