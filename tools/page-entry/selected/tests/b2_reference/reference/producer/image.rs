@@ -110,9 +110,10 @@ impl Builder {
         let directory=root.join(format!("case{}",NEXT.fetch_add(1,Ordering::Relaxed)));
         fs::create_dir(&directory).unwrap();
         let interpreter=directory.join(std::str::from_utf8(&SONAME[..SONAME.len()-1]).unwrap());
-        let mut ib=vec![0;2*PAGE]; header(&mut ib,3,PAGE as u64,3);
-        ph(&mut ib,0,1,5,0,0,(2*PAGE) as u64,PAGE as u64);
-        ph(&mut ib,1,2,4,0x500,0x500,64,8); ph(&mut ib,2,0x6474e551,6,0,0,0,16);
+        let mut ib=vec![0;2*PAGE]; header(&mut ib,3,PAGE as u64,4);
+        ph(&mut ib,0,1,4,0,0,PAGE as u64,PAGE as u64);
+        ph(&mut ib,1,1,5,PAGE as u64,PAGE as u64,PAGE as u64,PAGE as u64);
+        ph(&mut ib,2,2,4,0x500,0x500,64,8); ph(&mut ib,3,0x6474e551,6,0,0,0,16);
         dynamic(&mut ib,0,true);
         ib[PAGE..PAGE+2].copy_from_slice(&[0x48,0xb8]);
         put64(&mut ib,PAGE+2,BASE+SETUP as u64); ib[PAGE+10..PAGE+12].copy_from_slice(&[0xff,0xe0]);

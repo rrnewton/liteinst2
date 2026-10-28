@@ -72,9 +72,9 @@ def fixture(path,ref):
     ip=ps[3];need(ip[:5]==(3,4,1792,BASE+1792,BASE+1792) and ip[5]==ip[6] and 2<=ip[5]<=2048 and ip[7]==1,'actual PT_INTERP extent')
     name=b[1792:1792+ip[5]];need(name[:1]==b'/' and name[-1:]==b'\0' and b'\0'not in name[:-1],'exact lexical interpreter path')
     interp=Path(name[:-1].decode());ib=interp.read_bytes();ih=eh.unpack_from(ib)
-    need(len(ib)==8192 and ih[0][:7]==h[0][:7] and ih[1:6]==(3,62,1,4096,64) and ih[6:]==(0,0,64,56,3,0,0,0),'actual unchained ET_DYN interpreter')
-    ips=[ph.unpack_from(ib,64+i*56)for i in range(3)]
-    need(ips==[(1,5,0,0,0,8192,8192,4096),(2,4,1280,1280,1280,64,64,8),(0x6474e551,6,0,0,0,0,0,16)],'exact interpreter executable mapping and no PT_INTERP/TLS')
+    need(len(ib)==8192 and ih[0][:7]==h[0][:7] and ih[1:6]==(3,62,1,4096,64) and ih[6:]==(0,0,64,56,4,0,0,0),'actual unchained ET_DYN interpreter')
+    ips=[ph.unpack_from(ib,64+i*56)for i in range(4)]
+    need(ips==[(1,4,0,0,0,4096,4096,4096),(1,5,4096,4096,4096,4096,4096,4096),(2,4,1280,1280,1280,64,64,8),(0x6474e551,6,0,0,0,0,0,16)],'exact interpreter read-only header/executable page and no PT_INTERP/TLS')
     code=bytes.fromhex('48b8')+struct.pack('<Q',BASE+16384)+bytes.fromhex('ffe0')
     need(ib[4096:4096+len(code)]==code and not any(ib[4096+len(code):]),'literal genuine interpreter handoff')
     for source,base,tag in((b,BASE,1),(ib,0,14)):
