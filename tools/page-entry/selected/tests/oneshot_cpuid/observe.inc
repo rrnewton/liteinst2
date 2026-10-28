@@ -13,6 +13,11 @@ struct oc_sample {
     unsigned char source_before[2][PAGE],source_after[2][PAGE];
     unsigned char data_before[32768],data_after[32768];
 };
+struct oc_setup {
+    uint64_t h[32];
+    struct li2_decoded decoded;
+    struct oi_frame before,after;
+};
 struct oc_record {
     uint64_t h[32];
     struct li2_selected_hardware hardware;
@@ -21,16 +26,20 @@ struct oc_record {
     struct oi_frame main_entry;
     uint64_t startup[256];
     unsigned char terminal_source[65536],terminal_data[32768];
+    struct oc_setup setup[2];
 };
 _Static_assert(sizeof(struct oi_record)+sizeof(struct oc_record)<(16U<<20),"complete two-record cap");
 static struct oc_record oc_record;
 static unsigned oc_used,oc_pending,oc_finished,oc_finite,oc_registered;
 static const siginfo_t *oc_si;
 static const ucontext_t *oc_uc;
+static unsigned oc_setup_used,oc_setup_pending;
+static const siginfo_t *oc_setup_si;
+static const ucontext_t *oc_setup_uc;
 static void oc_initialize(void) {
     volatile unsigned char *p=(void *)&oc_record;
     for(size_t i=0;i<sizeof oc_record;i++)p[i]=0;
-    oc_record.h[0]=UINT64_C(0x31584e50434f324c);oc_record.h[1]=1;oc_record.h[2]=sizeof oc_record;
+    oc_record.h[0]=UINT64_C(0x31584e50434f324c);oc_record.h[1]=2;oc_record.h[2]=sizeof oc_record;
     oc_record.h[3]=sizeof(struct oc_sample);oc_record.h[4]=sizeof(struct oi_record);
     oc_record.h[5]=1;oc_record.h[12]=selected_session.pid;oc_record.h[13]=selected_session.tid;
     oc_record.h[14]=original_main.entry;oc_record.h[15]=original_interpreter.entry;
@@ -47,7 +56,33 @@ static void oc_initialize(void) {
         oc_record.xstate[i][2]=a;oc_record.xstate[i][3]=c;
     }
 }
+static void oc_setup_before(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    if(!oc_registered||selected_decoded.pc!=original_main.bias+8189)return;
+    checked(!oc_setup_pending&&oc_setup_used<2&&!selected_oneshot_active,1697,12);
+    struct oc_setup *s=&oc_record.setup[oc_setup_used];
+    const struct li2_rseq_state *rs=li2_rseq_snapshot();
+    s->h[0]=1;s->h[1]=oc_setup_used;s->h[2]=selected_decoded.pc;s->h[3]=selected_decoded.next_pc;
+    s->h[4]=(uint64_t)uc->uc_mcontext.gregs[REG_RAX];s->h[5]=selected_logical_flags;
+    s->h[6]=selected_oneshot_used;s->h[7]=li2_lifecycle_fetch_interlock();
+    s->h[8]=selected_view.length;s->h[9]=selected_view.page_count;
+    s->h[10]=rs->registered;s->h[11]=rs->held;s->h[12]=rs->phase;
+    oi_copy(&s->decoded,&selected_decoded,sizeof selected_decoded);oi_frame(&s->before,sig,si,uc);
+    oc_setup_si=si;oc_setup_uc=uc;oc_setup_pending=1;
+}
+static void oc_setup_after(const ucontext_t *uc) {
+    if(!oc_setup_pending)return;
+    checked(uc==oc_setup_uc&&oc_setup_used<2,1697,13);
+    struct oc_setup *s=&oc_record.setup[oc_setup_used];
+    const struct li2_rseq_state *rs=li2_rseq_snapshot();
+    oi_frame(&s->after,SIGSEGV,oc_setup_si,uc);
+    s->h[13]=rs->registered;s->h[14]=rs->held;s->h[15]=rs->phase;
+    s->h[16]=selected_oneshot_used;s->h[17]=li2_lifecycle_fetch_interlock();
+    s->h[18]=selected_step_pending;s->h[19]=selected_pending_route;
+    s->h[20]=(uint64_t)uc->uc_mcontext.gregs[REG_RAX];s->h[21]=(uint64_t)uc->uc_mcontext.gregs[REG_RIP];
+    s->h[0]=2;++oc_setup_used;oc_setup_pending=0;oc_setup_si=0;oc_setup_uc=0;
+}
 static void oc_before(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    oc_setup_before(sig,si,uc);
     if(oc_registered&&selected_decoded.pc==original_main.entry) {
         checked(!oc_record.main_entry.h[0],1697,7);oi_frame(&oc_record.main_entry,sig,si,uc);oc_record.h[25]=1;
     }
@@ -78,7 +113,8 @@ static void oc_before(int sig,const siginfo_t *si,const ucontext_t *uc) {
         checked(end<126,1697,10);++end;
         while(end+1<256&&stack[end])end+=2;
         checked(end+1<256&&!stack[end]&&!stack[end+1],1697,11);end+=2;
-        for(size_t j=0;j<end;j++)oc_record.startup[j]=stack[j];oc_record.h[24]=end;
+        for(size_t j=0;j<end;j++)oc_record.startup[j]=stack[j];
+        oc_record.h[24]=end;
     }
     for(unsigned i=0;i<s->h[12];i++)oi_copy(s->source_before[i],(const void *)selected_view.pages[i].address,PAGE);
     if(oc_finite)oi_copy(s->data_before,(const void *)(uintptr_t)OC_DATA,32768);
@@ -106,6 +142,7 @@ static void oc_terminal(unsigned status,unsigned code,long detail) {
     if(oc_finished||!oc_record.h[5])return;
     oc_finished=1;oc_record.h[6]=status;oc_record.h[7]=code;oc_record.h[8]=(uint64_t)detail;
     oc_record.h[9]=oc_used;oc_record.h[10]=oc_pending;oc_record.h[11]=cpuid_count;
+    oc_record.h[26]=oc_setup_used;oc_record.h[27]=oc_setup_pending;
     oc_record.h[20]=selected_cpuid_nx.attempts;oc_record.h[21]=selected_cpuid_nx.samples;oc_record.h[22]=selected_cpuid_nx.commits;
     if(oc_finite&&oc_used) {
         oi_copy(oc_record.terminal_source,(const void *)(uintptr_t)OC_MAIN,65536);

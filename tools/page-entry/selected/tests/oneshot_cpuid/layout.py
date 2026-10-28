@@ -7,7 +7,7 @@ def shape(name):
         if f.name is None or f.bitpos%8 or f.bitsize:raise ValueError('byte-aligned fields')
         fields[f.name]=dict(offset=int(f.bitpos)//8,bytes=int(f.type.sizeof))
     return dict(bytes=int(t.sizeof),fields=fields)
-names=('oc_record','oc_sample','li2_fetch_view','li2_fetch_page','li2_selected_hardware','oi_record','oi_owner','oi_frame','li2_oneshot_owner','li2_oneshot_admission_state',
+names=('oc_record','oc_sample','oc_setup','li2_fetch_view','li2_fetch_page','li2_selected_hardware','oi_record','oi_owner','oi_frame','li2_oneshot_owner','li2_oneshot_admission_state',
  'li2_oneshot_plan','li2_oneshot_call','li2_oneshot_operation','li2_oneshot_observation',
  'li2_oneshot_page','li2_oneshot_hooks','li2_oneshot_transfer','li2_oneshot_generation',
  'li2_oneshot_release','li2_oneshot_lifecycle_progress','li2_step_frame','li2_step_owner',

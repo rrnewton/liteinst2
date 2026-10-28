@@ -6,7 +6,7 @@ Native and gated clock values are separate observations. For immediate clock-to-
 
 All original provider, CPUID-NX, one-shot and registered-fallback cohorts remain mandatory. No performance or general B2/B3 completion claim is made.
 
-The added registered pair uses the unchanged registration fixture with a CPUID-first custom interpreter. The real inherited startup stack and AT_ENTRY drive main entry; no interpreter syscall or clock consumes an owner. This reaches the existing ACTIVE refusal with all eight owner slots unused.
+The added combined registered pair uses a distinct setup variant and a CPUID-first custom interpreter. A NOP at the clean AT_ENTRY helper forces the existing OLD_STEP fallback, then a genuine helper NX admission opportunity. The inherited startup stack and actual AT_ENTRY still drive main entry; the interpreter executes no syscall or clock. The two main setup operations enter real `66 0f 05` instructions and continue at PC+3. Two actual preclobber/postcommit frame pairs bind their decoded bytes, mmap/rseq arguments and results, full local UC/FP state, and zero owners before registration. The four canonical registered sites and their exact original completion checks remain unchanged. The separate original canonical two-byte setup cohort is still mandatory; this combined assembly is not claimed unchanged.
 
 Run on one reserved CPU after the same committed source has produced fresh positive6, full49-negative and full17-rseq private receipts:
 

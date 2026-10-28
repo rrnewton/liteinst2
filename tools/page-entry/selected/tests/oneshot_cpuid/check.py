@@ -93,7 +93,7 @@ def compare(native,gated,image):
             need(left[:2112]==right[:2112]and left[2144:]==right[2144:],'clock-derived CPUID: every non-output live byte exact')
     return dict(live_captures=9,source_reading_writes=4,same_input_cpuid_captures=4,clock_derived_cpuid_captures=5,bytes=len(gated))
 
-def owners(data,layout,image,pid,old_record,oi):
+def owners(data,layout,image,pid,old_record,oi,main_backing_bytes):
     images=image['images'];q,read,call,frame,changed,owner_frame,maps,backing=(getattr(oi,n)for n in('q','read','call','frame','changed','owner_frame','maps','backing'));MASK=oi.MASK
     V=old_record.View;r=V(data,layout,'oi_record');h=q(r.blob('h'))
     need(h[:6]==(0x31504c49534f324c,1,len(data),layout['uc_bytes'],layout['si_bytes'],1)and
@@ -200,7 +200,7 @@ def owners(data,layout,image,pid,old_record,oi):
              struct.unpack('<2q',backend.blob('backing_result'))==tuple([4096]*count+[0]*(2-count)),'actual complete backing reads')
         for m in backend.array('maps','li2_fetch_map_progress'):maps(m,True)
         for j,v in enumerate(backend.array('backing','li2_fetch_backing')):
-            if j<count:backing(v,images[a[2]]['bytes'])
+            if j<count:backing(v,main_backing_bytes if a[2]==1 else images[a[2]]['bytes'])
             else:need(not any(v.data),'unused backing observation')
         if kind==2:
             need(a[11]==1 and not any(a[13:23])and a[23:26]==(7,0,0)and a[27:29]==(0,0)and a[30]==0 and
@@ -223,10 +223,52 @@ def owners(data,layout,image,pid,old_record,oi):
     return dict(owners=8,published=8,restored=8,completed=8,effect_started=8,effect_returned=8,syscall_patches=4,rdtsc_patches=4,active_phase=0,
         ordered_owners=result,full_saved_frames=True,all_source_pages_restored=True)
 
-def cpuid(data,layout,image,pid,view,oi,stdout,ordinary=False,registered=False):
+def registered_setup_image(image):
+    """Additional literal execution entries; the old registered ELF checks run first."""
+    source=bytes.fromhex(image['source_hex'])
+    need(source[4093:4096]==bytes.fromhex('660f05')and
+         source[36:41]==bytes.fromhex('e9d40f0000')and source[4143:4145]==bytes.fromhex('ebcc'),
+         'both actual setup jumps enter the ignored-prefix SYSCALL at8189, nextPC8192')
+    return image
+
+def registered_setup(r,layout,images,pid,oi,bias,registration):
+    """Two genuine preclobber/postcommit frames, exact old syscall effects only."""
+    rows=r.array('setup','oc_setup');need(len(rows)==2,'two fixed complete setup rows')
+    need(oi.read(images[1],8189,3)==bytes.fromhex('660f05'),'actual setup source is three-byte prefixed SYSCALL')
+    address=None
+    for i,row in enumerate(rows):
+        a=Q(row.blob('h'));d=row.sub('decoded','li2_decoded');pc=bias+8189;npc=pc+3
+        before=oi.frame(row.sub('before','oi_frame'),layout);after=oi.frame(row.sub('after','oi_frame'),layout)
+        g=before['g'];flags=a[5];result=a[20]
+        need(a[:5]==(2,i,pc,npc,(9,334)[i])and a[6:13]==(0,301,3,1,0,0,0)and
+             a[13:20]==((0,0,0,0,0,0,0)if i==0 else(1,1,3,0,0,0,0))and a[21]==npc and not any(a[22:]),
+             'ordered actual setup returned, no owner, exact borrow/registration/release state')
+        need(tuple(d.number(k)for k in('pc','next_pc','abi_version','decode_status','code','kind','destination','width_bits','step_disposition','available','length','reserved'))==
+             (pc,npc,1,0,870,7,16,0,5,3,3,0)and d.blob('bytes')==bytes.fromhex('660f05')+bytes(13),
+             'complete actual ignored-prefix syscall decode: length3 and real PC+3')
+        need(before['h'][1]==11 and g[16]==before['addr']==g[22]==pc and g[19:21]==[21,14]and
+             g[18]&65535==0x33 and g[17]==flags|0x10000 and not flags&0x10100 and g[13]==a[4],
+             'genuine first-byte setup NX and actual preclobber syscall number/logical flags')
+        args=tuple(g[k]for k in(8,9,12,2,0,1))
+        need(args==((0,4096,3,0x22,U64,0)if i==0 else(address,32,0,0x53053053,U64,0)),
+             'actual anonymous mmap and actual registration inputs before architectural clobber')
+        if i==0:
+            need(0<result<0x800000000000 and not result&4095,'actual successful page-aligned user mmap return')
+            address=result
+        else:need(result==0,'actual successful registration return')
+        oi.changed(before,after,layout,{13:result,14:npc,3:flags,16:npc,17:flags})
+    owner=registration['owner']
+    need(owner[1:4]==[1,1,3]and owner[7:11]==[pid,pid,address,address]and owner[11:14]==[32,0x53053053,1],
+         'actual setup mmap/registration joins the unchanged terminal owner report')
+    return dict(setup_syscalls=2,full_setup_frames=4,setup_instruction_bytes=3)
+
+def cpuid(data,layout,image,pid,view,oi,stdout,ordinary=False,registered=False,main_backing_bytes=None,registration=None):
     """Append-only suffix. All old owner bytes and local frame rules remain."""
     first=layout['types']['oi_record']['bytes'];last=layout['types']['oc_record']['bytes']
     need(type(ordinary)is bool and type(registered)is bool and not(ordinary and registered)and len(data)==first+last<16<<20,'two exact complete records within unchanged cap')
+    need(main_backing_bytes is None if ordinary or registered else type(main_backing_bytes)is int and main_backing_bytes>0,
+         'finite mode requires exact retained main carrier extent; nonfinite modes forbid it')
+    need(type(registration)is dict if registered else registration is None,'only registered mode requires actual registration report')
     images=image if ordinary or registered else image['images'];old=view.View(data[:first],layout,'oi_record')
     if registered:
         z=Q(old.blob('h'));need(z[:6]==(0x31504c49534f324c,1,first,layout['uc_bytes'],layout['si_bytes'],1)and not any(z[6:12])and z[18:20]==(pid,pid)and z[23:25]==(0,1)and not any(z[25:])and
@@ -236,11 +278,11 @@ def cpuid(data,layout,image,pid,view,oi,stdout,ordinary=False,registered=False):
             z[20]==z[22]+layout['symbols']['selected_oneshot_owners']and z[21]==z[22]+layout['symbols']['selected_session'],
             'actual registered image/bridge/session/owner provenance')
         prefix=dict(owners=0,published=0,restored=0,completed=0,effect_started=0,effect_returned=0,syscall_patches=0,rdtsc_patches=0,active_phase=0)
-    else:prefix=oi.check(data[:first],layout,images,pid,view)if ordinary else owners(data[:first],layout,image,pid,view,oi)
+    else:prefix=oi.check(data[:first],layout,images,pid,view)if ordinary else owners(data[:first],layout,image,pid,view,oi,main_backing_bytes)
     r=view.View(data[first:],layout,'oc_record');h=Q(r.blob('h'));oh=Q(old.blob('h'));count=h[9]
-    need(h[:6]==(0x31584e50434f324c,1,last,layout['types']['oc_sample']['bytes'],first,1)and h[6:9]==(0,0,0)and
+    need(h[:6]==(0x31584e50434f324c,2,last,layout['types']['oc_sample']['bytes'],first,1)and h[6:9]==(0,0,0)and
          1<=count<=40 and h[10]==0 and h[11]==count and h[12:14]==(pid,pid)and h[14:18]==(oh[13],oh[16],oh[12],oh[15])and
-         h[18]==(2 if registered else int(not ordinary))and h[19]&0xe7==0xe7 and h[20:23]==(count,count,count)and h[23]==int(not ordinary and not registered)and not any(h[26:]),
+         h[18]==(2 if registered else int(not ordinary))and h[19]&0xe7==0xe7 and h[20:23]==(count,count,count)and h[23]==int(not ordinary and not registered)and h[26:28]==(2 if registered else 0,0)and not any(h[28:]),
          'complete actual CPUID suffix/terminal/PID/image/counts')
     hw=struct.unpack('<14I',r.blob('hardware'))
     need(hw[:2]==(1,0)and hw[2]>=13 and hw[8]&0x18000000==0x18000000 and hw[11]&0x40010000==0x40010000,'actual prearm hardware identity')
@@ -347,5 +389,7 @@ def cpuid(data,layout,image,pid,view,oi,stdout,ordinary=False,registered=False):
              main['g'][:16]==want and main['g'][17]==flags|0x10000 and main['fp']==inherited['fp']and main['h'][8:10]==inherited['h'][8:10],
              'real CPUID/AT_ENTRY/RSP handoff and complete preserved architectural state')
     else:need(h[24:26]==(0,0)and not any(r.blob('main_entry')+r.blob('startup')),'no unclaimed startup/entry observation')
+    if registered:prefix.update(registered_setup(r,layout,images,pid,oi,h[16],registration))
+    else:need(not any(r.blob('setup')),'all setup observation bytes zero in every other lane')
     return dict(prefix,cpuid_samples=count,full_cpuid_frames=2*count,raw_nx_commits=count,cpuid_owner_count=0,
         first_interpreter_cpuid=int(not ordinary),first_main_cpuid=int(not ordinary and not registered),restored_pc2_cpuid=8 if not ordinary and not registered else 0,capacity_fallback=1 if not ordinary and not registered else 0)

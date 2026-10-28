@@ -48,6 +48,35 @@ static int selected_oneshot_try(int sig,siginfo_t *si,ucontext_t *uc) {
     checked(!rs->held,1563,0);
     checked(rs->phase==LI2_RSEQ_IDLE,1563,2);
 #endif
+#ifdef LI2_ONESHOT_CPUID_NX
+    /* A valid two-byte instruction can leave a shorter borrow than its five-byte
+       publication window. Unknown/non-code extra pages keep the original
+       untouched refusal below; known_code is only a prefilter, never a permit. */
+    if(selected_view.length<5 && li2_lifecycle_known_code(selected_decoded.pc,5)) {
+        const struct li2_decoded original=selected_decoded;
+        checked(original.length==2 && original.available>=2 && original.available<5 &&
+            original.available==selected_view.length && selected_view.pc==original.pc &&
+            (uintptr_t)uc->uc_mcontext.gregs[REG_CR2]==original.pc &&
+            equal(selected_view.bytes,original.bytes,original.available),1584,0);
+        selected_release(); /* Authenticates the complete old borrow before ending it. */
+        checked(!li2_lifecycle_fetch_prepare(original.pc,5,&selected_borrow),1585,0);
+        checked(!li2_lifecycle_fetch_view(&selected_borrow,&selected_view),1586,0);
+        checked(!li2_decoder_decode(original.pc,selected_view.bytes,selected_view.length,
+            &selected_decoded),1587,0);
+        checked(selected_view.pc==original.pc && selected_view.length==5 &&
+            selected_decoded.available==5 && selected_decoded.pc==original.pc &&
+            selected_decoded.next_pc==original.next_pc &&
+            selected_decoded.abi_version==original.abi_version &&
+            selected_decoded.decode_status==original.decode_status &&
+            selected_decoded.code==original.code && selected_decoded.kind==original.kind &&
+            selected_decoded.destination==original.destination &&
+            selected_decoded.width_bits==original.width_bits &&
+            selected_decoded.step_disposition==original.step_disposition &&
+            selected_decoded.length==original.length && selected_decoded.reserved==original.reserved &&
+            equal(selected_decoded.bytes,original.bytes,original.available) &&
+            selected_oneshot_kind()==kind,1589,0);
+    }
+#endif
     uintptr_t original_pc=selected_decoded.pc,original_next=selected_decoded.next_pc;
     selected_pending_route=SELECTED_ONESHOT;selected_step_pending=1;
 #ifdef LI2_MAPS_PHASE_REUSE

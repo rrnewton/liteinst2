@@ -4,7 +4,7 @@ from pathlib import Path
 from page_selected import fact,need
 ADAPTERS=(
  ('runtime_loader.c','static void oi_terminal(unsigned,unsigned,long);',
-  'static void oi_terminal(unsigned,unsigned,long);\nstatic void oc_initialize(void);\nstatic void oc_before(int,const siginfo_t *,const ucontext_t *);\nstatic void oc_after(const ucontext_t *);\nstatic void oc_terminal(unsigned,unsigned,long);'),
+  'static void oi_terminal(unsigned,unsigned,long);\nstatic void oc_initialize(void);\nstatic void oc_before(int,const siginfo_t *,const ucontext_t *);\nstatic void oc_after(const ucontext_t *);\nstatic void oc_setup_after(const ucontext_t *);\nstatic void oc_terminal(unsigned,unsigned,long);'),
  ('runtime_loader.c','    oi_terminal(status,code,detail);','    oi_terminal(status,code,detail);\n    oc_terminal(status,code,detail);'),
  ('runtime_loader.c','#include "selected_controller.inc"','#include "selected_controller.inc"\n#include "oneshot_cpuid_observe.inc"'),
  ('runtime_loader.c','    oi_initialize();','    oi_initialize();\n    oc_initialize();'),
@@ -12,6 +12,8 @@ ADAPTERS=(
   '    if(!selected_selftesting) {\n        oc_before(sig,si,context);\n        if(!first_target_pc)first_target_pc=pc;'),
  ('selected_controller.inc','        checked(!selected_selftesting,630,0);selected_builtin(context);selected_release();return;',
   '        checked(!selected_selftesting,630,0);selected_builtin(context);oc_after(context);selected_release();return;'),
+ ('selected_controller.inc','        selected_owned_syscall(context,flags);return;',
+  '        selected_owned_syscall(context,flags);oc_setup_after(context);return;'),
 )
 def prepare(root,out,pin,registered=False):
     need(type(registered)is bool,'fixed registered observer choice')

@@ -14,6 +14,10 @@ _start:
     jmp setup0
 .macro setup n,next
 setup\n:
+    movabs $0x5162738495a6b7c8,%r10
+    mov %r10,%r11
+    mov %r11,%r12
+    cmp %rax,%rax
     lea oc_site\n(%rip),%rax
     mov %rax,pl_target(%rip)
     lea \next(%rip),%rax
@@ -120,6 +124,10 @@ pl_capture:
     vmovdqu64 %zmm\n,pl_live_vectors+64*\n(%rip)
 .endr
 .irp n,0,1,2,3,4,5,6,7
+.if (\n == 4)
+    /* Keep RIP-displacement bytes clear of the unchanged raw-byte HLE ban. */
+    nop
+.endif
     kmovq %k\n,pl_live_masks+8*\n(%rip)
 .endr
     mov nx_slot(%rip),%r8

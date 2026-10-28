@@ -36,7 +36,7 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
     regcomplete=load('oneshot_cpuid_registered_complete',selected/'tests/oneshot_registered/reports.py')
     namespace=load('oneshot_cpuid_namespace',root/'tools/page-entry/namespace.py')
     policy=load('oneshot_cpuid_native_policy',selected/'tests/oneshot_integrated/check.py')
-    for name in ('fixture.S','linker.ld','registered.ld','layout.py','observe.inc','launch.py'):pin(fixture/name)
+    for name in ('fixture.S','registered.S','linker.ld','registered.ld','layout.py','observe.inc','launch.py'):pin(fixture/name)
     observed={}
     for mode in ('observed','registered'):
         d=output/mode;observed[mode]=d
@@ -163,7 +163,8 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
                     receipt.setdefault('oneshot_cpuid_namespace_aliases',{})[str(p)]=value
             need(len(fds)==len(set(fds)),'unique actual dependency descriptors')
             environment={k:v for k,v in ENV.items()if k!='PYTHONDONTWRITEBYTECODE'};environment.update(LD_LIBRARY_PATH=str(ns),LI2_DEPENDENCY_FDS=','.join(fds))
-            need(started['argv']==[str(original)]and started['environment']==environment and started['carrier_sha256']==fact(carrier)['sha256'],'closed raw-profile launch; no provider environment')
+            need(started['argv']==[str(original)]and started['environment']==environment and started['carrier_sha256']==fact(carrier)['sha256']and
+                 started['carrier_size']==fact(carrier)['bytes']==row['carrier']['bytes'],'closed raw-profile launch; no provider environment')
         return row,command,out,err,rp.read_bytes()
     def emit(label,emitter):
         d=output/label;paths=(d/emitter.SONAME[:-1].decode(),d/'metadata.S')
@@ -175,7 +176,7 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
     interpreter,metadata_source=emit('finite-interpreter',emitter)
     def fixture_build(name,units,flags,linker):
         directory=output/name;directory.mkdir();original=directory/'original';row=dict(name=name,status='failed');state['programs'].append(row)
-        for p in units:pin(p)
+        units=[pin(p)for p in units]
         _,out,err=run(name+'-headers',[builder.tools['cc'],*flags,'-M','-MT','oneshot_cpuid',*units],env=builder.environment)
         rules=out.decode().replace('\\\n',' ').splitlines();need(not err and len(rules)==len(units)and all(x.startswith('oneshot_cpuid: ')for x in rules),'all actual fixture include rules')
         row['headers']={str(pin(t)):fact(pin(t))for line in rules for t in shlex.split(line.split(':',1)[1])}
@@ -203,7 +204,7 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
                 o=parsed['oneshot'];need(o['owners']==o['published']==o['restored']==o['completed']==o['effect_returned']==8 and o['rdtsc_patches']==o['syscall_patches']==4 and
                     parsed['loader']['cpuid']==11,'same finite actual legacy owners/CPUIDs');case['reports']=parsed;case['native_comparison']=check.compare(native_output,out,info)
             else:
-                parsed=report.reports(err);case['comparison']=check.cpuid(record,layouts['observed'],info,command['pid'],view,oi,out)
+                parsed=report.reports(err);case['comparison']=check.cpuid(record,layouts['observed'],info,command['pid'],view,oi,out,main_backing_bytes=case['carrier']['bytes'])
                 report.combined(parsed,command['pid'],case['comparison'],True);case['reports']=parsed;case['native_comparison']=check.compare(native_output,out,info)
             case['status']='passed'
     original,info=programs[0]
@@ -246,15 +247,15 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
              'both fixed ordinary lanes require all38 CPUIDs and all eight returned owners: two clocks and six syscalls')
         case['reports']=parsed;case['status']='passed'
     interp,meta=emit('registered-interpreter',regemitter)
-    row,original=fixture_build('oneshot-cpuid-registered-program',[selected/'tests/oneshot_registered/fixture.S',meta],
-        ['-nostdlib','-pie','-O2','-g','-Wall','-Wextra','-Werror'],fixture/'registered.ld')
-    info=regcheck.elf(original.read_bytes(),str(interp));row['image']=info;row['status']='built'
+    row,original=fixture_build('oneshot-cpuid-registered-program',[fixture/'registered.S',meta],
+        ['-nostdlib','-pie','-O2','-g','-Wall','-Wextra','-Werror','-Wl,--dynamic-linker='+str(interp)],fixture/'registered.ld')
+    info=regcheck.elf(original.read_bytes(),str(interp));check.registered_setup_image(info);row['image']=info;row['status']='built'
     registered_images={1:oi.elf(original.read_bytes()),2:oi.elf(interp.read_bytes())}
     b=interp.read_bytes();need(len(b)==12288 and b[4096:4103]==bytes.fromhex('0fa2e9f90f0000')and not any(b[4103:8192])and
          b[8192:8192+len(regemitter.CODE)]==regemitter.CODE and not any(b[8192+len(regemitter.CODE):])and
          [(p[1],p[2],p[3],p[5],p[6])for p in registered_images[2]['loads']]==[(4,0,0,4096,4096),(5,4096,4096,8192,8192)]and
-         policy.native_policy(b[8192-14:])==0,
-         'actual CPUID-first interpreter, complete clean AT_ENTRY helper/left halo and explicit end-of-RX boundary')
+         policy.native_policy(b[8192-14:])==0 and regemitter.CODE[:2]==bytes.fromhex('90fc'),
+         'actual CPUID-first interpreter, OLD_STEP NOP then clean AT_ENTRY helper/left halo and explicit end-of-RX boundary')
     outcomes={}
     for mode in('native','registered'):
         case,command,out,err,record=execute('oneshot-cpuid-registered-'+mode,original,mode,interp,interp.parent,None if mode=='native'else bridges[mode])
@@ -266,7 +267,7 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
                  c['attempts']==c['samples']==c['commits']==parsed['loader']['cpuid']==1 and c['raw']==c['result'],
                  'actual first-interpreter CPUID complete before registration and unchanged four fallback sites')
             case['registered_comparison']=regcheck.record(record[:regcheck.RECORD_BYTES],info,command['pid'],out,parsed['rseq'])
-            case['comparison']=check.cpuid(record[regcheck.RECORD_BYTES:],layouts[mode],registered_images,command['pid'],view,oi,out,registered=True)
+            case['comparison']=check.cpuid(record[regcheck.RECORD_BYTES:],layouts[mode],registered_images,command['pid'],view,oi,out,registered=True,registration=parsed['rseq'])
             case['reports']=parsed
         outcomes[mode]=(out,command['pid']);case['status']='passed'
     left,right=outcomes['native'][0],outcomes['registered'][0]
