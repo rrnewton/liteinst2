@@ -137,6 +137,7 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
         | Code::VEX_Kmovq_r64_kr
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
+        | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
         | Code::VEX_Blsmsk_r64_rm64 => return Ok(no_write(out)),
         _ => {}
     }

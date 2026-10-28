@@ -541,6 +541,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 1839: /* Movdqu_xmmm128_xmm */
     case 1840: /* VEX_Vmovdqu_xmmm128_xmm; canonical VEX128 store/reverse-copy */
     case 2453: /* Pxor_xmm_xmmm128 */
+    case 2459: /* EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64; canonical unmasked128 register triples */
     case 1324: /* Xorps_xmm_xmmm128 */
     case 1330: /* Xorpd_xmm_xmmm128 */
     case 2287: /* Pand_xmm_xmmm128 */
