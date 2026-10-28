@@ -89,6 +89,22 @@ fn stamp(
     writer: &Controller,
     registry: &Registry,
 ) -> Result<EntryStamp, IntervalEntryError> {
+    if session.history_mode == HistoryMode::Absolute {
+        let (end, binding) =
+            history_stream::validate(session, writer, registry, true).map_err(|e| {
+                if e == ControlError::TerminalFailure {
+                    IntervalEntryError::ControllerTerminal
+                } else {
+                    IntervalEntryError::BindingInconsistent
+                }
+            })?;
+        let history_len =
+            usize::try_from(end).map_err(|_| IntervalEntryError::BindingInconsistent)?;
+        return Ok(EntryStamp {
+            history_len,
+            binding,
+        });
+    }
     if writer.status != ControllerStatus::Ready {
         return Err(IntervalEntryError::ControllerTerminal);
     }

@@ -42,7 +42,9 @@ pub fn sp(base: u64) -> u64 {
     base + DATA_LEN as u64 - 128
 }
 
+#[cfg(test)]
 struct Mask(u64);
+#[cfg(test)]
 impl Mask {
     fn set(value: u64) -> Self {
         let mut previous = 0_u64;
@@ -62,6 +64,7 @@ impl Mask {
         Self(previous)
     }
 }
+#[cfg(test)]
 impl Drop for Mask {
     fn drop(&mut self) {
         if unsafe {
@@ -95,6 +98,7 @@ fn mask() -> u64 {
     );
     value
 }
+#[cfg(test)]
 pub fn spawn_masked<T: Send + 'static>(
     action: impl FnOnce() -> T + Send + 'static,
 ) -> std::thread::JoinHandle<T> {

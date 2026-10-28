@@ -1,6 +1,9 @@
 //! Always-on fixed-grammar callbacks. The old point and native adapters are separate.
 //! This facade owns metadata only; site::seal retains the actual publication.
 mod drain;
+mod history;
+pub use crate::frontend::HistoryBinding;
+pub use history::{HistoryBatch, HistoryFormat, HistoryStream, HistoryWindow};
 pub(super) mod gate;
 pub(super) mod site;
 mod timing;
@@ -10,7 +13,7 @@ pub use timing::{RawInterval, RawIntervalOwner, RawTimestamp};
 
 use crate::frontend::{
     BindingChange, ControlError, ControllerSnapshot, ControllerStatus, EpochHandle, FailurePoint,
-    FunctionSpec, GroupSpec, IntervalEntry, IntervalEntryError, IntervalEntrySummary,
+    FunctionSpec, GroupSpec, HistoryMode, IntervalEntry, IntervalEntryError, IntervalEntrySummary,
     IntervalExitError, Limits, ModelReturnSlot, Observation, Report, Session, SetupError,
     ThreadModel, UnsampledSummary,
 };
@@ -166,6 +169,37 @@ impl PreparedIntervalController {
             _exclusive: PhantomData,
         })
     }
+    /// Opt in to bounded resident action transfer and absolute journal prefixes.
+    /// Requires activate_concurrent; Limits.actions now bounds resident rows.
+    /// No automatic drain, eviction, counter reset or indefinite-lifetime promise.
+    pub fn new_streaming_history(
+        site: site::InstalledIntervalSite,
+        install: u64,
+        function: FunctionId,
+        limits: Limits,
+    ) -> Result<Self, BridgeError> {
+        let session = Session::new_streaming_history(
+            install,
+            &[FunctionSpec { function, group: 0 }],
+            &[GroupSpec { mandatory: true }],
+            limits,
+        )
+        .map_err(|e| error(Cause::Setup(e)))?;
+        let mut epochs = Vec::new();
+        epochs
+            .try_reserve_exact(limits.epochs)
+            .map_err(|_| error(Cause::Capacity))?;
+        Ok(Self {
+            session,
+            site: site.site,
+            key: Arc::new(()),
+            install,
+            function,
+            limits,
+            epochs,
+            _exclusive: PhantomData,
+        })
+    }
     /// Allocate and retain one bounded staged epoch without publishing it.
     pub fn stage(&mut self, config: Config) -> Result<IntervalEpoch, BridgeError> {
         staged(
@@ -210,6 +244,11 @@ impl PreparedIntervalController {
         self,
         entry_mode: EntryMode,
     ) -> Result<(IntervalController, IntervalClient), BridgeError> {
+        if self.session.history_mode() == HistoryMode::Absolute
+            && !matches!(entry_mode, EntryMode::Concurrent)
+        {
+            return Err(error(Cause::Control(ControlError::HistoryMode)));
+        }
         STATE
             .try_with(|cell| {
                 if POISONED.get()
@@ -225,7 +264,7 @@ impl PreparedIntervalController {
             .unwrap_or(Err(error(Cause::Attachment)))?;
         let snapshot = self
             .session
-            .snapshot()
+            .snapshot_for_bridge()
             .map_err(|e| error(Cause::Control(e)))?;
         if snapshot.status != ControllerStatus::Ready
             || snapshot.current.is_some()
@@ -332,7 +371,7 @@ impl IntervalController {
             let snapshot = self
                 .binding
                 .session
-                .snapshot()
+                .snapshot_for_bridge()
                 .map_err(|e| error(Cause::Control(e)))?;
             if snapshot.status != ControllerStatus::Ready {
                 return Err(error(Cause::Control(ControlError::TerminalFailure)));
@@ -900,7 +939,7 @@ impl State {
         let pair = self.pairs[depth].as_mut().ok_or(error(Cause::Invariant))?;
         let summary = pair.receipt.summary().ok_or(error(Cause::Invariant))?;
         pair.summary = Some(summary);
-        let (kind, generation, bits) = packed(summary, self.binding.function)?;
+        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;
         self.journal
             .row([kind, pair.ordinal, pc, rsp, return_word, generation, bits]);
         self.next = next;
@@ -945,7 +984,7 @@ impl State {
             return Err(error(Cause::Return));
         }
         let summary = pair.summary.ok_or(error(Cause::Invariant))?;
-        let (kind, generation, bits) = packed(summary, self.binding.function)?;
+        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;
         if self.journal.used() >= EVENTS {
             return Err(error(Cause::Capacity));
         }
@@ -1165,3 +1204,39 @@ unsafe extern "C" fn exit_callback(context: *mut HookContext, control: ControlId
 
 #[cfg(test)]
 mod tests;
+
+// Narrow sibling-test facade. These functions grant no native publication or
+// execution authority and are absent from non-test builds.
+#[cfg(test)]
+pub(super) fn backoff_test_site() -> site::InstalledIntervalSite {
+    site::synthetic_site()
+}
+#[cfg(test)]
+pub(super) fn backoff_test_transport(stream: HistoryStream, marker: u64) -> IntervalBatch {
+    drain::backoff_transport_sentinel(stream, marker)
+}
+#[cfg(test)]
+pub(super) fn backoff_test_retained(controller: &IntervalController) -> usize {
+    controller.binding.session.retained_epochs()
+}
+#[cfg(test)]
+pub(super) fn backoff_test_after_mutation(
+    controller: &IntervalController,
+    epoch: &IntervalEpoch,
+) -> Result<(), BridgeError> {
+    let _scope = ControllerScope::enter()?;
+    let owner = controller.owner(epoch)?;
+    controller
+        .binding
+        .session
+        .publish(owner, FailurePoint::AfterMutation)
+        .map_err(|e| error(Cause::Control(e)))
+}
+#[cfg(test)]
+pub(super) fn backoff_test_control_error(cause: ControlError) -> BridgeError {
+    error(Cause::Control(cause))
+}
+#[cfg(test)]
+pub(super) fn backoff_test_epoch_limit() -> BridgeError {
+    error(Cause::Setup(SetupError::EpochLimit))
+}

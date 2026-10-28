@@ -14,6 +14,8 @@ pub(super) struct Cursor {
 /// Timestamps retain their original raw/possibly unavailable meaning.
 #[derive(Debug, Eq, PartialEq)]
 pub struct IntervalBatch {
+    stream: Option<HistoryStream>,
+    history_end: Option<u64>,
     pid: u32,
     tid: u64,
     registration: u64,
@@ -29,6 +31,26 @@ pub struct IntervalBatch {
     journal: Vec<u64>,
 }
 impl IntervalBatch {
+    /// None is the unchanged legacy format. Absolute batches retain opaque
+    /// stream identity only, not a Session/epoch owner or export acknowledgement.
+    pub fn history_stream(&self) -> Option<&HistoryStream> {
+        self.stream.as_ref()
+    }
+    /// Absolute mode only: checked committed prefix bound captured at transfer.
+    pub fn history_high_water(&self) -> Option<u64> {
+        self.history_end
+    }
+    /// Decode one local event prefix against that bound. This does not replay
+    /// generation association; join HistoryBatch::binding_at for that proof.
+    pub fn history_prefix(&self, event: usize) -> Option<u64> {
+        self.stream.as_ref()?;
+        if event as u64 >= *self.journal.first()? {
+            return None;
+        }
+        let at = event.checked_mul(7)?.checked_add(10)?;
+        history::decode_absolute(*self.journal.get(at)?, self.history_end?)
+            .map(|(_, prefix, _)| prefix)
+    }
     pub fn pid(&self) -> u32 {
         self.pid
     }
@@ -103,6 +125,20 @@ fn balanced(totals: PairTotals) -> bool {
 }
 
 fn pair_matches(
+    row: &RawInterval,
+    entry: &[u64],
+    exit: &[u64],
+    state: &State,
+    gate: &CallGate,
+) -> bool {
+    if state.binding.session.history_mode() == HistoryMode::Absolute {
+        history::pair_matches_absolute(row, entry, exit, state, gate)
+    } else {
+        pair_matches_legacy(row, entry, exit, state, gate)
+    }
+}
+
+fn pair_matches_legacy(
     row: &RawInterval,
     entry: &[u64],
     exit: &[u64],
@@ -300,6 +336,9 @@ impl IntervalThread {
                     sequence,
                 };
                 let batch = IntervalBatch {
+                    stream: history::stream_for(&state.binding),
+                    history_end: (state.binding.session.history_mode() == HistoryMode::Absolute)
+                        .then(|| state.binding.session.history_committed_end()),
                     pid: self.pid,
                     tid: self.tid,
                     registration: self.registration,
@@ -330,3 +369,29 @@ impl IntervalThread {
 
 #[cfg(test)]
 mod tests;
+
+/// Deliberately invalid transport sentinel, not a drain/native receipt. No test
+/// may admit this value through the driver cursor or count it as worker success.
+#[cfg(test)]
+pub(super) fn backoff_transport_sentinel(stream: HistoryStream, marker: u64) -> IntervalBatch {
+    IntervalBatch {
+        stream: Some(stream),
+        history_end: Some(0),
+        pid: 0,
+        tid: 0,
+        registration: 0,
+        install: 0,
+        function: FunctionId(0),
+        before: Cursor::default(),
+        after: Cursor {
+            number: marker,
+            ..Cursor::default()
+        },
+        next: 0,
+        gate_sequence: 0,
+        raw_range: 0..0,
+        event_range: 0..0,
+        rows: Vec::new(),
+        journal: vec![marker; 512],
+    }
+}

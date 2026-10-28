@@ -463,7 +463,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::exec) enum Case {
 
 #[cfg(test)]
 pub(in crate::linux::remote::dynamic::owner::admission::exec) fn run(case: Case) {
-    let (fixture, reference) = prepare(case);
+    let (fixture, reference) = prepare(case, raw::original);
     let (send, receive) = sync_channel(1);
     let worker = support::spawn_masked(move || {
         let result = owner_body(case, None, fixture, reference);
@@ -483,7 +483,10 @@ pub(in crate::linux::remote::dynamic::owner::admission::exec) fn run(case: Case)
     }
 }
 
-fn prepare(_case: Case) -> (Arc<Fixture>, Arc<raw::Transcript>) {
+fn prepare(
+    _case: Case,
+    collect_reference: fn(Arc<Fixture>) -> raw::Transcript,
+) -> (Arc<Fixture>, Arc<raw::Transcript>) {
     #[cfg(test)]
     let case = _case;
     let fixture = {
@@ -492,7 +495,7 @@ fn prepare(_case: Case) -> (Arc<Fixture>, Arc<raw::Transcript>) {
         drop(guard);
         fixture
     };
-    let reference = Arc::new(raw::original(Arc::clone(&fixture)));
+    let reference = Arc::new(collect_reference(Arc::clone(&fixture)));
     #[cfg(test)]
     if matches!(case, Case::Errno) {
         let guard = crate::TEST_FILE_FORK.lock().unwrap();
@@ -919,8 +922,13 @@ pub(crate) fn backing_child(role: crate::exec_cleanup_support::Role, receipt: &s
         Role::Unwind => backing_cleanup::Scenario::Unwind,
         Role::InvalidUnmap => unreachable!(),
     };
-    let (fixture, reference) = prepare(Case::Complete);
-    // raw::original returned only after its worker joined and native cleanup.
+    // This fresh exec child is already a masked main-thread singleton. Keep
+    // reference ptrace/wait/cleanup custody here; no reference worker is needed.
+    assert_main_singleton();
+    let (fixture, reference) = prepare(Case::Complete, |fixture| {
+        raw::original_current_thread(&fixture)
+    });
+    // Raw cleanup and the exact reap proof completed on this same thread.
     assert_main_singleton();
     if let Err(payload) = owner_body(Case::Complete, Some(scenario), fixture, reference) {
         std::panic::resume_unwind(payload);

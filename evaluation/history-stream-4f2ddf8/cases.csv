@@ -1,0 +1,2 @@
+case,status,actions,calls,empty_drains,epochs,events,history_batches,history_full_refusals,interval_batches,joined,max_resident,new_prefix,not_drained_refusals,old_prefix,originals,registrations,replacements,replay_refusals,report_permit_refusals,retired,rows,sampled,stale_refusals
+history-stream,PASS,600,2,2,300,4,77,1,2,True,8,599,1,1,2,1,298,4,1,300,2,2,1
