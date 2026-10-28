@@ -996,6 +996,27 @@ fn main() {
         }
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("strnlen-state") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            7,
+            "strnlen-state CANDIDATE FINAL ELF_VA LENGTH OUTPUT"
+        );
+        let arguments = oracle::native_ordinary::strnlen::Arguments::parse(
+            args[4].to_str().unwrap(),
+            args[5].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[6]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        ordinary::strnlen::run(&subject, &expected, arguments, &output, deadline);
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("selected-state") {
         assert_eq!(
             args.len(),
