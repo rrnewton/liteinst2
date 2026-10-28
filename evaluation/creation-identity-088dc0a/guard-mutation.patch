@@ -1,0 +1,23 @@
+--- a/crates/liteinst-launch/src/linux/remote/dynamic/owner.rs
++++ b/crates/liteinst-launch/src/linux/remote/dynamic/owner.rs
+@@ -972,10 +972,6 @@
+         if child <= 0
+             || self.reaped.contains(&child)
+             || self.tracer_terminal.contains_key(&child)
+-            || self
+-                .broker
+-                .as_ref()
+-                .is_some_and(|broker| broker.pid == child)
+         {
+             return Err(LaunchError::Invalid("invalid creation custody candidate"));
+         }
+@@ -996,8 +992,7 @@
+                     | libc::WSTOPPED
+                     | libc::WNOHANG
+                     | libc::WNOWAIT
+-                    | libc::__WALL
+-                    | libc::__WNOTHREAD,
++                    | libc::__WALL,
+             )
+         };
+         if observed < 0 {

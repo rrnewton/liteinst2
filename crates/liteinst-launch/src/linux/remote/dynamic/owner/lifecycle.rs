@@ -729,10 +729,10 @@ impl NativeLifecycle {
                 "fork payload names a retired incarnation",
             ));
         }
-        // The ptrace event and automatic child stop pin this newborn until its
-        // tracer consumes the terminal. Establish ownership before fallible reads.
-        owner.owned.insert(child);
-        owner.pin_task(child)?;
+        // The event payload may already belong to a replacement EXIT stop.
+        // Authenticate this candidate in the original tracer's wait domain
+        // before retaining any numeric authority or performing later reads.
+        owner.pin_creation_candidate(child)?;
         if read_registers(tid)? != pending.entry || xstate(tid)? != pending.xstate {
             return Err(LaunchError::Invalid(
                 "fork parent event changed entry state",

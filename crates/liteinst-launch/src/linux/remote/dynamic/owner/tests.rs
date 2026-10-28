@@ -1,6 +1,7 @@
 use super::*;
 
 mod coalescence_fixture;
+mod event_identity;
 mod helper_death;
 mod source_census;
 mod stack_fixture;

@@ -1,0 +1,44 @@
+diff --git a/crates/liteinst-launch/src/linux/remote/dynamic/owner.rs b/crates/liteinst-launch/src/linux/remote/dynamic/owner.rs
+index 3209c27..40337ce 100644
+--- a/crates/liteinst-launch/src/linux/remote/dynamic/owner.rs
++++ b/crates/liteinst-launch/src/linux/remote/dynamic/owner.rs
+@@ -558,6 +558,8 @@ impl Owner {
+             return Ok(None);
+         }
+         if consumed != tid {
++            #[cfg(test)]
++            eprintln!("LI2CORE_CLEANUP_DIAGNOSTIC consume tid={tid} peek_code={} peek_status={} consumed={consumed} errno={:?} closing={}", info.si_code, unsafe { info.si_status() }, io::Error::last_os_error().raw_os_error(), self.closing);
+             return Err(system("consume pinned dynamic wait"));
+         }
+         if helper {
+@@ -1059,7 +1061,9 @@ impl Owner {
+         loop {
+             // Receive Ready before Abort: R keeps the root unreaped until the
+             // transferred pidfd has been authenticated, even during cancellation.
+-            if self.poll_broker().is_err() {
++            if let Err(error) = self.poll_broker() {
++                #[cfg(test)]
++                eprintln!("LI2CORE_CLEANUP_DIAGNOSTIC broker={error:?}");
+                 self.lost_wait = true;
+             }
+             if self.pid > 0
+@@ -1086,7 +1090,9 @@ impl Owner {
+                         domain_empty = true;
+                         break;
+                     }
+-                    Err(_) => {
++                    Err(error) => {
++                        #[cfg(test)]
++                        eprintln!("LI2CORE_CLEANUP_DIAGNOSTIC poll_raw={error:?}");
+                         self.lost_wait = true;
+                         break;
+                     }
+@@ -1108,6 +1114,8 @@ impl Owner {
+                                 })
+                         });
+                         return if self.lost_wait || !self.owned.is_empty() || !statuses {
++                            #[cfg(test)]
++                            eprintln!("LI2CORE_CLEANUP_DIAGNOSTIC lost_wait={} missing_pin={} owned={:?} reaped={:?} physical={:?} tracer_terminal={:?} attached={} pid={}", self.lost_wait, self.missing_pin, self.owned, self.reaped, broker.physical, self.tracer_terminal, self.attached, self.pid);
+                             Err(LaunchError::Invalid(
+                                 "dynamic physical cleanup ownership was lost",
+                             ))

@@ -102,6 +102,10 @@ class ExactParsers(unittest.TestCase):
                 (directory/'exact-truth.csv').write_bytes(csv_bytes(truth_header, truth))
                 (directory/'exact-refusals.csv').write_bytes(b'case,status,reason\nempty_capable_symbol,PASS,NoPatchWindow\n')
             write(); self.assertEqual(P['exact_native_output'](directory, terminal)[-1], 840)
+            concurrent = terminal.replace(b'native-exact:', b'native-exact-concurrent:')
+            self.assertEqual(P['exact_native_output'](directory, concurrent, concurrent=True)[-1], 840)
+            with self.assertRaises(AssertionError): P['exact_native_output'](directory, terminal, concurrent=True)
+            with self.assertRaises(AssertionError): P['exact_native_output'](directory, concurrent)
             for table, row, column, wrong in [(pairs, 0, 0, 1), (pairs, 0, 5, 12), (pairs, 0, 6, 20001),
                     (truth, 1, 3, 388), (truth, 1, 5, 62), (truth, 0, 7, 0), (truth, 0, 8, 0)]:
                 prior = table[row][column]; table[row][column] = wrong; write()

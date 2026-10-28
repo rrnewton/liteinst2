@@ -1,8 +1,10 @@
 //! Always-on fixed-grammar callbacks. The old point and native adapters are separate.
 //! This facade owns metadata only; site::seal retains the actual publication.
+mod drain;
 pub(super) mod gate;
 pub(super) mod site;
 mod timing;
+pub use drain::IntervalBatch;
 pub use gate::{CallGate, CallResult, GateError, OriginalCallResult};
 pub use timing::{RawInterval, RawIntervalOwner, RawTimestamp};
 
@@ -41,6 +43,9 @@ enum Cause {
     Outstanding,
     Gate(GateError),
     ClockProfile,
+    ControllerReentry,
+    CurrentEpoch,
+    NotDrained,
 }
 /// Opaque typed failure. Debug retains the exact original model error; no
 /// FunctionClosed/NoCurrent fallback converts an unrelated error into a sample.
@@ -60,6 +65,14 @@ struct Binding {
     install: u64,
     function: FunctionId,
     limits: Limits,
+    entry_mode: EntryMode,
+    #[cfg(test)]
+    native_entry_pause: std::sync::OnceLock<Arc<tests::concurrent_native::EntryPause>>,
+}
+#[derive(Clone, Copy)]
+enum EntryMode {
+    NonBlocking,
+    Concurrent,
 }
 impl Binding {
     fn process(&self) -> Result<(), BridgeError> {
@@ -91,26 +104,35 @@ pub struct PreparedIntervalController {
     install: u64,
     function: FunctionId,
     limits: Limits,
-    epochs: Vec<EpochHandle>,
+    epochs: Vec<Option<EpochHandle>>,
     _exclusive: PhantomData<Cell<()>>,
 }
 fn staged(
     session: &Session,
     key: &Arc<()>,
-    epochs: &mut Vec<EpochHandle>,
+    epochs: &mut Vec<Option<EpochHandle>>,
     limits: Limits,
     config: Config,
 ) -> Result<IntervalEpoch, BridgeError> {
-    if epochs.len() == limits.epochs {
+    // Only explicit retirement creates a vacancy; a closed owner is not scavenged.
+    let index = epochs
+        .iter()
+        .position(Option::is_none)
+        .unwrap_or(epochs.len());
+    if index == limits.epochs {
         return Err(error(Cause::Capacity));
     }
     let owner = session.stage(config).map_err(|e| error(Cause::Setup(e)))?;
     let token = IntervalEpoch {
         key: Arc::clone(key),
-        index: epochs.len(),
+        index,
         generation: owner.generation(),
     };
-    epochs.push(owner); // Exact capacity was reserved before any publication.
+    if index == epochs.len() {
+        epochs.push(Some(owner)); // Exact capacity was reserved before publication.
+    } else {
+        epochs[index] = Some(owner);
+    }
     Ok(token)
 }
 impl PreparedIntervalController {
@@ -163,6 +185,31 @@ impl PreparedIntervalController {
     /// the parent's copy must not be activated/reused. Installation and managed
     /// controls are process-private snapshots. Active controllers cannot be rebound.
     pub unsafe fn activate(self) -> Result<(IntervalController, IntervalClient), BridgeError> {
+        self.activate_mode(EntryMode::NonBlocking)
+    }
+
+    /// Activate callbacks that wait for concurrent metadata transitions. Each
+    /// admission observes one complete writer/registry state and retains that
+    /// owner until its original return. Contention is never an unsampled result.
+    ///
+    /// # Safety
+    /// All [`Self::activate`] obligations apply. Controller operations may run
+    /// on another thread, but must not wait for a callback to finish or acquire
+    /// their metadata locks (including through allocator hooks). Same-thread controller
+    /// reentry is refused. No signal, cancellation or unwind may interrupt a
+    /// callback. Waiting has no fairness or bounded-latency guarantee. Raw start
+    /// timestamps precede the wait; the chosen epoch is the one at reservation,
+    /// not necessarily the one current at that timestamp.
+    pub unsafe fn activate_concurrent(
+        self,
+    ) -> Result<(IntervalController, IntervalClient), BridgeError> {
+        self.activate_mode(EntryMode::Concurrent)
+    }
+
+    fn activate_mode(
+        self,
+        entry_mode: EntryMode,
+    ) -> Result<(IntervalController, IntervalClient), BridgeError> {
         STATE
             .try_with(|cell| {
                 if POISONED.get()
@@ -185,6 +232,7 @@ impl PreparedIntervalController {
             || !snapshot.actions.is_empty()
             || snapshot.retained_failed_generation.is_some()
             || snapshot.enabled != [false]
+            || self.epochs.iter().any(Option::is_none)
             || self.session.retained_epochs() != self.epochs.len()
         {
             return Err(error(Cause::Invariant));
@@ -197,6 +245,9 @@ impl PreparedIntervalController {
             install: self.install,
             function: self.function,
             limits: self.limits,
+            entry_mode,
+            #[cfg(test)]
+            native_entry_pause: std::sync::OnceLock::new(),
         });
         let client = IntervalClient {
             binding: Arc::clone(&binding),
@@ -214,19 +265,24 @@ impl PreparedIntervalController {
 /// One non-Clone controller, Send but not Sync. No Session or EpochHandle escapes.
 pub struct IntervalController {
     binding: Arc<Binding>,
-    epochs: Vec<EpochHandle>,
+    epochs: Vec<Option<EpochHandle>>,
     _exclusive: PhantomData<Cell<()>>,
 }
 impl IntervalController {
     fn owner(&self, epoch: &IntervalEpoch) -> Result<&EpochHandle, BridgeError> {
         self.binding.process()?;
-        let owner = self.epochs.get(epoch.index).ok_or(error(Cause::Epoch))?;
+        let owner = self
+            .epochs
+            .get(epoch.index)
+            .and_then(Option::as_ref)
+            .ok_or(error(Cause::Epoch))?;
         if !Arc::ptr_eq(&epoch.key, &self.binding.key) || owner.generation() != epoch.generation {
             return Err(error(Cause::Epoch));
         }
         Ok(owner)
     }
-    /// Stage without recycling a lifetime slot or dropping an old owner.
+    /// Stage in an explicitly retired slot or an unused bounded slot. Closed
+    /// owners are never recycled implicitly; all retained owners still consume E.
     pub fn stage(&mut self, config: Config) -> Result<IntervalEpoch, BridgeError> {
         self.binding.process()?;
         staged(
@@ -239,6 +295,7 @@ impl IntervalController {
     }
     /// Exact existing metadata publication; physical bookkeeping stays enabled.
     pub fn arm(&mut self, epoch: &IntervalEpoch) -> Result<(), BridgeError> {
+        let _scope = ControllerScope::enter()?;
         let owner = self.owner(epoch)?;
         self.binding
             .session
@@ -247,6 +304,7 @@ impl IntervalController {
     }
     /// Remove only the specified current epoch, preserving its old reservations.
     pub fn disarm(&mut self, epoch: &IntervalEpoch) -> Result<(), BridgeError> {
+        let _scope = ControllerScope::enter()?;
         let generation = self.owner(epoch)?.generation();
         self.binding
             .session
@@ -257,8 +315,42 @@ impl IntervalController {
     pub fn report(&self, epoch: &IntervalEpoch) -> Result<Option<Report>, BridgeError> {
         Ok(self.owner(epoch)?.try_report())
     }
+    /// Explicitly release a closed, noncurrent, drained epoch's controller slot.
+    /// This does not close an epoch or wait for outstanding reservations.
+    /// The returned report is acquired before removal and retains its original
+    /// owner permit. A new stage can still fail EpochLimit while any report,
+    /// acquired owner, frame or FunctionClosed receipt retains that owner.
+    ///
+    /// Retirement proves metadata drain only: a FunctionClosed receipt may hold
+    /// the permit until consumption inside the exit callback, before physical
+    /// RET. Neither retirement nor last-permit release proves native/code
+    /// quiescence or permits unmapping. History and generations are never reset.
+    pub fn retire(&mut self, epoch: &IntervalEpoch) -> Result<Report, BridgeError> {
+        let _scope = ControllerScope::enter()?;
+        let owner = self.owner(epoch)?;
+        {
+            let snapshot = self
+                .binding
+                .session
+                .snapshot()
+                .map_err(|e| error(Cause::Control(e)))?;
+            if snapshot.status != ControllerStatus::Ready {
+                return Err(error(Cause::Control(ControlError::TerminalFailure)));
+            }
+            if snapshot.current == Some(owner.generation()) {
+                return Err(error(Cause::CurrentEpoch));
+            }
+        } // Drop the allocating snapshot before the slot commit.
+        let report = owner.try_report().ok_or(error(Cause::NotDrained))?;
+        // The unique &mut controller is the only writer; callbacks can finish
+        // records but cannot replace this generation or make it current again.
+        // No allocation or fallible operation follows removal. Report owns E.
+        drop(self.epochs[epoch.index].take());
+        Ok(report)
+    }
     /// Bounded immutable copy of the complete existing action history.
     pub fn history(&self) -> Result<ControllerSnapshot, BridgeError> {
+        let _scope = ControllerScope::enter()?;
         self.binding.process()?;
         self.binding
             .session
@@ -270,7 +362,7 @@ impl Drop for IntervalController {
     fn drop(&mut self) {
         // Closing is not a fabricated Removed row or a native/code drain.
         // A forked active copy owns private metadata but has no rebinding API.
-        for epoch in &self.epochs {
+        for epoch in self.epochs.iter().flatten() {
             epoch.close();
         }
     }
@@ -391,6 +483,30 @@ struct State {
 thread_local! {
     static STATE: RefCell<Option<State>> = const { RefCell::new(None) };
     static POISONED: Cell<bool> = const { Cell::new(false) };
+    static CONTROLLER_ACTIVE: Cell<bool> = const { Cell::new(false) };
+}
+
+// Snapshot allocates while holding writer authority. An instrumented allocator
+// must refuse same-thread reentry instead of waiting for its own lock. The
+// marker spans all lock-owning facade operations and cannot move across threads.
+struct ControllerScope(PhantomData<Rc<()>>);
+impl ControllerScope {
+    fn enter() -> Result<Self, BridgeError> {
+        CONTROLLER_ACTIVE
+            .try_with(|active| {
+                if active.replace(true) {
+                    Err(error(Cause::ControllerReentry))
+                } else {
+                    Ok(Self(PhantomData))
+                }
+            })
+            .unwrap_or(Err(error(Cause::ControllerReentry)))
+    }
+}
+impl Drop for ControllerScope {
+    fn drop(&mut self) {
+        let _ = CONTROLLER_ACTIVE.try_with(|active| active.set(false));
+    }
 }
 /// Non-Clone actual-thread token; failure retains TLS ownership, not return credit.
 pub struct IntervalThread {
@@ -400,6 +516,8 @@ pub struct IntervalThread {
     tid: u64,
     registration: u64,
     active: bool,
+    finished: Cell<Option<PairTotals>>,
+    drain_cursor: drain::Cursor,
     _local: PhantomData<Rc<()>>,
 }
 fn tid() -> u64 {
@@ -410,8 +528,10 @@ impl IntervalClient {
     /// Attach only after the complete site publication and caller stack admission.
     ///
     /// # Safety
-    /// The installed fixed grammar, caller-certified single-thread/signal and
-    /// readable-stack contract holds until an empty explicit detach. A real
+    /// The installed fixed grammar, caller-certified execution/signal and
+    /// readable-stack contract holds until an empty explicit detach. Concurrent
+    /// metadata transitions require activation with `activate_concurrent`;
+    /// publication itself still requires quiescence. A real
     /// original invoke CALL must supply the sealed terminal return word.
     pub unsafe fn attach(
         &self,
@@ -466,6 +586,8 @@ impl IntervalClient {
                     tid,
                     registration,
                     active: true,
+                    finished: Cell::new(Some(PairTotals::default())),
+                    drain_cursor: drain::Cursor::default(),
                     _local: PhantomData,
                 })
             })
@@ -503,7 +625,8 @@ impl IntervalThread {
             })
             .unwrap_or(Err(error(Cause::Attachment)))
     }
-    /// Copy raw completed endpoints while the attached thread has no live pair.
+    /// Copy the CURRENT local buffer while the attached thread has no live pair.
+    /// Explicitly drained rows are available in their owned IntervalBatch instead.
     /// The caller may move the copy out of its joined worker; no receipt escapes.
     pub fn raw_intervals(&self) -> Result<Vec<RawInterval>, BridgeError> {
         self.totals()?;
@@ -560,6 +683,9 @@ impl IntervalThread {
                 ))
             })
             .unwrap_or(Err(error(Cause::Attachment)))?;
+        // Only a successful matching facade completion can restore this latch.
+        // Preflight refusals above deliberately leave it unchanged.
+        let previous = self.finished.replace(None);
         // No STATE borrow or reference into its storage spans the assembly CALL.
         // SAFETY: exact caller obligations above and retained immutable gate.
         let result = unsafe { gate.invoke(bytes.as_ptr(), bytes.len(), &stack) }
@@ -570,6 +696,8 @@ impl IntervalThread {
         {
             return Err(error(Cause::Invariant));
         }
+        self.finished
+            .set(drain::completed_checkpoint(previous, before, after));
         Ok(result)
     }
     /// Failure leaves this handle and all TLS owners intact; only empty success removes them.
@@ -705,6 +833,9 @@ impl State {
         start: Option<RawTimestamp>,
         gate: Option<gate::GateEntry>,
     ) -> Result<(), BridgeError> {
+        if CONTROLLER_ACTIVE.try_with(Cell::get).unwrap_or(true) {
+            return Err(error(Cause::ControllerReentry));
+        }
         let timed = self.binding.site.gate.is_some();
         if timed != start.is_some() || timed != gate.is_some() || timed != self.timing.is_some() {
             return Err(error(Cause::ClockProfile));
@@ -737,15 +868,18 @@ impl State {
             identity: self.next,
             word: TOKEN,
         };
-        let receipt = self
-            .model
-            .enter_interval(
-                self.binding.install,
-                self.binding.function,
-                start.map_or(self.next, |value| value.ticks),
-                &mut slot,
-            )
-            .map_err(|e| error(Cause::Entry(e)))?;
+        let enter = match self.binding.entry_mode {
+            EntryMode::NonBlocking => ThreadModel::enter_interval,
+            EntryMode::Concurrent => ThreadModel::enter_interval_waiting,
+        };
+        let receipt = enter(
+            &mut self.model,
+            self.binding.install,
+            self.binding.function,
+            start.map_or(self.next, |value| value.ticks),
+            &mut slot,
+        )
+        .map_err(|e| error(Cause::Entry(e)))?;
         // Retain before any postcondition; even impossible failure cannot lose an admission.
         self.pairs[depth] = Some(Pair {
             key: Arc::clone(&self.binding.key),
@@ -772,6 +906,12 @@ impl State {
         self.next = next;
         self.totals.entries = entries;
         self.journal.header(self.tid, self.depth);
+        // Qualification-only pause after actual owner/pair/journal publication.
+        // Production builds have no field, branch or callback here.
+        #[cfg(test)]
+        if let Some(pause) = self.binding.native_entry_pause.get() {
+            pause.wait(next - 1)?;
+        }
         Ok(())
     }
     fn finish(&mut self, pc: u64, rsp: u64, return_word: u64) -> Result<(), BridgeError> {

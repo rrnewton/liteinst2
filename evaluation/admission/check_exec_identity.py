@@ -31,6 +31,8 @@ def main():
                       help='Run only the seven workspace and historical allocation checks after a merge.')
     mode.add_argument('--include-reachable-allocation', action='store_true',
                         help='Also qualify trampoline allocation under forced and default-parallel contention.')
+    mode.add_argument('--include-creation-identity', action='store_true',
+                      help='Run the three creation identity controls, five default launch-library runs and seven merge checks.')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     out = args.output.absolute()
@@ -82,6 +84,7 @@ def main():
         scope='Functional validation. Seconds are command wall durations, not throughput or profiler accuracy.',
         recipe='python3 -B evaluation/admission/check_exec_identity.py --toolchain "$TOOLCHAIN" --cargo-home "$CARGO_HOME" --output "$REPO/ignored/NEW_RUN"'
                + (' --include-reachable-allocation' if args.include_reachable_allocation else
+                  ' --include-creation-identity' if args.include_creation_identity else
                   ' --checks-only' if args.checks_only else ''))
     steps = [
         ('fmt', ['fmt', '--check'], 180),
@@ -102,12 +105,22 @@ def main():
             ('reachable-contention', ['test', '-p', 'liteinst2', '--lib', 'trampoline::near_mapping::tests::', '--', '--nocapture'], 120),
             *[(f'core-default-{i:02}', ['test', '-p', 'liteinst2', '--lib'], 180) for i in range(1, 26)],
         ]
-    if args.checks_only:
+    if args.checks_only or args.include_creation_identity:
         required = {'fmt', 'clippy', 'check', 'workspace-default', 'serial-launch',
                     'staged-allocation', 'prefixed-pun'}
         steps = [step for step in steps if step[0] in required]
         assert len(steps) == len(required)
-    result['scope'] += ' ' + ('Seven merge checks only; no repeated issue-specific campaign.'
+    if args.include_creation_identity:
+        steps[3:3] = [
+            ('creation-controls', ['test', '-p', 'liteinst-launch', '--lib',
+             'linux::remote::dynamic::owner::tests::event_identity::', '--', '--nocapture'], 180),
+            *[(f'creation-library-{i:02}', ['test', '-p', 'liteinst-launch', '--lib'], 240)
+              for i in range(1, 6)],
+        ]
+        assert len(steps) == 13
+    result['scope'] += ' ' + ('Creation identity controls, five default launch-library runs and seven merge checks.'
+                              if args.include_creation_identity else
+                              'Seven merge checks only; no repeated issue-specific campaign.'
                               if args.checks_only else 'Complete executable-identity campaign.')
     def save():
         (out / 'receipt.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
@@ -128,6 +141,21 @@ def main():
             print(name, closed['exit_code'], flush=True)
             assert closed['exit_code'] == 0 and closed['termination'] is None
             assert closed['cleanup_complete'] and closed['reaped_descendants'] == 0
+            if name == 'creation-controls':
+                expected = [
+                    'creation_candidate_cannot_acquire_another_tracer_threads_child',
+                    'creation_custody_accepts_unready_application_but_excludes_helper_and_nonchild',
+                    'replaced_creation_payload_cannot_authorize_an_exit_status_as_a_task',
+                ]
+                assert terminals == [dict(result='ok', passed=len(expected), failed=0, ignored=0)]
+                for case in expected:
+                    assert data.count(('test linux::remote::dynamic::owner::tests::event_identity::'
+                                       + case + ' ... ok').encode()) == 1
+            if name.startswith('creation-library-'):
+                assert len(terminals) == 1 and terminals[0]['result'] == 'ok'
+                assert terminals[0]['failed'] == 0 and terminals[0]['ignored'] == 0
+                assert data.count(b'test linux::remote::dynamic::owner::kernel_journal::tests::native::'
+                                  b'raw_newborn_failure_retains_unjoined_native_identity_and_actual_prefix ... ok') == 1
             if name == 'reachable-contention':
                 expected = [
                     'reachable_mapping_gap_walk_is_complete_aligned_and_below_first',

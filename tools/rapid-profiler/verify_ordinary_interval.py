@@ -127,7 +127,8 @@ def exact_output(data, schedule, retained):
         population_instructions=population, retained_instructions=selected, selection_error_numerator=numerator, selection_error_denominator=denominator)
 
 
-def exact_native_output(directory, terminal):
+def exact_native_output(directory, terminal, concurrent=False):
+    assert type(concurrent) is bool
     header = 'seed,length,status,children,comparisons,original_visits,original_steps,candidate_steps,value'
     truth_header = 'seed,length,status,instructions,conditional_branches,taken_branches,input_reads,return_reads,value'
     table = (directory/'exact-pairs.csv').read_bytes(); rows = exact_table(table, header, 4)
@@ -146,9 +147,42 @@ def exact_native_output(directory, terminal):
         assert (observed['instructions'], observed['conditional_branches'], observed['taken_branches'], observed['input_reads'], observed['return_reads']) == (6*n+5, n, n-1, n, 1)
     comparisons = sum(row['comparisons'] for row in rows)
     assert (directory/'exact-refusals.csv').read_bytes() == b'case,status,reason\nempty_capable_symbol,PASS,NoPatchWindow\n'
-    assert terminal == (f'native-exact:required=4:pairs=4:children=8:comparisons={comparisons}:truth-instructions=800:conditional=130:taken=126:'
+    mode = 'exact-concurrent' if concurrent else 'exact'
+    assert terminal == (f'native-{mode}:required=4:pairs=4:children=8:comparisons={comparisons}:truth-instructions=800:conditional=130:taken=126:'
         'input-reads=130:return-reads=4:short-ret-refusals=1:real-outer-ret=8:complete\n').encode('ascii')
     return rows, table, truth_table, comparisons
+
+
+RETIREMENT_CASES = {
+    'sixteen-epochs': (
+        'frontend_native::always_on::tests::concurrent_native::retirement_native::ordinary_native_retirement_sixteen_epochs',
+        'retirement-native PASS case=sixteen-epochs epochs=16 originals=16 calls=16 sampled=16 rows=16 events=32 actions=32 registrations=1 report_permit_refusals=16 joined=true'),
+    'function-closed': (
+        'frontend_native::always_on::tests::concurrent_native::retirement_native::ordinary_native_retirement_function_closed_receipt',
+        'retirement-native PASS case=function-closed originals=2 calls=2 sampled=1 closed=1 rows=2 events=4 actions=2 report_ready_before_return=true receipt_permit_refusal=1 post_return_stage=true joined=true'),
+}
+
+
+def retirement_output(data, case):
+    assert case in RETIREMENT_CASES
+    assert 0 < len(data) <= MIB and data.endswith(b'\n') and b'\r' not in data
+    test_name, terminal = RETIREMENT_CASES[case]
+    protocol = '\nrunning 1 test\ntest '+test_name+' ... '+terminal+'\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; '
+    assert re.fullmatch(re.escape(protocol)+r'[0-9]+ filtered out; finished in [0-9]+\.[0-9]+s\n\n', data.decode('ascii'))
+    fields = dict(word.split('=', 1) for word in terminal.split()[2:])
+    return {key: int(value) if value.isdecimal() else True if value == 'true' else value for key, value in fields.items()}
+
+
+DRAIN_TEST = 'frontend_native::always_on::tests::concurrent_native::drain_native::ordinary_native_two_completed_batches'
+DRAIN_PASS = 'drain-native PASS originals=64 calls=64 sampled=64 batches=2 rows=64 events=128 actions=2 registrations=1 capacity_refusals=2 empty_drains=3 report_records=64 detached=true input_unchanged=true'
+
+
+def drain_output(data):
+    assert 0 < len(data) <= MIB and data.endswith(b'\n') and b'\r' not in data
+    protocol = '\nrunning 1 test\ntest '+DRAIN_TEST+' ... '+DRAIN_PASS+'\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; '
+    assert re.fullmatch(re.escape(protocol)+r'[0-9]+ filtered out; finished in [0-9]+\.[0-9]+s\n\n', data.decode('ascii'))
+    fields = dict(word.split('=', 1) for word in DRAIN_PASS.split()[2:])
+    return {key: int(value) if value.isdecimal() else True if value == 'true' else value for key, value in fields.items()}
 
 
 def main():
@@ -157,15 +191,37 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__); ap.add_argument('--revision', required=True)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+name, type=Path, required=True)
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
+    ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
+    ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
+    ap.add_argument('--drain-completed', action='store_true', help='also require two full native completed-record batches; requires --retire-epochs')
+    ap.add_argument('--streamed-epochs', action='store_true', help='also require a finite 160-call streamed epoch trial; requires --drain-completed')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     for p in (repo, a.toolchain, a.user_home, a.cargo_home): assert p.is_absolute() and p.resolve(strict=True) == p and p.is_dir()
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists()
     assert raw.parent.resolve(strict=True) == raw.parent
-    raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work,
+    assert not a.concurrent_epochs or a.exact_work
+    assert not a.retire_epochs or a.concurrent_epochs
+    assert not a.drain_completed or a.retire_epochs
+    assert not a.streamed_epochs or a.drain_completed
+    raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work, concurrent_epochs_requested=a.concurrent_epochs,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
+    result['retire_epochs_requested'] = a.retire_epochs
+    result['drain_completed_requested'] = a.drain_completed
+    result['streamed_epochs_requested'] = a.streamed_epochs
+    if a.streamed_epochs:
+        result['streamed_epochs'] = dict(status='UNRUN',
+            scope='finite 160-call, 20-epoch trial; mandatory entry/RET hooks remain active; no indefinite service, timing accuracy, throughput or new full-register-state qualification',
+            source_attested='Rust checks whole guarded input, original calls, full 512-word journal pages, batch identity, complete Report/terminal payloads, owned retirement and real gate returns; CSV exports only the stated projections')
+    if a.drain_completed:
+        result['completed_drain'] = dict(status='UNRUN', test=DRAIN_TEST,
+            scope='two finite 32-call batches in one thread/registration; source-attested actual returns, entire input/raw/journal/report joins and capacity refusals; no new full-register oracle, indefinite service, timing accuracy or performance credit')
+    if a.retire_epochs:
+        result['epoch_retirement'] = dict(status='UNRUN',
+            scope='two finite cfg(test) lifecycle controls; source-attested actual CALL/RET, journal and report ownership; no new full-register oracle, buffer-drain, indefinite-service or performance credit',
+            cases=[dict(case=case, test=test, status='UNRUN') for case, (test, _) in RETIREMENT_CASES.items()])
     try:
         cpus = sorted(os.sched_getaffinity(0))[:4]; assert len(cpus) == 4
         os.sched_setaffinity(0, cpus); assert set(os.sched_getaffinity(0)) == set(cpus)
@@ -189,7 +245,29 @@ def main():
             'tools/rapid-profiler/verify_ordinary_interval.py', 'evaluation/admission/processes.py', 'tools/unwind-oracle/bounded_command.py',
             'tools/rapid-profiler/ordinary-interval/exact.rs', 'tools/rapid-profiler/exact-work/exact_work.S',
             'tools/rapid-profiler/exact-work/truth.rs', 'tools/rapid-profiler/exact-work/join.rs', 'tools/rapid-profiler/exact-work/join/tests.rs',
-            'tools/rapid-profiler/exact-work/README.md', 'tools/rapid-profiler/exact-work/test_recipe.py']
+            'tools/rapid-profiler/exact-work/README.md', 'tools/rapid-profiler/exact-work/test_recipe.py',
+            'tools/rapid-profiler/src/frontend/interval_entry.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native.rs',
+            'tools/rapid-profiler/ordinary-interval/timed.rs',
+            'tools/rapid-profiler/ordinary-interval/timed/check.rs',
+            'tools/rapid-profiler/ordinary-interval/timed/check_tests.rs',
+            'tools/rapid-profiler/timed-work/check_output.py', 'tools/rapid-profiler/timed-work/test_recipe.py',
+            'tools/rapid-profiler/timed-work/README.md']
+        if a.retire_epochs:
+            names.append('tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/retirement_native.rs')
+        names.extend(['tools/rapid-profiler/src/frontend_native/mod.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/drain.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/drain/tests.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/gate/drain_tests.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/timing/drain_tests.rs'])
+        if a.drain_completed:
+            names.append('tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/drain_native.rs')
+        if a.streamed_epochs:
+            names.extend(['tools/rapid-profiler/ordinary-interval/streamed.rs',
+                'tools/rapid-profiler/ordinary-interval/streamed/check.rs',
+                'tools/rapid-profiler/ordinary-interval/streamed/check_tests.rs',
+                'tools/rapid-profiler/streamed-work/check_output.py', 'tools/rapid-profiler/streamed-work/test_recipe.py',
+                'tools/rapid-profiler/streamed-work/README.md'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -210,14 +288,19 @@ def main():
         assert len(hardware) == 1; vendor, family, model, stepping = hardware.pop(); assert vendor in ('GenuineIntel', 'AuthenticAMD')
         result.update(sources=before, tools=tool_hashes, versions=dict(rust={k: rust[k] for k in ('release', 'commit-hash', 'host')}, cargo=cargo, gcc=gcc, git=git_version, python=list(sys.version_info[:3])),
             hardware=dict(architecture='x86_64', vendor=vendor, family=family, model=model, stepping=stepping, build_affinity_cpus=4, native_affinity_cpus=1, native_state_affinity_cpus=4,
+                native_affinity_scope='single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate',
                 owner_label='AMD EPYC Zen 5 dev host', owner_label_origin='owner-specified; not inferred from observed CPU fields'))
+        if a.concurrent_epochs:
+            result['hardware'].update(timed_worker_affinity_cpus=1, timed_controller_affinity_cpus=1, timed_total_active_cpus=2)
+        if a.streamed_epochs:
+            result['hardware'].update(streamed_worker_affinity_cpus=1, streamed_controller_affinity_cpus=1, streamed_total_active_cpus=2)
         spec = importlib.util.spec_from_file_location('ordinary_processes', repo/'evaluation/admission/processes.py')
         processes = importlib.util.module_from_spec(spec); spec.loader.exec_module(processes)
         log_root = repo/'target/evaluation'; log_root.mkdir(parents=True, exist_ok=True)
         logs = Path(tempfile.mkdtemp(prefix='ordinary-interval-', dir=log_root)); helper = repo/'tools/unwind-oracle/bounded_command.py'
-        def stage(name, argv, cpu, wall, cap):
+        def stage(name, argv, cpu, wall, cap, extra_env=None):
             result['stage'] = name; directory = raw/name; directory.mkdir(); (directory/'tmp').mkdir()
-            request = dict(argv=argv, cwd=str(repo), env=dict(env, TMPDIR=str(directory/'tmp')), stdout=str(directory/'stdout.txt'), stderr=str(directory/'stderr.txt'), cpu_seconds=cpu, wall_seconds=wall, file_bytes=cap)
+            request = dict(argv=argv, cwd=str(repo), env=dict(env, **(extra_env or {}), TMPDIR=str(directory/'tmp')), stdout=str(directory/'stdout.txt'), stderr=str(directory/'stderr.txt'), cpu_seconds=cpu, wall_seconds=wall, file_bytes=cap)
             save(directory/'request.json', request)
             invocation = [str(tools['python']), '-B', str(helper), '--request', str(directory/'request.json'), '--receipt', str(directory/'receipt.json')]
             save(directory/'parent-command.json', dict(argv=invocation, env=env, affinity=cpus, wall_seconds=wall+25))
@@ -314,6 +397,112 @@ def main():
             assert len(exact['trials']) == 12 and all(t['status'] == 'PASS' for t in exact['trials'])
             assert sum(t['calls'] for t in exact['trials']) == 288 and sum(t['sampled'] for t in exact['trials']) == 140
             exact.update(status='PASS', stage='complete', fresh_processes=12, calls=288, originals=288, sampled=140, closed=148)
+        if a.concurrent_epochs:
+            concurrent = dict(status='FAILED', scope='bounded concurrent metadata admission and three timed epochs; mandatory hooks stay active; no timing accuracy, throughput, indefinite service or contested full-register-state claim')
+            result['concurrent_epochs'] = concurrent
+            concurrent_dir = raw/'concurrent-oracle-output'
+            result['commands'].append(['$REPO/target/release/frontend-native-oracle', 'exact-concurrent-state', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so', '$RAW/concurrent-oracle-output'])
+            observed = stage('concurrent-oracle', [str(binaries['frontend-native-oracle']), 'exact-concurrent-state', str(exact_candidate), str(exact_trusted), str(concurrent_dir)], 90, 90, MIB)
+            assert (observed/'stderr.txt').read_bytes() == b''
+            pairs, pair_bytes, truth_bytes, count = exact_native_output(concurrent_dir, (observed/'stdout.txt').read_bytes(), concurrent=True)
+            exact_stable(); (raw/'concurrent-state-pairs.csv').write_bytes(pair_bytes); (raw/'concurrent-truth.csv').write_bytes(truth_bytes)
+            concurrent['oracle'] = dict(pairs=4, children=8, comparisons=count, rows=pairs,
+                scope='concurrent activation without a competing controller; same complete original-state comparator and truth checks')
+            test_args = ['test', '--locked', '--offline', '--release', '--jobs', '4', '-p', 'rapid-profiler', '--lib', '--no-run', '--message-format=json-render-diagnostics']
+            result['commands'].append(['$CARGO', *test_args])
+            built = stage('concurrent-test-build', [str(tools['cargo']), *test_args], 120, 180, 128*MIB)
+            messages = [json.loads(line) for line in (built/'stdout.txt').read_text().splitlines()]
+            assert messages[-1] == dict(reason='build-finished', success=True)
+            products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'rapid_profiler' and m['profile']['test']]
+            assert len(products) == 1; product = products[0]
+            test_binary = Path(product['executable']); assert test_binary.resolve(strict=True) == test_binary
+            assert test_binary.parent == repo/'target/release/deps' and re.fullmatch('rapid_profiler-[0-9a-f]+', test_binary.name)
+            assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml')
+            assert product['target']['src_path'] == str(repo/'tools/rapid-profiler/src/lib.rs')
+            assert product['target']['kind'] == product['target']['crate_types'] == ['lib']
+            assert product['profile'] == dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True)
+            assert type(product['profile']['debuginfo']) is int and type(product['fresh']) is bool
+            assert all(product['profile'][key] is True for key in ('test', 'debug_assertions', 'overflow_checks'))
+            test_hash = digest(test_binary)
+            concurrent['test_artifact'] = dict(binary=test_hash, profile=product['profile'], cargo_fresh=product['fresh'])
+            test_name = 'frontend_native::always_on::tests::concurrent_native::ordinary_native_concurrent_arm_remove_and_old_owner'
+            test_flags = ['--exact', test_name, '--ignored', '--nocapture', '--test-threads=1']
+            result['commands'].append(['$RAPID_LIBTEST', *test_flags])
+            observed = stage('concurrent-native', [str(test_binary), *test_flags], 10, 15, MIB,
+                dict(RAPID_CONCURRENT_CANDIDATE=str(candidate), RAPID_CONCURRENT_EXPECTED=str(trusted)))
+            assert (observed/'stderr.txt').read_bytes() == b''
+            terminal = 'concurrent-native PASS originals=6 calls=6 entries=6 returns=6 sampled=4 closed=1 removed=1 reports=2+2 writer_contentions=2 registry_contentions=0 inflight_rearm=1 joined=true'
+            protocol = '\nrunning 1 test\ntest '+test_name+' ... '+terminal+'\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; '
+            assert re.fullmatch(re.escape(protocol)+r'[0-9]+ filtered out; finished in [0-9]+\.[0-9]+s\n\n', (observed/'stdout.txt').read_text())
+            assert digest(test_binary) == test_hash and digest(candidate) == digest(trusted) == trusted_hash
+            concurrent['forced_native'] = dict(originals=6, calls=6, sampled=4, closed=1, removed=1, writer_contentions=2, registry_contentions=0, inflight_rearm=1,
+                scope='cfg(test) atomic rendezvous; actual CALL/RET, raw rows, whole journal, input, stack and reports; no concurrent full-register comparator')
+            result['commands'].append(['$REPO/target/release/ordinary-interval', 'timed-work', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so'])
+            observed = stage('timed-native', [str(binary), 'timed-work', str(exact_candidate), str(exact_trusted)], 20, 30, MIB)
+            assert (observed/'stderr.txt').read_bytes() == b''
+            spec = importlib.util.spec_from_file_location('timed_check', repo/'tools/rapid-profiler/timed-work/check_output.py')
+            checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker)
+            timed = checker.parse((observed/'stdout.txt').read_bytes())
+            assert {timed['worker_cpu'], timed['controller_cpu']} <= set(cpus)
+            for label in ('transitions', 'calls', 'reports'):
+                with (raw/('timed-'+label+'.csv')).open('x', newline='') as stream:
+                    rows = timed[label]; writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator='\n')
+                    writer.writeheader(); writer.writerows(rows)
+            concurrent['timed'] = {k: v for k, v in timed.items() if k not in ('transitions', 'calls', 'reports')}
+            concurrent['timed'].update(originals=24, calls=24, epochs=3, actions=6, requested_active_ms=30, requested_inactive_ms=10)
+            exact_stable(); assert digest(test_binary) == test_hash
+            concurrent['status'] = 'PASS'
+        if a.retire_epochs:
+            retirement = result['epoch_retirement']; retirement['status'] = 'FAILED'
+            for case in retirement['cases']:
+                case['status'] = 'FAILED'
+                exact_stable(); assert digest(test_binary) == test_hash
+                label = 'retirement-'+case['case']
+                test_flags = ['--exact', case['test'], '--ignored', '--nocapture', '--test-threads=1']
+                result['commands'].append(['$RAPID_LIBTEST', *test_flags])
+                observed = stage(label, [str(test_binary), *test_flags], 10, 15, MIB,
+                    dict(RAPID_CONCURRENT_CANDIDATE=str(candidate), RAPID_CONCURRENT_EXPECTED=str(trusted)))
+                assert (observed/'stderr.txt').read_bytes() == b''
+                summary = retirement_output((observed/'stdout.txt').read_bytes(), case['case'])
+                exact_stable(); assert digest(test_binary) == test_hash
+                case.update(summary, status='PASS')
+            assert len(retirement['cases']) == 2 and all(c['status'] == 'PASS' for c in retirement['cases'])
+            retirement.update(status='PASS', fresh_processes=2)
+        if a.drain_completed:
+            drained = result['completed_drain']; drained['status'] = 'FAILED'
+            exact_stable(); assert digest(test_binary) == test_hash
+            test_flags = ['--exact', DRAIN_TEST, '--ignored', '--nocapture', '--test-threads=1']
+            result['commands'].append(['$RAPID_LIBTEST', *test_flags])
+            observed = stage('drain-native', [str(test_binary), *test_flags], 10, 15, MIB,
+                dict(RAPID_CONCURRENT_CANDIDATE=str(candidate), RAPID_CONCURRENT_EXPECTED=str(trusted)))
+            assert (observed/'stderr.txt').read_bytes() == b''
+            summary = drain_output((observed/'stdout.txt').read_bytes())
+            exact_stable(); assert digest(test_binary) == test_hash
+            drained.update(summary, status='PASS', fresh_processes=1)
+        if a.streamed_epochs:
+            streamed = result['streamed_epochs']; streamed['status'] = 'FAILED'
+            exact_stable(); assert digest(test_binary) == test_hash
+            result['commands'].append(['$REPO/target/release/ordinary-interval', 'streamed-work', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so'])
+            observed = stage('streamed-native', [str(binary), 'streamed-work', str(exact_candidate), str(exact_trusted)], 20, 30, MIB)
+            assert (observed/'stderr.txt').read_bytes() == b''
+            spec = importlib.util.spec_from_file_location('streamed_check', repo/'tools/rapid-profiler/streamed-work/check_output.py')
+            checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker)
+            parsed = checker.parse((observed/'stdout.txt').read_bytes())
+            assert {parsed['worker_cpu'], parsed['controller_cpu']} <= set(cpus)
+            tables = ('transitions', 'calls', 'batches', 'retirement', 'reports')
+            exported = {}
+            for label in tables:
+                path = raw/('streamed-'+label+'.csv')
+                with path.open('x', newline='') as stream:
+                    rows = parsed[label]; writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator='\n')
+                    writer.writeheader(); writer.writerows(rows)
+                exported[label] = dict(file=path.name, rows=len(rows), **digest(path))
+            exact_stable(); assert digest(test_binary) == test_hash
+            streamed.update({k: v for k, v in parsed.items() if k not in tables})
+            streamed.update(status='PASS', originals=160, calls=160, entries=160, returns=160, epochs=20, slots=3, retired=20, replacements=17,
+                batches=40, raw_rows=160, events=320, actions=40, reports=parsed['sampled'], active_coverage=20, off_coverage=20,
+                requested_active_ms=30, requested_inactive_ms=10, nominal_window_ms=800, schedule_deadline_ms=2000,
+                replacement_cutoff_before_arm_ms=10, calls_per_batch=4, channel_capacity=2, tables=exported, fresh_processes=1)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
