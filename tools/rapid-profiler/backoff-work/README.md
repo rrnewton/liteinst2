@@ -46,8 +46,10 @@ Two new fresh children then run the existing C-checksum `backoff-work` client:
 K10 and K1000, each with 520 ten-millisecond periods and a 100000-call ceiling.
 The application uses its existing independent 23-call bursts, 250 us spacing
 and 3 ms idle gaps. Calls are measured, not tied to epoch boundaries. Parent
-and build use four allowed CPUs; the native worker and controller each pin
-one distinct CPU, and the sink inherits the four-CPU set.
+and build use four allowed CPUs; the native worker, controller, sink and joining
+main thread each pin one distinct CPU within that set. The sink uses a fixed
+8 KiB buffer and compact Debug formatting with all fields/array elements. It
+counts underlying file writes and explicitly flushes before sync.
 
 Each new child has 20 CPU seconds, 30 wall seconds and a 64 MiB file limit,
 inside a 55-second/1 MiB parent. These bounds are fixed before observations;

@@ -297,3 +297,127 @@ fn real_retirement_copies_reports_but_external_report_owners_still_bound_reuse()
     assert!(driver.pending.is_none());
     no_completion(&driver);
 }
+
+#[test]
+fn poll_deadline_diagnostic_distinguishes_inclusive_arm_and_exclusive_end_limits() {
+    let start = Instant::now();
+    let policy = Policy::ten_ms(10, 3, 100).unwrap();
+    let mut clock = Clock::new(start, policy).unwrap();
+    let ns = Duration::from_nanos(1);
+    let slack = Duration::from_millis(2);
+    assert_eq!(
+        clock.poll(start + slack, false, 0),
+        Ok(Decision::Arm(start))
+    );
+    let now = start + slack + ns;
+    assert_eq!(clock.poll(now, false, 0), Err(Error::Deadline));
+    assert_eq!(
+        clock.poll_failure(now, false, 0),
+        DeadlineFailure {
+            phase: DeadlinePhase::ClockPoll,
+            scheduled: Some(Duration::ZERO),
+            limit: Some(slack),
+            observed: Some(slack + ns),
+            arm_started: None,
+            at_limit_is_late: false,
+        }
+    );
+    let end = Duration::from_millis(30);
+    assert_eq!(clock.poll(start + end, false, 1), Err(Error::Deadline));
+    let missed = clock.poll_failure(start + end, false, 1);
+    assert_eq!(
+        (missed.scheduled, missed.limit, missed.at_limit_is_late),
+        (Some(end), Some(end), true)
+    );
+    // Earlier acknowledged stop wins over the original absolute endpoint.
+    assert_eq!(clock.poll(start + ns, true, 1), Ok(Decision::Stop));
+    let stopped = Duration::from_secs(2) + ns;
+    assert_eq!(
+        clock.poll(start + stopped - ns, false, 1),
+        Ok(Decision::Wait)
+    );
+    assert_eq!(clock.poll(start + stopped, false, 1), Err(Error::Deadline));
+    let failure = clock.poll_failure(start + stopped, false, 1);
+    assert_eq!(
+        (
+            failure.scheduled,
+            failure.limit,
+            failure.observed,
+            failure.at_limit_is_late
+        ),
+        (Some(stopped), Some(stopped), Some(stopped), true)
+    );
+    assert_eq!(clock.stopping, Some(start + stopped)); // Never renew the deadline.
+}
+
+#[test]
+fn actual_deadline_errors_retain_first_phase_and_do_not_replace_other_errors() {
+    let Prepared { mut driver, .. } = prepared();
+    let start = Instant::now();
+    let policy = Policy::ten_ms(10, 3, 100).unwrap();
+    let ns = Duration::from_nanos(1);
+    let slack = Duration::from_millis(2);
+    let began = start + Duration::from_millis(1);
+    let observed = start + slack + ns;
+    assert_eq!(arm_due(start + slack, start, slack), Ok(true));
+    let arm_error = arm_due(observed, start, slack).unwrap_err();
+    let arm = DeadlineFailure::at(
+        DeadlinePhase::ArmOperation,
+        start,
+        Some(start),
+        Some(start + slack),
+        observed,
+        Some(began),
+        false,
+    );
+    assert_eq!(
+        arm,
+        DeadlineFailure {
+            phase: DeadlinePhase::ArmOperation,
+            scheduled: Some(Duration::ZERO),
+            limit: Some(slack),
+            observed: Some(slack + ns),
+            arm_started: Some(Duration::from_millis(1)),
+            at_limit_is_late: false,
+        }
+    );
+    assert_eq!(driver.remember_deadline(Error::Full, arm), Error::Full);
+    assert_eq!(driver.deadline_failure(), None);
+    assert_eq!(driver.remember_deadline(arm_error, arm), Error::Deadline);
+    assert_eq!(driver.deadline_failure(), Some(arm));
+    let mut clock = Clock::new(start, policy).unwrap();
+    let end = start + Duration::from_millis(30);
+    assert_eq!(clock.poll(end, false, 3), Ok(Decision::Stop));
+    let deadline = start + Duration::from_millis(2030);
+    assert_eq!(clock.check_deadline(deadline - ns), Ok(()));
+    let final_error = clock.check_deadline(deadline).unwrap_err();
+    let final_failure = DeadlineFailure::at(
+        DeadlinePhase::FinalCompletion,
+        start,
+        Some(clock.diagnostic_shutdown_deadline()),
+        Some(clock.diagnostic_shutdown_deadline()),
+        deadline,
+        None,
+        true,
+    );
+    assert_eq!(final_failure.phase, DeadlinePhase::FinalCompletion);
+    assert_eq!(
+        (
+            final_failure.scheduled,
+            final_failure.limit,
+            final_failure.observed
+        ),
+        (
+            Some(Duration::from_millis(2030)),
+            Some(Duration::from_millis(2030)),
+            Some(Duration::from_millis(2030))
+        )
+    );
+    assert!(final_failure.at_limit_is_late);
+    assert_eq!(
+        driver.remember_deadline(final_error, final_failure),
+        Error::Deadline
+    );
+    assert_eq!(driver.deadline_failure(), Some(arm)); // First failure survives recovery.
+    no_completion(&driver);
+}

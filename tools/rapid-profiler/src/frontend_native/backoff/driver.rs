@@ -23,6 +23,47 @@ pub struct Driver {
     started: bool,
     close_error: Option<Error>,
     close_attempted: bool,
+    deadline_failure: Option<DeadlineFailure>,
+}
+/// Refusal location, not a diagnosis of OS scheduling or lock contention.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DeadlinePhase {
+    ClockPoll,
+    ArmOperation,
+    FinalCompletion,
+}
+/// First deadline refusal only. Times are relative to the original start;
+/// None means before start or an unrepresentable diagnostic endpoint.
+/// Equality is late only when `at_limit_is_late` is true. No retry/reset follows.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DeadlineFailure {
+    pub phase: DeadlinePhase,
+    pub scheduled: Option<Duration>,
+    pub limit: Option<Duration>,
+    pub observed: Option<Duration>,
+    /// Additional observation immediately before arm(), including its history export.
+    pub arm_started: Option<Duration>,
+    pub at_limit_is_late: bool,
+}
+impl DeadlineFailure {
+    fn at(
+        phase: DeadlinePhase,
+        start: Instant,
+        scheduled: Option<Instant>,
+        limit: Option<Instant>,
+        observed: Instant,
+        arm_started: Option<Instant>,
+        at_limit_is_late: bool,
+    ) -> Self {
+        Self {
+            phase,
+            scheduled: scheduled.and_then(|t| t.checked_duration_since(start)),
+            limit: limit.and_then(|t| t.checked_duration_since(start)),
+            observed: observed.checked_duration_since(start),
+            arm_started: arm_started.and_then(|t| t.checked_duration_since(start)),
+            at_limit_is_late,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StopReason {
@@ -78,7 +119,18 @@ impl Driver {
             started: false,
             close_error: None,
             close_attempted: false,
+            deadline_failure: None,
         }
+    }
+    /// Retained first diagnostic; absence does not classify a different failure.
+    pub fn deadline_failure(&self) -> Option<DeadlineFailure> {
+        self.deadline_failure
+    }
+    fn remember_deadline(&mut self, error: Error, failure: DeadlineFailure) -> Error {
+        if error == Error::Deadline && self.deadline_failure.is_none() {
+            self.deadline_failure = Some(failure);
+        }
+        error
     }
     fn emit(&mut self, packet: Export) -> Result<(), Error> {
         // A failed send retains ownership and immediately stops further progress.
@@ -237,11 +289,12 @@ impl Driver {
         let mut stop_acknowledged = None;
         let mut removal_completed = None;
         loop {
-            match clock.poll(
-                Instant::now(),
-                self.shared.stop.load(Ordering::Acquire),
-                self.arms,
-            )? {
+            let polled = Instant::now();
+            let requested = self.shared.stop.load(Ordering::Acquire);
+            let arms = self.arms;
+            match clock.poll(polled, requested, arms).map_err(|error| {
+                self.remember_deadline(error, clock.poll_failure(polled, requested, arms))
+            })? {
                 Decision::Stop => {
                     stop_acknowledged = Instant::now().checked_duration_since(start);
                     self.shared.stop.store(true, Ordering::Release);
@@ -250,10 +303,24 @@ impl Driver {
                     self.history()?;
                 }
                 Decision::Arm(due) => {
+                    let arm_started = Instant::now();
                     self.arm()?;
                     // An arm itself consuming the fixed slack also refuses.
                     let completed = Instant::now();
-                    arm_due(completed, due, self.policy.lateness())?;
+                    arm_due(completed, due, self.policy.lateness()).map_err(|error| {
+                        self.remember_deadline(
+                            error,
+                            DeadlineFailure::at(
+                                DeadlinePhase::ArmOperation,
+                                start,
+                                Some(due),
+                                due.checked_add(self.policy.lateness()),
+                                completed,
+                                Some(arm_started),
+                                false,
+                            ),
+                        )
+                    })?;
                     max_arm_lateness = max_arm_lateness.max(completed.duration_since(due));
                 }
                 Decision::Wait => (),
@@ -271,7 +338,21 @@ impl Driver {
                         // after the loop's check. Late completion is a failure,
                         // even with all packets exported; this cannot cancel it.
                         let completed = Instant::now();
-                        clock.check_deadline(completed)?;
+                        clock.check_deadline(completed).map_err(|error| {
+                            let deadline = clock.diagnostic_shutdown_deadline();
+                            self.remember_deadline(
+                                error,
+                                DeadlineFailure::at(
+                                    DeadlinePhase::FinalCompletion,
+                                    start,
+                                    Some(deadline),
+                                    Some(deadline),
+                                    completed,
+                                    None,
+                                    true,
+                                ),
+                            )
+                        })?;
                         return Ok(RunSummary {
                             arms: self.arms,
                             reports: self.reports,
@@ -370,6 +451,37 @@ impl Clock {
             stopping: None,
             stop_reason: None,
         })
+    }
+    // Diagnostic derivation only, called after an existing predicate refused.
+    // These methods neither make a scheduling decision nor change clock state.
+    fn diagnostic_shutdown_deadline(&self) -> Instant {
+        self.stopping
+            .unwrap_or(self.absolute_end)
+            .min(self.absolute_end)
+    }
+    fn poll_failure(&self, now: Instant, request: bool, arms: u32) -> DeadlineFailure {
+        let shutdown = self.diagnostic_shutdown_deadline();
+        let (scheduled, limit, at_limit) = if now >= shutdown {
+            (Some(shutdown), Some(shutdown), true)
+        } else if !request && now >= self.end && arms < self.policy.epochs {
+            (Some(self.end), Some(self.end), true)
+        } else {
+            let due = self.start.checked_add(self.policy.period() * arms);
+            (
+                due,
+                due.and_then(|t| t.checked_add(self.policy.lateness())),
+                false,
+            )
+        };
+        DeadlineFailure::at(
+            DeadlinePhase::ClockPoll,
+            self.start,
+            scheduled,
+            limit,
+            now,
+            None,
+            at_limit,
+        )
     }
     pub(super) fn check_deadline(&self, now: Instant) -> Result<(), Error> {
         if now >= self.absolute_end || self.stopping.is_some_and(|d| now >= d) {

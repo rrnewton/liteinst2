@@ -91,7 +91,9 @@ fn sink(output: Output, rx: mpsc::Receiver<Export>, stop: api::StopHandle) -> Si
             stop.request();
             break;
         }
-        if let Err(e) = writeln!(output, "{packet:#?}") {
+        // Keep every derived Debug field/array element without indentation;
+        // whitespace must not consume the fixed export budget or sink CPU.
+        if let Err(e) = writeln!(output, "{packet:?}") {
             result.status = Err(e.to_string());
             result.failed = Some(packet);
             stop.request();
@@ -149,7 +151,7 @@ fn sink(output: Output, rx: mpsc::Receiver<Export>, stop: api::StopHandle) -> Si
     result.unwritten = unwritten.expect("sink writer did not unwind");
     result
 }
-fn cpus() -> [usize; 2] {
+fn cpus() -> [usize; 4] {
     const WORDS: usize = std::mem::size_of::<libc::cpu_set_t>() / std::mem::size_of::<usize>();
     let mut allowed = [0_usize; WORDS];
     assert_eq!(
@@ -164,10 +166,7 @@ fn cpus() -> [usize; 2] {
     );
     let mut ids = (0..WORDS * usize::BITS as usize)
         .filter(|&i| allowed[i / usize::BITS as usize] & (1 << (i % usize::BITS as usize)) != 0);
-    [
-        ids.next().expect("worker CPU"),
-        ids.next().expect("controller CPU"),
-    ]
+    std::array::from_fn(|_| ids.next().expect("four distinct application CPUs"))
 }
 
 pub(super) fn run(
@@ -180,7 +179,7 @@ pub(super) fn run(
 ) {
     let policy = api::Policy::ten_ms(k, epochs, calls).expect("finite backoff policy");
     single_main();
-    let [worker_cpu, controller_cpu] = cpus();
+    let [worker_cpu, controller_cpu, sink_cpu, main_cpu] = cpus();
     let bytes = expected_file(candidate, trusted);
     // SAFETY: same explicit trusted compiler/ordinary readonly-leaf contract as
     // the existing demo. Only this worker may call the admitted nonempty symbol.
@@ -223,7 +222,10 @@ pub(super) fn run(
     let sink_stop = stop.clone();
     let mut sink_thread = Worker {
         resume: None,
-        handle: Some(thread::spawn(move || sink(output, export, sink_stop))),
+        handle: Some(thread::spawn(move || {
+            pin(Some(sink_cpu));
+            sink(output, export, sink_stop)
+        })),
     };
     let (ready_tx, ready_rx) = mpsc::sync_channel(1);
     let (start_tx, start_rx) = mpsc::sync_channel(1);
@@ -292,6 +294,9 @@ pub(super) fn run(
             (driver, result)
         })),
     };
+    // All children inherited the original four-CPU mask before main narrows it.
+    // Keep Debug export and join polling off the controller's application CPU.
+    pin(Some(main_cpu));
     start_tx.send(start).expect("one initial start");
     drop(start_tx);
     let end = start + policy.period() * policy.epoch_limit() + policy.shutdown();
@@ -311,6 +316,7 @@ pub(super) fn run(
         // These bounded recovery values are unexported failure prefixes, not a
         // complete successful stream. Keep the receiver until actual worker join.
         eprintln!("backoff FAILED result={result:?} call={call_error:?} worker={finish:?}");
+        eprintln!("deadline diagnostic {:?}", driver.deadline_failure());
         if let Some(p) = driver.take_pending() {
             eprintln!("unexported {p:?}");
         }

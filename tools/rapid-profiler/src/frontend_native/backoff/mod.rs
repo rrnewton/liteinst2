@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 
 mod driver;
 mod worker;
-pub use driver::{Driver, RunSummary, StopReason};
+pub use driver::{DeadlineFailure, DeadlinePhase, Driver, RunSummary, StopReason};
 pub use worker::{CallOutcome, Client, Thread, WorkerFinish};
 
 const ROWS: usize = 4;

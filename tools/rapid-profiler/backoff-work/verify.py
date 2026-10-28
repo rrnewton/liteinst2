@@ -181,7 +181,7 @@ def main():
             stable(); assert {str(p): digest(p) for p in products} == {str(p): v for p, v in products.items()}
         products_stable()
         receipt.update(tools=tool_hashes, versions=prior['versions'], sources=before,
-            hardware=dict(prior['hardware'], backoff_parent_affinity_cpus=4, backoff_worker_affinity_cpus=1, backoff_controller_affinity_cpus=1, backoff_sink_inherited_affinity_cpus=4),
+            hardware=dict(prior['hardware'], backoff_parent_affinity_cpus=4, backoff_worker_affinity_cpus=1, backoff_controller_affinity_cpus=1, backoff_sink_affinity_cpus=1, backoff_main_affinity_cpus=1, backoff_distinct_application_cpus=4),
             artifacts=dict(artifacts, libtest=test), dso=prior['dso'],
             prerequisite=dict(status='PASS', stages=27, result=digest(prior_raw/'result.json'), parent=digest(prior_parent/'parent-closed.json')))
         binary = repo/'target/release/ordinary-interval'; helper = repo/'tools/unwind-oracle/bounded_command.py'
