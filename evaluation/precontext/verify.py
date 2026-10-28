@@ -164,8 +164,8 @@ def main():
                 '--raw', '$REPO/ignored/NEW_RUN', '--toolchain', '$TOOLCHAIN', '--cargo-home', '$CARGO_HOME'],
         helpers=dict(process=PROCESS_SHA, bounded=BOUNDED_SHA), commands=[],
         runner_sha256=digest(Path(__file__)), compiler_jobs=4,
-        # Cargo reports rustc --test, not cfg(test); this target has harness=false.
-        profile=dict(opt_level='3', debuginfo=0, test=False, debug_assertions=True, overflow_checks=True),
+        # Cargo emits unit_mode.is_any_test(); harness=false controls --test separately.
+        profile=dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True),
         limits=dict(cpu_seconds=20, wall_seconds=30, file_bytes=MIB), native='UNRUN')
     save(public / 'receipt.json', receipt)
     logs = repo / 'target/evaluation' / a.raw.name
@@ -205,7 +205,7 @@ def main():
         assert len(artifacts) == 1
         artifact = artifacts[0]
         assert artifact['profile'] == receipt['profile']
-        assert artifact['profile']['test'] is False
+        assert artifact['profile']['test'] is True
         assert artifact['target']['kind'] == ['test']
         assert Path(artifact['manifest_path']).resolve() == repo / 'Cargo.toml'
         assert Path(artifact['target']['src_path']).resolve() == repo / 'tests/precontext_native.rs'
