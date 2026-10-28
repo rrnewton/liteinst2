@@ -26,24 +26,24 @@ static void fail_oracle(unsigned code,long detail) {
             code,detail,rounds,queries);
     exit(1);
 }
-static void require(int value,unsigned code) { if(!value)fail_oracle(code,0); }
+static void oracle_require(int value,unsigned code) { if(!value)fail_oracle(code,0); }
 static void start_round(void) {
     memcpy(saved_records,records,sizeof(records));memcpy(&saved_counts,&counts,sizeof(counts));
     saved_used=used;saved_generation=generation;++rounds;
 }
 static void end_round(void) {
-    require(used==saved_used && generation==saved_generation &&
+    oracle_require(used==saved_used && generation==saved_generation &&
             !memcmp(&counts,&saved_counts,sizeof(counts)) &&
             !memcmp(records,saved_records,sizeof(records)),900);
 }
 static void check(uintptr_t address,size_t slot) {
-    require(slot==RECORDS || slot<used,901);
+    oracle_require(slot==RECORDS || slot<used,901);
     struct owned_page *want=slot==RECORDS?0:&records[slot];
     struct owned_page *old=linear_current(address),*got=li2_current_oracle(address);
     ++queries;
-    require(old==want && got==want,902);
+    oracle_require(old==want && got==want,902);
     if(want) {
-        require(want->live && want->address==address &&
+        oracle_require(want->live && want->address==address &&
                 !memcmp(want,&saved_records[slot],sizeof(*want)),903);
         ++hits;
     } else ++misses;
@@ -51,7 +51,7 @@ static void check(uintptr_t address,size_t slot) {
 static void add(uintptr_t address) {
     size_t slot=used;
     append(address,slot+11,slot*PAGE,SEALED,(unsigned)(slot%OBJECTS),PROT_READ|PROT_EXEC,PROT_READ);
-    require(used==slot+1 && records[slot].address==address && records[slot].live &&
+    oracle_require(used==slot+1 && records[slot].address==address && records[slot].live &&
             records[slot].generation==slot+1,904);
 }
 static uintptr_t churn_address(size_t key) { return UINT64_C(0x100000)+key*PAGE; }
@@ -129,9 +129,9 @@ int main(void) {
     for(size_t key=0;key<257;key++)check(churn_address(key),RECORDS);
     check(0,RECORDS);check(PAGE,RECORDS);check(UINT64_C(0x8000000000000000),RECORDS);
     check(UINTPTR_MAX&~(uintptr_t)(PAGE-1),RECORDS);check(UINTPTR_MAX,RECORDS);end_round();
-    require(used==RECORDS && generation==RECORDS && counts.generations==RECORDS &&
+    oracle_require(used==RECORDS && generation==RECORDS && counts.generations==RECORDS &&
             counts.retained_records==RECORDS && counts.retired==RECORDS && !counts.live_pages,905);
-    require(rounds==292 && queries==3716 && hits==2615 && misses==1101,906);
+    oracle_require(rounds==292 && queries==3716 && hits==2615 && misses==1101,906);
     printf("{\"version\":1,\"record_capacity\":%u,\"record_bytes\":%zu,"
            "\"appends\":%zu,\"retirements\":%"PRIu64",\"rounds\":%"PRIu64
            ",\"queries\":%"PRIu64",\"hits\":%"PRIu64",\"misses\":%"PRIu64

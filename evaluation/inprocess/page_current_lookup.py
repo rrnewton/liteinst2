@@ -24,7 +24,7 @@ EXPECTED = dict(version=1, record_capacity=8192, record_bytes=64, appends=8192, 
 # Exact reviewed production lookup and unmodified whole-TU oracle/recipe.
 INPUTS = {
     'lifecycle_loader.c':'cc25a232a3a8c5fda27eae439b63c1bb4b7e58c7e17f0bfe6261ee18929139ec',
-    'tests/current_lookup/oracle.c':'32ee4998fa135695227951d75296ef535077ebfbb1da6c5074a0d9f63ba601f8',
+    'tests/current_lookup/oracle.c':'684da2d92582b65acc0d1186e003372e8e9e70e9e7262d7a18a0fbd6b3d5337e',
     'tests/current_lookup/build.sh':'ee4077e450cc4feac2c059e17419f59e8a8092652f4f4a41e2a6f764ff371039',
     'tests/current_lookup/EXPECTED.json':'5033984bdf067cefb5ee1f8980ec3c6f39bf06545526bcbc5b0311096fde1f23',
 }
