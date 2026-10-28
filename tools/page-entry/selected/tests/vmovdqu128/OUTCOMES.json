@@ -1,0 +1,129 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vmovdqu128-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 13,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 13,
+        "refusals": 146,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU128_TF_PASS pairs=13 loads=12 selftest=1 old_refusal_bytes=113 new_refusal_bytes=33 footprint_queries=24 full_state=13 full_memory=13 live_endpoints=13\n"
+    },
+    {
+      "argv": [
+        "vmovdqu128-0"
+      ],
+      "environment_delta": {
+        "LI2_VM128_CONTROL": "full-read-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 13,
+        "refusals": 146,
+        "version": 1
+      },
+      "name": "full-read-fault",
+      "process_outcome": "expected genuine failed m128 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "vmovdqu128-0"
+      ],
+      "environment_delta": {
+        "LI2_VM128_CONTROL": "cross-read-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 13,
+        "refusals": 146,
+        "version": 1
+      },
+      "name": "cross-read-fault",
+      "process_outcome": "expected genuine failed m128 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    }
+  ],
+  "literal_effects": "XMM0 receives the complete independent16-byte memory literal; ZMM0 bits511:128 become0. Every other initialized kernelFP/liveXSAVE byte, other31 vectors, all8 masks, GPRs, flags and full stack/data remain unchanged. No XSTATE_BV normalization.",
+  "native_pairs_per_group": [
+    13
+  ],
+  "negative_endpoint": "Two real m128 read faults at original PC: fully inaccessible operand and8 readable bytes followed by8 inaccessible bytes. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.",
+  "new_load_pairs_total": 12,
+  "new_refusal_count": 33,
+  "old_refusal_count": 113,
+  "prospective_only": true,
+  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000 + 96 + 9024; original storage plus complete CPUID/BV/fault and actual-before query trailers",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Only exact VEX.128 VMOVDQU XMM0,[RSI]c5fa6f06/Code1598; no other VEX authority, real-program completion or performance claim."
+}

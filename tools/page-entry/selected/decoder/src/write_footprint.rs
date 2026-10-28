@@ -120,6 +120,7 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
         // the same mnemonic must remain unsupported until explicitly reviewed.
         Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
+        | Code::VEX_Vmovdqu_xmm_xmmm128
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::VEX_Kmovq_r64_kr
