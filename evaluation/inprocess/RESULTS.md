@@ -585,3 +585,43 @@ Reproduce both projections from the hash-bound original receipts and retained pr
 PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_trace_vmov.py --inputs evaluation/inprocess/results/20261028-merged-trace-vmov-inputs.json --output /tmp/merged-trace-vmov.json
 PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_trace_vmov_predecessors.py --inputs evaluation/inprocess/results/20261028-merged-trace-vmov-inputs.json --output /tmp/merged-trace-vmov-predecessors.json
 ```
+
+## Streamed-profiler merge validation (claims 1, 2, 4)
+
+Revision `2a747e7bdffeeecc83557dd8bc9ab7d1fd109f12` includes main
+`ac0963c663e57468aee955c7b64b0d7ec59b73b6`. It retains the opt-in original-address
+TRACE successor handoff and exact EVEX512 VMOVDQU64 load. The merged creation
+identity and profiler additions change the source-derived test census without
+changing the selected runtime or its acceptance predicates.
+
+All four required checks pass, alongside 340 recorder tests and 1,039 serial
+tests across 27 harnesses. Workspace results are 2,571 passed, zero failed and
+eight ignored across 100 harnesses. The ignores comprise four historical tests
+and four newly added upstream release fixtures; this run gives those ignored
+fixtures no execution credit. All 110 named validation outcomes and the five
+cleanup controls covering six trajectories remain required and qualified.
+
+The nine native evaluators retain 349 command outcomes. TRACE's 23 processes,
+VMOV's 38 positive state pairs and two actual failed reads, and the other finite
+oracles pass. The connected cohort remains finite-only. Timing discovery and
+all four selected-profile real-program cases remain failed: default `true` and
+`ls` refuse rseq, rseq-disabled `true` reaches unsupported VPTESTNMB, and
+rseq-disabled `ls` exits with SIGKILL and no report. All real whole-process,
+first-touch and steady-state timing fields remain null. No result is inferred
+for the killed process. The distinct kernel-trap first-entry profile is unchanged.
+
+The compact numeric record retains all ten original receipt identities, exact
+revision, hardware, reproduction commands, statuses and 22 raw finite clock
+intervals. Earlier publications and failures remain unchanged. Reproduce the
+projection after running the recorded evaluator commands and retaining their
+original receipts:
+
+```sh
+python3 evaluation/inprocess/summarize_trace_vmov.py \
+  --inputs evaluation/inprocess/results/20261028-coreac-trace-vmov-inputs.json \
+  --output target/coreac-trace-vmov-reproduced.json
+```
+
+Results: `results/20261028-coreac-trace-vmov-milestone.json`; input bindings:
+`results/20261028-coreac-trace-vmov-inputs.json`. This merge validation adds no
+selected-profile real-program completion or performance claim.
