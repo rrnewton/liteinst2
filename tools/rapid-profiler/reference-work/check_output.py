@@ -14,6 +14,54 @@ PASS = ('exact-reference FUNCTIONAL_PASS originals=24 installed=24 raw_rows=24 s
 ORIGINAL_EMPTY = frozenset(('ordinal', 'generation', 'invocation', 'raw_start_ticks', 'raw_end_ticks', 'raw_start_aux', 'raw_end_aux', 'raw_ticks', 'entry_gap_ticks', 'return_gap_ticks'))
 
 
+# Exact transitive frontend-native-calibrations inventory, including expected panics.
+CALIBRATION_TESTS = {
+    'oracle::calibration::rejects_application_memory_corruption': True,
+    'oracle::calibration::rejects_defined_flag_corruption': True,
+    'oracle::calibration::rejects_fault_address_corruption': True,
+    'oracle::calibration::rejects_gpr_corruption': True,
+    'oracle::calibration::rejects_redzone_corruption': True,
+    'oracle::calibration::rejects_simd_corruption': True,
+    'oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact': False,
+    'oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_complete_frame_phase_and_owner_refuse': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_gate_bytes_offsets_and_extent_refuse': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_observer_omission_extra_and_order_refuse': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_ready_full_mapping_and_observer_identity_refuse': False,
+    'oracle::native_ordinary::reference::tests::reference_cell_cannot_alias_frame_data_stack_or_executable_ranges': False,
+    'oracle::native_ordinary::reference::tests::reference_complete_cell_identity_spills_and_canary_are_material': False,
+    'oracle::native_ordinary::reference::tests::reference_layout_requires_every_byte_and_actual_label': False,
+    'oracle::native_ordinary::reference::tests::reference_profile_and_complete_ret_inventory_refuse_substitution': False,
+    'oracle::native_ordinary::reference::tests::reference_reader_transparency_keeps_full_state_and_physical_pcs': False,
+    'oracle::native_ordinary::reference::tests::reference_result_requires_both_restorations_real_rax_and_leg': False,
+    'oracle::native_ordinary::reference::tests::reference_result_wire_rejects_clock_geometry_missing_duplicate_and_tail': False,
+    'oracle::native_ordinary::reference::tests::reference_stores_require_actual_unique_rdtscp_outputs': False,
+    'oracle::native_ordinary::tests::ordinary_actual_frame_data_and_tls_mismatch_refuse': False,
+    'oracle::native_ordinary::tests::ordinary_full_data_and_redzone_comparator_refuses': False,
+    'oracle::native_ordinary::tests::ordinary_gate_and_ready_identity_refuse': False,
+    'oracle::native_ordinary::tests::ordinary_harness_resume_only_removes_debugger_tf': False,
+    'oracle::native_ordinary::tests::ordinary_map_missing_and_duplicate_ret_refuse': False,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc': True,
+    'oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity': False,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity': True,
+    'oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record': False,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction': True,
+}
+
+
 def number(word):
     assert isinstance(word, str) and re.fullmatch(r'0|[1-9][0-9]*', word)
     value = int(word)
@@ -55,12 +103,14 @@ def pairs(data, terminal, stderr):
 def calibrations(stdout, stderr):
     assert stderr == b'' and 0 < len(stdout) <= 1048576
     text = stdout.decode('ascii')
-    pattern = (r'\nrunning 43 tests\n((?:test [A-Za-z0-9_:]+ \.\.\. ok\n){43})\n'
+    pattern = (r'\nrunning 43 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){43})\n'
         r'test result: ok\. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
     match = re.fullmatch(pattern, text)
     assert match is not None
     names = [line.split()[1] for line in match.group(1).splitlines()]
     assert len(set(names)) == 43
+    observed = {line.split()[1]: ' - should panic ... ok' in line for line in match.group(1).splitlines()}
+    assert observed == CALIBRATION_TESTS
 
 
 def functional(data, stderr):

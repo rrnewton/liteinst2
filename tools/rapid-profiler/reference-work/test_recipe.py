@@ -57,12 +57,22 @@ def client_bytes(rows):
 
 class NativeProjection(unittest.TestCase):
     def test_full_calibration_population_no_ignored_or_duplicate_names(self):
-        data = ('\nrunning 43 tests\n'+''.join(f'test oracle::control_{i} ... ok\n' for i in range(43))+
-            '\ntest result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
+        def transcript(order):
+            return ('\nrunning 43 tests\n'+''.join(
+                f'test {name}{" - should panic" if panic else ""} ... ok\n' for name, panic in order)+
+                '\ntest result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
+        items = list(CHECK.CALIBRATION_TESTS.items())
+        data = transcript(items)
         CHECK.calibrations(data, b'')
-        for bad in (data[:-1], data+b'\n', data.replace(b'control_1 ', b'control_0 '),
+        CHECK.calibrations(transcript(reversed(items)), b'')
+        for index, (name, panic) in enumerate(items):
+            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 43]):
+                bad = items.copy(); bad[index] = changed
+                with self.subTest(name=name, changed=changed), self.assertRaises(AssertionError):
+                    CHECK.calibrations(transcript(bad), b'')
+        for bad in (data[:-1], data+b'\n', transcript(items[:-1]), transcript(items+items[:1]),
                     data.replace(b'43 passed', b'42 passed'), data.replace(b'0 ignored', b'1 ignored'),
-                    data.replace(b'control_1 ... ok', b'control_1 ... ignored')):
+                    data.replace(b' ... ok', b' ... ignored', 1), data.replace(b' ... ok', b' ... FAILED', 1)):
             with self.assertRaises(AssertionError):
                 CHECK.calibrations(bad, b'')
         with self.assertRaises(AssertionError):
