@@ -520,7 +520,7 @@ impl NormalContext<'_> {
             assert_eq!(libc::ptrace(libc::PTRACE_TRACEME, 0, 0_usize, 0_usize), 0);
             assert_eq!(libc::raise(libc::SIGSTOP), 0);
         }
-        self.oracle.deadline.check();
+        // Post-stop deadline enforcement belongs to the parent reach/step path.
     }
 }
 fn mode_case(seed: u64, case: Case, extent: usize, mode: Mode) {
@@ -609,6 +609,8 @@ impl NormalOracle {
         point
     }
     fn reach_caller(&self, walk: &mut Walk<'_>, ready: &NormalReady) -> libc::user_regs_struct {
+        // Enforce the post-ready deadline without tracing supervisory clock code.
+        self.deadline.check();
         let mut last = None;
         while walk.child.registers().rip != ready.caller {
             let before = walk.child.registers();
