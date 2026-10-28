@@ -18,9 +18,27 @@ static void copy(void *d,const void *s,size_t n) {
 }
 static int equal(const void *a,const void *b,size_t n) {
     const unsigned char *x=a,*y=b;
+#ifdef LI2_FAST_EQUAL
+    /* GCC's alias-anything, alignment-one integer type permits the same
+       immutable byte ranges as the scalar path. Each load is wholly inside
+       the requested range; neither alignment nor a readable suffix is needed.
+       No vector/string instruction or application-state normalization is used. */
+    typedef uint64_t word __attribute__((__may_alias__,__aligned__(1)));
+    _Static_assert(sizeof(word)==8 && __alignof__(word)==1,"bounded unaligned word");
+    while(n>=sizeof(word)) {
+        if(*(const word *)(const void *)x!=*(const word *)(const void *)y)return 0;
+        x+=sizeof(word);y+=sizeof(word);n-=sizeof(word);
+    }
+#endif
     for(size_t i=0;i<n;i++)if(x[i]!=y[i])return 0;
     return 1;
 }
+#ifdef LI2_EQUAL_ORACLE
+/* Test-only external entry to this actual translation unit, never a copied
+   implementation. The normal runtime has no exported oracle symbol. */
+__attribute__((noinline,used,visibility("default")))
+int li2_equal_oracle(const void *a,const void *b,size_t n) { return equal(a,b,n); }
+#endif
 static uint32_t u32(const unsigned char *p) {
     return (uint32_t)p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24;
 }
