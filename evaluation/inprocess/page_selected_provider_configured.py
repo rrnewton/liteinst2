@@ -15,6 +15,7 @@ from page_selected_component_build import provider as build_provider
 from page_selected_oneshot_build import before_default
 import page_selected_provider_callback as callback
 import page_selected_provider_launch as launcher
+from page_selected_provider_libraries import libraries as provider_libraries
 SELECTED=ROOT/'tools/page-entry/selected'
 BOUNDS=dict(BUILD_PROFILES,provider=[3,256<<20,1<<20,10],provider_build=[30,512<<20,64<<20,60],
             **callback.BOUNDS,**launcher.BOUNDS)
@@ -55,7 +56,7 @@ def original_provider(builder,products,private,pin,binary,run,receipt):
     compare=load('configured_original_provider_compare',SELECTED/'tests/provider/compare.py')
     cases=load('configured_original_provider_cases',SELECTED/'tests/provider/cases.py').cohort()
     need(len(cases)==385,'full original provider cohort');state['cohort_sha256']=digest(cases)
-    for name in ('crt1.o','Scrt1.o','crti.o','crtn.o','crtbegin.o','crtbeginS.o','crtend.o','crtendS.o','libgcc.a','libgcc_s.so','libc.so','libc_nonshared.a'):
+    for name in ('crt1.o','Scrt1.o','crti.o','crtn.o','crtbegin.o','crtbeginS.o','crtend.o','crtendS.o','libgcc.a','libgcc_s.so','libc.so','libc_nonshared.a','libgcc_s.so.1','libc.so.6'):
         _,out,err=run('original-link-input-'+name,[builder.tools['cc'],'-print-file-name='+name],env=builder.environment)
         value=out.decode().strip();need(not err and Path(value).is_absolute(),'actual original C runtime link input')
         p=pin(value);state['link_inputs'][name]=dict(path=str(p),**fact(p))
@@ -85,16 +86,7 @@ def original_provider(builder,products,private,pin,binary,run,receipt):
         need(len(name_bytes)==p[5]and name_bytes[:1]==b'/'and name_bytes[-1:]==b'\0'and b'\0'not in name_bytes[:-1],'actual original interpreter string')
         interpreter=pin(Path(os.fsdecode(name_bytes[:-1])))
         _,out,err=run('original-'+name+'-libraries',[interpreter,'--list',executable],env=builder.environment);need(not err,'actual original loader list')
-        libraries={};vdso=0
-        for line in out.decode().splitlines():
-            if re.fullmatch(r'\s*linux-vdso\.so\.1 \(0x[0-9a-f]+\)',line):vdso+=1;continue
-            m=re.fullmatch(r'\s*(?:(\S+) => )?(/\S+) \(0x[0-9a-f]+\)',line);need(m is not None,'closed original loader dependency')
-            key=m[1]or'interpreter'
-            if m[1]and m[1].startswith('/'):
-                need(pin(m[1])==pin(m[2])==interpreter,'actual original interpreter aliases');key='interpreter'
-            need(key not in libraries,'unique original dependency');p=pin(m[2]);libraries[key]=dict(path=str(p),**fact(p))
-        need(vdso==1 and set(libraries)=={'libc.so.6','interpreter'}and libraries['interpreter']['path']==str(interpreter),'complete original libc/interpreter closure')
-        state.setdefault('libraries',{})[name]=libraries
+        state.setdefault('libraries',{})[name]=provider_libraries(ROOT,executable,interpreter,out,state['link_inputs'],pin)
     for case in cases:
         name='original-provider-'+case['name'];row=dict(name=name,case=case,accepted=False);state['cases'].append(row)
         nested=case['args'][4]==38;executable=built['nested'if nested else'normal']

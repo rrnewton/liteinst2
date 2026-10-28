@@ -9,6 +9,7 @@ import shlex
 from page_selected import fact,need,elf
 from page_selected_component_build import symbols
 from page_selected_register_time_build import recipe,expand
+from page_selected_provider_libraries import libraries as provider_libraries
 
 BOUNDS={'provider_component':[3,256<<20,1<<20,10],
         'provider_component_build':[30,512<<20,16<<20,60]}
@@ -52,7 +53,7 @@ def _component(builder,products,root,private,pin,binary,aliases,run,receipt,pres
     state['configuration_presence']=presence
     state['link_inputs']={}
     for name in ('crt1.o','Scrt1.o','crti.o','crtn.o','crtbegin.o','crtbeginS.o',
-                 'crtend.o','crtendS.o','libgcc.a','libgcc_s.so','libc.so','libc_nonshared.a'):
+                 'crtend.o','crtendS.o','libgcc.a','libgcc_s.so','libc.so','libc_nonshared.a','libgcc_s.so.1','libc.so.6'):
         command,out,err=run('provider-callback-link-input-'+name,
                             [builder.tools['cc'],'-print-file-name='+name],env=builder.environment)
         value=out.decode().strip()
@@ -135,20 +136,7 @@ def _component(builder,products,root,private,pin,binary,aliases,run,receipt,pres
     state['elf']=dict(type='ET_EXEC',interpreter=fact(interpreter),dynamic=True)
     _,out,err=run('provider-callback-libraries',[interpreter,'--list',executable],env=builder.environment)
     need(not err,'actual callback loader dependency stderr')
-    libraries={};vdso=0
-    for line in out.decode().splitlines():
-        if re.fullmatch(r'\s*linux-vdso\.so\.1 \(0x[0-9a-f]+\)',line):vdso+=1;continue
-        match=re.fullmatch(r'\s*(?:(\S+) => )?(/\S+) \(0x[0-9a-f]+\)',line)
-        need(match is not None,'closed actual callback loader dependency row')
-        key=match[1]or'interpreter'
-        if match[1]and match[1].startswith('/'):
-            need(pin(match[1])==pin(match[2])==interpreter,'both actual callback interpreter aliases')
-            key='interpreter'
-        need(key not in libraries,'unique callback loader dependency')
-        dependency=pin(match[2]);libraries[key]=dict(alias=match[2],path=str(dependency),**fact(dependency))
-    need(vdso==1 and set(libraries)=={'libc.so.6','interpreter'}and
-         libraries['interpreter']['path']==str(interpreter),'only actual callback libc/interpreter')
-    state['libraries']=libraries
+    state['libraries']=provider_libraries(root,executable,interpreter,out,state['link_inputs'],pin)
     _,out,err=run('provider-callback-symbols',[builder.tools['nm'],'-S','--defined-only',executable],profile='inspect',env=builder.environment)
     need(not err,'actual component symbol capture')
     actual=symbols(executable)
