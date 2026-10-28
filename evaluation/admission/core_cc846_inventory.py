@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+import inventory_syntax
 import core_5cda_inventory as main5c
 import core_813_inventory as main813
 
@@ -169,10 +170,7 @@ def require_current(declared):
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):
-        for cls in ast.parse(path.read_text()).body:
-            if isinstance(cls, ast.ClassDef):
-                identities.extend(path.stem + '.' + cls.name + '.' + method.name
-                                  for method in cls.body if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
-                                  and method.name.startswith('test_'))
+        identities.extend(path.stem + '.' + identity
+                          for identity in inventory_syntax.identities(path.read_text()))
     require(digest(identities) == PYTHON_CURRENT and len(identities) == RECORDER_TESTS,
             'cc846_python_inventory_differs')

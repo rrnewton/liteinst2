@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+import inventory_syntax
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
@@ -159,10 +160,9 @@ def require_09fe_sources(error='main09fe_source_inventory_differs'):
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN09FE['python_metadata']
-    tree = ast.parse(source_before_727(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
+    assignment_sources = inventory_syntax.assignments(source_before_727(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
     for name, expected in metadata['assignments'].items():
-        values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
-                  and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        values = inventory_syntax.literal_values(assignment_sources, name)
         if name in metadata['tuple_assignments']:
             expected = tuple(expected)
         require(values == [expected], error)
@@ -232,10 +232,9 @@ def require_0a8_sources(error='main0a8_source_inventory_differs'):
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN0A8['python_metadata']
-    tree = ast.parse(source_before_09fe(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
+    assignment_sources = inventory_syntax.assignments(source_before_09fe(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
     for name, expected in metadata['assignments'].items():
-        values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
-                  and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        values = inventory_syntax.literal_values(assignment_sources, name)
         if name in metadata['tuple_assignments']:
             expected = tuple(expected)
         require(values == [expected], error)
@@ -305,10 +304,9 @@ def require_0df8_sources(error='main0df8_source_inventory_differs'):
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN0DF8['python_metadata']
-    tree = ast.parse(source_before_0a8(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
+    assignment_sources = inventory_syntax.assignments(source_before_0a8(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
     for name, expected in metadata['assignments'].items():
-        values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
-                  and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        values = inventory_syntax.literal_values(assignment_sources, name)
         if name in metadata['tuple_assignments']:
             expected = tuple(expected)
         require(values == [expected], error)
@@ -378,10 +376,9 @@ def require_43d7_sources(error='main43d7_source_inventory_differs'):
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN43D7['python_metadata']
-    tree = ast.parse(source_before_0df8(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
+    assignment_sources = inventory_syntax.assignments(source_before_0df8(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
     for name, expected in metadata['assignments'].items():
-        values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
-                  and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        values = inventory_syntax.literal_values(assignment_sources, name)
         require(values == [expected], error)
     for path, facts in metadata['qualification_facts'].items():
         raw = source_before_0df8(path, (ROOT / path).read_bytes(), error).decode()
