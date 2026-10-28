@@ -49,6 +49,56 @@ STAGES = ('parser-controls', 'runtime-controls', 'caller-controls', 'state-contr
     'child-controls', 'caller-build', 'normal-state', 'normal-work', 'drop-sampled', 'drop-closed')
 
 
+# Independent closed lists: no import of the external-session producer/recipe.
+EXACT_PREFIXES = ('oracle::native_ordinary::normal_caller::exact_tests::', 'exact_body::', 'exact_truth::')
+EXACT_STATE = (
+    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_closed_cases_input_and_counts',
+    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_pair_rejects_count_step_return_value_or_reap_drift',
+    'exact_body::tests::exact_normal_source_requires_all_bytes_heads_and_ret36',
+    'exact_body::tests::exact_normal_body_accepts_two_real_continuation_shapes_and_closed_lengths',
+    'exact_body::tests::exact_normal_body_mutations_refuse_without_omitted_suffix_or_read',
+    'exact_truth::tests::literal_one_iteration_trace_includes_real_ret_read',
+    'exact_truth::tests::every_length_matches_algebra_input_order_and_scalar_model',
+    'exact_truth::tests::unsigned_loop_comparison_is_independent_of_input_xor_zero_flag',
+    'exact_truth::tests::changed_opcode_displacement_immediate_and_extent_all_refuse',
+    'exact_truth::tests::invalid_length_and_address_wrap_refuse')
+REFERENCE_WITNESS_PREFIX = 'oracle::native_ordinary::normal_caller::reference::tests::'
+REFERENCE_WITNESS = tuple(REFERENCE_WITNESS_PREFIX+n for n in (
+    'ready_envelope_requires_owned_cells_and_exact_tail',
+    'helper_effects_preserve_complete_state',
+    'rdtscp_outputs_require_actual_width_and_store_identity',
+    'reader_restoration_and_head_order_are_exact',
+    'calls_returns_keep_actual_words_and_full_stack',
+    'postflight_requires_outer_return_and_complete_cells',
+    'cell_page_requires_full_guards_and_disjoint_ranges',
+    'pair_counts_require_all_heads_readers_stores_and_reaps'))
+REFERENCE_GEOMETRY_NAMES = ('normal_reference_body_every_opcode_bit_and_extent',
+    'normal_reference_labels_require_exact_addresses_and_no_wrap',
+    'normal_reference_reader_boundaries_and_cell_isolation',
+    'normal_reference_fresh_identity_phase_stack_result_and_canary',
+    'normal_reference_endpoint_high_words_aux_and_regression',
+    'normal_reference_zero_and_full_width_endpoints_are_retained')
+REFERENCE_GEOMETRY_PREFIX = 'oracle::native_ordinary::normal_caller::reference::bytes::tests::'
+REFERENCE_GEOMETRY = tuple(REFERENCE_GEOMETRY_PREFIX+n for n in REFERENCE_GEOMETRY_NAMES)
+REFERENCE_OWNER_PREFIX = 'normal::caller::reference::tests::'
+REFERENCE_OWNER = tuple(REFERENCE_OWNER_PREFIX+n for n in (
+    'reference_owner_profiles_keep_exact_function_body_and_legacy_identity',
+    'reference_owner_all_hidden_labels_require_exact_shape_and_address',
+    'reference_owner_linker_localization_is_closed_not_candidate_selected',
+    'reference_owner_retains_segment_dynamic_cet_and_section_refusals'))
+REFERENCE_OWNER_GEOMETRY_PREFIX = 'normal::caller::reference_bytes::tests::'
+REFERENCE_OWNER_GEOMETRY = tuple(REFERENCE_OWNER_GEOMETRY_PREFIX+n for n in REFERENCE_GEOMETRY_NAMES)
+REFERENCE_CHILD_PREFIX = 'normal_check::reference_tests::'
+REFERENCE_CHILD = tuple(REFERENCE_CHILD_PREFIX+n for n in (
+    'normal_reference_rows_require_fixed_continuations_and_complete_journal',
+    'normal_reference_postflight_requires_exact_cells_identity_stack_and_order'))
+REFERENCE_STAGES = ('reference-fixture-controls', 'reference-exact-parser-controls',
+    'reference-parser-controls', 'reference-exact-controls', 'reference-witness-controls',
+    'reference-geometry-controls', 'reference-owner-controls', 'reference-owner-geometry-controls',
+    'reference-child-controls', 'reference-exact-build', 'reference-caller-build',
+    'reference-old-exact-state', 'reference-state')
+
+
 def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
@@ -68,6 +118,7 @@ def save(path, value):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--revision', required=True)
+    ap.add_argument('--reference-exact', action='store_true', help='Append four old Exact37 and four reference Exact37 pairs after all ordinary prerequisites.')
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'):
         ap.add_argument('--'+name, type=Path, required=True)
     a = ap.parse_args()
@@ -95,6 +146,16 @@ def main():
         'tools/rapid-profiler/verify_strnlen_interval.py', 'evaluation/admission/processes.py',
         'tools/unwind-oracle/bounded_command.py', 'tools/rapid-profiler/selected-work/check_output.py',
         'tools/rapid-profiler/normal-work/check_output.py', 'tests/call_tree_truth.rs'}
+    if a.reference_exact:
+        required.update('tools/rapid-profiler/'+name for name in (
+            'verify_ordinary_interval.py', 'exact-work/exact_work.S',
+            'normal-work/exact_fixture.py', 'normal-work/test_exact_fixture.py',
+            'normal-work/exact_native.py', 'normal-work/test_exact_native.py',
+            'normal-work/reference_native.py', 'normal-work/test_reference_native.py',
+            'normal-work/reference_caller.S', 'normal-work/reference_bytes.rs',
+            'normal-work/reference_owner.rs', 'native-interval/normal/reference.rs'))
+        required.update(('tests/support/native_normal_reference.rs',
+            'tests/support/native_normal_reference_tests.rs'))
     names = git('ls-files', '-z', '--', 'src', 'tests/support', 'tools/rapid-profiler',
         'Cargo.toml', 'Cargo.lock', 'README.md', 'build.rs', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
     assert all(names) and len(names) == len(set(names)) and required.issubset(names)
@@ -106,6 +167,11 @@ def main():
     census = load('normal_census', repo/'tools/rapid-profiler/selected-work/check_output.py')
     check = load('normal_output', repo/'tools/rapid-profiler/normal-work/check_output.py')
     prior = load('normal_prior', repo/'tools/rapid-profiler/verify_strnlen_interval.py')
+    if a.reference_exact:
+        shared = load('normal_reference_shared', repo/'tools/rapid-profiler/verify_ordinary_interval.py')
+        exact_fixture = load('normal_reference_fixture', repo/'tools/rapid-profiler/normal-work/exact_fixture.py')
+        exact_native = load('normal_reference_exact_output', repo/'tools/rapid-profiler/normal-work/exact_native.py')
+        reference_native = load('normal_reference_output', repo/'tools/rapid-profiler/normal-work/reference_native.py')
     a.raw.mkdir(mode=0o700)
     save(a.raw/'sources-before.json', before)
     result = dict(schema=1, status='FAILED', stage='setup', revision=a.revision,
@@ -114,6 +180,13 @@ def main():
             '--revision', a.revision, '--raw', '$RAW', '--toolchain', '$TOOLCHAIN',
             '--user-home', '$USER_HOME', '--cargo-home', '$CARGO_HOME'], stages=[],
         sources=dict(count=len(before), manifest=digest(a.raw/'sources-before.json')))
+    if a.reference_exact:
+        result['command'].append('--reference-exact')
+        result['reference_exact'] = dict(status='UNRUN', required_stages=list(REFERENCE_STAGES),
+            stages=[dict(name=name, status='UNRUN') for name in REFERENCE_STAGES],
+            subject=dict(status='UNRUN'), caller=dict(status='UNRUN'),
+            old_exact=dict(status='UNRUN', required_pairs=4), reference=dict(status='UNRUN', required_pairs=4),
+            scope='Fixed physical reference-reader/store/return provenance and complete architectural comparisons; no duration accuracy, performance or complete-A5 claim.')
     artifacts = {}
     tool_paths = {}
     def unchanged():
@@ -266,8 +339,171 @@ def main():
             d = stage('drop-'+name, [binaries['ordinary-interval'], 'normal-drop-'+name, *argv])
             assert (d/'stderr.txt').read_bytes() == b''
             check.lifecycle((d/'stdout.txt').read_bytes(), owner)
+        if a.reference_exact:
+            group = result['reference_exact']; group['status'] = 'FAILED'
+            def reference_stage(name, argv):
+                # The section's predeclared rows retain all absent stages as UNRUN.
+                pending = next(r for r in group['stages'] if r['name'] == name)
+                assert pending['status'] == 'UNRUN'
+                pending['status'] = 'FAILED'
+                try:
+                    d = stage(name, argv, 20, 30, MIB)
+                finally:
+                    if result['stages'] and result['stages'][-1]['name'] == name:
+                        pending.update(result['stages'][-1])
+                        pending['status'] = 'FAILED'
+                        result['stages'][-1]['status'] = 'FAILED'
+                return d, pending, result['stages'][-1]
+            def reference_done(pending, row, **values):
+                pending.update(values); row.update(values)
+                pending['status'] = row['status'] = 'PASS'
+            for name, script, count in (
+                ('reference-fixture-controls', 'test_exact_fixture.py', 4),
+                ('reference-exact-parser-controls', 'test_exact_native.py', 8),
+                ('reference-parser-controls', 'test_reference_native.py', 9)):
+                d, pending, row = reference_stage(name, [python, '-B', repo/'tools/rapid-profiler/normal-work'/script])
+                assert (d/'stdout.txt').read_bytes() == b''
+                assert re.fullmatch(rb'\.{'+str(count).encode()+rb'}\n-+\nRan '+str(count).encode()+rb' tests in [0-9]+\.[0-9]+s\n\nOK\n', (d/'stderr.txt').read_bytes())
+                reference_done(pending, row, passed=count)
+            def reference_product(label, target, source, kind, crate_types):
+                # These same-revision builds/lists just completed in the mandatory
+                # prerequisite. Join their exact receipts before reusing either.
+                for suffix in ('-build', '-list'):
+                    records = [s for s in old['stages'] if s['name'] == label+suffix]
+                    assert len(records) == 1 and records[0]['status'] == 'PASS'
+                    record = records[0]; directory = nested/(label+suffix)
+                    for key, file in (('request','request.json'), ('receipt','receipt.json'),
+                            ('parent_closed','parent-closed.json'), ('stdout','stdout.txt'), ('stderr','stderr.txt')):
+                        artifacts[directory/file] = digest(directory/file)
+                        assert artifacts[directory/file] == record[key]
+                    closed_ok(json.loads((directory/'parent-closed.json').read_bytes()))
+                    receipt = json.loads((directory/'receipt.json').read_bytes())
+                    assert receipt['exit'] == 0 and receipt['wall_timeout'] is False and receipt['inputs_unchanged'] is True
+                    assert receipt['absence_proof'] == 'ECHILD' and receipt['unexpected_descendants'] == receipt['cleanup_events'] == []
+                    assert receipt['cleanup_error'] is receipt['aborted'] is None
+                    assert receipt['request_sha256'] == artifacts[directory/'request.json']['sha256']
+                    assert receipt['helper_sha256'] == before['tools/unwind-oracle/bounded_command.py']['sha256']
+                    assert all(receipt[s+'_sha256'] == artifacts[directory/(s+'.txt')]['sha256'] for s in ('stdout', 'stderr'))
+                messages = [json.loads(line) for line in (nested/(label+'-build')/'stdout.txt').read_text().splitlines()]
+                assert messages[-1] == dict(reason='build-finished', success=True)
+                products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == target and m['profile']['test']]
+                assert len(products) == 1
+                product = products[0]; binary = Path(product['executable'])
+                profile = dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True)
+                assert product['profile'] == profile and type(product['fresh']) is bool
+                assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml')
+                assert product['target']['src_path'] == str(repo/'tools/rapid-profiler'/source)
+                assert product['target']['kind'] == [kind] and product['target']['crate_types'] == [crate_types]
+                assert binary.resolve(strict=True) == binary and binary.parent == repo/'target/release/deps'
+                assert re.fullmatch(re.escape(target.replace('-', '_'))+'-[0-9a-f]+', binary.name)
+                artifacts[binary] = digest(binary)
+                authority = old['artifacts'][label]
+                assert authority == dict(binary=artifacts[binary], profile=profile, cargo_fresh=product['fresh'])
+                listing = nested/(label+'-list')
+                inventory = census.census((listing/'stdout.txt').read_bytes(), (listing/'stderr.txt').read_bytes())
+                return binary, inventory, dict(authority, full_census=len(inventory), listing=digest(listing/'stdout.txt'))
+            calibration = reference_product('state-validator', 'frontend-native-calibrations',
+                'native-interval/calibrations.rs', 'test', 'bin')
+            ordinary_test = reference_product('work-validator', 'ordinary-interval',
+                'ordinary-interval/main.rs', 'bin', 'bin')
+            for name, product, prefixes, methods in (
+                ('reference-exact-controls', calibration, EXACT_PREFIXES, EXACT_STATE),
+                ('reference-witness-controls', calibration, (REFERENCE_WITNESS_PREFIX,), REFERENCE_WITNESS),
+                ('reference-geometry-controls', calibration, (REFERENCE_GEOMETRY_PREFIX,), REFERENCE_GEOMETRY),
+                ('reference-owner-controls', ordinary_test, (REFERENCE_OWNER_PREFIX,), REFERENCE_OWNER),
+                ('reference-owner-geometry-controls', ordinary_test, (REFERENCE_OWNER_GEOMETRY_PREFIX,), REFERENCE_OWNER_GEOMETRY),
+                ('reference-child-controls', calibration, (REFERENCE_CHILD_PREFIX,), REFERENCE_CHILD)):
+                binary, inventory, authority = product
+                assert {n for n in inventory if n.startswith(prefixes)} == set(methods)
+                d, pending, row = reference_stage(name, [binary, *methods, '--exact', '--test-threads=1'])
+                checked = census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(), methods, inventory)
+                reference_done(pending, row, controls=checked, artifact=authority)
+
+            exact_final, exact_candidate = a.raw/'reference-exact-final.so', a.raw/'reference-exact-candidate.so'
+            d, pending, row = reference_stage('reference-exact-build', [tool_paths['gcc'], *shared.CFLAGS,
+                repo/'tools/rapid-profiler/exact-work/exact_work.S', '-o', exact_final])
+            assert (d/'stdout.txt').read_bytes() == (d/'stderr.txt').read_bytes() == b''
+            artifacts[exact_final] = digest(exact_final)
+            assert 0 < artifacts[exact_final]['bytes'] <= MIB
+            details = exact_fixture.describe(exact_final.read_bytes())
+            assert details['final'] == artifacts[exact_final] and details['length'] == 37
+            selection_file = a.raw/'reference-exact-selection.json'
+            save(selection_file, dict(details, revision=a.revision))
+            artifacts[selection_file] = digest(selection_file)
+            unchanged() # Trusted entire ELF/descriptor is frozen BEFORE candidate creation.
+            with exact_candidate.open('xb') as stream: stream.write(exact_final.read_bytes())
+            artifacts[exact_candidate] = digest(exact_candidate)
+            assert artifacts[exact_candidate] == artifacts[exact_final]
+            assert exact_fixture.authenticate(exact_candidate, exact_final, details['elf_va'], 37,
+                selection_file, artifacts[selection_file]['sha256']) == details
+            group['subject'] = dict(status='PASS', **details, candidate=artifacts[exact_candidate],
+                manifest=artifacts[selection_file], source=before['tools/rapid-profiler/exact-work/exact_work.S'])
+            unchanged()
+            reference_done(pending, row, selection=group['subject'])
+
+            reference_final, reference_candidate = a.raw/'reference-caller.so', a.raw/'reference-caller-candidate.so'
+            d, pending, row = reference_stage('reference-caller-build', [tool_paths['gcc'], *CALLER_FLAGS,
+                repo/'tools/rapid-profiler/normal-work/reference_caller.S', '-o', reference_final])
+            assert (d/'stdout.txt').read_bytes() == (d/'stderr.txt').read_bytes() == b''
+            artifacts[reference_final] = digest(reference_final)
+            assert 0 < artifacts[reference_final]['bytes'] <= MIB
+            caller_authority = a.raw/'reference-caller-authority.json'
+            save(caller_authority, dict(schema=1, revision=a.revision, final=artifacts[reference_final],
+                source=before['tools/rapid-profiler/normal-work/reference_caller.S'],
+                geometry_source=before['tools/rapid-profiler/normal-work/reference_bytes.rs'],
+                build_stage='reference-caller-build', symbol='normal_reference_caller',
+                closed_body_bytes=295, required_labels=32,
+                scope='Complete independently built ELF authority; actual owner must authenticate body, all labels and live mapping before invocation.'))
+            artifacts[caller_authority] = digest(caller_authority)
+            unchanged() # No helper candidate or address is an authority input.
+            with reference_candidate.open('xb') as stream: stream.write(reference_final.read_bytes())
+            artifacts[reference_candidate] = digest(reference_candidate)
+            assert artifacts[reference_candidate] == artifacts[reference_final]
+            assert reference_candidate.read_bytes() == reference_final.read_bytes()
+            assert (reference_candidate.stat().st_dev, reference_candidate.stat().st_ino) != (reference_final.stat().st_dev, reference_final.stat().st_ino)
+            group['caller'] = dict(status='PASS', final=artifacts[reference_final], candidate=artifacts[reference_candidate],
+                authority=artifacts[caller_authority], body_bytes=295, labels=32,
+                scope='Successful reference-state additionally authenticates the actual owner/body/labels. No stand-alone native claim from this build.')
+            unchanged()
+            reference_done(pending, row, caller=group['caller'])
+
+            for name, route, helper_candidate, helper_final, directory, filename, parser, expected in (
+                ('reference-old-exact-state', 'normal-exact-state', candidate, caller,
+                    'reference-old-exact-output', 'normal-exact-pairs.csv', exact_native, 1696),
+                ('reference-state', 'normal-reference-state', reference_candidate, reference_final,
+                    'reference-native-output', 'normal-reference-pairs.csv', reference_native, 1736)):
+                cohort = group['old_exact' if expected == 1696 else 'reference']
+                cohort['status'] = 'FAILED'
+                assert exact_fixture.authenticate(exact_candidate, exact_final, details['elf_va'], 37,
+                    selection_file, artifacts[selection_file]['sha256']) == details
+                output = a.raw/directory
+                d, pending, row = reference_stage(name, [binaries['frontend-native-oracle'], route,
+                    exact_candidate, exact_final, str(details['elf_va']), '37', helper_candidate, helper_final, output])
+                raw_table = output/filename
+                table = raw_table.read_bytes()
+                observed = parser.check(table, (d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes())
+                assert observed['status'] == 'FUNCTIONAL_PASS' and observed['pairs'] == 4 and observed['children'] == 8
+                assert observed['comparisons'] == expected
+                artifacts[raw_table] = digest(raw_table)
+                exported = a.raw/filename
+                with exported.open('xb') as stream: stream.write(table)
+                artifacts[exported] = digest(exported); assert artifacts[exported] == artifacts[raw_table]
+                cohort.update(observation={k:v for k,v in observed.items() if k != 'rows'}, table=artifacts[exported],
+                    binary=artifacts[binaries['frontend-native-oracle']], helper=artifacts[helper_final],
+                    source_stage=name, absolute_seconds_per_pair=15, continuous_steps_per_child=20000,
+                    process_cpu_seconds=20, process_wall_seconds=30)
+                unchanged()
+                cohort['status'] = 'PASS'
+                reference_done(pending, row, pairs=4, comparisons=expected, table=artifacts[exported])
+            assert tuple(r['name'] for r in group['stages']) == REFERENCE_STAGES
+            assert all(r['status'] == 'PASS' for r in group['stages'])
+            assert group['old_exact']['status'] == group['reference']['status'] == 'PASS'
+            group.update(status='PASS', closure=dict(owned_stages=13, normal_helpers=13, outer_owners=13, rescues=0),
+                complete_populations=dict(old_exact_pairs=4, reference_pairs=4, children=16,
+                    old_exact_comparisons=1696, reference_comparisons=1736,
+                    reference_reader_checks=32, reference_output_stores=96, reference_returned_cells=16))
         unchanged(); save(a.raw/'sources-after.json', {n: digest(repo/n) for n in names})
-        assert tuple(r['name'] for r in result['stages']) == STAGES and all(r['status'] == 'PASS' for r in result['stages'])
+        assert tuple(r['name'] for r in result['stages']) == STAGES + (REFERENCE_STAGES if a.reference_exact else ()) and all(r['status'] == 'PASS' for r in result['stages'])
         result.update(status='PASS', stage='complete',
             artifacts=dict(subject=artifacts[trusted], caller=artifacts[caller], **{n: artifacts[p] for n, p in binaries.items()}),
             outputs={n: digest(a.raw/n) for n in ('normal-pairs.csv', 'normal-rows.csv')},
@@ -278,7 +514,7 @@ def main():
                 generations=2, events=16, journal_words=512, reports=2, worker_joins=1),
             abandonment=dict(cases=2, original_calls=16, installed_calls=4, checkpoints=0,
                 pending_after_tls_exit=2, reattach_refusals=2, worker_joins=2),
-            closure=dict(owned_stages=10, nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
+            closure=dict(owned_stages=10 + (len(REFERENCE_STAGES) if a.reference_exact else 0), nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
             prior_failures='Fresh attempt with no retries; prior failures remain failures.')
     except BaseException as error:
         result['error_type'] = type(error).__name__

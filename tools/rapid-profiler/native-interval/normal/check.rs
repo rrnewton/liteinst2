@@ -14,6 +14,29 @@ pub(super) struct Facts<'a> {
     pub(super) tid: u64,
 }
 pub(super) fn rows_match(rows: &[NormalRecord], journal: &[u64], f: &Facts<'_>) -> bool {
+    rows_match_profile(rows, journal, f, Layout::Legacy)
+}
+#[derive(Clone, Copy)]
+enum Layout {
+    Legacy,
+    Reference,
+}
+pub(super) fn reference_rows_match(rows: &[NormalRecord], journal: &[u64], f: &Facts<'_>) -> bool {
+    !f.crossed && rows_match_profile(rows, journal, f, Layout::Reference)
+}
+fn rows_match_profile(
+    rows: &[NormalRecord],
+    journal: &[u64],
+    f: &Facts<'_>,
+    layout: Layout,
+) -> bool {
+    let (continuations, rsp_delta) = match layout {
+        Layout::Legacy => (CONTINUATIONS, SUBJECT_RSP_DELTA),
+        Layout::Reference => (
+            reference_bytes::CONTINUATIONS,
+            reference_bytes::SUBJECT_RSP_DELTA,
+        ),
+    };
     if rows.len() != 2
         || journal.len() != 512
         || f.generations.contains(&0)
@@ -41,8 +64,8 @@ pub(super) fn rows_match(rows: &[NormalRecord], journal: &[u64], f: &Facts<'_>) 
                     generation: f.generations[i],
                     invocation,
                 })
-            || row.entry_rsp != f.caller_rsp - SUBJECT_RSP_DELTA
-            || row.return_word != f.caller + CONTINUATIONS[i]
+            || row.entry_rsp != f.caller_rsp - rsp_delta
+            || row.return_word != f.caller + continuations[i]
             || row.history_prefix != prefix
             || row.acknowledgement != acknowledgement
         {
@@ -72,7 +95,7 @@ pub(super) fn rows_match(rows: &[NormalRecord], journal: &[u64], f: &Facts<'_>) 
 mod tests {
     use super::*;
     use rapid_profiler::frontend_native::{RawInterval, RawTimestamp};
-    fn fixture(crossed: bool) -> (Vec<NormalRecord>, [u64; 512]) {
+    pub(super) fn fixture(crossed: bool) -> (Vec<NormalRecord>, [u64; 512]) {
         let rows = (0..2)
             .map(|i| NormalRecord {
                 raw: RawInterval {
@@ -123,7 +146,7 @@ mod tests {
         }
         (rows, page)
     }
-    fn facts(crossed: bool) -> Facts<'static> {
+    pub(super) fn facts(crossed: bool) -> Facts<'static> {
         Facts {
             entry: 0x1000,
             returns: &[0x1020],
@@ -197,5 +220,121 @@ mod tests {
             assert!(!rows_match(&rows[..1], &page, &facts(crossed)));
             assert!(!rows_match(&rows, &page[..511], &facts(crossed)));
         }
+    }
+}
+
+// Canonical geometry: the native oracle and this consumer share exactly one
+// reference_bytes type/module. No selectable public continuation comparator.
+use crate::oracle::native_ordinary::normal_caller::reference::bytes as reference_bytes;
+pub(super) fn reference_cells_match(
+    cells: &[reference_bytes::ReferenceCell; 2],
+    caller_rsp: u64,
+    value: u64,
+) -> Option<[reference_bytes::Enclosure; 2]> {
+    let pre_call_rsp = caller_rsp.checked_sub(40)?;
+    let first = cells[0].enclosure(1, 1, pre_call_rsp, value).ok()?;
+    let second = cells[1].enclosure(2, 2, pre_call_rsp, value).ok()?;
+    (first.end.ticks <= second.start.ticks && first.start.aux == second.start.aux)
+        .then_some([first, second])
+}
+
+#[cfg(test)]
+mod reference_tests {
+    use super::*;
+    #[test]
+    fn normal_reference_rows_require_fixed_continuations_and_complete_journal() {
+        let (mut rows, mut journal) = super::tests::fixture(false);
+        let facts = super::tests::facts(false);
+        assert!(rows_match(&rows, &journal, &facts));
+        assert!(!reference_rows_match(&rows, &journal, &facts));
+        for (i, row) in rows.iter_mut().enumerate() {
+            let word = facts.caller + reference_bytes::CONTINUATIONS[i];
+            row.return_word = word;
+            journal[4 + i * 14 + 4] = word;
+            journal[4 + i * 14 + 11] = word;
+        }
+        assert!(reference_rows_match(&rows, &journal, &facts));
+        assert!(!rows_match(&rows, &journal, &facts));
+        for i in 0..2 {
+            let mut bad = rows.clone();
+            let mut page = journal;
+            bad[i].return_word += 1;
+            page[4 + i * 14 + 4] += 1;
+            page[4 + i * 14 + 11] += 1;
+            assert!(!reference_rows_match(&bad, &page, &facts));
+        }
+        for i in 0..512 {
+            let mut page = journal;
+            page[i] ^= 1;
+            assert!(!reference_rows_match(&rows, &page, &facts));
+        }
+        let mut crossed = facts;
+        crossed.crossed = true;
+        crossed.generations[1] = 9;
+        assert!(!reference_rows_match(&rows, &journal, &crossed));
+        assert!(!reference_rows_match(
+            &rows[..1],
+            &journal,
+            &super::tests::facts(false)
+        ));
+    }
+    fn cells() -> [reference_bytes::ReferenceCell; 2] {
+        let mut cells = reference_bytes::fresh_cells(1, [1, 2]).unwrap();
+        assert_eq!(std::mem::size_of_val(&cells), 36 * 8);
+        // Pure fabricated fixture. ReferenceCell is repr(C), exactly18 u64 words
+        // with no padding/invalid bit patterns; this does not execute a reader.
+        let words = unsafe { &mut *(&raw mut cells).cast::<[u64; 36]>() };
+        for i in 0..2 {
+            let c = &mut words[i * 18..(i + 1) * 18];
+            c[0] = 2;
+            c[3] = 0x8000;
+            c[4] = 0x8000;
+            c[5] = 10 + i as u64 * 20;
+            c[7] = 5;
+            c[8] = 20 + i as u64 * 20;
+            c[10] = 5;
+            c[14] = 91;
+        }
+        cells
+    }
+    #[test]
+    fn normal_reference_postflight_requires_exact_cells_identity_stack_and_order() {
+        let good = cells();
+        assert!(reference_cells_match(&good, 0x8028, 91).is_some());
+        assert!(reference_cells_match(&good, 39, 91).is_none());
+        assert!(reference_cells_match(&good, 0x8038, 91).is_none());
+        assert!(reference_cells_match(&good, 0x8028, 92).is_none());
+        for (word, replacement) in [
+            (0, 1),
+            (1, 2),
+            (2, 2),
+            (3, 0x8010),
+            (4, 0x8010),
+            (5, 1u64 << 32),
+            (7, 6),
+            (10, 6),
+            (14, 92),
+            (17, 0),
+            (18 + 1, 1),
+            (18 + 2, 1),
+            (18 + 5, 19),
+            (18 + 7, 6),
+            (18 + 10, 6),
+        ] {
+            let mut bad = good;
+            let words = unsafe { &mut *(&raw mut bad).cast::<[u64; 36]>() };
+            words[word] = replacement;
+            assert!(
+                reference_cells_match(&bad, 0x8028, 91).is_none(),
+                "word {word}"
+            );
+        }
+        let mut equal = good;
+        let words = unsafe { &mut *(&raw mut equal).cast::<[u64; 36]>() };
+        for i in 0..2 {
+            words[i * 18 + 5] = 0;
+            words[i * 18 + 8] = 0;
+        }
+        assert!(reference_cells_match(&equal, 0x8028, 91).is_some());
     }
 }

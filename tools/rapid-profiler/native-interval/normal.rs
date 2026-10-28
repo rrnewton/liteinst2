@@ -13,6 +13,7 @@ use caller::CallerOwner;
 use caller_bytes::Request;
 mod check;
 pub(super) mod exact;
+pub(super) mod reference;
 use check::{Facts, rows_match};
 use oracle::native_ordinary::strnlen::{Arguments, CASES, Deadline, LABEL, SEEDS, cases};
 use rapid_profiler::frontend::{
@@ -229,13 +230,33 @@ fn check_live(immutable: &[(u64, Vec<u8>)]) {
 
 fn child(
     candidate: bool,
-    mut context: NormalContext<'_>,
+    context: NormalContext<'_>,
     subject: &Path,
     selection: &TrustedFunctionSelection<'_>,
     caller_path: &Path,
     caller_elf: &[u8],
     mode: Mode,
 ) -> i32 {
+    child_with(
+        candidate,
+        context,
+        subject,
+        selection,
+        caller_path,
+        caller_elf,
+        reference::Profile::Legacy(mode),
+    )
+}
+fn child_with(
+    candidate: bool,
+    mut context: NormalContext<'_>,
+    subject: &Path,
+    selection: &TrustedFunctionSelection<'_>,
+    caller_path: &Path,
+    caller_elf: &[u8],
+    profile: reference::Profile,
+) -> i32 {
+    let mode = profile.mode();
     current_single_main();
     context.deadline().check();
     let crossed = mode == Mode::CrossedOwner;
@@ -243,7 +264,7 @@ fn child(
     let (bound, expected) = if let Some(case) = exact_case {
         assert_eq!(mode, Mode::Stable);
         assert_eq!(context.input(), case.input());
-        assert_eq!(selection.label(), exact::LABEL);
+        assert_eq!(selection.label(), profile.exact_label());
         (case.length(), case.scalar())
     } else {
         let case = context.case();
@@ -256,7 +277,8 @@ fn child(
     // helper; no constructors, foreign caller, active CET, signals, alias writer,
     // unload or nonlocal exit. Both real C calls obey the separate normal ABI.
     let owner = unsafe { LoadedNormalLeaf::load_selected(subject, selection, CONTRACT) }.unwrap();
-    let mut caller = unsafe { CallerOwner::load(caller_path, caller_elf) }.unwrap();
+    let mut caller =
+        unsafe { reference::Helper::load(profile, &mut context, caller_path, caller_elf) };
     let entry = owner.entry();
     let heads = owner.certificate().heads().to_vec();
     let returns = owner.certificate().returns().to_vec();
@@ -454,7 +476,7 @@ fn child(
         caller.verify().unwrap();
         check_live(&ready.immutable);
         deadline.check();
-        context.ready(&ready);
+        caller.ready(context, &ready);
         // SAFETY: real application C CALLs, no SDK invocation/RBX scratch. The
         // tracer seeds only the actual helper entry and restores its real harness
         // after complete comparisons and the independently checked callee saves.
@@ -473,6 +495,7 @@ fn child(
         );
         caller.verify().unwrap();
         check_live(&ready.immutable);
+        caller.postflight(caller_rsp, expected);
         deadline.check();
         if let Some(join) = helper {
             local = Some(join.join().expect("actual controller helper join"));
@@ -501,7 +524,7 @@ fn child(
             crossed,
             tid: u64::from(std::process::id()),
         };
-        batch(&completed, &facts);
+        caller.batch(&completed, &facts);
         assert_eq!(attached.totals().unwrap(), totals(2));
         assert!(
             unsafe { attached.checkpoint_after_returns() }
@@ -531,7 +554,7 @@ fn child(
         owner.verify_original().unwrap();
         caller.verify().unwrap();
         deadline.check();
-        context.ready(&ready);
+        caller.ready(context, &ready);
         // SAFETY: same true original C caller/target ABI and inherited live data.
         let (sum, values) = {
             let results = unsafe { &mut *(results_address as usize as *mut [u64; 2]) };
@@ -549,7 +572,9 @@ fn child(
         owner.verify_original().unwrap();
         caller.verify().unwrap();
         check_live(&ready.immutable);
+        caller.postflight(caller_rsp, expected);
     }
+    caller.finish();
     current_single_main();
     deadline.check();
     0
