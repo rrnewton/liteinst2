@@ -352,6 +352,22 @@ fn check_report(report: &Report, rows: &[RawInterval], generation: u64, sequence
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-session") {
+        assert_eq!(
+            args.len(),
+            8,
+            "ordinary-interval normal-session CANDIDATE FINAL ELF_VA LENGTH K EPOCHS"
+        );
+        normal::session::run(
+            Path::new(&args[2]),
+            Path::new(&args[3]),
+            strnlen::number(args[4].to_str().unwrap()),
+            strnlen::number(args[5].to_str().unwrap()),
+            args[6].to_str().unwrap().parse().unwrap(),
+            args[7].to_str().unwrap().parse().unwrap(),
+        );
+        return;
+    }
     if let Some(mode) = args
         .get(1)
         .and_then(|s| s.to_str())

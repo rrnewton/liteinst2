@@ -25,7 +25,9 @@ mod driver;
 mod optional;
 mod sink;
 mod worker;
-pub use driver::{DeadlineFailure, DeadlinePhase, Driver, RunSummary, StopReason};
+pub use driver::{
+    DeadlineFailure, DeadlinePhase, Driver, RunSummary, Schedule, ScheduleDecision, StopReason,
+};
 pub use optional::{
     OptionalCallOutcome, OptionalClient, OptionalCompletedBatch, OptionalCompletedCall,
     OptionalDriver, OptionalExport, OptionalPrepared, OptionalRunSummary, OptionalThread,

@@ -12,17 +12,24 @@ struct Fixture {
 }
 impl Fixture {
     fn new(epochs: usize) -> Self {
+        Self::with_history(epochs, HistoryMode::Legacy, 256)
+    }
+    fn with_history(epochs: usize, mode: HistoryMode, actions: usize) -> Self {
         let limits = Limits {
             epochs,
             threads: 1,
             depth: 1,
             records_per_epoch: 64,
-            actions: 256,
+            actions,
         };
         // Opaque legacy site sentinel supplies no executable authority; these
         // controls call metadata methods only, never normal attach/callbacks.
         let site = super::super::backoff_test_site().site;
-        let session = Session::new(
+        let constructor = match mode {
+            HistoryMode::Legacy => Session::new,
+            HistoryMode::Absolute => Session::new_streaming_history,
+        };
+        let session = constructor(
             71,
             &[FunctionSpec {
                 function: FunctionId(11),
@@ -40,7 +47,10 @@ impl Fixture {
             install: 71,
             function: FunctionId(11),
             limits,
-            entry_mode: EntryMode::NonBlocking,
+            entry_mode: match mode {
+                HistoryMode::Legacy => EntryMode::NonBlocking,
+                HistoryMode::Absolute => EntryMode::Concurrent,
+            },
             native_entry_pause: std::sync::OnceLock::new(),
         });
         let model = binding.session.register_thread(7).unwrap();
@@ -501,6 +511,8 @@ fn transfer_reuses_buffers_without_resetting_absolute_identity_or_model_sequence
     f.enter();
     f.observe();
     let first = f.transfer();
+    assert!(first.history_stream().is_none());
+    assert!(first.history_high_water().is_none());
     assert_eq!(first.number(), 1);
     assert_eq!(first.next_ordinal(), 2);
     assert_eq!(first.completed_sequences(), (0, 1));
@@ -544,4 +556,191 @@ fn gated_site_cannot_be_relabelled_into_normal_preparation() {
             cause: Cause::Identity
         })
     ));
+    let legacy = super::super::backoff_test_site();
+    let forged_wrapper = site::ordinary::InstalledNormalSite { site: legacy.site };
+    assert!(matches!(
+        PreparedNormalController::new_streaming_history(forged_wrapper, 71, FunctionId(11), limits),
+        Err(BridgeError {
+            cause: Cause::Identity
+        })
+    ));
+}
+
+fn rotate(f: &mut Fixture, chunks: &mut Vec<HistoryBatch>) {
+    let epoch = f.stage(1);
+    f.controller.arm(&epoch).unwrap();
+    f.controller.disarm(&epoch).unwrap();
+    drop(f.controller.retire(&epoch).unwrap());
+    chunks.push(f.controller.drain_history().unwrap().unwrap());
+}
+
+#[test]
+fn streaming_normal_pending_owner_survives_600_actions_without_return_acknowledgement() {
+    let mut f = Fixture::with_history(2, HistoryMode::Absolute, 4);
+    let a = f.stage(2);
+    f.controller.arm(&a).unwrap();
+    f.enter();
+    f.observe();
+    f.controller.disarm(&a).unwrap();
+    let mut chunks = vec![f.controller.drain_history().unwrap().unwrap()];
+    for _ in 0..299 {
+        rotate(&mut f, &mut chunks);
+        assert!(f.controller.report(&a).unwrap().is_none());
+        assert_eq!(f.state.totals.confirmed, 0);
+        assert_eq!(f.state.model.depth(), 1);
+    }
+    assert_eq!(f.state.history_bound(), 600);
+    assert_eq!(chunks[0].range(), 0..2);
+    assert!(chunks.windows(2).all(|w| w[1].follows(&w[0])));
+    assert_eq!(chunks.last().unwrap().range().end, 600);
+    let b = f.stage(1);
+    f.controller.arm(&b).unwrap();
+    chunks.push(f.controller.drain_history().unwrap().unwrap());
+    f.enter(); // Only this real metadata entry confirms A, retaining A's stamp.
+    f.observe();
+    assert!(f.controller.report(&a).unwrap().is_some());
+    assert!(f.controller.report(&b).unwrap().is_none());
+    let batch = f.transfer();
+    assert_eq!(batch.history_stream(), Some(chunks[0].stream()));
+    assert_eq!(batch.history_high_water(), Some(601));
+    assert_eq!(batch.records()[0].history_prefix, 1);
+    assert_eq!(batch.records()[1].history_prefix, 601);
+    assert_eq!(
+        batch.records()[0].raw.owner,
+        RawIntervalOwner::Sampled {
+            generation: a.generation().get(),
+            invocation: 0,
+        }
+    );
+    assert_eq!(
+        batch.records()[1].raw.owner,
+        RawIntervalOwner::Sampled {
+            generation: b.generation().get(),
+            invocation: 0,
+        }
+    );
+    assert_eq!(
+        chunks[0].binding_at(1),
+        Some(HistoryBinding::Published {
+            action_index: 0,
+            generation: a.generation(),
+        })
+    );
+    assert_eq!(
+        chunks.last().unwrap().binding_at(601),
+        Some(HistoryBinding::Published {
+            action_index: 600,
+            generation: b.generation(),
+        })
+    );
+    for (row, prefix) in [1, 601].into_iter().enumerate() {
+        for event in [row * 2, row * 2 + 1] {
+            assert_eq!(
+                history::decode_absolute(batch.journal()[event * 7 + 10], 601),
+                Some((1, prefix, 0))
+            );
+        }
+    }
+    assert_eq!(batch.completed_sequences(), (0, 2));
+    drop(f.controller.retire(&a).unwrap());
+    f.controller.disarm(&b).unwrap();
+    drop(f.controller.retire(&b).unwrap());
+    assert_eq!(f.controller.binding.session.retained_epochs(), 0);
+}
+
+#[test]
+fn streaming_normal_closed_and_removed_records_join_after_repeated_idle_drains() {
+    let mut f = Fixture::with_history(2, HistoryMode::Absolute, 4);
+    let mut chunks = Vec::new();
+    for _ in 0..260 {
+        rotate(&mut f, &mut chunks);
+    }
+    let a = f.stage(1);
+    f.controller.arm(&a).unwrap();
+    chunks.push(f.controller.drain_history().unwrap().unwrap());
+    f.enter();
+    f.observe();
+    let first = f.transfer();
+    assert_eq!(first.records()[0].history_prefix, 521);
+    f.enter();
+    f.observe(); // FunctionClosed remains pending even after its report retires.
+    f.controller.disarm(&a).unwrap();
+    drop(f.controller.retire(&a).unwrap());
+    chunks.push(f.controller.drain_history().unwrap().unwrap());
+    assert_eq!(f.controller.binding.session.retained_epochs(), 1);
+    for _ in 0..10 {
+        rotate(&mut f, &mut chunks);
+    }
+    assert_eq!(f.controller.binding.session.retained_epochs(), 1);
+    let second = f.transfer();
+    assert_eq!(second.number(), 2);
+    assert_eq!(second.totals().0, first.totals().1);
+    assert_eq!(second.completed_sequences(), (1, 1));
+    assert_eq!(
+        second.records()[0].raw.owner,
+        RawIntervalOwner::FunctionClosed {
+            generation: a.generation().get()
+        }
+    );
+    assert_eq!(second.records()[0].history_prefix, 521);
+    assert_eq!(second.history_high_water(), Some(542));
+    assert_eq!(f.controller.binding.session.retained_epochs(), 0);
+    let (rows, page) = outputs().unwrap();
+    assert!(f.state.transfer(rows, page).unwrap().is_none());
+    f.enter();
+    f.observe();
+    let removed_generation = match chunks.last().unwrap().after() {
+        HistoryBinding::Removed { generation, .. } => generation,
+        other => panic!("unexpected history owner {other:?}"),
+    };
+    let third = f.transfer();
+    assert_eq!(third.number(), 3);
+    assert_eq!(third.totals().0, second.totals().1);
+    assert_eq!(
+        third.records()[0].raw.owner,
+        RawIntervalOwner::Removed {
+            generation: removed_generation.get()
+        }
+    );
+    assert_eq!(third.records()[0].history_prefix, 542);
+    assert_eq!(third.history_stream(), first.history_stream());
+    assert_eq!(
+        third.totals().1,
+        NormalTotals {
+            entered: 3,
+            ret_observed: 3,
+            confirmed: 3,
+            completed: 1,
+            unsampled: 2
+        }
+    );
+}
+
+#[test]
+fn streaming_normal_upper_prefix_corruption_refuses_before_consuming_pending_owner() {
+    let mut f = Fixture::with_history(1, HistoryMode::Absolute, 4);
+    let a = f.stage(1);
+    f.controller.arm(&a).unwrap();
+    f.enter();
+    f.observe();
+    let original = f.state.journal.page.0;
+    for at in [10, 17] {
+        f.state.journal.word(at, original[at] | (1 << 24));
+        let (rows, page) = outputs().unwrap();
+        assert!(f.state.transfer(rows, page).is_err());
+        assert_eq!(f.state.totals.confirmed, 0);
+        assert!(f.controller.report(&a).unwrap().is_none());
+        f.state.journal.word(at, original[at]);
+    }
+    let mut record = f.transfer().records()[0];
+    record.history_prefix = 512;
+    assert!(record_words(&record, HistoryMode::Legacy).is_err());
+    let (entry, exit) = record_words(&record, HistoryMode::Absolute).unwrap();
+    assert_eq!(entry[6], exit[6]);
+    assert_eq!(history::decode_absolute(entry[6], 512), Some((1, 512, 0)));
+    assert!(history::decode_absolute(entry[6], 511).is_none());
+    record.history_prefix = crate::frontend::MAX_HISTORY_POSITION;
+    assert!(record_words(&record, HistoryMode::Absolute).is_ok());
+    record.history_prefix += 1;
+    assert!(record_words(&record, HistoryMode::Absolute).is_err());
 }

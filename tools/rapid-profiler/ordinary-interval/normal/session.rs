@@ -1,0 +1,438 @@
+//! Finite external-input application session; no per-call profiler invocation.
+use super::*;
+use rapid_profiler::frontend_native::backoff::{Policy, Schedule, ScheduleDecision};
+use rapid_profiler::frontend_native::{
+    HistoryBatch, HistoryBinding, IntervalController, IntervalEpoch,
+};
+use std::sync::mpsc::{TryRecvError, TrySendError};
+mod check;
+mod io;
+mod protocol;
+mod worker;
+use check::Ledger;
+use io::Io;
+use protocol::Command;
+
+struct Engine {
+    controller: IntervalController,
+    epochs: [Option<IntervalEpoch>; 3],
+    current: Option<usize>,
+    history: Vec<HistoryBatch>,
+    reports: Vec<(u64, Vec<RecordObservation>)>,
+    k: usize,
+    committed_arms: u32,
+}
+impl Engine {
+    fn history(&mut self, io: &mut Io) -> Result<(), String> {
+        if let Some(chunk) = self.controller.drain_history().map_err(failure)? {
+            if let Some(previous) = self.history.last() {
+                assert!(chunk.follows(previous));
+            } else {
+                assert_eq!(chunk.number(), 1);
+                assert_eq!(chunk.range().start, 0);
+                assert_eq!(chunk.before(), HistoryBinding::Initial);
+            }
+            assert_eq!(
+                chunk.range().end - chunk.range().start,
+                chunk.actions().len() as u64
+            );
+            // Retain the actual transfer before any output operation may refuse.
+            self.history.push(chunk);
+            let h = self.history.last().unwrap();
+            for (i, action) in h.actions().iter().enumerate() {
+                assert_eq!(action.function, None);
+                assert_eq!(action.group, None);
+                let kind = match action.kind {
+                    rapid_profiler::frontend::ActionKind::Published => {
+                        assert_eq!(action.current, Some(action.generation));
+                        "published"
+                    }
+                    rapid_profiler::frontend::ActionKind::Removed => {
+                        assert_eq!(action.current, None);
+                        "removed"
+                    }
+                    _ => panic!("unexpected mandatory session action"),
+                };
+                io.emit(format!(
+                    "HISTORY,{},{},{kind},{}\n",
+                    h.number(),
+                    h.range().start + i as u64 + 1,
+                    action.generation.get()
+                ))?;
+            }
+        }
+        Ok(())
+    }
+    fn retire(&mut self, io: &mut Io) -> Result<(), String> {
+        for i in 0..3 {
+            if self.current == Some(i) {
+                continue;
+            }
+            let Some(epoch) = &self.epochs[i] else {
+                continue;
+            };
+            if self.controller.report(epoch).map_err(failure)?.is_none() {
+                continue;
+            }
+            let report = self.controller.retire(epoch).map_err(failure)?;
+            let generation = report.generation().get();
+            let records: Vec<_> = report.records().collect();
+            assert!(records.len() <= self.k);
+            let n = records.len();
+            self.reports.push((generation, records));
+            drop(report);
+            self.epochs[i] = None;
+            io.emit(format!("REPORT,{generation},{n}\n"))?;
+        }
+        Ok(())
+    }
+    fn arm(&mut self, io: &mut Io) -> Result<(), String> {
+        self.retire(io)?;
+        let i = self
+            .epochs
+            .iter()
+            .position(Option::is_none)
+            .ok_or("retained epoch capacity")?;
+        let epoch = self
+            .controller
+            .stage(Config {
+                retained_per_function: self.k,
+                max_inflight: 1,
+                max_invocations: self.k,
+            })
+            .map_err(failure)?;
+        self.controller.arm(&epoch).map_err(failure)?;
+        self.committed_arms += 1; // Publication remains real if history later fails.
+        self.epochs[i] = Some(epoch);
+        self.current = Some(i);
+        self.history(io)
+    }
+    fn stop(&mut self, io: &mut Io) -> Result<(), String> {
+        if let Some(i) = self.current {
+            self.controller
+                .disarm(self.epochs[i].as_ref().unwrap())
+                .map_err(failure)?;
+            self.current = None;
+        }
+        self.history(io)
+    }
+}
+fn failure(e: impl std::fmt::Debug) -> String {
+    format!("{e:?}")
+}
+fn clock_failure(
+    e: impl std::fmt::Debug,
+    phase: &str,
+    committed: u32,
+    schedule: &Schedule,
+) -> String {
+    format!(
+        "clock {phase}: {e:?} committed={committed} completed={} pending={:?}",
+        schedule.armed(),
+        schedule.pending_arm()
+    )
+}
+
+fn dispatch(
+    tx: &mpsc::SyncSender<Command>,
+    pending: &mut Option<Command>,
+    stopping: bool,
+    stop_sent: &mut bool,
+) -> Result<bool, String> {
+    let mut progress = false;
+    if let Some(command) = pending.take() {
+        match tx.try_send(command) {
+            Ok(()) => progress = true,
+            Err(TrySendError::Full(command)) => *pending = Some(command),
+            Err(TrySendError::Disconnected(command)) => {
+                *pending = Some(command);
+                return Err("work queue disconnected".into());
+            }
+        }
+    }
+    if stopping && pending.is_none() && !*stop_sent {
+        match tx.try_send(Command::Stop) {
+            Ok(()) => {
+                *stop_sent = true;
+                progress = true;
+            }
+            Err(TrySendError::Full(_)) => (),
+            Err(TrySendError::Disconnected(_)) => return Err("stop queue disconnected".into()),
+        }
+    }
+    Ok(progress)
+}
+
+fn cpus() -> [usize; 2] {
+    // Read before narrowing main's mask; the worker inherits this complete mask.
+    let mut set = unsafe { std::mem::zeroed::<libc::cpu_set_t>() };
+    assert_eq!(
+        unsafe { libc::sched_getaffinity(0, std::mem::size_of_val(&set), &mut set) },
+        0
+    );
+    let mut ids =
+        (0..libc::CPU_SETSIZE as usize).filter(|&cpu| unsafe { libc::CPU_ISSET(cpu, &set) });
+    std::array::from_fn(|_| ids.next().expect("two distinct permitted session CPUs"))
+}
+
+pub(crate) fn run(
+    candidate: &Path,
+    trusted: &Path,
+    elf_va: u64,
+    length: u64,
+    k: usize,
+    epochs: u32,
+) {
+    if let Err(error) = run_checked(candidate, trusted, elf_va, length, k, epochs) {
+        eprintln!("normal-session FAILED: {error}");
+        // Failure is process fail-stop, never cancellation, a successful worker
+        // join, or release authority for an unfinished callback/receipt.
+        std::process::exit(1);
+    }
+}
+fn run_checked(
+    candidate: &Path,
+    trusted: &Path,
+    elf_va: u64,
+    length: u64,
+    k: usize,
+    epochs: u32,
+) -> Result<(), String> {
+    single_main();
+    let cpus = cpus();
+    let policy = Policy::ten_ms(k, epochs, protocol::COMMANDS as u64).map_err(failure)?;
+    let bytes = expected_file(candidate, trusted);
+    let selection = TrustedFunctionSelection::new(
+        &bytes,
+        elf_va,
+        usize::try_from(length).map_err(failure)?,
+        LABEL,
+    )
+    .map_err(failure)?;
+    // SAFETY: closed read-only strnlen application, independent full ELF extent,
+    // exact C ABI and sole entry; no signals/reentry/nonlocal exit/CET or writers.
+    // One attached worker supplies bounded immutable input for every actual call.
+    let owner = unsafe { LoadedNormalLeaf::load_selected(candidate, &selection, NORMAL_CONTRACT) }
+        .map_err(failure)?;
+    let entry = owner.entry();
+    let returns = owner.certificate().returns().iter().copied().collect();
+    owner.verify_original().map_err(failure)?;
+    let prep =
+        NormalSitePreparation::new_whole_function(owner, identity(entry)).map_err(failure)?;
+    let mut spans: Vec<_> = prep
+        .plan()
+        .plan()
+        .final_bytes()
+        .iter()
+        .map(|s| (s.address, s.bytes.clone()))
+        .collect();
+    spans.extend(
+        prep.plan()
+            .images()
+            .iter()
+            .map(|i| (i.address(), i.bytes().to_vec())),
+    );
+    let spans = Arc::new(spans);
+    let site = publish(prep);
+    unsafe { immutable(&spans) };
+    let prepared = PreparedNormalController::new_streaming_history(
+        site,
+        INSTALL,
+        FUNCTION,
+        Limits {
+            epochs: 3,
+            threads: 1,
+            depth: 1,
+            records_per_epoch: k,
+            actions: 8,
+        },
+    )
+    .map_err(failure)?;
+    // SAFETY: pristine metadata, completed real quiescent publication, exactly
+    // one controlled calling worker. Main does no blocking I/O under metadata.
+    let (controller, client) = unsafe { prepared.activate_concurrent() }.map_err(failure)?;
+    let stream = controller
+        .history_window()
+        .map_err(failure)?
+        .stream()
+        .clone();
+    let mut engine = Engine {
+        controller,
+        epochs: [None, None, None],
+        current: None,
+        history: Vec::with_capacity(epochs as usize + 1),
+        reports: Vec::with_capacity(epochs as usize),
+        k,
+        committed_arms: 0,
+    };
+    let mut io = Io::new()?;
+    let (tx, rx) = mpsc::sync_channel(4);
+    let (events, replies) = mpsc::sync_channel(1);
+    let worker_spans = Arc::clone(&spans);
+    let mut handle = Some(thread::spawn(move || {
+        worker::run(entry, client, worker_spans, rx, events, cpus[1])
+    }));
+    pin(Some(cpus[0]));
+    let worker::Event::Ready { tid } = replies.recv_timeout(WAIT).map_err(failure)? else {
+        return Err("worker attachment handshake".into());
+    };
+    let mut ledger = Ledger::new(tid, entry, returns, stream, k);
+    let mut ids = protocol::Ids::default();
+    let mut pending = None;
+    let mut requested = false;
+    let mut stop_sent = false;
+    let mut finished = None;
+    let mut final_output = false;
+    io.emit(format!(
+        "READY,normal-session-v1,{k},{epochs},10,2,4096,4096,4,1\n"
+    ))?;
+    let mut schedule = Schedule::new(Instant::now(), policy).map_err(failure)?;
+    loop {
+        let mut progress = false;
+        match schedule
+            .poll(Instant::now(), requested)
+            .map_err(|e| clock_failure(e, "poll", engine.committed_arms, &schedule))?
+        {
+            ScheduleDecision::Arm { .. } => {
+                if let Err(error) = engine.arm(&mut io) {
+                    return Err(format!(
+                        "arm/history failed: committed={} completed={} {error}",
+                        engine.committed_arms,
+                        schedule.armed()
+                    ));
+                }
+                schedule.arm_completed(Instant::now()).map_err(|e| {
+                    clock_failure(e, "arm-completed", engine.committed_arms, &schedule)
+                })?;
+                progress = true;
+            }
+            ScheduleDecision::Stop => {
+                engine.stop(&mut io)?;
+                progress = true;
+            }
+            ScheduleDecision::Wait => (),
+        }
+        // At most one reply per iteration. A full reply slot blocks only the
+        // worker after its metadata operation, never the controller or timer.
+        match replies.try_recv() {
+            Ok(worker::Event::Batch { calls, native }) => {
+                engine.history(&mut io)?;
+                ledger.batch(calls, *native, &engine.history, &mut io)?;
+                progress = true;
+            }
+            Ok(worker::Event::Flushed { id, totals }) => {
+                ledger.flushed(id, totals, &mut io)?;
+                progress = true;
+            }
+            Ok(worker::Event::Finished(totals)) => {
+                assert!(finished.replace(totals).is_none());
+                progress = true;
+            }
+            Ok(worker::Event::Ready { .. }) => return Err("duplicate worker handshake".into()),
+            Err(TryRecvError::Disconnected) if finished.is_none() => {
+                return Err("worker disconnected before completion".into());
+            }
+            Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),
+        }
+        engine.retire(&mut io)?;
+        if !schedule.is_stopping() && !requested && pending.is_none() {
+            if let Some(command) = io.command()? {
+                if command == Command::Stop {
+                    requested = true;
+                } else {
+                    ids.accept(&command).map_err(str::to_string)?;
+                    // Acceptance reserves both ledger space and this owned
+                    // pending cell. Queue Full never loses an accepted request.
+                    ledger.accepted.push(match &command {
+                        Command::Call { id, bound, bytes } => Command::Call {
+                            id: *id,
+                            bound: *bound,
+                            bytes: bytes.clone(),
+                        },
+                        Command::Flush { id } => Command::Flush { id: *id },
+                        Command::Stop => unreachable!(),
+                    });
+                    pending = Some(command);
+                }
+                progress = true;
+            } else if io.eof() {
+                return Err("EOF before STOP or scheduled shutdown".into());
+            }
+        }
+        progress |= dispatch(&tx, &mut pending, schedule.is_stopping(), &mut stop_sent)?;
+        if !final_output
+            && let Some(totals) = finished
+            && handle.as_ref().is_some_and(|h| h.is_finished())
+        {
+            assert!(schedule.is_stopping() && stop_sent && pending.is_none());
+            handle.take().unwrap().join().map_err(|_| "worker panic")?;
+            engine.retire(&mut io)?;
+            engine.history(&mut io)?;
+            assert!(engine.epochs.iter().all(Option::is_none));
+            assert_eq!(engine.reports.len(), schedule.armed() as usize);
+            assert_eq!(engine.committed_arms, schedule.armed());
+            assert_eq!(
+                engine.history.last().unwrap().range().end,
+                u64::from(schedule.armed()) + 1
+            );
+            ledger.finish(totals, &engine.reports, &mut io)?;
+            assert_eq!(ids.len(), ledger.accepted.len());
+            single_main();
+            unsafe { immutable(&spans) };
+            io.emit(format!("IO,{}\n", io.write_blocked()))?;
+            io.emit(format!(
+                "DONE,{:?},{},{},{},{},{},{},{},{},1,1\n",
+                schedule.stop_reason().unwrap(),
+                schedule.armed(),
+                engine.history.last().unwrap().range().end,
+                ledger.accepted.len(),
+                totals.confirmed,
+                totals.completed,
+                totals.unsampled,
+                ledger.batches,
+                ledger.flushes
+            ))?;
+            final_output = true;
+        }
+        io.write()?;
+        if final_output && io.drained() {
+            schedule
+                .check_completion(Instant::now())
+                .map_err(|e| clock_failure(e, "final-output", engine.committed_arms, &schedule))?;
+            return Ok(());
+        }
+        let wait = schedule
+            .wait_bound(Instant::now())
+            .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
+        if !progress {
+            thread::sleep(wait);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn accepted_full_queue_retains_pending_before_stop_and_disconnect() {
+        let (tx, rx) = mpsc::sync_channel(1);
+        tx.send(Command::Flush { id: 1 }).unwrap();
+        let mut pending = Some(Command::Flush { id: 2 });
+        let mut stopped = false;
+        assert!(!dispatch(&tx, &mut pending, true, &mut stopped).unwrap());
+        assert_eq!(pending, Some(Command::Flush { id: 2 }));
+        assert!(!stopped);
+        assert_eq!(rx.try_recv().unwrap(), Command::Flush { id: 1 });
+        assert!(dispatch(&tx, &mut pending, true, &mut stopped).unwrap());
+        assert!(pending.is_none() && !stopped);
+        assert_eq!(rx.try_recv().unwrap(), Command::Flush { id: 2 });
+        assert!(dispatch(&tx, &mut pending, true, &mut stopped).unwrap());
+        assert!(stopped);
+        assert_eq!(rx.try_recv().unwrap(), Command::Stop);
+        assert!(!dispatch(&tx, &mut pending, true, &mut stopped).unwrap());
+        pending = Some(Command::Flush { id: 3 });
+        drop(rx);
+        assert!(dispatch(&tx, &mut pending, false, &mut stopped).is_err());
+        assert_eq!(pending, Some(Command::Flush { id: 3 }));
+    }
+}
