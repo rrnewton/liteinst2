@@ -1,0 +1,10 @@
+{
+  "manifest_sha256": "2591b91ce3d9cbe16b878994d4ffa062ff43024473b7722486f4353674590c06",
+  "merge_changed_paths": 77,
+  "merged_revision": "8fe4f861e6dcb3b64c74781d418c6be7368721e3",
+  "native_revision": "8680b3954ab36a681323438c15800d7322322aa8",
+  "overlapping_native_inputs": [],
+  "scope": "All campaign source inputs equal both Git revisions and current files. Measurements were executed at native_revision only; merged-tree functional checks recorded separately.",
+  "unchanged_native_source_inputs": 158,
+  "upstream_revision": "e7972d45a99a2b1ad9b65752c1ada84ff2821bd2"
+}

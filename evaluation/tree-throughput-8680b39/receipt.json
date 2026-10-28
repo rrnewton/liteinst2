@@ -1,0 +1,261 @@
+{
+  "artifacts": {
+    "cache-calibrations": {
+      "binary": {
+        "bytes": 1754096,
+        "sha256": "db1da3eae8ae6d13ce61db9d4849fc6fc99dedc62a93750d4fa853579989bf68"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    },
+    "frontend-native-oracle": {
+      "binary": {
+        "bytes": 5073752,
+        "sha256": "251c62462d9e864dcc607b5fab0f4f5f35ed24aa91210594592b366ed94c6294"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "ordinary-interval": {
+      "binary": {
+        "bytes": 4899016,
+        "sha256": "bf4e8822f9e7821822a68ee61a059f0d1fec8e97edc644b8afe7c09645eed122"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "rapid-libtest": {
+      "binary": {
+        "bytes": 8255984,
+        "sha256": "2c552ed4d21899676c49b617b575e2688c99d190821ae59aa86c01394f8cc9d1"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    },
+    "reference-calibrations": {
+      "binary": {
+        "bytes": 1754096,
+        "sha256": "db1da3eae8ae6d13ce61db9d4849fc6fc99dedc62a93750d4fa853579989bf68"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    }
+  },
+  "binary": {
+    "bytes": 4899016,
+    "sha256": "bf4e8822f9e7821822a68ee61a059f0d1fec8e97edc644b8afe7c09645eed122"
+  },
+  "bounds": {
+    "client_cpu_seconds": 20,
+    "client_output_bytes": 1048576,
+    "client_wall_seconds": 30,
+    "outer_wall_seconds": 1200
+  },
+  "claim": 4,
+  "closure": {
+    "helper_echild": 99,
+    "inherited_stages": 47,
+    "normal_outer_parent": true,
+    "normal_stage_parents": 99,
+    "rescues": 0,
+    "source_inputs": 158,
+    "sources_digest": {
+      "bytes": 26251,
+      "sha256": "2591b91ce3d9cbe16b878994d4ffa062ff43024473b7722486f4353674590c06"
+    },
+    "stages": 99
+  },
+  "command": [
+    "$CPUSET_ALLOC",
+    "run",
+    "--cores",
+    "4",
+    "--tag",
+    "li2core-tree-throughput",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_ordinary_interval.py",
+    "--revision",
+    "8680b3954ab36a681323438c15800d7322322aa8",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--exact-work",
+    "--concurrent-epochs",
+    "--retire-epochs",
+    "--drain-completed",
+    "--streamed-epochs",
+    "--stream-history",
+    "--optional-frontend",
+    "--optional-backoff-control",
+    "--reference-timing",
+    "--cache-work",
+    "--counter-probe",
+    "--call-tree",
+    "--tree-population",
+    "--tree-throughput"
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "streamed_controller_affinity_cpus": 1,
+    "streamed_total_active_cpus": 2,
+    "streamed_worker_affinity_cpus": 1,
+    "timed_controller_affinity_cpus": 1,
+    "timed_total_active_cpus": 2,
+    "timed_worker_affinity_cpus": 1,
+    "vendor": "AuthenticAMD"
+  },
+  "launcher_environment": {
+    "AGENT_UTILS_ENGINE": "python",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1"
+  },
+  "launcher_v1_limitation": "Private launcher lacks its own -O guard. Selected root invocation was explicitly python3 -B; no optimized invocation or replacement timing cohort.",
+  "measurement": "Four raw wall/CPU/wall snapshots; primary whole and loop wall enclosures, distinct CPU deltas. All guarded SDK consumer checks are included. Clock resolution is metadata, not accuracy.",
+  "population": {
+    "closed": 61568,
+    "installed_roots": 59904,
+    "measured": 40,
+    "nodes": 119808,
+    "originals": 19968,
+    "processes": 52,
+    "roots": 79872,
+    "sampled": 58240,
+    "warmups": 12
+  },
+  "prerequisites": {
+    "complete_population": "PASS",
+    "full_native_calibration_methods": 76,
+    "tree_owner_control": "PASS",
+    "tree_pairs": 4,
+    "tree_return_word_refusal": "EXPECTED_REFUSAL",
+    "tree_state_comparisons": 1372,
+    "tree_transfer_witnesses": 24
+  },
+  "private_receipts": {
+    "outer": {
+      "bytes": 3762,
+      "sha256": "5bf81347c49ffcf13730ad02baa86c18b842bb8aacd35dcd27512d1777d52f40"
+    },
+    "result": {
+      "bytes": 227075,
+      "sha256": "8cd02cf11536b1737c45cee66740ac40c2bea7622eec94c43a1db6764a3fa845"
+    }
+  },
+  "profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "3",
+    "overflow_checks": true,
+    "test": false
+  },
+  "retained_development_failure": {
+    "reason": "Strict Clippy rejected a needless range loop in a synthetic fixture; changed to enumerate over the same two functions. No production predicate or test case changed.",
+    "receipt": {
+      "bytes": 83299,
+      "sha256": "94b7297304b900fed0d11a84232c4c5afd98deed31bad478dec5b88f766c731f"
+    },
+    "status": "FAILED"
+  },
+  "revision": "8680b3954ab36a681323438c15800d7322322aa8",
+  "schema": 1,
+  "scope": "Measured guarded SDK consumer region; startup, final timing terminal and exit excluded. No bare-native, hook-latency, hardware-event, perf-accuracy or full A5 claim.",
+  "source_reviews": "Independent source reviews; actual executions and this projection are root-attested.",
+  "status": "OBSERVED",
+  "tables": {
+    "statistics.json": {
+      "bytes": 11162,
+      "sha256": "37c333471baf30733e67e5b5bf075158ede553474e79878648041d0b65b705c7"
+    },
+    "trials.csv": {
+      "bytes": 20164,
+      "sha256": "88ca384492e4d86d9a9d8e5ace823ae688453097b95cec0c521da22e83a92376"
+    }
+  },
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "tree_dso": {
+    "bytes": 13400,
+    "sha256": "e1bddc78f41d7a03b189d13b5102b78b79d741ae8f2257a651f9bd2b90239449"
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}
