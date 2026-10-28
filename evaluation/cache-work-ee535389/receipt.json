@@ -1,0 +1,284 @@
+{
+  "artifacts": {
+    "cache-calibrations": {
+      "binary": {
+        "bytes": 1570864,
+        "sha256": "aaff481fb450ff5a0a8b4a61fb4315bf7e21431ca64d198b30280782e926edac"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    },
+    "cache-dso": {
+      "bytes": 13360,
+      "sha256": "8c7419a2aac3ae89e1d9335013b2ae63350e4906b6deb528965f9cbf9210dd1c"
+    },
+    "frontend-native-oracle": {
+      "binary": {
+        "bytes": 4727816,
+        "sha256": "67904680855aec5e358595603667c8756b47655fa4fa92cf07fe3cdad4472bf8"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "ordinary-interval": {
+      "binary": {
+        "bytes": 4512112,
+        "sha256": "eba4d2f809814c34792b961c615e48c7a498268dde333c625003d4b258f3035a"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    }
+  },
+  "bounds": {
+    "continuous_child_steps": 20000,
+    "outer_log_bytes": 1048576,
+    "outer_wall_seconds": 1200,
+    "pair_seconds": 15,
+    "state_cpu_seconds": 90,
+    "state_supervisor_seconds": 115,
+    "state_wall_seconds": 90
+  },
+  "claim": 4,
+  "closure": {
+    "all_sources_and_tools_unchanged": true,
+    "helper_echild": 39,
+    "normal_outer_parent": true,
+    "normal_stage_parents": 39,
+    "rescues": 0,
+    "source_inputs": 115,
+    "stage_names": [
+      "build",
+      "c-build",
+      "cache-build",
+      "cache-calibration-build",
+      "cache-calibrations",
+      "cache-oracle",
+      "concurrent-native",
+      "concurrent-oracle",
+      "concurrent-test-build",
+      "drain-native",
+      "exact-alternating-k1",
+      "exact-alternating-k10",
+      "exact-alternating-k24",
+      "exact-build",
+      "exact-late-long-k1",
+      "exact-late-long-k10",
+      "exact-late-long-k24",
+      "exact-long-k1",
+      "exact-long-k10",
+      "exact-long-k24",
+      "exact-oracle",
+      "exact-short-k1",
+      "exact-short-k10",
+      "exact-short-k24",
+      "history-native",
+      "native",
+      "optional-backoff-native",
+      "optional-fast-state",
+      "optional-functional",
+      "optional-slow-state",
+      "oracle",
+      "reference-calibration-build",
+      "reference-calibrations",
+      "reference-native",
+      "reference-oracle",
+      "retirement-function-closed",
+      "retirement-sixteen-epochs",
+      "streamed-native",
+      "timed-native"
+    ],
+    "stage_receipt_index_sha256": "151ee42ac5d94b8d9af6153dbef75ebfaba0416204106dc36a909d9ad7d9b8ed",
+    "stages": 39
+  },
+  "command": [
+    "$CPUSET_ALLOC",
+    "run",
+    "--cores",
+    "4",
+    "--tag",
+    "li2core-cache",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_ordinary_interval.py",
+    "--revision",
+    "ee535389b414118681651fca1fca0b0dc11d1c58",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--exact-work",
+    "--concurrent-epochs",
+    "--retire-epochs",
+    "--drain-completed",
+    "--streamed-epochs",
+    "--stream-history",
+    "--optional-frontend",
+    "--optional-backoff-control",
+    "--reference-timing",
+    "--cache-work"
+  ],
+  "controls": {
+    "parser-v2": {
+      "executed_base_revision": "c0ddeee62aad2d06458f2a32cb775343730efb89",
+      "execution_scope": "precommit working source; these parser/preflight inputs are identical at the native campaign revision",
+      "failed": 0,
+      "ignored": 0,
+      "passed": 7,
+      "receipt": {
+        "bytes": 49899,
+        "sha256": "615ce7b34beaaa80e69facfcd81b62a32b0a68e1becace29a9f1c08b3738ded3"
+      },
+      "reproducing_revision": "ee535389b414118681651fca1fca0b0dc11d1c58",
+      "source_sha256": {
+        "tools/rapid-profiler/cache-work/check_output.py": "6873523b73e8e1e7933f7ec644ce4d99d4a0ef1703d05585fd6e98cd4cc45a49",
+        "tools/rapid-profiler/cache-work/test_recipe.py": "5bc973cb92c6440158c03c53031b1c46c97e51de4123bc6def10ed89bc5ac2fd"
+      }
+    },
+    "reference-parser-v1": {
+      "executed_base_revision": "c0ddeee62aad2d06458f2a32cb775343730efb89",
+      "execution_scope": "precommit working source; these parser/preflight inputs are identical at the native campaign revision",
+      "failed": 0,
+      "ignored": 0,
+      "passed": 10,
+      "receipt": {
+        "bytes": 51596,
+        "sha256": "ede920166f027054fc1dd408e84c7480dda9d68578da719a2df1dfdee06b424b"
+      },
+      "reproducing_revision": "ee535389b414118681651fca1fca0b0dc11d1c58",
+      "source_sha256": {
+        "tools/rapid-profiler/reference-work/check_output.py": "b93b149b611a95101896aca9459cfdd4ab9e3fe3bf0d8d7f05a216daca6438a9",
+        "tools/rapid-profiler/reference-work/test_recipe.py": "4602f99ce5cd256f643d2420a723731d2ff32dff4cc235d4afb7cfe884abb5f7",
+        "tools/rapid-profiler/verify_ordinary_interval.py": "38a016d450c03a55fd784495d60a29073c2aa7ee5510514d88c03a351ae18c5d"
+      }
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "streamed_controller_affinity_cpus": 1,
+    "streamed_total_active_cpus": 2,
+    "streamed_worker_affinity_cpus": 1,
+    "timed_controller_affinity_cpus": 1,
+    "timed_total_active_cpus": 2,
+    "timed_worker_affinity_cpus": 1,
+    "vendor": "AuthenticAMD"
+  },
+  "numerical_files": {
+    "cache-state-pairs.csv": {
+      "bytes": 2772,
+      "sha256": "e56854a1adeaf9ae3e51063468609990a07b73c3612b8893645988495fec1680"
+    }
+  },
+  "prerequisites": {
+    "stages": 35,
+    "status": "PASS"
+  },
+  "private_receipts": {
+    "campaign": {
+      "bytes": 81142,
+      "sha256": "4c286aecff25e7cc509a51fc9a92c4667be22ba4aba09c925a39725da6541599"
+    },
+    "outer": {
+      "bytes": 3654,
+      "sha256": "4178b54f9ac003e65588cc183e818c9a44db186cfeabd2ab332dede9f2927f41"
+    },
+    "sources_after": {
+      "bytes": 19179,
+      "sha256": "015acd1ec83fdb7f1af3dfdb7454825a15d9466abd2487fc120d550d814c6604"
+    },
+    "sources_before": {
+      "bytes": 19179,
+      "sha256": "015acd1ec83fdb7f1af3dfdb7454825a15d9466abd2487fc120d550d814c6604"
+    }
+  },
+  "reproduction": "Tracked verify_ordinary_interval.py produces the complete numerical CSV and exact revision/tool/process receipts. All prior failed campaigns retain their original status. No hardware-cache, timing-accuracy, throughput or complete-A5 claim.",
+  "result": {
+    "calibrations": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 58,
+      "scope": "complete inherited and new validator/model controls; no hardware-cache calibration",
+      "status": "PASS"
+    },
+    "children": 24,
+    "comparisons": 3564,
+    "conditional_branches": 672,
+    "csv": "cache-state-pairs.csv",
+    "csv_digest": {
+      "bytes": 2772,
+      "sha256": "e56854a1adeaf9ae3e51063468609990a07b73c3612b8893645988495fec1680"
+    },
+    "input_reads": 1356,
+    "instructions": 3432,
+    "model": {
+      "addressing": "actual virtual line number; set = floor(address/64) modulo 4",
+      "events": "all original subject demand operand reads including count and RET; no instruction fetch or observer accesses",
+      "initial": "all invalid per invocation",
+      "line_bytes": 64,
+      "replacement": "true LRU",
+      "sets": 4,
+      "ways": 2
+    },
+    "model_events": 1368,
+    "model_hits": 1040,
+    "model_misses": 328,
+    "pairs": 12,
+    "real_outer_returns": 24,
+    "return_reads": 12,
+    "scope": "exact original architectural operand reads replayed through a declared virtual-address cache model; no hardware-cache, timing-accuracy or performance claim",
+    "source_attested": "exact whole input/source and ordered original PCs, actual load operands/results, DEC/JNZ and return/stack; shared full-state candidate comparison and exact gate/Report joins; simulator and independent reuse-distance agree per event",
+    "stage": "complete",
+    "status": "PASS",
+    "taken_branches": 660
+  },
+  "revision": "ee535389b414118681651fca1fca0b0dc11d1c58",
+  "schema": 1,
+  "scope": "exact original architectural operand reads replayed through a declared virtual-address cache model; no hardware-cache, timing-accuracy or performance claim",
+  "status": "PASS",
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}
