@@ -1,0 +1,96 @@
+{
+  "fast_function": {
+    "bytes": 15,
+    "code_hex": "4989f84889d189f0fcf3aa4c89c0c3",
+    "sha256": "9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f"
+  },
+  "schema": 1,
+  "scope": "Explicit rseq/fast timing evaluator composition only; unchanged current timing/rseq catalogs separately required. No source-authority exception.",
+  "sources": [
+    {
+      "bytes": 23234,
+      "path": "evaluation/inprocess/page_selected_fast_memset.py",
+      "sha256": "ddef8b9f7cdf8c3bf2daa90bc103b36c2e34034b68d0635d45b7c49a91e549c7"
+    },
+    {
+      "bytes": 17603,
+      "path": "evaluation/inprocess/page_selected_fast_zero_link.py",
+      "sha256": "cf2f0475b575f7225771013f5e6b50968cc9d1934e427fb8390bd3c2270949c7"
+    },
+    {
+      "bytes": 18433,
+      "path": "evaluation/inprocess/page_selected_register_time.py",
+      "sha256": "35551f50ed1cf5a73e3234d2b47bbd109db2a51d8a06c783ae34eda1ff2ca52e"
+    },
+    {
+      "bytes": 9738,
+      "path": "evaluation/inprocess/page_selected_register_time_build.py",
+      "sha256": "c6354248d89f8622b328cb21c744a4e9c37221f0d152cd5c3fbed7f48e6fe84d"
+    },
+    {
+      "bytes": 8873,
+      "path": "evaluation/inprocess/page_selected_register_time_compare.py",
+      "sha256": "9f9cf09d6ecbdcf30e95400059a1073aee5585c7a012db74fd29471f0192fcfe"
+    },
+    {
+      "bytes": 1725,
+      "path": "evaluation/inprocess/page_selected_register_time_dwarf.py",
+      "sha256": "45e3b709fbd07938af45167f67694731986da590b69fabe4ee55a47eee5ff9d8"
+    },
+    {
+      "bytes": 17945,
+      "path": "evaluation/inprocess/page_selected_register_time_inputs.json",
+      "sha256": "fc2a4a22c23a7bc22c6c084a1c39f04a585677cb02902f796ffb02ed28535c78"
+    },
+    {
+      "bytes": 4887,
+      "path": "evaluation/inprocess/page_selected_register_time_program.py",
+      "sha256": "df5759deed662b20ee70a1a94a759caee8bd288c0e4d80d79cc50e2f3f757543"
+    },
+    {
+      "bytes": 12292,
+      "path": "evaluation/inprocess/page_selected_register_time_record.py",
+      "sha256": "47e05920930033f5a6ab855e806bd0f6fbaef8e526b25c866a12a2fe67f064ff"
+    },
+    {
+      "bytes": 6539,
+      "path": "evaluation/inprocess/page_selected_rseq_build.py",
+      "sha256": "9e51f2ed77792e39ee90fa73411c800d657f5851a1161e0866e9d67eb2e21805"
+    },
+    {
+      "bytes": 5741,
+      "path": "evaluation/inprocess/page_selected_rseq_compare.py",
+      "sha256": "d6e41775dea18811d7350c4642d3cad9448010da3b920c6af91c3f87c6f01f7d"
+    },
+    {
+      "bytes": 28036,
+      "path": "evaluation/inprocess/page_selected_rseq_inputs.json",
+      "sha256": "27fb2a2cd2bfd15302843a9189e6dcfac9ef4cc28efc0d1421b2c1f48685534a"
+    },
+    {
+      "bytes": 2012,
+      "path": "evaluation/inprocess/page_selected_rseq_prepare.py",
+      "sha256": "e4df3ff2a80b4213a3588bf6d751d3913318a668f612a2c1f336c3f0399ae5e3"
+    },
+    {
+      "bytes": 3938,
+      "path": "evaluation/inprocess/page_selected_rseq_schema.json",
+      "sha256": "711bb00ed57273ed88f17e326bf8782f886a6051861fa69dc283403dbcf78ff9"
+    },
+    {
+      "bytes": 16327,
+      "path": "evaluation/inprocess/page_selected_rseq_time.py",
+      "sha256": "55c439f65d560413c9881890508f86cd2433a94e4dae1cc31e450a8d334d7e7e"
+    },
+    {
+      "bytes": 3302,
+      "path": "tools/page-entry/selected/build-rseq-inactive.sh",
+      "sha256": "fb240d7dfa404f9053b17ecfa4b64a25f4fd813a1b6598742244efae33b5c015"
+    },
+    {
+      "bytes": 2175,
+      "path": "tools/page-entry/selected/build-rseq-timing.sh",
+      "sha256": "dc3217d800d6063d284da121d03d5da27b30995eeb853760bf7cac4b9d605de4"
+    }
+  ]
+}

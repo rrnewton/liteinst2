@@ -7,7 +7,8 @@ from page_selected import fact, interpreter, need
 
 
 def execute(name, mode, selected, bridge, original, interp, extra, expected_stdout,
-            disabled, namespace_api, builder, root, private, pin, binary, run, receipt, env, digest):
+            disabled, namespace_api, builder, root, private, pin, binary, run, receipt, env, digest,
+            rseq_schema=None):
     row = dict(name=name, mode=mode, status='failed', environment=env,
                original=fact(original), interpreter=fact(interp), bridge=fact(bridge))
     receipt['programs'].append(row)
@@ -57,9 +58,17 @@ def execute(name, mode, selected, bridge, original, interp, extra, expected_stdo
          launch['dependency_fds'] == [x['fd'] for x in ns['objects']], 'actual environment/argv/carrier/FD join')
     row.update(namespace={n: fact(directory/n) for n in ('namespace.json', 'launch.json')},
                launch_environment_sha256=digest(target_env))
-    report = parse(stderr);row['report'] = report
+    if rseq_schema is None:
+        report = parse(stderr)
+    else:
+        from page_selected_rseq_time import parse as rseq_parse
+        report = rseq_parse(stderr, rseq_schema)
+    row['report'] = report
     need(gated['exit'] == report['loader']['status'], 'actual terminal exit equals report')
     need(gated['exit'] == 0 and actual == output == expected_stdout, 'completed entire program before any timing credit')
+    if rseq_schema is not None:
+        from page_selected_rseq_time import completed as rseq_completed
+        rseq_completed(report, gated['pid'], disabled)
     value = qualify(report, fact(interp)['sha256'], mode, selected)
     row.update(status='completed', qualified=value)
     return value

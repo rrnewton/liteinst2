@@ -6099,7 +6099,7 @@
     "workspace_tests": {
       "doc/liteinst2": {
         "ignored": 0,
-        "tests": 6
+        "tests": 8
       },
       "doc/liteinst_admission": {
         "ignored": 0,
@@ -6123,7 +6123,7 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 15
+        "tests": 20
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6279,7 +6279,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 0,
-        "tests": 31
+        "tests": 35
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6365,6 +6365,10 @@
         "ignored": 0,
         "tests": 1
       },
+      "test/precontext_planning": {
+        "ignored": 0,
+        "tests": 8
+      },
       "test/prefixed_pun_contract": {
         "ignored": 0,
         "tests": 1
@@ -6447,7 +6451,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 242
+        "tests": 248
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6486,8 +6490,8 @@
         "tests": 27
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 4,
-        "tests": 214
+        "ignored": 7,
+        "tests": 288
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
@@ -7553,6 +7557,19 @@
       "test": "b3_exec::self_maps_parser_tests::self_capture_uses_actual_rows_but_child_still_refuses_513"
     }
   ],
-  "recorder_tests": 340,
+  "precontext_native_harnesses": {
+    "workspace_tests": [
+      {
+        "binary": "precontext_native",
+        "id": "control/precontext_native",
+        "malformed_children": 2,
+        "pairs": 8,
+        "profile": "precontext-v1",
+        "reader_sha256": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+        "source": "tests/precontext_native.rs"
+      }
+    ]
+  },
+  "recorder_tests": 350,
   "schema_version": 1
 }

@@ -123,29 +123,25 @@ fn canonical_lock_cmpxchg_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
         && bytes[..4] == [0xf0, 0x0f, 0xb1, 0x15]
 }
 
-// Canonical dword [base],EDX only: one complete literal form per GPR base.
-// RBP/R13 require zero disp8, RSP/R12 require no-index SIB; all other
-// displacements, indices, ignored REX bits, widths and LOCK/HLE aliases refuse.
+// Canonical dword [base],r32: all sixteen source and base GPRs. Only
+// necessary REX.R/B bits are permitted. RBP/R13 require zero disp8 and
+// RSP/R12 require no-index SIB. RIP remains the separate EDX-only family.
+// All other displacements, indices, widths, ignored REX and HLE aliases refuse.
 fn canonical_lock_cmpxchg_base(instruction: &Instruction, bytes: &[u8]) -> bool {
-    instruction.code() == Code::Cmpxchg_rm32_r32
-        && matches!(bytes,
-            [0xf0, 0x0f, 0xb1, 0x10]
-            | [0xf0, 0x0f, 0xb1, 0x11]
-            | [0xf0, 0x0f, 0xb1, 0x12]
-            | [0xf0, 0x0f, 0xb1, 0x13]
-            | [0xf0, 0x0f, 0xb1, 0x14, 0x24]
-            | [0xf0, 0x0f, 0xb1, 0x55, 0x00]
-            | [0xf0, 0x0f, 0xb1, 0x16]
-            | [0xf0, 0x0f, 0xb1, 0x17]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x10]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x11]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x12]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x13]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x14, 0x24]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x55, 0x00]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x16]
-            | [0xf0, 0x41, 0x0f, 0xb1, 0x17]
-        )
+    if instruction.code() != Code::Cmpxchg_rm32_r32 {
+        return false;
+    }
+    let address = match bytes {
+        [0xf0, 0x0f, 0xb1, address @ ..]
+        | [0xf0, 0x41 | 0x44 | 0x45, 0x0f, 0xb1, address @ ..] => address,
+        _ => return false,
+    };
+    match address {
+        [modrm] => modrm & 0xc0 == 0 && modrm & 7 != 4 && modrm & 7 != 5,
+        [modrm, 0x24] => modrm & 0xc7 == 0x04,
+        [modrm, 0x00] => modrm & 0xc7 == 0x45,
+        _ => false,
+    }
 }
 
 // Five exact legacy SSE4.1 PMAXUD forms qualified by the finite oracle.
