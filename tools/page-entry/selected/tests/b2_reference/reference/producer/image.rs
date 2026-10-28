@@ -148,7 +148,9 @@ impl Fixture {
         assert_eq!(e.initial_instruction,e.interpreter_base+PAGE as u64);
         assert!(e.interpreter_base>=0x200000000 && e.interpreter_base%PAGE as u64==0);
         assert_eq!(checkpoint.read_memory(e.interpreter_base,self.interpreter_bytes.len()).unwrap(),self.interpreter_bytes);
-        ImageFacts {start:e.interpreter_base,bytes:self.interpreter_bytes.clone(),
+        // The census describes the executable VMA; the read-only ELF header
+        // page remains covered by the complete image-byte check above.
+        ImageFacts {start:e.interpreter_base+PAGE as u64,bytes:self.interpreter_bytes[PAGE..].to_vec(),
             heads:[e.initial_instruction,e.initial_instruction+10].into_iter().collect()}
     }
 }
