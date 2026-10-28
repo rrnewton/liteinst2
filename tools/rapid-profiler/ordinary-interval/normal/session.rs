@@ -163,7 +163,7 @@ fn dispatch(
     Ok(progress)
 }
 
-// Shorten only the caller's requested wait; Schedule retains every deadline.
+// Shorten only the caller's idle slice; Schedule retains every deadline.
 // The original next arm becomes the original end after the last acknowledgement.
 fn guarded_wait(
     started: Instant,
@@ -446,7 +446,18 @@ fn run_checked(
                 std::hint::spin_loop();
             } else {
                 let before = Instant::now();
-                thread::sleep(wait);
+                if schedule.is_stopping() {
+                    thread::sleep(wait);
+                } else {
+                    // A normal scheduler cannot bound wakeup after sleep. Spend
+                    // a controller CPU during this finite timed portion instead.
+                    // One immutable target, at most the existing 1ms cap; after
+                    // preemption the next real poll still refuses lateness.
+                    let until = observed.checked_add(wait).ok_or("idle wait extent")?;
+                    while Instant::now() < until {
+                        std::hint::spin_loop();
+                    }
+                }
                 last_wait = Some((wait, before.elapsed()));
             }
         }

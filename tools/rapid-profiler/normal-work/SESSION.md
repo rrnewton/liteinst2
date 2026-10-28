@@ -40,12 +40,14 @@ Epochs run independently of incoming requests: K is10 or1000, and EPOCHS is
 calls keep running after K closes sampling. The controller uses the existing
 Clock policy, with no missed-arm catch-up or deadline extension. Explicit STOP
 is an earlier-stop run; it is never counted as a full scheduled campaign.
-The idle controller sleeps at most 1 ms outside a 2 ms guard before the next
-original arm or end, using the unchanged lateness duration. Inside that guard
-it keeps servicing the nonblocking loop without sleeping. This spends more controller CPU near each
-boundary; it does not prevent preemption or an earlier sleep from overrunning
-the window. A missed deadline still fails. Shutdown keeps its original wait
-policy. This is not a real-time scheduling guarantee.
+During the finite timed portion the controller actively waits in slices of at
+most 1 ms. Each slice has one fixed target; the complete nonblocking event loop
+runs between slices. In a 2 ms guard before the next original arm or end it
+polls without a slice, using the unchanged lateness duration. This policy can
+occupy one controller CPU. It removes deliberate sleep and wakeup from the
+timed portion, but cannot prevent preemption or excessive application work;
+a missed deadline still fails. Shutdown retains the original sleep policy.
+This is not a real-time or low-overhead scheduling guarantee.
 
 The last removal and shutdown retain the original strict2 s bound. The
 520-epoch campaign requires521 actions; streaming history preserves their
