@@ -163,6 +163,17 @@ fn child(
     let heads = owner.certificate().heads().to_vec();
     let returns = owner.certificate().returns().to_vec();
     let mut prep = OptionalSitePreparation::new(owner, identity(entry)).unwrap();
+    let selector = prep.plan().images()[0]
+        .precontext_selector()
+        .unwrap()
+        .clone();
+    assert!(
+        prep.plan()
+            .images()
+            .iter()
+            .all(|image| image.precontext_selector() == Some(&selector))
+    );
+    assert!(!selector.is_enabled());
     assert_eq!(
         prep.role_pcs().collect::<Vec<_>>(),
         std::iter::once(entry)
@@ -259,6 +270,7 @@ fn child(
         }
         let initial = controller.history().unwrap();
         assert_eq!(initial.enabled, [slow]);
+        assert_eq!(selector.is_enabled(), slow);
         assert_eq!(
             initial.current.map(|g| g.get()),
             if slow { Some(generation) } else { None }
@@ -278,18 +290,23 @@ fn child(
                     controller.arm(&epoch).unwrap();
                 }
                 let snapshot = controller.history().unwrap();
-                assert_eq!(snapshot.enabled, [!slow]);
+                // Removed closes admission without changing historical group state.
+                // Authenticate the actual retained selector separately from history.
+                assert_eq!(snapshot.enabled, [true]);
                 assert_eq!(
                     snapshot.current.map(|g| g.get()),
                     if slow { None } else { Some(generation) }
                 );
-                !slow
+                let enabled = selector.is_enabled();
+                assert_eq!(enabled, !slow);
+                enabled
             });
             // This message exists only after actual invoke/drain/detach. Keeping
             // the controller alive until then prevents premature binding poison.
             if !slow {
                 controller.disarm(&epoch).unwrap();
             }
+            assert!(!selector.is_enabled());
             report(&mut controller, &epoch, &batch, slow);
             let history = controller.history().unwrap();
             assert_eq!(history.actions.len(), 2);
