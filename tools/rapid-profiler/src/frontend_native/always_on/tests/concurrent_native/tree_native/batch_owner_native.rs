@@ -1,10 +1,10 @@
-//! Nineteen fresh-process public-owner controls, separate from the state oracle.
+//! Nineteen original owner cases plus one accessor-first refusal, all fresh processes.
 use super::*;
 use crate::frontend::RecordObservation;
 use crate::frontend_native::always_on::tree::native_checks;
 use crate::frontend_native::{
-    OriginalTreeCallResult, TreeBatch, TreeCallResult, TreeError, TreeSourceBatchError,
-    TreeSourceBatchRequest, TreeThread,
+    OriginalTreeCallResult, TreeBatch, TreeCallResult, TreeError, TreeSourceBatch,
+    TreeSourceBatchError, TreeSourceBatchRequest, TreeThread,
 };
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::rc::Rc;
@@ -207,6 +207,16 @@ fn original_failure(name: &str, mode: Failure) {
     );
 }
 
+// Two real guard observations must leave the entire caller state unchanged.
+// Expected counters come from each fixed case, not from the observed snapshot.
+fn observed_totals(guard: &mut TreeSourceBatch<'_>, expected: TreeTotals) {
+    let before = native_checks::state().unwrap();
+    assert_eq!(guard.totals().unwrap(), expected);
+    assert_eq!(native_checks::state().unwrap(), before);
+    assert_eq!(guard.totals().unwrap(), expected);
+    assert_eq!(native_checks::state().unwrap(), before);
+}
+
 fn installed_failure(name: &str, mode: Failure) {
     let (prep, _) = preparation();
     let root = prep.gate().target();
@@ -220,6 +230,7 @@ fn installed_failure(name: &str, mode: Failure) {
     let mut attached = unsafe { client.attach(1, readable, IntervalJournal::allocate()) }.unwrap();
     let payload = Box::new(CallerUnwind);
     let mut batch = unsafe { attached.begin_source_batch(&requests) }.unwrap();
+    observed_totals(&mut batch, totals(0, 0));
     for i in 0..mode.calls() {
         installed_result(
             unsafe { batch.invoke_next() }.unwrap(),
@@ -228,6 +239,7 @@ fn installed_failure(name: &str, mode: Failure) {
             &input,
             &before,
         );
+        observed_totals(&mut batch, totals(i as u64 + 1, 0));
     }
     let returned = native_checks::state().unwrap();
     assert_eq!(
@@ -286,7 +298,10 @@ fn installed_failure(name: &str, mode: Failure) {
                 );
                 TreeSourceBatchError::CallCount
             };
+            same_error(&e, batch.totals().unwrap_err());
+            same_error(&e, batch.totals().unwrap_err());
             same_error(&e, unsafe { batch.invoke_next() }.unwrap_err());
+            same_error(&e, batch.totals().unwrap_err());
             same_error(&e, batch.finish().unwrap_err());
             e
         }
@@ -369,14 +384,20 @@ fn finished_calls(
     before: &Input,
     first: u64,
     root: u64,
+    expected: (TreeTotals, bool),
 ) -> Vec<TreeCallResult> {
     let requests = requests(&input.0[64..1088], first);
     let mut guard = unsafe { attached.begin_source_batch(&requests) }.unwrap();
+    observed_totals(&mut guard, expected.0);
     let mut calls = Vec::with_capacity(8);
     for id in first..first + 8 {
         let call = unsafe { guard.invoke_next() }.unwrap();
         installed_result(call, id, root, input, before);
         calls.push(call);
+        observed_totals(
+            &mut guard,
+            totals(id, expected.0.pairs.completed + 2 * u64::from(expected.1)),
+        );
     }
     assert_eq!(guard.finish().unwrap().calls(), 8);
     calls
@@ -650,8 +671,22 @@ fn finish_reuse_capacity() {
         );
         assert_eq!(native_checks::owner(&attached), checkpoint);
     }
-    let mut calls = finished_calls(&mut attached, &input, &before, 1, root);
-    calls.extend(finished_calls(&mut attached, &input, &before, 9, root));
+    let mut calls = finished_calls(
+        &mut attached,
+        &input,
+        &before,
+        1,
+        root,
+        (totals(0, 0), true),
+    );
+    calls.extend(finished_calls(
+        &mut attached,
+        &input,
+        &before,
+        9,
+        root,
+        (totals(8, 2), false),
+    ));
     let full = native_checks::owner(&attached);
     assert_eq!(
         (
@@ -694,11 +729,13 @@ fn finish_reuse_capacity() {
     );
     // Reuse the exact previously refused ID/input request array after the drain.
     let mut guard = unsafe { attached.begin_source_batch(&third) }.unwrap();
+    observed_totals(&mut guard, totals(16, 2));
     let mut calls = Vec::with_capacity(8);
     for id in 17..25 {
         let call = unsafe { guard.invoke_next() }.unwrap();
         installed_result(call, id, root, &input, &before);
         calls.push(call);
+        observed_totals(&mut guard, totals(id, 2));
     }
     assert_eq!(guard.finish().unwrap().calls(), 8);
     let second = checked_drain(
@@ -727,7 +764,14 @@ fn finish_reuse_capacity() {
     let gb = b.generation();
     assert_ne!(ga, gb);
     controller.arm(&b).unwrap();
-    let calls = finished_calls(&mut attached, &input, &before, 25, root);
+    let calls = finished_calls(
+        &mut attached,
+        &input,
+        &before,
+        25,
+        root,
+        (totals(24, 2), true),
+    );
     let third = checked_drain(
         &mut attached,
         geometry,
@@ -892,12 +936,17 @@ fn concurrent_owners(closed: bool) {
     };
     ready_rx.recv_timeout(WAIT).unwrap();
     let mut batch = unsafe { attached.begin_source_batch(&requests) }.unwrap();
+    observed_totals(&mut batch, totals(0, 0));
     let mut calls = Vec::with_capacity(8);
     let first_calls = if closed { 2 } else { 1 };
     for id in 1..=first_calls {
         let call = unsafe { batch.invoke_next() }.unwrap();
         installed_result(call, id, geometry.root, &input, &before);
         calls.push(call);
+        observed_totals(
+            &mut batch,
+            totals(id, if closed && id == 2 { 3 } else { 2 }),
+        );
     }
     // A metadata Report is genuine and available while the source batch has
     // not finished. Joining does not waive any remaining source-batch checks.
@@ -912,6 +961,7 @@ fn concurrent_owners(closed: bool) {
         let call = unsafe { batch.invoke_next() }.unwrap();
         installed_result(call, id, geometry.root, &input, &before);
         calls.push(call);
+        observed_totals(&mut batch, totals(id, if closed { 3 } else { 2 }));
     }
     assert_eq!(batch.finish().unwrap().calls(), 8);
     let ga = generations[0];
@@ -1036,4 +1086,77 @@ fn sampled_abc() {
 #[ignore = "requires release tree batch fixture reproducer; one fresh process"]
 fn closed_abc() {
     concurrent_owners(true);
+}
+
+// A separate process preserves the old invoke-first case and makes the accessor
+// itself encounter the real ControllerScope refusal after one actual return.
+#[test]
+#[ignore = "requires release tree batch fixture reproducer; one fresh process"]
+fn installed_totals_first_error() {
+    let (prep, _) = preparation();
+    let root = prep.gate().target();
+    let gate = Arc::clone(prep.gate());
+    let start = gate.idle_checkpoint().unwrap();
+    let input = input();
+    let before = input.clone();
+    let requests = requests(&input.0[64..1088], 1);
+    let (_controller, client) = unsafe { prepared(prep, 1, 2, 2).activate_concurrent() }.unwrap();
+    let mut attached = unsafe { client.attach(1, stack(), IntervalJournal::allocate()) }.unwrap();
+    let mut batch = unsafe { attached.begin_source_batch(&requests) }.unwrap();
+    observed_totals(&mut batch, totals(0, 0));
+    installed_result(
+        unsafe { batch.invoke_next() }.unwrap(),
+        1,
+        root,
+        &input,
+        &before,
+    );
+    observed_totals(&mut batch, totals(1, 0));
+    let returned = native_checks::state().unwrap();
+    assert_eq!(returned.totals, totals(1, 0));
+    assert_eq!(gate.idle_checkpoint().unwrap(), start + 1);
+    let scope = ControllerScope::enter().unwrap();
+    let first = batch.totals().unwrap_err();
+    drop(scope);
+    assert!(
+        matches!(&first, TreeSourceBatchError::Call(c) if matches!(c.as_ref(), TreeError::Bridge(b) if *b == error(Cause::ControllerReentry)))
+    );
+    assert_eq!(native_checks::state(), Some(returned.clone()));
+    assert_eq!(gate.idle_checkpoint().unwrap(), start + 1);
+    same_error(&first, batch.totals().unwrap_err());
+    same_error(&first, batch.totals().unwrap_err());
+    same_error(&first, unsafe { batch.invoke_next() }.unwrap_err());
+    assert_eq!(native_checks::state(), Some(returned.clone()));
+    assert_eq!(gate.idle_checkpoint().unwrap(), start + 1);
+    same_error(&first, batch.finish().unwrap_err());
+    let checkpoint = native_checks::owner(&attached);
+    assert_eq!(checkpoint.state, returned);
+    assert!(
+        matches!(unsafe { attached.prepare_tree_call(&input.0[64..1088], 9) }, Err(TreeError::Bridge(e)) if e == error(Cause::Outstanding))
+    );
+    same_error(
+        &first,
+        refused(unsafe { attached.begin_source_batch(&requests) }),
+    );
+    assert_eq!(attached.totals().unwrap_err(), error(Cause::Outstanding));
+    assert_eq!(
+        attached.drain_completed().unwrap_err(),
+        error(Cause::Outstanding)
+    );
+    assert_eq!(attached.detach().unwrap_err(), error(Cause::Outstanding));
+    assert_eq!(native_checks::owner(&attached), checkpoint);
+    drop(attached);
+    let mut poisoned = returned;
+    assert_eq!(poisoned.failure, None);
+    assert!(!poisoned.poisoned);
+    assert_eq!(poisoned.journal[1], 0);
+    poisoned.failure = Some(error(Cause::Outstanding));
+    poisoned.poisoned = true;
+    poisoned.journal[1] = 1;
+    assert_eq!(native_checks::state(), Some(poisoned));
+    assert_eq!(gate.idle_checkpoint().unwrap(), start + 1);
+    assert_eq!(input, before);
+    println!(
+        "tree-batch-owner PASS case=installed_totals_first_error originals=0 installed=1 finishes=0 refusal=ControllerReentry joins=0 retained_poison=true"
+    );
 }

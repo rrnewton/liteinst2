@@ -1,8 +1,10 @@
 # Source-batch owner controls
 
 `verify_batch_owners.py` builds the trusted tree DSO and library tests in release
-mode, runs the unchanged one-call ownership prerequisite, then runs nineteen
-new exact tests in separate processes. It requires a clean tracked checkout at
+mode, qualifies all ten actual source-batch pure methods, runs the unchanged
+one-call ownership prerequisite, then runs the nineteen existing exact tests
+and one accessor-first refusal in separate processes. It requires a clean
+tracked checkout at
 the supplied full revision. Raw requests, logs and receipts stay under `ignored/`.
 
 ```sh
@@ -18,8 +20,11 @@ maintain all unsafe immutability, thread, source and stack obligations throughou
 the batch, including gaps. A transient forbidden mapping/file change can evade
 the boundary checks. Existing single-call APIs retain their checks.
 
-The new population has 29 original and 61 installed actual root calls, eight
-successful batch finishes and two controller helper joins. These are required
+The original nineteen-case population retains 29 original and 61 installed
+actual root calls, eight successful batch finishes and two controller helper
+joins. The appended accessor-first refusal adds one installed root, making
+20 cases with 29 original and 62 installed roots, the same eight finishes and
+two helper joins. These are required
 denominators, not results until the runner accepts every case:
 
 | Cases | Required behavior |
@@ -39,6 +44,22 @@ existing controller waits remain two seconds. Builds use four jobs and release
 optimization level 3 with debug information off, assertions and overflow checks
 on. Every accepted stage requires normal completion, ECHILD and zero cleanup
 rescues. The receipt records exact source/tool/artifact hashes and hardware.
+
+The pure stage uses the actual release library binary and requires each of the
+ten named methods once, zero failures/ignored tests and exactly 374 filtered
+methods (384 total). Its parser controls reject missing, duplicate or renamed
+methods and altered harness counts. Pure latch/unwind tests retain their own
+scope and receive no native inside-callback credit.
+
+Installed positives observe the actual guard totals twice at admission and
+after every completed call, including counts zero and eight. They require the
+independent exact sampled/closed partition and unchanged complete caller-state
+snapshots. The existing invoke-first and ninth-call refusals also require totals
+to preserve the exact first cause. A separate `installed_totals_first_error`
+case performs one actual call, enters the real ControllerScope, then makes the
+accessor itself refuse. Repeated totals/invoke/finish and owner operations must
+retain that cause without another gate sequence, counter or journal mutation.
+It adds no successful finish and no inside-callback Busy/unwind credit.
 
 This is public-owner functional qualification. It gives no full-register-state,
 performance, inside-invoke Busy-unwind, or abandoned-original public-seal runtime

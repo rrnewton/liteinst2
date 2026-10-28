@@ -184,6 +184,8 @@ fn child(candidate: bool, context: ChildContext<'_>, subject: &Path, expected_el
         // through finish, including each controlled stop. No foreign entry,
         // signal handler, file/mapping writer, reentry, fork or retirement occurs.
         let mut guard = unsafe { attached.begin_source_batch(&requests) }.unwrap();
+        assert_eq!(guard.totals().unwrap(), zero);
+        assert_eq!(guard.totals().unwrap(), zero);
         context.ready(&ready);
         let mut calls: Vec<TreeCallResult> = Vec::with_capacity(CALLS);
         for index in 0..CALLS {
@@ -213,6 +215,18 @@ fn child(candidate: bool, context: ChildContext<'_>, subject: &Path, expected_el
             );
             assert_eq!(bytes, &input);
             calls.push(result);
+            let roots = index as u64 + 1;
+            let expected_totals = TreeTotals {
+                roots,
+                pairs: PairTotals {
+                    entries: 2 * roots,
+                    returns: 2 * roots,
+                    completed: 2 * roots,
+                    unsampled: 0,
+                },
+            };
+            assert_eq!(guard.totals().unwrap(), expected_totals);
+            assert_eq!(guard.totals().unwrap(), expected_totals);
             if index + 1 < CALLS {
                 checkpoint(index);
             }
