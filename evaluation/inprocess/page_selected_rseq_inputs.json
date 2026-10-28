@@ -211,9 +211,9 @@
       "sha256": "43bdccbc38871caf9a27e85de73ebadb1b10e615d183cb328afd1e1e4432d2d2"
     },
     {
-      "bytes": 7704,
+      "bytes": 7788,
       "path": "tools/page-entry/selected/decoder/src/write_footprint.rs",
-      "sha256": "a520b3a3007125737eb971f192602b951d6b496fd041973441a16955f8278356"
+      "sha256": "657a4bb3de1a2a4037277b4f56c40a78e1efdb3dcfe42ae2ba29e78dbf17bfd6"
     },
     {
       "bytes": 2900,
@@ -548,9 +548,9 @@
       "sha256": "43bdccbc38871caf9a27e85de73ebadb1b10e615d183cb328afd1e1e4432d2d2"
     },
     {
-      "bytes": 7704,
+      "bytes": 7788,
       "path": "tools/page-entry/selected/decoder/src/write_footprint.rs",
-      "sha256": "a520b3a3007125737eb971f192602b951d6b496fd041973441a16955f8278356"
+      "sha256": "657a4bb3de1a2a4037277b4f56c40a78e1efdb3dcfe42ae2ba29e78dbf17bfd6"
     },
     {
       "bytes": 2900,
