@@ -8,6 +8,7 @@ import re
 
 from parsing import require
 import core_5cda_inventory as main5c
+import core_813_inventory as main813
 
 DATA_SHA256 = 'bdea03e1f24150ab46dfa196782fb4866378d8cf00f8291745d89de21593cf14'
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,8 +19,8 @@ CURRENT = DATA['current_corpus_sha256']
 AC0963 = DATA['ac0963']
 LIVE = AC0963['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
-RECORDER_TESTS = main5c.RECORDER_TESTS
-PYTHON_CURRENT = main5c.PYTHON_CURRENT
+RECORDER_TESTS = main813.RECORDER_TESTS
+PYTHON_CURRENT = main813.PYTHON_CURRENT
 PYTHON_PRE_5CDA = '462da94e73e635ac5c3b46192cba7b991de92b72ec871853204e45d529943b3f'
 PYTHON_PREVIOUS = 'fb8adb475b7ecbafb984dfa99c674f8a60fdb59fbb5adeb5754482e1136bb3bc'
 PYTHON_MODULE = 'test_main_query_inventory'
@@ -78,7 +79,7 @@ def before_ac0963(declared):
 
 
 def peel_ac0963(declared):
-    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT) else declared
+    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT) else declared
 
 
 def source_before_cc846(path, data, error):
@@ -164,7 +165,7 @@ def peel_python(identities):
 
 def require_current(declared):
     """Live preflight has no historical-catalog acceptance path."""
-    require(type(declared) is dict and digest(declared) == main5c.CURRENT, 'ac0963_inventory_differs')
+    require(type(declared) is dict and digest(declared) == main813.CURRENT, 'ac0963_inventory_differs')
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):

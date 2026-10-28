@@ -24,6 +24,7 @@ from dynamic_matrix import matrix_receipts
 from native_fixtures import fixture_outcomes
 import backing_cleanup
 import backing_cleanup_query
+import precontext_native
 import core_cc846_inventory
 
 ENV = {"CARGO_INCREMENTAL": "0", "CARGO_BUILD_JOBS": "4",
@@ -227,6 +228,14 @@ def command_evidence(command, output, corpus):
         if error is not None:
             command["backing_cleanup_parse_error"] = error
             command["evidence_status"] = "incomplete"
+    if "precontext_native_harnesses" in corpus and command["id"] == "workspace_tests":
+        libtest_output, rows, error = precontext_native.separate(
+            libtest_output, corpus["precontext_native_harnesses"][command["id"]],
+            command["status"] == "passed")
+        command["precontext_native_harnesses"] = rows
+        if error is not None:
+            command["precontext_native_parse_error"] = error
+            command["evidence_status"] = "incomplete"
     try:
         command["harnesses"] = parse_harnesses(
             libtest_output, corpus["harness_test_counts"][command["id"]], command["exit_code"])
@@ -278,10 +287,14 @@ def qualify(record):
             rows = commands.get(identity, {}).get("backing_cleanup_harnesses", [])
             cleanup_reader = backing_cleanup_query if record.get("backing_cleanup_query_required") is True else backing_cleanup
             passed &= len(rows) == 1 and cleanup_reader.is_complete(rows[0])
+    if record.get("precontext_native_required") is True:
+        commands = {command["id"]: command for command in record["commands"]}
+        rows = commands.get("workspace_tests", {}).get("precontext_native_harnesses", [])
+        passed &= len(rows) == 1 and precontext_native.is_complete(rows[0])
     record["status"] = "passed" if passed else "failed"
     for command in record["commands"]:
         for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases",
-                      "native_validation_fixtures", "backing_cleanup_harnesses"):
+                      "native_validation_fixtures", "backing_cleanup_harnesses", "precontext_native_harnesses"):
             for row in command.get(field, []):
                 row["qualified_run"] = passed and row.get("command_succeeded", False)
 
@@ -321,7 +334,8 @@ def main():
               "claim_targets": [1, 2, 4], "complete_claims_established": [],
               "preemption_clock": "not_evaluated", "performance_claim": None,
               "status": "preflight", "commands": [], "source_unchanged": None,
-              "backing_cleanup_required": True, "backing_cleanup_query_required": True}
+              "backing_cleanup_required": True, "backing_cleanup_query_required": True,
+              "precontext_native_required": True}
     for name, argv, timeout in COMMANDS:
         record["commands"].append({"id": name, "argv": argv, "timeout_seconds": timeout,
                                    "environment_delta": {"LITEINST_EVALUATION": "1"}
@@ -340,6 +354,7 @@ def main():
         corpus = json.loads(corpus_data)
         require(corpus["schema_version"] == 1, "unknown_corpus_schema")
         backing_cleanup_query.require_inventory(corpus)
+        precontext_native.require_inventory(corpus)
         core_cc846_inventory.require_current(corpus)
         record["configuration"] = cargo_configuration(env)
         record["hardware"] = hardware()
@@ -386,7 +401,7 @@ def main():
                             "interrupted" if isinstance(error, KeyboardInterrupt) else "recorder_error")
         for command in record["commands"]:
             for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases",
-                      "native_validation_fixtures", "backing_cleanup_harnesses"):
+                      "native_validation_fixtures", "backing_cleanup_harnesses", "precontext_native_harnesses"):
                 for row in command.get(field, []):
                     row["qualified_run"] = False
     finally:

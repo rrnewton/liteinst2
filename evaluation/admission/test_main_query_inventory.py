@@ -11,6 +11,7 @@ import backing_cleanup as old_cleanup
 import backing_cleanup_query as cleanup
 import core_cc846_inventory as inventory
 import core_5cda_inventory as main5c
+import core_813_inventory as main813
 import parsing
 import run
 from test_backing_cleanup import (HEADER, OLD, records as old_records,
@@ -56,6 +57,7 @@ class MainQueryInventoryTests(unittest.TestCase):
     def test_exact_sources_catalog_and_historical_denominators(self):
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
+        declared = main813.before_current(declared)
         # Exact additive main5c boundary precedes every historical assertion.
         self.assertEqual(declared['recorder_tests'], 345)
         rows = declared['harness_test_counts']['workspace_tests']
@@ -69,6 +71,7 @@ class MainQueryInventoryTests(unittest.TestCase):
             self.assertEqual((len(rows), sum(r['tests'] for r in rows.values()),
                               sum(r['ignored'] for r in rows.values())), expected)
         identities = main5c.python_identities(Path(__file__).parent)
+        identities = main813.peel_python(identities)
         self.assertEqual(len(identities), 345)
         self.assertEqual(len(main5c.peel_python(identities)), 340)
         for identity in main5c.DATA['python_added']:

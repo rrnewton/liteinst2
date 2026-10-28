@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+import core_813_inventory as main813
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_SHA256 = '5f622c9cb2600b35ddf93f587e5ba7198b90712d0c8bb139acd55381e552dd91'
@@ -26,6 +27,7 @@ def digest(value):
 
 def source_before(path, data, error):
     """Authenticate whole successor before exact inverse; stale input refuses."""
+    data = main813.source_before(path, data, error)
     if path not in DATA['projections']:
         return data
     row = DATA['projections'][path]
@@ -45,6 +47,7 @@ def require_sources(error='main5c_source_inventory_differs'):
             data = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        data = main813.source_before(path, data, error)
         require(hashlib.sha256(data).hexdigest() == expected, error)
         if path in DATA['methods']:
             rows = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', data.decode())
@@ -55,6 +58,7 @@ def require_sources(error='main5c_source_inventory_differs'):
 
 
 def before_current(declared, error='main5c_inventory_differs', source_error='main5c_source_inventory_differs'):
+    declared = main813.peel_current(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     require_sources(source_error)
     old = copy.deepcopy(declared)
@@ -68,10 +72,12 @@ def before_current(declared, error='main5c_inventory_differs', source_error='mai
 
 
 def peel_current(declared, error='main5c_inventory_differs', source_error='main5c_source_inventory_differs'):
+    declared = main813.peel_current(declared, error, source_error)
     return before_current(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT else declared
 
 
 def peel_python(identities):
+    identities = main813.peel_python(identities)
     if type(identities) is list and digest(identities) == PYTHON_CURRENT:
         require(len(identities) == RECORDER_TESTS and len(set(identities)) == RECORDER_TESTS,
                 'main5c_python_inventory_differs')
