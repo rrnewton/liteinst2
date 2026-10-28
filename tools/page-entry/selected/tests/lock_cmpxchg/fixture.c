@@ -4,6 +4,7 @@
 #include "tests/generic/fixture.c"
 #undef fixture_main
 #include "cases.inc"
+#include "write_footprint.h"
 #define LOCK_EXPECTED_CODE 2075
 #define LOCK_CONTROL_KEY "LI2_LOCK_CMPXCHG_CONTROL="
 #ifndef LOCK_CMPXCHG_GROUP
@@ -28,6 +29,31 @@ _Static_assert(sizeof(struct lock_fault_record)==128+4*PAGE,"fixed fault trailer
 static const struct lock_case *lock_case(const struct sample *s) {
     need(s->id>=1800+18*LOCK_CMPXCHG_GROUP&&s->id<1818+18*LOCK_CMPXCHG_GROUP,900);
     return &lock_cases[LOCK_CMPXCHG_GROUP][s->id-1800-18*LOCK_CMPXCHG_GROUP];
+}
+/* Two retained supplied instruction rows, queried with actual native/TF
+   before-state from this old EDX oracle. These queries are not native execution
+   of those rows; their actual execution is mandatory in the all-register suite. */
+struct lock_query { uint64_t row,lane,pc,result; struct li2_write_registers before; struct li2_write_footprint value; };
+struct lock_query_record { uint64_t magic,version,bytes,sample_id,rows,native_queries,step_queries,reserved; struct lock_query queries[2][2]; };
+static struct lock_query_record lock_queries;
+_Static_assert(sizeof(struct lock_query)==224&&sizeof(lock_queries)==960,"fixed promoted-query trailer");
+static void lock_promoted_queries(struct sample *s) {
+    static const unsigned char bytes[2][6]={{0xf0,0x41,0x0f,0xb1,0x4d,0},{0xf0,0x45,0x0f,0xb1,0x55,0}};
+    need(!lock_queries.magic,981);lock_queries.magic=UINT64_C(0x315052514c32494c);
+    lock_queries.version=1;lock_queries.bytes=sizeof(lock_queries);lock_queries.sample_id=s->id;lock_queries.rows=2;
+    for(unsigned row=0;row<2;row++)for(unsigned lane_index=0;lane_index<2;lane_index++) {
+        const struct state *before=lane_index?&s->step_before:&s->native_before;
+        struct lock_query *q=&lock_queries.queries[row][lane_index];q->row=row?16:0;q->lane=lane_index;q->pc=s->pc;
+        for(unsigned r=0;r<16;r++)q->before.gpr[r]=(uint64_t)before->frame.greg[regs[r]];
+        q->before.fs_base=before->fs;q->before.gs_base=before->gs;
+        need(q->before.gpr[13]==s->target,982);
+        q->result=li2_decoder_write_footprint(s->pc,bytes[row],6,&q->before,&q->value);
+        need(!q->result&&q->value.abi_version==1&&q->value.policy==LI2_WRITE_RANGE&&
+             q->value.pc==s->pc&&q->value.next_pc==s->pc+6&&q->value.length==6&&q->value.code==2075&&
+             q->value.first==s->target&&q->value.end==s->target+4,983);
+        if(lane_index)++lock_queries.step_queries;else ++lock_queries.native_queries;
+    }
+    need(lock_queries.native_queries==2&&lock_queries.step_queries==2,984);
 }
 static void lock_fault_after(unsigned lane_index) {
     need(control==1&&lane_index<2&&data_fault==lock_fault.operand,901);
@@ -172,8 +198,9 @@ static void lock_failure(void *context,const struct li2_step_owner *o) {
              !memcmp(s->live[0].gpr,s->live[1].gpr,sizeof(s->live[0].gpr))&&
              !memcmp(s->live[0].selectors,s->live[1].selectors,sizeof(s->live[0].selectors)),941);
     }
+    lock_promoted_queries(s);
     failure(context,o); /* Unchanged actual frame/revoke/sync/held-borrow predicates and dump. */
-    need(write_all(3,&lock_fault,sizeof(lock_fault)),942);
+    need(write_all(3,&lock_fault,sizeof(lock_fault))&&write_all(3,&lock_queries,sizeof(lock_queries)),942);
 }
 static void lock_pair(struct sample *s) {
     current=s;fixture_target=s->pc;lock_inputs(s);borrow(s);lane=0;native_phase=0;fixture_enter();
@@ -196,6 +223,7 @@ static void lock_pair(struct sample *s) {
     s->live[2]=fixture_live_before;s->live[3]=fixture_live_after;
     memcpy(s->actual_fp[2],fixture_fp_before,xsave_bytes);memcpy(s->actual_fp[3],fixture_fp_after,xsave_bytes);
     compare(s);lock_effects(s);
+    if(s==&samples[1])lock_promoted_queries(s);
     need(!li2_lifecycle_fetch_release(&s->ref),106);s->step_fetch=*li2_lifecycle_fetch_progress();
     ++result.completed;
 }
@@ -239,17 +267,27 @@ static void lock_refusals(void) {
                  refused_last.policy==1&&refused_last.flow==LI2_TF_FALLTHROUGH&&
                  refused_last.family==LI2_TF_INTEGER,978);
             ++promoted;
+        } else if(i==0||i==16) {
+            /* Retained historical rows, qualified by the all-register native suite. */
+            const unsigned char *exact=i==0?(const unsigned char *)"\xf0\x41\x0f\xb1\x4d\0":
+                (const unsigned char *)"\xf0\x45\x0f\xb1\x55\0";
+            need(cases[i].n==6&&!memcmp(cases[i].b,exact,6)&&!result.decoder_result&&
+                 refused_last.abi_version==1&&refused_last.pc==0x1000&&refused_last.next_pc==0x1006&&
+                 refused_last.length==6&&refused_last.code==2075&&refused_last.policy==1&&
+                 refused_last.flow==LI2_TF_FALLTHROUGH&&refused_last.family==LI2_TF_INTEGER,980);
+            ++promoted;
         } else {
             need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
                  !refused_last.policy&&!refused_last.flow&&!refused_last.family,950+(unsigned)i);
             ++result.refusals;
         }
     }
-    need(promoted==1,979);output("LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\n");
+    need(promoted==3,979);output("LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\n");
+    output("LI2_LOCK_CMPXCHG_REGISTER_PROMOTED_ACCEPTANCES 2\n");
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
-    _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+sizeof(lock_fault)<16*1024*1024,
+    _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+sizeof(lock_fault)+sizeof(lock_queries)<16*1024*1024,
                    "unchanged complete private record bound");
     result.magic=UINT64_C(0x314649585446324c);result.version=1;result.pairs=LOCK_PAIRS;
     lock_fault.magic=UINT64_C(0x314b434f4c32494c);lock_fault.version=1;lock_fault.bytes=sizeof(lock_fault);
@@ -266,15 +304,15 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47,130);
-    lock_refusals();need(result.refusals==70,973);
+    lock_refusals();need(result.refusals==68,973);
     prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     if(control){lock_prepare(&negative_sample,lock_fault_mismatch?13:1);lock_pair(&negative_sample);die(974);}
     for(unsigned i=0;i<LOCK_COUNT;i++){lock_prepare(&samples[i+1],i);lock_pair(&samples[i+1]);}
-    need(result.completed==LOCK_PAIRS&&dump()&&write_all(3,&lock_fault,sizeof(lock_fault)),975);
+    need(result.completed==LOCK_PAIRS&&dump()&&write_all(3,&lock_fault,sizeof(lock_fault))&&write_all(3,&lock_queries,sizeof(lock_queries)),975);
 #if LOCK_CMPXCHG_GROUP==0
-    output("LI2_LOCK_CMPXCHG_TF_PASS group=0 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=23 full_state=19 full_memory=19 live_endpoints=19\n");
+    output("LI2_LOCK_CMPXCHG_TF_PASS group=0 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=21 full_state=19 full_memory=19 live_endpoints=19\n");
 #else
-    output("LI2_LOCK_CMPXCHG_TF_PASS group=1 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=23 full_state=19 full_memory=19 live_endpoints=19\n");
+    output("LI2_LOCK_CMPXCHG_TF_PASS group=1 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=21 full_state=19 full_memory=19 live_endpoints=19\n");
 #endif
     return 0;
 }

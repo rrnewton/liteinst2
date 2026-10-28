@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -104,6 +105,32 @@ def fault_trailer(data, negative, readonly):
                 snapshots=4, protection=prot, native_error=error, stepped_error=error)
 
 
+def promotion_queries(data,record,header,layout,negative):
+    need(len(data)==960 and layout['query_bytes']==960,'complete actual promoted query trailer')
+    slot=21 if negative else 1
+    sample=header['header_bytes']+slot*header['sample_bytes']
+    sample_id=struct.unpack_from('<I',record,sample+layout['sample']['id'])[0]
+    pc=struct.unpack_from('<Q',record,sample+layout['sample']['pc'])[0]
+    target=struct.unpack_from('<Q',record,sample+layout['sample']['target'])[0]
+    need(struct.unpack_from('<8Q',data)==(0x315052514c32494c,1,960,sample_id,2,2,2,0),
+         'exact supplied-row query prefix bound to actual old sample')
+    indices=[13,14,12,11,15,10,9,8,0,1,2,3,4,5,6,7]
+    for row,old_index in enumerate((0,16)):
+        for lane in (0,1):
+            raw=data[64+224*(2*row+lane):64+224*(2*row+lane+1)]
+            need(struct.unpack_from('<4Q',raw)==(old_index,lane,pc,0),'exact retained supplied row/query identity')
+            before=struct.unpack_from('<18Q',raw,32)
+            at=sample+layout['sample']['step_before' if lane else 'native_before']
+            greg=at+layout['state']['frame']+layout['frame']['greg']
+            need(before[:16]==tuple(struct.unpack_from('<Q',record,greg+8*i)[0] for i in indices) and
+                 before[16:]==tuple(struct.unpack_from('<Q',record,at+layout['state'][x])[0] for x in ('fs','gs')),
+                 'all supplied query inputs equal genuine retained before-frame')
+            need(before[13]==target and struct.unpack_from('<4Q4I',raw,176)==
+                 (pc,pc+6,target,target+4,1,2,2075,6),'mandatory complete potential4B range for both promoted rows')
+    return dict(bytes=960,supplied_rows=[0,16],actual_before_queries=4,write_bytes_per_query=4,
+                native_execution_credit=False)
+
+
 def publish(path, record, receipt):
     build = record.get('build', {})
     public = {key: record.get(key) for key in (
@@ -133,7 +160,7 @@ def publish(path, record, receipt):
         cases=[{'name': c['name'], 'accepted': c['accepted'], 'process_outcome': c['process_outcome'],
                 'actual_exit': c.get('actual_exit'), 'operation_completed': c.get('operation_completed'),
                 'verified_memory_fault': c.get('verified_memory_fault'),
-                'header': c.get('header'), 'record': c.get('record'), 'fault_trailer': c.get('fault_trailer')} for c in record['cases']],
+                'header': c.get('header'), 'record': c.get('record'), 'fault_trailer': c.get('fault_trailer'), 'promotion_queries': c.get('promotion_queries')} for c in record['cases']],
         command_recipe={
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
             'fixture_build': ['sh', 'tools/page-entry/selected/tests/lock_cmpxchg/build.sh',
@@ -165,7 +192,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-lock-cmpxchg-oracle-v1', 'status': 'failed',
-        'scope': 'Only f0410fb15500 atomic CMPXCHG dword [R13+0],EDX at the original PC. Two additive 19-pair cohorts give 36 compare-success/failure pairs and two startup pairs, with 47 unchanged and 23 neighboring supplied refusals and one exact promoted RIP acceptance per command. Four genuine no-access/read-only RMW faults cover both would-match and would-mismatch inputs and remain failed operations. Full source-bound native/TF state comparisons and complete private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-program completion, performance or full-B2 qualification.',
+        'scope': 'Only f0410fb15500 atomic CMPXCHG dword [R13+0],EDX at the original PC. Two additive 19-pair cohorts give 36 compare-success/failure pairs and two startup pairs, with 47 unchanged and 21 neighboring supplied refusals, one exact promoted RIP acceptance and two exact promoted source-register acceptances per command. Four genuine no-access/read-only RMW faults cover both would-match and would-mismatch inputs and remain failed operations. Full source-bound native/TF state comparisons and complete private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-program completion, performance or full-B2 qualification.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -221,6 +248,13 @@ def main():
                 pin(REPO/os.fsdecode(value))
         build = Build(record, private, pin, binary, run)
         products = build.prepare()
+        build.tools['gdb']=pin(shutil.which('gdb',path=ENV['PATH']))
+        gdb_environment=dict(build.environment,XDG_CACHE_HOME=str(private/'gdb-cache'))
+        _,out,err=run('version-gdb',[build.tools['gdb'],'--version'],profile='metadata',env=gdb_environment)
+        need(out and not err,'actual file-only GDB identity')
+        record['build']['versions']['gdb']=out.decode().strip()
+        record['build']['tools']['gdb']=dict(path=str(build.tools['gdb']),**fact(build.tools['gdb']))
+        layouts={}
         run('fixture-build', [build.tools['sh'], FIXTURE/'build.sh', products['archive'], private, REPO/'tools/page-entry/selected'],
             profile='fixture_link', env=build.environment)
         record['fixtures'], record['elf'] = {}, {}
@@ -231,6 +265,16 @@ def main():
             _, out, err = run(fixture_name+'-undefined', [build.tools['nm'], '-u', fixture],
                               profile='inspect', env=build.environment)
             need(not out and not err, 'no undefined fixture symbols')
+            _,out,err=run(fixture_name+'-dwarf',[build.tools['gdb'],'-q','-nx','-batch',
+                '-iex','set auto-load off','-iex','set debuginfod enabled off','-iex','set index-cache enabled off',
+                '-iex','maintenance set worker-threads 1','--readnow','--se='+str(fixture),
+                '-x',pin(REPO/'evaluation/inprocess/page_selected_lock_base_dwarf.py')],profile='metadata',env=gdb_environment)
+            need(not err,'actual file-only promoted-query DWARF stderr')
+            layout=json.loads(out)
+            need(layout['sample_bytes']>0 and layout['query_bytes']==960 and layout['greg_count']==23,
+                 'actual complete sample/query DWARF layouts')
+            layouts[fixture_name]=layout
+        record['layouts']=layouts
         record['catalogue'] = catalogue()
         outcomes = json.loads((FIXTURE/'OUTCOMES.json').read_bytes())
         names = outcomes['record_header_fields']
@@ -250,7 +294,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact LOCK CMPXCHG names, input environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             'a8e314c32c49e6fe659806920d9542d822018370c5b8272737b3be3fc4aeb015',
+             'fd19f7fbf8c0803a524a3779244a6a749756379c1f99378479c73bfd6672c009',
              'exact reviewed six-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -267,19 +311,20 @@ def main():
             header = dict(zip(names, struct.unpack_from('<17Q', data)))
             result.update(header=header, record=fact(private/(name+'.record')))
             need(all(header[key] == value for key, value in case['header_equals'].items()), 'exact header outcome: '+name)
-            need(header['sample_bytes'] > 0 and len(data) == header['header_bytes']+22*header['sample_bytes']+40+16512 and len(data) < 16 << 20,
+            need(header['sample_bytes'] == layouts[case['argv'][0]]['sample_bytes'] and len(data) == header['header_bytes']+22*header['sample_bytes']+40+16512+960 and len(data) < 16 << 20,
                  'complete actual record extent')
             need(576 <= header['xsave_bytes'] <= 65536 and header['xcr0'] & 3 == 3, 'qualified XSAVE extent')
             # The C fixture's authenticated binary enforces full-state effects;
             # retain all complete samples for independent actual-layout replay.
             positive = name in ('group0', 'group1')
             used = 19 if positive else 1
-            result['fault_trailer'] = fault_trailer(data[-16512:], not positive, name.startswith('read-only'))
+            result['fault_trailer'] = fault_trailer(data[-17472:-960], not positive, name.startswith('read-only'))
+            result['promotion_queries'] = promotion_queries(data[-960:],data,header,layouts[case['argv'][0]],not positive)
             start = header['header_bytes']+used*header['sample_bytes']
             end = header['header_bytes']+21*header['sample_bytes']
             need(not any(data[start:end]), 'all unused original sample slots remain zero')
             record['totals']['executed_refusal_checks'] += header['refusals']
-            record['totals']['promoted_acceptance_checks'] += 1
+            record['totals']['promoted_acceptance_checks'] += 3
             if positive:
                 need(not any(data[end:end+header['sample_bytes']]), 'positive has no negative sample')
                 result['operation_completed'] = True
@@ -291,8 +336,8 @@ def main():
                 record['totals']['comparison_failure_pairs'] += 6 if name == 'group0' else 18
                 record['totals']['new_page_ending_pairs'] += 3
                 record['totals']['new_crossing_pairs'] += 15
-                record['totals'].update(supplied_refusal_encodings=70,
-                    old_refusal_encodings=47, new_refusal_encodings=23)
+                record['totals'].update(supplied_refusal_encodings=68,
+                    old_refusal_encodings=47, new_refusal_encodings=21)
             else:
                 need(any(data[end:end+header['sample_bytes']]), 'retain actual failed-operation sample')
                 # The authenticated C path requires actual native #PF and the
@@ -306,12 +351,12 @@ def main():
                 record['totals']['additional_negative_command_selftests'] += 1
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=38, generic_pairs=36, lock_cmpxchg_pairs=36,
-                 positive_selftest_pairs=2, supplied_refusal_encodings=70, old_refusal_encodings=47,
-                 new_refusal_encodings=23, comparison_success_pairs=12, comparison_failure_pairs=24,
+                 positive_selftest_pairs=2, supplied_refusal_encodings=68, old_refusal_encodings=47,
+                 new_refusal_encodings=21, comparison_success_pairs=12, comparison_failure_pairs=24,
                  new_page_ending_pairs=6, new_crossing_pairs=30,
                  verified_memory_fault_commands=4, actual_native_failed_operations=4,
                  actual_stepped_failed_operations=4, additional_negative_command_selftests=4,
-                 executed_refusal_checks=420, promoted_acceptance_checks=6) and
+                 executed_refusal_checks=408, promoted_acceptance_checks=18) and
              len(record['cases']) == 6 and all(c['accepted'] for c in record['cases']),
              'complete two nineteen-pair cohorts and four failed atomic-memory operations')
         record['status'] = 'passed'
