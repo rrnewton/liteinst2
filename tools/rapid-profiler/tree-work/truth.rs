@@ -2,8 +2,7 @@
 //! This is evaluation truth, with no certificate, planner or callback input.
 //! An interpreter prediction is not evidence that a native CALL/RET executed.
 
-#[path = "../cache-work/truth.rs"]
-pub mod leaf;
+use super::leaf;
 
 pub const INPUT_BYTES: usize = 1024;
 pub const ROOT_NODE: u8 = 0;

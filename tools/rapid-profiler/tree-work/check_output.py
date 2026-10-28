@@ -11,6 +11,9 @@ CASES = (('fit2', (0, 4), 3), ('conflict3', (0, 4, 8), 65))
 TERMINAL = ('native-tree:required=4:pairs=4:children=8:comparisons=1372:instructions=1328:'
     'conditional=256:taken=252:input-reads=516:return-reads=8:call-stores=4:'
     'model-events=528:model-hits=392:model-misses=136:transfers=24:real-outer-ret=8:complete\n')
+REFUSAL_HEADER = 'status,children,steps,injected_bytes,physical_calls,exit_code,reaped,echild,runtime_cause'
+REFUSAL_TERMINAL = ('native-tree-refusal:required=1:children=1:injected-bytes=8:physical-call=1:'
+    'exit=123:reaped=1:echild=1:runtime-cause=undifferentiated:expected-refusal\n')
 
 
 def number(word):
@@ -18,6 +21,25 @@ def number(word):
     value = int(word)
     assert value < 2**64
     return value
+
+
+def refusal(data, terminal, stderr):
+    """Actual injected word and bounded exit; no decoded runtime-cause claim."""
+    assert stderr == b'' and terminal == REFUSAL_TERMINAL.encode('ascii')
+    assert 0 < len(data) <= 1048576 and data.endswith(b'\n') and b'\r' not in data
+    lines = data.decode('ascii').split('\n')[:-1]
+    assert len(lines) == 2 and lines[0] == REFUSAL_HEADER
+    rows = list(csv.DictReader(lines, strict=True))
+    assert len(rows) == 1
+    row = rows[0]
+    assert set(row) == set(REFUSAL_HEADER.split(',')) and all(isinstance(v, str) for v in row.values())
+    assert (row['status'], row['runtime_cause']) == ('EXPECTED_REFUSAL', 'undifferentiated')
+    for key in set(row) - {'status', 'runtime_cause'}:
+        row[key] = number(row[key])
+    assert 1 <= row['steps'] <= 20000
+    assert (row['children'], row['injected_bytes'], row['physical_calls'], row['exit_code'],
+        row['reaped'], row['echild']) == (1, 8, 1, 123, 1, 1)
+    return row
 
 
 def pairs(data, terminal, stderr):

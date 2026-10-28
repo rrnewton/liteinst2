@@ -10,6 +10,19 @@ import unittest
 SPEC = importlib.util.spec_from_file_location('tree_check', Path(__file__).with_name('check_output.py'))
 CHECK = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECK)
+OWNER_SPEC = importlib.util.spec_from_file_location('tree_owner_check', Path(__file__).resolve().parents[1]/'verify_ordinary_interval.py')
+OWNER = importlib.util.module_from_spec(OWNER_SPEC)
+OWNER_SPEC.loader.exec_module(OWNER)
+
+OWNER_TEST = 'frontend_native::always_on::tests::concurrent_native::tree_native::tree_native_root_child_keep_distinct_owners_until_actual_returns'
+OWNER_PASS = ('tree-owner-native PASS originals=1 roots=1 entries=2 returns=2 sampled=2 rows=2 events=4 '
+    'reports=1+1+0 root_owner=A child_owner=B rearmed_owner=C child_pending_before_ret=true '
+    'root_pending_before_ret=true actual_outer_return=true input_unchanged=true joined=true')
+
+
+def owner_output():
+    return ('\nrunning 1 test\ntest '+OWNER_TEST+' ... '+OWNER_PASS+'\nok\n\n'
+        'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1200 filtered out; finished in 0.25s\n\n').encode('ascii')
 
 
 def encode(rows):
@@ -143,6 +156,69 @@ class TreeProtocol(unittest.TestCase):
                 CHECK.pairs(data,terminal,b'')
         with self.assertRaises(AssertionError):
             CHECK.pairs(data,CHECK.TERMINAL.encode('ascii'),b'warning\n')
+
+    def test_owner_pending_boundaries_distinct_generations_and_join_are_required(self):
+        data = owner_output()
+        got = OWNER.tree_owner_output(data, b'')
+        self.assertEqual((got['status'], got['roots'], got['entries'], got['returns'], got['reports'], got['helper_joined']),
+            ('PASS', 1, 2, 2, [1, 1, 0], True))
+        for before, after in [('originals=1','originals=0'), ('roots=1','roots=0'),
+                ('entries=2','entries=1'), ('returns=2','returns=1'), ('sampled=2','sampled=1'),
+                ('rows=2','rows=1'), ('events=4','events=2'), ('reports=1+1+0','reports=2+0+0'),
+                ('root_owner=A','root_owner=C'), ('child_owner=B','child_owner=C'),
+                ('rearmed_owner=C','rearmed_owner=B'), ('child_pending_before_ret=true','child_pending_before_ret=false'),
+                ('root_pending_before_ret=true','root_pending_before_ret=false'),
+                ('actual_outer_return=true','actual_outer_return=false'),
+                ('input_unchanged=true','input_unchanged=false'), ('joined=true','joined=false')]:
+            self.assertIn(before.encode('ascii'),data)
+            with self.assertRaises(AssertionError):
+                OWNER.tree_owner_output(data.replace(before.encode('ascii'),after.encode('ascii')),b'')
+
+    def test_owner_exact_test_success_and_empty_stderr_are_required(self):
+        data = owner_output()
+        for bad in (b'',data[:-1],data+b'\n',data.replace(b'\n',b'\r\n'),
+                data.replace(OWNER_TEST.encode('ascii'),b'other_test'),
+                data.replace(b'1 passed; 0 failed;',b'0 passed; 1 failed;'),
+                data.replace(b'0 ignored;',b'1 ignored;'),data.replace(b'PASS',b'SKIP')):
+            with self.assertRaises(AssertionError):
+                OWNER.tree_owner_output(bad,b'')
+        with self.assertRaises(AssertionError):
+            OWNER.tree_owner_output(data,b'warning\n')
+
+    def test_injected_word_exit_and_reaping_are_required_without_claiming_cause(self):
+        data = (CHECK.REFUSAL_HEADER+'\nEXPECTED_REFUSAL,1,432,8,1,123,1,1,undifferentiated\n').encode('ascii')
+        terminal = CHECK.REFUSAL_TERMINAL.encode('ascii')
+        good = CHECK.refusal(data,terminal,b'')
+        self.assertEqual(good, dict(status='EXPECTED_REFUSAL', children=1, steps=432,
+            injected_bytes=8, physical_calls=1, exit_code=123, reaped=1, echild=1,
+            runtime_cause='undifferentiated'))
+        fields = CHECK.REFUSAL_HEADER.split(',')
+        original = data.decode('ascii').split('\n')[1].split(',')
+        for field, values in {'status':['PASS','SKIP','FAILED'], 'children':['0','2'],
+                'steps':['0','20001'], 'injected_bytes':['0','7','9'], 'physical_calls':['0','2'],
+                'exit_code':['0','6','134'], 'reaped':['0'], 'echild':['0'],
+                'runtime_cause':['Return','SIGABRT','unknown']}.items():
+            for value in values:
+                changed = original.copy(); changed[fields.index(field)] = value
+                bad = (CHECK.REFUSAL_HEADER+'\n'+','.join(changed)+'\n').encode('ascii')
+                with self.assertRaises(AssertionError): CHECK.refusal(bad,terminal,b'')
+        for field in fields[1:-1]:
+            for value in ('-1','+1','01','1.0','',' 1',str(2**64)):
+                changed = original.copy(); changed[fields.index(field)] = value
+                bad = (CHECK.REFUSAL_HEADER+'\n'+','.join(changed)+'\n').encode('ascii')
+                with self.assertRaises(AssertionError): CHECK.refusal(bad,terminal,b'')
+
+    def test_refusal_exact_population_terminal_and_empty_stderr(self):
+        data = (CHECK.REFUSAL_HEADER+'\nEXPECTED_REFUSAL,1,432,8,1,123,1,1,undifferentiated\n').encode('ascii')
+        terminal = CHECK.REFUSAL_TERMINAL.encode('ascii')
+        CHECK.refusal(data,terminal,b'')
+        for bad in (b'',data[:-1],data+b'\n',data.replace(b'\n',b'\r\n'),
+                data+data.split(b'\n')[1]+b'\n',data.replace(b'physical_calls',b'callbacks')):
+            with self.assertRaises(AssertionError): CHECK.refusal(bad,terminal,b'')
+        for bad in (b'',terminal[:-1],terminal+b'\n',terminal.replace(b'exit=123',b'exit=0'),
+                terminal.replace(b'undifferentiated',b'Return'),terminal.replace(b'reaped=1',b'reaped=0')):
+            with self.assertRaises(AssertionError): CHECK.refusal(data,bad,b'')
+        with self.assertRaises(AssertionError): CHECK.refusal(data,terminal,b'warning\n')
 
 
 if __name__ == '__main__':

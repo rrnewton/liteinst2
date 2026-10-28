@@ -60,3 +60,16 @@ the four-row CSV; it must describe the actual completed run. This document
 states the fixed contract, not an execution result. Concurrent epoch ownership
 requires its separate real-call control and cannot be inferred from these
 single-epoch pairs.
+
+The required owner control pauses the actual root entry under epoch A, replaces
+it with B before child entry, and replaces B with C at the child's pre-RET
+pause. It checks that B stays pending until the original caller continuation
+and A stays pending until the actual outer return and source postflight. The
+caller retains its local loader and attachment; only the controller moves to
+the joined helper thread.
+
+A separate malformed-word child authenticates the original E8, changes only
+its eight-byte saved return word, and requires bounded normal exit 123 plus
+exact reaping. Its one-row `EXPECTED_REFUSAL` result is separate from the four
+successful pairs. Exit 123 is the existing undifferentiated fatal policy; the
+receipt makes no claim to have decoded the internal runtime error.

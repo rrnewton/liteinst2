@@ -198,6 +198,21 @@ def history_output(data, stderr):
     return {key: int(value) if value.isdecimal() else True if value == 'true' else value for key, value in fields.items()}
 
 
+TREE_OWNER_TEST = 'frontend_native::always_on::tests::concurrent_native::tree_native::tree_native_root_child_keep_distinct_owners_until_actual_returns'
+TREE_OWNER_PASS = ('tree-owner-native PASS originals=1 roots=1 entries=2 returns=2 sampled=2 rows=2 events=4 '
+    'reports=1+1+0 root_owner=A child_owner=B rearmed_owner=C child_pending_before_ret=true '
+    'root_pending_before_ret=true actual_outer_return=true input_unchanged=true joined=true')
+
+
+def tree_owner_output(data, stderr):
+    assert stderr == b'' and 0 < len(data) <= MIB and b'\r' not in data
+    protocol = '\nrunning 1 test\ntest '+TREE_OWNER_TEST+' ... '+TREE_OWNER_PASS+'\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; '
+    assert re.fullmatch(re.escape(protocol)+r'[0-9]+ filtered out; finished in [0-9]+\.[0-9]+s\n\n', data.decode('ascii'))
+    return dict(status='PASS', originals=1, roots=1, entries=2, returns=2, sampled=2,
+        rows=2, events=4, reports=[1, 1, 0], helper_joined=True,
+        source_attested='root A remains outstanding at root RET; child B remains outstanding before child RET and finishes only at its original continuation under C; root finishes after actual outer return/postflight; complete input, rows, journal, history, original-owner Reports and retirement joins')
+
+
 def main():
     if sys.flags.optimize: raise SystemExit('assertions required')
     sys.dont_write_bytecode = True
@@ -205,6 +220,7 @@ def main():
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+name, type=Path, required=True)
     ap.add_argument('--cache-work', action='store_true', help='also require twelve loaded cache-model state pairs; requires --exact-work')
     ap.add_argument('--counter-probe', action='store_true', help='also require twelve raw whole-original-API counter observations; requires --cache-work')
+    ap.add_argument('--call-tree', action='store_true', help='also require four loaded caller/child state pairs and actual A/B/C ownership control; requires --cache-work and --concurrent-epochs')
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
     ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
@@ -222,6 +238,8 @@ def main():
     assert raw.parent.resolve(strict=True) == raw.parent
     assert not a.cache_work or a.exact_work
     assert not a.counter_probe or a.cache_work
+    assert not a.call_tree or a.cache_work
+    assert not a.call_tree or a.concurrent_epochs
     assert not a.concurrent_epochs or a.exact_work
     assert not a.retire_epochs or a.concurrent_epochs
     assert not a.drain_completed or a.retire_epochs
@@ -242,6 +260,10 @@ def main():
     result['reference_timing_requested'] = a.reference_timing
     result['cache_work_requested'] = a.cache_work
     result['counter_probe_requested'] = a.counter_probe
+    result['call_tree_requested'] = a.call_tree
+    if a.call_tree:
+        result['call_tree'] = dict(status='UNRUN', stage='UNRUN',
+            scope='fixed depth-two ordinary calls, physical transfer witnesses and one continuous architectural demand-cache model; no hardware-cache, calibrated-time or performance claim')
     if a.counter_probe:
         result['counter_probe'] = dict(status='UNRUN', stage='UNRUN',
             hardware_accuracy='unqualified', model11h_semantics='unqualified',
@@ -389,6 +411,22 @@ def main():
         if a.counter_probe:
             names.extend(['tools/rapid-profiler/counter-work/check_output.py',
                 'tools/rapid-profiler/counter-work/test_recipe.py', 'tools/rapid-profiler/counter-work/README.md'])
+        if a.call_tree:
+            names.extend(['tests/support/native_call_tree.rs', 'tests/support/native_call_tree/tests.rs', 'tests/support/native_call_tree/refusal.rs', 'tests/call_tree_truth.rs',
+                'tools/rapid-profiler/native-interval/tree.rs',
+                'tools/rapid-profiler/tree-work/tree_work.S', 'tools/rapid-profiler/tree-work/truth.rs',
+                'tools/rapid-profiler/tree-work/model.rs', 'tools/rapid-profiler/tree-work/check_output.py',
+                'tools/rapid-profiler/tree-work/test_recipe.py', 'tools/rapid-profiler/tree-work/README.md',
+                'tools/rapid-profiler/src/frontend_native/ordinary/tree.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/gate/tree.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tree/drain.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tree/postflight.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tree/site.rs',
+                'src/frame_trace.rs', 'src/quiescent.rs', 'src/trampoline.rs'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -707,7 +745,7 @@ def main():
             observed = stage('reference-calibrations', [str(calibration_binary)], 20, 30, MIB)
             checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
             assert digest(calibration_binary) == calibration_hash
-            reference['calibrations'] = dict(status='PASS', passed=58, failed=0, ignored=0,
+            reference['calibrations'] = dict(status='PASS', passed=76, failed=0, ignored=0,
                 scope='actual state-validator mutation controls, including all inherited controls; not clock calibration')
             exact_stable(); assert digest(test_binary) == test_hash
             directory = raw/'reference-oracle-output'; reference['native_state'] = dict(status='FAILED')
@@ -764,7 +802,7 @@ def main():
             observed = stage('cache-calibrations', [str(cache_calibration)], 20, 30, MIB)
             calibration_checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
             assert digest(cache_calibration) == cache_calibration_hash
-            cache['calibrations'] = dict(status='PASS', passed=58, failed=0, ignored=0,
+            cache['calibrations'] = dict(status='PASS', passed=76, failed=0, ignored=0,
                 scope='complete inherited and new validator/model controls; no hardware-cache calibration')
             cache.update(stage='assembly-build')
             cache_trusted, cache_candidate = raw/'cache-trusted.so', raw/'cache-candidate.so'
@@ -811,6 +849,55 @@ def main():
                     probe.update(parsed, tables={name: digest(directory/name) for name in table_names})
             assert probe['status'] == 'OBSERVED' and probe['observed_full_running'] == 12
             cache_stable(); probe['stage'] = 'complete'
+        if a.call_tree:
+            tree = result['call_tree']; tree.update(status='FAILED', stage='assembly-build')
+            cache_stable()
+            spec = importlib.util.spec_from_file_location('tree_check', repo/'tools/rapid-profiler/tree-work/check_output.py')
+            tree_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(tree_checker)
+            tree_trusted, tree_candidate = raw/'tree-trusted.so', raw/'tree-candidate.so'
+            assembly = repo/'tools/rapid-profiler/tree-work/tree_work.S'
+            result['commands'].append(['$GCC', *CFLAGS, '$REPO/tools/rapid-profiler/tree-work/tree_work.S', '-o', '$RAW/tree-trusted.so'])
+            stage('tree-build', [str(tools['gcc']), *CFLAGS, str(assembly), '-o', str(tree_trusted)], 20, 30, MIB)
+            tree_hash = digest(tree_trusted); assert 0 < tree_hash['bytes'] <= MIB
+            with tree_trusted.open('rb') as inp, tree_candidate.open('xb') as out: out.write(inp.read(MIB+1))
+            assert (tree_trusted.stat().st_dev, tree_trusted.stat().st_ino) != (tree_candidate.stat().st_dev, tree_candidate.stat().st_ino)
+            def tree_stable():
+                cache_stable()
+                assert digest(tree_trusted) == digest(tree_candidate) == tree_hash and tree_trusted.read_bytes() == tree_candidate.read_bytes()
+            tree_stable(); tree.update(dso=tree_hash, stage='oracle')
+            directory = raw/'tree-oracle-output'
+            result['commands'].append(['$REPO/target/release/frontend-native-oracle', 'tree-state', '$RAW/tree-candidate.so', '$RAW/tree-trusted.so', '$RAW/tree-oracle-output'])
+            observed = stage('tree-oracle', [str(binaries['frontend-native-oracle']), 'tree-state', str(tree_candidate), str(tree_trusted), str(directory)], 90, 90, MIB)
+            table = (directory/'tree-pairs.csv').read_bytes()
+            rows = tree_checker.pairs(table, (observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            tree_stable(); (raw/'tree-state-pairs.csv').write_bytes(table)
+            tree.update(stage='owner-control', native_state='PASS', pairs=4, children=8, comparisons=1372,
+                instructions=1328, root_instructions=24, child_instructions=1304,
+                conditional_branches=256, taken_branches=252, input_reads=516, return_reads=8, call_stores=4,
+                model_events=528, model_hits=392, model_misses=136, root_misses=4, child_misses=132,
+                model_writebacks=0, transfers=24, real_outer_returns=8,
+                rows=rows, csv='tree-state-pairs.csv', csv_digest=digest(raw/'tree-state-pairs.csv'),
+                model=dict(line_bytes=64, sets=4, ways=2, replacement='true LRU', initial='all invalid once at root entry',
+                    stores='write allocate, write back; this population never evicts its dirty stack line',
+                    addressing='actual virtual line number; input base set2 and both return words in one set3 line',
+                    events='original CALL store, count/payload/link reads and both RET reads; no instruction fetch or observer accesses'),
+                source_attested='whole source/input, all ordered original heads, immediate physical E8/C3 successor and RSP/word witnesses, full unmasked stack/GPR/flags/XSAVE comparison, retained owners through child acknowledgement and root actual return/postflight; exact nested rows/journal/Reports')
+            test_flags = [TREE_OWNER_TEST, '--exact', '--ignored', '--nocapture', '--test-threads=1']
+            result['commands'].append(['$TEST_BINARY', *test_flags])
+            observed = stage('tree-owner-native', [str(test_binary), *test_flags], 10, 15, MIB,
+                extra_env=dict(RAPID_TREE_CANDIDATE=str(tree_candidate), RAPID_TREE_EXPECTED=str(tree_trusted)))
+            tree['ownership'] = tree_owner_output((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            tree_stable(); assert digest(test_binary) == test_hash
+            tree.update(stage='return-word-refusal')
+            directory = raw/'tree-refusal-output'
+            result['commands'].append(['$REPO/target/release/frontend-native-oracle', 'tree-return-word-refusal', '$RAW/tree-candidate.so', '$RAW/tree-trusted.so', '$RAW/tree-refusal-output'])
+            observed = stage('tree-return-word-refusal', [str(binaries['frontend-native-oracle']), 'tree-return-word-refusal', str(tree_candidate), str(tree_trusted), str(directory)], 20, 30, MIB)
+            table = (directory/'tree-refusal.csv').read_bytes()
+            tree['return_word_refusal'] = tree_checker.refusal(table, (observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            (raw/'tree-return-word-refusal.csv').write_bytes(table)
+            tree.update(refusal_csv='tree-return-word-refusal.csv', refusal_csv_digest=digest(raw/'tree-return-word-refusal.csv'))
+            tree_stable()
+            tree.update(status='PASS', stage='complete')
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
