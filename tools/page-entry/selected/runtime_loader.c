@@ -48,6 +48,21 @@ static uintptr_t first_target_pc;
 static uint64_t native_main_admissions,native_main_refaults;
 #endif
 static long last_syscall=-1;
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+#ifndef LI2_SELECTED_PROVIDER
+#error "Configured builtins require the configured provider profile"
+#endif
+static unsigned selected_provider_builtins_enabled;
+static void selected_provider_syscall_decide(long,const long[6],ucontext_t *);
+static void selected_provider_syscall_exit(void);
+static void selected_provider_syscall_guarded(void);
+static int selected_provider_syscall_replace(long *);
+static void selected_provider_syscall_raw_enter(void);
+static void selected_provider_syscall_raw_return(long);
+static int selected_provider_syscall_replaced(void);
+static void selected_provider_syscall_commit(ucontext_t *,long);
+static void selected_provider_builtins_report(unsigned,unsigned);
+#endif
 static uintptr_t vdso_first,vdso_end;
 static unsigned long vdso_selected;
 static void fail(unsigned,long) __attribute__((noreturn));
@@ -165,6 +180,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_SELECTED_PROVIDER
     selected_provider_report(status,code);
+#endif
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    selected_provider_builtins_report(status,code);
 #endif
 #ifdef LI2_CPUID_NX_ONLY
     selected_cpuid_nx_report(status,code);
@@ -300,7 +318,13 @@ static void dispatch_operation(long n,ucontext_t *context) {
     int rseq_error=li2_rseq_before_syscall(n,a);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
 #endif
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    if(selected_provider_builtins_enabled)selected_provider_syscall_decide(n,a,context);
+#endif
     if(n==SYS_exit || n==SYS_exit_group) {
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+        if(selected_provider_builtins_enabled)selected_provider_syscall_exit();
+#endif
         ++forwarded; report((unsigned)a[0],0,0); (void)raw(n,a[0],a[1],a[2],a[3],a[4],a[5]); fail(203,n);
     }
     checked(n!=SYS_close || ((unsigned int)a[0]!=(unsigned int)report_fd && !fork_reserved_fd(a[0])),204,n);
@@ -310,6 +334,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
     selected_run_before_syscall(n,a);
 #endif
     li2_lifecycle_before_other(n,a);
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    if(selected_provider_builtins_enabled)selected_provider_syscall_guarded();
+#endif
 #ifdef LI2_RSEQ_INACTIVE
     if(n==SYS_rseq) {
         rseq_error=li2_rseq_dispatch(a,&result);
@@ -331,18 +358,33 @@ static void dispatch_operation(long n,ucontext_t *context) {
         else if(n==SYS_ioctl) checked(a[1]==0x5401 || a[1]==0x5413 || a[1]==0x541b,208,a[1]);
         else if(n==SYS_madvise) checked(!intersects((uintptr_t)a[0],(size_t)a[1]),209,n);
         else checked(ordinary(n),210,n);
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+        if(!selected_provider_builtins_enabled || !selected_provider_syscall_replace(&result)) {
+            if(selected_provider_builtins_enabled)selected_provider_syscall_raw_enter();
+            result=raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
+            if(selected_provider_builtins_enabled)selected_provider_syscall_raw_return(result);
+        }
+#else
         result=raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
+#endif
     }
 #ifdef LI2_RSEQ_INACTIVE
     rseq_error=li2_rseq_after_syscall(n,a);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
 #endif
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    if(!selected_provider_builtins_enabled || !selected_provider_syscall_replaced())++forwarded;
+#else
     ++forwarded;
+#endif
     if(n==SYS_arch_prctl && !result && (a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS)) ++tls_changes;
     if(n==SYS_set_tid_address && result>=0) ++tid_sets;
     if(n==SYS_set_robust_list && !result) ++robust_sets;
     if(n==SYS_rseq) ++rseq_calls;
     g[REG_RAX]=result; g[REG_RCX]=pc; g[REG_R11]=g[REG_EFL];
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    if(selected_provider_builtins_enabled)selected_provider_syscall_commit(context,result);
+#endif
 }
 static void dispatch(siginfo_t *si,ucontext_t *context) {
     (void)si;(void)context;fail(602,0);
