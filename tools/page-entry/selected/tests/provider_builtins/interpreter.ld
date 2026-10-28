@@ -14,7 +14,7 @@ SECTIONS {
     .hash : { *(.hash) } :headers
     .gnu.hash : { *(.gnu.hash) } :headers
     .dynsym : { *(.dynsym) } :headers
-    .dynstr : { BYTE(0); *(.dynstr.fixture) } :headers
+    .dynstr : { *(.dynstr) BYTE(0); pb_dynamic_name = .; *(.dynstr.fixture) } :headers
     .gnu.version : { *(.gnu.version) } :headers
     .gnu.version_d : { *(.gnu.version_d) } :headers
     .gnu.version_r : { *(.gnu.version_r) } :headers
@@ -31,7 +31,7 @@ SECTIONS {
     /* Literal DT_SONAME/DT_STRTAB metadata, as in the existing emitted rseq
        custom-interpreter images. No dependency or conventional ld.so exists. */
     .dynamic : {
-        QUAD(14); QUAD(1);
+        QUAD(14); QUAD(pb_dynamic_name - ADDR(.dynstr));
         QUAD(5); QUAD(ADDR(.dynstr));
         QUAD(10); QUAD(SIZEOF(.dynstr));
         QUAD(0); QUAD(0);

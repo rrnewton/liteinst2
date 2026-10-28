@@ -66,7 +66,7 @@ def produce(builder,root,private,fixture,pin,binary,run,receipt,boundary):
     # This is an ordinary Rust test with unwind cleanup, not the decoder's
     # panic-abort C archive. Its one Cargo target remains the existing root.
     environment.update(CARGO_TARGET_DIR=str(root/'target'),CARGO_INCREMENTAL='0',CARGO_BUILD_JOBS='1',
-        RUSTFLAGS='',LI2_B2_REFERENCE_DIR=str(corpus))
+        RUSTFLAGS='',CARGO_PROFILE_TEST_DEBUG='0',LI2_B2_REFERENCE_DIR=str(corpus))
     state['environment']=environment.copy()
     def retain(path):
         try:
@@ -130,7 +130,8 @@ def produce(builder,root,private,fixture,pin,binary,run,receipt,boundary):
         need(products==state['compiler_artifacts']and not receipt['final_errors'],'complete independently retained Cargo artifact prefix')
         candidates=[m for m in products if m.get('target',{}).get('name')=='b2_dynamic_reference'and m.get('executable')]
         need(len(candidates)==1 and candidates[0]['target']['src_path']==str(view/'crates/liteinst-launch/tests/b2_dynamic_reference.rs')and
-             candidates[0]['target']['kind']==['test']and candidates[0]['profile']['test']is True,'one actual exact named reference test binary')
+             candidates[0]['target']['kind']==['test']and candidates[0]['profile']['test']is True and
+             candidates[0]['profile']['debuginfo']==0,'one actual exact named reference test binary without debug sections')
         ids={p['id']for p in metadata['packages']}
         need(all(p['package_id']in ids for p in products),'all actual compiled artifacts have authenticated package sources')
         state['compiler_artifacts']=products
