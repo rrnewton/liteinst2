@@ -167,6 +167,400 @@
     ]
   },
   "listing_revision": "18f8c106fe4167dce41b77956917f8e45c583b42",
+  "main690": {
+    "base": "e0d94eb766db5e070ef853ad28c5b9d52ad0dcf3",
+    "current_corpus_sha256": "61e6fe15da8d2484b9abf1cbe9d1e9fbaf91896ec5aeea31f4fc1d3365617548",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_tests": 16
+    },
+    "methods": {
+      "tools/rapid-profiler/src/frontend_native/backoff/driver/sink_tests.rs": {
+        "all": [
+          "missing_budget_preserves_real_published_and_removed_without_fallback",
+          "accepted_late_calls_are_received_once_and_never_returned_as_pending",
+          "real_retired_report_burst_shares_one_hard_budget_and_counts_late_acceptance",
+          "original_next_arm_all_issued_and_early_stop_budgets_do_not_renew",
+          "request_during_real_arm_wait_is_acknowledged_by_actual_stop_branch",
+          "mixed_history_calls_and_report_do_not_replace_the_context_budget",
+          "opt_in_run_refusals_clear_budget_and_keep_failure_before_cleanup"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/optional/sink_tests.rs": {
+        "all": [
+          "missing_budget_keeps_optional_history_and_never_falls_back",
+          "optional_full_and_disconnect_keep_history_removed_and_unread_sink_items",
+          "genuine_optional_report_copy_is_delivered_before_late_failure_without_pending",
+          "optional_opt_in_run_refusals_clear_budget_without_fabricating_finish"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/sink/tests.rs": {
+        "all": [
+          "capacity_four_retries_transfer_the_same_allocation_once",
+          "full_local_expiry_hard_priority_and_coincident_boundaries",
+          "retry_window_limits_attempt_admission_not_successful_send_latency",
+          "missing_budget_disconnect_and_scoped_unwind_retain_authority",
+          "sink_policy_is_explicit_and_orthogonal_without_changing_limits"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "690cb9c4677ea4eb5401946c383c536f821295ad",
+    "previous_corpus_sha256": "884864b391332b735ebe3a3c72a935132ed95910cdc16d1793c4befdc01edc31",
+    "projections": {
+      "tools/rapid-profiler/backoff-work/verify.py": {
+        "current_sha256": "f96182b9efa5383a3214b5c0234aa7c61eb6fc0d887e8136c3316f814aeebed6",
+        "edits": [
+          [
+            4645,
+            4770,
+            ""
+          ],
+          [
+            5379,
+            5428,
+            ""
+          ],
+          [
+            6969,
+            7253,
+            ""
+          ],
+          [
+            7476,
+            7612,
+            ""
+          ],
+          [
+            17506,
+            17607,
+            ""
+          ],
+          [
+            19676,
+            19869,
+            "            if a.optional:\n"
+          ],
+          [
+            21458,
+            21552,
+            ""
+          ]
+        ],
+        "previous_sha256": "0c30f4551b3c8c26b07866d682910b928f730d5d8dd35283b5a9df3307611487"
+      },
+      "tools/rapid-profiler/optional-backoff-work/check_output.py": {
+        "current_sha256": "c83416507f83577f7a743b6bcbe9ef885d47cbf476d4c43286a5e80424710e7d",
+        "edits": [
+          [
+            3847,
+            4391,
+            ""
+          ]
+        ],
+        "previous_sha256": "e4f1ed1ce21dedb1217d80c599490c26c30e91651da378f10484b4f95394ca69"
+      },
+      "tools/rapid-profiler/optional-backoff-work/test_recipe.py": {
+        "current_sha256": "009e088783ae8273b90655b27cf8e6e962445cb4663a0cffe8e49d6951d85d36",
+        "edits": [
+          [
+            10261,
+            14824,
+            ""
+          ]
+        ],
+        "previous_sha256": "7b7668b310d7f98036f00ab9a4d821944a07b7293c927671b855c9e1870f60de"
+      },
+      "tools/rapid-profiler/ordinary-interval/backoff.rs": {
+        "current_sha256": "7b524cc768acaa42e0a0a50cc57d7ba0fc165abdbdb9ec2683e5157feddda24a",
+        "edits": [
+          [
+            17424,
+            17766,
+            ""
+          ]
+        ],
+        "previous_sha256": "7cccbda805bff2cec0b51b965ebf40d385418f45d2e648997ca65dc0cd41782b"
+      },
+      "tools/rapid-profiler/ordinary-interval/backoff/optional.rs": {
+        "current_sha256": "9f58ce28d58e0e2654ba3716225d54e56ce78cd36b0897f75f4da122c587067c",
+        "edits": [
+          [
+            6652,
+            7545,
+            ""
+          ],
+          [
+            12890,
+            13297,
+            ""
+          ],
+          [
+            16142,
+            16321,
+            ""
+          ],
+          [
+            16335,
+            16964,
+            "        \"optional-backoff-work COMPLETE originals={} k={k} calls={calls} fast={} slow={} sampled={} unsampled={} arms={} reports={} disabled={} actions={} history_batches={} call_batches={} max_entry_prefix={} epoch_limit={epochs} call_limit={limit} stop_reason={stop_reason} max_arm_late_ns={} stop_ack_ns={} removed_ns={} controller_done_ns={} accepted_exports={} written_exports={} written_bytes={} worker_detached=true actual_threads_joined=3 export_synced=true result_input_rsp_checked=true worker_backpressure={transport} scope=finite-functional-raw-uncalibrated post_disable_rearm_coverage=not-qualified\",\n"
+          ]
+        ],
+        "previous_sha256": "79baed392819f5120aee2353a080eb3b07772e58580f742cd44b8e0dcd1993e6"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "053001e24c61e1ab4380396b8ccd28b1d64afeb29aa82301ea51284e49159c08",
+        "edits": [
+          [
+            12195,
+            12987,
+            ""
+          ]
+        ],
+        "previous_sha256": "9b79f04567cf0ceb213add92c1f66d9e4e8710440103e0219d175db7a233a0cb"
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/driver.rs": {
+        "current_sha256": "8911729d5a43603636ef1322ad7d1c6965190bcb353e94e6f1e0036d9788e990",
+        "edits": [
+          [
+            559,
+            595,
+            ""
+          ],
+          [
+            1077,
+            1124,
+            ""
+          ],
+          [
+            1748,
+            1770,
+            "    fn at(\n"
+          ],
+          [
+            3776,
+            3820,
+            ""
+          ],
+          [
+            4612,
+            4844,
+            ""
+          ],
+          [
+            4906,
+            5180,
+            ""
+          ],
+          [
+            10418,
+            10455,
+            ""
+          ],
+          [
+            10666,
+            10703,
+            ""
+          ],
+          [
+            10878,
+            10911,
+            ""
+          ],
+          [
+            15477,
+            16222,
+            ""
+          ],
+          [
+            16805,
+            16958,
+            "    // Diagnostic derivation only, called after an existing predicate refused.\n    // These methods neither make a scheduling decision nor change clock state.\n"
+          ],
+          [
+            20492,
+            20610,
+            ""
+          ],
+          [
+            21978,
+            22257,
+            "fn run_loop(mut driver: DriverRef<'_>, start: Instant) -> Result<LoopCompletion, Error> {\n"
+          ],
+          [
+            22473,
+            22501,
+            "        let polled = Instant::now();\n"
+          ],
+          [
+            22809,
+            23023,
+            "                stop_acknowledged = Instant::now().checked_duration_since(start);\n"
+          ],
+          [
+            23125,
+            23198,
+            "                removal_completed = Instant::now().checked_duration_since(start);\n"
+          ],
+          [
+            23283,
+            23484,
+            "                let arm_started = Instant::now();\n"
+          ],
+          [
+            23515,
+            23554,
+            "                let completed = Instant::now();\n"
+          ],
+          [
+            24276,
+            24402,
+            ""
+          ],
+          [
+            24641,
+            24700,
+            "        let wait = clock.wait_bound(Instant::now(), driver.arms());\n"
+          ],
+          [
+            24845,
+            24880,
+            "            let completed = Instant::now();\n"
+          ],
+          [
+            25811,
+            25840,
+            ""
+          ]
+        ],
+        "previous_sha256": "aa5cc35adb6640804b2c946fa133d8d329e718d0375e2109c92e04b2332d7d78"
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/mod.rs": {
+        "current_sha256": "0ade44d4f998d5a76cb762f9e2b259243e6cb461f86463a4df3aad7e1921f1c7",
+        "edits": [
+          [
+            1094,
+            1104,
+            ""
+          ],
+          [
+            2371,
+            2400,
+            ""
+          ],
+          [
+            3027,
+            3065,
+            ""
+          ],
+          [
+            3319,
+            3402,
+            "    /// Controller-to-sink Full remains fatal. The default stays immediate.\n"
+          ],
+          [
+            3599,
+            4113,
+            ""
+          ]
+        ],
+        "previous_sha256": "991f2ca6b19efe2c22f803c38dc923b23b2b82fe07013c6c52edb1c4e8aea893"
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/optional.rs": {
+        "current_sha256": "5214819c21a3eb6c6a5bd439031c4999781b9d794858caa991d5add86a151c48",
+        "edits": [
+          [
+            3488,
+            3532,
+            ""
+          ],
+          [
+            4583,
+            4619,
+            ""
+          ],
+          [
+            6005,
+            6237,
+            ""
+          ],
+          [
+            6307,
+            6581,
+            ""
+          ],
+          [
+            12288,
+            12325,
+            ""
+          ],
+          [
+            12526,
+            12563,
+            ""
+          ],
+          [
+            13411,
+            13444,
+            ""
+          ],
+          [
+            16135,
+            16164,
+            ""
+          ]
+        ],
+        "previous_sha256": "6f8ddbf12da6512565fb48f6056f22bd79bc79f6a3fee4cd9c83a13127eb0e94"
+      },
+      "tools/rapid-profiler/verify_ordinary_interval.py": {
+        "current_sha256": "3b2a5e939927a8f653aeefebea8bb9591926f066ad7585ad2a0e522f313bc4fa",
+        "edits": [
+          [
+            27207,
+            27545,
+            ""
+          ]
+        ],
+        "previous_sha256": "91a79ef36580a603b69632690f42fa6027b998602685017be175986d0e72f626"
+      }
+    },
+    "scope": "Source-derived inventory only; actual test execution remains separately required.",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "tools/rapid-profiler/Cargo.toml": "44a10ae94825a0bad3d09776065fe2aff56082dcb41263a5efe28230a746c685",
+      "tools/rapid-profiler/backoff-work/verify.py": "f96182b9efa5383a3214b5c0234aa7c61eb6fc0d887e8136c3316f814aeebed6",
+      "tools/rapid-profiler/optional-backoff-work/check_output.py": "c83416507f83577f7a743b6bcbe9ef885d47cbf476d4c43286a5e80424710e7d",
+      "tools/rapid-profiler/optional-backoff-work/test_recipe.py": "009e088783ae8273b90655b27cf8e6e962445cb4663a0cffe8e49d6951d85d36",
+      "tools/rapid-profiler/ordinary-interval/backoff.rs": "7b524cc768acaa42e0a0a50cc57d7ba0fc165abdbdb9ec2683e5157feddda24a",
+      "tools/rapid-profiler/ordinary-interval/backoff/optional.rs": "9f58ce28d58e0e2654ba3716225d54e56ce78cd36b0897f75f4da122c587067c",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "053001e24c61e1ab4380396b8ccd28b1d64afeb29aa82301ea51284e49159c08",
+      "tools/rapid-profiler/src/frontend_native/backoff/driver.rs": "8911729d5a43603636ef1322ad7d1c6965190bcb353e94e6f1e0036d9788e990",
+      "tools/rapid-profiler/src/frontend_native/backoff/driver/sink_tests.rs": "edc633f389ad7a3d7904ca7c6575d03a8f2b822b35411a1b37a07e40e7ceb50b",
+      "tools/rapid-profiler/src/frontend_native/backoff/mod.rs": "0ade44d4f998d5a76cb762f9e2b259243e6cb461f86463a4df3aad7e1921f1c7",
+      "tools/rapid-profiler/src/frontend_native/backoff/optional.rs": "5214819c21a3eb6c6a5bd439031c4999781b9d794858caa991d5add86a151c48",
+      "tools/rapid-profiler/src/frontend_native/backoff/optional/sink_tests.rs": "4340bbca1e7bcd936d360effa27a33162f0ba41b95a573572b9fa95668f88bad",
+      "tools/rapid-profiler/src/frontend_native/backoff/sink.rs": "f559a795f962d3f18d7e3cc64626a4b069f2e1eaf9f20295e5f8430288e8a046",
+      "tools/rapid-profiler/src/frontend_native/backoff/sink/tests.rs": "b532a34ec976b4c3d257bddeb0d0d97dc3737d5bcd9d40a446d9cd5173a1da8f",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "96f44acb14c3f061d122367b6bdedf2e261b470251124c72442bd8940a48ec5c",
+      "tools/rapid-profiler/src/lib.rs": "52b54ed20f6e8daa509846e2ac543ff5ef6e8099b1d69cc8623b94421e3c363d",
+      "tools/rapid-profiler/verify_ordinary_interval.py": "3b2a5e939927a8f653aeefebea8bb9591926f066ad7585ad2a0e522f313bc4fa"
+    },
+    "workspace_change": {
+      "current": {
+        "ignored": 7,
+        "tests": 304
+      },
+      "identity": "unit/rapid_profiler/lib",
+      "previous": {
+        "ignored": 7,
+        "tests": 288
+      }
+    }
+  },
   "merged_revision": "3067913e0daf2b98baf9a5989ca468efe9fb797f",
   "methods": {
     "src/trampoline/precontext/tests.rs": {

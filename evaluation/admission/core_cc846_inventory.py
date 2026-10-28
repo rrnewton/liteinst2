@@ -79,7 +79,7 @@ def before_ac0963(declared):
 
 
 def peel_ac0963(declared):
-    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT) else declared
+    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.LATEST) else declared
 
 
 def source_before_cc846(path, data, error):
@@ -165,7 +165,7 @@ def peel_python(identities):
 
 def require_current(declared):
     """Live preflight has no historical-catalog acceptance path."""
-    require(type(declared) is dict and digest(declared) == main813.CURRENT, 'ac0963_inventory_differs')
+    require(type(declared) is dict and digest(declared) == main813.LATEST, 'ac0963_inventory_differs')
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):
