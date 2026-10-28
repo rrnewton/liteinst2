@@ -13,7 +13,7 @@ struct rtc_query_layout {
  struct btrfs_ioctl_get_subvol_info_args subvolume;
 };
 static struct rtc_query_layout rtc_query_layout __attribute__((used));
-static const unsigned long rtc_subvol_command __attribute__((used,retain))=BTRFS_IOC_GET_SUBVOL_INFO;
+const unsigned long rtc_subvol_command __attribute__((used,visibility("hidden")))=BTRFS_IOC_GET_SUBVOL_INFO;
 #define RTC_MAGIC UINT64_C(0x3153544547435452)
 #define RTC_ROWS 2U
 #define RTC_PRIVATE_BYTES (16U*4096U)

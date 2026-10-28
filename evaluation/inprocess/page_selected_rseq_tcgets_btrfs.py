@@ -101,6 +101,7 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
     for kind in('unobserved','observed'):
         name=prefix+'-'+kind;actual=argv.copy();sources=units.copy();bridge=output/(kind+'.so');actual[-1]=str(bridge)
         if kind=='observed':
+            actual[-2:-2]=['-Wl,--undefined=rtc_subvol_command']
             for basename in('runtime_loader.c','rseq_guard.c'):
                 old,new=str(selected/basename),str(observed/basename)
                 need(actual.count(old)==1,'one exact observation translation-unit replacement')

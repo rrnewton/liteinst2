@@ -13,5 +13,5 @@ cc_bin=${LI2_CC:?exact compiler required}
 "$cc_bin" -O2 -g -Wall -Wextra -Werror -fno-pie -no-pie -nostdlib \
  -ffreestanding -fno-builtin -fno-stack-protector -fno-asynchronous-unwind-tables \
  -mgeneral-regs-only -mcmodel=large -DRN_CASE="$case_number" -DRTC_INJECT="$injected" \
- "-Wl,-T,$fixture_dir/linker.ld,-z,max-page-size=4096,--build-id=none" \
+ "-Wl,-T,$fixture_dir/linker.ld,-z,max-page-size=4096,--build-id=none,--undefined=rtc_subvol_command" \
  "$fixture_dir/fixture.S" "$fixture_dir/native_reference.c" "$metadata" -o "$output"

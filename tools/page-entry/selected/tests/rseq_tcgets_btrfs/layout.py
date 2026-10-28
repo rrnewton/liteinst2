@@ -19,10 +19,10 @@ offsets={k:off(v)for k,v in dict(greg='((ucontext_t*)0)->uc_mcontext.gregs',fp_p
 si_fields=dict(si_signo='((siginfo_t*)0)->si_signo',si_errno='((siginfo_t*)0)->si_errno',si_code='((siginfo_t*)0)->si_code',si_addr='((siginfo_t*)0)->_sifields._sigfault.si_addr')
 siginfo=dict(bytes=int(gdb.lookup_type('siginfo_t').sizeof),offsets={k:off(v)for k,v in si_fields.items()},widths={k:int(gdb.parse_and_eval('sizeof('+v+')'))for k,v in si_fields.items()})
 gate_symbols={n:int(gdb.lookup_static_symbol(n).value().address)for n in ('tcgets','tcgets_empty','tcgets_mount_path')}if record=='rtc_record'else {}
-subvol=gdb.lookup_static_symbol('rtc_subvol_command')
+subvol=gdb.lookup_global_symbol('rtc_subvol_command')
 unsigned_long=gdb.lookup_type('unsigned long').strip_typedefs().unqualified()
 if subvol is None or not subvol.is_variable or subvol.type.strip_typedefs().unqualified()!=unsigned_long or int(subvol.type.sizeof)!=8:
-    raise ValueError('actual static unsigned-long subvolume command symbol/type')
+    raise ValueError('actual global unsigned-long subvolume command symbol/type')
 subvol_value=subvol.value()
 if subvol_value.address is None or int(subvol_value.address)<=0:raise ValueError('actual retained subvolume command storage')
 subvolume_command=int(subvol_value)

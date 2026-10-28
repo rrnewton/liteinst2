@@ -108,7 +108,7 @@ RSEC long rtc_native_setup(unsigned c) {
  for(size_t i=0;i<sizeof rtc_altstack;i++)rtc_altstack[i]=0;
  rtc_native_record.h[0]=RTC_MAGIC;rtc_native_record.h[1]=1;
  rtc_native_record.h[2]=sizeof rtc_native_record;rtc_native_record.h[3]=c;
- rtc_native_record.h[8]=call6(39,0,0,0,0,0,0);rtc_native_record.h[9]=call6(186,0,0,0,0,0);
+ rtc_native_record.h[8]=call6(39,0,0,0,0,0,0);rtc_native_record.h[9]=call6(186,0,0,0,0,0,0);
  uint32_t low,high;__asm__ volatile("xgetbv":"=a"(low),"=d"(high):"c"(0):"memory");
  rtc_native_record.h[10]=(uint64_t)low|((uint64_t)high<<32);
  rtc_native_record.h[11]=(uintptr_t)rtc_altstack;rtc_native_record.h[12]=sizeof rtc_altstack;
