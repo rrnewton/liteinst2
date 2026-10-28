@@ -53,7 +53,7 @@
     {
       "bytes": 10047,
       "path": "evaluation/inprocess/page_selected_maps_inputs.json",
-      "sha256": "9137cb0e5854711377552b7eaff53a5dc65c52d948e853692a242fc6e051b22a"
+      "sha256": "2d5973eff1285e80405cc1706e1dd397ed78d17187261b7dc779e3bac2894a24"
     },
     {
       "bytes": 7089,
@@ -73,7 +73,7 @@
     {
       "bytes": 17945,
       "path": "evaluation/inprocess/page_selected_register_time_inputs.json",
-      "sha256": "69fda2aedb9c6a3014cf7fee7aab0e3075209d8157cd5f7d75da5d1e954d7926"
+      "sha256": "b2d3db9be83ae61738f350bb4c827930431d275a7da0871c8005a1d5025ce7d8"
     },
     {
       "bytes": 12373,
@@ -126,9 +126,9 @@
       "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
     },
     {
-      "bytes": 15965,
+      "bytes": 16383,
       "path": "tools/page-entry/bridge.c",
-      "sha256": "1f48f8d895982a6a7403024ef0f30858553c9a89da90269b084c7fea7551f11a"
+      "sha256": "e1d85212da97de4a8114bb7fc2fd2e2b8a2e08d3f57e1706985727df8b8f0d99"
     },
     {
       "bytes": 1531,
@@ -483,9 +483,9 @@
   ],
   "runtime_sources": [
     {
-      "bytes": 15965,
+      "bytes": 16383,
       "path": "tools/page-entry/bridge.c",
-      "sha256": "1f48f8d895982a6a7403024ef0f30858553c9a89da90269b084c7fea7551f11a"
+      "sha256": "e1d85212da97de4a8114bb7fc2fd2e2b8a2e08d3f57e1706985727df8b8f0d99"
     },
     {
       "bytes": 1531,

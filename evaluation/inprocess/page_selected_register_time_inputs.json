@@ -156,10 +156,10 @@
       "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
     },
     {
-      "bytes": 15965,
+      "bytes": 16383,
       "origin": "committed composition input",
       "path": "tools/page-entry/bridge.c",
-      "sha256": "1f48f8d895982a6a7403024ef0f30858553c9a89da90269b084c7fea7551f11a"
+      "sha256": "e1d85212da97de4a8114bb7fc2fd2e2b8a2e08d3f57e1706985727df8b8f0d99"
     },
     {
       "bytes": 1531,
