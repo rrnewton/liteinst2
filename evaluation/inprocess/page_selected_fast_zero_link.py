@@ -104,7 +104,9 @@ def compile_retained(label,argv,run,binary,builder,pending,errors):
 def extract(builder,products,root,private,pin,binary,run,record,pending):
     selected=root/'tools/page-entry/selected';output=private/'extracted';output.mkdir()
     script=pin(selected/'build-rseq-inactive.sh');commands=recipe(script,'"$cc_bin"')
-    need(len(commands)==2,'production bridge and observer recipes')
+    need(len(commands)==3 and commands[0]==['$cc_bin','--version','>','$output_dir/cc-version.txt'],
+         'exact compiler metadata followed by production bridge and observer recipes')
+    commands=commands[1:]
     argv=expand(commands[0],{'$cc_bin':builder.tools['cc'],'$parent_dir':selected.parent,
         '$source_dir':selected,'$output_dir':output})
     units=[x for x in argv[1:-2]if x.endswith(('.c','.S'))]
