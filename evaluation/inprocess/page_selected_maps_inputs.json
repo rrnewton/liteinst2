@@ -136,9 +136,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 28605,
+      "bytes": 29064,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "65100cec00fed8a9f41e3bfdb9107ed5c034a9a39fc25b36709d2f7c08e2e39e"
+      "sha256": "f80b113eacace0e0be173bb91a74b1001efb690207bb8d3be398e4cddf149526"
     },
     {
       "bytes": 32527,

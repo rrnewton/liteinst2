@@ -2,6 +2,9 @@
    selected source publication is a separate, still required capability. */
 #include "native_pages.h"
 #include "native_policy.h"
+#ifdef LI2_RSEQ_NATIVE
+#include "rseq_guard.h"
+#endif
 #define NATIVE_LOW_LIMIT UINT64_C(0x200000000)
 static struct li2_native_counts native_counts;
 static uintptr_t native_timed_page;
@@ -92,6 +95,10 @@ int li2_lifecycle_native_admit(uintptr_t pc) {
     }
     /* No bytes changed between authentication and permission publication;
        the singleton handler owns execution and all mapping mutation paths. */
+#ifdef LI2_RSEQ_NATIVE
+    int rseq_result=li2_rseq_native_prepare(pc);
+    if(rseq_result)DIE((unsigned)rseq_result,li2_rseq_native_snapshot()->first_detail);
+#endif
     if(!li2_lifecycle_admit(pc,pc))DIE(1428,0);
     read_maps();p=current(address);const struct map_row *r=mapping(address);
     verify_page(p,r);
@@ -109,6 +116,10 @@ int li2_lifecycle_native_admit(uintptr_t pc) {
         native_counts.revisit_ns[native_counts.revisit_count++]=ended-started;
     }
     native_increment(&native_counts.admissions);
+#ifdef LI2_RSEQ_NATIVE
+    rseq_result=li2_rseq_native_publish(pc);
+    if(rseq_result)DIE((unsigned)rseq_result,li2_rseq_native_snapshot()->first_detail);
+#endif
     return 1;
 }
 

@@ -1,0 +1,555 @@
+{
+  "bounds": {
+    "cpu_seconds": 30,
+    "file_bytes": 16777216,
+    "memory_bytes": 536870912,
+    "wall_seconds": 60
+  },
+  "bridge_sha256": "94110b21da8be5bec13611a863e90a2d131081d5b93818074b530d9a775d617e",
+  "cases": [
+    {
+      "admission_service": {
+        "first_admission_ns": 77677,
+        "revisit_count": 16,
+        "revisit_median_ns": 77952.5,
+        "revisit_ns": [
+          81121,
+          76985,
+          79109,
+          79330,
+          79178,
+          84377,
+          78108,
+          82654,
+          77227,
+          81853,
+          77345,
+          76615,
+          77105,
+          77527,
+          76625,
+          77797
+        ]
+      },
+      "completion_accepted": true,
+      "gated_exit": 0,
+      "gated_stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "gated_whole_process_ns": 6330147263,
+      "input_sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "name": "true-default",
+      "native_exit": 0,
+      "native_stderr_empty": true,
+      "native_stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_whole_process_ns": 3481447,
+      "output_equal": true,
+      "passed": true,
+      "report_error_sha256": null,
+      "report_prefix": {
+        "loader": {
+          "admissions": 1389,
+          "cpuid": 38,
+          "failure_code": 0,
+          "generic_tf_steps": 83019,
+          "nx_faults": 14108,
+          "rdtsc": 10,
+          "rdtscp": 0,
+          "source_patches": 0,
+          "source_syscalls": 47,
+          "status": 0
+        },
+        "native": {
+          "admissions": 1389,
+          "attempts": 13540,
+          "blocked": 12151,
+          "close_busy": 0,
+          "close_complete": 1,
+          "close_error": 0,
+          "closed": 1389,
+          "epoch_error": 0,
+          "epoch_exits": 1389,
+          "main_admissions": 4,
+          "main_refaults": 0,
+          "refaults": 28
+        },
+        "rseq_native": {
+          "admitted_epochs": 974,
+          "attempted_epochs": 974,
+          "authenticated_entries": 974,
+          "boundary": {
+            "attempted": 23,
+            "authenticated_entries": 23,
+            "completed": 23,
+            "failure_code": 0,
+            "first_error": 0,
+            "handler_entries": 23,
+            "phase": 0,
+            "status": 0,
+            "tls_refreshes": 23,
+            "zero_page_observations": 23
+          },
+          "closed_epochs": 974,
+          "exercised": true,
+          "failure_code": 0,
+          "first_error": 0,
+          "handler_entries": 974,
+          "phase": 0,
+          "registered": 1,
+          "status": 0,
+          "tls_refreshes": 974,
+          "unsafe_terminal": 0,
+          "version": 1
+        }
+      },
+      "terminal_report_parsed": true
+    },
+    {
+      "admission_service": {
+        "first_admission_ns": 81994,
+        "revisit_count": 16,
+        "revisit_median_ns": 80571.0,
+        "revisit_ns": [
+          83755,
+          79829,
+          81403,
+          80300,
+          80451,
+          83185,
+          81993,
+          83225,
+          79811,
+          118658,
+          80691,
+          79750,
+          79829,
+          79639,
+          78708,
+          82203
+        ]
+      },
+      "completion_accepted": true,
+      "gated_exit": 0,
+      "gated_stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "gated_whole_process_ns": 6528538848,
+      "input_sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "name": "true-disabled",
+      "native_exit": 0,
+      "native_stderr_empty": true,
+      "native_stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "native_whole_process_ns": 3904412,
+      "output_equal": true,
+      "passed": true,
+      "report_error_sha256": null,
+      "report_prefix": {
+        "loader": {
+          "admissions": 1389,
+          "cpuid": 38,
+          "failure_code": 0,
+          "generic_tf_steps": 84369,
+          "nx_faults": 14283,
+          "rdtsc": 10,
+          "rdtscp": 0,
+          "source_patches": 0,
+          "source_syscalls": 48,
+          "status": 0
+        },
+        "native": {
+          "admissions": 1389,
+          "attempts": 13721,
+          "blocked": 12332,
+          "close_busy": 0,
+          "close_complete": 1,
+          "close_error": 0,
+          "closed": 1389,
+          "epoch_error": 0,
+          "epoch_exits": 1389,
+          "main_admissions": 4,
+          "main_refaults": 0,
+          "refaults": 28
+        },
+        "rseq_native": {
+          "admitted_epochs": 0,
+          "attempted_epochs": 0,
+          "authenticated_entries": 0,
+          "boundary": {
+            "attempted": 0,
+            "authenticated_entries": 0,
+            "completed": 0,
+            "failure_code": 0,
+            "first_error": 0,
+            "handler_entries": 0,
+            "phase": 0,
+            "status": 0,
+            "tls_refreshes": 0,
+            "zero_page_observations": 0
+          },
+          "closed_epochs": 0,
+          "exercised": false,
+          "failure_code": 0,
+          "first_error": 0,
+          "handler_entries": 0,
+          "phase": 0,
+          "registered": 0,
+          "status": 0,
+          "tls_refreshes": 0,
+          "unsafe_terminal": 0,
+          "version": 1
+        }
+      },
+      "terminal_report_parsed": true
+    },
+    {
+      "admission_service": {
+        "first_admission_ns": 83255,
+        "revisit_count": 16,
+        "revisit_median_ns": 80716.0,
+        "revisit_ns": [
+          81352,
+          79390,
+          80471,
+          81412,
+          89385,
+          81192,
+          78838,
+          82844,
+          103125,
+          79429,
+          77757,
+          77306,
+          84897,
+          80231,
+          77737,
+          80961
+        ]
+      },
+      "completion_accepted": false,
+      "gated_exit": 125,
+      "gated_stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "gated_whole_process_ns": 19714495952,
+      "input_sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "name": "ls-default",
+      "native_exit": 0,
+      "native_stderr_empty": true,
+      "native_stdout": {
+        "bytes": 2,
+        "sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+      },
+      "native_whole_process_ns": 3900556,
+      "output_equal": false,
+      "passed": false,
+      "report_error_sha256": "c60e995511c94b67b2f32209b8a8e6a6e12abffa5df1a6688a46a75008550a7f",
+      "report_prefix": {
+        "loader": {
+          "admissions": 5485,
+          "cpuid": 38,
+          "failure_code": 1207,
+          "generic_tf_steps": 206416,
+          "nx_faults": 41489,
+          "rdtsc": 10,
+          "rdtscp": 0,
+          "source_patches": 0,
+          "source_syscalls": 93,
+          "status": 125
+        },
+        "native": {
+          "admissions": 5485,
+          "attempts": 40180,
+          "blocked": 34695,
+          "close_busy": 0,
+          "close_complete": 1,
+          "close_error": 0,
+          "closed": 5485,
+          "epoch_error": 1207,
+          "epoch_exits": 5485,
+          "main_admissions": 2,
+          "main_refaults": 0,
+          "refaults": 45
+        },
+        "rseq_native": {
+          "admitted_epochs": 4346,
+          "attempted_epochs": 4346,
+          "authenticated_entries": 4346,
+          "boundary": {
+            "attempted": 39,
+            "authenticated_entries": 39,
+            "completed": 39,
+            "failure_code": 1207,
+            "first_error": 0,
+            "handler_entries": 39,
+            "phase": 0,
+            "status": 125,
+            "tls_refreshes": 39,
+            "zero_page_observations": 39
+          },
+          "closed_epochs": 4346,
+          "exercised": true,
+          "failure_code": 1207,
+          "first_error": 0,
+          "handler_entries": 4346,
+          "phase": 0,
+          "registered": 1,
+          "status": 125,
+          "tls_refreshes": 4346,
+          "unsafe_terminal": 0,
+          "version": 1
+        }
+      },
+      "terminal_report_parsed": true
+    },
+    {
+      "admission_service": {
+        "first_admission_ns": 82103,
+        "revisit_count": 16,
+        "revisit_median_ns": 82959.5,
+        "revisit_ns": [
+          83125,
+          82834,
+          83085,
+          84497,
+          84016,
+          88192,
+          80260,
+          87601,
+          89905,
+          81512,
+          77096,
+          96265,
+          81452,
+          80982,
+          79109,
+          82134
+        ]
+      },
+      "completion_accepted": true,
+      "gated_exit": 0,
+      "gated_stdout": {
+        "bytes": 2,
+        "sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+      },
+      "gated_whole_process_ns": 20227672053,
+      "input_sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "name": "ls-disabled",
+      "native_exit": 0,
+      "native_stderr_empty": true,
+      "native_stdout": {
+        "bytes": 2,
+        "sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+      },
+      "native_whole_process_ns": 4769289,
+      "output_equal": true,
+      "passed": true,
+      "report_error_sha256": null,
+      "report_prefix": {
+        "loader": {
+          "admissions": 5732,
+          "cpuid": 38,
+          "failure_code": 0,
+          "generic_tf_steps": 212791,
+          "nx_faults": 42882,
+          "rdtsc": 10,
+          "rdtscp": 0,
+          "source_patches": 0,
+          "source_syscalls": 102,
+          "status": 0
+        },
+        "native": {
+          "admissions": 5732,
+          "attempts": 41589,
+          "blocked": 35857,
+          "close_busy": 0,
+          "close_complete": 1,
+          "close_error": 0,
+          "closed": 5732,
+          "epoch_error": 0,
+          "epoch_exits": 5732,
+          "main_admissions": 38,
+          "main_refaults": 0,
+          "refaults": 46
+        },
+        "rseq_native": {
+          "admitted_epochs": 0,
+          "attempted_epochs": 0,
+          "authenticated_entries": 0,
+          "boundary": {
+            "attempted": 0,
+            "authenticated_entries": 0,
+            "completed": 0,
+            "failure_code": 0,
+            "first_error": 0,
+            "handler_entries": 0,
+            "phase": 0,
+            "status": 0,
+            "tls_refreshes": 0,
+            "zero_page_observations": 0
+          },
+          "closed_epochs": 0,
+          "exercised": false,
+          "failure_code": 0,
+          "first_error": 0,
+          "handler_entries": 0,
+          "phase": 0,
+          "registered": 0,
+          "status": 0,
+          "tls_refreshes": 0,
+          "unsafe_terminal": 0,
+          "version": 1
+        }
+      },
+      "terminal_report_parsed": true
+    },
+    {
+      "admission_service": {
+        "first_admission_ns": 80020,
+        "revisit_count": 16,
+        "revisit_median_ns": 80661.0,
+        "revisit_ns": [
+          79770,
+          82093,
+          81672,
+          82223,
+          80952,
+          81643,
+          78928,
+          83125,
+          84587,
+          78898,
+          78899,
+          78868,
+          78728,
+          79339,
+          83736,
+          80370
+        ]
+      },
+      "completion_accepted": true,
+      "gated_exit": 0,
+      "gated_stdout": {
+        "bytes": 128,
+        "sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32"
+      },
+      "gated_whole_process_ns": 1218266335,
+      "input_sha256": "7898b958ecc49135c814acc5748c8e0be5a079df868bc990da969122a2df951d",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "name": "boundary-disabled",
+      "native_exit": 0,
+      "native_stderr_empty": true,
+      "native_stdout": {
+        "bytes": 128,
+        "sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32"
+      },
+      "native_whole_process_ns": 3395829,
+      "output_equal": true,
+      "passed": true,
+      "report_error_sha256": null,
+      "report_prefix": {
+        "loader": {
+          "admissions": 174,
+          "cpuid": 39,
+          "failure_code": 0,
+          "generic_tf_steps": 15835,
+          "nx_faults": 2578,
+          "rdtsc": 6,
+          "rdtscp": 0,
+          "source_patches": 0,
+          "source_syscalls": 13,
+          "status": 0
+        },
+        "native": {
+          "admissions": 174,
+          "attempts": 2376,
+          "blocked": 2202,
+          "close_busy": 0,
+          "close_complete": 1,
+          "close_error": 0,
+          "closed": 174,
+          "epoch_error": 0,
+          "epoch_exits": 174,
+          "main_admissions": 4,
+          "main_refaults": 1,
+          "refaults": 5
+        },
+        "rseq_native": {
+          "admitted_epochs": 0,
+          "attempted_epochs": 0,
+          "authenticated_entries": 0,
+          "boundary": {
+            "attempted": 0,
+            "authenticated_entries": 0,
+            "completed": 0,
+            "failure_code": 0,
+            "first_error": 0,
+            "handler_entries": 0,
+            "phase": 0,
+            "status": 0,
+            "tls_refreshes": 0,
+            "zero_page_observations": 0
+          },
+          "closed_epochs": 0,
+          "exercised": false,
+          "failure_code": 0,
+          "first_error": 0,
+          "handler_entries": 0,
+          "phase": 0,
+          "registered": 0,
+          "status": 0,
+          "tls_refreshes": 0,
+          "unsafe_terminal": 0,
+          "version": 1
+        }
+      },
+      "terminal_report_parsed": true
+    }
+  ],
+  "hardware": {
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "machine": "x86_64",
+    "model": "AMD EPYC 9D85 158-Core Processor",
+    "reserved_cpu_count": 1
+  },
+  "limitations": [
+    "Admission service and whole-process release durations are distinct single-run observations; no overhead subtraction or speedup claim.",
+    "A parsed failed prefix is not completed execution. Signals alone do not establish a kill cause.",
+    "Original matrix custody is retained; no compiler-M system-header closure or new native execution is claimed."
+  ],
+  "matrix_sha256": "7c6dd44672717d6b04d6fc7f28f88a30c4010e6be898fb541fef19fda63da981",
+  "passed": false,
+  "passed_cases": 4,
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_pages.py",
+    "--expect-revision",
+    "4649d361f5fa3c2e30957f9cd6cf9f7475011d51",
+    "--output",
+    "evaluation/inprocess/results/native-pages-rseq-native-boundary-4649d361f5fa-20261028T202136.530978Z.json",
+    "--library-root",
+    "/usr/lib64",
+    "--cpuid-nx",
+    "--rseq-native",
+    "--rseq-native-boundary"
+  ],
+  "revision": "4649d361f5fa3c2e30957f9cd6cf9f7475011d51",
+  "schema": 1,
+  "source_manifest_sha256": "78687f156acaed3963733fbb5cdda39b1a3f92cb27e155f317a7cff8fd4f38e3",
+  "timing_scope": "CLOCK_MONOTONIC_RAW admission service from owner entry through live byte, backing, halo, permission and post-publication verification; first admitted page and at most16 revisits to that exact address/allocation/generation. Excludes signal delivery. Whole-process gated time includes namespace preparation. Single observations on a shared host; no instrumentation-only overhead claim.",
+  "tool_manifest_sha256": "53300ee2510992dacbf8601ced3a1ad9e3196b8709efcdc0e5615b316b412cc6",
+  "total_cases": 5
+}

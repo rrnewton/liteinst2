@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import resource
 import signal
 import shutil
@@ -28,6 +29,15 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def kernel_identity(release):
+    if type(release) is not str:
+        raise ValueError('kernel release type')
+    version = re.match(r'[0-9]+\.[0-9]+\.[0-9]+', release)
+    if version is None:
+        raise ValueError('kernel version invalid')
+    return dict(kernel_version=version[0], kernel_release_sha256=sha(release.encode()))
+
+
 def limits():
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     resource.setrlimit(resource.RLIMIT_CPU, (30, 30))
@@ -41,7 +51,15 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--library-root', default='/usr/lib64')
     parser.add_argument('--cpuid-nx', action='store_true', help='explicit raw CPUID NX-only release profile')
+    parser.add_argument('--rseq-native', action='store_true',
+                        help='qualified original-PC rseq native epoch; requires --cpuid-nx')
+    parser.add_argument('--rseq-native-boundary', action='store_true',
+                        help='explicit registered current-PC boundary retry; requires --rseq-native --cpuid-nx')
     args = parser.parse_args()
+    if args.rseq_native and not args.cpuid_nx:
+        parser.error('--rseq-native requires --cpuid-nx')
+    if args.rseq_native_boundary and not (args.rseq_native and args.cpuid_nx):
+        parser.error('--rseq-native-boundary requires --rseq-native --cpuid-nx')
     if args.output.is_absolute():
         raise ValueError('public output must be repository-relative')
     os.chdir(ROOT)
@@ -55,6 +73,14 @@ def main():
         nx_compare = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = nx_compare
         spec.loader.exec_module(nx_compare)
+    native_rseq_compare = None
+    if args.rseq_native:
+        spec = importlib.util.spec_from_file_location('native_page_rseq_native_reports',
+            ROOT/('tools/page-entry/selected/tests/rseq_native_boundary/reports.py' if args.rseq_native_boundary
+                  else 'tools/page-entry/selected/tests/rseq_native/reports.py'))
+        native_rseq_compare = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = native_rseq_compare
+        spec.loader.exec_module(native_rseq_compare)
     # Bind the actual local import closure, including the unchanged completion
     # predicates reached through the old comparators. The schema is data rather
     # than a Python module, so it is named separately.
@@ -95,7 +121,7 @@ def main():
         if key in os.environ:
             env[key] = os.environ[key]
     receipt = dict(schema=1, revision=revision, started_utc=stamp,
-                   hardware=dict(machine=platform.machine(), kernel=platform.release(),
+                   hardware=dict(machine=platform.machine(), **kernel_identity(platform.release()),
                                  model=next(line.split(':', 1)[1].strip() for line in
                                             Path('/proc/cpuinfo').read_text().splitlines()
                                             if line.startswith('model name')),
@@ -107,6 +133,12 @@ def main():
     if args.cpuid_nx:
         receipt['cpuid_profile'] = 'nx-only-raw'
         receipt['reproduce'].append('--cpuid-nx')
+    if args.rseq_native:
+        receipt['rseq_profile'] = 'original-pc-native-v1'
+        receipt['reproduce'].append('--rseq-native')
+    if args.rseq_native_boundary:
+        receipt['rseq_profile'] = 'current-pc-native-boundary-v1'
+        receipt['reproduce'].append('--rseq-native-boundary')
     commands = []
     tool_paths, tool_aliases, tool_hashes = {}, {}, {}
     receipt['tool_sha256'] = tool_hashes
@@ -165,10 +197,18 @@ def main():
             value = out.decode().strip()
             pin_tool(name, value if Path(value).is_absolute() else shutil.which(value, path=env['PATH']))
         recipe = 'tools/page-entry/selected/build-cpuid-nx.sh' if args.cpuid_nx else 'tools/page-entry/selected/build-native-pages.sh'
+        if args.rseq_native:
+            recipe = 'tools/page-entry/selected/build-rseq-native.sh'
+        if args.rseq_native_boundary:
+            recipe = 'tools/page-entry/selected/build-rseq-native-boundary.sh'
         status, _, _, _, _ = run('build', ['sh', recipe])
         if status:
             raise RuntimeError('release build failed')
         bridge = Path('target/page-entry/cpuid-nx/bridge-cpuid-nx.so' if args.cpuid_nx else 'target/page-entry/native-pages/bridge-native-pages.so')
+        if args.rseq_native:
+            bridge = Path('target/page-entry/rseq-native/bridge-rseq-native.so')
+        if args.rseq_native_boundary:
+            bridge = Path('target/page-entry/rseq-native-boundary/bridge-rseq-native-boundary.so')
         receipt['bridge_sha256'] = sha(bridge.read_bytes())
         artifacts[str(bridge)] = receipt['bridge_sha256']
         status, symbols, err, _, _ = run('runtime-memset-symbols', ['nm', '-S', '-n', str(bridge)])
@@ -228,10 +268,16 @@ def main():
                 dependencies[namespace['interpreter']] = identities['interpreter_sha256']
                 loader, pages, report_error = {}, {}, None
                 nx_public = None
+                rseq_native_public = None
                 try:
                     if args.cpuid_nx:
-                        parsed = nx_compare.reports(gated[2], True, False)
-                        nx_compare.completed(parsed, gated[4])
+                        if args.rseq_native:
+                            parsed = native_rseq_compare.reports(gated[2])
+                            native_rseq_compare.completed(parsed, gated[4])
+                            rseq_native_public = native_rseq_compare.compact_public(parsed)
+                        else:
+                            parsed = nx_compare.reports(gated[2], True, False)
+                            nx_compare.completed(parsed, gated[4])
                         nx = parsed['cpuid_nx']
                         if not (nx['status'] == nx['failure_code'] == 0 and
                                 nx['hardware_entered'] == nx['hardware_returned'] == 1 and nx['phase'] == 3 and
@@ -247,6 +293,9 @@ def main():
                     report_error = type(error).__name__ + ': ' + str(error)
                 passed = (native[0] == gated[0] == 0 and native[1] == gated[1] and not native[2]
                           and report_error is None)
+                if args.rseq_native and rseq == 'default':
+                    passed = (passed and rseq_native_public is not None and
+                              rseq_native_public['admitted_epochs'] > 0)
                 if program == 'boundary':
                     passed = (passed and len(gated[1]) == 128 and pages.get('main_admissions') == 4
                               and pages.get('main_refaults') == 1)
@@ -256,7 +305,8 @@ def main():
                     output_sha256=sha(gated[1]), native_whole_process_ns=native[3], gated_whole_process_ns=gated[3],
                     loader={k: loader.get(k) for k in ('status', 'failure_code', 'nx_faults', 'admissions',
                                                       'source_syscalls', 'cpuid', 'rdtsc', 'rdtscp')},
-                    pages=pages, **({'cpuid_nx': nx_public} if args.cpuid_nx else {})))
+                    pages=pages, **({'cpuid_nx': nx_public} if args.cpuid_nx else {}),
+                    **({'rseq_native': rseq_native_public} if args.rseq_native else {})))
         receipt['passed'] = len(receipt['cases']) == 5 and all(c['passed'] for c in receipt['cases'])
     except Exception as error:
         receipt['error'] = type(error).__name__ + ': ' + str(error)

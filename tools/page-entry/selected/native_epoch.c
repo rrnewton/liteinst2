@@ -1,4 +1,7 @@
 #include "native_epoch.h"
+#ifdef LI2_RSEQ_NATIVE
+#include "rseq_guard.h"
+#endif
 #include <sys/syscall.h>
 #ifdef LI2_MAPS_PHASE_REUSE
 #include "maps_phase.h"
@@ -77,6 +80,16 @@ int li2_native_epoch_nx(int sig,siginfo_t *si,ucontext_t *uc,uint64_t *logical_f
         return error(LI2_NATIVE_FOREIGN,sig);
     uint64_t flags=(uint64_t)g[REG_EFL];
     if((flags&LI2_STEP_TF) || !(flags&LI2_STEP_RF))return error(LI2_NATIVE_FLAGS,(long)flags);
+#ifdef LI2_RSEQ_NATIVE
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    int rseq_result=li2_rseq_native_boundary_enter(sig,si,uc,retry);
+#else
+    if(retry && (li2_rseq_snapshot()->registered ||
+       li2_rseq_native_snapshot()->phase!=LI2_RN_IDLE))return error(LI2_RN_ENTRY,LI2_NATIVE_RETRY);
+    int rseq_result=li2_rseq_native_enter(sig,si,uc);
+#endif
+    if(rseq_result)return error((unsigned)rseq_result,li2_rseq_native_snapshot()->first_detail);
+#endif
     struct li2_step_frame *frame=retry?&epoch.second:&epoch.first;
     if(!retry){epoch.first_observed=0;epoch.second_observed=0;}
     int r=capture(frame,uc);if(r)return r;
@@ -86,6 +99,10 @@ int li2_native_epoch_nx(int sig,siginfo_t *si,ucontext_t *uc,uint64_t *logical_f
     if(!closed->complete || closed->busy || closed->first_error || closed->pid!=epoch.session->pid ||
        closed->tid!=epoch.session->tid || closed->pages!=closed->verified)
         return error(LI2_NATIVE_STATE,2);
+#ifdef LI2_RSEQ_NATIVE
+    rseq_result=li2_rseq_native_closed();
+    if(rseq_result)return error((unsigned)rseq_result,li2_rseq_native_snapshot()->first_detail);
+#endif
     if(retry) {
         if(closed->pages || !epoch.first_observed || epoch.signal_address!=pc ||
            epoch.first.fp_bytes!=epoch.second.fp_bytes || epoch.first.mask!=epoch.second.mask ||
@@ -95,6 +112,10 @@ int li2_native_epoch_nx(int sig,siginfo_t *si,ucontext_t *uc,uint64_t *logical_f
            Every other saved GPR/selector/flag and complete FP byte stays exact. */
         for(size_t i=0;i<NGREG;i++)if(i!=REG_CR2 && epoch.first.greg[i]!=epoch.second.greg[i])
             return error(LI2_NATIVE_RETRY_CHANGED,(long)i);
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+        rseq_result=li2_rseq_native_boundary_complete();
+        if(rseq_result)return error((unsigned)rseq_result,li2_rseq_native_snapshot()->first_detail);
+#endif
     } else {
         if(!closed->pages) {
             epoch.phase=LI2_NATIVE_IDLE;epoch.in_handler=0;
