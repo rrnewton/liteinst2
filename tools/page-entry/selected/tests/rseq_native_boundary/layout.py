@@ -16,4 +16,6 @@ s=gdb.lookup_static_symbol(record)
 if s is None or int(s.type.sizeof)!=types[record]['bytes']:raise ValueError('complete actual record symbol')
 def off(s):return int(gdb.parse_and_eval('(unsigned long)&('+s+')'))
 offsets={k:off(v)for k,v in dict(greg='((ucontext_t*)0)->uc_mcontext.gregs',fp_pointer='((ucontext_t*)0)->uc_mcontext.fpregs',mask='((ucontext_t*)0)->uc_sigmask',stack_sp='((ucontext_t*)0)->uc_stack.ss_sp',stack_flags='((ucontext_t*)0)->uc_stack.ss_flags',stack_size='((ucontext_t*)0)->uc_stack.ss_size').items()}
-print(json.dumps(dict(types=types,record=record,offsets=offsets,uc_bytes=int(gdb.lookup_type('ucontext_t').sizeof)),sort_keys=True,separators=(',',':')))
+si_fields=dict(si_signo='((siginfo_t*)0)->si_signo',si_errno='((siginfo_t*)0)->si_errno',si_code='((siginfo_t*)0)->si_code',si_addr='((siginfo_t*)0)->_sifields._sigfault.si_addr')
+siginfo=dict(bytes=int(gdb.lookup_type('siginfo_t').sizeof),offsets={k:off(v)for k,v in si_fields.items()},widths={k:int(gdb.parse_and_eval('sizeof('+v+')'))for k,v in si_fields.items()})
+print(json.dumps(dict(types=types,record=record,offsets=offsets,siginfo=siginfo,uc_bytes=int(gdb.lookup_type('ucontext_t').sizeof)),sort_keys=True,separators=(',',':')))

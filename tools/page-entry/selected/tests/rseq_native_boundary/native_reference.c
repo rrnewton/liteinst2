@@ -76,6 +76,7 @@ static RSEC void handler(int sig,siginfo_t *si,void *ptr) {
     ((uint64_t)u->uc_mcontext.gregs[REG_EFL]&0x10100)!=0x10000)die();
  struct rnb_native_row *r=&rnb_native_record.rows[i];
  r->h[0]=1;r->h[1]=i;r->h[2]=pc;r->h[3]=a;
+ r->h[24]=(uintptr_t)si;r->h[26]=sizeof *si;r->h[27]=offsetof(siginfo_t,si_addr);
  capture(&r->before,sig,si,u);++rnb_seen;
  if(c!=2 && i==0)protect(r,0,RN_BODY,1);
  else if(c!=2 && i==1) {protect(r,0,RN_BODY,5);protect(r,1,RN_TAIL,5);}
@@ -83,7 +84,7 @@ static RSEC void handler(int sig,siginfo_t *si,void *ptr) {
   protect(r,0,c==1?RN_TAIL:RN_BODY,1);protect(r,1,RN_GUARD,5);
  } else if(c==1 || c==2)protect(r,0,RN_TAIL,5);
  else protect(r,0,RN_GUARD,5);
- capture(&r->after,sig,si,u);r->h[4]=1;
+ capture(&r->after,sig,si,u);r->h[25]=(uintptr_t)si;r->h[4]=1;
 }
 __asm__(".section .text.reference,\"ax\",@progbits\n.global rn_restorer\nrn_restorer:\nmov $15,%eax\nsyscall\nud2\n.previous\n");
 extern void rn_restorer(void);
@@ -92,7 +93,7 @@ RSEC long rnb_native_setup(unsigned c) {
  volatile unsigned char *z=(void *)&rnb_native_record;
  for(size_t i=0;i<sizeof rnb_native_record;i++)z[i]=0;
  for(size_t i=0;i<sizeof rnb_altstack;i++)rnb_altstack[i]=0;
- rnb_native_record.h[0]=RNB_MAGIC;rnb_native_record.h[1]=1;
+ rnb_native_record.h[0]=RNB_MAGIC;rnb_native_record.h[1]=2;
  rnb_native_record.h[2]=sizeof rnb_native_record;rnb_native_record.h[3]=c;
  rnb_native_record.h[8]=call6(39,0,0,0,0,0,0);rnb_native_record.h[9]=call6(186,0,0,0,0,0,0);
  uint32_t low,high;__asm__ volatile("xgetbv":"=a"(low),"=d"(high):"c"(0):"memory");

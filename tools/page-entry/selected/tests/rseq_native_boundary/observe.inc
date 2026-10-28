@@ -56,7 +56,7 @@ static void rnb_initialize(void) {
  checked(original_main.entry==RN_MAIN && !original_main.bias,1697,0);
  uint64_t c=*(const volatile uint64_t *)(uintptr_t)(RN_DATA+8);
  checked(c<4 && *(const volatile uint64_t *)(uintptr_t)RN_DATA==RN_MAGIC,1697,1);
- rnb_record.h[0]=RNB_MAGIC;rnb_record.h[1]=1;rnb_record.h[2]=sizeof rnb_record;
+ rnb_record.h[0]=RNB_MAGIC;rnb_record.h[1]=2;rnb_record.h[2]=sizeof rnb_record;
  rnb_record.h[3]=c;rnb_record.h[4]=sizeof(ucontext_t);rnb_record.h[5]=sizeof(struct rnb_row);
  rnb_copy(&rnb_record.hardware,&selected_hardware,sizeof selected_hardware);
  checked(selected_hardware.leaf0[0]>=13 &&
@@ -92,6 +92,7 @@ static void rnb_entry(int sig,const siginfo_t *si,const ucontext_t *u) {
  if(rnb_used==RNB_ROWS){rnb_record.h[8]=1;return;}
  rnb_current=rnb_used++;struct rnb_row *r=&rnb_record.rows[rnb_current];
  r->h[0]=1;r->h[1]=rnb_current;r->h[2]=pc;r->h[3]=a;
+ r->h[24]=(uintptr_t)si;r->h[26]=sizeof *si;r->h[27]=offsetof(siginfo_t,si_addr);
  rnb_frame_pointer=u;rnb_copy(&rnb_signal,si,sizeof rnb_signal);
  rnb_copy(&r->native_before,li2_rseq_native_snapshot(),sizeof r->native_before);
  rnb_copy(&r->boundary_before,li2_rseq_native_boundary_snapshot(),sizeof r->boundary_before);
@@ -115,6 +116,7 @@ static void rnb_fetch_return(int result,int sig,const siginfo_t *si,const uconte
  rnb_copy(&r->close,li2_lifecycle_native_close_progress(),sizeof r->close);
  rnb_permits(r->permits[1]);
  if(!rnb_capture(&r->after,sig,si,u))rnb_record.h[8]=5;
+ r->h[25]=(uintptr_t)si;
 }
 int rnb_real_instruction(const struct li2_decoded *,const ucontext_t *);
 int li2_rseq_check_instruction(const struct li2_decoded *d,const ucontext_t *u) {

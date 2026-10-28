@@ -83,6 +83,10 @@ class Reader(old.Reader):
         self.data,self.types,self.layout=data,layout['types'],layout
         self.rt=self.types[record];self.ft=self.types['rn_frame'];self.ucn=layout['uc_bytes'];self.go=layout['offsets']['greg'];self.fo=layout['offsets']['fp_pointer']
         need(layout['record']==record and len(data)==self.rt['bytes']<16<<20 and 0<self.ucn<=2048 and self.go+23*8<=self.ucn and self.fo+8<=self.ucn,'complete actual DWARF/record extent')
+        si=layout['siginfo']
+        need(all(type(x)is int for x in (si['bytes'],*si['offsets'].values(),*si['widths'].values())) and
+             si==dict(bytes=128,offsets=dict(si_signo=0,si_errno=4,si_code=8,si_addr=16),widths=dict(si_signo=4,si_errno=4,si_code=4,si_addr=8)),
+             'actual complete native x86-64 siginfo ABI')
         frame=self.ft['bytes'];forms={'rn_frame':dict(h=512,uc=2048,fp=65536,source=24576,data=16384,rseq=4096)}
         if record=='rnb_native_record':
             forms['rnb_native_row']=dict(h=256,before=frame,after=frame)
@@ -99,6 +103,23 @@ class Reader(old.Reader):
             for key,size in fields.items():
                 need(shape['fields'][key]==dict(offset=at,bytes=size),'contiguous actual field '+name+'.'+key);at+=size
             need(shape['bytes']==at,'complete record extent without ignored padding '+name)
+
+    def siginfo_alias(self,row,st,f):
+        v=q(self.field(row,st,'h'));si=self.layout['siginfo'];offsets=si['offsets']
+        need(v[24]==v[25]>0 and v[26]==si['bytes'] and v[27]==offsets['si_addr'],
+             'actual entry/return siginfo pointer and sizeof/offsetof identity')
+        offset=v[24]-f['h'][3]
+        # The retained native x86-64 kernel ucontext ends after its 8-byte mask;
+        # its following siginfo overlaps the larger libc ucontext_t copy.
+        need(offset==self.layout['offsets']['mask']+8 and 0<=offset<=self.ucn-si['bytes'],
+             'actual complete siginfo follows the kernel mask inside retained libc UC')
+        expected=bytearray(si['bytes'])
+        for key,value in (('si_signo',f['h'][5]),('si_errno',f['h'][7]),('si_code',f['h'][6])):
+            struct.pack_into('<i',expected,offsets[key],value)
+        put(expected,offsets['si_addr'],f['h'][8])
+        need(f['uc'][offset:offset+si['bytes']]==expected,
+             'entire actual siginfo alias including header padding and unused union bytes')
+        return offset+offsets['si_addr']
 
 def registers(c,i,terminal=False):
     r=[0x1122334455667700+n for n in range(16)];r[0]=DATA+256;r[4]=DATA+16320;r[7]=AREA
@@ -142,12 +163,15 @@ def frames(r,rows,st,image,components,lo,cap,native):
         f=r.unchanged(r.field(row,st,'before'),r.field(row,st,'after'),image)
         need(f['greg'][16]==pc and f['h'][8]==address and f['greg'][19]==21,'actual exact sequential current-PC/CR2 geometry')
         r.envelope(f,lo,cap,native);seeded(r,f,components,c,i)
+        f['si_addr_alias']=r.siginfo_alias(row,st,f)
         need(f['data']==memory(image,native,f['page'],i),'complete literal data and stack before/after event')
         result.append(f)
     need(all(f['fp']==result[0]['fp'] for f in result),'whole actual FP state conserved through all original operations')
     if c!=2:
         a,b=result[:2];ua,ub=bytearray(a['uc']),bytearray(b['uc'])
         put(ua,r.go+22*8,0);put(ub,r.go+22*8,0)
+        need(a['si_addr_alias']==b['si_addr_alias'],'same authenticated cross-event siginfo alias field')
+        put(ua,a['si_addr_alias'],0);put(ub,b['si_addr_alias'],0)
         need(ua==ub and a['fp']==b['fp'] and a['data']==b['data'] and a['page']==b['page'] and
              a['h'][:8]==b['h'][:8] and a['h'][9:]==b['h'][9:],
              'two genuine frames identical except actual CR2/siginfo address; no intervening operation')
@@ -156,7 +180,7 @@ def frames(r,rows,st,image,components,lo,cap,native):
 def native(data,layout,image,pid,exit_status):
     c=image['case'];need(type(pid)is int and pid>0 and type(exit_status)is int and exit_status==0,'actual successful native subject')
     r=Reader(data,layout,'rnb_native_record');h=q(r.field(data,r.rt,'h'));st=r.types['rnb_native_row'];rows=r.field(data,r.rt,'rows')
-    need(h[:6]==(MAGIC,1,len(data),c,EVENTS[c],1) and h[6:8]==(0,0) and h[8:10]==(pid,pid) and
+    need(h[:6]==(MAGIC,2,len(data),c,EVENTS[c],1) and h[6:8]==(0,0) and h[8:10]==(pid,pid) and
          h[10]&0xe7==0xe7 and h[11]>0 and h[12]==131072 and not any(h[13:]),'exact complete native identity and no partial success')
     fs=frames(r,rows,st,image,r.components(r.field(data,r.rt,'xstate')),h[11],h[12],True)
     for i,(pc,a)in enumerate(geometry(c)):
@@ -167,13 +191,13 @@ def native(data,layout,image,pid,exit_status):
         elif c in(1,2):calls=[(TAIL,4096,5,0)]
         else:calls=[(GUARD,4096,5,0)]
         need(v[:5]==(1,i,pc,a,1) and not any(v[5:8]) and v[8:8+4*len(calls)]==sum(calls,()) and
-             not any(v[8+4*len(calls):]),'exact successful native close/reopen calls and complete unused prefix')
+             not any(v[8+4*len(calls):24]+v[28:]),'exact successful native close/reopen calls and complete unused prefix')
     return dict(case=c,exit_status=0,events=len(fs),genuine_refaults=RETRIES[c],observed_cpus=[page_ids(f['page'])['cpu']for f in fs])
 
 def gated(data,layout,image,pid,exit_status):
     c=image['case'];need(type(pid)is int and pid>0 and type(exit_status)is int and exit_status==0,'actual successful gated subject')
     r=Reader(data,layout,'rnb_record');h=q(r.field(data,r.rt,'h'));st=r.types['rnb_row'];rows=r.field(data,r.rt,'rows')
-    need(h[:6]==(MAGIC,1,len(data),c,r.ucn,st['bytes']) and h[6]&0xe7==0xe7 and h[7:15]==(1,0,1,0,0,0,EVENTS[c],1) and
+    need(h[:6]==(MAGIC,2,len(data),c,r.ucn,st['bytes']) and h[6]&0xe7==0xe7 and h[7:15]==(1,0,1,0,0,0,EVENTS[c],1) and
          h[15]>0 and h[16]==512*1024 and h[17]==h[18]>0 and not any(h[19:]),'complete actual successful terminal and balanced lifecycle counts')
     hw=struct.unpack('<14I',r.field(data,r.rt,'hardware'))
     need(hw[:2]==(1,0) and hw[2]>=13 and hw[8]&0x18000000==0x18000000 and hw[11]&0x40010000==0x40010000,'actual required pre-arm hardware')
@@ -230,7 +254,7 @@ def gated(data,layout,image,pid,exit_status):
     for i,(pc,a)in enumerate(geometry(c)):
         row=rows[i*st['bytes']:(i+1)*st['bytes']];v=q(r.field(row,st,'h'));p=q(r.field(row,st,'permits'))
         epoch=i==0 or(c!=2 and i==1);refault=c!=2 and i==0;guard=c!=2 and i==1
-        need(v[:8]==(1,i,pc,a,1,int(refault),int(epoch),int(refault)) and v[8:11]==(int(guard),int(guard),0) and not any(v[11:]),
+        need(v[:8]==(1,i,pc,a,1,int(refault),int(epoch),int(refault)) and v[8:11]==(int(guard),int(guard),0) and not any(v[11:24]+v[28:]),
              'actual fetch and epoch READY/REFAULT returns; no fabricated owner call')
         need(p[:3]==p[12:15]==(0,0,0) and p[3:10]==p[15:22] and p[10]==p[22] and p[23]>=p[11],
              'no old execution permit or new native admission while returning the unchanged frame')
@@ -331,7 +355,7 @@ def pair(native_record,gated_record,native_output,gated_output,layout,image,nati
     need(all(x==cpu for x in n['observed_cpus']+g['observed_cpus']) and no['kernel_ids']['cpu']==go['kernel_ids']['cpu']==cpu,
          'every actual recorded and output CPU equals independent affinity authority')
     nr=Reader(native_record,layout['native'],'rnb_native_record');gr=Reader(gated_record,layout['gated'],'rnb_record')
-    need(layout['native']['offsets']==layout['gated']['offsets'] and nr.ucn==gr.ucn,'same real complete signal ABI')
+    need(layout['native']['offsets']==layout['gated']['offsets'] and layout['native']['siginfo']==layout['gated']['siginfo'] and nr.ucn==gr.ucn,'same real complete signal ABI')
     nrows=nr.field(native_record,nr.rt,'rows');grows=gr.field(gated_record,gr.rt,'rows')
     nt=nr.types['rnb_native_row'];gt=gr.types['rnb_row'];o=nr.layout['offsets']
     for i in range(EVENTS[image['case']]):
