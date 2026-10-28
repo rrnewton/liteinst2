@@ -7,6 +7,7 @@ use rapid_profiler::frontend_native::{
     TreeCallResult, TreeContract, TreeRecord, TreeSitePreparation, TreeTotals,
 };
 mod check;
+pub(super) mod throughput;
 #[path = "../tree-work/truth.rs"]
 mod truth;
 use check::{Batch, ReportRow, Spec};

@@ -222,6 +222,7 @@ def main():
     ap.add_argument('--counter-probe', action='store_true', help='also require twelve raw whole-original-API counter observations; requires --cache-work')
     ap.add_argument('--call-tree', action='store_true', help='also require four loaded caller/child state pairs and actual A/B/C ownership control; requires --cache-work and --concurrent-epochs')
     ap.add_argument('--tree-population', action='store_true', help='also require three 24-root finite populations at K=1/10/24; requires --call-tree')
+    ap.add_argument('--tree-throughput', action='store_true', help='also measure 52 frozen paired SDK-consumer trials; requires --tree-population')
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
     ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
@@ -240,6 +241,7 @@ def main():
     assert not a.cache_work or a.exact_work
     assert not a.counter_probe or a.cache_work
     assert not a.tree_population or a.call_tree
+    assert not a.tree_throughput or a.tree_population
     assert not a.call_tree or a.cache_work
     assert not a.call_tree or a.concurrent_epochs
     assert not a.concurrent_epochs or a.exact_work
@@ -264,6 +266,10 @@ def main():
     result['counter_probe_requested'] = a.counter_probe
     result['call_tree_requested'] = a.call_tree
     result['tree_population_requested'] = a.tree_population
+    result['tree_throughput_requested'] = a.tree_throughput
+    if a.tree_throughput:
+        result['tree_throughput'] = dict(status='UNRUN', trials=[],
+            scope='Release guarded SDK consumer cost against original SDK, including source/input checks and installed joins; no bare-native or timing-accuracy claim')
     if a.tree_population:
         result['tree_population'] = dict(status='UNRUN', trials=[],
             scope='finite same-thread root/child population with exact work attribution and first-K selection error; raw ticks uncalibrated, no cache-model, timing-accuracy or performance claim')
@@ -322,6 +328,10 @@ def main():
             'tools/rapid-profiler/ordinary-interval/tree.rs',
             'tools/rapid-profiler/ordinary-interval/tree/check.rs',
             'tools/rapid-profiler/ordinary-interval/tree/check/tests.rs',
+            'tools/rapid-profiler/ordinary-interval/tree/throughput.rs',
+            'tools/rapid-profiler/ordinary-interval/tree/throughput/joins.rs',
+            'tools/rapid-profiler/ordinary-interval/tree/throughput/joins/tests.rs',
+            'tools/rapid-profiler/ordinary-interval/tree/throughput/clocks.rs',
             'tools/rapid-profiler/native-interval/main.rs', 'tools/rapid-profiler/native-interval/ordinary.rs',
             'tests/support/native_ordinary.rs', 'tests/support/native_interval_oracle.rs',
             'tests/support/native_cache.rs', 'tools/rapid-profiler/native-interval/cache.rs',
@@ -440,6 +450,11 @@ def main():
         if a.tree_population:
             names.extend(['tools/rapid-profiler/tree-work/check_population.py',
                 'tools/rapid-profiler/tree-work/test_population.py'])
+        if a.tree_throughput:
+            names.extend(['tools/rapid-profiler/tree-work/check_throughput.py',
+                'tools/rapid-profiler/tree-work/test_throughput.py',
+                'tools/rapid-profiler/tree-work/throughput_stats.py',
+                'tools/rapid-profiler/tree-work/test_throughput_stats.py'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -447,6 +462,14 @@ def main():
             return {n: digest(repo/n) for n in names}
         before = sources(); tool_hashes = {n: digest(p) for n, p in tools.items()}
         save(raw/'sources-before.json', before); save(raw/'tools.json', {n: dict(path=str(p), **tool_hashes[n]) for n, p in tools.items()})
+        if a.tree_throughput:
+            spec = importlib.util.spec_from_file_location('tree_throughput_stats', repo/'tools/rapid-profiler/tree-work/throughput_stats.py')
+            throughput_stats = importlib.util.module_from_spec(spec); spec.loader.exec_module(throughput_stats)
+            throughput_plan = throughput_stats.plan()
+            save(raw/'tree-throughput-plan.json', dict(seed=throughput_stats.SEED, trials=throughput_plan,
+                cpu_seconds=20, wall_seconds=30, file_bytes=MIB))
+            result['tree_throughput'].update(plan_digest=digest(raw/'tree-throughput-plan.json'),
+                trials=[dict(request, status='UNRUN') for request in throughput_plan])
         rust_text = command([str(tools['rustc']), '--version', '--verbose']); (raw/'rustc-version.txt').write_text(rust_text)
         rust = dict(line.split(': ', 1) for line in rust_text.splitlines() if ': ' in line)
         assert re.fullmatch('[0-9A-Za-z.+_-]+', rust['release']) and re.fullmatch('[0-9a-f]{40}', rust['commit-hash'])
@@ -933,6 +956,30 @@ def main():
             assert all(t['status'] == 'PASS' for t in population['trials'])
             population.update(status='PASS', fresh_processes=3, originals=72, roots=72, nodes=144,
                 sampled=70, closed=74, batches=9, events=288, reports=70)
+        if a.tree_throughput:
+            throughput = result['tree_throughput']; throughput['status'] = 'FAILED'
+            assert result['tree_population']['status'] == 'PASS'
+            spec = importlib.util.spec_from_file_location('tree_throughput_check', repo/'tools/rapid-profiler/tree-work/check_throughput.py')
+            throughput_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(throughput_checker)
+            assert len(throughput['trials']) == 52
+            for request, trial in zip(throughput_plan, throughput['trials']):
+                assert trial == dict(request, status='UNRUN')
+                mode = request['mode']; label = f'tree-throughput-{request["trial"]:02d}-{mode}'
+                trial.update(status='FAILED', stage=label)
+                tree_stable()
+                result['commands'].append(['$REPO/target/release/ordinary-interval', 'tree-throughput', mode, '$RAW/tree-candidate.so', '$RAW/tree-trusted.so'])
+                observed = stage(label, [str(binary), 'tree-throughput', mode, str(tree_candidate), str(tree_trusted)], 20, 30, MIB)
+                parsed = throughput_checker.parse((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes(), mode)
+                tree_stable()
+                assert not (set(parsed['summary']) & {'trial', 'phase', 'block', 'position', 'stage'})
+                assert parsed['summary']['mode'] == mode and parsed['summary']['status'] == 'FUNCTIONAL_PASS'
+                trial.update(parsed['summary'], stdout_digest=digest(observed/'stdout.txt'), stderr_digest=digest(observed/'stderr.txt'))
+            statistics = throughput_stats.summarize(throughput['trials'])
+            save(raw/'tree-throughput-statistics.json', statistics)
+            throughput.update(status='OBSERVED', fresh_processes=52, statistics=statistics,
+                statistics_digest=digest(raw/'tree-throughput-statistics.json'),
+                source_attested=parsed['source_attested'],
+                retention='All 52 trials retained. Twelve fixed warmups excluded only from the estimator; no retries, outlier discard or post-observation cohort changes.')
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
