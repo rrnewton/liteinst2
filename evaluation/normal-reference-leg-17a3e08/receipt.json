@@ -1,0 +1,624 @@
+{
+  "allocation": {
+    "cpus": [
+      15,
+      44,
+      72,
+      74
+    ],
+    "excludes_unrelated_host_work": false,
+    "hard_allowed_cpus": true,
+    "private_command": {
+      "bytes": 2043,
+      "sha256": "d930ec57aeefbbb69ff26ec9ec3c2624605e2bada4e202bc5ead97ade5c050c0"
+    },
+    "source_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    }
+  },
+  "artifacts": {
+    "caller": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "frontend-native-oracle": {
+      "bytes": 6399952,
+      "sha256": "5d11b0a04f2b4b78a31ccb7b2edc6e93089febb4b27ac29f89ccfd38f1b16af0"
+    },
+    "ordinary-interval": {
+      "bytes": 5916360,
+      "sha256": "746048d8a0107bac710227b571e8eec36af74d4e8dffad150bcdf30512520398"
+    },
+    "subject": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    }
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "cause": "Root invoked run-qualification-v1.py through a second run-qualification.py with the same run name; the builder already supplies one bounded outer wrapper. The second outer record replaced the inner owner JSON; complete per-stage owned records were not affected.",
+      "correction": "Run new script v2 directly; it invokes exactly one bounded outer owner under a fresh name and raw attempt2. Retain attempt1 and both closure observations without claiming two persisted outer receipts.",
+      "functional_status": "PASS",
+      "qualification_status": "UNQUALIFIED_OUTER_RECEIPT_ALIAS",
+      "raw_result_sha256": "ab5f77c5713d27ab4bf872be4f1fc397b63fee242e5317790b4787906f93be8a",
+      "retained_outer_log_sha256": "ded5a2398f3d592972feaefa5c4a8e98868387db00720a7523fce0b7a019b193",
+      "retained_outer_receipt_sha256": "8b57024ad92fe03872c90b03a28c5ffbd719fd170e97f4ace55df03fbb49846a"
+    },
+    {
+      "attempt": 2,
+      "functional_status": "PASS",
+      "outer_receipt": {
+        "bytes": 1489,
+        "sha256": "5f74dd9eeb0d78beadbbf9b3b4e91968e105638393509e497d1dc0529f07b294"
+      },
+      "qualification_status": "PASS",
+      "raw_result": {
+        "bytes": 123623,
+        "sha256": "1b32de665fd8a93d3624f243a24274e67bccad1c429b64882a057ab69eeb8772"
+      }
+    }
+  ],
+  "claim": 4,
+  "closure": {
+    "nested_normal_helpers": 46,
+    "nested_outer_owners": 48,
+    "owned_stages": 30,
+    "rescues": 0
+  },
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_normal_interval.py",
+    "--revision",
+    "17a3e086f3f5bb46fbc19512620f75cc69bbab6c",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--reference-exact",
+    "--reference-work",
+    "--reference-leg"
+  ],
+  "development_lint": {
+    "corrected_log_sha256": "69297047e68e74e6ccc2cfe833ddce096edb82a546f54dfca1388adb49475a0d",
+    "corrected_status": "PASS",
+    "correction": "Final original-owner borrow as_deref_mut to as_mut; same verify_original predicate and owner lifetime.",
+    "exit_code": 101,
+    "initial_log_sha256": "544551510ecb5e111d4ff469cdc4c0da2d58c2da177dc9fd49e8804bf33d5596",
+    "initial_status": "FAILED",
+    "lint": "clippy::needless_option_as_deref"
+  },
+  "files": {
+    "README.md": {
+      "bytes": 5232,
+      "sha256": "b9a5dddeb6c9a5bf95d72d953b58d4b3b4066cc51b191667259def6b1b8d8f7d"
+    },
+    "checks.csv": {
+      "bytes": 720,
+      "sha256": "dd03f7f338161f485220e92d72297c0e714f2a0f4f908f7ba3a576535064068e"
+    },
+    "normal-reference-leg-installed.csv": {
+      "bytes": 8907,
+      "sha256": "92775dde55f7d7e045c0d724c37102dfaee5540ee908f53592e1567a149c13c1"
+    },
+    "normal-reference-leg-original.csv": {
+      "bytes": 5432,
+      "sha256": "55a9eeb8841d53b9f89d53fecf1216038095d1af10590ddd88768a802eef8531"
+    },
+    "stages.csv": {
+      "bytes": 3431,
+      "sha256": "456ceb4b95314c57cd99e906113a5f79b96dfd901601cb78c10866739283ead0"
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "build_cpus": 4,
+    "caller_and_helper_shared_cpus": 1,
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "state_allowed_cpus": 4,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "independently_authenticated_stage_receipts": 76,
+  "inherited": {
+    "abandonment": {
+      "cases": 2,
+      "checkpoints": 0,
+      "installed_calls": 4,
+      "original_calls": 16,
+      "pending_after_tls_exit": 2,
+      "reattach_refusals": 2,
+      "worker_joins": 2
+    },
+    "collector": {
+      "binary": {
+        "bytes": 5916360,
+        "sha256": "746048d8a0107bac710227b571e8eec36af74d4e8dffad150bcdf30512520398"
+      },
+      "file_bytes": 1048576,
+      "helper": {
+        "bytes": 14960,
+        "sha256": "88d3ab8292e0a94d107467ed689ec1674e6087986a15575bd7f10f532334af11"
+      },
+      "helper_authority": {
+        "bytes": 721,
+        "sha256": "c892c970cfd56210d261779482e3d4e1dbbd8358a2218ce863a316e1336dd11d"
+      },
+      "installed": 24,
+      "observation": {
+        "actions": 2,
+        "batches": 1,
+        "completed": 24,
+        "confirmed": 24,
+        "entered": 24,
+        "events": 48,
+        "generation": 1,
+        "helper_calls": 24,
+        "installed": 24,
+        "originals": 24,
+        "pid": 954744,
+        "records": 24,
+        "reference_cells": 48,
+        "reports": 1,
+        "ret_observed": 24,
+        "scope": "Functional uncalibrated collector only. R is a fenced CALL enclosure and H a callback interval; neither is original body-only duration. Original-before-installed order is not a drift-controlled perturbation comparison. No accuracy, performance, session-temporal, PMU or full-A5 claim. Zero spans are retained without relative error.",
+        "selection": "normal-reference-exact-37-v1",
+        "source_attested": "Actual helper returns, cell-store provenance, full source/generated/input and stack custody, complete512-word journal and Report/history joins require the producer source and separately owned execution receipts. This compact table is not an independent replay of those checks; originals have no SDK stack observation.",
+        "status": "FUNCTIONAL_PASS",
+        "unsampled": 0,
+        "whole_journal_words": 512,
+        "work": {
+          "installed": {
+            "conditional_branches": 780,
+            "input_bytes": 780,
+            "instructions": 4800,
+            "ret_bytes": 192,
+            "taken_branches": 756
+          },
+          "original": {
+            "conditional_branches": 780,
+            "input_bytes": 780,
+            "instructions": 4800,
+            "ret_bytes": 192,
+            "taken_branches": 756
+          }
+        },
+        "zero_reference_spans": 0
+      },
+      "originals": 24,
+      "process_cpu_seconds": 20,
+      "process_wall_seconds": 30,
+      "selection": {
+        "bytes": 586,
+        "sha256": "c072d2d2dc072efd0e9e5bedc5cbb87cde7a4f8419aa007bbee4e1d5ef4f775a"
+      },
+      "source_stage": "reference-work",
+      "status": "PASS",
+      "subject": {
+        "bytes": 13360,
+        "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+      },
+      "table": {
+        "bytes": 13078,
+        "sha256": "b5198e651aaf653eae2f7137bcf71b5d65489ab6a9d59697ae5f27d69a87ec17"
+      }
+    },
+    "native": {
+      "children": 34,
+      "comparisons": 4044,
+      "crossed_pairs": 1,
+      "helper_joins": 1,
+      "input_bytes": 696,
+      "input_reads": 696,
+      "outer_returns": 34,
+      "pairs": 17,
+      "stable_pairs": 16,
+      "target_calls": 68,
+      "target_returns": 68
+    },
+    "normal_work": {
+      "checkpoint_acknowledgements": 1,
+      "events": 16,
+      "function_closed": 2,
+      "generations": 2,
+      "installed_calls": 8,
+      "journal_words": 512,
+      "next_entry_acknowledgements": 7,
+      "original_calls": 8,
+      "removed": 2,
+      "reports": 2,
+      "sampled": 4,
+      "worker_joins": 1
+    },
+    "old_exact": {
+      "candidate_steps": 24236,
+      "children": 8,
+      "comparisons": 1696,
+      "conditional_branches": 260,
+      "input_reads": 260,
+      "instructions": 1600,
+      "normal_reaps": 8,
+      "original_steps": 1972,
+      "outer_returns": 8,
+      "pairs": 4,
+      "return_read_bytes": 64,
+      "return_reads": 8,
+      "scope": "Counts describe two original subject bodies per pair; transfer/reap counts include both children. Full-state comparison, physical transfers and normal reaps are producer-attested and require separate source/artifact/owned-receipt qualification. No timing, PMU, performance or concurrent-interleaving claim.",
+      "selection": "normal-exact-37-v1",
+      "status": "FUNCTIONAL_PASS",
+      "taken_branches": 252,
+      "target_calls": 16,
+      "target_returns": 16
+    },
+    "reference": {
+      "candidate_steps": 30111,
+      "children": 8,
+      "comparisons": 1736,
+      "conditional_branches": 260,
+      "helper_heads": 640,
+      "input_reads": 260,
+      "instructions": 1600,
+      "interior_heads": 368,
+      "normal_reaps": 8,
+      "original_steps": 7374,
+      "outer_returns": 8,
+      "output_stores": 96,
+      "pairs": 4,
+      "reader_checks": 32,
+      "return_read_bytes": 64,
+      "return_reads": 8,
+      "returned_cells": 16,
+      "scope": "Functional reference-state projection only. Work counts describe two original subject bodies per pair; helper/reader/store/cell/transfer/reap counts include both children. Actual state preservation, RDTSCP output-to-store provenance, returns, postflight and reaps are producer-attested and require separate source/artifact/owned-receipt qualification. Enclosures are not independent body-duration truth. No calibration, timing accuracy, performance, PMU or concurrent-interleaving claim.",
+      "selection": "normal-reference-exact-37-v1",
+      "status": "FUNCTIONAL_PASS",
+      "taken_branches": 252,
+      "target_calls": 16,
+      "target_returns": 16
+    }
+  },
+  "leg_controls": {
+    "python": 12,
+    "rust": 9
+  },
+  "legs": [
+    {
+      "binary": {
+        "bytes": 5916360,
+        "sha256": "746048d8a0107bac710227b571e8eec36af74d4e8dffad150bcdf30512520398"
+      },
+      "calls": 24,
+      "file_bytes": 1048576,
+      "helper": {
+        "bytes": 14960,
+        "sha256": "88d3ab8292e0a94d107467ed689ec1674e6087986a15575bd7f10f532334af11"
+      },
+      "helper_authority": {
+        "bytes": 721,
+        "sha256": "c892c970cfd56210d261779482e3d4e1dbbd8358a2218ce863a316e1336dd11d"
+      },
+      "leg": "original",
+      "observation": {
+        "actions": 0,
+        "batches": 0,
+        "calls": 24,
+        "completed": 0,
+        "confirmed": 0,
+        "entered": 0,
+        "events": 0,
+        "generation": null,
+        "helper_calls": 12,
+        "leg": "original",
+        "phase": "qualification",
+        "pid": 958343,
+        "records": 0,
+        "reference_cells": 24,
+        "reports": 0,
+        "ret_observed": 0,
+        "scope": "Functional uncalibrated single-leg collector only. R is a fenced CALL enclosure and H a callback interval, not original body-only duration. Fresh-process contrast includes setup, configuration, cache and ASLR effects; no accuracy, performance, perturbation estimate, PMU, session-temporal or full-A5 claim. Zero spans retained.",
+        "selection": "normal-reference-exact-37-v1",
+        "source_attested": "Actual helper returns, cell-store provenance, full source/generated/input and stack custody, complete512-word journal and Report/history joins require the producer source and separately owned execution receipts. This compact table is not an independent replay of those checks; originals have no SDK stack observation.",
+        "status": "FUNCTIONAL_PASS",
+        "trial": 1,
+        "unsampled": 0,
+        "whole_journal_words": 0,
+        "work": {
+          "conditional_branches": 780,
+          "input_bytes": 780,
+          "instructions": 4800,
+          "ret_bytes": 192,
+          "taken_branches": 756
+        },
+        "zero_reference_spans": 0
+      },
+      "phase": "qualification",
+      "process_cpu_seconds": 20,
+      "process_wall_seconds": 30,
+      "selection": {
+        "bytes": 586,
+        "sha256": "c072d2d2dc072efd0e9e5bedc5cbb87cde7a4f8419aa007bbee4e1d5ef4f775a"
+      },
+      "source_stage": "reference-leg-original",
+      "status": "PASS",
+      "subject": {
+        "bytes": 13360,
+        "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+      },
+      "table": {
+        "bytes": 5432,
+        "sha256": "55a9eeb8841d53b9f89d53fecf1216038095d1af10590ddd88768a802eef8531"
+      },
+      "trial": 1
+    },
+    {
+      "binary": {
+        "bytes": 5916360,
+        "sha256": "746048d8a0107bac710227b571e8eec36af74d4e8dffad150bcdf30512520398"
+      },
+      "calls": 24,
+      "file_bytes": 1048576,
+      "helper": {
+        "bytes": 14960,
+        "sha256": "88d3ab8292e0a94d107467ed689ec1674e6087986a15575bd7f10f532334af11"
+      },
+      "helper_authority": {
+        "bytes": 721,
+        "sha256": "c892c970cfd56210d261779482e3d4e1dbbd8358a2218ce863a316e1336dd11d"
+      },
+      "leg": "installed",
+      "observation": {
+        "actions": 2,
+        "batches": 1,
+        "calls": 24,
+        "completed": 24,
+        "confirmed": 24,
+        "entered": 24,
+        "events": 48,
+        "generation": 1,
+        "helper_calls": 12,
+        "leg": "installed",
+        "phase": "qualification",
+        "pid": 958595,
+        "records": 24,
+        "reference_cells": 24,
+        "reports": 1,
+        "ret_observed": 24,
+        "scope": "Functional uncalibrated single-leg collector only. R is a fenced CALL enclosure and H a callback interval, not original body-only duration. Fresh-process contrast includes setup, configuration, cache and ASLR effects; no accuracy, performance, perturbation estimate, PMU, session-temporal or full-A5 claim. Zero spans retained.",
+        "selection": "normal-reference-exact-37-v1",
+        "source_attested": "Actual helper returns, cell-store provenance, full source/generated/input and stack custody, complete512-word journal and Report/history joins require the producer source and separately owned execution receipts. This compact table is not an independent replay of those checks; originals have no SDK stack observation.",
+        "status": "FUNCTIONAL_PASS",
+        "trial": 1,
+        "unsampled": 0,
+        "whole_journal_words": 512,
+        "work": {
+          "conditional_branches": 780,
+          "input_bytes": 780,
+          "instructions": 4800,
+          "ret_bytes": 192,
+          "taken_branches": 756
+        },
+        "zero_reference_spans": 0
+      },
+      "phase": "qualification",
+      "process_cpu_seconds": 20,
+      "process_wall_seconds": 30,
+      "selection": {
+        "bytes": 586,
+        "sha256": "c072d2d2dc072efd0e9e5bedc5cbb87cde7a4f8419aa007bbee4e1d5ef4f775a"
+      },
+      "source_stage": "reference-leg-installed",
+      "status": "PASS",
+      "subject": {
+        "bytes": 13360,
+        "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+      },
+      "table": {
+        "bytes": 8907,
+        "sha256": "92775dde55f7d7e045c0d724c37102dfaee5540ee908f53592e1567a149c13c1"
+      },
+      "trial": 1
+    }
+  ],
+  "outer_receipt": {
+    "bytes": 1489,
+    "sha256": "5f74dd9eeb0d78beadbbf9b3b4e91968e105638393509e497d1dc0529f07b294"
+  },
+  "qualification_seconds": 98.51022525597364,
+  "raw_ranges": [
+    {
+      "callback_ticks_max": null,
+      "callback_ticks_min": null,
+      "calls": 12,
+      "enclosure_ticks_max": 140,
+      "enclosure_ticks_min": 46,
+      "leg": "original",
+      "length": 1
+    },
+    {
+      "callback_ticks_max": null,
+      "callback_ticks_min": null,
+      "calls": 12,
+      "enclosure_ticks_max": 217,
+      "enclosure_ticks_min": 77,
+      "leg": "original",
+      "length": 64
+    },
+    {
+      "callback_ticks_max": 6293,
+      "callback_ticks_min": 1349,
+      "calls": 12,
+      "enclosure_ticks_max": 8246,
+      "enclosure_ticks_min": 2124,
+      "leg": "installed",
+      "length": 1
+    },
+    {
+      "callback_ticks_max": 2697,
+      "callback_ticks_min": 1286,
+      "calls": 12,
+      "enclosure_ticks_max": 3658,
+      "enclosure_ticks_min": 2061,
+      "leg": "installed",
+      "length": 64
+    }
+  ],
+  "raw_result": {
+    "bytes": 123623,
+    "sha256": "1b32de665fd8a93d3624f243a24274e67bccad1c429b64882a057ab69eeb8772"
+  },
+  "recipe": {
+    "bytes": 52444,
+    "sha256": "50fad5a13495fe0ccc0957039577620f5bfdb6856e302324c0f97731856c2c50"
+  },
+  "release_profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "3",
+    "overflow_checks": true
+  },
+  "required_checks": {
+    "available_affinity_cpus": 316,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/admission/check_exec_identity.py",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--output",
+      "$GATES",
+      "--checks-only"
+    ],
+    "compiler_jobs": 4,
+    "historical_regressions_passed": [
+      "admitted_exec_native_first_user_and_retired_history_are_exact",
+      "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+      "admitted_exec_native_source_profile_bound_refuses_after_exec",
+      "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+      "original_exec_replacement_matches_raw_replay_and_native_full_state",
+      "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+      "native_state_covers_every_prefixed_pun_and_original_successor"
+    ],
+    "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+    "receipt": {
+      "bytes": 21876,
+      "sha256": "110de3d7ae875e8e349b2178f2214b6abd403bed27522e53c0cf349bd48e55d6"
+    }
+  },
+  "revision": "17a3e086f3f5bb46fbc19512620f75cc69bbab6c",
+  "schema": 1,
+  "scope": "Finite fresh-process original and installed24-call endpoint collectors; functional validation, no calibration, body-duration accuracy, throughput or full-A5 claim.",
+  "source_inventory": {
+    "count": 455,
+    "manifest": {
+      "bytes": 73032,
+      "sha256": "42546a58fe84b7eb31aa39d42006c0654a97c277c23eda7202d6f5ff9a75d6ce"
+    }
+  },
+  "source_reviews": {
+    "producer": {
+      "bytes": 7335,
+      "sha256": "47bec8955b3500023ddcc7c7923ebaa4ff92ee1e15418721adb1f7e4d51d31ee"
+    },
+    "producer_exact_head": {
+      "bytes": 3652,
+      "sha256": "e7315e96989a638014d5464af2df6883e7934a6202c4566e41ba6ad511fdf240"
+    },
+    "recipe": {
+      "bytes": 8500,
+      "sha256": "c77cf2d5a846ea7aaf3f672ff27afbcd38b957bb8cfba4673f79716631c519b8"
+    },
+    "recipe_exact_head": {
+      "bytes": 2471,
+      "sha256": "63e4c087ad134c272e19e441904aa526b6cd4558b7a18797654e007dd5b088eb"
+    },
+    "validators": {
+      "bytes": 5030,
+      "sha256": "89d9e222d8d9d6993ffc3be1925e6c16b5325042799501be1a002cd667533e26"
+    },
+    "validators_exact_head": {
+      "bytes": 3271,
+      "sha256": "b72d605f0e07b8be26fddea617794d6d0042f199add9581159d10f98a07a9788"
+    }
+  },
+  "status": "PASS",
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "unrelated_temporal_qualification": {
+    "note": "All four earlier whole Exact37 session attempts remain FAILED; unchanged2ms gate.",
+    "receipt": "../ordinary-exact-progress-20261028/receipt.json",
+    "status": "UNQUALIFIED"
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  }
+}
