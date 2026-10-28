@@ -2,7 +2,9 @@
 use super::*;
 use rapid_profiler::frontend_native::{IntervalBatch, TrustedFunctionSelection};
 
-mod check;
+mod check {
+    crate::consumer_checks::consumer_check!();
+}
 
 const INSTALL: u64 = 0x7365_6c01;
 const LABEL: &str = "selected-checksum-v1";
