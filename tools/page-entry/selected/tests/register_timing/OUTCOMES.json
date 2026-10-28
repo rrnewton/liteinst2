@@ -1,0 +1,59 @@
+{
+  "scope": "Finite active-handler clock observer qualification; not completed real-program timing.",
+  "bounds": {
+    "external_cpus": 1,
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "name": "register-timing-0",
+      "exit_code": 0,
+      "stdout": "LI2_REGISTER_TIMING_PASS pairs=11 miss=1 hit=10 samples=11 clocks=33 refusal=47 trace=0\n",
+      "stderr": "",
+      "operation": "completed",
+      "completed": 11,
+      "retained_full_records": 11,
+      "native_references": 11,
+      "clock_calls": 33,
+      "samples": 11
+    },
+    {
+      "name": "register-timing-1",
+      "exit_code": 125,
+      "stdout": "LI2_TF_FIXTURE_FAILURE 803\n",
+      "stderr": "",
+      "operation": "failed",
+      "completed": 0,
+      "retained_full_records": 1,
+      "native_references": 1,
+      "clock_calls": 1,
+      "samples": 0,
+      "actual_error": -22,
+      "scope": "Actual invalid clock_gettime before publication; no fabricated syscall result."
+    },
+    {
+      "name": "register-timing-2",
+      "exit_code": 125,
+      "stdout": "LI2_TF_FIXTURE_FAILURE 304\n",
+      "stderr": "",
+      "operation": "failed",
+      "completed": 0,
+      "retained_full_records": 1,
+      "native_references": 1,
+      "clock_calls": 2,
+      "samples": 0,
+      "actual_signals": 1,
+      "scope": "Real tgkill while publication is complete but original NX handler remains pending before arm; no generated execution."
+    }
+  ],
+  "preservation": {
+    "old_startup_per_command": 1,
+    "old_refusals_per_command": 47,
+    "positive_comparison": "Unchanged compare_run body, plus independent supplied-record reader using actual ELF/DWARF.",
+    "old_positive_and_fourteen_negative_suites": "Remain unchanged separate regression cohorts, not replaced by this fixture."
+  },
+  "record": "Original 216-byte register header, one old startup sample, eleven run_record slots, sixty-four zero capacity rows, original tail, one timing_fixture_record trailer; each extent from retained ELF/DWARF, exact total below 16 MiB."
+}

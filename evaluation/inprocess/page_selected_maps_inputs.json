@@ -1,0 +1,272 @@
+{
+  "bindings": [
+    {
+      "bytes": 7298,
+      "path": "evaluation/inprocess/checks.py",
+      "sha256": "cd3477ec3bfe5391f2c55ae61a89941fd75c5218194e871290442453f5d754c2"
+    },
+    {
+      "bytes": 29973,
+      "path": "evaluation/inprocess/page_selected.py",
+      "sha256": "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17"
+    },
+    {
+      "bytes": 22590,
+      "path": "evaluation/inprocess/page_selected_components.py",
+      "sha256": "74dea5e7e11f56a2179b51a802facb496078ea044cf1e298cccef2fdbd0b5735"
+    },
+    {
+      "bytes": 13303,
+      "path": "evaluation/inprocess/page_selected_generic_build.py",
+      "sha256": "bca479e14865a41c627aacbab5d018422fafa52b215162f056056e5c4a942870"
+    },
+    {
+      "bytes": 7089,
+      "path": "evaluation/inprocess/page_selected_process.py",
+      "sha256": "71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773"
+    },
+    {
+      "bytes": 21977,
+      "path": "evaluation/inprocess/page_selected_register.py",
+      "sha256": "e2a9fb4ff8bd0d73be8a275073419187a79874a9ba7f466683c7449ba0ecadba"
+    },
+    {
+      "bytes": 18872,
+      "path": "evaluation/inprocess/page_selected_register_controls.py",
+      "sha256": "8580ab153681d6ea1caaf74bf6e830c98bd5b154ede2ee3ce97eaab06df3b69e"
+    },
+    {
+      "bytes": 16228,
+      "path": "evaluation/inprocess/page_selected_register_perf.py",
+      "sha256": "172150fc98997c016f42eabcb7436ee74407d0649110fbadb70a71741b379f33"
+    },
+    {
+      "bytes": 13593,
+      "path": "evaluation/inprocess/run.py",
+      "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
+    },
+    {
+      "bytes": 15965,
+      "path": "tools/page-entry/bridge.c",
+      "sha256": "1f48f8d895982a6a7403024ef0f30858553c9a89da90269b084c7fea7551f11a"
+    },
+    {
+      "bytes": 1531,
+      "path": "tools/page-entry/bridge.h",
+      "sha256": "c9d849cb270211bfff896c2e996e67edfbc0979b43e7f4f6411e626faeb4f7e9"
+    },
+    {
+      "bytes": 3192,
+      "path": "tools/page-entry/selected/build-register-run.sh",
+      "sha256": "64688455305f942c11251dbb37e3e2d53a9f41f1f16ef70c2919c8aa9e2a7649"
+    },
+    {
+      "bytes": 3014,
+      "path": "tools/page-entry/selected/build.sh",
+      "sha256": "e453596f873279e5de1ccb6ecc78141fdcf365ae78fb781ab0ba7bd3386a5ab6"
+    },
+    {
+      "bytes": 2900,
+      "path": "tools/page-entry/selected/entry.S",
+      "sha256": "e8927647513805dc1684b56912cccc1a9f54260e65a267c7bbfcd3cb53831b8e"
+    },
+    {
+      "bytes": 10296,
+      "path": "tools/page-entry/selected/fetch_loader.inc",
+      "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
+    },
+    {
+      "bytes": 36798,
+      "path": "tools/page-entry/selected/lifecycle_loader.c",
+      "sha256": "4c3d0d259d09a8fe68f5022a168fdb7420bb599df3a10d44ae9f60d48b3a4b70"
+    },
+    {
+      "bytes": 5426,
+      "path": "tools/page-entry/selected/lifecycle_loader.h",
+      "sha256": "afcc78199d577b3c87fe5d45e64b5adb8b248509ba491921bd2f0138dd1f74e7"
+    },
+    {
+      "bytes": 1711,
+      "path": "tools/page-entry/selected/maps_phase.h",
+      "sha256": "69126941704abc1015d4a7f0aaf6076395203d75cf3d32c27844a2354db029fe"
+    },
+    {
+      "bytes": 7480,
+      "path": "tools/page-entry/selected/maps_phase.inc",
+      "sha256": "42acd97b5b004b35416be99d58d29343d99636efcad2e7615538340a22871b2b"
+    },
+    {
+      "bytes": 855,
+      "path": "tools/page-entry/selected/private_code_query.h",
+      "sha256": "0d4bcb84e6fab2bbf670c29ecf716739cdb40c3f2bb7aba99ceb8dc582d7d050"
+    },
+    {
+      "bytes": 1567,
+      "path": "tools/page-entry/selected/private_code_query.inc",
+      "sha256": "70f5c8fb7f7b35411d20518c15408729a0d37432c96985a3246253e6e0697ae9"
+    },
+    {
+      "bytes": 6190,
+      "path": "tools/page-entry/selected/register_run.h",
+      "sha256": "5106c335e54ede90588915837f36b362b57086679d5576eed2abdb312c58ff86"
+    },
+    {
+      "bytes": 14402,
+      "path": "tools/page-entry/selected/register_run_owner.c",
+      "sha256": "a866fa46e4efe453cb7f6dd326bdf8e76f5bcc5b7f714aaf61702c330879fa89"
+    },
+    {
+      "bytes": 19934,
+      "path": "tools/page-entry/selected/register_run_publish.c",
+      "sha256": "20398abd5ec9bd70a53f471c555b8058bc2c7289d355c763e412f22406828dcd"
+    },
+    {
+      "bytes": 5397,
+      "path": "tools/page-entry/selected/register_run_publish.h",
+      "sha256": "c7fc766512f11b67af42b1c189043f2790fa21f9707bc07f3d9c98f0becd918a"
+    },
+    {
+      "bytes": 4076,
+      "path": "tools/page-entry/selected/register_run_reset.c",
+      "sha256": "05bf57184349574f3a6b281fe03da8dbbb9efb9e2df878627b67f716061b7582"
+    },
+    {
+      "bytes": 8675,
+      "path": "tools/page-entry/selected/repeat_owner.inc",
+      "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
+    },
+    {
+      "bytes": 18605,
+      "path": "tools/page-entry/selected/runtime_loader.c",
+      "sha256": "c8c781629736cd851943bb72efac4ae5a4e36af8b8cee34920d4cb074b67f1bd"
+    },
+    {
+      "bytes": 21675,
+      "path": "tools/page-entry/selected/selected_controller.inc",
+      "sha256": "59f1a0f3d240f43b18a216022788d2076fb85a2e2e401e2464bdd5132a32f528"
+    },
+    {
+      "bytes": 3416,
+      "path": "tools/page-entry/selected/selected_globals.inc",
+      "sha256": "511d2af9fc9485443c6daa9afa2c3cc5aa3034f27d292d2ee1e10f8bc54eab4b"
+    },
+    {
+      "bytes": 14504,
+      "path": "tools/page-entry/selected/selected_register_run.inc",
+      "sha256": "cf329a26ed4360f6cc6e2895dcaf066ebdfc62994e64f8dac7daba1e277e26b9"
+    },
+    {
+      "bytes": 12474,
+      "path": "tools/page-entry/selected/step_owner.c",
+      "sha256": "d2008695c78b460736cd45fb8f164ff3b1654f214e6134da62792085a9ad75db"
+    },
+    {
+      "bytes": 3971,
+      "path": "tools/page-entry/selected/tests/generic/fixture.S",
+      "sha256": "c2b1b973ff0ce9ca01e55d3094c16d05a671c72e95d6a7f4315570d08f67e262"
+    },
+    {
+      "bytes": 34870,
+      "path": "tools/page-entry/selected/tests/generic/fixture.c",
+      "sha256": "b0c758cb466ef3f8a35442f7cecbda77eb58c269a7ac90270d769c53440b2910"
+    },
+    {
+      "bytes": 3127,
+      "path": "tools/page-entry/selected/tests/generic/tf_controls.c",
+      "sha256": "e885b57159faf106a5b737c86a39fa7df42f1bd5b4957f4f89359336f7388d99"
+    },
+    {
+      "bytes": 5262,
+      "path": "tools/page-entry/selected/tests/maps_phase/OUTCOMES.json",
+      "sha256": "01ba593dfc4667aab272fb882e0a924104f2632e66b435b9121cd0aed4baa781"
+    },
+    {
+      "bytes": 1860,
+      "path": "tools/page-entry/selected/tests/maps_phase/adapt_support.py",
+      "sha256": "4a497b6b5917411d1dfeaacf3d1400f16e02f130e2903317310659a5d3fe1c4e"
+    },
+    {
+      "bytes": 1809,
+      "path": "tools/page-entry/selected/tests/maps_phase/build-regressions.sh",
+      "sha256": "525f9e6884cb4e3972c255e4ea9aaf97ece229425a7dc3bc33e54e09507711c7"
+    },
+    {
+      "bytes": 782,
+      "path": "tools/page-entry/selected/tests/maps_phase/build.sh",
+      "sha256": "2885f61b872b2f4b863f2ff0e623e5dff6f5ee13ce3c6bf5bf3871b769b8c481"
+    },
+    {
+      "bytes": 566,
+      "path": "tools/page-entry/selected/tests/maps_phase/fixture.S",
+      "sha256": "a7c8e10fa1afbf30c2f02ea02d6efeb342022b1399cee78c6ca70061b11e22f5"
+    },
+    {
+      "bytes": 18615,
+      "path": "tools/page-entry/selected/tests/maps_phase/fixture.c",
+      "sha256": "93d04cf5b3baa3ad1b94f636f4b30e83c24191646eab8f673beaf373943a9440"
+    },
+    {
+      "bytes": 6402,
+      "path": "tools/page-entry/selected/tests/register_run/OUTCOMES.json",
+      "sha256": "3175ba3724a47b94e60eecd1233fb80bc863b9636234823ac383432228408836"
+    },
+    {
+      "bytes": 1360,
+      "path": "tools/page-entry/selected/tests/register_run/build.sh",
+      "sha256": "21119a7396edcd773b714ff976483979bdf2011595444822a945bd7d1258ad79"
+    },
+    {
+      "bytes": 1340,
+      "path": "tools/page-entry/selected/tests/register_run/cases.h",
+      "sha256": "3a1e2e3564d106e509d83a5b814810716b5d4ed05bf9cf509af11b4b8b5e6e8f"
+    },
+    {
+      "bytes": 30490,
+      "path": "tools/page-entry/selected/tests/register_run/fixture.c",
+      "sha256": "6d4e551426006b33ebd38cceff1ab48762ab19d310a07cbb74e42a94497f44c1"
+    },
+    {
+      "bytes": 1811,
+      "path": "tools/page-entry/selected/tests/register_run/prepare.py",
+      "sha256": "0d9c5001a08846591da538b0b66b247ef6f9cc9ea068e75991611bd3383770d8"
+    },
+    {
+      "bytes": 11932,
+      "path": "tools/page-entry/selected/tests/register_run_controls/OUTCOMES.json",
+      "sha256": "ab9cad0ecbb51bb226acba1c926b6fbfc68378517a452cd2b8c2427b2404f026"
+    },
+    {
+      "bytes": 1703,
+      "path": "tools/page-entry/selected/tests/register_run_controls/build.sh",
+      "sha256": "e92cc30fc507df4ce51774792bd463ffd008c715cc34137ad720c337a836187f"
+    },
+    {
+      "bytes": 21704,
+      "path": "tools/page-entry/selected/tests/register_run_controls/fixture.c",
+      "sha256": "9892e9c2796aca024baa69b5b107ab422b9417909c7e602982e624cadbfc33e2"
+    },
+    {
+      "bytes": 3457,
+      "path": "tools/page-entry/selected/tests/register_run_controls/prepare.py",
+      "sha256": "38b97ced888d1c92f97a6e4b4b39b44e077e53d942cfb0f0b9e9c7a2833066cd"
+    },
+    {
+      "bytes": 619,
+      "path": "tools/page-entry/selected/tf_continuation.h",
+      "sha256": "8c0e7b0296b3082581ba49e1bd6eef08843553d9e1c7ecbf382d6875dac4a7d4"
+    },
+    {
+      "bytes": 2143,
+      "path": "tools/page-entry/selected/tf_continuation.inc",
+      "sha256": "17499a2b9ff98bb6d90e146ad1f7e0adbcd63d30ff5f81244894ad5133a1228e"
+    },
+    {
+      "bytes": 16797,
+      "path": "tools/page-entry/selected/tf_owner.inc",
+      "sha256": "86a703cc20af302b9e8b81a09bf7fb9ff05a1afdb5d255dfe581a9f150b730bb"
+    }
+  ],
+  "implementation_sha256": "43f7c49331315ae1fb032243956f8f2739827bf27adcea7a77ef72ab3e4cc64f",
+  "scope": "Exact reviewed maps-reuse implementation and unchanged helpers. Decoder sources/archive are authenticated at the requested current committed revision by unchanged Build/dep-info/locked registry closure; no stale frozen decoder archive.",
+  "version": 1
+}

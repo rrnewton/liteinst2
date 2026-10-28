@@ -22,6 +22,10 @@ static int failed(struct li2_run_owner *o,unsigned code,long detail) {
     o->phase=LI2_RUN_FAILED;return (int)o->first_error;
 }
 _Noreturn void li2_run_abort(struct li2_run_owner *o,unsigned code,long detail) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
     if(o) {
         (void)failed(o,code,detail);
         /* No original page was opened and no publication is reclaimed. The

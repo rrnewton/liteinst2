@@ -67,7 +67,15 @@ fn canonical_padding_nop(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Nop_rm32, [0x0f, 0x1f, 0x80, 0x00, 0x00, 0x00, 0x00]) |
         (Code::Nop_rm32, [0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]) |
         (Code::Nop_rm16, [0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]) |
-        (Code::Nop_rm16, [0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        (Code::Nop_rm16, [0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]) |
+        (Code::Nop_rm16, [0x66, 0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
+}
+
+// Exact original-PC BND indirect JMP only. Actual XCR0 MPX-disabled state
+// is observed again on the authenticated NX frame before source pages open.
+fn canonical_bnd_jmp_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Jmp_rm64
+        && matches!(bytes, [0xf2, 0xff, 0x25, _, _, _, _])
 }
 
 // Exact near-register NOTRACK forms in the existing no-user-CET profile.
@@ -83,6 +91,41 @@ fn canonical_notrack_register(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Call_rm64, 0xd0) | (Code::Jmp_rm64, 0xe0))
 }
 
+// Exactly the nine legacy REX.W MOVQ encodings qualified by the finite
+// full-state cohort. This does not relax the general 66+REX.W prefix rule.
+fn canonical_movq_integer(instruction: &Instruction, bytes: &[u8]) -> bool {
+    matches!((instruction.code(), bytes),
+        (Code::Movq_xmm_rm64, [0x66, 0x48 | 0x4d, 0x0f, 0x6e, 0xce | 0x0f]) |
+        (Code::Movq_rm64_xmm, [0x66, 0x48 | 0x4d, 0x0f, 0x7e, 0xce | 0x0f]) |
+        (Code::Movq_rm64_xmm, [0x66, 0x48, 0x0f, 0x7e, 0xc6]))
+}
+
+// Only this original-PC, memory-destination LOCK ADD encoding. The CPU
+// performs the atomic RMW; this exception neither emulates it nor authorizes
+// other LOCK/HLE prefixes, address sizes, operand sizes or ModRM forms.
+fn canonical_lock_add_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Add_rm32_imm8
+        && matches!(bytes, [0xf0, 0x83, 0x05, _, _, _, _, _])
+}
+
+// Paired canonical memory SUB only; no general LOCK/prefix permission.
+// The CPU performs the atomic RMW at the original RIP-relative address.
+fn canonical_lock_sub_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Sub_rm32_imm8
+        && matches!(bytes, [0xf0, 0x83, 0x2d, _, _, _, _, _])
+}
+
+// Five exact legacy SSE4.1 PMAXUD forms qualified by the finite oracle.
+// No ignored REX bits, other address modes, prefix aliases or VEX/EVEX.
+// Memory alignment/faults remain CPU effects at the original source PC.
+fn canonical_pmaxud(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Pmaxud_xmm_xmmm128
+        && matches!(bytes,
+            [0x66, 0x0f, 0x38, 0x3f, 0xc1 | 0xff | 0x06] |
+            [0x66, 0x45, 0x0f, 0x38, 0x3f, 0xe1] |
+            [0x66, 0x44, 0x0f, 0x38, 0x3f, 0x26])
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -94,16 +137,32 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Existing no-CET profile only: one canonical instruction, no added
         // or ignored prefix. Other Code values retain the old prefix policy.
         if source[..instruction.len()] != [0xf3, 0x0f, 0x1e, 0xfa] { return Ok(out); }
+    } else if instruction.code() == Code::Rdsspq_r64 {
+        // Only canonical r64 encodings. Actual disabled-shadow-stack custody
+        // is checked on the genuine NX frame before either source page opens.
+        if !matches!(&source[..instruction.len()],
+            [0xf3, 0x48 | 0x49, 0x0f, 0x1e, m] if (*m & 0xf8) == 0xc8) { return Ok(out); }
+    } else if matches!(instruction.code(), Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm) {
+        if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpbroadcastb_zmm_k1z_r32 {
+        // Only the observed unmasked EVEX.512 register form, ZMM16 <- RSI[7:0].
+        // This exact gate grants no other EVEX, masking, width or register form.
+        if source[..instruction.len()] != [0x62, 0xe2, 0x7d, 0x48, 0x7a, 0xc6] { return Ok(out); }
+    } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
+        if !canonical_pmaxud(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {
         // The actual ECX=0 restriction is enforced on the genuine NX frame
         // before either instruction page opens; decoding grants no RX permit.
         if source[..instruction.len()] != [0x0f, 0x01, 0xd0] { return Ok(out); }
     } else if !canonical_padding_nop(&instruction, &source[..instruction.len()])
         && !canonical_notrack_register(&instruction, &source[..instruction.len()])
+        && !canonical_bnd_jmp_rip(&instruction, &source[..instruction.len()])
+        && !canonical_lock_add_rip(&instruction, &source[..instruction.len()])
+        && !canonical_lock_sub_rip(&instruction, &source[..instruction.len()])
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
-        Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
+        Code::Rdsspq_r64 | Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
         | Code::Nop_rm16 | Code::Nop_rm32 | Code::Nop_rm64
         | Code::Mov_rm8_r8 | Code::Mov_rm16_r16 | Code::Mov_rm32_r32
         | Code::Mov_rm64_r64 | Code::Mov_r8_rm8 | Code::Mov_r16_rm16
@@ -370,7 +429,23 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Pcmpeqb_xmm_xmmm128 | Code::Pcmpeqw_xmm_xmmm128 | Code::Pcmpeqd_xmm_xmmm128
         | Code::Pcmpgtb_xmm_xmmm128 | Code::Pcmpgtw_xmm_xmmm128 | Code::Pcmpgtd_xmm_xmmm128
         | Code::Pminub_xmm_xmmm128 | Code::Pmaxub_xmm_xmmm128
-        | Code::Pmovmskb_r32_xmm => (1, 6),
+        // Exact SSE4.1 PMAXUD palette is checked before this Code arm.
+        | Code::Pmaxud_xmm_xmmm128
+        // Exact unmasked EVEX512 broadcast, checked before this Code arm.
+        | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
+        | Code::Pmovmskb_r32_xmm
+        // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
+        | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm
+        | Code::Movhpd_xmm_m64 | Code::Movhpd_m64_xmm
+        // Legacy byte-count shifts of one XMM register; upper vectors survive.
+        | Code::Pslldq_xmm_imm8 | Code::Psrldq_xmm_imm8
+        // Legacy MOVD r/m32 only; load clears XMM[127:32], r32 stores zero-extend.
+        | Code::Movd_xmm_rm32 | Code::Movd_rm32_xmm
+        // Legacy low-lane unpack/shuffle only; upper vectors and flags survive.
+        | Code::Punpcklbw_xmm_xmmm128 | Code::Punpcklwd_xmm_xmmm128
+        | Code::Pshufd_xmm_xmmm128_imm8
+        // REX.W MOVQ uses only the independently guarded canonical palette.
+        | Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm => (1, 6),
         _ => return Ok(out),
     };
     out.policy = 1;

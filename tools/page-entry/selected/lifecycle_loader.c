@@ -105,6 +105,9 @@ static int number_checked(size_t *at,size_t end,unsigned base,char separator,
 static void spaces(size_t *at,size_t end) {
     while (*at<end && maps_bytes[*at]==' ') ++*at;
 }
+#ifdef LI2_MAPS_PHASE_REUSE
+#define read_maps_checked read_maps_fresh
+#endif
 static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress *p) {
     *p=(struct li2_fetch_map_progress){.fd=-1};
     const char path[]="/proc/self/maps";
@@ -160,6 +163,10 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
     }
     return 0;
 }
+#ifdef LI2_MAPS_PHASE_REUSE
+#undef read_maps_checked
+#include "maps_phase.inc"
+#endif
 static void read_maps(void) {
     struct check_error error={0}; struct li2_fetch_map_progress progress;
     if (read_maps_checked(&error,&progress)) DIE(error.code,error.detail);

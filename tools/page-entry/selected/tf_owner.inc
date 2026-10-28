@@ -77,9 +77,100 @@ static void tf_xgetbv_begin(struct li2_step_owner *o,int sig,siginfo_t *si,ucont
     o->phase=LI2_STEP_RUNNING;o->in_handler=0;
 }
 
+/* Canonical RDSSPQ executes only after actual per-thread SHSTK status is
+   observed zero. The complete old NX/open/TF sequence is otherwise retained. */
+static void tf_rdssp_begin(struct li2_tf_owner *owner,int sig,siginfo_t *si,ucontext_t *uc) {
+    struct li2_step_owner *o=&owner->step;
+    enter(o,LI2_STEP_ARMED,sig,si,uc);
+    greg_t *g=uc->uc_mcontext.gregs;
+    uintptr_t pc=o->request.decoded.pc;
+    require(o,sig==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
+            (uintptr_t)g[REG_RIP]==pc && g[REG_TRAPNO]==14 && g[REG_ERR]==21 &&
+            (uintptr_t)si->si_addr==pc,LI2_STEP_FOREIGN_EVENT,sig);
+    require(o,(uint64_t)g[REG_EFL]==(o->request.original_flags|LI2_STEP_RF),LI2_STEP_INPUT_FLAGS,g[REG_EFL]);
+    frame(o,&o->before,uc);
+    require(o,equal((const void *)pc,o->request.decoded.bytes,o->request.decoded.length),LI2_STEP_PAGE_BINDING,2);
+    /* A successful actual status query is mandatory, including on CPUs
+       without CET. No EINVAL/ENOSYS fallback and no CPUID-derived permission. */
+    owner->rdssp_features=UINT64_MAX;
+    __asm__ volatile("":::"memory");
+    owner->rdssp_query_attempted=1;
+    owner->rdssp_query_result=RAW(SYS_arch_prctl,0x5005,&owner->rdssp_features,0,0,0,0);
+    owner->rdssp_query_complete=1;
+    __asm__ volatile("":::"memory");
+    require(o,!owner->rdssp_query_result,LI2_TF_SHSTK_QUERY,owner->rdssp_query_result);
+    require(o,!owner->rdssp_features,LI2_TF_SHSTK_ENABLED,(long)owner->rdssp_features);
+    o->phase=LI2_STEP_OPENING;
+    for(size_t i=0;i<o->request.page_count;i++) {
+        const struct li2_step_page *p=&o->request.pages[i];
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->closed_prot),LI2_STEP_PAGE_BINDING,(long)i);
+        o->open_started[i]=1;
+        o->open_result[i]=RAW(SYS_mprotect,p->address,LI2_STEP_PAGE,p->open_prot,0,0,0);
+        require(o,!o->open_result[i],LI2_STEP_OPEN,o->open_result[i]);o->opened[i]=1;
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->open_prot),LI2_STEP_PAGE_BINDING,(long)i);
+    }
+    o->open_sync=RAW(SYS_membarrier,32,0,0,0,0,0);
+    require(o,!o->open_sync,LI2_STEP_SYNC_OPEN,o->open_sync);
+    require(o,equal(uc->uc_mcontext.fpregs,o->before.fp,o->before.fp_bytes),LI2_STEP_FRAME,4);
+    g[REG_EFL]|=LI2_STEP_TF;
+    o->phase=LI2_STEP_RUNNING;o->in_handler=0;
+}
+
+/* XCR0 is read, never changed. The existing OSXSAVE precondition applies;
+   a fault cannot complete this observation or authorize source opening. */
+__attribute__((noinline)) uint64_t li2_tf_observe_xcr0(void) {
+    uint32_t a,d;
+    __asm__ volatile("xgetbv":"=a"(a),"=d"(d):"c"(0):"memory");
+    return (uint64_t)d<<32|a;
+}
+
+/* Complete old NX/open sequence with a fresh actual no-MPX observation.
+   CPL3 cannot write XCR0; the closed singleton runtime issues no application
+   syscall, signal handler or context-changing operation before sigreturn. */
+static void tf_bnd_jmp_begin(struct li2_tf_owner *owner,int sig,siginfo_t *si,ucontext_t *uc) {
+    struct li2_step_owner *o=&owner->step;
+    enter(o,LI2_STEP_ARMED,sig,si,uc);
+    greg_t *g=uc->uc_mcontext.gregs;
+    uintptr_t pc=o->request.decoded.pc;
+    require(o,sig==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
+            (uintptr_t)g[REG_RIP]==pc && g[REG_TRAPNO]==14 && g[REG_ERR]==21 &&
+            (uintptr_t)si->si_addr==pc,LI2_STEP_FOREIGN_EVENT,sig);
+    require(o,(uint64_t)g[REG_EFL]==(o->request.original_flags|LI2_STEP_RF),LI2_STEP_INPUT_FLAGS,g[REG_EFL]);
+    frame(o,&o->before,uc);
+    require(o,equal((const void *)pc,o->request.decoded.bytes,o->request.decoded.length),LI2_STEP_PAGE_BINDING,2);
+    owner->bnd_xcr0=UINT64_MAX;
+    __asm__ volatile("":::"memory");owner->bnd_xcr0_attempted=1;
+    owner->bnd_xcr0=li2_tf_observe_xcr0();
+    __asm__ volatile("":::"memory");owner->bnd_xcr0_complete=1;
+    require(o,!(owner->bnd_xcr0&UINT64_C(0x18)),LI2_TF_MPX_ENABLED,
+            (long)(owner->bnd_xcr0&UINT64_C(0x18)));
+    o->phase=LI2_STEP_OPENING;
+    for(size_t i=0;i<o->request.page_count;i++) {
+        const struct li2_step_page *p=&o->request.pages[i];
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->closed_prot),LI2_STEP_PAGE_BINDING,(long)i);
+        o->open_started[i]=1;
+        o->open_result[i]=RAW(SYS_mprotect,p->address,LI2_STEP_PAGE,p->open_prot,0,0,0);
+        require(o,!o->open_result[i],LI2_STEP_OPEN,o->open_result[i]);o->opened[i]=1;
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->open_prot),LI2_STEP_PAGE_BINDING,(long)i);
+    }
+    o->open_sync=RAW(SYS_membarrier,32,0,0,0,0,0);
+    require(o,!o->open_sync,LI2_STEP_SYNC_OPEN,o->open_sync);
+    require(o,equal(uc->uc_mcontext.fpregs,o->before.fp,o->before.fp_bytes),LI2_STEP_FRAME,4);
+    g[REG_EFL]|=LI2_STEP_TF;
+    o->phase=LI2_STEP_RUNNING;o->in_handler=0;
+}
+
 void li2_tf_begin(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
+    const struct li2_decoded *d=&o->step.request.decoded;
+    if(o->classification.code==765 && d->length==7 &&
+       d->bytes[0]==0xf2 && d->bytes[1]==0xff && d->bytes[2]==0x25) {
+        tf_bnd_jmp_begin(o,sig,si,uc);return;
+    }
     if(o->classification.code==825) {
         tf_xgetbv_begin(&o->step,sig,si,uc);return;
+    }
+    if(o->classification.code==1053) {
+        tf_rdssp_begin(o,sig,si,uc);return;
     }
     /* This old function performs no emulated-result check: exact real NX
        entry, immutable source, installed open prefixes, sync, then TF only. */
@@ -138,4 +229,74 @@ void li2_tf_trace(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
     /* Preserve every actual CPU result. Only this owner's TF is removed. */
     g[REG_EFL]&=~LI2_STEP_TF;
     p->phase=LI2_STEP_COMPLETE;p->in_handler=0;
+}
+
+/* Separate observed-state profile. These two canonical instructions are in
+   ONE asm block and target fixed DISTINCT registers. No SSP writer, CALL,
+   RET or syscall occurs between them. No alignment/range assumption is used. */
+__attribute__((noinline)) int li2_tf_observe_shstk(struct li2_tf_shstk_observation *p) {
+    if(!p || p->version || p->attempted || p->complete || p->reserved ||
+       p->seed_a || p->seed_b || p->value_a || p->value_b)
+        return LI2_TF_SHSTK_OBSERVATION;
+    p->version=1;p->seed_a=LI2_SHSTK_SEED_A;p->seed_b=LI2_SHSTK_SEED_B;
+    uint64_t a=p->seed_a,b=p->seed_b;
+    __asm__ volatile("":::"memory");p->attempted=1;
+    __asm__ volatile(".byte 0xf3,0x48,0x0f,0x1e,0xc8\n\t"
+                     ".byte 0xf3,0x48,0x0f,0x1e,0xca"
+                     :"+a"(a),"+d"(b)::"memory");
+    p->value_a=a;p->value_b=b;
+    __asm__ volatile("":::"memory");p->complete=1;
+    return 0;
+}
+int li2_tf_shstk_observation_disabled(const struct li2_tf_shstk_observation *p) {
+    return p && p->version==1 && p->attempted==1 && p->complete==1 && !p->reserved &&
+           p->seed_a==LI2_SHSTK_SEED_A && p->seed_b==LI2_SHSTK_SEED_B && p->seed_a!=p->seed_b &&
+           p->value_a==p->seed_a && p->value_b==p->seed_b;
+}
+static void tf_rdssp_observed_begin(struct li2_tf_owner *owner,int sig,siginfo_t *si,ucontext_t *uc) {
+    struct li2_step_owner *o=&owner->step;
+    enter(o,LI2_STEP_ARMED,sig,si,uc);
+    greg_t *g=uc->uc_mcontext.gregs;
+    uintptr_t pc=o->request.decoded.pc;
+    require(o,sig==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
+            (uintptr_t)g[REG_RIP]==pc && g[REG_TRAPNO]==14 && g[REG_ERR]==21 &&
+            (uintptr_t)si->si_addr==pc,LI2_STEP_FOREIGN_EVENT,sig);
+    require(o,(uint64_t)g[REG_EFL]==(o->request.original_flags|LI2_STEP_RF),LI2_STEP_INPUT_FLAGS,g[REG_EFL]);
+    frame(o,&o->before,uc);
+    require(o,equal((const void *)pc,o->request.decoded.bytes,o->request.decoded.length),LI2_STEP_PAGE_BINDING,2);
+    /* Retain the actual query independently. It grants no authority here. */
+    owner->rdssp_features=UINT64_MAX;
+    __asm__ volatile("":::"memory");
+    owner->rdssp_query_attempted=1;
+    owner->rdssp_query_result=RAW(SYS_arch_prctl,0x5005,&owner->rdssp_features,0,0,0,0);
+    owner->rdssp_query_complete=1;
+    __asm__ volatile("":::"memory");
+    /* Status is diagnostic only. Even status0 cannot authorize this route;
+       actual retained marker preservation is independently mandatory. */
+    int observed=li2_tf_observe_shstk(&owner->rdssp_observation);
+    require(o,!observed && li2_tf_shstk_observation_disabled(&owner->rdssp_observation),
+            LI2_TF_SHSTK_OBSERVATION,observed);
+    require(o,owner->rdssp_query_result || !owner->rdssp_features,
+            LI2_TF_SHSTK_ENABLED,(long)owner->rdssp_features);
+    o->phase=LI2_STEP_OPENING;
+    for(size_t i=0;i<o->request.page_count;i++) {
+        const struct li2_step_page *p=&o->request.pages[i];
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->closed_prot),LI2_STEP_PAGE_BINDING,(long)i);
+        o->open_started[i]=1;
+        o->open_result[i]=RAW(SYS_mprotect,p->address,LI2_STEP_PAGE,p->open_prot,0,0,0);
+        require(o,!o->open_result[i],LI2_STEP_OPEN,o->open_result[i]);o->opened[i]=1;
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->open_prot),LI2_STEP_PAGE_BINDING,(long)i);
+    }
+    o->open_sync=RAW(SYS_membarrier,32,0,0,0,0,0);
+    require(o,!o->open_sync,LI2_STEP_SYNC_OPEN,o->open_sync);
+    require(o,equal(uc->uc_mcontext.fpregs,o->before.fp,o->before.fp_bytes),LI2_STEP_FRAME,4);
+    g[REG_EFL]|=LI2_STEP_TF;
+    o->phase=LI2_STEP_RUNNING;o->in_handler=0;
+}
+
+void li2_tf_begin_observed_shstk(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
+    if(o->classification.code==1053) {
+        tf_rdssp_observed_begin(o,sig,si,uc);return;
+    }
+    li2_tf_begin(o,sig,si,uc);
 }

@@ -1,5 +1,8 @@
 #define _GNU_SOURCE
 #include "step_owner.h"
+#ifdef LI2_MAPS_PHASE_REUSE
+#include "maps_phase.h"
+#endif
 #include <sys/mman.h>
 #include <sys/syscall.h>
 
@@ -50,6 +53,10 @@ static void revoke_pages(struct li2_step_owner *o) {
     }
 }
 _Noreturn void li2_step_abort(struct li2_step_owner *o,unsigned code,long detail) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
     first(o,code,detail);
     if(o->session && o->session->initialized)revoke_pages(o);
     o->phase=LI2_STEP_FAILED;

@@ -17,16 +17,29 @@ static int selected_run_protect_contains(void *unused,uintptr_t first,size_t byt
 static const struct li2_run_protection selected_run_protection={
     0,selected_run_protect_add,selected_run_protect_contains
 };
+#ifdef LI2_RUN_TIMING
+#include "selected_run_timing.inc"
+#endif
 static void selected_run_initialize(void) {
     checked(!selected_run_protect_add(0,(uintptr_t)&selected_run_owner,sizeof selected_run_owner),760,0);
     checked(!selected_run_protect_add(0,(uintptr_t)&selected_run_history,sizeof selected_run_history),760,1);
     int error=li2_run_cache_initialize(&selected_session,&selected_run_protection,&selected_run_cache);
     checked(!error,761,error);
+#ifdef LI2_RUN_TIMING
+    selected_run_time_initialize();
+#endif
 }
 static void selected_run_failure(void *unused,const struct li2_run_owner *owner) {
     (void)unused;report(125,owner->first_error,owner->first_detail);
 }
 static _Noreturn void selected_run_abort(unsigned code,long detail) {
+#ifdef LI2_RUN_TIMING
+    li2_run_timing_fail(&selected_run_timing,code,detail);
+#endif
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
     if(selected_run_failing) {
         /* A secondary event during cleanup must never restart that cleanup. */
         (void)li2_run_cache_interrupt(selected_run_cache,code,detail);
@@ -40,6 +53,13 @@ static _Noreturn void selected_run_abort(unsigned code,long detail) {
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
 static _Noreturn void selected_run_unexpected(int sig,siginfo_t *si,ucontext_t *uc) {
+#ifdef LI2_RUN_TIMING
+    li2_run_timing_fail(&selected_run_timing,LI2_TIME_INTERRUPTED,sig);
+#endif
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
     if(!selected_run_interrupted.event.observed) {
         struct li2_run_nested *n=&selected_run_interrupted;
         n->event.observed=1;n->event.number=sig;
@@ -76,8 +96,21 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
     selected_run_publication=0;
     selected_pending_route=SELECTED_REGISTER_RUN;selected_step_pending=1;
     __asm__ volatile("" ::: "memory");
+#ifdef LI2_RUN_TIMING
+    int time_error=li2_run_timing_begin(&selected_run_timing,&selected_run_plan,
+                                      &selected_borrow,&selected_view);
+    if(time_error)selected_run_abort((unsigned)time_error,selected_run_timing.first_detail);
+#endif
     error=li2_run_cache_publish(selected_run_cache,&selected_borrow,&selected_run_plan,
                                &selected_run_publication);
+#ifdef LI2_RUN_TIMING
+    if(!error || error==LI2_RUN_SLOW) {
+        time_error=li2_run_timing_published(&selected_run_timing,error,
+            li2_run_cache_diagnostic(selected_run_cache),
+            li2_run_publication_progress(selected_run_cache,selected_run_publication));
+        if(time_error)selected_run_abort((unsigned)time_error,selected_run_timing.first_detail);
+    } else li2_run_timing_fail(&selected_run_timing,(unsigned)error,0);
+#endif
     if(error==LI2_RUN_SLOW) {
         /* Only actual capacity exhaustion before a publication attempt grants
            this branch. No owner is armed/reset and the real borrow stays held. */
@@ -105,6 +138,10 @@ static void selected_run_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     if(error)selected_run_abort((unsigned)error,0);
     checked(selected_run_history.reset_complete && !selected_run_history.first_error &&
             selected_run_owner.phase==LI2_RUN_EMPTY && !li2_lifecycle_fetch_interlock(),766,0);
+#ifdef LI2_RUN_TIMING
+    error=li2_run_timing_complete(&selected_run_timing,&selected_run_history);
+    if(error)selected_run_abort((unsigned)error,selected_run_timing.first_detail);
+#endif
     selected_logical_flags=selected_run_history.last_complete.logical_flags;
     selected_flags_known=1;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     /* The actual guard has not executed; route this same real NX event with

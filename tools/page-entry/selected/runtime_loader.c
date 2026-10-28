@@ -30,6 +30,9 @@ static void fail(unsigned,long) __attribute__((noreturn));
 #ifdef LI2_REGISTER_RUN
 static void selected_run_initialize(void);
 static void selected_run_report(unsigned,unsigned,long);
+#ifdef LI2_RUN_TIMING
+static void selected_run_time_report(unsigned,unsigned,long);
+#endif
 static int selected_run_try(int,siginfo_t *,ucontext_t *,uint64_t);
 static void selected_run_exit(int,siginfo_t *,ucontext_t *);
 static void selected_run_before_syscall(long,const long[6]);
@@ -86,9 +89,16 @@ static void report(unsigned status,unsigned code,long detail) {
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
 #ifdef LI2_REGISTER_RUN
     selected_run_report(status,code,detail);
+#ifdef LI2_RUN_TIMING
+    selected_run_time_report(status,code,detail);
+#endif
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
 #ifdef LI2_REGISTER_RUN
     if(selected_pending_route==SELECTED_REGISTER_RUN)selected_run_abort(code,detail);
 #endif
@@ -159,6 +169,9 @@ static int ordinary(long n) {
     }
 }
 static void dispatch_operation(long n,ucontext_t *context) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_end(); /* Even a query syscall crosses the application boundary. */
+#endif
     greg_t *g=context->uc_mcontext.gregs;
     uintptr_t pc=(uintptr_t)g[REG_RIP];
     checked(!li2_lifecycle_fetch_interlock() && !selected_step_pending,600,n);
@@ -204,6 +217,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #endif
 
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_event_boundary(); /* First action, including nested/foreign events. */
+#endif
 #ifdef LI2_REGISTER_RUN
     if(selected_pending_route==SELECTED_REGISTER_RUN &&
        (handling || !selected_step_pending || !si || !ptr ||
@@ -233,6 +249,12 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
             li2_tf_unexpected(&selected_tf,sig,si,uc);
     }
     checked(!handling && si && ptr,218,sig); handling=1;
+#ifdef LI2_MAPS_PHASE_REUSE
+    /* This scopes routing only. The route still authenticates its actual frame,
+       session and query ownership before using any observations. */
+    if(!selected_selftesting && selected_session.self_test_complete)
+        checked(!li2_maps_phase_begin(),770,0);
+#endif
 #ifdef LI2_REGISTER_RUN
     if(selected_pending_route==SELECTED_REGISTER_RUN) {
         selected_run_exit(sig,si,ptr);
@@ -253,6 +275,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     }
     else if(sig==SIGSYS) dispatch(si,ptr);
     else fail(219,sig);
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_end(); /* Before sigreturn, hence before generated/app execution. */
+#endif
     handling=0;
 }
 

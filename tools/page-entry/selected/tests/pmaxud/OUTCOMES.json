@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "prospective_only": true,
+  "scope": "Prospective closed legacy SSE4.1 PMAXUD: five exact encodings,18 literal native/TF pairs and actual aligned protected-page/unaligned read failures. No execution or program completion claim.",
+  "record_header_format": "<17Q",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_extent": "header_bytes + 22 * actual_DWARF_sample_bytes + 40; positive samples[0..18], unused samples[19..20] zero; failed control retains samples[0] and negative_sample",
+  "record_limit_bytes": 16777216,
+  "commands": [
+    {
+      "name": "positive",
+      "argv": [
+        "pmaxud-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "stdout": "LI2_PMAXUD_TF_PASS pairs=19 pmaxud=18 selftest=1 old_refusal_bytes=74 new_refusal_bytes=24 full_state=19 full_memory=19 live_endpoints=19\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 19,
+        "refusals": 98,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 19,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite native/TF pair cohort"
+    },
+    {
+      "name": "load-fault",
+      "argv": [
+        "pmaxud-0"
+      ],
+      "environment_delta": {
+        "LI2_PMAXUD_CONTROL": "load-fault"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 19,
+        "refusals": 98,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "process_outcome": "failed original-PC guarded m128 #PF with unchanged destination and full native/stepped fault state",
+      "required_record": {
+        "native_fault": 1,
+        "native_complete": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_phase": 6,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "owner_continuation_started": 0,
+        "owner_continuation_complete": 0,
+        "native_after_TRAPNO": 14,
+        "native_after_ERR": 4,
+        "owner_signal_number": 11,
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_revoke_sync_started": 1,
+        "owner_revoke_sync": 0,
+        "fetch_held": 1,
+        "actual_code": 2993,
+        "actual_bytes": "660f383f06",
+        "owner_signal_address": "actual guarded data_fault page",
+        "native_after_RSI": "actual guarded data_fault page"
+      }
+    },
+    {
+      "name": "unaligned",
+      "argv": [
+        "pmaxud-0"
+      ],
+      "environment_delta": {
+        "LI2_PMAXUD_CONTROL": "unaligned"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 19,
+        "refusals": 98,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "process_outcome": "failed original-PC unaligned m128 #GP with unchanged destination and full native/stepped fault state",
+      "required_record": {
+        "native_fault": 1,
+        "native_complete": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_phase": 6,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "owner_continuation_started": 0,
+        "owner_continuation_complete": 0,
+        "native_after_TRAPNO": 13,
+        "native_after_ERR": 0,
+        "owner_signal_number": 11,
+        "owner_signal_code": 128,
+        "owner_signal_errno": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_revoke_sync_started": 1,
+        "owner_revoke_sync": 0,
+        "fetch_held": 1,
+        "actual_code": 2993,
+        "actual_bytes": "660f383f06",
+        "owner_signal_address": "zero",
+        "native_after_RSI": "actual data_page + 1"
+      }
+    }
+  ],
+  "bounds": {
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15,
+    "cpu_affinity_count": 1
+  },
+  "literal_effects": "Four literal unsigned32 lane maxima replace exactly destination XMM[127:0]. Full old native/TF comparator stays exact: other FP/XSAVE bytes, all GPR/flags/FS/GS/live selectors,8KiB stack and4KiB data. Legacy upper vectors preserved. Failed instructions are not complete; only owned TF differs in their raw flags comparison.",
+  "native_pairs_per_group": 19,
+  "new_sse2_pairs_total": 18,
+  "old_refusal_count": 74,
+  "new_refusal_count": 24,
+  "case_table": "Literal cases.inc plus CASES.json; five exact encodings including observed660f383fc1.",
+  "old_cohorts": "All old tests and predicates remain required; default SSE2 fixture preprocessing is recovered byte-exact. New profile reuses old74 refusals and adds24.",
+  "negative_endpoint": "The crossing native load faults before its planned INT3. Actual native fault EFLAGS retains RF and must equal the retained native-before flags. Only the separately derived logical seed clears RF; the raw fault frames are never normalized or marked complete.",
+  "page_ending_pairs": 4,
+  "crossing_pairs": 14,
+  "register_pairs": 12,
+  "aligned_memory_pairs": 6,
+  "alignment": "Pinned Intel formal PMAXUD m128 uses Explicitly_Aligned; Translate_Logical_To_Linear raises #GP(0) for misalignment. No unaligned successful-memory claim."
+}

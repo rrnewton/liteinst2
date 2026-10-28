@@ -1,0 +1,75 @@
+{
+  "artifact_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": null,
+  "cases_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "command_count": 0,
+  "commands_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "cpu": 3,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "fbe862a2b3623aa27ded57231855f6f3981432ed",
+  "failure_type": "InvalidEvidence",
+  "final_error_count": 1,
+  "hardware": null,
+  "input_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "maps_cases": [],
+  "old_negative_cases": [],
+  "old_negative_operations_completed": null,
+  "private_receipt": {
+    "bytes": 1578,
+    "sha256": "a1b99949c20a87980646804c20af140e993f8449281a30bb8737956419377b0f"
+  },
+  "profile": "page-selected-maps-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_maps.py",
+    "--expect-revision",
+    "fbe862a2b3623aa27ded57231855f6f3981432ed"
+  ],
+  "schema_version": 1,
+  "scope": "Nine actual component-handler maps cases plus unchanged four cache-positive/capacity and fourteen failed-operation controls. Macro enabled; all complete private state retained. Component NOP/JMP is source execution, not a direct product-handler/generated-cache phase oracle. Connected and performance qualification remain separate.",
+  "source": null,
+  "source_unchanged": false,
+  "started_utc": "20261027T220426.731857Z",
+  "status": "failed",
+  "tool_hashes": {},
+  "tool_versions": {},
+  "totals": {}
+}

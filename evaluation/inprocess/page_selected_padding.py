@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Finite additive original-address padding-NOP native state and memory oracle."""
+"""Original padding pairs plus the exact observed eleven-byte NOP, with explicit refusal promotion."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -43,7 +43,7 @@ def publish(path, record, receipt):
                      for name, value in build.get('tools', {}).items()},
         build_artifacts={name: {k: value[k] for k in ('bytes', 'sha256')}
                          for name, value in build.get('artifacts', {}).items()},
-        fixture=record.get('fixture'),
+        fixtures=record.get('fixtures'),
         build_status=build.get('status', 'not_started'),
         failure_type=(record.get('error') or '').split(':')[0] or None,
         final_error_count=len(record['final_errors']),
@@ -60,7 +60,7 @@ def publish(path, record, receipt):
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
             'fixture_build': ['sh', 'tools/page-entry/selected/tests/padding/build.sh',
                               '<retained decoder.a>', '<private run directory>', 'tools/page-entry/selected'],
-            'native': ['padding-tf-fixture'],
+            'native': [['padding-tf-fixture'], ['padding-long-tf-fixture']],
             'actual_commands': 'Complete ordered argv, environments and captures are retained privately and bound by commands_sha256.'})
     text = json.dumps(public, sort_keys=True, indent=2, allow_nan=False)+'\n'
     markers = (str(Path.home()), str(REPO), platform.node())
@@ -84,18 +84,20 @@ def main():
     private = REPO/'target/evaluation/inprocess'/name
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
-    record = {'schema_version': 1, 'profile': 'page-selected-padding-oracle-v1', 'status': 'failed',
-        'scope': 'One padding cohort: 20 native/TF full-state and memory pairs, one real startup pair, 47 unchanged classifier refusals and 12 additional padding refusals. The original generic oracle and its three failed-operation controls must also pass. No loader, performance or full-B2 claim.',
+    record = {'schema_version': 1, 'profile': 'page-selected-padding-oracle-v2', 'status': 'failed',
+        'scope': 'Two bounded padding cohorts: all 20 original pairs plus 11 new pairs for the exact observed eleven-byte form, with two genuine startup pairs. All 47 generic and 11 retained padding refusals remain; two new neighbors refuse. Historical padding refusal entry two is explicitly promoted to accepted classification and positive full-state coverage. The original generic oracle and its failed-operation controls remain required. No program completion, performance or full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
         'totals': {'positive_pairs': 0, 'generic_pairs': 0, 'positive_selftest_pairs': 0,
                    'supplied_refusal_encodings': 0, 'verified_failed_operations': 0,
-                   'additional_negative_command_selftests': 0},
+                   'additional_negative_command_selftests': 0, 'new_padding_pairs': 0,
+                   'promoted_padding_encodings': 0, 'executed_promoted_acceptance_checks': 0,
+                   'retained_padding_refusals': 0, 'new_padding_refusals': 0, 'executed_refusal_checks': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_padding.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
-    fixture = private/'padding-tf-fixture'
+    fixtures = {name: private/name for name in ('padding-tf-fixture', 'padding-long-tf-fixture')}
     build = None
 
     def pin(path):
@@ -138,17 +140,23 @@ def main():
         products = build.prepare()
         run('fixture-build', [build.tools['sh'], FIXTURE/'build.sh', products['archive'], private, REPO/'tools/page-entry/selected'],
             profile='fixture_link', env=build.environment)
-        binary(fixture)
-        record['fixture'] = fact(fixture)
-        record['elf'] = plain_executable(fixture)
-        _, out, err = run('fixture-undefined', [build.tools['nm'], '-u', fixture],
-                          profile='inspect', env=build.environment)
-        need(not out and not err, 'no undefined fixture symbols')
+        record['fixtures'], record['elf'] = {}, {}
+        for index, (name, fixture) in enumerate(fixtures.items()):
+            binary(fixture)
+            record['fixtures'][name] = fact(fixture)
+            record['elf'][name] = plain_executable(fixture)
+            _, out, err = run('fixture-undefined' if index == 0 else 'fixture-undefined-long',
+                              [build.tools['nm'], '-u', fixture], profile='inspect', env=build.environment)
+            need(not out and not err, 'no undefined fixture symbols')
         outcomes = json.loads((FIXTURE/'OUTCOMES.json').read_bytes())
         names = outcomes['record_header_fields']
-        need(len(names) == 17 and len(outcomes['commands']) == 1, 'complete finite padding protocol')
+        need(len(names) == 17 and len(outcomes['commands']) == 2 and
+             [c['name'] for c in outcomes['commands']] == ['positive', 'long-positive'] and
+             [c['group'] for c in outcomes['commands']] == [0, 1], 'complete finite padding protocol')
         for case in outcomes['commands']:
             name = case['name']
+            need(case['argv'][0] in fixtures and len(case['argv']) == 1, 'exact fixture command')
+            fixture = fixtures[case['argv'][0]]
             result = {'name': name, 'process_outcome': case['process_outcome'], 'accepted': False}
             record['cases'].append(result)
             _, out, err = run(name, [fixture, *case['argv'][1:]], case['exit'])
@@ -161,10 +169,30 @@ def main():
             need(header['sample_bytes'] > 0 and len(data) == header['header_bytes']+22*header['sample_bytes']+40,
                  'complete actual record extent')
             need(576 <= header['xsave_bytes'] <= 65536 and header['xcr0'] & 3 == 3, 'qualified XSAVE extent')
+            expected_pairs = 21 if case['group'] == 0 else 12
+            need(header['pairs'] == header['completed'] == expected_pairs and
+                 case['unused_sample_slots'] == 21-expected_pairs,
+                 'actual finite pair count and unused bounded slots')
+            used_end = header['header_bytes']+expected_pairs*header['sample_bytes']
+            sample_end = header['header_bytes']+21*header['sample_bytes']
+            need(not any(data[used_end:sample_end]) and
+                 not any(data[sample_end:sample_end+header['sample_bytes']]),
+                 'all unused positive slots and negative sample remain zero')
             result['accepted'] = True
-            if name == 'positive':
-                record['totals'].update(positive_pairs=21, generic_pairs=20, positive_selftest_pairs=1,
-                                        supplied_refusal_encodings=59)
+            record['totals']['positive_pairs'] += expected_pairs
+            record['totals']['generic_pairs'] += expected_pairs-1
+            record['totals']['positive_selftest_pairs'] += 1
+            record['totals']['executed_refusal_checks'] += header['refusals']
+            record['totals']['executed_promoted_acceptance_checks'] += 1
+            record['totals'].update(supplied_refusal_encodings=60, promoted_padding_encodings=1,
+                                    retained_padding_refusals=11, new_padding_refusals=2)
+            if case['group'] == 1:
+                record['totals']['new_padding_pairs'] = 11
+        need(record['totals']['positive_pairs'] == 33 and record['totals']['generic_pairs'] == 31 and
+             record['totals']['positive_selftest_pairs'] == 2 and
+             record['totals']['executed_refusal_checks'] == 120 and
+             record['totals']['executed_promoted_acceptance_checks'] == 2,
+             'both exact cohorts and every control completed')
         record['status'] = 'passed'
     except BaseException as exc:
         record['error'] = type(exc).__name__+': '+str(exc)
@@ -176,13 +204,15 @@ def main():
                     need(record['build']['status'] == 'passed', 'build closure did not pass')
             except BaseException as exc:
                 record['final_errors'].append('build closure: '+repr(exc))
-        try:
-            if fixture.is_file():
-                record['fixture_after'] = fact(fixture)
-                record.setdefault('fixture', record['fixture_after'])
-                binary(fixture)
-        except BaseException as exc:
-            record['final_errors'].append('fixture retention: '+repr(exc))
+        record['fixtures_after'] = {}
+        for name, fixture in fixtures.items():
+            try:
+                if fixture.is_file():
+                    record['fixtures_after'][name] = fact(fixture)
+                    record.setdefault('fixtures', {}).setdefault(name, record['fixtures_after'][name])
+                    binary(fixture)
+            except BaseException as exc:
+                record['final_errors'].append('fixture retention '+name+': '+repr(exc))
         record['inputs_before'], record['binaries_before'] = pins, binaries
         for key, before in (('inputs_after', pins), ('binaries_after', binaries)):
             after = record[key] = {}

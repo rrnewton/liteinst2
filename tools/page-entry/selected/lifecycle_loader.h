@@ -2,6 +2,10 @@
 #define LI2_LOADER_LIFECYCLE_H
 #include <stddef.h>
 #include <stdint.h>
+#ifdef LI2_MAPS_PHASE_REUSE
+#include "maps_phase.h"
+#endif
+
 /* Raw-only, singleton module. initialize runs before SUD/NX activation. */
 struct li2_lifecycle_hooks {
     long (*raw)(long,long,long,long,long,long,long);
@@ -60,6 +64,10 @@ struct li2_fetch_map_progress {
     long fd,last_read,close_result;
     size_t bytes,rows;
     unsigned opened,close_started,closed;
+#ifdef LI2_MAPS_PHASE_REUSE
+    /* I/O fields describe this acquisition, not new I/O on a reused query. */
+    struct li2_maps_observation observation;
+#endif
 };
 struct li2_fetch_page {
     uintptr_t address;

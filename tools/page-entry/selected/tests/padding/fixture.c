@@ -4,8 +4,21 @@
 #include "tests/generic/fixture.c"
 #undef fixture_main
 
-struct padding_case { unsigned length,tail,code; unsigned char bytes[10]; };
+#ifndef PADDING_GROUP
+#define PADDING_GROUP 0
+#endif
+#if PADDING_GROUP == 0
+#define PADDING_COUNT 20
+#define PADDING_FIRST 200
+#elif PADDING_GROUP == 1
+#define PADDING_COUNT 11
+#define PADDING_FIRST 220
+#else
+#error unsupported padding group
+#endif
+struct padding_case { unsigned length,tail,code; unsigned char bytes[11]; };
 static const struct padding_case padding_cases[]={
+#if PADDING_GROUP == 0
     {1,1,300,{0x90}},
     {2,2,299,{0x66,0x90}},
     {3,3,1057,{0x0f,0x1f,0x00}},
@@ -26,16 +39,30 @@ static const struct padding_case padding_cases[]={
     {10,8,1056,{0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
     {10,9,1056,{0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
     {9,4,1056,{0x66,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+#else
+    {11,11,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,1,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,2,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,3,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,4,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,5,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,6,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,7,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,8,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,9,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+    {11,10,1056,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00}},
+#endif
 };
-_Static_assert(PAIRS==21 && sizeof(padding_cases)/sizeof(padding_cases[0])==20,
-               "old bounded capture layout plus twenty padding pairs");
+_Static_assert(PAIRS==21 && PADDING_COUNT+1<=PAIRS &&
+               sizeof(padding_cases)/sizeof(padding_cases[0])==PADDING_COUNT,
+               "unchanged bounded capture layout and exact finite group");
 static const struct padding_case *padding_case(const struct sample *s) {
-    need(s->id>=200 && s->id<220,400);return &padding_cases[s->id-200];
+    need(s->id>=PADDING_FIRST && s->id<PADDING_FIRST+PADDING_COUNT,400);return &padding_cases[s->id-PADDING_FIRST];
 }
 static void padding_prepare(struct sample *s,unsigned index) {
-    need(index<20,401);const struct padding_case *v=&padding_cases[index];
-    s->id=200+index;s->selftest=0;s->length=v->length;
-    need(v->tail && v->tail<=v->length && v->length<=10,402);
+    need(index<PADDING_COUNT,401);const struct padding_case *v=&padding_cases[index];
+    s->id=PADDING_FIRST+index;s->selftest=0;s->length=v->length;
+    need(v->tail && v->tail<=v->length && v->length<=11,402);
     long reserved=dispatch(SYS_mmap,0,5*PAGE,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
     need(reserved>0,403);s->mapping=(uintptr_t)reserved+PAGE;
     need(!dispatch(SYS_mprotect,s->mapping,CODE_BYTES,PROT_READ|PROT_WRITE,0,0,0),404);
@@ -79,8 +106,10 @@ static void padding_effects(struct sample *s) {
          s->continuation.pc==s->expected_post && s->continuation.complete,417);
 }
 
-/* Supplied bytes only. These twelve near-neighbor encodings remain outside the
-   new exact prefix exception. Old forty-seven controls run unchanged first. */
+/* All twelve historical supplied byte strings stay installed. Entry two is
+   intentionally promoted from refusal to exact accepted classification and
+   additionally receives eleven actual native/TF pairs in group one. The other
+   eleven remain refusals; all forty-seven generic controls run unchanged. */
 struct padding_refusal { unsigned length; unsigned char bytes[12]; };
 static const struct padding_refusal padding_refusals[]={
     {9,{0x2e,0x0f,0x1f,0x84,0,0,0,0,0}},
@@ -97,10 +126,19 @@ static const struct padding_refusal padding_refusals[]={
     {9,{0x66,0x2e,0x0f,0x1f,0x84,0,0,0,0}},
 };
 _Static_assert(sizeof(padding_refusals)/sizeof(padding_refusals[0])==12,"closed extra refusal set");
+static size_t padding_promoted_acceptances;
 static void padding_refusal_controls(void) {
     for(size_t i=0;i<12;i++) {
         const struct padding_refusal *v=&padding_refusals[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(UINT64_C(0x1000),v->bytes,v->length,&refused_last);
+        if(i==2) {
+            need(!result.decoder_result && refused_last.abi_version==1 &&
+                 refused_last.pc==UINT64_C(0x1000) && refused_last.next_pc==UINT64_C(0x100b) &&
+                 refused_last.length==11 && refused_last.code==1056 && refused_last.policy==1 &&
+                 refused_last.flow==LI2_TF_FALLTHROUGH && refused_last.family==LI2_TF_INTEGER,418);
+            ++padding_promoted_acceptances;
+            continue;
+        }
         need(!result.decoder_result && refused_last.abi_version==1 &&
              refused_last.pc==UINT64_C(0x1000) && !refused_last.policy &&
              !refused_last.flow && !refused_last.family,420+(unsigned)i);
@@ -108,19 +146,53 @@ static void padding_refusal_controls(void) {
     }
     result.failed_refusal=SIZE_MAX;
 }
+static void padding_long_refusal_controls(void) {
+    static const struct padding_refusal v[]={
+        {12,{0x66,0x66,0x66,0x2e,0x0f,0x1f,0x84,0,0,0,0,0}},
+        {11,{0x66,0x66,0x2e,0x0f,0x1f,0x84,0,1,0,0,0}},
+    };
+    for(size_t i=0;i<2;i++) {
+        result.failed_refusal=59+i;
+        result.decoder_result=li2_decoder_tf_classify(UINT64_C(0x1000),v[i].bytes,v[i].length,&refused_last);
+        need(!result.decoder_result && refused_last.abi_version==1 &&
+             refused_last.pc==UINT64_C(0x1000) && !refused_last.policy &&
+             !refused_last.flow && !refused_last.family,434+(unsigned)i);
+        ++result.refusals;
+    }
+    result.failed_refusal=SIZE_MAX;
+}
+static void padding_no_memory_access(const struct sample *s) {
+    if(PADDING_GROUP!=1)return;
+    uint64_t native=(uint64_t)s->native_before.frame.greg[REG_RAX]*2;
+    uint64_t stepped=(uint64_t)s->step_before.frame.greg[REG_RAX]*2;
+    /* The exact SIB is [RAX+RAX], with zero displacement. These retained
+       inputs are noncanonical for both 48- and 57-bit virtual addresses.
+       A successful NOP therefore cannot be a hidden read from that operand. */
+    need(native==stepped && (native>>48)!=((native&(UINT64_C(1)<<47))?UINT64_C(0xffff):0) &&
+         (native>>57)!=((native&(UINT64_C(1)<<56))?UINT64_C(0x7f):0),436);
+}
 int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)<16*1024*1024,
                    "unchanged complete private record bound");
-    result.magic=UINT64_C(0x314649585446324c);result.version=1;result.pairs=PAIRS;
+    result.magic=UINT64_C(0x314649585446324c);result.version=1;result.pairs=PADDING_COUNT+1;
     need(stack[0]==1,432);setup(stack);
     size_t complete=0,failed=0;uint32_t decoder_result=0;
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc && complete==li2_tf_refusal_count() && complete==47,130);
-    padding_refusal_controls();need(result.refusals==59,433);
+    padding_refusal_controls();need(result.refusals==58 && padding_promoted_acceptances==1,433);
+    padding_long_refusal_controls();need(result.refusals==60,437);
     prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
-    for(unsigned i=0;i<20;i++){padding_prepare(&samples[i+1],i);run_pair(&samples[i+1]);padding_effects(&samples[i+1]);}
-    need(result.completed==PAIRS && dump(),133);
-    output("LI2_PADDING_TF_PASS pairs=21 generic=20 selftest=1 old_refusal_bytes=47 padding_refusal_bytes=12 full_state=21 full_memory=21 live_endpoints=21\n");
+    for(unsigned i=0;i<PADDING_COUNT;i++){padding_prepare(&samples[i+1],i);run_pair(&samples[i+1]);padding_effects(&samples[i+1]);padding_no_memory_access(&samples[i+1]);}
+    #if PADDING_GROUP == 1
+    const unsigned char *unused=(const void *)&samples[PADDING_COUNT+1];
+    for(size_t i=0;i<(PAIRS-PADDING_COUNT-1)*sizeof(samples[0]);i++)need(!unused[i],438);
+#endif
+    need(result.completed==PADDING_COUNT+1 && dump(),133);
+#if PADDING_GROUP == 0
+    output("LI2_PADDING_TF_PASS group=0 pairs=21 generic=20 selftest=1 old_refusal_bytes=47 retained_padding_refusal_bytes=11 new_padding_refusal_bytes=2 promoted_padding_encodings=1 full_state=21 full_memory=21 live_endpoints=21\n");
+#else
+    output("LI2_PADDING_TF_PASS group=1 pairs=12 generic=11 selftest=1 old_refusal_bytes=47 retained_padding_refusal_bytes=11 new_padding_refusal_bytes=2 promoted_padding_encodings=1 full_state=12 full_memory=12 live_endpoints=12\n");
+#endif
     return 0;
 }

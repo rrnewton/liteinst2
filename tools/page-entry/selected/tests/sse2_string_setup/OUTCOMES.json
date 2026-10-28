@@ -1,0 +1,276 @@
+{
+  "schema_version": 1,
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "old_refusal_count": 47,
+  "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "scope": "Three legacy SSE2 low-lane unpack/shuffle Codes; finite original-PC native/TF qualification. MMX/VEX/EVEX and other unpack/shuffle forms excluded. No loader-completion/performance/full-B2 claim.",
+  "prospective_only": true,
+  "commands": [
+    {
+      "argv": [
+        "sse2-string-setup-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 83,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_STRING_SETUP_TF_PASS group=0 pairs=19 string_setup=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=36 full_state=19 full_memory=19 live_endpoints=19\n"
+    },
+    {
+      "argv": [
+        "sse2-string-setup-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 83,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_STRING_SETUP_TF_PASS group=1 pairs=19 string_setup=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=36 full_state=19 full_memory=19 live_endpoints=19\n"
+    },
+    {
+      "argv": [
+        "sse2-string-setup-0"
+      ],
+      "environment_delta": {
+        "LI2_STRING_SETUP_CONTROL": "punpcklbw-load-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 83,
+        "version": 1
+      },
+      "name": "punpcklbw-load-fault",
+      "process_outcome": "Failed original-PC aligned memory source read; actual native/stepped #PF, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit or inferred memory-access width.",
+      "required_record": {
+        "code": 1484,
+        "fetch_held": 1,
+        "native_after_ERR": 4,
+        "native_after_TRAPNO": 14,
+        "native_complete": 0,
+        "native_fault": 1,
+        "negative_verified": 1,
+        "owner_continuation_complete": 0,
+        "owner_continuation_started": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_phase": 6,
+        "owner_revoke_sync": 0,
+        "owner_revoke_sync_started": 1,
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_signal_number": 11,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "source_pages": 2,
+        "step_endpoint_seen": 0
+      },
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "sse2-string-setup-0"
+      ],
+      "environment_delta": {
+        "LI2_STRING_SETUP_CONTROL": "punpcklwd-load-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 83,
+        "version": 1
+      },
+      "name": "punpcklwd-load-fault",
+      "process_outcome": "Failed original-PC aligned memory source read; actual native/stepped #PF, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit or inferred memory-access width.",
+      "required_record": {
+        "code": 1491,
+        "fetch_held": 1,
+        "native_after_ERR": 4,
+        "native_after_TRAPNO": 14,
+        "native_complete": 0,
+        "native_fault": 1,
+        "negative_verified": 1,
+        "owner_continuation_complete": 0,
+        "owner_continuation_started": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_phase": 6,
+        "owner_revoke_sync": 0,
+        "owner_revoke_sync_started": 1,
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_signal_number": 11,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "source_pages": 2,
+        "step_endpoint_seen": 0
+      },
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "sse2-string-setup-0"
+      ],
+      "environment_delta": {
+        "LI2_STRING_SETUP_CONTROL": "pshufd-load-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 83,
+        "version": 1
+      },
+      "name": "pshufd-load-fault",
+      "process_outcome": "Failed original-PC aligned memory source read; actual native/stepped #PF, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit or inferred memory-access width.",
+      "required_record": {
+        "code": 1613,
+        "fetch_held": 1,
+        "native_after_ERR": 4,
+        "native_after_TRAPNO": 14,
+        "native_complete": 0,
+        "native_fault": 1,
+        "negative_verified": 1,
+        "owner_continuation_complete": 0,
+        "owner_continuation_started": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_phase": 6,
+        "owner_revoke_sync": 0,
+        "owner_revoke_sync_started": 1,
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_signal_number": 11,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "source_pages": 2,
+        "step_endpoint_seen": 0
+      },
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    }
+  ],
+  "new_refusal_count": 36,
+  "new_sse2_pairs_total": 36,
+  "native_pairs_per_group": [
+    19,
+    19
+  ],
+  "case_table": "Literal cases.inc: each of three operations at XMM1/XMM9, self/distinct-register/aligned-memory source, one page-ending and one explicitly selected crossing split.",
+  "literal_effects": "PUNPCKLBW interleaves low8 bytes; PUNPCKLWD interleaves low4 words; PSHUFD applies actual imm8 dword selectors. Only low128 of one XMM changes; full initialized kernel/live FP and all other state/memory remain exact.",
+  "memory_scope": "All supplied memory operands are16-byte aligned. PUNPCKL may fetch only relevant64 bits but still requires128-bit operand alignment; no exact access-width claim. Last16-byte guarded placement and actual PROT_NONE faults are retained.",
+  "negative_endpoint": "Three actual original-PC PROT_NONE source reads ERR4, one per opcode, in both lanes; failed owner retains revoke/sync/borrow and no completion.",
+  "record_extent": "header_bytes +22*actual_DWARF_sample_bytes+40; each positive command uses19 samples; two unused positive slots and negative slot remain zero; failed commands retain startup plus negative_sample."
+}

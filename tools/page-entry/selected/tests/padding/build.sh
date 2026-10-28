@@ -10,7 +10,10 @@ test -f "$decoder_archive"
 test -f "$selected_dir/tests/generic/fixture.c"
 mkdir -p "$output_dir"
 cc_bin=${LI2_CC:-cc}
-"$cc_bin" -std=gnu11 -O2 -g -nostdlib -static -no-pie -fno-pie \
+for group in 0 1; do
+  name=padding-tf-fixture
+  if test "$group" -eq 1; then name=padding-long-tf-fixture; fi
+"$cc_bin" -std=gnu11 -DPADDING_GROUP="$group" -O2 -g -nostdlib -static -no-pie -fno-pie \
   -fno-builtin -fno-stack-protector -fno-tree-loop-distribute-patterns \
   -fno-tree-vectorize -mgeneral-regs-only -fno-asynchronous-unwind-tables \
   -ffunction-sections -fdata-sections -Wall -Wextra -Werror \
@@ -18,4 +21,5 @@ cc_bin=${LI2_CC:-cc}
   -Wl,-e,_start,-z,noexecstack,--gc-sections,--build-id=none \
   "$selected_dir/step_owner.c" "$selected_dir/lifecycle_loader.c" \
   "$selected_dir/tests/generic/tf_controls.c" "$source_dir/fixture.c" \
-  "$selected_dir/tests/generic/fixture.S" "$decoder_archive" -o "$output_dir/padding-tf-fixture"
+  "$selected_dir/tests/generic/fixture.S" "$decoder_archive" -o "$output_dir/$name"
+done
