@@ -1730,6 +1730,1001 @@
       }
     }
   },
+  "maine797": {
+    "base": "3e2bd5210f348a2f41fbdefac88d5df193ef7828",
+    "current_corpus_sha256": "913430a415427049ffeb64855fe105ea13182895b191324f29b24d6a1f533ca3",
+    "declared_delta": {
+      "doctests": 18,
+      "harnesses": 2,
+      "ignored": 1,
+      "rust_tests": 75
+    },
+    "doctests": {
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs": [
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 9,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 14,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0502",
+          "line": 20,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0502",
+          "line": 29,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0382",
+          "line": 38,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0515",
+          "line": 46,
+          "marker": "///"
+        },
+        {
+          "attributes": "no_run",
+          "line": 55,
+          "marker": "///"
+        }
+      ],
+      "tools/rapid-profiler/src/frontend_native/mod.rs": [
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 20,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 25,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 30,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 35,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 40,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 45,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 50,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 55,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0502",
+          "line": 62,
+          "marker": "//!"
+        },
+        {
+          "attributes": "compile_fail,E0382",
+          "line": 71,
+          "marker": "//!"
+        },
+        {
+          "attributes": "",
+          "line": 80,
+          "marker": "//!"
+        }
+      ]
+    },
+    "instances": {
+      "src/frame_trace/tests/stack_profile.rs": {
+        "unit/liteinst2/lib": "frame_trace::tests::stack_profile::"
+      },
+      "src/trampoline/stack_profile_tests.rs": {
+        "unit/liteinst2/lib": "trampoline::stack_profile_tests::"
+      },
+      "tests/stack_profile_planning.rs": {
+        "test/stack_profile_planning": ""
+      },
+      "tests/support/native_call_tree/refusal.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::call_tree::refusal::tests::"
+      },
+      "tests/support/native_call_tree/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::call_tree::tests::"
+      },
+      "tools/rapid-profiler/cache-work/truth.rs": {
+        "test/call_tree_truth": "leaf::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/check/tests.rs": {
+        "unit/ordinary_interval/main": "tree::check::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/tree.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::gate::tree::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tests::concurrent_native::tree_native::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/postflight.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tree::postflight::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tree::prepared::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tree::runtime::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tree.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::module::ordinary::tree::tests::"
+      },
+      "tools/rapid-profiler/tree-work/model.rs": {
+        "test/call_tree_truth": "model::tests::",
+        "test/frontend_native_calibrations": "oracle::native_ordinary::call_tree::model::tests::"
+      },
+      "tools/rapid-profiler/tree-work/truth.rs": {
+        "test/call_tree_truth": "truth::tests::",
+        "test/frontend_native_calibrations": "oracle::native_ordinary::call_tree::truth::tests::",
+        "unit/ordinary_interval/main": "tree::truth::tests::"
+      }
+    },
+    "methods": {
+      "src/frame_trace/tests/stack_profile.rs": {
+        "all": [
+          "every_tree_role_preserves_full_protected_range_and_original_registers",
+          "actual_wrong_reserve_recovery_restore_and_descriptor_refuse",
+          "profile_annotations_cannot_mix_or_attach_to_another_image",
+          "coalesced_tree_actions_keep_each_fresh_profile_anchor"
+        ],
+        "ignored": []
+      },
+      "src/trampoline/stack_profile_tests.rs": {
+        "all": [
+          "explicit_legacy_matches_old_constructor_bytes_layout_maps_and_owners",
+          "nonlegacy_profile_refuses_mixed_modes_before_emission",
+          "profile_is_part_of_image_identity_not_a_byte_length_guess"
+        ],
+        "ignored": []
+      },
+      "tests/stack_profile_planning.rs": {
+        "all": [
+          "profiled_overlay_preserves_original_call_resume_and_both_coalesced_roles",
+          "explicit_legacy_planner_retains_old_image_and_contract",
+          "changed_original_and_reused_window_refuse_before_image_search",
+          "unsupported_modes_bad_actions_and_bounds_still_refuse"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_call_tree/refusal.rs": {
+        "all": [
+          "tree_refusal_injection_changes_only_the_authenticated_word",
+          "tree_refusal_requires_normal_exact_exit123",
+          "tree_refusal_rejects_application_or_gate_resumption"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_call_tree/tests.rs": {
+        "all": [
+          "tree_native_actual_transfer_bytes_pc_rsp_and_saved_word",
+          "tree_native_transfer_population_order_and_original_call_pc",
+          "tree_native_closed_source_gap_heads_returns_and_call_map",
+          "tree_native_pending_frame_rejects_idle_leaf_phase_and_each_word",
+          "tree_native_call_store_preserves_every_other_protected_byte",
+          "tree_native_complete_shape_refuses_missing_extra_reordered_and_node",
+          "tree_native_actual_payload_link_and_dec_flags_are_authenticated"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/cache-work/truth.rs": {
+        "all": [
+          "cache_literal_fixture_and_first_iteration",
+          "cache_all_cases_join_independent_cycles_scalar_counts_and_ret",
+          "cache_valid_link_or_payload_mutation_cannot_relabel_the_case",
+          "cache_every_changed_opcode_bit_is_refused",
+          "cache_invalid_header_links_extent_and_wrap_are_refused"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/check/tests.rs": {
+        "all": [
+          "tree_population_all_three_policies_and_nonzero_gate_baseline",
+          "tree_population_missing_duplicate_or_reordered_calls_and_batches_refuse",
+          "tree_population_identity_stack_and_case_substitution_refuse",
+          "tree_population_every_full_journal_word_and_prior_batch_metadata_refuse",
+          "tree_population_report_owner_rank_and_complete_payload_refuse",
+          "tree_population_closed_owners_and_clock_chronology_refuse"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/tree.rs": {
+        "all": [
+          "tree_return_observation_is_not_leaf_completion_or_resumption"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs": {
+        "all": [
+          "tree_native_root_child_keep_distinct_owners_until_actual_returns"
+        ],
+        "ignored": [
+          "tree_native_root_child_keep_distinct_owners_until_actual_returns"
+        ]
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/postflight.rs": {
+        "all": [
+          "installed_gate_error_survives_both_postflight_refusals",
+          "original_gate_error_survives_both_postflight_refusals",
+          "successful_gate_retains_pending_until_both_checks_then_refuses_or_transfers",
+          "postflight_unwind_drops_pending_without_returning_success"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs": {
+        "all": [
+          "prepared_checkpoint_refuses_each_changed_input_byte_and_extent",
+          "prepared_checkpoint_refuses_each_changed_lifetime_counter"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": {
+        "all": [
+          "mixed_owners_remain_pending_until_child_ack_and_root_postflight",
+          "child_ack_rejects_early_wrong_fields_and_duplicate_without_completion",
+          "paired_return_checks_stream_function_registration_slot_and_stack",
+          "root_postflight_claim_cannot_consume_pending_owner_with_wrong_fields",
+          "two_full_buffers_keep_absolute_identity_and_held_pages_unchanged",
+          "whole_page_validator_refuses_every_word_and_sparse_row_corruption",
+          "sampled_unsampled_parent_child_combinations_keep_real_receipt_owners",
+          "epoch_retirement_authenticates_stale_tokens_and_last_report_permit",
+          "controller_reentry_failed_prefix_and_legacy_history_limit_remain_refusals",
+          "preflight_refuses_depth_budget_identity_overflow_and_poison_atomically",
+          "function_closed_receipts_retain_epoch_through_child_ack_and_root_finish"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tree.rs": {
+        "all": [
+          "tree_admission_exact_original_call_and_resume_geometry",
+          "tree_admission_changed_call_stack_ret_or_callee_refuses",
+          "tree_admission_complete_elf_owns_both_protected_symbols_and_page",
+          "tree_admission_elf_visibility_alias_geometry_and_envelope_refuse",
+          "tree_admission_external_contract_is_not_inferred_from_bytes"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/tree-work/model.rs": {
+        "all": [
+          "tree_model_one_cache_exact_literal_vectors_and_attribution",
+          "tree_model_no_write_allocate_and_child_reset_are_observable",
+          "tree_model_missing_reordered_wrong_function_and_kind_refuse",
+          "tree_model_every_foreign_address_width_and_geometry_refuses",
+          "tree_model_lru_and_dirty_state_kernel_controls"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/tree-work/truth.rs": {
+        "all": [
+          "tree_truth_real_call_two_returns_and_nested_order",
+          "tree_truth_every_opcode_bit_refuses_and_case_cannot_be_relabelled",
+          "tree_truth_boundaries_and_non64_count_refuse"
+        ],
+        "ignored": []
+      }
+    },
+    "new_declarations": 59,
+    "origin": "e7972d45a99a2b1ad9b65752c1ada84ff2821bd2",
+    "previous_corpus_sha256": "4dce834cf183a267d7930e9eade37b70e6fc38e80106db4658820ce5928933a9",
+    "projections": {
+      "src/quiescent.rs": {
+        "current_sha256": "de3b725b46a839dd83009b0a8420c13c8d25524ba573b87e67bb1a945a8f32d4",
+        "edits": [
+          [
+            16605,
+            18772,
+            ""
+          ],
+          [
+            25834,
+            25965,
+            ""
+          ],
+          [
+            26107,
+            26183,
+            "            Self::Controlled(a) => a.len(),\n"
+          ],
+          [
+            26303,
+            26391,
+            "            Self::Controlled(a) => a[index].logical_pc,\n"
+          ],
+          [
+            26560,
+            26646,
+            "            Self::Controlled(a) => &a[index].control,\n"
+          ],
+          [
+            28291,
+            28967,
+            ""
+          ],
+          [
+            52731,
+            52859,
+            ""
+          ],
+          [
+            53195,
+            53427,
+            ""
+          ]
+        ],
+        "previous_sha256": "3b5cb3c84cfb44e10b058f37beca023652ac6c374047cf42045943357035a47c"
+      },
+      "src/trampoline.rs": {
+        "current_sha256": "65607ba6462f96e1b582ee9238337aca698be754ed87e0912e7b5e72f246cdd7",
+        "edits": [
+          [
+            26602,
+            27883,
+            ""
+          ],
+          [
+            28035,
+            28166,
+            ""
+          ],
+          [
+            44734,
+            44790,
+            ""
+          ],
+          [
+            48925,
+            49000,
+            ""
+          ],
+          [
+            52658,
+            52733,
+            ""
+          ],
+          [
+            56450,
+            56525,
+            ""
+          ],
+          [
+            59010,
+            59085,
+            ""
+          ],
+          [
+            60758,
+            60833,
+            ""
+          ],
+          [
+            63760,
+            64598,
+            ""
+          ],
+          [
+            65255,
+            65305,
+            ""
+          ],
+          [
+            70981,
+            72063,
+            ""
+          ],
+          [
+            74458,
+            74572,
+            "        let mut frames = FrameRecorder::new(origin, limits);\n"
+          ],
+          [
+            75378,
+            75423,
+            ""
+          ],
+          [
+            77661,
+            77941,
+            "            let mut instrumentation_frames = HelperFrames::new(FrameStage::SaveAndCall);\n            let mut restore_frames = HelperFrames::new(FrameStage::Restore);\n"
+          ],
+          [
+            78750,
+            78798,
+            ""
+          ],
+          [
+            80562,
+            80637,
+            ""
+          ],
+          [
+            89441,
+            89499,
+            ""
+          ],
+          [
+            95369,
+            95704,
+            "                let mut instrumentation_frames = HelperFrames::new(FrameStage::SaveAndCall);\n                let mut restore_frames = HelperFrames::new(FrameStage::Restore);\n"
+          ],
+          [
+            96345,
+            96397,
+            ""
+          ],
+          [
+            106050,
+            106121,
+            ""
+          ],
+          [
+            112498,
+            112576,
+            ""
+          ],
+          [
+            112693,
+            112846,
+            "        assembler\n            .lea(rsp, rsp - SYSTEM_V_RED_ZONE_BYTES)\n            .map_err(encoding_error)?;\n        record_frame_effect(\n            &mut frames,\n            &assembler,\n            FrameEffect::Reserve(SYSTEM_V_RED_ZONE_BYTES),\n        );\n"
+          ],
+          [
+            115080,
+            115177,
+            "                    rsp + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES\n                        + SYSTEM_V_RED_ZONE_BYTES\n                        + SAVED_INTEGER_BYTES,\n"
+          ],
+          [
+            120825,
+            120863,
+            ""
+          ],
+          [
+            122302,
+            122359,
+            "        .lea(rsp, rsp + SYSTEM_V_RED_ZONE_BYTES)\n"
+          ],
+          [
+            122460,
+            122523,
+            "        FrameEffect::Release(SYSTEM_V_RED_ZONE_BYTES),\n"
+          ],
+          [
+            224981,
+            225063,
+            ""
+          ],
+          [
+            422835,
+            422924,
+            ""
+          ]
+        ],
+        "previous_sha256": "c6862585fa860e4bd0fd19de21b2aecf84301137495c0494fbba52fc3fa80d95"
+      },
+      "tests/support/native_ordinary.rs": {
+        "current_sha256": "83fdcc04d8b34b4d8730ae15391056c7082dfe5725f79e047be131013d805b2b",
+        "edits": [
+          [
+            10129,
+            10212,
+            ""
+          ],
+          [
+            10812,
+            10874,
+            "            Subject::Checksum => None,\n"
+          ],
+          [
+            10949,
+            11287,
+            ""
+          ],
+          [
+            18004,
+            18091,
+            "            Subject::Checksum => panic!(\"not a cache subject\"),\n"
+          ],
+          [
+            18607,
+            20019,
+            ""
+          ],
+          [
+            20533,
+            20586,
+            "        let start = self.gate_rsp() - ready.profile.entry_delta() - 128;\n"
+          ],
+          [
+            25762,
+            26049,
+            ""
+          ],
+          [
+            26707,
+            26763,
+            ""
+          ],
+          [
+            29982,
+            30283,
+            ""
+          ],
+          [
+            32850,
+            32975,
+            ""
+          ],
+          [
+            33012,
+            33151,
+            ""
+          ],
+          [
+            34271,
+            34396,
+            ""
+          ],
+          [
+            34434,
+            34573,
+            ""
+          ],
+          [
+            34660,
+            35392,
+            "        assert_eq!(returns.len(), 1, \"one real subject RET per call\");\n        self.frame_after(a.child, &ar, &original, &af, None);\n        self.frame_after(b.child, &br, &candidate, &bf, returns.first().copied());\n"
+          ],
+          [
+            35954,
+            36238,
+            ""
+          ],
+          [
+            39999,
+            40147,
+            ""
+          ],
+          [
+            41107,
+            41161,
+            "            stack_address: self.gate_rsp() - profile.entry_delta() - 128,\n"
+          ],
+          [
+            41627,
+            41829,
+            ""
+          ],
+          [
+            45964,
+            46093,
+            ""
+          ]
+        ],
+        "previous_sha256": "626460a793bfa17efa9d9287681efa9b302ca9fc7e9f910022dab9f1e9d08853"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "064112e3c3adf4bf4b34eb0ef55a46733e4cab1fad8743b9945bdb8134a383c9",
+        "edits": [
+          [
+            345,
+            355,
+            ""
+          ],
+          [
+            33975,
+            35301,
+            ""
+          ]
+        ],
+        "previous_sha256": "62811bb727956ed06154ba3bf99457019413cc72f4b9d8cd4c4a23798f5cd394"
+      },
+      "tools/rapid-profiler/ordinary-interval/counter.rs": {
+        "current_sha256": "613ff26ce03b39bb415cfb25f8f8428952f18cc62aad97722a3c524946c564f8",
+        "edits": [
+          [
+            420,
+            442,
+            "mod truth;\n"
+          ]
+        ],
+        "previous_sha256": "ad21fae846e4af37da3b417771529792a82beb5db0c4a31f587fd63c7eebdfe3"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "c091c2448bba532404456de4408c6b33129ad6249d6ea959363e95cc2c534362",
+        "edits": [
+          [
+            917,
+            927,
+            ""
+          ],
+          [
+            12155,
+            12540,
+            ""
+          ]
+        ],
+        "previous_sha256": "a3bff5601fcc28d597a2d508bba550b546f50fc0e39eca4d0facf8068b732573"
+      },
+      "tools/rapid-profiler/reference-work/check_output.py": {
+        "current_sha256": "dcd710575294765ab43952a8d6a18b3c4b9af467b0932eba41218f841fb4afd1",
+        "edits": [
+          [
+            1652,
+            2004,
+            ""
+          ],
+          [
+            8005,
+            9791,
+            ""
+          ],
+          [
+            11694,
+            11918,
+            "    pattern = (r'\\nrunning 58 tests\\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \\.\\.\\. ok\\n){58})\\n'\n        r'test result: ok\\. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\\.[0-9]+s\\n\\n')\n"
+          ],
+          [
+            12057,
+            12090,
+            "    assert len(set(names)) == 58\n"
+          ]
+        ],
+        "previous_sha256": "b93b149b611a95101896aca9459cfdd4ab9e3fe3bf0d8d7f05a216daca6438a9"
+      },
+      "tools/rapid-profiler/reference-work/test_recipe.py": {
+        "current_sha256": "b4c5437b6131bc56e15fc86c9d883799dd09827d726e6391c406391cfa3acb88",
+        "edits": [
+          [
+            3210,
+            3262,
+            "            return ('\\nrunning 58 tests\\n'+''.join(\n"
+          ],
+          [
+            3365,
+            3501,
+            "                '\\ntest result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\\n\\n').encode('ascii')\n"
+          ],
+          [
+            3741,
+            3835,
+            "            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 58]):\n"
+          ],
+          [
+            4147,
+            4251,
+            "                    data.replace(b'58 passed', b'57 passed'), data.replace(b'0 ignored', b'1 ignored'),\n"
+          ]
+        ],
+        "previous_sha256": "4602f99ce5cd256f643d2420a723731d2ff32dff4cc235d4afb7cfe884abb5f7"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": {
+        "current_sha256": "1da7f27fe39af03e8061e91b7b8b89975b455f4b4e965cb507415ede6d158130",
+        "edits": [
+          [
+            49035,
+            49130,
+            ""
+          ]
+        ],
+        "previous_sha256": "a86db1430804d1f57052058388648db8a532768158da429747bb73f368cd8115"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": {
+        "current_sha256": "b690998214f6d45977550c3694b5a4ad88ea75597f80f49316593163f539b691",
+        "edits": [
+          [
+            21993,
+            22087,
+            ""
+          ]
+        ],
+        "previous_sha256": "5e7067a70435ffa4048fd39db5bde611ed0655dbaec9edfd5547ecd7f19f73e6"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native.rs": {
+        "current_sha256": "8205e69cbfbedd9d98545f27cb2a9f877a8bef418a5ac71116ef2267d80399dc",
+        "edits": [
+          [
+            25318,
+            25336,
+            ""
+          ]
+        ],
+        "previous_sha256": "19ad002b329dfa248cc845a8ce531217ed9104c1d33e860549940e993fb80fa7"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "690b2bfaab7d166c234ed7854f2ff0c2a1932f0ce64b0bbb82132934a7d241aa",
+        "edits": [
+          [
+            1048,
+            3644,
+            ""
+          ],
+          [
+            4489,
+            4695,
+            ""
+          ],
+          [
+            5590,
+            6041,
+            ""
+          ]
+        ],
+        "previous_sha256": "ed219f26f2390659cd08cda1667de1a22c05564a7e76f2e0e92c6e1ace1099c8"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+        "current_sha256": "d5bb9a1ececf4ecb0be449a73899ba4b1495e3c46ac153854a6ed7c1d57430e7",
+        "edits": [
+          [
+            548,
+            667,
+            ""
+          ],
+          [
+            4745,
+            4905,
+            ""
+          ],
+          [
+            4974,
+            5225,
+            ""
+          ],
+          [
+            13102,
+            13133,
+            "    cfg::admit(&code, entry)?;\n"
+          ],
+          [
+            14737,
+            17813,
+            ""
+          ],
+          [
+            19580,
+            19800,
+            "        let mut file = File::open(path).map_err(|_| SetupRefusal::OperatingSystem)?;\n        let original = stamp(&file)?;\n        if bounded_read(&mut file)? != expected\n            || original != stamp(&file)?\n            || original.size != expected.len() as u64\n        {\n            return Err(SetupRefusal::SourceBytes);\n        }\n        let device = mount_device(file.as_raw_fd())?;\n        let mut shstk = 0_u64;\n        // SAFETY: read-only status query; never changes CET state.\n        let status = unsafe { libc::syscall(libc::SYS_arch_prctl, 0x5005, &mut shstk) };\n        if status == 0 && shstk != 0 {\n            return Err(SetupRefusal::Cet);\n        }\n        if status != 0\n            && !matches!(\n                std::io::Error::last_os_error().raw_os_error(),\n                Some(libc::EINVAL | libc::ENOSYS)\n            )\n        {\n            return Err(SetupRefusal::OperatingSystem);\n        }\n        let fd_path = CString::new(format!(\"/proc/self/fd/{}\", file.as_raw_fd())).unwrap();\n        // SAFETY: whole trusted DSO and explicit caller obligations above.\n        let handle = unsafe { libc::dlopen(fd_path.as_ptr(), libc::RTLD_NOW | libc::RTLD_LOCAL) };\n        if handle.is_null() {\n            return Err(SetupRefusal::OperatingSystem);\n        }\n        // Keep the original fd/handle on every subsequent refusal as well.\n        let retained = Box::leak(Box::new(Retained {\n            _handle: handle,\n            file,\n            expected: expected.to_vec(),\n            original,\n            device,\n            pid: std::process::id(),\n        }));\n        // SAFETY: live retained loader handle and terminated symbol name.\n        let address = unsafe { libc::dlsym(handle, symbol.as_ptr()) } as usize as u64;\n        let bias = address\n            .checked_sub(parsed.entry)\n            .ok_or(SetupRefusal::SymbolOwner)?;\n        if address == 0 || bias % 4096 != 0 {\n            return Err(SetupRefusal::SymbolOwner);\n        }\n        // SAFETY: initialized loader outputs; addresses remain owned by dlopen.\n        let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };\n        if unsafe { libc::dladdr(address as usize as *const libc::c_void, &mut info) } == 0\n            || info.dli_fbase as usize as u64 != bias\n            || info.dli_saddr as usize as u64 != address\n            || info.dli_sname.is_null()\n            || unsafe { CStr::from_ptr(info.dli_sname) } != symbol\n        {\n            return Err(SetupRefusal::SymbolOwner);\n        }\n        let mut link: *const u64 = std::ptr::null();\n        // RTLD_DI_LINKMAP: l_addr is the first ELF64 link_map ABI field.\n        if unsafe { libc::dlinfo(handle, 2, (&raw mut link).cast()) } != 0\n            || link.is_null()\n            || unsafe { link.read() } != bias\n        {\n            return Err(SetupRefusal::SymbolOwner);\n        }\n"
+          ],
+          [
+            21179,
+            23109,
+            "        if self.owner.pid != std::process::id()\n            || expected.len() != self.parsed.code.len()\n            || stamp(&self.owner.file)? != self.owner.original\n            || bounded_read(&mut self.owner.file)? != self.owner.expected\n            || stamp(&self.owner.file)? != self.owner.original\n            || mount_device(self.owner.file.as_raw_fd())? != self.owner.device\n        {\n            return Err(SetupRefusal::SourceBytes);\n"
+          ],
+          [
+            23119,
+            24539,
+            "        for load in &self.parsed.loads {\n            let bias = self.entry() - self.parsed.entry;\n            let end = load.address + load.memory_size;\n            let mut cursor = load.address;\n            while cursor < end {\n                let (next, permissions) = match &self.parsed.relro {\n                    Some(r) if cursor < r.start => {\n                        (end.min(r.start), load_permissions(load.flags)?)\n                    }\n                    Some(r) if cursor < r.end => {\n                        if load.flags != 6 {\n                            return Err(SetupRefusal::Format);\n                        }\n                        (end.min(r.end), \"r--p\")\n                    }\n                    _ => (end, load_permissions(load.flags)?),\n                };\n                map_rows(\n                    bias.checked_add(cursor).ok_or(SetupRefusal::Format)?,\n                    next - cursor,\n                    self.owner.device,\n                    self.owner.original.inode,\n                    Some(permissions),\n                    Some(load.offset + cursor - load.address),\n                )?;\n                cursor = next;\n            }\n"
+          ],
+          [
+            24549,
+            24861,
+            "        if let Some(r) = &self.parsed.relro {\n            let load = &self.parsed.loads[r.owner];\n            let offset = u64::try_from(\n                i128::from(load.offset) + i128::from(r.start) - i128::from(load.address),\n            )\n            .map_err(|_| SetupRefusal::Format)?;\n            let address = (self.entry() - self.parsed.entry)\n                .checked_add(r.start)\n                .ok_or(SetupRefusal::Format)?;\n            map_rows(\n                address,\n                r.end - r.start,\n                self.owner.device,\n                self.owner.original.inode,\n                Some(\"r--p\"),\n                Some(offset),\n            )?;\n        }\n        map_rows(\n            self.source_start,\n            self.parsed.source.len() as u64,\n            self.owner.device,\n            self.owner.original.inode,\n            Some(\"r-xp\"),\n            Some(self.parsed.page_offset),\n        )?;\n        let mut whole = self.parsed.source.clone();\n        let at =\n            usize::try_from(self.entry() - self.source_start).map_err(|_| SetupRefusal::Format)?;\n"
+          ],
+          [
+            24875,
+            24905,
+            "            .get_mut(at..at + expected.len())\n"
+          ],
+          [
+            24947,
+            24992,
+            "            .copy_from_slice(expected);\n        // SAFETY: caller's retained readable mapping contract, plus complete\n        // current file-backed page ownership/protection validation above.\n        if unsafe {\n            std::slice::from_raw_parts(self.source_start as usize as *const u8, whole.len())\n        } != whole\n        {\n            return Err(SetupRefusal::SourceBytes);\n        }\n        Ok(())\n"
+          ],
+          [
+            24998,
+            25324,
+            ""
+          ]
+        ],
+        "previous_sha256": "777c9844103f7d507cf21a8969ff076d3f27fe31822e08f1bc62017abcfc0d42"
+      },
+      "tools/rapid-profiler/verify_ordinary_interval.py": {
+        "current_sha256": "dd1bd88d8b47f74f000ae90a4214ce92b60d01da4da8575b78620f4ca972741c",
+        "edits": [
+          [
+            13682,
+            14976,
+            ""
+          ],
+          [
+            15602,
+            15949,
+            ""
+          ],
+          [
+            18006,
+            18147,
+            ""
+          ],
+          [
+            19906,
+            20580,
+            ""
+          ],
+          [
+            25739,
+            25943,
+            ""
+          ],
+          [
+            34238,
+            35953,
+            ""
+          ],
+          [
+            68641,
+            68733,
+            "            reference['calibrations'] = dict(status='PASS', passed=58, failed=0, ignored=0,\n"
+          ],
+          [
+            74660,
+            74748,
+            "            cache['calibrations'] = dict(status='PASS', passed=58, failed=0, ignored=0,\n"
+          ],
+          [
+            79301,
+            86079,
+            ""
+          ]
+        ],
+        "previous_sha256": "5bcaba1894ec3ce54efac60a42a174b3a91015acfc83998cf7bbc7501998549a"
+      }
+    },
+    "reused_declarations": 5,
+    "scope": "Exact source-derived compiled instances; listings are not execution evidence. The one new release-only test remains ignored by default.",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/admission/backing_cleanup.py": "527106ba75b273437c6204d326aa0d109da195be9df9aad8ac604a704332faa8",
+      "evaluation/admission/backing_cleanup_query.py": "4696bfe404065b365fbc2fcc52513398d5101ea3b87ae11b78b58e1de013e194",
+      "evaluation/admission/native_fixtures.py": "ba6a3815a624996d7ea223a6d2d2b2eb52efff6f5de562897283e61ecbdfdbf5",
+      "evaluation/admission/precontext_native.py": "1eaac492da452ec61e9ca178f3994a9233b5b0c8f2fd0252f300f0a495ca2373",
+      "evaluation/precontext/verify.py": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+      "src/frame_trace.rs": "6e351d854e58a6c39c0c53c8360a89cb714417704226b8a3124336f8d37ce469",
+      "src/frame_trace/tests.rs": "f13580b371e284a49b17f78cd23b824deb3dde0a4056c9b1fdfbac679576fc14",
+      "src/frame_trace/tests/stack_profile.rs": "0d3a20d3df1a1c9abc7b04629ebbf4c461608ed4cdc02661b76aa42f9758185e",
+      "src/generated_unwind/mod.rs": "fa66c4e0219752e38985cf63850e22af485c6756a641edf389bef764161c35d3",
+      "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+      "src/quiescent.rs": "de3b725b46a839dd83009b0a8420c13c8d25524ba573b87e67bb1a945a8f32d4",
+      "src/trampoline.rs": "65607ba6462f96e1b582ee9238337aca698be754ed87e0912e7b5e72f246cdd7",
+      "src/trampoline/stack_profile_tests.rs": "05dfd7c233352e0412573b00195639fb4a9357767be6d6bff0accdd858c78c05",
+      "tests/call_tree_truth.rs": "55f5ff248e892fe073b342e71df40a4b2e790eea134ea17c9632456b05b19add",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/stack_profile_planning.rs": "d779336a5ee77b973de9005bf4ed9b1e73a14236d15fafa53e8781ba42bbf522",
+      "tests/support/native_call_tree.rs": "c81a5934ee056d50626587a0eebd04e3ed712cfaae7c8cc33a38a5d97ae99761",
+      "tests/support/native_call_tree/refusal.rs": "d917b8e6cb30b850357b49f1ab588bb9e0f511cdf4d034fa551b386b73e17df5",
+      "tests/support/native_call_tree/tests.rs": "0a80d2f4b20633cc36e37be477597d1774b26cac75257b79f94a4197da1ed920",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_ordinary.rs": "83fdcc04d8b34b4d8730ae15391056c7082dfe5725f79e047be131013d805b2b",
+      "tests/support/native_precontext.rs": "5bc039aee42b467d56d57ad0f65cda57a0fc2cfeef142cf7b2a55eb59c5f04c4",
+      "tools/rapid-profiler/Cargo.toml": "44a10ae94825a0bad3d09776065fe2aff56082dcb41263a5efe28230a746c685",
+      "tools/rapid-profiler/cache-work/truth.rs": "8b2c0701109d42321cbaa0d7281cd5b3cd24a2bb27a5f7ccc1eea0f73210fd57",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "f9c7f96424095442e28c541a38196800f1481482237e9f2739aba2392d811e1f",
+      "tools/rapid-profiler/native-interval/main.rs": "064112e3c3adf4bf4b34eb0ef55a46733e4cab1fad8743b9945bdb8134a383c9",
+      "tools/rapid-profiler/native-interval/tree.rs": "748ba85b66f00fdd4e5e89b14ad324c0c5947ca6a3cd86675879592ad73085da",
+      "tools/rapid-profiler/native-point/main.rs": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645",
+      "tools/rapid-profiler/ordinary-interval/counter.rs": "613ff26ce03b39bb415cfb25f8f8428952f18cc62aad97722a3c524946c564f8",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "c091c2448bba532404456de4408c6b33129ad6249d6ea959363e95cc2c534362",
+      "tools/rapid-profiler/ordinary-interval/tree.rs": "7233a4570076072f9938171c7ba98a3fc6282b2faad3897831c0d689d0c45287",
+      "tools/rapid-profiler/ordinary-interval/tree/check.rs": "877aeffef2be0db00bafecf27acc4c0fda27a7f8e590f5429590096052ca4d09",
+      "tools/rapid-profiler/ordinary-interval/tree/check/tests.rs": "e718ac63254f9f3b430bcab7b52ff22c142885bb462fa7e2d2a47a7deb28ad08",
+      "tools/rapid-profiler/reference-work/check_output.py": "dcd710575294765ab43952a8d6a18b3c4b9af467b0932eba41218f841fb4afd1",
+      "tools/rapid-profiler/reference-work/test_recipe.py": "b4c5437b6131bc56e15fc86c9d883799dd09827d726e6391c406391cfa3acb88",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "1da7f27fe39af03e8061e91b7b8b89975b455f4b4e965cb507415ede6d158130",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": "b690998214f6d45977550c3694b5a4ad88ea75597f80f49316593163f539b691",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/tree.rs": "77b7145b3c7ac623c7b061ff99ae1019a4d7e1f14836c7a374ad1137db019d57",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests.rs": "54634cad5b01f867ff48f077509d0c31d0b2dbf2921f70b2989d3773b099580f",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native.rs": "8205e69cbfbedd9d98545f27cb2a9f877a8bef418a5ac71116ef2267d80399dc",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs": "e94aadb79349860a8f369dfc5d3dc705a981a3b0285889e44a9b3b9cac740629",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/drain.rs": "6aba4fe205dd9bae93afab10150d0ca07c09fcb0a7b0b827468dc6c8e4cb05e4",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs": "464af707485ae4bff8ffdf0f576a55e457e529664b5e3092a7c25f66f55ba34b",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/postflight.rs": "257accdaa83577269655a27b74d6720dc74236bd719cb813a07960dc1146e684",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs": "036d21dc83c647f91399a26f8ac60079a2a03b202c30f04c9a431ffbe44b86fa",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime.rs": "56362e6122b0044c8ed39787503817b99643c2f78bf858434b8bf2ce3f0f4a18",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": "619c25cb4a0f94346f797562a4c3f23823e2dfba6ac746ccd9fdd025437c8157",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/site.rs": "8c592338f646ab114dc016c66becdab059eba778a7f3eb4d24a79a083bf023f4",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "690b2bfaab7d166c234ed7854f2ff0c2a1932f0ce64b0bbb82132934a7d241aa",
+      "tools/rapid-profiler/src/frontend_native/module.rs": "f893147ba9e48bfe23570cb66c9f26470505da8b9ebf9bd3377ae2c0ac613eff",
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "d5bb9a1ececf4ecb0be449a73899ba4b1495e3c46ac153854a6ed7c1d57430e7",
+      "tools/rapid-profiler/src/frontend_native/ordinary/tree.rs": "f69e205a8ab84dd8764d05b1ee11856e13d041c57eca14988cd5725a0e616c75",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
+      "tools/rapid-profiler/tree-work/check_output.py": "5a8f402c14499c30507826a6972592e24440a5e205e923fa6bf1cf7e3adc7a10",
+      "tools/rapid-profiler/tree-work/check_population.py": "f7d1ce4370b0039ed9949ec4d2a8946eda6aee22dd87c4841b3f8fd8405e8440",
+      "tools/rapid-profiler/tree-work/model.rs": "9ceaf999827a9a1b6d976ffd7def814bdf5258c650a33b7cfbaf3aa63bf570dd",
+      "tools/rapid-profiler/tree-work/test_population.py": "472be46337b541757821e9b9ac90c54f7f390287ce8db0d72801483394881e5f",
+      "tools/rapid-profiler/tree-work/test_recipe.py": "105f82410456f532c4203e8d760b22c121801cdb602e94b288d20d89f4c179d7",
+      "tools/rapid-profiler/tree-work/tree_work.S": "681a273ffd2f2ec3eedd0f85ffdbe4f59fa955e9a5f59da4bde51c77b7de8284",
+      "tools/rapid-profiler/tree-work/truth.rs": "0bd97c0055b3b0d693062db3c34d54289c16601f218854b744c6d08b04dbe016",
+      "tools/rapid-profiler/verify_ordinary_interval.py": "dd1bd88d8b47f74f000ae90a4214ce92b60d01da4da8575b78620f4ca972741c"
+    },
+    "workspace_changes": {
+      "doc/rapid_profiler": {
+        "current": {
+          "ignored": 0,
+          "tests": 38
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 20
+        }
+      },
+      "test/call_tree_truth": {
+        "current": {
+          "ignored": 0,
+          "tests": 13
+        },
+        "previous": null
+      },
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 0,
+          "tests": 76
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 58
+        }
+      },
+      "test/stack_profile_planning": {
+        "current": {
+          "ignored": 0,
+          "tests": 4
+        },
+        "previous": null
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 255
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 248
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 47
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 38
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 8,
+          "tests": 352
+        },
+        "previous": {
+          "ignored": 7,
+          "tests": 328
+        }
+      }
+    }
+  },
   "merged_revision": "3067913e0daf2b98baf9a5989ca468efe9fb797f",
   "methods": {
     "src/trampoline/precontext/tests.rs": {

@@ -163,6 +163,16 @@ fn canonical_pmaxud(instruction: &Instruction, bytes: &[u8]) -> bool {
             [0x66, 0x44, 0x0f, 0x38, 0x3f, 0x26])
 }
 
+// Canonical unmasked EVEX.128.W1 VPXORQ register triples. All32 registers
+// are available in each operand role. Other widths, masks, zeroing/broadcast
+// encodings, memory and added prefixes remain outside this closed family.
+fn canonical_vpxorq128(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
+        && matches!(bytes, [0x62, p0, p1, p2, 0xef, m]
+            if (*p0 & 0x0f) == 0x01 && (*p1 & 0x87) == 0x85
+                && (*p2 & 0xf7) == 0 && (*m & 0xc0) == 0xc0)
+}
+
 // Canonical EVEX.512.W0 VPCMPB register forms. The opmask destination has
 // no extension bits; z/b, non-512 widths, memory and reserved imm8 bits stay closed.
 fn canonical_vpcmpb(instruction: &Instruction, bytes: &[u8]) -> bool {
@@ -189,6 +199,35 @@ fn canonical_vpbroadcastb(instruction: &Instruction, bytes: &[u8]) -> bool {
             if (*p0 & 0x4f) == 0x42 && (*m & 0xc0) == 0xc0)
 }
 
+// VEX.128.F3.0F.WIG VMOVDQU load/register-copy forms only. The validated
+// Code fixes the destination to XMM0..15 and the source to XMM0..15 or m128.
+// Both VEX lengths and both WIG values are equivalent; the CPU calculates
+// the original 64-bit ModRM/SIB/RIP address. No leading legacy/address/segment
+// prefix, store, wider vector, EVEX, or non-reserved vvvv is admitted here.
+fn canonical_vmovdqu128(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::VEX_Vmovdqu_xmm_xmmm128
+        && match bytes {
+            [0xc5, p1, 0x6f, _, ..] => *p1 & 0x7f == 0x7a,
+            [0xc4, p0, p1, 0x6f, _, ..] =>
+                *p0 & 0x1f == 0x01 && *p1 & 0x7f == 0x7a,
+            _ => false,
+        }
+}
+
+// VEX.128.F3.0F.WIG VMOVDQU store/reverse-register-copy only. The
+// validated Code fixes operand zero to XMM0..15 or m128 and operand one to
+// XMM0..15. The CPU executes the original ModRM/SIB/RIP effective address.
+// No leading legacy/address/segment prefix, wider vector or EVEX is added.
+fn canonical_vmovdqu128_store(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::VEX_Vmovdqu_xmmm128_xmm
+        && match bytes {
+            [0xc5, p1, 0x7f, _, ..] => *p1 & 0x7f == 0x7a,
+            [0xc4, p0, p1, 0x7f, _, ..] =>
+                *p0 & 0x1f == 0x01 && *p1 & 0x7f == 0x7a,
+            _ => false,
+        }
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -207,12 +246,14 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
             [0xf3, 0x48 | 0x49, 0x0f, 0x1e, m] if (*m & 0xf8) == 0xc8) { return Ok(out); }
     } else if matches!(instruction.code(), Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm) {
         if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64 {
+        if !canonical_vpxorq128(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpbroadcastb_zmm_k1z_r32 {
         if !canonical_vpbroadcastb(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::VEX_Vmovdqu_xmm_xmmm128 {
-        // Exact VEX.128 load XMM0 <- 16 bytes at [RSI]; upper ZMM0 bits clear.
-        // No added address, register, prefix, store or wider VEX form.
-        if source[..instruction.len()] != [0xc5, 0xfa, 0x6f, 0x06] { return Ok(out); }
+        if !canonical_vmovdqu128(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::VEX_Vmovdqu_xmmm128_xmm {
+        if !canonical_vmovdqu128_store(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512 {
         // Exact observed unmasked EVEX.512 load, ZMM17 <- 64 bytes at [RDI].
         // No other EVEX, mask, width, register, address or added prefix is granted.
@@ -526,10 +567,12 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::VEX_Vmovdqu_xmm_xmmm128
+        | Code::VEX_Vmovdqu_xmmm128_xmm
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
+        | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
         | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.

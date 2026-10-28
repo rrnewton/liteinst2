@@ -240,10 +240,10 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 32534,
+      "bytes": 34768,
       "origin": "qualified exact LOCK CMPXCHG successor",
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "63dbbf6ecab18fe33f2efcb09b04273bb65dd58699e5ec0d7c1ef31e0218296d"
+      "sha256": "d689c210b787e0ca118bb170315c4f8901e5d3124880d8b0e2c8bca50d62f503"
     },
     {
       "bytes": 2900,
@@ -252,10 +252,10 @@
       "sha256": "e8927647513805dc1684b56912cccc1a9f54260e65a267c7bbfcd3cb53831b8e"
     },
     {
-      "bytes": 38000,
+      "bytes": 38325,
       "origin": "committed composition input",
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "79626dd9e16e366866e787118ac66d481ad4534e8e3767eee9ed098d1904c269"
+      "sha256": "a313d31eea2b5980f7db86c1d56e7bc49c4acf1649cd573ea3192ddcb317551c"
     },
     {
       "bytes": 8010,

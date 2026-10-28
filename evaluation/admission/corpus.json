@@ -6123,7 +6123,7 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 20
+        "tests": 38
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6164,6 +6164,10 @@
       "test/call_return_oracle": {
         "ignored": 0,
         "tests": 36
+      },
+      "test/call_tree_truth": {
+        "ignored": 0,
+        "tests": 13
       },
       "test/checkpoint": {
         "ignored": 0,
@@ -6279,7 +6283,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 0,
-        "tests": 58
+        "tests": 76
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6417,6 +6421,10 @@
         "ignored": 0,
         "tests": 2
       },
+      "test/stack_profile_planning": {
+        "ignored": 0,
+        "tests": 4
+      },
       "test/stress": {
         "ignored": 3,
         "tests": 7
@@ -6451,7 +6459,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 248
+        "tests": 255
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6487,11 +6495,11 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 0,
-        "tests": 38
+        "tests": 47
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 7,
-        "tests": 328
+        "ignored": 8,
+        "tests": 352
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

@@ -684,3 +684,132 @@ All three real matrices remain failed 3/5: [ef0538](results/native-pages-ef0538e
 Each JSON retains its exact revision, hardware, reproduction command, numeric outcomes and artifact/capture bindings. Run each native evaluator on one reserved CPU. The 49-control evaluator requires a fresh passed positive receipt at that same revision. Full B2/B3 completion remains open.
 
 The [required checks at 3f6](results/20261028T083941.256858Z-checks-3f6b56b94c26.json) passed: 350 recorder tests, formatting, strict workspace Clippy, 2,741 workspace tests with 11 unchanged ignored tests across 101 harnesses, workspace check and all 1,039 serial launch tests across 27 harnesses. The workspace run took 332.392 seconds and serial took 138.166 seconds within their unchanged 900/180-second limits. Saved log hashes, command evidence and the strict qualification replay agree; source and configuration were unchanged. This evidence publication changes only this report and the numeric result files.
+
+## VEX128 load family and mapping lookup (claims 1 and 4)
+
+ADDS: canonical VEX.128 VMOVDQU loads and register copies across the XMM registers and ordinary 64-bit addressing forms, plus binary search over validated mapping intervals. The CPU executes these VMOVDQU instructions at their original addresses. Map acquisition, alias checks, permissions and failure handling are unchanged.
+
+At `7bb9b77c905cece21ca77a271a7c2ed905579641`, the [family oracle](results/20261028T091604.545475Z-page-selected-vmovdqu128-family-7bb9b77c905c.json) passes 128 new structural pairs in eight cohorts, four genuine failed reads, 1,608 refusals and 264 actual-before queries. Coverage includes all 16 XMM and base registers, all usable index registers, four scales, real RSP/RIP/absolute operands, and every fetch tail for lengths 4–10. The [companion](results/20261028T091711.111372Z-page-selected-vmovdqu128-7bb9b77c905c.json) retains its 13 positive pairs and two genuine failed reads. Twelve formerly refused byte encodings remain as explicit typed/NONE promotions and executed family cases. Complete native/TF architectural comparisons remain in the authenticated C oracle; the portable reader independently checks the protocol, record extent and before-state queries. The first [family](results/20261028T090422.779554Z-page-selected-vmovdqu128-family-b4ae49c8e02f.json) and [companion](results/20261028T090502.097403Z-page-selected-vmovdqu128-b4ae49c8e02f.json) runs at `b4ae49c8e02f2e56ec078bdde18794558ffe7a53` also pass.
+
+The [mapping oracle](results/20261028T091449.515492Z-page-selected-mapping-lookup-7bb9b77c905c.json) passes 115,199 queries across 46 layouts: 69,060 hits and 46,139 misses agree with both the predecessor and literal interval expectations. The complete row buffer and count stay unchanged. The [map-phase regressions](results/20261028T091506.558650Z-page-selected-maps-7bb9b77c905c.json) pass nine map cases, four cache/capacity cohorts and 14 failed-operation controls. The [native-epoch refusal](results/native-pages-negative-7bb9b77.json) retains terminal code 602 and verifies all 171 admissions closed; the refused operation does not complete. These finite checks establish no application speedup.
+
+The release program matrices at [b4ae49c](results/native-pages-b4ae49c.json) and [7bb9b77](results/native-pages-7bb9b77.json) remain failed 3/5. Both `true` configurations and the boundary fixture complete. Default `ls` exits -9 without a terminal report; disabled-rseq `ls` refuses `c5fa7f07`, VMOVDQU [RDI],XMM0, before source opening. Both failures remain visible. On the recorded AMD EPYC 9D85, the final completed cases report:
+
+| Release case | Whole gated process (s) | First admission service (µs) | Median of 16 same-page revisits (µs) |
+| --- | ---: | ---: | ---: |
+| true, default rseq |10.068634 |130.186 |80.2805 |
+| true, rseq disabled |7.672333 |81.933 |82.814 |
+| boundary, rseq disabled |1.318513 |83.766 |84.2565 |
+
+Admission intervals use CLOCK_MONOTONIC_RAW and exclude signal delivery; revisits refer to the same address/allocation/generation. Whole-process time includes namespace preparation. These are single shared-host observations, with all raw intervals retained in JSON; they do not establish steady-state application throughput or a speedup. The original resource bounds remain. Every receipt records exact revision, hardware, command and artifact identities; native evaluators run on one reserved CPU. The wider store family and full B2/B3/B4 remain unfinished.
+
+The [required checks at 7bb9](results/20261028T092000.444175Z-checks-7bb9b77c905c.json) pass: 350 recorder tests, formatting, strict workspace Clippy, 2,741 workspace tests with zero failures and 11 unchanged ignores across 101 harnesses, workspace check, and 1,039 serial launch tests across 27 harnesses. Workspace and serial runs took 340.311 and 127.537 seconds within their unchanged 900/180-second limits. Saved log hashes and strict qualification replay agree; source and configuration stayed unchanged. This evidence publication changes only this report and ten result files.
+
+## Canonical VEX128 stores on merged caller-child main
+
+Source `acd695058dd44d1a8126fc9ecf8e172cd31ddd70` includes main
+`e7972d45a99a2b1ad9b65752c1ada84ff2821bd2`. Page mode now executes canonical
+VEX.128.F3.0F.WIG VMOVDQU stores and reverse register copies at their original
+instruction and operand addresses. Memory forms require a checked 16-byte write
+range; register destinations retain NONE. Existing owner, mapping, alias and rseq
+checks are unchanged. This supports claims 1 and 4 within the existing cooperative
+single-thread execution envelope; it does not establish complete B2/B3/B4 coverage.
+
+The release [store oracle](results/20261028T094301.895884Z-page-selected-vmovdqu128-store-acd695058dd4.json)
+passes 128 new structural pairs (94 memory, 34 register) plus eight positive startup
+pairs. It observes eight separately failed writes, 272 actual-before queries,
+2,400 refusals, and three registered programs: one disjoint store completes, while
+NX and genuine TRACE overlap are refused before effect. Complete native/TF memory
+post-images match; every byte outside the possible write range stays unchanged.
+Faults retain failed-operation status, with no assumption that split stores are
+atomic. Full architectural comparisons and the original 5 CPU-second, 15 wall-second,
+512 MiB and 16 MiB record limits remain. All eight actual fixture ELFs expose a
+16,476,168-byte complete record, below the unchanged cap.
+
+The [load family](results/20261028T094357.394265Z-page-selected-vmovdqu128-family-acd695058dd4.json)
+and [original load companion](results/20261028T094434.703086Z-page-selected-vmovdqu128-acd695058dd4.json)
+retain 136/13 positive pairs and four/two genuine failed reads. Their old store
+refusal row is now an explicit Code1840/RANGE16 query and executes in the new store
+corpus; the remaining refusals and all twelve prior NONE promotions are retained.
+The unchanged [17-case rseq cohort](results/20261028T094446.414828Z-page-selected-rseq-application-fast-memset-acd695058dd4.json),
+[115,199-query mapping oracle](results/20261028T094516.859074Z-page-selected-mapping-lookup-acd695058dd4.json)
+and [27-process maps regression](results/20261028T094524.335457Z-page-selected-maps-acd695058dd4.json)
+also pass. Each receipt records the exact reproduction command, revision, hardware,
+inputs and compact numeric observations; full records remain private. The
+[first build attempt](results/20261028T094214.000475Z-page-selected-vmovdqu128-store-849471b7eb53.json)
+remains failed: GCC rejected misleading indentation before native execution. The
+correction adds braces around an unchanged loop body; warnings remain errors.
+
+The [release real-program matrix](results/native-pages-acd6950.json) remains **3/5**.
+Both `true` configurations and the boundary program complete. Both `ls -d .`
+configurations exit -9 without a terminal report; the receipt does not establish
+the kill's exact cause. These failures receive no completion or performance credit.
+
+| Program | Gated whole process (s) | First admission (ns) | Median of 16 revisits (ns) | Outcome |
+| --- | ---: | ---: | ---: | --- |
+| true, default rseq | 11.012919151 | 81,862 | 83,926 | complete |
+| true, rseq disabled | 8.604918058 | 83,896 | 85,503.5 | complete |
+| ls, default rseq | 30.357592083 | — | — | failed, exit -9 |
+| ls, rseq disabled | 30.330595353 | — | — | failed, exit -9 |
+| boundary | 5.516598652 | 85,478 | 152,879.5 | complete |
+
+These are single shared-host observations on an AMD EPYC 9D85 158-Core Processor,
+x86-64, GCC 11.5.0, with one reserved CPU. The receipt records the exact kernel.
+Whole-process time includes namespace preparation. Admission/revisit service uses
+CLOCK_MONOTONIC_RAW and excludes signal delivery; revisits retain the same address,
+allocation and generation. No application speedup or steady-state throughput is
+claimed. All 24 commands and 48 captures, 421 source identities, dependency joins and the
+unchanged completion comparator were replayed against the retained release bridge.
+
+Independent saved-data review of the five regression profiles authenticates 265
+commands, 77 native processes and 682 captures, including all 42 expected failed
+operations. Exact public projections and the unchanged readers replay. The mapping
+oracle's retained 84-byte wrapper implements the same unsigned binary search as
+the reviewed source. The load suites retain the reviewed C architectural oracle;
+their portable readers are not a second complete architectural implementation.
+
+Independent review of the new store records replayed 144 successful architectural
+samples (128 new cases and 16 process startups), all eight genuine failed stores,
+and all 272 actual-before footprint queries. It checked complete retained
+GPR/flags, kernel FP and live XSAVE state, literal vector effects, two-page memory
+images, and the actual seed/capture/restorer instructions in all eight ELFs.
+Inactive arena preservation remains the C oracle's check; the independent memory
+replay covers the recorded active pages.
+
+The [initial required-check attempt](results/20261028T094805.039943Z-checks-acd695058dd4.json)
+remains failed. The workspace command exited zero, but the evidence parser rejected
+the merged core's 255-test ptrace-child cohort. Saved-log diagnosis also found
+rustdoc's two complete groups of 2 and 36 tests for the 38-test profiler cohort.
+Recorder tests, formatting and strict Clippy passed in that attempt; workspace
+evidence did not qualify, and workspace check and serial launch did not run.
+
+The parser correction is `043031d6a1d6f9741c17d28ceb4470e719a6415c`. Its two-file
+diff changes only admission-output parsing and parser tests; runtime, native
+fixtures and native evaluation scripts remain byte-identical to `acd6950`. It
+requires the exact new core cohort and both complete, unfiltered rustdoc groups.
+Twenty-nine focused parser tests and independent malformed-input controls pass.
+Saved-log replay is calibration only; the earlier failed validation is not
+reclassified.
+
+Fresh [required checks](results/20261028T100512.879375Z-checks-043031d6a1d6.json)
+all pass at `043031d6`: 350 recorder tests, formatting, strict workspace Clippy,
+2,833 workspace tests with 12 ignored across 103 harnesses, workspace check, and
+1,039 serial launch tests across 27 harnesses. Workspace/serial time is
+348.338/128.934 seconds under the unchanged 900/180-second caps. Sources and
+configuration remained unchanged; process cleanup completed for all six commands.
+The serial run qualifies all 50 selected native cases, 15 dynamic admission
+fixtures, 388 dynamic matrix cases and 110 native validation fixtures.
+
+## EVEX128 register XOR (claims 1 and 4)
+
+Source `2df36d95be28500ebb4656a3ab7bc1ab04c14dbf` adds canonical unmasked EVEX128 VPXORQ register triples at their original PCs. Its exact Code2459/byte gate admits all 32 registers in each operand role and reports no memory write. Memory, masks, other widths and prefixed encodings remain refused. The CPU computes the original sources' low 128-bit XOR and clears destination bits 128..511; publication, continuation and rseq guards are unchanged.
+
+The [reproducer](page_selected_vpxorq128.py) passed **102 state pairs** (96 new, six startup), **936 refusals**, **192 actual-before NONE queries** and six retained typed-promotion controls. Cases cover every register role, five alias classes and all six fetch positions; this is structural coverage, not exhaustive native execution of all 32,768 triples. Full native/TF GPR, flags, initialized kernelFP/liveXSAVE, all 32 ZMM/eight K, source, stack and data comparisons remain mandatory. All original per-process resource limits and expected outcomes are preserved. [Exact result](results/20261028T102649.156267Z-page-selected-vpxorq128-2df36d95be28.json).
+
+At the same revision, the unchanged [VPCMPB cohort](results/20261028T102714.520412Z-page-selected-vpcmpb-2df36d95be28.json) passed 189 pairs, 1,071 refusals and 360 queries; the [generic oracle](results/20261028T102741.849707Z-page-selected-generic-oracle-2df36d95be28.json) passed 21 positive pairs and retained three genuine failed operations; the [rseq application cohort](results/20261028T102750.970236Z-page-selected-rseq-application-fast-memset-2df36d95be28.json) passed its original 17 finite cases. Reproducers, revision, hardware and capture identities are in each numeric receipt; full ordered commands are retained privately and hash-bound.
+
+The [release program matrix](results/native-pages-2df36d9.json) still **fails overall: only 3/5 cases complete**. Both dynamically linked true profiles and the boundary fixture complete with exact output and closed admissions. Default ls exits−9 without a terminal report; its kill cause is unproven. Disabled-rseq ls advances beyond VPXORQ, then refuses `62f17d407407`, VPCMPEQB K0,ZMM16,[RDI], before source opening/TRACE after 204,754 completed steps and 5,327 verified admission closes. Neither ls case receives completion or performance credit.
+
+For completed default true, first admission is 79,849 ns and the median of 16 same-page/allocation/generation revisits is 84,972.5 ns; disabled-rseq true is 81,251 ns/80,686 ns and the boundary fixture 80,851 ns/81,076.5 ns. These are single shared-host release observations on AMD EPYC 9D85 with GCC 11.5.0 and one reserved CPU. Service uses CLOCK_MONOTONIC_RAW and excludes signal delivery; whole-process times include namespace preparation. No application speedup or throughput claim follows. Full B2/B3/B4, configured all-class callbacks, no-faulting page mode and general application lifecycle remain open.
+
+All six [required checks](results/20261028T102926.809142Z-checks-2df36d95be28.json) pass at the same source revision: 350 recorder tests, fmt, strict workspace/all-target/all-feature Clippy, 2,833 workspace tests with 0 failures and 12 ignored across 103 harnesses, workspace check, and 1,039 serial launch tests with 0 failures across 27 harnesses. Workspace 333.847 s and serial 130.329 s remain inside the original 900/180 s limits. Source, configuration and process cleanup are unchanged; all 50 selected native, 15 dynamic-admission, 388 dynamic-matrix and 110 native-validation serial cases qualify.

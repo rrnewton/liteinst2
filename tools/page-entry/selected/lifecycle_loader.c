@@ -82,7 +82,16 @@ static struct owned_page *current(uintptr_t address) {
     return 0;
 }
 static const struct map_row *mapping(uintptr_t address) {
-    for (size_t i=0;i<row_count;i++) if (rows[i].first<=address && address<rows[i].end) return &rows[i];
+    /* Only complete successful acquisitions reach callers: their rows are
+       ordered, disjoint half-open intervals. Failed parses are never queried. */
+    size_t first=0,last=row_count;
+    while (first<last) {
+        size_t middle=first+(last-first)/2;
+        const struct map_row *r=&rows[middle];
+        if (address<r->first) last=middle;
+        else if (address>=r->end) first=middle+1;
+        else return r;
+    }
     return 0;
 }
 /* The fallible cores retain the old predicates/codes. Legacy callers keep

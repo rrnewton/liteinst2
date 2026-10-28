@@ -26,13 +26,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 13,
-        "refusals": 146,
+        "refusals": 133,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_TF_PASS pairs=13 loads=12 selftest=1 old_refusal_bytes=113 new_refusal_bytes=33 footprint_queries=24 full_state=13 full_memory=13 live_endpoints=13\n"
+      "stdout": "LI2_VMOVDQU128_TF_PASS pairs=13 loads=12 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=24 full_state=13 full_memory=13 live_endpoints=13\n"
     },
     {
       "argv": [
@@ -55,7 +55,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 13,
-        "refusals": 146,
+        "refusals": 133,
         "version": 1
       },
       "name": "full-read-fault",
@@ -84,7 +84,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 13,
-        "refusals": 146,
+        "refusals": 133,
         "version": 1
       },
       "name": "cross-read-fault",
@@ -99,10 +99,11 @@
   ],
   "negative_endpoint": "Two real m128 read faults at original PC: fully inaccessible operand and8 readable bytes followed by8 inaccessible bytes. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.",
   "new_load_pairs_total": 12,
-  "new_refusal_count": 33,
+  "new_refusal_count": 20,
   "old_refusal_count": 113,
+  "promoted_refusal_count": 13,
   "prospective_only": true,
-  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000 + 96 + 9024; original storage plus complete CPUID/BV/fault and actual-before query trailers",
+  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000 + 96 + 9024; original storage plus complete CPUID/BV/fault and actual-before query trailers + 3808-byte complete supplied-promotion trailer",
   "record_header_fields": [
     "magic",
     "version",
@@ -125,5 +126,5 @@
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
   "schema_version": 1,
-  "scope": "Only exact VEX.128 VMOVDQU XMM0,[RSI]c5fa6f06/Code1598; no other VEX authority, real-program completion or performance claim."
+  "scope": "This companion retains the exact c5fa6f06 twelve-load native cohort and two genuine failed reads. The product now admits canonical VEX128 Code1598; twelve exact retained neighbor rows require typed/NONE acceptance and separate family native coverage. No other VEX/EVEX, completion or performance claim. The retained c5fa7f06 row additionally requires Code1840/FALLTHROUGH/SIMD and a supplied RANGE16, with native coverage required separately in store corpus row72. Each process requires all12 old supplied NONE queries plus this one RANGE query; no store executes in this load companion."
 }
