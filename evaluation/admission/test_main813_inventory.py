@@ -362,7 +362,7 @@ class Main813InventoryTests(unittest.TestCase):
                     main813.source_before_7cdc(path, bad, 'changed')
 
         self.assertEqual(main813.digest(main813.before_43d7(actual)), main813.CURRENT7CDC)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_0df8(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 2910, 32))
         self.assertEqual(sum(len(x) for x in main813.MAIN43D7['added_methods'].values()), 39)
@@ -414,6 +414,57 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(len(metadata['added_calibration_tests']), 12)
         self.assertTrue(all(metadata['assignments']['CALIBRATION_TESTS'][k] == v
                             for k, v in metadata['previous_calibration_tests'].items()))
+
+        self.assertEqual(main813.digest(main813.before_0df8(actual)), main813.CURRENT43D7)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 2938, 33))
+        self.assertEqual(sum(len(x) for x in main813.MAIN0DF8['added_methods'].values()), 28)
+        self.assertEqual(sum(len(main813.MAIN0DF8['added_methods'][p]) * len(v)
+                             for p, v in main813.MAIN0DF8['instances'].items()), 28)
+        self.assertEqual(main813.MAIN0DF8['declared_delta'],
+                         {'rust_tests': 28, 'doctests': 0, 'ignored': 1, 'harnesses': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_0df8(actual))
+        for name, change in main813.MAIN0DF8['workspace_changes'].items():
+            self.assertEqual(current_rows[name], change['current'])
+            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
+                          True, float(change['current']['tests'])):
+                changed = copy.deepcopy(actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(main0df8_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+            changed = copy.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.subTest(main0df8_missing=name), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        for key in actual:
+            changed = copy.deepcopy(actual); changed[key] = None
+            with self.subTest(main0df8_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main813.before_0df8(changed)
+        for path in main813.MAIN0DF8['sources']:
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == main813.ROOT / path:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main0df8_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        for path, row in main813.MAIN0DF8['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_0df8(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main0df8_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_0df8(path, bad, 'changed')
+
+        self.assertEqual(sum(len(x) for x in main813.MAIN0DF8['doctests'].values()), 0)
+        metadata = main813.MAIN0DF8['python_metadata']['assignments']
+        self.assertEqual((len(metadata['ADMISSION']), len(metadata['STATE_CONTROLS']),
+                          len(metadata['WORK_CONTROLS'])), (24, 4, 7))
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'

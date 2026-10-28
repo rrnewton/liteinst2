@@ -79,7 +79,7 @@ def before_ac0963(declared):
 
 
 def peel_ac0963(declared):
-    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.LATEST) else declared
+    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.CURRENT43D7, main813.LATEST) else declared
 
 
 def source_before_cc846(path, data, error):
