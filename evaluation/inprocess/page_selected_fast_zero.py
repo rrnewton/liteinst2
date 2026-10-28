@@ -126,7 +126,7 @@ def main():
             if name and Path(name).resolve().is_relative_to(ROOT):pin(name)
         products=builder.prepare()
         gdb_environment=dict(builder.environment,XDG_CACHE_HOME=str(private/'gdb-cache'))
-        for key in ('gdb','objdump'):
+        for key in ('gdb','objdump','objcopy'):
             builder.tools[key]=pin(shutil.which(key,path=ENV['PATH']))
             _,out,err=run('version-'+key,[builder.tools[key],'--version'],profile='metadata',
                 env=gdb_environment if key=='gdb' else builder.environment)

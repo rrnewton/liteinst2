@@ -116,18 +116,30 @@ def extract(builder,products,root,private,pin,binary,run,record,pending):
          '-fno-builtin','-fno-tree-loop-distribute-patterns','-fno-tree-vectorize','-ffunction-sections','-fdata-sections',
          '-DLI2_TF_HANDOFF=1','-DLI2_REGISTER_RUN=1','-DLI2_MAPS_PHASE_REUSE=1','-DLI2_RSEQ_INACTIVE=1')),
          'exact optimized production flags and macros')
-    full=output/'bridge-fast.o';leaf=output/'bridge-memset.o'
+    full=output/'bridge-fast.o';raw=output/'bridge-memset-debug.o';leaf=output/'bridge-memset.o'
     command=[builder.tools['cc'],*flags,'-DLI2_FAST_MEMSET=1','-c',pin(selected.parent/'bridge.c'),'-o',full]
     command=list(map(str,command));state=record['extraction']=dict(status='failed',recipe=fact(script))
     headers('bridge-headers',command,builder,pin,run,state)
     compile_retained('bridge-object',command,run,binary,builder,pending,record['final_errors'])
     before=memset_body(full)
-    compile_retained('memset-extract',[str(builder.tools['ld']),'-r','--gc-sections','--undefined=memset',str(full),'-o',str(leaf)],
+    compile_retained('memset-extract',[str(builder.tools['ld']),'-r','--gc-sections','--undefined=memset',str(full),'-o',str(raw)],
                      run,binary,builder,pending,record['final_errors'])
+    need(memset_body(raw)['body']==before['body'],'actual bridge body survives section extraction exactly')
+    # GNU ld preserves debug relocations and their now-unused undefined symbols.
+    # Remove that metadata from a retained copy; keep the final leaf guard strict.
+    need(not leaf.exists(),'unique stripped helper output');pending.append(leaf)
+    try:
+        run('memset-strip',[builder.tools['objcopy'],'--strip-debug','--strip-unneeded','--keep-symbol=memset',raw,leaf],
+            profile='fixture_link',env=builder.environment)
+    finally:
+        try:
+            if leaf.is_file():binary(leaf)
+        except BaseException as exc:record['final_errors'].append('partial stripped artifact retention: '+repr(exc))
     after=memset_body(leaf,True);need(before['body']==after['body'],'actual bridge body survives extraction exactly')
     _,out,err=run('memset-undefined',[builder.tools['nm'],'-u',leaf],profile='inspect',env=builder.environment)
     need(out==err==b'','no unresolved extracted helper')
-    state.update(status='passed',whole_object=fact(full),object=fact(leaf),function={k:v for k,v in after.items()if k!='body'})
+    state.update(status='passed',whole_object=fact(full),debug_object=fact(raw),object=fact(leaf),
+                 function={k:v for k,v in after.items()if k!='body'})
     return leaf,after['body']
 
 
