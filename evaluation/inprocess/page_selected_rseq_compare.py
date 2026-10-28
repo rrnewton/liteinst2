@@ -36,8 +36,8 @@ def observed_data(v, owner, pid):
          got_pid == tid == pid and v[7:12] == [1,1,0,0,0],
          'actual complete owned rseq page and singleton identity')
     need(v[12] < 1 << 31 and v[13:18] == [0,0,0,0,0] and v[18] > 0 and v[19] > 0 and
-         v[20:23] == [1,1,1] and v[23] > 0 and v[24] > 0 and
-         v[26] in (1,2) and v[27] == int(v[26] == 1),
+         v[20:23] == [1,1,1] and v[23] > 0 and v[24] == 0 and v[25] > 0 and
+         v[26:28] == [0,1],
          'complete actual maps acquisition/read/close prefix')
     return [1,allocation,generation,offset]
 
@@ -88,7 +88,7 @@ def completed(loader, repeat, run, c, r, pid):
         if not t[4]:
             need(observed_data(r['after'], owner, pid) == identity == r['identity'] and
                  r['before'][:7] == r['after'][:7], 'same actual registration mapping before and after kernel')
-            need(r['after'][26:] == [1,1] and r['after'][23] > r['before'][23] and
+            need(r['after'][26:] == [0,1] and r['after'][23] > r['before'][23] and
                  r['after'][25] > r['before'][25] and r['after'][24] == r['before'][24],
                  'actual raw registration invalidated maps before the fresh post-kernel query')
         else:
