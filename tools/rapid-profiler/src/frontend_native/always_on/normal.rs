@@ -3,6 +3,8 @@
 //! caller checkpoint acknowledges return. Neither acknowledgement observes C3
 //! execution or grants executable reclamation. All code owners are process-lived.
 use super::*;
+mod two_callers;
+pub use two_callers::PreparedTwoCallerNormalController;
 
 const CALLS: usize = EVENTS / 2;
 
@@ -271,7 +273,7 @@ struct NormalState {
 
 // A lost/failed handle and actual TLS teardown must not cancel a pending model
 // frame or release a FunctionClosed permit. Explicit empty detach is the only
-// path that takes/drops this allocation. At most one lifetime registration exists.
+// path that takes/drops this allocation. Each TLS contains at most one attachment.
 struct Storage(Option<Box<NormalState>>);
 impl Drop for Storage {
     fn drop(&mut self) {
@@ -315,6 +317,16 @@ impl NormalClient {
         if !timing::supported() {
             return Err(error(Cause::ClockProfile));
         }
+        self.attach_ready(registration, stack, journal)
+    }
+    // Both public unsafe routes have authenticated their immutable profile,
+    // process, limits, journal and clock under a live ControllerScope first.
+    fn attach_ready(
+        &self,
+        registration: u64,
+        stack: ReadableStack,
+        journal: IntervalJournal,
+    ) -> Result<NormalThread, BridgeError> {
         NORMAL
             .try_with(|cell| {
                 if NORMAL_POISON.get() {
@@ -355,6 +367,11 @@ impl NormalClient {
             })
             .unwrap_or(Err(error(Cause::Attachment)))
     }
+}
+
+fn normal_binding_matches(binding: &Binding) -> bool {
+    (binding.site.is_normal() && binding.limits.threads == 1 && binding.limits.depth == 1)
+        || two_callers::binding_matches(binding)
 }
 
 fn stack_word_ok(stack: &ReadableStack, rsp: u64, word: u64) -> bool {
@@ -534,7 +551,7 @@ impl NormalState {
         entry: bool,
     ) -> Result<u64, BridgeError> {
         self.binding.process()?;
-        if !self.binding.site.is_normal()
+        if !normal_binding_matches(&self.binding)
             || self.actual_thread != thread::current().id()
             || self.tid != tid()
             || context.stack_pointer < self.stack.start
@@ -883,7 +900,7 @@ impl NormalThread {
             && s.tid == self.tid
             && s.actual_thread == self.thread
             && Arc::ptr_eq(&self.key, &s.binding.key)
-            && s.binding.site.is_normal()
+            && normal_binding_matches(&s.binding)
     }
     /// Snapshot only; a pending pre-RET remains pending and holds its owner.
     pub fn totals(&self) -> Result<NormalTotals, BridgeError> {

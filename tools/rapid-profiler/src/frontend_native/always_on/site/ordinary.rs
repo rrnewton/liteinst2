@@ -23,8 +23,10 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 mod normal;
+mod two_callers;
 mod whole;
 pub use normal::{InstalledNormalSite, NormalSitePreparation};
+pub use two_callers::{InstalledTwoCallerNormalSite, TwoCallerNormalSitePreparation};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum PreparationPolicy {
@@ -424,6 +426,7 @@ impl OrdinarySitePreparation {
 enum CallbackProfile<'a> {
     Gated(&'a Arc<CallGate>),
     Normal,
+    NormalTwoCallers,
 }
 
 // The two sealed factories share byte/CFG/overlay checks, not caller authority.
@@ -459,6 +462,7 @@ fn prepare_source(
                     || source.contains(gate.continuation())
             }
             CallbackProfile::Normal => false,
+            CallbackProfile::NormalTwoCallers => false,
         }
     {
         return Err(SiteError::Correspondence);
@@ -495,7 +499,10 @@ fn prepare_source(
         .enumerate()
         .map(|(i, &pc)| {
             let (control, writer) = ProbeControl::new_managed_bound(
-                if matches!(profile, CallbackProfile::Normal) {
+                if matches!(
+                    profile,
+                    CallbackProfile::Normal | CallbackProfile::NormalTwoCallers
+                ) {
                     if i == 0 {
                         super::super::normal::entry_callback
                     } else {
@@ -730,6 +737,7 @@ fn prepare_source(
             Some(Arc::clone(gate)),
         ),
         CallbackProfile::Normal => (SiteKind::NormalCaller, 0, None),
+        CallbackProfile::NormalTwoCallers => (SiteKind::NormalTwoCallers, 0, None),
     };
     let site = Arc::new(Site {
         kind,
