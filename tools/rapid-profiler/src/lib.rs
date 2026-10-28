@@ -35,6 +35,10 @@ pub mod generation;
 /// Lossless counter endpoints and exact arithmetic; no acquisition or activation.
 pub mod counter_reading;
 
+/// One-shot Linux raw counter acquisition around a whole caller-supplied operation.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub mod counter_probe;
+
 mod interval;
 mod pmu;
 

@@ -204,6 +204,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__); ap.add_argument('--revision', required=True)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+name, type=Path, required=True)
     ap.add_argument('--cache-work', action='store_true', help='also require twelve loaded cache-model state pairs; requires --exact-work')
+    ap.add_argument('--counter-probe', action='store_true', help='also require twelve raw whole-original-API counter observations; requires --cache-work')
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
     ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
@@ -220,6 +221,7 @@ def main():
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists()
     assert raw.parent.resolve(strict=True) == raw.parent
     assert not a.cache_work or a.exact_work
+    assert not a.counter_probe or a.cache_work
     assert not a.concurrent_epochs or a.exact_work
     assert not a.retire_epochs or a.concurrent_epochs
     assert not a.drain_completed or a.retire_epochs
@@ -239,6 +241,11 @@ def main():
     result['optional_backoff_control_requested'] = a.optional_backoff_control
     result['reference_timing_requested'] = a.reference_timing
     result['cache_work_requested'] = a.cache_work
+    result['counter_probe_requested'] = a.counter_probe
+    if a.counter_probe:
+        result['counter_probe'] = dict(status='UNRUN', stage='UNRUN',
+            hardware_accuracy='unqualified', model11h_semantics='unqualified',
+            scope='raw event availability and full-running reads around the whole original API; no cache-model equality')
     if a.cache_work:
         result['cache_work'] = dict(status='UNRUN', stage='UNRUN',
             scope='exact original architectural operand reads replayed through a declared virtual-address cache model; no hardware-cache, timing-accuracy or performance claim')
@@ -281,6 +288,9 @@ def main():
         def command(argv): return subprocess.check_output(argv, cwd=repo, env=env, timeout=15).decode('ascii')
         def git(*argv): return command([str(tools['git']), '-C', str(repo), *argv])
         names = ['Cargo.toml', 'Cargo.lock', 'tools/rapid-profiler/Cargo.toml', 'tools/rapid-profiler/ordinary-interval/main.rs',
+            'tools/rapid-profiler/src/counter_probe.rs', 'tools/rapid-profiler/src/counter_probe/tests.rs',
+            'tools/rapid-profiler/src/counter_reading.rs', 'tools/rapid-profiler/src/lib.rs',
+            'tools/rapid-profiler/ordinary-interval/counter.rs',
             'tools/rapid-profiler/native-interval/main.rs', 'tools/rapid-profiler/native-interval/ordinary.rs',
             'tests/support/native_ordinary.rs', 'tests/support/native_interval_oracle.rs',
             'tests/support/native_cache.rs', 'tools/rapid-profiler/native-interval/cache.rs',
@@ -376,6 +386,9 @@ def main():
                 'tools/rapid-profiler/reference-work/check_output.py',
                 'tools/rapid-profiler/reference-work/test_recipe.py',
                 'tools/rapid-profiler/reference-work/README.md'])
+        if a.counter_probe:
+            names.extend(['tools/rapid-profiler/counter-work/check_output.py',
+                'tools/rapid-profiler/counter-work/test_recipe.py', 'tools/rapid-profiler/counter-work/README.md'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -780,6 +793,24 @@ def main():
                     addressing='actual virtual line number; set = floor(address/64) modulo 4',
                     events='all original subject demand operand reads including count and RET; no instruction fetch or observer accesses'),
                 source_attested='exact whole input/source and ordered original PCs, actual load operands/results, DEC/JNZ and return/stack; shared full-state candidate comparison and exact gate/Report joins; simulator and independent reuse-distance agree per event')
+        if a.counter_probe:
+            probe = result['counter_probe']; probe.update(status='FAILED', stage='untraced')
+            spec = importlib.util.spec_from_file_location('counter_check', repo/'tools/rapid-profiler/counter-work/check_output.py')
+            counter_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(counter_checker)
+            directory = raw/'counter-probe-output'
+            result['commands'].append(['$REPO/target/release/ordinary-interval', 'counter-cache-probe', '$RAW/cache-candidate.so', '$RAW/cache-trusted.so', '$RAW/counter-probe-output'])
+            try:
+                observed = stage('counter-probe', [str(binary), 'counter-cache-probe', str(cache_candidate), str(cache_trusted), str(directory)], 20, 30, MIB)
+            finally:
+                # A refusal remains a failed required stage. Preserve its finite
+                # raw export without changing stage's existing exit/closure gates.
+                table_names = ('population.csv', 'counters.csv', 'operations.csv')
+                if all((directory/name).is_file() for name in table_names):
+                    terminal = raw/'counter-probe'
+                    parsed = counter_checker.directory(directory, (terminal/'stdout.txt').read_bytes(), (terminal/'stderr.txt').read_bytes())
+                    probe.update(parsed, tables={name: digest(directory/name) for name in table_names})
+            assert probe['status'] == 'OBSERVED' and probe['observed_full_running'] == 12
+            cache_stable(); probe['stage'] = 'complete'
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
