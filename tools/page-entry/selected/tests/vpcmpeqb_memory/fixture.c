@@ -5,6 +5,7 @@
 #undef fixture_main
 #include "cases.inc"
 #include "write_footprint.h"
+#include "promotions.inc"
 #ifndef VPCM_GROUP
 #error VPCM_GROUP must select a bounded cohort
 #endif
@@ -256,7 +257,8 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
     if(control==1&&s==&negative_sample)
         need(write_all(3,&vpb_observations,sizeof(vpb_observations))&&
              write_all(3,&v64_fault,sizeof(v64_fault))&&
-             write_all(3,&vpc_queries,sizeof(vpc_queries)),1206);
+             write_all(3,&vpc_queries,sizeof(vpc_queries))&&
+             write_all(3,&vpcm_promotions,sizeof(vpcm_promotions)),1206);
 }
 static void vpb_pair(struct sample *s,unsigned index) {
     current=s;fixture_target=s->pc;vpb_inputs(s);borrow(s);lane=0;native_phase=0;fixture_enter();
@@ -288,15 +290,18 @@ static void vpb_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(vpcm_is_promoted(i))vpcm_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+        else {
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
         ++result.refusals;
+        }
     }
-    result.failed_refusal=SIZE_MAX;
+    vpcm_promotions_complete();result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
-                   sizeof(vpb_observations)+sizeof(v64_fault)+sizeof(vpc_queries)<16*1024*1024,"unchanged complete record cap");
+                   sizeof(vpb_observations)+sizeof(v64_fault)+sizeof(vpc_queries)+sizeof(vpcm_promotions)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5000,"literal trailer extent");
     _Static_assert(sizeof(v64_fault)==96,"actual failed-read trailer extent");
     _Static_assert(sizeof(vpb_refused)/sizeof(vpb_refused[0])==66,"closed supplied neighbors");
@@ -320,7 +325,7 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==113,1183);
+    vpb_refusals();need(result.refusals==108,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     if(control){vpb_prepare(&negative_sample,v64_fault_kind-1);vpb_pair(&negative_sample,1);die(1211);}
@@ -328,7 +333,8 @@ int fixture_main(unsigned long *stack) {
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          write_all(3,&vpb_observations,sizeof(vpb_observations))&&
          write_all(3,&v64_fault,sizeof(v64_fault))&&
-             write_all(3,&vpc_queries,sizeof(vpc_queries)),1184);
-    output("LI2_VPCMPEQB_MEMORY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 new_refusal_bytes=33 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n");
+             write_all(3,&vpc_queries,sizeof(vpc_queries))&&
+             write_all(3,&vpcm_promotions,sizeof(vpcm_promotions)),1184);
+    output("LI2_VPCMPEQB_MEMORY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 memory_refusals=28 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n");
     return 0;
 }

@@ -2725,6 +2725,141 @@
       }
     }
   },
+  "mainf0ef": {
+    "base": "355e20b26d549b94291a23a292f5bd2b9dab657b",
+    "current_corpus_sha256": "88708db07840bde15bd29a58638b34f5e52cc54a92d23c854fdb606d3d424c4d",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_tests": 9
+    },
+    "doctests": {},
+    "instances": {
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/clocks.rs": {
+        "unit/ordinary_interval/main": "tree::throughput::clocks::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/joins/tests.rs": {
+        "unit/ordinary_interval/main": "tree::throughput::joins::tests::"
+      }
+    },
+    "methods": {
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/clocks.rs": {
+        "all": [
+          "timespec_conversion_preserves_boundaries_and_refuses_failures",
+          "metrics_preserve_exact_brackets_zero_lower_and_independent_cpu",
+          "metrics_refuse_each_within_and_between_snapshot_order_violation",
+          "metrics_refuse_zero_resolution_nonpositive_regions_and_subtraction_underflow"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/joins/tests.rs": {
+        "all": [
+          "throughput_absolute_lifetimes_and_local_slots_all64_blocks",
+          "throughput_reset_namespaces_and_stale_epoch_refuse",
+          "throughput_entire_pages_and_full_reports_are_required",
+          "throughput_cross_block_clock_and_cursor_prefix_are_transactional",
+          "throughput_actual_call_anchors_scalar_stack_and_closed_rows"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "f0ef84a1c16a00ace794329179ce376b10b59253",
+    "previous_corpus_sha256": "913430a415427049ffeb64855fe105ea13182895b191324f29b24d6a1f533ca3",
+    "projections": {
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "e3f0530f3579b9c8d00261e5471ecce47ad39347b07bdc84cc8e5d2aaca1141c",
+        "edits": [
+          [
+            12155,
+            12538,
+            ""
+          ]
+        ],
+        "previous_sha256": "c091c2448bba532404456de4408c6b33129ad6249d6ea959363e95cc2c534362"
+      },
+      "tools/rapid-profiler/ordinary-interval/tree.rs": {
+        "current_sha256": "ad40bfb21390726c422e73462e544115ee3a05254e0f95577dbd5efdcdd9293a",
+        "edits": [
+          [
+            409,
+            436,
+            ""
+          ]
+        ],
+        "previous_sha256": "7233a4570076072f9938171c7ba98a3fc6282b2faad3897831c0d689d0c45287"
+      },
+      "tools/rapid-profiler/verify_ordinary_interval.py": {
+        "current_sha256": "a63bc30521b2bad9c62370018d128e0cd4af8fe14c2b10e0ffadd4b8eeb1d719",
+        "edits": [
+          [
+            15949,
+            16097,
+            ""
+          ],
+          [
+            18202,
+            18256,
+            ""
+          ],
+          [
+            20216,
+            20538,
+            ""
+          ],
+          [
+            26467,
+            26784,
+            ""
+          ],
+          [
+            36794,
+            37119,
+            ""
+          ],
+          [
+            37723,
+            38419,
+            ""
+          ],
+          [
+            87941,
+            90108,
+            ""
+          ]
+        ],
+        "previous_sha256": "dd1bd88d8b47f74f000ae90a4214ce92b60d01da4da8575b78620f4ca972741c"
+      }
+    },
+    "scope": "Nine source-declared tests compile once through ordinary_interval/main -> tree -> throughput. No execution credit from this inventory; no protocol or ignored-test changes.",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "tools/rapid-profiler/Cargo.toml": "44a10ae94825a0bad3d09776065fe2aff56082dcb41263a5efe28230a746c685",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "e3f0530f3579b9c8d00261e5471ecce47ad39347b07bdc84cc8e5d2aaca1141c",
+      "tools/rapid-profiler/ordinary-interval/tree.rs": "ad40bfb21390726c422e73462e544115ee3a05254e0f95577dbd5efdcdd9293a",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput.rs": "51641d86d6bfb2e87c610a09b3ae4e2078a1c7ac67e8c4c5ec8adbaabdb8fa3c",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/clocks.rs": "891db6ea6922d2a178155ed6391044c9725afeebe4fcf1cbc2ef8832d8002c97",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/joins.rs": "2bddf785c77e59ac52f97eec3e077256c5d65586e9a14666729182e2944e5adb",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/joins/tests.rs": "ef472000e618d7063b66b2af2dfe8dd8e3e065a5611278a18f6c643a46874cb1",
+      "tools/rapid-profiler/tree-work/check_throughput.py": "a34275ef8c73e0b23947d52aab7e0f1cd83ad96e46f787352376e5ceaa6ee8e3",
+      "tools/rapid-profiler/tree-work/test_throughput.py": "dc0bfc041db73f1bdf5940948ee04827acffce4ebcc969a60f33e70e78cfc04e",
+      "tools/rapid-profiler/tree-work/test_throughput_stats.py": "360831f2292b08fdb62331a6e2091fee12cde8ebc1ae4fccb9589f8e1a7b0587",
+      "tools/rapid-profiler/tree-work/throughput_stats.py": "67b3ec1fcf1775ad809613b14e2339d89e451ac0ddea42b0c48795884c82d7c9",
+      "tools/rapid-profiler/verify_ordinary_interval.py": "a63bc30521b2bad9c62370018d128e0cd4af8fe14c2b10e0ffadd4b8eeb1d719"
+    },
+    "workspace_changes": {
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 56
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 47
+        }
+      }
+    }
+  },
   "merged_revision": "3067913e0daf2b98baf9a5989ca468efe9fb797f",
   "methods": {
     "src/trampoline/precontext/tests.rs": {

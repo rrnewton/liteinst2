@@ -6,6 +6,7 @@
 #include "cases.inc"
 #include "write_footprint.h"
 #include "promotions.inc"
+#include "tests/vpcmpeqb_memory/promotions.inc"
 #ifndef VM128_GROUP
 #error VM128_GROUP must select a bounded cohort
 #endif
@@ -253,7 +254,8 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
         need(write_all(3,&vpb_observations,sizeof(vpb_observations))&&
              write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vpc_queries,sizeof(vpc_queries))&&
-             write_all(3,&v128_promotions,sizeof(v128_promotions)),1206);
+             write_all(3,&v128_promotions,sizeof(v128_promotions))&&
+             write_all(3,&vpcm_promotions,sizeof(vpcm_promotions)),1206);
 }
 static void vpb_pair(struct sample *s,unsigned index) {
     current=s;fixture_target=s->pc;vpb_inputs(s);borrow(s);lane=0;native_phase=0;fixture_enter();
@@ -285,7 +287,9 @@ static void vpb_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
-        if(v128_is_promoted(i)) {
+        if(vpcm_is_promoted(i)) {
+            vpcm_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+        } else if(v128_is_promoted(i)) {
             v128_promote(i,v->b,v->n,result.decoder_result,&refused_last);
         } else {
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
@@ -294,11 +298,12 @@ static void vpb_refusals(void) {
         }
     }
     v128_promotions_complete();
+    vpcm_promotions_complete();
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
-                   sizeof(vpb_observations)+sizeof(v64_fault)+sizeof(vpc_queries)+sizeof(v128_promotions)<16*1024*1024,"unchanged complete record cap");
+                   sizeof(vpb_observations)+sizeof(v64_fault)+sizeof(vpc_queries)+sizeof(v128_promotions)+sizeof(vpcm_promotions)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5000,"literal trailer extent");
     _Static_assert(sizeof(v64_fault)==96,"actual failed-read trailer extent");
     _Static_assert(sizeof(vpb_refused)/sizeof(vpb_refused[0])==99,"closed supplied neighbors");
@@ -322,7 +327,7 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==133&&v128_promotions.completed==13,1183);
+    vpb_refusals();need(result.refusals==128&&v128_promotions.completed==13&&vpcm_promotions.completed==5,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     if(control){vpb_prepare(&negative_sample,v64_fault_kind-1);vpb_pair(&negative_sample,1);die(1211);}
@@ -331,7 +336,8 @@ int fixture_main(unsigned long *stack) {
          write_all(3,&vpb_observations,sizeof(vpb_observations))&&
          write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vpc_queries,sizeof(vpc_queries))&&
-             write_all(3,&v128_promotions,sizeof(v128_promotions)),1184);
-    output("LI2_VMOVDQU128_TF_PASS pairs=13 loads=12 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=24 full_state=13 full_memory=13 live_endpoints=13\n");
+             write_all(3,&v128_promotions,sizeof(v128_promotions))&&
+             write_all(3,&vpcm_promotions,sizeof(vpcm_promotions)),1184);
+    output("LI2_VMOVDQU128_TF_PASS pairs=13 loads=12 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=24 full_state=13 full_memory=13 live_endpoints=13\n");
     return 0;
 }
