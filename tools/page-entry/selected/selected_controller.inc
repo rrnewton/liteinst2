@@ -1,3 +1,6 @@
+#ifdef LI2_CPUID_NX_ONLY
+#include "selected_cpuid_nx.inc"
+#endif
 /* Every target instruction stays NX until exact selected completion or one
    of three distinct original-address step owners. No fast page is admitted. */
 #ifdef LI2_TF_HANDOFF
@@ -229,7 +232,15 @@ static void selected_initialize(void) {
     selected_preflight();
     checked(!li2_decoder_initialize(selected_arena,sizeof selected_arena,&selected_initial_stats) &&
             selected_initial_stats.phase==2,608,0);
+#ifdef LI2_CPUID_NX_ONLY
+    __asm__ volatile("":::"memory");selected_cpuid_nx.hardware_entered=1;
+    __asm__ volatile("":::"memory");
+#endif
     checked(!li2_selected_observe_hardware(&selected_hardware),609,0);
+#ifdef LI2_CPUID_NX_ONLY
+    __asm__ volatile("":::"memory");selected_cpuid_nx.hardware_returned=1;
+    __asm__ volatile("":::"memory");
+#endif
 #ifdef LI2_SELECTED_PROVIDER
     selected_provider_configure();
 #endif
@@ -367,6 +378,29 @@ static void selected_builtin(ucontext_t *context) {
 #ifdef LI2_SELECTED_PROVIDER
     uint32_t policy_leaf=0,policy_subleaf=0;
 #endif
+#ifdef LI2_CPUID_NX_ONLY
+    if(p->kind==LI2_CPUID) {
+#ifdef LI2_SELECTED_PROVIDER
+        policy_leaf=(uint32_t)g[REG_RAX];policy_subleaf=(uint32_t)g[REG_RCX];
+#endif
+        selected_cpuid_nx_sample(g,&a,&b,&c,&d);
+        p->a=a;p->b=b;p->c=c;p->d=d;
+        /* phase 0 here is intentional: no enable/rearm operation occurred.
+           LI2_CPUID_NX retains the distinct attempted/sample/commit prefix. */
+    } else {
+        /* TSC remains faulted; its actual controls and phase meanings stay. */
+        p->phase=1;
+        p->enable_result=raw(SYS_prctl,PR_SET_TSC,PR_TSC_ENABLE,0,0,0,0);
+        p->phase=2;checked(!p->enable_result,647,p->enable_result);
+        p->phase=3;
+        if(p->kind==LI2_RDTSCP) __asm__ volatile("rdtscp":"=a"(a),"=d"(d),"=c"(c)::"memory");
+        else __asm__ volatile("rdtsc":"=a"(a),"=d"(d)::"memory");
+        p->a=a;p->b=b;p->c=c;p->d=d;p->phase=4;
+        p->phase=5;
+        p->restore_result=raw(SYS_prctl,PR_SET_TSC,PR_TSC_SIGSEGV,0,0,0,0);
+        p->phase=6;checked(!p->restore_result,648,p->restore_result);
+    }
+#else
     p->phase=1; /* enable operation entered, no result claimed */
     if(p->kind==LI2_CPUID) p->enable_result=raw(SYS_arch_prctl,ARCH_SET_CPUID,1,0,0,0,0);
     else p->enable_result=raw(SYS_prctl,PR_SET_TSC,PR_TSC_ENABLE,0,0,0,0);
@@ -387,6 +421,7 @@ static void selected_builtin(ucontext_t *context) {
     else p->restore_result=raw(SYS_prctl,PR_SET_TSC,PR_TSC_SIGSEGV,0,0,0,0);
     p->phase=6;
     checked(!p->restore_result,648,p->restore_result);
+#endif
 #ifdef LI2_SELECTED_PROVIDER
     if(p->kind==LI2_CPUID && selected_provider_state.mode)
         selected_provider_cpuid(policy_leaf,policy_subleaf,&a,&b,&c,&d);
@@ -395,6 +430,10 @@ static void selected_builtin(ucontext_t *context) {
     if(p->kind==LI2_CPUID) {g[REG_RBX]=b;g[REG_RCX]=c;++cpuid_count;}
     else if(p->kind==LI2_RDTSCP) {g[REG_RCX]=c;++tscp_count;}else ++tsc_count;
     g[REG_EFL]=(greg_t)selected_logical_flags;g[REG_RIP]=(greg_t)selected_decoded.next_pc;
+#ifdef LI2_CPUID_NX_ONLY
+    if(p->kind==LI2_CPUID)selected_cpuid_nx_committed(g);
+    else
+#endif
     p->phase=7; /* selected context committed */
 #ifdef LI2_SELECTED_PROVIDER
     if(p->kind==LI2_CPUID && selected_provider_state.mode)selected_provider_cpuid_committed();

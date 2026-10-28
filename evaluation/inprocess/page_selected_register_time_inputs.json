@@ -330,16 +330,16 @@
       "sha256": "cdc38ac5592beadef79472d0d366baef4911316b4f779bf65aa7aaf1e6a14f4b"
     },
     {
-      "bytes": 25451,
+      "bytes": 26706,
       "origin": "timing V2 3842a4be; TRACE d2f00cd3/report-route36c9 composition",
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "9a949c05df44703a8fa57befc49567056493e2c0171ffb3da1e0e8c85e57b262"
+      "sha256": "feacc097a77367c976548b968567af20699544765bad523016337769b4ed8e8c"
     },
     {
-      "bytes": 30626,
+      "bytes": 32155,
       "origin": "committed composition input; TRACE d2f00cd3/report-route36c9 composition",
       "path": "tools/page-entry/selected/selected_controller.inc",
-      "sha256": "d41bd68c6637d0245d03edf69e69cfe3efdcc60c8d9b55c93af06f5cfd0dd205"
+      "sha256": "9605e573c0ad4f5938da387583aa33514fa285468a7344c4beb3dc21c54172d6"
     },
     {
       "bytes": 4784,

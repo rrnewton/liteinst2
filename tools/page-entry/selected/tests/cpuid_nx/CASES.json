@@ -1,0 +1,111 @@
+{
+  "controls": {
+    "application": [
+      7,
+      8
+    ],
+    "initial_disabled": [
+      "nx-raw",
+      "nx-configured"
+    ],
+    "outer_denials": [
+      "get",
+      "set",
+      "both"
+    ]
+  },
+  "data_bytes": 32768,
+  "lanes": [
+    "native",
+    "faulted-raw",
+    "faulted-configured",
+    "nx-raw",
+    "nx-configured"
+  ],
+  "limits": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "live_slot_bytes": 2304,
+  "output_bytes": 9728,
+  "programs": [
+    {
+      "cpuid": [
+        "nx_plain0",
+        "nx_plain1"
+      ],
+      "id": 1,
+      "name": "entries",
+      "slots": [
+        "nx_plain0",
+        "nx_plain1"
+      ]
+    },
+    {
+      "cpuid": [
+        "nx_ending",
+        "nx_split"
+      ],
+      "id": 2,
+      "name": "fetch-tails",
+      "slots": [
+        "nx_ending",
+        "nx_split"
+      ]
+    },
+    {
+      "cpuid": [
+        "nx_embedded_direct+2",
+        "nx_embedded_indirect+2",
+        "nx_embedded_ret+2"
+      ],
+      "id": 3,
+      "name": "embedded",
+      "slots": [
+        "nx_embedded_direct+2",
+        "nx_embedded_indirect+2",
+        "nx_embedded_ret+2",
+        "nx_enclosing"
+      ]
+    },
+    {
+      "cpuid": [
+        "nx_boundary_target",
+        "nx_straddler_cpuid"
+      ],
+      "id": 4,
+      "name": "native-boundary",
+      "slots": [
+        "nx_boundary_target",
+        "nx_straddler_cpuid"
+      ]
+    },
+    {
+      "cpuid": [
+        "nx_trace_cpuid0",
+        "nx_trace_cpuid1"
+      ],
+      "id": 5,
+      "name": "trace",
+      "slots": [
+        "nx_trace_cpuid0",
+        "nx_trace_cpuid1"
+      ]
+    },
+    {
+      "cpuid": [
+        "nx_run_cpuid0",
+        "nx_run_cpuid1"
+      ],
+      "id": 6,
+      "name": "register-guard",
+      "slots": [
+        "nx_run_cpuid0",
+        "nx_run_cpuid1"
+      ]
+    }
+  ],
+  "source_bytes": 65536
+}

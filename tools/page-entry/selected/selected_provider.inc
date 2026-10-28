@@ -66,8 +66,9 @@ static int selected_provider_random(ucontext_t *uc,const struct li2_selected_req
 static void selected_provider_cpuid(uint32_t leaf,uint32_t subleaf,
                                     uint32_t *a,uint32_t *b,uint32_t *c,uint32_t *d) {
     selected_provider_begin();
-    /* Original sample remains in selected_builtin_prefix. Its gate was already
-       restored successfully; this copied result has no native authority. */
+    /* Original sample remains in selected_builtin_prefix. The faulted profile
+       has restored its gate; NX-only has retained its distinct raw sample.
+       This copied result has no native authority in either profile. */
     __typeof__(selected_provider_state.cpuid) *p=&selected_provider_state.cpuid;
     *p=(__typeof__(*p)){.input={leaf,subleaf,{*a,*b,*c,*d}}};
     __asm__ volatile("":::"memory");p->entered=1;
