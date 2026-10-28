@@ -44,6 +44,15 @@ def reap(child, deadline):
     return code
 
 
+def refusal(mode, code, transcript, errors):
+    """Accept only the declared normal exit, never a competing fatal exit."""
+    assert mode in ('duplicate', 'eof')
+    assert type(code) is int and code == 1
+    assert b'DONE,' not in transcript and b'normal-session FAILED:' in errors
+    assert (b'duplicate request ID' if mode == 'duplicate' else b'overlong or unterminated request') in errors
+    return dict(control=mode, expected_refusal=True, exit_code=code)
+
+
 def integer(s):
     assert s.isascii() and s.isdecimal() and (s == '0' or not s.startswith('0'))
     n = int(s)
@@ -284,9 +293,7 @@ def main():
         code = reap(child, deadline)
         assert not buffer
         if a.mode in ('duplicate', 'eof'):
-            assert code != 0 and b'DONE,' not in transcript and b'normal-session FAILED:' in errors
-            assert (b'duplicate request ID' if a.mode == 'duplicate' else b'overlong or unterminated request') in errors
-            summary = dict(control=a.mode, expected_refusal=True, exit_code=code)
+            summary = refusal(a.mode, code, transcript, errors)
         else:
             assert code == 0 and not errors and not outgoing
             summary = check(transcript.decode('ascii'), expected, a.k, epochs,

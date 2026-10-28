@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import tempfile
 from unittest.mock import Mock, patch
-from session_driver import authenticate, check, checksum, main, remaining, reap
+from session_driver import authenticate, check, checksum, main, remaining, reap, refusal
 
 EXPECTED = [('CALL', 42, 3, b'a\0b'), ('FLUSH', 9)]
 TRACE = f'''READY,normal-session-v1,10,1,10,2,4096,4096,4,1
@@ -148,5 +148,25 @@ DONE,EpochLimit,2,3,2,2,2,0,2,0,1,1
                 result = json.loads((output/'result.json').read_text())
                 self.assertEqual(result['status'], 'FAILED')
                 self.assertTrue(result['rescue'])
+
+    def test_refusal_requires_exact_normal_exit_one(self):
+        transcript = b'READY,normal-session-v1,10,520,10,2,4096,4096,4,1\n'
+        for mode, reason in (('duplicate', b'duplicate request ID'),
+                             ('eof', b'overlong or unterminated request')):
+            errors = b'normal-session FAILED: ' + reason + b'\n'
+            self.assertEqual(refusal(mode, 1, transcript, errors),
+                dict(control=mode, expected_refusal=True, exit_code=1))
+            for code in (0, 2, 123, -9, None, True, 1.0, '1'):
+                with self.subTest(mode=mode, code=code):
+                    with self.assertRaises(AssertionError):
+                        refusal(mode, code, transcript, errors)
+            for output, diagnostic in ((transcript+b'DONE,forged\n', errors),
+                                       (transcript, b''),
+                                       (transcript, reason),
+                                       (transcript, b'normal-session FAILED: other failure\n')):
+                with self.assertRaises(AssertionError):
+                    refusal(mode, 1, output, diagnostic)
+        with self.assertRaises(AssertionError):
+            refusal('full', 1, transcript, b'normal-session FAILED: duplicate request ID\n')
 
 if __name__ == '__main__': unittest.main()

@@ -19,7 +19,7 @@ import traceback
 
 MIB = 1048576
 # Exact CLOSED source-v3 census and whole-ELF authority; a successor is explicit.
-PYTHON_CONTROLS = 11
+PYTHON_CONTROLS = 12
 SUBJECT_SHA256 = '8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d'
 SESSION_PREFIX = 'normal::session::'
 SESSION = tuple(SESSION_PREFIX + name for name in (
