@@ -111,9 +111,11 @@ def execute(carrier, argv):
     os.execve(fd, argv or [str(carrier)], os.environ.copy())
 
 
-def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False):
+def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None):
     # This separate command intentionally supplies a private namespace and a
     # closed environment. The original fixture's make/exec path is unchanged.
+    if provider_policy not in (None, "mask-random-v1"):
+        raise ValueError("unknown selected provider policy")
     import namespace
     with carrier.open("rb") as stream:
         data = stream.read(MAX_FILE + 1)
@@ -136,6 +138,8 @@ def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, chi
         env = {"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C", "TZ": "UTC",
                "LD_LIBRARY_PATH": str(directory), "LD_BIND_NOW": "1",
                "LI2_DEPENDENCY_FDS": ",".join(str(item) for item in fds)}
+        if provider_policy is not None:
+            env["LI2_SELECTED_PROVIDER"] = provider_policy
         if disable_rseq:
             # Explicit named workload only; never inherit arbitrary caller tunables.
             env["GLIBC_TUNABLES"] = "glibc.pthread.rseq=0"
@@ -180,6 +184,8 @@ def main():
     loader.add_argument("--library-root", action="append", type=Path, required=True)
     loader.add_argument("--namespace", type=Path, required=True)
     loader.add_argument("--disable-rseq", action="store_true", help="explicit glibc.pthread.rseq=0 workload")
+    loader.add_argument("--provider-policy", choices=("mask-random-v1",),
+                        help="explicit configured selected-provider policy; native behavior remains the default")
     loader.add_argument("carrier", type=Path)
     loader.add_argument("original", type=Path)
     loader.add_argument("argv", nargs=argparse.REMAINDER)
@@ -202,7 +208,7 @@ def main():
                        (args.report_parent, args.report_child), args.child_failure)
     else:
         execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv,
-                       disable_rseq=args.disable_rseq)
+                       disable_rseq=args.disable_rseq, provider_policy=args.provider_policy)
 
 
 if __name__ == "__main__":

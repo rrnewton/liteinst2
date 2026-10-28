@@ -2,7 +2,7 @@
 import hashlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[5]
-BEFORE_SHA='8b196af13ea422c552762612f50f20e9dff90778582c6e913c1472afde8af159'
+BEFORE_SHA='3361b23b0661dfccc956ce0194a6c5f48a97d8e4277599a0de264053e6f16b63'
 OLD='        if fork_fds is not None:\n'
 NEW='''        # Explicit finite test selector, retained in the actual launch receipt.
         selector = os.environ.get("LI2_ONESHOT_FAILURE", "")
