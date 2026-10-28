@@ -71,6 +71,14 @@ fn canonical_padding_nop(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Nop_rm16, [0x66, 0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
 }
 
+// Canonical VEX.L0.F2.0F.W1 KMOVQ r64,k only. RSP destination stays
+// outside this family; no reverse, memory, narrow, ignored-extension or prefix forms.
+fn canonical_kmovq_register(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::VEX_Kmovq_r64_kr
+        && matches!(bytes, [0xc4, 0xe1 | 0x61, 0xfb, 0x93, modrm]
+            if *modrm & 0xc0 == 0xc0 && !(bytes[1] == 0xe1 && *modrm & 0x38 == 0x20))
+}
+
 // Exact original-PC BND indirect JMP only. Actual XCR0 MPX-disabled state
 // is observed again on the authenticated NX frame before source pages open.
 fn canonical_bnd_jmp_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
@@ -216,10 +224,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Only RSI <- (RSI-1)^RSI. CPU retains all defined/undefined flag effects.
         if source[..instruction.len()] != [0xc4, 0xe2, 0xc8, 0xf3, 0xd6] { return Ok(out); }
     } else if instruction.code() == Code::VEX_Kmovq_r64_kr {
-        // Two separately qualified transfers only: RSI<-K0 or RAX<-K1.
-        // No other VEX, direction, width, register pairing or memory form.
-        if !matches!(&source[..instruction.len()],
-            [0xc4, 0xe1, 0xfb, 0x93, 0xf0 | 0xc1]) { return Ok(out); }
+        if !canonical_kmovq_register(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
         if !canonical_pmaxud(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {

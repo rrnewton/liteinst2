@@ -1,0 +1,1985 @@
+{
+  "accepted_pairs": 1,
+  "actual_bridge": {
+    "bytes": 2506840,
+    "sha256": "2086f2a01d1988aba40d7297e9e363168696cdb1ece5e9cb5cfb8b5af58014a7"
+  },
+  "artifact_manifest_sha256": "ac81ffb2087263de03c0d7e9984479ced36334c8aebdbeee07ed05463e63d438",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ]
+  },
+  "build_artifacts": {
+    "bridge-selected.so": {
+      "bytes": 2042048,
+      "mode": 493,
+      "sha256": "7185b7c322fd1203a76576c4af3597caeee957ab8c3cd7e04d19affbc23432d5"
+    },
+    "cc-version.txt": {
+      "bytes": 248,
+      "mode": 420,
+      "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+    },
+    "decoder-cargo.txt": {
+      "bytes": 36,
+      "mode": 420,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    "decoder-rustc.txt": {
+      "bytes": 196,
+      "mode": 420,
+      "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+    },
+    "decoder.a": {
+      "bytes": 11141614,
+      "mode": 420,
+      "sha256": "75474be0fe759d2003489f1ffc1e370af09e8fbd7919ce3fcdd0bee6c733b55e"
+    },
+    "decoder.d": {
+      "bytes": 987,
+      "mode": 420,
+      "sha256": "5e95f73f06ba79348dfa46a769db69613b304e6a78e4e903b22e623ede503662"
+    },
+    "generic-observe": {
+      "bytes": 1520544,
+      "mode": 493,
+      "sha256": "7a0d46cc567d3a85e7f300e782b1cc1fada0d77d0d4f775e8427e11c3a0bbf31"
+    },
+    "observe": {
+      "bytes": 1519584,
+      "mode": 493,
+      "sha256": "d5e45ece5430318b73832814922bdc8729cd5b0442114adc405428d654688084"
+    }
+  },
+  "build_command_completed": true,
+  "build_status": "passed",
+  "cases": [
+    {
+      "error_type": null,
+      "exit": 0,
+      "name": "native",
+      "status": "completed",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 338,
+        "sha256": "0344e6be8dbb35a8737f332fdf21b6f3e315f5ce6e0ce80f241ea17e426ce03b"
+      }
+    },
+    {
+      "error_type": null,
+      "exit": 0,
+      "name": "gated",
+      "status": "completed",
+      "stderr": {
+        "bytes": 5296,
+        "sha256": "1596dc6079fa7decdd6119c5573a8b2696e9adb4175cb8f0feddd8aff76c133c"
+      },
+      "stdout": {
+        "bytes": 338,
+        "sha256": "4319bbd0d6203d0f8fd3108fc45c67a3286169934093d40fa0eb993401179cb3"
+      }
+    }
+  ],
+  "command_count": 34,
+  "command_recipe": {
+    "default_build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ],
+    "fixture": [
+      "sh",
+      "tools/page-entry/selected/tests/oneshot_integrated/build.sh",
+      "<actual interpreter>",
+      "<library root>",
+      "${RUN}/original"
+    ],
+    "gated": "Actual carrier and sealed dependency namespace with explicit glibc.pthread.rseq=0; original native has matching application environment.",
+    "oneshot": "Exact current build-oneshot.sh C link expanded with the retained current release archive; conditional includes inspected before compilation."
+  },
+  "command_rows_sha256": "8d8f0b4f6f2ea58f6b5a322ea438f3e5804a5bf7a3d67d73ab7af2bb1c485de7",
+  "commands": [
+    {
+      "actual_argv_sha256": "18bdb9739219bdbdcd6983a323594acf4faf3a63bc673f817245ca2191db1bb7",
+      "argv": [
+        "${TOOL_GIT}",
+        "-C",
+        "${REPO_ROOT}",
+        "ls-files",
+        "-z",
+        "tools/page-entry",
+        "evaluation/inprocess"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 36830,
+          "sha256": "468f131628686d89c37b331b7cc6fce8d220696889e3530b0ac0f292f296db68"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "source-paths",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "7b627f6da895abffc7ba5514fbea05fa25d91f3f2bcf46688197eec434c1984d",
+      "argv": [
+        "${TOOL_RUSTUP}",
+        "which",
+        "cargo"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 74,
+          "sha256": "794362539ea27188bc2cddb8221271ae691aa74e934324d761c98e0f5ea1aa34"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "ddfcbf8d509ae69c2b7e953d826f39e628e255799b14a62107a4a4addea130d8",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-cargo",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "8845fddae76f9f542dd157baefad248f9823d14ae808ec486f8d2fd77b2541a4",
+      "argv": [
+        "${TOOL_RUSTUP}",
+        "which",
+        "rustc"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 74,
+          "sha256": "5e776b2193b77c28e08d0506ee7ba7aefe1fbe72a6cca79df4cdfa0bab8f3610"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "ddfcbf8d509ae69c2b7e953d826f39e628e255799b14a62107a4a4addea130d8",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-rustc",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "09a2ffbaacb516dd6e385a433dfdc5d0ce2230401bad1aeb4b23bcf57559d6cd",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=cc1"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 44,
+          "sha256": "59fa4bbf4edf0b03fa2943dc05d8062c3f7d2a749836dd8ef99c85c5bd3db4ed"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-cc1",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "55dbca06e41ac95f26628cf580b1f97c184f91ac7a52ca0c2211f5ec44bc87cd",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=collect2"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 49,
+          "sha256": "61a1f98fe2340c0787d504b6f91ed72f29ba84d4f9065d368a5103dbd7c1e48c"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-collect2",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "56bac916e4d342ec8b2df6b475c2128c3f1e8498f169cfc56d3f424a1c8fb6a2",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=as"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 3,
+          "sha256": "8b97bca79750847558d488e2ea4de79903c9c71c9af27ecf1b3dff5dba2abdd9"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-as",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4adc3c26fbefba4a7a31c3f79109cf7e008d3321b06d61883af0c6effef0f6e2",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=ld"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 3,
+          "sha256": "3b6cb8ae51045d062a7c7de7cc488ad8785144cfbc0a7fc9546ed52429e0d97f"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-ld",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "f7c68fa8c505befad352ef4434e259e1264c6c42be90cf00c71b8052aaa91cba",
+      "argv": [
+        "${TOOL_CC}",
+        "--version"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 248,
+          "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-cc",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9077d801ee56eeef523e18299c7f06541f16daec02e61df6b4de43b06b136b3f",
+      "argv": [
+        "${TOOL_CARGO}",
+        "--version"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 36,
+          "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-cargo",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "f4985c635314f2e6a3dcf88ac21d83cb09391fb48db484da9304ef1757fecadb",
+      "argv": [
+        "${TOOL_RUSTC}",
+        "-vV"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 196,
+          "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-rustc",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "fabbb0f2779d88ad5ef290139da1fc4d16711fee77cec2d85896575e84e41960",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "--version"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 20,
+          "sha256": "5eb6687f88cac9c862afa5695cc3b4a5d024ae22b0cbd39840169c06ca1aa5f6"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-python",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "6ee62f129a19c2e74594aab66332c3ed952fc82a2f3927c23b46b08ba7d846c6",
+      "argv": [
+        "${TOOL_CARGO}",
+        "metadata",
+        "--manifest-path",
+        "${REPO_ROOT}/tools/page-entry/selected/decoder/Cargo.toml",
+        "--format-version",
+        "1",
+        "--locked",
+        "--offline"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 11183,
+          "sha256": "d7039f9983e2f34b8c0a7d2657cfe83ac49c9d48298ae811e79074bc88337876"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "cargo-metadata",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "736314d27fc90b11c00fbf8419141860c1ebc6e97ff099069e5c54924d4bb1e5",
+      "argv": [
+        "${TOOL_CC}",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-nostdlib",
+        "-shared",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-fno-stack-protector",
+        "-fno-builtin",
+        "-fno-tree-loop-distribute-patterns",
+        "-fno-tree-vectorize",
+        "-mgeneral-regs-only",
+        "-fno-asynchronous-unwind-tables",
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-DLI2_MAPS_PHASE_REUSE=1",
+        "-I${REPO_ROOT}/tools/page-entry/selected",
+        "-I${REPO_ROOT}/tools/page-entry",
+        "-M",
+        "-MT",
+        "li2_timing",
+        "${REPO_ROOT}/tools/page-entry/bridge.c",
+        "${REPO_ROOT}/tools/page-entry/selected/runtime_loader.c",
+        "${REPO_ROOT}/tools/page-entry/selected/lifecycle_loader.c",
+        "${REPO_ROOT}/tools/page-entry/selected/entry.S",
+        "${REPO_ROOT}/tools/page-entry/selected/provider.c",
+        "${REPO_ROOT}/tools/page-entry/selected/step_owner.c",
+        "${REPO_ROOT}/tools/page-entry/selected/selected_selftest.S",
+        "${REPO_ROOT}/tools/page-entry/selected/support.c"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 22915,
+          "sha256": "f97d69a7df2e477f9a4c39be88815a0d5839b7f3c71622188363e37c571e2095"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "default-headers-0",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9f2bea0a4c2ab3538ed4a35a708ef55141852f7a04b21b20e3a68c442eeb884e",
+      "argv": [
+        "${TOOL_CC}",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-I${REPO_ROOT}/tools/page-entry/selected",
+        "-M",
+        "-MT",
+        "li2_timing",
+        "${REPO_ROOT}/tools/page-entry/selected/fixture_observe.c"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 2817,
+          "sha256": "c4ad2265e206952c32b0ffd12886bbf4eb75a4be35e4cbe67834617d1edc5775"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "default-headers-1",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "3ebe3b0a8d9dd840ea03b488ee9c51c874e09f9094187ec4c3020a89c751e78f",
+      "argv": [
+        "${TOOL_SH}",
+        "${REPO_ROOT}/tools/page-entry/selected/build.sh"
+      ],
+      "bounds": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 74,
+          "sha256": "8891688152b3682ac33cac049b7f47af9e151be35242f35d1894ba784331e3a7"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "selected-build",
+      "profile": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "2cc39bb2f887d405f03838399b3889a3e988fbffdce0cdba688dc463d7c044cb",
+      "argv": [
+        "${TOOL_NM}",
+        "-g",
+        "--defined-only",
+        "${RUN}/artifacts/decoder.a"
+      ],
+      "bounds": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 133212,
+          "sha256": "04c002d3bf7bb808bd810867ddbe00395a1bd5eaffc724b452060ce1eb6f4a24"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "archive-text-exports",
+      "profile": "inspect",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4f338deb6535425acadda84189e77605aeec221cbc6bf55f420b7e81ae7ac98a",
+      "argv": [
+        "${TOOL_NM}",
+        "-u",
+        "${RUN}/artifacts/bridge-selected.so"
+      ],
+      "bounds": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-undefined",
+      "profile": "inspect",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "90fc4cb8206868e4d9de426d1aa0056e21fe7000c1fce5c44bb26a1ad426862c",
+      "argv": [
+        "${TOOL_READELF}",
+        "-h",
+        "-l",
+        "-d",
+        "-r",
+        "-W",
+        "${RUN}/artifacts/bridge-selected.so"
+      ],
+      "bounds": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 52644,
+          "sha256": "61596f6e0a90bfeb930e64f7e7057112070883b40148fe5693502b02faab9528"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-elf",
+      "profile": "inspect",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "fb4f7628a4dccf0091409da7f351f87f037320e7b00e1da416865f5903b1140b",
+      "argv": [
+        "${TOOL_CC}",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-I${REPO_ROOT}/tools/page-entry/selected",
+        "-M",
+        "-MT",
+        "li2_timing",
+        "${REPO_ROOT}/tools/page-entry/selected/tests/generic/observe.c"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 2823,
+          "sha256": "46e44a7ec0864dc732683c1271dd43758c330165faf4b5649ee13aaf2459c53c"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "generic-observer-headers",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "32025d78c3633daa93e34a75cb0c37e75f18699c04c367faf15a663ef0b82a18",
+      "argv": [
+        "${TOOL_CC}",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-I${REPO_ROOT}/tools/page-entry/selected",
+        "-Wl,--gc-sections,--exclude-libs,ALL,-z,noexecstack,--build-id=none",
+        "${REPO_ROOT}/tools/page-entry/selected/tests/generic/observe.c",
+        "${RUN}/artifacts/decoder.a",
+        "-o",
+        "${RUN}/generic-observe"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "generic-observer-link",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "322af3c2773ac7f662eaf5350ef95cb257c9f0c5e07aa96136f66d7cd96f110d",
+      "argv": [
+        "${TOOL_CC}",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-nostdlib",
+        "-shared",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-fno-stack-protector",
+        "-fno-builtin",
+        "-fno-tree-loop-distribute-patterns",
+        "-fno-tree-vectorize",
+        "-mgeneral-regs-only",
+        "-fno-asynchronous-unwind-tables",
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-DLI2_TF_HANDOFF=1",
+        "-DLI2_REGISTER_RUN=1",
+        "-DLI2_MAPS_PHASE_REUSE=1",
+        "-DLI2_RSEQ_INACTIVE=1",
+        "-DLI2_NATIVE_PAGES=1",
+        "-DLI2_FAST_MEMSET=1",
+        "-DLI2_ONESHOT_PUBLICATION=1",
+        "-I${REPO_ROOT}/tools/page-entry/selected",
+        "-I${REPO_ROOT}/tools/page-entry",
+        "-M",
+        "-MT",
+        "li2_timing",
+        "${REPO_ROOT}/tools/page-entry/bridge.c",
+        "${REPO_ROOT}/tools/page-entry/selected/runtime_loader.c",
+        "${REPO_ROOT}/tools/page-entry/selected/lifecycle_loader.c",
+        "${REPO_ROOT}/tools/page-entry/selected/entry.S",
+        "${REPO_ROOT}/tools/page-entry/selected/provider.c",
+        "${REPO_ROOT}/tools/page-entry/selected/step_owner.c",
+        "${REPO_ROOT}/tools/page-entry/selected/selected_selftest.S",
+        "${REPO_ROOT}/tools/page-entry/selected/support.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_plan.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_owner.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_publish.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_reset.c",
+        "${REPO_ROOT}/tools/page-entry/selected/rseq_guard.c",
+        "${REPO_ROOT}/tools/page-entry/selected/native_policy.c",
+        "${REPO_ROOT}/tools/page-entry/selected/native_epoch.c",
+        "${REPO_ROOT}/tools/page-entry/selected/oneshot.c"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 56277,
+          "sha256": "b98f55715c0e99225ce0f74929c233e70fa8f69eb5ed4be19cc6b3b22671268b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "oneshot-headers",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "2cc39bb2f887d405f03838399b3889a3e988fbffdce0cdba688dc463d7c044cb",
+      "argv": [
+        "${TOOL_NM}",
+        "-g",
+        "--defined-only",
+        "${RUN}/artifacts/decoder.a"
+      ],
+      "bounds": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 133212,
+          "sha256": "04c002d3bf7bb808bd810867ddbe00395a1bd5eaffc724b452060ce1eb6f4a24"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "oneshot-archive-exports",
+      "profile": "inspect",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "b91d9b517fc453a609652563904db7d4debdb135cdc6211b0d700ad6ad6af08e",
+      "argv": [
+        "${TOOL_CC}",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-nostdlib",
+        "-shared",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-fno-stack-protector",
+        "-fno-builtin",
+        "-fno-tree-loop-distribute-patterns",
+        "-fno-tree-vectorize",
+        "-mgeneral-regs-only",
+        "-fno-asynchronous-unwind-tables",
+        "-ffunction-sections",
+        "-fdata-sections",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-DLI2_TF_HANDOFF=1",
+        "-DLI2_REGISTER_RUN=1",
+        "-DLI2_MAPS_PHASE_REUSE=1",
+        "-DLI2_RSEQ_INACTIVE=1",
+        "-DLI2_NATIVE_PAGES=1",
+        "-DLI2_FAST_MEMSET=1",
+        "-DLI2_ONESHOT_PUBLICATION=1",
+        "-I${REPO_ROOT}/tools/page-entry/selected",
+        "-I${REPO_ROOT}/tools/page-entry",
+        "-Wl,--gc-sections,--exclude-libs,ALL,--undefined=li2_selected_observe_hardware,--undefined=li2_selected_complete_native,--undefined=li2_selected_complete_scripted,--undefined=li2_step_session_init,--undefined=li2_step_arm,--undefined=li2_step_begin,--undefined=li2_step_trace,--undefined=li2_step_abort,--undefined=li2_decoder_initialize,--undefined=li2_decoder_decode,--undefined=li2_decoder_scan_page,--undefined=li2_decoder_stats,--undefined=li2_decoder_tf_classify,--undefined=li2_tf_arm,--undefined=li2_tf_begin,--undefined=li2_tf_trace,--undefined=li2_tf_abort,--undefined=li2_tf_unexpected,--undefined=li2_lifecycle_tf_continuation,--undefined=li2_decoder_write_footprint",
+        "-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined",
+        "${REPO_ROOT}/tools/page-entry/bridge.c",
+        "${REPO_ROOT}/tools/page-entry/selected/runtime_loader.c",
+        "${REPO_ROOT}/tools/page-entry/selected/lifecycle_loader.c",
+        "${REPO_ROOT}/tools/page-entry/selected/entry.S",
+        "${REPO_ROOT}/tools/page-entry/selected/provider.c",
+        "${REPO_ROOT}/tools/page-entry/selected/step_owner.c",
+        "${REPO_ROOT}/tools/page-entry/selected/selected_selftest.S",
+        "${REPO_ROOT}/tools/page-entry/selected/support.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_plan.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_owner.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_publish.c",
+        "${REPO_ROOT}/tools/page-entry/selected/register_run_reset.c",
+        "${REPO_ROOT}/tools/page-entry/selected/rseq_guard.c",
+        "${REPO_ROOT}/tools/page-entry/selected/native_policy.c",
+        "${REPO_ROOT}/tools/page-entry/selected/native_epoch.c",
+        "${REPO_ROOT}/tools/page-entry/selected/oneshot.c",
+        "${RUN}/artifacts/decoder.a",
+        "-o",
+        "${RUN}/oneshot-build/bridge-oneshot.so"
+      ],
+      "bounds": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "6e8c7f5a2babf56c9281018fb2713ca696b0350b5811332ff29b76b38a0f7abc",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "oneshot-link",
+      "profile": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9919f2df0faa63ba5204a6c7f43d743d78a450d1d7f40c47bd0466a54977929a",
+      "argv": [
+        "${TOOL_NM}",
+        "-S",
+        "--defined-only",
+        "${RUN}/oneshot-build/bridge-oneshot.so"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 78697,
+          "sha256": "3bef31856cd40de712f26128f203e468598d197952e13fab7e4a1ba8f90144db"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-symbols",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "fa4bcbe201ed9b5c096f64644e76ab94ea73c0ba6f09f26a5b727b5d92572282",
+      "argv": [
+        "${TOOL_OBJDUMP}",
+        "-d",
+        "-w",
+        "-M",
+        "att",
+        "--disassemble=memset",
+        "${RUN}/oneshot-build/bridge-oneshot.so"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 601,
+          "sha256": "34842a3cff0c6898a010e12935633a5070d1a6685c858aaa22fd14edad533937"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-memset",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9c4ce252dd41bd81a00cd976935620ad91d7b076b8a14a178c252ff0d0cdcb6e",
+      "argv": [
+        "${TOOL_NM}",
+        "-u",
+        "${RUN}/oneshot-build/bridge-oneshot.so"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "oneshot-bridge-undefined",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "648b38a3651fbbf25168b6a3fabb53b0639d772e93a90755221296ff19ac74ee",
+      "argv": [
+        "${TOOL_CC}",
+        "-M",
+        "-MT",
+        "oneshot",
+        "${REPO_ROOT}/tools/page-entry/selected/tests/oneshot_integrated/fixture.S"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 164,
+          "sha256": "29d96967dae88ab98330adc28c120353468e3aa5cdb1d002d1b9471adccf86a8"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fixture-dependencies",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9b37017ec8af5b28adba5ff9fb9a3559ea8e5435f1a14f982a5b6d06361b2af2",
+      "argv": [
+        "${TOOL_SH}",
+        "${REPO_ROOT}/tools/page-entry/selected/tests/oneshot_integrated/build.sh",
+        "${PRIVATE_ARGUMENT_SHA256:8136534e86f949863d6df7874f55a23d239d3aecd1092383827c63f901730bfd}",
+        "${PRIVATE_ARGUMENT_SHA256:eefbcb3ad1fcd53faa8c69718e2a8d7221cd780f5441918769f5ca05df8d0fca}",
+        "${RUN}/original"
+      ],
+      "bounds": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "78198b32b074ee150c9eac60c0a186d63d49cb339ac282dcb53c7e53087a2f87",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fixture-link",
+      "profile": "link",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "b619252bfe255d6d768e7ace85d375a4ef6b23a519480c86eb9d43c7ed1d5f5f",
+      "argv": [
+        "${TOOL_NM}",
+        "-S",
+        "-n",
+        "${RUN}/original"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 793,
+          "sha256": "eccfd9f85a861bdaf584edd5fe0d49cf95d6fa2287b26edbb0bb8ae53a4caae7"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fixture-symbols",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "b0a130b401d9798a1d15700bd6973f95d521a9a823bcfa26c006250f154de5c2",
+      "argv": [
+        "${TOOL_OBJDUMP}",
+        "-d",
+        "-w",
+        "${RUN}/original"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 288293,
+          "sha256": "76d6125a8be9b06c82084d256f3b2296b3e708001bd659a06500f4b839d8f04e"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fixture-assembly",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "963c99489d7fb6d2e5b73b8d6c2f524de587c1fb4c82524de30a2453c74cdcb6",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/original",
+        "${RUN}/oneshot-build/bridge-oneshot.so",
+        "${RUN}/carrier"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "fcb3c5354189d34e02887fd4c4c112669763ce998e157b13470056e3b758ad30"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "carrier-make",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "50e5cde7ab9a0bf168e0485ac9997d6bce05cd3de6dcee66fb9c067fc6f3126e",
+      "argv": [
+        "${PRIVATE_ARGUMENT_SHA256:6a1f7ebc9f4fdbc5e712593ce1da54b0f4d6cfcfd3884cb0ae3ab031be3e2d81}",
+        "--list",
+        "${RUN}/original"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 123,
+          "sha256": "43d080f565f5055cf1b648feb8e03402df8ab888f2bb6f0985b319ca5bf969a0"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "native-loader-list",
+      "profile": "program",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "953a62c53f84b1b4d9d5297a630da742f4f7c6abdb9e0860a743e9dde88343a7",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/selected/tests/oneshot_integrated/launch.py",
+        "--mode",
+        "native",
+        "--original",
+        "${RUN}/original",
+        "--library-root",
+        "${PRIVATE_ARGUMENT_SHA256:eefbcb3ad1fcd53faa8c69718e2a8d7221cd780f5441918769f5ca05df8d0fca}",
+        "--preparation",
+        "${RUN}/native.preparation"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 338,
+          "sha256": "0344e6be8dbb35a8737f332fdf21b6f3e315f5ce6e0ce80f241ea17e426ce03b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native",
+      "profile": "program",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "e92ce97783e120f5ca23b6721d263a10ec4f474fbf2138ff7d65e01db7c92a9e",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/selected/tests/oneshot_integrated/launch.py",
+        "--mode",
+        "gated",
+        "--original",
+        "${RUN}/original",
+        "--library-root",
+        "${PRIVATE_ARGUMENT_SHA256:eefbcb3ad1fcd53faa8c69718e2a8d7221cd780f5441918769f5ca05df8d0fca}",
+        "--preparation",
+        "${RUN}/gated.preparation",
+        "--carrier",
+        "${RUN}/carrier",
+        "--namespace",
+        "${RUN}/namespace"
+      ],
+      "bounds": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 5296,
+          "sha256": "1596dc6079fa7decdd6119c5573a8b2696e9adb4175cb8f0feddd8aff76c133c"
+        },
+        "stdout": {
+          "bytes": 338,
+          "sha256": "4319bbd0d6203d0f8fd3108fc45c67a3286169934093d40fa0eb993401179cb3"
+        }
+      },
+      "cleanup_error_count": 0,
+      "environment_sha256": "dc27a0a5bc71370500597475a01d83eaee877663a8bf269c2c98e969b468107f",
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "gated",
+      "profile": "program",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "dep_info": {
+    "tools/page-entry/selected/decoder/src/abi.rs": {
+      "bytes": 2353,
+      "sha256": "7d29aecce77ce21dc34bbaddfe10af32b6994b052a25cd07c92120edb9db5b2c"
+    },
+    "tools/page-entry/selected/decoder/src/admission_oneshot.rs": {
+      "bytes": 6456,
+      "sha256": "a92ee9f030e7d1627e006133a0669dec38dcaefc54bdb14d8fb8c80653f88abf"
+    },
+    "tools/page-entry/selected/decoder/src/arena.rs": {
+      "bytes": 5490,
+      "sha256": "7306a0e12a5cb26fb7a19ea271f828bc2561ab4d03e5bcc9e0273a61eb22bd6b"
+    },
+    "tools/page-entry/selected/decoder/src/decode.rs": {
+      "bytes": 8805,
+      "sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
+    },
+    "tools/page-entry/selected/decoder/src/lib.rs": {
+      "bytes": 8127,
+      "sha256": "d92bb24241bfdcd8efb3b8c9700670455617afe0b33ad9cbe8966a18742ceee6"
+    },
+    "tools/page-entry/selected/decoder/src/scan.rs": {
+      "bytes": 2626,
+      "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
+    },
+    "tools/page-entry/selected/decoder/src/tf.rs": {
+      "bytes": 31754,
+      "sha256": "fc753a1293e8517d9493ed031c538241bf839943273ba637592f1e68256eee65"
+    },
+    "tools/page-entry/selected/decoder/src/write_footprint.rs": {
+      "bytes": 7887,
+      "sha256": "26b62533a8c3c749376f598c78e55f9f0679b8c33d1f2d7c7c1aba60a79d7f7f"
+    }
+  },
+  "environment": {
+    "GLIBC_TUNABLES": "glibc.pthread.rseq=0",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "LD_BIND_NOW": "1",
+    "PATH": "/usr/bin:/bin",
+    "TZ": "UTC"
+  },
+  "expected_revision": "313cfc1a8c91e6e2c44317ef063f058a8061061a",
+  "failure_type": null,
+  "final_error_count": 0,
+  "full_reports_sha256": "ff15f0b400dd16760ab63777e12739e9105d8352a29a5acb4563bb226f137772",
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 52,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "header_closure_sha256": "b4e16154dcbb3ac0e9a3012f228ba617c986ffb2d4d33fe8e1540c55fe2e6104",
+  "input_manifest_sha256": "9e33bd600585be3aaadc060087d529023f923c93c4d5fa2639bb23e98736d2e8",
+  "loader": {
+    "admissions": 172,
+    "cpuid": 38,
+    "failure_code": 0,
+    "forwarded": 15,
+    "nx_faults": 2598,
+    "rdtsc": 8,
+    "rdtscp": 0,
+    "selected_steps": 980,
+    "source_patches": 6,
+    "status": 0,
+    "syscalls": 15
+  },
+  "native_pages": {
+    "admissions": 172,
+    "attempts": 2398,
+    "blocked": 2226,
+    "close_busy": 0,
+    "close_complete": 1,
+    "close_error": 0,
+    "closed": 172,
+    "epoch_error": 0,
+    "epoch_exits": 172,
+    "failure_code": 0,
+    "low_address_refusals": 0,
+    "main_admissions": 2,
+    "main_refaults": 0,
+    "refaults": 4,
+    "status": 0
+  },
+  "oneshot": {
+    "active_phase": 7,
+    "completed": 5,
+    "effect_returned": 5,
+    "effect_started": 6,
+    "failure_code": 0,
+    "owners": 6,
+    "published": 6,
+    "rdtsc_patches": 2,
+    "restored": 6,
+    "scope": "singleton_initial_main_temporary_e9",
+    "status": 0,
+    "syscall_patches": 4,
+    "version": 1
+  },
+  "oneshot_recipe": {
+    "bytes": 3439,
+    "sha256": "3ae6dfa945f27904ffdece29d8e0b5a79a697931d3b2ba5b9710412ad617e8f6"
+  },
+  "outputs": {
+    "clock_word_offsets": [
+      26,
+      34,
+      170,
+      186
+    ],
+    "gated": {
+      "clocks": [
+        1964985409659023,
+        1964985412703688
+      ],
+      "deterministic_sha256": "091ac4010f2b97bbc7fbcbd396f5655c59275a4192c6de558d21314fe93ebb5e",
+      "flags": [
+        3799,
+        3799
+      ],
+      "nondestination_registers": 14,
+      "raw_clock_words": [
+        3512000655,
+        457508,
+        3515045320,
+        457508
+      ],
+      "restored_source_bytes": "0f059090900f31909090",
+      "selectors": [
+        51,
+        43,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stdout_sha256": "4319bbd0d6203d0f8fd3108fc45c67a3286169934093d40fa0eb993401179cb3"
+    },
+    "native": {
+      "clocks": [
+        1964982876752052,
+        1964982876752532
+      ],
+      "deterministic_sha256": "091ac4010f2b97bbc7fbcbd396f5655c59275a4192c6de558d21314fe93ebb5e",
+      "flags": [
+        3799,
+        3799
+      ],
+      "nondestination_registers": 14,
+      "raw_clock_words": [
+        979093684,
+        457508,
+        979094164,
+        457508
+      ],
+      "restored_source_bytes": "0f059090900f31909090",
+      "selectors": [
+        51,
+        43,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stdout_sha256": "0344e6be8dbb35a8737f332fdf21b6f3e315f5ce6e0ce80f241ea17e426ce03b"
+    },
+    "nonclock_bytes_equal": true
+  },
+  "performance_credit": false,
+  "planned_dependencies": [
+    {
+      "bytes": 939216,
+      "names": [
+        "ld-linux-x86-64.so.2"
+      ],
+      "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+    }
+  ],
+  "private_receipt": {
+    "bytes": 830133,
+    "sha256": "3cc7994fb4015e6c0395fd6f8552cd9ab43f3de3f95c4aab905dd952c29f73df"
+  },
+  "profile": "page-selected-oneshot-v1",
+  "publisher_archive_exports": [
+    "li2_admission_oneshot_plan",
+    "li2_admission_oneshot_bind",
+    "li2_admission_oneshot_transition",
+    "li2_admission_oneshot_fail"
+  ],
+  "registry_sources": [
+    {
+      "archive": {
+        "bytes": 1240616,
+        "sha256": "7c447cff8c7f384a7d4f741cfcff32f75f3ad02b406432e8d6c878d56b1edf6b"
+      },
+      "checksum": "7c447cff8c7f384a7d4f741cfcff32f75f3ad02b406432e8d6c878d56b1edf6b",
+      "files_checked": 142,
+      "marker": {
+        "bytes": 7,
+        "sha256": "afbf9d0f3560b0fd7795e81c42a0a79ee6b6fc67e064f77826aee642cad28d91"
+      },
+      "member_manifest_sha256": "751c82f251acd4c0d449899eb5eb0be588fd7d9c4984cdcc04c2f2a4670c5ffc",
+      "name": "iced-x86",
+      "version": "1.21.0"
+    },
+    {
+      "archive": {
+        "bytes": 14025,
+        "sha256": "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+      },
+      "checksum": "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe",
+      "files_checked": 21,
+      "marker": {
+        "bytes": 7,
+        "sha256": "afbf9d0f3560b0fd7795e81c42a0a79ee6b6fc67e064f77826aee642cad28d91"
+      },
+      "member_manifest_sha256": "dc18ef2cf1041d52937348d613d069c5d639ba9b884d375a1c5718ae2874c527",
+      "name": "lazy_static",
+      "version": "1.5.0"
+    },
+    {
+      "archive": {
+        "bytes": 38958,
+        "sha256": "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
+      },
+      "checksum": "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67",
+      "files_checked": 23,
+      "marker": {
+        "bytes": 7,
+        "sha256": "afbf9d0f3560b0fd7795e81c42a0a79ee6b6fc67e064f77826aee642cad28d91"
+      },
+      "member_manifest_sha256": "08acc95365f0071c296f80bf613f4ea0728a835803650b8015b7bd191b92d9e9",
+      "name": "spin",
+      "version": "0.9.8"
+    }
+  ],
+  "report_error_type": null,
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_oneshot.py",
+    "--expect-revision",
+    "313cfc1a8c91e6e2c44317ef063f058a8061061a",
+    "--library-root",
+    "/usr/lib64"
+  ],
+  "reset": {
+    "binding": "STB_LOCAL",
+    "bytes": 15,
+    "sha256": "9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f",
+    "type": "STT_FUNC",
+    "visibility": "STV_DEFAULT"
+  },
+  "schema": 1,
+  "scope": "Opt-in same-page initial-main temporary E9 publication; six owned sites in one freestanding dynamically linked program; no general B2/B3 or performance claim",
+  "source": {
+    "head_sources_match": true,
+    "revision": "313cfc1a8c91e6e2c44317ef063f058a8061061a",
+    "source_manifest_sha256": "bea72f0f45c28de1148f2d2a7ee1bb352e9db7944ac535a3e78055131c5aede7",
+    "tracked_clean": true,
+    "tree": "a6f6d175010de862f32016e68353d9b0ae643534"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T074403.056418Z",
+  "status": "passed",
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "basename": {
+      "bytes": 32240,
+      "sha256": "0591f136c7c5f79cf2b3915cf03a37d8587cd1aca9a45a34cfa9247573a935f0"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "dirname": {
+      "bytes": 27952,
+      "sha256": "dcccd2b58cda47c25292457d1153e612a68599ad7086c3b90a66ed568ab8950b"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "translation_units": 16
+}

@@ -1,0 +1,1158 @@
+{
+  "aliases_sha256": "42d1f7f7540650881009662bdcf5c27e0f9dd37a429a3378dc2d41ef71f5e23c",
+  "binaries_sha256": "7b73ee3135f0de1f0fe5a14d95ee8957556361d41393d93c9fde3166581a6e30",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": "passed",
+  "cases": [
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "leaf0",
+      "outcome": {
+        "architecture": "Exact reviewed emitted C full-state/native comparator; this reader validates protocol/CPUID/extent, not a second full-state replay.",
+        "header": {
+          "completed": 19,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 19,
+          "refusals": 128,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 18,
+        "observations": {
+          "checked": 19,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              285149184,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "sha256": "966a4c81eb59e952d3de8ad6ce588403d689803adb96cd3e8133abb06341728a",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 19,
+        "refusals": 128
+      },
+      "record": {
+        "bytes": 15869288,
+        "sha256": "249a496851132014ae0775466cdeaddbd7b5c94b6657bea6edb0cd50ff807209"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "leaf1",
+      "outcome": {
+        "architecture": "Exact reviewed emitted C full-state/native comparator; this reader validates protocol/CPUID/extent, not a second full-state replay.",
+        "header": {
+          "completed": 21,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 21,
+          "refusals": 128,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 20,
+        "observations": {
+          "checked": 21,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              285149184,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "sha256": "fd5c09da66c9e028c0966acd42c821a43cd59f5cd5da7cfaef231552e0c1e49b",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 21,
+        "refusals": 128
+      },
+      "record": {
+        "bytes": 15869288,
+        "sha256": "72fbacac4466f2dc5292eba15e20bcb550d1f66ddf8f7b9109704f96dd5bfb58"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "leaf2",
+      "outcome": {
+        "architecture": "Exact reviewed emitted C full-state/native comparator; this reader validates protocol/CPUID/extent, not a second full-state replay.",
+        "header": {
+          "completed": 21,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 21,
+          "refusals": 128,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 20,
+        "observations": {
+          "checked": 21,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              285149184,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "sha256": "25081619b2cc7b58b0cece74c39fc4c6b671ed1b3047cdab15ae1c021f4a64f5",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 21,
+        "refusals": 128
+      },
+      "record": {
+        "bytes": 15869288,
+        "sha256": "82635dc33b123fcc2b5f351d9519a0f62107631156ba7f9e491f65fe741b626f"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "12"
+      },
+      "name": "short-return-match",
+      "outcome": {
+        "genuine_trace_handoffs": 7,
+        "lanes": 3,
+        "nx": [
+          2,
+          9,
+          2
+        ],
+        "observations": {
+          "checked": 3,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              285149184,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "sha256": "b9d4342870ad713c0430a68e0148c4d8f0f18538f9d3613c49bcdee3a78f754b",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusals": 47,
+        "route_checks": 15,
+        "trace": [
+          0,
+          8,
+          8
+        ]
+      },
+      "record": {
+        "bytes": 8034552,
+        "sha256": "0fe26bbdf7d111e8c34038d08070ba21a826829c5f0c9563f7138be805881f36"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "13"
+      },
+      "name": "short-return-null",
+      "outcome": {
+        "genuine_trace_handoffs": 5,
+        "lanes": 3,
+        "nx": [
+          2,
+          7,
+          2
+        ],
+        "observations": {
+          "checked": 3,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              285149184,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "sha256": "44c8e68eb697bd83df427f0d07d282d7212bc21e0e9290e7599451d1448c640f",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusals": 47,
+        "route_checks": 15,
+        "trace": [
+          0,
+          6,
+          6
+        ]
+      },
+      "record": {
+        "bytes": 8034552,
+        "sha256": "afb454eeb275e922b86478ae3797c0d360b8a8a0543bd4995705cdebeff27946"
+      },
+      "status": "accepted_observation"
+    }
+  ],
+  "cleanup_complete": true,
+  "command_count": 41,
+  "command_recipe": {
+    "fixture": [
+      "sh",
+      "tools/page-entry/selected/tests/strrchr_short/build.sh",
+      "<retained decoder.a>",
+      "<unique private output>",
+      "tools/page-entry/selected"
+    ],
+    "native": [
+      [
+        "short-leaf-0"
+      ],
+      [
+        "short-leaf-1"
+      ],
+      [
+        "short-leaf-2"
+      ],
+      [
+        "short-connected"
+      ],
+      [
+        "short-connected"
+      ]
+    ],
+    "product": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ],
+    "selectors": [
+      {},
+      {},
+      {},
+      {
+        "LI2_CHAIN_CASE": "12"
+      },
+      {
+        "LI2_CHAIN_CASE": "13"
+      }
+    ]
+  },
+  "commands_sha256": "943cf41459c302ae0772637e6ddfeb11cd63b5892aa47e48a7b3913110e76cfe",
+  "cpu": 8,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "1952a6bee08101b53151d59ab013902b48934f23",
+  "failure_type": null,
+  "final_error_count": 0,
+  "fixture_build": {
+    "short-connected": {
+      "artifact": {
+        "bytes": 2040448,
+        "mode": 493,
+        "sha256": "d7c88e1aa85687e01aaca5b465c9e94c4be25a0ef25d1ecd5743b56334206038"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "215c7b1b721c75cab61f5dbb23f9468ee856f87bcf584ac3e63e46e660361b75",
+      "symbols_sha256": "d56ce0e820aa745ea14fbf125df61e31f13354fa663155752535c48834ade700"
+    },
+    "short-leaf-0": {
+      "artifact": {
+        "bytes": 1905560,
+        "mode": 493,
+        "sha256": "65486f57124764f29224737bd537f6a81ba8ee7b60356c30f60d9f7ac77d387d"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "446a13b1ecbe05788bcb0a4774f38c2c5cb74ff9c618aa8955269a3b96ec8df2",
+      "symbols_sha256": "9638be1abb53cdb58ff8f9d162294ec42778ec80130ea9accfad2ac9c4a43d91"
+    },
+    "short-leaf-1": {
+      "artifact": {
+        "bytes": 1905096,
+        "mode": 493,
+        "sha256": "224296897e2277a1bff8d5ed75f1b09f6878e9cd48402d6d3eadbe69dbced960"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "446a13b1ecbe05788bcb0a4774f38c2c5cb74ff9c618aa8955269a3b96ec8df2",
+      "symbols_sha256": "9638be1abb53cdb58ff8f9d162294ec42778ec80130ea9accfad2ac9c4a43d91"
+    },
+    "short-leaf-2": {
+      "artifact": {
+        "bytes": 1905600,
+        "mode": 493,
+        "sha256": "71e72d1fc3fad6a5ab2ce71ff6fa00dde67014139b620634b557a733d330cc7d"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "446a13b1ecbe05788bcb0a4774f38c2c5cb74ff9c618aa8955269a3b96ec8df2",
+      "symbols_sha256": "9638be1abb53cdb58ff8f9d162294ec42778ec80130ea9accfad2ac9c4a43d91"
+    }
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 8,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "4c8929da12a1ad0b2157e010e8c5e892f9f6271b3b01fd6b5e50ae579dd07cee",
+  "private_receipt": {
+    "bytes": 1292961,
+    "sha256": "2e53eb2ea1bfed625011dc81d1dcbe47dd4b638e950d320084cd6fde37f7fd40"
+  },
+  "profile": "page-selected-strrchr-short-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_strrchr_short.py",
+    "--expect-revision",
+    "1952a6bee08101b53151d59ab013902b48934f23"
+  ],
+  "schema": 1,
+  "scope": "Only three exact register encodings and two literal29-byte return programs.61 original-PC native/TF pairs and two three-lane programs, including five startup pairs total. Existing full-state C predicates remain; each leaf retains128 refusals and7 exact typed1933/NONE promotions, with every old supplied byte row retained. No general EVEX/VEX/BMI, memory-form, rseq, longer path, real-program completion or performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "1952a6bee08101b53151d59ab013902b48934f23",
+    "source_manifest_sha256": "25b9fa3fbbf7adae3f1bb4932e462950646eb66e0919884cebe5f9a04a50f521",
+    "tracked_clean": true,
+    "tree": "4cd9e6cf8fd1168e8891a0256caecf5dd595eb15"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T070800.214323Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "gdb": {
+      "bytes": 17179552,
+      "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "totals": {
+    "connected_lanes": 6,
+    "connected_programs": 2,
+    "genuine_trace_handoffs": 12,
+    "individual_pairs": 61,
+    "new_instruction_pairs": 58,
+    "promoted_encoding_checks": 21,
+    "promoted_footprint_queries": 21,
+    "refusal_checks": 478,
+    "route_checks": 30,
+    "startup_pairs": 5
+  }
+}

@@ -153,7 +153,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-kmovq-oracle-v1', 'status': 'failed',
-        'scope': 'Exactc4e1fb93f0/Code1933 KMOVQ RSI,K0. One21-pair cohort:20 new plus startup, four full-width K0 patterns across all five fetch geometries. Complete64-bit RSI result, all32ZMM/all8K and every other register/flags/memory unchanged, actual kernel/live XSAVE and endpoints compared. All47 old+33 new supplied refusals. No memory operand or invented operand-fault claim; original fault suites remain required separately. No general VEX, enabled-CET, hardware masking, real-program completion, speedup or full-B2 claim.',
+        'scope': 'Exactc4e1fb93f0/Code1933 KMOVQ RSI,K0. One21-pair cohort:20 new plus startup, four full-width K0 patterns across all five fetch geometries. Complete64-bit RSI result, all32ZMM/all8K and every other register/flags/memory unchanged, actual kernel/live XSAVE and endpoints compared. All47 old+28 retained supplied refusals and5 explicit typed1933/NONE promotions. No memory operand or invented operand-fault claim; original fault suites remain required separately. No general VEX, enabled-CET, hardware masking, real-program completion, speedup or full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -161,7 +161,7 @@ def main():
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
                    'new_refusal_encodings': 0, 'register_move_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
-                   'executed_refusal_checks': 0},
+                   'executed_refusal_checks': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_kmovq.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
@@ -234,7 +234,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact register-move names, environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             '374753dc601bdff601536267b32e6b4795ecfac24201fb65af80e5be34cb8740',
+             'f7787136f8710f7c16f557fb2edc05f67d80e4dd8ed00adf67f5cf926a5fba32',
              'exact reviewed one-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -269,13 +269,14 @@ def main():
             record['totals']['new_page_ending_pairs'] += 4
             record['totals']['new_crossing_pairs'] += 16
             record['totals']['executed_refusal_checks'] += header['refusals']
-            record['totals'].update(supplied_refusal_encodings=80,
-                old_refusal_encodings=47, new_refusal_encodings=33)
+            record['totals'].update(supplied_refusal_encodings=75,
+                old_refusal_encodings=47, new_refusal_encodings=28,
+                promoted_encoding_checks=5, promoted_footprint_queries=5)
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=21, generic_pairs=20, register_move_pairs=20,
-                 positive_selftest_pairs=1, supplied_refusal_encodings=80, old_refusal_encodings=47,
-                 new_refusal_encodings=33, new_page_ending_pairs=4, new_crossing_pairs=16,
-                 executed_refusal_checks=80) and len(record['cases']) == 1 and
+                 positive_selftest_pairs=1, supplied_refusal_encodings=75, old_refusal_encodings=47,
+                 new_refusal_encodings=28, new_page_ending_pairs=4, new_crossing_pairs=16,
+                 executed_refusal_checks=75, promoted_encoding_checks=5, promoted_footprint_queries=5) and len(record['cases']) == 1 and
              all(c['accepted'] for c in record['cases']),
              'complete one21-pair register-move cohort; original fault suites remain separate')
         record['status'] = 'passed'

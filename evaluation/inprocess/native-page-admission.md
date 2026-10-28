@@ -2,7 +2,32 @@ ADDS: real unchanged-page execution in the in-process first-entry gate.
 Certified pages become RX and execute at their original addresses without a
 trap after each instruction. The runtime uses no ptrace supervisor. Pages
 that contain selected or excluded opcode patterns remain with the existing
-NX/TF controller. Selected source patches remain zero.
+NX/TF controller. This unchanged-page profile keeps selected source patches zero.
+
+The separate [one-shot publication profile](one-shot-publication.md) now
+publishes and restores real syscall and RDTSC source patches. Its six-site
+dynamically linked fixture completes, with restoration checked before the
+kernel reads the original instruction bytes. The profiles retain separate
+completion predicates.
+
+At `1952a6bee08101b53151d59ab013902b48934f23`, canonical KMOVQ transfers
+cover all 120 non-RSP register pairings. The
+[new register oracle](results/20261028T070635.063273Z-page-selected-kmovq-register-1952a6bee081.json)
+passes 168 full-state pairs; the
+[original KMOVQ oracle](results/20261028T070751.660872Z-page-selected-kmovq-1952a6bee081.json)
+passes 21, and the
+[short-return oracle](results/20261028T070800.214323Z-page-selected-strrchr-short-1952a6bee081.json)
+passes 61 plus its connected execution cases. Previous refusal byte strings
+remain checked, with newly supported forms counted as explicit typed promotions.
+
+The [latest real-program matrix](results/native-pages-1952a6b.json) remains
+failed, with three of five cases passing under the unchanged bounds.
+Rseq-disabled `ls` advances past KMOVQ and refuses `VPBROADCASTB ZMM17,ESI`,
+bytes `62 e2 7d 48 7a ce`, code 3210. It closes all 4,951 admissions and
+reports 39,945 NX faults. Default-rseq `ls` still ends in SIGKILL without a
+terminal report. Source, tool, artifact and input checks pass; no failed
+workload supplies a completed-program performance result. Earlier receipts
+and their original outcomes follow.
 
 The merged successor contains upstream main
 `c0ddeee62aad2d06458f2a32cb775343730efb89`. It adds canonical register

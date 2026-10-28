@@ -83,6 +83,10 @@ struct li2_step_owner {
    private source with no writable alias. Async signals are blocked. The
    fixture establishes these separately; this API does not invent them. */
 int li2_step_session_init(struct li2_step_session *,uint64_t application_mask);
+#ifdef LI2_ONESHOT_PUBLICATION
+/* Separate four-reserved-signal contract; the old constructor stays exact. */
+int li2_step_session_init_oneshot(struct li2_step_session *,uint64_t);
+#endif
 int li2_step_arm(struct li2_step_owner *,struct li2_step_session *,
                 const struct li2_step_hooks *,const struct li2_step_request *,int self_test);
 /* Called only by the real reserved signal dispatcher. Neither success path

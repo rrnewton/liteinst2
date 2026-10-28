@@ -206,10 +206,12 @@ static void vpb_pair(struct sample *s,unsigned index) {
     need(!li2_lifecycle_fetch_release(&s->ref),106);s->step_fetch=*li2_lifecycle_fetch_progress();
     ++result.completed;
 }
+#include "tests/kmovq/register_promotions.inc"
 static void old_kmov_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(i<5){kmr_promote(v,(unsigned)i);continue;}
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
         ++result.refusals;
@@ -221,6 +223,7 @@ static void vpb_refusals(void) {
     for(size_t i=0;i<SHORT_EXTRA_REFUSALS;i++) {
         const struct vpb_refusal *v=&short_refused[i];result.failed_refusal=80+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(i==9||i==10){kmr_promote(v,(unsigned)i-4);continue;}
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1250+(unsigned)i);
         ++result.refusals;
@@ -238,12 +241,12 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==80+SHORT_EXTRA_REFUSALS,1183);
+    vpb_refusals();need(result.refusals==73+SHORT_EXTRA_REFUSALS&&kmr_promoted==7,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     for(unsigned i=0;i<VPB_COUNT;i++){vpb_prepare(&samples[i+1],i);vpb_pair(&samples[i+1],i+1);}
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          write_all(3,&vpb_observations,sizeof(vpb_observations)),1184);
-    output(SHORT_GROUP==0?"LI2_SHORT_LEAF_PASS group=0 pairs=19\n":SHORT_GROUP==1?"LI2_SHORT_LEAF_PASS group=1 pairs=21\n":"LI2_SHORT_LEAF_PASS group=2 pairs=21\n");
+    output(SHORT_GROUP==0?"LI2_SHORT_LEAF_PASS group=0 pairs=19 promoted_encoding_checks=7 promoted_footprint_queries=7\n":SHORT_GROUP==1?"LI2_SHORT_LEAF_PASS group=1 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7\n":"LI2_SHORT_LEAF_PASS group=2 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7\n");
     return 0;
 }

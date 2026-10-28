@@ -48,6 +48,8 @@ class Main813InventoryTests(unittest.TestCase):
     def test_exact_inventory_sources_docs_and_historical_denominators(self):
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
+        live = copy.deepcopy(declared)
+        declared = main813.before_c1(declared)
         newest = copy.deepcopy(declared)
         declared = main813.before_c0(declared)
         latest = copy.deepcopy(declared)
@@ -102,7 +104,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(sum(len(x['all']) for x in main813.MAIN690['methods'].values()), 16)
         self.assertEqual(sum(len(x['ignored']) for x in main813.MAIN690['methods'].values()), 0)
         self.assertEqual(main813.digest(main813.before_690(latest)), main813.CURRENT)
-        latest = newest  # Later live-source mutations must reach the current guard.
+        latest = live  # Later live-source mutations must reach the current guard.
         with self.assertRaises(parsing.InvalidEvidence):
             inventory.require_current(declared)
         for key in latest:
@@ -145,7 +147,7 @@ class Main813InventoryTests(unittest.TestCase):
             self.assertEqual(rows[name], change['current'])
             for value in (change['previous']['tests'], change['current']['tests'] - 1,
                           change['current']['tests'] + 1, True, float(change['current']['tests'])):
-                changed = copy.deepcopy(newest)
+                changed = copy.deepcopy(live)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainc0_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
@@ -153,6 +155,9 @@ class Main813InventoryTests(unittest.TestCase):
             changed = copy.deepcopy(newest); changed[key] = None
             with self.subTest(mainc0_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_c0(changed)
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(newest)
+        newest = live  # Source mutation controls authenticate the actual current catalog.
         for path in main813.MAINC0['sources']:
             for missing in (False, True):
                 def changed(candidate):
@@ -171,6 +176,47 @@ class Main813InventoryTests(unittest.TestCase):
             for bad in (raw + b'\n', raw[:-1], restored):
                 with self.subTest(mainc0_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
                     main813.source_before_c0(path, bad, 'changed')
+
+        self.assertEqual(main813.digest(main813.before_c1(live)), main813.CURRENTC0)
+        rows = live['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
+                          sum(x['ignored'] for x in rows.values())), (101, 2752, 11))
+        self.assertEqual(sum(len(x['all']) for x in main813.MAINC1['methods'].values()), 31)
+        self.assertEqual(sum(len(x['ignored']) for x in main813.MAINC1['methods'].values()), 0)
+        self.assertEqual(sum(len(main813.MAINC1['methods'][p]['all']) * len(v)
+                             for p, v in main813.MAINC1['instances'].items()), 36)
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_c1(live))
+        for name, change in main813.MAINC1['workspace_changes'].items():
+            self.assertEqual(rows[name], change['current'])
+            for value in (change['previous']['tests'], change['current']['tests'] - 1,
+                          change['current']['tests'] + 1, True, float(change['current']['tests'])):
+                changed = copy.deepcopy(live)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(mainc1_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+        for key in live:
+            changed = copy.deepcopy(live); changed[key] = None
+            with self.subTest(mainc1_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main813.before_c1(changed)
+        for path in main813.MAINC1['sources']:
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == main813.ROOT / path:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(mainc1_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(live)
+        for path, row in main813.MAINC1['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_c1(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(mainc1_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_c1(path, bad, 'changed')
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'

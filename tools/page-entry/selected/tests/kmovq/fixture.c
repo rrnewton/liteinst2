@@ -180,10 +180,12 @@ static void vpb_pair(struct sample *s,unsigned index) {
     need(!li2_lifecycle_fetch_release(&s->ref),106);s->step_fetch=*li2_lifecycle_fetch_progress();
     ++result.completed;
 }
+#include "tests/kmovq/register_promotions.inc"
 static void vpb_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(i<5){kmr_promote(v,(unsigned)i);continue;}
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
         ++result.refusals;
@@ -201,12 +203,12 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==80,1183);
+    vpb_refusals();need(result.refusals==75&&kmr_promoted==5,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     for(unsigned i=0;i<VPB_COUNT;i++){vpb_prepare(&samples[i+1],i);vpb_pair(&samples[i+1],i+1);}
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          write_all(3,&vpb_observations,sizeof(vpb_observations)),1184);
-    output("LI2_KMV_TF_PASS group=0 pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=33 full_state=21 full_memory=21 live_endpoints=21\n");
+    output("LI2_KMV_TF_PASS group=0 pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=28 promoted_encoding_checks=5 promoted_footprint_queries=5 full_state=21 full_memory=21 live_endpoints=21\n");
     return 0;
 }

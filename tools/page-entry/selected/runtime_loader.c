@@ -41,6 +41,11 @@ static long last_syscall=-1;
 static uintptr_t vdso_first,vdso_end;
 static unsigned long vdso_selected;
 static void fail(unsigned,long) __attribute__((noreturn));
+#ifdef LI2_ONESHOT_PUBLICATION
+static void selected_oneshot_report(unsigned,unsigned,long);
+static _Noreturn void selected_oneshot_abort(unsigned,long);
+static void selected_oneshot_stage(void);
+#endif
 #ifdef LI2_TF_HANDOFF
 static void selected_chain_failure(const struct li2_tf_chain *);
 static void selected_chain_report(unsigned,unsigned,long);
@@ -86,7 +91,12 @@ static void report(unsigned status,unsigned code,long detail) {
     reported=1;
     if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
-#if defined(LI2_NATIVE_PAGES)
+#if defined(LI2_ONESHOT_PUBLICATION)
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_oneshot\"");
+    uint64_t patches=0;
+    for(unsigned i=0;i<selected_oneshot_used;i++)patches+=selected_oneshot_owners[i].state.published==1;
+    field(&w,",\"source_patches\":",patches);
+#elif defined(LI2_NATIVE_PAGES)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_native_pages\",\"source_patches\":0");
 #elif defined(LI2_REGISTER_RUN)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_register_run\",\"source_patches\":0");
@@ -139,6 +149,9 @@ static void report(unsigned status,unsigned code,long detail) {
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 #endif
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
+#ifdef LI2_ONESHOT_PUBLICATION
+    selected_oneshot_report(status,code,detail);
+#endif
 #ifdef LI2_RSEQ_INACTIVE
     selected_rseq_report(status,code,detail);
 #endif
@@ -153,6 +166,10 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_ONESHOT_PUBLICATION
+    if(selected_pending_route==SELECTED_ONESHOT || selected_oneshot_active)
+        selected_oneshot_abort(code,detail);
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_fail();
 #endif
@@ -282,7 +299,11 @@ static void dispatch_operation(long n,ucontext_t *context) {
         if(n==SYS_arch_prctl) checked(a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS || a[0]==ARCH_GET_FS || a[0]==ARCH_GET_GS || a[0]==0x3001 || a[0]==ARCH_SHSTK_STATUS,205,a[0]);
         /* Queries execute in our handler context. Do not expose its blocked
            mask, SS_ONSTACK state or reserved private signal dispositions. */
-        else if(n==SYS_rt_sigaction) checked(!a[1] && (int)a[0]!=SIGSEGV && (int)a[0]!=SIGSYS && (int)a[0]!=SIGTRAP,206,n);
+        else if(n==SYS_rt_sigaction) checked(!a[1] && (int)a[0]!=SIGSEGV && (int)a[0]!=SIGSYS && (int)a[0]!=SIGTRAP
+#ifdef LI2_ONESHOT_PUBLICATION
+            && (int)a[0]!=SIGILL
+#endif
+            ,206,n);
         else if(n==SYS_rt_sigprocmask) fail(206,n);
         else if(n==SYS_sigaltstack) fail(207,n);
         else if(n==SYS_prctl) checked(a[0]==PR_CAPBSET_READ,240,a[0]);
@@ -314,6 +335,14 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "native_controller.inc"
 #endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_ONESHOT_PUBLICATION
+    /* No generic ingress may resume a reserved-signal interruption of a writer
+       or selected effect. Owner capture authenticates the real landing frame. */
+    if((selected_pending_route==SELECTED_ONESHOT || selected_oneshot_active) &&
+       (handling || !selected_step_pending || selected_pending_route!=SELECTED_ONESHOT ||
+        !selected_oneshot_active || selected_oneshot_active->state.phase!=LI2_ONESHOT_PUBLISHED ||
+        sig!=SIGILL || !si || !ptr))selected_oneshot_abort(1561,sig);
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_event_boundary(); /* First action, including nested/foreign events. */
 #endif
@@ -356,8 +385,16 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_MAPS_PHASE_REUSE
     /* This scopes routing only. The route still authenticates its actual frame,
        session and query ownership before using any observations. */
-    if(!selected_selftesting && selected_session.self_test_complete)
-        checked(!li2_maps_phase_begin(),770,0);
+    if(!selected_selftesting && selected_session.self_test_complete
+#ifdef LI2_ONESHOT_PUBLICATION
+       && selected_pending_route!=SELECTED_ONESHOT
+#endif
+       )checked(!li2_maps_phase_begin(),770,0);
+#endif
+#ifdef LI2_ONESHOT_PUBLICATION
+    if(selected_pending_route==SELECTED_ONESHOT) {
+        selected_oneshot_landed(sig,si,ptr);
+    } else
 #endif
 #ifdef LI2_REGISTER_RUN
     if(selected_pending_route==SELECTED_REGISTER_RUN) {
@@ -416,8 +453,15 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     unsigned long cet=0;long result=raw(SYS_arch_prctl,0x5005,(long)&cet,0,0,0,0);
     checked((!result && !cet)||result==-22||result==-38,229,result);
     uint64_t mask=0;checked(!raw(SYS_rt_sigprocmask,0,0,(long)&mask,8,0,0) && !(mask&((1ULL<<(SIGSEGV-1))|(1ULL<<(SIGSYS-1)))),230,0);
+#ifdef LI2_ONESHOT_PUBLICATION
+    checked(!(mask&((UINT64_C(1)<<(SIGILL-1))|(UINT64_C(1)<<(SIGTRAP-1)))),230,1);
+#endif
     struct action old;
-    for(int sig=1;sig<=64;sig++) { if(sig==SIGKILL || sig==SIGSTOP)continue;checked(!raw(SYS_rt_sigaction,sig,0,(long)&old,8,0,0) && (uintptr_t)old.handler<=1 && ((sig!=SIGSEGV && sig!=SIGSYS && sig!=SIGTRAP) || !old.handler),231,sig); }
+    for(int sig=1;sig<=64;sig++) { if(sig==SIGKILL || sig==SIGSTOP)continue;checked(!raw(SYS_rt_sigaction,sig,0,(long)&old,8,0,0) && (uintptr_t)old.handler<=1 && ((sig!=SIGSEGV && sig!=SIGSYS && sig!=SIGTRAP
+#ifdef LI2_ONESHOT_PUBLICATION
+        && sig!=SIGILL
+#endif
+        ) || !old.handler),231,sig); }
     size_t total=ALT_BYTES+2*PAGE;void *area=memory(total,PROT_NONE);protect((uintptr_t)area,total);
     checked(!raw(SYS_mprotect,(long)area+PAGE,ALT_BYTES,PROT_READ|PROT_WRITE,0,0,0),232,0);
     stack_t stack={.ss_sp=(char *)area+PAGE,.ss_size=ALT_BYTES}; fork_gate_stack=stack;checked(!raw(SYS_sigaltstack,(long)&stack,0,0,0,0,0),233,0);
@@ -439,6 +483,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     struct action action={handler,SA_SIGINFO|SA_ONSTACK|SA_NODEFER|0x04000000UL,li2_restorer,SELECTED_MASK};
     fork_gate_action=action;
     checked(!raw(SYS_rt_sigaction,SIGSEGV,(long)&action,0,8,0,0) && !raw(SYS_rt_sigaction,SIGSYS,(long)&action,0,8,0,0) && !raw(SYS_rt_sigaction,SIGTRAP,(long)&action,0,8,0,0),235,0);
+#ifdef LI2_ONESHOT_PUBLICATION
+    checked(!raw(SYS_rt_sigaction,SIGILL,(long)&action,0,8,0,0),235,1);
+#endif
     checked(raw(SYS_arch_prctl,ARCH_GET_CPUID,0,0,0,0,0)==1,236,0);int tsc=0;
     checked(!raw(SYS_prctl,PR_GET_TSC,(long)&tsc,0,0,0,0) && tsc==PR_TSC_ENABLE,237,0);
     checked(!raw(SYS_arch_prctl,ARCH_SET_CPUID,0,0,0,0,0) && !raw(SYS_prctl,PR_SET_TSC,PR_TSC_SIGSEGV,0,0,0,0),238,0);
@@ -448,6 +495,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     checked(!result,1431,result);
 #endif
     selected_selftest();
+#ifdef LI2_ONESHOT_PUBLICATION
+    selected_oneshot_stage();
+#endif
 #ifdef LI2_NATIVE_PAGES
     int native_error=li2_native_epoch_initialize(&selected_session);
     checked(!native_error,(unsigned)native_error,0);
