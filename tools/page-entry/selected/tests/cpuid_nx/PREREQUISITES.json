@@ -47,8 +47,8 @@
     {
       "path": "tools/page-entry/selected/runtime_loader.c",
       "fact": {
-        "bytes": 29628,
-        "sha256": "29af2ad5816e62628c2735fa919b8ecae65dbe018f31613346025cfee9020788"
+        "bytes": 30296,
+        "sha256": "52497b7885006db823d1ff4a42f2e6cfb4258eb359ae17bf37c8df97e204ccd7"
       }
     },
     {

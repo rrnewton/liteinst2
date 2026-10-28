@@ -3,6 +3,11 @@
 #if defined(LI2_RSEQ_NATIVE_BOUNDARY) && (!defined(LI2_RSEQ_NATIVE) || LI2_RSEQ_NATIVE_BOUNDARY != 1)
 #error "Registered boundary retry requires its explicit native profile"
 #endif
+#ifdef LI2_RSEQ_TIOCGWINSZ_BTRFS
+#if LI2_RSEQ_TIOCGWINSZ_BTRFS != 1 || !defined(LI2_RSEQ_TCGETS_BTRFS) || LI2_RSEQ_TCGETS_BTRFS != 1
+#error "TIOCGWINSZ requires the explicit TCGETS btrfs capture profile"
+#endif
+#endif
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -68,6 +73,10 @@ int li2_rseq_check_instruction(const struct li2_decoded *,const ucontext_t *);
 struct li2_run_plan;
 int li2_rseq_check_run(const struct li2_run_plan *,const ucontext_t *);
 
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+#include "rseq_tcgets_btrfs.h"
+
+#endif
 #ifdef LI2_RSEQ_NATIVE
 #if LI2_RSEQ_NATIVE != 1 || !defined(LI2_NATIVE_PAGES) || !defined(LI2_RSEQ_INACTIVE) || \
     !defined(LI2_MAPS_PHASE_REUSE) || !defined(LI2_TF_HANDOFF) || \

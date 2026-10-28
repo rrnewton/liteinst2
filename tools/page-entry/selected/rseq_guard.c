@@ -116,6 +116,10 @@ static int same_data(const struct li2_rseq_data *a,const struct li2_rseq_data *b
         a->generation==b->generation && a->offset==b->offset &&
         a->pid==b->pid && a->tid==b->tid;
 }
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+#include "rseq_tcgets_btrfs.inc"
+
+#endif
 int li2_rseq_dispatch(const long a[6],long *result) {
     if(ready())return (int)state.first_error;
     if(!a || !result || li2_lifecycle_fetch_interlock())return bad(LI2_RSEQ_ARGUMENT,3);
@@ -230,12 +234,18 @@ int li2_rseq_check_run(const struct li2_run_plan *p,const ucontext_t *uc) {
 }
 int li2_rseq_before_syscall(long n,const long a[6]) {
     if(ready())return (int)state.first_error;
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+    int tcgets_error=tcgets_before(n,a);if(tcgets_error)return tcgets_error;
+#endif
     if(!state.registered)return 0;
     if(!a)return bad(LI2_RSEQ_ARGUMENT,5);
     if(word_zero() || count(&state.syscall_checks))return (int)state.first_error;
     state.last_first=state.last_end=0;
     switch(n) {
     case SYS_rseq:case SYS_exit:case SYS_exit_group:return 0;
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+    case SYS_ioctl:return tcgets_permit(a);
+#endif
     case SYS_read:case SYS_pread64:return span((uintptr_t)a[1],(size_t)a[2]);
     case SYS_getrandom:return span((uintptr_t)a[0],(size_t)a[1]);
     case SYS_getdents64:return span((uintptr_t)a[1],(unsigned int)a[2]);
