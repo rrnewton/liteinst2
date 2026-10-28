@@ -1,6 +1,9 @@
 //! Finite optional ordinary intervals. FastBypass is not an unsampled interval.
 mod drain;
 mod gate;
+mod history;
+#[cfg(test)]
+pub(crate) use history::metadata_site;
 mod site;
 use super::*;
 pub use drain::OptionalIntervalBatch;
@@ -533,7 +536,7 @@ impl State {
         let pair = self.pair.as_mut().ok_or(error(Cause::Invariant))?;
         let summary = pair.receipt.summary().ok_or(error(Cause::Invariant))?;
         pair.summary = Some(summary);
-        let (kind, generation, bits) = packed(summary, self.binding.function)?;
+        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;
         self.journal.row([
             kind,
             pair.ordinal,
@@ -570,7 +573,7 @@ impl State {
             return Err(error(Cause::Return));
         }
         let summary = pair.summary.ok_or(error(Cause::Invariant))?;
-        let (kind, generation, bits) = packed(summary, self.binding.function)?;
+        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;
         self.rows.reserve(0)?;
         if self.journal.used() >= EVENTS {
             return Err(error(Cause::Capacity));

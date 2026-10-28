@@ -469,3 +469,5 @@ fn missing_finished_checkpoint_cannot_be_repaired_by_a_later_success() {
 
 // Separate explicit ignored release qualification; all existing controls remain pure.
 pub(super) mod native;
+
+mod history;

@@ -22,8 +22,27 @@ pub struct OptionalIntervalBatch {
     rows: Vec<RawInterval>,
     joins: Vec<u64>,
     journal: Vec<u64>,
+    stream: Option<HistoryStream>,
+    history_end: Option<u64>,
 }
 impl OptionalIntervalBatch {
+    /// None selects the unchanged finite legacy format; this opaque key owns no epoch.
+    pub fn history_stream(&self) -> Option<&HistoryStream> {
+        self.stream.as_ref()
+    }
+    /// Committed absolute prefix bound at transfer, not a historical-owner proof.
+    pub fn history_high_water(&self) -> Option<u64> {
+        self.history_end
+    }
+    /// A Slow event only. Fast returns have no prefix; replay HistoryBatch to join ownership.
+    pub fn history_prefix(&self, event: usize) -> Option<u64> {
+        self.stream.as_ref()?;
+        if event as u64 >= *self.journal.first()? {
+            return None;
+        }
+        let at = event.checked_mul(7)?.checked_add(10)?;
+        history::decode(*self.journal.get(at)?, self.history_end?).map(|(_, prefix, _)| prefix)
+    }
     pub fn pid(&self) -> u32 {
         self.pid
     }
@@ -79,6 +98,9 @@ impl OptionalIntervalBatch {
     }
 }
 pub(super) fn pair_matches(row: &RawInterval, entry: &[u64], exit: &[u64], s: &State) -> bool {
+    if s.binding.session.history_mode() == HistoryMode::Absolute {
+        return history::pair_matches_absolute(row, entry, exit, s);
+    }
     let bits = entry[6];
     let invocation = bits & 0x1fff;
     let prefix = (bits >> 13) & 0x1ff;
@@ -280,7 +302,10 @@ impl OptionalThread {
                     totals,
                     completed,
                 };
+                let (stream, history_end) = history::batch_identity(&s.binding)?;
                 let batch = OptionalIntervalBatch {
+                    stream,
+                    history_end,
                     pid: self.pid,
                     tid: self.tid,
                     registration: self.registration,

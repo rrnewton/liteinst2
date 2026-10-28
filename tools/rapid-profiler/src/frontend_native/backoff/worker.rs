@@ -3,7 +3,7 @@ use super::*;
 // Private transport seam: production supplies Instant::now/sleep; controls use
 // the same real capacity-two channel with deterministic observations/waits.
 // This is called only after drain_completed returned an owned, post-RET packet.
-fn transfer<T>(
+pub(super) fn transfer<T>(
     tx: &mpsc::SyncSender<T>,
     mut value: T,
     policy: Policy,

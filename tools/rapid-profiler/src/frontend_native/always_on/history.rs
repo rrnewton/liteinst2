@@ -29,6 +29,20 @@ impl PartialEq for HistoryStream {
 }
 impl Eq for HistoryStream {}
 impl HistoryStream {
+    // Crate-owned facade bindings only; never a public forgeable identity.
+    pub(super) fn from_binding(
+        key: &Arc<()>,
+        pid: u32,
+        install: u64,
+        function: FunctionId,
+    ) -> Self {
+        Self {
+            key: Arc::clone(key),
+            pid,
+            install,
+            function,
+        }
+    }
     pub fn pid(&self) -> u32 {
         self.pid
     }
@@ -59,6 +73,9 @@ pub struct HistoryBatch {
     chunk: HistoryChunk,
 }
 impl HistoryBatch {
+    pub(super) fn from_checked(stream: HistoryStream, chunk: HistoryChunk) -> Self {
+        Self { stream, chunk }
+    }
     pub fn stream(&self) -> &HistoryStream {
         &self.stream
     }
@@ -143,6 +160,9 @@ pub struct HistoryWindow {
     view: HistoryView,
 }
 impl HistoryWindow {
+    pub(super) fn from_checked(stream: HistoryStream, view: HistoryView) -> Self {
+        Self { stream, view }
+    }
     pub fn stream(&self) -> &HistoryStream {
         &self.stream
     }
@@ -237,7 +257,7 @@ pub(super) fn packed_for(
     }
 }
 
-fn packed_absolute(
+pub(super) fn packed_absolute(
     summary: IntervalEntrySummary,
     function: FunctionId,
     high_water: u64,

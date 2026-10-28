@@ -3,6 +3,10 @@
 //! K closes sampling, not the mandatory native hooks. This is not asynchronous
 //! preemption, a thread-join service, durable storage, or an indefinite daemon.
 //! Source/gate lifetime and the ordinary readonly-leaf unsafe contract remain.
+//!
+//! `prepare_optional` is a distinct opt-in profile: the same scheduler drives
+//! optional selector scans and exports physical calls plus sparse Slow rows.
+//! It does not change the mandatory constructors, packets or their counters.
 use super::{
     BridgeError, CallResult, HistoryBatch, HistoryBinding, HistoryStream, InstalledIntervalSite,
     IntervalBatch, IntervalClient, IntervalController, IntervalEpoch, IntervalJournal,
@@ -18,8 +22,14 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 mod driver;
+mod optional;
 mod worker;
 pub use driver::{DeadlineFailure, DeadlinePhase, Driver, RunSummary, StopReason};
+pub use optional::{
+    OptionalCallOutcome, OptionalClient, OptionalCompletedBatch, OptionalCompletedCall,
+    OptionalDriver, OptionalExport, OptionalPrepared, OptionalRunSummary, OptionalThread,
+    OptionalWorkerFinish, OptionalWorkerStatus, optional_matches_history, prepare_optional,
+};
 pub use worker::{CallOutcome, Client, Thread, WorkerFinish};
 
 const ROWS: usize = 4;
