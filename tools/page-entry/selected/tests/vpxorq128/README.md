@@ -1,0 +1,13 @@
+# EVEX128 register VPXORQ
+
+This cohort qualifies only canonical unmasked EVEX.128.66.0F.W1 register triples for iced Code 2459. It exercises 96 structural cases plus 6 startup pairs, every XMM0..31 operand role, five alias classes and all six one/two-page instruction placements. It is not an exhaustive 32,768-case native matrix. Memory, opmasks, zeroing controls, broadcast, other widths and leading prefixes remain refused.
+
+The independent literal result is the two original sources' low 128 XOR, followed by zero in destination bits 128..511. Complete native/TF frame, live state, all 32 ZMM/eight K registers, GPRs/RSP, flags including DF, selectors, FS/GS, source, stack and data comparisons remain mandatory. Actual CPUID/XCR0 records require AVX512F/BW/VL and all enabled XSAVE component bounds. The fixture keeps 21 record slots; each process fills 17 and requires the four unused slots and original negative sample to remain zero. It records 32 actual-before NONE queries per process.
+
+All 119 donor refusal cases remain, together with its existing typed VPTESTMB promotion; 37 new VPXORQ neighbors are additional. Native operand-memory faults are outside this register-only scope. Each process retains 5 CPU seconds, 15 wall seconds, 512 MiB address space and 16 MiB per file. The evaluator binds the actual compiler headers, archive, emitted ELF record extents, captures and final source/artifact cleanup. It reuses the original complete C architectural comparator; the Python reader validates records, layout, CPUID and typed queries rather than claiming a second full-state replay.
+
+Run `python3 evaluation/inprocess/page_selected_vpxorq128.py --expect-revision <40-hex revision>` under the repository's single-CPU allocator. The evaluator creates one compact public numeric receipt and retains raw records privately. `generate.py` recreates the literal case files from its formulas and the unchanged VPCMPB refusal suffix.
+
+Intel's [PXOR instruction reference](https://intel.github.io/SDM/data/sdm/PXOR.docbook), section “VPXORQ (EVEX Encoded Versions)”, specifies original-source XOR for two 64-bit lanes at VL128, zero above VL, and no flags or numeric exceptions. Reference SHA256: `3fe92a99948877cebb0979d1864c23a07bb5acd6323509dee7eae74c1d5abd33`; indexed Git blob: `a5ba45e2b8f7f1036542855de4017e9f5ddfb0d2`. This profile uses the stated AVX512F+VL prerequisite and does not claim the alternative AVX10 profile.
+
+Execution results are reported separately; this design implies no application completion or performance result.

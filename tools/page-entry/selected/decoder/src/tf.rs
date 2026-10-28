@@ -163,6 +163,16 @@ fn canonical_pmaxud(instruction: &Instruction, bytes: &[u8]) -> bool {
             [0x66, 0x44, 0x0f, 0x38, 0x3f, 0x26])
 }
 
+// Canonical unmasked EVEX.128.W1 VPXORQ register triples. All32 registers
+// are available in each operand role. Other widths, masks, zeroing/broadcast
+// encodings, memory and added prefixes remain outside this closed family.
+fn canonical_vpxorq128(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
+        && matches!(bytes, [0x62, p0, p1, p2, 0xef, m]
+            if (*p0 & 0x0f) == 0x01 && (*p1 & 0x87) == 0x85
+                && (*p2 & 0xf7) == 0 && (*m & 0xc0) == 0xc0)
+}
+
 // Canonical EVEX.512.W0 VPCMPB register forms. The opmask destination has
 // no extension bits; z/b, non-512 widths, memory and reserved imm8 bits stay closed.
 fn canonical_vpcmpb(instruction: &Instruction, bytes: &[u8]) -> bool {
@@ -236,6 +246,8 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
             [0xf3, 0x48 | 0x49, 0x0f, 0x1e, m] if (*m & 0xf8) == 0xc8) { return Ok(out); }
     } else if matches!(instruction.code(), Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm) {
         if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64 {
+        if !canonical_vpxorq128(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpbroadcastb_zmm_k1z_r32 {
         if !canonical_vpbroadcastb(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::VEX_Vmovdqu_xmm_xmmm128 {
@@ -560,6 +572,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
+        | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
         | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
