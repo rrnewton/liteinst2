@@ -65,8 +65,14 @@ def produce(builder,root,private,fixture,pin,binary,run,receipt,boundary):
     pending=[];packages=[];environment=dict(builder.environment)
     # This is an ordinary Rust test with unwind cleanup, not the decoder's
     # panic-abort C archive. Its one Cargo target remains the existing root.
+    # Cargo may reuse relative dep-info across distinct private workspaces.
+    # A unique invocation cfg covers every compiled unit in the shared target;
+    # no source reads are inferred merely from remapping an old .d file.
+    build_identity=H(os.fsencode(view.resolve(strict=True)))
+    need('CARGO_ENCODED_RUSTFLAGS'not in environment,'unambiguous reference compiler flags')
     environment.update(CARGO_TARGET_DIR=str(root/'target'),CARGO_INCREMENTAL='0',CARGO_BUILD_JOBS='1',
-        RUSTFLAGS='',CARGO_PROFILE_TEST_DEBUG='0',LI2_B2_REFERENCE_DIR=str(corpus))
+        RUSTFLAGS='--cfg=li2_b2_reference_build="'+build_identity+'"',
+        CARGO_PROFILE_TEST_DEBUG='0',LI2_B2_REFERENCE_DIR=str(corpus))
     state['environment']=environment.copy()
     def retain(path):
         try:
@@ -128,10 +134,12 @@ def produce(builder,root,private,fixture,pin,binary,run,receipt,boundary):
         need(messages and messages[-1]=={'reason':'build-finished','success':True},'actual successful reference build terminal')
         products=[m for m in messages if m.get('reason')=='compiler-artifact']
         need(products==state['compiler_artifacts']and not receipt['final_errors'],'complete independently retained Cargo artifact prefix')
+        need(all(p.get('fresh')is False for p in products),'every emitted reference compiler artifact freshly compiled for this source view')
         candidates=[m for m in products if m.get('target',{}).get('name')=='b2_dynamic_reference'and m.get('executable')]
         need(len(candidates)==1 and candidates[0]['target']['src_path']==str(view/'crates/liteinst-launch/tests/b2_dynamic_reference.rs')and
              candidates[0]['target']['kind']==['test']and candidates[0]['profile']['test']is True and
-             candidates[0]['profile']['debuginfo']==0,'one actual exact named reference test binary without debug sections')
+             candidates[0]['profile']['debuginfo']==0 and candidates[0].get('fresh')is False,
+             'one actual freshly compiled exact named reference test binary without debug sections')
         ids={p['id']for p in metadata['packages']}
         need(all(p['package_id']in ids for p in products),'all actual compiled artifacts have authenticated package sources')
         state['compiler_artifacts']=products
