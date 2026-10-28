@@ -40,6 +40,7 @@ def main():
     parser.add_argument('--expect-revision', required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--library-root', default='/usr/lib64')
+    parser.add_argument('--cpuid-nx', action='store_true', help='explicit raw CPUID NX-only release profile')
     args = parser.parse_args()
     if args.output.is_absolute():
         raise ValueError('public output must be repository-relative')
@@ -47,6 +48,13 @@ def main():
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
     if revision != args.expect_revision or len(os.sched_getaffinity(0)) != 1:
         raise RuntimeError('exact revision and one reserved CPU required')
+    nx_compare = None
+    if args.cpuid_nx:
+        spec = importlib.util.spec_from_file_location('native_page_cpuid_nx_reports',
+            ROOT/'tools/page-entry/selected/tests/cpuid_nx/reports.py')
+        nx_compare = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = nx_compare
+        spec.loader.exec_module(nx_compare)
     # Bind the actual local import closure, including the unchanged completion
     # predicates reached through the old comparators. The schema is data rather
     # than a Python module, so it is named separately.
@@ -96,6 +104,9 @@ def main():
                               '--expect-revision', revision, '--output', str(args.output),
                               '--library-root', args.library_root],
                    cases=[], passed=False)
+    if args.cpuid_nx:
+        receipt['cpuid_profile'] = 'nx-only-raw'
+        receipt['reproduce'].append('--cpuid-nx')
     commands = []
     tool_paths, tool_aliases, tool_hashes = {}, {}, {}
     receipt['tool_sha256'] = tool_hashes
@@ -153,10 +164,11 @@ def main():
                 raise RuntimeError('actual C subtool resolution failed: ' + name)
             value = out.decode().strip()
             pin_tool(name, value if Path(value).is_absolute() else shutil.which(value, path=env['PATH']))
-        status, _, _, _, _ = run('build', ['sh', 'tools/page-entry/selected/build-native-pages.sh'])
+        recipe = 'tools/page-entry/selected/build-cpuid-nx.sh' if args.cpuid_nx else 'tools/page-entry/selected/build-native-pages.sh'
+        status, _, _, _, _ = run('build', ['sh', recipe])
         if status:
             raise RuntimeError('release build failed')
-        bridge = Path('target/page-entry/native-pages/bridge-native-pages.so')
+        bridge = Path('target/page-entry/cpuid-nx/bridge-cpuid-nx.so' if args.cpuid_nx else 'target/page-entry/native-pages/bridge-native-pages.so')
         receipt['bridge_sha256'] = sha(bridge.read_bytes())
         artifacts[str(bridge)] = receipt['bridge_sha256']
         status, symbols, err, _, _ = run('runtime-memset-symbols', ['nm', '-S', '-n', str(bridge)])
@@ -215,10 +227,22 @@ def main():
                     dependency_rows.append(dict(names=item['names'], sha256=item['sha256'], size=item['size']))
                 dependencies[namespace['interpreter']] = identities['interpreter_sha256']
                 loader, pages, report_error = {}, {}, None
+                nx_public = None
                 try:
-                    parsed = compare.reports(gated[2])
+                    if args.cpuid_nx:
+                        parsed = nx_compare.reports(gated[2], True, False)
+                        nx_compare.completed(parsed, gated[4])
+                        nx = parsed['cpuid_nx']
+                        if not (nx['status'] == nx['failure_code'] == 0 and
+                                nx['hardware_entered'] == nx['hardware_returned'] == 1 and nx['phase'] == 3 and
+                                nx['attempts'] == nx['samples'] == nx['commits'] == parsed['loader']['cpuid'] > 0 and
+                                2 <= nx['next_pc']-nx['pc'] <= 15 and nx['raw'] == nx['result']):
+                            raise ValueError('complete real NX raw sampling/commit; no fabricated fault/rearm')
+                        nx_public = {k: nx[k] for k in ('hardware_entered', 'hardware_returned', 'phase', 'attempts', 'samples', 'commits')}
+                    else:
+                        parsed = compare.reports(gated[2])
+                        compare.completed(parsed, gated[4])
                     loader, pages = parsed['loader'], parsed['native']
-                    compare.completed(parsed, gated[4])
                 except (ValueError, KeyError, TypeError) as error:
                     report_error = type(error).__name__ + ': ' + str(error)
                 passed = (native[0] == gated[0] == 0 and native[1] == gated[1] and not native[2]
@@ -232,7 +256,7 @@ def main():
                     output_sha256=sha(gated[1]), native_whole_process_ns=native[3], gated_whole_process_ns=gated[3],
                     loader={k: loader.get(k) for k in ('status', 'failure_code', 'nx_faults', 'admissions',
                                                       'source_syscalls', 'cpuid', 'rdtsc', 'rdtscp')},
-                    pages=pages))
+                    pages=pages, **({'cpuid_nx': nx_public} if args.cpuid_nx else {})))
         receipt['passed'] = len(receipt['cases']) == 5 and all(c['passed'] for c in receipt['cases'])
     except Exception as error:
         receipt['error'] = type(error).__name__ + ': ' + str(error)
