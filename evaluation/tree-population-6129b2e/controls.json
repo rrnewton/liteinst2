@@ -1,0 +1,15 @@
+{
+  "errors": 0,
+  "failures": 0,
+  "methods": 8,
+  "output_limit_bytes": 8388608,
+  "private_receipt_sha256": "339aad680f50dca44d1ec56a4a6002bbe9e124f33e71da78fda45d698c98ea4b",
+  "python": "Python 3.9.25",
+  "recipe": "python3 -B tools/rapid-profiler/tree-work/test_population.py",
+  "rescues": 0,
+  "revision": "6129b2e6934ca1f076e51df6b58e4754cea48410",
+  "scope": "Fabricated protocol mutation controls; no native execution or performance measurement.",
+  "status": "PASS",
+  "wall_limit_seconds": 180,
+  "wall_seconds": 2.1177798230201006
+}
