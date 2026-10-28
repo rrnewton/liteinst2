@@ -161,7 +161,8 @@ def qualify(parsed,pid,count,nx,configured,program):
     if nx:
         r=parsed['cpuid_nx'];need(r['status']==r['failure_code']==0 and r['hardware_entered']==r['hardware_returned']==1 and
             r['phase']==3 and r['attempts']==r['samples']==r['commits']==count and r['next_pc']==r['pc']+2 and
-            l['builtin_kind']==1 and l['builtin_phase']==0 and all(l[k]==0 for k in ('builtin_enable_result_abs','builtin_enable_result_negative','builtin_restore_result_abs','builtin_restore_result_negative','builtin_a','builtin_b','builtin_c','builtin_d')),
+            l['builtin_kind']==1 and l['builtin_phase']==0 and all(l[k]==0 for k in ('builtin_enable_result_abs','builtin_enable_result_negative','builtin_restore_result_abs','builtin_restore_result_negative'))and
+            [l[k]for k in ('builtin_a','builtin_b','builtin_c','builtin_d')]==r['raw'],
             'actual NX completion with no control/rearm claim')
     else:
         need(l['builtin_kind']==1 and l['builtin_phase']==7 and all(l[k]==0 for k in ('builtin_enable_result_abs','builtin_enable_result_negative','builtin_restore_result_abs','builtin_restore_result_negative')),'unchanged actual faulted rearm')

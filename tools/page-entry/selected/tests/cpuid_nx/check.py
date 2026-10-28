@@ -159,7 +159,7 @@ def check(data,layout,image,nx,configured,stdout,expected_status=0,expected_code
                 need(value==VECTOR[reg*64:(reg+1)*64],'entire actual before ZMM '+str(reg))
             off,n=components[5];need(fb[off:off+n]==MASK,'all actual before K registers')
         if nx:
-            need(v[25:29]==(3,i+1,i+1,i+1)and v[40:48]==(1,0,0,0,0,0,0,0)and v[68:72]==(pc,pc+2,*v[30:32])and v[72:76]==v[36:40],'real NX attempted/sample/commit; no fabricated enable/rearm')
+            need(v[25:29]==(3,i+1,i+1,i+1)and v[40:44]==(1,0,0,0)and v[44:48]==v[32:36]and v[68:72]==(pc,pc+2,*v[30:32])and v[72:76]==v[36:40],'real NX attempted/sample/commit and raw tuple; no fabricated enable/rearm')
         else:need(v[25:29]==(0,0,0,0)and v[40:44]==(1,7,0,0)and v[32:36]==v[44:48]and not any(v[68:76]),'unchanged actual faulted sample/rearm/commit')
         need(v[29]==0 and v[50:52]==(0,0)and not any(v[76:]),'all reserved observation words zero')
         result=list(v[32:36])
