@@ -561,6 +561,534 @@
       }
     }
   },
+  "main7cdc": {
+    "base": "ab2183e0efd7b5318196a09ecc7dcbb8550dbbeb",
+    "current_corpus_sha256": "d2d2ce9b96cc1b733cc12c8429392b54e11c7ba9e3bd3d6c6bceedb07182075a",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_tests": 10
+    },
+    "doctests": {},
+    "instances": {
+      "tests/support/native_native_call/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::native_call::tests::"
+      },
+      "tools/rapid-profiler/tree-work/collection.rs": {
+        "unit/ordinary_interval/main": "tree::throughput::collection::tests::"
+      }
+    },
+    "methods": {
+      "tests/support/native_native_call/tests.rs": {
+        "all": [
+          "literal_native_profile_has_no_transient_exclusions_or_legacy_alias",
+          "actual_target_input_length_and_alignment_are_required",
+          "every_callee_save_must_restore_before_harness",
+          "outer_call_requires_exact_instruction_target_stack_successor_and_saved_word",
+          "callback_order_count_and_stack_geometry_are_exact",
+          "wrapper_semantics_compare_all_unaffected_state_and_complete_stack"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/tree-work/collection.rs": {
+        "all": [
+          "complete_population_checks_every_value_and_wrapping_sum",
+          "duplicate_missing_extra_and_reordered_results_refuse",
+          "cancellation_cannot_hide_two_wrong_results",
+          "wrong_or_incomplete_block_summaries_refuse"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "7cdc68012a7bdecfd52d6b70e4318b60c51e9cab",
+    "previous_corpus_sha256": "88708db07840bde15bd29a58638b34f5e52cc54a92d23c854fdb606d3d424c4d",
+    "projections": {
+      "tests/support/native_call_tree.rs": {
+        "current_sha256": "64855dde2e6d0eca71d5de8d7dce38c1df016b5f4f42aa235b8a1d55258df256",
+        "edits": [
+          [
+            1237,
+            1307,
+            ""
+          ],
+          [
+            2394,
+            2717,
+            ""
+          ],
+          [
+            19320,
+            23737,
+            ""
+          ]
+        ],
+        "previous_sha256": "c81a5934ee056d50626587a0eebd04e3ed712cfaae7c8cc33a38a5d97ae99761"
+      },
+      "tests/support/native_ordinary.rs": {
+        "current_sha256": "78258ca0c088b4672aca4989a7325b88a6d6649684f204fd79fc20f685a0eb74",
+        "edits": [
+          [
+            996,
+            1012,
+            ""
+          ],
+          [
+            1186,
+            1240,
+            ""
+          ],
+          [
+            1412,
+            1464,
+            ""
+          ],
+          [
+            1635,
+            1671,
+            ""
+          ],
+          [
+            1839,
+            1875,
+            ""
+          ],
+          [
+            2022,
+            2057,
+            ""
+          ],
+          [
+            2201,
+            2293,
+            "        self == Self::Legacy || !reference::transient(gate, pc)\n"
+          ],
+          [
+            6242,
+            6294,
+            ""
+          ],
+          [
+            8114,
+            8152,
+            ""
+          ],
+          [
+            20066,
+            20707,
+            ""
+          ],
+          [
+            20827,
+            20955,
+            "                assert_eq!(profile, Profile::Legacy);\n"
+          ],
+          [
+            26409,
+            26999,
+            ""
+          ],
+          [
+            31425,
+            31664,
+            "        let profile = reference.map_or(Profile::Legacy, |(_, external_id)| Profile::Reference {\n            external_id,\n        });\n"
+          ],
+          [
+            31842,
+            32320,
+            "                call_tree::Witness::new(&original, self.gate_rsp()),\n                call_tree::Witness::new(&candidate, self.gate_rsp()),\n"
+          ],
+          [
+            32930,
+            33351,
+            "        let af = self.armed_frame(a.child, &ar, &original);\n        let bf = self.armed_frame(b.child, &br, &candidate);\n"
+          ],
+          [
+            33395,
+            33454,
+            "            Profile::Legacy => None,\n"
+          ],
+          [
+            33612,
+            34244,
+            "                    reference::Witness::new(self, a.child, &original, ar, &af, external_id, false),\n                    reference::Witness::new(self, b.child, &candidate, br, &bf, external_id, true),\n"
+          ],
+          [
+            34513,
+            34839,
+            ""
+          ],
+          [
+            36152,
+            36283,
+            ""
+          ],
+          [
+            36320,
+            36483,
+            ""
+          ],
+          [
+            36719,
+            37082,
+            ""
+          ],
+          [
+            38230,
+            38362,
+            ""
+          ],
+          [
+            38400,
+            38564,
+            ""
+          ],
+          [
+            39117,
+            40227,
+            "            self.frame_after(a.child, &ar, &original, &af, None);\n            call_tree::frame_after(b.child, &br, &candidate, &bf, self.gate_rsp());\n"
+          ],
+          [
+            40319,
+            40523,
+            "            self.frame_after(a.child, &ar, &original, &af, None);\n            self.frame_after(b.child, &br, &candidate, &bf, returns.first().copied());\n"
+          ],
+          [
+            51234,
+            51290,
+            ""
+          ]
+        ],
+        "previous_sha256": "83fdcc04d8b34b4d8730ae15391056c7082dfe5725f79e047be131013d805b2b"
+      },
+      "tools/rapid-profiler/Cargo.toml": {
+        "current_sha256": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+        "edits": [
+          [
+            788,
+            887,
+            ""
+          ]
+        ],
+        "previous_sha256": "44a10ae94825a0bad3d09776065fe2aff56082dcb41263a5efe28230a746c685"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "45c722bf160e1f341ce46a5c967d8e65144021a1970439df792cb0a4ceb65c14",
+        "edits": [
+          [
+            209,
+            226,
+            ""
+          ],
+          [
+            34673,
+            35322,
+            ""
+          ]
+        ],
+        "previous_sha256": "064112e3c3adf4bf4b34eb0ef55a46733e4cab1fad8743b9945bdb8134a383c9"
+      },
+      "tools/rapid-profiler/native-interval/ordinary.rs": {
+        "current_sha256": "6bfcab1e2b2c36761504113eed7f98d76a753ecabeef490b393ff26ed681ea5e",
+        "edits": [
+          [
+            5003,
+            5099,
+            ""
+          ],
+          [
+            6472,
+            6568,
+            ""
+          ],
+          [
+            11291,
+            11391,
+            ""
+          ],
+          [
+            12085,
+            12185,
+            ""
+          ],
+          [
+            15404,
+            15504,
+            ""
+          ],
+          [
+            15967,
+            16067,
+            ""
+          ]
+        ],
+        "previous_sha256": "5ca44cbf81e774b8d608e2f6d4281bb99ee96d4207c7e6961a636ab6ad2a1b39"
+      },
+      "tools/rapid-profiler/native-interval/tree.rs": {
+        "current_sha256": "c4d01f036ea9a931d52b3a8dbac88e82efab1078e11070b35230bba5c937ef29",
+        "edits": [
+          [
+            1291,
+            1366,
+            "fn expected_bytes(subject: &Path, expected: &Path) -> Vec<u8> {\n"
+          ],
+          [
+            2266,
+            2346,
+            "fn protect(range: AddressRange, flags: i32) -> Result<(), Refusal> {\n"
+          ]
+        ],
+        "previous_sha256": "748ba85b66f00fdd4e5e89b14ad324c0c5947ca6a3cd86675879592ad73085da"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "c4254b218af1a48aca71e3bea4460f0f1e3cabb672bcdfb3eba464fa946d6804",
+        "edits": [
+          [
+            12155,
+            12546,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3f0530f3579b9c8d00261e5471ecce47ad39347b07bdc84cc8e5d2aaca1141c"
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/throughput.rs": {
+        "current_sha256": "1ccaf3baab3e0e5d5de46cce89acb111b91412afb9f4d3d4e60c30122c302c67",
+        "edits": [
+          [
+            222,
+            280,
+            ""
+          ],
+          [
+            5007,
+            5060,
+            ""
+          ],
+          [
+            5973,
+            6102,
+            ""
+          ],
+          [
+            6665,
+            6718,
+            ""
+          ],
+          [
+            9066,
+            9195,
+            ""
+          ],
+          [
+            13088,
+            13347,
+            ""
+          ],
+          [
+            13720,
+            13996,
+            ""
+          ],
+          [
+            14036,
+            14314,
+            "        None => original(prep, &input, &expected_inputs),\n        Some(k) => installed(prep, root, continuation, k, &input, &expected_inputs),\n"
+          ],
+          [
+            14321,
+            14495,
+            ""
+          ],
+          [
+            15000,
+            15565,
+            "    write!(out, \"tree-throughput FUNCTIONAL_PASS mode={} blocks=64 roots=1536 calls=1536 originals={} installed_roots={} node_rows={} sampled={} closed={} batches={} events={} reports={} epochs={} actions={} root_inclusive_instructions=509952 root_exclusive_instructions=9216 child_instructions=500736 input_unchanged=true records_joined={} clock_scope=guarded-consumer\",\n"
+          ],
+          [
+            15899,
+            15979,
+            ""
+          ]
+        ],
+        "previous_sha256": "51641d86d6bfb2e87c610a09b3ae4e2078a1c7ac67e8c4c5ec8adbaabdb8fa3c"
+      },
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/clocks.rs": {
+        "current_sha256": "f42c82422fe93aa500df33bd42593a8afa0d7168ce28b9d30c2cdd34c8eeb313",
+        "edits": [
+          [
+            2266,
+            2858,
+            ""
+          ],
+          [
+            3046,
+            3147,
+            ""
+          ]
+        ],
+        "previous_sha256": "891db6ea6922d2a178155ed6391044c9725afeebe4fcf1cbc2ef8832d8002c97"
+      },
+      "tools/rapid-profiler/reference-work/check_output.py": {
+        "current_sha256": "eb2439971085a752abbe0a0ccea4c5718743ad3e31fa53a2f2ffc1e9f655fbc8",
+        "edits": [
+          [
+            1652,
+            2366,
+            ""
+          ],
+          [
+            12408,
+            12632,
+            "    pattern = (r'\\nrunning 76 tests\\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \\.\\.\\. ok\\n){76})\\n'\n        r'test result: ok\\. 76 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\\.[0-9]+s\\n\\n')\n"
+          ],
+          [
+            12771,
+            12804,
+            "    assert len(set(names)) == 76\n"
+          ]
+        ],
+        "previous_sha256": "dcd710575294765ab43952a8d6a18b3c4b9af467b0932eba41218f841fb4afd1"
+      },
+      "tools/rapid-profiler/reference-work/test_recipe.py": {
+        "current_sha256": "72968b82bef75ed5521c64f6ca1c2fd19608eb835ea3c485f21b643e7c463313",
+        "edits": [
+          [
+            3210,
+            3262,
+            "            return ('\\nrunning 76 tests\\n'+''.join(\n"
+          ],
+          [
+            3365,
+            3501,
+            "                '\\ntest result: ok. 76 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\\n\\n').encode('ascii')\n"
+          ],
+          [
+            3741,
+            3835,
+            "            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 76]):\n"
+          ],
+          [
+            4147,
+            4251,
+            "                    data.replace(b'76 passed', b'75 passed'), data.replace(b'0 ignored', b'1 ignored'),\n"
+          ]
+        ],
+        "previous_sha256": "b4c5437b6131bc56e15fc86c9d883799dd09827d726e6391c406391cfa3acb88"
+      },
+      "tools/rapid-profiler/verify_ordinary_interval.py": {
+        "current_sha256": "0f9395e51425b8d2fdb4c828f30020da0923a48f3a210fea418e9bc02be59e6a",
+        "edits": [
+          [
+            15949,
+            16105,
+            ""
+          ],
+          [
+            18412,
+            18516,
+            ""
+          ],
+          [
+            20536,
+            20606,
+            ""
+          ],
+          [
+            29351,
+            29634,
+            ""
+          ],
+          [
+            37732,
+            38121,
+            ""
+          ],
+          [
+            39421,
+            39521,
+            ""
+          ],
+          [
+            71605,
+            71697,
+            "            reference['calibrations'] = dict(status='PASS', passed=76, failed=0, ignored=0,\n"
+          ],
+          [
+            77624,
+            77712,
+            "            cache['calibrations'] = dict(status='PASS', passed=76, failed=0, ignored=0,\n"
+          ],
+          [
+            91210,
+            91395,
+            ""
+          ]
+        ],
+        "previous_sha256": "a63bc30521b2bad9c62370018d128e0cd4af8fe14c2b10e0ffadd4b8eeb1d719"
+      }
+    },
+    "scope": "Six native-call tests compile once in frontend_native_calibrations; four collection tests compile once in ordinary_interval/main. The new tree-native-baseline target has test=false. No execution credit, removed tests, new doctests/ignores, or custom-protocol change.",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/tree-native-a39caa7/clock-limit-probe.c": "447f1b81002df77a4f73663a19111d6a9e5b6e9d155c4505fb6a83e3c670991d",
+      "evaluation/tree-native-a39caa7/reproduce-clock-limit.py": "1ced4e2876d8de98360953b682f62fa21b36b6c755b34a1556eb8727b6e7b519",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_call_tree.rs": "64855dde2e6d0eca71d5de8d7dce38c1df016b5f4f42aa235b8a1d55258df256",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_native_call.rs": "8e723a6b9ea292468835ef9c7b55f6ea64e386591bc04e7c1b29709e1dced587",
+      "tests/support/native_native_call/tests.rs": "314182d6f496b4313f4b2c2d58a8baadac7d2e6e40f2d2f3e34357c8dbe51ad8",
+      "tests/support/native_ordinary.rs": "78258ca0c088b4672aca4989a7325b88a6d6649684f204fd79fc20f685a0eb74",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-baseline/main.rs": "4c44b40a83a69c5bab3823f224383506871d861eab51e2c824d10efa620dee06",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "f9c7f96424095442e28c541a38196800f1481482237e9f2739aba2392d811e1f",
+      "tools/rapid-profiler/native-interval/main.rs": "45c722bf160e1f341ce46a5c967d8e65144021a1970439df792cb0a4ceb65c14",
+      "tools/rapid-profiler/native-interval/native_tree.rs": "1dac801d19a6a09cdfe08a9a5ff515c2cdae86a6781657cce7a66962fc75705d",
+      "tools/rapid-profiler/native-interval/ordinary.rs": "6bfcab1e2b2c36761504113eed7f98d76a753ecabeef490b393ff26ed681ea5e",
+      "tools/rapid-profiler/native-interval/tree.rs": "c4d01f036ea9a931d52b3a8dbac88e82efab1078e11070b35230bba5c937ef29",
+      "tools/rapid-profiler/native-point/main.rs": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "c4254b218af1a48aca71e3bea4460f0f1e3cabb672bcdfb3eba464fa946d6804",
+      "tools/rapid-profiler/ordinary-interval/tree.rs": "ad40bfb21390726c422e73462e544115ee3a05254e0f95577dbd5efdcdd9293a",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput.rs": "1ccaf3baab3e0e5d5de46cce89acb111b91412afb9f4d3d4e60c30122c302c67",
+      "tools/rapid-profiler/ordinary-interval/tree/throughput/clocks.rs": "f42c82422fe93aa500df33bd42593a8afa0d7168ce28b9d30c2cdd34c8eeb313",
+      "tools/rapid-profiler/reference-work/check_output.py": "eb2439971085a752abbe0a0ccea4c5718743ad3e31fa53a2f2ffc1e9f655fbc8",
+      "tools/rapid-profiler/reference-work/test_recipe.py": "72968b82bef75ed5521c64f6ca1c2fd19608eb835ea3c485f21b643e7c463313",
+      "tools/rapid-profiler/tree-work/check_comparison.py": "c5123203e0bef3a0ad72fcc2cc1e4b936ef51b4bb0c604342db8aa71d8e74e1c",
+      "tools/rapid-profiler/tree-work/collection.rs": "1d7fc73fe61957897b407070d1574c2f621e054348110a9f9841b6daf365a0a7",
+      "tools/rapid-profiler/tree-work/comparison_runner.py": "024fe8eaca5189792209ac4629df965b5b8757b38da554276d1694cf15251a10",
+      "tools/rapid-profiler/tree-work/comparison_stats.py": "8c1e07f101f82cf8c8a67256d3c68d6721b71754d6ea2232cf5d2162ab577e18",
+      "tools/rapid-profiler/tree-work/native_call.rs": "452791d64e9410da3f7c0f6583c00cfff9cdd97d8ec9db9ce324f4c9a0b4f544",
+      "tools/rapid-profiler/tree-work/process_timer.c": "ac301235729a93ab579e0f20af598ee60b53abc9aa7e9fc142729f22bd098646",
+      "tools/rapid-profiler/tree-work/process_timer_control.c": "9ceb5e8d6a6e20db16bd39c2d3557afaafb08245768ad077aee5303b4004c1d7",
+      "tools/rapid-profiler/tree-work/process_timing.py": "5feee9de4625879d5f39a553cb04ade2f9817335af2b75a398f3c7db59454332",
+      "tools/rapid-profiler/tree-work/test_comparison.py": "37fb7baebb88c3a3f8083bc288951b6415fc6c84c5d902a8ac27904a42f15b18",
+      "tools/rapid-profiler/tree-work/test_comparison_stats.py": "3715bb39ded0d54339ebf80456c57b2cc81385f8452e186e64a32c09eb3afad0",
+      "tools/rapid-profiler/tree-work/test_process_timer_live.py": "eb69f2cfdf3374c09a2bcb186aee63e04b38d55705c28e2d5f4b07ae3a520bb0",
+      "tools/rapid-profiler/tree-work/test_process_timing.py": "467517d4985b6b6d92d24d7ed57492d56c338617e363a52e9f01ebe83dbf51f8",
+      "tools/rapid-profiler/verify_ordinary_interval.py": "0f9395e51425b8d2fdb4c828f30020da0923a48f3a210fea418e9bc02be59e6a"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 0,
+          "tests": 82
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 76
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 60
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 56
+        }
+      }
+    }
+  },
   "mainc0": {
     "base": "d81a77a658cef48075eac62eb128822e33f33a64",
     "current_corpus_sha256": "748713582eb3ae3cbd1fc92301f532a35e485603a20741711e46e2778e81c4bf",
