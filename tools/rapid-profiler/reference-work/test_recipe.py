@@ -70,20 +70,20 @@ class NativeProjection(unittest.TestCase):
 
     def test_full_calibration_population_no_ignored_or_duplicate_names(self):
         def transcript(order):
-            return ('\nrunning 58 tests\n'+''.join(
+            return ('\nrunning 76 tests\n'+''.join(
                 f'test {name}{" - should panic" if panic else ""} ... ok\n' for name, panic in order)+
-                '\ntest result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
+                '\ntest result: ok. 76 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
         items = list(CHECK.CALIBRATION_TESTS.items())
         data = transcript(items)
         CHECK.calibrations(data, b'')
         CHECK.calibrations(transcript(reversed(items)), b'')
         for index, (name, panic) in enumerate(items):
-            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 58]):
+            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 76]):
                 bad = items.copy(); bad[index] = changed
                 with self.subTest(name=name, changed=changed), self.assertRaises(AssertionError):
                     CHECK.calibrations(transcript(bad), b'')
         for bad in (data[:-1], data+b'\n', transcript(items[:-1]), transcript(items+items[:1]),
-                    data.replace(b'58 passed', b'57 passed'), data.replace(b'0 ignored', b'1 ignored'),
+                    data.replace(b'76 passed', b'75 passed'), data.replace(b'0 ignored', b'1 ignored'),
                     data.replace(b' ... ok', b' ... ignored', 1), data.replace(b' ... ok', b' ... FAILED', 1)):
             with self.assertRaises(AssertionError):
                 CHECK.calibrations(bad, b'')

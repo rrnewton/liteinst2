@@ -562,3 +562,5 @@ fn invalid_producer_rows_and_uncovered_bytes_are_explicit_metadata_failures() {
     let other = plan.emit_at(NEAR + 4096).unwrap();
     assert!(!emitted.trace().unwrap().matches_image(&other));
 }
+
+mod stack_profile;

@@ -16,6 +16,9 @@ ORIGINAL_EMPTY = frozenset(('ordinal', 'generation', 'invocation', 'raw_start_ti
 
 # Exact transitive frontend-native-calibrations inventory, including expected panics.
 CALIBRATION_TESTS = {
+    'oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_injection_changes_only_the_authenticated_word': False,
+    'oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_requires_normal_exact_exit123': False,
+    'oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_rejects_application_or_gate_resumption': False,
     'oracle::native_ordinary::cache::model::tests::cache_model_foreign_cross_line_width_and_wrap_refused': False,
     'oracle::native_ordinary::cache::model::tests::cache_model_literal_case_totals_and_set_rotation': False,
     'oracle::native_ordinary::cache::model::tests::cache_model_literal_lru_policy_discriminator': False,
@@ -74,6 +77,21 @@ CALIBRATION_TESTS = {
     'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity': True,
     'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process': True,
     'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction': True,
+    'oracle::native_ordinary::call_tree::model::tests::tree_model_every_foreign_address_width_and_geometry_refuses': False,
+    'oracle::native_ordinary::call_tree::model::tests::tree_model_lru_and_dirty_state_kernel_controls': False,
+    'oracle::native_ordinary::call_tree::model::tests::tree_model_missing_reordered_wrong_function_and_kind_refuse': False,
+    'oracle::native_ordinary::call_tree::model::tests::tree_model_no_write_allocate_and_child_reset_are_observable': False,
+    'oracle::native_ordinary::call_tree::model::tests::tree_model_one_cache_exact_literal_vectors_and_attribution': False,
+    'oracle::native_ordinary::call_tree::tests::tree_native_actual_payload_link_and_dec_flags_are_authenticated': False,
+    'oracle::native_ordinary::call_tree::tests::tree_native_actual_transfer_bytes_pc_rsp_and_saved_word': False,
+    'oracle::native_ordinary::call_tree::tests::tree_native_call_store_preserves_every_other_protected_byte': False,
+    'oracle::native_ordinary::call_tree::tests::tree_native_closed_source_gap_heads_returns_and_call_map': False,
+    'oracle::native_ordinary::call_tree::tests::tree_native_complete_shape_refuses_missing_extra_reordered_and_node': False,
+    'oracle::native_ordinary::call_tree::tests::tree_native_pending_frame_rejects_idle_leaf_phase_and_each_word': False,
+    'oracle::native_ordinary::call_tree::tests::tree_native_transfer_population_order_and_original_call_pc': False,
+    'oracle::native_ordinary::call_tree::truth::tests::tree_truth_boundaries_and_non64_count_refuse': False,
+    'oracle::native_ordinary::call_tree::truth::tests::tree_truth_every_opcode_bit_refuses_and_case_cannot_be_relabelled': False,
+    'oracle::native_ordinary::call_tree::truth::tests::tree_truth_real_call_two_returns_and_nested_order': False,
 }
 
 
@@ -118,12 +136,12 @@ def pairs(data, terminal, stderr):
 def calibrations(stdout, stderr):
     assert stderr == b'' and 0 < len(stdout) <= 1048576
     text = stdout.decode('ascii')
-    pattern = (r'\nrunning 58 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){58})\n'
-        r'test result: ok\. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
+    pattern = (r'\nrunning 76 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){76})\n'
+        r'test result: ok\. 76 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
     match = re.fullmatch(pattern, text)
     assert match is not None
     names = [line.split()[1] for line in match.group(1).splitlines()]
-    assert len(set(names)) == 58
+    assert len(set(names)) == 76
     observed = {line.split()[1]: ' - should panic ... ok' in line for line in match.group(1).splitlines()}
     assert observed == CALIBRATION_TESTS
 

@@ -270,7 +270,9 @@ impl PreparedUnwind {
         {
             return Err(Refusal::SourceIdentity);
         }
-        if trace.origin() != FrameEntryOrigin::ApplicationStack
+        if image.layout().observation_stack_profile
+            != crate::trampoline::ObservationStackProfile::Legacy128
+            || trace.origin() != FrameEntryOrigin::ApplicationStack
             || trace.calls().len() != 1
             || trace.calls()[0].kind() != FrameCallKind::Observer
             || plan.parts().kind != PlanKind::Relocation

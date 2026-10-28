@@ -1,0 +1,235 @@
+{
+  "binary": {
+    "bytes": 4830096,
+    "sha256": "996a4570614d06b548b94c1d5db30fa7017328c8ef6a53725a8f1df0373a878d"
+  },
+  "bounds": {
+    "outer_wall_seconds": 1200,
+    "population_cpu_seconds": 20,
+    "population_output_bytes": 1048576,
+    "population_wall_seconds": 30
+  },
+  "claim": 4,
+  "closure": {
+    "helper_echild": 47,
+    "inherited_stages": 44,
+    "normal_outer_parent": true,
+    "normal_stage_parents": 47,
+    "rescues": 0,
+    "source_inputs": 150,
+    "sources_digest": {
+      "bytes": 24886,
+      "sha256": "cbe152896bc933fc790da26c6951e6efdf5406a7eaf64e7a622e92f0dd572894"
+    },
+    "stages": 47
+  },
+  "command": [
+    "$CPUSET_ALLOC",
+    "run",
+    "--cores",
+    "4",
+    "--tag",
+    "li2core-tree-population",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_ordinary_interval.py",
+    "--revision",
+    "6129b2e6934ca1f076e51df6b58e4754cea48410",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--exact-work",
+    "--concurrent-epochs",
+    "--retire-epochs",
+    "--drain-completed",
+    "--streamed-epochs",
+    "--stream-history",
+    "--optional-frontend",
+    "--optional-backoff-control",
+    "--reference-timing",
+    "--cache-work",
+    "--counter-probe",
+    "--call-tree",
+    "--tree-population"
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "streamed_controller_affinity_cpus": 1,
+    "streamed_total_active_cpus": 2,
+    "streamed_worker_affinity_cpus": 1,
+    "timed_controller_affinity_cpus": 1,
+    "timed_total_active_cpus": 2,
+    "timed_worker_affinity_cpus": 1,
+    "vendor": "AuthenticAMD"
+  },
+  "prerequisites": {
+    "full_native_calibration_methods": 76,
+    "tree_owner_control": "PASS",
+    "tree_pairs": 4,
+    "tree_return_word_refusal": "EXPECTED_REFUSAL",
+    "tree_state_comparisons": 1372,
+    "tree_transfer_witnesses": 24
+  },
+  "prior_compile": {
+    "reason": "Strict unused-method lint; fixed by adding independent cycle-based scalar comparison, without suppressing warnings.",
+    "receipt": {
+      "bytes": 81075,
+      "sha256": "4fb3bc68c81d35a7c379f38bd0346576b48ffd3ba8a41a3a65568b7d3eb9ba7a"
+    },
+    "status": "FAILED"
+  },
+  "prior_python": {
+    "reason": "Python3.9 lacks zip(strict=True); replaced with explicit equal-length assertions, retaining all controls.",
+    "receipt": {
+      "bytes": 81516,
+      "sha256": "ede14f5b2371591077acd151601076bfbcf7047a501531bf1e7a2aa48795639c"
+    },
+    "status": "FAILED"
+  },
+  "private_receipts": {
+    "outer": {
+      "bytes": 3736,
+      "sha256": "b49598f2cf854e4d08698035721e94264dfa7c66d47dd796dd9553767241ac97"
+    },
+    "result": {
+      "bytes": 100713,
+      "sha256": "916891f3c69950734834547514b2cc2555706730f97197bf03de4074df4e7961"
+    }
+  },
+  "profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "3",
+    "overflow_checks": true,
+    "test": false
+  },
+  "results": [
+    {
+      "actions": 2,
+      "aux": 10,
+      "batches": 3,
+      "child_instructions": 7824,
+      "closed": 46,
+      "conflict_population": 14,
+      "conflict_retained": 0,
+      "events": 96,
+      "generation": 1,
+      "input_unchanged": true,
+      "k": 1,
+      "nodes": 48,
+      "originals": 24,
+      "records_joined": true,
+      "reports": 2,
+      "root_exclusive_instructions": 144,
+      "root_inclusive_instructions": 7968,
+      "roots": 24,
+      "sampled": 2,
+      "selection_error_denominator": 24,
+      "selection_error_numerator": -14,
+      "status": "FUNCTIONAL_PASS",
+      "uncalibrated": true
+    },
+    {
+      "actions": 2,
+      "aux": 10,
+      "batches": 3,
+      "child_instructions": 7824,
+      "closed": 28,
+      "conflict_population": 14,
+      "conflict_retained": 0,
+      "events": 96,
+      "generation": 1,
+      "input_unchanged": true,
+      "k": 10,
+      "nodes": 48,
+      "originals": 24,
+      "records_joined": true,
+      "reports": 20,
+      "root_exclusive_instructions": 144,
+      "root_inclusive_instructions": 7968,
+      "roots": 24,
+      "sampled": 20,
+      "selection_error_denominator": 240,
+      "selection_error_numerator": -140,
+      "status": "FUNCTIONAL_PASS",
+      "uncalibrated": true
+    },
+    {
+      "actions": 2,
+      "aux": 10,
+      "batches": 3,
+      "child_instructions": 7824,
+      "closed": 0,
+      "conflict_population": 14,
+      "conflict_retained": 14,
+      "events": 96,
+      "generation": 1,
+      "input_unchanged": true,
+      "k": 24,
+      "nodes": 48,
+      "originals": 24,
+      "records_joined": true,
+      "reports": 48,
+      "root_exclusive_instructions": 144,
+      "root_inclusive_instructions": 7968,
+      "roots": 24,
+      "sampled": 48,
+      "selection_error_denominator": 576,
+      "selection_error_numerator": 0,
+      "status": "FUNCTIONAL_PASS",
+      "uncalibrated": true
+    }
+  ],
+  "revision": "6129b2e6934ca1f076e51df6b58e4754cea48410",
+  "schema": 1,
+  "scope": "Same-thread finite root/child population and exact first-K label selection error. Instruction totals come from qualified fixed source, not an instruction trace of these ordinary calls. Raw callback ticks uncalibrated; no hardware-cache, time-accuracy, performance or complete A5 claim.",
+  "status": "PASS",
+  "tables": {
+    "k1.csv": {
+      "bytes": 6065,
+      "sha256": "4f912b966bd0fffaefc256b5567c4b0ed77cd84b8aae54435853f204f7036355"
+    },
+    "k10.csv": {
+      "bytes": 6159,
+      "sha256": "5879b7632974009065aee28c85254d2b26d4f261f08b184aeeb3050092697768"
+    },
+    "k24.csv": {
+      "bytes": 6243,
+      "sha256": "be4b4ac136a54091875e1d9bb5c1ecbb69a541ef647cb6577024fb4089d020bd"
+    }
+  },
+  "tree_dso": {
+    "bytes": 13400,
+    "sha256": "e1bddc78f41d7a03b189d13b5102b78b79d741ae8f2257a651f9bd2b90239449"
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}

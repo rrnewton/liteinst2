@@ -13,6 +13,10 @@ use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 mod cfg;
+mod tree;
+pub use tree::{
+    CallTreeCertificate, LoadedCallTree, TreeCallEdge, TreeContract, TreeRootCertificate,
+};
 
 /// Explicit external facts; byte inspection does not establish these claims.
 #[derive(Clone, Copy, Debug)]
@@ -134,7 +138,19 @@ fn dynamic(bytes: &[u8]) -> Result<(), SetupRefusal> {
     Ok(())
 }
 
+// The leaf callback preserves the existing complete CFG check. The only other
+// callers are this module's closed tree validators; no unchecked parse escapes.
 fn parse(bytes: &[u8], name: &str) -> Result<Parsed, SetupRefusal> {
+    parse_admitted(bytes, name, |code, entry| {
+        cfg::admit(code, entry).map(|_| ())
+    })
+}
+
+fn parse_admitted(
+    bytes: &[u8],
+    name: &str,
+    admit_code: fn(&[u8], u64) -> Result<(), SetupRefusal>,
+) -> Result<Parsed, SetupRefusal> {
     if bytes.len() > 1024 * 1024
         || bytes.get(..7) != Some(b"\x7fELF\x02\x01\x01")
         || u16_at(bytes, 16)? != 3
@@ -350,7 +366,7 @@ fn parse(bytes: &[u8], name: &str) -> Result<Parsed, SetupRefusal> {
         .get(at..at + length)
         .ok_or(SetupRefusal::SourceBytes)?
         .to_vec();
-    cfg::admit(&code, entry)?;
+    admit_code(&code, entry)?;
     let page = entry & !4095;
     let source_len =
         usize::try_from(((end + 4095) & !4095) - page).map_err(|_| SetupRefusal::Format)?;
@@ -411,6 +427,88 @@ struct Retained {
     device: (u32, u32),
     pid: u32,
 }
+// The caller must have completed the private whole-ELF/code parser and retain
+// its explicit no-constructor/no-writer/no-unload contract. No subject is called.
+unsafe fn retain_loader(
+    path: &Path,
+    expected: &[u8],
+) -> Result<&'static mut Retained, SetupRefusal> {
+    let mut file = File::open(path).map_err(|_| SetupRefusal::OperatingSystem)?;
+    let original = stamp(&file)?;
+    if bounded_read(&mut file)? != expected
+        || original != stamp(&file)?
+        || original.size != expected.len() as u64
+    {
+        return Err(SetupRefusal::SourceBytes);
+    }
+    let device = mount_device(file.as_raw_fd())?;
+    let mut shstk = 0_u64;
+    // SAFETY: read-only status query; never changes CET state.
+    let status = unsafe { libc::syscall(libc::SYS_arch_prctl, 0x5005, &mut shstk) };
+    if status == 0 && shstk != 0 {
+        return Err(SetupRefusal::Cet);
+    }
+    if status != 0
+        && !matches!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::EINVAL | libc::ENOSYS)
+        )
+    {
+        return Err(SetupRefusal::OperatingSystem);
+    }
+    let fd_path = CString::new(format!("/proc/self/fd/{}", file.as_raw_fd())).unwrap();
+    // SAFETY: whole trusted DSO and explicit caller obligations above.
+    let handle = unsafe { libc::dlopen(fd_path.as_ptr(), libc::RTLD_NOW | libc::RTLD_LOCAL) };
+    if handle.is_null() {
+        return Err(SetupRefusal::OperatingSystem);
+    }
+    // Keep the original fd/handle on every subsequent refusal as well.
+    let retained = Box::leak(Box::new(Retained {
+        _handle: handle,
+        file,
+        expected: expected.to_vec(),
+        original,
+        device,
+        pid: std::process::id(),
+    }));
+    Ok(retained)
+}
+
+fn loaded_symbol(
+    owner: &Retained,
+    parsed: &Parsed,
+    symbol: &CStr,
+) -> Result<(u64, u64), SetupRefusal> {
+    let handle = owner._handle;
+    // SAFETY: live retained loader handle and terminated symbol name.
+    let address = unsafe { libc::dlsym(handle, symbol.as_ptr()) } as usize as u64;
+    let bias = address
+        .checked_sub(parsed.entry)
+        .ok_or(SetupRefusal::SymbolOwner)?;
+    if address == 0 || bias % 4096 != 0 {
+        return Err(SetupRefusal::SymbolOwner);
+    }
+    // SAFETY: initialized loader outputs; addresses remain owned by dlopen.
+    let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };
+    if unsafe { libc::dladdr(address as usize as *const libc::c_void, &mut info) } == 0
+        || info.dli_fbase as usize as u64 != bias
+        || info.dli_saddr as usize as u64 != address
+        || info.dli_sname.is_null()
+        || unsafe { CStr::from_ptr(info.dli_sname) } != symbol
+    {
+        return Err(SetupRefusal::SymbolOwner);
+    }
+    let mut link: *const u64 = std::ptr::null();
+    // RTLD_DI_LINKMAP: l_addr is the first ELF64 link_map ABI field.
+    if unsafe { libc::dlinfo(handle, 2, (&raw mut link).cast()) } != 0
+        || link.is_null()
+        || unsafe { link.read() } != bias
+    {
+        return Err(SetupRefusal::SymbolOwner);
+    }
+    Ok((address, bias))
+}
+
 /// A process-lived normal-loader owner. No Drop, dlclose, executable function
 /// pointer, publication receipt or writable code view is exposed.
 pub struct LoadedIntegerLeaf {
@@ -445,70 +543,9 @@ impl LoadedIntegerLeaf {
         contract.check()?;
         let name = symbol.to_str().map_err(|_| SetupRefusal::SymbolOwner)?;
         let parsed = parse(expected, name)?;
-        let mut file = File::open(path).map_err(|_| SetupRefusal::OperatingSystem)?;
-        let original = stamp(&file)?;
-        if bounded_read(&mut file)? != expected
-            || original != stamp(&file)?
-            || original.size != expected.len() as u64
-        {
-            return Err(SetupRefusal::SourceBytes);
-        }
-        let device = mount_device(file.as_raw_fd())?;
-        let mut shstk = 0_u64;
-        // SAFETY: read-only status query; never changes CET state.
-        let status = unsafe { libc::syscall(libc::SYS_arch_prctl, 0x5005, &mut shstk) };
-        if status == 0 && shstk != 0 {
-            return Err(SetupRefusal::Cet);
-        }
-        if status != 0
-            && !matches!(
-                std::io::Error::last_os_error().raw_os_error(),
-                Some(libc::EINVAL | libc::ENOSYS)
-            )
-        {
-            return Err(SetupRefusal::OperatingSystem);
-        }
-        let fd_path = CString::new(format!("/proc/self/fd/{}", file.as_raw_fd())).unwrap();
-        // SAFETY: whole trusted DSO and explicit caller obligations above.
-        let handle = unsafe { libc::dlopen(fd_path.as_ptr(), libc::RTLD_NOW | libc::RTLD_LOCAL) };
-        if handle.is_null() {
-            return Err(SetupRefusal::OperatingSystem);
-        }
-        // Keep the original fd/handle on every subsequent refusal as well.
-        let retained = Box::leak(Box::new(Retained {
-            _handle: handle,
-            file,
-            expected: expected.to_vec(),
-            original,
-            device,
-            pid: std::process::id(),
-        }));
-        // SAFETY: live retained loader handle and terminated symbol name.
-        let address = unsafe { libc::dlsym(handle, symbol.as_ptr()) } as usize as u64;
-        let bias = address
-            .checked_sub(parsed.entry)
-            .ok_or(SetupRefusal::SymbolOwner)?;
-        if address == 0 || bias % 4096 != 0 {
-            return Err(SetupRefusal::SymbolOwner);
-        }
-        // SAFETY: initialized loader outputs; addresses remain owned by dlopen.
-        let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };
-        if unsafe { libc::dladdr(address as usize as *const libc::c_void, &mut info) } == 0
-            || info.dli_fbase as usize as u64 != bias
-            || info.dli_saddr as usize as u64 != address
-            || info.dli_sname.is_null()
-            || unsafe { CStr::from_ptr(info.dli_sname) } != symbol
-        {
-            return Err(SetupRefusal::SymbolOwner);
-        }
-        let mut link: *const u64 = std::ptr::null();
-        // RTLD_DI_LINKMAP: l_addr is the first ELF64 link_map ABI field.
-        if unsafe { libc::dlinfo(handle, 2, (&raw mut link).cast()) } != 0
-            || link.is_null()
-            || unsafe { link.read() } != bias
-        {
-            return Err(SetupRefusal::SymbolOwner);
-        }
+        // SAFETY: the complete unchanged leaf parser and caller contract above.
+        let retained = unsafe { retain_loader(path, expected)? };
+        let (address, bias) = loaded_symbol(retained, &parsed, symbol)?;
         let source_start = bias.checked_add(parsed.page).ok_or(SetupRefusal::Format)?;
         let certificate = cfg::admit(&parsed.code, address)?;
         let loaded = Box::leak(Box::new(Self {
@@ -549,86 +586,131 @@ impl LoadedIntegerLeaf {
         &mut self,
         expected: &[u8],
     ) -> Result<(), SetupRefusal> {
-        if self.owner.pid != std::process::id()
-            || expected.len() != self.parsed.code.len()
-            || stamp(&self.owner.file)? != self.owner.original
-            || bounded_read(&mut self.owner.file)? != self.owner.expected
-            || stamp(&self.owner.file)? != self.owner.original
-            || mount_device(self.owner.file.as_raw_fd())? != self.owner.device
-        {
-            return Err(SetupRefusal::SourceBytes);
-        }
-        for load in &self.parsed.loads {
-            let bias = self.entry() - self.parsed.entry;
-            let end = load.address + load.memory_size;
-            let mut cursor = load.address;
-            while cursor < end {
-                let (next, permissions) = match &self.parsed.relro {
-                    Some(r) if cursor < r.start => {
-                        (end.min(r.start), load_permissions(load.flags)?)
-                    }
-                    Some(r) if cursor < r.end => {
-                        if load.flags != 6 {
-                            return Err(SetupRefusal::Format);
-                        }
-                        (end.min(r.end), "r--p")
-                    }
-                    _ => (end, load_permissions(load.flags)?),
-                };
-                map_rows(
-                    bias.checked_add(cursor).ok_or(SetupRefusal::Format)?,
-                    next - cursor,
-                    self.owner.device,
-                    self.owner.original.inode,
-                    Some(permissions),
-                    Some(load.offset + cursor - load.address),
-                )?;
-                cursor = next;
-            }
-        }
-        if let Some(r) = &self.parsed.relro {
-            let load = &self.parsed.loads[r.owner];
-            let offset = u64::try_from(
-                i128::from(load.offset) + i128::from(r.start) - i128::from(load.address),
-            )
-            .map_err(|_| SetupRefusal::Format)?;
-            let address = (self.entry() - self.parsed.entry)
-                .checked_add(r.start)
-                .ok_or(SetupRefusal::Format)?;
-            map_rows(
-                address,
-                r.end - r.start,
-                self.owner.device,
-                self.owner.original.inode,
-                Some("r--p"),
-                Some(offset),
-            )?;
-        }
-        map_rows(
+        let entry = self.entry();
+        verify_expected_bodies(
+            self.owner,
+            &self.parsed,
+            entry,
             self.source_start,
-            self.parsed.source.len() as u64,
-            self.owner.device,
-            self.owner.original.inode,
-            Some("r-xp"),
-            Some(self.parsed.page_offset),
-        )?;
-        let mut whole = self.parsed.source.clone();
-        let at =
-            usize::try_from(self.entry() - self.source_start).map_err(|_| SetupRefusal::Format)?;
-        whole
-            .get_mut(at..at + expected.len())
-            .ok_or(SetupRefusal::Format)?
-            .copy_from_slice(expected);
-        // SAFETY: caller's retained readable mapping contract, plus complete
-        // current file-backed page ownership/protection validation above.
-        if unsafe {
-            std::slice::from_raw_parts(self.source_start as usize as *const u8, whole.len())
-        } != whole
-        {
-            return Err(SetupRefusal::SourceBytes);
-        }
-        Ok(())
+            expected,
+            None,
+        )
     }
+}
+
+// Only the closed tree's private verifier supplies the second disjoint body.
+struct BodyOverlay<'a> {
+    entry: u64,
+    expected: &'a [u8],
+}
+
+fn verify_expected_bodies(
+    owner: &mut Retained,
+    parsed: &Parsed,
+    entry: u64,
+    source_start: u64,
+    expected: &[u8],
+    additional: Option<BodyOverlay<'_>>,
+) -> Result<(), SetupRefusal> {
+    if owner.pid != std::process::id()
+        || expected.len() != parsed.code.len()
+        || stamp(&owner.file)? != owner.original
+        || bounded_read(&mut owner.file)? != owner.expected
+        || stamp(&owner.file)? != owner.original
+        || mount_device(owner.file.as_raw_fd())? != owner.device
+    {
+        return Err(SetupRefusal::SourceBytes);
+    }
+    for load in &parsed.loads {
+        let bias = entry - parsed.entry;
+        let end = load.address + load.memory_size;
+        let mut cursor = load.address;
+        while cursor < end {
+            let (next, permissions) = match &parsed.relro {
+                Some(r) if cursor < r.start => (end.min(r.start), load_permissions(load.flags)?),
+                Some(r) if cursor < r.end => {
+                    if load.flags != 6 {
+                        return Err(SetupRefusal::Format);
+                    }
+                    (end.min(r.end), "r--p")
+                }
+                _ => (end, load_permissions(load.flags)?),
+            };
+            map_rows(
+                bias.checked_add(cursor).ok_or(SetupRefusal::Format)?,
+                next - cursor,
+                owner.device,
+                owner.original.inode,
+                Some(permissions),
+                Some(load.offset + cursor - load.address),
+            )?;
+            cursor = next;
+        }
+    }
+    if let Some(r) = &parsed.relro {
+        let load = &parsed.loads[r.owner];
+        let offset =
+            u64::try_from(i128::from(load.offset) + i128::from(r.start) - i128::from(load.address))
+                .map_err(|_| SetupRefusal::Format)?;
+        let address = (entry - parsed.entry)
+            .checked_add(r.start)
+            .ok_or(SetupRefusal::Format)?;
+        map_rows(
+            address,
+            r.end - r.start,
+            owner.device,
+            owner.original.inode,
+            Some("r--p"),
+            Some(offset),
+        )?;
+    }
+    map_rows(
+        source_start,
+        parsed.source.len() as u64,
+        owner.device,
+        owner.original.inode,
+        Some("r-xp"),
+        Some(parsed.page_offset),
+    )?;
+    let mut whole = parsed.source.clone();
+    let at = usize::try_from(entry - source_start).map_err(|_| SetupRefusal::Format)?;
+    whole
+        .get_mut(at..at + expected.len())
+        .ok_or(SetupRefusal::Format)?
+        .copy_from_slice(expected);
+    if let Some(body) = additional {
+        let end = body
+            .entry
+            .checked_add(body.expected.len() as u64)
+            .ok_or(SetupRefusal::Format)?;
+        let first_end = entry
+            .checked_add(expected.len() as u64)
+            .ok_or(SetupRefusal::Format)?;
+        if body.entry < first_end && entry < end {
+            return Err(SetupRefusal::EntryExit);
+        }
+        let at = usize::try_from(
+            body.entry
+                .checked_sub(source_start)
+                .ok_or(SetupRefusal::Format)?,
+        )
+        .map_err(|_| SetupRefusal::Format)?;
+        let end = at
+            .checked_add(body.expected.len())
+            .ok_or(SetupRefusal::Format)?;
+        whole
+            .get_mut(at..end)
+            .ok_or(SetupRefusal::Format)?
+            .copy_from_slice(body.expected);
+    }
+    // SAFETY: caller's retained readable mapping contract, plus complete
+    // current file-backed page ownership/protection validation above.
+    if unsafe { std::slice::from_raw_parts(source_start as usize as *const u8, whole.len()) }
+        != whole
+    {
+        return Err(SetupRefusal::SourceBytes);
+    }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -1,0 +1,334 @@
+{
+  "artifacts": {
+    "loaded-tree-dso": {
+      "bytes": 13400,
+      "sha256": "e1bddc78f41d7a03b189d13b5102b78b79d741ae8f2257a651f9bd2b90239449"
+    },
+    "native-oracle": {
+      "binary": {
+        "bytes": 5073752,
+        "sha256": "251c62462d9e864dcc607b5fab0f4f5f35ed24aa91210594592b366ed94c6294"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "owner-control-libtest": {
+      "binary": {
+        "bytes": 8255984,
+        "sha256": "2c552ed4d21899676c49b617b575e2688c99d190821ae59aa86c01394f8cc9d1"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    }
+  },
+  "bounds": {
+    "build_stage_output_bytes": 134217728,
+    "child_deadline_seconds": 15,
+    "child_steps": 20000,
+    "outer_wall_seconds": 1200,
+    "owner_cpu_seconds": 10,
+    "owner_wall_seconds": 15,
+    "refusal_cpu_seconds": 20,
+    "refusal_wall_seconds": 30,
+    "state_cpu_seconds": 90,
+    "state_wall_seconds": 90,
+    "subject_stage_output_bytes": 1048576
+  },
+  "claim": 4,
+  "closure": {
+    "all_sources_and_tools_unchanged": true,
+    "helper_echild": 44,
+    "normal_outer_parent": true,
+    "normal_stage_parents": 44,
+    "rescues": 0,
+    "source_inputs": 145,
+    "stage_names": [
+      "build",
+      "c-build",
+      "cache-build",
+      "cache-calibration-build",
+      "cache-calibrations",
+      "cache-oracle",
+      "concurrent-native",
+      "concurrent-oracle",
+      "concurrent-test-build",
+      "counter-probe",
+      "drain-native",
+      "exact-alternating-k1",
+      "exact-alternating-k10",
+      "exact-alternating-k24",
+      "exact-build",
+      "exact-late-long-k1",
+      "exact-late-long-k10",
+      "exact-late-long-k24",
+      "exact-long-k1",
+      "exact-long-k10",
+      "exact-long-k24",
+      "exact-oracle",
+      "exact-short-k1",
+      "exact-short-k10",
+      "exact-short-k24",
+      "history-native",
+      "native",
+      "optional-backoff-native",
+      "optional-fast-state",
+      "optional-functional",
+      "optional-slow-state",
+      "oracle",
+      "reference-calibration-build",
+      "reference-calibrations",
+      "reference-native",
+      "reference-oracle",
+      "retirement-function-closed",
+      "retirement-sixteen-epochs",
+      "streamed-native",
+      "timed-native",
+      "tree-build",
+      "tree-oracle",
+      "tree-owner-native",
+      "tree-return-word-refusal"
+    ],
+    "stage_receipt_index_sha256": "698893e1b9469ad068010a890a57b7695695d80bc54ad1fc5ec720548b8ca9f7",
+    "stages": 44
+  },
+  "command": [
+    "$CPUSET_ALLOC",
+    "run",
+    "--cores",
+    "4",
+    "--tag",
+    "li2core-tree",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_ordinary_interval.py",
+    "--revision",
+    "c2db96897b3a86cec7803a0b00a6f06a17b811aa",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--exact-work",
+    "--concurrent-epochs",
+    "--retire-epochs",
+    "--drain-completed",
+    "--streamed-epochs",
+    "--stream-history",
+    "--optional-frontend",
+    "--optional-backoff-control",
+    "--reference-timing",
+    "--cache-work",
+    "--counter-probe",
+    "--call-tree"
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "streamed_controller_affinity_cpus": 1,
+    "streamed_total_active_cpus": 2,
+    "streamed_worker_affinity_cpus": 1,
+    "timed_controller_affinity_cpus": 1,
+    "timed_total_active_cpus": 2,
+    "timed_worker_affinity_cpus": 1,
+    "vendor": "AuthenticAMD"
+  },
+  "launcher_environment": {
+    "AGENT_UTILS_ENGINE": "python",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1"
+  },
+  "limitations": "Only two functions, two fixed seeds and two linked-memory cases. Raw callback ticks are uncalibrated. Cache hits/misses are software-model results. Exit123 is undifferentiated. Report readiness is not code quiescence. Historical failures remain failures.",
+  "numerical_files": {
+    "pairs.csv": {
+      "bytes": 1338,
+      "sha256": "0b84ee77cb495727d4d42c4d156468441347f519418cfb4e2f844138aa3be8b6"
+    },
+    "refusal.csv": {
+      "bytes": 143,
+      "sha256": "8e3d8e32db76ef32d505446d0fb07b0cbdd4994af596a20d2c4a997d206962a0"
+    }
+  },
+  "prerequisites": {
+    "expected_panics": 22,
+    "full_calibration_methods": 76,
+    "reference_protocol_controls": 10,
+    "stages": 40,
+    "status": "PASS",
+    "tree_protocol_controls": 10
+  },
+  "prior_attempt": {
+    "completed_stages": 41,
+    "normal_cleanup": true,
+    "owner_control": "UNRUN",
+    "parent": {
+      "bytes": 344,
+      "sha256": "6af566e9054ae4cb9e0cb0bb5696ba3d1fc0f95eb0dcae162a8e2b5f965c988f"
+    },
+    "reason": "First candidate exhausted20000 steps before gate; no positive tree pair credited.",
+    "receipt": {
+      "bytes": 590,
+      "sha256": "b5cc7d65d9d123799c5451354baeebbf48c7db418a88b5a1153e1672faa96e0b"
+    },
+    "result": {
+      "bytes": 88522,
+      "sha256": "bba629ebf08bcb17ad0b5e0f16fce3b9ab925f23ad4feda59f10dec1c50e70e4"
+    },
+    "return_word_refusal": "UNRUN",
+    "revision": "5c629044bd1f9b4cbb8307097d5216042ff6b331",
+    "stage": "tree-oracle",
+    "status": "FAILED"
+  },
+  "private_receipts": {
+    "campaign": {
+      "bytes": 95822,
+      "sha256": "fb9dbeef237fe575722825917b76ef81c21d4a5f288e2d3d69d3ea4de39186a1"
+    },
+    "outer": {
+      "bytes": 3694,
+      "sha256": "be66a3fec8e5b998d78ece152fb24614370e61c85a14dc1825191cc802183fb1"
+    },
+    "review_binding": {
+      "bytes": 1228,
+      "sha256": "d417767a355fede6190ea9e2c5e179a0a4fba8a5b1c4cbe2571efe931fd16680"
+    },
+    "sources_after": {
+      "bytes": 24062,
+      "sha256": "7635e411b06e8aa44e4f10bece81bd7d8c9dbe74ad7af61bd4246c845acc12f3"
+    },
+    "sources_before": {
+      "bytes": 24062,
+      "sha256": "7635e411b06e8aa44e4f10bece81bd7d8c9dbe74ad7af61bd4246c845acc12f3"
+    }
+  },
+  "provenance": "Producer-attested release artifact/tool stability; projector authenticates recorded sources, commands, limits, normal closures and strict parsed numerical summaries. No independent binary/tool replay.",
+  "result": {
+    "call_stores": 4,
+    "child_instructions": 1304,
+    "child_misses": 132,
+    "children": 8,
+    "comparisons": 1372,
+    "conditional_branches": 256,
+    "input_reads": 516,
+    "instructions": 1328,
+    "model": {
+      "addressing": "actual virtual line number; input base set2 and both return words in one set3 line",
+      "events": "original CALL store, count/payload/link reads and both RET reads; no instruction fetch or observer accesses",
+      "initial": "all invalid once at root entry",
+      "line_bytes": 64,
+      "replacement": "true LRU",
+      "sets": 4,
+      "stores": "write allocate, write back; this population never evicts its dirty stack line",
+      "ways": 2
+    },
+    "model_events": 528,
+    "model_hits": 392,
+    "model_misses": 136,
+    "model_writebacks": 0,
+    "native_state": "PASS",
+    "ownership": {
+      "entries": 2,
+      "events": 4,
+      "helper_joined": true,
+      "originals": 1,
+      "reports": [
+        1,
+        1,
+        0
+      ],
+      "returns": 2,
+      "roots": 1,
+      "rows": 2,
+      "sampled": 2,
+      "source_attested": "root A remains outstanding at root RET; child B remains outstanding before child RET and finishes only at its original continuation under C; root finishes after actual outer return/postflight; complete input, rows, journal, history, original-owner Reports and retirement joins",
+      "status": "PASS"
+    },
+    "pairs": 4,
+    "real_outer_returns": 8,
+    "return_reads": 8,
+    "return_word_refusal": {
+      "children": 1,
+      "echild": 1,
+      "exit_code": 123,
+      "injected_bytes": 8,
+      "physical_calls": 1,
+      "reaped": 1,
+      "runtime_cause": "undifferentiated",
+      "status": "EXPECTED_REFUSAL",
+      "steps": 3112
+    },
+    "root_instructions": 24,
+    "root_misses": 4,
+    "scope": "fixed depth-two ordinary calls, physical transfer witnesses and one continuous architectural demand-cache model; no hardware-cache, calibrated-time or performance claim",
+    "source_attested": "whole source/input, all ordered original heads, immediate physical E8/C3 successor and RSP/word witnesses, full unmasked stack/GPR/flags/XSAVE comparison, retained owners through child acknowledgement and root actual return/postflight; exact nested rows/journal/Reports",
+    "stage": "complete",
+    "status": "PASS",
+    "taken_branches": 252,
+    "transfers": 24
+  },
+  "revision": "c2db96897b3a86cec7803a0b00a6f06a17b811aa",
+  "schema": 1,
+  "scope": "Fixed depth-two native ordinary call tree, retained owner completion and continuous software demand-cache model; no general call-graph or performance claim.",
+  "source_setup_boundary": "Full source/input preflight before controlled ready, inside the unchanged15-second deadline; fresh caller/input/counter/idle checks on guard consumption. Continuous20000-step execution and complete state comparator unchanged. No equivalent stepped-preflight coverage claim.",
+  "status": "PASS",
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}

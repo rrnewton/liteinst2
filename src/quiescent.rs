@@ -420,6 +420,56 @@ pub fn plan_coalesced_detailed(
     plan_coalesced_core(&PlanningRequest::live(request), actions)
 }
 
+/// Controlled observation with an explicit immutable storage profile.
+///
+/// Requires Observe/RelocationOnly before image search. Existing complete entry,
+/// Enumerated resume, source, block and finite allocation rules still apply.
+/// This selects stack geometry, not a call-tree or preserving-hook certificate.
+/// The caller must keep the profile's full writable save/callback extent alive.
+/// `request.hook` is unused; every managed control identity remains retained.
+pub fn plan_coalesced_detailed_with_stack_profile(
+    request: &InstallRequest<'_>,
+    actions: &[crate::controls::ControlledAction],
+    profile: crate::trampoline::ObservationStackProfile,
+) -> Result<PlannedInstall, PlanningFailure> {
+    plan_coalesced_flavor(
+        &PlanningRequest::live(request),
+        CoalescedActions::ControlledProfile(actions, profile),
+        None,
+    )
+}
+
+/// Profiled observation after an authenticated original/current overlay.
+///
+/// Retains the ordinary composition contract: original bytes supply decoding,
+/// the predecessor supplies complete current reads, and every displaced window
+/// must still be original. This does not append or grant allocation authority;
+/// callers retain complete source ownership and validate the final bundle.
+pub fn plan_coalesced_detailed_after_with_stack_profile(
+    request: &InstallRequest<'_>,
+    actions: &[crate::controls::ControlledAction],
+    predecessor: &crate::composition::Composition,
+    profile: crate::trampoline::ObservationStackProfile,
+) -> Result<PlannedInstall, PlanningFailure> {
+    let current = predecessor
+        .planning_overlay(request.identity, request.base_address, request.code)
+        .map_err(|reason| {
+            let mut search = SearchEvidence::default();
+            search.qualification(SearchScope::default(), &reason);
+            PlanningFailure {
+                reason,
+                attempts: Vec::new(),
+                search,
+            }
+        })?;
+    let original = PlanningRequest::live(request);
+    plan_coalesced_flavor(
+        &original.with_code(&current),
+        CoalescedActions::ControlledProfile(actions, profile),
+        None,
+    )
+}
+
 /// Plan the finite authored inline-clock profile with unchanged allocation caps.
 /// No upstream/window expansion, pun fallback, artifact profile or replacement.
 pub fn plan_backedge_clock_detailed(
@@ -571,24 +621,28 @@ pub unsafe fn plan_precontext_coalesced_detailed_after(
 #[derive(Clone, Copy)]
 enum CoalescedActions<'a> {
     Controlled(&'a [crate::controls::ControlledAction]),
+    ControlledProfile(
+        &'a [crate::controls::ControlledAction],
+        crate::trampoline::ObservationStackProfile,
+    ),
     PreContext(&'a [crate::precontext::PreContextAction]),
 }
 impl<'a> CoalescedActions<'a> {
     fn len(self) -> usize {
         match self {
-            Self::Controlled(a) => a.len(),
+            Self::Controlled(a) | Self::ControlledProfile(a, _) => a.len(),
             Self::PreContext(a) => a.len(),
         }
     }
     fn pc(self, index: usize) -> u64 {
         match self {
-            Self::Controlled(a) => a[index].logical_pc,
+            Self::Controlled(a) | Self::ControlledProfile(a, _) => a[index].logical_pc,
             Self::PreContext(a) => a[index].logical_pc(),
         }
     }
     fn control(self, index: usize) -> &'a crate::controls::ProbeControl {
         match self {
-            Self::Controlled(a) => &a[index].control,
+            Self::Controlled(a) | Self::ControlledProfile(a, _) => &a[index].control,
             Self::PreContext(a) => a[index].control(),
         }
     }
@@ -639,6 +693,22 @@ fn plan_coalesced_flavor(
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
+        if let CoalescedActions::ControlledProfile(_, _) = actions {
+            let qualified = if clock.is_some() {
+                Err(Refusal::InvalidPlan)
+            } else if request.semantics != HookSemantics::Observe
+                || request.search.tactics != TacticPolicy::RelocationOnly
+            {
+                Err(Refusal::UnsupportedSemantics(
+                    "profiled controls require Observe and RelocationOnly".into(),
+                ))
+            } else {
+                Ok(())
+            };
+            qualified.inspect_err(|reason| {
+                search_evidence.qualification(SearchScope::default(), reason)
+            })?;
+        }
         if let CoalescedActions::PreContext(_) = actions {
             let qualified = if clock.is_some() {
                 Err(Refusal::InvalidPlan)
@@ -1282,10 +1352,18 @@ fn plan_at_with_controls(
         .require_original(displaced)
         .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
     let trampoline = match (clock, controls) {
+        (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {
+            return Err(Refusal::InvalidPlan);
+        }
         (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),
         (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
         (None, Some(CoalescedActions::Controlled(actions))) => {
             TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
+        }
+        (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {
+            TrampolinePlan::from_controlled_actions_with_stack_profile(
+                scan, physical, end, actions, profile,
+            )
         }
         (None, Some(CoalescedActions::PreContext(actions))) => {
             // SAFETY: this private variant comes only from the unsafe typed

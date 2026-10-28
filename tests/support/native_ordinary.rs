@@ -296,6 +296,10 @@ enum Subject {
         case: cache::truth::Case,
         deadline: Instant,
     },
+    Tree {
+        case: call_tree::truth::Case,
+        deadline: Instant,
+    },
 }
 
 /// Parent-owned mappings inherited at the same addresses, live until both reap.
@@ -317,8 +321,15 @@ impl ChildContext<'_> {
     /// Closed cache identity; no caller-supplied result, mask or address map.
     pub fn cache_case(&self) -> Option<(cache::truth::Case, u64)> {
         match self.oracle.subject {
-            Subject::Checksum => None,
+            Subject::Checksum | Subject::Tree { .. } => None,
             Subject::Cache { case, .. } => Some((case, self.oracle.seed)),
+        }
+    }
+    /// Closed two-function subject; never a caller-provided expected result.
+    pub fn tree_case(&self) -> Option<(call_tree::truth::Case, u64)> {
+        match self.oracle.subject {
+            Subject::Tree { case, .. } => Some((case, self.oracle.seed)),
+            Subject::Checksum | Subject::Cache { .. } => None,
         }
     }
     pub fn input(&self) -> &[u8] {
@@ -526,7 +537,7 @@ impl OrdinaryOracle {
     pub fn cache_deadline(&self) -> Instant {
         match self.subject {
             Subject::Cache { deadline, .. } => deadline,
-            Subject::Checksum => panic!("not a cache subject"),
+            Subject::Checksum | Subject::Tree { .. } => panic!("not a cache subject"),
         }
     }
 
@@ -540,6 +551,43 @@ impl OrdinaryOracle {
         assert!(matches!(self.subject, Subject::Cache { .. }));
         self.pair_profile(cache::truth::INPUT_BYTES, setup, inspect, None)
             .0
+    }
+
+    /// The closed tree keeps the Legacy CALL gate and starts the same absolute
+    /// deadline before allocating either inherited mapping.
+    pub fn new_tree(case: call_tree::truth::Case, seed: u64) -> Self {
+        let deadline = Instant::now() + CHILD_BUDGET;
+        let mut oracle = Self::new(seed);
+        oracle
+            .data
+            .initialize(128, &call_tree::truth::input(case, seed));
+        oracle.subject = Subject::Tree { case, deadline };
+        assert!(Instant::now() < deadline, "tree mapping/input deadline");
+        oracle
+    }
+    pub fn tree_deadline(&self) -> Instant {
+        match self.subject {
+            Subject::Tree { deadline, .. } => deadline,
+            _ => panic!("not a tree subject"),
+        }
+    }
+    pub fn pair_tree<F, O>(&self, setup: F, inspect: O) -> PairResult
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+        O: for<'a> FnOnce(OriginalObservation<'a>),
+    {
+        assert!(matches!(self.subject, Subject::Tree { .. }));
+        self.pair_profile(call_tree::truth::INPUT_BYTES, setup, inspect, None)
+            .0
+    }
+    fn stack_start(&self, profile: Profile) -> u64 {
+        match self.subject {
+            Subject::Tree { .. } => {
+                assert_eq!(profile, Profile::Legacy);
+                self.gate_rsp() - 160
+            }
+            _ => self.gate_rsp() - profile.entry_delta() - 128,
+        }
     }
 
     fn gate_rsp(&self) -> u64 {
@@ -557,7 +605,7 @@ impl OrdinaryOracle {
                 "whole source/image bytes"
             );
         }
-        let start = self.gate_rsp() - ready.profile.entry_delta() - 128;
+        let start = self.stack_start(ready.profile);
         Snapshot {
             logical_pc: pc,
             registers: child.registers(),
@@ -699,6 +747,11 @@ impl OrdinaryOracle {
                 assert!(reference.is_none(), "cache uses only the Legacy gate");
                 assert!(Instant::now() < deadline, "cache pre-fork deadline");
             }
+            Subject::Tree { deadline, .. } => {
+                assert_eq!(length, call_tree::truth::INPUT_BYTES);
+                assert!(reference.is_none(), "tree uses only the Legacy gate");
+                assert!(Instant::now() < deadline, "tree pre-fork deadline");
+            }
         }
         if let Some((deadline, _)) = reference {
             assert!(Instant::now() < deadline);
@@ -713,6 +766,7 @@ impl OrdinaryOracle {
         let deadline = match self.subject {
             Subject::Checksum => reference.map_or_else(|| Instant::now() + CHILD_BUDGET, |r| r.0),
             Subject::Cache { deadline, .. } => deadline,
+            Subject::Tree { deadline, .. } => deadline,
         };
         let mut pids = [0; 2];
         for index in 0..2 {
@@ -797,6 +851,14 @@ impl OrdinaryOracle {
             external_id,
         });
         assert_eq!(original.profile, profile, "requested fixture profile");
+        let mut tree_witnesses = if matches!(self.subject, Subject::Tree { .. }) {
+            Some([
+                call_tree::Witness::new(&original, self.gate_rsp()),
+                call_tree::Witness::new(&candidate, self.gate_rsp()),
+            ])
+        } else {
+            None
+        };
         let mut a = Walk {
             child: &children[0],
             steps: 0,
@@ -861,7 +923,13 @@ impl OrdinaryOracle {
             if pc == original.gate + profile.outer_ret() {
                 break;
             }
+            let transfer = tree_witnesses
+                .as_ref()
+                .and_then(|w| w[0].before(a.child, pc));
             a.step("original_body");
+            if let Some(transfer) = transfer {
+                tree_witnesses.as_mut().unwrap()[0].after(a.child, transfer);
+            }
         }
         let mut next = 0;
         loop {
@@ -889,12 +957,30 @@ impl OrdinaryOracle {
                     break;
                 }
             }
+            let transfer = tree_witnesses
+                .as_ref()
+                .and_then(|w| w[1].before(b.child, pc));
             b.step("candidate_body");
+            if let Some(transfer) = transfer {
+                tree_witnesses.as_mut().unwrap()[1].after(b.child, transfer);
+            }
         }
         assert_eq!(next, points.len(), "all original boundary comparisons");
-        assert_eq!(returns.len(), 1, "one real subject RET per call");
-        self.frame_after(a.child, &ar, &original, &af, None);
-        self.frame_after(b.child, &br, &candidate, &bf, returns.first().copied());
+        if let Some(witnesses) = &tree_witnesses {
+            for witness in witnesses {
+                assert_eq!(witness.finish(), 3, "CALL and both real subject RETs");
+            }
+            assert_eq!(
+                returns,
+                BTreeSet::from([original.entry + 22, original.entry + 70])
+            );
+            self.frame_after(a.child, &ar, &original, &af, None);
+            call_tree::frame_after(b.child, &br, &candidate, &bf, self.gate_rsp());
+        } else {
+            assert_eq!(returns.len(), 1, "one real subject RET per call");
+            self.frame_after(a.child, &ar, &original, &af, None);
+            self.frame_after(b.child, &br, &candidate, &bf, returns.first().copied());
+        }
         let value = match self.subject {
             Subject::Checksum => {
                 self.data.bytes()[128..128 + length]
@@ -909,6 +995,13 @@ impl OrdinaryOracle {
                     &cache::truth::input(case, self.seed)
                 );
                 cache::truth::scalar(case, self.seed)
+            }
+            Subject::Tree { case, .. } => {
+                assert_eq!(
+                    &self.data.bytes()[128..128 + length],
+                    &call_tree::truth::input(case, self.seed)
+                );
+                call_tree::truth::scalar(case, self.seed)
             }
         };
         let expected_records = witnesses.as_ref().map(|w| {
@@ -994,6 +1087,9 @@ impl OrdinaryOracle {
         if matches!(self.subject, Subject::Cache { .. }) {
             assert!(Instant::now() < deadline, "cache complete reaps deadline");
         }
+        if matches!(self.subject, Subject::Tree { .. }) {
+            assert!(Instant::now() < deadline, "tree complete reaps deadline");
+        }
         let reference_stats = expected_records.map(|expected| {
             let pipes = outputs.as_ref().expect("owned reference result pipes");
             for index in 0..2 {
@@ -1015,7 +1111,7 @@ impl OrdinaryOracle {
             input_address: self.data.address() + 128,
             input: &self.data.bytes()[128..128 + length],
             data_address: self.data.address(),
-            stack_address: self.gate_rsp() - profile.entry_delta() - 128,
+            stack_address: self.stack_start(profile),
             points: if reference_stats.is_some() {
                 &reference_points
             } else {
@@ -1029,6 +1125,12 @@ impl OrdinaryOracle {
             assert!(
                 Instant::now() < deadline,
                 "cache trace/model inspection deadline"
+            );
+        }
+        if matches!(self.subject, Subject::Tree { .. }) {
+            assert!(
+                Instant::now() < deadline,
+                "tree trace/model inspection deadline"
             );
         }
         (
@@ -1151,3 +1253,7 @@ pub mod reference;
 // Closed loaded linked-memory subject and source-independent observation checks.
 #[path = "native_cache.rs"]
 pub mod cache;
+
+// Closed real CALL tree; old leaf profiles and populations remain separate.
+#[path = "native_call_tree.rs"]
+pub mod call_tree;

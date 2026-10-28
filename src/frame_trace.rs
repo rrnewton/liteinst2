@@ -4,7 +4,7 @@
 //! storage. They do not establish original CFI validity at a new hook point,
 //! register an FDE, or authorize exception propagation or asynchronous unwinding.
 
-use crate::trampoline::TrampolineImage;
+use crate::trampoline::{ObservationStackProfile, TrampolineImage};
 use iced_x86::{BlockEncoderResult, Instruction, Register};
 
 /// Stack origin selected by the emitter constructor.
@@ -96,6 +96,7 @@ const GPRS: [Register; 16] = [
 /// independently proved valid at that exact head and composed with these facts.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrameState {
+    profile: ObservationStackProfile,
     anchor: Register,
     original_rsp_offset: i32,
     registers: [OriginalRegisterLocation; 16],
@@ -107,6 +108,7 @@ impl FrameState {
         let mut registers = GPRS.map(OriginalRegisterLocation::Live);
         registers[7] = OriginalRegisterLocation::OriginalStackPointer;
         Self {
+            profile: ObservationStackProfile::Legacy128,
             anchor: Register::RSP,
             original_rsp_offset: 0,
             registers,
@@ -129,6 +131,40 @@ impl FrameState {
         state.apply(FrameEffect::MetadataWord).unwrap();
         state.apply(FrameEffect::AnchorContext).unwrap();
         state
+    }
+
+    fn entry_for_profile(profile: ObservationStackProfile) -> Self {
+        Self {
+            profile,
+            ..Self::entry()
+        }
+    }
+
+    fn saved_for_profile(profile: ObservationStackProfile) -> Self {
+        if profile == ObservationStackProfile::Legacy128 {
+            return Self::saved();
+        }
+        let mut state = Self::entry_for_profile(profile);
+        state
+            .apply(FrameEffect::Reserve(profile.reserved_bytes() as i32))
+            .unwrap();
+        state.apply(FrameEffect::Reserve(32)).unwrap();
+        state.apply(FrameEffect::SaveFlags).unwrap();
+        for register in GPRS
+            .into_iter()
+            .filter(|register| *register != Register::RSP)
+        {
+            state.apply(FrameEffect::SaveRegister(register)).unwrap();
+        }
+        state.apply(FrameEffect::MetadataWord).unwrap();
+        state.apply(FrameEffect::MetadataWord).unwrap();
+        state.apply(FrameEffect::AnchorContext).unwrap();
+        state
+    }
+
+    /// Exact storage profile; a legacy rule is never a tree rule or vice versa.
+    pub const fn observation_stack_profile(&self) -> ObservationStackProfile {
+        self.profile
     }
 
     /// Original application RSP is the named live register plus this offset.
@@ -156,7 +192,9 @@ impl FrameState {
             .original_rsp_offset
             .checked_add(bytes)
             .ok_or(FrameTraceRefusal::ArithmeticOverflow)?;
-        if !(0..=304).contains(&self.original_rsp_offset) {
+        if !(0..=self.profile.context_stack_prefix_bytes() as i32)
+            .contains(&self.original_rsp_offset)
+        {
             return Err(FrameTraceRefusal::InvalidProducerAnnotation);
         }
         Ok(())
@@ -184,13 +222,17 @@ impl FrameState {
             }
             FrameEffect::MetadataWord => self.adjust_rsp(8)?,
             FrameEffect::AnchorContext => {
-                if self.anchor != Register::RSP || self.original_rsp_offset != 304 {
+                if self.anchor != Register::RSP
+                    || self.original_rsp_offset != self.profile.context_stack_prefix_bytes() as i32
+                {
                     return Err(FrameTraceRefusal::InvalidProducerAnnotation);
                 }
                 self.anchor = Register::R12;
             }
             FrameEffect::RestoreStack => {
-                if self.anchor != Register::R12 || self.original_rsp_offset != 304 {
+                if self.anchor != Register::R12
+                    || self.original_rsp_offset != self.profile.context_stack_prefix_bytes() as i32
+                {
                     return Err(FrameTraceRefusal::InvalidProducerAnnotation);
                 }
                 self.anchor = Register::RSP;
@@ -363,6 +405,10 @@ impl FrameTrace {
     pub const fn origin(&self) -> FrameEntryOrigin {
         self.origin
     }
+    /// Immutable image storage profile used by every helper row.
+    pub const fn observation_stack_profile(&self) -> ObservationStackProfile {
+        self.identity.layout().observation_stack_profile
+    }
     /// Per-instruction producer records, excluding data bytes.
     pub fn instructions(&self) -> &[FrameInstruction] {
         &self.instructions
@@ -441,7 +487,7 @@ impl FrameEmission {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum FrameEffect {
     Reserve(i32),
     SaveFlags,
@@ -456,6 +502,7 @@ pub(crate) enum FrameEffect {
 }
 
 pub(crate) struct HelperFrames {
+    profile: ObservationStackProfile,
     stage: FrameStage,
     effects: Vec<(usize, FrameEffect)>,
     call: Option<(usize, FrameCallKind)>,
@@ -471,10 +518,17 @@ struct HelperImage {
 impl HelperFrames {
     pub(crate) fn new(stage: FrameStage) -> Self {
         Self {
+            profile: ObservationStackProfile::Legacy128,
             stage,
             effects: Vec::new(),
             call: None,
             result: None,
+        }
+    }
+    pub(crate) fn with_profile(stage: FrameStage, profile: ObservationStackProfile) -> Self {
+        Self {
+            profile,
+            ..Self::new(stage)
         }
     }
     pub(crate) fn after(&mut self, instruction_count: usize, effect: FrameEffect) {
@@ -485,6 +539,126 @@ impl HelperFrames {
     }
     pub(crate) fn finish(&mut self, source: &[Instruction], encoded: &BlockEncoderResult) {
         self.result = Some(self.resolve(source, encoded));
+    }
+    // Tree annotations must describe the actual producer instructions, not
+    // merely a plausible 320-byte final offset. Legacy metadata is unchanged.
+    fn validate_tree_instructions(&self, source: &[Instruction]) -> Result<(), FrameTraceRefusal> {
+        use iced_x86::{Mnemonic, OpKind};
+        let bad = FrameTraceRefusal::InvalidProducerAnnotation;
+        let lea = |i: &Instruction, dst, displacement: i64| {
+            i.mnemonic() == Mnemonic::Lea
+                && i.op_count() == 2
+                && i.op0_kind() == OpKind::Register
+                && i.op0_register() == dst
+                && i.op1_kind() == OpKind::Memory
+                && i.memory_base() == Register::RSP
+                && i.memory_index() == Register::None
+                && i.memory_displacement64() as i64 == displacement
+        };
+        let reg = |i: &Instruction, mnemonic, register| {
+            i.mnemonic() == mnemonic
+                && i.op_count() == 1
+                && i.op0_kind() == OpKind::Register
+                && i.op0_register() == register
+        };
+        let mov = |i: &Instruction, dst, src| {
+            i.mnemonic() == Mnemonic::Mov
+                && i.op_count() == 2
+                && i.op0_kind() == OpKind::Register
+                && i.op0_register() == dst
+                && i.op1_kind() == OpKind::Register
+                && i.op1_register() == src
+        };
+        let registers: Vec<_> = GPRS.into_iter().filter(|r| *r != Register::RSP).collect();
+        let mut expected = Vec::new();
+        match self.stage {
+            FrameStage::SaveAndCall => {
+                expected.extend([
+                    FrameEffect::Reserve(144),
+                    FrameEffect::Reserve(32),
+                    FrameEffect::SaveFlags,
+                ]);
+                expected.extend(registers.iter().copied().map(FrameEffect::SaveRegister));
+                expected.extend([
+                    FrameEffect::MetadataWord,
+                    FrameEffect::MetadataWord,
+                    FrameEffect::AnchorContext,
+                ]);
+                if self.effects.first().map(|row| row.0) != Some(1) {
+                    return Err(bad);
+                }
+                let first_metadata = self
+                    .effects
+                    .iter()
+                    .find(|(_, e)| matches!(e, FrameEffect::MetadataWord))
+                    .ok_or(bad)?
+                    .0;
+                let recovery = first_metadata
+                    .checked_sub(2)
+                    .and_then(|index| source.get(index))
+                    .ok_or(bad)?;
+                if !lea(recovery, Register::RAX, 304) {
+                    return Err(bad);
+                }
+            }
+            FrameStage::Restore => {
+                expected.extend([FrameEffect::RestoreStack, FrameEffect::SkipMetadata]);
+                expected.extend(
+                    registers
+                        .iter()
+                        .rev()
+                        .copied()
+                        .map(FrameEffect::RestoreRegister),
+                );
+                expected.extend([
+                    FrameEffect::RestoreFlags,
+                    FrameEffect::Release(32),
+                    FrameEffect::Release(144),
+                ]);
+                if self.effects.last().map(|row| row.0) != Some(source.len()) {
+                    return Err(bad);
+                }
+            }
+        }
+        if self.effects.len() != expected.len() {
+            return Err(bad);
+        }
+        let mut previous = 0;
+        for (&(boundary, effect), expected) in self.effects.iter().zip(expected) {
+            if boundary <= previous || effect != expected {
+                return Err(bad);
+            }
+            previous = boundary;
+            let i = boundary
+                .checked_sub(1)
+                .and_then(|index| source.get(index))
+                .ok_or(bad)?;
+            let matches = match effect {
+                FrameEffect::Reserve(bytes) => lea(i, Register::RSP, -i64::from(bytes)),
+                FrameEffect::Release(bytes) => lea(i, Register::RSP, i64::from(bytes)),
+                FrameEffect::SaveFlags => i.mnemonic() == Mnemonic::Pushfq,
+                FrameEffect::RestoreFlags => i.mnemonic() == Mnemonic::Popfq,
+                FrameEffect::SaveRegister(r) => reg(i, Mnemonic::Push, r),
+                FrameEffect::RestoreRegister(r) => reg(i, Mnemonic::Pop, r),
+                FrameEffect::MetadataWord => reg(i, Mnemonic::Push, Register::RAX),
+                FrameEffect::AnchorContext => mov(i, Register::R12, Register::RSP),
+                FrameEffect::RestoreStack => mov(i, Register::RSP, Register::R12),
+                FrameEffect::SkipMetadata => {
+                    i.mnemonic() == Mnemonic::Add
+                        && i.op_count() == 2
+                        && i.op0_register() == Register::RSP
+                        && matches!(
+                            i.op1_kind(),
+                            OpKind::Immediate8to64 | OpKind::Immediate32to64
+                        )
+                        && i.immediate(1) == 16
+                }
+            };
+            if !matches {
+                return Err(bad);
+            }
+        }
+        Ok(())
     }
     fn resolve(
         &self,
@@ -502,10 +676,13 @@ impl HelperFrames {
         {
             return Err(FrameTraceRefusal::InvalidProducerAnnotation);
         }
+        if self.profile == ObservationStackProfile::Tree144 {
+            self.validate_tree_instructions(source)?;
+        }
         let mut rows = Vec::new();
         let mut state = match self.stage {
-            FrameStage::SaveAndCall => FrameState::entry(),
-            FrameStage::Restore => FrameState::saved(),
+            FrameStage::SaveAndCall => FrameState::entry_for_profile(self.profile),
+            FrameStage::Restore => FrameState::saved_for_profile(self.profile),
         };
         let mut call = None;
         for (index, instruction) in source.iter().enumerate() {
@@ -550,8 +727,8 @@ impl HelperFrames {
             }
         }
         let expected = match self.stage {
-            FrameStage::SaveAndCall => FrameState::saved(),
-            FrameStage::Restore => FrameState::entry(),
+            FrameStage::SaveAndCall => FrameState::saved_for_profile(self.profile),
+            FrameStage::Restore => FrameState::entry_for_profile(self.profile),
         };
         if state != expected
             || (self.stage == FrameStage::SaveAndCall && call.is_none())
@@ -568,6 +745,7 @@ impl HelperFrames {
 }
 
 pub(crate) struct FrameRecorder {
+    profile: ObservationStackProfile,
     origin: FrameEntryOrigin,
     limits: FrameTraceLimits,
     refusal: Option<FrameTraceRefusal>,
@@ -579,12 +757,23 @@ pub(crate) struct FrameRecorder {
 impl FrameRecorder {
     pub(crate) fn new(origin: FrameEntryOrigin, limits: FrameTraceLimits) -> Self {
         Self {
+            profile: ObservationStackProfile::Legacy128,
             origin,
             limits,
             refusal: None,
             instructions: Vec::new(),
             data: Vec::new(),
             calls: Vec::new(),
+        }
+    }
+    pub(crate) fn with_profile(
+        origin: FrameEntryOrigin,
+        limits: FrameTraceLimits,
+        profile: ObservationStackProfile,
+    ) -> Self {
+        Self {
+            profile,
+            ..Self::new(origin, limits)
         }
     }
     pub(crate) fn refuse(&mut self, error: FrameTraceRefusal) {
@@ -625,6 +814,10 @@ impl FrameRecorder {
         frames: HelperFrames,
     ) {
         if !self.recording() {
+            return;
+        }
+        if frames.profile != self.profile {
+            self.refuse(FrameTraceRefusal::InvalidProducerAnnotation);
             return;
         }
         let result = frames
@@ -717,6 +910,9 @@ impl FrameRecorder {
         }
         if self.origin != FrameEntryOrigin::ApplicationStack {
             return Err(FrameTraceRefusal::UnsupportedEntryOrigin);
+        }
+        if image.layout().observation_stack_profile != self.profile {
+            return Err(FrameTraceRefusal::InvalidProducerAnnotation);
         }
         self.instructions.sort_by_key(|row| row.start);
         self.data.sort_unstable();

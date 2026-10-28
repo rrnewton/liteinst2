@@ -642,3 +642,6 @@ mod tests;
 
 #[cfg(test)]
 pub(super) mod drain_tests;
+
+// Same immutable CALL stencil, separate two-frame completion protocol.
+pub(super) mod tree;
