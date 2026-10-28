@@ -561,6 +561,771 @@
       }
     }
   },
+  "mainc0": {
+    "base": "d81a77a658cef48075eac62eb128822e33f33a64",
+    "current_corpus_sha256": "748713582eb3ae3cbd1fc92301f532a35e485603a20741711e46e2778e81c4bf",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_tests": 22
+    },
+    "methods": {
+      "tests/support/native_reference/tests.rs": {
+        "all": [
+          "reference_layout_requires_every_byte_and_actual_label",
+          "reference_profile_and_complete_ret_inventory_refuse_substitution",
+          "reference_reader_transparency_keeps_full_state_and_physical_pcs",
+          "reference_cell_cannot_alias_frame_data_stack_or_executable_ranges",
+          "reference_complete_cell_identity_spills_and_canary_are_material",
+          "reference_stores_require_actual_unique_rdtscp_outputs",
+          "reference_result_requires_both_restorations_real_rax_and_leg",
+          "reference_result_wire_rejects_clock_geometry_missing_duplicate_and_tail"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/exact/reference/join/tests.rs": {
+        "all": [
+          "complete_population_keeps_real_sequence_independent_of_raw_ordinal",
+          "all_reference_identity_fields_and_stack_must_join_the_actual_result",
+          "reference_and_raw_endpoint_mutations_refuse_without_outlier_filtering",
+          "missing_extra_prior_owner_value_and_ret_rows_use_the_unchanged_join",
+          "exact_ids_populations_and_dropped_pending_are_not_recoverable_success",
+          "sequence_reset_gap_wrap_and_cross_leg_clock_change_are_refused"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference/hardware.rs": {
+        "all": [
+          "admission_requires_every_explicit_feature_and_user_access"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference/tests.rs": {
+        "all": [
+          "external_identity_leg_and_actual_sequence_are_not_raw_ordinals",
+          "clock_words_aux_and_order_refuse_instead_of_inventing_elapsed",
+          "original_and_installed_gate_predicates_remain_distinct",
+          "failed_owner_aftercheck_keeps_both_slots_poisoned_and_unpublished",
+          "commit_checks_actual_cells_then_resets_only_after_success",
+          "mismatched_methods_refuse_before_tls_or_hardware_reads",
+          "linked_stencil_offsets_flags_and_register_restore_are_exact"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "c0ddeee62aad2d06458f2a32cb775343730efb89",
+    "previous_corpus_sha256": "61e6fe15da8d2484b9abf1cbe9d1e9fbaf91896ec5aeea31f4fc1d3365617548",
+    "projections": {
+      "tests/neighbor_eviction_oracle.rs": {
+        "current_sha256": "b50f2059826bc9951593f6fd70bfe6631b327b4d50823589aac7df3db1723fd4",
+        "edits": [
+          [
+            19767,
+            20402,
+            ""
+          ],
+          [
+            21094,
+            21154,
+            "        let oracle = NativeOracle::new(&code);\n"
+          ],
+          [
+            21817,
+            21897,
+            "        let victim_image = Mapping::new(4096);\n        let selected_image = Mapping::new(4096);\n"
+          ],
+          [
+            22087,
+            22141,
+            "        write_mapping(&victim_image, 0, &victim_code);\n"
+          ],
+          [
+            22269,
+            22327,
+            "        write_mapping(&selected_image, 0, &selected_code);\n"
+          ],
+          [
+            23646,
+            23675,
+            "            _images: vec![victim_image, selected_image],\n"
+          ],
+          [
+            24359,
+            24448,
+            "    fn prefix(&self, bytes: &[u8]) -> Mapping {\n        let mapping = Mapping::new(4096);\n"
+          ],
+          [
+            24619,
+            24661,
+            "        write_mapping(&mapping, 0, &code);\n"
+          ],
+          [
+            31510,
+            31599,
+            "    let prefix_source = Mapping::new(4096);\n    let prefix_image = Mapping::new(4096);\n"
+          ],
+          [
+            32016,
+            32067,
+            "    write_mapping(&prefix_image, 0, image.bytes());\n"
+          ],
+          [
+            32200,
+            32251,
+            "    write_mapping(&prefix_source, 0, &prefix_code);\n"
+          ],
+          [
+            60109,
+            60165,
+            "    let oracle = NativeOracle::new(&code);\n"
+          ],
+          [
+            60628,
+            60700,
+            "    let victim_image = Mapping::new(4096);\n    let selected_image = Mapping::new(4096);\n"
+          ],
+          [
+            60880,
+            60930,
+            "    write_mapping(&victim_image, 0, &victim_code);\n"
+          ],
+          [
+            61050,
+            61104,
+            "    write_mapping(&selected_image, 0, &selected_code);\n"
+          ],
+          [
+            62167,
+            62192,
+            "        _images: vec![victim_image, selected_image],\n"
+          ]
+        ],
+        "previous_sha256": "5b1f6d6a001d92d0ebf96b7d3f0f679ddd0506a73971901c7898af68865255eb"
+      },
+      "tests/support/cross_function_neighbor_oracle.rs": {
+        "current_sha256": "93600c4768b53c3b862180e4bab1e3a6d1537415e93d8a602f058b3be39b23cb",
+        "edits": [
+          [
+            4542,
+            4825,
+            "    let oracle = NativeOracle::with_seeded_memory_and_flags(&code, 0x15_57);\n"
+          ],
+          [
+            5807,
+            6119,
+            "    // Reserve once without MAP_FIXED or a clobbering retry. The two image slots\n    // and callback bridge are private, disjoint subranges of this single owner.\n    // Planning/placement failure unwinds this owner before any source redirect.\n    let generated = Mapping::new(GENERATED_BYTES);\n"
+          ]
+        ],
+        "previous_sha256": "0c29abab39b6948e89840350c715b04085fdfb679c7f06b2e2b45f07b1847182"
+      },
+      "tests/support/native_optional_frontend.rs": {
+        "current_sha256": "3b2d94e16b6dcc1e8c5021081c785f1e03dbc2e8442458a8beb2e73ed5a0e5c1",
+        "edits": [
+          [
+            1043,
+            1106,
+            ""
+          ],
+          [
+            27363,
+            27419,
+            ""
+          ]
+        ],
+        "previous_sha256": "e51ebf4af28607c4a63f188b5ab59e807cd44c21fc927d3dee89727bceed9cc3"
+      },
+      "tests/support/native_ordinary.rs": {
+        "current_sha256": "604ea8bd57c1e1c1521a9d34851d5b67037974fa9ad0aa6485670157e1c30821",
+        "edits": [
+          [
+            808,
+            2045,
+            ""
+          ],
+          [
+            2219,
+            2245,
+            ""
+          ],
+          [
+            2632,
+            2775,
+            "        self.validate_profile(candidate, AFTER_CALL, GATE_BYTES.len())\n"
+          ],
+          [
+            5908,
+            6137,
+            ""
+          ],
+          [
+            7624,
+            7876,
+            ""
+          ],
+          [
+            8548,
+            8569,
+            ""
+          ],
+          [
+            8856,
+            8924,
+            "        ready.gate.checked_add(AFTER_CALL).unwrap()\n"
+          ],
+          [
+            8931,
+            9001,
+            "    assert_eq!(bytes, GATE_BYTES, \"whole immutable gate\");\n"
+          ],
+          [
+            9297,
+            9335,
+            ""
+          ],
+          [
+            10242,
+            10267,
+            ""
+          ],
+          [
+            10667,
+            10901,
+            ""
+          ],
+          [
+            15262,
+            15385,
+            "        check_gate(ready, &self.child.memory(ready.gate, GATE_BYTES.len()));\n"
+          ],
+          [
+            16386,
+            16504,
+            "        check_gate(ready, &child.memory(ready.gate, GATE_BYTES.len()));\n"
+          ],
+          [
+            16724,
+            16797,
+            "        let start = self.gate_rsp() - 16 - 128;\n"
+          ],
+          [
+            18490,
+            18634,
+            "        expected[7] = self.gate_rsp() - 8;\n        expected[8] = self.gate_rsp() - 8;\n"
+          ],
+          [
+            18750,
+            18824,
+            "            expected[11] = self.gate_rsp() - 16;\n"
+          ],
+          [
+            21124,
+            21498,
+            ""
+          ],
+          [
+            21541,
+            21648,
+            ""
+          ],
+          [
+            21916,
+            22078,
+            "        let deadline = Instant::now() + CHILD_BUDGET;\n"
+          ],
+          [
+            22556,
+            23012,
+            ""
+          ],
+          [
+            23298,
+            23375,
+            ""
+          ],
+          [
+            24345,
+            24561,
+            ""
+          ],
+          [
+            25077,
+            25286,
+            ""
+          ],
+          [
+            25957,
+            26440,
+            ""
+          ],
+          [
+            26520,
+            26665,
+            ""
+          ],
+          [
+            26702,
+            26749,
+            ""
+          ],
+          [
+            26890,
+            26977,
+            "            let logical = if GATE_HEADS.iter().any(|p| original.gate + p == pc) {\n"
+          ],
+          [
+            27377,
+            27816,
+            "            points.push(self.snapshot(a.child, &original, logical));\n            if pc == original.gate + OUTER_RET {\n"
+          ],
+          [
+            27987,
+            28075,
+            "            let logical = if GATE_HEADS.iter().any(|p| candidate.gate + p == pc) {\n"
+          ],
+          [
+            28229,
+            28951,
+            "                let expected = points.get(next).expect(\"extra candidate restored boundary\");\n                assert_eq!(\n                    logical, expected.logical_pc,\n                    \"ordered original visits, including loops/RET\"\n                );\n                assert_state(expected, &self.snapshot(b.child, &candidate, logical));\n                next += 1;\n                if pc == candidate.gate + OUTER_RET {\n"
+          ],
+          [
+            29533,
+            29737,
+            ""
+          ],
+          [
+            29941,
+            30011,
+            "            assert_eq!(actual.rip, ready.gate + OUTER_RET);\n"
+          ],
+          [
+            33119,
+            33698,
+            ""
+          ],
+          [
+            34079,
+            34298,
+            "            stack_address: self.gate_rsp() - 16 - 128,\n            points: &points,\n"
+          ],
+          [
+            34310,
+            34430,
+            "        PairResult {\n            comparisons: next,\n            original_steps: a.steps,\n            candidate_steps: b.steps,\n            visits: visits.len(),\n            returns,\n            declared_returns: original.returns.into_iter().collect(),\n            value,\n"
+          ],
+          [
+            34440,
+            34807,
+            ""
+          ],
+          [
+            35448,
+            35486,
+            ""
+          ],
+          [
+            38372,
+            38424,
+            ""
+          ]
+        ],
+        "previous_sha256": "30beb6de9eb7b6e0fcdcd2afae35d435761ff21dffc1d7d8a6d249c2f7031b69"
+      },
+      "tests/support/native_precontext.rs": {
+        "current_sha256": "5bc039aee42b467d56d57ad0f65cda57a0fc2cfeef142cf7b2a55eb59c5f04c4",
+        "edits": [
+          [
+            13090,
+            13131,
+            ""
+          ],
+          [
+            29126,
+            29177,
+            ""
+          ]
+        ],
+        "previous_sha256": "0e98c370de0feed73316e1fc6a04646426fa08a1ed1c9a3579035c31464bbaee"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "12c44886e13704b366c6e52bd658190441af3442302109a8d44199148643a63a",
+        "edits": [
+          [
+            5045,
+            5515,
+            ""
+          ],
+          [
+            5555,
+            6821,
+            "        let code_mapping = Mapping::new(PAGE);\n"
+          ],
+          [
+            7728,
+            8020,
+            "        Self {\n            code: code_mapping,\n            data,\n            stack,\n            initial_rsp,\n            return_pc,\n            original_code,\n            seeded_arithmetic_flags: false,\n        }\n"
+          ],
+          [
+            8415,
+            8822,
+            "        let mut oracle = Self::new(code);\n"
+          ],
+          [
+            9390,
+            9417,
+            "        oracle\n"
+          ]
+        ],
+        "previous_sha256": "e8c17e5daaf6e9720d6c515fd5e6f986307eca9c12ce115cdd51b465406dc756"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "85f46427076016462cd8a62bd660b43354b9174333d9f4cac2b6d3844cc040fc",
+        "edits": [
+          [
+            319,
+            334,
+            ""
+          ],
+          [
+            33954,
+            34626,
+            ""
+          ]
+        ],
+        "previous_sha256": "a628fa59d90bb6ab396022a1ae57489cf797b6def101d7fe392ed08e7cc57f12"
+      },
+      "tools/rapid-profiler/native-interval/optional.rs": {
+        "current_sha256": "9fec54630a4c5419f6c44c0993947d16804e003f9c1eae71abb6ac8ba6c31172",
+        "edits": [
+          [
+            7677,
+            7740,
+            ""
+          ]
+        ],
+        "previous_sha256": "f472141e4f27ef750f9e325368c7f31f4c456ff57ce995b2719ce2e30192f5c3"
+      },
+      "tools/rapid-profiler/native-interval/ordinary.rs": {
+        "current_sha256": "e0b8a055f0fb88730f57ad8cec2aabfebe8cc8cc1b3b787d4ea9434653c5674d",
+        "edits": [
+          [
+            3722,
+            4771,
+            ""
+          ],
+          [
+            5515,
+            6518,
+            "    let gate = CallGate::new(owner.certificate()).unwrap();\n    let gate_address = &raw const __rapid_profiler_ordinary_call_v1 as usize as u64;\n    // SAFETY: immutable text symbol, exact bounded assembly extent.\n    assert_eq!(\n        unsafe { std::slice::from_raw_parts(gate_address as usize as *const u8, GATE_BYTES.len()) },\n        GATE_BYTES\n    );\n    assert_eq!(gate.continuation(), gate_address + 25);\n"
+          ],
+          [
+            7755,
+            7772,
+            ""
+          ],
+          [
+            10086,
+            10591,
+            "        let result =\n            unsafe { attached.invoke_integer_leaf(std::slice::from_raw_parts(data, length)) }\n"
+          ],
+          [
+            10618,
+            10749,
+            ""
+          ],
+          [
+            10793,
+            11305,
+            "        assert_eq!(result.pre_call_rsp, gate_rsp - 8);\n        assert_eq!(result.entry_rsp, gate_rsp - 16);\n        assert_eq!(result.resumed_rsp, gate_rsp - 8);\n"
+          ],
+          [
+            13999,
+            14431,
+            "        let result = unsafe { call.invoke(data, length, &stack) }.unwrap();\n"
+          ],
+          [
+            14475,
+            14865,
+            "        assert_eq!(result.pre_call_rsp, gate_rsp - 8);\n        assert_eq!(result.resumed_rsp, gate_rsp - 8);\n"
+          ],
+          [
+            14898,
+            15093,
+            ""
+          ],
+          [
+            15464,
+            15559,
+            "fn check_exact(observed: OriginalObservation<'_>) -> (usize, usize, usize, usize) {\n"
+          ]
+        ],
+        "previous_sha256": "f596e349ac2436a43032d183cb51007cc9c81a5762feb59390d5eed4e34d0fe7"
+      },
+      "tools/rapid-profiler/ordinary-interval/exact.rs": {
+        "current_sha256": "cdf5acd93e0a1ab35c4eee6dce1e40cf902aca5978f94ed7cdc4f228fb9d59cd",
+        "edits": [
+          [
+            137,
+            152,
+            ""
+          ],
+          [
+            209,
+            257,
+            ""
+          ]
+        ],
+        "previous_sha256": "665f1dc894c9cd8da1398dde4a496ad73f47ae708fd5ccffe9638ea0a4d54b26"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "3ec76fa54007cc273061acb16e6d2f96517c5fd248d590ee8ce47c8ce1b15139",
+        "edits": [
+          [
+            15360,
+            15663,
+            ""
+          ]
+        ],
+        "previous_sha256": "053001e24c61e1ab4380396b8ccd28b1d64afeb29aa82301ea51284e49159c08"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": {
+        "current_sha256": "a86db1430804d1f57052058388648db8a532768158da429747bb73f368cd8115",
+        "edits": [
+          [
+            418,
+            614,
+            "pub use gate::{CallGate, CallResult, GateError, OriginalCallResult};\n"
+          ],
+          [
+            26300,
+            26375,
+            ""
+          ],
+          [
+            27680,
+            30611,
+            ""
+          ]
+        ],
+        "previous_sha256": "0dda9458eaae32bd653f3dc699216fa30b4416a0dae41fc726f9a772ef20bc29"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": {
+        "current_sha256": "5e7067a70435ffa4048fd39db5bde611ed0655dbaec9edfd5547ecd7f19f73e6",
+        "edits": [
+          [
+            492,
+            667,
+            ""
+          ],
+          [
+            1698,
+            1892,
+            ""
+          ],
+          [
+            2157,
+            2183,
+            ""
+          ],
+          [
+            11945,
+            12184,
+            "                idle(unsafe { cell.get().read() })\n"
+          ],
+          [
+            12995,
+            13037,
+            ""
+          ],
+          [
+            13492,
+            13610,
+            ""
+          ],
+          [
+            13695,
+            13899,
+            ""
+          ],
+          [
+            15579,
+            15611,
+            ""
+          ],
+          [
+            18116,
+            18148,
+            ""
+          ]
+        ],
+        "previous_sha256": "adcf5eeb201d15a1c9f7d99e7997697cda1ae7d438c651b6b121d46c5073250d"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/drain_tests.rs": {
+        "current_sha256": "523cb57362e382835d8f0ba4e3aeec8e2c0b9095e92d55a0e0e02e7e816fa04b",
+        "edits": [
+          [
+            663,
+            701,
+            ""
+          ],
+          [
+            4559,
+            4597,
+            ""
+          ]
+        ],
+        "previous_sha256": "815fa25a57bcb2387594fcdf1e9fb8e36b1a62c73a34fe5ea6e048e81a87bf5a"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/tests.rs": {
+        "current_sha256": "bbed8d171ffadff92646713296b879bface8a6233071aaeeef4c4c3f81c5aa08",
+        "edits": [
+          [
+            6470,
+            6508,
+            ""
+          ]
+        ],
+        "previous_sha256": "521bd77cc78a40d57bbe1cbe10c90f3e3163a1fcfad8b8c64018d27e449431a8"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+        "current_sha256": "c4ebe60e9f07e43394bf8f652623f31b13813e1aea72620c96a788ea93455204",
+        "edits": [
+          [
+            126,
+            208,
+            "    gate::{CallGate, GateError, OriginalCallResult},\n"
+          ],
+          [
+            4173,
+            5844,
+            ""
+          ],
+          [
+            21450,
+            22069,
+            ""
+          ]
+        ],
+        "previous_sha256": "dd7327024b47eb43f71c7f71a5d10e0912537066c3d551146bb0e98acb51f842"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "ed219f26f2390659cd08cda1667de1a22c05564a7e76f2e0e92c6e1ace1099c8",
+        "edits": [
+          [
+            2080,
+            2306,
+            "    CallGate, CallResult, GateError, OriginalCallResult, RawInterval, RawIntervalOwner,\n    RawTimestamp,\n"
+          ]
+        ],
+        "previous_sha256": "96f44acb14c3f061d122367b6bdedf2e261b470251124c72442bd8940a48ec5c"
+      },
+      "tools/rapid-profiler/verify_ordinary_interval.py": {
+        "current_sha256": "19edc0f306705ed91d9c958958cde3d288eb0ece55c8f8bcb709b29d763d5fcc",
+        "edits": [
+          [
+            15288,
+            15475,
+            ""
+          ],
+          [
+            16364,
+            16428,
+            ""
+          ],
+          [
+            17571,
+            17943,
+            ""
+          ],
+          [
+            28582,
+            29609,
+            ""
+          ],
+          [
+            59603,
+            65377,
+            ""
+          ]
+        ],
+        "previous_sha256": "3b2a5e939927a8f653aeefebea8bb9591926f066ad7585ad2a0e522f313bc4fa"
+      }
+    },
+    "scope": "Exact source-derived declarations; listing and actual execution are distinct evidence.",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/admission/precontext_native.py": "1eaac492da452ec61e9ca178f3994a9233b5b0c8f2fd0252f300f0a495ca2373",
+      "evaluation/precontext/verify.py": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+      "tests/neighbor_eviction_oracle.rs": "b50f2059826bc9951593f6fd70bfe6631b327b4d50823589aac7df3db1723fd4",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/quiescent_oracle.rs": "3e3f2e03d6c3425c06555a943f64aea13e4ef7b9b42bd32f03cf08b8b769d7d7",
+      "tests/support/cross_function_neighbor_oracle.rs": "93600c4768b53c3b862180e4bab1e3a6d1537415e93d8a602f058b3be39b23cb",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_optional_frontend.rs": "3b2d94e16b6dcc1e8c5021081c785f1e03dbc2e8442458a8beb2e73ed5a0e5c1",
+      "tests/support/native_ordinary.rs": "604ea8bd57c1e1c1521a9d34851d5b67037974fa9ad0aa6485670157e1c30821",
+      "tests/support/native_precontext.rs": "5bc039aee42b467d56d57ad0f65cda57a0fc2cfeef142cf7b2a55eb59c5f04c4",
+      "tests/support/native_reference.rs": "1a673c980551ebb080062f9cf7716c209b167c7dbe023e5674f7dc16ac36f44b",
+      "tests/support/native_reference/tests.rs": "7bad15a1732abd676cdd4d7887cd8742de114c9024a1eaf30a74336294166529",
+      "tests/support/quiescent_oracle.rs": "12c44886e13704b366c6e52bd658190441af3442302109a8d44199148643a63a",
+      "tools/rapid-profiler/Cargo.toml": "44a10ae94825a0bad3d09776065fe2aff56082dcb41263a5efe28230a746c685",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "f9c7f96424095442e28c541a38196800f1481482237e9f2739aba2392d811e1f",
+      "tools/rapid-profiler/native-interval/main.rs": "85f46427076016462cd8a62bd660b43354b9174333d9f4cac2b6d3844cc040fc",
+      "tools/rapid-profiler/native-interval/optional.rs": "9fec54630a4c5419f6c44c0993947d16804e003f9c1eae71abb6ac8ba6c31172",
+      "tools/rapid-profiler/native-interval/ordinary.rs": "e0b8a055f0fb88730f57ad8cec2aabfebe8cc8cc1b3b787d4ea9434653c5674d",
+      "tools/rapid-profiler/native-interval/reference.rs": "d25977835c56971508e5cd0a19319e28905e81ca25020386207808e6d9e6cbaa",
+      "tools/rapid-profiler/native-point/main.rs": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645",
+      "tools/rapid-profiler/ordinary-interval/exact.rs": "cdf5acd93e0a1ab35c4eee6dce1e40cf902aca5978f94ed7cdc4f228fb9d59cd",
+      "tools/rapid-profiler/ordinary-interval/exact/reference.rs": "c8185cff529ed5c2dcba54139c9528313efa22f3e1a38b15ae651fac3eb17983",
+      "tools/rapid-profiler/ordinary-interval/exact/reference/join.rs": "a1e5014cb7d2bc409b327ef17c8bd7491c6f0917a73851e95bbd0caacf5538a4",
+      "tools/rapid-profiler/ordinary-interval/exact/reference/join/tests.rs": "8f5aeb2e9ee07905911e504aa4baab5cb6b328f22fee37f22d2e8d83711ca541",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "3ec76fa54007cc273061acb16e6d2f96517c5fd248d590ee8ce47c8ce1b15139",
+      "tools/rapid-profiler/reference-work/check_output.py": "9d493bce603a1c72c15864a544148f674235bb02b1e56dbda033ed169403c023",
+      "tools/rapid-profiler/reference-work/test_recipe.py": "d92af164dc2214f1447693490f5ba42ea398325e0f98182e8ffecf94611baac6",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "a86db1430804d1f57052058388648db8a532768158da429747bb73f368cd8115",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": "5e7067a70435ffa4048fd39db5bde611ed0655dbaec9edfd5547ecd7f19f73e6",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/drain_tests.rs": "523cb57362e382835d8f0ba4e3aeec8e2c0b9095e92d55a0e0e02e7e816fa04b",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference.rs": "b91ebedd2cc26a2a736ea1409f24a9e4c41a99ee2830e2afc5996b1320bc029a",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference/hardware.rs": "136fc74e25b8ec34dc3d39b0280201379365c8a2a35484ef431bf76b8be39cb4",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference/tests.rs": "9e07f5656e22376982484a84e29cf97db5e42ca12b2eb4ca0ac461ad6549e16c",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/tests.rs": "bbed8d171ffadff92646713296b879bface8a6233071aaeeef4c4c3f81c5aa08",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "c4ebe60e9f07e43394bf8f652623f31b13813e1aea72620c96a788ea93455204",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "ed219f26f2390659cd08cda1667de1a22c05564a7e76f2e0e92c6e1ace1099c8",
+      "tools/rapid-profiler/src/lib.rs": "52b54ed20f6e8daa509846e2ac543ff5ef6e8099b1d69cc8623b94421e3c363d",
+      "tools/rapid-profiler/verify_ordinary_interval.py": "19edc0f306705ed91d9c958958cde3d288eb0ece55c8f8bcb709b29d763d5fcc"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 0,
+          "tests": 43
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 35
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 33
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 27
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 7,
+          "tests": 312
+        },
+        "previous": {
+          "ignored": 7,
+          "tests": 304
+        }
+      }
+    }
+  },
   "merged_revision": "3067913e0daf2b98baf9a5989ca468efe9fb797f",
   "methods": {
     "src/trampoline/precontext/tests.rs": {
