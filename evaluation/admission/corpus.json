@@ -6495,11 +6495,11 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 0,
-        "tests": 82
+        "tests": 98
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 28,
-        "tests": 407
+        "ignored": 31,
+        "tests": 424
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
