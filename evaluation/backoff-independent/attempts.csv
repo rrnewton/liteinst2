@@ -1,0 +1,8 @@
+attempt,revision,environment,worker_transport,campaign_status,prerequisite_stages_passed,k10_status,k10_calls,k10_sampled,k10_unsampled,k10_error,k1000_status,k1000_calls,k1000_sampled,k1000_unsampled,k1000_error,source_summary_sha256
+1,cfa6347b5017e9b3a7e956f0329dc585d7d69b35,initial-first-four,immediate-refusal,FAILED,27,FAILED,24,10,14,Full,UNRUN,,,,,029ad7cd28cda6f11eaf532a5f2f2d7938da486c8e74bda39a2a8f0bf3295bc5
+2,76420e99f7d561a7820b7a492d7c8a151d5f09e2,initial-first-four,immediate-refusal,FAILED,27,FAILED,2665,1170,1495,Worker/export Full,UNRUN,,,,,fb13499fb4aadd2f07df9d6d46a0634d7492f4d07fbba93f163119f1256bdb94
+3,0f27b73e10b1dba7d611de9221a7b3cf76715566,initial-first-four,immediate-refusal,FAILED,27,FAILED,168,70,98,Deadline,UNRUN,,,,,c7a8c0e844bf7465449b0a36f41d1ffed086a4290c0225e1f0f255ddd8d4d53b
+4,0f27b73e10b1dba7d611de9221a7b3cf76715566,allocator-reserved-four,immediate-refusal,FAILED,27,PASS,12006,5200,6806,,FAILED,6726,6725,1,Deadline,9ab34557e0eb3f7b78b6c486361c6b22b6b151494f940b3f96fef9621964cab8
+5,458af2d885b413a2a70f606b607f240ff46f4847,allocator-reserved-four,immediate-refusal,FAILED,27,FAILED,7941,3410,4531,Deadline,UNRUN,,,,,c80d802e17895db9be16bb2aa4ac33a1c7e14629eea9d8bcb1877bb7a31f59ba
+6,fc28f982129a5f4329315bd9719cebc9f3f4e0ef,allocator-reserved-four,immediate-refusal,FAILED,27,FAILED,9097,3960,5137,Worker/export Full,UNRUN,,,,,2303f9df71778445d4a80f478fd78bb9df55336cae292c87eb1c0d812c1c2e01
+7,035a4bdb6cb03c2664da7f319527d03be96870ec,allocator-reserved-four,bounded-wait,FAILED,27,FAILED,5236,2330,2906,Deadline,UNRUN,,,,,3e04e927a4cbf093c99c2e053d0c868b480aeca6aad476958b4bab54bd337403
