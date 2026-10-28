@@ -240,10 +240,10 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 26954,
-      "origin": "c3c42b67b35a plus reviewed exact VPBROADCASTB composition 2a599b1f",
+      "bytes": 27338,
+      "origin": "c3c42b67b35a plus reviewed exact VPBROADCASTB composition 2a599b1f; exact VMOVDQU64 leaf55898638 + shared PLAIN1605",
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "dd04b58857ded7fc8e2dfb55f14928518c0099bea11f1f1bb8f1693a2a1d2b35"
+      "sha256": "3cf464b8a3979d3af5bd9cfc139a5403d0f4deede11af8e277c8aadb430508b4"
     },
     {
       "bytes": 2900,

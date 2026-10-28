@@ -576,6 +576,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 1582: /* Movq_xmm_rm64 */
     case 1821: /* Movq_rm64_xmm */
     case 3210: /* EVEX_Vpbroadcastb_zmm_k1z_r32; classifier still exact 62e27d487ac6 */
+    case 1605: /* EVEX_Vmovdqu64_zmm_k1z_zmmm512; classifier still exact 62e1fe486f0f */
         return LI2_TF_ENTRY_PLAIN;
     default:return LI2_TF_ENTRY_UNKNOWN;
     }
