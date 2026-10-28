@@ -87,9 +87,12 @@ pub(super) fn validate_symbols(trusted: &[u8], entry: u64, file_offset: u64) -> 
                     st_other: 2
                 }
             );
+            // object::is_definition() denotes a function/data definition and
+            // excludes zero-size NOTYPE labels. Their actual definition is the
+            // exact concrete .text section plus the required address below.
             require(
                 !seen[k]
-                    && symbol.is_definition()
+                    && !symbol.is_undefined()
                     && symbol.kind() == SymbolKind::Unknown
                     && hidden
                     && symbol.section_index() == Some(section_index)
@@ -101,7 +104,7 @@ pub(super) fn validate_symbols(trusted: &[u8], entry: u64, file_offset: u64) -> 
             addresses[k] = symbol.address();
         } else if name.starts_with("normal_reference_") {
             return Err(CallerError::SymbolOwner);
-        } else if symbol.is_definition() && symbol.section_index() == Some(section_index) {
+        } else if symbol.section_index() == Some(section_index) {
             // Only the optional standard local section symbol may share this
             // section beyond the closed function and named label set.
             require(
@@ -379,6 +382,8 @@ mod tests {
                 (5, 3, 1),
                 (6, 2, 2),
                 (6, 0, 2),
+                (6, 0xfff1, 2),
+                (6, 0xffff, 2),
                 (8, 0x1001 + bytes::LABELS[k].1, 8),
                 (16, 1, 8),
             ] {
@@ -403,6 +408,33 @@ mod tests {
         exported[LABEL_FIRST + 4] = 0x10;
         exported[LABEL_FIRST + 5] = 0;
         assert!(parse_spec::<Profile>(&exported).is_err());
+        // An extra unnamed, zero-size NOTYPE label in .text is still an
+        // additional selected-section symbol; is_definition() would miss it.
+        let mut extra = good.clone();
+        let count = bytes::LABELS.len() + 2;
+        let at = SYMTAB + (count - 1) * 24;
+        // Keep the global function after every local symbol and update sh_info.
+        extra[at + 24..at + 48].copy_from_slice(&good[at..at + 24]);
+        extra[at..at + 24].copy_from_slice(&good[LABEL_FIRST..LABEL_FIRST + 24]);
+        w(&mut extra, at, 0, 4);
+        w(
+            &mut extra,
+            0x3100 + 6 * 64 + 32,
+            ((count + 1) * 24) as u64,
+            8,
+        );
+        w(&mut extra, 0x3100 + 6 * 64 + 44, count as u64, 4);
+        assert!(parse_spec::<Profile>(&extra).is_err());
+        // The sole permitted extra is a standard local section symbol.
+        extra[at + 4] = 3;
+        extra[at + 5] = 0;
+        w(&mut extra, at + 8, 0x1000, 8);
+        assert!(parse_spec::<Profile>(&extra).is_ok());
+        for (delta, value, width) in [(4, 0x13, 1), (5, 2, 1), (8, 0x1001, 8), (16, 1, 8)] {
+            let mut bad = extra.clone();
+            w(&mut bad, at + delta, value, width);
+            assert!(parse_spec::<Profile>(&bad).is_err());
+        }
     }
     #[test]
     fn reference_owner_linker_localization_is_closed_not_candidate_selected() {
