@@ -137,8 +137,10 @@ remaining trials stay unrun. All twelve warmup results remain in the receipt
 but are excluded from the estimator by this fixed policy. No trial is retried,
 trimmed, discarded as short or unstable, or adjusted by empty-hook subtraction.
 
-Each clock snapshot reads `CLOCK_MONOTONIC`, then `CLOCK_PROCESS_CPUTIME_ID`,
-then `CLOCK_MONOTONIC` again. S0 precedes source loading, input preparation and
+Each clock snapshot reads `CLOCK_MONOTONIC`, `CLOCK_THREAD_CPUTIME_ID`,
+`CLOCK_PROCESS_CPUTIME_ID`, then `CLOCK_MONOTONIC` again. Only the two wall
+values and process value are exported; the thread read requests the accounting
+update described below. S0 precedes source loading, input preparation and
 SDK setup; affinity and clock-resolution queries precede S0. S1 follows setup
 and precedes the first epoch stage or original call. S2 follows all 64 blocks,
 including the last installed retirement and Report validation/drop. S3 follows
@@ -242,3 +244,14 @@ signal/nonzero exit, a child with closed output that remains alive, a killed
 timer, an acknowledged detached descendant, existing record refusal and file
 truncation. Keep full logs/64-row transcripts in `ignored/`; publish compact raw
 CSV/JSON per-process numbers and the exact revision, hardware and command.
+
+The shared internal clock bracket reads MONOTONIC, THREAD_CPUTIME_ID,
+PROCESS_CPUTIME_ID, then MONOTONIC. Linux can serve the process clock from
+tick-updated group accounting while a finite CPU limit is active. The thread
+read requests an update of the current task's contribution before the process read; both
+clients enforce a single main thread. The reported CPU value remains the
+process clock and must include the preceding thread value. This extra read is
+inside every native and SDK bracket. Positive whole/loop CPU deltas, all clock
+ordering checks, the fixed worklist and the CPU limit remain required. This
+prospective sampling change adds no clock accuracy or universal kernel freshness
+guarantee and does not reinterpret results collected by the earlier method.

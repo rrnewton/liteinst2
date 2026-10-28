@@ -266,7 +266,9 @@ fn main() {
     out.flush().unwrap();
     let s3 = clocks::read();
     let snapshots = [s0, s1, s2, s3];
-    let m = clocks::metrics(&snapshots, resolution).expect("valid native consumer clock brackets");
+    let m = clocks::metrics(&snapshots, resolution).unwrap_or_else(|| {
+        panic!("valid native consumer clock brackets: {snapshots:?}; {resolution:?}")
+    });
     write!(out, "tree-comparison FUNCTIONAL_PASS mode=native blocks=64 roots=1536 calls=1536 originals=1536 installed_roots=0 node_rows=0 sampled=0 closed=0 batches=0 events=0 reports=0 epochs=0 actions=0 root_inclusive_instructions=509952 root_exclusive_instructions=9216 child_instructions=500736 input_unchanged=true records_joined=false clock_scope=matched-consumer collected_results=1536").unwrap();
     for (i, s) in snapshots.iter().enumerate() {
         write!(
