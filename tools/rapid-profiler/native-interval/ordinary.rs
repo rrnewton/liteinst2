@@ -105,6 +105,52 @@ fn child(
     symbol: &std::ffi::CStr,
     concurrent: bool,
 ) {
+    child_profile(
+        candidate,
+        context,
+        subject,
+        expected_elf,
+        symbol,
+        concurrent,
+        oracle::native_ordinary::Profile::Legacy,
+    );
+}
+
+pub(super) fn child_reference(
+    candidate: bool,
+    context: ChildContext<'_>,
+    subject: &Path,
+    expected_elf: &[u8],
+    id: u64,
+    cpu: usize,
+) {
+    super::reference::check_cpu(cpu);
+    child_profile(
+        candidate,
+        context,
+        subject,
+        expected_elf,
+        c"exact_work_nonempty",
+        false,
+        oracle::native_ordinary::Profile::Reference { external_id: id },
+    );
+}
+
+fn child_profile(
+    candidate: bool,
+    mut context: ChildContext<'_>,
+    subject: &Path,
+    expected_elf: &[u8],
+    symbol: &std::ffi::CStr,
+    concurrent: bool,
+    profile: oracle::native_ordinary::Profile,
+) {
+    use oracle::native_ordinary::Profile;
+    let output = match profile {
+        Profile::Legacy => None,
+        Profile::Reference { .. } => Some(context.reference_output()),
+    };
+    let mut returned = None;
     current_single_main();
     // SAFETY: independently pinned exact fixed C/assembly DSO output.
     // The selected symbol is one of the two nonempty checksum implementations. Child-local load precedes any application call; no constructors,
@@ -119,14 +165,30 @@ fn child(
     let entry = owner.entry();
     let heads = owner.certificate().heads().to_vec();
     let returns = owner.certificate().returns().to_vec();
-    let gate = CallGate::new(owner.certificate()).unwrap();
-    let gate_address = &raw const __rapid_profiler_ordinary_call_v1 as usize as u64;
-    // SAFETY: immutable text symbol, exact bounded assembly extent.
-    assert_eq!(
-        unsafe { std::slice::from_raw_parts(gate_address as usize as *const u8, GATE_BYTES.len()) },
-        GATE_BYTES
-    );
-    assert_eq!(gate.continuation(), gate_address + 25);
+    let (gate, gate_address) = match profile {
+        Profile::Legacy => {
+            let gate = CallGate::new(owner.certificate()).unwrap();
+            let gate_address = &raw const __rapid_profiler_ordinary_call_v1 as usize as u64;
+            // SAFETY: immutable text symbol, exact bounded assembly extent.
+            assert_eq!(
+                unsafe {
+                    std::slice::from_raw_parts(gate_address as usize as *const u8, GATE_BYTES.len())
+                },
+                GATE_BYTES
+            );
+            assert_eq!(gate.continuation(), gate_address + 25);
+            (gate, gate_address)
+        }
+        Profile::Reference { .. } => {
+            let gate = CallGate::new_reference(owner.certificate()).unwrap();
+            let address = super::reference::gate_address();
+            assert_eq!(
+                gate.continuation(),
+                address + oracle::native_ordinary::reference::AFTER_CALL
+            );
+            (gate, address)
+        }
+    };
     let mut prep = OrdinarySitePreparation::new(owner, gate, identity(entry)).unwrap();
     assert_eq!(
         prep.role_pcs().collect::<Vec<_>>(),
@@ -156,6 +218,7 @@ fn child(
         }
     }
     let ready = Ready {
+        profile,
         entry,
         gate: gate_address,
         continuation: prep.gate().continuation(),
@@ -223,13 +286,36 @@ fn child(
         // SAFETY: live inherited immutable input, 1/64 nonempty scalar leaf,
         // exact attached gate and controlled stack; the tracer restores only
         // the outer harness context AFTER complete application comparisons.
-        let result =
-            unsafe { attached.invoke_integer_leaf(std::slice::from_raw_parts(data, length)) }
+        let result = match profile {
+            Profile::Legacy => {
+                unsafe { attached.invoke_integer_leaf(std::slice::from_raw_parts(data, length)) }
+                    .unwrap()
+            }
+            Profile::Reference { external_id } => {
+                let result = unsafe {
+                    attached.invoke_integer_leaf_reference(
+                        std::slice::from_raw_parts(data, length),
+                        external_id,
+                    )
+                }
                 .unwrap();
+                returned = Some(super::reference::installed_record(&result));
+                result.call
+            }
+        };
         assert_eq!(result.value, expected);
-        assert_eq!(result.pre_call_rsp, gate_rsp - 8);
-        assert_eq!(result.entry_rsp, gate_rsp - 16);
-        assert_eq!(result.resumed_rsp, gate_rsp - 8);
+        match profile {
+            Profile::Legacy => {
+                assert_eq!(result.pre_call_rsp, gate_rsp - 8);
+                assert_eq!(result.entry_rsp, gate_rsp - 16);
+                assert_eq!(result.resumed_rsp, gate_rsp - 8);
+            }
+            Profile::Reference { .. } => {
+                assert_eq!(result.pre_call_rsp, gate_rsp - 24);
+                assert_eq!(result.entry_rsp, gate_rsp - 32);
+                assert_eq!(result.resumed_rsp, gate_rsp - 24);
+            }
+        }
         assert!(ready.returns.contains(&result.return_pc));
         assert_eq!(attached.totals().unwrap(), totals);
         let rows = attached.raw_intervals().unwrap();
@@ -292,12 +378,33 @@ fn child(
         context.ready(&ready);
         // SAFETY: the consuming original-only guard uses the unchanged private
         // arming/assembly and full after-check, with no callback/completion credit.
-        let result = unsafe { call.invoke(data, length, &stack) }.unwrap();
+        let result = match profile {
+            Profile::Legacy => unsafe { call.invoke(data, length, &stack) }.unwrap(),
+            Profile::Reference { external_id } => {
+                let result =
+                    unsafe { call.invoke_reference(data, length, &stack, external_id) }.unwrap();
+                returned = Some(super::reference::original_record(&result));
+                result.call
+            }
+        };
         assert_eq!(result.value, expected);
-        assert_eq!(result.pre_call_rsp, gate_rsp - 8);
-        assert_eq!(result.resumed_rsp, gate_rsp - 8);
+        match profile {
+            Profile::Legacy => {
+                assert_eq!(result.pre_call_rsp, gate_rsp - 8);
+                assert_eq!(result.resumed_rsp, gate_rsp - 8);
+            }
+            Profile::Reference { .. } => {
+                assert_eq!(result.pre_call_rsp, gate_rsp - 24);
+                assert_eq!(result.resumed_rsp, gate_rsp - 24);
+            }
+        }
     }
     current_single_main();
+    match (output, returned) {
+        (Some(output), Some(record)) => output.complete(record),
+        (None, None) => {}
+        _ => panic!("reference result channel/profile mismatch"),
+    }
 }
 
 fn bytes_at(bytes: &[u8], base: u64, address: u64, count: usize) -> &[u8] {
@@ -307,7 +414,7 @@ fn bytes_at(bytes: &[u8], base: u64, address: u64, count: usize) -> &[u8] {
 
 // Independent expected trace uses no Ready heads, certificate or emitted map.
 // The original path is an actual normal uninstrumented subject invocation.
-fn check_exact(observed: OriginalObservation<'_>) -> (usize, usize, usize, usize) {
+pub(super) fn check_exact(observed: OriginalObservation<'_>) -> (usize, usize, usize, usize) {
     let code = bytes_at(
         observed.source,
         observed.source_address,

@@ -1,0 +1,159 @@
+"""Finite reference-clock projections; no calibration or timing accuracy verdict."""
+import csv
+import re
+
+PAIR_HEADER = 'seed,length,status,children,comparisons,original_visits,original_steps,candidate_steps,reader_checks,timestamp_joins,returned_records,value'
+PAIR_PASS = ('native-exact-reference:required=4:pairs=4:children=8:comparisons=872:'
+    'reader-checks=16:timestamp-joins=16:returned-records=8:truth-instructions=800:'
+    'conditional=130:taken=126:input-reads=130:return-reads=4:subject-ret=8:real-outer-ret=8:complete\n')
+SEEDS = (0x1234567887654320, 0xfedcba9801234567)
+SCOPE = '# uncalibrated real-CALL enclosures and hook endpoints; fixed-assembly work model, no timing-accuracy, frequency-conversion or performance claim'
+HEADER = 'leg,external_id,gate_sequence,ordinal,length,owner,generation,invocation,instructions,branches,taken_branches,input_byte_reads,return_read_bytes,value,reference_start_ticks,reference_end_ticks,reference_start_aux,reference_end_aux,raw_start_ticks,raw_end_ticks,raw_start_aux,raw_end_aux,enclosure_ticks,raw_ticks,entry_gap_ticks,return_gap_ticks'
+PASS = ('exact-reference FUNCTIONAL_PASS originals=24 installed=24 raw_rows=24 sampled=24 unsampled=0 report_records=24 '
+    'original_instructions=4800 installed_instructions=4800 same_thread=true detached=true input_unchanged=true uncalibrated=true')
+ORIGINAL_EMPTY = frozenset(('ordinal', 'generation', 'invocation', 'raw_start_ticks', 'raw_end_ticks', 'raw_start_aux', 'raw_end_aux', 'raw_ticks', 'entry_gap_ticks', 'return_gap_ticks'))
+
+
+# Exact transitive frontend-native-calibrations inventory, including expected panics.
+CALIBRATION_TESTS = {
+    'oracle::calibration::rejects_application_memory_corruption': True,
+    'oracle::calibration::rejects_defined_flag_corruption': True,
+    'oracle::calibration::rejects_fault_address_corruption': True,
+    'oracle::calibration::rejects_gpr_corruption': True,
+    'oracle::calibration::rejects_redzone_corruption': True,
+    'oracle::calibration::rejects_simd_corruption': True,
+    'oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact': False,
+    'oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_complete_frame_phase_and_owner_refuse': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_gate_bytes_offsets_and_extent_refuse': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_observer_omission_extra_and_order_refuse': False,
+    'oracle::native_ordinary::optional_frontend::tests::optional_frontend_ready_full_mapping_and_observer_identity_refuse': False,
+    'oracle::native_ordinary::reference::tests::reference_cell_cannot_alias_frame_data_stack_or_executable_ranges': False,
+    'oracle::native_ordinary::reference::tests::reference_complete_cell_identity_spills_and_canary_are_material': False,
+    'oracle::native_ordinary::reference::tests::reference_layout_requires_every_byte_and_actual_label': False,
+    'oracle::native_ordinary::reference::tests::reference_profile_and_complete_ret_inventory_refuse_substitution': False,
+    'oracle::native_ordinary::reference::tests::reference_reader_transparency_keeps_full_state_and_physical_pcs': False,
+    'oracle::native_ordinary::reference::tests::reference_result_requires_both_restorations_real_rax_and_leg': False,
+    'oracle::native_ordinary::reference::tests::reference_result_wire_rejects_clock_geometry_missing_duplicate_and_tail': False,
+    'oracle::native_ordinary::reference::tests::reference_stores_require_actual_unique_rdtscp_outputs': False,
+    'oracle::native_ordinary::tests::ordinary_actual_frame_data_and_tls_mismatch_refuse': False,
+    'oracle::native_ordinary::tests::ordinary_full_data_and_redzone_comparator_refuses': False,
+    'oracle::native_ordinary::tests::ordinary_gate_and_ready_identity_refuse': False,
+    'oracle::native_ordinary::tests::ordinary_harness_resume_only_removes_debugger_tf': False,
+    'oracle::native_ordinary::tests::ordinary_map_missing_and_duplicate_ret_refuse': False,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc': True,
+    'oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc': True,
+    'oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity': False,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication': True,
+    'oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity': True,
+    'oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record': False,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process': True,
+    'oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction': True,
+}
+
+
+def number(word):
+    assert isinstance(word, str) and re.fullmatch(r'0|[1-9][0-9]*', word)
+    value = int(word)
+    assert value < 2**64
+    return value
+
+
+def table(data, header, count):
+    assert 0 < len(data) <= 1048576 and data.endswith(b'\n') and b'\r' not in data
+    lines = data.decode('ascii').splitlines()
+    assert len(lines) == count + 1 and lines[0] == header
+    rows = list(csv.DictReader(lines, strict=True))
+    assert len(rows) == count
+    assert all(set(row) == set(header.split(',')) and all(isinstance(v, str) for v in row.values()) for row in rows)
+    return rows
+
+
+def pairs(data, terminal, stderr):
+    assert stderr == b'' and terminal == PAIR_PASS.encode('ascii')
+    rows = table(data, PAIR_HEADER, 4)
+    for row, (seed, n) in zip(rows, [(seed, n) for seed in SEEDS for n in (1, 64)]):
+        assert row['status'] == 'PASS'
+        for key in set(row) - {'status'}:
+            row[key] = number(row[key])
+        assert (row['seed'], row['length'], row['children']) == (seed, n, 2)
+        assert row['original_visits'] == 6*n + 5
+        # Eighteen restored wrapper instruction heads are fixed by the separate
+        # literal stencil. Reader transparency is counted independently below.
+        assert row['comparisons'] == row['original_visits'] + 18
+        assert row['comparisons'] <= min(row['original_steps'], row['candidate_steps'])
+        assert max(row['original_steps'], row['candidate_steps']) <= 20000
+        assert (row['reader_checks'], row['timestamp_joins'], row['returned_records']) == (4, 4, 2)
+        expected = sum(((((128+j)*37+11+seed) & 255) ^ 0x5a) for j in range(n)) ^ 0x9e3779b97f4a7c15
+        assert row['value'] == expected
+    assert sum(row['comparisons'] for row in rows) == 872
+    return rows
+
+
+def calibrations(stdout, stderr):
+    assert stderr == b'' and 0 < len(stdout) <= 1048576
+    text = stdout.decode('ascii')
+    pattern = (r'\nrunning 43 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){43})\n'
+        r'test result: ok\. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
+    match = re.fullmatch(pattern, text)
+    assert match is not None
+    names = [line.split()[1] for line in match.group(1).splitlines()]
+    assert len(set(names)) == 43
+    observed = {line.split()[1]: ' - should panic ... ok' in line for line in match.group(1).splitlines()}
+    assert observed == CALIBRATION_TESTS
+
+
+def functional(data, stderr):
+    assert stderr == b'' and 0 < len(data) <= 1048576 and data.endswith(b'\n') and b'\r' not in data
+    lines = data.decode('ascii').splitlines()
+    assert len(lines) == 51 and lines[0] == SCOPE and lines[-1] == PASS
+    csv_bytes = ('\n'.join(lines[1:-1])+'\n').encode('ascii')
+    rows = table(csv_bytes, HEADER, 48)
+    first_sequence = generation = aux = last_end = None
+    for position, row in enumerate(rows):
+        original = position < 24
+        index = position % 24
+        n = 1 if index % 2 == 0 else 64
+        assert row['leg'] == ('original' if original else 'installed')
+        assert row['owner'] == ('original' if original else 'sampled')
+        empty = ORIGINAL_EMPTY if original else frozenset()
+        assert all(row[key] == '' for key in empty)
+        for key in set(row) - empty - {'leg', 'owner'}:
+            row[key] = number(row[key])
+        assert (row['external_id'], row['length']) == (0x72656600+index, n)
+        assert (row['instructions'], row['branches'], row['taken_branches'], row['input_byte_reads'], row['return_read_bytes']) == (6*n+5, n, n-1, n, 8)
+        expected = sum((((j*37+11) & 255) ^ 0x5a) for j in range(n)) ^ 0x9e3779b97f4a7c15
+        assert row['value'] == expected
+        if position == 0:
+            first_sequence, aux = row['gate_sequence'], row['reference_start_aux']
+            assert 0 < first_sequence <= 2**64-48 and aux < 2**32
+        assert row['gate_sequence'] == first_sequence+position
+        assert row['reference_start_aux'] == row['reference_end_aux'] == aux
+        start, end = row['reference_start_ticks'], row['reference_end_ticks']
+        assert start <= end and row['enclosure_ticks'] == end-start
+        assert last_end is None or start >= last_end
+        last_end = end
+        if not original:
+            if index == 0:
+                generation = row['generation']
+                assert generation > 0
+            assert (row['ordinal'], row['generation'], row['invocation']) == (index+1, generation, index)
+            assert row['raw_start_aux'] == row['raw_end_aux'] == aux
+            raw_start, raw_end = row['raw_start_ticks'], row['raw_end_ticks']
+            assert start <= raw_start <= raw_end <= end
+            assert row['raw_ticks'] == raw_end-raw_start
+            assert row['entry_gap_ticks'] == raw_start-start
+            assert row['return_gap_ticks'] == end-raw_end
+            assert row['enclosure_ticks'] == row['entry_gap_ticks']+row['raw_ticks']+row['return_gap_ticks']
+    assert sum(row['instructions'] for row in rows[:24]) == sum(row['instructions'] for row in rows[24:]) == 4800
+    return rows, csv_bytes

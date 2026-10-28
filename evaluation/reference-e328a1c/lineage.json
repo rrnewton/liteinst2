@@ -1,0 +1,41 @@
+{
+  "all_native_recorded_source_hashes_equal": true,
+  "fixture_fix": "Source and all fixed relay/prefix/generated images share one24KiB reservation with disjoint owners; exact E9, old assertion messages, comparison masks, populations and parallelism retained.",
+  "fixture_fix_commit": "4421656cdb0d963f6abcaeb4844d136e2c93921c",
+  "fixture_integration_review_sha256": "3e1c4c341a09a4ba2ad77d5abe318e1c31594e5bfe0b367356349c09a9f742c9",
+  "fixture_source_review_sha256": "4c5983997d2b73aa37b2374e16fba2c0ba21ac1294c3ad5267e31b3f6f3d1c3a",
+  "main": "690cb9c4677ea4eb5401946c383c536f821295ad",
+  "merge_commit": "2b3e1524b122266962f0bc5d72238245f55d6150",
+  "merged_gate_revision": "4421656cdb0d963f6abcaeb4844d136e2c93921c",
+  "native_evidence_review_sha256": "548dd62b2b34eb01f77dcd96467c5101e750f35f8fe75f063539975a2e70f99d",
+  "native_recorded_sources": 107,
+  "native_result_sha256": "cbc836deda945c50565abbf3252dad678b215ac79ee79d997c5b7ed0454fb223",
+  "native_revision": "e328a1c3f749fcda690cd0c95bff2366288c1616",
+  "neighbor_development": {
+    "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "eba7cdb9b0648d0825bdf3735c5b862fc01821a745c592fc99e855d3e6d7efc2",
+      "reaped_descendants": 0,
+      "seconds": 112.49892752896994,
+      "start_utc": "2026-10-28T05:55:11.196447+00:00",
+      "termination": null
+    },
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "liteinst2",
+      "--test",
+      "neighbor_eviction_oracle"
+    ],
+    "failed": 0,
+    "ignored": 0,
+    "passed": 80,
+    "source_base": "2b3e1524b122266962f0bc5d72238245f55d6150",
+    "source_state": "three reviewed fixture files modified; exact formatted hashes committed unchanged in4421656"
+  },
+  "scope": "Native campaign remains at its exact e328a1c revision; all107 recorded inputs match the merged fixed tree. Final seven gates ran at4421656. This is source-input continuity, not a claimed native rerun at the later revision.",
+  "source_binding_sha256": "6937c682d4141bd4f53854f6ffe722115cd5a0f4c0bbb0a4964928732898cef3"
+}

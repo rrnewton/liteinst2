@@ -28,6 +28,7 @@ impl std::ops::Deref for Ready {
 }
 impl Ready {
     fn validate(&self, candidate: bool) -> BTreeMap<u64, u64> {
+        assert_eq!(self.base.profile, super::Profile::Legacy);
         let map = self.base.validate_profile(candidate, AFTER, GATE.len());
         let expected: Vec<_> = if candidate {
             std::iter::once(self.entry)
@@ -757,6 +758,7 @@ mod tests {
     fn ready(candidate: bool) -> Ready {
         Ready {
             base: super::super::Ready {
+                profile: super::super::Profile::Legacy,
                 entry: 0x4000,
                 gate: 0x1000,
                 continuation: 0x101c,

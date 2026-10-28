@@ -1,0 +1,287 @@
+{
+  "artifacts": {
+    "exact-dso": {
+      "bytes": 13672,
+      "sha256": "6dc05966ea7a8bd8c7c70dd63065e7157e709d46220d90a08056a3eed38c5ecc"
+    },
+    "frontend-native-oracle": {
+      "binary": {
+        "bytes": 4648448,
+        "sha256": "2b8640cbfa67bf769aa14df05005b70350b7e335606e93f0826ecba1911799f0"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "ordinary-interval": {
+      "binary": {
+        "bytes": 4512112,
+        "sha256": "eba4d2f809814c34792b961c615e48c7a498268dde333c625003d4b258f3035a"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "reference-calibrations": {
+      "binary": {
+        "bytes": 1436800,
+        "sha256": "03920abc4e4028a3a444dc3bdc2ae5bb86776af10e7b9a3f207c933cc0473448"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    }
+  },
+  "bounds": {
+    "client_cpu_seconds": 20,
+    "client_wall_seconds": 30,
+    "pair_seconds": 15,
+    "state_cpu_seconds": 90,
+    "state_supervisor_seconds": 115,
+    "state_wall_seconds": 90,
+    "whole_child_steps": 20000
+  },
+  "calibration_controls": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 43,
+    "scope": "actual state-validator mutation controls, including all inherited controls; not clock calibration",
+    "status": "PASS"
+  },
+  "claim": 4,
+  "client": {
+    "affinity_cpus": 1,
+    "csv": "reference-rows.csv",
+    "csv_digest": {
+      "bytes": 7320,
+      "sha256": "fbf615b1eb182c51437c53f5573631d776381c7ddb197af0c818efc69b513919"
+    },
+    "detached": true,
+    "input_unchanged": true,
+    "installed": 24,
+    "installed_instructions": 4800,
+    "original_instructions": 4800,
+    "originals": 24,
+    "raw_rows": 24,
+    "report_records": 24,
+    "same_thread": true,
+    "sampled": 24,
+    "scope": "48 serial real CALLs with distinct legs, exact IDs/work/Report joins and uncalibrated enclosing/inner TSC endpoints; no accuracy, frequency or performance claim",
+    "status": "PASS"
+  },
+  "closure": {
+    "all_sources_and_tools_unchanged": true,
+    "helper_echild": 35,
+    "normal_outer_parent": true,
+    "normal_stage_parents": 35,
+    "rescues": 0,
+    "stage_names": [
+      "build",
+      "c-build",
+      "concurrent-native",
+      "concurrent-oracle",
+      "concurrent-test-build",
+      "drain-native",
+      "exact-alternating-k1",
+      "exact-alternating-k10",
+      "exact-alternating-k24",
+      "exact-build",
+      "exact-late-long-k1",
+      "exact-late-long-k10",
+      "exact-late-long-k24",
+      "exact-long-k1",
+      "exact-long-k10",
+      "exact-long-k24",
+      "exact-oracle",
+      "exact-short-k1",
+      "exact-short-k10",
+      "exact-short-k24",
+      "history-native",
+      "native",
+      "optional-backoff-native",
+      "optional-fast-state",
+      "optional-functional",
+      "optional-slow-state",
+      "oracle",
+      "reference-calibration-build",
+      "reference-calibrations",
+      "reference-native",
+      "reference-oracle",
+      "retirement-function-closed",
+      "retirement-sixteen-epochs",
+      "streamed-native",
+      "timed-native"
+    ],
+    "stage_receipt_index_sha256": "935e30efcd323c359256d0f916e89c80ce0302078668dc6f7da90597d026f995",
+    "stages": 35
+  },
+  "command": [
+    "$CPUSET_ALLOC",
+    "run",
+    "--cores",
+    "4",
+    "--tag",
+    "li2core-reference",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_ordinary_interval.py",
+    "--revision",
+    "e328a1c3f749fcda690cd0c95bff2366288c1616",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--exact-work",
+    "--concurrent-epochs",
+    "--retire-epochs",
+    "--drain-completed",
+    "--streamed-epochs",
+    "--stream-history",
+    "--optional-frontend",
+    "--optional-backoff-control",
+    "--reference-timing"
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "family": 26,
+    "model": 17,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "recipe_affinity_cpus": 4,
+    "reference_parent_and_child_affinity_cpus": 1,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "native_state": {
+    "affinity_cpus": 1,
+    "children": 8,
+    "comparisons": 872,
+    "conditional_branches": 130,
+    "input_reads": 130,
+    "original_instructions": 800,
+    "pairs": 4,
+    "reader_checks": 16,
+    "real_outer_returns": 8,
+    "return_reads": 4,
+    "returned_records": 8,
+    "scope": "unchanged full-state comparator over restored application/wrapper points and both same-child readers, expanded application stack, actual RDTSCP outputs joined to stores and postflight records; no timing-accuracy result",
+    "status": "PASS",
+    "subject_returns": 8,
+    "taken_branches": 126,
+    "timestamp_joins": 16
+  },
+  "numerical_files": {
+    "reference-rows.csv": {
+      "bytes": 7320,
+      "sha256": "fbf615b1eb182c51437c53f5573631d776381c7ddb197af0c818efc69b513919"
+    },
+    "reference-state-pairs.csv": {
+      "bytes": 434,
+      "sha256": "9b45c9847427cc3f3b445130730a940e1559b6b85a2e248d92723f20fc71304a"
+    }
+  },
+  "prerequisites": {
+    "stages": 31,
+    "status": "PASS"
+  },
+  "prior_attempt": {
+    "new_client": "UNRUN",
+    "new_native_state": "UNRUN",
+    "reason": "Parser rejected expected-panic annotations although all43 Rust controls passed; exact43-name/22-marker source inventory added in successor.",
+    "receipt": {
+      "bytes": 64296,
+      "sha256": "0b94e619b22ec2a77af65b94a9c64299e18eceb2606b0c9ab8927479de670d01"
+    },
+    "revision": "af90fa1f2641333f45177a918fe582abe7beacaf",
+    "stage": "reference-calibrations",
+    "status": "FAILED"
+  },
+  "private_receipts": {
+    "campaign": {
+      "bytes": 68115,
+      "sha256": "cbc836deda945c50565abbf3252dad678b215ac79ee79d997c5b7ed0454fb223"
+    },
+    "outer": {
+      "bytes": 3644,
+      "sha256": "d4f3b49cd843820727313a60cd551ee86f001f13545147bf5d9f029247ac2496"
+    },
+    "sources_after": {
+      "bytes": 17940,
+      "sha256": "0fc3217d9e2a1b12a10efa83f171d511a133e09e143b3aa19c7ad2c97880177d"
+    },
+    "sources_before": {
+      "bytes": 17940,
+      "sha256": "0fc3217d9e2a1b12a10efa83f171d511a133e09e143b3aa19c7ad2c97880177d"
+    }
+  },
+  "raw_ticks": {
+    "installed": {
+      "enclosure_ticks": {
+        "max": 14756,
+        "min": 2697,
+        "sum": 78431
+      },
+      "entry_gap_ticks": {
+        "max": 915,
+        "min": 139,
+        "sum": 4341
+      },
+      "raw_ticks": {
+        "max": 7595,
+        "min": 1193,
+        "sum": 36735
+      },
+      "return_gap_ticks": {
+        "max": 6246,
+        "min": 1286,
+        "sum": 37355
+      }
+    },
+    "original": {
+      "enclosure_ticks": {
+        "max": 155,
+        "min": 62,
+        "sum": 2666
+      }
+    }
+  },
+  "reproduction": "Tracked tools/rapid-profiler/verify_ordinary_interval.py creates fresh raw numerical CSVs and exact source/tool/process receipts. Raw logs remain ignored. This summary contains no calibrated error bound, throughput or counterfactual uninstrumented timing claim.",
+  "revision": "e328a1c3f749fcda690cd0c95bff2366288c1616",
+  "schema": 1,
+  "scope": "separate real-CALL enclosing TSC endpoints and inner callback endpoints, with exact invocation/work joins; no frequency, calibration, accuracy or performance claim",
+  "status": "PASS",
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}

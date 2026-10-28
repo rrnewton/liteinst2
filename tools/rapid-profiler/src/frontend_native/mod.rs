@@ -40,8 +40,9 @@ pub use module::ordinary::{IntegerLeafCertificate, IntegerLeafContract, LoadedIn
 /// Separate ordinary scalar-function interval profile; raw, uncalibrated timing.
 pub use always_on::site::ordinary::{OrdinarySitePreparation, PreparedOriginalCall};
 pub use always_on::{
-    CallGate, CallResult, GateError, OriginalCallResult, RawInterval, RawIntervalOwner,
-    RawTimestamp,
+    CallGate, CallResult, GateError, GateProfile, OriginalCallResult, RawInterval,
+    RawIntervalOwner, RawTimestamp, ReferenceCallResult, ReferenceInterval, ReferenceLeg,
+    ReferenceOriginalCallResult, ReferenceTimestamp,
 };
 
 /// Finite independent backoff control with bounded owned exports; hooks stay on.

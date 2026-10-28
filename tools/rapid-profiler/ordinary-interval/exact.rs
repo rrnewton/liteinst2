@@ -2,8 +2,10 @@
 use super::*;
 #[path = "../exact-work/join.rs"]
 mod join;
+mod reference;
 #[path = "../exact-work/truth.rs"]
 pub(super) mod truth;
+pub(super) use reference::run as run_reference;
 
 pub(super) fn run(candidate: &Path, expected: &Path, name: &str, retained: usize) {
     let (schedule, schedule_id) = match name {

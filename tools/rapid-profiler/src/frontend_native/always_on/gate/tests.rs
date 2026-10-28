@@ -192,6 +192,7 @@ fn immutable_descriptor_is_send_sync_and_continuation_is_library_owned() {
     fn shared<T: Send + Sync>() {}
     shared::<CallGate>();
     let gate = CallGate {
+        profile: GateProfile::Legacy,
         target: 0x1000,
         returns: RETS.into(),
         pid: 0,

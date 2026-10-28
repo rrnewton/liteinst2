@@ -217,6 +217,7 @@ fn child(
     }
     let ready = Ready {
         base: oracle::native_ordinary::Ready {
+            profile: oracle::native_ordinary::Profile::Legacy,
             entry,
             gate,
             continuation: prep.gate().continuation(),

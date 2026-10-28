@@ -16,9 +16,55 @@ const AFTER_CALL: u64 = 25;
 const OUTER_RET: u64 = 30;
 const WIRE_LIMIT: usize = 128 * 1024;
 
+/// Closed fixture profiles, not caller-supplied instruction maps or masks.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Profile {
+    Legacy,
+    Reference { external_id: u64 },
+}
+impl Profile {
+    fn bytes(self) -> &'static [u8] {
+        match self {
+            Self::Legacy => GATE_BYTES,
+            Self::Reference { .. } => reference::STENCIL,
+        }
+    }
+    fn heads(self) -> &'static [u64] {
+        match self {
+            Self::Legacy => GATE_HEADS,
+            Self::Reference { .. } => reference::HEADS,
+        }
+    }
+    fn after_call(self) -> u64 {
+        match self {
+            Self::Legacy => AFTER_CALL,
+            Self::Reference { .. } => reference::AFTER_CALL,
+        }
+    }
+    fn outer_ret(self) -> u64 {
+        match self {
+            Self::Legacy => OUTER_RET,
+            Self::Reference { .. } => reference::OUTER_RET,
+        }
+    }
+    fn pre_call_delta(self) -> u64 {
+        match self {
+            Self::Legacy => 8,
+            Self::Reference { .. } => 24,
+        }
+    }
+    fn entry_delta(self) -> u64 {
+        self.pre_call_delta() + 8
+    }
+    fn comparison(self, gate: u64, pc: u64) -> bool {
+        self == Self::Legacy || !reference::transient(gate, pc)
+    }
+}
+
 /// Constructed from the actual child-local source certificate and bundle.
 /// This is fixture inspection data, never an admission or a forged gate token.
 pub struct Ready {
+    pub profile: Profile,
     pub entry: u64,
     pub gate: u64,
     pub continuation: u64,
@@ -32,7 +78,11 @@ pub struct Ready {
 
 impl Ready {
     fn validate(&self, candidate: bool) -> BTreeMap<u64, u64> {
-        self.validate_profile(candidate, AFTER_CALL, GATE_BYTES.len())
+        self.validate_profile(
+            candidate,
+            self.profile.after_call(),
+            self.profile.bytes().len(),
+        )
     }
     fn validate_profile(
         &self,
@@ -112,6 +162,13 @@ impl Ready {
     fn encode(&self) -> Vec<u8> {
         let mut b = Vec::new();
         let word = |b: &mut Vec<u8>, n: u64| b.extend_from_slice(&n.to_le_bytes());
+        match self.profile {
+            Profile::Legacy => word(&mut b, 0),
+            Profile::Reference { external_id } => {
+                word(&mut b, 1);
+                word(&mut b, external_id);
+            }
+        }
         for n in [self.entry, self.gate, self.continuation] {
             word(&mut b, n);
         }
@@ -157,6 +214,13 @@ impl Ready {
             assert!((1..=256).contains(&n));
             (0..n).map(|_| word(b)).collect()
         }
+        let profile = match word(&mut bytes) {
+            0 => Profile::Legacy,
+            1 => Profile::Reference {
+                external_id: word(&mut bytes),
+            },
+            _ => panic!("unknown ordinary native profile"),
+        };
         let (entry, gate, continuation) = (word(&mut bytes), word(&mut bytes), word(&mut bytes));
         let (heads, returns) = (list(&mut bytes), list(&mut bytes));
         let n = word(&mut bytes);
@@ -172,6 +236,7 @@ impl Ready {
         let original_source = data(&mut bytes);
         assert!(bytes.is_empty(), "no unparsed readiness tail");
         Self {
+            profile,
             entry,
             gate,
             continuation,
@@ -187,9 +252,9 @@ impl Ready {
 fn check_gate(ready: &Ready, bytes: &[u8]) {
     assert_eq!(
         ready.continuation,
-        ready.gate.checked_add(AFTER_CALL).unwrap()
+        ready.gate.checked_add(ready.profile.after_call()).unwrap()
     );
-    assert_eq!(bytes, GATE_BYTES, "whole immutable gate");
+    assert_eq!(bytes, ready.profile.bytes(), "whole immutable gate");
 }
 
 fn same_arguments(a: &libc::user_regs_struct, b: &libc::user_regs_struct) {
@@ -201,6 +266,7 @@ fn same_arguments(a: &libc::user_regs_struct, b: &libc::user_regs_struct) {
 }
 
 fn same_ready(a: &Ready, b: &Ready) {
+    assert_eq!(a.profile, b.profile);
     assert_eq!(
         (a.entry, a.gate, a.continuation),
         (b.entry, b.gate, b.continuation)
@@ -233,6 +299,7 @@ pub struct OrdinaryOracle {
 pub struct ChildContext<'a> {
     oracle: &'a OrdinaryOracle,
     write: i32,
+    output: Option<i32>,
     length: usize,
 }
 impl ChildContext<'_> {
@@ -247,6 +314,10 @@ impl ChildContext<'_> {
     }
     pub fn gate_rsp(&self) -> u64 {
         self.oracle.gate_rsp()
+    }
+    /// One dedicated fixed-size output pipe; take exactly once before ready().
+    pub fn reference_output(&mut self) -> reference::Output {
+        reference::Output::new(self.output.take().expect("reference result channel"))
     }
     /// Metadata is written before ptrace; the real invoke must follow this stop.
     pub fn ready(self, ready: &Ready) {
@@ -382,7 +453,10 @@ impl Walk<'_> {
         while self.child.registers().rip != ready.gate {
             self.step(phase);
         }
-        check_gate(ready, &self.child.memory(ready.gate, GATE_BYTES.len()));
+        check_gate(
+            ready,
+            &self.child.memory(ready.gate, ready.profile.bytes().len()),
+        );
         self.child.registers()
     }
 }
@@ -416,7 +490,10 @@ impl OrdinaryOracle {
         self.stack.address() + STACK_BYTES as u64 - 8
     }
     fn snapshot(&self, child: &Tracee, ready: &Ready, pc: u64) -> Snapshot {
-        check_gate(ready, &child.memory(ready.gate, GATE_BYTES.len()));
+        check_gate(
+            ready,
+            &child.memory(ready.gate, ready.profile.bytes().len()),
+        );
         for (address, bytes) in &ready.immutable {
             assert_eq!(
                 child.memory(*address, bytes.len()),
@@ -424,7 +501,7 @@ impl OrdinaryOracle {
                 "whole source/image bytes"
             );
         }
-        let start = self.gate_rsp() - 16 - 128;
+        let start = self.gate_rsp() - ready.profile.entry_delta() - 128;
         Snapshot {
             logical_pc: pc,
             registers: child.registers(),
@@ -476,11 +553,11 @@ impl OrdinaryOracle {
     ) {
         let mut expected = armed.to_vec();
         expected[6] = ready.entry;
-        expected[7] = self.gate_rsp() - 8;
-        expected[8] = self.gate_rsp() - 8;
+        expected[7] = self.gate_rsp() - ready.profile.pre_call_delta();
+        expected[8] = self.gate_rsp() - ready.profile.pre_call_delta();
         if let Some(pc) = ret {
             expected[0] = 3; // COMPLETED only after existing model postconditions.
-            expected[11] = self.gate_rsp() - 16;
+            expected[11] = self.gate_rsp() - ready.profile.entry_delta();
             expected[12] = ready.continuation;
             expected[13] = pc;
         }
@@ -542,14 +619,32 @@ impl OrdinaryOracle {
         F: for<'a> Fn(bool, ChildContext<'a>),
         O: for<'a> FnOnce(OriginalObservation<'a>),
     {
+        self.pair_profile(length, setup, inspect, None).0
+    }
+
+    fn pair_profile<F, O>(
+        &self,
+        length: usize,
+        setup: F,
+        inspect: O,
+        reference: Option<(Instant, u64)>,
+    ) -> (PairResult, Option<reference::Stats>)
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+        O: for<'a> FnOnce(OriginalObservation<'a>),
+    {
         assert!(matches!(length, 1 | 64));
+        if let Some((deadline, _)) = reference {
+            assert!(Instant::now() < deadline);
+        }
         assert_eq!(
             unsafe { libc::syscall(libc::SYS_gettid) },
             libc::c_long::from(std::process::id())
         );
         assert_eq!(std::fs::read_dir("/proc/self/task").unwrap().count(), 1);
         let mut pipes = [Pipe::new(), Pipe::new()];
-        let deadline = Instant::now() + CHILD_BUDGET;
+        let mut outputs = reference.map(|_| [Pipe::new(), Pipe::new()]);
+        let deadline = reference.map_or_else(|| Instant::now() + CHILD_BUDGET, |r| r.0);
         let mut pids = [0; 2];
         for index in 0..2 {
             let pid = unsafe { libc::fork() };
@@ -564,12 +659,25 @@ impl OrdinaryOracle {
                         }
                     }
                 }
+                if let Some(outputs) = &outputs {
+                    for (n, pipe) in outputs.iter().enumerate() {
+                        unsafe {
+                            libc::close(pipe.0[0]);
+                        }
+                        if n != index {
+                            unsafe {
+                                libc::close(pipe.0[1]);
+                            }
+                        }
+                    }
+                }
                 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                     setup(
                         index == 1,
                         ChildContext {
                             oracle: self,
                             write: pipes[index].0[1],
+                            output: outputs.as_ref().map(|p| p[index].0[1]),
                             length,
                         },
                     );
@@ -600,6 +708,12 @@ impl OrdinaryOracle {
         for pipe in &mut pipes {
             pipe.close_write();
         }
+        if let Some(outputs) = &mut outputs {
+            for pipe in outputs {
+                pipe.close_write();
+            }
+            assert!(Instant::now() < deadline, "reference setup deadline");
+        }
         let original = pipes[0].read(&children[0]);
         let candidate = pipes[1].read(&children[1]);
         for child in &children {
@@ -610,6 +724,10 @@ impl OrdinaryOracle {
         let original_map = original.validate(false);
         let candidate_map = candidate.validate(true);
         same_ready(&original, &candidate);
+        let profile = reference.map_or(Profile::Legacy, |(_, external_id)| Profile::Reference {
+            external_id,
+        });
+        assert_eq!(original.profile, profile, "requested fixture profile");
         let mut a = Walk {
             child: &children[0],
             steps: 0,
@@ -628,14 +746,29 @@ impl OrdinaryOracle {
         let bw = b.child.memory(br.rsp, 8);
         let af = self.armed_frame(a.child, &ar, &original);
         let bf = self.armed_frame(b.child, &br, &candidate);
+        let mut witnesses = match profile {
+            Profile::Legacy => None,
+            Profile::Reference { external_id } => {
+                assert_eq!(ar.rcx, br.rcx, "actual same-address reference cells");
+                Some([
+                    reference::Witness::new(self, a.child, &original, ar, &af, external_id, false),
+                    reference::Witness::new(self, b.child, &candidate, br, &bf, external_id, true),
+                ])
+            }
+        };
         self.seed(a.child, ar, length);
         self.seed(b.child, br, length);
+        if witnesses.is_some() {
+            reference::seed_argument(a.child, ar);
+            reference::seed_argument(b.child, br);
+        }
         let mut points = Vec::new();
+        let mut reference_points = Vec::new();
         let mut visits = Vec::new();
         let mut returns = BTreeSet::new();
         loop {
             let pc = a.child.registers().rip;
-            let logical = if GATE_HEADS.iter().any(|p| original.gate + p == pc) {
+            let logical = if profile.heads().iter().any(|p| original.gate + p == pc) {
                 pc
             } else {
                 *original_map
@@ -648,8 +781,15 @@ impl OrdinaryOracle {
             if original.returns.contains(&logical) {
                 returns.insert(logical);
             }
-            points.push(self.snapshot(a.child, &original, logical));
-            if pc == original.gate + OUTER_RET {
+            let point = self.snapshot(a.child, &original, logical);
+            if let Some(witnesses) = &mut witnesses {
+                witnesses[0].observe(a.child, &original, &point);
+                reference_points.push(reference::copy_snapshot(&point));
+            }
+            if profile.comparison(original.gate, pc) {
+                points.push(point);
+            }
+            if pc == original.gate + profile.outer_ret() {
                 break;
             }
             a.step("original_body");
@@ -657,20 +797,26 @@ impl OrdinaryOracle {
         let mut next = 0;
         loop {
             let pc = b.child.registers().rip;
-            let logical = if GATE_HEADS.iter().any(|p| candidate.gate + p == pc) {
+            let logical = if profile.heads().iter().any(|p| candidate.gate + p == pc) {
                 Some(pc)
             } else {
                 candidate_map.get(&pc).copied()
             };
             if let Some(logical) = logical {
-                let expected = points.get(next).expect("extra candidate restored boundary");
-                assert_eq!(
-                    logical, expected.logical_pc,
-                    "ordered original visits, including loops/RET"
-                );
-                assert_state(expected, &self.snapshot(b.child, &candidate, logical));
-                next += 1;
-                if pc == candidate.gate + OUTER_RET {
+                let point = self.snapshot(b.child, &candidate, logical);
+                if let Some(witnesses) = &mut witnesses {
+                    witnesses[1].observe(b.child, &candidate, &point);
+                }
+                if profile.comparison(candidate.gate, pc) {
+                    let expected = points.get(next).expect("extra candidate restored boundary");
+                    assert_eq!(
+                        logical, expected.logical_pc,
+                        "ordered original visits, including loops/RET"
+                    );
+                    assert_state(expected, &point);
+                    next += 1;
+                }
+                if pc == candidate.gate + profile.outer_ret() {
                     break;
                 }
             }
@@ -685,12 +831,18 @@ impl OrdinaryOracle {
             .map(|b| u64::from(b ^ 0x5a))
             .sum::<u64>()
             ^ 0x9e37_79b9_7f4a_7c15;
+        let expected_records = witnesses.as_ref().map(|w| {
+            [
+                w[0].record(value, None),
+                w[1].record(value, returns.first().copied()),
+            ]
+        });
         for (walk, ready, saved, xstate, word) in [
             (&mut a, &original, ar, ax, aw),
             (&mut b, &candidate, br, bx, bw),
         ] {
             let actual = walk.child.registers();
-            assert_eq!(actual.rip, ready.gate + OUTER_RET);
+            assert_eq!(actual.rip, ready.gate + profile.outer_ret());
             assert_eq!(actual.rsp, self.gate_rsp());
             assert_eq!(actual.rax, value);
             assert_eq!(
@@ -759,6 +911,19 @@ impl OrdinaryOracle {
                 Some(libc::ECHILD)
             );
         }
+        let reference_stats = expected_records.map(|expected| {
+            let pipes = outputs.as_ref().expect("owned reference result pipes");
+            for index in 0..2 {
+                let actual = reference::read_record(&pipes[index], &children[index]);
+                reference::check_record(&actual, &expected[index]);
+            }
+            assert!(Instant::now() < deadline, "reference complete deadline");
+            reference::Stats {
+                reader_checks: 4,
+                timestamp_joins: 4,
+                records: 2,
+            }
+        });
         inspect(OriginalObservation {
             entry: original.entry,
             continuation: original.continuation,
@@ -767,18 +932,28 @@ impl OrdinaryOracle {
             input_address: self.data.address() + 128,
             input: &self.data.bytes()[128..128 + length],
             data_address: self.data.address(),
-            stack_address: self.gate_rsp() - 16 - 128,
-            points: &points,
+            stack_address: self.gate_rsp() - profile.entry_delta() - 128,
+            points: if reference_stats.is_some() {
+                &reference_points
+            } else {
+                &points
+            },
         });
-        PairResult {
-            comparisons: next,
-            original_steps: a.steps,
-            candidate_steps: b.steps,
-            visits: visits.len(),
-            returns,
-            declared_returns: original.returns.into_iter().collect(),
-            value,
+        if reference_stats.is_some() {
+            assert!(Instant::now() < deadline, "reference inspection deadline");
         }
+        (
+            PairResult {
+                comparisons: next,
+                original_steps: a.steps,
+                candidate_steps: b.steps,
+                visits: visits.len(),
+                returns,
+                declared_returns: original.returns.into_iter().collect(),
+                value,
+            },
+            reference_stats,
+        )
     }
 }
 
@@ -801,6 +976,7 @@ mod tests {
     }
     fn ready() -> Ready {
         Ready {
+            profile: Profile::Legacy,
             entry: 0x2000,
             gate: 0x1000,
             continuation: 0x1019,
@@ -879,3 +1055,6 @@ pub mod precontext;
 // Actual optional frontend, separately qualified from both existing profiles.
 #[path = "native_optional_frontend.rs"]
 pub mod optional_frontend;
+
+#[path = "native_reference.rs"]
+pub mod reference;

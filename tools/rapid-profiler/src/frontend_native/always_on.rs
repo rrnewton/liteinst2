@@ -9,7 +9,10 @@ pub(super) mod gate;
 pub(super) mod site;
 mod timing;
 pub use drain::IntervalBatch;
-pub use gate::{CallGate, CallResult, GateError, OriginalCallResult};
+pub use gate::{
+    CallGate, CallResult, GateError, GateProfile, OriginalCallResult, ReferenceCallResult,
+    ReferenceInterval, ReferenceLeg, ReferenceOriginalCallResult, ReferenceTimestamp,
+};
 pub use timing::{RawInterval, RawIntervalOwner, RawTimestamp};
 
 use crate::frontend::{
@@ -709,6 +712,7 @@ impl IntervalThread {
                         .as_ref()
                         .ok_or(error(Cause::ClockProfile))?,
                 );
+                gate.require_legacy().map_err(|e| error(Cause::Gate(e)))?;
                 state
                     .timing
                     .as_ref()
@@ -739,6 +743,70 @@ impl IntervalThread {
         self.finished
             .set(drain::completed_checkpoint(previous, before, after));
         Ok(result)
+    }
+    /// Opt-in independent CALL/physical-RET enclosure with a caller-assigned ID.
+    /// The ID is a label, not an ordinal or authority; consumers must join their
+    /// complete external population. No raw row is used to obtain either endpoint.
+    ///
+    /// # Safety
+    /// All `invoke_integer_leaf` obligations hold, including singleton CPU pinning
+    /// throughout admission and CALL. The explicit reference hardware contract
+    /// remains valid (no virtualized/forged CPUID, TSC-policy change or migration).
+    /// This requires a site prepared with `CallGate::new_reference`. It does not
+    /// claim an uninstrumented duration, accuracy, code retirement or fast bypass.
+    pub unsafe fn invoke_integer_leaf_reference(
+        &self,
+        bytes: &[u8],
+        external_id: u64,
+    ) -> Result<ReferenceCallResult, BridgeError> {
+        let before = self.totals()?;
+        let (gate, stack) = STATE
+            .try_with(|cell| {
+                let storage = cell.try_borrow().map_err(|_| error(Cause::Attachment))?;
+                let state = storage.as_ref().ok_or(error(Cause::Attachment))?;
+                if !self.matches(state) {
+                    return Err(error(Cause::Attachment));
+                }
+                let gate = Arc::clone(
+                    state
+                        .binding
+                        .site
+                        .gate
+                        .as_ref()
+                        .ok_or(error(Cause::ClockProfile))?,
+                );
+                gate.require_reference()
+                    .map_err(|e| error(Cause::Gate(e)))?;
+                state
+                    .timing
+                    .as_ref()
+                    .ok_or(error(Cause::ClockProfile))?
+                    .reserve(0)?;
+                Ok((
+                    gate,
+                    ReadableStack {
+                        start: state.stack.start,
+                        end: state.stack.end,
+                    },
+                ))
+            })
+            .unwrap_or(Err(error(Cause::Attachment)))?;
+        let previous = self.finished.replace(None);
+        // No STATE borrow crosses CALL. Pending keeps BOTH gate cells non-IDLE
+        // through every facade postcheck; its drop poisons them on any failure.
+        let pending =
+            unsafe { gate.invoke_reference(bytes.as_ptr(), bytes.len(), &stack, external_id) }
+                .map_err(|e| error(Cause::Gate(e)))?;
+        let after = self.totals()?;
+        if before.entries.checked_add(1) != Some(after.entries)
+            || before.returns.checked_add(1) != Some(after.returns)
+        {
+            return Err(error(Cause::Invariant));
+        }
+        let (call, reference) = pending.commit().map_err(|e| error(Cause::Gate(e)))?;
+        self.finished
+            .set(drain::completed_checkpoint(previous, before, after));
+        Ok(ReferenceCallResult { call, reference })
     }
     /// Failure leaves this handle and all TLS owners intact; only empty success removes them.
     pub fn detach(&mut self) -> Result<PairTotals, BridgeError> {
