@@ -56,9 +56,9 @@
       "sha256": "e5e7690309267be887cee9b04d26e90a29f8d379110e22214948922c857a139a"
     },
     {
-      "bytes": 13303,
+      "bytes": 13358,
       "path": "evaluation/inprocess/page_selected_generic_build.py",
-      "sha256": "bca479e14865a41c627aacbab5d018422fafa52b215162f056056e5c4a942870"
+      "sha256": "8309ebe938d1ea5db386a3f65997f7c99b3b94a8195bca7f4729c40cccb9ff18"
     },
     {
       "bytes": 11633,
@@ -131,9 +131,9 @@
       "sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
     },
     {
-      "bytes": 6696,
+      "bytes": 8104,
       "path": "tools/page-entry/selected/decoder/src/lib.rs",
-      "sha256": "c98f3ada4c6a4f5e23e7d4000cca265b613c036517c3919cafd62ad6ff33cb2f"
+      "sha256": "64c47f9459d304eb1763c30698b0958a6b1b8af8ccff0cbd4330eacc89384875"
     },
     {
       "bytes": 2626,
