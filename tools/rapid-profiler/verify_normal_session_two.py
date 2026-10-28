@@ -40,6 +40,30 @@ TRIALS = (('full-k10', 'full', 10), ('full-k1000', 'full', 1000), ('stop-k10', '
     ('duplicate-k10', 'duplicate', 10), ('eof-k10', 'eof', 10), ('backpressure-k10', 'backpressure', 10))
 STAGES = ('parser-controls', 'sdk-controls', 'consumer-controls', 'native-k1-zero', 'native-k1-one',
     'native-e4', *(row[0] for row in TRIALS))
+EXACT_PREFIX = CONSUMER_PREFIX+'exact::tests::'
+EXACT_CONSUMER = tuple(EXACT_PREFIX+n for n in (
+    'exact_subject_authenticates_every_byte_head_extent_and_return',
+    'exact_domain_refusal_precedes_actual_shared_id_acceptance',
+    'exact_value_validator_checks_the_complete_input_and_full_u64_result',
+    'exact_return_validator_refuses_other_exits_and_address_overflow',
+    'exact_metadata_keeps_fixed_selection_labels_and_extents_distinct',
+    'exact_output_envelope_preserves_legacy_and_all_capacity_refusals'))
+EXACT_STATE = (
+    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_closed_cases_input_and_counts',
+    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_pair_rejects_count_step_return_value_or_reap_drift',
+    'exact_body::tests::exact_normal_source_requires_all_bytes_heads_and_ret36',
+    'exact_body::tests::exact_normal_body_accepts_two_real_continuation_shapes_and_closed_lengths',
+    'exact_body::tests::exact_normal_body_mutations_refuse_without_omitted_suffix_or_read',
+    'exact_truth::tests::literal_one_iteration_trace_includes_real_ret_read',
+    'exact_truth::tests::every_length_matches_algebra_input_order_and_scalar_model',
+    'exact_truth::tests::unsigned_loop_comparison_is_independent_of_input_xor_zero_flag',
+    'exact_truth::tests::changed_opcode_displacement_immediate_and_extent_all_refuse',
+    'exact_truth::tests::invalid_length_and_address_wrap_refuse')
+EXACT_TRIALS = tuple(('exact-'+schedule+'-k'+str(k), schedule, k)
+    for schedule in ('short', 'long', 'alternating', 'late-long') for k in (10, 1000))
+EXACT_STAGES = ('exact-fixture-controls', 'exact-parser-controls', 'exact-native-parser-controls',
+    'exact-consumer-controls', 'exact-state-controls', 'exact-build', 'exact-state',
+    *(row[0] for row in EXACT_TRIALS))
 FIELDS = ('case', 'outcome', 'k', 'epochs', 'arms', 'actions', 'accepted', 'calls', 'admitted',
     'retained', 'dropped', 'unsampled', 'batches', 'flushes', 'cancelled', 'unfinished', 'detaches',
     'joins', 'worker1_calls', 'worker2_calls', 'maximum_entry_prefix', 'maximum_batch_calls',
@@ -65,6 +89,7 @@ def load(name, path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--revision', required=True)
+    ap.add_argument('--exact-work', action='store_true', help='Also require all eight fixed Exact37 work cohorts')
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'):
         ap.add_argument('--'+name, type=Path, required=True)
     a = ap.parse_args()
@@ -95,12 +120,19 @@ def main():
     required = {'tools/rapid-profiler/verify_normal_session.py', 'tools/rapid-profiler/verify_normal_session_two.py',
         'tools/rapid-profiler/normal-work/check_session_two.py', 'tools/rapid-profiler/normal-work/session_two_driver.py',
         'tools/rapid-profiler/normal-work/test_session_two.py', 'tools/rapid-profiler/normal-work/session_driver.py',
+        'tools/rapid-profiler/normal-work/exact_fixture.py', 'tools/rapid-profiler/normal-work/exact_session.py',
+        'tools/rapid-profiler/selected-work/provenance.py',
         'tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers.rs',
         'tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/two.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/two/check.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/two/worker.rs',
         'evaluation/admission/processes.py', 'tools/unwind-oracle/bounded_command.py'}
+    if a.exact_work:
+        required.update('tools/rapid-profiler/normal-work/'+n for n in (
+            'test_exact_fixture.py', 'test_exact_session.py', 'exact_native.py', 'test_exact_native.py'))
+        required.update(('tools/rapid-profiler/exact-work/exact_work.S',
+            'tools/rapid-profiler/verify_ordinary_interval.py', 'tools/rapid-profiler/selected-work/test_provenance.py'))
     names = git('ls-files', '-z', '--', 'src', 'tests', 'tools/rapid-profiler', 'Cargo.toml', 'Cargo.lock',
         'README.md', 'build.rs', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
     assert all(names) and len(names) == len(set(names)) and required.issubset(names)
@@ -116,6 +148,14 @@ def main():
     prior = load('two_prior', repo/'tools/rapid-profiler/verify_normal_session.py')
     processes = load('two_processes', repo/'evaluation/admission/processes.py')
     census = load('two_census', repo/'tools/rapid-profiler/selected-work/check_output.py')
+    if a.exact_work:
+        # Canonical checker name serves the single reducer import, after Git authentication.
+        assert 'check_session_two' not in sys.modules
+        sys.modules['check_session_two'] = load('check_session_two', repo/'tools/rapid-profiler/normal-work/check_session_two.py')
+        exact_work = load('two_exact_work', repo/'tools/rapid-profiler/normal-work/exact_session.py')
+        exact_fixture = load('two_exact_fixture', repo/'tools/rapid-profiler/normal-work/exact_fixture.py')
+        exact_native = load('two_exact_native', repo/'tools/rapid-profiler/normal-work/exact_native.py')
+        shared = load('two_exact_flags', repo/'tools/rapid-profiler/verify_ordinary_interval.py')
     assert prior.TRIALS == TRIALS and len(prior.SESSION) == 10 and len(prior.SCHEDULE) == 7
     read, decode, integer, profile = prior.read, prior.decode, prior.integer, prior.PROFILE
     a.raw.mkdir(mode=0o700)
@@ -128,6 +168,12 @@ def main():
         sources=dict(count=len(before), manifest=digest(a.raw/'sources-before.json')), tools=tool_hashes,
         prerequisite=dict(status='UNRUN'), stages=[dict(name=n, status='UNRUN') for n in STAGES],
         trials=[dict(name=n, mode=m, k=k, status='UNRUN') for n, m, k in TRIALS])
+    if a.exact_work:
+        result['command'].append('--exact-work')
+        result['stages'].extend(dict(name=n, status='UNRUN') for n in EXACT_STAGES)
+        result['exact_work'] = dict(status='UNRUN', selection=dict(status='UNRUN'), native=dict(status='UNRUN'),
+            trials=[dict(name=n, schedule=s, k=k, status='UNRUN') for n, s, k in EXACT_TRIALS],
+            interpretation='Original-body semantic work, including RET; no hardware retired-instruction or duration truth. Exact signed retained-minus-population mean instruction error; zero retained remains unresolved.')
     artifacts = {}
     def pin(path, expected=None):
         got = digest(path)
@@ -257,9 +303,12 @@ def main():
         assert re.fullmatch(rb'\.{15}\n-+\nRan 15 tests in [0-9]+\.[0-9]+s\n\nOK\n', (d/'stderr.txt').read_bytes())
         row.update(status='PASS', passed=PYTHON_CONTROLS)
         products = {}
-        for label, target, source, kind, crate_type in (
+        artifact_groups = (
             ('work-validator', 'ordinary-interval', 'ordinary-interval/main.rs', 'bin', 'bin'),
-            ('whole-front', 'rapid_profiler', 'src/lib.rs', 'lib', 'lib')):
+            ('whole-front', 'rapid_profiler', 'src/lib.rs', 'lib', 'lib'))
+        if a.exact_work:
+            artifact_groups += (('state-validator', 'frontend-native-calibrations', 'native-interval/calibrations.rs', 'test', 'bin'),)
+        for label, target, source, kind, crate_type in artifact_groups:
             built = fixture/(label+'-build')/'stdout.txt'; listing = fixture/(label+'-list')
             for suffix, path in (('build', built), ('list', listing/'stdout.txt')):
                 record = next(r for r in fixture_result['stages'] if r['name'] == label+'-'+suffix); pin(path, record['stdout'])
@@ -282,7 +331,8 @@ def main():
         library, lib_inventory, lib_fresh = products['rapid_profiler']
         consumer, bin_inventory, bin_fresh = products['ordinary-interval']
         assert {n for n in lib_inventory if n.startswith(SDK_PREFIX) or n.startswith(OWNER_PREFIX)} == set(SDK+NATIVE)
-        assert {n for n in bin_inventory if n.startswith(CONSUMER_PREFIX)} == set(CONSUMER)
+        assert {n for n in bin_inventory if n.startswith(CONSUMER_PREFIX) and not n.startswith(EXACT_PREFIX)} == set(CONSUMER)
+        assert {n for n in bin_inventory if n.startswith(EXACT_PREFIX)} == set(EXACT_CONSUMER)
         for name, artifact, inventory, methods, fresh in (
             ('sdk-controls', library, lib_inventory, SDK, lib_fresh), ('consumer-controls', consumer, bin_inventory, CONSUMER, bin_fresh)):
             d, row = stage(name, [artifact, *methods, '--exact', '--test-threads=1'])
@@ -353,10 +403,123 @@ def main():
             unchanged()
         with (a.raw/'sessions-two.csv').open('x', newline='') as stream:
             writer = csv.DictWriter(stream, fieldnames=FIELDS, lineterminator='\n'); writer.writeheader(); writer.writerows(numeric)
+        if a.exact_work:
+            group = result['exact_work']; group['status'] = 'FAILED'
+            for name, script, count in (
+                ('exact-fixture-controls', 'test_exact_fixture.py', 4),
+                ('exact-parser-controls', 'test_exact_session.py', 8),
+                ('exact-native-parser-controls', 'test_exact_native.py', 8)):
+                d, row = stage(name, [tools['python'], '-B', repo/'tools/rapid-profiler/normal-work'/script])
+                assert (d/'stdout.txt').read_bytes() == b''
+                assert re.fullmatch(rb'\.{'+str(count).encode()+rb'}\n-+\nRan '+str(count).encode()+rb' tests in [0-9]+\.[0-9]+s\n\nOK\n', (d/'stderr.txt').read_bytes())
+                row.update(status='PASS', passed=count)
+            calibration, inventory, fresh = products['frontend-native-calibrations']
+            prefixes = ('oracle::native_ordinary::normal_caller::exact_tests::', 'exact_body::', 'exact_truth::')
+            assert {n for n in inventory if n.startswith(prefixes)} == set(EXACT_STATE)
+            for name, artifact, listing, methods, cargo_fresh in (
+                ('exact-consumer-controls', consumer, bin_inventory, EXACT_CONSUMER, bin_fresh),
+                ('exact-state-controls', calibration, inventory, EXACT_STATE, fresh)):
+                d, row = stage(name, [artifact, *methods, '--exact', '--test-threads=1'])
+                row.update(census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(), methods, listing),
+                    binary=digest(artifact), profile=profile, full_census=len(listing), cargo_fresh=cargo_fresh)
+
+            # Independent complete ELF authority exists and is hashed BEFORE any candidate copy.
+            exact_final, exact_candidate = a.raw/'exact-final.so', a.raw/'exact-candidate.so'
+            d, row = stage('exact-build', [tools['gcc'], *shared.CFLAGS,
+                repo/'tools/rapid-profiler/exact-work/exact_work.S', '-o', exact_final])
+            assert (d/'stdout.txt').read_bytes() == (d/'stderr.txt').read_bytes() == b''
+            final_hash = pin(exact_final); assert 0 < final_hash['bytes'] <= MIB
+            details = exact_fixture.describe(exact_final.read_bytes())
+            assert details['final'] == final_hash and details['length'] == 37
+            exact_selection = a.raw/'exact-selection.json'
+            save(exact_selection, dict(details, revision=a.revision))
+            manifest = pin(exact_selection)
+            unchanged()
+            with exact_candidate.open('xb') as stream: stream.write(exact_final.read_bytes())
+            candidate_hash = pin(exact_candidate, final_hash)
+            assert exact_fixture.authenticate(exact_candidate, exact_final, details['elf_va'], 37,
+                exact_selection, manifest['sha256']) == details
+            row['status'] = 'PASS'
+            group['selection'] = dict(status='PASS', **details, candidate=candidate_hash, manifest=manifest,
+                build_stage='exact-build', assembly=before['tools/rapid-profiler/exact-work/exact_work.S'])
+            normal_dir = nested/'normal-prerequisite'
+            caller_final, caller_candidate = normal_dir/'caller.so', normal_dir/'caller-candidate.so'
+            pin(caller_final, normal_result['artifacts']['caller'])
+            pin(caller_candidate, normal_result['artifacts']['caller'])
+            assert caller_candidate.read_bytes() == caller_final.read_bytes()
+            assert (caller_candidate.stat().st_dev, caller_candidate.stat().st_ino) != (caller_final.stat().st_dev, caller_final.stat().st_ino)
+            native_binary = repo/'target/release/frontend-native-oracle'
+            native_artifact = fixture_result['artifacts']['frontend-native-oracle']
+            pin(native_binary, native_artifact['binary'])
+            assert digest(native_binary) == normal_result['artifacts']['frontend-native-oracle']
+            assert native_artifact['profile'] == dict(profile, test=False)
+            assert type(native_artifact['cargo_fresh']) is bool
+            output = a.raw/'exact-native-output'
+            d, row = stage('exact-state', [native_binary, 'normal-exact-state', exact_candidate, exact_final,
+                str(details['elf_va']), '37', caller_candidate, caller_final, output])
+            native_table = output/'normal-exact-pairs.csv'
+            observed = exact_native.check(native_table.read_bytes(), (d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes())
+            assert observed['status'] == 'FUNCTIONAL_PASS' and observed['pairs'] == 4
+            group['native'] = dict(observed, table=pin(native_table), binary=native_artifact,
+                caller=digest(caller_final), internal_absolute_seconds_per_pair=15, cumulative_steps_per_child=20000,
+                scope='Four fixed original/installed ordinary-call pairs, separate from the concurrent external population.')
+            row['status'] = 'PASS'
+            tables = []
+            assert exact_work.SCHEDULES == ('short', 'long', 'alternating', 'late-long')
+            for trial, (name, schedule, k) in zip(group['trials'], EXACT_TRIALS):
+                trial['status'] = 'FAILED'; output = a.raw/name/'producer'
+                # Freeze all complete inputs/IDs independently before the producer process.
+                planned = exact_work.commands(schedule, k)
+                intended = (json.dumps([list(c[:3])+[c[3].hex()] if c[0] == 'CALL' else list(c)
+                    for c in planned], separators=(',', ':'))+'\n').encode('ascii')
+                assert len(planned) == 49 and 0 < len(intended) <= 16384
+                d, row = stage(name, [tools['python'], '-B', repo/'tools/rapid-profiler/normal-work/session_two_driver.py',
+                    '--binary', binary, '--candidate', exact_candidate, '--trusted', exact_final,
+                    '--elf-va', str(details['elf_va']), '--length', '37', '--output', output,
+                    '--k', str(k), '--mode', 'exact', '--schedule', schedule,
+                    '--selection', exact_selection, '--selection-sha256', manifest['sha256']])
+                assert (d/'stderr.txt').read_bytes() == (output/'stderr.txt').read_bytes() == b''
+                summary = read(output/'result.json'); assert decode((d/'stdout.txt').read_bytes()) == summary
+                assert summary['status'] == 'PASS' and summary['mode'] == 'exact' and summary['schedule'] == schedule and summary['k'] == k
+                assert type(summary['child_exit']) is int and summary['child_exit'] == 0
+                assert summary['normal_reaps'] == 1 and summary['rescues'] == 0 and summary['absence'] == 'ECHILD' and summary['rescue'] is False
+                transcript = (output/'stdout.txt').read_bytes()
+                checked, work_rows = exact_work.measure(transcript.decode('ascii'), schedule, k, 520)
+                assert all(summary[key] == value for key, value in checked.items())
+                assert summary['work_rows'] == work_rows
+                for key, value in dict(calls=48, accepted=49, flushes=1, arms=520, actions=521, detaches=2, joins=2).items():
+                    assert integer(summary[key]) == value
+                assert summary['stop_reason'] == 'EpochLimit' and summary['cancelled'] == summary['unfinished'] == 0
+                assert (output/'intended.json').read_bytes() == intended
+                assert summary['intended_bytes'] == len(intended) and summary['intended_sha256'] == hashlib.sha256(intended).hexdigest()
+                wire = b''.join((f'CALL {c[1]} {c[2]} {c[3].hex()}\n' if c[0] == 'CALL'
+                    else f'FLUSH {c[1]}\n').encode('ascii') for c in planned)
+                assert integer(summary['input_bytes']) == len(wire)
+                assert pin(output/'stdout.txt') == dict(bytes=integer(summary['transcript_bytes'], 1, 4*MIB), sha256=summary['transcript_sha256'])
+                work_table = exact_work.encode(work_rows)
+                assert (output/'work.csv').read_bytes() == work_table
+                assert pin(output/'work.csv') == dict(bytes=integer(summary['work_bytes'], 1, 8192), sha256=summary['work_sha256'])
+                assert exact_fixture.authenticate(exact_candidate, exact_final, details['elf_va'], 37,
+                    exact_selection, manifest['sha256']) == details
+                trial.update(status='PASS', result=pin(output/'result.json'), transcript=pin(output/'stdout.txt'),
+                    stderr=pin(output/'stderr.txt'), intended=pin(output/'intended.json'), work=pin(output/'work.csv'),
+                    counts={key: summary[key] for key in ('calls', 'admitted', 'retained', 'dropped', 'unsampled',
+                        'batches', 'arms', 'actions', 'flushes', 'detaches', 'joins', 'normal_reaps', 'rescues')})
+                tables.append(work_table); row['status'] = 'PASS'; unchanged()
+            assert len(tables) == 8 and all(t.splitlines()[0] == tables[0].splitlines()[0] for t in tables)
+            combined = tables[0]+b''.join(t.split(b'\n', 1)[1] for t in tables[1:])
+            assert len(combined.splitlines()) == 25 and len(combined) <= 8*8192
+            (a.raw/'exact-work.csv').write_bytes(combined)
+            assert all(t['status'] == 'PASS' for t in group['trials'])
+            group.update(status='PASS', output=pin(a.raw/'exact-work.csv'), rows=24, population_calls=384,
+                closure=dict(owned_stages=15, normal_helper_reaps=15, absence='ECHILD', native_child_reaps=8,
+                    producer_child_reaps=8, producer_rescues=0, owner_rescues=0))
         unchanged(); save(a.raw/'sources-after.json', {n: digest(repo/n) for n in names})
+        assert tuple(r['name'] for r in result['stages']) == STAGES+(EXACT_STAGES if a.exact_work else ())
         assert all(r['status'] == 'PASS' for r in result['stages']+result['trials'])
         result.update(status='PASS', stage='complete', output=digest(a.raw/'sessions-two.csv'),
-            closure=dict(owned_stages=12, normal_helper_reaps=12, absence='ECHILD', producer_child_reaps=6, producer_rescues=0, owner_rescues=0),
+            closure=dict(owned_stages=len(result['stages']), normal_helper_reaps=len(result['stages']), absence='ECHILD',
+                producer_child_reaps=14 if a.exact_work else 6, producer_rescues=0, owner_rescues=0),
             limits=dict(epochs=520, period_ms=10, arm_lateness_ms=2, shutdown_seconds=2, producer_absolute_seconds=15,
                 producer_cpu_seconds=20, producer_wall_seconds=30, producer_file_bytes=4*MIB, backpressure_stdout_delay_ms=250),
             prior_failures='Fresh attempt only; no retry, omitted population or discarded failure.',
