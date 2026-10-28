@@ -360,3 +360,58 @@ class Main813InventoryTests(unittest.TestCase):
             raw = '\n'.join((header('liteinst2'), f'running {total} tests', f'running {nested} tests', summary(total - ignored, ignored=ignored)))
             with self.assertRaises(parsing.InvalidEvidence):
                 parsing.parse_harnesses(raw, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+
+        # Exact new cohort: keep all old rows/assertions and refuse neighbors.
+        raw = '\n'.join((header('liteinst2'), 'running 255 tests', 'running 1 test',
+                         'test trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack ... ok',
+                         summary(254, ignored=1)))
+        row = parsing.parse_harnesses(raw, {'unit/liteinst2/lib': counts(255, 1)}, 0)[0]
+        self.assertEqual(row['outer']['passed'], 254)
+        self.assertEqual(row['outer']['ignored'], 1)
+        self.assertEqual(row['unmatched_nested_starts'], 1)
+        for total, ignored, nested in ((254, 1, 1), (256, 1, 1), (255, 0, 1), (255, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests', f'running {nested} tests',
+                             summary(total - ignored, ignored=ignored)))
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+
+        doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
+                         'running 36 tests', summary(36),
+                         'all doctests ran in 0.51s; merged doctests compilation took 0.21s'))
+        expected = {'doc/rapid_profiler': counts(38)}
+        row = parsing.parse_harnesses(doc, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=38, failed=0, ignored=0, measured=0, filtered=0, result='ok'))
+        self.assertEqual(row['declared_outer_tests'], 2)
+        self.assertEqual([p['declared_tests'] for p in row['partitions']], [2, 36])
+        self.assertEqual([p['summary']['passed'] for p in row['partitions']], [2, 36])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+        changes = [doc.replace('rapid_profiler', 'example'),
+                   doc.replace('running 2 tests', 'running 3 tests'),
+                   doc.replace('running 36 tests', 'running 35 tests'),
+                   doc.replace('running 36 tests', 'running 37 tests'),
+                   doc.replace(summary(2), summary(1)),
+                   doc.replace(summary(36), summary(35)),
+                   doc.replace(summary(2), summary(2, filtered=1)),
+                   doc.replace(summary(36), summary(36, filtered=1)),
+                   doc.replace(summary(36), summary(35, ignored=1)),
+                   doc.replace(summary(36), summary(35, measured=1)),
+                   doc.replace(summary(36), summary(35, failed=1)),
+                   doc.replace(summary(36), summary(36, result='FAILED')),
+                   doc.replace('running 36 tests', 'running 36 tests\nrunning 36 tests'),
+                   doc.replace(summary(2), summary(2)+'\n'+summary(2)),
+                   doc.replace(summary(36), ''),
+                   doc.replace(summary(2), ''),
+                   '\n'.join(doc.splitlines()[:-1]),
+                   doc+'\n'+doc.splitlines()[-1],
+                   doc+'\nrunning 1 test\n'+summary(1),
+                   doc.replace('all doctests ran in 0.51s;', 'all doctests ran in NaNs;')]
+        for bad in changes:
+            with self.subTest(doc_partition=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        for total, ignored in ((37, 0), (39, 0), (38, 1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(doc, {'doc/rapid_profiler': counts(total, ignored)}, 0)
+        failed = doc.replace(summary(36), summary(35, failed=1))
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']), ('FAILED', 37, 1))
+        self.assertEqual(row['partitions'][1]['summary']['failed'], 1)

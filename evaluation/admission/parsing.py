@@ -142,6 +142,22 @@ def parse_harnesses(output, expected, exit_code):
                 continue
             if re.match(r"\s*(Running |Doc-tests )", line):
                 raise InvalidEvidence("unrecognized_harness_header")
+            if current is not None and "partitions" in current and line.startswith("all doctests ran in "):
+                require(re.fullmatch(r"all doctests ran in \d+(?:\.\d+)?s; "
+                                     r"merged doctests compilation took \d+(?:\.\d+)?s", line)
+                        and current["outer"] is None and not stack
+                        and [p["declared_tests"] for p in current["partitions"]] == [2, 36]
+                        and all(p["summary"] is not None for p in current["partitions"]),
+                        "incomplete_doc_partitions")
+                summaries = [p["summary"] for p in current["partitions"]]
+                combined = {k: sum(s[k] for s in summaries) for k in
+                            ("passed", "failed", "ignored", "measured", "filtered")}
+                require(sum(combined[k] for k in ("passed", "failed", "ignored", "measured"))
+                        == current["expected_tests"], "changed_outer_cohort")
+                combined["result"] = "FAILED" if combined["failed"] else "ok"
+                current["outer"] = combined
+                current["status"] = "complete"
+                continue
             start = re.fullmatch(r"running (\d+) tests?", line)
             if start:
                 require(current is not None, "test_start_without_harness")
@@ -149,7 +165,18 @@ def parse_harnesses(output, expected, exit_code):
                 count = int(start[1])
                 if current["declared_outer_tests"] is None:
                     current["declared_outer_tests"] = count
-                    require(count == current["expected_tests"], "changed_outer_cohort")
+                    if (current["id"], current["expected_tests"], current["expected_ignored"], count) == (
+                            "doc/rapid_profiler", 38, 0, 2):
+                        # Retain actual declarations/summaries; the outer counts
+                        # are aggregated only after both and rustdoc's terminal.
+                        current["partitions"] = [{"declared_tests": 2, "summary": None}]
+                    else:
+                        require(count == current["expected_tests"], "changed_outer_cohort")
+                elif "partitions" in current:
+                    require(not stack and len(current["partitions"]) == 1
+                            and current["partitions"][0]["summary"] is not None and count == 36,
+                            "changed_doc_partition")
+                    current["partitions"].append({"declared_tests": count, "summary": None})
                 else:
                     current["nested_starts"] += 1
                 stack.append(count)
@@ -165,6 +192,22 @@ def parse_harnesses(output, expected, exit_code):
             current["unclassified_summaries"].append(summary)
             require(current["outer"] is None and stack, "summary_without_start")
             count = sum(summary[k] for k in ("passed", "failed", "ignored", "measured"))
+            if "partitions" in current:
+                part = current["partitions"][-1]
+                require(stack == [part["declared_tests"]] and part["summary"] is None
+                        and count == part["declared_tests"], "summary_start_count_mismatch")
+                require(summary["filtered"] == 0, "filtered_outer_summary")
+                require(summary["measured"] == 0, "unexpected_measured_tests")
+                require(summary["ignored"] == 0, "changed_ignore_cohort")
+                require((summary["result"] == "FAILED") == (summary["failed"] > 0),
+                        "contradictory_summary_result")
+                if exit_code == 0:
+                    require(summary["result"] == "ok" and summary["failed"] == 0,
+                            "successful_exit_with_failed_summary")
+                part["summary"] = summary
+                current["unclassified_summaries"].pop()
+                stack.pop()
+                continue
             # The core ptrace child and stress::run_isolated use authenticated
             # process exits instead of returning through libtest. These are
             # observations of the existing fixtures, not successful child counts.
@@ -184,7 +227,10 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 219, 1),
                                   ("unit/liteinst2/lib", 227, 1),
                                   ("unit/liteinst2/lib", 242, 1),
-                                  ("unit/liteinst2/lib", 248, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 248, 1),
+                                  # e797 adds seven tests; the exact ptrace child
+                                  # and its parent-authenticated exit41 are unchanged.
+                                  ("unit/liteinst2/lib", 255, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,
