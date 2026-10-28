@@ -27,6 +27,14 @@ const _: () = {
     assert!(core::mem::offset_of!(Classification, family) == 36);
 };
 
+// Canonical W0 unmasked EVEX.512 VPCMPEQB k,ZMM,[RDI]. All source ZMM
+// and destination K indices; no other address, mask, width or prefix is granted.
+fn canonical_vpcmpeqb_rdi(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
+        && matches!(bytes, [0x62, 0xf1, p1, p2, 0x74, modrm]
+            if *p1 & 0x87 == 0x05 && *p2 & 0xf7 == 0x40 && *modrm & 0xc7 == 0x07)
+}
+
 fn prefixes(instruction: &Instruction, bytes: &[u8]) -> bool {
     let mut operand = false;
     let mut address = false;
@@ -269,10 +277,9 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
             return Ok(out);
         }
     } else if instruction.code() == Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512 {
-        // Exact unmasked EVEX.512 forms: K1 <- equality(ZMM17,ZMM16),
-        // or K0 <- equality(ZMM17,64 bytes at [RDI]). No added mask/address/prefix.
+        // Preserve the exact original register form; memory uses the closed RDI family.
         if source[..instruction.len()] != [0x62, 0xb1, 0x75, 0x40, 0x74, 0xc8]
-            && source[..instruction.len()] != [0x62, 0xf1, 0x75, 0x40, 0x74, 0x07] { return Ok(out); }
+            && !canonical_vpcmpeqb_rdi(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::VEX_Blsmsk_r64_rm64 {
         // Only RSI <- (RSI-1)^RSI. CPU retains all defined/undefined flag effects.
         if source[..instruction.len()] != [0xc4, 0xe2, 0xc8, 0xf3, 0xd6] { return Ok(out); }

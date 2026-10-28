@@ -21,7 +21,7 @@ HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/vmovdqu128_store'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='c5b5c2fbb2af20471273badfa3663e3fdab2a53c3d7829ade8dcf37bdc1c4436'
+OUTCOMES_SHA='7eafc3762bb46dac30a10b34de9b154d7d46049aaeb4ee192116b15b2e69ed97'
 GENERATED_COMMON={'bytes': 34886, 'sha256': 'f946f5d3018d7072a481f94bd749d7a02c01c18a616ff87020282fd9c8235acc'}
 GENERATED_JSON={'bytes': 52800, 'sha256': '5cf89bd95f4128970f167bfcb88c0ef3e41f17e723b34ff424da27574407f1c4'}
 GENERATED_C={'bytes': 12562, 'sha256': 'e1208c844924b75b9be2eabf7d3e6f7e80c8185eae71193f91cf4c742ef6a1ae'}
@@ -38,6 +38,7 @@ from page_selected_generic import digest
 from page_selected_register_time_compare import decode
 from page_selected_vmovdqu128_family import observations
 from page_selected_vmovdqu128_promotions import promotions
+from page_selected_vpcmpeqb_memory_promotions import promotions as vpcm_promotions
 
 MASK=(1<<64)-1;PAGE=4096
 MEMORY_ROW=32888;MEMORY_BYTES=64+18*MEMORY_ROW
@@ -196,6 +197,8 @@ def fault_observations(data,kind,h,pairs):
         expected_trap=14,expected_error=6 if kind in (1,3)else 7)
 
 def record(data,expected,sample_bytes,rows):
+    need(1504<len(data)<(16<<20),'complete additional typed-promotion trailer within unchanged cap')
+    memory_promoted=vpcm_promotions(data[-1504:]);data=data[:-1504]
     h=dict(zip(NAMES,struct.unpack_from('<17Q',data)))
     need(all(h[k]==v for k,v in expected['header_equals'].items()),'exact outcome; failed stores remain failed')
     base=136+22*sample_bytes+40;extent=base+5000+96+10304+3808+MEMORY_BYTES+800
@@ -212,7 +215,8 @@ def record(data,expected,sample_bytes,rows):
     supplied=ranges(data[base:]);failed=fault_observations(failed_raw,kind,h,pairs)
     return dict(operation='completed'if positive else 'failed_memory_write',pairs=17 if positive else 0,new_pairs=16 if positive else 0,
         startup_pairs=1,verified_memory_failures=int(not positive),refusals=h['refusals'],actual_before_queries=foot['actual_before_queries'],
-        typed_promotions=13,supplied_none_queries=12,supplied_range_queries=1,supplied_range_end_controls=3,
+        typed_promotions=13,supplied_none_queries=12,supplied_range_queries=1,
+        vpcm_promotions=memory_promoted,vpcm_typed_promotions=5,vpcm_supplied_none_queries=5,supplied_range_end_controls=3,
         ending_pairs=sum(c['tail']==c['length']for c in rows[16*group:16*group+16])if positive else 0,
         crossing_pairs=sum(c['tail']<c['length']for c in rows[16*group:16*group+16])if positive else 0,
         header=h,observations=obs,footprint=foot,promotions=promoted,memory=mem,range_controls=supplied,fault_observations=failed,
@@ -252,12 +256,12 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile='page-selected-vmovdqu128-store-v1',status='failed',
-        scope='Canonical VEX128 Code1840 store/reverse-copy structural family:128 pairs, eight failed writes with complete actual post-memory, exact13 old-byte typed promotions, before-frame RANGE16/NONE and supplied overflow controls. Full C architectural oracle with independent structural/memory replay; no real completion or performance claim.',
+        scope='Canonical VEX128 Code1840 store/reverse-copy structural family:128 pairs, eight failed writes with complete actual post-memory, exact13 original typed promotions plus5 additional supplied Code1720/NONE promotions, before-frame RANGE16/NONE and supplied overflow controls. Full C architectural oracle with independent structural/memory replay; no real completion or performance claim.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vmovdqu128_store.py','--expect-revision',args.expect_revision],
         commands=[],cases=[],error=None,final_errors=[],
         totals=dict(pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
-                    refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0,typed_promotions=0,supplied_none_queries=0,supplied_range_queries=0,supplied_range_end_controls=0))
+                    refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0,typed_promotions=0,supplied_none_queries=0,supplied_range_queries=0,vpcm_typed_promotions=0,vpcm_supplied_none_queries=0,supplied_range_end_controls=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
         lexical=str(Path(path).absolute());p=Path(path).resolve(strict=True);value=fact(p)
@@ -332,7 +336,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'samples','negative_sample','result','refused_last','vpb_observations','v64_fault','vpc_queries','v128_promotions','store_memory','store_ranges'}
+            need(not err,'actual symbol inspection stderr');roots={'samples','negative_sample','result','refused_last','vpb_observations','v64_fault','vpc_queries','v128_promotions','vpcm_promotions','store_memory','store_ranges'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -348,12 +352,12 @@ def main():
             state['symbols']=symbols;sample=symbols['negative_sample']['bytes']
             need(symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
                 symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5000 and symbols['v64_fault']['bytes']==96 and
-                symbols['vpc_queries']['bytes']==10304 and symbols['v128_promotions']['bytes']==3808 and
+                symbols['vpc_queries']['bytes']==10304 and symbols['v128_promotions']['bytes']==3808 and symbols['vpcm_promotions']['bytes']==1504 and
                 symbols['store_memory']['bytes']==MEMORY_BYTES and symbols['store_ranges']['bytes']==800 and
-                136+22*sample+40+5000+96+10304+3808+MEMORY_BYTES+800<16<<20,
+                136+22*sample+40+5000+96+10304+3808+MEMORY_BYTES+800+1504<16<<20,
                 'actual ELF-sized complete sample array/trailers below unchanged cap');samples[name]=sample
             r['fixture_build'][name]=dict(artifact=state['artifact'],elf=state['elf'],symbols_sha256=digest(symbols),
-                record_bytes=136+22*sample+40+5000+96+10304+3808+MEMORY_BYTES+800,headers_sha256=digest(state['headers']))
+                record_bytes=136+22*sample+40+5000+96+10304+3808+MEMORY_BYTES+800+1504,headers_sha256=digest(state['headers']))
         for expected in commands:
             item=dict(name=expected['name'],status='failed',environment_delta=expected['environment_delta'],actual_exit=None);r['cases'].append(item)
             row,out,err=run(expected['name'],[paths[expected['argv'][0]]],expected['exit'],env=dict(ENV,**expected['environment_delta']))
@@ -366,8 +370,8 @@ def main():
             for key in r['totals']:r['totals'][key]+=value[key]
             item.update(status='accepted_observation',outcome=value)
         need(r['totals']==dict(pairs=136,new_pairs=128,startup_pairs=16,verified_memory_failures=8,
-            refusals=2400,actual_before_queries=272,ending_pairs=85,crossing_pairs=43,typed_promotions=208,
-            supplied_none_queries=192,supplied_range_queries=16,supplied_range_end_controls=48) and
+            refusals=2320,actual_before_queries=272,ending_pairs=85,crossing_pairs=43,typed_promotions=208,
+            supplied_none_queries=192,supplied_range_queries=16,vpcm_typed_promotions=80,vpcm_supplied_none_queries=80,supplied_range_end_controls=48) and
             len(r['cases'])==16 and all(c['status']=='accepted_observation'for c in r['cases']),
             'eight complete17-pair cohorts and eight genuine failed writes')
         registered_controls(builder,products,private,pin,binary,run,r,cpu)

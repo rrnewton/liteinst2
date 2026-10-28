@@ -813,3 +813,30 @@ The [release program matrix](results/native-pages-2df36d9.json) still **fails ov
 For completed default true, first admission is 79,849 ns and the median of 16 same-page/allocation/generation revisits is 84,972.5 ns; disabled-rseq true is 81,251 ns/80,686 ns and the boundary fixture 80,851 ns/81,076.5 ns. These are single shared-host release observations on AMD EPYC 9D85 with GCC 11.5.0 and one reserved CPU. Service uses CLOCK_MONOTONIC_RAW and excludes signal delivery; whole-process times include namespace preparation. No application speedup or throughput claim follows. Full B2/B3/B4, configured all-class callbacks, no-faulting page mode and general application lifecycle remain open.
 
 All six [required checks](results/20261028T102926.809142Z-checks-2df36d95be28.json) pass at the same source revision: 350 recorder tests, fmt, strict workspace/all-target/all-feature Clippy, 2,833 workspace tests with 0 failures and 12 ignored across 103 harnesses, workspace check, and 1,039 serial launch tests with 0 failures across 27 harnesses. Workspace 333.847 s and serial 130.329 s remain inside the original 900/180 s limits. Source, configuration and process cleanup are unchanged; all 50 selected native, 15 dynamic-admission, 388 dynamic-matrix and 110 native-validation serial cases qualify.
+
+## Vector memory comparisons and real ls completion (claims 1 and 4)
+
+Source `94a552a673dd0cb750a2d9a417de6124d731ce3b` adds canonical unmasked EVEX512 VPCMPEQB K,ZMM,[RDI] at original instruction and operand addresses. All 32 vector sources and eight mask destinations are admitted; existing addressing, width, mask and prefix restrictions remain.
+
+The [native reproducer](page_selected_vpcmpeqb_memory_family.py) passed **108 new structural comparisons**, six positive cohort startups, two genuine read-fault controls, 936 refusals and 220 actual-before NONE queries. Five old encodings now require explicit typed/NONE controls and have native coverage; no old case was omitted. Full architectural comparisons and process limits remain unchanged. This covers all register indices and six fetch positions, rather than exhaustive native execution of all 256 encodings. [Result](results/20261028T104725.944918Z-page-selected-vpcmpeqb-memory-family-94a552a673dd.json).
+
+All four affected prior suites also pass, retaining their genuine failed operations:
+
+| Suite | Positive cohort pairs | Failed reads/writes | Result |
+|---|---:|---:|---|
+| vpcmpeqb_memory | 19 | 2 | [receipt](results/20261028T104752.992483Z-page-selected-vpcmpeqb-memory-94a552a673dd.json) |
+| vmovdqu128 | 13 | 2 | [receipt](results/20261028T104803.912486Z-page-selected-vmovdqu128-94a552a673dd.json) |
+| vmovdqu128_family | 136 | 4 | [receipt](results/20261028T104814.797115Z-page-selected-vmovdqu128-family-94a552a673dd.json) |
+| vmovdqu128_store | 136 | 8 | [receipt](results/20261028T104849.431110Z-page-selected-vmovdqu128-store-94a552a673dd.json) |
+
+The store cohort also retains one registered application completion and two required refusals before effects. Each receipt records its reproducer, exact revision, hardware and numeric results.
+
+The release [real-program matrix](results/native-pages-94a552a.json) is **4/5 complete and still fails overall**. With glibc rseq disabled, dynamically linked `/bin/ls` now exits 0 with output identical to native, 212,791 completed generic steps and all 5,732 admissions closed. It took 20.543995793 s including namespace preparation (native process: 0.003289536 s). Default-rseq ls still exits−9 without a terminal report; the kill cause is unproven. Both true configurations and the boundary fixture also complete. No earlier failure is reclassified.
+
+For completed ls, first admission service was **82,343 ns**; the median of 16 revisits to the same page/allocation/generation was **83,715.5 ns**. These are single shared-host release observations on AMD EPYC 9D85 with GCC 11.5.0 and one reserved CPU. Service uses CLOCK_MONOTONIC_RAW and excludes signal delivery. Revisit service is not application steady-state throughput. The current implementation has substantial whole-process overhead; no speedup claim follows.
+
+All six [required checks](results/20261028T105122.818629Z-checks-94a552a673dd.json) pass at the same source revision: 350 recorder tests, fmt, strict workspace/all-target/all-feature Clippy, 2,833 workspace tests with 0 failed and 12 ignored across 103 harnesses, workspace check, and 1,039 serial launch tests with 0 failed across 27 harnesses. Workspace/serial times are 345.445/129.152 s under unchanged 900/180 s caps. Source, configuration and process cleanup checks pass. All 50 selected native, 15 dynamic-admission, 388 dynamic-matrix and 110 native-validation serial cases qualify.
+
+Full B2/B3/B4 remain open, including configured callbacks in the C launcher, a page profile without CPUID faulting, lifecycle coverage and hybrid paths.
+
+Main `f0ef84a1c16a00ace794329179ce376b10b59253` was subsequently merged as `355e20b26d549b94291a23a292f5bd2b9dab657b`. Its 20 incoming files add core throughput work; page runtime, fixtures and native evaluation scripts remain byte-identical to the native-qualified source above. The five-file inventory successor `612771fef139961a6e3ef698eefac89290c99156` requires all nine new core tests while retaining the prior guards. Fresh [merged-tree checks](results/20261028T110549.356560Z-checks-612771fef139.json) all pass: 350 recorder, fmt, strict Clippy, **2,842 workspace passed / 0 failed / 12 ignored across 103 harnesses**, workspace check, and **1,039 serial passed / 0 failed across 27 harnesses**. Workspace/serial times are 333.906/127.933 s, with unchanged limits, source/configuration and complete cleanup. Native measurements remain attributed to `94a552a6`; they were not rerun or relabelled as measurements of the merge.
