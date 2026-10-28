@@ -37,11 +37,23 @@ static uint64_t selected_repeat_attempts,selected_repeat_steps,selected_repeat_t
 static uint64_t selected_repeat_queries;
 static unsigned selected_repeat_release_started,selected_repeat_release_complete;
 static int selected_repeat_release_result;
+#ifdef LI2_TF_HANDOFF
+#include "tf_chain.h"
+static struct li2_tf_chain selected_chain;
+#define selected_tf (selected_chain.slots[selected_chain.active].owner)
+#define selected_tf_continuation (selected_chain.slots[selected_chain.active].query)
+#define selected_tf_attempts (selected_chain.attempts)
+#define selected_tf_steps (selected_chain.steps)
+#define selected_tf_release_started (selected_chain.slots[selected_chain.active].release.started)
+#define selected_tf_release_complete (selected_chain.slots[selected_chain.active].release.complete)
+#define selected_tf_release_result (selected_chain.slots[selected_chain.active].release.result)
+#else
 static struct li2_tf_owner selected_tf;
 static struct li2_tf_continuation selected_tf_continuation;
 static uint64_t selected_tf_attempts,selected_tf_steps;
 static unsigned selected_tf_release_started,selected_tf_release_complete;
 static int selected_tf_release_result;
+#endif
 static struct li2_fetch_ref selected_borrow;
 static struct li2_fetch_view selected_view;
 static struct li2_selected_hardware selected_hardware;
