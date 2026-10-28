@@ -34,7 +34,9 @@ CSV rows stay under `ignored/`.
 Native CSV totals report the live comparator, not an independent saved-state
 audit. Native state qualification covers the actual gate entry through its post-POP
 boundary: full inherited GPR/flags/XSAVE comparison, the complete data page and
-exact `[S-128, stack_end)` application-stack range. Each child then restores
+exact `[S-16-128, stack_end)` application-stack range, where `S` is the gate-entry
+stack pointer. The extra 16 bytes cover the gate's saved register and the subject's
+return word before its red zone. Each child then restores
 only its own saved harness context and executes the real outer return before
 normal invocation validation. After that return, every flag except ptrace's TF
 bit must equal the saved harness flags; the adapter clears only TF before
@@ -68,3 +70,25 @@ Calls, tail calls, stores, indirect control flow, active CET, signal/nonlocal
 exits, unwind, fork, unload and concurrent source mutation are outside this
 profile. The loaded code, controls and installed image stay alive until process
 exit. Input storage is released only after the worker has joined.
+
+## Selecting an internal function
+
+`TrustedFunctionSelection` binds the complete independently trusted final ELF
+bytes to an ELF virtual address, complete function length and printable metadata
+label. `LoadedIntegerLeaf::load_selected` uses that descriptor and the retained
+normal-loader handle to resolve the function. It does not use the label for a
+symbol lookup. The named `load` API still requires its original dynamic symbol.
+
+The caller must establish the function's complete extent and entry closure from
+trusted metadata. For a stripped file, pre-strip metadata is usable only with
+proof that stripping preserved the selected code and load geometry. A candidate's
+own range or hash does not supply that independent authority. The safe descriptor
+constructor checks representation bounds; it does not prove function boundaries
+or make loading safe. An interior range can itself decode as a valid smaller CFG.
+
+Range selection retains the existing whole-file, loader-object, mapping, source
+page, CFG and every-RET checks and all execution contracts above. It supports an
+eligible internal function without requiring its exported name; it does not add
+sectionless ELF, dependencies, constructors, relocations or a broader instruction
+grammar. Native qualification of this new selection path is separate from the
+named-function evidence linked above.

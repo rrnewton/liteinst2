@@ -316,6 +316,7 @@ pub struct OrdinaryOracle {
     stack: Mapping,
     seed: u64,
     subject: Subject,
+    selected_deadline: Option<selected::Deadline>,
 }
 
 /// Passed only to the child-local fixture. No gate private state is exposed.
@@ -498,6 +499,30 @@ impl Walk<'_> {
     }
 }
 
+// Only the new route checks the carried deadline after each ready-returning
+// step. The old reach_gate and step bodies/predicates remain literal.
+impl Walk<'_> {
+    fn reach_selected_gate(
+        &mut self,
+        ready: &Ready,
+        phase: &str,
+        deadline: selected::Deadline,
+    ) -> libc::user_regs_struct {
+        deadline.check();
+        while self.child.registers().rip != ready.gate {
+            self.step(phase);
+            deadline.check();
+        }
+        check_gate(
+            ready,
+            &self.child.memory(ready.gate, ready.profile.bytes().len()),
+        );
+        let registers = self.child.registers();
+        deadline.check();
+        registers
+    }
+}
+
 impl OrdinaryOracle {
     pub fn new(seed: u64) -> Self {
         let data = Mapping::new(PAGE);
@@ -526,7 +551,28 @@ impl OrdinaryOracle {
             stack,
             seed,
             subject: Subject::Checksum,
+            selected_deadline: None,
         }
+    }
+
+    /// Selected checksum only: the route creates this immutable budget before
+    /// ANY oracle mapping allocation. Old constructors retain their old path.
+    pub fn new_selected(seed: u64, deadline: selected::Deadline) -> Self {
+        deadline.check();
+        let mut oracle = Self::new(seed);
+        oracle.selected_deadline = Some(deadline);
+        deadline.check();
+        oracle
+    }
+    pub fn pair_selected<F>(&self, length: usize, setup: F) -> PairResult
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+    {
+        assert!(matches!(self.subject, Subject::Checksum));
+        self.selected_deadline
+            .expect("selected constructor required")
+            .check();
+        self.pair_profile(length, setup, |_| {}, None).0
     }
 
     /// Starts the one absolute child deadline BEFORE mappings/input allocation.
@@ -780,6 +826,10 @@ impl OrdinaryOracle {
         F: for<'a> Fn(bool, ChildContext<'a>),
         O: for<'a> FnOnce(OriginalObservation<'a>),
     {
+        if let Some(deadline) = self.selected_deadline {
+            assert!(matches!(self.subject, Subject::Checksum));
+            deadline.request(reference, native_noop);
+        }
         if native_noop.is_some() {
             assert!(reference.is_none());
             assert!(matches!(self.subject, Subject::Tree { .. }));
@@ -809,10 +859,17 @@ impl OrdinaryOracle {
         assert_eq!(std::fs::read_dir("/proc/self/task").unwrap().count(), 1);
         let mut pipes = [Pipe::new(), Pipe::new()];
         let mut outputs = reference.map(|_| [Pipe::new(), Pipe::new()]);
-        let deadline = match self.subject {
-            Subject::Checksum => reference.map_or_else(|| Instant::now() + CHILD_BUDGET, |r| r.0),
-            Subject::Cache { deadline, .. } => deadline,
-            Subject::Tree { deadline, .. } => deadline,
+        let deadline = if let Some(deadline) = self.selected_deadline {
+            deadline.check();
+            deadline.end()
+        } else {
+            match self.subject {
+                Subject::Checksum => {
+                    reference.map_or_else(|| Instant::now() + CHILD_BUDGET, |r| r.0)
+                }
+                Subject::Cache { deadline, .. } => deadline,
+                Subject::Tree { deadline, .. } => deadline,
+            }
         };
         let mut pids = [0; 2];
         for index in 0..2 {
@@ -883,10 +940,22 @@ impl OrdinaryOracle {
             }
             assert!(Instant::now() < deadline, "reference setup deadline");
         }
+        if let Some(deadline) = self.selected_deadline {
+            deadline.check();
+        }
         let original = pipes[0].read(&children[0]);
+        if let Some(deadline) = self.selected_deadline {
+            deadline.check();
+        }
         let candidate = pipes[1].read(&children[1]);
+        if let Some(deadline) = self.selected_deadline {
+            deadline.check();
+        }
         for child in &children {
             let status = child.wait();
+            if let Some(deadline) = self.selected_deadline {
+                deadline.check();
+            }
             assert!(libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP);
             child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         }
@@ -925,8 +994,16 @@ impl OrdinaryOracle {
             child: &children[1],
             steps: 0,
         };
-        let ar = a.reach_gate(&original, "reach_original_gate");
-        let br = b.reach_gate(&candidate, "reach_candidate_gate");
+        let (ar, br) = if let Some(deadline) = self.selected_deadline {
+            (
+                a.reach_selected_gate(&original, "reach_original_gate", deadline),
+                b.reach_selected_gate(&candidate, "reach_candidate_gate", deadline),
+            )
+        } else {
+            let ar = a.reach_gate(&original, "reach_original_gate");
+            let br = b.reach_gate(&candidate, "reach_candidate_gate");
+            (ar, br)
+        };
         same_arguments(&ar, &br);
         let ax = a.child.xstate();
         let bx = b.child.xstate();
@@ -1018,6 +1095,9 @@ impl OrdinaryOracle {
             let outer = native_noop
                 .and_then(|_| native_call::before_outer(a.child, &original, self.gate_rsp()));
             a.step("original_body");
+            if let Some(deadline) = self.selected_deadline {
+                deadline.check();
+            }
             if let Some(before) = outer {
                 native_call::after_outer(a.child, &original, before);
                 outer_calls[0] += 1;
@@ -1069,6 +1149,9 @@ impl OrdinaryOracle {
             let outer = native_noop
                 .and_then(|_| native_call::before_outer(b.child, &candidate, self.gate_rsp()));
             b.step("candidate_body");
+            if let Some(deadline) = self.selected_deadline {
+                deadline.check();
+            }
             if let Some(before) = outer {
                 native_call::after_outer(b.child, &candidate, before);
                 outer_calls[1] += 1;
@@ -1171,6 +1254,9 @@ impl OrdinaryOracle {
             walk.child.set_registers(&restored);
             walk.child.set_xstate(&xstate);
             walk.step("outer_return"); // Execute the actual outer RET on its own original stack.
+            if let Some(deadline) = self.selected_deadline {
+                deadline.check();
+            }
             let after = walk.child.registers();
             assert_eq!(after.rip, continuation);
             assert_eq!(after.rsp, saved.rsp.checked_add(8).unwrap());
@@ -1189,6 +1275,9 @@ impl OrdinaryOracle {
             walk.child.set_registers(&continuation_registers);
             walk.child.request(libc::PTRACE_CONT, 0, 0);
             let status = walk.child.wait();
+            if let Some(deadline) = self.selected_deadline {
+                deadline.check();
+            }
             assert!(
                 libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
                 "real invoke validation failed {status:#x}; saved_flags={:#x} after_ret_flags={:#x} stopped={:?}",
@@ -1220,6 +1309,9 @@ impl OrdinaryOracle {
                 std::io::Error::last_os_error().raw_os_error(),
                 Some(libc::ECHILD)
             );
+        }
+        if let Some(deadline) = self.selected_deadline {
+            deadline.check();
         }
         if matches!(self.subject, Subject::Cache { .. }) {
             assert!(Instant::now() < deadline, "cache complete reaps deadline");
@@ -1255,6 +1347,9 @@ impl OrdinaryOracle {
                 &points
             },
         });
+        if let Some(deadline) = self.selected_deadline {
+            deadline.check();
+        }
         if reference_stats.is_some() {
             assert!(Instant::now() < deadline, "reference inspection deadline");
         }
@@ -1405,3 +1500,7 @@ mod hardware;
 // Opt-in eight-request API route; old traversal and populations stay literal.
 #[path = "native_tree_batch.rs"]
 pub mod tree_batch;
+
+// Selected checksum metadata, population and opt-in absolute deadline controls.
+#[path = "native_selected.rs"]
+pub mod selected;

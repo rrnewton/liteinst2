@@ -154,12 +154,42 @@ pub(super) fn child_reference(
     );
 }
 
+// Private closed admission choice. Selected never performs a symbol lookup.
+enum ChildOwner<'a> {
+    Named {
+        expected_elf: &'a [u8],
+        symbol: &'a std::ffi::CStr,
+    },
+    Selected(&'a rapid_profiler::frontend_native::TrustedFunctionSelection<'a>),
+}
+
 fn child_profile(
     candidate: bool,
-    mut context: ChildContext<'_>,
+    context: ChildContext<'_>,
     subject: &Path,
     expected_elf: &[u8],
     symbol: &std::ffi::CStr,
+    concurrent: bool,
+    profile: oracle::native_ordinary::Profile,
+) {
+    child_admitted(
+        candidate,
+        context,
+        subject,
+        ChildOwner::Named {
+            expected_elf,
+            symbol,
+        },
+        concurrent,
+        profile,
+    );
+}
+
+fn child_admitted(
+    candidate: bool,
+    mut context: ChildContext<'_>,
+    subject: &Path,
+    owner_choice: ChildOwner<'_>,
     concurrent: bool,
     profile: oracle::native_ordinary::Profile,
 ) {
@@ -175,8 +205,28 @@ fn child_profile(
     // A closed checksum/cache symbol and its complete input are selected below.
     // Child-local load precedes any application call; no constructors,
     // foreign callers, CET, signal/nonlocal entry, unload or source writer.
-    let owner =
-        unsafe { LoadedIntegerLeaf::load(subject, expected_elf, symbol, CONTRACT) }.unwrap();
+    let (owner, symbol) = match owner_choice {
+        ChildOwner::Named {
+            expected_elf,
+            symbol,
+        } => (
+            unsafe { LoadedIntegerLeaf::load(subject, expected_elf, symbol, CONTRACT) }.unwrap(),
+            symbol,
+        ),
+        ChildOwner::Selected(selection) => {
+            assert_eq!(profile, Profile::Legacy);
+            assert!(!concurrent && context.cache_case().is_none() && context.tree_case().is_none());
+            assert_eq!(selection.label(), oracle::native_ordinary::selected::LABEL);
+            // SAFETY: the separate trusted PRESTRIP -> FINAL provenance step
+            // proves this complete nonempty checksum extent and unchanged load
+            // geometry. All existing sole-child/ABI/lifetime premises above hold.
+            let owner =
+                unsafe { LoadedIntegerLeaf::load_selected(subject, selection, CONTRACT) }.unwrap();
+            // This fixed tag chooses the existing scalar expectation below; it
+            // is NEVER supplied to a loader in this branch or used as fallback.
+            (owner, c"ordinary_checksum_nonempty")
+        }
+    };
     let cache_case = context.cache_case();
     if let Some((case, seed)) = cache_case {
         assert_eq!(symbol, c"cache_work_linked");
@@ -747,3 +797,6 @@ fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool, con
         );
     }
 }
+
+// Separate selected-loader route; all existing named routes stay intact.
+pub(super) mod selected;
