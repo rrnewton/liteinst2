@@ -18,7 +18,7 @@ for mode in scalar fast; do
     -Wall -Wextra -Werror -Dmemset=li2_test_memset -Dmemcpy=li2_test_memcpy \
     -DLI2_TF_HANDOFF=1 -DLI2_REGISTER_RUN=1 -DLI2_MAPS_PHASE_REUSE=1 -DLI2_RSEQ_INACTIVE=1 \
     $extra -I"$parent_dir" -c "$bridge_source" -o "$output_dir/bridge-$mode.o"
-  "$cc_bin" -std=gnu11 -O2 -g -fno-builtin -fno-stack-protector \
+  "$cc_bin" -std=gnu11 -O2 -g -fno-eliminate-unused-debug-types -fno-builtin -fno-stack-protector \
     -fno-tree-loop-distribute-patterns -fno-tree-vectorize -mgeneral-regs-only \
     -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections \
     -DLI2_TF_HANDOFF=1 -DLI2_REGISTER_RUN=1 -DLI2_MAPS_PHASE_REUSE=1 -DLI2_RSEQ_INACTIVE=1 \
