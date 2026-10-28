@@ -16,6 +16,18 @@ ORIGINAL_EMPTY = frozenset(('ordinal', 'generation', 'invocation', 'raw_start_ti
 
 # Exact transitive frontend-native-calibrations inventory, including expected panics.
 CALIBRATION_TESTS = {
+    'oracle::native_ordinary::tree_batch::tests::batch_armed_all_fields_and_retained_lifetime_refuse_corruption': False,
+    'oracle::native_ordinary::tree_batch::tests::batch_checkpoint_exact_idle_refuses_missing_or_early_return': False,
+    'oracle::native_ordinary::tree_batch::tests::batch_checkpoint_requires_exact_self_thread_signal': False,
+    'oracle::native_ordinary::tree_batch::tests::batch_outer_call_checks_actual_instruction_successor_word_and_rf': False,
+    'oracle::native_ordinary::hardware::tests::hardware_event_requires_exact_owned_trap': False,
+    'oracle::native_ordinary::hardware::tests::hardware_initial_owner_and_offsets_are_closed': False,
+    'oracle::native_ordinary::hardware::tests::hardware_peek_preserves_valid_minus_one': False,
+    'oracle::native_ordinary::hardware::tests::hardware_harness_only_removes_authenticated_rf': False,
+    'oracle::native_ordinary::hardware::tests::hardware_partial_install_and_restore_keep_custody': False,
+    'oracle::native_ordinary::hardware::tests::hardware_readback_and_exact_restoration': False,
+    'oracle::native_ordinary::hardware::tests::hardware_cleanup_does_not_touch_running_or_terminal_child': False,
+    'oracle::native_ordinary::hardware::tests::hardware_targets_authenticate_closed_tree_and_literal_bytes': False,
     'oracle::native_ordinary::native_call::tests::literal_native_profile_has_no_transient_exclusions_or_legacy_alias': False,
     'oracle::native_ordinary::native_call::tests::actual_target_input_length_and_alignment_are_required': False,
     'oracle::native_ordinary::native_call::tests::every_callee_save_must_restore_before_harness': False,
@@ -140,16 +152,27 @@ def pairs(data, terminal, stderr):
     return rows
 
 
+# This newly added native prerequisite runs only in its own bounded process.
+# None of the 82 inherited controls is ignored; eight hardware and four batch pure controls are added.
+HARDWARE_IGNORED = ('test oracle::native_ordinary::hardware::control::'
+    'owned_execution_breakpoint_restores_then_steps_then_stops ... ignored, '
+    'requires explicit fresh-process release hardware-stop prerequisite')
+
+
 def calibrations(stdout, stderr):
     assert stderr == b'' and 0 < len(stdout) <= 1048576
     text = stdout.decode('ascii')
-    pattern = (r'\nrunning 82 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){82})\n'
-        r'test result: ok\. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
+    pattern = (r'\nrunning 95 tests\n((?:test [^\n]+\n){95})\n'
+        r'test result: ok\. 94 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
     match = re.fullmatch(pattern, text)
     assert match is not None
-    names = [line.split()[1] for line in match.group(1).splitlines()]
-    assert len(set(names)) == 82
-    observed = {line.split()[1]: ' - should panic ... ok' in line for line in match.group(1).splitlines()}
+    lines = match.group(1).splitlines()
+    assert lines.count(HARDWARE_IGNORED) == 1
+    lines.remove(HARDWARE_IGNORED)
+    assert all(re.fullmatch(r'test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok', line) for line in lines)
+    names = [line.split()[1] for line in lines]
+    assert len(names) == len(set(names)) == 94
+    observed = {line.split()[1]: ' - should panic ... ok' in line for line in lines}
     assert observed == CALIBRATION_TESTS
 
 

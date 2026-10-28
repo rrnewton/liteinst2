@@ -1,0 +1,495 @@
+{
+  "artifact": {
+    "binary": {
+      "bytes": 1898352,
+      "sha256": "4a803d0ac8125ca73bac21543baa870cb7c8361348c2e89704ca883dc0ad801d"
+    },
+    "cargo_fresh": false,
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": true
+    }
+  },
+  "batch_artifacts": {
+    "binary": {
+      "bytes": 5382864,
+      "sha256": "1029327700398d4e4d7f3ca4a0c11a046bc9158e50dff657809344af72268170"
+    },
+    "cargo_fresh": true,
+    "dso": {
+      "bytes": 13400,
+      "sha256": "e1bddc78f41d7a03b189d13b5102b78b79d741ae8f2257a651f9bd2b90239449"
+    },
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": false
+    }
+  },
+  "batch_controls": {
+    "failed": 0,
+    "filtered": 91,
+    "ignored": 0,
+    "measured": 0,
+    "passed": 4,
+    "scope": "Four named pure oracle predicates only; native execution is separate.",
+    "status": "PASS",
+    "tests": [
+      "oracle::native_ordinary::tree_batch::tests::batch_armed_all_fields_and_retained_lifetime_refuse_corruption",
+      "oracle::native_ordinary::tree_batch::tests::batch_checkpoint_exact_idle_refuses_missing_or_early_return",
+      "oracle::native_ordinary::tree_batch::tests::batch_checkpoint_requires_exact_self_thread_signal",
+      "oracle::native_ordinary::tree_batch::tests::batch_outer_call_checks_actual_instruction_successor_word_and_rf"
+    ]
+  },
+  "batch_state": {
+    "csv": "tree-batch-pairs.csv",
+    "csv_digest": {
+      "bytes": 910,
+      "sha256": "3eb93ae83b771250ff431f5553af05739ab76a65ad8f6895d4c58369bef4337b"
+    },
+    "rows": [
+      {
+        "calls_per_child": 8,
+        "candidate_events": 32,
+        "candidate_report_records": 16,
+        "candidate_rows": 16,
+        "candidate_steps": 11098,
+        "case": "fit2",
+        "children": 2,
+        "comparisons": 686,
+        "full_indices": "0+7",
+        "hardware_stops_candidate": 38,
+        "hardware_stops_original": 38,
+        "normal_reaps": 2,
+        "original_steps": 716,
+        "original_visits": 664,
+        "outer_calls": 16,
+        "outer_returns": 16,
+        "seed": 1311768467139281696,
+        "selected0_candidate_steps": 5526,
+        "selected0_original_steps": 343,
+        "selected7_candidate_steps": 5542,
+        "selected7_original_steps": 343,
+        "source_attested_finishes": 2,
+        "status": "PASS",
+        "tree_transfers": 48,
+        "value": 13455538007910626262
+      },
+      {
+        "calls_per_child": 8,
+        "candidate_events": 32,
+        "candidate_report_records": 16,
+        "candidate_rows": 16,
+        "candidate_steps": 11098,
+        "case": "conflict3",
+        "children": 2,
+        "comparisons": 686,
+        "full_indices": "0+7",
+        "hardware_stops_candidate": 38,
+        "hardware_stops_original": 38,
+        "normal_reaps": 2,
+        "original_steps": 716,
+        "original_visits": 664,
+        "outer_calls": 16,
+        "outer_returns": 16,
+        "seed": 1311768467139281696,
+        "selected0_candidate_steps": 5526,
+        "selected0_original_steps": 343,
+        "selected7_candidate_steps": 5542,
+        "selected7_original_steps": 343,
+        "source_attested_finishes": 2,
+        "status": "PASS",
+        "tree_transfers": 48,
+        "value": 18114441086748040058
+      },
+      {
+        "calls_per_child": 8,
+        "candidate_events": 32,
+        "candidate_report_records": 16,
+        "candidate_rows": 16,
+        "candidate_steps": 11098,
+        "case": "fit2",
+        "children": 2,
+        "comparisons": 686,
+        "full_indices": "0+7",
+        "hardware_stops_candidate": 38,
+        "hardware_stops_original": 38,
+        "normal_reaps": 2,
+        "original_steps": 716,
+        "original_visits": 664,
+        "outer_calls": 16,
+        "outer_returns": 16,
+        "seed": 18364758542526924135,
+        "selected0_candidate_steps": 5526,
+        "selected0_original_steps": 343,
+        "selected7_candidate_steps": 5542,
+        "selected7_original_steps": 343,
+        "source_attested_finishes": 2,
+        "status": "PASS",
+        "tree_transfers": 48,
+        "value": 14448916110156114966
+      },
+      {
+        "calls_per_child": 8,
+        "candidate_events": 32,
+        "candidate_report_records": 16,
+        "candidate_rows": 16,
+        "candidate_steps": 11098,
+        "case": "conflict3",
+        "children": 2,
+        "comparisons": 686,
+        "full_indices": "0+7",
+        "hardware_stops_candidate": 38,
+        "hardware_stops_original": 38,
+        "normal_reaps": 2,
+        "original_steps": 716,
+        "original_visits": 664,
+        "outer_calls": 16,
+        "outer_returns": 16,
+        "seed": 18364758542526924135,
+        "selected0_candidate_steps": 5526,
+        "selected0_original_steps": 343,
+        "selected7_candidate_steps": 5542,
+        "selected7_original_steps": 343,
+        "source_attested_finishes": 2,
+        "status": "PASS",
+        "tree_transfers": 48,
+        "value": 6122101979721109698
+      }
+    ],
+    "scope": "Four finite pairs; only indices0/7 receive full-state and original operand inspection. The six middle calls have functional and actual transfer checks. Continued instructions are not counted SINGLESTEP operations. No timing, hardware-cache, accuracy or performance claim.",
+    "source_attested": "Successful eight-call API finishes and complete candidate row, full512-word journal, Report/history/input/retirement/detach joins are child-source assertions before normal exit0. The compact CSV does not independently export or replay those objects.",
+    "summary": {
+      "candidate_events": 128,
+      "candidate_report_records": 64,
+      "candidate_rows": 64,
+      "children": 8,
+      "comparisons": 2744,
+      "full_indices": [
+        0,
+        7
+      ],
+      "hardware_stops": 304,
+      "middle": "functional-only",
+      "normal_reaps": 8,
+      "outer_calls": 64,
+      "outer_returns": 64,
+      "pairs": 4,
+      "roots": 64,
+      "selected_call_pairs": 8,
+      "selected_original_visits": 2656,
+      "source_attested_finishes": 8,
+      "status": "PASS",
+      "tree_transfers": 192
+    }
+  },
+  "command": [
+    "python3",
+    "-B",
+    "tools/rapid-profiler/tree-work/verify_hardware_stop.py",
+    "--revision",
+    "b7166e8a35951958e9f0247e27e0694fb45cfd35",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--batch-state"
+  ],
+  "hardware": {
+    "affinity_cpus": 4,
+    "architecture": "x86_64",
+    "family": 26,
+    "model": 17,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "native": {
+    "children": 1,
+    "debug_restored": true,
+    "echild": 1,
+    "exit": 0,
+    "hardware_stops": 2,
+    "reaped": 1,
+    "rf_clear_after_each_step": true,
+    "single_steps": 2,
+    "state_unchanged": true,
+    "status": "PASS",
+    "steps_exposing_tf_bits": 0,
+    "stops_exposing_rf": 2
+  },
+  "pure": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 8,
+    "status": "PASS"
+  },
+  "revision": "b7166e8a35951958e9f0247e27e0694fb45cfd35",
+  "schema_version": 1,
+  "scope": "Hardware prerequisite plus four eight-call original/installed pairs. Only calls 1 and 8 receive full state/operand comparison; middle calls receive physical-transfer and functional checks. No performance or clock-accuracy result.",
+  "source_inputs": {
+    "count": 348,
+    "manifest": {
+      "bytes": 55134,
+      "sha256": "40c78f2c11964426273f88107e470b3699aa95973ffe507d715e789a8efb6fca"
+    }
+  },
+  "stage": "complete",
+  "stages": [
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/tree-work/test_hardware_stop.py"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.3556985850445926,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "parser-controls",
+      "receipt_sha256": "66bf2b4c94b792047d897e7bdb9fa64981c7296e565069c8b276811dbff76343",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "5ea242214728b382ef92ecdd47f04473d897893607b9bb46540ece773e309f2f",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--test",
+        "frontend-native-calibrations",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "elapsed_seconds": 8.427053730003536,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "build",
+      "receipt_sha256": "9cfeef28436a613f4d51c37ade786a4352270097d6c296613263b38e9de2f200",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "088846115ee7eb00900a27bc4d048611e5706a716d41caedf9a6080a001078cb",
+      "stdout_sha256": "d27e29eb41f312d63b40bc07a64964f12597f5beac823e051fdba21d684e7e1a",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::hardware::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.10329254902899265,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "pure-controls",
+      "receipt_sha256": "5de31536a8c7af47fab38b34ade3685a7dcf0da6d4123418d4978244414ba400",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3eb53bd1dcf2dd665221b16ae8dd0292f01a92c39166433e982e53a13fbca17",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::hardware::control::owned_execution_breakpoint_restores_then_steps_then_stops",
+        "--exact",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.09392446000128984,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "hardware-native",
+      "receipt_sha256": "d3c13cf9c249315bd8ba9c1d108062a7b70098df7ce5f954d4e027f2e4c9f333",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "db8cecfef244f8e425e42235e5f281d319b1ad77ef13ee732904678354872ecd",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/tree-work/test_batch_recipe.py"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.5604340760037303,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "batch-parser-controls",
+      "receipt_sha256": "fd0847cb9b312f260570f1ecf019dc9f912fff06ad2e13048ef982bf6e47b981",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "d26a92a441c4d1c6e6a30845982d7ef5d1e8f486f27894030ff39833b38d87f3",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::tree_batch::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.09702156903222203,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "batch-pure-controls",
+      "receipt_sha256": "e09bab8b9b2cb9a426aa45088f4d7f50ca7f75694dbfc4cd5231145797042e5c",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "55c47b7641b3f57dee71dea61c2b3d2f2acba4fddafb256b098ff97e86574aaa",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,-z,now",
+        "-Wl,-z,noexecstack",
+        "$REPO/tools/rapid-profiler/tree-work/tree_work.S",
+        "-o",
+        "$RAW/trusted.so"
+      ],
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.10778704495169222,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "tree-build",
+      "receipt_sha256": "e06398f45acf836473808d53dfb5a0d61f462a1f881ade9bc4714e4b806af5bf",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "frontend-native-oracle",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "elapsed_seconds": 0.12397004012018442,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "batch-build",
+      "receipt_sha256": "9e1ba21bf0aa603ce51cc86306dba9ce776239c5251ebc3c7a8efac6f9866ba0",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "6bfa9e18ffdef821c711a542cfebd7db0982665615563e5a191285e489609c6f",
+      "stdout_sha256": "39c972956cb99dcccfb58c1b0e87fb8f8b62ce8f53419f45d138e8d6866c047a",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$REPO/target/release/frontend-native-oracle",
+        "tree-batch-state",
+        "$RAW/candidate.so",
+        "$RAW/trusted.so",
+        "$RAW/batch-output"
+      ],
+      "cpu_seconds": 90,
+      "elapsed_seconds": 10.319854959845543,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "batch-native",
+      "receipt_sha256": "9abb7ca29b5c6b0842873c92b4868a2c92aac9ddce42dd047f4c107b04a0a7fc",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6a6f2fbd1687ad067c7ff027fd2b33d844d83a1bc842e634884fcc0c8ff3b036",
+      "wall_seconds": 90
+    }
+  ],
+  "status": "PASS",
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "versions": {
+    "gcc": "11.5.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}

@@ -357,6 +357,8 @@ def main():
             'tools/rapid-profiler/ordinary-interval/timed/check_tests.rs',
             'tools/rapid-profiler/timed-work/check_output.py', 'tools/rapid-profiler/timed-work/test_recipe.py',
             'tools/rapid-profiler/timed-work/README.md']
+        names.extend(['tests/support/native_tree_hardware.rs', 'tests/support/native_tree_hardware_control.rs',
+            'tests/support/native_tree_batch.rs', 'tools/rapid-profiler/native-interval/tree/batch.rs'])
         names.extend(['tests/support/native_native_call.rs', 'tests/support/native_native_call/tests.rs',
             'tools/rapid-profiler/tree-work/native_call.rs', 'tools/rapid-profiler/tree-work/collection.rs',
             'tools/rapid-profiler/native-interval/native_tree.rs'])
@@ -793,7 +795,7 @@ def main():
             observed = stage('reference-calibrations', [str(calibration_binary)], 20, 30, MIB)
             checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
             assert digest(calibration_binary) == calibration_hash
-            reference['calibrations'] = dict(status='PASS', passed=82, failed=0, ignored=0,
+            reference['calibrations'] = dict(status='PASS', passed=94, failed=0, ignored=1,
                 scope='actual state-validator mutation controls, including all inherited controls; not clock calibration')
             exact_stable(); assert digest(test_binary) == test_hash
             directory = raw/'reference-oracle-output'; reference['native_state'] = dict(status='FAILED')
@@ -850,7 +852,7 @@ def main():
             observed = stage('cache-calibrations', [str(cache_calibration)], 20, 30, MIB)
             calibration_checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
             assert digest(cache_calibration) == cache_calibration_hash
-            cache['calibrations'] = dict(status='PASS', passed=82, failed=0, ignored=0,
+            cache['calibrations'] = dict(status='PASS', passed=94, failed=0, ignored=1,
                 scope='complete inherited and new validator/model controls; no hardware-cache calibration')
             cache.update(stage='assembly-build')
             cache_trusted, cache_candidate = raw/'cache-trusted.so', raw/'cache-candidate.so'

@@ -493,3 +493,5 @@ fn tree_native_root_child_keep_distinct_owners_until_actual_returns() {
         "tree-owner-native PASS originals=1 roots=1 entries=2 returns=2 sampled=2 rows=2 events=4 reports=1+1+0 root_owner=A child_owner=B rearmed_owner=C child_pending_before_ret=true root_pending_before_ret=true actual_outer_return=true input_unchanged=true joined=true"
     );
 }
+
+mod batch_owner_native;

@@ -68,22 +68,24 @@ class NativeProjection(unittest.TestCase):
                     with self.subTest(separator=separator, index=index), self.assertRaises((AssertionError, csv.Error)):
                         parse(bad)
 
-    def test_full_calibration_population_no_ignored_or_duplicate_names(self):
+    def test_full_calibration_population_and_only_named_new_prerequisite_ignored(self):
         def transcript(order):
-            return ('\nrunning 82 tests\n'+''.join(
+            return ('\nrunning 95 tests\n'+CHECK.HARDWARE_IGNORED+'\n'+''.join(
                 f'test {name}{" - should panic" if panic else ""} ... ok\n' for name, panic in order)+
-                '\ntest result: ok. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
+                '\ntest result: ok. 94 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode('ascii')
         items = list(CHECK.CALIBRATION_TESTS.items())
         data = transcript(items)
         CHECK.calibrations(data, b'')
         CHECK.calibrations(transcript(reversed(items)), b'')
         for index, (name, panic) in enumerate(items):
-            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 82]):
+            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 94]):
                 bad = items.copy(); bad[index] = changed
                 with self.subTest(name=name, changed=changed), self.assertRaises(AssertionError):
                     CHECK.calibrations(transcript(bad), b'')
         for bad in (data[:-1], data+b'\n', transcript(items[:-1]), transcript(items+items[:1]),
-                    data.replace(b'82 passed', b'81 passed'), data.replace(b'0 ignored', b'1 ignored'),
+                    data.replace(b'94 passed', b'93 passed'), data.replace(b'1 ignored', b'2 ignored'),
+                    data.replace(CHECK.HARDWARE_IGNORED.encode('ascii'), b'test foreign ... ignored'),
+                    data.replace(CHECK.HARDWARE_IGNORED.encode('ascii')+b'\n', b''),
                     data.replace(b' ... ok', b' ... ignored', 1), data.replace(b' ... ok', b' ... FAILED', 1)):
             with self.assertRaises(AssertionError):
                 CHECK.calibrations(bad, b'')

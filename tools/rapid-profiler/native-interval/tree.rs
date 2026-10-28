@@ -670,3 +670,5 @@ pub fn run_refusal(subject: &Path, expected: &Path, output: &Path) {
         "refusal terminal output deadline"
     );
 }
+
+pub(super) mod batch;

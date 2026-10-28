@@ -51,6 +51,30 @@ pub(super) struct State {
     failure: Option<BridgeError>,
 }
 impl State {
+    // Copy-only observation at the caller's idle checkpoint. Never reset TLS,
+    // expose a receipt/owner, or borrow this state across a native call.
+    #[cfg(test)]
+    pub(super) fn native_snapshot(&self) -> super::native_checks::StateSnapshot {
+        assert_eq!(self.depth, 0);
+        assert!(self.pairs.iter().all(Option::is_none));
+        assert!(self.active.is_none());
+        super::native_checks::StateSnapshot {
+            totals: self.totals,
+            next: self.next,
+            gate_base: self.gate_base,
+            rows: self.rows,
+            len: self.len,
+            last_external: self.last_external,
+            failure: self.failure,
+            poisoned: TREE_POISON.get(),
+            journal: self.journal.page.0,
+            registration: self.registration,
+            tid: self.tid,
+            stack: [self.stack.start, self.stack.end],
+            model_depth: self.model.depth(),
+        }
+    }
+
     pub(super) fn new(
         binding: Arc<Binding>,
         registration: u64,
@@ -93,6 +117,40 @@ impl State {
             || self.active.is_some()
         {
             return Err(error(Cause::Outstanding));
+        }
+        Ok(())
+    }
+    // Non-reserving admission for exactly eight roots. The ordinary begin still
+    // repeats every dynamic reservation check immediately before each real CALL.
+    pub(super) fn check_source_batch(&self, ids: &[u64; 8]) -> Result<(), BridgeError> {
+        self.empty()?;
+        let mut prior = self.last_external;
+        for &id in ids {
+            if id == 0 || id <= prior {
+                return Err(error(Cause::Capacity));
+            }
+            prior = id;
+        }
+        if self.len.checked_add(16).is_none_or(|n| n > self.rows.len())
+            || self
+                .journal
+                .used()
+                .checked_add(32)
+                .is_none_or(|n| n > EVENTS)
+            || self.rows[self.len..].iter().any(Option::is_some)
+            || self
+                .gate_base
+                .checked_add(self.totals.roots)
+                .and_then(|n| n.checked_add(8))
+                .is_none()
+            || self.next.checked_add(16).is_none()
+            || self.totals.roots.checked_add(8).is_none()
+            || self.totals.pairs.entries.checked_add(16).is_none()
+            || self.totals.pairs.returns.checked_add(16).is_none()
+            || self.totals.pairs.completed.checked_add(16).is_none()
+            || self.totals.pairs.unsampled.checked_add(16).is_none()
+        {
+            return Err(error(Cause::Capacity));
         }
         Ok(())
     }

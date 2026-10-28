@@ -73,7 +73,7 @@ pub struct PreparedTreeCall<'call> {
 }
 
 // Rechecked at consumption before any active invocation or ID is published.
-fn checkpoint(
+pub(super) fn checkpoint(
     bytes: &[u8],
     input: &[u8; 1024],
     current: TreeTotals,
@@ -111,7 +111,15 @@ impl PreparedTreeCall<'_> {
         checkpoint(bytes, &input, thread.totals()?, before)?;
         // Stack/sequence/capacity/external-ID validation and begin remain inside
         // this private path immediately before the real CALL. Postflight is exact.
-        unsafe { thread.invoke_prepared(bytes, input, external_id, before) }
+        unsafe {
+            thread.invoke_prepared(
+                bytes,
+                input,
+                external_id,
+                before,
+                batch::SourceAuthority::Full,
+            )
+        }
     }
 }
 

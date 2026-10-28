@@ -289,6 +289,7 @@ impl TreeThread {
     /// Transfer both complete buffers only after a successful actual tree return.
     /// Allocation/validation failure preserves both live buffers; IDs never reset.
     pub fn drain_completed(&mut self) -> Result<Option<TreeBatch>, BridgeError> {
+        self.batch.closed().map_err(|_| error(Cause::Outstanding))?;
         let _scope = ControllerScope::enter()?;
         let mut rows = Vec::new();
         let mut journal = Vec::new();

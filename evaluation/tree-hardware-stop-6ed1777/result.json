@@ -1,0 +1,198 @@
+{
+  "artifact": {
+    "binary": {
+      "bytes": 1878280,
+      "sha256": "aeb8d13632b6e2e7ad84db3ebd26dce6864490e9e94029936a88c9ea8698c0f1"
+    },
+    "cargo_fresh": false,
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": true
+    }
+  },
+  "command": [
+    "python3",
+    "-B",
+    "tools/rapid-profiler/tree-work/verify_hardware_stop.py",
+    "--revision",
+    "6ed17770717db70c1c08820349a6da82cbad94a8",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "hardware": {
+    "affinity_cpus": 4,
+    "architecture": "x86_64",
+    "family": 26,
+    "model": 17,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "native": {
+    "children": 1,
+    "debug_restored": true,
+    "echild": 1,
+    "exit": 0,
+    "hardware_stops": 2,
+    "reaped": 1,
+    "rf_clear_after_each_step": true,
+    "single_steps": 2,
+    "state_unchanged": true,
+    "status": "PASS",
+    "steps_exposing_tf_bits": 0,
+    "stops_exposing_rf": 2
+  },
+  "pure": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 8,
+    "status": "PASS"
+  },
+  "revision": "6ed17770717db70c1c08820349a6da82cbad94a8",
+  "schema_version": 1,
+  "scope": "Fixture hardware-stop prerequisite only. No SDK batch, application-state population or performance result.",
+  "source_inputs": {
+    "count": 343,
+    "manifest": {
+      "bytes": 54341,
+      "sha256": "21b72126cd6a88b9eb26234ee26878767d7386eaed791e308468fd2443546759"
+    }
+  },
+  "stage": "complete",
+  "stages": [
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/tree-work/test_hardware_stop.py"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.35279279109090567,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "parser-controls",
+      "receipt_sha256": "966a79ee96dabe0a016f34e0b82f6f99623c2b8d1806c503826e533f678d6f9e",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "fe7648fc21ac591de5d68e0294cea7392fbff6521d52d4916d1c84ce6859e387",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--test",
+        "frontend-native-calibrations",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "elapsed_seconds": 16.576027164934203,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "build",
+      "receipt_sha256": "3e50bab49771f62c54d0b799c1ed23cd6f3ce83d258269eacf4149d98a5cabaf",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "82085d02fc0faf06b2c416f569318c39843f7b103e8891ec5abc3d20546e92d4",
+      "stdout_sha256": "6e824f8036cc33e55e4151a0d4adc4238c088cccb8a5a45125f654344391df87",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::hardware::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.09171593212522566,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "pure-controls",
+      "receipt_sha256": "398e1d5e722771b9dfa6afb7e4388e2be9c4c45e304a29ade41dd277d4a5f01b",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "fe14af29865475c19ca30a9c110c2552a8470afaa98b09d4db573054b93fd915",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "command": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::hardware::control::owned_execution_breakpoint_restores_then_steps_then_stops",
+        "--exact",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 10,
+      "elapsed_seconds": 0.0907794558443129,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "hardware-native",
+      "receipt_sha256": "7cf1bd8675d30c751cbe9ddae6b821de19ea7e4cd532d0f8f26cdd34be0bc9d1",
+      "rescues": 0,
+      "status": "PASS",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "41f7524f9ae6bec120d3fed181ec51a932060362653379f6395f62c20702c628",
+      "wall_seconds": 15
+    }
+  ],
+  "status": "PASS",
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "versions": {
+    "gcc": "11.5.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}

@@ -32,6 +32,7 @@ impl Site {
 /// Exact plan and its unique ordinary loader; neither exposes a callable pointer.
 pub struct TreeSitePreparation {
     owner: &'static mut LoadedCallTree,
+    pub(super) batch: batch::Latch,
     planned: PlannedBundle,
     site: Arc<Site>,
     _local: PhantomData<Rc<()>>,
@@ -47,8 +48,8 @@ pub(super) struct Live {
     receipt: BundleReceipt,
 }
 impl Live {
-    pub(super) fn verify(&mut self) -> Result<(), SiteError> {
-        let prep = &mut self.prep;
+    fn verify_images(&self) -> Result<(), SiteError> {
+        let prep = &self.prep;
         if !prep.site.gate.process_matches()
             || self.installed.is_retired()
             || !same_bundle(self.installed.plan(), prep.planned.plan())
@@ -72,6 +73,11 @@ impl Live {
                 check_image(image, executable)?;
             }
         }
+        Ok(())
+    }
+    pub(super) fn verify(&mut self) -> Result<(), SiteError> {
+        self.verify_images()?;
+        let prep = &mut self.prep;
         let finals = prep.planned.plan().final_bytes();
         let (start, end) = prep.owner.source_range();
         if finals.len() != 1
@@ -100,7 +106,56 @@ impl Live {
     }
 }
 
+impl Live {
+    pub(super) fn source_proof(&mut self) -> Result<batch::SourceProof, SiteError> {
+        self.verify()?;
+        let prep = &self.prep;
+        prep.owner
+            .source_proof(&prep.planned.plan().final_bytes()[0].bytes)
+            .map_err(SiteError::Source)
+    }
+    pub(super) fn verify_source_proof(&self, proof: &batch::SourceProof) -> Result<(), SiteError> {
+        self.verify_images()?;
+        self.prep
+            .owner
+            .verify_source_proof(proof)
+            .map_err(SiteError::Source)
+    }
+}
+
 impl TreeSitePreparation {
+    pub(super) fn original_source_proof(&mut self) -> Result<batch::SourceProof, SiteError> {
+        self.owner.verify_original().map_err(SiteError::Source)?;
+        self.owner
+            .source_proof(self.owner.original_source())
+            .map_err(SiteError::Source)
+    }
+    pub(super) fn verify_source(
+        &mut self,
+        source: batch::SourceAuthority<'_>,
+    ) -> Result<(), SiteError> {
+        match source {
+            batch::SourceAuthority::Full => self.owner.verify_original(),
+            batch::SourceAuthority::Batch(proof) => self.owner.verify_source_proof(proof),
+        }
+        .map_err(SiteError::Source)
+    }
+    pub(super) unsafe fn invoke_original_batch(
+        &mut self,
+        bytes: &[u8],
+        stack: &ReadableStack,
+        pid: u32,
+        tid: u64,
+        proof: &batch::SourceProof,
+    ) -> Result<OriginalTreeCallResult, SiteError> {
+        let call = PreparedOriginalTreeCall {
+            prep: self,
+            pid,
+            tid,
+            _local: PhantomData,
+        };
+        unsafe { call.invoke_with_source(bytes, stack, batch::SourceAuthority::Batch(proof)) }
+    }
     pub fn new(
         owner: &'static mut LoadedCallTree,
         gate: Arc<TreeCallGate>,
@@ -347,6 +402,7 @@ impl TreeSitePreparation {
         owner.verify_original().map_err(SiteError::Source)?;
         Ok(Self {
             owner,
+            batch: batch::Latch::Closed,
             planned,
             site: Arc::new(Site {
                 roles,
@@ -372,6 +428,7 @@ impl TreeSitePreparation {
     pub unsafe fn prepare_original_call(
         &mut self,
     ) -> Result<PreparedOriginalTreeCall<'_>, SiteError> {
+        self.batch.closed().map_err(|_| SiteError::Correspondence)?;
         let _scope = ControllerScope::enter().map_err(|_| SiteError::Correspondence)?;
         self.owner.verify_original().map_err(SiteError::Source)?;
         let actual = tid();
@@ -394,6 +451,7 @@ impl TreeSitePreparation {
         installed: InstalledBundle,
         receipt: BundleReceipt,
     ) -> Result<InstalledTreeSite, SiteError> {
+        self.batch.closed().map_err(|_| SiteError::Correspondence)?;
         let live = Box::leak(Box::new(Live {
             prep: self,
             installed,
@@ -422,6 +480,14 @@ impl PreparedOriginalTreeCall<'_> {
         bytes: &[u8],
         stack: &ReadableStack,
     ) -> Result<OriginalTreeCallResult, SiteError> {
+        unsafe { self.invoke_with_source(bytes, stack, batch::SourceAuthority::Full) }
+    }
+    unsafe fn invoke_with_source(
+        self,
+        bytes: &[u8],
+        stack: &ReadableStack,
+        source: batch::SourceAuthority<'_>,
+    ) -> Result<OriginalTreeCallResult, SiteError> {
         let before = input_copy(bytes).map_err(|_| SiteError::Gate(GateError::Descriptor))?;
         let pending = if self.pid != std::process::id() || self.tid != tid() {
             Err(GateError::Identity)
@@ -435,7 +501,13 @@ impl PreparedOriginalTreeCall<'_> {
             pending.map_err(SiteError::Gate),
             || {
                 let _scope = scope.as_ref().map_err(|_| SiteError::Correspondence)?;
-                self.prep.owner.verify_original().map_err(SiteError::Source)
+                match source {
+                    batch::SourceAuthority::Full => self.prep.owner.verify_original(),
+                    batch::SourceAuthority::Batch(proof) => {
+                        self.prep.owner.verify_source_proof(proof)
+                    }
+                }
+                .map_err(SiteError::Source)
             },
             || {
                 if bytes == before {
