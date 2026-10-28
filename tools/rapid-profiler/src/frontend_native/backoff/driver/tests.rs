@@ -149,7 +149,7 @@ fn failed_export(disconnected: bool) {
         assert!(packet.calls.iter().all(Option::is_none));
     }
     assert!(driver.recover_worker_packet().is_none());
-    assert_eq!(driver.receive_one(), Err(Error::Worker));
+    assert_eq!(driver.receive_one(POLL), Err(Error::Worker));
     if let Some(output) = output {
         for i in 0..EXPORT_QUEUE {
             let Export::Report(report) = output.try_recv().unwrap() else {
@@ -420,4 +420,28 @@ fn actual_deadline_errors_retain_first_phase_and_do_not_replace_other_errors() {
     );
     assert_eq!(driver.deadline_failure(), Some(arm)); // First failure survives recovery.
     no_completion(&driver);
+}
+
+#[test]
+fn receive_wait_stops_at_original_arm_end_and_shutdown_without_drift() {
+    let start = Instant::now();
+    let policy = Policy::ten_ms(10, 3, 100).unwrap();
+    let mut clock = Clock::new(start, policy).unwrap();
+    let ns = Duration::from_nanos(1);
+    let due = start + Duration::from_millis(10);
+    assert_eq!(clock.wait_bound(start, 1), POLL);
+    assert_eq!(clock.wait_bound(due - ns, 1), ns);
+    assert_eq!(clock.wait_bound(due, 1), Duration::ZERO);
+    assert_eq!(clock.wait_bound(due + ns, 1), Duration::ZERO);
+    assert_eq!(clock.poll(due, false, 1), Ok(Decision::Arm(due)));
+    let end = start + Duration::from_millis(30);
+    assert_eq!(clock.wait_bound(end - ns, 3), ns);
+    assert_eq!(clock.wait_bound(end, 3), Duration::ZERO);
+    assert_eq!(clock.poll(end, false, 3), Ok(Decision::Stop));
+    let stop = end + Duration::from_secs(2);
+    assert_eq!(clock.wait_bound(stop - ns, 3), ns);
+    assert_eq!(clock.wait_bound(stop, 3), Duration::ZERO);
+    assert_eq!(clock.wait_bound(stop + ns, 3), Duration::ZERO);
+    assert_eq!(clock.check_deadline(stop), Err(Error::Deadline));
+    assert_eq!(clock.stopping, Some(stop));
 }

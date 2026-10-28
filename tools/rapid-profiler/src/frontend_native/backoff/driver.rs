@@ -172,11 +172,11 @@ impl Driver {
         }
         Ok(())
     }
-    fn receive_one(&mut self) -> Result<(), Error> {
+    fn receive_one(&mut self, wait: Duration) -> Result<(), Error> {
         // Wake on a completed batch instead of imposing a sleep after every
         // packet. A queued burst is still handled one packet per clock check;
         // idle waits retain the same fixed poll bound and shutdown deadlines.
-        match self.input.recv_timeout(POLL) {
+        match self.input.recv_timeout(wait) {
             Ok(packet) => {
                 self.pending = Some(Export::Calls(Box::new(packet)));
                 let Some(Export::Calls(p)) = self.pending.as_ref() else {
@@ -325,7 +325,8 @@ impl Driver {
                 }
                 Decision::Wait => (),
             }
-            self.receive_one()?;
+            let wait = clock.wait_bound(Instant::now(), self.arms);
+            self.receive_one(wait)?;
             self.retire()?;
             if clock.stopping.is_some() {
                 if let Some(status) = self.shared.finished.get().copied() {
@@ -451,6 +452,20 @@ impl Clock {
             stopping: None,
             stop_reason: None,
         })
+    }
+    /// A channel wait must not intentionally pass the next original arm/end.
+    /// POLL remains only an upper bound; no deadline or schedule is renewed.
+    fn wait_bound(&self, now: Instant, arms: u32) -> Duration {
+        let next = if let Some(stop) = self.stopping {
+            stop
+        } else if arms < self.policy.epochs {
+            self.start
+                .checked_add(self.policy.period() * arms)
+                .unwrap_or(now)
+        } else {
+            self.end
+        };
+        POLL.min(next.min(self.absolute_end).saturating_duration_since(now))
     }
     // Diagnostic derivation only, called after an existing predicate refused.
     // These methods neither make a scheduling decision nor change clock state.
