@@ -1,0 +1,539 @@
+{
+  "build": {
+    "artifacts": {
+      "frontend-native-oracle": {
+        "binary": {
+          "bytes": 4066744,
+          "sha256": "1d4278d13d846e26cd1899539507395adc4c447277250b53c69b5109d37b5e72"
+        },
+        "cargo_fresh": true,
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      "ordinary-interval": {
+        "binary": {
+          "bytes": 3418112,
+          "sha256": "23a2cf9a45b5c0b423cd8f88c868bf69d50e46a3031e2196378db98e8a96827a"
+        },
+        "cargo_fresh": false,
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": false
+        }
+      }
+    },
+    "cpu_seconds": 120,
+    "file_bytes": 134217728,
+    "process_exit": 0,
+    "strict_cleanup": true,
+    "wall_seconds": 180
+  },
+  "c_build": {
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "process_exit": 0,
+    "strict_cleanup": true,
+    "wall_seconds": 30
+  },
+  "closures": {
+    "native": {
+      "bounded_child": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.1285419431515038,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "2064186d309f858735c2ca1ef08d1471347b95bc8ba5cb2157ec742ebb7ae378",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "723e151ac58a2329576a169eb56d16e4d347d1bfcb8fc25539c3a06b05d33aaa",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "waited_parent": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17706250282935798,
+        "start_utc": "2026-10-27T19:37:23.508076+00:00",
+        "termination": null
+      }
+    },
+    "oracle": {
+      "bounded_child": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 3.2700999239459634,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "a1e062caf4674afc7adf6b23b0f0c4a230488b228f25a92bbc905f7f3102834a",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "688517d64b44768adcde6dcc8a5935f709330ef9e5a371985ae5619ab833d3e7",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "waited_parent": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 3.3145072779152542,
+        "start_utc": "2026-10-27T19:37:20.116211+00:00",
+        "termination": null
+      }
+    }
+  },
+  "cohort": "ordinary-combined-v7",
+  "commands": [
+    [
+      "$GCC",
+      "-O2",
+      "-fPIC",
+      "-shared",
+      "-nostdlib",
+      "-fno-builtin",
+      "-fno-stack-protector",
+      "-fomit-frame-pointer",
+      "-fno-tree-vectorize",
+      "-fno-tree-slp-vectorize",
+      "-fno-asynchronous-unwind-tables",
+      "-fno-unwind-tables",
+      "-fcf-protection=none",
+      "-Wl,-z,now",
+      "-Wl,-z,noexecstack",
+      "$REPO/tools/rapid-profiler/native-interval/ordinary_checksum.c",
+      "-o",
+      "$RAW/trusted.so"
+    ],
+    [
+      "$CARGO",
+      "build",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--bin",
+      "ordinary-interval",
+      "--bin",
+      "frontend-native-oracle",
+      "--message-format=json-render-diagnostics"
+    ],
+    [
+      "$REPO/target/release/frontend-native-oracle",
+      "ordinary-state",
+      "$RAW/candidate.so",
+      "$RAW/trusted.so",
+      "$RAW/oracle-output"
+    ],
+    [
+      "$REPO/target/release/ordinary-interval",
+      "$RAW/candidate.so",
+      "$RAW/trusted.so"
+    ]
+  ],
+  "counts": {
+    "calls": 8,
+    "completed": 6,
+    "entries": 8,
+    "originals": 8,
+    "reports": [
+      4,
+      2
+    ],
+    "required_short_ret_refusal": true,
+    "returns": 8,
+    "unsampled": 2,
+    "whole_guarded_input_bytes": 96,
+    "worker_joined": true
+  },
+  "csv_files": {
+    "failures.csv": {
+      "bytes": 4147,
+      "sha256": "964e7a04e4498a4fd59f409f99057b422351aca1183e8eefcc5c541ffc84de4a"
+    },
+    "intervals.csv": {
+      "bytes": 959,
+      "sha256": "f9fe3eff32edd86a6f4a23b4945507ef4fcb1ca1ceb1c40d33058072c1c6ba54"
+    },
+    "state-pairs.csv": {
+      "bytes": 361,
+      "sha256": "9c85297dae9aa3eaaf07b1a62e8024f192992b06e2de7ac849cf3a3bbb57c8d4"
+    }
+  },
+  "dso": {
+    "bytes": 13624,
+    "sha256": "ec9791b02a6ccb07ad150e953516c30710ee0f88ad0483fd8f3fc3fa3175ae7d"
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "historical_budget_diagnosis": "The v2 step-budget failure did not report its phase; v3 confirmed reach_original_gate. See failures.csv.",
+  "native_limits": {
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "process_exit": 0,
+    "strict_cleanup": true,
+    "wall_seconds": 30
+  },
+  "native_setup": "Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.",
+  "native_state_counts": {
+    "children": 8,
+    "comparisons": 978,
+    "pairs": 4,
+    "real_outer_returns": 8,
+    "short_ret_refusals": 1
+  },
+  "native_state_qualification": "PASS: gate entry through post-POP; full inherited GPR/flags/XSAVE/data and exact [S-128, stack_end) comparisons; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim",
+  "prior_failures": {
+    "interpretation": "Earlier failed attempts remain FAILED. Blank state-count fields mean no completed cohort count was reported; they are not zero-execution claims.",
+    "manual_command": [
+      "$REPO/target/release/frontend-native-oracle",
+      "ordinary-state",
+      "$CANDIDATE_ELF",
+      "$TRUSTED_EXPECTED_ELF",
+      "$NEW_OUTPUT_DIRECTORY"
+    ],
+    "manual_product_hashes": {
+      "candidate_and_expected": "ec9791b02a6ccb07ad150e953516c30710ee0f88ad0483fd8f3fc3fa3175ae7d",
+      "oracle": "12e3e38be0bf28c56afbefb42340ccb78a8a323a3fba4eb25c550f915b3847a5"
+    },
+    "manual_request_limits": {
+      "cpu_seconds": 90,
+      "file_bytes": 1048576,
+      "wall_seconds": 90
+    },
+    "records": {
+      "combined-v1": {
+        "failure.txt": {
+          "bytes": 913,
+          "sha256": "05316f846c597c6157485585744127d17fa586c661ccc4444b12f7dc651f9a8a"
+        },
+        "oracle/receipt.json": {
+          "bytes": 591,
+          "sha256": "a34766cc28806dfe209209aa6de0797e00960b9d6999ef0ffc2788b9e89110b6"
+        },
+        "oracle/stderr.txt": {
+          "bytes": 1519,
+          "sha256": "2de61edaa41b5b99269fb9d7d9785876465f278055558d67a6b6695682733535"
+        },
+        "result.json": {
+          "bytes": 6404,
+          "sha256": "34800259d61200186f15f5db7f0a92e1359189e28ef6af82f1ce72eae5c62228"
+        }
+      },
+      "combined-v2": {
+        "failure.txt": {
+          "bytes": 913,
+          "sha256": "05316f846c597c6157485585744127d17fa586c661ccc4444b12f7dc651f9a8a"
+        },
+        "oracle/receipt.json": {
+          "bytes": 590,
+          "sha256": "32357341bfd62be842c3bc369d498cf2a0a220b73a138284a9b0d37f53bf4a59"
+        },
+        "oracle/stderr.txt": {
+          "bytes": 240,
+          "sha256": "e8b99a6e8fb1f5357862c7fa108218725a504115036cd49c31d26935fdb6ad32"
+        },
+        "result.json": {
+          "bytes": 6404,
+          "sha256": "9d5155a2b4cd7f57aa3b469e04fbd34197742cbc3ff7582dd5d4883990adc178"
+        }
+      },
+      "combined-v3": {
+        "failure.txt": {
+          "bytes": 913,
+          "sha256": "05316f846c597c6157485585744127d17fa586c661ccc4444b12f7dc651f9a8a"
+        },
+        "oracle/receipt.json": {
+          "bytes": 588,
+          "sha256": "587010879850f7c3b2812804861b7357f5d4b43af5616184fe071db05325fe60"
+        },
+        "oracle/stderr.txt": {
+          "bytes": 306,
+          "sha256": "e70b9e20c8d2f7bbb7fa11459d5210e6b520a35fe6eafed3e44e99a14a827a29"
+        },
+        "result.json": {
+          "bytes": 6403,
+          "sha256": "bab2bafa76e84e3b6eeac8cc690b2eecd4678586489f65b6dcda172bcbb905c4"
+        }
+      },
+      "combined-v4": {
+        "failure.txt": {
+          "bytes": 913,
+          "sha256": "159372e55a553e60b93c22e7318bcfb87955a4ccb913b6917844b61c60de29be"
+        },
+        "oracle/receipt.json": {
+          "bytes": 590,
+          "sha256": "d543b763e634b9e075c0b8a4a44310f639036008400c69f73b59cef021729d64"
+        },
+        "oracle/stderr.txt": {
+          "bytes": 237,
+          "sha256": "0a7da6378b6ed14238c4e4bfcad80a93d205d10d76711b793fe9642c0801a1e7"
+        },
+        "result.json": {
+          "bytes": 6703,
+          "sha256": "0a3a90c88842d14ed9e964b534e1997d94f0f70ee7dc584f85a2f4ea63abcf49"
+        }
+      },
+      "combined-v5": {
+        "failure.txt": {
+          "bytes": 913,
+          "sha256": "159372e55a553e60b93c22e7318bcfb87955a4ccb913b6917844b61c60de29be"
+        },
+        "oracle/receipt.json": {
+          "bytes": 590,
+          "sha256": "64e5538a525b66bdc8e263863dbac05fcbb4baeaf4915fe01372f2898d374821"
+        },
+        "oracle/stderr.txt": {
+          "bytes": 324,
+          "sha256": "bb746701a06fbffd838e226b63d3357e216459e48bb08efca5ab1fa6e0eec8ee"
+        },
+        "result.json": {
+          "bytes": 6702,
+          "sha256": "430af6c935a59c3867327124e0d94956419a24be60895bf6473511c049e677ac"
+        }
+      },
+      "combined-v6": {
+        "failure.txt": {
+          "bytes": 781,
+          "sha256": "96627ccaf8a48ed95aafe81d67f18295d2aeb176b906cdc9d609311b37b52693"
+        },
+        "native/receipt.json": {
+          "bytes": 591,
+          "sha256": "520846da6222dac0911b71953d00c8f5811ffd27c242e7505ea8bb6a0d7e6fe3"
+        },
+        "native/stderr.txt": {
+          "bytes": 200,
+          "sha256": "1661ed036c013edc7436c7b79cf8d40bdceaacea5456607bd45ac4b894d045d6"
+        },
+        "result.json": {
+          "bytes": 8201,
+          "sha256": "909efb6d1947fb75d7b126b5e8df4786552183ad3525104d8756a2dd7240df8d"
+        }
+      },
+      "manual-native-v1": {
+        "inputs.json": {
+          "bytes": 696,
+          "sha256": "8e743fb9e39f7cd9668f2d07309f0a098e2bb9e3bd51fe0df4afa45cbb934074"
+        },
+        "receipt.json": {
+          "bytes": 590,
+          "sha256": "1bba0947fd621cebf2280893ba467dff3253609997712cec79a9dbeb819f3583"
+        },
+        "request.json": {
+          "bytes": 2265,
+          "sha256": "1fd9b0d45530194d67e53d4091ac92e95dd74951520f7d1be99b2b34e47c6041"
+        },
+        "stderr.txt": {
+          "bytes": 679,
+          "sha256": "aaafeee2dd3fb1bb33f2f4a95248af3d7d9c36ae2e311cdb26497d448fbbb097"
+        }
+      }
+    },
+    "rows": 7,
+    "status": "FAILED"
+  },
+  "projection": "Closed metadata only; CSV bytes are unchanged. Counts join strict receipts and literal completion terminals. State comparisons are live-oracle results, not an independent replay of capture bodies. No binaries, captures, mappings or active gate outputs were read.",
+  "required_gates": {
+    "receipt": "validation.json",
+    "reproducer": "tools/rapid-profiler/validate_ordinary.py",
+    "sha256": "3c14f01250e4221ab74ed5fe3acf0ce170539f0cf68da51015b19d874491a44c",
+    "status": "PASS"
+  },
+  "revision": "ff18353d4ed70bb3ad4018079328833bac4696b4",
+  "schema": 1,
+  "scope": "uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim",
+  "source_hashes": {
+    "Cargo.lock": {
+      "bytes": 5214,
+      "sha256": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088"
+    },
+    "Cargo.toml": {
+      "bytes": 3968,
+      "sha256": "4f19980341acf68a101ee80cb748cc5d0894e7a35e3fddf35a6df422855a0dea"
+    },
+    "evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "tests/support/native_interval_oracle.rs": {
+      "bytes": 79917,
+      "sha256": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460"
+    },
+    "tests/support/native_ordinary.rs": {
+      "bytes": 29163,
+      "sha256": "17f256749102a7cc229abb6249a8fedeab7cf048633b41622f206796cf66421f"
+    },
+    "tools/rapid-profiler/Cargo.toml": {
+      "bytes": 789,
+      "sha256": "84f5d950d5118f224269c19efd414a6c9ba60cf34ede9503cb2181bec86ebefc"
+    },
+    "tools/rapid-profiler/native-interval/main.rs": {
+      "bytes": 35316,
+      "sha256": "ce3706bcaf584498beb7286693fe07ad3c0b05dc3411d2f6d8be4c5b15e5859a"
+    },
+    "tools/rapid-profiler/native-interval/ordinary.rs": {
+      "bytes": 14995,
+      "sha256": "bfcbf738245cb5994e8d6f43c2bb5918375d07071d35281bbb8908c95d248e54"
+    },
+    "tools/rapid-profiler/native-interval/ordinary_checksum.c": {
+      "bytes": 1181,
+      "sha256": "88f291fca7a3faf2a630431df169f7309ea70797f115ccfd7167e20fa153748e"
+    },
+    "tools/rapid-profiler/ordinary-interval/main.rs": {
+      "bytes": 21772,
+      "sha256": "fc5cff8fbc3aab66d83a2b90eacf61f0e4df6faa768c533c4b18e1b938a69f27"
+    },
+    "tools/rapid-profiler/src/frontend.rs": {
+      "bytes": 40541,
+      "sha256": "82bc3c5a5f086673450190378b7ae3099cb8f9e968834e3bb28494edcacee4cd"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on.rs": {
+      "bytes": 36524,
+      "sha256": "137f87093954004be88ed7706d400da06cf004df534e84a0e90d46d6f1b463a6"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": {
+      "bytes": 20192,
+      "sha256": "00176fda7a34b9e70fd27f55c4c9252d0af8d56dcde429406a2d2e32cd165cf2"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+      "bytes": 25616,
+      "sha256": "cc3005100df913d44f742a44054c9888594c427c608b48bd38dc494f0024cba7"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/timing.rs": {
+      "bytes": 6353,
+      "sha256": "1d381750abc68c0e2124729acba3dbbad35136f7e5a9768c4ef7a4ebd3dcfd45"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": {
+      "bytes": 7892,
+      "sha256": "a986f89e31eff1b9b57fe63d43ed1f88cd42bf7b26b9bab76c25e7bcab2c598e"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+      "bytes": 23486,
+      "sha256": "777c9844103f7d507cf21a8969ff076d3f27fe31822e08f1bc62017abcfc0d42"
+    },
+    "tools/rapid-profiler/src/generation.rs": {
+      "bytes": 24354,
+      "sha256": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1"
+    },
+    "tools/rapid-profiler/verify_ordinary_interval.py": {
+      "bytes": 18869,
+      "sha256": "efca6b9baf0d96e3c64789913f509059464fa1bff0d0fd9ef8aabe94c707443e"
+    },
+    "tools/unwind-oracle/bounded_command.py": {
+      "bytes": 7710,
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  },
+  "source_records": {
+    "native/parent-closed.json": {
+      "bytes": 345,
+      "sha256": "696c1ada60f66ab149498cd7a608ebee42063fd5b4072524a9bb050f034c2e1d"
+    },
+    "native/receipt.json": {
+      "bytes": 588,
+      "sha256": "8ff88c271051045284718075bb729de646e7242053438ad3e898229db780f590"
+    },
+    "native/stdout.txt": {
+      "bytes": 1250,
+      "sha256": "723e151ac58a2329576a169eb56d16e4d347d1bfcb8fc25539c3a06b05d33aaa"
+    },
+    "oracle/parent-closed.json": {
+      "bytes": 344,
+      "sha256": "3758c30bc93c2b048c84da072cb8b2ea65040ffe5b4fd83d59fff72d2a7b986b"
+    },
+    "oracle/receipt.json": {
+      "bytes": 588,
+      "sha256": "99dea93cdd8d352d5fb6b2cde2450bee3b1702da81d88c614032486985e5f374"
+    },
+    "oracle/stdout.txt": {
+      "bytes": 109,
+      "sha256": "688517d64b44768adcde6dcc8a5935f709330ef9e5a371985ae5619ab833d3e7"
+    },
+    "result.json": {
+      "bytes": 12691,
+      "sha256": "c04fccad820275563d9a37b4269f0bad0f0abfae9bc5c658724118dfc3e42351"
+    },
+    "rows.csv": {
+      "bytes": 959,
+      "sha256": "f9fe3eff32edd86a6f4a23b4945507ef4fcb1ca1ceb1c40d33058072c1c6ba54"
+    },
+    "state-pairs.csv": {
+      "bytes": 361,
+      "sha256": "9c85297dae9aa3eaaf07b1a62e8024f192992b06e2de7ac849cf3a3bbb57c8d4"
+    }
+  },
+  "state_limits": {
+    "cpu_seconds": 90,
+    "file_bytes": 1048576,
+    "process_exit": 0,
+    "strict_cleanup": true,
+    "wall_seconds": 90
+  },
+  "status": "PASS",
+  "tool_hashes": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  }
+}

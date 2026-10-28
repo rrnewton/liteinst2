@@ -1,0 +1,92 @@
+{
+  "base_script_sha256": "3ef4a5cd1a4c625c95aacc2d80adba750056ab686472a2508cf27a681dd72e78",
+  "build_profile": "dev-debug0-v1",
+  "comparison_scope": "Existing live Rust full state comparisons; capture schema and hashes corroborated, not independently replayed",
+  "configuration_denied_lookups": 2,
+  "configuration_scope": "Classified lookup observations under three-consecutive-negative-v1, not identical raw syscall outcomes; READ_DENIED is unknown content, not absent",
+  "fresh_source_tools_inputs_and_configuration_observations_unchanged": true,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_count": 4,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "host_label_scope": "Owner-specified reporting label; cpu_model is freshly observed, and Zen 5 or historical same-host identity is not inferred",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "historical_custody_reconstruction": false,
+  "historical_owner_continuity": false,
+  "independent_saved_content_audit": false,
+  "native": {
+    "failed": 0,
+    "pass": 8,
+    "unrun": 0
+  },
+  "observed": {
+    "children": 2816,
+    "comparisons": 4224,
+    "pairs": 1408
+  },
+  "performance_claim": false,
+  "planned": {
+    "cells": 8,
+    "children": 2816,
+    "live_comparisons": 4224,
+    "pairs": 1408,
+    "stages": 16
+  },
+  "prior_parent_sha256": "d066c279d6155a766124d07d42e693a850848e203a1a27f2438e89262a4001ab",
+  "prior_receipt_sha256": "ed4593e683910dcc4d3ce4202733b670a57108d3f4d02e587b1f9a3ba417aa0f",
+  "prior_results_sha256": "d1b27702e276b8266124d59b8662f612f437022ce77f7543825a08b54edb4b4f",
+  "product_sha256": {
+    "common_sites": "182071f1b787d11547a2bd0274c7ae800e14feb5818c08dd9b6fde090dc7e4e6",
+    "elf-exec-oracle": "33d55343f8c893f31f9b4c8f7e1aeee8b66eb32f40b2790758943405b509896a",
+    "liteinst-rewrite": "047d94847fe5097ddb9895dbf19ad98c3d26e9ef3fcc81abc4c90c9d6061b608",
+    "verify_common_core": "7c48e9fdb01b17440bae635e571b795bdb7014d5ad6718d6634a5055f00368af"
+  },
+  "qualification_complete": false,
+  "retention": {
+    "failed": 0,
+    "pass": 8,
+    "unrun": 0
+  },
+  "revision": "e8a8b6d447673aa7b98e00ff18df2eedf5e07d82",
+  "schema": 1,
+  "script_sha256": "cdc1d33d313a4dc4566dbbc6a37f92bf4acf79231c6d5b6b340d344626534a93",
+  "selected_inputs_sha256": "2d7482c76dec44364a523eb8595be8d9490c300ff8f2e41d3ca9d2cf11f8f127",
+  "source_files_sha256": "fa06ffefd3d52a42b6f78e4256a8600b41868e2c2861155bd99735087f40ca50",
+  "stages": {
+    "failed": 0,
+    "pass": 16,
+    "unrun": 0
+  },
+  "status": "PASS",
+  "tool_sha256": {
+    "$DU": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f",
+    "$E9_ABI_BACKEND": "3750339187ffc4a084d075de77d1c653c255abd96e396870ea691b495f0c5453",
+    "$E9_ABI_LOADER": "126b6143c5668e4d390e0b9626824f5007b54d56e47a07bb72b415757b51773c",
+    "$E9_STOCK_BACKEND": "890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb",
+    "$E9_STOCK_FRONTEND": "36b05e9a47c9193041d71ed4e14dda87e835e0e2b47e4a82a7d30a7c0d4eeb5e",
+    "$E9_STOCK_LOADER": "4d39f324ab8a3a9420d2436129ba941e17fd78aa2c4e35eff3d27311e0683477",
+    "$E9_TRANSPORT_FRONTEND": "0fea3c8bc0701dffeb16b524e7159e458be9add11bcf3df5f47b9714c1005acc",
+    "$GCC": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+    "$GIT": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+    "$NM": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c",
+    "$PYTHON": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "$READELF": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff",
+    "$REPO/tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "$RUNTIME_0": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+    "$STRIP": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84",
+    "$TAR": "a4d90534fdba5ec20e34f3191218b4e7d3d5fbb370fee1b1fdcaa18ebab9f808",
+    "$TIMEOUT": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+    "$TOOLCHAIN/cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "$TOOLCHAIN/clippy-driver": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373",
+    "$TOOLCHAIN/rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "$TOOLCHAIN/rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+    "$TOOLCHAIN/rustfmt": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8",
+    "$ZSTD": "e962cad3f96aab0b17231e70f5f2e6ee59ebb1771e02017ff66563c0069e1ee2"
+  }
+}

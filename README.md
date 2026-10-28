@@ -55,6 +55,10 @@ delivery while depending on the policy-free core:
 cargo build --example preload_consumer
 ```
 
+For a standalone stop/resume client with an owned buffer, see
+[`owned_loop_clock`](tools/software-preemption/README.md#owned-loop-client).
+Run `cargo run --example owned_loop_clock` without arguments.
+
 ## How the crate is organised
 
 Each module owns one correctness boundary:

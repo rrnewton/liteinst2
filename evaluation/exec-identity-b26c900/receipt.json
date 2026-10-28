@@ -1,0 +1,521 @@
+{
+  "baseline": {
+    "b3": {
+      "failed": 0,
+      "reported_intermittency_reproduced": false,
+      "reported_sigabrt_reproduced": false,
+      "runs": 25
+    },
+    "changes": "diagnostic output only, attached patch",
+    "diagnostic_patch_sha256": "e70b6eb8fb740c1d2534c707690e5574a429fbe1034057baa2756e1324416406",
+    "library": {
+      "capture_bytes": [
+        36184,
+        33832,
+        30304
+      ],
+      "failed": 3,
+      "ignored": 0,
+      "parser_error": "RowLimit",
+      "passed": 734,
+      "tracer_map_rows": [
+        705,
+        657,
+        585
+      ]
+    },
+    "revision": "6fc7b8ce823c4fde4a850bc8b4798069faad53f5"
+  },
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "name": "fmt",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "name": "clippy",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "name": "check",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--lib"
+      ],
+      "name": "library-default",
+      "wall_limit_seconds": 240
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--lib",
+        "native_query",
+        "--",
+        "--nocapture"
+      ],
+      "name": "projection-pressure",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "exec_backing_cleanup"
+      ],
+      "name": "cleanup",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-01",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-02",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-03",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-04",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-05",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-06",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-07",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-08",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-09",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-10",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-11",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-12",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-13",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-14",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-15",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-16",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-17",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-18",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-19",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-20",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-21",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-22",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-23",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-24",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission"
+      ],
+      "name": "b3-default-25",
+      "wall_limit_seconds": 120
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "name": "workspace-default",
+      "wall_limit_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "name": "serial-launch",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "name": "staged-allocation",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "name": "prefixed-pun",
+      "wall_limit_seconds": 180
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "kernel_version": "7.1.3",
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "pressure": {
+    "baseline_queries": 1,
+    "churn_cycles": 134,
+    "maps_rows": 553,
+    "owned_rows": 516,
+    "queries": 128
+  },
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\"",
+  "results": {
+    "b3": {
+      "added_parser_controls_per_run": 2,
+      "failed": 0,
+      "original_native_cases_per_run": 5,
+      "runs": 25,
+      "tests_per_run": 7
+    },
+    "cleanup": {
+      "controls": 5,
+      "expected_abort_trajectories": 1,
+      "trajectories": 6
+    },
+    "library": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 742
+    },
+    "workspace": {
+      "custom_cleanup_counts_excluded": true,
+      "failed": 0,
+      "ignored": 4,
+      "nested_summaries_excluded": 5,
+      "outer_groups": 99,
+      "passed": 2513,
+      "raw_summaries": 104
+    }
+  },
+  "retained_prior_attempts": [
+    {
+      "reason": "unused unit expression; removed equivalent explicit unit",
+      "result": "FAILED",
+      "stage": "focused Clippy"
+    },
+    {
+      "reason": "identity bitwise operation in negative test; simplified equivalent address expression",
+      "result": "FAILED",
+      "stage": "focused Clippy retry"
+    }
+  ],
+  "review": {
+    "closed_validation_binding_sha256": "4c0dc18340d4f90320ec95a460d873ba662ee6b13b38d832415f417650835e5c",
+    "scope": "adversarial source review; runtime evidence recorded separately",
+    "source_binding_sha256": "a010287328b90cd036b629b98f7e5db5f464e4435ca4c111040ea99c262d46a2"
+  },
+  "revision": "b26c900be977d176e791fdc38cc19dcd3fc32147",
+  "runner_sha256": "fd2a232664275bdfff7daaca8662e18c5b57e81218d88249f5325846d2f0cdf8",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Functional validation. Seconds are command wall durations, not throughput or profiler accuracy.",
+  "status": "PASS"
+}

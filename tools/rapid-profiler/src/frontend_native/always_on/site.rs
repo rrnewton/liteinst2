@@ -1,5 +1,6 @@
 //! Exact fixed-grammar factories; callers cannot substitute a role/action list.
 use super::{entry_callback, exit_callback};
+pub mod ordinary;
 use crate::frontend_native::{LoadedBranchLeaf, LoadedLeaf, SetupRefusal};
 use liteinst2::bundle::{BundleBudget, BundlePlan, BundleReceipt, InstalledBundle, PlannedBundle};
 use liteinst2::contracts::*;
@@ -15,6 +16,10 @@ use std::sync::Arc;
 #[derive(Debug)]
 /// A source/planning/publication correspondence refusal, with no installed authority.
 pub enum SiteError {
+    /// The separate raw timestamp profile requires RDTSCP.
+    ClockUnsupported,
+    /// Exact library CALL/RET gate refusal.
+    Gate(super::gate::GateError),
     /// Original complete loader/source qualification failed.
     Source(SetupRefusal),
     /// Full bounded candidate failure, including its attempts, remains available.
@@ -36,6 +41,7 @@ struct Role {
 pub(super) struct Site {
     roles: Vec<Role>,
     pub(super) terminal: u64,
+    pub(super) gate: Option<Arc<super::gate::CallGate>>,
 }
 impl Site {
     pub(super) fn matches(&self, pc: u64, control: ControlIdentity<'_>, entry: bool) -> bool {
@@ -216,7 +222,11 @@ impl IntervalSitePreparation {
         Ok(Self {
             owner: Owner::Single(owner),
             planned: Planned::Single(Box::new(plan)),
-            site: Arc::new(Site { roles, terminal }),
+            site: Arc::new(Site {
+                roles,
+                terminal,
+                gate: None,
+            }),
         })
     }
     /// Construct the unchanged three-member block-local branch grammar: entry,
@@ -354,7 +364,11 @@ impl IntervalSitePreparation {
         Ok(Self {
             owner: Owner::Branch(owner),
             planned: Planned::Branch(Box::new(plan)),
-            site: Arc::new(Site { roles, terminal }),
+            site: Arc::new(Site {
+                roles,
+                terminal,
+                gate: None,
+            }),
         })
     }
     /// Exact factory plan for the existing unsafe publisher and complete lease.
@@ -528,6 +542,7 @@ pub(super) fn synthetic_site() -> InstalledIntervalSite {
         site: Arc::new(Site {
             roles: roles(0x1000, &[0, 18]),
             terminal: 0x2005,
+            gate: None,
         }),
     }
 }

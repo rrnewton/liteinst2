@@ -1,0 +1,154 @@
+{
+  "E9_null_continuation": {
+    "cells": 8,
+    "pairs": 1408,
+    "status": "UNRUN"
+  },
+  "F3_completed_native_cells": [
+    "core/null-heap-write-unstripped",
+    "core/null-heap-write-stripped"
+  ],
+  "attempts": [
+    {
+      "attempt": "F1",
+      "completed_native": {
+        "children": 0,
+        "comparisons": 0,
+        "pairs": 0
+      },
+      "counts": {
+        "native_cells": [
+          0,
+          0,
+          16
+        ],
+        "ordinary": [
+          150,
+          1,
+          41
+        ],
+        "stages": [
+          283,
+          1,
+          73
+        ]
+      },
+      "evidence_sha256": {
+        "failure": "90ebd5432622bb15b5391bc8ec870fd694f1d92e05cc125d1a66ed52227c21f7",
+        "outer_closed": "379781a90c6360bf0704f97ce109d386f9cdc0a10d9a6209f6513d12937c868c",
+        "receipt": "aebe786c6253740f38d78d2c4d7dadf81ac0e599c693779298cf058717380814"
+      },
+      "failed_stage": "ordinary-journal-heap-write-unstripped-core-duplicates-17",
+      "failure_class": "metadata_PermissionError",
+      "observation": "PermissionError (EPERM) during configuration metadata observation; exact root cause unproved.",
+      "outer_seconds": 517.8308104290627,
+      "script_sha256": "832d99c333ed1e73bb8086f271f641ac024e1476c45b61189c414fac3b2ef9d9",
+      "status": "FAILED"
+    },
+    {
+      "attempt": "F2",
+      "completed_native": {
+        "children": 0,
+        "comparisons": 0,
+        "pairs": 0
+      },
+      "counts": {
+        "native_cells": [
+          0,
+          0,
+          16
+        ],
+        "ordinary": [
+          0,
+          0,
+          192
+        ],
+        "stages": [
+          56,
+          1,
+          300
+        ]
+      },
+      "evidence_sha256": {
+        "failure": "0ffd92e9d355e470865078fc4cc574e5c2228b241eeda334e8eea99e0297ba29",
+        "outer_closed": "f4e33888a98a62f453b33e46ae26d0fcbff7466818dc04234b78a4cb4663fdb3",
+        "receipt": "cceea87926dd2fa02b7a958634d65bf9b22352b61dac5e754b1b7b37309f74f3"
+      },
+      "failed_stage": "observe-stripped-reverse-17",
+      "failure_class": "classified_metadata_equality",
+      "observation": "Configuration snapshot equality assertion; the differing field was not retained, so its precise cause is unproved.",
+      "outer_seconds": 330.8216072060168,
+      "script_sha256": "f15c04774876a9e4b138087cbd33fa49677cbb785d23ecb009f9d5da5a112726",
+      "status": "FAILED"
+    },
+    {
+      "attempt": "F3",
+      "completed_native": {
+        "children": 704,
+        "comparisons": 1056,
+        "pairs": 352
+      },
+      "counts": {
+        "native_cells": [
+          2,
+          1,
+          13
+        ],
+        "ordinary": [
+          192,
+          0,
+          0
+        ],
+        "stages": [
+          329,
+          1,
+          27
+        ]
+      },
+      "evidence_sha256": {
+        "failure": "8bd12509d129440757fb73ccb941f14549677c1455194f9d854a35c8ff9c603c",
+        "outer_closed": "20aed185949f7bec02cb158e4db028219eb2b796794008fafb95cc36d9142215",
+        "receipt": "98f69333e5a6e7c9b3a75a77f57603e0c4f19e45da0883933af0cbfaeeabbc6f",
+        "witness_stderr": "cbdc5483cbee4b3f535e720733c74687c877ae814fbc5dcfe62953b8b7f54fd2"
+      },
+      "failed_stage": "native-core-null-jump-site-unstripped-witness",
+      "failure_class": "actual_instruction_prefix_byte_assertion",
+      "observation": "Witness refused whole original instruction bytes: prefixes 2e 66 versus 66 2e. No replay credit for this failed cell.",
+      "outer_seconds": 522.2579297819175,
+      "script_sha256": "0a4618ac5ffb36011ae7c87289e3e8321c9a8bd53c9ad90a2ec8df835310ce29",
+      "status": "FAILED"
+    }
+  ],
+  "build_profile": "dev-debug0-v1",
+  "count_order": [
+    "PASS",
+    "FAILED",
+    "UNRUN"
+  ],
+  "hardware_label": "AMD EPYC Zen 5 dev host",
+  "limitations": [
+    "Every attempt remains FAILED; partial passes are not transferred between attempts.",
+    "Counts reconcile with saved public CSVs; no independent saved-state replay or historical custody reconstruction.",
+    "Workspace test counts are not present in these receipts and are not inferred. Timings are operational, not performance results."
+  ],
+  "outer_closure_all": {
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "reaped_descendants": 0,
+    "termination": null,
+    "wall_limit_seconds": 7200
+  },
+  "planned_per_attempt": {
+    "core_null_pairs": 704,
+    "live_comparisons": 8448,
+    "native_cells": 16,
+    "native_children": 5632,
+    "native_pairs": 2816,
+    "ordinary": 192,
+    "recording_pairs": 2112,
+    "stages": 357
+  },
+  "revision": "cf5f20d36fe5c9a979eb9f7ca65db19e0353c1d6",
+  "schema": 1,
+  "successor_reproducer": "reproduce.py"
+}

@@ -465,6 +465,36 @@ pub fn plan_backedge_clock_detailed(
     )
 }
 
+/// Plan live observing controls after an authenticated composition.
+///
+/// `request.code` remains the unchanged original snapshot, with the same complete
+/// function, block and entry facts. Instruction identity comes from those original
+/// bytes; read expectations come from the predecessor's current overlay. A window
+/// already changed by an earlier plan is still refused.
+///
+/// This does not append the result or inherit allocation/bundle-budget authority.
+/// The caller must exclude prior allocations, append each result before planning
+/// the next member, and validate the complete transaction with `PlannedBundle`.
+pub fn plan_coalesced_detailed_after(
+    request: &InstallRequest<'_>,
+    actions: &[crate::controls::ControlledAction],
+    predecessor: &crate::composition::Composition,
+) -> Result<PlannedInstall, PlanningFailure> {
+    let current = predecessor
+        .planning_overlay(request.identity, request.base_address, request.code)
+        .map_err(|reason| {
+            let mut search = SearchEvidence::default();
+            search.qualification(SearchScope::default(), &reason);
+            PlanningFailure {
+                reason,
+                attempts: Vec::new(),
+                search,
+            }
+        })?;
+    let original = PlanningRequest::live(request);
+    plan_coalesced_core(&original.with_code(&current), actions)
+}
+
 fn plan_coalesced_core(
     request: &PlanningRequest<'_>,
     actions: &[crate::controls::ControlledAction],

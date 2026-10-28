@@ -1,0 +1,9 @@
+cell,lane,status,pairs,children,comparisons,capture_files
+null-heap-write-unstripped,stock-algorithm,PASS,176,352,528,8637
+null-heap-write-unstripped,bootstrap-patched-reference,PASS,176,352,528,8637
+null-heap-write-stripped,stock-algorithm,PASS,176,352,528,8637
+null-heap-write-stripped,bootstrap-patched-reference,PASS,176,352,528,8637
+null-jump-site-unstripped,stock-algorithm,PASS,176,352,528,8637
+null-jump-site-unstripped,bootstrap-patched-reference,PASS,176,352,528,8637
+null-jump-site-stripped,stock-algorithm,PASS,176,352,528,8637
+null-jump-site-stripped,bootstrap-patched-reference,PASS,176,352,528,8637

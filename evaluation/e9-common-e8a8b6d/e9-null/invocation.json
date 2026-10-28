@@ -1,0 +1,67 @@
+{
+  "argv": [
+    "$PYTHON",
+    "-B",
+    "$CONTINUATION",
+    "--reproducer",
+    "$REPRODUCER",
+    "--prior-raw",
+    "$PRIOR_RAW",
+    "--prior-parent",
+    "$PRIOR_PARENT",
+    "--prior-parent-sha256",
+    "d066c279d6155a766124d07d42e693a850848e203a1a27f2438e89262a4001ab",
+    "--prior-receipt-sha256",
+    "ed4593e683910dcc4d3ce4202733b670a57108d3f4d02e587b1f9a3ba417aa0f",
+    "--prior-results-sha256",
+    "d1b27702e276b8266124d59b8662f612f437022ce77f7543825a08b54edb4b4f",
+    "--repo",
+    "$REPO",
+    "--tools",
+    "$TOOLS_JSON",
+    "--raw",
+    "$RAW"
+  ],
+  "command_contexts_sha256": "d6cc863cf40af99f5115793e28a0eb79af3d17f32fd43c5c96be2ed0906c5ee6",
+  "cpu_count": 4,
+  "subject_limits": {
+    "native_child_seconds": 15,
+    "native_child_stops": 20000,
+    "replay": [
+      60,
+      90,
+      67108864
+    ],
+    "witness": [
+      20,
+      30,
+      16777216
+    ]
+  },
+  "tools": {
+    "cargo_home": "$CARGO_HOME",
+    "du": "$DU",
+    "e9": {
+      "abi_backend": "$E9_ABI_BACKEND",
+      "abi_loader": "$E9_ABI_LOADER",
+      "stock_backend": "$E9_STOCK_BACKEND",
+      "stock_frontend": "$E9_STOCK_FRONTEND",
+      "stock_loader": "$E9_STOCK_LOADER",
+      "transport_frontend": "$E9_TRANSPORT_FRONTEND"
+    },
+    "gcc": "$GCC",
+    "git": "$GIT",
+    "nm": "$NM",
+    "python": "$PYTHON",
+    "readelf": "$READELF",
+    "runtime_libraries": [
+      "$RUNTIME_0"
+    ],
+    "strip": "$STRIP",
+    "tar": "$TAR",
+    "timeout": "$TIMEOUT",
+    "toolchain": "$TOOLCHAIN",
+    "user_home": "$USER_HOME",
+    "zstd": "$ZSTD"
+  }
+}

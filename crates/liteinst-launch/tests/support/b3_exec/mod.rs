@@ -214,6 +214,20 @@ impl Maps {
         result
     }
     pub fn parse(raw: Vec<u8>) -> Self {
+        Self::parse_bound(raw, 512)
+    }
+    /// Tracer-self observation only. All byte/grammar/order checks remain;
+    /// the independent complete capture supplies its measured newline count.
+    pub fn parse_self(raw: Vec<u8>, observed_rows: usize) -> Self {
+        assert_eq!(
+            raw.iter().filter(|&&byte| byte == b'\n').count(),
+            observed_rows
+        );
+        let result = Self::parse_bound(raw, observed_rows);
+        assert_eq!(result.rows.len(), observed_rows);
+        result
+    }
+    fn parse_bound(raw: Vec<u8>, row_bound: usize) -> Self {
         assert!(!raw.is_empty() && raw.len() <= 65536 && raw.ends_with(b"\n") && !raw.contains(&0));
         let text = std::str::from_utf8(&raw).unwrap();
         let mut rows: Vec<Map> = Vec::new();
@@ -276,7 +290,7 @@ impl Maps {
                 path,
                 line: line.to_owned(),
             });
-            assert!(rows.len() <= 512);
+            assert!(rows.len() <= row_bound);
         }
         Self { raw, rows }
     }
@@ -286,6 +300,43 @@ impl Maps {
             .iter()
             .find(|m| m.start <= address && end <= m.end)
             .unwrap()
+    }
+}
+#[cfg(test)]
+mod self_maps_parser_tests {
+    use super::Maps;
+    fn rows(count: usize) -> Vec<u8> {
+        (0..count)
+            .map(|n| {
+                format!(
+                    "{:x}-{:x} ---p 00000000 00:01 1 /owned\n",
+                    0x1000 + n * 0x2000,
+                    0x2000 + n * 0x2000
+                )
+            })
+            .collect::<String>()
+            .into_bytes()
+    }
+    #[test]
+    fn self_capture_uses_actual_rows_but_child_still_refuses_513() {
+        let bytes = rows(513);
+        assert!(bytes.len() < 65536);
+        assert_eq!(Maps::parse_self(bytes.clone(), 513).rows.len(), 513);
+        assert!(std::panic::catch_unwind(|| Maps::parse(bytes)).is_err());
+        assert_eq!(Maps::parse(rows(512)).rows.len(), 512);
+    }
+    #[test]
+    fn self_capture_still_requires_exact_count_complete_bytes_and_order() {
+        assert!(std::panic::catch_unwind(|| Maps::parse_self(rows(2), 1)).is_err());
+        assert!(std::panic::catch_unwind(|| Maps::parse_self(rows(2), 3)).is_err());
+        let mut incomplete = rows(2);
+        incomplete.pop();
+        assert!(std::panic::catch_unwind(|| Maps::parse_self(incomplete, 1)).is_err());
+        let duplicated = [rows(1), rows(1)].concat();
+        assert!(std::panic::catch_unwind(|| Maps::parse_self(duplicated, 2)).is_err());
+        let oversized = rows(2000);
+        assert!(oversized.len() > 65536);
+        assert!(std::panic::catch_unwind(|| Maps::parse_self(oversized, 2000)).is_err());
     }
 }
 /// Independent non-controlling read by the client while the owner holds the

@@ -1,0 +1,13 @@
+schedule,k,status,calls,originals,sampled,closed,population_instructions,retained_instructions,selection_error_numerator,selection_error_denominator
+short,24,PASS,24,24,24,0,264,264,0,576
+short,1,PASS,24,24,1,23,264,11,0,24
+short,10,PASS,24,24,10,14,264,110,0,240
+long,24,PASS,24,24,24,0,9336,9336,0,576
+long,1,PASS,24,24,1,23,9336,389,0,24
+long,10,PASS,24,24,10,14,9336,3890,0,240
+alternating,24,PASS,24,24,24,0,4800,4800,0,576
+alternating,1,PASS,24,24,1,23,4800,11,-4536,24
+alternating,10,PASS,24,24,10,14,4800,2000,0,240
+late-long,24,PASS,24,24,24,0,5556,5556,0,576
+late-long,1,PASS,24,24,1,23,5556,11,-5292,24
+late-long,10,PASS,24,24,10,14,5556,110,-52920,240

@@ -1,6 +1,10 @@
 //! Always-on fixed-grammar callbacks. The old point and native adapters are separate.
 //! This facade owns metadata only; site::seal retains the actual publication.
+pub(super) mod gate;
 pub(super) mod site;
+mod timing;
+pub use gate::{CallGate, CallResult, GateError, OriginalCallResult};
+pub use timing::{RawInterval, RawIntervalOwner, RawTimestamp};
 
 use crate::frontend::{
     BindingChange, ControlError, ControllerSnapshot, ControllerStatus, EpochHandle, FailurePoint,
@@ -35,6 +39,8 @@ enum Cause {
     Return,
     Invariant,
     Outstanding,
+    Gate(GateError),
+    ClockProfile,
 }
 /// Opaque typed failure. Debug retains the exact original model error; no
 /// FunctionClosed/NoCurrent fallback converts an unrelated error into a sample.
@@ -363,6 +369,9 @@ struct Pair {
     slot: ModelReturnSlot,
     receipt: IntervalEntry,
     summary: Option<IntervalEntrySummary>,
+    gate: Option<gate::GateEntry>,
+    start: Option<RawTimestamp>,
+    entry_pc: u64,
 }
 struct State {
     binding: Arc<Binding>,
@@ -377,6 +386,7 @@ struct State {
     totals: PairTotals,
     journal: IntervalJournal,
     failure: Option<BridgeError>,
+    timing: Option<timing::Rows>,
 }
 thread_local! {
     static STATE: RefCell<Option<State>> = const { RefCell::new(None) };
@@ -445,6 +455,7 @@ impl IntervalClient {
                     totals: PairTotals::default(),
                     journal,
                     failure: None,
+                    timing: self.binding.site.gate.as_ref().map(|_| timing::Rows::new()),
                 };
                 state.journal.header(tid, 0);
                 *storage = Some(state);
@@ -491,6 +502,75 @@ impl IntervalThread {
                 Ok(state.totals)
             })
             .unwrap_or(Err(error(Cause::Attachment)))
+    }
+    /// Copy raw completed endpoints while the attached thread has no live pair.
+    /// The caller may move the copy out of its joined worker; no receipt escapes.
+    pub fn raw_intervals(&self) -> Result<Vec<RawInterval>, BridgeError> {
+        self.totals()?;
+        STATE
+            .try_with(|cell| {
+                let storage = cell.try_borrow().map_err(|_| error(Cause::Attachment))?;
+                let state = storage.as_ref().ok_or(error(Cause::Attachment))?;
+                if !self.matches(state) {
+                    return Err(error(Cause::Attachment));
+                }
+                Ok(state
+                    .timing
+                    .as_ref()
+                    .ok_or(error(Cause::ClockProfile))?
+                    .snapshot())
+            })
+            .unwrap_or(Err(error(Cause::Attachment)))
+    }
+    /// Call the admitted ordinary leaf through its immutable library CALL gate.
+    ///
+    /// # Safety
+    /// The loader/publication/attachment contracts hold, and this exact input
+    /// satisfies the admitted function's ABI, memory and termination obligations.
+    /// The thread is pinned to one CPU; no signal/nonlocal exit or foreign call
+    /// can interrupt the gate. The source and generated code remain process-lived.
+    pub unsafe fn invoke_integer_leaf(&self, bytes: &[u8]) -> Result<CallResult, BridgeError> {
+        let before = self.totals()?;
+        let (gate, stack) = STATE
+            .try_with(|cell| {
+                let storage = cell.try_borrow().map_err(|_| error(Cause::Attachment))?;
+                let state = storage.as_ref().ok_or(error(Cause::Attachment))?;
+                if !self.matches(state) {
+                    return Err(error(Cause::Attachment));
+                }
+                let gate = Arc::clone(
+                    state
+                        .binding
+                        .site
+                        .gate
+                        .as_ref()
+                        .ok_or(error(Cause::ClockProfile))?,
+                );
+                state
+                    .timing
+                    .as_ref()
+                    .ok_or(error(Cause::ClockProfile))?
+                    .reserve(0)?;
+                Ok((
+                    gate,
+                    ReadableStack {
+                        start: state.stack.start,
+                        end: state.stack.end,
+                    },
+                ))
+            })
+            .unwrap_or(Err(error(Cause::Attachment)))?;
+        // No STATE borrow or reference into its storage spans the assembly CALL.
+        // SAFETY: exact caller obligations above and retained immutable gate.
+        let result = unsafe { gate.invoke(bytes.as_ptr(), bytes.len(), &stack) }
+            .map_err(|e| error(Cause::Gate(e)))?;
+        let after = self.totals()?;
+        if before.entries.checked_add(1) != Some(after.entries)
+            || before.returns.checked_add(1) != Some(after.returns)
+        {
+            return Err(error(Cause::Invariant));
+        }
+        Ok(result)
     }
     /// Failure leaves this handle and all TLS owners intact; only empty success removes them.
     pub fn detach(&mut self) -> Result<PairTotals, BridgeError> {
@@ -615,6 +695,23 @@ impl State {
         Ok(word)
     }
     fn enter(&mut self, pc: u64, rsp: u64, return_word: u64) -> Result<(), BridgeError> {
+        self.enter_observed(pc, rsp, return_word, None, None)
+    }
+    fn enter_observed(
+        &mut self,
+        pc: u64,
+        rsp: u64,
+        return_word: u64,
+        start: Option<RawTimestamp>,
+        gate: Option<gate::GateEntry>,
+    ) -> Result<(), BridgeError> {
+        let timed = self.binding.site.gate.is_some();
+        if timed != start.is_some() || timed != gate.is_some() || timed != self.timing.is_some() {
+            return Err(error(Cause::ClockProfile));
+        }
+        if let Some(rows) = &self.timing {
+            rows.reserve(self.depth)?;
+        }
         if self.failure.is_some() {
             return Err(error(Cause::Attachment));
         }
@@ -645,7 +742,7 @@ impl State {
             .enter_interval(
                 self.binding.install,
                 self.binding.function,
-                self.next,
+                start.map_or(self.next, |value| value.ticks),
                 &mut slot,
             )
             .map_err(|e| error(Cause::Entry(e)))?;
@@ -661,6 +758,9 @@ impl State {
             slot,
             receipt,
             summary: None,
+            gate,
+            start,
+            entry_pc: pc,
         });
         self.depth += 1;
         let pair = self.pairs[depth].as_mut().ok_or(error(Cause::Invariant))?;
@@ -675,6 +775,20 @@ impl State {
         Ok(())
     }
     fn finish(&mut self, pc: u64, rsp: u64, return_word: u64) -> Result<(), BridgeError> {
+        self.finish_observed(pc, rsp, return_word, None, None)
+    }
+    fn finish_observed(
+        &mut self,
+        pc: u64,
+        rsp: u64,
+        return_word: u64,
+        end: Option<RawTimestamp>,
+        returned: Option<gate::GateReturn>,
+    ) -> Result<(), BridgeError> {
+        let timed = self.binding.site.gate.is_some();
+        if timed != end.is_some() || timed != returned.is_some() || timed != self.timing.is_some() {
+            return Err(error(Cause::ClockProfile));
+        }
         if self.failure.is_some() {
             return Err(error(Cause::Attachment));
         }
@@ -710,12 +824,30 @@ impl State {
             .unsampled
             .checked_add(u64::from(kind == 3))
             .ok_or(error(Cause::Capacity))?;
+        let row = match (pair.start, end) {
+            (Some(start), Some(end)) => Some(RawInterval {
+                ordinal: pair.ordinal,
+                entry_pc: pair.entry_pc,
+                return_pc: pc,
+                owner: timing::owner(summary),
+                start,
+                end,
+            }),
+            (None, None) => None,
+            _ => return Err(error(Cause::ClockProfile)),
+        };
+        // Capacity for this completion was reserved at entry; recheck before
+        // consuming the original owner, including every outstanding return.
+        if let Some(rows) = &self.timing {
+            rows.reserve(self.depth - 1)?;
+        }
         let result = self
             .model
             .finish_interval(
                 &mut pair.receipt,
                 &mut pair.slot,
-                Observation::Value(pair.ordinal),
+                row.as_ref()
+                    .map_or(Observation::Value(pair.ordinal), RawInterval::observation),
             )
             .map_err(|e| error(Cause::Exit(e)))?;
         if result.summary() != summary
@@ -726,6 +858,21 @@ impl State {
                 })
         {
             return Err(error(Cause::Invariant));
+        }
+        if let Some(returned) = returned {
+            self.binding
+                .site
+                .gate
+                .as_ref()
+                .ok_or(error(Cause::ClockProfile))?
+                .complete_ret(returned)
+                .map_err(|e| error(Cause::Gate(e)))?;
+        }
+        if let Some(row) = row {
+            self.timing
+                .as_mut()
+                .ok_or(error(Cause::ClockProfile))?
+                .push(row)?;
         }
         self.journal.row([
             kind + 1,
@@ -772,6 +919,85 @@ fn callback(
             result
         })
         .unwrap_or(Err(error(Cause::Attachment)))
+}
+fn timed_callback(
+    context: &HookContext,
+    control: ControlIdentity<'_>,
+    entry: bool,
+    stamp: RawTimestamp,
+) -> Result<(), BridgeError> {
+    STATE
+        .try_with(|cell| {
+            if POISONED.get() {
+                return Err(error(Cause::Attachment));
+            }
+            let mut storage = cell
+                .try_borrow_mut()
+                .map_err(|_| error(Cause::Attachment))?;
+            let state = storage.as_mut().ok_or(error(Cause::Attachment))?;
+            let result = (|| {
+                let word = state.identity(context, control, entry)?;
+                let gate = Arc::clone(
+                    state
+                        .binding
+                        .site
+                        .gate
+                        .as_ref()
+                        .ok_or(error(Cause::ClockProfile))?,
+                );
+                if entry {
+                    let entered = gate.enter(context).map_err(|e| error(Cause::Gate(e)))?;
+                    state.enter_observed(
+                        context.instruction_pointer,
+                        context.stack_pointer,
+                        word,
+                        Some(stamp),
+                        Some(entered),
+                    )
+                } else {
+                    let index = state.depth.checked_sub(1).ok_or(error(Cause::Return))?;
+                    let pair = state.pairs[index].as_ref().ok_or(error(Cause::Return))?;
+                    let entered = pair.gate.as_ref().ok_or(error(Cause::ClockProfile))?;
+                    let returned = gate
+                        .validate_ret(entered, context)
+                        .map_err(|e| error(Cause::Gate(e)))?;
+                    state.finish_observed(
+                        context.instruction_pointer,
+                        context.stack_pointer,
+                        word,
+                        Some(stamp),
+                        Some(returned),
+                    )
+                }
+            })();
+            if let Err(e) = result {
+                state.fail(e);
+            }
+            result
+        })
+        .unwrap_or(Err(error(Cause::Attachment)))
+}
+unsafe extern "C" fn timed_entry_callback(context: *mut HookContext, control: ControlIdentity<'_>) {
+    // SAFETY: only the separate RDTSCP-qualified factory emits this callback.
+    let stamp = unsafe { timing::read() };
+    if context.is_null() {
+        fatal();
+    }
+    // SAFETY: sealed managed dispatcher supplied a live fully saved frame.
+    if timed_callback(unsafe { &*context }, control, true, stamp).is_err() {
+        fatal();
+    }
+}
+unsafe extern "C" fn timed_exit_callback(context: *mut HookContext, control: ControlIdentity<'_>) {
+    // SAFETY: same separate instruction-support qualification as timed entry.
+    let stamp = unsafe { timing::read() };
+    if context.is_null() {
+        fatal();
+    }
+    // SAFETY: same sealed dispatcher at an original admitted RET.
+    if timed_callback(unsafe { &*context }, control, false, stamp).is_err() {
+        fatal();
+    }
 }
 fn fatal() -> ! {
     let _ = POISONED.try_with(|p| p.set(true));

@@ -222,6 +222,8 @@ pub(crate) enum Role {
     ReadError,
     Unwind,
     InvalidUnmap,
+    QueryError,
+    Legacy,
 }
 impl Role {
     fn id(self) -> &'static str {
@@ -230,6 +232,8 @@ impl Role {
             Self::ReadError => "read_error",
             Self::Unwind => "unwind",
             Self::InvalidUnmap => "invalid_unmap",
+            Self::QueryError => "query_error",
+            Self::Legacy => "legacy",
         }
     }
     fn index(self) -> usize {
@@ -238,14 +242,20 @@ impl Role {
             Self::ReadError => 1,
             Self::Unwind => 2,
             Self::InvalidUnmap => 3,
+            Self::QueryError => 4,
+            Self::Legacy => 5,
         }
     }
     fn probes(self) -> u64 {
-        if self == Self::Complete { 6 } else { 1 }
+        if matches!(self, Self::Complete | Self::Legacy) {
+            6
+        } else {
+            1
+        }
     }
     fn errno(self) -> u64 {
         match self {
-            Self::ReadError => libc::EFAULT as u64,
+            Self::ReadError | Self::QueryError => libc::EFAULT as u64,
             Self::InvalidUnmap => libc::EINVAL as u64,
             _ => 0,
         }
@@ -256,15 +266,19 @@ impl Role {
             "read_error" => Self::ReadError,
             "unwind" => Self::Unwind,
             "invalid_unmap" => Self::InvalidUnmap,
+            "query_error" => Self::QueryError,
+            "legacy" => Self::Legacy,
             _ => panic!("unknown backing child role"),
         }
     }
 }
-const ROLES: [Role; 4] = [
+const ROLES: [Role; 6] = [
     Role::Complete,
     Role::ReadError,
     Role::Unwind,
     Role::InvalidUnmap,
+    Role::QueryError,
+    Role::Legacy,
 ];
 const PREFIX: &str = "LITEINST_BACKING_CLEANUP_V1 ";
 
@@ -383,7 +397,7 @@ fn dispatch(action: fn(Role, &File)) {
     }
     assert!(args.is_empty() || args == ["--test-threads=1", "--nocapture"]);
     println!(
-        "{PREFIX}{{\"schema_version\":1,\"kind\":\"begin\",\"controls\":3,\"trajectories\":4}}"
+        "{PREFIX}{{\"schema_version\":1,\"kind\":\"begin\",\"controls\":5,\"trajectories\":6}}"
     );
     for role in ROLES {
         run_child(role);
@@ -401,6 +415,16 @@ fn dispatch(action: fn(Role, &File)) {
             Role::Unwind => (
                 "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
                 "injected_unwind",
+                "exit0",
+            ),
+            Role::QueryError => (
+                "admitted_exec_native_backing_query_preserves_cleanup",
+                "native_query_error",
+                "exit0",
+            ),
+            Role::Legacy => (
+                "admitted_exec_native_backing_enotty_uses_exact_legacy_projection",
+                "native_enotty_fallback",
                 "exit0",
             ),
             Role::InvalidUnmap => (
@@ -422,7 +446,7 @@ fn dispatch(action: fn(Role, &File)) {
         );
     }
     println!(
-        "{PREFIX}{{\"schema_version\":1,\"kind\":\"complete\",\"controls\":3,\"trajectories\":4,\"physical_cleanup\":true}}"
+        "{PREFIX}{{\"schema_version\":1,\"kind\":\"complete\",\"controls\":5,\"trajectories\":6,\"physical_cleanup\":true}}"
     );
 }
 fn run_child(role: Role) {

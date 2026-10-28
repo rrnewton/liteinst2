@@ -1,6 +1,7 @@
 //! Test-only, same-owner local resource observations. No control authority.
 //! All recording storage exists before the attempt. Drop hooks never allocate,
 //! parse, assert, or unwind; unexpected recorder misuse fails the command.
+use super::super::super::source_identity::backing::query::{Query, REQUEST};
 use super::*;
 use std::cell::{RefCell, RefMut};
 use std::rc::Rc;
@@ -84,6 +85,33 @@ fn native_file(fd: i32) -> NativeFile {
         ],
     }
 }
+#[derive(Clone, Copy, Debug)]
+struct QueryCall {
+    request: (i32, libc::c_ulong, u64),
+    result: Outcome,
+    before: Query,
+    after: Query,
+    name_len: usize,
+    name_address: u64,
+}
+// Explicit UAPI fields, including every output and the unchanged input pointers.
+fn query_words(q: Query) -> [u64; 13] {
+    [
+        q.size,
+        q.query_flags,
+        q.query_addr,
+        q.vma_start,
+        q.vma_end,
+        q.vma_flags,
+        q.vma_page_size,
+        q.vma_offset,
+        q.inode,
+        u64::from(q.dev_major) | (u64::from(q.dev_minor) << 32),
+        u64::from(q.vma_name_size) | (u64::from(q.build_id_size) << 32),
+        q.vma_name_addr,
+        q.build_id_addr,
+    ]
+}
 #[derive(Clone, Copy, Debug, Default)]
 struct Record {
     until: Option<Instant>,
@@ -98,6 +126,8 @@ struct Record {
     maps_read: Option<Outcome>,
     maps_close: Option<Outcome>,
     maps_len: usize,
+    maps_rows: usize,
+    production_query: Option<QueryCall>,
     production_reads: u32,
     production_last: Option<Outcome>,
     production_first_arguments: Option<(i32, u64, usize)>,
@@ -118,6 +148,7 @@ struct Storage {
     clock: u32,
     rows: [Record; SLOTS],
     maps: Vec<u8>,
+    query_names: Vec<u8>,
     abort_receipt: Option<i32>,
 }
 pub(in crate::linux::remote::dynamic::owner) struct ExecBackingInspection {
@@ -153,6 +184,7 @@ impl ExecBackingInspection {
                 clock: 0,
                 rows: [Record::default(); SLOTS],
                 maps: vec![0; SLOTS * MAP_BYTES],
+                query_names: vec![0; SLOTS * MAP_BYTES],
                 abort_receipt,
             }),
         }
@@ -176,7 +208,7 @@ impl ExecBackingInspection {
         assert_eq!(row.maps_close, Some(Outcome::zero()));
         assert!(row.maps_len > 0 && row.maps_len < MAP_BYTES);
         let bytes = &storage.maps[index * MAP_BYTES..][..row.maps_len];
-        let maps = crate::exec_oracle_support::Maps::parse(bytes.to_vec());
+        let maps = crate::exec_oracle_support::Maps::parse_self(bytes.to_vec(), row.maps_rows);
         let end = row.address.checked_add(PAGE_BYTES as u64).unwrap();
         let overlaps = maps
             .rows
@@ -218,7 +250,7 @@ impl ExecBackingInspection {
         &self,
         count: usize,
         until: Instant,
-        panic: Option<bool>,
+        fault: Option<ExecFault>,
     ) {
         assert_eq!(self.storage.borrow().count, count);
         for index in 0..count {
@@ -239,34 +271,48 @@ impl ExecBackingInspection {
                 row.initial_file.unwrap().getfd
             );
             assert!(row.mapped < row.unmapped);
-            assert_eq!(row.unmap_explicit, panic.is_none());
+            let complete = matches!(fault, None | Some(ExecFault::MapsQueryUnsupported));
+            assert_eq!(row.unmap_explicit, complete);
             let directory = row.closes[0].unwrap();
             let executable = row.closes[1].unwrap();
             assert!(directory.order < row.mapped);
             assert!(row.unmapped < executable.order);
             assert_eq!(Some(executable.fd), row.fd);
             assert!(directory.explicit);
-            assert_eq!(executable.explicit, panic.is_none());
+            assert_eq!(executable.explicit, complete);
             for closed in row.closes.iter().flatten() {
                 assert!(closed.fd >= 0);
                 assert_eq!(closed.result, Outcome::zero());
                 assert_eq!(closed.next_getfd, Outcome::error(libc::EBADF));
             }
-            match panic {
-                None => {
+            match fault {
+                None | Some(ExecFault::MapsQueryUnsupported) => {
                     assert_eq!(row.production_identity, Some(observed));
-                    assert!(row.production_reads > 0);
-                    assert_eq!(row.production_last, Some(Outcome::zero()));
-                    let first = row.production_first_arguments.unwrap();
-                    let last = row.production_last_arguments.unwrap();
-                    assert_eq!((first.0, first.2), (row.closes[2].unwrap().fd, MAP_BYTES));
-                    assert_eq!(last.0, first.0);
-                    assert!(first.1 != 0 && last.1 != 0 && last.2 > 0 && last.2 <= MAP_BYTES);
-                    assert!(!row.null_read);
+                    let q = row
+                        .production_query
+                        .expect("one actual query before success");
+                    let forced_legacy =
+                        fault == Some(ExecFault::MapsQueryUnsupported) && index == 0;
+                    self.check_query(index, forced_legacy, observed.1);
+                    if q.result == Outcome::zero() {
+                        assert!(!forced_legacy);
+                        Self::no_reads(row);
+                    } else {
+                        assert_eq!(q.result, Outcome::error(libc::ENOTTY));
+                        assert!(row.production_reads > 0);
+                        assert_eq!(row.production_last, Some(Outcome::zero()));
+                        let first = row.production_first_arguments.unwrap();
+                        let last = row.production_last_arguments.unwrap();
+                        assert_eq!((first.0, first.2), (row.closes[2].unwrap().fd, MAP_BYTES));
+                        assert_eq!(last.0, first.0);
+                        assert!(first.1 != 0 && last.1 != 0 && last.2 > 0 && last.2 <= MAP_BYTES);
+                        assert!(!row.null_read);
+                    }
                     let maps = row.closes[2].unwrap();
                     assert!(maps.explicit && row.mapped < maps.order && maps.order < row.unmapped);
                 }
-                Some(false) => {
+                Some(ExecFault::MapsRead) => {
+                    assert!(row.production_query.is_none());
                     assert!(row.production_identity.is_none());
                     assert_eq!(row.production_reads, 1);
                     assert_eq!(row.production_last, Some(Outcome::error(libc::EFAULT)));
@@ -277,7 +323,20 @@ impl ExecBackingInspection {
                     let maps = row.closes[2].unwrap();
                     assert!(maps.explicit && row.mapped < maps.order && maps.order < row.unmapped);
                 }
-                Some(true) => {
+                Some(ExecFault::MapsQuery) => {
+                    assert!(row.production_identity.is_none());
+                    let q = row.production_query.expect("actual null query");
+                    assert_eq!(q.request, (row.closes[2].unwrap().fd, REQUEST, 0));
+                    assert_eq!(q.result, Outcome::error(libc::EFAULT));
+                    Self::query_input(q.before, row.address, q.name_address);
+                    assert_eq!(query_words(q.after), query_words(q.before));
+                    assert_eq!(q.name_len, 0);
+                    Self::no_reads(row);
+                    let maps = row.closes[2].unwrap();
+                    assert!(maps.explicit && row.mapped < maps.order && maps.order < row.unmapped);
+                }
+                Some(ExecFault::AfterMapPanic) => {
+                    assert!(row.production_query.is_none());
                     assert!(row.production_identity.is_none() && row.production_last.is_none());
                     assert_eq!(row.production_reads, 0);
                     assert!(
@@ -286,9 +345,110 @@ impl ExecBackingInspection {
                     );
                     assert!(!row.null_read && row.closes[2].is_none());
                 }
+                _ => panic!("unexpected backing inspection fault"),
             }
         }
         assert!(Instant::now() < until);
+    }
+    fn no_reads(row: Record) {
+        assert_eq!(row.production_reads, 0);
+        assert!(row.production_last.is_none());
+        assert!(
+            row.production_first_arguments.is_none() && row.production_last_arguments.is_none()
+        );
+        assert!(!row.null_read);
+    }
+    fn query_input(q: Query, address: u64, name_address: u64) {
+        assert_eq!(REQUEST, 0xc068_6611);
+        assert_eq!(q.size, 104);
+        assert_eq!((q.query_flags, q.query_addr), (0, address));
+        assert_eq!(
+            (
+                q.vma_start,
+                q.vma_end,
+                q.vma_flags,
+                q.vma_page_size,
+                q.vma_offset,
+                q.inode
+            ),
+            (0, 0, 0, 0, 0, 0)
+        );
+        assert_eq!(
+            (q.dev_major, q.dev_minor, q.build_id_size, q.build_id_addr),
+            (0, 0, 0, 0)
+        );
+        assert_eq!(q.vma_name_size as usize, MAP_BYTES);
+        assert_ne!(q.vma_name_addr, 0);
+        assert_eq!(q.vma_name_addr, name_address);
+    }
+    fn check_query(&self, index: usize, forced_legacy: bool, identity: [u64; 3]) {
+        let storage = self.storage.borrow();
+        let row = storage.rows[index];
+        let q = row.production_query.unwrap();
+        assert_eq!(
+            (q.request.0, q.request.1),
+            (
+                row.closes[2].unwrap().fd,
+                if forced_legacy { 0 } else { REQUEST }
+            )
+        );
+        assert_ne!(q.request.2, 0);
+        Self::query_input(q.before, row.address, q.name_address);
+        if q.result != Outcome::zero() {
+            assert_eq!(q.result, Outcome::error(libc::ENOTTY));
+            assert_eq!(query_words(q.after), query_words(q.before));
+            assert_eq!(q.name_len, 0);
+            return;
+        }
+        assert!(!forced_legacy);
+        let a = q.after;
+        assert_eq!(
+            (
+                a.size,
+                a.query_flags,
+                a.query_addr,
+                a.vma_name_addr,
+                a.build_id_size,
+                a.build_id_addr
+            ),
+            (104, 0, row.address, q.before.vma_name_addr, 0, 0)
+        );
+        assert_eq!(
+            (
+                a.vma_start,
+                a.vma_end,
+                a.vma_flags,
+                a.vma_page_size,
+                a.vma_offset
+            ),
+            (
+                row.address,
+                row.address.checked_add(PAGE_BYTES as u64).unwrap(),
+                0,
+                PAGE_BYTES as u64,
+                0
+            )
+        );
+        assert_eq!(
+            [u64::from(a.dev_major), u64::from(a.dev_minor), a.inode],
+            identity
+        );
+        assert_eq!(q.name_len, a.vma_name_size as usize);
+        assert!((2..=MAP_BYTES).contains(&q.name_len));
+        let name = &storage.query_names[index * MAP_BYTES..][..q.name_len];
+        assert_eq!(name.last(), Some(&0));
+        assert!(!name[..name.len() - 1].contains(&0));
+        let bytes = &storage.maps[index * MAP_BYTES..][..row.maps_len];
+        let maps = crate::exec_oracle_support::Maps::parse_self(bytes.to_vec(), row.maps_rows);
+        let map = maps
+            .rows
+            .iter()
+            .find(|entry| entry.start == row.address)
+            .unwrap();
+        assert_eq!(
+            &name[..name.len() - 1],
+            map.path.as_ref().unwrap().as_bytes()
+        );
     }
 }
 impl Probe {
@@ -380,7 +540,48 @@ impl Probe {
                 fatal();
             }
         }
+        row.maps_rows = storage.maps[self.index * MAP_BYTES..][..row.maps_len]
+            .iter()
+            .filter(|&&byte| byte == b'\n')
+            .count();
         storage.rows[self.index] = row;
+    }
+    pub(in crate::linux::remote::dynamic::owner) fn maps_query(
+        &self,
+        request: (i32, libc::c_ulong, u64),
+        result: i32,
+        error: &Option<LaunchError>,
+        before: &Query,
+        after: &Query,
+        name: &[u8],
+    ) {
+        let mut storage = self.inspection.storage();
+        let length = if result == 0 {
+            after.vma_name_size as usize
+        } else {
+            0
+        };
+        if name.len() != MAP_BYTES || length > MAP_BYTES {
+            fatal();
+        }
+        storage.query_names[self.index * MAP_BYTES..][..length].copy_from_slice(&name[..length]);
+        if storage.rows[self.index]
+            .production_query
+            .replace(QueryCall {
+                request,
+                result: Outcome {
+                    result: i64::from(result),
+                    errno: saved_error(error),
+                },
+                before: *before,
+                after: *after,
+                name_len: length,
+                name_address: name.as_ptr() as usize as u64,
+            })
+            .is_some()
+        {
+            fatal();
+        }
     }
     pub(in crate::linux::remote::dynamic::owner) fn maps_read(
         &self,

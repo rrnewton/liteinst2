@@ -1,0 +1,26 @@
+{
+  "toolchain": "/canonical/rust-toolchain/bin",
+  "cargo_home": "/canonical/offline-cargo-home",
+  "user_home": "/canonical/build-home",
+  "gcc": "/canonical/tools/gcc",
+  "strip": "/canonical/tools/strip",
+  "nm": "/canonical/tools/nm",
+  "readelf": "/canonical/tools/readelf",
+  "python": "/canonical/tools/python3",
+  "timeout": "/canonical/tools/timeout",
+  "git": "/canonical/tools/git",
+  "du": "/canonical/tools/du",
+  "e9": {
+    "stock_frontend": "/canonical/e9/stock/e9tool",
+    "stock_backend": "/canonical/e9/stock/e9patch",
+    "stock_loader": "/canonical/e9/stock/e9loader",
+    "transport_frontend": "/canonical/e9/transport/e9tool",
+    "abi_backend": "/canonical/e9/patched/e9patch",
+    "abi_loader": "/canonical/e9/patched/e9loader"
+  },
+  "runtime_libraries": [
+    "/canonical/runtime/libc.so.6"
+  ],
+  "tar": "/canonical/tools/tar",
+  "zstd": "/canonical/tools/zstd"
+}

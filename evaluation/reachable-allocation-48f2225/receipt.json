@@ -1,0 +1,146 @@
+{
+  "all_final_required_checks_pass": true,
+  "allocator_source_revision": "48f22252ca010c5ed7da130f494bee4eaf9c028d",
+  "allocator_source_sha256": {
+    "src/trampoline.rs": "b86925a70b608ffce9a64ac2a4a6b23d2b320490c03c116c5c7ed6862e0d7f50",
+    "src/trampoline/near_mapping.rs": "8697a2b3d623abd50f569276d67a11a3590e1654d7839e989b0f860ace23cc5c",
+    "src/trampoline/near_mapping/tests.rs": "fd360cb3ab7a1c695ea578c419c6d84d45de6cc4c0fb17bbc8e3064da77f3540"
+  },
+  "claim": 4,
+  "commands_csv_sha256": "2c562170f388f5721f758aadabbc91a1c7f41397b2b62e572a7f401f9db43adb",
+  "environment": {
+    "RUST_TEST_THREADS": null,
+    "affinity_changed": false,
+    "available_affinity_cpus": 316,
+    "cargo_home": "$CARGO_HOME",
+    "compiler_jobs": 4,
+    "incremental": false,
+    "offline": true,
+    "profiles": {
+      "dev": {
+        "debug": 0,
+        "debug_assertions": true,
+        "opt_level": 0,
+        "overflow_checks": true
+      },
+      "test": {
+        "debug": 0,
+        "debug_assertions": true,
+        "opt_level": 0,
+        "overflow_checks": true
+      }
+    },
+    "target_directory": "$REPO/target",
+    "toolchain_directory": "$TOOLCHAIN"
+  },
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "included_main": "4f4e39bf9f1ab7efd4858ef0c3796829f71e61aa",
+  "issues": [
+    "https://github.com/rrnewton/liteinst2/issues/35",
+    "https://github.com/rrnewton/liteinst2/issues/36"
+  ],
+  "kernel_version": "7.1.3",
+  "limits": [
+    "Baseline did not reproduce the historical intermittent allocator failure in five runs; the regression forces the stale-candidate schedule directly.",
+    "Search covers captured free gaps once; no guarantee for gaps freed after capture or an adversary occupying each attempted address.",
+    "Baseline and repeated core totals come from outer libtest summaries; fixed runs additionally require explicit reported-case terminals; interleaved output is not treated as a complete independent case inventory.",
+    "Custom cleanup-harness success is checked separately and is not counted as additional libtest cases.",
+    "Command seconds are operational durations, not performance measurements.",
+    "The original unexpected exec-admission abort was not reproduced. Older kernels retain the documented legacy backing-identity fallback."
+  ],
+  "merged_retry": {
+    "closed_receipt_sha256": "d150d7f54f500754504e913162668d5513076db1d217206229b422869168934f",
+    "commands": 23,
+    "recipe": "At the merged revision, repeat dynamic_control active_interrupt_preserves_seeded_state_and_rejects_stale_or_foreign_tokens with --exact --test-threads=1 --nocapture twenty times, then repeat the unchanged serial-launch, staged-allocation and prefixed-pun commands from commands.csv. Same environment and command bounds.",
+    "revision": "16ae829d8dfad08b74dad326f1129181601473d7",
+    "status": "PASS"
+  },
+  "merged_test_revision": "16ae829d8dfad08b74dad326f1129181601473d7",
+  "phases": [
+    {
+      "closed_receipt_sha256": "f150a2c833357821e5400e544dfdc128cc2bcf6f4dc1c15137e5740eee5fe8a6",
+      "commands": 62,
+      "name": "campaign",
+      "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --include-reachable-allocation",
+      "revision": "48f22252ca010c5ed7da130f494bee4eaf9c028d",
+      "runner_sha256": "894771b8ad4ba51af312b0ea0d49238a91e377e9d38bd01c347573241b8e2c4c",
+      "status": "PASS"
+    },
+    {
+      "closed_receipt_sha256": "31eaff000a419bb08ddeb1b4aa55bc9c0811354e3aa71a63f4adce31644d15dc",
+      "commands": 5,
+      "name": "merged-attempt",
+      "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+      "revision": "16ae829d8dfad08b74dad326f1129181601473d7",
+      "runner_sha256": "4c818472d657651b1e0d3c84a125bbfd5b989f3123f32ae23448b63ad235ea9b",
+      "status": "FAILED"
+    }
+  ],
+  "pressure": {
+    "baseline_queries": 1,
+    "churn_cycles": 179,
+    "maps_rows": 553,
+    "owned_rows": 516,
+    "queries": 128
+  },
+  "prior_failure": {
+    "closed_log_sha256": "5931a44d499bcbb8a995ea5179eb8a0274dbe6722fd581b3de21fdb479ebc375",
+    "correction": "Equivalent modulo predicate after the existing nonzero power-of-two guard. No MSRV or lint exemption changed.",
+    "exit_code": 101,
+    "operation": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "phase": "uncommitted draft before source commit",
+    "reason": "incompatible_msrv: usize::is_multiple_of requires Rust 1.87; project minimum is 1.85"
+  },
+  "process_helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "retained_merge_failure": {
+    "cause": "Consistent with an interrupt at syscall return versus in the user self-jump; the kernel scheduling path was not directly traced.",
+    "cleanup_complete": true,
+    "comparator_changed_for_retry": false,
+    "only_evidence_difference": {
+      "field": "orig_rax",
+      "first_stop": 39,
+      "second_stop": 18446744073709551615
+    },
+    "rescued_descendants_after_failure": 2,
+    "secondary_poisoned_lock_failures": 7,
+    "source_changed_for_retry": false,
+    "status": "UNRESOLVED_SEPARATE_FIXTURE_RACE",
+    "test": "active_interrupt_preserves_seeded_state_and_rejects_stale_or_foreign_tokens",
+    "unrun_after_failure": [
+      "staged-allocation",
+      "prefixed-pun"
+    ]
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "source_reviews": {
+    "allocator": "8c491a6ccc821d9af89dd4ae88ee57870a48edcdbdf0ba2758b77711ca8803e1",
+    "merge_recipe": "88060b46f69764a1766dbea91d50535f7486ef9517e713480610f7c650f65c3c"
+  },
+  "status": "PASS_WITH_RETAINED_FAILURE",
+  "totals": {
+    "b3_passed_per_run": 7,
+    "b3_runs": 25,
+    "baseline_core_passed_per_run": 237,
+    "baseline_core_runs": 5,
+    "core_ignored_per_run": 1,
+    "fixed_core_passed_per_run": 241,
+    "fixed_core_runs": 25,
+    "forced_contention_controls": 4,
+    "launch_library_passed": 742,
+    "workspace_failed": 0,
+    "workspace_ignored": 4,
+    "workspace_nested_summaries_excluded": 5,
+    "workspace_outer_groups": 99,
+    "workspace_passed": 2517
+  }
+}

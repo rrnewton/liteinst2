@@ -1,4 +1,4 @@
-//! Finite, flag-neutral BEFORE-taken-backedge clocks for four authored loops.
+//! Flag-neutral BEFORE-taken-backedge clocks with explicit finite source profiles.
 //!
 //! The mapping and invocation constructors are unsafe ownership boundaries.
 //! They do not hide source addresses already known to an installer. The caller
@@ -17,6 +17,8 @@ use std::sync::{
 
 use crate::contracts::{AddressRange, CodeIdentity};
 use crate::controls::{ControlWriter, ProbeControl};
+
+mod owned_loop;
 
 /// Exact additional instrumentation data per instance, independent of code caps.
 pub const CLOCK_PAGE_BYTES: usize = 4096;
@@ -336,6 +338,58 @@ pub struct BackedgeClockAction {
     pub(crate) condition: Option<u8>,
 }
 impl BackedgeClockAction {
+    /// Check a bounded caller-supplied loop without changing the literal profile.
+    ///
+    /// The complete source is at most 256 bytes, has one final unprefixed RET,
+    /// and has exactly one near backward JNZ/JG/JB/JMP to a decoded head.
+    /// Forward Jcc/JMP targets must also be in-region heads. Calls, indirect or
+    /// system transfers, other backedges, explicit RSP use and unsupported
+    /// ordinary instructions refuse. Every decoded head must be CFG-reachable
+    /// from `base`; this is not a proof that any execution terminates.
+    ///
+    /// This safe constructor only copies/checks supplied bytes and retains the
+    /// clock/control owners. It does not read live code or prove memory safety,
+    /// complete external entries, mapping lifetime, callable ABI or `max_work`.
+    /// Installation still requires the planner's versioned legal-entry/resume
+    /// facts and unsafe publication proof. Invocation still requires the unsafe
+    /// clock lease and exclusion of every external, recursive or signal entry
+    /// before the first spill. Application accesses must not modify source,
+    /// generated code or clock storage. The client retains all data/code owners
+    /// and supplies the actual encounter bound; decoding does not establish it.
+    pub fn new_owned_loop(
+        identity: CodeIdentity,
+        base: u64,
+        source: &[u8],
+        logical_pc: u64,
+        managed: (ProbeControl, ControlWriter),
+        clock: BackedgeClock,
+        mode: ClockMode,
+    ) -> Result<Self, ClockError> {
+        let (control, writer) = managed;
+        let condition = owned_loop::admit(source, base, logical_pc)?;
+        if identity.mapping != base
+            || identity.generation == 0
+            || !control.is_managed_bound()
+            || !writer.matches(&control)
+            || !control.is_enabled()
+            || AddressRange::new(base, source.len())
+                .map_err(|_| ClockError::Source)?
+                .overlaps(clock.range())
+        {
+            return Err(ClockError::Source);
+        }
+        Ok(Self {
+            identity,
+            logical_pc,
+            control,
+            clock,
+            mode,
+            source: source.to_vec(),
+            base,
+            condition,
+        })
+    }
+
     /// Bind one of the exact four authored functions, never an arbitrary loop.
     /// Consumes the exact unique writer so the clock callback cannot later be
     /// disabled by a planner-readable clone. The caller still owns mapping,

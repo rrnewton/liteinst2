@@ -1,0 +1,36 @@
+{
+  "command": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "$REPO/tools/software-preemption/verify_owned_loop.py",
+      "--revision",
+      "5eca3cb8db9cd548bb398fd3a94e2440d6f48cf5",
+      "--raw",
+      "$RAW",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 330,
+    "source_sha256": "e121ca6f6c64f4e93dac59a45d49dd9165b4fdbe4cf258747c77d02577648197"
+  },
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "0741b7f3d128fd073de599fc5a608f7901a5c25c4363da9be4edd7b375d5a17a",
+    "reaped_descendants": 0,
+    "seconds": 2.8657388270366937,
+    "start_utc": "2026-10-27T18:19:18.577904+00:00",
+    "termination": null
+  }
+}
