@@ -1,0 +1,129 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vpcmpeqb-memory-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 113,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPEQB_MEMORY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 new_refusal_bytes=33 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "full-read-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 113,
+        "version": 1
+      },
+      "name": "full-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "cross-read-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 113,
+        "version": 1
+      },
+      "name": "cross-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    }
+  ],
+  "literal_effects": "K0 is the independent 64-lane byte-equality literal (0,UINT64_MAX,0x9249249249249249). All other initialized kernelFP/liveXSAVE bytes, every ZMM, other masks, GPRs, flags and full stack/data remain unchanged; no XSTATE_BV normalization.",
+  "native_pairs_per_group": [
+    19
+  ],
+  "negative_endpoint": "Two real m512 read faults at original PC: fully inaccessible operand and last32 bytes beyond readable page. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.",
+  "new_load_pairs_total": 18,
+  "new_refusal_count": 33,
+  "old_refusal_count": 80,
+  "prospective_only": true,
+  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000 + 96 + 9024; original storage plus complete CPUID/BV/fault and actual-before query trailers",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Only exact unmasked VPCMPEQB K0,ZMM17,[RDI]62f175407407/Code1720 is added. Original register support and old suites unchanged. No other EVEX authority, real-program completion or performance claim."
+}

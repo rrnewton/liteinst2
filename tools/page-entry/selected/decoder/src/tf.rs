@@ -224,8 +224,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
             return Ok(out);
         }
     } else if instruction.code() == Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512 {
-        // Only K1 <- byte equality(ZMM17,ZMM16), unmasked EVEX.512.
-        if source[..instruction.len()] != [0x62, 0xb1, 0x75, 0x40, 0x74, 0xc8] { return Ok(out); }
+        // Exact unmasked EVEX.512 forms: K1 <- equality(ZMM17,ZMM16),
+        // or K0 <- equality(ZMM17,64 bytes at [RDI]). No added mask/address/prefix.
+        if source[..instruction.len()] != [0x62, 0xb1, 0x75, 0x40, 0x74, 0xc8]
+            && source[..instruction.len()] != [0x62, 0xf1, 0x75, 0x40, 0x74, 0x07] { return Ok(out); }
     } else if instruction.code() == Code::VEX_Blsmsk_r64_rm64 {
         // Only RSI <- (RSI-1)^RSI. CPU retains all defined/undefined flag effects.
         if source[..instruction.len()] != [0xc4, 0xe2, 0xc8, 0xf3, 0xd6] { return Ok(out); }
