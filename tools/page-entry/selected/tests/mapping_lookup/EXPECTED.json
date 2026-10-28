@@ -1,0 +1,11 @@
+{
+  "hits": 69060,
+  "layouts": 46,
+  "linear_and_literal_equal": 1,
+  "misses": 46139,
+  "queries": 115199,
+  "row_bytes": 56,
+  "row_capacity": 2048,
+  "version": 1,
+  "whole_rows_unchanged": 1
+}
