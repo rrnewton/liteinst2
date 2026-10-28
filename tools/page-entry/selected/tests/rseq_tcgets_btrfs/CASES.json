@@ -1,0 +1,405 @@
+{
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "subject": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cases": [
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 0,
+      "index": 0,
+      "name": "normal-buffer",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "null",
+      "fd": 1,
+      "gated_exit": 0,
+      "index": 1,
+      "name": "null",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "unmapped",
+      "fd": 1,
+      "gated_exit": 0,
+      "index": 2,
+      "name": "unmapped",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "word",
+      "fd": 1,
+      "gated_exit": 0,
+      "index": 3,
+      "name": "rseq-word",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "vdso",
+      "fd": 1,
+      "gated_exit": 0,
+      "index": 4,
+      "name": "private-vdso",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 0,
+      "index": 5,
+      "name": "subvolume",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "subvolume",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 0,
+      "index": 6,
+      "name": "same-ofd-dup",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "dup",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 7,
+      "name": "close-before-registration",
+      "native_exit": 0,
+      "native_operation": "close",
+      "native_result": -9,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 8,
+      "name": "close-and-same-ofd-restore",
+      "native_exit": 0,
+      "native_operation": "close-restore",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 9,
+      "name": "request-below",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21504
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 10,
+      "name": "request-above",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21506
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 11,
+      "name": "request-high-bits",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 4294988801
+    },
+    {
+      "argument": "buffer",
+      "fd": 3,
+      "gated_exit": 125,
+      "index": 12,
+      "name": "wrong-fd",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": -1,
+      "gated_exit": 125,
+      "index": 13,
+      "name": "invalid-fd",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -9,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 4294967297,
+      "gated_exit": 125,
+      "index": 14,
+      "name": "fd-high-bits",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "normal",
+      "request": 21505
+    },
+    {
+      "argument": "word",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 15,
+      "name": "fionread-word",
+      "native_exit": 0,
+      "native_operation": "prefix",
+      "native_result": null,
+      "parent_fd_route": "normal",
+      "request": 21531
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 16,
+      "name": "opath",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -9,
+      "parent_fd_route": "opath",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 17,
+      "name": "directory",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "directory",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 18,
+      "name": "pipe",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "pipe",
+      "request": 21505
+    },
+    {
+      "argument": "buffer",
+      "fd": 1,
+      "gated_exit": 125,
+      "index": 19,
+      "name": "wrong-filesystem",
+      "native_exit": 0,
+      "native_operation": "complete",
+      "native_result": -25,
+      "parent_fd_route": "memfd",
+      "request": 21505
+    }
+  ],
+  "injected_refusals": [
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 1,
+      "name": "fstat-query"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 2,
+      "name": "opath-flags"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 3,
+      "name": "filesystem-type"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 4,
+      "name": "missing-mount-id-mask"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 5,
+      "name": "statx-inode"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 6,
+      "name": "zero-mount-id"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 7,
+      "name": "coordinated-new-inode"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 8,
+      "name": "mount-open"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 9,
+      "name": "mount-read"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 10,
+      "name": "mount-close"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 11,
+      "name": "partial-final-line"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 12,
+      "name": "duplicate-mount-id"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 13,
+      "name": "wrong-matching-filesystem"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 14,
+      "name": "wrong-parser-wanted-id"
+    },
+    {
+      "actual_ioctl": 1,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 15,
+      "name": "unexpected-supplied-ioctl-result"
+    },
+    {
+      "actual_ioctl": 0,
+      "case": 0,
+      "exit": 125,
+      "frame_commits": 0,
+      "index": 16,
+      "name": "fstat-directory-type"
+    }
+  ],
+  "notes": [
+    "Native case15 stops at a genuine before-operation NX frame. It does not execute FIONREAD at the publication word or claim a native refusal.",
+    "Cases16..19 require exact initialization refusal before application entry; no gated full target frame or target result is invented.",
+    "Native exit0 means the finite observer completed; it does not relabel the ioctl errno or the required gated exit125.",
+    "No case may skip because btrfs/subvolume or a required native outcome is unavailable."
+  ],
+  "positive_pairs": 7,
+  "required_failed_gated_operations": 13,
+  "required_original_cohorts": {
+    "inactive_rseq": 17,
+    "oneshot_failures": 49,
+    "oneshot_positive": 6,
+    "registered_boundary": 4,
+    "registered_native": 16
+  },
+  "status": "source-design-not-qualified",
+  "version": 1
+}
