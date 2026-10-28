@@ -380,8 +380,15 @@ def main():
             record = next(r for r in fixture_result['stages'] if r['name'] == old_label+'-list')
             pin(listing/'stderr.txt', record['stderr'])
             inventory = census.census((listing/'stdout.txt').read_bytes(), (listing/'stderr.txt').read_bytes())
-            assert set(n for n in inventory if n.startswith(prefix)) == set(methods)
-            d, row = stage(name+'-controls', [test_binary, prefix, '--test-threads=1'])
+            if name == 'session':
+                # Only the new two:: namespace has its own separate exact qualification.
+                assert {n for n in inventory if n.startswith(prefix)
+                    and not n.startswith(prefix+'two::')} == set(methods)
+                argv = [test_binary, *methods, '--exact', '--test-threads=1']
+            else:
+                assert set(n for n in inventory if n.startswith(prefix)) == set(methods)
+                argv = [test_binary, prefix, '--test-threads=1']
+            d, row = stage(name+'-controls', argv)
             row.update(census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(), methods, inventory),
                 binary=digest(test_binary), profile=PROFILE, full_census=len(inventory), cargo_fresh=p['fresh'])
         numeric = []
