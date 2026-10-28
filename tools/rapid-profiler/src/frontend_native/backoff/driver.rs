@@ -121,7 +121,10 @@ impl Driver {
         Ok(())
     }
     fn receive_one(&mut self) -> Result<(), Error> {
-        match self.input.try_recv() {
+        // Wake on a completed batch instead of imposing a sleep after every
+        // packet. A queued burst is still handled one packet per clock check;
+        // idle waits retain the same fixed poll bound and shutdown deadlines.
+        match self.input.recv_timeout(POLL) {
             Ok(packet) => {
                 self.pending = Some(Export::Calls(Box::new(packet)));
                 let Some(Export::Calls(p)) = self.pending.as_ref() else {
@@ -137,8 +140,8 @@ impl Driver {
                 let p = self.pending.take().unwrap();
                 self.emit(p)
             }
-            Err(mpsc::TryRecvError::Empty) => Ok(()),
-            Err(mpsc::TryRecvError::Disconnected) => {
+            Err(mpsc::RecvTimeoutError::Timeout) => Ok(()),
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
                 finished_ok(self.shared.finished.get().copied())
             }
         }
@@ -287,7 +290,6 @@ impl Driver {
                     }
                 }
             }
-            std::thread::sleep(POLL);
         }
     }
     /// Recover an unsent export after failure. No successful run/resume is implied.
