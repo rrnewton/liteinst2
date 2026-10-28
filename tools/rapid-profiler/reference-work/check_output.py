@@ -16,6 +16,21 @@ ORIGINAL_EMPTY = frozenset(('ordinal', 'generation', 'invocation', 'raw_start_ti
 
 # Exact transitive frontend-native-calibrations inventory, including expected panics.
 CALIBRATION_TESTS = {
+    'oracle::native_ordinary::cache::model::tests::cache_model_foreign_cross_line_width_and_wrap_refused': False,
+    'oracle::native_ordinary::cache::model::tests::cache_model_literal_case_totals_and_set_rotation': False,
+    'oracle::native_ordinary::cache::model::tests::cache_model_literal_lru_policy_discriminator': False,
+    'oracle::native_ordinary::cache::model::tests::cache_model_literal_per_operand_miss_positions': False,
+    'oracle::native_ordinary::cache::model::tests::cache_model_missing_duplicate_reordered_or_relabelled_reads_refused': False,
+    'oracle::native_ordinary::cache::model::tests::cache_model_ret_uses_full_address_and_each_call_starts_invalid': False,
+    'oracle::native_ordinary::cache::tests::cache_actual_dec_jnz_requires_counter_zf_and_successor': False,
+    'oracle::native_ordinary::cache::tests::cache_actual_qword_reads_require_address_width_and_all_bytes': False,
+    'oracle::native_ordinary::cache::tests::cache_actual_ret_requires_full_word_and_physical_successor': False,
+    'oracle::native_ordinary::cache::tests::cache_complete_visit_sequence_refuses_omission_insertion_and_reorder': False,
+    'oracle::native_ordinary::cache::truth::tests::cache_all_cases_join_independent_cycles_scalar_counts_and_ret': False,
+    'oracle::native_ordinary::cache::truth::tests::cache_every_changed_opcode_bit_is_refused': False,
+    'oracle::native_ordinary::cache::truth::tests::cache_invalid_header_links_extent_and_wrap_are_refused': False,
+    'oracle::native_ordinary::cache::truth::tests::cache_literal_fixture_and_first_iteration': False,
+    'oracle::native_ordinary::cache::truth::tests::cache_valid_link_or_payload_mutation_cannot_relabel_the_case': False,
     'oracle::calibration::rejects_application_memory_corruption': True,
     'oracle::calibration::rejects_defined_flag_corruption': True,
     'oracle::calibration::rejects_fault_address_corruption': True,
@@ -71,7 +86,7 @@ def number(word):
 
 def table(data, header, count):
     assert 0 < len(data) <= 1048576 and data.endswith(b'\n') and b'\r' not in data
-    lines = data.decode('ascii').splitlines()
+    lines = data.decode('ascii').split('\n')[:-1]
     assert len(lines) == count + 1 and lines[0] == header
     rows = list(csv.DictReader(lines, strict=True))
     assert len(rows) == count
@@ -103,19 +118,19 @@ def pairs(data, terminal, stderr):
 def calibrations(stdout, stderr):
     assert stderr == b'' and 0 < len(stdout) <= 1048576
     text = stdout.decode('ascii')
-    pattern = (r'\nrunning 43 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){43})\n'
-        r'test result: ok\. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
+    pattern = (r'\nrunning 58 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){58})\n'
+        r'test result: ok\. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
     match = re.fullmatch(pattern, text)
     assert match is not None
     names = [line.split()[1] for line in match.group(1).splitlines()]
-    assert len(set(names)) == 43
+    assert len(set(names)) == 58
     observed = {line.split()[1]: ' - should panic ... ok' in line for line in match.group(1).splitlines()}
     assert observed == CALIBRATION_TESTS
 
 
 def functional(data, stderr):
     assert stderr == b'' and 0 < len(data) <= 1048576 and data.endswith(b'\n') and b'\r' not in data
-    lines = data.decode('ascii').splitlines()
+    lines = data.decode('ascii').split('\n')[:-1]
     assert len(lines) == 51 and lines[0] == SCOPE and lines[-1] == PASS
     csv_bytes = ('\n'.join(lines[1:-1])+'\n').encode('ascii')
     rows = table(csv_bytes, HEADER, 48)
