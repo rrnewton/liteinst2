@@ -1,0 +1,249 @@
+{
+  "artifacts": {
+    "binary": {
+      "bytes": 6052640,
+      "sha256": "49fbfa7e555194f2a9e56182bf01f81d86a8ab4acd95931e8e7cb0bdba8d10ae"
+    },
+    "helper": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "selection": {
+      "bytes": 586,
+      "sha256": "a9b620f685a2f030fed2593598b936b9f9c04c1a0bc0229bd613f0ed0b81fc03"
+    },
+    "subject": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    }
+  },
+  "claim": 4,
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_normal_interval.py",
+    "--revision",
+    "7d987e39135725611ab2e5fa208025b3a6795127",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--reference-exact",
+    "--reference-work",
+    "--reference-leg",
+    "--observer-work"
+  ],
+  "end_utc": "2026-10-28T23:24:52.367004+00:00",
+  "execution": {
+    "attempts": 1,
+    "closure": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "2a633ec7b5e7c2dec6b3e2eaeff19710b9038b4ee693b906b4ba774f228e8d89",
+      "reaped_descendants": 0,
+      "seconds": 120.91306674201041,
+      "start_utc": "2026-10-28T23:22:51.453542+00:00",
+      "termination": null
+    },
+    "modes": [
+      "native",
+      "always-on"
+    ],
+    "per_new_process": {
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "wall_seconds": 30
+    },
+    "release": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true
+    },
+    "whole_wall_limit_seconds": 1200
+  },
+  "full_checks": {
+    "command": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+    "historical_mapping_cases_passed": 8,
+    "workspace": {
+      "additional_custom_harnesses": 2,
+      "failed": 0,
+      "ignored": 36,
+      "passed": 3088
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "available_host_affinity_cpus": 316,
+    "build_cpus": 4,
+    "caller_and_helper_shared_cpus": 1,
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "state_allowed_cpus": 4,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "limitations": [
+    "Counts are original-body semantic instructions, not PMU events or installed instruction counts.",
+    "The two processes each execute all 3,072 calls; these are not 3,072 independent workload trials.",
+    "Raw callback ticks remain uncalibrated and are not used for a timing claim.",
+    "Actual native stack/full-state authority is the unchanged prerequisite oracle, not the compact transcript.",
+    "joined=true is data/identity validation, not a spawned-worker join.",
+    "All previous strict 2 ms campaign failures remain failures; no rerun or deadline relaxation.",
+    "Per-call captures and raw logs remain under ignored; tracked CSV contains one functional result per process."
+  ],
+  "load_average_after": [
+    29.65,
+    30.49,
+    32.33
+  ],
+  "load_average_before": [
+    34.77,
+    31.8,
+    32.98
+  ],
+  "private_evidence": {
+    "gate_receipt": {
+      "bytes": 21879,
+      "sha256": "f5c39e1944c0f31f61c73cabb7f688e211d1a71f57b91a267b7783b5be057397"
+    },
+    "launch_request": {
+      "bytes": 2932,
+      "sha256": "3cdde1a93fd4cd27dec19a6c546ccb482b5d0056baef20ab8c65699b6a0261fb"
+    },
+    "result": {
+      "bytes": 143865,
+      "sha256": "1f8cc335cde4c297db9d6ddfaad8b801e7be2c42a7ad3ee7e05726fbdceefe74"
+    },
+    "root_audit": {
+      "bytes": 1661,
+      "sha256": "4ccfb94dfc8f3bf6724cd41df89b62c6e9c66ffd4cd5a0935e3b65b0cfa52fb5"
+    },
+    "source_manifest": {
+      "bytes": 75428,
+      "sha256": "36c0973aa170001ceb9f3a800578807d43c9738176a0d3742729969355ab292b"
+    }
+  },
+  "qualification": {
+    "all_stages_passed": true,
+    "closure": {
+      "nested_normal_helpers": 46,
+      "nested_outer_owners": 48,
+      "owned_stages": 34,
+      "rescues": 0
+    },
+    "new_parser_controls": 11,
+    "new_rust_controls": 7,
+    "original_exact_state_comparisons": 1696,
+    "reference_exact_state_comparisons": 1736,
+    "source_files": 469,
+    "top_level_stages": 34
+  },
+  "reservation": {
+    "application_cpu": 3,
+    "application_threads": 1,
+    "cores": [
+      3,
+      8,
+      25,
+      40
+    ],
+    "enforcement": "AllowedCPUs for complete owned tree",
+    "revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "tool": "cpuset-alloc"
+  },
+  "revision": "7d987e39135725611ab2e5fa208025b3a6795127",
+  "schema": 1,
+  "scope": "Same fixed ordinary-call work in native and always-on configurations; functional joins only. No throughput, duration accuracy, perf comparison or full-A5 claim.",
+  "source_reviews": {
+    "normal-observer-work-parser-review-v1": "0cd8349d74305c265d0b2a10570faef47c9b048e6b1764eee6ce3d11cd0a3ec5",
+    "normal-observer-work-recipe-review-v1": "211c1b35f68e054dd58c6e72658bc15b8ae1c36305c14fef9c6a7e3da2871047",
+    "normal-observer-work-recipe-review-v1/launcher-v1": "1ec4819826e0e96abd0d1ed9d269d6389cd0b289808b11a9b1762d1a59386a7b",
+    "normal-observer-work-review-v1": "2eab4b95fd8f741a79a76c1c347fd1fa2e286909e58c965c1c736f98c412a74c"
+  },
+  "source_sha256": {
+    "tools/rapid-profiler/normal-work/observer_work.py": "a39307218a21080ba294a1988a190d5d39988a9f342dbfd7e4859cb5ffde6305",
+    "tools/rapid-profiler/normal-work/test_observer_work.py": "aa71198e6a2af79328f2e8f6a1fd3abefc9912437df169a89329ee3f1fb9c071",
+    "tools/rapid-profiler/ordinary-interval/main.rs": "c075f6b98d0b8e50022364eae54b71079698c2b77144740e8c979d5c0e013318",
+    "tools/rapid-profiler/ordinary-interval/normal.rs": "f41a67639d456511c008d95267e3099d91a279bfa1d7022431260fcd8c1c2373",
+    "tools/rapid-profiler/ordinary-interval/normal/observer.rs": "837bc5590de153503e7418210c5be6b849d1bc7b0bd9a18a1d98363dd48de1e7",
+    "tools/rapid-profiler/verify_normal_interval.py": "e14ea7b161329816e7e5d3dff56132706a853fb6619b3810512afdf88a85852c"
+  },
+  "start_utc": "2026-10-28T23:22:51.453155+00:00",
+  "status": "FUNCTIONAL_PASS",
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  }
+}
