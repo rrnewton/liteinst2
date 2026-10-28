@@ -687,9 +687,44 @@ const _: () = assert!(core::mem::offset_of!(HookContext, rflags) == 136);
 const _: () = assert!(core::mem::offset_of!(HookContext, saved_extended_state) == 144);
 const _: () = assert!(core::mem::size_of::<HookContext>() == 176);
 
+/// Immutable temporary stack geometry for controlled observation.
+///
+/// This selects storage only, not an application CFG, callback-preservation or
+/// unwind certificate. Tree144 reserves an additional 16 bytes below each
+/// application's RSP; callers must keep that space, the aligned extended-state
+/// image and the callback stack writable through every actual return.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ObservationStackProfile {
+    /// Existing System V 128-byte red-zone preservation; context prefix 304.
+    #[default]
+    Legacy128,
+    /// Depth-two tree storage envelope; context prefix 320. No unwind admission.
+    Tree144,
+}
+
+impl ObservationStackProfile {
+    /// Bytes left untouched immediately below the application RSP.
+    pub const fn reserved_bytes(self) -> usize {
+        match self {
+            Self::Legacy128 => SYSTEM_V_RED_ZONE_BYTES as usize,
+            Self::Tree144 => 144,
+        }
+    }
+
+    /// Distance from application RSP to the unchanged 176-byte HookContext.
+    pub const fn context_stack_prefix_bytes(self) -> usize {
+        self.reserved_bytes()
+            + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES as usize
+            + SAVED_INTEGER_BYTES as usize
+            + HOOK_METADATA_BYTES as usize
+    }
+}
+
 /// Checked byte lengths and saved-state layout for one trampoline.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TrampolineLayout {
+    /// Exact immutable observation stack geometry used by this image.
+    pub observation_stack_profile: ObservationStackProfile,
     /// Original instructions executed before the first logical hook.
     ///
     /// This is zero for the original same-site constructors.
@@ -1123,6 +1158,7 @@ enum TrampolineKind {
 /// Immutable emission plan for logical hooks or callback-free relocation.
 #[derive(Clone, Debug)]
 pub struct TrampolinePlan {
+    observation_stack_profile: ObservationStackProfile,
     execute_address: u64,
     return_address: u64,
     hook: Option<HookCallback>,
@@ -1219,6 +1255,7 @@ impl TrampolinePlan {
                     instruction_len: 2,
                 })?;
         Ok(Self {
+            observation_stack_profile: ObservationStackProfile::Legacy128,
             execute_address,
             return_address,
             hook: Some(hook),
@@ -1306,6 +1343,7 @@ impl TrampolinePlan {
             },
         )?;
         Ok(Self {
+            observation_stack_profile: ObservationStackProfile::Legacy128,
             execute_address,
             return_address,
             hook: Some(hook),
@@ -1408,6 +1446,7 @@ impl TrampolinePlan {
             });
         }
         Ok(Self {
+            observation_stack_profile: ObservationStackProfile::Legacy128,
             execute_address: physical,
             return_address: end,
             hook,
@@ -1473,6 +1512,7 @@ impl TrampolinePlan {
             },
         )?;
         Ok(Self {
+            observation_stack_profile: ObservationStackProfile::Legacy128,
             execute_address,
             return_address,
             hook,
@@ -1517,6 +1557,7 @@ impl TrampolinePlan {
             },
         )?;
         Ok(Self {
+            observation_stack_profile: ObservationStackProfile::Legacy128,
             execute_address,
             return_address,
             hook: None,
@@ -1586,6 +1627,28 @@ impl TrampolinePlan {
         end: u64,
         actions: &[ControlledAction],
     ) -> Result<Self, TrampolineError> {
+        Self::from_controlled_actions_with_stack_profile(
+            scan,
+            physical,
+            end,
+            actions,
+            ObservationStackProfile::Legacy128,
+        )
+    }
+
+    /// Builds controlled observation with one immutable stack geometry.
+    ///
+    /// All ordinary action checks still apply. No replacement, ptrace-owned
+    /// stack, optional pre-context, inline-clock or artifact mode is exposed by
+    /// this constructor. Tree144 requires the extra writable stack extent and
+    /// does not itself authenticate a call tree or a preserving callback.
+    pub fn from_controlled_actions_with_stack_profile(
+        scan: &ScanResult,
+        physical: u64,
+        end: u64,
+        actions: &[ControlledAction],
+        profile: ObservationStackProfile,
+    ) -> Result<Self, TrampolineError> {
         for (index, action) in actions.iter().enumerate() {
             if actions[..index]
                 .iter()
@@ -1602,6 +1665,7 @@ impl TrampolinePlan {
             .collect();
         let mut plan = Self::from_actions(scan, physical, end, &static_actions)?;
         plan.controls = actions.to_vec();
+        plan.observation_stack_profile = profile;
         Ok(plan)
     }
 
@@ -1732,6 +1796,31 @@ impl TrampolinePlan {
         Ok(plan)
     }
 
+    /// Immutable observation stack geometry, carried into the emitted layout.
+    pub const fn observation_stack_profile(&self) -> ObservationStackProfile {
+        self.observation_stack_profile
+    }
+
+    // Closed nonlegacy profile: private callers cannot silently mix storage
+    // geometry with an unrelated execution mode, even after future refactors.
+    fn validate_stack_profile(&self, artifact: bool) -> Result<(), TrampolineError> {
+        if self.observation_stack_profile != ObservationStackProfile::Legacy128
+            && (artifact
+                || self.ptrace_stops
+                || self.clock.is_some()
+                || !self.precontext_actions.is_empty()
+                || self.kind != TrampolineKind::Actions
+                || self.controls.is_empty()
+                || self.controls.len() != self.actions.len()
+                || self.actions.iter().any(|action| action.2))
+        {
+            return Err(encoding_error(
+                "stack profile requires unmixed live controlled observation",
+            ));
+        }
+        Ok(())
+    }
+
     /// Exact immutable managed point associations retained by this plan.
     /// Read-only clones cannot recover managed write authority.
     pub fn controlled_actions(&self) -> &[ControlledAction] {
@@ -1793,7 +1882,8 @@ impl TrampolinePlan {
         } else {
             FrameEntryOrigin::ApplicationStack
         };
-        let mut frames = FrameRecorder::new(origin, limits);
+        let mut frames =
+            FrameRecorder::with_profile(origin, limits, self.observation_stack_profile);
         if self.ptrace_stops {
             frames.refuse(FrameTraceRefusal::UnsupportedEntryOrigin);
         } else if matches!(self.kind, TrampolineKind::ExactSyscall) {
@@ -1813,6 +1903,7 @@ impl TrampolinePlan {
         address: u64,
         frames: Option<&mut FrameRecorder>,
     ) -> Result<TrampolineImage, TrampolineError> {
+        self.validate_stack_profile(false)?;
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
             let _ = (address, frames);
@@ -1860,8 +1951,10 @@ impl TrampolinePlan {
                 .checked_add(entry_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let recording = frames.as_deref().is_some_and(FrameRecorder::recording);
-            let mut instrumentation_frames = HelperFrames::new(FrameStage::SaveAndCall);
-            let mut restore_frames = HelperFrames::new(FrameStage::Restore);
+            let mut instrumentation_frames =
+                HelperFrames::with_profile(FrameStage::SaveAndCall, self.observation_stack_profile);
+            let mut restore_frames =
+                HelperFrames::with_profile(FrameStage::Restore, self.observation_stack_profile);
             let instrumentation = self
                 .encode_instrumentation(
                     instrumentation_address,
@@ -1881,6 +1974,7 @@ impl TrampolinePlan {
             let restore = encode_restore(
                 restore_address,
                 &extended_state,
+                self.observation_stack_profile,
                 recording.then_some(&mut restore_frames),
             )?;
             let completion_stop_address = restore_address
@@ -1914,6 +2008,7 @@ impl TrampolinePlan {
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let return_jump = encode_return_jump(return_jump_address, self.return_address)?;
             let layout = TrampolineLayout {
+                observation_stack_profile: self.observation_stack_profile,
                 relocated_prefix_len: prefix.len(),
                 entry_stop_len: entry_stop.len(),
                 instrumentation_len: instrumentation.len(),
@@ -2127,6 +2222,7 @@ impl TrampolinePlan {
         artifact: Option<&ArtifactEmission>,
         frames: Option<&mut FrameRecorder>,
     ) -> Result<TrampolineImage, TrampolineError> {
+        self.validate_stack_profile(artifact.is_some())?;
         if self.clock.is_some() && (artifact.is_some() || frames.is_some() || self.ptrace_stops) {
             return Err(encoding_error(
                 "inline clock supports only live ordinary emission",
@@ -2257,8 +2353,12 @@ impl TrampolinePlan {
                 // immediates and internal relative branches. Their byte strings
                 // are position independent and remain contiguous below.
                 let recording = frames.as_deref().is_some_and(FrameRecorder::recording);
-                let mut instrumentation_frames = HelperFrames::new(FrameStage::SaveAndCall);
-                let mut restore_frames = HelperFrames::new(FrameStage::Restore);
+                let mut instrumentation_frames = HelperFrames::with_profile(
+                    FrameStage::SaveAndCall,
+                    self.observation_stack_profile,
+                );
+                let mut restore_frames =
+                    HelperFrames::with_profile(FrameStage::Restore, self.observation_stack_profile);
                 let instrumentation = self.encode_instrumentation(
                     0,
                     &extended_state,
@@ -2275,6 +2375,7 @@ impl TrampolinePlan {
                 let restore = encode_restore(
                     instrumentation.bytes.len() as u64,
                     &extended_state,
+                    self.observation_stack_profile,
                     recording.then_some(&mut restore_frames),
                 )?;
                 first_hook_lengths.get_or_insert((
@@ -2493,6 +2594,7 @@ impl TrampolinePlan {
             .checked_sub(prefix_len + instrumentation_len + restore_len)
             .ok_or_else(|| encoding_error("coalesced hook exceeds emitted image"))?;
         let layout = TrampolineLayout {
+            observation_stack_profile: self.observation_stack_profile,
             relocated_prefix_len: prefix_len,
             instrumentation_len,
             restore_len,
@@ -2649,16 +2751,11 @@ impl TrampolinePlan {
         mut frames: Option<&mut HelperFrames>,
     ) -> Result<InstrumentationEmission, TrampolineError> {
         let (hook, control) = hook_control;
+        let reserve = self.observation_stack_profile.reserved_bytes() as i32;
         let mut fragments = Vec::new();
         let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
-        assembler
-            .lea(rsp, rsp - SYSTEM_V_RED_ZONE_BYTES)
-            .map_err(encoding_error)?;
-        record_frame_effect(
-            &mut frames,
-            &assembler,
-            FrameEffect::Reserve(SYSTEM_V_RED_ZONE_BYTES),
-        );
+        assembler.lea(rsp, rsp - reserve).map_err(encoding_error)?;
+        record_frame_effect(&mut frames, &assembler, FrameEffect::Reserve(reserve));
         // Reserve the descriptor immediately below the untouched application
         // red zone. Flags and GPR pushes below it retain every pre-existing
         // HookContext offset, while the descriptor becomes its 32-byte tail.
@@ -2709,9 +2806,7 @@ impl TrampolinePlan {
             assembler
                 .lea(
                     rax,
-                    rsp + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES
-                        + SYSTEM_V_RED_ZONE_BYTES
-                        + SAVED_INTEGER_BYTES,
+                    rsp + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES + reserve + SAVED_INTEGER_BYTES,
                 )
                 .map_err(encoding_error)?;
         }
@@ -2848,6 +2943,7 @@ impl TrampolinePlan {
 fn encode_restore(
     address: u64,
     extended_state: &SavedExtendedStateLayout,
+    profile: ObservationStackProfile,
     mut frames: Option<&mut HelperFrames>,
 ) -> Result<Vec<u8>, TrampolineError> {
     let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
@@ -2884,12 +2980,12 @@ fn encode_restore(
         FrameEffect::Release(SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES),
     );
     assembler
-        .lea(rsp, rsp + SYSTEM_V_RED_ZONE_BYTES)
+        .lea(rsp, rsp + profile.reserved_bytes() as i32)
         .map_err(encoding_error)?;
     record_frame_effect(
         &mut frames,
         &assembler,
-        FrameEffect::Release(SYSTEM_V_RED_ZONE_BYTES),
+        FrameEffect::Release(profile.reserved_bytes() as i32),
     );
     assemble_frame_helper(&mut assembler, address, frames)
 }
@@ -5558,6 +5654,7 @@ mod tests {
     #[test]
     fn total_length_includes_every_section() {
         let layout = TrampolineLayout {
+            observation_stack_profile: super::ObservationStackProfile::Legacy128,
             relocated_prefix_len: 0,
             entry_stop_len: 1,
             instrumentation_len: 32,
@@ -9940,3 +10037,6 @@ mod observing_control_tests {
         );
     }
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod stack_profile_tests;

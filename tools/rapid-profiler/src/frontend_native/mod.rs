@@ -37,6 +37,11 @@ pub use always_on::{
 /// Separate bounded scalar-symbol admission; no publication or interval execution.
 pub use module::ordinary::{IntegerLeafCertificate, IntegerLeafContract, LoadedIntegerLeaf};
 
+/// Closed two-function admission only; execution awaits its separate tree profile.
+pub use module::ordinary::{
+    CallTreeCertificate, LoadedCallTree, TreeCallEdge, TreeContract, TreeRootCertificate,
+};
+
 /// Separate ordinary scalar-function interval profile; raw, uncalibrated timing.
 pub use always_on::site::ordinary::{OrdinarySitePreparation, PreparedOriginalCall};
 pub use always_on::{
