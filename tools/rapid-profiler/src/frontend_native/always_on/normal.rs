@@ -163,6 +163,18 @@ impl PreparedNormalController {
     pub fn stage(&mut self, config: Config) -> Result<IntervalEpoch, BridgeError> {
         self.0.stage(config)
     }
+    /// Prepare exactly Limits.epochs non-Clone fixed-Config banks once, before
+    /// activation, staging or registration, in pristine streaming-history mode.
+    /// All fallible allocation finishes before this commits banked mode; ordinary
+    /// allocating stage then refuses. Initialized slot state is touched, not every
+    /// byte of storage capacity: this promises neither residency nor a 2 ms bound.
+    /// Dropped/forgotten banks and legacy retirement permanently lose capacity.
+    pub fn prepare_epoch_storage(
+        &mut self,
+        config: Config,
+    ) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
+        super::epoch_storage::prepare(&mut self.0, config)
+    }
     /// # Safety
     /// The pristine fork/activation obligations of PreparedIntervalController
     /// apply. NormalLeafContract, successful publication and continuous source,

@@ -53,6 +53,31 @@ The last removal and shutdown retain the original strict2 s bound. The
 520-epoch campaign requires521 actions; streaming history preserves their
 absolute positions through explicit bounded history drains.
 
+## Epoch storage
+
+Before activation and Ready, the session prepares three fixed storage banks
+with A=K. The two-worker sessions prepare four with A=4096. Each bank holds the
+function, admission/terminal and payload vectors. Preparation initializes and
+touches their slot state; it does not pin pages. No replacement banks can be
+created, and ordinary allocating staging is refused in this explicit mode.
+
+Each prepared stage creates fresh ownership shells and a fresh generation.
+Reclamation requires a closed, noncurrent epoch with zero reservations and
+exclusive ownership of both the frontend and model Arc. A retained Report,
+admission handle or pending return receipt prevents reuse even when the
+reservation count is zero. The consumer copies and checks each final Report
+once, retaining its output
+obligation while another owner delays reclamation. After all owners release,
+reclamation clears every slot and returns the same vectors for another epoch.
+History positions, worker identities and completion sequences keep advancing.
+
+This removes recurring allocation of the three vectors. Two Arc allocations,
+full-vector clearing, report copying, locks and history/output work remain.
+Work performed by an arm still precedes its original completion timestamp; the
+2 ms gate is unchanged. Storage reuse alone supplies no latency guarantee.
+
+## Results and completion
+
 Output is typed CSV with a4 MiB total limit. READY declares the version,
 K/epochs/period/lateness/command/input/FIFO/reply bounds. RESULT contains ID,
 ordinal,bound,input length,diagnostic FNV-1a64 checksum,value,owner,generation,

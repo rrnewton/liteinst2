@@ -708,3 +708,6 @@ mod owned_tests;
 
 #[cfg(test)]
 mod tests;
+
+// Crate-private fixed-vector ownership, separate from legacy construction.
+pub(crate) mod storage;
