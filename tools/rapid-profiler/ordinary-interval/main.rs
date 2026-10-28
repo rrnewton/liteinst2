@@ -23,6 +23,7 @@ use std::time::{Duration, Instant};
 mod backoff;
 mod counter;
 mod exact;
+mod selected;
 mod streamed;
 mod timed;
 mod tree;
@@ -347,6 +348,35 @@ fn check_report(report: &Report, rows: &[RawInterval], generation: u64, sequence
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("selected-work") {
+        assert_eq!(
+            args.len(),
+            6,
+            "ordinary-interval selected-work CANDIDATE FINAL ELF_VA LENGTH"
+        );
+        selected::run(
+            Path::new(&args[2]),
+            Path::new(&args[3]),
+            selected::number(args[4].to_str().unwrap()),
+            selected::number(args[5].to_str().unwrap()),
+        );
+        return;
+    }
+    if args.get(1).and_then(|s| s.to_str()) == Some("selected-refusals") {
+        assert_eq!(
+            args.len(),
+            7,
+            "ordinary-interval selected-refusals PRESTRIP FINAL MUTATED ELF_VA LENGTH"
+        );
+        selected::refusals(
+            Path::new(&args[2]),
+            Path::new(&args[3]),
+            Path::new(&args[4]),
+            selected::number(args[5].to_str().unwrap()),
+            selected::number(args[6].to_str().unwrap()),
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("tree-comparison-batch") {
         assert_eq!(
             args.len(),
