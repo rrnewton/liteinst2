@@ -263,9 +263,7 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
             root = Path(temporary)
             here = root / "evaluation/admission"
             here.mkdir(parents=True)
-            (here / "corpus.json").write_text(json.dumps({"schema_version": 1,
-                "backing_cleanup_harnesses": {name: [run.backing_cleanup.specification()]
-                    for name in ("workspace_tests", "serial_launch")}}))
+            (here / "corpus.json").write_bytes(Path(__file__).with_name("corpus.json").read_bytes())
             source = {"revision": "a" * 40, "tracked_clean": True}
 
             def completed(argv, env, log, timeout):

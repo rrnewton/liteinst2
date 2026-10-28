@@ -6,7 +6,9 @@
         "controls": [
           "admitted_exec_native_backing_probes_close_exact_owned_resources",
           "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
-          "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+          "exec_backing_native_invalid_unmap_aborts_isolated_owner",
+          "admitted_exec_native_backing_query_preserves_cleanup",
+          "admitted_exec_native_backing_enotty_uses_exact_legacy_projection"
         ],
         "id": "control/exec_backing_cleanup",
         "protocol": "LITEINST_BACKING_CLEANUP_V1",
@@ -15,7 +17,9 @@
           "complete",
           "read_error",
           "unwind",
-          "invalid_unmap"
+          "invalid_unmap",
+          "query_error",
+          "legacy"
         ]
       }
     ],
@@ -25,7 +29,9 @@
         "controls": [
           "admitted_exec_native_backing_probes_close_exact_owned_resources",
           "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
-          "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+          "exec_backing_native_invalid_unmap_aborts_isolated_owner",
+          "admitted_exec_native_backing_query_preserves_cleanup",
+          "admitted_exec_native_backing_enotty_uses_exact_legacy_projection"
         ],
         "id": "control/exec_backing_cleanup",
         "protocol": "LITEINST_BACKING_CLEANUP_V1",
@@ -34,7 +40,9 @@
           "complete",
           "read_error",
           "unwind",
-          "invalid_unmap"
+          "invalid_unmap",
+          "query_error",
+          "legacy"
         ]
       }
     ]
@@ -5985,7 +5993,7 @@
       },
       "test/b3_exec_admission": {
         "ignored": 0,
-        "tests": 5
+        "tests": 7
       },
       "test/b3_mapping_admission": {
         "ignored": 0,
@@ -6085,7 +6093,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 737
+        "tests": 742
       }
     },
     "workspace_tests": {
@@ -6115,7 +6123,7 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 11
+        "tests": 15
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6131,7 +6139,7 @@
       },
       "test/b3_exec_admission": {
         "ignored": 0,
-        "tests": 5
+        "tests": 7
       },
       "test/b3_mapping_admission": {
         "ignored": 0,
@@ -6160,6 +6168,10 @@
       "test/checkpoint": {
         "ignored": 0,
         "tests": 23
+      },
+      "test/coalesced_composition": {
+        "ignored": 0,
+        "tests": 3
       },
       "test/concurrent_control": {
         "ignored": 0,
@@ -6267,7 +6279,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 0,
-        "tests": 26
+        "tests": 31
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6435,7 +6447,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 227
+        "tests": 242
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6455,7 +6467,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 737
+        "tests": 742
       },
       "unit/liteinst_preempt/main": {
         "ignored": 0,
@@ -6469,9 +6481,13 @@
         "ignored": 0,
         "tests": 0
       },
+      "unit/ordinary_interval/main": {
+        "ignored": 0,
+        "tests": 14
+      },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
-        "tests": 160
+        "tests": 186
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
@@ -7527,6 +7543,6 @@
       "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::thirtytwo::runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history"
     }
   ],
-  "recorder_tests": 330,
+  "recorder_tests": 340,
   "schema_version": 1
 }

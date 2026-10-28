@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 from parsing import require
+from core_cc846_inventory import peel_python
 
 PRE_RUNTIME_STACK_CONSUMER_CORPUS_SHA256 = 'f6bdba51926d868460764db440f1d084eb5228b3cd32f1cbee52cc6236e8ed24'
 OLD_PYTHON305_SHA256 = 'b48c3f3f5c2e33915767d3f31e0032fbd79ccafa23138cfa624e7520adcd8089'
@@ -27,6 +28,7 @@ def digest(value):
 
 def before_runtime_stack_consumer_python(identities):
     """Authenticate all 25 additions and the entire ordered old 305-name list."""
+    identities = peel_python(identities)
     require(type(identities) is list and len(identities) == CURRENT_RECORDER_TESTS
             and all(type(value) is str for value in identities)
             and len(set(identities)) == len(identities)
@@ -51,7 +53,7 @@ def python_source_identities():
                                       and method.name.startswith("test_"))
     except (OSError, UnicodeError, SyntaxError):
         require(False, "runtime_stack_consumer_source_inventory_differs")
-    return identities
+    return peel_python(identities)
 
 
 def require_current_runtime_stack_consumer_sources():

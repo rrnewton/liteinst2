@@ -29,8 +29,8 @@ def digest(value):
 
 def source_before_inprocess(path, data, error):
     """Authenticate each exact new Cargo file before its one literal inverse."""
-    data = source_before_core_c7a3e1e(path, data, error)
     data = source_before_selected(path, data, error)
+    data = source_before_core_c7a3e1e(path, data, error)
     if path not in SOURCE_PROJECTIONS:
         return data
     row = SOURCE_PROJECTIONS[path]

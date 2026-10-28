@@ -26,6 +26,7 @@ import inprocess_inventory as inprocess
 import selected_inventory as selected
 import inline_clock_inventory as inline
 import core223_inventory as core223
+import core_cc846_inventory as corecc846
 from owned_stack_inventory import before_owned_stack
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
@@ -308,6 +309,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
         # Authenticate the new complete catalogue once at raw ingress. All
         # literal historical assertions below retain their predecessor inputs.
         core223_current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        core223_current = corecc846.before_cc846(core223_current)
         core223_untouched = copy.deepcopy(core223_current)
         core223_previous = core223.before_core223(core223_current)
         self.assertEqual(core223_current, core223_untouched)
@@ -534,6 +536,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
         for path, row in corec7.SOURCE_PROJECTIONS.items():
             data = (Path(__file__).resolve().parents[2] / path).read_bytes()
+            data = corecc846.source_before_cc846(path, data, "core_c7a3e1e_source_inventory_differs")
             restored = corec7.source_before_core_c7a3e1e(path, data, "core_c7a3e1e_source_inventory_differs")
             self.assertEqual(hashlib.sha256(restored).hexdigest(), row["previous_sha256"])
             for bad in (restored, data + b"\n// PRIVATE_SENTINEL\n"):
