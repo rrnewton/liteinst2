@@ -226,7 +226,7 @@ def main():
         assert tuple(r['name'] for r in old['stages']) == prior.STAGES
         assert all(r['status'] == 'PASS' for r in old['stages']+old['trials'])
         assert tuple((r['name'], r['mode'], r['k']) for r in old['trials']) == TRIALS
-        assert old['closure'] == dict(owned_stages=9, normal_helper_reaps=9, absence='ECHILD', producer_child_reaps=6, producer_rescues=0, owner_rescues=0)
+        assert old['closure'] == dict(owned_stages=10, normal_helper_reaps=10, absence='ECHILD', producer_child_reaps=6, producer_rescues=0, owner_rescues=0)
         assert old['tools'] == tool_hashes
         sources = read(nested/'sources-before.json')
         pin(nested/'sources-before.json', old['sources']['manifest']); pin(nested/'sources-after.json')

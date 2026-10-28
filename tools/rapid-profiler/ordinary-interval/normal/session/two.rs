@@ -500,6 +500,7 @@ fn run_subject(
     // alive when a recoverable controller error selects process fail-stop.
     // Returning Err from their owner scope would disconnect attached workers
     // and close epochs before the outer wrapper could choose exit(1).
+    let mut loop_trace = loop_trace::Trace::default();
     let outcome = (|| -> Result<(), String> {
         pin(Some(cpus[0]));
         let mut tids = [0; 2];
@@ -548,7 +549,26 @@ fn run_subject(
             let mut progress = false;
             let observed = Instant::now();
             let waited = last_wait.take();
-            match schedule.poll(observed, requested).map_err(|e| {
+            let decision = schedule.poll(observed, requested).map_err(|e| {
+                loop_trace.refused_poll(
+                    observed,
+                    loop_trace::State {
+                        pending: match dispatch.pending.as_ref() {
+                            None => 0,
+                            Some(Pending::Call { .. }) => 1,
+                            Some(Pending::Flush(_)) => 2,
+                        },
+                        requested,
+                        stopping: schedule.is_stopping(),
+                        accepted: ledger.accepted.len(),
+                        history: engine.history.last().map_or(0, |h| h.range().end),
+                        reports: engine.reports.len(),
+                        finished: u8::from(finished[0].is_some())
+                            | (u8::from(finished[1].is_some()) << 1),
+                        write_blocked: io.write_blocked(),
+                        output_drained: io.drained(),
+                    },
+                );
                 format!(
                     "{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}",
                     clock_failure(e, "poll", engine.committed_arms, &schedule),
@@ -556,8 +576,29 @@ fn run_subject(
                     observed.duration_since(previous_poll).as_nanos(),
                     waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))
                 )
-            })? {
+            })?;
+            loop_trace.begin(
+                observed,
+                loop_trace::State {
+                    pending: match dispatch.pending.as_ref() {
+                        None => 0,
+                        Some(Pending::Call { .. }) => 1,
+                        Some(Pending::Flush(_)) => 2,
+                    },
+                    requested,
+                    stopping: schedule.is_stopping(),
+                    accepted: ledger.accepted.len(),
+                    history: engine.history.last().map_or(0, |h| h.range().end),
+                    reports: engine.reports.len(),
+                    finished: u8::from(finished[0].is_some())
+                        | (u8::from(finished[1].is_some()) << 1),
+                    write_blocked: io.write_blocked(),
+                    output_drained: io.drained(),
+                },
+            );
+            match decision {
                 ScheduleDecision::Arm { .. } => {
+                    loop_trace.decision("arm");
                     if let Err(error) = engine.arm(&mut io) {
                         return Err(format!(
                             "arm/history failed: committed={} completed={} {error}",
@@ -571,12 +612,14 @@ fn run_subject(
                     progress = true;
                 }
                 ScheduleDecision::Stop => {
+                    loop_trace.decision("stop");
                     engine.stop(&mut io)?;
                     progress = true;
                 }
-                ScheduleDecision::Wait => (),
+                ScheduleDecision::Wait => loop_trace.decision("wait"),
             }
             previous_poll = observed;
+            loop_trace.mark(loop_trace::Phase::PollArm);
             // At most one reply, rotating preference. Metadata/timer never wait on a queue.
             let mut event = None;
             for offset in 0..2 {
@@ -596,17 +639,20 @@ fn run_subject(
             if let Some((i, event)) = event {
                 match event {
                     worker::Event::Batch { calls, native } => {
+                        loop_trace.reply("batch", i + 1, calls.len());
                         assert!(finished[i].is_none());
                         engine.history(&mut io)?;
                         ledger.batch(i, calls, *native, &engine.history, &mut io)?;
                     }
                     worker::Event::Flushed { id, totals } => {
+                        loop_trace.reply("flushed", i + 1, 0);
                         ledger.totals(i, totals);
                         if dispatch.flushed(i, id, totals)? {
                             ledger.flushed(id, &mut io)?;
                         }
                     }
                     worker::Event::Finished(totals) => {
+                        loop_trace.reply("finished", i + 1, 0);
                         ledger.totals(i, totals);
                         dispatch.finished(i, totals)?;
                         assert!(finished[i].replace(totals).is_none());
@@ -615,9 +661,17 @@ fn run_subject(
                 }
                 progress = true;
             }
+            loop_trace.progress(progress);
+            loop_trace.mark(loop_trace::Phase::ReplyHistory);
             engine.retire(&mut io)?;
+            loop_trace.mark(loop_trace::Phase::Retire);
             if !schedule.is_stopping() && !requested && dispatch.pending.is_none() {
                 if let Some(command) = io.command()? {
+                    loop_trace.command(match &command {
+                        Command::Call { .. } => "call",
+                        Command::Flush { .. } => "flush",
+                        Command::Stop => "stop",
+                    });
                     if command == Command::Stop {
                         requested = true;
                     } else {
@@ -629,7 +683,11 @@ fn run_subject(
                     return Err("EOF before STOP or scheduled shutdown".into());
                 }
             }
+            loop_trace.progress(progress);
+            loop_trace.mark(loop_trace::Phase::Input);
             progress |= dispatch.advance(&tx, schedule.is_stopping(), ledger.prefixes())?;
+            loop_trace.progress(progress);
+            loop_trace.mark(loop_trace::Phase::Dispatch);
             if !final_output
                 && finished.iter().all(Option::is_some)
                 && handles
@@ -688,7 +746,9 @@ fn run_subject(
                 ))?;
                 final_output = true;
             }
+            loop_trace.mark(loop_trace::Phase::Finalize);
             io.write()?;
+            loop_trace.mark(loop_trace::Phase::Write);
             if final_output && io.drained() {
                 schedule.check_completion(Instant::now()).map_err(|e| {
                     clock_failure(e, "final-output", engine.committed_arms, &schedule)
@@ -699,6 +759,7 @@ fn run_subject(
             let bound = schedule
                 .wait_bound(observed)
                 .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
+            loop_trace.mark(loop_trace::Phase::WaitBound);
             if !progress {
                 let wait = guarded_wait(started, observed, policy, &schedule, bound);
                 if wait.is_zero() {
@@ -716,12 +777,29 @@ fn run_subject(
                     last_wait = Some((wait, before.elapsed()));
                 }
             }
+            loop_trace.mark(loop_trace::Phase::Wait);
+            loop_trace.complete(loop_trace::State {
+                pending: match dispatch.pending.as_ref() {
+                    None => 0,
+                    Some(Pending::Call { .. }) => 1,
+                    Some(Pending::Flush(_)) => 2,
+                },
+                requested,
+                stopping: schedule.is_stopping(),
+                accepted: ledger.accepted.len(),
+                history: engine.history.last().map_or(0, |h| h.range().end),
+                reports: engine.reports.len(),
+                finished: u8::from(finished[0].is_some()) | (u8::from(finished[1].is_some()) << 1),
+                write_blocked: io.write_blocked(),
+                output_drained: io.drained(),
+            });
         }
     })();
     if let Err(error) = outcome {
+        let details = loop_trace.failure();
         match subject {
-            Subject::Strnlen41 => eprintln!("normal-session-two FAILED: {error}"),
-            Subject::Exact37 => eprintln!("normal-session-two-exact FAILED: {error}"),
+            Subject::Strnlen41 => eprintln!("normal-session-two FAILED: {error}{details}"),
+            Subject::Exact37 => eprintln!("normal-session-two-exact FAILED: {error}{details}"),
         }
         // No cancellation, checkpoint, detach or join is fabricated on failure.
         // Independent worker/callback failures keep their original fail-stop.
