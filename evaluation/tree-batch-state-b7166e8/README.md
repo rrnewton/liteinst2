@@ -65,3 +65,27 @@ This establishes finite batch correctness with selected full-state coverage.
 It supplies no general workload, full-middle-call state, hardware-cache,
 clock-accuracy or performance claim. The separate owner qualification covers
 batch abandonment, incomplete finish and lifecycle failures.
+
+Merged revision `eefaefefc8e35563c64c3baa90297eb0967ffea0` includes main
+`7cdc68012a7bdecfd52d6b70e4318b60c51e9cab`. All 348 native qualification inputs
+are byte-identical to the tested revision above; the native result is inherited
+by that source comparison, not reported as a second run. The seven required
+checks passed on the merged revision:
+
+| Check | Result | Wall seconds |
+| --- | --- | ---: |
+| Formatting | PASS | 6.186 |
+| Strict workspace Clippy | PASS | 30.182 |
+| All-feature/all-target workspace check | PASS | 3.666 |
+| Default workspace tests | 2,878 passed, 0 failed, 32 ignored | 337.916 |
+| Serial launch | 1,039 passed, 0 failed | 129.826 |
+| Staged allocation regressions | 3 passed, 0 failed | 0.037 |
+| Prefixed-pun oracle | 36 passed, 0 failed | 1.329 |
+
+Workspace testing retained the full 316-CPU affinity and default libtest
+parallelism. The 20 newly ignored cases are the 19 fresh-process owner cases
+qualified in `evaluation/tree-batch-owners-b291ef8/` and the hardware prerequisite
+qualified here; no inherited test was made ignored. Nested child summaries do
+not count as additional workspace tests. Every command completed normally with
+zero cleanup rescues. Reproduce these checks with the command in
+`merged-gates.json`; their durations are operational validation measurements.
