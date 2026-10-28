@@ -30,7 +30,7 @@ SECTIONS {
     ASSERT(ADDR(.text.helper) == 0x200402000 && SIZEOF(.text.helper) == 4096, "complete native helper page")
     . = 0x200403000;
     .data.fixture : { *(.data.fixture) } :data
-    ASSERT(pl_data == 0x200403000 && pl_data_end-pl_data == 16384, "full observed data and stack extent")
+    ASSERT(pl_data == 0x200403000 && pl_data_end - pl_data == 16384, "full observed data and stack extent")
     /* Literal DT_NEEDED/DT_STRTAB metadata, as in the existing emitted rseq
        custom-interpreter images. No unused libc or conventional ld.so exists. */
     .dynamic : {
