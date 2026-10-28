@@ -141,9 +141,9 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 35141,
+      "bytes": 35686,
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "a13d02cc05e41bc5fb381926eaf0b809f156652604b14e891f6d083d6c06830e"
+      "sha256": "80f92c31d9e8af2f1a4fca7aaae3d2d7227a9decdf2aa74ce19521adff84ccdb"
     },
     {
       "bytes": 10296,

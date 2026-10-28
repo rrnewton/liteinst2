@@ -237,12 +237,27 @@ fn canonical_vmovdqu128_store(instruction: &Instruction, bytes: &[u8]) -> bool {
 }
 
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
+    classify(pc, source, None)
+}
+
+// The footprint consumes this same decoded object only after policy == 1,
+// then independently retains its Code/length/next_ip identity checks.
+pub(crate) fn one_with_instruction(
+    pc: u64, source: &[u8], instruction: &mut Instruction,
+) -> Result<Classification, u32> {
+    classify(pc, source, Some(instruction))
+}
+
+fn classify(
+    pc: u64, source: &[u8], instruction_out: Option<&mut Instruction>,
+) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
         abi_version: 1, code: decoded.code, length: decoded.length, ..Classification::default() };
     if decoded.decode_status != abi::VALID || decoded.kind != abi::NONE { return Ok(out); }
     let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
     let instruction = decoder.decode();
+    if let Some(output) = instruction_out { *output = instruction; }
     if instruction.code() == Code::Endbr64 {
         // Existing no-CET profile only: one canonical instruction, no added
         // or ignored prefix. Other Code values retain the old prefix policy.
