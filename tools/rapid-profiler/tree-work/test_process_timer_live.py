@@ -47,7 +47,11 @@ def main():
         request = dict(argv=wrapped, cwd=str(root), env=env, stdout=str(directory/'stdout.txt'),
             stderr=str(directory/'stderr.txt'), cpu_seconds=2, wall_seconds=wall, file_bytes=cap)
         save(directory/'request.json', request)
-        log = root/'target/evaluation'/('process-timer-'+a.output.name+'-'+mode+'.log')
+        # Preserve the complete campaign-relative name: every campaign calls
+        # its control directory "timer-controls", so a basename-only log path
+        # collides with an earlier, deliberately retained campaign.
+        log = root/'target/evaluation/process-timer'/a.output.relative_to(root/'ignored')/(mode+'.log')
+        log.parent.mkdir(parents=True, exist_ok=True)
         assert not log.exists()
         closed = processes.run_command([sys.executable, '-B', str(helper), '--request',
             str(directory/'request.json'), '--receipt', str(directory/'receipt.json')], env, log, wall+25, 1048576)
