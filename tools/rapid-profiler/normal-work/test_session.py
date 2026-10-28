@@ -126,7 +126,7 @@ DONE,EpochLimit,2,3,2,2,2,0,2,0,1,1
             with self.assertRaises(AssertionError): reap(child, 15)
         child.wait.assert_called_once_with(timeout=1)
     def test_setup_failure_still_owns_and_reaps_child(self):
-        for fail_at in ('selector', 'descriptor'):
+        for fail_at in ('placement', 'readback', 'selector', 'descriptor'):
             with tempfile.TemporaryDirectory() as directory:
                 output = Path(directory)/'result'
                 child = Mock(returncode=None)
@@ -134,20 +134,39 @@ DONE,EpochLimit,2,3,2,2,2,0,2,0,1,1
                 def reaped(): child.returncode = -9
                 child.wait.side_effect = reaped
                 selector = Mock()
+                affinity = {0, 1, 2, 3}
+                def set_affinity(pid, mask):
+                    nonlocal affinity
+                    self.assertEqual(pid, 0)
+                    if set(mask) == {3}:
+                        if fail_at == 'placement': raise OSError('placement')
+                        if fail_at == 'readback': return
+                    affinity = set(mask)
+                def spawn(*args, **kwargs):
+                    self.assertEqual(affinity, {0, 1, 2, 3})
+                    return child
                 argv = ['driver', '--binary', 'b', '--candidate', 'c', '--trusted', 't', '--output', str(output),
                     '--elf-va', '4096', '--length', '41', '--k', '10', '--mode', 'full']
                 with patch('sys.argv', argv), patch('session_driver.authenticate'), \
-                     patch('session_driver.os.sched_getaffinity', return_value={0, 1, 2, 3}), \
-                     patch('session_driver.os.sched_setaffinity'), patch('builtins.print'), \
-                     patch('session_driver.subprocess.Popen', return_value=child), \
-                     patch('session_driver.selectors.DefaultSelector', side_effect=OSError('setup') if fail_at == 'selector' else None, return_value=selector), \
-                     patch('session_driver.os.set_blocking', side_effect=OSError('setup')):
+                     patch('session_driver.os.sched_getaffinity', side_effect=lambda pid: set(affinity)), \
+                     patch('session_driver.os.sched_setaffinity', side_effect=set_affinity), patch('builtins.print'), \
+                     patch('session_driver.subprocess.Popen', side_effect=spawn), \
+                     patch('session_driver.selectors.DefaultSelector', side_effect=OSError('setup') if fail_at == 'selector' else None, return_value=selector) as select, \
+                     patch('session_driver.os.set_blocking', side_effect=OSError('setup')) as block:
                     with self.assertRaises(AssertionError): main()
                 child.kill.assert_called_once_with()
                 child.wait.assert_called_once_with()
                 result = json.loads((output/'result.json').read_text())
                 self.assertEqual(result['status'], 'FAILED')
                 self.assertTrue(result['rescue'])
+                if fail_at in ('placement', 'readback'):
+                    select.assert_not_called(); block.assert_not_called()
+                    self.assertIn('OSError: placement' if fail_at == 'placement' else 'producer singleton affinity', result['error'])
+                else:
+                    self.assertEqual(affinity, {3})
+                    select.assert_called_once_with()
+                    if fail_at == 'selector': block.assert_not_called()
+                    else: block.assert_called_once()
 
     def test_refusal_requires_exact_normal_exit_one(self):
         transcript = b'READY,normal-session-v1,10,520,10,2,4096,4096,4,1\n'

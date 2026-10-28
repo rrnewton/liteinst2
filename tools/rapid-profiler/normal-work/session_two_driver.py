@@ -144,9 +144,13 @@ def main():
         advance()
     rescue, failure, selector = False, None, None
     summary = dict(status='FAILED', mode=a.mode, k=a.k, error='child setup incomplete')
+    # The child inherits all four CPUs before only this producer is narrowed.
+    assert os.sched_getaffinity(0) == set(cpus), 'child inheritance affinity'
     child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
         # A successful Popen is immediately guarded, including fd/selector setup.
+        os.sched_setaffinity(0, {cpus[3]})
+        assert os.sched_getaffinity(0) == {cpus[3]}, 'producer singleton affinity'
         remaining(deadline)
         selector = selectors.DefaultSelector()
         for pipe, name in ((child.stdout, 'out'), (child.stderr, 'err')):
