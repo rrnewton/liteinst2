@@ -1,0 +1,891 @@
+{
+  "artifacts_unchanged": true,
+  "bounds": {
+    "cpu_seconds": 30,
+    "file_bytes": 16777216,
+    "memory_bytes": 536870912,
+    "wall_seconds": 60
+  },
+  "bridge_sha256": "b8986c2dec23027fb6bc6816a8b24aad92cba4f62ebc28e98c8a396de0ff0492",
+  "cases": [
+    {
+      "cpuid_nx": {
+        "attempts": 38,
+        "commits": 38,
+        "hardware_entered": 1,
+        "hardware_returned": 1,
+        "phase": 3,
+        "samples": 38
+      },
+      "dependencies": [
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 0,
+      "gated_whole_process_ns": 9769962023,
+      "input_sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 415,
+        "cpuid": 38,
+        "failure_code": 0,
+        "nx_faults": 22146,
+        "rdtsc": 10,
+        "rdtscp": 0,
+        "source_syscalls": 47,
+        "status": 0
+      },
+      "name": "true-default",
+      "native_exit": 0,
+      "native_whole_process_ns": 4374066,
+      "output_equal": true,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pages": {
+        "admissions": 415,
+        "attempts": 3157,
+        "blocked": 2742,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 415,
+        "epoch_error": 0,
+        "epoch_exits": 415,
+        "failure_code": 0,
+        "first_admission_ns": 79499,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 0,
+        "main_refaults": 0,
+        "refaults": 5,
+        "revisit_count": 16,
+        "revisit_ns": [
+          83325,
+          81943,
+          82615,
+          80371,
+          80501,
+          83055,
+          76865,
+          82915,
+          78077,
+          77476,
+          85017,
+          87061,
+          81322,
+          79339,
+          87982,
+          99930
+        ],
+        "status": 0,
+        "version": 1
+      },
+      "passed": true,
+      "report_error": null
+    },
+    {
+      "cpuid_nx": {
+        "attempts": 38,
+        "commits": 38,
+        "hardware_entered": 1,
+        "hardware_returned": 1,
+        "phase": 3,
+        "samples": 38
+      },
+      "dependencies": [
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 0,
+      "gated_whole_process_ns": 7092995809,
+      "input_sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 1389,
+        "cpuid": 38,
+        "failure_code": 0,
+        "nx_faults": 14283,
+        "rdtsc": 10,
+        "rdtscp": 0,
+        "source_syscalls": 48,
+        "status": 0
+      },
+      "name": "true-disabled",
+      "native_exit": 0,
+      "native_whole_process_ns": 3391213,
+      "output_equal": true,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pages": {
+        "admissions": 1389,
+        "attempts": 13721,
+        "blocked": 12332,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 1389,
+        "epoch_error": 0,
+        "epoch_exits": 1389,
+        "failure_code": 0,
+        "first_admission_ns": 81893,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 4,
+        "main_refaults": 0,
+        "refaults": 28,
+        "revisit_count": 16,
+        "revisit_ns": [
+          94002,
+          144627,
+          970156,
+          91347,
+          152558,
+          85829,
+          82644,
+          86659,
+          87801,
+          82444,
+          81803,
+          81833,
+          80752,
+          156625,
+          147341,
+          82164
+        ],
+        "status": 0,
+        "version": 1
+      },
+      "passed": true,
+      "report_error": null
+    },
+    {
+      "cpuid_nx": null,
+      "dependencies": [
+        {
+          "names": [
+            "libselinux.so.1"
+          ],
+          "sha256": "c265777e75d52d549e52ec3b24df4f760d26fb439cc468b260d34175d1bac0e5",
+          "size": 175624
+        },
+        {
+          "names": [
+            "libcap.so.2"
+          ],
+          "sha256": "29a6c106d86e91a4f3c6cbbe4645a2e08fc792522849ae21dcb1e605fa17144a",
+          "size": 36296
+        },
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "libpcre2-8.so.0"
+          ],
+          "sha256": "2f9276d0d881d95db4513d415b749a0f871fc7dc996ba813e48c50d784b84c10",
+          "size": 636720
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": -9,
+      "gated_whole_process_ns": 30372617176,
+      "input_sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": null,
+        "cpuid": null,
+        "failure_code": null,
+        "nx_faults": null,
+        "rdtsc": null,
+        "rdtscp": null,
+        "source_syscalls": null,
+        "status": null
+      },
+      "name": "ls-default",
+      "native_exit": 0,
+      "native_whole_process_ns": 4544815,
+      "output_equal": false,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pages": {},
+      "passed": false,
+      "report_error": "ValueError: literal lane and complete report"
+    },
+    {
+      "cpuid_nx": {
+        "attempts": 38,
+        "commits": 38,
+        "hardware_entered": 1,
+        "hardware_returned": 1,
+        "phase": 3,
+        "samples": 38
+      },
+      "dependencies": [
+        {
+          "names": [
+            "libselinux.so.1"
+          ],
+          "sha256": "c265777e75d52d549e52ec3b24df4f760d26fb439cc468b260d34175d1bac0e5",
+          "size": 175624
+        },
+        {
+          "names": [
+            "libcap.so.2"
+          ],
+          "sha256": "29a6c106d86e91a4f3c6cbbe4645a2e08fc792522849ae21dcb1e605fa17144a",
+          "size": 36296
+        },
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "libpcre2-8.so.0"
+          ],
+          "sha256": "2f9276d0d881d95db4513d415b749a0f871fc7dc996ba813e48c50d784b84c10",
+          "size": 636720
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 0,
+      "gated_whole_process_ns": 21236220425,
+      "input_sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 5732,
+        "cpuid": 38,
+        "failure_code": 0,
+        "nx_faults": 42879,
+        "rdtsc": 10,
+        "rdtscp": 0,
+        "source_syscalls": 102,
+        "status": 0
+      },
+      "name": "ls-disabled",
+      "native_exit": 0,
+      "native_whole_process_ns": 3416322,
+      "output_equal": true,
+      "output_sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e",
+      "pages": {
+        "admissions": 5732,
+        "attempts": 41586,
+        "blocked": 35854,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 5732,
+        "epoch_error": 0,
+        "epoch_exits": 5732,
+        "failure_code": 0,
+        "first_admission_ns": 92649,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 38,
+        "main_refaults": 0,
+        "refaults": 46,
+        "revisit_count": 16,
+        "revisit_ns": [
+          82234,
+          81292,
+          83034,
+          81943,
+          82614,
+          81442,
+          81152,
+          84608,
+          91597,
+          80751,
+          80911,
+          79199,
+          79099,
+          106150,
+          78578,
+          80831
+        ],
+        "status": 0,
+        "version": 1
+      },
+      "passed": true,
+      "report_error": null
+    },
+    {
+      "cpuid_nx": {
+        "attempts": 39,
+        "commits": 39,
+        "hardware_entered": 1,
+        "hardware_returned": 1,
+        "phase": 3,
+        "samples": 39
+      },
+      "dependencies": [
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 0,
+      "gated_whole_process_ns": 1369656921,
+      "input_sha256": "c75fdfc9a7bcd1993edad3226a08b3bc2585bfbc8259e948879082e5f8daf60e",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 174,
+        "cpuid": 39,
+        "failure_code": 0,
+        "nx_faults": 2578,
+        "rdtsc": 6,
+        "rdtscp": 0,
+        "source_syscalls": 13,
+        "status": 0
+      },
+      "name": "boundary-disabled",
+      "native_exit": 0,
+      "native_whole_process_ns": 2765321,
+      "output_equal": true,
+      "output_sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32",
+      "pages": {
+        "admissions": 174,
+        "attempts": 2376,
+        "blocked": 2202,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 174,
+        "epoch_error": 0,
+        "epoch_exits": 174,
+        "failure_code": 0,
+        "first_admission_ns": 83055,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 4,
+        "main_refaults": 1,
+        "refaults": 5,
+        "revisit_count": 16,
+        "revisit_ns": [
+          82354,
+          81642,
+          82523,
+          82594,
+          82805,
+          85048,
+          85178,
+          81783,
+          80630,
+          81433,
+          80982,
+          78508,
+          82544,
+          93010,
+          85368,
+          88513
+        ],
+        "status": 0,
+        "version": 1
+      },
+      "passed": true,
+      "report_error": null
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "rustup",
+        "which",
+        "cargo"
+      ],
+      "elapsed_ns": 7936014,
+      "exit": 0,
+      "name": "resolve-cargo",
+      "pid": 2326052,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "794362539ea27188bc2cddb8221271ae691aa74e934324d761c98e0f5ea1aa34"
+    },
+    {
+      "command": [
+        "rustup",
+        "which",
+        "rustc"
+      ],
+      "elapsed_ns": 8025568,
+      "exit": 0,
+      "name": "resolve-rustc",
+      "pid": 2326173,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5e776b2193b77c28e08d0506ee7ba7aefe1fbe72a6cca79df4cdfa0bab8f3610"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=cc1"
+      ],
+      "elapsed_ns": 2185030,
+      "exit": 0,
+      "name": "resolve-cc1",
+      "pid": 2326188,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "59fa4bbf4edf0b03fa2943dc05d8062c3f7d2a749836dd8ef99c85c5bd3db4ed"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=collect2"
+      ],
+      "elapsed_ns": 2423598,
+      "exit": 0,
+      "name": "resolve-collect2",
+      "pid": 2326198,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "61a1f98fe2340c0787d504b6f91ed72f29ba84d4f9065d368a5103dbd7c1e48c"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=as"
+      ],
+      "elapsed_ns": 2098971,
+      "exit": 0,
+      "name": "resolve-as",
+      "pid": 2326199,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "8b97bca79750847558d488e2ea4de79903c9c71c9af27ecf1b3dff5dba2abdd9"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=ld"
+      ],
+      "elapsed_ns": 2098840,
+      "exit": 0,
+      "name": "resolve-ld",
+      "pid": 2326214,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3b6cb8ae51045d062a7c7de7cc488ad8785144cfbc0a7fc9546ed52429e0d97f"
+    },
+    {
+      "command": [
+        "sh",
+        "tools/page-entry/selected/build-cpuid-nx.sh"
+      ],
+      "elapsed_ns": 4189758105,
+      "exit": 0,
+      "name": "build",
+      "pid": 2326221,
+      "stderr_sha256": "8891688152b3682ac33cac049b7f47af9e151be35242f35d1894ba784331e3a7",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "nm",
+        "-S",
+        "-n",
+        "target/page-entry/cpuid-nx/bridge-cpuid-nx.so"
+      ],
+      "elapsed_ns": 2551370,
+      "exit": 0,
+      "name": "runtime-memset-symbols",
+      "pid": 2341516,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "cbb39d84b5bbc45c2e7503fc9fc29c86ae37674d1159591c4501904c111f1e8d"
+    },
+    {
+      "command": [
+        "objdump",
+        "-d",
+        "--disassemble=memset",
+        "target/page-entry/cpuid-nx/bridge-cpuid-nx.so"
+      ],
+      "elapsed_ns": 7141581,
+      "exit": 0,
+      "name": "runtime-memset-body",
+      "pid": 2341525,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6bc6742537d13e98ae63dc94575d65be065f51a857f14d3f1e2bd493aad170f7"
+    },
+    {
+      "command": [
+        "cc",
+        "-dumpfullversion"
+      ],
+      "elapsed_ns": 2540954,
+      "exit": 0,
+      "name": "compiler-version",
+      "pid": 2341572,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "1469df2ef34ff2700bdfabed251223bc235a44f68b1a549fcebcc5ce0f43a5af"
+    },
+    {
+      "command": [
+        "cc",
+        "-nostdlib",
+        "-pie",
+        "-Wl,--dynamic-linker,/lib64/ld-linux-x86-64.so.2",
+        "-Wl,-T,tools/page-entry/selected/tests/native_pages/linker.ld,-z,max-page-size=4096,--build-id=none,--no-as-needed",
+        "-L/usr/lib64",
+        "-l:ld-linux-x86-64.so.2",
+        "tools/page-entry/selected/tests/native_pages/boundary.S",
+        "-o",
+        "target/native-pages/20261028T163926Z/boundary"
+      ],
+      "elapsed_ns": 16488412,
+      "exit": 0,
+      "name": "build-boundary",
+      "pid": 2341666,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "make",
+        "/bin/true",
+        "target/page-entry/cpuid-nx/bridge-cpuid-nx.so",
+        "target/native-pages/20261028T163926Z/true-carrier"
+      ],
+      "elapsed_ns": 115884794,
+      "exit": 0,
+      "name": "carrier-true",
+      "pid": 2341953,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "f5b459b8cacbe6c168e19df856630d7e86721cf2872663e6380bacab656c03d5"
+    },
+    {
+      "command": [
+        "/bin/true"
+      ],
+      "elapsed_ns": 4374066,
+      "exit": 0,
+      "name": "true-default-native",
+      "pid": 2342841,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T163926Z/true-default-ns",
+        "target/native-pages/20261028T163926Z/true-carrier",
+        "/bin/true",
+        "--",
+        "/bin/true"
+      ],
+      "elapsed_ns": 9769962023,
+      "exit": 0,
+      "name": "true-default-gated",
+      "pid": 2342883,
+      "stderr_sha256": "dde3fde139827dae86433f63db8eb946fec7fb248bd21f71ec488c125215bc85",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "/bin/true"
+      ],
+      "elapsed_ns": 3391213,
+      "exit": 0,
+      "name": "true-disabled-native",
+      "pid": 2388302,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T163926Z/true-disabled-ns",
+        "--disable-rseq",
+        "target/native-pages/20261028T163926Z/true-carrier",
+        "/bin/true",
+        "--",
+        "/bin/true"
+      ],
+      "elapsed_ns": 7092995809,
+      "exit": 0,
+      "name": "true-disabled-gated",
+      "pid": 2388311,
+      "stderr_sha256": "602fbedc2f03d124b8e00172103cc9da1b62547f08571c073b1af67a4762efb4",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "make",
+        "/bin/ls",
+        "target/page-entry/cpuid-nx/bridge-cpuid-nx.so",
+        "target/native-pages/20261028T163926Z/ls-carrier"
+      ],
+      "elapsed_ns": 270405581,
+      "exit": 0,
+      "name": "carrier-ls",
+      "pid": 2420082,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9b64ad189b594ed590102aacdbec703d4d1005d7855c9158e41ba90c64d5c513"
+    },
+    {
+      "command": [
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 4544815,
+      "exit": 0,
+      "name": "ls-default-native",
+      "pid": 2423163,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T163926Z/ls-default-ns",
+        "target/native-pages/20261028T163926Z/ls-carrier",
+        "/bin/ls",
+        "--",
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 30372617176,
+      "exit": -9,
+      "name": "ls-default-gated",
+      "pid": 2423189,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 3416322,
+      "exit": 0,
+      "name": "ls-disabled-native",
+      "pid": 2574019,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T163926Z/ls-disabled-ns",
+        "--disable-rseq",
+        "target/native-pages/20261028T163926Z/ls-carrier",
+        "/bin/ls",
+        "--",
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 21236220425,
+      "exit": 0,
+      "name": "ls-disabled-gated",
+      "pid": 2574044,
+      "stderr_sha256": "1d9f84e6a9fad30a1bf8f2e3b9fdd9da3f071d2bd4555b730829ce0d3ed7bd2e",
+      "stdout_sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "make",
+        "target/native-pages/20261028T163926Z/boundary",
+        "target/page-entry/cpuid-nx/bridge-cpuid-nx.so",
+        "target/native-pages/20261028T163926Z/boundary-carrier"
+      ],
+      "elapsed_ns": 269505580,
+      "exit": 0,
+      "name": "carrier-boundary",
+      "pid": 2673231,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "515475e9b90d7abf866a47d060d5e0fca553281c9de4d4114fd649f324b34ce6"
+    },
+    {
+      "command": [
+        "target/native-pages/20261028T163926Z/boundary"
+      ],
+      "elapsed_ns": 2765321,
+      "exit": 0,
+      "name": "boundary-disabled-native",
+      "pid": 2674518,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T163926Z/boundary-disabled-ns",
+        "--disable-rseq",
+        "target/native-pages/20261028T163926Z/boundary-carrier",
+        "target/native-pages/20261028T163926Z/boundary",
+        "--",
+        "target/native-pages/20261028T163926Z/boundary"
+      ],
+      "elapsed_ns": 1369656921,
+      "exit": 0,
+      "name": "boundary-disabled-gated",
+      "pid": 2674543,
+      "stderr_sha256": "eae437c13ff680f1c404ccb8b87a9dc2a7f59c06596d6a47ba5bbb0a8b4e94fd",
+      "stdout_sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32"
+    }
+  ],
+  "compiler": "11.5.0",
+  "cpuid_profile": "nx-only-raw",
+  "final_errors": [],
+  "hardware": {
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "machine": "x86_64",
+    "model": "AMD EPYC 9D85 158-Core Processor",
+    "reserved_cpu_count": 1
+  },
+  "inputs_unchanged": true,
+  "passed": false,
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_pages.py",
+    "--expect-revision",
+    "a8b67511b2104aacdc7a46474eef227d3fd936c1",
+    "--output",
+    "evaluation/inprocess/results/native-pages-nx-a8b6751.json",
+    "--library-root",
+    "/usr/lib64",
+    "--cpuid-nx"
+  ],
+  "revision": "a8b67511b2104aacdc7a46474eef227d3fd936c1",
+  "runtime_memset": {
+    "address": 22688,
+    "bytes": 15,
+    "code_hex": "4989f84889d189f0fcf3aa4c89c0c3",
+    "instructions": [
+      {
+        "address": 22688,
+        "bytes": "4989f8",
+        "text": "mov    %rdi,%r8"
+      },
+      {
+        "address": 22691,
+        "bytes": "4889d1",
+        "text": "mov    %rdx,%rcx"
+      },
+      {
+        "address": 22694,
+        "bytes": "89f0",
+        "text": "mov    %esi,%eax"
+      },
+      {
+        "address": 22696,
+        "bytes": "fc",
+        "text": "cld"
+      },
+      {
+        "address": 22697,
+        "bytes": "f3aa",
+        "text": "rep stos %al,%es:(%rdi)"
+      },
+      {
+        "address": 22699,
+        "bytes": "4c89c0",
+        "text": "mov    %r8,%rax"
+      },
+      {
+        "address": 22702,
+        "bytes": "c3",
+        "text": "ret"
+      }
+    ],
+    "sha256": "9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f"
+  },
+  "schema": 1,
+  "source_manifest_sha256": "ce6b148f206b246efbb091983fb0d8aa6a337d9233a03db0d1fb226a0c2e80a5",
+  "source_unchanged": true,
+  "started_utc": "20261028T163926Z",
+  "timing_scope": "CLOCK_MONOTONIC_RAW admission service from owner entry through live byte, backing, halo, permission and post-publication verification; first admitted page and at most16 revisits to that exact address/allocation/generation. Excludes signal delivery. Whole-process gated time includes namespace preparation. Single observations on a shared host; no instrumentation-only overhead claim.",
+  "tool_sha256": {
+    "app_python": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "as": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56",
+    "cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "cc": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+    "cc1": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5",
+    "collect2": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e",
+    "cp": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2",
+    "dirname": "dcccd2b58cda47c25292457d1153e612a68599ad7086c3b90a66ed568ab8950b",
+    "evaluator_python": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b",
+    "git": "e0e8ba1925e6f68171db5c688e806dc7a6caa6b49f662e750239592112c8da72",
+    "ld": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42",
+    "mkdir": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993",
+    "nm": "1e9d014468a356a030a32edf4f709b521cac91112fe2dda10a505c6e4189e4ed",
+    "objdump": "02e21a57741c6d64f20b1f148c533ffb7373d064b46594d439c05dc4f66d0216",
+    "python3": "b9bdddd7b79073264e92aed71233f2a3a8f9d81f7c3e1e2b04d6d6e34830b01b",
+    "rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "rustup": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71",
+    "sh": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+  },
+  "tools_unchanged": true
+}
