@@ -209,6 +209,7 @@ def main():
     ap.add_argument('--drain-completed', action='store_true', help='also require two full native completed-record batches; requires --retire-epochs')
     ap.add_argument('--streamed-epochs', action='store_true', help='also require a finite 160-call streamed epoch trial; requires --drain-completed')
     ap.add_argument('--stream-history', action='store_true', help='also require the finite native absolute-history/old-owner control; requires --streamed-epochs')
+    ap.add_argument('--optional-frontend', action='store_true', help='also require real optional Fast/Slow state pairs and finite reuse; requires --stream-history')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
@@ -220,6 +221,7 @@ def main():
     assert not a.drain_completed or a.retire_epochs
     assert not a.streamed_epochs or a.drain_completed
     assert not a.stream_history or a.streamed_epochs
+    assert not a.optional_frontend or a.stream_history
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work, concurrent_epochs_requested=a.concurrent_epochs,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
@@ -227,6 +229,11 @@ def main():
     result['drain_completed_requested'] = a.drain_completed
     result['streamed_epochs_requested'] = a.streamed_epochs
     result['stream_history_requested'] = a.stream_history
+    result['optional_frontend_requested'] = a.optional_frontend
+    if a.optional_frontend:
+        result['optional_frontend'] = dict(status='UNRUN', state_modes={}, functional='UNRUN',
+            scope='actual optional TLS gate with eight full-state pairs and a separate 96-call functional/accounting case; no joint full-state coverage, timing accuracy, cheap-off or performance claim',
+            source_attested='whole input, frame, physical returns, complete journal/Report and retained-owner joins; emitted rows are compact projections')
     if a.stream_history:
         result['history_stream'] = dict(status='UNRUN', test=HISTORY_TEST,
             scope='one finite cfg(test) history/owner control; no new full-register-state, indefinite-service, timing-accuracy or performance qualification',
@@ -295,6 +302,19 @@ def main():
         if a.stream_history:
             names.extend(['tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/history_native.rs',
                 'tools/rapid-profiler/history-stream/README.md', 'tools/rapid-profiler/history-stream/test_recipe.py'])
+        if a.optional_frontend:
+            names.extend(['src/precontext.rs', 'src/quiescent.rs', 'src/trampoline.rs',
+                'tests/support/native_precontext.rs', 'tests/support/native_optional_frontend.rs',
+                'tools/rapid-profiler/native-interval/optional.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/gate.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/site.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/drain.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/tests.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/gate/tests.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/tests/native.rs',
+                'tools/rapid-profiler/optional-work/check_output.py', 'tools/rapid-profiler/optional-work/test_recipe.py',
+                'tools/rapid-profiler/optional-work/README.md'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -541,6 +561,37 @@ def main():
             exact_stable(); assert digest(test_binary) == test_hash
             history.update(status='PASS', protocol=parsed, fresh_processes=1,
                 source_assertions=dict(epoch_limit=2, retained_owner_release=[2, 1, 0], full_journal_pages=2, words_per_journal_page=512))
+        if a.optional_frontend:
+            optional = result['optional_frontend']; optional['status'] = 'FAILED'
+            spec = importlib.util.spec_from_file_location('optional_check', repo/'tools/rapid-profiler/optional-work/check_output.py')
+            checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker)
+            for mode in ('fast', 'slow'):
+                optional['state_modes'][mode] = dict(status='FAILED')
+                exact_stable(); assert digest(test_binary) == test_hash
+                directory = raw/('optional-'+mode+'-output'); label = 'optional-'+mode+'-state'
+                result['commands'].append(['$REPO/target/release/frontend-native-oracle', label, '$RAW/candidate.so', '$RAW/trusted.so', '$RAW/'+directory.name])
+                observed = stage(label, [str(binaries['frontend-native-oracle']), label, str(candidate), str(trusted), str(directory)], 90, 90, MIB)
+                assert (observed/'stderr.txt').read_bytes() == b''
+                table = (directory/'optional-pairs.csv').read_bytes()
+                pairs, count = checker.pairs(table, (directory/'optional-refusals.csv').read_bytes(), (observed/'stdout.txt').read_bytes(), mode == 'slow')
+                exact_stable(); assert digest(test_binary) == test_hash
+                (raw/('optional-'+mode+'-pairs.csv')).write_bytes(table)
+                optional['state_modes'][mode] = dict(status='PASS', pairs=4, children=8, comparisons=count, rows=pairs,
+                    helper_joins=4, observer_entries=8 if mode == 'slow' else 0, controller_transitions=4, short_ret_refusals=1,
+                    scope='actual optional gate entry through post-POP with controller transition; real outer return after own harness restoration')
+            optional['functional'] = dict(status='FAILED')
+            exact_stable(); assert digest(test_binary) == test_hash
+            flags = ['--exact', checker.TEST, '--ignored', '--nocapture', '--test-threads=1']
+            result['commands'].append(['$RAPID_LIBTEST', *flags])
+            observed = stage('optional-functional', [str(test_binary), *flags], 10, 15, MIB,
+                dict(RAPID_CONCURRENT_CANDIDATE=str(candidate), RAPID_CONCURRENT_EXPECTED=str(trusted)))
+            parsed = checker.functional((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            exact_stable(); assert digest(test_binary) == test_hash
+            optional['functional'] = dict(parsed, status='PASS', fresh_processes=1,
+                scope='96 originals plus 96 installed functional/accounting calls; no full-register oracle for this schedule')
+            with (raw/'optional-functional.csv').open('x', newline='') as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(parsed), lineterminator='\n'); writer.writeheader(); writer.writerow(parsed)
+            optional.update(status='PASS', state_pairs=8, state_children=16, state_helper_joins=8, functional_helper_joins=1)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:

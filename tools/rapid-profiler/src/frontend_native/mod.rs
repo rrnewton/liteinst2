@@ -46,3 +46,10 @@ pub use always_on::{
 
 /// Finite independent backoff control with bounded owned exports; hooks stay on.
 pub mod backoff;
+
+/// Separate optional ordinary observation with an authenticated real fast return.
+pub use always_on::optional::{
+    InstalledOptionalSite, OptionalCallGate, OptionalCallResult, OptionalClient,
+    OptionalController, OptionalIntervalBatch, OptionalPath, OptionalSitePreparation,
+    OptionalThread, OptionalTotals, PreparedOptionalController, PreparedOptionalOriginalCall,
+};

@@ -5,6 +5,7 @@
 mod branch;
 #[path = "../exact-work/truth.rs"]
 mod exact_truth;
+mod optional;
 #[allow(dead_code)]
 #[path = "../../../tests/support/native_interval_oracle.rs"]
 mod oracle;
@@ -856,6 +857,29 @@ fn permission_refusals(leaf: &mut LoadedLeaf, output: &Path) {
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if matches!(
+        args.get(1).and_then(|s| s.to_str()),
+        Some("optional-fast-state" | "optional-slow-state")
+    ) {
+        assert_eq!(
+            args.len(),
+            5,
+            "optional-state CANDIDATE_ELF TRUSTED_EXPECTED_ELF NEW_OUTPUT_DIRECTORY"
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[4]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        optional::run(
+            &subject,
+            &expected,
+            &output,
+            args[1] == "optional-slow-state",
+        );
+        return;
+    }
     if matches!(
         args.get(1).and_then(|s| s.to_str()),
         Some("exact-state" | "exact-concurrent-state")

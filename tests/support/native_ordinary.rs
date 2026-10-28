@@ -32,9 +32,17 @@ pub struct Ready {
 
 impl Ready {
     fn validate(&self, candidate: bool) -> BTreeMap<u64, u64> {
+        self.validate_profile(candidate, AFTER_CALL, GATE_BYTES.len())
+    }
+    fn validate_profile(
+        &self,
+        candidate: bool,
+        after_call: u64,
+        gate_bytes: usize,
+    ) -> BTreeMap<u64, u64> {
         assert_eq!(
             self.continuation,
-            self.gate.checked_add(AFTER_CALL).unwrap()
+            self.gate.checked_add(after_call).unwrap()
         );
         assert!(!self.heads.is_empty() && self.heads.len() <= 256);
         assert_eq!(self.heads[0], self.entry);
@@ -52,10 +60,7 @@ impl Ready {
                 .iter()
                 .all(|p| *source <= *p && *p < *source + bytes.len() as u64)
         );
-        let mut ranges = vec![(
-            self.gate,
-            self.gate.checked_add(GATE_BYTES.len() as u64).unwrap(),
-        )];
+        let mut ranges = vec![(self.gate, self.gate.checked_add(gate_bytes as u64).unwrap())];
         for (index, (address, bytes)) in self.immutable.iter().enumerate() {
             assert!(!bytes.is_empty() && bytes.len() <= 8192);
             let end = address.checked_add(bytes.len() as u64).unwrap();
@@ -870,3 +875,7 @@ mod tests {
 // Separate scratch ABI; all existing adapter bodies and populations stay literal.
 #[path = "native_precontext.rs"]
 pub mod precontext;
+
+// Actual optional frontend, separately qualified from both existing profiles.
+#[path = "native_optional_frontend.rs"]
+pub mod optional_frontend;

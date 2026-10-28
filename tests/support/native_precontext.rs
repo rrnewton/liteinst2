@@ -461,7 +461,7 @@ impl Channels {
         }
     }
 }
-fn wait_io(fd: i32, events: i16, deadline: Instant) {
+pub(super) fn wait_io(fd: i32, events: i16, deadline: Instant) {
     loop {
         assert!(Instant::now() < deadline, "optional pipe deadline");
         let mut p = libc::pollfd {
@@ -486,7 +486,7 @@ fn wait_io(fd: i32, events: i16, deadline: Instant) {
         }
     }
 }
-fn write_all(fd: i32, mut bytes: &[u8], deadline: Instant) {
+pub(super) fn write_all(fd: i32, mut bytes: &[u8], deadline: Instant) {
     while !bytes.is_empty() {
         wait_io(fd, libc::POLLOUT, deadline);
         let n = unsafe { libc::write(fd, bytes.as_ptr().cast(), bytes.len()) };
@@ -501,7 +501,7 @@ fn write_all(fd: i32, mut bytes: &[u8], deadline: Instant) {
         bytes = &bytes[n as usize..];
     }
 }
-fn read_exact(fd: i32, bytes: &mut [u8], deadline: Instant) {
+pub(super) fn read_exact(fd: i32, bytes: &mut [u8], deadline: Instant) {
     let mut done = 0;
     while done < bytes.len() {
         wait_io(fd, libc::POLLIN, deadline);
@@ -517,7 +517,7 @@ fn read_exact(fd: i32, bytes: &mut [u8], deadline: Instant) {
         done += n as usize;
     }
 }
-fn words<const N: usize>(fd: i32, deadline: Instant) -> [u64; N] {
+pub(super) fn words<const N: usize>(fd: i32, deadline: Instant) -> [u64; N] {
     let mut result = [0; N];
     for word in &mut result {
         let mut bytes = [0; 8];
@@ -526,12 +526,12 @@ fn words<const N: usize>(fd: i32, deadline: Instant) -> [u64; N] {
     }
     result
 }
-fn send_words(fd: i32, words: &[u64], deadline: Instant) {
+pub(super) fn send_words(fd: i32, words: &[u64], deadline: Instant) {
     for word in words {
         write_all(fd, &word.to_le_bytes(), deadline);
     }
 }
-fn eof(fd: i32, deadline: Instant) {
+pub(super) fn eof(fd: i32, deadline: Instant) {
     loop {
         wait_io(fd, libc::POLLIN, deadline);
         let mut b = 0_u8;
@@ -549,7 +549,7 @@ fn eof(fd: i32, deadline: Instant) {
 }
 // READY has one unknown but positive non-executor helper TID. FLIPPED must
 // authenticate that exact previously observed TID, all four words and EOF.
-fn helper_ack(
+pub(super) fn helper_ack(
     bytes: &[u8],
     stage: u64,
     process: u64,
@@ -576,7 +576,7 @@ fn helper_ack(
     }
     Ok(a[2])
 }
-fn final_ack(fd: i32, deadline: Instant, process: u64, helper: u64, value: bool) {
+pub(super) fn final_ack(fd: i32, deadline: Instant, process: u64, helper: u64, value: bool) {
     // Fixed-size exact frame plus one-byte overrun probe: no unbounded collection.
     let mut bytes = [0; 33];
     read_exact(fd, &mut bytes[..32], deadline);

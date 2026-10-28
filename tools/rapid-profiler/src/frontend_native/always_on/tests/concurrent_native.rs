@@ -19,14 +19,15 @@ use std::time::{Duration, Instant};
 
 const LENGTHS: [usize; 6] = [1, 64, 1, 64, 1, 64];
 const WAIT: Duration = Duration::from_secs(2);
-const FUNCTION: FunctionId = FunctionId(1);
-const CONTRACT: IntegerLeafContract = IntegerLeafContract {
-    single_external_entry: true,
-    ordinary_ret_only: true,
-    no_active_cet: true,
-};
+pub(in crate::frontend_native::always_on) const FUNCTION: FunctionId = FunctionId(1);
+pub(in crate::frontend_native::always_on) const CONTRACT: IntegerLeafContract =
+    IntegerLeafContract {
+        single_external_entry: true,
+        ordinary_ret_only: true,
+        no_active_cet: true,
+    };
 
-fn pin(cpu: Option<usize>) -> usize {
+pub(in crate::frontend_native::always_on) fn pin(cpu: Option<usize>) -> usize {
     // Linux x86-64 affinity bitset, sized exactly as the native libc type.
     const WORDS: usize = std::mem::size_of::<libc::cpu_set_t>() / std::mem::size_of::<usize>();
     const BITS: usize = usize::BITS as usize;
@@ -86,7 +87,7 @@ fn establish_callback_stack() {
     std::hint::black_box(storage.as_mut_ptr());
 }
 
-fn stack() -> ReadableStack {
+pub(in crate::frontend_native::always_on) fn stack() -> ReadableStack {
     establish_callback_stack();
     let rsp: u64;
     // SAFETY: observe the actual stack pointer, not the pthread reservation.
@@ -118,7 +119,10 @@ fn stack() -> ReadableStack {
     unsafe { ReadableStack::new(start, end) }.unwrap()
 }
 
-fn expected_file(candidate: &Path, expected: &Path) -> Vec<u8> {
+pub(in crate::frontend_native::always_on) fn expected_file(
+    candidate: &Path,
+    expected: &Path,
+) -> Vec<u8> {
     let mut file = File::open(expected).unwrap();
     let before = file.metadata().unwrap();
     let other = std::fs::metadata(candidate).unwrap();
@@ -151,7 +155,7 @@ fn expected_file(candidate: &Path, expected: &Path) -> Vec<u8> {
     bytes
 }
 
-fn identity(entry: u64) -> CodeIdentity {
+pub(in crate::frontend_native::always_on) fn identity(entry: u64) -> CodeIdentity {
     // Caller-selected namespace, NOT a claimed hash. The loader authenticates
     // whole candidate bytes against the separately trusted expected ELF.
     CodeIdentity {
@@ -161,7 +165,10 @@ fn identity(entry: u64) -> CodeIdentity {
     }
 }
 
-fn protect(range: AddressRange, flags: i32) -> Result<(), Refusal> {
+pub(in crate::frontend_native::always_on) fn protect(
+    range: AddressRange,
+    flags: i32,
+) -> Result<(), Refusal> {
     // SAFETY: the caller exclusively owns this exact complete source-page range.
     if unsafe {
         libc::mprotect(
@@ -236,7 +243,7 @@ fn publish(prep: OrdinarySitePreparation) -> crate::frontend_native::InstalledIn
     unsafe { prep.seal(installed, receipt) }.unwrap()
 }
 
-fn guarded() -> [u8; 96] {
+pub(in crate::frontend_native::always_on) fn guarded() -> [u8; 96] {
     let mut bytes = [0xa5; 96];
     for (i, b) in bytes[16..80].iter_mut().enumerate() {
         *b = (i * 37 + 11) as u8;
@@ -245,12 +252,17 @@ fn guarded() -> [u8; 96] {
     bytes
 }
 
-fn model(bytes: &[u8]) -> u64 {
+pub(in crate::frontend_native::always_on) fn model(bytes: &[u8]) -> u64 {
     assert!((1..=64).contains(&bytes.len()));
     bytes.iter().map(|&b| u64::from(b ^ 0x5a)).sum::<u64>() ^ 0x9e37_79b9_7f4a_7c15
 }
 
-fn check_report(report: &Report, rows: &[RawInterval], generation: u64, sequence: u64) {
+pub(in crate::frontend_native::always_on) fn check_report(
+    report: &Report,
+    rows: &[RawInterval],
+    generation: u64,
+    sequence: u64,
+) {
     assert_eq!(report.generation().get(), generation);
     let records: Vec<_> = report.records().collect();
     assert_eq!(records.len(), rows.len());

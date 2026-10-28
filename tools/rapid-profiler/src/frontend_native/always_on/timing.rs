@@ -95,6 +95,7 @@ pub(super) unsafe fn read() -> RawTimestamp {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct Rows {
     rows: [Option<RawInterval>; super::EVENTS / 2],
     len: usize,
@@ -124,6 +125,18 @@ impl Rows {
         *slot = Some(row);
         self.len += 1;
         Ok(())
+    }
+    // Optional facade: authenticate one append without exposing mutable rows.
+    pub(super) fn one_after(&self, before: &Self) -> Option<RawInterval> {
+        if before.len.checked_add(1) != Some(self.len)
+            || self.len > self.rows.len()
+            || self.rows[..before.len] != before.rows[..before.len]
+            || before.rows[before.len..].iter().any(Option::is_some)
+            || self.rows[self.len..].iter().any(Option::is_some)
+        {
+            return None;
+        }
+        self.rows[before.len]
     }
     pub(super) fn snapshot(&self) -> Vec<RawInterval> {
         self.rows[..self.len]
