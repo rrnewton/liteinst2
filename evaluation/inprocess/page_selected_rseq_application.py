@@ -41,6 +41,9 @@ def publish(path,r,private):
         tool_versions=b.get('numeric_versions'),tool_bindings_sha256=digest(b.get('tools',{})),
         build_evidence_sha256=digest(b),rseq_build_sha256=digest(r.get('rseq_build')),
         final_error_count=len(r['final_errors']),failure_type=r['error'].split(':',1)[0]if r['error']else None)
+    if r.get('rseq_build',{}).get('fast_memset'):
+        body=r['rseq_build'].get('fast_memset_body',{})
+        result['fast_memset_body']={k:body[k]for k in ('bytes','sha256')if k in body}
     text=json.dumps(result,sort_keys=True,indent=2,allow_nan=False)+'\n'
     import platform,re
     need(not any(x and len(x)>1 and x in text for x in (str(ROOT),str(Path.home()),platform.node())) and
@@ -49,18 +52,22 @@ def publish(path,r,private):
     with path.open('x')as f:f.write(text)
 
 def main():
-    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--expect-revision',required=True);args=ap.parse_args()
+    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--expect-revision',required=True)
+    ap.add_argument('--fast-memset',action='store_true',help='Use the qualified full-byte REP STOSB reset in the actual bridge')
+    args=ap.parse_args()
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1,'one external reserved CPU and assertions')
     cpu=next(iter(os.sched_getaffinity(0)));os.chdir(ROOT)
     stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-page-selected-rseq-application-'+args.expect_revision[:12]
+    profile='page-selected-rseq-application'+('-fast-memset' if args.fast_memset else '')
+    stem=stamp+'-'+profile+'-'+args.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem
     public=HERE/'results'/(stem+'.json')
     need(not public.exists(),'unique public receipt')
     private.mkdir(parents=True,exist_ok=False)
-    r=dict(version=1,profile='page-selected-rseq-application-v1',status='failed',expected_revision=args.expect_revision,
+    r=dict(version=1,profile=profile+'-v1',status='failed',expected_revision=args.expect_revision,
            environment=ENV,bounds=BOUNDS,cpu=cpu,started_utc=stamp,commands=[],cases=[],error=None,final_errors=[],source_unchanged=False,
            reproduce=['python3','evaluation/inprocess/page_selected_rseq_application.py','--expect-revision',args.expect_revision])
+    if args.fast_memset:r['reproduce'].append('--fast-memset')
     pins={};binaries={};aliases={};stage='build'
     def pin(p):
         lexical=str(Path(os.path.abspath(p)));p=Path(lexical).resolve(strict=True)
@@ -88,7 +95,7 @@ def main():
         need(not err,'source enumeration stderr')
         for p in out.split(b'\0'):
             if p and not os.fsdecode(p).startswith('evaluation/inprocess/results/'):pin(ROOT/os.fsdecode(p))
-        products=builder.prepare();bridge=link(builder,products,private,pin,binary,run,r)
+        products=builder.prepare();bridge=link(builder,products,private,pin,binary,run,r,fast_memset=args.fast_memset)
         python=builder.tools['python'];schema=compare.decode(pin(HERE/'page_selected_rseq_schema.json').read_bytes())
         stage='cohort';run('generate-images',[python,HERE/'page_selected_rseq_application_images.py',private/'images',cpu],profile='metadata')
         catalog=compare.decode(binary(private/'images/images.json').read_bytes())

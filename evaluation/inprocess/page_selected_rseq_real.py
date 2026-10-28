@@ -88,6 +88,10 @@ def publish(path, r, private):
             program_bounds=PROFILES['program'], native=['/bin/true', '/bin/ls -d .'],
             gated='carrier.py exec-loader, with --disable-rseq only for explicitly named rseq-disabled workloads',
             environment='LD_BIND_NOW=1 in both lanes. Only rseq-disabled workloads add GLIBC_TUNABLES=glibc.pthread.rseq=0. Actual sealed namespace and dependency FDs remain explicit identity differences.'))
+    if r.get('rseq_build', {}).get('fast_memset'):
+        body = r['rseq_build'].get('fast_memset_body', {})
+        result['fast_memset_body'] = {k: body[k] for k in ('bytes', 'sha256') if k in body}
+        result['command_recipe']['opt_in_macro'] = '-DLI2_FAST_MEMSET=1'
     text = json.dumps(result, sort_keys=True, indent=2, allow_nan=False)+'\n'
     need(not any(x and len(x) > 1 and x in text for x in
          (str(ROOT), str(Path.home()), platform.node(), '/home/')), 'private publication data')
@@ -99,23 +103,28 @@ def publish(path, r, private):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
+    ap.add_argument('--fast-memset', action='store_true',
+                    help='Use the qualified full-byte REP STOSB reset in the actual bridge')
     args = ap.parse_args()
     need(not sys.flags.optimize and len(os.sched_getaffinity(0)) == 1 and
          re.fullmatch('[0-9a-f]{40}', args.expect_revision), 'exact source, assertions and reserved CPU')
     cpu = next(iter(os.sched_getaffinity(0)))
     os.chdir(ROOT)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem = stamp+'-page-selected-rseq-real-'+args.expect_revision[:12]
+    profile = 'page-selected-rseq-real'+('-fast-memset' if args.fast_memset else '')
+    stem = stamp+'-'+profile+'-'+args.expect_revision[:12]
     private = ROOT/'target/evaluation/inprocess'/stem
     private.mkdir(parents=True, exist_ok=False)
     public = HERE/'results'/(stem+'.json')
     need(not public.exists(), 'unique public receipt')
     pins, binaries, aliases = {}, {}, {}
-    r = dict(schema=1, profile='page-selected-rseq-real-v1', status='failed',
+    r = dict(schema=1, profile=profile+'-v1', status='failed',
         scope='Four unchanged real-program/environment pairs with opt-in registered-inactive rseq, TRACE chaining and cache; no active critical sections, full B2/B3, transparent namespace or steady-state performance claim.',
         expected_revision=args.expect_revision, started_utc=stamp, source=None, source_unchanged=False,
         cpu=cpu, bounds=PROFILES, commands=[], cases=[], error=None, final_errors=[],
         reproduce=['python3', 'evaluation/inprocess/page_selected_rseq_real.py', '--expect-revision', args.expect_revision])
+    if args.fast_memset:
+        r['reproduce'].append('--fast-memset')
     def pin(path):
         lexical = str(Path(os.path.abspath(path))); p = Path(lexical).resolve(strict=True); value = fact(p)
         need(lexical not in aliases or aliases[lexical] == str(p), 'input alias changed')
@@ -160,7 +169,7 @@ def main():
             if p and Path(p).resolve().is_relative_to(ROOT):
                 pin(p)
         built = builder.prepare()
-        bridge = link.build(builder, built, ROOT, private, pin, binary, run, r)
+        bridge = link.build(builder, built, ROOT, private, pin, binary, run, r, fast_memset=args.fast_memset)
         python = builder.tools['python']
         schema = decode(pin(HERE/'page_selected_rseq_schema.json').read_bytes())
         stage = 'program'

@@ -1,6 +1,7 @@
 """Separate unobserved production and observation-only application links."""
 from pathlib import Path
 import shlex
+import shutil
 from page_selected import need, fact, bridge_check
 from page_selected_rseq_prepare import FIXTURE, prepare, validate
 
@@ -11,7 +12,7 @@ UNITS = ('bridge.c', 'selected/runtime_loader.c', 'selected/lifecycle_loader.c',
          'selected/register_run_publish.c', 'selected/register_run_reset.c', 'selected/rseq_guard.c')
 
 
-def _link(builder, products, selected, recipe, output, pin, binary, run, receipt, observed):
+def _link(builder, products, selected, recipe, output, pin, binary, run, receipt, observed, fast_memset=False):
     recipe = pin(recipe)
     lines = recipe.read_text().replace('\\\n', ' ').splitlines()
     lines = [x for x in lines if '-DLI2_RSEQ_INACTIVE=1' in x]
@@ -32,6 +33,10 @@ def _link(builder, products, selected, recipe, output, pin, binary, run, receipt
          ('-O2', '-g', '-nostdlib', '-shared', '-mgeneral-regs-only', '-DLI2_TF_HANDOFF=1',
           '-DLI2_REGISTER_RUN=1', '-DLI2_MAPS_PHASE_REUSE=1', '-DLI2_RSEQ_INACTIVE=1')),
          'exact thirteen product units plus observer only in finite fixture')
+    need(type(fast_memset) is bool and not any('LI2_FAST_MEMSET' in x for x in argv),
+         'scalar recipe and explicit fast reset choice')
+    if fast_memset:
+        argv.insert(1, '-DLI2_FAST_MEMSET=1')
     flags = [x for x in argv[1:-2] if x not in sources and x != str(products['archive']) and not x.startswith('-Wl,')]
     _, out, err = run('rseq-headers', [builder.tools['cc'], *flags, '-M', '-MT', 'rseq_application', *sources],
                       profile='metadata', env=builder.environment)
@@ -40,7 +45,7 @@ def _link(builder, products, selected, recipe, output, pin, binary, run, receipt
     need(len(rules) == len(sources) and all(x.startswith('rseq_application: ') for x in rules), 'complete include rules')
     deps = {str(Path(x).absolute()) for row in rules for x in shlex.split(row.split(':', 1)[1])}
     need(set(sources) <= deps, 'all actual linked sources in header closure')
-    state = receipt['rseq_build'] = dict(status='failed', observed=observed, recipe=fact(recipe),
+    state = receipt['rseq_build'] = dict(status='failed', observed=observed, fast_memset=fast_memset, recipe=fact(recipe),
         headers={p: fact(pin(p)) for p in sorted(deps)}, archive=fact(products['archive']), argv=argv)
     try:
         run('rseq-link', argv, profile='build', env=builder.environment)
@@ -64,21 +69,37 @@ def _link(builder, products, selected, recipe, output, pin, binary, run, receipt
         need(not err and not any(line.split()[-1].startswith(b'application_') for line in out.splitlines() if line.split()),
              'production bridge has no application observation adapter')
         state['unobserved_symbols_checked'] = True
+    if fast_memset:
+        from page_selected_fast_memset import body_check
+        pin(Path(__file__).with_name('page_selected_fast_memset.py'))
+        objdump = pin(shutil.which('objdump', path=builder.environment['PATH']))
+        state['fast_memset_tool'] = fact(objdump)
+        _, symbols, err = run('rseq-fast-memset-symbols',
+                             [builder.tools['nm'], '-S', '--defined-only', bridge],
+                             profile='inspect', env=builder.environment)
+        need(not err, 'fast reset symbol inspection stderr')
+        _, assembly, err = run('rseq-fast-memset-body',
+                              [objdump, '-d', '-w', '-M', 'att', '--disassemble=memset', bridge],
+                              profile='inspect', env=builder.environment)
+        need(not err, 'fast reset body inspection stderr')
+        state['fast_memset_body'] = body_check(bridge, symbols, assembly, 'fast', symbol_name='memset')
     state['status'] = 'passed'
     return bridge
 
 
-def build(builder, products, root, private, pin, binary, run, receipt):
+def build(builder, products, root, private, pin, binary, run, receipt, fast_memset=False):
     validate(pin)
     selected = root/'tools/page-entry/selected'
-    return _link(builder, products, selected, selected/'build-rseq-inactive.sh', private/'bridge-rseq-inactive.so',
-                 pin, binary, run, receipt, False)
+    output = private/('bridge-rseq-inactive-fast-memset.so' if fast_memset else 'bridge-rseq-inactive.so')
+    return _link(builder, products, selected, selected/'build-rseq-inactive.sh', output,
+                 pin, binary, run, receipt, False, fast_memset)
 
 
-def application(builder, products, private, pin, binary, run, receipt):
+def application(builder, products, private, pin, binary, run, receipt, fast_memset=False):
     selected = prepare(private/'source', pin)
     for p in sorted((private/'source').rglob('*')):
         if p.is_file():
             pin(p)
-    return _link(builder, products, selected, FIXTURE/'build.sh', private/'bridge-rseq-observed.so',
-                 pin, binary, run, receipt, True)
+    output = private/('bridge-rseq-observed-fast-memset.so' if fast_memset else 'bridge-rseq-observed.so')
+    return _link(builder, products, selected, FIXTURE/'build.sh', output,
+                 pin, binary, run, receipt, True, fast_memset)
