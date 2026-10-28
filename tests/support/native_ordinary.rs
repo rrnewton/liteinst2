@@ -1397,3 +1397,7 @@ pub mod call_tree;
 
 #[path = "native_native_call.rs"]
 pub mod native_call;
+
+// Fixed private hardware-stop ownership; old traversal and cleanup stay literal.
+#[path = "native_tree_hardware.rs"]
+mod hardware;
