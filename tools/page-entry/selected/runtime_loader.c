@@ -2,6 +2,11 @@
    The real ld.so runs against an explicit namespace of inherited sealed DSOs. */
 #include "bridge.h"
 #include "lifecycle_loader.h"
+#ifdef LI2_NATIVE_PAGES
+#include "native_pages.h"
+#include "native_epoch.h"
+#include "native_seccomp.h"
+#endif
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_guard.h"
 #if !defined(LI2_TF_HANDOFF) || !defined(LI2_REGISTER_RUN)
@@ -29,6 +34,9 @@ static unsigned long first_interpreter,main_faults,interpreter_faults,dependency
 static unsigned long tls_changes,tid_sets,robust_sets,rseq_calls;
 static int report_fd=-1;
 static uintptr_t first_target_pc;
+#ifdef LI2_NATIVE_PAGES
+static uint64_t native_main_admissions,native_main_refaults;
+#endif
 static long last_syscall=-1;
 static uintptr_t vdso_first,vdso_end;
 static unsigned long vdso_selected;
@@ -78,7 +86,9 @@ static void report(unsigned status,unsigned code,long detail) {
     reported=1;
     if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
-#ifdef LI2_REGISTER_RUN
+#if defined(LI2_NATIVE_PAGES)
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_native_pages\",\"source_patches\":0");
+#elif defined(LI2_REGISTER_RUN)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_register_run\",\"source_patches\":0");
 #else
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_generic_tf_original_entry\",\"source_patches\":0");
@@ -107,6 +117,27 @@ static void report(unsigned status,unsigned code,long detail) {
     selected_report(&w);
 #endif
     text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+#ifdef LI2_NATIVE_PAGES
+    const struct li2_native_counts *nc=li2_lifecycle_native_counts();
+    const struct li2_native_epoch *ne=li2_native_epoch_progress();
+    const struct li2_native_close *cl=li2_lifecycle_native_close_progress();
+    w.used=0;text(&w,"LI2_NATIVE {\"version\":1");
+    field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+    field(&w,",\"attempts\":",nc->attempts);field(&w,",\"admissions\":",nc->admissions);
+    field(&w,",\"closed\":",nc->closed);field(&w,",\"blocked\":",nc->blocked);
+    field(&w,",\"low_address_refusals\":",nc->low_address_refusals);
+    field(&w,",\"epoch_exits\":",ne->ready);field(&w,",\"refaults\":",ne->retries);
+    field(&w,",\"main_admissions\":",native_main_admissions);field(&w,",\"main_refaults\":",native_main_refaults);
+    field(&w,",\"epoch_error\":",ne->first_error);field(&w,",\"close_error\":",cl->first_error);
+    field(&w,",\"close_complete\":",cl->complete);field(&w,",\"close_busy\":",cl->busy);
+    field(&w,",\"first_admission_ns\":",nc->first_admission_ns);
+    field(&w,",\"first_source_offset\":",nc->first_source_offset);
+    field(&w,",\"revisit_count\":",nc->revisit_count);
+    text(&w,",\"revisit_ns\":[");
+    for(size_t i=0;i<nc->revisit_count;i++){if(i)text(&w,",");number(&w,nc->revisit_ns[i]);}
+    text(&w,"]");
+    text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+#endif
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
 #ifdef LI2_RSEQ_INACTIVE
     selected_rseq_report(status,code,detail);
@@ -136,6 +167,9 @@ static void fail(unsigned code,long detail) {
     if(selected_pending_route==SELECTED_GENERIC_TF) li2_tf_abort(&selected_tf,code,detail);
 #endif
     if(selected_step_pending) li2_step_abort(&selected_step,code,detail);
+#ifdef LI2_NATIVE_PAGES
+    li2_native_epoch_abort(code,detail);
+#endif
     li2_lifecycle_abort(); report(125,code,detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0); __builtin_trap();
 }
@@ -218,6 +252,10 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #else
     checked(n!=SYS_rseq && n!=SYS_fork && n!=SYS_clone && n!=SYS_vfork,601,n);
 #endif
+#ifdef LI2_NATIVE_PAGES
+    /* No native source remains executable across a mapping or rseq change. */
+    li2_lifecycle_native_close();
+#endif
     ++syscall_count; last_syscall=n;
     long a[6]={g[REG_RDI],g[REG_RSI],g[REG_RDX],g[REG_R10],g[REG_R8],g[REG_R9]},result;
 #ifdef LI2_RSEQ_INACTIVE
@@ -272,6 +310,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "selected_register_run.inc"
 #endif
 
+#ifdef LI2_NATIVE_PAGES
+#include "native_controller.inc"
+#endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_event_boundary(); /* First action, including nested/foreign events. */
@@ -334,6 +375,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
         selected_pending_route=SELECTED_NO_STEP;
     } else if(sig==SIGSEGV) {
         checked(selected_pending_route==SELECTED_NO_STEP,658,0);
+#ifdef LI2_NATIVE_PAGES
+        if(!selected_native_fetch(sig,si,ptr))
+#endif
         selected_fetch(sig,si,ptr);
     }
     else if(sig==SIGSYS) dispatch(si,ptr);
@@ -399,5 +443,13 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     checked(!raw(SYS_prctl,PR_GET_TSC,(long)&tsc,0,0,0,0) && tsc==PR_TSC_ENABLE,237,0);
     checked(!raw(SYS_arch_prctl,ARCH_SET_CPUID,0,0,0,0,0) && !raw(SYS_prctl,PR_SET_TSC,PR_TSC_SIGSEGV,0,0,0,0),238,0);
     checked(!raw(SYS_prctl,PR_SET_SYSCALL_USER_DISPATCH,PR_SYS_DISPATCH_ON,(long)li2_gateway_start,li2_gateway_end-li2_gateway_start,0,0),239,0);
+#ifdef LI2_NATIVE_PAGES
+    result=li2_native_seccomp_install(raw,(uintptr_t)li2_gateway_start,(uintptr_t)li2_gateway_end);
+    checked(!result,1431,result);
+#endif
     selected_selftest();
+#ifdef LI2_NATIVE_PAGES
+    int native_error=li2_native_epoch_initialize(&selected_session);
+    checked(!native_error,(unsigned)native_error,0);
+#endif
 }

@@ -1,0 +1,537 @@
+{
+  "affinity": [
+    1
+  ],
+  "base_revision": "38224a816ec03bc62907f88197a8c9bbceeab653",
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "capture_bytes": 2097152,
+    "child_alarm_seconds": 3,
+    "child_cpu_seconds": 2,
+    "native_wall_seconds": 15,
+    "parent_cpu_seconds": 5
+  },
+  "cases": [
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "plain",
+      "negative_return": null,
+      "operation": "vsyscall_gettimeofday",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "plain",
+      "negative_return": null,
+      "operation": "vsyscall_time",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "plain",
+      "negative_return": null,
+      "operation": "vsyscall_getcpu",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "plain",
+      "negative_return": null,
+      "operation": "trusted_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "plain",
+      "negative_return": null,
+      "operation": "outside_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "plain",
+      "negative_return": null,
+      "operation": "compat_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "plain",
+      "negative_return": -38,
+      "operation": "x32_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "failed",
+      "syscall": 0
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "seccomp",
+      "negative_return": null,
+      "operation": "vsyscall_gettimeofday",
+      "reason": 3,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 96
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "seccomp",
+      "negative_return": null,
+      "operation": "vsyscall_time",
+      "reason": 3,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 201
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "seccomp",
+      "negative_return": null,
+      "operation": "vsyscall_getcpu",
+      "reason": 3,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 309
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "seccomp",
+      "negative_return": null,
+      "operation": "trusted_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "seccomp",
+      "negative_return": null,
+      "operation": "outside_getpid",
+      "reason": 3,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 39
+    },
+    {
+      "arch": 1073741827,
+      "code": 1,
+      "exit": 125,
+      "mode": "seccomp",
+      "negative_return": null,
+      "operation": "compat_getpid",
+      "reason": 1,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 20
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "seccomp",
+      "negative_return": null,
+      "operation": "x32_getpid",
+      "reason": 2,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 1073741863
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "sud",
+      "negative_return": null,
+      "operation": "vsyscall_gettimeofday",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "sud",
+      "negative_return": null,
+      "operation": "vsyscall_time",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "sud",
+      "negative_return": null,
+      "operation": "vsyscall_getcpu",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "sud",
+      "negative_return": null,
+      "operation": "trusted_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 3221225534,
+      "code": 2,
+      "exit": 125,
+      "mode": "sud",
+      "negative_return": null,
+      "operation": "outside_getpid",
+      "reason": 0,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 39
+    },
+    {
+      "arch": 1073741827,
+      "code": 2,
+      "exit": 125,
+      "mode": "sud",
+      "negative_return": null,
+      "operation": "compat_getpid",
+      "reason": 0,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 20
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "sud",
+      "negative_return": -38,
+      "operation": "x32_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "failed",
+      "syscall": 0
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "sud_seccomp",
+      "negative_return": null,
+      "operation": "vsyscall_gettimeofday",
+      "reason": 3,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 96
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "sud_seccomp",
+      "negative_return": null,
+      "operation": "vsyscall_time",
+      "reason": 3,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 201
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "sud_seccomp",
+      "negative_return": null,
+      "operation": "vsyscall_getcpu",
+      "reason": 3,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 309
+    },
+    {
+      "arch": 0,
+      "code": 0,
+      "exit": 0,
+      "mode": "sud_seccomp",
+      "negative_return": null,
+      "operation": "trusted_getpid",
+      "reason": 0,
+      "signal": 0,
+      "status": "completed",
+      "syscall": 0
+    },
+    {
+      "arch": 3221225534,
+      "code": 2,
+      "exit": 125,
+      "mode": "sud_seccomp",
+      "negative_return": null,
+      "operation": "outside_getpid",
+      "reason": 0,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 39
+    },
+    {
+      "arch": 1073741827,
+      "code": 2,
+      "exit": 125,
+      "mode": "sud_seccomp",
+      "negative_return": null,
+      "operation": "compat_getpid",
+      "reason": 0,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 20
+    },
+    {
+      "arch": 3221225534,
+      "code": 1,
+      "exit": 125,
+      "mode": "sud_seccomp",
+      "negative_return": null,
+      "operation": "x32_getpid",
+      "reason": 2,
+      "signal": 31,
+      "status": "refused",
+      "syscall": 1073741863
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit": 0,
+      "label": "revision",
+      "reaped": true,
+      "seconds": 0.0030800418462604284,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 41,
+        "sha256": "4a8a858fab82ec185d762806a16bf4b7cd9deedae96335b9291a6c01a1d0de3f"
+      },
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "{compiler:gcc}",
+        "--version"
+      ],
+      "exit": 0,
+      "label": "compiler-version",
+      "reaped": true,
+      "seconds": 0.002354492899030447,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 248,
+        "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+      },
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "{compiler:gcc}",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-fno-stack-protector",
+        "-fcf-protection=none",
+        "-fno-pie",
+        "-no-pie",
+        "-Itools/page-entry/selected",
+        "tools/page-entry/selected/tests/native_pages/gateway_probe.c",
+        "tools/page-entry/selected/tests/native_pages/gateway_probe.S",
+        "-o",
+        "target/evaluation/native-gateway/20261028T060730.629003Z/gateway-probe"
+      ],
+      "exit": 0,
+      "label": "compile",
+      "reaped": true,
+      "seconds": 0.16620738292112947,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "target/evaluation/native-gateway/20261028T060730.629003Z/gateway-probe"
+      ],
+      "exit": 0,
+      "label": "native",
+      "reaped": true,
+      "seconds": 0.00868280092254281,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 9661,
+        "sha256": "856bede85ea0be5431ec6f35e208584e071f6e776109d911c473e2fc2aa903ae"
+      },
+      "timed_out": false
+    }
+  ],
+  "comparisons": {
+    "event_bytes": 168,
+    "exact_call_address_and_elf_continuation": true,
+    "exact_waitpid_record_and_eof": true,
+    "header_layout": [
+      8,
+      16,
+      64,
+      0,
+      4,
+      8
+    ],
+    "old_cohort_predicates": 182,
+    "refused_vsyscall_outputs_unchanged": true,
+    "supplied_header_controls": 17,
+    "total_python_predicates": 186
+  },
+  "compiler": {
+    "bytes": 1093144,
+    "name": "gcc",
+    "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+    "version": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)"
+  },
+  "elf": {
+    "bytes": 42888,
+    "sha256": "57ff255cf4ac82ed623c03f634221a834d6d3dc70ca3f16ccde923b7792b1129"
+  },
+  "environment": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin:/usr/local/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "final_errors": [],
+  "hardware": {
+    "cpu": {
+      "cpu family": "26",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "machine": "x86_64"
+  },
+  "parent_status": {
+    "NoNewPrivs": "0",
+    "Seccomp": "0"
+  },
+  "profile": "native-gateway-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_gateway.py"
+  ],
+  "reproduce_condition": "Reserve exactly one CPU; compiler and native command are bounded separately.",
+  "schema": 1,
+  "scope": "Host confinement mechanism only; complete runtime integration not qualified.",
+  "source_kind": "exact working-tree inputs bound above, based on base_revision",
+  "source_unchanged": true,
+  "sources": [
+    {
+      "bytes": 3880,
+      "path": "tools/page-entry/selected/native_seccomp.h",
+      "sha256": "b70ac247a64dd1999ce04d70416b06f7cf094dc67d27dcef3c93aa6897b21b07"
+    },
+    {
+      "bytes": 10559,
+      "path": "tools/page-entry/selected/tests/native_pages/gateway_probe.c",
+      "sha256": "f32d30a2b5413089e9a39d51faae9f635e456e0a47ec5a664c536122404c45a4"
+    },
+    {
+      "bytes": 928,
+      "path": "tools/page-entry/selected/tests/native_pages/gateway_probe.S",
+      "sha256": "eaa22de8b919633565dd12d6dd22cb02763681c6f173bb3de23006679d0d2b68"
+    },
+    {
+      "bytes": 15223,
+      "path": "evaluation/inprocess/native_gateway.py",
+      "sha256": "e597560c175ebbe7e8e7da39fbb4dea38fb52f30c26b655d124002b145b1cba6"
+    }
+  ],
+  "started_utc": "2026-10-28T06:07:30.629321+00:00",
+  "status": "passed",
+  "totals": {
+    "completed_operations": 12,
+    "failed_enosys_operations": 2,
+    "plain_vsyscalls": 3,
+    "processes": 28,
+    "refused_operations": 14,
+    "seccomp_vsyscalls": 0,
+    "sud_only_vsyscalls": 3,
+    "sud_seccomp_vsyscalls": 0,
+    "trusted_gateway_completions": 4
+  }
+}

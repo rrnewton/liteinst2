@@ -713,3 +713,7 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_data.inc"
 #endif
+
+#ifdef LI2_NATIVE_PAGES
+#include "native_lifecycle.inc"
+#endif
