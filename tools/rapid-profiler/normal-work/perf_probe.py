@@ -108,7 +108,8 @@ def main():
     assert git('rev-parse', 'HEAD').decode().strip() == a.revision
     assert git('status', '--porcelain', '--untracked-files=no') == b''
     required = {'evaluation/admission/processes.py', 'tools/unwind-oracle/bounded_command.py',
-        'tools/rapid-profiler/verify_normal_interval.py', 'tools/rapid-profiler/normal-work/perf_probe.py'}
+        'tools/rapid-profiler/verify_normal_interval.py', 'tools/rapid-profiler/normal-work/perf_probe.py',
+        'tests/call_tree_truth.rs'}
     required.update('tools/rapid-profiler/tree-work/'+name for name in (
         'limit_exec.c', 'limit_exec_control.c', 'process_timer.c', 'process_timing.py',
         'test_process_timing.py', 'comparison_runner.py', 'limit_record.py', 'test_limit_record.py'))
