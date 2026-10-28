@@ -27,6 +27,7 @@ pub mod grouping;
 pub mod neighbor;
 pub mod patcher;
 pub mod planner;
+pub mod precontext;
 pub mod probe;
 pub mod quiescent;
 pub mod rapid;

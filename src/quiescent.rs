@@ -457,10 +457,10 @@ pub fn plan_backedge_clock_detailed(
     }
     plan_coalesced_flavor(
         &PlanningRequest::live(request),
-        &[crate::controls::ControlledAction {
+        CoalescedActions::Controlled(&[crate::controls::ControlledAction {
             logical_pc: action.logical_pc,
             control: action.control.clone(),
-        }],
+        }]),
         Some(action),
     )
 }
@@ -495,43 +495,180 @@ pub fn plan_coalesced_detailed_after(
     plan_coalesced_core(&original.with_code(&current), actions)
 }
 
+/// Plan an explicitly optional pre-context observing window.
+///
+/// This first profile requires the supplied original decode range to equal the
+/// complete function and entry scope, Complete entries, no saved resumes or
+/// ENDBR-required entries, and Observe/RelocationOnly. Actions keep their typed
+/// roles, selector and permanent callback identities through emission; there is
+/// no mandatory-image fallback. `request.hook` is unused. Existing finite search,
+/// block, source, entry, allocation and publication obligations remain in force.
+/// This plan alone does not certify the complete leaf or every reachable RET.
+///
+/// # Safety
+/// Before execution authenticate the complete readonly scalar leaf/CFG, sole
+/// external entry, every literal C3 return and local target. Every original
+/// instruction excludes RBX, including address operands. Exclude body entry,
+/// saved resumes, recursion, signals/reentry, unwind, fork, CET and source
+/// mutation. Callbacks preserve all application/extended state including RBX
+/// and never access the scratch header. The actual CALL gate must own exclusive
+/// aligned 72-byte CallScratch storage at RBX, with no Rust borrow across CALL,
+/// authentic PID/TID/site/sequence/stack/return-word/continuation joins, and
+/// frame/source/input/callback/code lifetimes through actual returns. Preflight
+/// possible Slow capacity regardless of a selector hint; a refusal is never a
+/// bypass. ReturnObserved is before physical RET. Do not recover a generated
+/// UD2 fault into original execution or register it as an original entry key.
+/// The full `TrampolinePlan::from_precontext_actions` contract applies.
+pub unsafe fn plan_precontext_coalesced_detailed(
+    request: &InstallRequest<'_>,
+    actions: &[crate::precontext::PreContextAction],
+) -> Result<PlannedInstall, PlanningFailure> {
+    plan_coalesced_flavor(
+        &PlanningRequest::live(request),
+        CoalescedActions::PreContext(actions),
+        None,
+    )
+}
+
+/// Plan typed optional actions after an authenticated original/current overlay.
+///
+/// `request.code` remains the complete original function. This does not append
+/// the result or grant allocation authority: exclude complete source mappings
+/// and prior reserved generated mappings, append each member before the next
+/// plan, then validate all ordered members and complete source-page snapshots
+/// with `PlannedBundle`. Missing or reversed predecessors remain refusals.
+///
+/// # Safety
+/// All requirements of [`plan_precontext_coalesced_detailed`] and the unchanged
+/// composition/publication ownership contracts apply. A predecessor authenticates
+/// bytes, not the complete optional-site/frame/physical-return certificate.
+pub unsafe fn plan_precontext_coalesced_detailed_after(
+    request: &InstallRequest<'_>,
+    actions: &[crate::precontext::PreContextAction],
+    predecessor: &crate::composition::Composition,
+) -> Result<PlannedInstall, PlanningFailure> {
+    let current = predecessor
+        .planning_overlay(request.identity, request.base_address, request.code)
+        .map_err(|reason| {
+            let mut search = SearchEvidence::default();
+            search.qualification(SearchScope::default(), &reason);
+            PlanningFailure {
+                reason,
+                attempts: Vec::new(),
+                search,
+            }
+        })?;
+    let original = PlanningRequest::live(request);
+    plan_coalesced_flavor(
+        &original.with_code(&current),
+        CoalescedActions::PreContext(actions),
+        None,
+    )
+}
+
+// The PreContext variant is constructed only by the unsafe typed wrappers.
+// These borrowed views support geometry/identity checks, never metadata erasure.
+#[derive(Clone, Copy)]
+enum CoalescedActions<'a> {
+    Controlled(&'a [crate::controls::ControlledAction]),
+    PreContext(&'a [crate::precontext::PreContextAction]),
+}
+impl<'a> CoalescedActions<'a> {
+    fn len(self) -> usize {
+        match self {
+            Self::Controlled(a) => a.len(),
+            Self::PreContext(a) => a.len(),
+        }
+    }
+    fn pc(self, index: usize) -> u64 {
+        match self {
+            Self::Controlled(a) => a[index].logical_pc,
+            Self::PreContext(a) => a[index].logical_pc(),
+        }
+    }
+    fn control(self, index: usize) -> &'a crate::controls::ProbeControl {
+        match self {
+            Self::Controlled(a) => &a[index].control,
+            Self::PreContext(a) => a[index].control(),
+        }
+    }
+}
+
+fn qualify_precontext(request: &PlanningRequest<'_>) -> Result<(), Refusal> {
+    if request.semantics != HookSemantics::Observe
+        || request.search.tactics != TacticPolicy::RelocationOnly
+    {
+        return Err(Refusal::UnsupportedSemantics(
+            "pre-context planning requires Observe and RelocationOnly".into(),
+        ));
+    }
+    let source = AddressRange::new(request.base_address, request.code.len())?;
+    if source != request.function || source != request.entries.scope {
+        return Err(Refusal::InvalidRange);
+    }
+    if request.entries.completeness != EntryCompleteness::Complete
+        || request.entries.resumes != ResumeObligation::NoneExist
+    {
+        return Err(Refusal::UnresolvedEntry);
+    }
+    if request
+        .entries
+        .entries
+        .iter()
+        .any(|entry| entry.requires_endbr)
+    {
+        return Err(Refusal::UnsupportedSemantics(
+            "pre-context planning excludes ENDBR-required entries".into(),
+        ));
+    }
+    Ok(())
+}
+
 fn plan_coalesced_core(
     request: &PlanningRequest<'_>,
     actions: &[crate::controls::ControlledAction],
 ) -> Result<PlannedInstall, PlanningFailure> {
-    plan_coalesced_flavor(request, actions, None)
+    plan_coalesced_flavor(request, CoalescedActions::Controlled(actions), None)
 }
 
 fn plan_coalesced_flavor(
     request: &PlanningRequest<'_>,
-    actions: &[crate::controls::ControlledAction],
+    actions: CoalescedActions<'_>,
     clock: Option<&crate::backedge_clock::BackedgeClockAction>,
 ) -> Result<PlannedInstall, PlanningFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
+        if let CoalescedActions::PreContext(_) = actions {
+            let qualified = if clock.is_some() {
+                Err(Refusal::InvalidPlan)
+            } else {
+                qualify_precontext(request)
+            };
+            qualified.inspect_err(|reason| {
+                search_evidence.qualification(SearchScope::default(), reason)
+            })?;
+        }
         if request.semantics != HookSemantics::Observe {
             return Err(Refusal::UnsupportedSemantics(
                 "runtime coalesced controls currently require observing hooks".into(),
             ));
         }
-        if actions.first().map(|action| action.logical_pc) != Some(request.logical_pc)
-            || actions.iter().enumerate().any(|(index, action)| {
-                (index > 0 && actions[index - 1].logical_pc >= action.logical_pc)
-                    || actions[..index]
-                        .iter()
-                        .any(|prior| prior.control == action.control)
+        if (actions.len() != 0).then(|| actions.pc(0)) != Some(request.logical_pc)
+            || (0..actions.len()).any(|index| {
+                (index > 0 && actions.pc(index - 1) >= actions.pc(index))
+                    || (0..index).any(|prior| actions.control(prior) == actions.control(index))
             })
         {
             return Err(Refusal::InvalidPlan);
         }
         let (source, scan) = validated_source_core(request)
             .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
-        for action in actions {
-            if !request.block.contains(action.logical_pc) {
+        for index in 0..actions.len() {
+            if !request.block.contains(actions.pc(index)) {
                 return Err(Refusal::InvalidRange);
             }
-            if scan.site(action.logical_pc).is_none() {
+            if scan.site(actions.pc(index)).is_none() {
                 return Err(Refusal::NotInstructionHead);
             }
         }
@@ -1052,7 +1189,7 @@ fn plan_at_with_controls(
     physical: u64,
     occupied: &[AddressRange],
     (controls, clock): (
-        Option<&[crate::controls::ControlledAction]>,
+        Option<CoalescedActions<'_>>,
         Option<&crate::backedge_clock::BackedgeClockAction>,
     ),
     search_evidence: &mut SearchEvidence,
@@ -1062,8 +1199,8 @@ fn plan_at_with_controls(
         ..SearchScope::default()
     };
     let last_logical = controls
-        .and_then(|actions| actions.last())
-        .map_or(request.logical_pc, |action| action.logical_pc);
+        .and_then(|actions| actions.len().checked_sub(1).map(|index| actions.pc(index)))
+        .unwrap_or(request.logical_pc);
     let mut end = physical;
     let mut instructions = Vec::new();
     for item in scan
@@ -1145,9 +1282,16 @@ fn plan_at_with_controls(
         .require_original(displaced)
         .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
     let trampoline = match (clock, controls) {
+        (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),
         (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
-        (None, Some(actions)) => {
+        (None, Some(CoalescedActions::Controlled(actions))) => {
             TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
+        }
+        (None, Some(CoalescedActions::PreContext(actions))) => {
+            // SAFETY: this private variant comes only from the unsafe typed
+            // wrappers, which retain the entire leaf/frame/callback contract.
+            // Original scan/current-read/whole-window guards above are unchanged.
+            unsafe { TrampolinePlan::from_precontext_actions(scan, physical, end, actions) }
         }
         (None, None) => request.emission.window(
             scan,
