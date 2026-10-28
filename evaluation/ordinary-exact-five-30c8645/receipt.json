@@ -584,8 +584,8 @@
   "failed_exact_cohorts": 1,
   "files": {
     "README.md": {
-      "bytes": 5873,
-      "sha256": "4e45bd97f27e30ec046b721f02f0b7d5ce2b8734e704dbff5e59ee6d61d579f1"
+      "bytes": 6372,
+      "sha256": "21f012f0446a7b7a513b78ea1125d66caac4833c44ba0cc7cbadf8033fc525eb"
     },
     "attempts.csv": {
       "bytes": 459,
@@ -602,6 +602,14 @@
     "exact-work.csv": {
       "bytes": 11138,
       "sha256": "1fd23b53be6f4768621817b80f587dd1881316175c96a80f278ce7dd93815344"
+    },
+    "merge-checks.csv": {
+      "bytes": 720,
+      "sha256": "1c55ddc3a942ad0e8d16c5e5bb79eada98d7559a6207538fa56d50a336d020f6"
+    },
+    "merge-checks.json": {
+      "bytes": 5675,
+      "sha256": "db18edc7f26b2fbcd2b8f11ec8f85cdeb857e985395194179b445d72fe5a3029"
     },
     "stages.csv": {
       "bytes": 17486,
@@ -625,6 +633,15 @@
     "vendor": "AuthenticAMD"
   },
   "limitations": "Strict gate failed in two of five attempts. Successful sessions record no numeric maximum lateness. Diagnostic brackets are not lateness or exact off-CPU time. No low-load causation, whole-session native-state, throughput, accuracy, perf-comparison or full-A5 claim.",
+  "merged_tree_validation": {
+    "campaign_rerun": false,
+    "receipt": {
+      "bytes": 5675,
+      "sha256": "db18edc7f26b2fbcd2b8f11ec8f85cdeb857e985395194179b445d72fe5a3029"
+    },
+    "revision": "55f15f6183a29c78b1d7a8872e69721c834420f5",
+    "status": "PASS"
+  },
   "outer_cleanup_complete": true,
   "outer_exit": 1,
   "outer_log": {

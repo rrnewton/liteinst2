@@ -91,6 +91,14 @@ while retaining both positive and compile-fail rustdoc batches. The preceding
 collector report's 3,061 count included five nested summaries twice and is
 corrected to 3,056 without changing any raw receipt or log.
 
+After merging main `abab69594a19140fe5e6f78492da883803dfbe4c`, all seven
+checks passed again at `55f15f6183a29c78b1d7a8872e69721c834420f5`:
+workspace 3,056 top-level passes in 337.401 seconds, serial launch 1,039 in
+125.694 seconds, staged allocation 3 and prefixed pun 36. All seven historical
+regression names passed. See `merge-checks.json` and `merge-checks.csv`.
+All 507 campaign source inputs remain byte-identical. This merged-tree check
+does not rerun or relabel the five-attempt campaign.
+
 This supports claim 4 through a reproducible negative qualification result
 and complete finite work accounting. It supplies no accuracy, throughput,
 matched-perf, arbitrary-interleaving or full-A5 claim. Hardware is the AMD EPYC
