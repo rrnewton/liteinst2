@@ -11,7 +11,7 @@ import inventory_syntax
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '22ce936749652f1e8d34298a59bf2790a0f903e4f3aba0299d56e0db0fb7b426', 'main813_inventory_data_differs')
+require(hashlib.sha256(RAW).hexdigest() == '76224b091697a4331ca748817e59e047e27f39b4c5bf39b8282660f452fc5211', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -35,7 +35,9 @@ CURRENT0A8 = MAIN0A8['current_corpus_sha256']
 MAIN09FE = DATA['main09fe']
 CURRENT09FE = MAIN09FE['current_corpus_sha256']
 MAIN727 = DATA['main727']
-LATEST = MAIN727['current_corpus_sha256']
+CURRENT727 = MAIN727['current_corpus_sha256']
+MAINABAB = DATA['mainabab']
+LATEST = MAINABAB['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -46,11 +48,11 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
-def source_before_727(path, data, error):
-    """Only the fixed 727 whole blob may reach its exact historical source."""
-    if path not in MAIN727['projections']:
+def source_before_abab(path, data, error):
+    """Only the fixed abab whole blob may reach its exact historical source."""
+    if path not in MAINABAB['projections']:
         return data
-    row = MAIN727['projections'][path]
+    row = MAINABAB['projections'][path]
     require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
@@ -61,29 +63,29 @@ def source_before_727(path, data, error):
     return data
 
 
-def require_727_sources(error='main727_source_inventory_differs'):
-    for path, expected in MAIN727['sources'].items():
+def require_abab_sources(error='mainabab_source_inventory_differs'):
+    for path, expected in MAINABAB['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
         require(hashlib.sha256(raw).hexdigest() == expected, error)
-        if path in MAIN727['methods']:
+        if path in MAINABAB['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
-            row = MAIN727['methods'][path]
+            row = MAINABAB['methods'][path]
             require([name for _, name in found] == row['all'] and
                     [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
-                    raw.count(b'#[test]') == len(found) + MAIN727['macros'].get(path, {}).get('test_attributes', 0), error)
+                    raw.count(b'#[test]') == len(found) + MAINABAB['macros'].get(path, {}).get('test_attributes', 0), error)
 
-    for path, row in MAIN727['macros'].items():
+    for path, row in MAINABAB['macros'].items():
         require((ROOT / path).read_text().count(row['literal']) == 1, error)
-    for path, rows in MAIN727['doctests'].items():
+    for path, rows in MAINABAB['doctests'].items():
         lines = (ROOT / path).read_text().splitlines()
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
-    metadata = MAIN727['python_metadata']
+    metadata = MAINABAB['python_metadata']
     raw = (ROOT / metadata['path']).read_bytes()
-    require(hashlib.sha256(raw).hexdigest() == MAIN727['sources'][metadata['path']], error)
+    require(hashlib.sha256(raw).hexdigest() == MAINABAB['sources'][metadata['path']], error)
     require(len(metadata['assignment_sources']) == len(metadata['assignments']) == 5, error)
     snippets = []
     for start, end, literal in metadata['assignment_sources']:
@@ -101,8 +103,87 @@ def require_727_sources(error='main727_source_inventory_differs'):
         require(all(raw.count(literal) == 1 for literal in facts), error)
 
 
-def before_727(declared, error='main727_inventory_differs', source_error='main727_source_inventory_differs'):
+def before_abab(declared, error='mainabab_inventory_differs', source_error='mainabab_source_inventory_differs'):
     require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_abab_sources(source_error)
+    old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAINABAB['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == MAINABAB['previous_corpus_sha256'] == CURRENT727, error)
+    return old
+
+
+def peel_abab(declared, error, source_error):
+    return before_abab(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
+def source_before_727(path, data, error):
+    """Only the fixed 727 whole blob may reach its exact historical source."""
+    data = source_before_abab(path, data, error)
+    if path not in MAIN727['projections']:
+        return data
+    row = MAIN727['projections'][path]
+    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = data[:start] + old.encode() + data[end:]
+        last = start
+    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    return data
+
+
+def require_727_sources(error='main727_source_inventory_differs'):
+    require_abab_sources(error)
+    for path, expected in MAIN727['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        raw = source_before_abab(path, raw, error)
+        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        if path in MAIN727['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN727['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found) + MAIN727['macros'].get(path, {}).get('test_attributes', 0), error)
+
+    for path, row in MAIN727['macros'].items():
+        raw = source_before_abab(path, (ROOT / path).read_bytes(), error)
+        require(raw.decode().count(row['literal']) == 1, error)
+    for path, rows in MAIN727['doctests'].items():
+        lines = source_before_abab(path, (ROOT / path).read_bytes(), error).decode().splitlines()
+        for row in rows:
+            require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
+    metadata = MAIN727['python_metadata']
+    raw = source_before_abab(metadata['path'], (ROOT / metadata['path']).read_bytes(), error)
+    require(hashlib.sha256(raw).hexdigest() == MAIN727['sources'][metadata['path']], error)
+    require(len(metadata['assignment_sources']) == len(metadata['assignments']) == 5, error)
+    snippets = []
+    for start, end, literal in metadata['assignment_sources']:
+        require(0 <= start <= end <= len(raw) and raw[start:end] == literal.encode(), error)
+        snippets.append(literal)
+    tree = ast.parse('\n'.join(snippets))
+    for name, expected in metadata['assignments'].items():
+        values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+                  and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        if name in metadata['tuple_assignments']:
+            expected = tuple(expected)
+        require(values == [expected], error)
+    for path, facts in metadata['qualification_facts'].items():
+        raw = source_before_abab(path, (ROOT / path).read_bytes(), error).decode()
+        require(all(raw.count(literal) == 1 for literal in facts), error)
+
+
+def before_727(declared, error='main727_inventory_differs', source_error='main727_source_inventory_differs'):
+    declared = peel_abab(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT727, error)
     require_727_sources(source_error)
     old = copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -117,7 +198,8 @@ def before_727(declared, error='main727_inventory_differs', source_error='main72
 
 
 def peel_727(declared, error, source_error):
-    return before_727(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_abab(declared, error, source_error)
+    return before_727(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT727 else declared
 
 
 def source_before_09fe(path, data, error):
