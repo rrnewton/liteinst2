@@ -103,6 +103,8 @@ pub use always_on::{
     IntervalThread, PairTotals, PreparedIntervalController, ReadableStack,
 };
 
+/// Explicit final-ELF-bound selection; loading still requires its unsafe contract.
+pub use module::ordinary::TrustedFunctionSelection;
 /// Separate bounded scalar-symbol admission; no publication or interval execution.
 pub use module::ordinary::{IntegerLeafCertificate, IntegerLeafContract, LoadedIntegerLeaf};
 

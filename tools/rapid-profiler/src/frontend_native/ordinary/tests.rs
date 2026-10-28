@@ -1,4 +1,5 @@
 //! Prospective pure controls: no loader calls, executable maps or native credit.
+mod selection;
 use super::*;
 
 // Independently authored scalar byte sum; two RETs and one backward local edge.
