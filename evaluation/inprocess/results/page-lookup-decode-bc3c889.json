@@ -1,0 +1,887 @@
+{
+  "bounds_profiles": {
+    "bounds_0": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "bounds_1": {
+      "build": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "fixture_link": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "inspect": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "metadata": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "native": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "bounds_2": {
+      "build": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "inspect": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "metadata": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "native": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    }
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "oracles": [
+    {
+      "artifacts_sha256": "7383669d975cd60d7ff19e106feca37ef2eaad8cffc2e1870346e5089d38c4e9",
+      "bounds_profile": "bounds_0",
+      "build_status": "passed",
+      "commands": 31,
+      "commands_sha256": "0d7c7d75f1282c86a2607e66188b725426bfbbe24dd9ca2b4fe688882491e145",
+      "cpu": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "1ab9de4d930e9dd306e5a5f4d11eb7b38d052b245fc977652603b5d2ce925728",
+      "metrics": {
+        "appends": 8192,
+        "hits": 2615,
+        "linear_and_literal_equal": 1,
+        "misses": 1101,
+        "queries": 3716,
+        "record_bytes": 64,
+        "record_capacity": 8192,
+        "retirements": 8192,
+        "rounds": 292,
+        "version": 1,
+        "whole_records_and_counts_unchanged": 1
+      },
+      "name": "lookup",
+      "original_receipt": {
+        "bytes": 3821,
+        "sha256": "f9c97784db4116dcc1da1c4e7a8240044f5d1d04d58da43023b3d9a8d9ea3e66"
+      },
+      "private_receipt": {
+        "bytes": 169726,
+        "sha256": "2c96219367912527a281ada6ddb8f48758fd50e533bdc251d0dbc428fab6801f"
+      },
+      "profile": "page-current-lookup-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_current_lookup.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T160852.169616Z",
+      "status": "passed",
+      "tool_versions": {
+        "as": [
+          2,
+          35,
+          2
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "ld": [
+          2,
+          35,
+          2
+        ],
+        "nm": [
+          2,
+          35,
+          2
+        ],
+        "objdump": [
+          2,
+          35,
+          2
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ]
+      },
+      "whole_source_receipt": false
+    },
+    {
+      "artifacts_sha256": "95a68cf58239b5c56c3f3c6af0184d4ed7f7a7a768a2522a045eaf25563c0fe2",
+      "bounds_profile": "bounds_1",
+      "build_status": "passed",
+      "command_rows_sha256": "9dd494db3dfeb898450e11e427daf1f6dab6065d340fce9974c32b749cf465d0",
+      "commands": 19,
+      "cpu": 3,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "36acf11ac2d06803da5ff85429f82a52d0760a3967d3ac244fa17304e9911ddc",
+      "metrics": {
+        "actual_instructions": 30,
+        "added_register_only_cases": 4,
+        "api_controls": 6,
+        "cases": 38,
+        "old_cases": 34,
+        "sealed_stats_unchanged": true,
+        "supplied_refusals": 8
+      },
+      "name": "footprint",
+      "original_receipt": {
+        "bytes": 15035,
+        "sha256": "dadba832e26f83fad87b692ebb2d2e58bddfd727f8334b948d16984afd39e0c7"
+      },
+      "private_receipt": {
+        "bytes": 387936,
+        "sha256": "607767cee6da3675dbbf26f71dc8c69f1740b063b1862be3af0b0fc59ce7c887"
+      },
+      "profile": "page-selected-write-footprint-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_write_footprint.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T160938.841607Z",
+      "status": "passed",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    },
+    {
+      "binaries_sha256": "6c9aa0a01e4d1d6f15a8a285961de8bcbe6ed81614f0cd76632d4fd11ad0775c",
+      "bounds_profile": "bounds_1",
+      "build_status": "passed",
+      "commands": 22,
+      "commands_sha256": "c28f607d3596203608df0f25ef6800c0f078b01f03eb210128ffae5665488a60",
+      "cpu": 6,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "36acf11ac2d06803da5ff85429f82a52d0760a3967d3ac244fa17304e9911ddc",
+      "metrics": {
+        "additional_negative_command_selftests": 3,
+        "generic_pairs": 20,
+        "positive_pairs": 21,
+        "positive_selftest_pairs": 1,
+        "supplied_refusal_encodings": 47,
+        "verified_failed_operations": 3
+      },
+      "name": "generic",
+      "original_receipt": {
+        "bytes": 16230,
+        "sha256": "bbdf204fbc11f95cff50fe4a6821cfee5bba7a55eeae91efd6965dd36727067a"
+      },
+      "private_receipt": {
+        "bytes": 389653,
+        "sha256": "9a497721e102fbdf342c89eeed96f5724786b7ce214b2df9c70264c97a883db2"
+      },
+      "profile": "page-selected-generic-oracle-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_generic_oracle.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T161027.263897Z",
+      "status": "passed",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    },
+    {
+      "binaries_sha256": "67a1d74a91a8332ce1daf39a6eb0ee942a4f39d55d74135b949f511c39e0558a",
+      "bounds_profile": "bounds_1",
+      "build_status": "passed",
+      "commands": 24,
+      "commands_sha256": "629f72947d50c2e2a01c06409859a511ae3cd2f23c2b59e5f56d691401ca38fc",
+      "cpu": 1,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "38923730c72aca4188efd610c7ba80f7d2984babdd51b04d98eebbaa51b05c41",
+      "metrics": {
+        "actual_before_queries": 28,
+        "crossing_pairs": 9,
+        "ending_pairs": 3,
+        "new_pairs": 12,
+        "pairs": 13,
+        "refusals": 384,
+        "startup_pairs": 3,
+        "supplied_none_queries": 36,
+        "supplied_range_queries": 3,
+        "typed_promotions": 39,
+        "verified_memory_failures": 2,
+        "vpcm_supplied_none_queries": 15,
+        "vpcm_typed_promotions": 15
+      },
+      "name": "vmov-load",
+      "original_receipt": {
+        "bytes": 25886,
+        "sha256": "13392257ed1bcb9a64764cf62679207c30cea71a77d45e444929420a9d6ba869"
+      },
+      "private_receipt": {
+        "bytes": 677841,
+        "sha256": "71a367566268a1950b88ebba7f6ceb686d25f5f5f3dedbdd11897e61d19901c2"
+      },
+      "profile": "page-selected-vmovdqu128-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu128.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T161038.881967Z",
+      "status": "passed",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    },
+    {
+      "binaries_sha256": "553906c5bc5f0300a82a9a2e2ca01317b2c00d9e2b9d47e3c1f3d8e11a7412f9",
+      "bounds_profile": "bounds_1",
+      "build_status": "passed",
+      "commands": 61,
+      "commands_sha256": "4bb4867ca8c988f933351cec065f20c8b2ff7022764df38b26759b7b3c467500",
+      "cpu": 6,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "38923730c72aca4188efd610c7ba80f7d2984babdd51b04d98eebbaa51b05c41",
+      "metrics": {
+        "actual_before_queries": 264,
+        "crossing_pairs": 42,
+        "ending_pairs": 86,
+        "new_pairs": 128,
+        "pairs": 136,
+        "refusals": 1536,
+        "startup_pairs": 12,
+        "supplied_none_queries": 144,
+        "supplied_range_queries": 12,
+        "typed_promotions": 156,
+        "verified_memory_failures": 4,
+        "vpcm_supplied_none_queries": 60,
+        "vpcm_typed_promotions": 60
+      },
+      "name": "vmov-load-family",
+      "original_receipt": {
+        "bytes": 76687,
+        "sha256": "efb9cd25255dd15e754ca866a0d1b67782e8faad0ae7e466fc85723c4ca3e5d3"
+      },
+      "private_receipt": {
+        "bytes": 1067286,
+        "sha256": "0f450a2a622becccbe0e979daa60548ff3f5b60e313590c5974fc01e03261b8d"
+      },
+      "profile": "page-selected-vmovdqu128-family-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu128_family.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T161051.128514Z",
+      "status": "passed",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    },
+    {
+      "binaries_sha256": "bee55a160e3bda71534722d6d643a8d9f8332675cb29ba0529f286dc97270402",
+      "bounds_profile": "bounds_1",
+      "build_status": "passed",
+      "commands": 95,
+      "commands_sha256": "ba3b701b47760307291b728dc579a7f3f7084efb3a96764c80ea395e6696481b",
+      "cpu": 1,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "44b62e931cd6e4ba38073c5e910568b3f5db6609d62f6568d8251818f33576c2",
+      "metrics": {
+        "actual_before_queries": 272,
+        "crossing_pairs": 43,
+        "ending_pairs": 85,
+        "new_pairs": 128,
+        "pairs": 136,
+        "refusals": 2320,
+        "startup_pairs": 16,
+        "supplied_none_queries": 192,
+        "supplied_range_end_controls": 48,
+        "supplied_range_queries": 16,
+        "typed_promotions": 208,
+        "verified_memory_failures": 8,
+        "vpcm_supplied_none_queries": 80,
+        "vpcm_typed_promotions": 80
+      },
+      "name": "vmov-store",
+      "original_receipt": {
+        "bytes": 65666,
+        "sha256": "26322b3d2cd1d8b1c8585a38c2ffc9b86230c5a39733b34e6baf7d841d8fed77"
+      },
+      "private_receipt": {
+        "bytes": 1501189,
+        "sha256": "bfc54050299b0d58ba6880d53159b133e38ba031f969529951246f8655f503f5"
+      },
+      "profile": "page-selected-vmovdqu128-store-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu128_store.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T161126.807989Z",
+      "status": "passed",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    },
+    {
+      "binaries_sha256": "78d8fb1d7b47f36491f3c45fb9d6eb0708cf7cd4d5dc64a941e31ccb933c927b",
+      "bounds_profile": "bounds_1",
+      "build_status": "passed",
+      "commands": 24,
+      "commands_sha256": "42b2d2ec65169f751ccd8c490b3601ec1df95972982f862fc66da2c390f21f11",
+      "cpu": 1,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "38923730c72aca4188efd610c7ba80f7d2984babdd51b04d98eebbaa51b05c41",
+      "metrics": {
+        "actual_before_queries": 40,
+        "crossing_pairs": 15,
+        "ending_pairs": 3,
+        "new_pairs": 18,
+        "pairs": 19,
+        "refusals": 324,
+        "startup_pairs": 3,
+        "supplied_none_queries": 15,
+        "typed_promotions": 15,
+        "verified_memory_failures": 2
+      },
+      "name": "compare-memory",
+      "original_receipt": {
+        "bytes": 24296,
+        "sha256": "b36f08d01214951aa628f1b04c60a2819af09a9fc0fbed08c192339462723591"
+      },
+      "private_receipt": {
+        "bytes": 676860,
+        "sha256": "9538aa9b3da7936bb5cdd6e82c858f1123b1ec495af477f34ba8605a15fbf7d7"
+      },
+      "profile": "page-selected-vpcmpeqb-memory-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vpcmpeqb_memory.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T161220.070785Z",
+      "status": "passed",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    },
+    {
+      "binaries_sha256": "8cceec41dd3cc718a4935dfc3021c5dcfcd516ced5ec8227709a72d5be3872be",
+      "bounds_profile": "bounds_1",
+      "build_status": "passed",
+      "commands": 49,
+      "commands_sha256": "110af8f2f8db2d3b10bce482047190bc0bbcc7c9ff04601a398b16f29496413e",
+      "cpu": 1,
+      "failure_type": null,
+      "final_error_count": 0,
+      "inputs_sha256": "38923730c72aca4188efd610c7ba80f7d2984babdd51b04d98eebbaa51b05c41",
+      "metrics": {
+        "actual_before_queries": 220,
+        "crossing_pairs": 87,
+        "ending_pairs": 21,
+        "new_pairs": 108,
+        "pairs": 114,
+        "refusals": 936,
+        "startup_pairs": 8,
+        "supplied_none_queries": 40,
+        "typed_promotions": 40,
+        "verified_memory_failures": 2
+      },
+      "name": "compare-memory-family",
+      "original_receipt": {
+        "bytes": 28564,
+        "sha256": "82d62b47beacdcb27828eb3347bc4695dd8eb2c87fd57a674326926765a15d55"
+      },
+      "private_receipt": {
+        "bytes": 938886,
+        "sha256": "02ad847e9d5cdf3b7cfa11f8792876547fb4837328f1580e36082e7ed8b14406"
+      },
+      "profile": "page-selected-vpcmpeqb-memory-family-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vpcmpeqb_memory_family.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T161231.989445Z",
+      "status": "passed",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    },
+    {
+      "artifact_manifest_sha256": "ba64cb5268f205e68d1745fdc5525097a8d14b9062b246eae982749b887b9659",
+      "bounds_profile": "bounds_2",
+      "build_status": "passed",
+      "command_rows_sha256": "b6f8d59204d0ef68a5f45adb38a5b88450d70d1a61c7d84f9886a7e13f801d73",
+      "commands": 75,
+      "cpu": 8,
+      "failure_type": null,
+      "final_error_count": 0,
+      "input_manifest_sha256": "25dcfa94bfea3095df569495d14048458b42865588309a2cae86771b2002a3dc",
+      "metrics": {
+        "accepted_cases": 17,
+        "completed_cases": 2,
+        "finite_command_count": 52,
+        "required_cases": 17,
+        "required_refusals": 15
+      },
+      "name": "rseq",
+      "original_receipt": {
+        "bytes": 20954,
+        "sha256": "8d11511e3affc5e57206dfa49c1829c08a2697200cd33fe3b598873037c7ed90"
+      },
+      "private_receipt": {
+        "bytes": 717166,
+        "sha256": "0fda8306ee367ee8b6f7882f4ab6ee438c82c6ecd12a277e3e86f4a929ed3bfb"
+      },
+      "profile": "page-selected-rseq-application-fast-memset-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_rseq_application.py",
+        "--expect-revision",
+        "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+        "--fast-memset"
+      ],
+      "reserved_cpu_count": 1,
+      "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+      "source_unchanged": true,
+      "started_utc": "20261028T161259.367384Z",
+      "status": "passed_finite_inactive_profile",
+      "tool_versions": {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      "whole_source_receipt": true
+    }
+  ],
+  "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+  "schema": 1,
+  "scope": "Existing native correctness oracles after positive page lookup reuse and local decode reuse. No performance inference from these oracle runs.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+    "source_manifest_sha256": "3d755305836f8f57057f7fa77a90e64e00c023c8b52d17569ecbbe452a9e989f",
+    "tracked_clean": true,
+    "tree": "56bab7ffa5d21082398887439f1a3d00af639d42"
+  },
+  "summary": {
+    "all_expected_outcomes_passed": true,
+    "command_count": 400,
+    "full_state_pairs": 439,
+    "oracle_runs": 9
+  }
+}
