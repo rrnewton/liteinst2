@@ -188,7 +188,7 @@ def main():
             ('core-controls', ['test', '--release', '-p', 'liteinst2', '--lib', 'precontext::'], 6),
             ('compile-fail-contracts', ['test', '--release', '-p', 'liteinst2', '--doc', 'precontext'], 2),
             ('planner-controls', ['test', '--release', '-p', 'liteinst2', '--test', 'precontext_planning'], 8),
-            ('oracle-calibrations', ['test', '--release', '-p', 'rapid-profiler', '--test', 'frontend-native-calibrations'], 13),
+            ('oracle-calibrations', ['test', '--release', '-p', 'rapid-profiler', '--test', 'frontend-native-calibrations'], 31),
         ]
         for name, args, count in prerequisites:
             data = command(name, [str(toolchain / 'bin/cargo'), *args], ['cargo', *args], 180, 8 * MIB)
