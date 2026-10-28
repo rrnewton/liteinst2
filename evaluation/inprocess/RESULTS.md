@@ -566,3 +566,22 @@ numeric bytes from retained original receipts, without running workloads:
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_trace_vmov.py --inputs evaluation/inprocess/results/20261028-trace-vmov-inputs.json --output target/reproduced-trace-vmov.json
 ```
+
+### Merged TRACE/VMOV qualification, 2026-10-28
+
+Source `577ac6823ca2a7f2cdbd3bf0241a2e875eaf6d98` includes merged main `cc846a834d9cfd59b48e356be9d4e7eee5452058`. The [numeric packet](results/20261028-merged-trace-vmov-milestone.json) retains ten final receipts and four failed `0969d5d` receipts. The [predecessor supplement](results/20261028-merged-trace-vmov-predecessors.json) retains fifteen earlier evaluator runs with their original statuses, totals, commands, readable hardware and clock values. The [input inventory](results/20261028-merged-trace-vmov-inputs.json) binds all 29 originals by byte count and SHA256. The earlier twenty-receipt publication remains unchanged.
+
+All six required checks passed. Workspace tests reported 2,531 passed and four ignored across 100 harnesses; serial launch reported 1,036 passed across 27 harnesses; recorder tests reported 340 passed. Workspace and serial durations were 351.572 s and 130.157 s. Serial evidence qualified the existing 50 selected cases, 15 dynamic fixtures, 388 matrix cases and 108 named validation fixtures, plus two separately labelled supplied-byte parser controls. The live `backing_cleanup_query_required: true` gate requires five cleanup controls/six trajectories through the [closed cleanup reader](../admission/backing_cleanup_query.py); both required harness instances qualified. Historical three-control/four-trajectory checks remain intact.
+
+TRACE passed 23 operations: twelve native/all-NX/chained programs (36 completed lanes) and eleven verified failed-operation controls. VMOVDQU64 passed 38 pairs and 320 encoding-refusal checks; its two genuine failed reads retain exit 125 and no completion. VPB, generic, maps and register-control profiles passed. Connected cache validation passed its three-program finite cohort only.
+
+The three `0969d5d` input-pin preflights issued zero commands and remain failed. Its checks receipt also remains failed: serial tests exited 0, but the closed recorder rejected two newly merged parser-control names. The correction appended exactly those two mandatory identities, preserving all 108 old row objects, old assertions and 340 recorder identities.
+
+Real-program completion and performance remain unqualified. All four final original native baselines exited 0; gated exits were 125, 125, 125 and -9. Default programs refused syscall 334; rseq-disabled `true` reached bytes `62b2764026c1`/Code 2791 and refused; rseq-disabled `ls` had no complete terminal report. Timing discovery also failed, leaving selection and real timing null. All 22 final finite clock interval values and 22 predecessor values remain published; they do not establish real-program timings or speedup.
+
+Reproduce both projections from the hash-bound original receipts and retained private command receipts:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_trace_vmov.py --inputs evaluation/inprocess/results/20261028-merged-trace-vmov-inputs.json --output /tmp/merged-trace-vmov.json
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_trace_vmov_predecessors.py --inputs evaluation/inprocess/results/20261028-merged-trace-vmov-inputs.json --output /tmp/merged-trace-vmov-predecessors.json
+```
