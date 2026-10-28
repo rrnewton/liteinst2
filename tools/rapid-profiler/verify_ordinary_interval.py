@@ -221,6 +221,7 @@ def main():
     ap.add_argument('--cache-work', action='store_true', help='also require twelve loaded cache-model state pairs; requires --exact-work')
     ap.add_argument('--counter-probe', action='store_true', help='also require twelve raw whole-original-API counter observations; requires --cache-work')
     ap.add_argument('--call-tree', action='store_true', help='also require four loaded caller/child state pairs and actual A/B/C ownership control; requires --cache-work and --concurrent-epochs')
+    ap.add_argument('--tree-population', action='store_true', help='also require three 24-root finite populations at K=1/10/24; requires --call-tree')
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
     ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
@@ -238,6 +239,7 @@ def main():
     assert raw.parent.resolve(strict=True) == raw.parent
     assert not a.cache_work or a.exact_work
     assert not a.counter_probe or a.cache_work
+    assert not a.tree_population or a.call_tree
     assert not a.call_tree or a.cache_work
     assert not a.call_tree or a.concurrent_epochs
     assert not a.concurrent_epochs or a.exact_work
@@ -261,6 +263,10 @@ def main():
     result['cache_work_requested'] = a.cache_work
     result['counter_probe_requested'] = a.counter_probe
     result['call_tree_requested'] = a.call_tree
+    result['tree_population_requested'] = a.tree_population
+    if a.tree_population:
+        result['tree_population'] = dict(status='UNRUN', trials=[],
+            scope='finite same-thread root/child population with exact work attribution and first-K selection error; raw ticks uncalibrated, no cache-model, timing-accuracy or performance claim')
     if a.call_tree:
         result['call_tree'] = dict(status='UNRUN', stage='UNRUN',
             scope='fixed depth-two ordinary calls, physical transfer witnesses and one continuous architectural demand-cache model; no hardware-cache, calibrated-time or performance claim')
@@ -313,6 +319,9 @@ def main():
             'tools/rapid-profiler/src/counter_probe.rs', 'tools/rapid-profiler/src/counter_probe/tests.rs',
             'tools/rapid-profiler/src/counter_reading.rs', 'tools/rapid-profiler/src/lib.rs',
             'tools/rapid-profiler/ordinary-interval/counter.rs',
+            'tools/rapid-profiler/ordinary-interval/tree.rs',
+            'tools/rapid-profiler/ordinary-interval/tree/check.rs',
+            'tools/rapid-profiler/ordinary-interval/tree/check/tests.rs',
             'tools/rapid-profiler/native-interval/main.rs', 'tools/rapid-profiler/native-interval/ordinary.rs',
             'tests/support/native_ordinary.rs', 'tests/support/native_interval_oracle.rs',
             'tests/support/native_cache.rs', 'tools/rapid-profiler/native-interval/cache.rs',
@@ -411,23 +420,26 @@ def main():
         if a.counter_probe:
             names.extend(['tools/rapid-profiler/counter-work/check_output.py',
                 'tools/rapid-profiler/counter-work/test_recipe.py', 'tools/rapid-profiler/counter-work/README.md'])
-        if a.call_tree:
-            names.extend(['tests/support/native_call_tree.rs', 'tests/support/native_call_tree/tests.rs', 'tests/support/native_call_tree/refusal.rs', 'tests/call_tree_truth.rs',
-                'tools/rapid-profiler/native-interval/tree.rs',
-                'tools/rapid-profiler/tree-work/tree_work.S', 'tools/rapid-profiler/tree-work/truth.rs',
-                'tools/rapid-profiler/tree-work/model.rs', 'tools/rapid-profiler/tree-work/check_output.py',
-                'tools/rapid-profiler/tree-work/test_recipe.py', 'tools/rapid-profiler/tree-work/README.md',
-                'tools/rapid-profiler/src/frontend_native/ordinary/tree.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/gate/tree.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tree/drain.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tree/postflight.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs',
-                'tools/rapid-profiler/src/frontend_native/always_on/tree/site.rs',
-                'src/frame_trace.rs', 'src/quiescent.rs', 'src/trampoline.rs'])
+        # Tree code is compiled into the ordinary client even without its trial.
+        names.extend(['tests/support/native_call_tree.rs', 'tests/support/native_call_tree/tests.rs', 'tests/support/native_call_tree/refusal.rs', 'tests/call_tree_truth.rs',
+            'tools/rapid-profiler/native-interval/tree.rs',
+            'tools/rapid-profiler/tree-work/tree_work.S', 'tools/rapid-profiler/tree-work/truth.rs',
+            'tools/rapid-profiler/tree-work/model.rs', 'tools/rapid-profiler/tree-work/check_output.py',
+            'tools/rapid-profiler/tree-work/test_recipe.py', 'tools/rapid-profiler/tree-work/README.md',
+            'tools/rapid-profiler/src/frontend_native/ordinary/tree.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/gate/tree.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/drain.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/postflight.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/site.rs',
+            'src/frame_trace.rs', 'src/quiescent.rs', 'src/trampoline.rs'])
+        if a.tree_population:
+            names.extend(['tools/rapid-profiler/tree-work/check_population.py',
+                'tools/rapid-profiler/tree-work/test_population.py'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -899,6 +911,28 @@ def main():
             tree.update(refusal_csv='tree-return-word-refusal.csv', refusal_csv_digest=digest(raw/'tree-return-word-refusal.csv'))
             tree_stable()
             tree.update(status='PASS', stage='complete')
+        if a.tree_population:
+            population = result['tree_population']; population['status'] = 'FAILED'
+            assert result['call_tree']['status'] == 'PASS'
+            spec = importlib.util.spec_from_file_location('tree_population_check', repo/'tools/rapid-profiler/tree-work/check_population.py')
+            population_checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(population_checker)
+            for k in (1, 10, 24):
+                label = f'tree-population-k{k}'
+                trial = dict(k=k, status='FAILED'); population['trials'].append(trial)
+                tree_stable()
+                result['commands'].append(['$REPO/target/release/ordinary-interval', 'tree-population', '$RAW/tree-candidate.so', '$RAW/tree-trusted.so', str(k)])
+                observed = stage(label, [str(binary), 'tree-population', str(tree_candidate), str(tree_trusted), str(k)], 20, 30, MIB)
+                parsed = population_checker.parse((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes(), k)
+                tree_stable()
+                path = raw/(label+'.csv')
+                with path.open('x', newline='') as stream:
+                    writer = csv.DictWriter(stream, fieldnames=list(parsed['rows'][0]), lineterminator='\n')
+                    writer.writeheader(); writer.writerows(parsed['rows'])
+                trial.update(parsed['summary'], status='PASS', csv=path.name, csv_digest=digest(path))
+            assert [t['k'] for t in population['trials']] == [1, 10, 24]
+            assert all(t['status'] == 'PASS' for t in population['trials'])
+            population.update(status='PASS', fresh_processes=3, originals=72, roots=72, nodes=144,
+                sampled=70, closed=74, batches=9, events=288, reports=70)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:

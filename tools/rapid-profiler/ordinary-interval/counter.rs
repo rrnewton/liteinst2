@@ -7,7 +7,7 @@ use std::io::Write as _;
 
 #[path = "../cache-work/truth.rs"]
 #[allow(dead_code)] // The native trace stage, not this driver, owns interpret/model checks.
-mod truth;
+pub(super) mod truth;
 
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];
 #[repr(C, align(64))]

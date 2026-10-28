@@ -25,6 +25,7 @@ mod counter;
 mod exact;
 mod streamed;
 mod timed;
+mod tree;
 
 const LENGTHS: [usize; 8] = [1, 2, 17, 64, 3, 63, 7, 32];
 const WAIT: Duration = Duration::from_secs(2);
@@ -346,6 +347,19 @@ fn check_report(report: &Report, rows: &[RawInterval], generation: u64, sequence
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("tree-population") {
+        assert_eq!(
+            args.len(),
+            5,
+            "ordinary-interval tree-population CANDIDATE TRUSTED K"
+        );
+        tree::run(
+            Path::new(&args[2]),
+            Path::new(&args[3]),
+            args[4].to_str().unwrap().parse().unwrap(),
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("counter-cache-probe") {
         assert_eq!(
             args.len(),

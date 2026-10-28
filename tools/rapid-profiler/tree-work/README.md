@@ -81,3 +81,37 @@ its eight-byte saved return word, and requires bounded normal exit 123 plus
 exact reaping. Its one-row `EXPECTED_REFUSAL` result is separate from the four
 successful pairs. Exit 123 is the existing undifferentiated fatal policy; the
 receipt makes no claim to have decoded the internal runtime error.
+
+
+The ordinary `tree-population` client exercises this same loaded tree over a
+fixed population: ten `fit2` calls followed by fourteen `conflict3` calls,
+alternating the two seeds. Add `--tree-population` to the reproduction above
+for three fresh release processes with K=1, K=10 and K=24. Each checks 24
+original and 24 installed root calls, 48 node intervals, three eight-root
+journal drains and the full retained Reports. The actual installed gate
+sequences must be 25 through 48, following the 24 successful originals.
+
+Both functions retain their first K invocations. K=1 and K=10 miss the later
+conflicting phase entirely; K=24 retains all fourteen conflicting calls.
+The exact retained-label fraction errors are -14/24, -140/240 and 0/576.
+Each root has 332 inclusive instructions and six exclusive instructions;
+its child has 326 instructions. These counts describe the authenticated fixed
+source. Inclusive root and child totals overlap and must not be added as
+disjoint work. This ordinary client does not trace instruction counts or
+satisfy the native cache model's stack-set placement requirement. Its raw
+callback timestamps remain uncalibrated.
+
+Run its consumer and output controls with:
+
+```sh
+cargo test --locked --offline --release -p rapid-profiler --bin ordinary-interval tree::
+python3 -B tools/rapid-profiler/tree-work/test_population.py
+```
+
+The output is a compact 48-row CSV and exact terminal per process. The Rust
+client checks the complete 512-word journal pages, hidden record identities,
+Reports, input guards, real returns and retained batch stability before
+printing it; those checks are not all projected into the CSV. Each added
+process keeps the existing 20 CPU-second, 30 wall-second and 1 MiB bounds.
+The inherited native state, owner and malformed-return controls remain
+required; their results cannot be inferred from this functional population.
