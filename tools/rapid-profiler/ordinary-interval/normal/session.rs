@@ -110,7 +110,8 @@ impl Engine {
             .position(Option::is_none)
             .ok_or("retained epoch capacity")?;
         let mut bank = Some(self.banks.pop().ok_or("retained epoch capacity")?);
-        #[allow(clippy::result_large_err)] // Keep the returned bank inline until custody is restored.
+        #[allow(clippy::result_large_err)]
+        // Keep the returned bank inline until custody is restored.
         let epoch =
             match epoch_storage::transfer(&mut bank, |bank| self.controller.stage_prepared(bank)) {
                 Ok(epoch) => epoch,
