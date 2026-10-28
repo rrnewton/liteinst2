@@ -115,6 +115,17 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
             return Ok(if instruction.op0_kind() == OpKind::Register { no_write(out) } else { out });
         }
         Code::Pop_r64 | Code::Leaveq | Code::Retnq | Code::Retnq_imm16 => return Ok(no_write(out)),
+        // This exact store/reverse-copy Code is separate from the load's
+        // NONE arm. Every memory form potentially writes the complete16 bytes.
+        Code::VEX_Vmovdqu_xmmm128_xmm => {
+            if instruction.op0_kind() == OpKind::Register { return Ok(no_write(out)); }
+            if instruction.op0_kind() != OpKind::Memory { return Ok(out); }
+            let Some(first) = instruction.virtual_address(0, 0, |register, index, element_size| {
+                if index != 0 || element_size != 0 { return None; }
+                register_value(state, register)
+            }) else { return Ok(out); };
+            return Ok(range(out, first, 16));
+        }
         // These exact Codes have register destinations. Do not put their
         // mnemonics in the no-write family: a future memory-store Code with
         // the same mnemonic must remain unsupported until explicitly reviewed.

@@ -28,13 +28,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -57,13 +57,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -86,13 +86,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group2",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -115,13 +115,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group3",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -144,13 +144,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group4",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -173,13 +173,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group5",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -202,13 +202,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group6",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -231,13 +231,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "group7",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -263,7 +263,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "full-read-fault",
@@ -295,7 +295,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "cross-read-fault",
@@ -327,7 +327,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "indexed-full-read-fault",
@@ -359,7 +359,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 134,
+        "refusals": 133,
         "version": 1
       },
       "name": "indexed-cross-read-fault",
@@ -382,11 +382,11 @@
   "negative_endpoint": "Four actual original-PC failed16-byte reads: full and8+8 crossing operands, through base and indexed address forms. Each keeps failed operation/exit125, zero TRACE/completion and exact unchanged native/owner architectural state and memory.",
   "new_load_pairs_total": 94,
   "new_move_pairs_total": 128,
-  "new_refusal_count": 21,
+  "new_refusal_count": 20,
   "old_refusal_count": 113,
-  "promoted_refusal_count": 12,
+  "promoted_refusal_count": 13,
   "prospective_only": true,
-  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +10304 +3520; complete old samples and CPUID/fault/actual-before-EA/supplied-promotion trailers",
+  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +10304 +3808; complete old samples and CPUID/fault/actual-before-EA/supplied-promotion trailers",
   "record_header_fields": [
     "magic",
     "version",
@@ -410,5 +410,5 @@
   "record_limit_bytes": 16777216,
   "register_copy_pairs": 34,
   "schema_version": 1,
-  "scope": "Canonical VEX.128.F3.0F.WIG Code1598 load/register-copy forms; structural family coverage, not every numeric effective address. No other VEX/EVEX or real completion/performance claim."
+  "scope": "Canonical VEX.128.F3.0F.WIG Code1598 load/register-copy forms; structural family coverage, not every numeric effective address. No other VEX/EVEX or real completion/performance claim. The retained c5fa7f06 row additionally requires Code1840/FALLTHROUGH/SIMD and a supplied RANGE16, with native coverage required separately in store corpus row72. Each process requires all12 old supplied NONE queries plus this one RANGE query; no store executes in this load companion."
 }

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "rip_displacements": {"negative": -16384, "positive": 12288},
+  "rows": [
+    {"case_index":64,"name":"rw_cross_1_15","operand_offset":4095},
+    {"case_index":65,"name":"rw_cross_2_14","operand_offset":4094},
+    {"case_index":66,"name":"rw_cross_4_12","operand_offset":4092},
+    {"case_index":67,"name":"rw_cross_8_8","operand_offset":4088},
+    {"case_index":68,"name":"rw_cross_12_4","operand_offset":4084},
+    {"case_index":69,"name":"rw_cross_15_1","operand_offset":4081},
+    {"case_index":70,"name":"rsp_minus16","hex":"c5fa7f7424f0","memory_kind":"stack","src_reg":6,"base":4,"displacement":-16,"disp_bytes":1,"operand_offset":-16},
+    {"case_index":71,"name":"rsp_plus7","hex":"c461fa7f7c2407","memory_kind":"stack","src_reg":15,"base":4,"displacement":7,"disp_bytes":1,"operand_offset":7},
+    {"case_index":72,"name":"exact_old_store_promotion","hex":"c5fa7f06","memory_kind":"data","src_reg":0,"base":6,"operand_offset":257,"promotion_index":73,"old_total_control_index":120},
+    {"case_index":73,"name":"actual_store_rdi_xmm0","hex":"c5fa7f07","memory_kind":"data","src_reg":0,"base":7,"operand_offset":4080},
+    {"case_index":74,"name":"extra_lower_rw_rip","hex":"c4e1fa7f2d00c0ffff","memory_kind":"rip","src_reg":5,"displacement":-16384,"disp_bytes":4,"tail":2},
+    {"case_index":75,"name":"register_alias_xmm14_wig0","hex":"c4417a7ff6","memory_kind":"register","src_reg":14,"dest":14},
+    {"case_index":125,"name":"lookahead_store_rdi_rdx_minus16","hex":"c5fa7f4c17f0","memory_kind":"data","src_reg":1,"base":7,"index":2,"scale":1,"displacement":-16,"disp_bytes":1,"operand_offset":4080,"index_value":7}
+  ]
+}

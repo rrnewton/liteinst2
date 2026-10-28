@@ -322,7 +322,7 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==134&&v128_promotions.completed==12,1183);
+    vpb_refusals();need(result.refusals==133&&v128_promotions.completed==13,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     if(control){vpb_prepare(&negative_sample,v64_fault_kind-1);vpb_pair(&negative_sample,1);die(1211);}
@@ -332,6 +332,6 @@ int fixture_main(unsigned long *stack) {
          write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vpc_queries,sizeof(vpc_queries))&&
              write_all(3,&v128_promotions,sizeof(v128_promotions)),1184);
-    output("LI2_VMOVDQU128_TF_PASS pairs=13 loads=12 selftest=1 refusal_bytes=134 promoted_bytes=12 supplied_none_queries=12 footprint_queries=24 full_state=13 full_memory=13 live_endpoints=13\n");
+    output("LI2_VMOVDQU128_TF_PASS pairs=13 loads=12 selftest=1 refusal_bytes=133 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 footprint_queries=24 full_state=13 full_memory=13 live_endpoints=13\n");
     return 0;
 }
