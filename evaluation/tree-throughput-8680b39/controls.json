@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/usr/bin/python3",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/rapid-profiler/tree-work",
+    "-p",
+    "test_throughput*.py"
+  ],
+  "failed": 0,
+  "parser_methods": 8,
+  "passed": 13,
+  "python": "3.9.25",
+  "receipt_sha256": "ac9ded77e04c15edeeb7d6f67ba60b325fd07b6ae12d0b57f981f9cf03762b1e",
+  "rescues": 0,
+  "revision": "8680b3954ab36a681323438c15800d7322322aa8",
+  "scope": "Synthetic protocol/arithmetic controls; no native or timing measurement evidence.",
+  "source_sha256": {
+    "tools/rapid-profiler/tree-work/check_throughput.py": "a34275ef8c73e0b23947d52aab7e0f1cd83ad96e46f787352376e5ceaa6ee8e3",
+    "tools/rapid-profiler/tree-work/test_throughput.py": "dc0bfc041db73f1bdf5940948ee04827acffce4ebcc969a60f33e70e78cfc04e",
+    "tools/rapid-profiler/tree-work/test_throughput_stats.py": "360831f2292b08fdb62331a6e2091fee12cde8ebc1ae4fccb9589f8e1a7b0587",
+    "tools/rapid-profiler/tree-work/throughput_stats.py": "67b3ec1fcf1775ad809613b14e2339d89e451ac0ddea42b0c48795884c82d7c9"
+  },
+  "statistics_methods": 5,
+  "status": "PASS",
+  "wall_limit_seconds": 180,
+  "wall_seconds": 6.855603034142405
+}

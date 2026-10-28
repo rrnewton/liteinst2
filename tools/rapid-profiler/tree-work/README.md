@@ -115,3 +115,66 @@ printing it; those checks are not all projected into the CSV. Each added
 process keeps the existing 20 CPU-second, 30 wall-second and 1 MiB bounds.
 The inherited native state, owner and malformed-return controls remain
 required; their results cannot be inferred from this functional population.
+
+`tree-throughput MODE CANDIDATE TRUSTED` measures the guarded SDK consumer
+for `original-sdk`, `k1`, `k10` and `k24`. Each process performs 64 repetitions
+of the same 24-call worklist (1,536 root calls). Installed modes reuse one
+attachment and one epoch slot: stage, arm, call and drain, disarm, retire,
+validate and drop the Report, then stage the next epoch. They retain bounded
+sealed batches across reuse and check the full journal and Report joins.
+The original mode uses the original SDK call path, including source/input
+checks. It is an SDK baseline, not bare native execution. Mandatory entry and
+return hooks remain active after K is reached.
+
+Add `--tree-throughput` to the full reproduction command above, together with
+`--tree-population`. The runner preserves its existing 47 stages and then runs
+52 fresh processes in the literal order in `throughput_stats.py`: three warmup
+blocks followed by ten measured blocks, each containing all four modes.
+The order was generated once with seed `0x4c49544554524545` and frozen before
+observations. Every trial must satisfy the functional checks and the unchanged
+20 CPU-second, 30 wall-second and 1 MiB bounds. A failure stops the campaign;
+remaining trials stay unrun. All twelve warmup results remain in the receipt
+but are excluded from the estimator by this fixed policy. No trial is retried,
+trimmed, discarded as short or unstable, or adjusted by empty-hook subtraction.
+
+Each clock snapshot reads `CLOCK_MONOTONIC`, then `CLOCK_PROCESS_CPUTIME_ID`,
+then `CLOCK_MONOTONIC` again. S0 precedes source loading, input preparation and
+SDK setup; affinity and clock-resolution queries precede S0. S1 follows setup
+and precedes the first epoch stage or original call. S2 follows all 64 blocks,
+including the last installed retirement and Report validation/drop. S3 follows
+final detach, history/input checks and flushing the 64 block summaries.
+Process startup, affinity/resolution setup, the final timing line and process
+exit are outside these regions. Per-call scalar, return and full guarded-input
+checks, and installed drains/joins, are part of the measured consumer cost.
+The instruction interpreter is not replayed on each timed call.
+
+The primary whole wall duration is `S3.wall_after - S0.wall_before`; the loop
+wall duration uses S2 and S1 with the same enclosing endpoints. Lower spans
+are also exported, using end.wall_before minus start.wall_after, but never
+substitute for the primary spans. CPU deltas use their own endpoints. All four
+raw triples and both positive clock resolutions are retained. Clock resolution
+is metadata, not a bound on measurement accuracy. No cross-clock CPU<=wall
+inequality or minimum-duration threshold is imposed.
+
+For each installed mode and metric, ten measured blocks provide ten paired
+ratios `original-sdk / installed`. The reported ratio is the geometric mean.
+The conditional 95% interval is Student t with nine degrees of freedom on
+the mean log ratio, assuming independent approximately normal log ratios.
+All ten ratios are retained. Cost increase is `100 * (1/ratio - 1)`;
+wall-only throughput loss is `100 * (1 - ratio)`. Negative values are retained.
+The primary metric is whole wall time; loop wall and both CPU deltas are
+secondary. These intervals do not establish empirical coverage, timing
+accuracy, isolation from shared-host effects or completion of the A5 gate.
+
+Run the additional source/protocol controls with:
+
+```sh
+cargo test --locked --offline --release -p rapid-profiler --bin ordinary-interval tree::throughput::
+python3 -B tools/rapid-profiler/tree-work/test_throughput.py
+python3 -B tools/rapid-profiler/tree-work/test_throughput_stats.py
+```
+
+Keep the 64-row transcripts and process logs in `ignored/`. A compact public
+receipt should retain all 52 per-process numeric summaries (including raw clock
+endpoints), the paired statistics, exact revision, release settings, command
+and sanitized hardware. This protocol document records no measurement result.
