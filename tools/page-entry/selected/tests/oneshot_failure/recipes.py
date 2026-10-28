@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[5]
 HERE=Path(__file__).resolve().parent
 VIEW=ROOT
 RECIPE=VIEW/'tools/page-entry/selected/build-oneshot.sh'
-RECIPE_SHA='3ae6dfa945f27904ffdece29d8e0b5a79a697931d3b2ba5b9710412ad617e8f6'
+RECIPE_SHA='5711089721052425b3714c44a4e56f56e40f35528d66faf76e53d9704865218b'
 RENAMES={name:'li2_fixture_product_'+name.removeprefix('li2_oneshot_') for name in
          ('li2_oneshot_initialize','li2_oneshot_nx','li2_oneshot_ud','li2_oneshot_abort_close')}
 
