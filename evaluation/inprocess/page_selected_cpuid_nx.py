@@ -295,7 +295,7 @@ def _boundary(builder,products,root,private,pin,binary,aliases,run,receipt,bridg
     lexical=namespace.parse(pin('/bin/true').read_bytes())['interpreter'];need(lexical is not None,'actual system interpreter spelling')
     interp=pin(lexical);source=pin(fixture/'boundary.S');linker=pin(fixture/'linker.ld');original=directory/'boundary'
     row=state['boundary_build']=dict(status='failed',source=fact(source),linker=fact(linker),interpreter=dict(path=str(interp),**fact(interp)))
-    flags=['-nostdlib','-pie','-Wl,--dynamic-linker,'+lexical,
+    flags=['-nostdlib','-pie','-Wl,--dynamic-linker,'+str(lexical),
         '-Wl,-T,'+str(linker)+',-z,max-page-size=4096,--build-id=none,--no-as-needed','-L'+str(interp.parent),'-l:'+interp.name]
     _,out,err=run('cpuid-boundary-headers',[builder.tools['cc'],'-M','-MT','cpuid_boundary',source],env=builder.environment)
     rules=out.decode().replace('\\\n',' ').splitlines();need(not err and len(rules)==1 and rules[0].startswith('cpuid_boundary: '),'one actual unchanged assembly include rule')
