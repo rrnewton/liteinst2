@@ -77,7 +77,9 @@ struct li2_step_owner {
 
 /* All objects are zero-initialized fixed owners, retained to process exit.
    Caller has actual singleton/external-debug exclusion, reserved default
-   SIGSEGV/SIGTRAP, a guarded alternate stack, no CET/rseq and an immutable
+   SIGSEGV/SIGTRAP, a guarded alternate stack, no CET, and no rseq unless the explicit registered-inactive runtime supplies
+   its pre-registration zero-word, every pre-effect write, mapping and signal-
+   frame proofs (the default rseq exclusion remains) and an immutable
    private source with no writable alias. Async signals are blocked. The
    fixture establishes these separately; this API does not invent them. */
 int li2_step_session_init(struct li2_step_session *,uint64_t application_mask);

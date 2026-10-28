@@ -1,0 +1,518 @@
+{
+  "aliases_sha256": "5ba2714c8e12ffc80b0a3c90bbc7fd9c46c6ba1080a3cb50e3a50d4280c2c42d",
+  "artifacts_sha256": "6ed2ec0afafc760c5ade0ff8304fd3433f5e5aca8e8aafa9e7f3b203408d52af",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": "passed",
+  "cases": [
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "measured": false,
+      "mode": "scalar",
+      "name": "scalar-functional",
+      "result": {
+        "bytes": 37272,
+        "cases": 273,
+        "fills_per_interval": 0,
+        "intervals_ns": [],
+        "sha256": "77ce62a9102ab6d1458b9a48d0a17a4507d0f18dd465b00aaf9370cd826e6fd7",
+        "slot_bytes": 200896,
+        "whole_buffer_bytes_checked": 11993088
+      }
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "measured": false,
+      "mode": "fast",
+      "name": "fast-functional",
+      "result": {
+        "bytes": 37272,
+        "cases": 273,
+        "fills_per_interval": 0,
+        "intervals_ns": [],
+        "sha256": "77ce62a9102ab6d1458b9a48d0a17a4507d0f18dd465b00aaf9370cd826e6fd7",
+        "slot_bytes": 200896,
+        "whole_buffer_bytes_checked": 11993088
+      }
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "measured": true,
+      "mode": "scalar",
+      "name": "scalar-measured-1",
+      "result": {
+        "bytes": 37272,
+        "cases": 273,
+        "fills_per_interval": 256,
+        "intervals_ns": [
+          17374234,
+          17317038,
+          17342917,
+          17309297,
+          17308546,
+          17386643,
+          17296067,
+          17333624
+        ],
+        "sha256": "eb4b826ba3c7543c9f641dfa41642d524a2a357761a2da3bde31cf66cd0c6d61",
+        "slot_bytes": 200896,
+        "whole_buffer_bytes_checked": 11993088
+      }
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "measured": true,
+      "mode": "fast",
+      "name": "fast-measured-1",
+      "result": {
+        "bytes": 37272,
+        "cases": 273,
+        "fills_per_interval": 256,
+        "intervals_ns": [
+          437697,
+          422354,
+          429715,
+          422334,
+          423576,
+          425659,
+          422094,
+          452148
+        ],
+        "sha256": "f1509ff754b9e510bb80a71a4a253bf3bde17ecd7c34c8a69ee560c0a0d3a49c",
+        "slot_bytes": 200896,
+        "whole_buffer_bytes_checked": 11993088
+      }
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "measured": true,
+      "mode": "fast",
+      "name": "fast-measured-2",
+      "result": {
+        "bytes": 37272,
+        "cases": 273,
+        "fills_per_interval": 256,
+        "intervals_ns": [
+          427532,
+          420751,
+          420611,
+          425229,
+          420692,
+          424377,
+          420672,
+          422715
+        ],
+        "sha256": "b353722a2d6006938af7ad01898f69d7f078e2d01bb3decff6615d16c914335a",
+        "slot_bytes": 200896,
+        "whole_buffer_bytes_checked": 11993088
+      }
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "measured": true,
+      "mode": "scalar",
+      "name": "scalar-measured-2",
+      "result": {
+        "bytes": 37272,
+        "cases": 273,
+        "fills_per_interval": 256,
+        "intervals_ns": [
+          17358380,
+          17420863,
+          17338842,
+          17311360,
+          17342045,
+          17332622,
+          17311781,
+          17446313
+        ],
+        "sha256": "18e8bb65f8bd12e9caa17b08482e8cbb25f35e2470a3685111d4b9926851e9cb",
+        "slot_bytes": 200896,
+        "whole_buffer_bytes_checked": 11993088
+      }
+    }
+  ],
+  "command_count": 40,
+  "commands_sha256": "617d211bd2bac5b85c7ea44a2036c5d7c5883dd5e732fff9763625cb39c3180a",
+  "cpu": 1,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "af08160895fb9af7ab06d6245c75d06027e08329",
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "95aa7c0ca596e736082ce7f9913fb06268e9d23aabb068891ead73b4f5cd23e7",
+  "inspection_sha256": "49d8e897bf6b02400e4898097017c0fff52d1484cff169933bdc34fe6a7f68cd",
+  "native_commands": [
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "scalar-functional",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fast-functional",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "scalar-measured-1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fast-measured-1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fast-measured-2",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "scalar-measured-2",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "private_receipt": {
+    "bytes": 384218,
+    "sha256": "92cd76504021ce1f23f9ebe7aea5ee8060cc68ba5affa2bb76dbaffa68efbe98"
+  },
+  "profile": "page-selected-fast-memset-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_fast_memset.py",
+    "--expect-revision",
+    "af08160895fb9af7ab06d6245c75d06027e08329"
+  ],
+  "rust_archive_used": false,
+  "scope": "Scalar versus opt-in REP STOSB primitive only; warm helper-call batches, no production enablement or real-program speed claim.",
+  "slot_bytes": 200896,
+  "source": {
+    "head_sources_match": true,
+    "revision": "af08160895fb9af7ab06d6245c75d06027e08329",
+    "source_manifest_sha256": "5174f9023c0ff34f4c5051e983595e7dbaa3b7487d7459987cf066ee6d317b8b",
+    "tracked_clean": true,
+    "tree": "f690ce663a5ae881f4c72e995b139314bef6f301"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T035139.737337Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "dirname": {
+      "bytes": 27952,
+      "sha256": "dcccd2b58cda47c25292457d1153e612a68599ad7086c3b90a66ed568ab8950b"
+    },
+    "gdb": {
+      "bytes": 17179552,
+      "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "gdb": [
+      17,
+      2,
+      0
+    ],
+    "objdump": [
+      2,
+      35,
+      2
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ]
+  },
+  "version": 1
+}

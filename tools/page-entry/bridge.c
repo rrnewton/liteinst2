@@ -28,7 +28,18 @@ long raw(long n,long a,long b,long c,long d,long e,long f) { return li2_raw6(n,a
 static int failed(long r) { return (unsigned long)r >= (unsigned long)-4095; }
 void copy(void *v,const void *w,size_t n) { unsigned char *d=v;const unsigned char *s=w;while(n--)*d++=*s++; }
 void *memcpy(void *d,const void *s,size_t n) { copy(d,s,n);return d; }
+#if defined(LI2_FAST_MEMSET) && LI2_FAST_MEMSET
+/* Runtime C entries have DF clear. This also establishes forward direction
+   locally; application flags live in the saved frame, not these C flags. */
+void *memset(void *d,int c,size_t n) {
+    void *original=d;
+    __asm__ volatile("cld; rep stosb" : "+D"(d), "+c"(n)
+                     : "a"((unsigned char)c) : "memory","cc");
+    return original;
+}
+#else
 void *memset(void *d,int c,size_t n) { unsigned char *p=d;while(n--)*p++=(unsigned char)c;return d; }
+#endif
 int equal(const void *v,const void *w,size_t n) { const unsigned char *a=v,*b=w;while(n--)if(*a++!=*b++)return 0;return 1; }
 void li2_fail(const char *why) {
     const char prefix[]="LI2_FIRST_ENTRY refused: ";size_t n=0;while(why[n]&&n<160)++n;

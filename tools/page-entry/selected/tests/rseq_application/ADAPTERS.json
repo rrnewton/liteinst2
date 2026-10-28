@@ -1,0 +1,38 @@
+[
+  {
+    "after": "long application_underlying_raw(long n,long a,long b,long c,long d,long e,long f)",
+    "before": "long raw(long n,long a,long b,long c,long d,long e,long f)",
+    "count": 2,
+    "path": "tools/page-entry/bridge.c"
+  },
+  {
+    "after": "int application_real_instruction(const struct li2_decoded *d,const ucontext_t *uc)",
+    "before": "int li2_rseq_check_instruction(const struct li2_decoded *d,const ucontext_t *uc)",
+    "count": 1,
+    "path": "tools/page-entry/selected/rseq_guard.c"
+  },
+  {
+    "after": "int application_real_before_syscall(long n,const long a[6])",
+    "before": "int li2_rseq_before_syscall(long n,const long a[6])",
+    "count": 1,
+    "path": "tools/page-entry/selected/rseq_guard.c"
+  },
+  {
+    "after": "#include \"rseq_guard.h\"\n#include \"observe.h\"",
+    "before": "#include \"rseq_guard.h\"",
+    "count": 1,
+    "path": "tools/page-entry/selected/runtime_loader.c"
+  },
+  {
+    "after": "    application_dispatch_frame(context);\n    int rseq_error=li2_rseq_before_syscall(n,a);",
+    "before": "    int rseq_error=li2_rseq_before_syscall(n,a);",
+    "count": 1,
+    "path": "tools/page-entry/selected/runtime_loader.c"
+  },
+  {
+    "after": "#endif\n#endif\n    application_terminal(status,code,detail,(unsigned)selected_pending_route,selected_step_pending,&selected_chain);\n}\nstatic void fail(unsigned code,long detail)",
+    "before": "#endif\n#endif\n}\nstatic void fail(unsigned code,long detail)",
+    "count": 1,
+    "path": "tools/page-entry/selected/runtime_loader.c"
+  }
+]

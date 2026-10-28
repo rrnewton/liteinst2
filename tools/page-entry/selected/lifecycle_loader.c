@@ -710,3 +710,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 
 /* Runtime-private code inspection: does not register application sources. */
 #include "private_code_query.inc"
+#ifdef LI2_RSEQ_INACTIVE
+#include "rseq_data.inc"
+#endif

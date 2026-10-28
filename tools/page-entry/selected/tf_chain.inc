@@ -1,6 +1,9 @@
 /* Included by step_owner.c only in LI2_TF_HANDOFF builds. Reuses unchanged
    frame/identity/revoke helpers and the complete existing generic owner. */
 #include "tf_chain.h"
+#ifdef LI2_RSEQ_INACTIVE
+#include "rseq_guard.h"
+#endif
 static struct li2_tf_chain *chain_registered;
 static void chain_invalidate(struct li2_tf_chain *c) {
     __atomic_store_n(&c->entry.valid,0,__ATOMIC_RELEASE);
@@ -256,6 +259,11 @@ static void chain_begin_trace(struct li2_tf_chain *c,int sig,siginfo_t *si,ucont
        (uint64_t)uc->uc_mcontext.gregs[REG_EFL]==e->flags,LI2_CHAIN_ORIGIN,4);
     frame(o,&o->before,uc);
     require(o,equal((const void *)e->pc,o->request.decoded.bytes,o->request.decoded.length),LI2_STEP_PAGE_BINDING,2);
+#ifdef LI2_RSEQ_INACTIVE
+    int rseq_error=li2_rseq_check_instruction(&o->request.decoded,uc);
+    if(rseq_error)li2_tf_chain_abort(c,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+    require(o,chain_frame_equal(&o->before,uc,0),LI2_CHAIN_FRAME,7);
+#endif
     o->phase=LI2_STEP_OPENING;
     for(size_t i=0;i<o->request.page_count;i++) {
         const struct li2_step_page *page=&o->request.pages[i];

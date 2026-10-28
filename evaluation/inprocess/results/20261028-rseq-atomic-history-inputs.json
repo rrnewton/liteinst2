@@ -1,0 +1,65 @@
+{
+  "receipts": [
+    {
+      "bytes": 24164,
+      "kind": "run",
+      "name": "20261028T025541.515442Z-page-selected-lock-cmpxchg-58fb9860d81b.json",
+      "sha256": "01624f8c9d685f32c25af8be38f328e35ba05400287ca1031eef41ae5e37faaf"
+    },
+    {
+      "bytes": 16004,
+      "kind": "run",
+      "name": "20261028T025612.435349Z-page-selected-chain-real-58fb9860d81b.json",
+      "sha256": "3f7226115f85463e8052bb1bb1f4297e5ebb8e8e42147f62cac87a75d157b335"
+    },
+    {
+      "bytes": 13869,
+      "kind": "run",
+      "name": "20261028T025904.018807Z-page-selected-write-footprint-58fb9860d81b.json",
+      "sha256": "713d491e0faa4b3ef67692a7c3ded04c78c3a98a846cca8de32c1e98505dfe87"
+    },
+    {
+      "bytes": 25792,
+      "kind": "run",
+      "name": "20261028T025910.943069Z-page-selected-chain-oracle-58fb9860d81b.json",
+      "sha256": "628ee5b829663bb01fc309e19b1523822df963ef839b5d41554ae203aabea159"
+    },
+    {
+      "bytes": 20794,
+      "kind": "run",
+      "name": "20261028T030606.960824Z-page-selected-rseq-application-de88447c5f40.json",
+      "sha256": "7e56ce805382a9ab22469f235d373b39627b01f058f55052b36706f3afb2083b"
+    },
+    {
+      "bytes": 11370,
+      "kind": "run",
+      "name": "20261028T030629.019043Z-page-selected-rseq-real-de88447c5f40.json",
+      "sha256": "3ef93b4f735714b53aede2522cbae39ffe7168819121b7326fc9f85889692ee9"
+    },
+    {
+      "bytes": 26657,
+      "kind": "run",
+      "name": "20261028T031920.935177Z-page-selected-lock-cmpxchg-rip-1f4199a4f2e0.json",
+      "sha256": "4d9885c292a407b7126d5eddfd68df3074a9d2b7895639c655880c983318f0c2"
+    },
+    {
+      "bytes": 24202,
+      "kind": "run",
+      "name": "20261028T031935.263871Z-page-selected-lock-cmpxchg-1f4199a4f2e0.json",
+      "sha256": "8e87602d0373145a63e8ac95ec460f88b59bfe43461d655f43b71540d03805df"
+    },
+    {
+      "bytes": 15035,
+      "kind": "run",
+      "name": "20261028T031946.919380Z-page-selected-write-footprint-1f4199a4f2e0.json",
+      "sha256": "90dbc50ba4290f320a3e2dd9338edceac952d077fedf19605b2b0d4a52314864"
+    },
+    {
+      "bytes": 20794,
+      "kind": "run",
+      "name": "20261028T031953.939006Z-page-selected-rseq-application-1f4199a4f2e0.json",
+      "sha256": "7c4c6f4d881872ca26070d4f95419a579fb0a4e80da761223d5fe65962cb384b"
+    }
+  ],
+  "summary_reader_sha256": "3e478b2016050245cd0ba37eb874a74c5ad0661ecf25a3532573f607a517ef97"
+}
