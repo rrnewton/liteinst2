@@ -17,6 +17,7 @@ import shutil
 import sys
 sys.dont_write_bytecode = True
 import native_pages_compare as compare
+from page_selected_fast_memset import body_check
 import subprocess
 import time
 
@@ -133,7 +134,7 @@ def main():
         return status, out, err, elapsed, process.pid
 
     try:
-        for name in ('cc', 'python3', 'sh', 'rustup', 'git', 'cp', 'mkdir', 'dirname'):
+        for name in ('cc', 'python3', 'sh', 'rustup', 'git', 'cp', 'mkdir', 'dirname', 'nm', 'objdump'):
             pin_tool(name, shutil.which(name, path=env['PATH']))
         pin_tool('evaluator_python', sys.executable)
         pin_tool('app_python', shutil.which('python3', path=app_env['PATH']))
@@ -158,6 +159,13 @@ def main():
         bridge = Path('target/page-entry/native-pages/bridge-native-pages.so')
         receipt['bridge_sha256'] = sha(bridge.read_bytes())
         artifacts[str(bridge)] = receipt['bridge_sha256']
+        status, symbols, err, _, _ = run('runtime-memset-symbols', ['nm', '-S', '-n', str(bridge)])
+        if status or err:
+            raise RuntimeError('runtime reset symbol inspection failed')
+        status, assembly, err, _, _ = run('runtime-memset-body', ['objdump', '-d', '--disassemble=memset', str(bridge)])
+        if status or err:
+            raise RuntimeError('runtime reset instruction inspection failed')
+        receipt['runtime_memset'] = body_check(bridge, symbols, assembly, 'fast', symbol_name='memset')
         status, out, err, _, _ = run('compiler-version', ['cc', '-dumpfullversion'])
         if status or err or not out.strip():
             raise RuntimeError('compiler version observation failed')
