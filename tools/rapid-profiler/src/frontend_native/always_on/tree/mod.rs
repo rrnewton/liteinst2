@@ -5,6 +5,8 @@ use super::*;
 use liteinst2::controls::ManagedCallback;
 mod batch;
 mod drain;
+#[cfg(test)]
+pub(in crate::frontend_native) mod native_checks;
 mod postflight;
 mod prepared;
 mod runtime;
