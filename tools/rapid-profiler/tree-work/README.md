@@ -54,6 +54,14 @@ input, stack, register, flag, XSAVE, row, journal, Report and child-reap checks.
 The original 15-second and 20,000-step child limits and 90-second/1MiB state
 stage limit apply. Failed witnesses or limits remain failures.
 
+Complete source preflight runs before the controlled trace stop through an
+exclusive, one-use prepared-call guard. Preparation stays inside the original
+15-second deadline; the continuous step budget starts at the ready stop.
+Consumption rechecks the actual caller, input, counters and idle gate before
+starting a call. Full source/input postflight still precedes root completion.
+The candidate also drops an unused guard, then uses the same invocation ID;
+only the consumed guard may advance the gate sequence and call counters.
+
 Raw logs and capture state remain in `ignored/`. A paper-facing receipt records
 the exact source revision, release profile, command, sanitized hardware and
 the four-row CSV; it must describe the actual completed run. This document

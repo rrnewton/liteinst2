@@ -5,9 +5,11 @@ use super::*;
 use liteinst2::controls::ManagedCallback;
 mod drain;
 mod postflight;
+mod prepared;
 mod runtime;
 mod site;
 pub use drain::TreeBatch;
+pub use prepared::PreparedTreeCall;
 pub use site::{InstalledTreeSite, PreparedOriginalTreeCall, TreeSitePreparation};
 
 #[derive(Debug)]
@@ -493,6 +495,38 @@ impl TreeThread {
             })
             .unwrap_or(Err(error(Cause::Attachment)))
     }
+    /// Complete source/input preflight without beginning a tree invocation.
+    /// The guard holds this thread and the immutable input until consumed/dropped.
+    /// Dropping it unused consumes no gate sequence, external ID or reservation.
+    ///
+    /// # Safety
+    /// Exact certified tree/immutable offset-linked1024-byte input and writable
+    /// Tree144 callback stack; pinned actual thread, no foreign entry, signal,
+    /// nonlocal exit, alias writer, unload, fork or reentry until guard drop/return.
+    /// A controlled tracer stop is permitted only while those invariants remain
+    /// intact: no handler, application call or source/input mutation may run.
+    pub unsafe fn prepare_tree_call<'call>(
+        &'call mut self,
+        bytes: &'call [u8],
+        external_id: u64,
+    ) -> Result<PreparedTreeCall<'call>, TreeError> {
+        let input = input_copy(bytes)?;
+        let before = self.totals()?;
+        {
+            let _scope = ControllerScope::enter()?;
+            self.live.verify()?;
+        }
+        Ok(PreparedTreeCall {
+            thread: self,
+            bytes,
+            external_id,
+            input,
+            before,
+            _local: PhantomData,
+        })
+    }
+    /// Prepare and consume one tree call without exposing its guarded interval.
+    ///
     /// # Safety
     /// Exact certified tree/immutable offset-linked1024-byte input and writable
     /// Tree144 callback stack; normal returns, pinned actual thread, no foreign
@@ -503,12 +537,16 @@ impl TreeThread {
         bytes: &[u8],
         external_id: u64,
     ) -> Result<TreeCallResult, TreeError> {
-        let input = input_copy(bytes)?;
-        let before = self.totals()?;
-        {
-            let _scope = ControllerScope::enter()?;
-            self.live.verify()?;
-        }
+        unsafe { self.prepare_tree_call(bytes, external_id)?.invoke() }
+    }
+    // Only the consumed local guard can supply these exact preflight snapshots.
+    unsafe fn invoke_prepared(
+        &mut self,
+        bytes: &[u8],
+        input: [u8; 1024],
+        external_id: u64,
+        before: TreeTotals,
+    ) -> Result<TreeCallResult, TreeError> {
         let gate = Arc::clone(&self.binding.site.gate);
         let (stack, sequence) = TREE_STATE
             .try_with(|cell| {

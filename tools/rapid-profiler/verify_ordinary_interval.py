@@ -423,6 +423,7 @@ def main():
                 'tools/rapid-profiler/src/frontend_native/always_on/tree/drain.rs',
                 'tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs',
                 'tools/rapid-profiler/src/frontend_native/always_on/tree/postflight.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs',
                 'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime.rs',
                 'tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs',
                 'tools/rapid-profiler/src/frontend_native/always_on/tree/site.rs',

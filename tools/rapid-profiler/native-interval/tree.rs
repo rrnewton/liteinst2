@@ -280,12 +280,26 @@ fn child(candidate: bool, context: ChildContext<'_>, subject: &Path, expected_el
             },
         };
         assert_eq!(attached.totals().unwrap(), zero);
+        // SAFETY: complete source/input preflight precedes the controlled stop.
+        // The exclusive guard retains this actual thread and immutable input;
+        // ready runs no application entry, handler, source/input writer or fork.
+        {
+            let _unused = unsafe {
+                attached.prepare_tree_call(std::slice::from_raw_parts(data, length), EXTERNAL_ID)
+            }
+            .unwrap();
+        }
+        assert_eq!(attached.totals().unwrap(), zero);
+        // The same external ID must remain available after dropping preparation.
+        let prepared_call = unsafe {
+            attached.prepare_tree_call(std::slice::from_raw_parts(data, length), EXTERNAL_ID)
+        }
+        .unwrap();
         context.ready(&ready);
-        // SAFETY: full immutable1024B closed input, genuine attached tree gate;
-        // tracer restores only this child's harness context after all comparisons.
-        let result =
-            unsafe { attached.invoke_tree(std::slice::from_raw_parts(data, length), EXTERNAL_ID) }
-                .unwrap();
+        // SAFETY: consume once on the same actual thread after the tracer-owned
+        // stop. The real gate, all postflight checks and physical-return joins
+        // remain required; preparation itself is outside the stepped interval.
+        let result = unsafe { prepared_call.invoke() }.unwrap();
         assert_eq!(
             (
                 result.value,
