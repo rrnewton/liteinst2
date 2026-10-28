@@ -205,8 +205,8 @@ static void vpb_inputs(struct sample *s) {
     store_target=target;need(vm128_ea(v,s->pc,fixture_seed)==target,1264);
     if(target&&!(s==&negative_sample&&v64_fault_kind>=7)) {
         unsigned covered=0;
-        for(unsigned j=0;j<16;j++) {unsigned own=0;for(unsigned p=0;p<store_region_count;p++)
-            own+=target+j>=store_regions[p].page&&target+j-store_regions[p].page<PAGE;
+        for(unsigned j=0;j<16;j++) {unsigned own=0;for(unsigned p=0;p<store_region_count;p++) {
+            own+=target+j>=store_regions[p].page&&target+j-store_regions[p].page<PAGE;}
             need(own==1,1299);*(unsigned char *)(target+j)=(unsigned char)(v64_patterns[v->pattern][j]^0xff);++covered;}
         need(covered==16,1300);
     }
