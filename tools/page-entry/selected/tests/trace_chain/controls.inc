@@ -69,12 +69,12 @@ static void chain_control_before_entry(void) {
         ctl.effects[1]=kernel(SYS_mprotect,page,PAGE,PROT_READ,0,0,0);need(!ctl.effects[1],384);
         memcpy(ctl.changed_source,(const void *)li2_chain_record.pc,sizeof ctl.changed_source);
     } else if(mode==CTL_ALIAS) {
-        ctl.effects[0]=kernel(SYS_mmap,0,CODE_BYTES,PROT_READ|PROT_WRITE,MAP_PRIVATE,program_fd,0);
+        ctl.effects[0]=kernel(SYS_mmap,0,CODE_BYTES,PROT_READ|PROT_WRITE,MAP_PRIVATE,program_fd,PAGE);
         need(ctl.effects[0]>0,385);ctl.alias=(uintptr_t)ctl.effects[0];++ctl.issued_effects;
         ctl.alias_prot=actual_protection(ctl.alias,0);need(ctl.alias_prot==(PROT_READ|PROT_WRITE),386);
     } else if(mode==CTL_GENERATION) {
         release_actual();ctl.effects[0]=dispatch(SYS_munmap,li2_chain_record.mapping,CODE_BYTES,0,0,0,0);need(!ctl.effects[0],387);
-        ctl.effects[1]=dispatch(SYS_mmap,li2_chain_record.mapping,CODE_BYTES,PROT_READ|PROT_EXEC,MAP_PRIVATE|MAP_FIXED,program_fd,0);
+        ctl.effects[1]=dispatch(SYS_mmap,li2_chain_record.mapping,CODE_BYTES,PROT_READ|PROT_EXEC,MAP_PRIVATE|MAP_FIXED_NOREPLACE,program_fd,PAGE);
         need(ctl.effects[1]==(long)li2_chain_record.mapping,388);++ctl.issued_effects;
         fetch_actual(li2_chain_record.pc);ctl.after_ref=active_ref;ctl.after_page=active_view.pages[0];
         need(ctl.after_ref.sequence!=ctl.before_ref.sequence&&

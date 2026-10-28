@@ -55,7 +55,7 @@ static struct chain_event *event;
 static unsigned case_id,mode,which,reference_pending,old_pending;
 static volatile sig_atomic_t chain_handling;
 static int program_fd=-1;
-static unsigned char program_image[CODE_BYTES];
+static unsigned char program_header[PAGE],program_image[CODE_BYTES];
 static siginfo_t *active_info;
 static ucontext_t *active_context;
 static uint64_t logical_flags;
@@ -253,9 +253,11 @@ static void install_chain_handler(void) {
 }
 static int chain_sealed_elf(void) {
     int seed=sealed_elf();need(!RAW(SYS_close,seed,0,0,0,0,0),328);
-    memcpy(program_image,elf_bytes,PAGE);memset(program_image+PAGE,0xcc,CODE_BYTES-PAGE);
-    Elf64_Phdr *ph=(void *)(program_image+sizeof(Elf64_Ehdr));
-    ph->p_flags=PF_R|PF_X;ph->p_filesz=CODE_BYTES;ph->p_memsz=CODE_BYTES;
+    memcpy(program_header,elf_bytes,PAGE);memset(program_image,0xcc,CODE_BYTES);
+    Elf64_Ehdr *eh=(void *)program_header;eh->e_phnum=2;
+    Elf64_Phdr *ph=(void *)(program_header+sizeof(Elf64_Ehdr));
+    ph[1]=(Elf64_Phdr){.p_type=PT_LOAD,.p_flags=PF_R|PF_X,.p_offset=PAGE,
+        .p_vaddr=PAGE,.p_filesz=CODE_BYTES,.p_memsz=CODE_BYTES,.p_align=PAGE};
     const struct chain_case *v=&chain_cases[case_id];
     memcpy(program_image+v->offset,v->bytes,v->length);
     if(mode==1) {
@@ -274,13 +276,17 @@ static int chain_sealed_elf(void) {
         memcpy(program_image+2*PAGE+64,callee,sizeof callee);
     }
     long fd=RAW(SYS_memfd_create,"li2-chain-literal",MFD_ALLOW_SEALING|MFD_CLOEXEC,0,0,0,0);
-    need(fd>=0&&write_all((int)fd,program_image,sizeof program_image),329);
+    need(fd>=0&&write_all((int)fd,program_header,sizeof program_header)&&
+         write_all((int)fd,program_image,sizeof program_image),329);
     need(!RAW(SYS_fcntl,fd,F_ADD_SEALS,SEALS,0,0,0),330);program_fd=(int)fd;return program_fd;
 }
 static void program_prepare(void) {
     long area=dispatch(SYS_mmap,0,5*PAGE,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);need(area>0,331);
     li2_chain_record.mapping=(uintptr_t)area+PAGE;
-    long mapped=dispatch(SYS_mmap,li2_chain_record.mapping,CODE_BYTES,PROT_READ|PROT_EXEC,MAP_PRIVATE|MAP_FIXED,program_fd,0);
+    /* Release the anonymous center; NOREPLACE creates a new sealed allocation.
+       MAP_FIXED loader replacement requires a retained reservation of that file. */
+    need(!dispatch(SYS_munmap,li2_chain_record.mapping,CODE_BYTES,0,0,0,0),365);
+    long mapped=dispatch(SYS_mmap,li2_chain_record.mapping,CODE_BYTES,PROT_READ|PROT_EXEC,MAP_PRIVATE|MAP_FIXED_NOREPLACE,program_fd,PAGE);
     need(mapped==(long)li2_chain_record.mapping,332);
     li2_chain_record.pc=li2_chain_record.mapping+chain_cases[case_id].offset;
     li2_chain_record.stop=li2_chain_record.mapping+(case_id==7?PAGE:2*PAGE);li2_chain_record.callee=li2_chain_record.mapping+2*PAGE+64;

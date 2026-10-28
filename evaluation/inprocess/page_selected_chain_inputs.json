@@ -256,14 +256,14 @@
       "sha256": "0819a70a280bcb5d814d75e819606a0904c0a906cc9edc96c6a8d5e2c57f2e23"
     },
     {
-      "bytes": 12561,
+      "bytes": 12577,
       "path": "tools/page-entry/selected/tests/trace_chain/controls.inc",
-      "sha256": "06552da695954d10fecfb0182fe064fd49724d4ff1b96b15057e32cc6681afae"
+      "sha256": "df1b50da588dcf1992af0f7c1addfdd1fa0493a3a2dcab2a99d32610c19c7b55"
     },
     {
-      "bytes": 23850,
+      "bytes": 24325,
       "path": "tools/page-entry/selected/tests/trace_chain/fixture.c",
-      "sha256": "6bb08534e7e8664b93ca8e8d254e5572d3b193601541b7c33dc3d40cabf2e6d8"
+      "sha256": "9b3869630f23d6fb2b492a4d968fefa1bf13c0302379d8807a957ab5bb8d4c77"
     },
     {
       "bytes": 304,
