@@ -31,7 +31,8 @@ SESSION = tuple(SESSION_PREFIX + name for name in (
     'protocol::tests::exact_requests_include_empty_nul_and_arbitrary_external_ids',
     'protocol::tests::malformed_requests_never_enter_the_population',
     'protocol::tests::duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers',
-    'tests::accepted_full_queue_retains_pending_before_stop_and_disconnect'))
+    'tests::accepted_full_queue_retains_pending_before_stop_and_disconnect',
+    'tests::guarded_wait_preserves_original_due_end_and_shutdown_boundaries'))
 SCHEDULE_PREFIX = 'frontend_native::backoff::driver::schedule::tests::'
 SCHEDULE = tuple(SCHEDULE_PREFIX + name for name in (
     'pending_arm_refuses_another_poll_without_count_or_deadline_reset',

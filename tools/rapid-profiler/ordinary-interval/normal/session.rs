@@ -163,6 +163,28 @@ fn dispatch(
     Ok(progress)
 }
 
+// Shorten only the caller's requested wait; Schedule retains every deadline.
+// The original next arm becomes the original end after the last acknowledgement.
+fn guarded_wait(
+    started: Instant,
+    observed: Instant,
+    policy: Policy,
+    schedule: &Schedule,
+    bound: Duration,
+) -> Duration {
+    if schedule.is_stopping() {
+        return bound;
+    }
+    // Schedule::new checked the whole end and armed() cannot exceed epoch_limit.
+    let due = started
+        .checked_add(policy.period() * schedule.armed())
+        .expect("validated original schedule extent");
+    bound.min(
+        due.saturating_duration_since(observed)
+            .saturating_sub(policy.lateness()),
+    )
+}
+
 fn cpus() -> [usize; 2] {
     // Read before narrowing main's mask; the worker inherits this complete mask.
     let mut set = unsafe { std::mem::zeroed::<libc::cpu_set_t>() };
@@ -412,13 +434,21 @@ fn run_checked(
                 .map_err(|e| clock_failure(e, "final-output", engine.committed_arms, &schedule))?;
             return Ok(());
         }
-        let wait = schedule
-            .wait_bound(Instant::now())
+        let observed = Instant::now();
+        let bound = schedule
+            .wait_bound(observed)
             .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
         if !progress {
-            let before = Instant::now();
-            thread::sleep(wait);
-            last_wait = Some((wait, before.elapsed()));
+            let wait = guarded_wait(started, observed, policy, &schedule, bound);
+            if wait.is_zero() {
+                // Service the complete nonblocking loop again; do not wait past
+                // the guard or claim that spinning prevents preemption.
+                std::hint::spin_loop();
+            } else {
+                let before = Instant::now();
+                thread::sleep(wait);
+                last_wait = Some((wait, before.elapsed()));
+            }
         }
     }
 }
@@ -426,6 +456,80 @@ fn run_checked(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn guarded_wait_preserves_original_due_end_and_shutdown_boundaries() {
+        use rapid_profiler::frontend_native::backoff::Error;
+        let started = Instant::now();
+        let tick = Duration::from_nanos(1);
+        let poll = Duration::from_millis(1);
+        for k in [10, 1000] {
+            let policy = Policy::ten_ms(k, 2, 1).unwrap();
+            let mut schedule = Schedule::new(started, policy).unwrap();
+            assert_eq!(
+                schedule.poll(started, false),
+                Ok(ScheduleDecision::Arm { due: started })
+            );
+            schedule.arm_completed(started).unwrap();
+            let due = started + policy.period();
+            let guard = due - policy.lateness();
+            for (at, expected) in [
+                (guard - poll * 2, poll),
+                (guard - poll, poll),
+                (guard - tick, tick),
+                (guard, Duration::ZERO),
+                (guard + tick, Duration::ZERO),
+                (due, Duration::ZERO),
+            ] {
+                let bound = schedule.wait_bound(at).unwrap();
+                assert_eq!(
+                    guarded_wait(started, at, policy, &schedule, bound),
+                    expected
+                );
+                assert_eq!(schedule.armed(), 1);
+                assert_eq!(schedule.pending_arm(), None);
+            }
+            assert_eq!(schedule.poll(due, false), Ok(ScheduleDecision::Arm { due }));
+            schedule.arm_completed(due).unwrap();
+            let end = started + policy.period() * policy.epoch_limit();
+            for (at, expected) in [
+                (end - policy.lateness() - tick, tick),
+                (end - policy.lateness(), Duration::ZERO),
+                (end - tick, Duration::ZERO),
+                (end, Duration::ZERO),
+            ] {
+                let bound = schedule.wait_bound(at).unwrap();
+                assert_eq!(
+                    guarded_wait(started, at, policy, &schedule, bound),
+                    expected
+                );
+                assert_eq!(schedule.armed(), 2);
+            }
+            assert_eq!(schedule.poll(end, false), Ok(ScheduleDecision::Stop));
+            let limit = end + policy.shutdown();
+            for at in [end, limit - tick] {
+                let bound = schedule.wait_bound(at).unwrap();
+                assert_eq!(guarded_wait(started, at, policy, &schedule, bound), bound);
+            }
+            assert_eq!(schedule.wait_bound(limit), Err(Error::Deadline));
+
+            let mut late = Schedule::new(started, policy).unwrap();
+            assert_eq!(
+                late.poll(started, false),
+                Ok(ScheduleDecision::Arm { due: started })
+            );
+            late.arm_completed(started).unwrap();
+            let at = due + policy.lateness() + tick;
+            let bound = late.wait_bound(at).unwrap();
+            assert_eq!(
+                guarded_wait(started, at, policy, &late, bound),
+                Duration::ZERO
+            );
+            assert_eq!(late.poll(at, false), Err(Error::Deadline));
+            assert_eq!(late.armed(), 1);
+            assert_eq!(late.poll(due, false), Err(Error::Deadline));
+        }
+    }
+
     #[test]
     fn accepted_full_queue_retains_pending_before_stop_and_disconnect() {
         let (tx, rx) = mpsc::sync_channel(1);
