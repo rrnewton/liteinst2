@@ -161,6 +161,7 @@ enum ChildOwner<'a> {
         symbol: &'a std::ffi::CStr,
     },
     Selected(&'a rapid_profiler::frontend_native::TrustedFunctionSelection<'a>),
+    Strnlen(&'a rapid_profiler::frontend_native::TrustedFunctionSelection<'a>),
 }
 
 fn child_profile(
@@ -205,7 +206,24 @@ fn child_admitted(
     // A closed checksum/cache symbol and its complete input are selected below.
     // Child-local load precedes any application call; no constructors,
     // foreign callers, CET, signal/nonlocal entry, unload or source writer.
+    let strnlen_case = context.strnlen_case();
     let (owner, symbol) = match owner_choice {
+        ChildOwner::Strnlen(selection) => {
+            assert_eq!(profile, Profile::Legacy);
+            assert!(!concurrent && context.cache_case().is_none() && context.tree_case().is_none());
+            let case = strnlen_case.expect("closed strnlen subject");
+            assert_eq!(selection.label(), oracle::native_ordinary::strnlen::LABEL);
+            assert_eq!(
+                context.input(),
+                &oracle::native_ordinary::strnlen::cases::input(case)[..case.bound]
+            );
+            // SAFETY: independent final-ELF metadata authenticates the complete
+            // unchanged upstream strnlen, sole entry and full input domain.
+            // The same single-child/no-writer/signal/unload premises hold.
+            let owner =
+                unsafe { LoadedIntegerLeaf::load_selected(subject, selection, CONTRACT) }.unwrap();
+            (owner, c"strnlen") // private scalar tag; never a symbol lookup/fallback
+        }
         ChildOwner::Named {
             expected_elf,
             symbol,
@@ -228,7 +246,15 @@ fn child_admitted(
         }
     };
     let cache_case = context.cache_case();
-    if let Some((case, seed)) = cache_case {
+    if let Some(case) = strnlen_case {
+        assert_eq!(symbol, c"strnlen");
+        assert_eq!(profile, Profile::Legacy);
+        assert!(!concurrent);
+        assert_eq!(
+            context.input(),
+            &oracle::native_ordinary::strnlen::cases::input(case)[..case.bound]
+        );
+    } else if let Some((case, seed)) = cache_case {
         assert_eq!(symbol, c"cache_work_linked");
         assert_eq!(profile, Profile::Legacy);
         assert!(!concurrent);
@@ -270,7 +296,11 @@ fn child_admitted(
             (gate, address)
         }
     };
-    let mut prep = OrdinarySitePreparation::new(owner, gate, identity(entry)).unwrap();
+    let mut prep = if strnlen_case.is_some() {
+        OrdinarySitePreparation::new_whole_function(owner, gate, identity(entry)).unwrap()
+    } else {
+        OrdinarySitePreparation::new(owner, gate, identity(entry)).unwrap()
+    };
     assert_eq!(
         prep.role_pcs().collect::<Vec<_>>(),
         std::iter::once(entry)
@@ -311,7 +341,9 @@ fn child_admitted(
     };
     let data = context.input().as_ptr();
     let length = context.input().len();
-    let expected = if let Some((case, seed)) = cache_case {
+    let expected = if let Some(case) = strnlen_case {
+        oracle::native_ordinary::strnlen::cases::scalar(case)
+    } else if let Some((case, seed)) = cache_case {
         oracle::native_ordinary::cache::truth::scalar(case, seed)
     } else {
         context
@@ -368,7 +400,7 @@ fn child_admitted(
             unsampled: 0,
         };
         context.ready(&ready);
-        // SAFETY: live inherited immutable input, exact closed nonempty scalar leaf,
+        // SAFETY: live inherited immutable input, exact admitted scalar leaf/input,
         // exact attached gate and controlled stack; the tracer restores only
         // the outer harness context AFTER complete application comparisons.
         let result = match profile {
@@ -800,3 +832,4 @@ fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool, con
 
 // Separate selected-loader route; all existing named routes stay intact.
 pub(super) mod selected;
+pub(super) mod strnlen;

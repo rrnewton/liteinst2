@@ -300,6 +300,10 @@ fn harness_resume_flags(saved: u64, after_ret: u64) -> u64 {
 #[derive(Clone, Copy)]
 enum Subject {
     Checksum,
+    Strnlen {
+        case: strnlen::Case,
+        deadline: strnlen::Deadline,
+    },
     Cache {
         case: cache::truth::Case,
         deadline: Instant,
@@ -330,7 +334,7 @@ impl ChildContext<'_> {
     /// Closed cache identity; no caller-supplied result, mask or address map.
     pub fn cache_case(&self) -> Option<(cache::truth::Case, u64)> {
         match self.oracle.subject {
-            Subject::Checksum | Subject::Tree { .. } => None,
+            Subject::Checksum | Subject::Tree { .. } | Subject::Strnlen { .. } => None,
             Subject::Cache { case, .. } => Some((case, self.oracle.seed)),
         }
     }
@@ -338,7 +342,14 @@ impl ChildContext<'_> {
     pub fn tree_case(&self) -> Option<(call_tree::truth::Case, u64)> {
         match self.oracle.subject {
             Subject::Tree { case, .. } => Some((case, self.oracle.seed)),
-            Subject::Checksum | Subject::Cache { .. } => None,
+            Subject::Checksum | Subject::Cache { .. } | Subject::Strnlen { .. } => None,
+        }
+    }
+    /// Fixed bounded-string identity; no supplied result or address map.
+    pub fn strnlen_case(&self) -> Option<strnlen::Case> {
+        match self.oracle.subject {
+            Subject::Strnlen { case, .. } => Some(case),
+            _ => None,
         }
     }
     pub fn input(&self) -> &[u8] {
@@ -523,6 +534,28 @@ impl Walk<'_> {
     }
 }
 
+impl Walk<'_> {
+    fn reach_strnlen_gate(
+        &mut self,
+        ready: &Ready,
+        phase: &str,
+        deadline: strnlen::Deadline,
+    ) -> libc::user_regs_struct {
+        deadline.check();
+        while self.child.registers().rip != ready.gate {
+            self.step(phase);
+            deadline.check();
+        }
+        check_gate(
+            ready,
+            &self.child.memory(ready.gate, ready.profile.bytes().len()),
+        );
+        let registers = self.child.registers();
+        deadline.check();
+        registers
+    }
+}
+
 impl OrdinaryOracle {
     pub fn new(seed: u64) -> Self {
         let data = Mapping::new(PAGE);
@@ -575,6 +608,46 @@ impl OrdinaryOracle {
         self.pair_profile(length, setup, |_| {}, None).0
     }
 
+    /// The route starts this absolute budget before first-pair file setup and
+    /// before every mapping allocation. No private stack/trace limit changes.
+    pub fn new_strnlen(case: strnlen::Case, seed: u64, deadline: strnlen::Deadline) -> Self {
+        deadline.check();
+        let input = strnlen::cases::input(case);
+        let mut oracle = Self::new(seed);
+        oracle.data.initialize(128, &input);
+        oracle.subject = Subject::Strnlen { case, deadline };
+        deadline.check();
+        oracle
+    }
+    fn check_strnlen_deadline(&self) {
+        if let Subject::Strnlen { deadline, .. } = self.subject {
+            deadline.check();
+        }
+    }
+    pub fn pair_strnlen<F>(&self, extent: usize, setup: F) -> (PairResult, strnlen::Trace)
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+    {
+        let Subject::Strnlen { case, deadline } = self.subject else {
+            panic!("not strnlen");
+        };
+        deadline.check();
+        assert!((5..=80).contains(&extent));
+        let mut trace = None;
+        let result = self
+            .pair_profile(
+                case.bound,
+                setup,
+                |observed| {
+                    trace = Some(strnlen::inspect(case, extent, observed));
+                },
+                None,
+            )
+            .0;
+        deadline.check();
+        (result, trace.expect("inspection after both normal reaps"))
+    }
+
     /// Starts the one absolute child deadline BEFORE mappings/input allocation.
     /// Bytes outside this input retain the old complete-page seeded pattern.
     pub fn new_cache(case: cache::truth::Case, seed: u64) -> Self {
@@ -591,7 +664,9 @@ impl OrdinaryOracle {
     pub fn cache_deadline(&self) -> Instant {
         match self.subject {
             Subject::Cache { deadline, .. } => deadline,
-            Subject::Checksum | Subject::Tree { .. } => panic!("not a cache subject"),
+            Subject::Checksum | Subject::Tree { .. } | Subject::Strnlen { .. } => {
+                panic!("not a cache subject")
+            }
         }
     }
 
@@ -838,6 +913,10 @@ impl OrdinaryOracle {
             Subject::Checksum => {
                 assert!(matches!(length, 1 | 64));
             }
+            Subject::Strnlen { case, deadline } => {
+                assert_eq!(length, case.bound);
+                deadline.request(reference, native_noop);
+            }
             Subject::Cache { deadline, .. } => {
                 assert_eq!(length, cache::truth::INPUT_BYTES);
                 assert!(reference.is_none(), "cache uses only the Legacy gate");
@@ -869,6 +948,10 @@ impl OrdinaryOracle {
                 }
                 Subject::Cache { deadline, .. } => deadline,
                 Subject::Tree { deadline, .. } => deadline,
+                Subject::Strnlen { deadline, .. } => {
+                    deadline.check();
+                    deadline.end()
+                }
             }
         };
         let mut pids = [0; 2];
@@ -943,19 +1026,23 @@ impl OrdinaryOracle {
         if let Some(deadline) = self.selected_deadline {
             deadline.check();
         }
+        self.check_strnlen_deadline();
         let original = pipes[0].read(&children[0]);
         if let Some(deadline) = self.selected_deadline {
             deadline.check();
         }
+        self.check_strnlen_deadline();
         let candidate = pipes[1].read(&children[1]);
         if let Some(deadline) = self.selected_deadline {
             deadline.check();
         }
+        self.check_strnlen_deadline();
         for child in &children {
             let status = child.wait();
             if let Some(deadline) = self.selected_deadline {
                 deadline.check();
             }
+            self.check_strnlen_deadline();
             assert!(libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP);
             child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         }
@@ -998,6 +1085,11 @@ impl OrdinaryOracle {
             (
                 a.reach_selected_gate(&original, "reach_original_gate", deadline),
                 b.reach_selected_gate(&candidate, "reach_candidate_gate", deadline),
+            )
+        } else if let Subject::Strnlen { deadline, .. } = self.subject {
+            (
+                a.reach_strnlen_gate(&original, "reach_original_gate", deadline),
+                b.reach_strnlen_gate(&candidate, "reach_candidate_gate", deadline),
             )
         } else {
             let ar = a.reach_gate(&original, "reach_original_gate");
@@ -1098,6 +1190,7 @@ impl OrdinaryOracle {
             if let Some(deadline) = self.selected_deadline {
                 deadline.check();
             }
+            self.check_strnlen_deadline();
             if let Some(before) = outer {
                 native_call::after_outer(a.child, &original, before);
                 outer_calls[0] += 1;
@@ -1152,6 +1245,7 @@ impl OrdinaryOracle {
             if let Some(deadline) = self.selected_deadline {
                 deadline.check();
             }
+            self.check_strnlen_deadline();
             if let Some(before) = outer {
                 native_call::after_outer(b.child, &candidate, before);
                 outer_calls[1] += 1;
@@ -1202,6 +1296,10 @@ impl OrdinaryOracle {
             self.frame_after(b.child, &br, &candidate, bf, returns.first().copied());
         }
         let value = match self.subject {
+            Subject::Strnlen { case, .. } => {
+                assert_eq!(&self.data.bytes()[128..192], &strnlen::cases::input(case));
+                strnlen::cases::scalar(case)
+            }
             Subject::Checksum => {
                 self.data.bytes()[128..128 + length]
                     .iter()
@@ -1257,6 +1355,7 @@ impl OrdinaryOracle {
             if let Some(deadline) = self.selected_deadline {
                 deadline.check();
             }
+            self.check_strnlen_deadline();
             let after = walk.child.registers();
             assert_eq!(after.rip, continuation);
             assert_eq!(after.rsp, saved.rsp.checked_add(8).unwrap());
@@ -1278,6 +1377,7 @@ impl OrdinaryOracle {
             if let Some(deadline) = self.selected_deadline {
                 deadline.check();
             }
+            self.check_strnlen_deadline();
             assert!(
                 libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
                 "real invoke validation failed {status:#x}; saved_flags={:#x} after_ret_flags={:#x} stopped={:?}",
@@ -1313,6 +1413,7 @@ impl OrdinaryOracle {
         if let Some(deadline) = self.selected_deadline {
             deadline.check();
         }
+        self.check_strnlen_deadline();
         if matches!(self.subject, Subject::Cache { .. }) {
             assert!(Instant::now() < deadline, "cache complete reaps deadline");
         }
@@ -1350,6 +1451,7 @@ impl OrdinaryOracle {
         if let Some(deadline) = self.selected_deadline {
             deadline.check();
         }
+        self.check_strnlen_deadline();
         if reference_stats.is_some() {
             assert!(Instant::now() < deadline, "reference inspection deadline");
         }
@@ -1504,3 +1606,5 @@ pub mod tree_batch;
 // Selected checksum metadata, population and opt-in absolute deadline controls.
 #[path = "native_selected.rs"]
 pub mod selected;
+#[path = "native_strnlen.rs"]
+pub mod strnlen;
