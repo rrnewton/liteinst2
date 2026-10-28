@@ -28,6 +28,7 @@ _start:
 .global footprint_enter
 footprint_enter:
     save_gprs footprint_caller
+footprint_load_seeds:
     movdqu footprint_vector(%rip),%xmm0
     mov footprint_seed+0(%rip),%rax
     mov footprint_seed+8(%rip),%rcx
@@ -50,6 +51,7 @@ footprint_enter:
 .global footprint_capture
 footprint_capture:
     save_gprs footprint_after
+footprint_restore_caller:
     mov footprint_caller+24(%rip),%rbx
     mov footprint_caller+40(%rip),%rbp
     mov footprint_caller+96(%rip),%r12
@@ -110,4 +112,27 @@ instruction fp_btrmem,0x48,0x0f,0xb3,0x07
 instruction fp_btcimm,0x48,0x0f,0xba,0x3f,0x01
 instruction fp_rep,0xf3,0x48,0xab
 instruction fp_unknown,0x0f,0x0b
+/* Additive palette path. Original entry/capture instructions remain exact.
+   The before vector observations are made after actual register loads, with
+   no decoder or C call between these observations and the target instruction. */
+.global footprint_palette_enter
+footprint_palette_enter:
+    save_gprs footprint_caller
+    vmovdqu64 footprint_zmm_seed+0(%rip),%zmm16
+    vmovdqu64 footprint_zmm_seed+64(%rip),%zmm17
+    kmovq footprint_mask_seed(%rip),%k1
+    vmovdqu64 %zmm16,footprint_zmm_before+0(%rip)
+    vmovdqu64 %zmm17,footprint_zmm_before+64(%rip)
+    kmovq %k1,footprint_mask_before(%rip)
+    jmp footprint_load_seeds
+.global fp_vpcmpeqb,fp_vpcmpeqb_end
+fp_vpcmpeqb:
+    .byte 0x62,0xb1,0x75,0x40,0x74,0xc8
+fp_vpcmpeqb_end:
+    save_gprs footprint_after
+    vmovdqu64 %zmm16,footprint_zmm_after+0(%rip)
+    vmovdqu64 %zmm17,footprint_zmm_after+64(%rip)
+    kmovq %k1,footprint_mask_after(%rip)
+    jmp footprint_restore_caller
+instruction fp_blsmsk,0xc4,0xe2,0xc8,0xf3,0xd6
 .section .note.GNU-stack,"",@progbits

@@ -46,9 +46,9 @@
       "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
     },
     {
-      "bytes": 15965,
+      "bytes": 16383,
       "path": "tools/page-entry/bridge.c",
-      "sha256": "1f48f8d895982a6a7403024ef0f30858553c9a89da90269b084c7fea7551f11a"
+      "sha256": "e1d85212da97de4a8114bb7fc2fd2e2b8a2e08d3f57e1706985727df8b8f0d99"
     },
     {
       "bytes": 1531,
@@ -76,9 +76,9 @@
       "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
     },
     {
-      "bytes": 36798,
+      "bytes": 36855,
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "4c3d0d259d09a8fe68f5022a168fdb7420bb599df3a10d44ae9f60d48b3a4b70"
+      "sha256": "569aecdecb70d4254d63ab721a22e9048ed045cbdfc4794d49d0204e3dac1047"
     },
     {
       "bytes": 5426,
@@ -106,9 +106,9 @@
       "sha256": "70f5c8fb7f7b35411d20518c15408729a0d37432c96985a3246253e6e0697ae9"
     },
     {
-      "bytes": 6190,
+      "bytes": 6351,
       "path": "tools/page-entry/selected/register_run.h",
-      "sha256": "5106c335e54ede90588915837f36b362b57086679d5576eed2abdb312c58ff86"
+      "sha256": "77c5af49c7d43096da300fb5af6b9b8e2cb1d8e1b5cdf48c711fddffa7a71214"
     },
     {
       "bytes": 14402,
@@ -136,14 +136,14 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 19437,
+      "bytes": 20803,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "b4b5228b547a298963f17d1708578d02e566aca9338aade8418b1d67b24e3835"
+      "sha256": "f9f3e290b337327f2b0cb20675e19a024d8e5117d0f6fdc2d8ec64e5de626ded"
     },
     {
-      "bytes": 28864,
+      "bytes": 29097,
       "path": "tools/page-entry/selected/selected_controller.inc",
-      "sha256": "7956052f4b4c31031b21f6ebc47d8005e7a353b7899e9d0a91b02d667bf48a9f"
+      "sha256": "0484f4d7be75b9d5a4c591626533a08eebdc6176ae4ff4ed030da616c9c8289b"
     },
     {
       "bytes": 4071,
@@ -151,9 +151,9 @@
       "sha256": "c1a403cf38a884c60060980475b662a304a5ef4624702bdaea42bce87f75f43e"
     },
     {
-      "bytes": 14504,
+      "bytes": 14679,
       "path": "tools/page-entry/selected/selected_register_run.inc",
-      "sha256": "cf329a26ed4360f6cc6e2895dcaf066ebdfc62994e64f8dac7daba1e277e26b9"
+      "sha256": "89527c6a59c15abf9be285d261215fcecbea32d581f29231fd1b599fd31f2f6c"
     },
     {
       "bytes": 12527,

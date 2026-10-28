@@ -2,6 +2,12 @@
    The real ld.so runs against an explicit namespace of inherited sealed DSOs. */
 #include "bridge.h"
 #include "lifecycle_loader.h"
+#ifdef LI2_RSEQ_INACTIVE
+#include "rseq_guard.h"
+#if !defined(LI2_TF_HANDOFF) || !defined(LI2_REGISTER_RUN)
+#error "The inactive-rseq runtime prototype requires the complete chain/register route composition"
+#endif
+#endif
 #include "provider.h"
 #include "step_owner.h"
 #include "tf_owner.h"
@@ -58,6 +64,9 @@ static void number(struct writer *w,uint64_t n) {
     while (used) { if(w->used==sizeof(w->bytes)) li2_fail("loader report overflow"); w->bytes[w->used++]=b[--used]; }
 }
 static void field(struct writer *w,const char *name,uint64_t n) { text(w,name); number(w,n); }
+#ifdef LI2_RSEQ_INACTIVE
+#include "rseq_report.inc"
+#endif
 #ifdef LI2_TF_HANDOFF
 static void selected_report(struct writer *,unsigned,unsigned,long);
 #else
@@ -99,6 +108,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
     text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
+#ifdef LI2_RSEQ_INACTIVE
+    selected_rseq_report(status,code,detail);
+#endif
 #ifdef LI2_TF_HANDOFF
     if(selected_chain.initialized)selected_chain_report(status,code,detail);
 #endif
@@ -132,9 +144,16 @@ static void protect(uintptr_t first,size_t bytes) {
     checked(bytes && first<=UINTPTR_MAX-bytes && protected_count<RANGES,201,0);
     protected[protected_count++]=(struct li2_fork_range){first,first+bytes};
 }
-static int intersects(uintptr_t first,size_t bytes) {
+static int private_intersects(uintptr_t first,size_t bytes) {
     if (!bytes || first>UINTPTR_MAX-bytes) return 1;
     for(size_t i=0;i<protected_count;i++) if(first<protected[i].end && protected[i].first<first+bytes) return 1;
+    return 0;
+}
+static int intersects(uintptr_t first,size_t bytes) {
+    if(private_intersects(first,bytes))return 1;
+#ifdef LI2_RSEQ_INACTIVE
+    if(li2_rseq_mapping_overlap(first,bytes))return 1;
+#endif
     return 0;
 }
 static int image_code(const struct image *image,uintptr_t pc) {
@@ -194,9 +213,17 @@ static void dispatch_operation(long n,ucontext_t *context) {
     greg_t *g=context->uc_mcontext.gregs;
     uintptr_t pc=(uintptr_t)g[REG_RIP];
     checked(!li2_lifecycle_fetch_interlock() && !selected_step_pending,600,n);
+#ifdef LI2_RSEQ_INACTIVE
+    checked(n!=SYS_fork && n!=SYS_clone && n!=SYS_vfork,601,n);
+#else
     checked(n!=SYS_rseq && n!=SYS_fork && n!=SYS_clone && n!=SYS_vfork,601,n);
+#endif
     ++syscall_count; last_syscall=n;
     long a[6]={g[REG_RDI],g[REG_RSI],g[REG_RDX],g[REG_R10],g[REG_R8],g[REG_R9]},result;
+#ifdef LI2_RSEQ_INACTIVE
+    int rseq_error=li2_rseq_before_syscall(n,a);
+    checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
     if(n==SYS_exit || n==SYS_exit_group) {
         ++forwarded; report((unsigned)a[0],0,0); (void)raw(n,a[0],a[1],a[2],a[3],a[4],a[5]); fail(203,n);
     }
@@ -207,6 +234,12 @@ static void dispatch_operation(long n,ucontext_t *context) {
     selected_run_before_syscall(n,a);
 #endif
     li2_lifecycle_before_other(n,a);
+#ifdef LI2_RSEQ_INACTIVE
+    if(n==SYS_rseq) {
+        rseq_error=li2_rseq_dispatch(a,&result);
+        checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+    } else
+#endif
     if(!fork_dispatch(n,a,context,&result) && !li2_lifecycle_dispatch(n,a,&result)) {
         if(n==SYS_arch_prctl) checked(a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS || a[0]==ARCH_GET_FS || a[0]==ARCH_GET_GS || a[0]==0x3001 || a[0]==ARCH_SHSTK_STATUS,205,a[0]);
         /* Queries execute in our handler context. Do not expose its blocked
@@ -220,6 +253,10 @@ static void dispatch_operation(long n,ucontext_t *context) {
         else checked(ordinary(n),210,n);
         result=raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
     }
+#ifdef LI2_RSEQ_INACTIVE
+    rseq_error=li2_rseq_after_syscall(n,a);
+    checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
     ++forwarded;
     if(n==SYS_arch_prctl && !result && (a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS)) ++tls_changes;
     if(n==SYS_set_tid_address && result>=0) ++tid_sets;
@@ -342,6 +379,10 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     stack_t stack={.ss_sp=(char *)area+PAGE,.ss_size=ALT_BYTES}; fork_gate_stack=stack;checked(!raw(SYS_sigaltstack,(long)&stack,0,0,0,0,0),233,0);
     int fds[32];dependency_count=parse_fds(fds);
     const struct li2_lifecycle_hooks hooks={raw,fail,intersects};li2_lifecycle_initialize(fds,dependency_count,&hooks);
+#ifdef LI2_RSEQ_INACTIVE
+    int rseq_error=li2_rseq_initialize(private_intersects);
+    checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
     li2_lifecycle_register_initial(main);li2_lifecycle_register_initial(interp);register_vdso();
     /* Closed in this partial profile. No vDSO execution/ownership claim. */
     selected_vdso_close_attempted=1;

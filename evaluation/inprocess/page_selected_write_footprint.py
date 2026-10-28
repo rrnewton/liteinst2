@@ -27,24 +27,24 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 def verify(data):
-    need(len(data) == 1135784, 'complete fixed native record')
+    need(len(data) == 1270344, 'complete fixed native record')
     header = struct.unpack_from('<11Q', data)
-    need(header == (0x315057465032494c, 1, 184, 33400, 34, 34, 26, 8, 6, 0, 0), 'complete literal success header')
+    need(header == (0x315057465032494c, 1, 184, 33400, 38, 38, 30, 8, 6, 0, 0), 'complete literal success header')
     need(data[88:136] == data[136:184], 'complete sealed allocator stats unchanged')
     rows = []
-    for i in range(34):
+    for i in range(38):
         at = 184+i*33400
         row = struct.unpack_from('<8Q', data, at)
-        need(row[:5] == (i, 1, 1, int(i < 26), 1), 'every actual case/query/execution completed')
+        need(row[:5] == (i, 1, 1, int(i < 26 or i >= 34), 1), 'every actual case/query/execution completed')
         pc, next_pc, first, end, version, policy, code, length = struct.unpack_from('<4Q4I', data, at+352)
         need(version == 1 and 0 < length <= 15 and next_pc == pc+length and
              (first, end) == row[6:8], 'actual footprint identity and expected bounds')
-        need(policy in (0, 1, 2) and (policy != 0) == (i < 26), 'explicit issued/refused split')
+        need(policy in (0, 1, 2) and (policy != 0) == (i < 26 or i >= 34), 'explicit issued/refused split')
         if policy != 2:
             need(first == end == 0 and row[5] == 0, 'no range/no changed bytes for NONE/refusal')
         else:
             need(first < end, 'nonwrapping potential write interval')
-        if i < 26:
+        if i < 26 or i >= 34:
             need(data[at+64:at+208] == data[at+208:at+352], 'all actual pre-GPR/FS/GS equal query inputs')
         before, after = data[at+632:at+17016], data[at+17016:at+33400]
         changed = sum(a != b for a, b in zip(before, after, strict=True))
@@ -53,7 +53,38 @@ def verify(data):
         # and each complete expected memory image, including unchanged bytes.
         rows.append(dict(id=i, policy=policy, code=code, length=length,
                          potential_bytes=end-first, changed_bytes=changed, executed=bool(row[3])))
-    return dict(cases=34, actual_instructions=26, supplied_refusals=8, api_controls=6,
+    palette_at = 184+38*33400
+    ph = struct.unpack_from('<8Q', data, palette_at)
+    need(ph[:3] == (0x31544c504632494c, 1, 960) and ph[3] >= 7 and ph[7] == 1 and
+         ph[4] & 0x1c000000 == 0x1c000000 and ph[5] & 0x40010008 == 0x40010008 and
+         ph[6] & 0xe7 == 0xe7, 'actual AVX512/BMI1 and OS-state qualification')
+    palette = []
+    for j, expected in enumerate((0x8000000180000081, 0x7ffffffe7fffff7e)):
+        at = palette_at+64+j*448
+        q = struct.unpack_from('<8Q', data, at)
+        need(q == (34+j, expected, 0x0123456789abcdef, 0x0123456789abcdef, expected, 1, 1720, 6),
+             'actual unmasked K1 equality result and seeded mask')
+        a = bytes((i*13+3) & 255 for i in range(64))
+        b = bytes(x if expected & (1 << i) else x ^ 0x5a for i, x in enumerate(a))
+        need(all(data[at+64+k*128:at+64+(k+1)*128] == a+b for k in range(3)),
+             'literal seeded and actually captured before/after ZMM16/ZMM17')
+        palette.append(dict(id=34+j, expected_mask=expected, actual_before_mask=q[3], actual_after_mask=q[4]))
+    for i in range(34, 38):
+        at = 184+i*33400
+        need(rows[i]['policy'] == 1 and rows[i]['potential_bytes'] == rows[i]['changed_bytes'] == 0 and
+             rows[i]['code'] == (1720 if i < 36 else 3676) and rows[i]['length'] == (6 if i < 36 else 5),
+             'exact-Code register-only NONE with full unchanged memory')
+        before = struct.unpack_from('<16Q', data, at+208)
+        after = struct.unpack_from('<16Q', data, at+472)
+        raw = bytes.fromhex('62b1754074c8' if i < 36 else 'c4e2c8f3d6')
+        need(data[at+616:at+616+len(raw)] == raw, 'actual exact instruction bytes')
+        if i >= 36:
+            need(before[6] == (0 if i == 36 else 0x23456789abcde000) and
+                 after[6] == (0xffffffffffffffff if i == 36 else 0x3fff), 'literal actual BLSMSK register effect')
+        need(all(x == y for reg, (x, y) in enumerate(zip(before, after, strict=True)) if i < 36 or reg != 6),
+             'all unrelated actual GPRs unchanged')
+    return dict(cases=38, actual_instructions=30, supplied_refusals=8, api_controls=6,
+                old_cases=34, added_register_only_cases=4, palette=palette,
                 sealed_stats_unchanged=True, rows=rows)
 
 def main():
