@@ -30,8 +30,8 @@ SECTIONS {
     .text.routes : { *(.text.routes) } :text
     ASSERT(ADDR(.text.routes) == 0x200403000 && SIZEOF(.text.routes) == 57344, "all literal route pages")
     ASSERT(nx_ending % 4096 == 4094 && nx_split % 4096 == 4095, "both CPUID fetch tails")
-    ASSERT(nx_boundary_call % 4096 == 4091 && nx_boundary_return == nx_boundary_call+5, "actual CALL boundary")
-    ASSERT(nx_straddler % 4096 == 4093 && nx_straddler_end == nx_straddler+10, "3+7 original MOVABS")
+    ASSERT(nx_boundary_call % 4096 == 4091 && nx_boundary_return == nx_boundary_call + 5, "actual CALL boundary")
+    ASSERT(nx_straddler % 4096 == 4093 && nx_straddler_end == nx_straddler + 10, "3+7 original MOVABS")
     . = 0x200420000;
     .data.fixture : { *(.data.fixture) } :data
     ASSERT(pl_data == 0x200420000 && pl_data_end - pl_data == 32768, "full observed data and stack extent")
