@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+import inventory_syntax
 import core_5cda_inventory as main5c
 import core_813_inventory as main813
 
@@ -79,7 +80,7 @@ def before_ac0963(declared):
 
 
 def peel_ac0963(declared):
-    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.CURRENT43D7, main813.CURRENT0DF8, main813.CURRENT0A8, main813.LATEST) else declared
+    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.CURRENT43D7, main813.CURRENT0DF8, main813.CURRENT0A8, main813.CURRENT09FE, main813.LATEST) else declared
 
 
 def source_before_cc846(path, data, error):
@@ -169,10 +170,7 @@ def require_current(declared):
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):
-        for cls in ast.parse(path.read_text()).body:
-            if isinstance(cls, ast.ClassDef):
-                identities.extend(path.stem + '.' + cls.name + '.' + method.name
-                                  for method in cls.body if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
-                                  and method.name.startswith('test_'))
+        identities.extend(path.stem + '.' + identity
+                          for identity in inventory_syntax.identities(path.read_text()))
     require(digest(identities) == PYTHON_CURRENT and len(identities) == RECORDER_TESTS,
             'cc846_python_inventory_differs')

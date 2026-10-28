@@ -323,3 +323,145 @@ int li2_rseq_after_syscall(long n,const long a[6]) {
     }
     return word_zero();
 }
+
+#ifdef LI2_RSEQ_NATIVE
+#include "native_epoch.h"
+#include "native_pages.h"
+#include "maps_phase.h"
+extern long li2_raw6(long,long,long,long,long,long,long);
+static struct li2_rseq_native_state native_rseq;
+const struct li2_rseq_native_state *li2_rseq_native_snapshot(void) { return &native_rseq; }
+static int native_bad(unsigned code,long detail) {
+    if(!native_rseq.first_error){native_rseq.first_error=code;native_rseq.first_detail=detail;}
+    native_rseq.phase=LI2_RN_FAILED;return (int)native_rseq.first_error;
+}
+static _Noreturn void native_unsafe(unsigned code,long detail) {
+    (void)native_bad(code,detail);native_rseq.unsafe_terminal=1;
+    __asm__ volatile("":::"memory");
+    /* No maps wrapper, logging, word repair, returning cleanup, or verified
+       close claim. A still-live descriptor could cover a runtime syscall PC. */
+    (void)li2_raw6(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+}
+static int native_pin(void) {
+    return state.initialized && !state.first_error && state.registered==1 && state.held==1 &&
+        state.phase==LI2_RSEQ_ACTIVE && state.tls_complete==1 && state.pid>0 && state.pid==state.tid &&
+        state.length==32 && !(state.address&31) && state.address<=UINTPTR_MAX-32 &&
+        state.page==(state.address&~(RSEQ_PAGE-1)) && state.epoch &&
+        state.data.complete==1 && !state.data.error && state.data.address==state.address &&
+        state.data.page==state.page && state.data.pid==state.pid && state.data.tid==state.tid &&
+        state.data.allocation && state.data.generation;
+}
+static int native_binding(void) {
+    return native_pin() && state.pid==native_rseq.pid && state.tid==native_rseq.tid &&
+        state.address==native_rseq.address && state.page==native_rseq.page &&
+        state.length==native_rseq.length && state.signature==native_rseq.signature &&
+        state.epoch==native_rseq.registration_epoch && same_data(&state.data,&native_rseq.before);
+}
+static void native_zero(uint64_t *out) {
+    if(native_rseq.checking)native_unsafe(LI2_RN_REENTRY,0);
+    native_rseq.checking=1;__asm__ volatile("":::"memory");
+    if(!native_binding())native_unsafe(LI2_RN_PIN,0);
+    *out=*(const volatile uint64_t *)(native_rseq.address+8);
+    if(*out)native_unsafe(LI2_RN_WORD,0);
+    __asm__ volatile("":::"memory");native_rseq.checking=0;
+}
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+#include "rseq_native_boundary.inc"
+#endif
+void li2_rseq_native_preentry(void) {
+    if(native_rseq.checking)native_unsafe(LI2_RN_REENTRY,1);
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    if(boundary_preentry())return;
+#endif
+    if(native_rseq.phase==LI2_RN_IDLE)return;
+    native_zero(&native_rseq.word_entry);
+    if(native_rseq.preentries==UINT64_MAX)native_unsafe(LI2_RN_OVERFLOW,0);
+    ++native_rseq.preentries;
+    __asm__ volatile("mov %%fs,%0; mov %%gs,%1":"=r"(native_rseq.fs_selector_entry),
+                     "=r"(native_rseq.gs_selector_entry)::"memory");
+    native_rseq.entry_checked=1;
+}
+int li2_rseq_native_prepare(uintptr_t pc) {
+    if(native_rseq.phase!=LI2_RN_IDLE || native_rseq.first_error)return native_bad(LI2_RN_STATE,0);
+    if(!state.registered)return 0;
+    if(!native_pin())native_unsafe(LI2_RN_PIN,1);
+    if(native_rseq.attempts==UINT64_MAX || native_rseq.admissions==UINT64_MAX ||
+       native_rseq.preentries==UINT64_MAX || native_rseq.entries==UINT64_MAX || native_rseq.closed==UINT64_MAX ||
+       native_rseq.tls_refreshes==UINT64_MAX)return native_bad(LI2_RN_OVERFLOW,1);
+    const struct li2_native_counts *n=li2_lifecycle_native_counts();
+    if(!pc || n->admissions!=n->closed || n->admissions==UINT64_MAX ||
+       native_rseq.attempts!=native_rseq.admissions || native_rseq.admissions!=native_rseq.closed ||
+       native_rseq.preentries!=native_rseq.closed || native_rseq.entries!=native_rseq.closed ||
+       native_rseq.tls_refreshes!=native_rseq.closed)
+        return native_bad(LI2_RN_STATE,1);
+    native_rseq=(struct li2_rseq_native_state){.attempts=native_rseq.attempts+1,
+        .admissions=native_rseq.admissions,.preentries=native_rseq.preentries,.entries=native_rseq.entries,
+        .closed=native_rseq.closed,.tls_refreshes=native_rseq.tls_refreshes,
+        .pc=pc,.address=state.address,.page=state.page,.pid=state.pid,.tid=state.tid,
+        .registration_epoch=state.epoch,.length=state.length,.signature=state.signature,
+        .native_admissions_before=n->admissions,.native_closed_before=n->closed,
+        .fs_before=state.fs_base,.gs_before=state.gs_base,.before=state.data};
+    __asm__ volatile("":::"memory");native_rseq.phase=LI2_RN_PREPARED;
+    native_zero(&native_rseq.word_before);
+    li2_maps_phase_end(); /* New actual page observation, never reused rows. */
+    struct li2_rseq_data observed={0};
+    int e=li2_lifecycle_rseq_data(state.address,&observed);
+    if(e || !same_data(&state.data,&observed))return native_bad(LI2_RN_PIN,e?e:1);
+    native_rseq.before=observed;native_zero(&native_rseq.word_before);
+    return 0;
+}
+int li2_rseq_native_publish(uintptr_t pc) {
+    if(!state.registered && native_rseq.phase==LI2_RN_IDLE)return 0;
+    const struct li2_native_counts *n=li2_lifecycle_native_counts();
+    if(native_rseq.phase!=LI2_RN_PREPARED || native_rseq.first_error || pc!=native_rseq.pc ||
+       n->admissions!=native_rseq.native_admissions_before+1 ||
+       n->closed!=native_rseq.native_closed_before)return native_bad(LI2_RN_STATE,2);
+    native_zero(&native_rseq.word_before);
+    ++native_rseq.admissions;native_rseq.entry_checked=0;
+    __asm__ volatile("":::"memory");native_rseq.phase=LI2_RN_EXECUTING;
+    return 0;
+}
+int li2_rseq_native_enter(int sig,siginfo_t *si,const ucontext_t *uc) {
+    if(native_rseq.phase==LI2_RN_IDLE && !state.registered)return 0;
+    if(native_rseq.phase!=LI2_RN_EXECUTING || native_rseq.first_error ||
+       !native_rseq.entry_checked || !native_binding())return native_bad(LI2_RN_STATE,3);
+    if(!si || !uc || sig!=SIGSEGV || si->si_signo!=SIGSEGV || si->si_code!=SEGV_ACCERR ||
+       si->si_errno || uc->uc_mcontext.gregs[REG_TRAPNO]!=14 || uc->uc_mcontext.gregs[REG_ERR]!=21 ||
+       (uintptr_t)uc->uc_mcontext.gregs[REG_RIP]!=(uintptr_t)si->si_addr ||
+       (uintptr_t)uc->uc_mcontext.gregs[REG_CR2]!=(uintptr_t)si->si_addr)
+        return native_bad(LI2_RN_ENTRY,sig);
+    /* The old native owner has already checked every mask/CS/RF/source gate.
+       This is the current kernel PC; equality does not imply absence of abort. */
+    native_zero(&native_rseq.word_entry);++native_rseq.entries;
+    native_rseq.phase=LI2_RN_CLOSING;return 0;
+}
+int li2_rseq_native_closed(void) {
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    if(native_boundary.phase==LI2_RNB_ENTERING)return boundary_observe();
+#endif
+    if(native_rseq.phase==LI2_RN_IDLE && !state.registered)return 0;
+    const struct li2_native_close *c=li2_lifecycle_native_close_progress();
+    const struct li2_native_counts *n=li2_lifecycle_native_counts();
+    if(native_rseq.phase!=LI2_RN_CLOSING || native_rseq.first_error || !native_rseq.entry_checked ||
+       !c->complete || c->busy || c->first_error || c->pages!=1 || c->verified!=1 ||
+       c->pid!=native_rseq.pid || c->tid!=native_rseq.tid ||
+       n->admissions!=native_rseq.native_admissions_before+1 || n->closed!=n->admissions)
+        return native_bad(LI2_RN_CLOSE,0);
+    native_zero(&native_rseq.word_after);li2_maps_phase_end();
+    int e=li2_lifecycle_rseq_data(state.address,&native_rseq.after);
+    if(e || !same_data(&native_rseq.before,&native_rseq.after))return native_bad(LI2_RN_PIN,e?e:2);
+    native_zero(&native_rseq.word_after);
+    if(tls_observe())return native_bad(LI2_RN_TLS,state.first_detail);
+    native_rseq.fs_after=state.fs_base;native_rseq.gs_after=state.gs_base;
+    __asm__ volatile("mov %%fs,%0; mov %%gs,%1":"=r"(native_rseq.fs_selector_after),
+                     "=r"(native_rseq.gs_selector_after)::"memory");
+    if(native_rseq.fs_selector_entry!=native_rseq.fs_selector_after ||
+       native_rseq.gs_selector_entry!=native_rseq.gs_selector_after)return native_bad(LI2_RN_TLS,1);
+    native_zero(&native_rseq.word_after);
+    ++native_rseq.tls_refreshes;++native_rseq.closed;
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    if(native_boundary.phase==LI2_RNB_FIRST)return boundary_arm(c,n);
+#endif
+    __asm__ volatile("":::"memory");native_rseq.phase=LI2_RN_IDLE;return 0;
+}
+#endif

@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "scope": "16 finite same-ELF native/registered-native pairs; no application/performance or general rseq support claim",
+  "cases": [
+    {
+      "index": 0,
+      "name": "zero-passive",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 1,
+      "name": "repeated-zero-epochs",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 2,
+      "name": "publish-commit-clear",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 3,
+      "name": "published-outside-cs",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 4,
+      "name": "genuine-scheduling-abort",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": true,
+      "kernel_fatal": false
+    },
+    {
+      "index": 5,
+      "name": "distinct-abort-refused",
+      "native_exit": 125,
+      "gated_exit": 125,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 6,
+      "name": "coincident-abort-current-pc",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 7,
+      "name": "registered-straddler-refused",
+      "native_exit": 125,
+      "gated_exit": 125,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 8,
+      "name": "gs-refresh-disjoint-store",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 9,
+      "name": "gs-refresh-overlap-refused",
+      "native_exit": 0,
+      "gated_exit": 125,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 10,
+      "name": "fs-refresh-disjoint-store",
+      "native_exit": 0,
+      "gated_exit": 0,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 11,
+      "name": "fs-refresh-overlap-refused",
+      "native_exit": 0,
+      "gated_exit": 125,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 12,
+      "name": "wrong-signature-kernel-fatal",
+      "native_exit": -11,
+      "gated_exit": -11,
+      "external_contender": false,
+      "kernel_fatal": true
+    },
+    {
+      "index": 13,
+      "name": "inaccessible-descriptor-kernel-fatal",
+      "native_exit": -11,
+      "gated_exit": -11,
+      "external_contender": false,
+      "kernel_fatal": true
+    },
+    {
+      "index": 14,
+      "name": "native-data-fault",
+      "native_exit": 125,
+      "gated_exit": 125,
+      "external_contender": false,
+      "kernel_fatal": false
+    },
+    {
+      "index": 15,
+      "name": "native-ud2",
+      "native_exit": -4,
+      "gated_exit": -4,
+      "external_contender": false,
+      "kernel_fatal": true
+    }
+  ]
+}

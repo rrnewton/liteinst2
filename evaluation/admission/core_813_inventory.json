@@ -3419,6 +3419,725 @@
       }
     }
   },
+  "main727": {
+    "added_methods": {
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": [
+        "guarded_wait_preserves_original_due_end_and_shutdown_boundaries",
+        "accepted_full_queue_retains_pending_before_stop_and_disconnect"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/check.rs": [
+        "coherent_shift_and_premature_closed_cannot_relabel_sample_population",
+        "whole_journal_tail_prefix_and_return_word_corruptions_refuse",
+        "report_payload_sequence_endpoint_and_terminal_are_independently_joined"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": [
+        "partial_input_eof_and_multiple_lines_preserve_exact_frames",
+        "full_output_retains_exact_unsent_bytes_then_drains_without_duplication"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/protocol.rs": [
+        "exact_requests_include_empty_nul_and_arbitrary_external_ids",
+        "malformed_requests_never_enter_the_population",
+        "duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/check/tests.rs": [
+        "global_slots_and_retained_ranks_accept_out_of_order_but_refuse_corruption",
+        "both_dispositions_join_actual_registration_sequence_and_raw_endpoints",
+        "local_identity_acknowledgement_and_whole_page_cannot_cross_workers"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/tests.rs": [
+        "partial_broadcast_full_acknowledgements_and_stop_keep_exact_custody",
+        "full_call_and_partial_disconnected_broadcast_never_reroute_or_disappear",
+        "complete_output_envelope_retains_maximum_ids_and_population"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": [
+        "streaming_normal_pending_owner_survives_600_actions_without_return_acknowledgement",
+        "streaming_normal_closed_and_removed_records_join_after_repeated_idle_drains",
+        "streaming_normal_upper_prefix_corruption_refuses_before_consuming_pending_owner"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers.rs": [
+        "two_caller_profile_requires_exact_site_limits_and_concurrent_mode",
+        "two_registration_limit_and_identity_reuse_refuse_without_recycling",
+        "two_pending_owners_confirm_locally_with_retained_dropped_and_closed_results"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": [
+        "two_caller_native_k1_first_worker_zero",
+        "two_caller_native_k1_first_worker_one",
+        "two_caller_native_closed_owners_fill_e4_until_local_confirmation"
+      ],
+      "tools/rapid-profiler/src/frontend_native/backoff/driver/schedule.rs": [
+        "pending_arm_refuses_another_poll_without_count_or_deadline_reset",
+        "post_arm_history_observation_accepts_equality_but_refuses_one_nanosecond_late",
+        "arm_acknowledgements_require_a_grant_and_cannot_precede_due",
+        "missed_original_arm_and_incomplete_epoch_limit_refuse_without_catchup",
+        "requested_stop_is_once_only_and_uses_exclusive_original_capped_shutdown",
+        "wait_caps_follow_original_due_end_and_stop_without_poll_extension",
+        "both_fixed_policies_issue_520_arms_and_complete_only_after_original_end"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/two_callers.rs": [
+        "two_caller_contract_refuses_missing_facts_before_source_access"
+      ]
+    },
+    "base": "181eab81e7cf316923d725299a57616e76236832",
+    "current_corpus_sha256": "240bc11bb4f6b592dc684856f530f699e3d4fb50720b995cb17a3fa762d412bd",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 3,
+      "rust_declarations": 33,
+      "rust_tests": 33
+    },
+    "doctests": {},
+    "instances": {
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+        "unit/ordinary_interval/main": "normal::session::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/check.rs": {
+        "unit/ordinary_interval/main": "normal::session::check::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
+        "unit/ordinary_interval/main": "normal::session::io::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/protocol.rs": {
+        "unit/ordinary_interval/main": "normal::session::protocol::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/check/tests.rs": {
+        "unit/ordinary_interval/main": "normal::session::two::check::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/tests.rs": {
+        "unit/ordinary_interval/main": "normal::session::two::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::normal::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::normal::two_callers::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::normal::two_callers::native::"
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/driver/schedule.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::backoff::driver::schedule::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/two_callers.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::module::ordinary::two_callers::tests::"
+      }
+    },
+    "macros": {},
+    "merge_base": "f07edef67f3e155fc32af5574f25ca86b628ee9f",
+    "methods": {
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+        "all": [
+          "guarded_wait_preserves_original_due_end_and_shutdown_boundaries",
+          "accepted_full_queue_retains_pending_before_stop_and_disconnect"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/check.rs": {
+        "all": [
+          "coherent_shift_and_premature_closed_cannot_relabel_sample_population",
+          "whole_journal_tail_prefix_and_return_word_corruptions_refuse",
+          "report_payload_sequence_endpoint_and_terminal_are_independently_joined"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
+        "all": [
+          "partial_input_eof_and_multiple_lines_preserve_exact_frames",
+          "full_output_retains_exact_unsent_bytes_then_drains_without_duplication"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/protocol.rs": {
+        "all": [
+          "exact_requests_include_empty_nul_and_arbitrary_external_ids",
+          "malformed_requests_never_enter_the_population",
+          "duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/check/tests.rs": {
+        "all": [
+          "global_slots_and_retained_ranks_accept_out_of_order_but_refuse_corruption",
+          "both_dispositions_join_actual_registration_sequence_and_raw_endpoints",
+          "local_identity_acknowledgement_and_whole_page_cannot_cross_workers"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/tests.rs": {
+        "all": [
+          "partial_broadcast_full_acknowledgements_and_stop_keep_exact_custody",
+          "full_call_and_partial_disconnected_broadcast_never_reroute_or_disappear",
+          "complete_output_envelope_retains_maximum_ids_and_population"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+        "all": [
+          "pending_ret_is_not_completion_and_k1_next_entry_finishes_before_admission",
+          "pending_function_closed_retains_epoch_permit_after_report_retirement",
+          "old_a_and_b_pending_receipts_keep_original_owner_across_rearm_c",
+          "geometry_duplicate_ret_recursion_and_wrong_ack_refuse_before_consumption",
+          "thirty_two_call_bound_preserves_last_return_and_rejects_next_admission",
+          "checkpoint_validates_whole_journal_and_pending_identity_before_finish",
+          "allocation_refusal_and_caught_busy_unwind_keep_pending_first_error",
+          "transfer_reuses_buffers_without_resetting_absolute_identity_or_model_sequence",
+          "gated_site_cannot_be_relabelled_into_normal_preparation",
+          "streaming_normal_pending_owner_survives_600_actions_without_return_acknowledgement",
+          "streaming_normal_closed_and_removed_records_join_after_repeated_idle_drains",
+          "streaming_normal_upper_prefix_corruption_refuses_before_consuming_pending_owner"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers.rs": {
+        "all": [
+          "two_caller_profile_requires_exact_site_limits_and_concurrent_mode",
+          "two_registration_limit_and_identity_reuse_refuse_without_recycling",
+          "two_pending_owners_confirm_locally_with_retained_dropped_and_closed_results"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": {
+        "all": [
+          "two_caller_native_k1_first_worker_zero",
+          "two_caller_native_k1_first_worker_one",
+          "two_caller_native_closed_owners_fill_e4_until_local_confirmation"
+        ],
+        "ignored": [
+          "two_caller_native_k1_first_worker_zero",
+          "two_caller_native_k1_first_worker_one",
+          "two_caller_native_closed_owners_fill_e4_until_local_confirmation"
+        ]
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/driver/schedule.rs": {
+        "all": [
+          "pending_arm_refuses_another_poll_without_count_or_deadline_reset",
+          "post_arm_history_observation_accepts_equality_but_refuses_one_nanosecond_late",
+          "arm_acknowledgements_require_a_grant_and_cannot_precede_due",
+          "missed_original_arm_and_incomplete_epoch_limit_refuse_without_catchup",
+          "requested_stop_is_once_only_and_uses_exclusive_original_capped_shutdown",
+          "wait_caps_follow_original_due_end_and_stop_without_poll_extension",
+          "both_fixed_policies_issue_520_arms_and_complete_only_after_original_end"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/two_callers.rs": {
+        "all": [
+          "two_caller_contract_refuses_missing_facts_before_source_access"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "727ae439e99abe08e08f520cc39a29546405c0ea",
+    "predecessor": "e1853396c7934ef903b185f3fe0b3b2259c07dc1",
+    "previous_corpus_sha256": "beb327a2e81ea290e37744ea59d4c4f06906f1c6220d26a2c22b7b8365834ce3",
+    "projections": {
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "5c91930a5b19cebb761c53f5b026a45b92a3994794f4d5d51da24fa8f45ecdc5",
+        "edits": [
+          [
+            12245,
+            13470,
+            ""
+          ]
+        ],
+        "previous_sha256": "f3fa6c68f61592412e1cb80cce9bbe3c4c99a8f44a657b4109afec12bf365d16"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal.rs": {
+        "current_sha256": "c4c713562dfe681059260882799121e2213266d38949cfbba0ef535f61f7b0f1",
+        "edits": [
+          [
+            525,
+            549,
+            ""
+          ]
+        ],
+        "previous_sha256": "65b2d81dfc584f9d230da4ba3e5d60ae18a256b5125c39d91184d29ae841b575"
+      },
+      "tools/rapid-profiler/selected-work/check_output.py": {
+        "current_sha256": "5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9",
+        "edits": [
+          [
+            6419,
+            6507,
+            "    prefix = f'\\nrunning {count} tests\\n'\n"
+          ]
+        ],
+        "previous_sha256": "e4572a81cfae73d7b814296295f7f222ee37f7b8fb5d0edb15fd8a96c572309e"
+      },
+      "tools/rapid-profiler/selected-work/test_recipe.py": {
+        "current_sha256": "9f3e7e5c952cffc41031d9f9961ca85c1fdecd3934a836992292a26ac6d49b02",
+        "edits": [
+          [
+            7409,
+            8210,
+            ""
+          ]
+        ],
+        "previous_sha256": "f70afe46e2311099fb607fad511827b3598e1c3fe41b5545a1cfae22c8dc447b"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+        "current_sha256": "1d51c509529f2ca34d89d36a377ff903cea3861d9287b4368468b7a664cc9c07",
+        "edits": [
+          [
+            335,
+            408,
+            ""
+          ],
+          [
+            1949,
+            2111,
+            "/// This profile uses finite legacy history (prefix <= 256), not streaming history.\n"
+          ],
+          [
+            2168,
+            2233,
+            ""
+          ],
+          [
+            2458,
+            2955,
+            ""
+          ],
+          [
+            4126,
+            5026,
+            ""
+          ],
+          [
+            5260,
+            5487,
+            "        PreparedIntervalController::new(\n"
+          ],
+          [
+            9238,
+            9322,
+            "// path that takes/drops this allocation. At most one lifetime registration exists.\n"
+          ],
+          [
+            11099,
+            11488,
+            ""
+          ],
+          [
+            12998,
+            13196,
+            ""
+          ],
+          [
+            14076,
+            14192,
+            "fn record_words(record: &NormalRecord) -> Result<([u64; 7], [u64; 7]), BridgeError> {\n"
+          ],
+          [
+            14770,
+            14936,
+            "    if prefix > 256\n"
+          ],
+          [
+            15227,
+            15322,
+            "    let bits = invocation | (prefix << 13) | (reason << 22);\n"
+          ],
+          [
+            15738,
+            16598,
+            ""
+          ],
+          [
+            19387,
+            19437,
+            "        if !self.binding.site.is_normal()\n"
+          ],
+          [
+            24142,
+            24199,
+            ""
+          ],
+          [
+            24786,
+            24786,
+            "            || ((bits >> 13) & 0x1ff) > self.binding.limits.actions as u64\n"
+          ],
+          [
+            25034,
+            25062,
+            "            history_prefix: (bits >> 13) & 0x1ff,\n"
+          ],
+          [
+            25102,
+            25191,
+            "        let (entry, exit) = record_words(&record)?;\n"
+          ],
+          [
+            28657,
+            28750,
+            "            let (entry, exit) = record_words(&record)?;\n"
+          ],
+          [
+            29225,
+            29289,
+            "                || record.history_prefix > self.binding.limits.actions as u64\n"
+          ],
+          [
+            30494,
+            30624,
+            ""
+          ],
+          [
+            31500,
+            31545,
+            ""
+          ],
+          [
+            32503,
+            32553,
+            "            && s.binding.site.is_normal()\n"
+          ]
+        ],
+        "previous_sha256": "373dfe36be73fa384c9cd35dd97d2c4187f228ce0f16608e556e68cbfb085913"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+        "current_sha256": "cedd8f9533b75d53d2d82185a729dcce0d9e8b1e4cedee355e9deb688a90ccee",
+        "edits": [
+          [
+            410,
+            557,
+            ""
+          ],
+          [
+            688,
+            709,
+            "            actions: 256,\n"
+          ],
+          [
+            937,
+            1140,
+            "        let session = Session::new(\n"
+          ],
+          [
+            1595,
+            1774,
+            "            entry_mode: EntryMode::NonBlocking,\n"
+          ],
+          [
+            14995,
+            15093,
+            ""
+          ],
+          [
+            16566,
+            16905,
+            ""
+          ],
+          [
+            16907,
+            23536,
+            ""
+          ]
+        ],
+        "previous_sha256": "60292a4b2f17cb6a4c2ef4e98a1d1b28aa4b3d01b1b86218e04eb9d86dfd110a"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site.rs": {
+        "current_sha256": "5f0679a8a29ae8c3c047fc905c705075005eeee9989f0a88419263cc67d9906c",
+        "edits": [
+          [
+            1634,
+            1656,
+            ""
+          ],
+          [
+            1915,
+            2026,
+            ""
+          ],
+          [
+            20840,
+            21323,
+            ""
+          ]
+        ],
+        "previous_sha256": "c87087971821b15a1280f9d330baa135d28e8ceafec4f1af170755fae23bccdf"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+        "current_sha256": "434c1b75d1d75c6abe32b938ad5f84220cca67e11a62112e4711cb6f457ffd59",
+        "edits": [
+          [
+            1003,
+            1020,
+            ""
+          ],
+          [
+            1093,
+            1178,
+            ""
+          ],
+          [
+            17537,
+            17559,
+            ""
+          ],
+          [
+            18997,
+            19053,
+            ""
+          ],
+          [
+            20132,
+            20290,
+            "                if matches!(profile, CallbackProfile::Normal) {\n"
+          ],
+          [
+            29156,
+            29240,
+            ""
+          ]
+        ],
+        "previous_sha256": "625d5b49713ca1dd7165e183c7c92a2c7408fd9f075e1214eb23bd7059c4f1f6"
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/driver.rs": {
+        "current_sha256": "ca3953aea3c8e56da6e5a54da99a2c4c1e23d0823f69c9a007cd37ec230ed763",
+        "edits": [
+          [
+            14,
+            77,
+            ""
+          ]
+        ],
+        "previous_sha256": "8911729d5a43603636ef1322ad7d1c6965190bcb353e94e6f1e0036d9788e990"
+      },
+      "tools/rapid-profiler/src/frontend_native/backoff/mod.rs": {
+        "current_sha256": "480e01eeda45daff17e5e9010fe70bf9d42f11dd2b1d6e3bff1fdbea79d85e7a",
+        "edits": [
+          [
+            1116,
+            1233,
+            "pub use driver::{DeadlineFailure, DeadlinePhase, Driver, RunSummary, StopReason};\n"
+          ]
+        ],
+        "previous_sha256": "0ade44d4f998d5a76cb762f9e2b259243e6cb461f86463a4df3aad7e1921f1c7"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "c86e013d00df89f5f1eff662d172004567af25630dae127fc70d7b88836342e7",
+        "edits": [
+          [
+            4762,
+            4846,
+            ""
+          ],
+          [
+            5178,
+            5243,
+            "    PreparedNormalController,\n"
+          ],
+          [
+            5327,
+            5426,
+            ""
+          ]
+        ],
+        "previous_sha256": "4079a9c9ca24d35c87896d8f518780f9b836351f13b57c27f1c71686df96c5ba"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+        "current_sha256": "5b0acfd9f903334387cd1c94185c1129040031e814242690cafe77babbcb468d",
+        "edits": [
+          [
+            616,
+            712,
+            ""
+          ]
+        ],
+        "previous_sha256": "b3e3fff0cd7a46ba62455beaf38cbe60c9df16cc4a9652e1f9ffab6bef3cbb55"
+      },
+      "tools/rapid-profiler/verify_normal_interval.py": {
+        "current_sha256": "f73058be6c7556be6cd153817b7ec0edb73eca47bc290bc476390f83c32ebe58",
+        "edits": [
+          [
+            1264,
+            1587,
+            "    'gated_site_cannot_be_relabelled_into_normal_preparation')\n"
+          ]
+        ],
+        "previous_sha256": "0b4b4b905fe8735fb389f9ae4375032e1502126e0499879b0e13d99b0098241d"
+      },
+      "tools/rapid-profiler/verify_selected_interval.py": {
+        "current_sha256": "f6e126940cefd8e0ca3579461774fa656e4f5cd298fb4ef5d7a1ea0e38130538",
+        "edits": [
+          [
+            26360,
+            26952,
+            "            assert set(n for n in inventory if n.startswith(prefix)) == set(expected)\n            observed = stage(label+'-controls', [str(binary), prefix, '--test-threads=1'], 20, 30, MIB)\n"
+          ]
+        ],
+        "previous_sha256": "d79e2aaef12f57bfbca9c0b1e40cfff65f959642078138fbe19469f8f4e4a65e"
+      }
+    },
+    "python_metadata": {
+      "assignment_sources": [
+        [
+          2739,
+          3055,
+          "CSV_FIELDS = ('case', 'outcome', 'k', 'epochs', 'arms', 'actions', 'accepted', 'calls',\n    'sampled', 'unsampled', 'batches', 'flushes', 'detach', 'joins', 'maximum_entry_prefix',\n    'maximum_batch_calls', 'write_blocked_at_finalize', 'input_bytes', 'transcript_bytes',\n    'child_exit', 'normal_reaps', 'rescues')"
+        ],
+        [
+          2150,
+          2342,
+          "NORMAL_STAGES = ('parser-controls', 'runtime-controls', 'caller-controls', 'state-controls',\n    'child-controls', 'caller-build', 'normal-state', 'normal-work', 'drop-sampled', 'drop-closed')"
+        ],
+        [
+          466,
+          486,
+          "PYTHON_CONTROLS = 11"
+        ],
+        [
+          1491,
+          1562,
+          "SCHEDULE_PREFIX = 'frontend_native::backoff::driver::schedule::tests::'"
+        ],
+        [
+          571,
+          607,
+          "SESSION_PREFIX = 'normal::session::'"
+        ]
+      ],
+      "assignments": {
+        "CSV_FIELDS": [
+          "case",
+          "outcome",
+          "k",
+          "epochs",
+          "arms",
+          "actions",
+          "accepted",
+          "calls",
+          "sampled",
+          "unsampled",
+          "batches",
+          "flushes",
+          "detach",
+          "joins",
+          "maximum_entry_prefix",
+          "maximum_batch_calls",
+          "write_blocked_at_finalize",
+          "input_bytes",
+          "transcript_bytes",
+          "child_exit",
+          "normal_reaps",
+          "rescues"
+        ],
+        "NORMAL_STAGES": [
+          "parser-controls",
+          "runtime-controls",
+          "caller-controls",
+          "state-controls",
+          "child-controls",
+          "caller-build",
+          "normal-state",
+          "normal-work",
+          "drop-sampled",
+          "drop-closed"
+        ],
+        "PYTHON_CONTROLS": 11,
+        "SCHEDULE_PREFIX": "frontend_native::backoff::driver::schedule::tests::",
+        "SESSION_PREFIX": "normal::session::"
+      },
+      "path": "tools/rapid-profiler/verify_normal_session.py",
+      "qualification_facts": {
+        "tools/rapid-profiler/verify_normal_session.py": [
+          "SESSION = tuple(SESSION_PREFIX + name for name in (\n    'check::tests::coherent_shift_and_premature_closed_cannot_relabel_sample_population',\n    'check::tests::whole_journal_tail_prefix_and_return_word_corruptions_refuse',\n    'check::tests::report_payload_sequence_endpoint_and_terminal_are_independently_joined',\n    'io::tests::partial_input_eof_and_multiple_lines_preserve_exact_frames',\n    'io::tests::full_output_retains_exact_unsent_bytes_then_drains_without_duplication',\n    'protocol::tests::exact_requests_include_empty_nul_and_arbitrary_external_ids',\n    'protocol::tests::malformed_requests_never_enter_the_population',\n    'protocol::tests::duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers',\n    'tests::accepted_full_queue_retains_pending_before_stop_and_disconnect',\n    'tests::guarded_wait_preserves_original_due_end_and_shutdown_boundaries'))",
+          "SCHEDULE = tuple(SCHEDULE_PREFIX + name for name in (\n    'pending_arm_refuses_another_poll_without_count_or_deadline_reset',\n    'post_arm_history_observation_accepts_equality_but_refuses_one_nanosecond_late',\n    'arm_acknowledgements_require_a_grant_and_cannot_precede_due',\n    'missed_original_arm_and_incomplete_epoch_limit_refuse_without_catchup',\n    'requested_stop_is_once_only_and_uses_exclusive_original_capped_shutdown',\n    'wait_caps_follow_original_due_end_and_stop_without_poll_extension',\n    'both_fixed_policies_issue_520_arms_and_complete_only_after_original_end'))",
+          "TRIALS = (('full-k10', 'full', 10), ('full-k1000', 'full', 1000),\n    ('stop-k10', 'stop', 10), ('duplicate-k10', 'duplicate', 10),\n    ('eof-k10', 'eof', 10), ('backpressure-k10', 'backpressure', 10))",
+          "STAGES = ('parser-controls', 'session-controls', 'schedule-controls', *(r[0] for r in TRIALS))",
+          "PROFILE = dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True)"
+        ],
+        "tools/rapid-profiler/verify_normal_session_two.py": [
+          "PYTHON_CONTROLS = 15",
+          "SDK_PREFIX = 'frontend_native::always_on::normal::two_callers::'",
+          "OWNER_PREFIX = 'frontend_native::module::ordinary::two_callers::tests::'",
+          "SDK = (OWNER_PREFIX+'two_caller_contract_refuses_missing_facts_before_source_access',\n    *(SDK_PREFIX+'tests::'+name for name in (\n        'two_caller_profile_requires_exact_site_limits_and_concurrent_mode',\n        'two_registration_limit_and_identity_reuse_refuse_without_recycling',\n        'two_pending_owners_confirm_locally_with_retained_dropped_and_closed_results')))",
+          "NATIVE = tuple(SDK_PREFIX+'native::'+name for name in (\n    'two_caller_native_k1_first_worker_zero', 'two_caller_native_k1_first_worker_one',\n    'two_caller_native_closed_owners_fill_e4_until_local_confirmation'))",
+          "CONSUMER_PREFIX = 'normal::session::two::'",
+          "CONSUMER = tuple(CONSUMER_PREFIX+name for name in (\n    'tests::partial_broadcast_full_acknowledgements_and_stop_keep_exact_custody',\n    'tests::full_call_and_partial_disconnected_broadcast_never_reroute_or_disappear',\n    'tests::complete_output_envelope_retains_maximum_ids_and_population',\n    'check::tests::global_slots_and_retained_ranks_accept_out_of_order_but_refuse_corruption',\n    'check::tests::both_dispositions_join_actual_registration_sequence_and_raw_endpoints',\n    'check::tests::local_identity_acknowledgement_and_whole_page_cannot_cross_workers'))",
+          "TRIALS = (('full-k10', 'full', 10), ('full-k1000', 'full', 1000), ('stop-k10', 'stop', 10),\n    ('duplicate-k10', 'duplicate', 10), ('eof-k10', 'eof', 10), ('backpressure-k10', 'backpressure', 10))",
+          "STAGES = ('parser-controls', 'sdk-controls', 'consumer-controls', 'native-k1-zero', 'native-k1-one',\n    'native-e4', *(row[0] for row in TRIALS))",
+          "FIELDS = ('case', 'outcome', 'k', 'epochs', 'arms', 'actions', 'accepted', 'calls', 'admitted',\n    'retained', 'dropped', 'unsampled', 'batches', 'flushes', 'cancelled', 'unfinished', 'detaches',\n    'joins', 'worker1_calls', 'worker2_calls', 'maximum_entry_prefix', 'maximum_batch_calls',\n    'write_blocked_at_finalize', 'input_bytes', 'transcript_bytes', 'child_exit', 'normal_reaps', 'rescues')"
+        ]
+      },
+      "tuple_assignments": [
+        "NORMAL_STAGES",
+        "CSV_FIELDS"
+      ]
+    },
+    "scope": "Incoming merge-base source census only:33 new Rust tests, including3 explicitly ignored upstream native prerequisites. No old identity or ignore changed; no new doctest/harness. Existing parser, protocols, recorder identities and bounds remain exact; listing is not execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/precontext/verify.py": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/normal-work/check_session_two.py": "c0ba76a40822335dd69d006426e48c847cf04b43f8772f02c129bbfd407490eb",
+      "tools/rapid-profiler/normal-work/session_driver.py": "07be978b32c82af931cf915aa49b264b86db8a4a813ab1b89dcc2cbb114b4ca5",
+      "tools/rapid-profiler/normal-work/session_two_driver.py": "20af473d83fdc9d2be66c9665a9caf06d246aae992c69429a7d3bce7ea09c56d",
+      "tools/rapid-profiler/normal-work/test_session.py": "a9c479072658e6d35ed314610839873f800fe09fdad3c7928585387aae506fc4",
+      "tools/rapid-profiler/normal-work/test_session_two.py": "b2adf50ae73e544ca8b33307ee7918b3a49f2ca08e23afc16842c0dcb53d3455",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "5c91930a5b19cebb761c53f5b026a45b92a3994794f4d5d51da24fa8f45ecdc5",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "c4c713562dfe681059260882799121e2213266d38949cfbba0ef535f61f7b0f1",
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": "030d10b200da2a23ac8eadcc0efc017d3e025a768a71bf4b3178cd182be36e75",
+      "tools/rapid-profiler/ordinary-interval/normal/session/check.rs": "9da7e5937a62d4bcb4f7b16782ee79e74c0660fae42cd0569f519370daa0e6d5",
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": "9277c2b288f7dd95fad68274135846e28a5456d380f5ddb042c083fffcd7ebd3",
+      "tools/rapid-profiler/ordinary-interval/normal/session/protocol.rs": "04885efcdb451d7e047a739c260f33abf4467efebf27264cf7137372353bad95",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two.rs": "33c0e910141f117f07d42850245912c836be37bf2d8fcbf2ceec292c5201780c",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/check.rs": "e8900d13f439cb80528bda26ee0a929e207a2a573e741bef0f89ae95455c4277",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/check/tests.rs": "7c842f1961586a49204c4282d24c7b480b2af36f6a078eb5b123d8edce5e0dab",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/tests.rs": "9088a4c17ec24a78606ec550fb1f647213596bddd0c6a1aa3d4140834f1c27df",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/worker.rs": "9041c120c83bd61485107cc9378b54f401b483b7ed77a75dc0926993819e6d6c",
+      "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": "f03a04be7bad14a40a33c5aca7d364bc7cc0ecfd7217f05654ff25e0d6f8c7ea",
+      "tools/rapid-profiler/selected-work/check_output.py": "5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9",
+      "tools/rapid-profiler/selected-work/test_recipe.py": "9f3e7e5c952cffc41031d9f9961ca85c1fdecd3934a836992292a26ac6d49b02",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "6d690779142e4b8cb6ad48f82d9e3f13771de95cce7fe0b4672d5657707f1576",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "1d51c509529f2ca34d89d36a377ff903cea3861d9287b4368468b7a664cc9c07",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": "cedd8f9533b75d53d2d82185a729dcce0d9e8b1e4cedee355e9deb688a90ccee",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers.rs": "d392c2a5a61411380c9d89401eca3ad1bf06ccd62b68b6e2324540e77820a4be",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": "5a97093795d644f25be07eccb857070160d197cad3eecb4d3945508631149bcb",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native/check.rs": "76fa44b67a69e9a024af7177b8f8fda8a5a56e78d044295fedec50b22debdfb4",
+      "tools/rapid-profiler/src/frontend_native/always_on/site.rs": "5f0679a8a29ae8c3c047fc905c705075005eeee9989f0a88419263cc67d9906c",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "434c1b75d1d75c6abe32b938ad5f84220cca67e11a62112e4711cb6f457ffd59",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/two_callers.rs": "57dee0b0cc2403f0bdd9423bb7bdeeee7ffb849f5cdfa82f5d2a672c62feb615",
+      "tools/rapid-profiler/src/frontend_native/backoff/driver.rs": "ca3953aea3c8e56da6e5a54da99a2c4c1e23d0823f69c9a007cd37ec230ed763",
+      "tools/rapid-profiler/src/frontend_native/backoff/driver/schedule.rs": "c46e0f1dc5c4c815f25ffaf935ec7b82fe883e3a096e9c32c5e444b8082ff884",
+      "tools/rapid-profiler/src/frontend_native/backoff/mod.rs": "480e01eeda45daff17e5e9010fe70bf9d42f11dd2b1d6e3bff1fdbea79d85e7a",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "c86e013d00df89f5f1eff662d172004567af25630dae127fc70d7b88836342e7",
+      "tools/rapid-profiler/src/frontend_native/module.rs": "f893147ba9e48bfe23570cb66c9f26470505da8b9ebf9bd3377ae2c0ac613eff",
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "5b0acfd9f903334387cd1c94185c1129040031e814242690cafe77babbcb468d",
+      "tools/rapid-profiler/src/frontend_native/ordinary/two_callers.rs": "ce933c1247058e98c9e40753e4916b9a7473842ab36346d559725ed14eb17470",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
+      "tools/rapid-profiler/verify_normal_interval.py": "f73058be6c7556be6cd153817b7ec0edb73eca47bc290bc476390f83c32ebe58",
+      "tools/rapid-profiler/verify_normal_session.py": "18ad942efa6a59c6c10befca5003278a69bb7173be532837c5a27b5ddd438c5b",
+      "tools/rapid-profiler/verify_normal_session_two.py": "9a59195040714ec69b2bee3625b98d1f200c3ee94b18a9070062f072682adcb0",
+      "tools/rapid-profiler/verify_selected_interval.py": "f6e126940cefd8e0ca3579461774fa656e4f5cd298fb4ef5d7a1ea0e38130538"
+    },
+    "workspace_changes": {
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 98
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 82
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 31,
+          "tests": 424
+        },
+        "previous": {
+          "ignored": 28,
+          "tests": 407
+        }
+      }
+    }
+  },
   "main7cdc": {
     "base": "ab2183e0efd7b5318196a09ecc7dcbb8550dbbeb",
     "current_corpus_sha256": "d2d2ce9b96cc1b733cc12c8429392b54e11c7ba9e3bd3d6c6bceedb07182075a",

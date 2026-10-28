@@ -108,6 +108,12 @@ static void field(struct writer *w,const char *name,uint64_t n) { text(w,name); 
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_report.inc"
 #endif
+#ifdef LI2_RSEQ_NATIVE
+#include "rseq_native_report.inc"
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+#include "rseq_native_boundary_report.inc"
+#endif
+#endif
 #ifdef LI2_TF_HANDOFF
 static void selected_report(struct writer *,unsigned,unsigned,long);
 #else
@@ -193,6 +199,12 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_RSEQ_INACTIVE
     selected_rseq_report(status,code,detail);
+#endif
+#ifdef LI2_RSEQ_NATIVE
+    selected_rseq_native_report(status,code,detail);
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    selected_rseq_boundary_report(status,code,detail);
+#endif
 #endif
 #ifdef LI2_TF_HANDOFF
     if(selected_chain.initialized)selected_chain_report(status,code,detail);
@@ -401,6 +413,10 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "native_controller.inc"
 #endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_RSEQ_NATIVE
+    /* Must precede every old checked/fail and returning cleanup path. */
+    li2_rseq_native_preentry();
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     /* No generic ingress may resume a reserved-signal interruption of a writer
        or selected effect. Owner capture authenticates the real landing frame. */

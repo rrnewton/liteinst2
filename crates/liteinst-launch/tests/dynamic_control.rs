@@ -188,6 +188,20 @@ fn spinner() -> (Vec<u8>, u64) {
     (code, pc)
 }
 
+// This fixture alone publishes a userspace-retirement handshake. The deadline
+// fixture keeps the original syscall-to-self-jump spinner unchanged.
+fn interrupt_spinner() -> (Vec<u8>, u64, u64) {
+    let (mut code, ready_pc) = spinner();
+    assert_eq!(&code[code.len() - 2..], &[0xeb, 0xfe]);
+    code.truncate(code.len() - 2);
+    code.extend_from_slice(&[0x48, 0xc7, 0x04, 0x25]); // MOV qword [DATA+8],1.
+    code.extend_from_slice(&((DATA + 8) as u32).to_le_bytes());
+    code.extend_from_slice(&1_u32.to_le_bytes());
+    let loop_pc = ENTRY + code.len() as u64;
+    code.extend_from_slice(&[0xeb, 0xfe]);
+    (code, ready_pc, loop_pc)
+}
+
 fn pidfd(pid: i32) -> OwnedFd {
     // SAFETY: this is the exact held or unreaped child owned by the caller.
     let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
@@ -432,7 +446,7 @@ fn interpreter_exec_event_preserves_both_selected_first_instructions() {
 fn active_interrupt_preserves_seeded_state_and_rejects_stale_or_foreign_tokens() {
     let _serial = TEST_LOCK.lock().unwrap();
     let directory = Directory::new();
-    let (code, loop_pc) = spinner();
+    let (code, ready_pc, loop_pc) = interrupt_spinner();
     let image = directory.image("spinner", &code, false, None);
     let mut session = image.launch();
     let pid = session.pid();
@@ -444,13 +458,38 @@ fn active_interrupt_preserves_seeded_state_and_rejects_stale_or_foreign_tokens()
     let old = session.initial_event().stop_token().unwrap().clone();
     let event = getpid_exit(&mut session);
     release(&mut session, &event);
-    let first = session.interrupt(TIMEOUT).unwrap();
+    // A syscall-exit stop is not proof of user retirement: an immediate
+    // INTERRUPT can retain orig_rax=SYS_getpid. Establish readiness before
+    // creating Evidence; no failed Evidence comparison is ever retried.
+    let until = Instant::now() + TIMEOUT;
+    let first = loop {
+        let remaining = until
+            .checked_duration_since(Instant::now())
+            .expect("userspace readiness deadline");
+        let event = session.interrupt(remaining).unwrap();
+        assert_eq!(event.kind, DynamicEventKind::Interrupted);
+        let token = event.stop_token().unwrap();
+        let ready = session.read_memory(token, DATA + 8, 8).unwrap();
+        let registers = session.read_registers(token).unwrap();
+        assert_eq!(session.read_memory(token, DATA, 8).unwrap(), [0; 8]);
+        assert!(Instant::now() < until, "userspace readiness deadline");
+        if ready == 1_u64.to_le_bytes() {
+            assert_eq!(registers.rip, loop_pc);
+            assert_eq!(registers.orig_rax, u64::MAX);
+            break event;
+        }
+        assert_eq!(ready, [0; 8]);
+        assert_eq!(registers.rip, ready_pc);
+        assert!(registers.orig_rax == libc::SYS_getpid as u64 || registers.orig_rax == u64::MAX);
+        release(&mut session, &event);
+    };
     assert_eq!(first.kind, DynamicEventKind::Interrupted);
     let expected = evidence(&mut session, &first);
     assert_eq!(expected.registers.rip, loop_pc);
     assert_eq!(expected.registers.rsp, STACK);
     assert_eq!(expected.registers.rax, pid as u64);
-    assert_eq!(expected.registers.rcx, loop_pc);
+    assert_eq!(expected.registers.orig_rax, u64::MAX);
+    assert_eq!(expected.registers.rcx, ready_pc);
     assert_eq!(expected.registers.r11, FLAGS);
     assert_eq!(expected.registers.eflags, FLAGS);
     assert_eq!(expected.marker, [0; 8]);
@@ -477,6 +516,12 @@ fn active_interrupt_preserves_seeded_state_and_rejects_stale_or_foreign_tokens()
     assert_ne!(first.stop_token(), second.stop_token());
     assert!(session.read_xstate(first.stop_token().unwrap()).is_err());
     assert_eq!(evidence(&mut session, &second), expected);
+    assert_eq!(
+        session
+            .read_memory(second.stop_token().unwrap(), DATA + 8, 8)
+            .unwrap(),
+        1_u64.to_le_bytes()
+    );
     finish(session, &handle, pid);
     finish(other, &other_handle, other_pid);
 }
