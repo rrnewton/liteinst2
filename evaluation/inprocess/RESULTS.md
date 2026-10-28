@@ -519,3 +519,50 @@ All six required commands passed at `bb425428e4d4e9cd51b9e431d819ac6a9bafdd8d`: 
 The compact projection binds each exact public/private receipt, revision, hardware, tools, source/artifact hashes, commands, outcomes and raw intervals. Native runs used one reserved CPU on AMD EPYC 9D85, Linux 7.1.3, GCC 11.5.0 and Rust 1.97.1. Every evaluator's exact command is retained; e.g. `python3 evaluation/inprocess/page_selected_vpbroadcast.py --expect-revision bb425428e4d4e9cd51b9e431d819ac6a9bafdd8d`. The tracked projection script reproduces the aggregate from those retained receipts without rerunning or replacing any qualification gate.
 
 The [compact numeric receipt](results/20261027T234020.381282Z-bnd-vpb-timing-summary-bb425428e4d4.json), [projection command](results/20261027T234020.381282Z-bnd-vpb-timing-summary-bb425428e4d4-argv.json), and [projection script](summarize_selected_milestone.py) retain the result and its reproduction recipe.
+
+### TRACE handoff and exact VMOVDQU64
+
+The [20-receipt numeric projection](results/20261028-trace-vmov-milestone.json)
+retains the historical attempts and final source
+`cdac5a7fd5d95c090048ec7be3d7ce901d4fbfee`. It makes no claim about a later
+merge. The opt-in TRACE path hands a genuine completed event to a qualified
+ordinary successor at its original address, preserving closure and ownership
+checks. Selected and guarded routes keep their explicit entry paths; instruction
+coverage remains bounded.
+
+The finite TRACE oracle passed 23 processes: 12 native/all-NX/chained programs
+(36 completed lanes) and 11 failed-operation controls, with 1,081 old refusal
+checks and 345 route checks. The exact `62e1fe486f0f` VMOVDQU64 load passed 36 new
+aligned/unaligned pairs plus two startup pairs, 320 encoding-refusal checks, and
+two genuine failed reads. Those reads still exit 125 and remain uncompleted
+operations. Their actual native/owner/live XSTATE and fault observations are
+retained. System headers were not individually archived, and failed-step final
+memory checks are enforced in C without separate final memory snapshots.
+
+The first TRACE selector (`dd05a9e`) and geometry (`70a4572`) attempts remain
+failed; `15b7e99` retains the first qualified TRACE cohort and its five regression
+receipts. VMOV's `057442d` attempt failed compilation before native execution;
+explicit unsigned casts preserved the flags predicate. A separate invocation
+with incorrect expected revision `5737d065` was refused at source preflight with
+zero commands and observed source `cdac5a7`; it is kept outside valid-revision
+runs.
+
+At `cdac5a7`, the VPB, generic, maps and register-control regressions passed;
+the connected runner passed its finite cohort. All six required checks passed: 330 recorder tests, workspace 2,457
+passed plus four ignored across 98 harnesses, and serial launch 1,029 passed
+across 27 harnesses, with native collections and backing cleanup qualified.
+Exact commands, hardware, source and original receipt hashes are retained.
+
+All four real-program cases still failed, while their native baselines exited 0.
+The last gated `ls` exited -9 without a complete report; partial chain counters
+are observations, not completion credit. Real timing discovery also failed.
+All 22 finite clock interval values remain public, while real-program timing
+stays null. No real-program completion or performance qualification is claimed.
+
+The [projection script](summarize_trace_vmov.py) and
+[exact input inventory](results/20261028-trace-vmov-inputs.json) reproduce the
+numeric bytes from retained original receipts, without running workloads:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_trace_vmov.py --inputs evaluation/inprocess/results/20261028-trace-vmov-inputs.json --output target/reproduced-trace-vmov.json
+```
