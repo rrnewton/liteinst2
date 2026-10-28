@@ -29,7 +29,8 @@ pub use pair::{
 mod always_on;
 pub use always_on::site::{InstalledIntervalSite, IntervalSitePreparation, SiteError};
 pub use always_on::{
-    BridgeError, IntervalBatch, IntervalClient, IntervalController, IntervalEpoch, IntervalJournal,
+    BridgeError, HistoryBatch, HistoryBinding, HistoryFormat, HistoryStream, HistoryWindow,
+    IntervalBatch, IntervalClient, IntervalController, IntervalEpoch, IntervalJournal,
     IntervalThread, PairTotals, PreparedIntervalController, ReadableStack,
 };
 

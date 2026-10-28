@@ -9,7 +9,7 @@ use crate::generation::{
     DeactivationRequest, Epoch, FunctionId, GenerationId, OwnedTicket, PopulationObservation,
     Record,
 };
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, TryLockError};
 
 /// Maximum simultaneously retained frontend epochs in this first model.
@@ -362,6 +362,11 @@ pub enum ControlError {
     AlreadyCurrent,
     InjectedBefore,
     InjectedAfter,
+    /// This operation requires the explicit absolute-history policy.
+    HistoryMode,
+    HistoryExhausted,
+    HistoryInvariant,
+    HistoryAllocation,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -383,6 +388,7 @@ struct Controller {
     current: Option<GenerationId>,
     enabled: Vec<bool>,
     actions: Vec<Action>,
+    history: history_stream::HistoryState,
     failed_owner: Option<Arc<FrontendEpoch>>,
 }
 struct SessionInner {
@@ -390,6 +396,8 @@ struct SessionInner {
     pool: Arc<PermitPool>,
     registry: Mutex<Registry>,
     writer: Mutex<Controller>,
+    history_mode: HistoryMode,
+    committed_end: AtomicU64,
     #[cfg(test)]
     entry_waits: [AtomicUsize; 2],
 }
@@ -477,8 +485,11 @@ impl Session {
                     current: None,
                     enabled,
                     actions: reserved(limits.actions)?,
+                    history: history_stream::HistoryState::new(),
                     failed_owner: None,
                 }),
+                history_mode: HistoryMode::Legacy,
+                committed_end: AtomicU64::new(0),
                 #[cfg(test)]
                 entry_waits: [const { AtomicUsize::new(0) }; 2],
             }),
@@ -578,13 +589,16 @@ impl Session {
         }
         if failure == FailurePoint::BeforeMutation {
             let current = w.current;
-            w.actions.push(Action {
-                kind: ActionKind::FailedBefore,
-                generation,
-                function: None,
-                current,
-                group: None,
-            });
+            self.inner.append_action(
+                &mut w,
+                Action {
+                    kind: ActionKind::FailedBefore,
+                    generation,
+                    function: None,
+                    current,
+                    group: None,
+                },
+            );
             return Err(ControlError::InjectedBefore);
         }
         if let Some(old) = &r.current {
@@ -597,22 +611,28 @@ impl Session {
             next.owner.epoch.close();
             w.failed_owner = Some(Arc::clone(&next.owner));
             w.status = ControllerStatus::TerminalFailure;
-            w.actions.push(Action {
-                kind: ActionKind::FailedAfter,
+            self.inner.append_action(
+                &mut w,
+                Action {
+                    kind: ActionKind::FailedAfter,
+                    generation,
+                    function: None,
+                    current: Some(generation),
+                    group: None,
+                },
+            );
+            return Err(ControlError::InjectedAfter);
+        }
+        self.inner.append_action(
+            &mut w,
+            Action {
+                kind: ActionKind::Published,
                 generation,
                 function: None,
                 current: Some(generation),
                 group: None,
-            });
-            return Err(ControlError::InjectedAfter);
-        }
-        w.actions.push(Action {
-            kind: ActionKind::Published,
-            generation,
-            function: None,
-            current: Some(generation),
-            group: None,
-        });
+            },
+        );
         self.inner.update_controls(&r, update);
         Ok(())
     }
@@ -645,13 +665,16 @@ impl Session {
         old.epoch.close();
         let generation = old.epoch.id();
         w.current = None;
-        w.actions.push(Action {
-            kind: ActionKind::Removed,
-            generation,
-            function: None,
-            current: None,
-            group: None,
-        });
+        self.inner.append_action(
+            &mut w,
+            Action {
+                kind: ActionKind::Removed,
+                generation,
+                function: None,
+                current: None,
+                group: None,
+            },
+        );
         self.inner.update_controls(&r, update);
         Ok(())
     }
@@ -801,6 +824,14 @@ impl Session {
 
     /// Take bounded diagnostic copies outside admission. No physical proof results.
     pub fn snapshot(&self) -> Result<ControllerSnapshot, ControlError> {
+        if self.history_mode() != HistoryMode::Legacy {
+            return Err(ControlError::HistoryMode);
+        }
+        self.snapshot_for_bridge()
+    }
+
+    // Internal pristine/current/retirement checks never expose an unqualified suffix.
+    pub(crate) fn snapshot_for_bridge(&self) -> Result<ControllerSnapshot, ControlError> {
         let w = self
             .inner
             .writer
@@ -852,6 +883,7 @@ impl SessionInner {
         if count > self.spec.limits.actions - w.actions.len() {
             return Err(ControlError::HistoryFull);
         }
+        self.preflight_absolute(w, count)?;
         Ok(())
     }
     fn apply_request(
@@ -863,13 +895,16 @@ impl SessionInner {
     ) -> Result<(), ControlError> {
         let current = w.current;
         if current != Some(request.generation) {
-            w.actions.push(Action {
-                kind: ActionKind::Stale,
-                generation: request.generation,
-                function: Some(request.function),
-                current,
-                group: None,
-            });
+            self.append_action(
+                w,
+                Action {
+                    kind: ActionKind::Stale,
+                    generation: request.generation,
+                    function: Some(request.function),
+                    current,
+                    group: None,
+                },
+            );
             return Ok(());
         }
         let owner = r.current.as_ref().ok_or(ControlError::NoCurrent)?;
@@ -897,11 +932,11 @@ impl SessionInner {
             group: Some(group),
         };
         if !all_closed || self.spec.groups[group].mandatory {
-            w.actions.push(action(ActionKind::Deferred));
+            self.append_action(w, action(ActionKind::Deferred));
             return Ok(());
         }
         if failure == FailurePoint::BeforeMutation {
-            w.actions.push(action(ActionKind::FailedBefore));
+            self.append_action(w, action(ActionKind::FailedBefore));
             return Err(ControlError::InjectedBefore);
         }
         w.enabled[group] = false;
@@ -909,10 +944,10 @@ impl SessionInner {
             owner.epoch.close();
             w.failed_owner = Some(Arc::clone(owner));
             w.status = ControllerStatus::TerminalFailure;
-            w.actions.push(action(ActionKind::FailedAfter));
+            self.append_action(w, action(ActionKind::FailedAfter));
             return Err(ControlError::InjectedAfter);
         }
-        w.actions.push(action(ActionKind::Disabled));
+        self.append_action(w, action(ActionKind::Disabled));
         Ok(())
     }
 }
@@ -1167,6 +1202,10 @@ impl ThreadModel {
         Ok(())
     }
 }
+
+mod history_stream;
+pub use history_stream::HistoryBinding;
+pub(crate) use history_stream::{HistoryChunk, HistoryMode, HistoryView, MAX_HISTORY_POSITION};
 
 mod interval_entry;
 pub(crate) use interval_entry::{
