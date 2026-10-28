@@ -2,7 +2,7 @@
 //! qualification or calibrated timing. The old timed/streamed trials are separate.
 use super::*;
 use rapid_profiler::frontend_native::backoff::{self as api, CallOutcome, Export};
-use std::io::Write;
+use std::io::{BufWriter, Write};
 
 const OUTPUT_CAP: usize = 64 * 1024 * 1024;
 struct Output {
@@ -39,10 +39,14 @@ struct Sink {
     last_closed: Option<u64>,
     sampled_after_closed: bool,
     written: usize,
+    unwritten: Vec<u8>,
     failed: Option<Export>,
     queued: mpsc::Receiver<Export>,
 }
-fn sink(mut output: Output, rx: mpsc::Receiver<Export>, stop: api::StopHandle) -> Sink {
+fn sink(output: Output, rx: mpsc::Receiver<Export>, stop: api::StopHandle) -> Sink {
+    // Debug emits many tiny fragments. Bound buffering independently of the
+    // existing channel and file caps; the underlying Output counts real writes.
+    let mut output = BufWriter::with_capacity(8192, output);
     let mut result = Sink {
         status: Ok(()),
         exports: 0,
@@ -56,6 +60,7 @@ fn sink(mut output: Output, rx: mpsc::Receiver<Export>, stop: api::StopHandle) -
         last_closed: None,
         sampled_after_closed: false,
         written: 0,
+        unwritten: Vec::new(),
         failed: None,
         queued: rx,
     };
@@ -131,13 +136,17 @@ fn sink(mut output: Output, rx: mpsc::Receiver<Export>, stop: api::StopHandle) -
     if result.status.is_ok() {
         result.status = output
             .flush()
-            .and_then(|()| output.file.sync_all())
+            .and_then(|()| output.get_ref().file.sync_all())
             .map_err(|e| e.to_string());
         if result.status.is_err() {
             stop.request();
         }
     }
+    // No implicit Drop flush after reporting failure: return the bounded unsent
+    // bytes with the failed packet/queue. A successful flush leaves none.
+    let (output, unwritten) = output.into_parts();
     result.written = output.written;
+    result.unwritten = unwritten.expect("sink writer did not unwind");
     result
 }
 fn cpus() -> [usize; 2] {
@@ -328,8 +337,8 @@ pub(super) fn run(
     let sink = sink_thread.join(); // Actual sink join, including flush/sync success.
     if sink.status.is_err() {
         eprintln!(
-            "sink FAILED {:?}; retained packet {:?}",
-            sink.status, sink.failed
+            "sink FAILED {:?}; retained packet {:?}; buffered bytes {:?}",
+            sink.status, sink.failed, sink.unwritten
         );
         while let Ok(p) = sink.queued.try_recv() {
             eprintln!("unwritten {p:?}");
@@ -354,6 +363,7 @@ pub(super) fn run(
     assert_eq!(sink.history_batches, summary.history_batches);
     assert_eq!(sink.exports, summary.accepted_exports);
     assert!(sink.status.is_ok());
+    assert!(sink.unwritten.is_empty());
     assert!(finish.unexported.is_none() && finish.partial_calls.iter().all(Option::is_none));
     let stop_reason = match summary.stop_reason {
         api::StopReason::Requested => "requested",
