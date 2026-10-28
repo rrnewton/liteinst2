@@ -1,0 +1,137 @@
+{
+  "claim": 4,
+  "files": {
+    "README.md": {
+      "bytes": 7287,
+      "sha256": "cfc2a9ee4b9f2425b841739ccf3392d415b5ca0b4bf8161cf339039da74c7ffa"
+    },
+    "clock-limit-observations.csv": {
+      "bytes": 844,
+      "sha256": "1f05cc978a58114093d038dacb06d19afc8946f722a5864637b57d550e44c9fd"
+    },
+    "clock-limit-probe.c": {
+      "bytes": 998,
+      "sha256": "447f1b81002df77a4f73663a19111d6a9e5b6e9d155c4505fb6a83e3c670991d"
+    },
+    "clock-limit-receipt.json": {
+      "bytes": 2056,
+      "sha256": "4b329297967e805fd7a1671b76b0e13faa602288c7bfa7b3022f2e10cee2db5a"
+    },
+    "continuity.json": {
+      "bytes": 310,
+      "sha256": "75040bfb38673cda344be9966f02d6097eb19245fa3d566b5244ad1f54bab863"
+    },
+    "failed-attempts.json": {
+      "bytes": 12652,
+      "sha256": "842206d72874e93bbbea003d4b7c81f807514c52208dc779f2f5b5d3f8ac61ed"
+    },
+    "gates.json": {
+      "bytes": 3430,
+      "sha256": "8dbdfa40078446030caf6034ed89d9849fad42ee4cc273c6cee63f2beeb1bb0d"
+    },
+    "merged-gates.json": {
+      "bytes": 3434,
+      "sha256": "076c59eca834b8056729a6b662f66f48803cd28d919a5a7f7477ee4b17145ca6"
+    },
+    "native-pairs.csv": {
+      "bytes": 461,
+      "sha256": "daf8c46449ea5978cfb2de2e8ff4867baf9d37e473d3bcda02ace3ade3dfa159"
+    },
+    "receipt.json": {
+      "bytes": 37740,
+      "sha256": "6f562cbf2417b46e1375559be8247868baeef3ef6235da207d2354eee7530e14"
+    },
+    "reproduce-clock-limit.py": {
+      "bytes": 2984,
+      "sha256": "1ced4e2876d8de98360953b682f62fa21b36b6c755b34a1556eb8727b6e7b519"
+    },
+    "stages.csv": {
+      "bytes": 7651,
+      "sha256": "83e21b7226eb76e9e64374806a2d65161e100778862f889ff41f4f73aa2ff693"
+    },
+    "statistics.json": {
+      "bytes": 23328,
+      "sha256": "2a94711d79b5aa48498ce969d1646a53b9e4937bd2891d09f50a66c993bb8ac5"
+    },
+    "trials.csv": {
+      "bytes": 30604,
+      "sha256": "e91619b482990bbae2c0c102e75ab947bfc9032ea9c5262c275a7c86c48896b8"
+    }
+  },
+  "merged_revision": "695f1ef9af953a2a8071600a218453fb0473212e",
+  "remaining": "SDK provenance cost remains high; full A5 performance/accuracy/workload qualification incomplete.",
+  "reproduction_allocator": {
+    "bin/cpuset-alloc": {
+      "bytes": 7588,
+      "sha256": "2c3ac95c8d8c70a423dd9efe0da0540f8ae3c70f589b7924ecec74cc634bc1f5"
+    },
+    "py/bin/cpuset-alloc": {
+      "bytes": 18512,
+      "sha256": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da"
+    },
+    "py/dagrun/cpuset_allocator.py": {
+      "bytes": 18512,
+      "sha256": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da"
+    },
+    "py/dagrun/reservation.py": {
+      "bytes": 18980,
+      "sha256": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    }
+  },
+  "review_scope": "Frozen source-only reviews. Executions, closed logs, source continuity and numerical projection are root-attested.",
+  "schema": 1,
+  "source_based_count_correction": {
+    "collection_controls": 4,
+    "current_workspace_passed": 2852,
+    "custom_harness_test_credit": 0,
+    "native_call_calibrations": 6,
+    "prior_workspace_passed": 2842
+  },
+  "source_reviews": {
+    "timer-log-fix-review-v1/binding.json": {
+      "bytes": 2998,
+      "sha256": "7427279f19b1638c9769d88a9c97f46636d291ad59204fc6f9e1d2e6f2b07db6"
+    },
+    "timer-rescue-fix-review-v1/binding.json": {
+      "bytes": 3108,
+      "sha256": "e34fc68136110ffab07729d309e48224d19a8da6106478108e3bcb14f867500f"
+    },
+    "tree-clock-fix-review-v1/binding.json": {
+      "bytes": 6887,
+      "sha256": "44ae53675c2f8a9acc5967c037ed491b0943ad125a8d11b048b3a39fd27a2524"
+    },
+    "tree-native-call-review-v1/binding.json": {
+      "bytes": 12845,
+      "sha256": "e3165cac0773ff12b4d88a564dbdc1119f2fa58ab3cfaf3b42162b684d683c69"
+    },
+    "tree-native-client-review-v1/v3-binding.json": {
+      "bytes": 2991,
+      "sha256": "de9544652d70e81b29b53ea75872689e38785c0de6cd5284e8f742544ba4391b"
+    },
+    "tree-native-gate-projection-review-v1/v2-binding.json": {
+      "bytes": 1767,
+      "sha256": "4c085cefdfd3f7e8bb2f93d03d2c1ce272e2227bb6687e33a46d69f70ebdf5e9"
+    },
+    "tree-native-parsers-review-v1/binding.json": {
+      "bytes": 6835,
+      "sha256": "1a694306838634469d3e4678bfe34372abada009992333bfc986311dbd9552c0"
+    },
+    "tree-native-projection-review-v1/v3-binding.json": {
+      "bytes": 1706,
+      "sha256": "20ab007bf58afcdd09fa929d7c7a8a013b87d9fd5b5217bcaedeec938b3ac006"
+    },
+    "tree-native-runner-review-v1/binding.json": {
+      "bytes": 10542,
+      "sha256": "6baaff565cfb426d69990f8664ecf1c3d2fb69a795152a77ff154d0565f60a89"
+    },
+    "tree-process-timer-review-v1/binding.json": {
+      "bytes": 3415,
+      "sha256": "1e8ffc4b59e3400ddae788f6ae4ee756b468c91c205ca1618cf088d728f349d4"
+    },
+    "tree-timer-controls-review-v1/binding.json": {
+      "bytes": 5559,
+      "sha256": "d6f17ec0f9f804f75a874cb33d75b1779c14caf5b9e4bc6c2f0d4d7385cf8f54"
+    }
+  },
+  "source_revision": "a39caa7c7e2e372aa1c07194f9758101b263ecbb"
+}

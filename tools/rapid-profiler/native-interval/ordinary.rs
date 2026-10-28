@@ -165,6 +165,7 @@ fn child_profile(
 ) {
     use oracle::native_ordinary::Profile;
     let output = match profile {
+        Profile::NativeCall => panic!("native caller requires its separate closed tree route"),
         Profile::Legacy => None,
         Profile::Reference { .. } => Some(context.reference_output()),
     };
@@ -195,6 +196,7 @@ fn child_profile(
     let heads = owner.certificate().heads().to_vec();
     let returns = owner.certificate().returns().to_vec();
     let (gate, gate_address) = match profile {
+        Profile::NativeCall => panic!("native caller requires its separate closed tree route"),
         Profile::Legacy => {
             let gate = CallGate::new(owner.certificate()).unwrap();
             let gate_address = &raw const __rapid_profiler_ordinary_call_v1 as usize as u64;
@@ -320,6 +322,7 @@ fn child_profile(
         // exact attached gate and controlled stack; the tracer restores only
         // the outer harness context AFTER complete application comparisons.
         let result = match profile {
+            Profile::NativeCall => panic!("native caller requires its separate closed tree route"),
             Profile::Legacy => {
                 unsafe { attached.invoke_integer_leaf(std::slice::from_raw_parts(data, length)) }
                     .unwrap()
@@ -338,6 +341,7 @@ fn child_profile(
         };
         assert_eq!(result.value, expected);
         match profile {
+            Profile::NativeCall => panic!("native caller requires its separate closed tree route"),
             Profile::Legacy => {
                 assert_eq!(result.pre_call_rsp, gate_rsp - 8);
                 assert_eq!(result.entry_rsp, gate_rsp - 16);
@@ -412,6 +416,7 @@ fn child_profile(
         // SAFETY: the consuming original-only guard uses the unchanged private
         // arming/assembly and full after-check, with no callback/completion credit.
         let result = match profile {
+            Profile::NativeCall => panic!("native caller requires its separate closed tree route"),
             Profile::Legacy => unsafe { call.invoke(data, length, &stack) }.unwrap(),
             Profile::Reference { external_id } => {
                 let result =
@@ -422,6 +427,7 @@ fn child_profile(
         };
         assert_eq!(result.value, expected);
         match profile {
+            Profile::NativeCall => panic!("native caller requires its separate closed tree route"),
             Profile::Legacy => {
                 assert_eq!(result.pre_call_rsp, gate_rsp - 8);
                 assert_eq!(result.resumed_rsp, gate_rsp - 8);

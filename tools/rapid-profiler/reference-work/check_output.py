@@ -16,6 +16,13 @@ ORIGINAL_EMPTY = frozenset(('ordinal', 'generation', 'invocation', 'raw_start_ti
 
 # Exact transitive frontend-native-calibrations inventory, including expected panics.
 CALIBRATION_TESTS = {
+    'oracle::native_ordinary::native_call::tests::literal_native_profile_has_no_transient_exclusions_or_legacy_alias': False,
+    'oracle::native_ordinary::native_call::tests::actual_target_input_length_and_alignment_are_required': False,
+    'oracle::native_ordinary::native_call::tests::every_callee_save_must_restore_before_harness': False,
+    'oracle::native_ordinary::native_call::tests::outer_call_requires_exact_instruction_target_stack_successor_and_saved_word': False,
+    'oracle::native_ordinary::native_call::tests::callback_order_count_and_stack_geometry_are_exact': False,
+    'oracle::native_ordinary::native_call::tests::wrapper_semantics_compare_all_unaffected_state_and_complete_stack': False,
+
     'oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_injection_changes_only_the_authenticated_word': False,
     'oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_requires_normal_exact_exit123': False,
     'oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_rejects_application_or_gate_resumption': False,
@@ -136,12 +143,12 @@ def pairs(data, terminal, stderr):
 def calibrations(stdout, stderr):
     assert stderr == b'' and 0 < len(stdout) <= 1048576
     text = stdout.decode('ascii')
-    pattern = (r'\nrunning 76 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){76})\n'
-        r'test result: ok\. 76 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
+    pattern = (r'\nrunning 82 tests\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \.\.\. ok\n){82})\n'
+        r'test result: ok\. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s\n\n')
     match = re.fullmatch(pattern, text)
     assert match is not None
     names = [line.split()[1] for line in match.group(1).splitlines()]
-    assert len(set(names)) == 76
+    assert len(set(names)) == 82
     observed = {line.split()[1]: ' - should panic ... ok' in line for line in match.group(1).splitlines()}
     assert observed == CALIBRATION_TESTS
 

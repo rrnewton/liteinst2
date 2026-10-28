@@ -33,3 +33,9 @@ name = "ordinary-interval"
 path = "ordinary-interval/main.rs"
 test = true
 bench = false
+
+[[bin]]
+name = "tree-native-baseline"
+path = "native-baseline/main.rs"
+test = false
+bench = false

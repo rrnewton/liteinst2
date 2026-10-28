@@ -1,0 +1,7 @@
+{
+  "native_revision": "a39caa7c7e2e372aa1c07194f9758101b263ecbb",
+  "merged_revision": "695f1ef9af953a2a8071600a218453fb0473212e",
+  "source_inputs": 170,
+  "bytes_modes_blobs_identical": true,
+  "scope": "Native campaign remains measured at its exact source revision; no merged-tree native rerun claimed."
+}

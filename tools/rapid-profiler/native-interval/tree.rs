@@ -33,7 +33,7 @@ const CONTRACT: TreeContract = TreeContract {
 };
 
 // Same separately trusted complete-ELF contract as the old ordinary driver.
-fn expected_bytes(subject: &Path, expected: &Path) -> Vec<u8> {
+pub(super) fn expected_bytes(subject: &Path, expected: &Path) -> Vec<u8> {
     let mut file = File::open(expected).unwrap();
     let before = file.metadata().unwrap();
     let other = std::fs::metadata(subject).unwrap();
@@ -66,7 +66,7 @@ fn expected_bytes(subject: &Path, expected: &Path) -> Vec<u8> {
     bytes
 }
 
-fn protect(range: AddressRange, flags: i32) -> Result<(), Refusal> {
+pub(super) fn protect(range: AddressRange, flags: i32) -> Result<(), Refusal> {
     // SAFETY: this actual sole child owns the one complete common source page.
     if unsafe {
         libc::mprotect(

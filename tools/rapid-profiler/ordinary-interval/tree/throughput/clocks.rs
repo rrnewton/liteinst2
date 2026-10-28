@@ -68,9 +68,21 @@ pub(super) fn resolution() -> Resolution {
 /// wall/CPU epoch or simultaneous timestamp is asserted.
 pub(super) fn read() -> Snapshot {
     let wall_before = query(libc::CLOCK_MONOTONIC, false);
+    // With an active process CPU timer (including finite RLIMIT_CPU), Linux
+    // can answer PROCESS_CPUTIME_ID from tick-updated group accounting. Reading
+    // THREAD_CPUTIME_ID first calls task_sched_runtime(current), refreshing the
+    // group's current-thread contribution. Both consumers require a single
+    // main thread. Keep the process clock as the reported metric, and include
+    // this extra syscall in every native/SDK bracket rather than dropping a
+    // zero-duration sample or removing the CPU limit.
+    let thread_cpu = query(libc::CLOCK_THREAD_CPUTIME_ID, false);
     let cpu = query(libc::CLOCK_PROCESS_CPUTIME_ID, false);
     let wall_after = query(libc::CLOCK_MONOTONIC, false);
     assert!(wall_before <= wall_after, "ordered wall-clock bracket");
+    assert!(
+        cpu >= thread_cpu,
+        "process CPU clock includes refreshed thread"
+    );
     Snapshot {
         wall_before,
         cpu,
