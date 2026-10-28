@@ -151,9 +151,9 @@
       "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
     },
     {
-      "bytes": 36798,
+      "bytes": 36855,
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "4c3d0d259d09a8fe68f5022a168fdb7420bb599df3a10d44ae9f60d48b3a4b70"
+      "sha256": "569aecdecb70d4254d63ab721a22e9048ed045cbdfc4794d49d0204e3dac1047"
     },
     {
       "bytes": 5426,
@@ -191,9 +191,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 19437,
+      "bytes": 20803,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "b4b5228b547a298963f17d1708578d02e566aca9338aade8418b1d67b24e3835"
+      "sha256": "f9f3e290b337327f2b0cb20675e19a024d8e5117d0f6fdc2d8ec64e5de626ded"
     },
     {
       "bytes": 4648,
@@ -201,9 +201,9 @@
       "sha256": "aa628e331cf54cb1dea86c87b44656b543c6856d91a2a4637195bda35802ef0c"
     },
     {
-      "bytes": 28864,
+      "bytes": 29097,
       "path": "tools/page-entry/selected/selected_controller.inc",
-      "sha256": "7956052f4b4c31031b21f6ebc47d8005e7a353b7899e9d0a91b02d667bf48a9f"
+      "sha256": "0484f4d7be75b9d5a4c591626533a08eebdc6176ae4ff4ed030da616c9c8289b"
     },
     {
       "bytes": 4071,
@@ -216,9 +216,9 @@
       "sha256": "dffdd29600db39727825b04d169d6d653fd8cdc96377e9ecd21b03078462b610"
     },
     {
-      "bytes": 3979,
+      "bytes": 4176,
       "path": "tools/page-entry/selected/step_owner.h",
-      "sha256": "2225714d80012af2fa3a63422a0e4031aaba1470bf5576500ad178988bf594a9"
+      "sha256": "d1415c405bf08a3acd8989c893e35fa074d14dbb3ef03809734820307ba134d8"
     },
     {
       "bytes": 3971,
@@ -286,9 +286,9 @@
       "sha256": "5cd7f07e4f4c8429ccb1445718d65325a3c295e3cb2e6e76e7917caf34f98e5f"
     },
     {
-      "bytes": 20254,
+      "bytes": 20578,
       "path": "tools/page-entry/selected/tf_chain.inc",
-      "sha256": "eb2457e9bf3ea0171d6d0df8d2161b9530c2e435de4c5550e0762d01db5512d6"
+      "sha256": "b4cc24f33cd1119fc0781648e67dee16f3b1cfbac9d3e08704ce26a7bcc39b4e"
     },
     {
       "bytes": 619,
@@ -311,9 +311,9 @@
       "sha256": "f0586abf11c58c5106ebb6584d0213ddf4580526f0965f1f9b6910fa52a3c918"
     },
     {
-      "bytes": 4789,
+      "bytes": 5024,
       "path": "tools/page-entry/selected/tf_owner.h",
-      "sha256": "3c442483e2201486d94c37ef0b289522446d95ed10e24a615a39b348e47341e2"
+      "sha256": "d318f82c0f04f2d04cb439ae83fc7a9185ed41deb09f07a4abb4a2b89e87dbdc"
     },
     {
       "bytes": 16738,

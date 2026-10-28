@@ -69,7 +69,10 @@ struct li2_tf_owner {
 /* Distinct proof: the CPU executes the original instruction. No emulated GPR,
    flags, memory, branch or FP result is constructed or claimed here. The old
    NOP/MOV owner and its actual startup selftest remain unchanged. Caller owns
-   fresh zeroed storage and the old singleton/debug/rseq/signal exclusions. */
+   fresh zeroed storage and the old singleton/debug/signal exclusions. The
+   default rseq exclusion may be discharged only by the explicit registered-
+   inactive runtime's pre-registration zero word and complete pre-effect write,
+   mapping and signal-frame proofs; this owner grants no standalone exception. */
 int li2_tf_arm(struct li2_tf_owner *,struct li2_step_session *,
                const struct li2_tf_hooks *,const struct li2_step_request *);
 void li2_tf_begin(struct li2_tf_owner *,int,siginfo_t *,ucontext_t *);

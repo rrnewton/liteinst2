@@ -114,7 +114,9 @@ struct li2_run_owner {
 };
 
 /* Fixed zeroed, mutually disjoint private owners retained to process exit.
-   Caller already owns the actual singleton/no-debug/no-CET/no-rseq profile,
+   Caller already owns the actual singleton/no-debug/no-CET profile and either
+   no rseq registration or the separately enforced registered-inactive profile
+   (pinned zero publication word; every copied instruction independently NONE),
    blocked asynchronous signals, genuine alternate stack/reserved signal route,
    initialized sealed decoder and genuine step session/selftest. App cannot
    access these owners or the publisher. No app-visible side effects may occur

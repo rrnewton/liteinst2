@@ -417,6 +417,12 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         g[REG_EFL]=(greg_t)flags;g[REG_R11]=(greg_t)flags;
         selected_release();++selected_source_syscalls;dispatch_operation(number,context);return;
     }
+#ifdef LI2_RSEQ_INACTIVE
+    if(!selected_selftesting) {
+        int rseq_error=li2_rseq_check_instruction(&selected_decoded,context);
+        checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+    }
+#endif
     if(!selected_selftesting && li2_repeat_candidate(&selected_decoded)) {
         selected_repeat_begin(sig,si,context,flags);return;
     }

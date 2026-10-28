@@ -93,6 +93,10 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
         ++selected_run_plan_misses;return 0;
     }
     checked(!error,764,error);
+#ifdef LI2_RSEQ_INACTIVE
+    int rseq_error=li2_rseq_check_run(&selected_run_plan,uc);
+    checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
     selected_run_publication=0;
     selected_pending_route=SELECTED_REGISTER_RUN;selected_step_pending=1;
     __asm__ volatile("" ::: "memory");

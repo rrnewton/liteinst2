@@ -1,0 +1,67 @@
+#ifndef LI2_RSEQ_GUARD_H
+#define LI2_RSEQ_GUARD_H
+#include <signal.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/ucontext.h>
+#include "decoder.h"
+#include "lifecycle_loader.h"
+#include "write_footprint.h"
+
+/* Explicit registered-but-inactive profile. No API permits an active rseq
+   critical section or changes an application byte to manufacture inactivity. */
+enum li2_rseq_error {
+    LI2_RSEQ_ARGUMENT=1200,LI2_RSEQ_STATE,LI2_RSEQ_IDENTITY,LI2_RSEQ_AREA,
+    LI2_RSEQ_MAPPING,LI2_RSEQ_OVERLAP,LI2_RSEQ_FOOTPRINT,LI2_RSEQ_UNSUPPORTED,
+    LI2_RSEQ_OVERFLOW,LI2_RSEQ_WORD,LI2_RSEQ_TLS,LI2_RSEQ_PLAN
+};
+enum li2_rseq_phase { LI2_RSEQ_IDLE,LI2_RSEQ_PREPARING,LI2_RSEQ_ISSUING,
+    LI2_RSEQ_ACTIVE,LI2_RSEQ_UNREGISTERING };
+struct li2_rseq_data {
+    uintptr_t address,page;
+    uint64_t allocation,generation,offset;
+    long pid,tid;
+    unsigned attempted,complete,error;
+    long detail;
+    struct li2_fetch_map_progress maps;
+};
+/* Read-only actual owned anonymous RW/NX page observation. No permission
+   changes, no allocation and no hooks.fail, including errors while pending. */
+int li2_lifecycle_rseq_data(uintptr_t,struct li2_rseq_data *);
+struct li2_rseq_transaction {
+    long args[6],result;
+    unsigned attempted,issued,returned,prior_registered,input_word_observed;
+    uint64_t input_word;
+    struct li2_rseq_data before,after;
+};
+struct li2_rseq_state {
+    unsigned initialized,registered,held,first_error;
+    volatile sig_atomic_t phase;
+    long first_detail,pid,tid;
+    uintptr_t address,page;
+    uint32_t length,signature;
+    uint64_t epoch,fs_base,gs_base;
+    long fs_result,gs_result;
+    unsigned tls_attempted,tls_complete;
+    uint64_t calls,registrations,unregistrations,kernel_errors;
+    uint64_t instruction_checks,range_checks,repeat_checks,run_checks,syscall_checks;
+    uint64_t last_first,last_end,last_pc,last_code,last_policy;
+    struct li2_write_footprint last_footprint;
+    struct li2_rseq_data data;
+    struct li2_rseq_transaction transaction;
+};
+/* Private callback excludes runtime/altstack/cache/source ranges. It must
+   exclude this owner's dynamic pin from its own test. */
+int li2_rseq_initialize(int (*private_range)(uintptr_t,size_t));
+const struct li2_rseq_state *li2_rseq_snapshot(void);
+int li2_rseq_mapping_overlap(uintptr_t,size_t);
+int li2_rseq_dispatch(const long[6],long *);
+int li2_rseq_before_syscall(long,const long[6]);
+int li2_rseq_after_syscall(long,const long[6]);
+/* Caller authenticates genuine entry/source/frame before these guards, then
+   keeps it unchanged until the original instruction. Errors return to that
+   actual cleanup owner; they never call hooks.fail recursively. */
+int li2_rseq_check_instruction(const struct li2_decoded *,const ucontext_t *);
+struct li2_run_plan;
+int li2_rseq_check_run(const struct li2_run_plan *,const ucontext_t *);
+#endif
