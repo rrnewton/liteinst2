@@ -357,6 +357,8 @@ def main():
             'tools/rapid-profiler/ordinary-interval/timed/check_tests.rs',
             'tools/rapid-profiler/timed-work/check_output.py', 'tools/rapid-profiler/timed-work/test_recipe.py',
             'tools/rapid-profiler/timed-work/README.md']
+        names.extend(['tools/rapid-profiler/ordinary-interval/tree/throughput/batch.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs'])
         names.extend(['tests/support/native_tree_hardware.rs', 'tests/support/native_tree_hardware_control.rs',
             'tests/support/native_tree_batch.rs', 'tools/rapid-profiler/native-interval/tree/batch.rs'])
         names.extend(['tests/support/native_native_call.rs', 'tests/support/native_native_call/tests.rs',

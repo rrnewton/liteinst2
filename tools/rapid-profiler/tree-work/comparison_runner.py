@@ -96,7 +96,7 @@ def run(repo, raw, result, tools, binaries, stage, tree_stable, candidate, trust
     observed = invoke('comparison-collection-controls', [str(tools['cargo']), *args], 120, 180, 128*MIB)
     terminal = (observed/'stdout.txt').read_text()
     match = re.fullmatch(r'\nrunning 4 tests\n((?:test tree::throughput::collection::tests::[a-z_]+ \.\.\. ok\n){4})'
-        r'\ntest result: ok\. 4 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in [0-9]+\.[0-9]+s\n\n', terminal)
+        r'\ntest result: ok\. 4 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in [0-9]+\.[0-9]+s\n\n', terminal)
     assert match is not None
     assert {line.split()[1].split('::')[-1] for line in match[1].splitlines()} == {
         'complete_population_checks_every_value_and_wrapping_sum', 'duplicate_missing_extra_and_reordered_results_refuse',
