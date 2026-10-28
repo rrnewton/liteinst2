@@ -530,6 +530,38 @@ impl Population {
     }
 }
 
+// The normal caller has two distinct physical return words and no Legacy gate.
+// Reuse the exact body validator without changing old inspect/Population rules.
+pub(super) fn inspect_normal_body(
+    case: Case,
+    entry: u64,
+    continuation: u64,
+    input_address: u64,
+    code: &[u8],
+    body: &[OriginalStep<'_>],
+) -> super::normal_caller::BodyTrace {
+    use super::normal_caller::{BodyCoverage, BodyTrace};
+    let t = inspect_body(case, entry, continuation, input_address, code, body);
+    BodyTrace {
+        entry: t.entry,
+        code: t.code,
+        declared: BodyCoverage {
+            heads: t.declared.heads,
+            edges: t.declared.edges,
+            returns: t.declared.returns,
+        },
+        observed: BodyCoverage {
+            heads: t.observed.heads,
+            edges: t.observed.edges,
+            returns: t.observed.returns,
+        },
+        visits: t.visits,
+        input_reads: t.input_reads,
+        input_bytes: t.input_bytes,
+        ret_offset: t.ret_offset,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

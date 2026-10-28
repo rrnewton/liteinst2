@@ -2,6 +2,7 @@
 //! This facade owns metadata only; site::seal retains the actual publication.
 mod drain;
 mod history;
+pub(super) mod normal;
 pub(super) mod optional;
 pub use crate::frontend::HistoryBinding;
 pub use history::{HistoryBatch, HistoryFormat, HistoryStream, HistoryWindow};

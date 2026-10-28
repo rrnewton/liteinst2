@@ -1,0 +1,859 @@
+{
+  "abandonment": {
+    "cases": 2,
+    "checkpoints": 0,
+    "installed_calls": 4,
+    "original_calls": 16,
+    "pending_after_tls_exit": 2,
+    "reattach_refusals": 2,
+    "worker_joins": 2
+  },
+  "artifacts": {
+    "caller": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "frontend-native-oracle": {
+      "bytes": 6164720,
+      "sha256": "a726add799b06f9c75b0e4b3076f2321b693cba35e071480dafc972df4835264"
+    },
+    "ordinary-interval": {
+      "bytes": 5459408,
+      "sha256": "3290810e1f3cadb86a8f753318d6a9b11e0bb16ba8a3dcae4f140ef9d3e65888"
+    },
+    "subject": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    }
+  },
+  "closure": {
+    "nested_normal_helpers": 46,
+    "nested_outer_owners": 48,
+    "owned_stages": 10,
+    "rescues": 0
+  },
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_normal_interval.py",
+    "--revision",
+    "d33e9e50a87409c0e19852deb51df1168d469f0f",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "controls": {
+    "caller": {
+      "failed": 0,
+      "filtered": 78,
+      "ignored": 0,
+      "names": [
+        "normal::caller::tests::normal_caller_complete_elf_refuses_wrong_symbol_body_load_and_dynamic",
+        "normal::caller::tests::normal_caller_dynamic_refuses_load_time_execution_and_dependencies",
+        "normal::caller::tests::normal_caller_literal_body_and_every_changed_byte_refuse",
+        "normal::caller::tests::normal_caller_mapping_requires_complete_exact_rx_owner"
+      ],
+      "passed": 4,
+      "status": "PASS"
+    },
+    "child": {
+      "failed": 0,
+      "filtered": 113,
+      "ignored": 0,
+      "names": [
+        "normal_check::tests::normal_native_rows_bind_continuation_owner_prefix_and_complete_journal",
+        "normal_check::tests::normal_native_rows_require_exact_next_entry_and_checkpoint"
+      ],
+      "passed": 2,
+      "status": "PASS"
+    },
+    "parser": 9,
+    "runtime": {
+      "failed": 0,
+      "filtered": 398,
+      "ignored": 0,
+      "names": [
+        "frontend_native::always_on::normal::tests::allocation_refusal_and_caught_busy_unwind_keep_pending_first_error",
+        "frontend_native::always_on::normal::tests::checkpoint_validates_whole_journal_and_pending_identity_before_finish",
+        "frontend_native::always_on::normal::tests::gated_site_cannot_be_relabelled_into_normal_preparation",
+        "frontend_native::always_on::normal::tests::geometry_duplicate_ret_recursion_and_wrong_ack_refuse_before_consumption",
+        "frontend_native::always_on::normal::tests::old_a_and_b_pending_receipts_keep_original_owner_across_rearm_c",
+        "frontend_native::always_on::normal::tests::pending_function_closed_retains_epoch_permit_after_report_retirement",
+        "frontend_native::always_on::normal::tests::pending_ret_is_not_completion_and_k1_next_entry_finishes_before_admission",
+        "frontend_native::always_on::normal::tests::thirty_two_call_bound_preserves_last_return_and_rejects_next_admission",
+        "frontend_native::always_on::normal::tests::transfer_reuses_buffers_without_resetting_absolute_identity_or_model_sequence"
+      ],
+      "passed": 9,
+      "status": "PASS"
+    },
+    "state": {
+      "failed": 0,
+      "filtered": 107,
+      "ignored": 0,
+      "names": [
+        "oracle::native_ordinary::normal_caller::tests::normal_control_ack_refuses_wrong_stage_identity_owner_and_tail",
+        "oracle::native_ordinary::normal_caller::tests::normal_epilogue_data_and_pending_journal_refuse",
+        "oracle::native_ordinary::normal_caller::tests::normal_mode_and_completion_counts_preserve_fixed_bounds",
+        "oracle::native_ordinary::normal_caller::tests::normal_original_caller_transition_effects_refuse",
+        "oracle::native_ordinary::normal_caller::tests::normal_population_refuses_missing_second_body_order_and_coverage",
+        "oracle::native_ordinary::normal_caller::tests::normal_ready_refuses_wrong_caller_maps_and_extents",
+        "oracle::native_ordinary::normal_caller::tests::normal_transfers_refuse_wrong_target_word_rsp_and_order",
+        "oracle::native_ordinary::normal_caller::tests::normal_wire_refuses_truncation_tail_and_journal_profile"
+      ],
+      "passed": 8,
+      "status": "PASS"
+    }
+  },
+  "fresh_prerequisites": {
+    "named": {
+      "children": 8,
+      "comparisons": 978,
+      "installed_calls": 8,
+      "original_calls": 8,
+      "pairs": 4,
+      "result": {
+        "bytes": 26979,
+        "sha256": "0226ee3bb3ad83eee1767b526825a40fb92704a1ea6a21da0e1e48d926627f9f"
+      },
+      "short_return_refusal": true
+    },
+    "selected": {
+      "closure": {
+        "nested_owned_stages": 4,
+        "normal_helpers": 22,
+        "outer_owners": 23,
+        "owned_stages": 18,
+        "rescues": 0
+      },
+      "result": {
+        "bytes": 48725,
+        "sha256": "c404f4bca6321446d75f2ba0c0f1b1a864aba0b342f1fd334803d1b176ba4da1"
+      },
+      "state": {
+        "children": 8,
+        "comparisons": 978,
+        "pairs": 4,
+        "real_outer_returns": 8,
+        "status": "PASS"
+      },
+      "work": {
+        "actions": 4,
+        "batches": 1,
+        "calls": 8,
+        "closed": 3,
+        "completed": 4,
+        "entries": 8,
+        "events": 16,
+        "generations": [
+          1,
+          2
+        ],
+        "originals": 8,
+        "raw_rows": 8,
+        "removed": 1,
+        "reports": [
+          2,
+          2
+        ],
+        "returns": 8,
+        "sampled": 4,
+        "status": "PASS",
+        "unsampled": 4
+      }
+    },
+    "strnlen": {
+      "closure": {
+        "nested_owned_stages": 22,
+        "normal_helpers": 46,
+        "outer_owners": 48,
+        "owned_stages": 24,
+        "rescues": 0
+      },
+      "result": {
+        "bytes": 63539,
+        "sha256": "6bc1325d132d07432905093018d5dff2f288e99df95fa96971c78052351a4bf6"
+      },
+      "state": {
+        "children": 32,
+        "comparisons": 1668,
+        "coverage_seeds": 2,
+        "input_bytes": 284,
+        "input_reads": 284,
+        "pairs": 16,
+        "real_outer_returns": 32,
+        "ret_offsets": [
+          34,
+          40
+        ],
+        "status": "PASS"
+      },
+      "work": {
+        "actions": 4,
+        "batches": 1,
+        "calls": 8,
+        "closed": 3,
+        "completed": 4,
+        "entries": 8,
+        "events": 16,
+        "generations": [
+          1,
+          2
+        ],
+        "originals": 8,
+        "raw_rows": 8,
+        "removed": 1,
+        "reports": [
+          2,
+          2
+        ],
+        "returns": 8,
+        "sampled": 4,
+        "status": "PASS",
+        "unsampled": 4
+      }
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "build_cpus": 4,
+    "caller_and_helper_shared_cpus": 1,
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "state_allowed_cpus": 4,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "native": {
+    "children": 34,
+    "comparisons": 4044,
+    "crossed_pairs": 1,
+    "helper_joins": 1,
+    "input_bytes": 696,
+    "input_reads": 696,
+    "outer_returns": 34,
+    "pairs": 17,
+    "stable_pairs": 16,
+    "target_calls": 68,
+    "target_returns": 68
+  },
+  "outputs": {
+    "normal-pairs.csv": {
+      "bytes": 1958,
+      "sha256": "ed949895394dd3c403b3d26bba03d9a4203298717a27d6e20294c50c58a15f75"
+    },
+    "normal-rows.csv": {
+      "bytes": 835,
+      "sha256": "c0c118eed6ea3f2b331048d57845f0a3c76eb42de36a3b4e41ce46d233baf207"
+    }
+  },
+  "prerequisite": {
+    "closed": {
+      "bytes": 342,
+      "sha256": "c48701d479ef7f6f057212609cb58a4533fe2389cac00ee0853c23c0667d9d5b"
+    },
+    "closure": {
+      "nested_owned_stages": 22,
+      "normal_helpers": 46,
+      "outer_owners": 48,
+      "owned_stages": 24,
+      "rescues": 0
+    },
+    "command": {
+      "bytes": 1452,
+      "sha256": "b28587eb6afc4da1a1eb7416f4d2cdb56e708a3214270614f03621ff59af3741"
+    },
+    "result": {
+      "bytes": 63539,
+      "sha256": "6bc1325d132d07432905093018d5dff2f288e99df95fa96971c78052351a4bf6"
+    }
+  },
+  "previous_release_attempt": {
+    "correction": "The same absolute deadline check moved to parent reach entry, retaining every step and unchanged 15-second/20000-step bounds. No earlier failed result is reclassified.",
+    "reason": "New fixture queried the clock after SIGSTOP; diagnostic run located the exhausted 20000-step reach loop in vDSO before the actual caller CALL.",
+    "result": {
+      "bytes": 13509,
+      "sha256": "5aeefc23b4f9c0de2f7117d2f1330d2a27281f4e7fcbde6c634d108ac6021130"
+    },
+    "revision": "23eddd7b866ab0d1a2bb6ead0c42b533d78ba05d",
+    "stage": "normal-state",
+    "status": "FAILED"
+  },
+  "prior_failures": "Fresh attempt with no retries; prior failures remain failures.",
+  "publication": {
+    "acknowledgements": "NextEntry and unsafe CallerCheckpoint are contract-based runtime acknowledgements; physical RET is separately observed by the native oracle.",
+    "claim": 4,
+    "kind": "Compact raw scalar CSV and JSON summaries; no raw logs or captures.",
+    "performance": "No timing accuracy, overhead or throughput claim.",
+    "scope": "Native producer asserts full state, sources, journal, Report and custody joins; scalar CSV alone cannot replay those checks."
+  },
+  "raw_result": {
+    "bytes": 19317,
+    "sha256": "46b014e0b8ed2541286b979b0eba186013c0a2ab0ce03c36baf04aa2b32f98e4"
+  },
+  "review_bindings": {
+    "deadline_relocation": "123aa10718b8c78809cf006739bb30216a9c87fc9c4de735b9d98e4b2da03a24",
+    "loader_runtime_consumer_runner": "6bd9a66585b60121e4a0c69bfe51a5faf4e1031630bfa4330b1abb7794071cdd",
+    "native_adapter": "190ae62091cc711c4b51f7cb68e7f79458f89cbceda7baeba67a823e798235e7",
+    "native_oracle": "4e2e3b3d4e748ceb917edfb151af6c7d8d90189061bf8072e752809266a19936"
+  },
+  "revision": "d33e9e50a87409c0e19852deb51df1168d469f0f",
+  "schema": 1,
+  "scope": "One bounded scalar leaf called by real C code; no arbitrary-application, accuracy, performance or complete-A5 claim.",
+  "selection": {
+    "abi": {
+      "architecture": "x86_64",
+      "char_bits": 8,
+      "data_model": "LP64",
+      "function_body": "exact pinned strnlen definition after preprocessing",
+      "operating_system": "linux",
+      "pointer_bits": 64,
+      "size_t_bits": 64
+    },
+    "candidate": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "changed_byte": {
+      "bytes": 13072,
+      "sha256": "dc6f8680d8f5154ca255bf8dadbfec591062b4806c2a1d9d784a66ba351b600c"
+    },
+    "elf_va": 4096,
+    "file_offset": 4096,
+    "final": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "header_count": 16,
+    "headers": {
+      "bytes": 5721,
+      "sha256": "00d56c45f463e796ac6faa321d44ebdc612a38747610c8b47ef144c47a2b3af3"
+    },
+    "label": "freebsd-strnlen-14.1-v1",
+    "length": 41,
+    "macros": {
+      "bytes": 19949,
+      "sha256": "14fbd8da8c282e44c32325f46ef6bf33b408b09e043e021d5fb00fb2afd8046f"
+    },
+    "manifest": {
+      "bytes": 14847,
+      "sha256": "5738f4d8849b5a4c150ebfb20dfc30aeafd310f47ae5e9f3e262e6cb1c74f03b"
+    },
+    "preprocessed": {
+      "bytes": 9038,
+      "sha256": "63381152720028302538df762876d8f44f4918b120bde887ab46785ef461a1ad"
+    },
+    "prestrip": {
+      "bytes": 13552,
+      "sha256": "9709038834242820cedb4e767ac4216f3b2969de4689848d8a3b24258e34e85e"
+    },
+    "selected_code": {
+      "bytes": 41,
+      "sha256": "0b254dc402a298e20daa7f5b09c4ec19b97f12cea2835595895e43523ac4839e"
+    }
+  },
+  "sources": {
+    "count": 402,
+    "manifest": {
+      "bytes": 63955,
+      "sha256": "f80980e0fc779c4613b64c12394d4e7e87cf6d9a2c69072f7ddb2b6f116378c2"
+    }
+  },
+  "stage": "complete",
+  "stages": [
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "a0f23ec922bac5530e4a2d5f72adb80a4a6d8c5f936dbfd26df8f2193b5d8b62"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/test_output.py"
+      ],
+      "cpu_seconds": 10,
+      "file_bytes": 1048576,
+      "name": "parser-controls",
+      "receipt": {
+        "bytes": 587,
+        "sha256": "7d60611e749ca7f8065b35f3b3ac842b19a89a5aad4f12e65d44d49ebaa4e9f9"
+      },
+      "request": {
+        "bytes": 1572,
+        "sha256": "1cd991f6b151b91be0624373e6e61299fa65f38ad82b803988c59d0e18836af4"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 107,
+        "sha256": "507497e01ec4c3c941eeedb089d4b9c2df68a2c21f7814518265f2b9a402cd9b"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "wall_seconds": 15
+    },
+    {
+      "closed": {
+        "bytes": 345,
+        "sha256": "4b18c90a7164f93f7b27a7c3b37cc305451b89dd44ad5fa39b290015432d5111"
+      },
+      "command": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::always_on::normal::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "runtime-controls",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "8e1051457098dd229cdbce8bb375fbebd56bde4d16a36cbe0897c688fdad2899"
+      },
+      "request": {
+        "bytes": 1592,
+        "sha256": "aa07b7394ddccce7891b16bb2e815755f090e6bbc959215abba98e372ead837b"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1232,
+        "sha256": "58ca28643dcc771bf46f6f1102d563f572cd1aff14264ffe88650858667a75bf"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "1851542bb62502225e56c0150ba6c6d841a9c8b4a4ee36b21b9017de3c08a874"
+      },
+      "command": [
+        "$REPO/target/release/deps/ordinary_interval-9a9a8634c2bd38e4",
+        "normal::caller::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "caller-controls",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "6ba11855343fa381107b2580a180304f2b35e0a2a954b02e41afc447a7107828"
+      },
+      "request": {
+        "bytes": 1572,
+        "sha256": "971686c10af106ea49b20077da5ee07e7384791e1485c8b99e3aa8f89b9d3360"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 503,
+        "sha256": "c537e8913101b49b28b6d3160d8fdee451123dd61c4f140a44e08cb60fc354c1"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "af680d7754c708f1fa0a85bde2af9e77e77bd37dbba4fc738cedc09d6e8830a7"
+      },
+      "command": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::normal_caller::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "state-controls",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "77889e781fc7be50e389f972558998c3b37f92892dff2a3673c25b841478c2fe"
+      },
+      "request": {
+        "bytes": 1604,
+        "sha256": "03a8e9bcdaf23ac38ab47f30b091882520d5e8ed3c075b41f9dcb069775b6433"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1031,
+        "sha256": "1aee78a89e425e659b7fae3426e166ea42463a5e77d1a136e75620d5996d8b32"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 345,
+        "sha256": "63692384cb8fb7ab5145e3d6d67909f8343db56254d934a326d451ac4752457e"
+      },
+      "command": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "normal_check::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "child-controls",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "735f6047bba8d5b25999e818eb1be1c9cfbfc449fe3f4da8bc36d33a3ed93765"
+      },
+      "request": {
+        "bytes": 1578,
+        "sha256": "14c399ccbcb7ffe3ed453d8aa096daaae043861b4d8abff466562e6d1b1e6149"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 311,
+        "sha256": "b5781e66b462f26e557505adca0ac8e42e954eaf18c8b80ee9cae794267d1a23"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "3d038ceb469aaa4049ed984e5e0c4ecfec77d53c086cffdc625847822941d757"
+      },
+      "command": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-fno-stack-protector",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-shared",
+        "-nostdlib",
+        "-Wl,-Bsymbolic,--no-undefined,--build-id=none,-z,relro,-z,now,-z,noexecstack",
+        "$REPO/tools/rapid-profiler/normal-work/caller.c",
+        "-o",
+        "$RAW/caller.so"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "caller-build",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "73f54f365470611b2826888a05adedee140d5e39a8baaa3968529f42dee7b009"
+      },
+      "request": {
+        "bytes": 1952,
+        "sha256": "bd8001b5f9ee226eebd2d882ae7810131de21dadf74124dbfca967f07e4182f6"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "1593855091beb72b32dd9b82d5d700d9d5ff70d8113b9522df29aac3f125c488"
+      },
+      "command": [
+        "$REPO/target/release/frontend-native-oracle",
+        "normal-state",
+        "$RAW/strnlen-prerequisite/candidate.so",
+        "$RAW/strnlen-prerequisite/final.so",
+        "4096",
+        "41",
+        "$RAW/caller-candidate.so",
+        "$RAW/caller.so",
+        "$RAW/normal-output"
+      ],
+      "cpu_seconds": 90,
+      "file_bytes": 1048576,
+      "name": "normal-state",
+      "receipt": {
+        "bytes": 588,
+        "sha256": "6c0c6a06c57d58b7da312e1667ccc78b90abe45960812c359659fdc3eb25af63"
+      },
+      "request": {
+        "bytes": 2206,
+        "sha256": "9ab86e5cf6fa6adb2c18cb441ce43d135ccb79fd82c3dc15224220f971c0e429"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 268,
+        "sha256": "be04fa112a8ec235aefb67aebfb5aabacc2b1a7a783271f9531b3429a2778bb8"
+      },
+      "wall_seconds": 90
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "0f8691d9735ee4dfeeac382bea59f2e9edccbd59767f99038687ba9a6c57675e"
+      },
+      "command": [
+        "$REPO/target/release/ordinary-interval",
+        "normal-work",
+        "$RAW/strnlen-prerequisite/candidate.so",
+        "$RAW/strnlen-prerequisite/final.so",
+        "4096",
+        "41",
+        "$RAW/caller-candidate.so",
+        "$RAW/caller.so"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "normal-work",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "dbde0ef5e6cb624b0bdd92bfb5499a794822c40f664f67ac6c30e841337b6d57"
+      },
+      "request": {
+        "bytes": 2070,
+        "sha256": "c69e388f65e27f27e668c62ca6a7b53170a8ffc972fea58b8fd47bd949cf9e88"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1062,
+        "sha256": "354a69589a09a1fd972018efb60f6f2f45c179702f2bd65e50e14da8067fa591"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 345,
+        "sha256": "24ec0ad3a5e848fd76d96de2b45bceb15349e8416e51bf4e1c6092ab0e7447d3"
+      },
+      "command": [
+        "$REPO/target/release/ordinary-interval",
+        "normal-drop-sampled",
+        "$RAW/strnlen-prerequisite/candidate.so",
+        "$RAW/strnlen-prerequisite/final.so",
+        "4096",
+        "41",
+        "$RAW/caller-candidate.so",
+        "$RAW/caller.so"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "drop-sampled",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "6b4a5d83ae1e9db815a3950afcad4b9939cbd85157bdf78a38bbbad3919c54b6"
+      },
+      "request": {
+        "bytes": 2081,
+        "sha256": "134f0e25e074b16aef9234d37453c2bc9281cb27d5d969ca15e7d5788c4e814b"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 205,
+        "sha256": "83f797f290d48c32c1365441deee727180749f6f8d46bc6a6c19ec4a02c2f35a"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "150bb2173dfbddfcfcd9b93d55ab6ebc102101c5634a325cb3c1ca5b74ee8ec5"
+      },
+      "command": [
+        "$REPO/target/release/ordinary-interval",
+        "normal-drop-closed",
+        "$RAW/strnlen-prerequisite/candidate.so",
+        "$RAW/strnlen-prerequisite/final.so",
+        "4096",
+        "41",
+        "$RAW/caller-candidate.so",
+        "$RAW/caller.so"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 1048576,
+      "name": "drop-closed",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "880a7f587493a33271fe3a8337d506151267b20ec39ef51358d83432226ba9a9"
+      },
+      "request": {
+        "bytes": 2077,
+        "sha256": "d9b9d1e529efdafff7dabd8a0b666921a1f07fc1fcdaa99f5f26246ec524ba07"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 213,
+        "sha256": "ecbfdc05393d356d3270f686a1fc4227b5186992bb9baafd335bee2294628b48"
+      },
+      "wall_seconds": 30
+    }
+  ],
+  "status": "PASS",
+  "tables": {
+    "normal-pairs.csv": {
+      "bytes": 1958,
+      "sha256": "ed949895394dd3c403b3d26bba03d9a4203298717a27d6e20294c50c58a15f75"
+    },
+    "normal-rows.csv": {
+      "bytes": 835,
+      "sha256": "c0c118eed6ea3f2b331048d57845f0a3c76eb42de36a3b4e41ce46d233baf207"
+    },
+    "ordinary-pairs.csv": {
+      "bytes": 361,
+      "sha256": "1d76a7d4144f3c1aca5f47a470396508eb2f2b8d5545aebc4b509eaff70b796f"
+    },
+    "ordinary-refusals.csv": {
+      "bytes": 59,
+      "sha256": "1c9a0c71c8229757a01d58fe9585126d2eeaafc97f9f48bf0bf12dcfd7cfd2f8"
+    },
+    "ordinary-rows.csv": {
+      "bytes": 959,
+      "sha256": "05cc5fdb1098eb47696a49e00877631141384d5a87319328b727ffb45bc231ee"
+    },
+    "selected-pairs.csv": {
+      "bytes": 361,
+      "sha256": "0e3f61719c520bc7983a84b89e43dc5eb4726496bf9027c71e12c1e068f6a986"
+    },
+    "selected-refusals.csv": {
+      "bytes": 158,
+      "sha256": "f128d067692ab6bd2a9bb870e270498eb33b8c26642ad17d56403b665dd4b7c0"
+    },
+    "selected-rows.csv": {
+      "bytes": 987,
+      "sha256": "b823056904ece8382eb5c6db1be2b6c325bd97496ff54f2614a46cb5db462fa0"
+    },
+    "strnlen-pairs.csv": {
+      "bytes": 1483,
+      "sha256": "a07618328da0896c27c28f98f1a0f7a139ef2cf4b046312c394e8945e8769b0f"
+    },
+    "strnlen-refusals.csv": {
+      "bytes": 158,
+      "sha256": "f128d067692ab6bd2a9bb870e270498eb33b8c26642ad17d56403b665dd4b7c0"
+    },
+    "strnlen-rows.csv": {
+      "bytes": 783,
+      "sha256": "31e7bf3cf64587b3e04f3fe69addc0027242ab24641647b45782980f97a59103"
+    }
+  },
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  },
+  "whole_recipe_owner": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "9e6f8734b4dac4bf89da75809a2751c225eed07150af92c4f76f87e765b2b4d2",
+    "reaped_descendants": 0,
+    "seconds": 114.37253858800977,
+    "start_utc": "2026-10-28T15:35:17.201701+00:00",
+    "termination": null
+  },
+  "work": {
+    "checkpoint_acknowledgements": 1,
+    "events": 16,
+    "function_closed": 2,
+    "generations": 2,
+    "installed_calls": 8,
+    "journal_words": 512,
+    "next_entry_acknowledgements": 7,
+    "original_calls": 8,
+    "removed": 2,
+    "reports": 2,
+    "sampled": 4,
+    "worker_joins": 1
+  }
+}

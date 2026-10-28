@@ -25,6 +25,7 @@ STAGES = ('provenance-controls', 'parser-controls',
     'selected-refusals', 'selected-state', 'selected-work')
 ADMISSION_PREFIX = 'frontend_native::module::ordinary::'
 ADMISSION = (
+    'frontend_native::module::ordinary::normal::tests::normal_contract_requires_entry_call_return_and_cet_facts_before_loading',
     'frontend_native::module::ordinary::tests::complete_scalar_cfg_has_both_returns_and_explicit_padding',
     'frontend_native::module::ordinary::tests::control_edges_must_land_on_local_heads',
     'frontend_native::module::ordinary::tests::stack_system_call_and_noninteger_forms_refuse',

@@ -1608,3 +1608,7 @@ pub mod tree_batch;
 pub mod selected;
 #[path = "native_strnlen.rs"]
 pub mod strnlen;
+
+// Separate ordinary two-CALL caller, with no gate/Frame profile impersonation.
+#[path = "native_normal_caller.rs"]
+pub mod normal_caller;

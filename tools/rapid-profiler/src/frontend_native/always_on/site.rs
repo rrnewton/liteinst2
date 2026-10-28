@@ -38,12 +38,21 @@ struct Role {
     pc: u64,
     control: ProbeControl,
 }
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum SiteKind {
+    Legacy,
+    NormalCaller,
+}
 pub(super) struct Site {
+    kind: SiteKind,
     roles: Vec<Role>,
     pub(super) terminal: u64,
     pub(super) gate: Option<Arc<super::gate::CallGate>>,
 }
 impl Site {
+    pub(super) fn is_normal(&self) -> bool {
+        self.kind == SiteKind::NormalCaller
+    }
     pub(super) fn matches(&self, pc: u64, control: ControlIdentity<'_>, entry: bool) -> bool {
         self.roles
             .iter()
@@ -227,6 +236,7 @@ impl IntervalSitePreparation {
             owner: Owner::Single(owner),
             planned: Planned::Single(Box::new(plan)),
             site: Arc::new(Site {
+                kind: SiteKind::Legacy,
                 roles,
                 terminal,
                 gate: None,
@@ -369,6 +379,7 @@ impl IntervalSitePreparation {
             owner: Owner::Branch(owner),
             planned: Planned::Branch(Box::new(plan)),
             site: Arc::new(Site {
+                kind: SiteKind::Legacy,
                 roles,
                 terminal,
                 gate: None,
@@ -544,6 +555,7 @@ pub(super) fn synthetic_site() -> InstalledIntervalSite {
     // Pure state tests only: never a loader/publication or native execution authority.
     InstalledIntervalSite {
         site: Arc::new(Site {
+            kind: SiteKind::Legacy,
             roles: roles(0x1000, &[0, 18]),
             terminal: 0x2005,
             gate: None,

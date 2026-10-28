@@ -13,6 +13,8 @@ use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 mod cfg;
+mod normal;
+pub use normal::{LoadedNormalLeaf, NormalLeafContract};
 mod selection;
 mod tree;
 pub use selection::TrustedFunctionSelection;
@@ -574,21 +576,8 @@ impl LoadedIntegerLeaf {
         contract: IntegerLeafContract,
     ) -> Result<&'static mut Self, SetupRefusal> {
         contract.check()?;
-        let name = symbol.to_str().map_err(|_| SetupRefusal::SymbolOwner)?;
-        let parsed = parse(expected, name)?;
-        // SAFETY: the complete unchanged leaf parser and caller contract above.
-        let retained = unsafe { retain_loader(path, expected)? };
-        let (address, bias) = loaded_symbol(retained, &parsed, symbol)?;
-        let source_start = bias.checked_add(parsed.page).ok_or(SetupRefusal::Format)?;
-        let certificate = cfg::admit(&parsed.code, address)?;
-        let loaded = Box::leak(Box::new(Self {
-            owner: retained,
-            parsed,
-            certificate,
-            source_start,
-        }));
-        loaded.verify_original()?;
-        Ok(loaded)
+        // SAFETY: the unchanged gate-exclusive contract was checked above.
+        unsafe { load_named_owner(path, expected, symbol) }
     }
     pub fn entry(&self) -> u64 {
         self.certificate.entry
@@ -629,6 +618,30 @@ impl LoadedIntegerLeaf {
             None,
         )
     }
+}
+
+// Shared loader mechanics only. Each public owner has its own unsafe caller
+// contract; the normal-caller path never asserts the old gate-exclusive contract.
+unsafe fn load_named_owner(
+    path: &Path,
+    expected: &[u8],
+    symbol: &CStr,
+) -> Result<&'static mut LoadedIntegerLeaf, SetupRefusal> {
+    let name = symbol.to_str().map_err(|_| SetupRefusal::SymbolOwner)?;
+    let parsed = parse(expected, name)?;
+    // SAFETY: the complete unchanged leaf parser and caller contract above.
+    let retained = unsafe { retain_loader(path, expected)? };
+    let (address, bias) = loaded_symbol(retained, &parsed, symbol)?;
+    let source_start = bias.checked_add(parsed.page).ok_or(SetupRefusal::Format)?;
+    let certificate = cfg::admit(&parsed.code, address)?;
+    let loaded = Box::leak(Box::new(LoadedIntegerLeaf {
+        owner: retained,
+        parsed,
+        certificate,
+        source_start,
+    }));
+    loaded.verify_original()?;
+    Ok(loaded)
 }
 
 // Only the closed tree's private verifier supplies the second disjoint body.
