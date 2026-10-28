@@ -72,6 +72,12 @@ class Controls(unittest.TestCase):
         got = self.valid()
         self.assertEqual((got['calls'], got['admitted'], got['retained'], got['dropped'], got['unsampled']), (14, 12, 10, 2, 2))
         self.assertEqual([w['completed'] for w in got['workers']], [5, 7])
+        rows = copy.deepcopy(self.rows)
+        indices = [i for i, r in enumerate(rows) if r[0] == 'RESULT' and int(r[4]) >= 5]
+        # Worker1's closed results may arrive before worker2's sampled results.
+        tail = sorted((rows[i] for i in indices), key=lambda r: int(r[2]))
+        for i, row in zip(indices, tail): rows[i] = row
+        self.valid(rows)
     def test_every_declared_field_is_authenticated(self):
         for index, row in enumerate(self.rows):
             for field, value in enumerate(row):
@@ -101,6 +107,32 @@ class Controls(unittest.TestCase):
         for field, value in [(5, '4096'), (8, 'retained'), (9, '1'), (10, '0'), (12, '0')]:
             self.refuse(self.changed('SAMPLE', field, value))
         self.refuse(self.changed('SAMPLE', 9, '1', -1))  # slot0 would duplicate slot1's retained rank
+        # Coherent relabels preserve the global slot/rank/count sets and every
+        # payload endpoint. Only the worker-local causal constraints reject them.
+        rows = copy.deepcopy(self.rows)
+        earlier = next(r for r in rows if r[0] == 'RESULT' and r[1] == '108')
+        later = next(r for r in rows if r[0] == 'RESULT' and r[1] == '110')
+        earlier[9], earlier[11] = 'closed', '0'
+        later[9], later[11] = 'sampled', '9'
+        sample = next(r for r in rows if r[0] == 'SAMPLE' and r[1] == '108')
+        sample[1], sample[6], sample[12] = '110', '2000', '2010'
+        self.refuse(rows)
+        rows = copy.deepcopy(self.rows)
+        for id_, inv1, slot in [('100', '3', '2'), ('102', '1', '0')]:
+            result = next(r for r in rows if r[0] == 'RESULT' and r[1] == id_)
+            sample = next(r for r in rows if r[0] == 'SAMPLE' and r[1] == id_)
+            result[11], sample[5], sample[10] = inv1, slot, slot
+        self.refuse(rows)
+        rows = copy.deepcopy(self.rows)
+        first = next(r for r in rows if r[0] == 'SAMPLE' and r[1] == '100')
+        second = next(r for r in rows if r[0] == 'SAMPLE' and r[1] == '102')
+        first[9], second[9] = second[9], first[9]
+        self.refuse(rows)
+        rows = copy.deepcopy(self.rows)
+        first = next(r for r in rows if r[0] == 'SAMPLE' and r[1] == '109')
+        second = next(r for r in rows if r[0] == 'SAMPLE' and r[1] == '111')
+        first[8:10], second[8:10] = second[8:10], first[8:10]
+        self.refuse(rows)
     def test_complete_retained_dropped_report_budget_refuse(self):
         for field, value in [(2, '11'), (3, '9'), (4, '1'), (5, '1'), (6, '1')]:
             self.refuse(self.changed('REPORT', field, value))
@@ -134,15 +166,33 @@ class Controls(unittest.TestCase):
             item = next(r for r in rows if r[0] == tag); rows.remove(item)
             rows.insert(next(i for i, r in enumerate(rows) if r[0] == before), item)
             with self.subTest(tag=tag, before=before): self.refuse(rows)
-        # A ready Report may precede a worker's exported batch. Only SAMPLE
-        # emission waits for the final ledger, so do not impose RESULT-before-REPORT.
+        # Publication alone cannot authorize retirement of a still-current epoch.
         rows = copy.deepcopy(self.rows)
         report = next(r for r in rows if r[0] == 'REPORT'); rows.remove(report)
         rows.insert(next(i for i, r in enumerate(rows) if r[0] == 'RESULT'), report)
+        self.refuse(rows)
+        # Closing HISTORY plus REPORT may precede exported RESULTs; this is not
+        # a blanket RESULT-before-REPORT rule. SAMPLE still waits for its RESULT.
+        removal = next(r for r in rows if r[0] == 'HISTORY' and r[3] == 'removed')
+        rows.remove(removal)
+        rows.insert(next(i for i, r in enumerate(rows) if r[0] == 'REPORT'), removal)
         self.valid(rows)
         sample = next(r for r in rows if r[0] == 'SAMPLE'); rows.remove(sample)
         rows.insert(next(i for i, r in enumerate(rows) if r[0] == 'RESULT'), sample)
         self.refuse(rows)
+        rows = copy.deepcopy(self.rows)
+        removal = next(r for r in rows if r[0] == 'HISTORY' and r[3] == 'removed')
+        removal[1], removal[2], removal[4] = '3', '3', '8'
+        rows.insert(next(i for i, r in enumerate(rows) if r[0] == 'RESULT'), ['HISTORY', '2', '2', 'published', '8'])
+        report = next(r for r in rows if r[0] == 'REPORT'); rows.remove(report)
+        rows.insert(next(i for i, r in enumerate(rows) if r[0] == 'RESULT'), report)
+        empty = ['REPORT', '8', '0', '0', '0', '0', '0']
+        rows.insert(rows.index(removal)+1, empty)
+        rows[0][3] = '2'
+        rows[-1][2:4] = ['2', '3']
+        self.assertEqual(check(text(rows), self.expected, 10, 2, 'EpochLimit')['arms'], 2)
+        rows.remove(empty); rows.insert(rows.index(removal), empty)
+        with self.assertRaises(AssertionError): check(text(rows), self.expected, 10, 2, 'EpochLimit')
     def test_barrier_prefix_requires_both_workers_before_next_acceptance(self):
         for field in range(2, 8): self.refuse(self.changed('FLUSHED', field, '0'))
         rows = copy.deepcopy(self.rows)

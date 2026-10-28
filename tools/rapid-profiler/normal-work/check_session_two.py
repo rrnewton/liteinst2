@@ -66,6 +66,8 @@ def check(text, expected, k, epochs, reason):
     assert reason != 'EpochLimit' or arms == epochs
     local = {w: dict(count=0, completed=0, batch=0, prefix=0, last=None, sizes=collections.Counter()) for w in (1, 2)}
     history, reports, results, positions, samples = [(0, 'initial', 0)], {}, {}, {}, {}
+    closed_generations = set()
+    local_closed, local_slots = {1: set(), 2: set()}, {}
     flush_index, done_workers, write_blocked = 0, [], None
     for index, row in enumerate(rows[3:-1], 3):
         tag = row[0]
@@ -78,8 +80,10 @@ def check(text, expected, k, epochs, reason):
             assert kind in ('published', 'removed')
             if kind == 'published':
                 assert prefix <= arms and generation > history[-1][2]
+                if history[-1][1] == 'published': closed_generations.add(history[-1][2])
             else:
                 assert prefix == actions and history[-1][1] == 'published' and generation == history[-1][2]
+                closed_generations.add(generation)
             history.append((prefix, kind, generation))
         elif tag == 'RESULT':
             assert len(row) == 20
@@ -114,7 +118,11 @@ def check(text, expected, k, epochs, reason):
             r = dict(id=id_, worker=worker, registration=registration, ordinal=ordinal, owner=owner,
                 generation=generation, invocation=inv1-1 if inv1 else None, prefix=prefix, ack=ack,
                 start=start, end=end, start_aux=start_aux, end_aux=end_aux, sequence=s['completed'], batch=batch)
+            if owner == 'closed': local_closed[worker].add(generation)
             if owner == 'sampled':
+                assert generation not in local_closed[worker], 'worker reopens a closed generation'
+                assert inv1 > local_slots.get((worker, generation), 0), 'worker admission slots reverse'
+                local_slots[worker, generation] = inv1
                 key = generation, inv1-1
                 assert key not in positions
                 positions[key] = r
@@ -136,6 +144,7 @@ def check(text, expected, k, epochs, reason):
             generation, count, kept, lost, cancel, pending = map(integer, row[1:])
             assert generation > 0 and generation not in reports and count <= 4096
             assert any(kind == 'published' and g == generation for _, kind, g in history), 'REPORT precedes publication'
+            assert generation in closed_generations, 'REPORT precedes replacement or removal'
             assert cancel == pending == 0 and kept == min(k, count) and lost == count-kept
             reports[generation] = (count, kept, lost)
         elif tag == 'SAMPLE':
@@ -170,6 +179,8 @@ def check(text, expected, k, epochs, reason):
     assert set(samples) == set(positions)
     ranks = collections.defaultdict(set)
     disposition_counts = collections.Counter()
+    # positions preserves RESULT insertion order, including each worker's validated ordinal order.
+    local_completion = {}
     for key, r in positions.items():
         id_, worker, registration, start, sequence, disposition, rank, kind, endpoint = samples[key]
         assert (id_, worker, registration, start, sequence) == (r['id'], r['worker'], r['registration'], r['start'], r['sequence'])
@@ -177,9 +188,14 @@ def check(text, expected, k, epochs, reason):
             ('unavailable', 2) if r['end'] < r['start'] else ('value', r['end']))
         assert (kind, endpoint) == wanted
         disposition_counts[key[0], disposition] += 1
+        prior_rank, seen_drop = local_completion.get((worker, key[0]), (0, False))
         if disposition == 'retained':
+            assert not seen_drop and rank > prior_rank, 'worker completion order reverses'
+            local_completion[worker, key[0]] = rank, False
             assert rank not in ranks[key[0]]
             ranks[key[0]].add(rank)
+        else:
+            local_completion[worker, key[0]] = prior_rank, True
     for generation, (count, kept, lost) in reports.items():
         assert {slot for g, slot in positions if g == generation} == set(range(count))
         assert ranks[generation] == set(range(1, kept+1))
