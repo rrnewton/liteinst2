@@ -286,13 +286,23 @@ fn run_checked(
     io.emit(format!(
         "READY,normal-session-v1,{k},{epochs},10,2,4096,4096,4,1\n"
     ))?;
-    let mut schedule = Schedule::new(Instant::now(), policy).map_err(failure)?;
+    let started = Instant::now();
+    let mut schedule = Schedule::new(started, policy).map_err(failure)?;
+    let mut previous_poll = started;
+    let mut last_wait: Option<(Duration, Duration)> = None;
     loop {
         let mut progress = false;
-        match schedule
-            .poll(Instant::now(), requested)
-            .map_err(|e| clock_failure(e, "poll", engine.committed_arms, &schedule))?
-        {
+        let observed = Instant::now();
+        let waited = last_wait.take();
+        match schedule.poll(observed, requested).map_err(|e| {
+            format!(
+                "{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}",
+                clock_failure(e, "poll", engine.committed_arms, &schedule),
+                observed.duration_since(started).as_nanos(),
+                observed.duration_since(previous_poll).as_nanos(),
+                waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))
+            )
+        })? {
             ScheduleDecision::Arm { .. } => {
                 if let Err(error) = engine.arm(&mut io) {
                     return Err(format!(
@@ -312,6 +322,7 @@ fn run_checked(
             }
             ScheduleDecision::Wait => (),
         }
+        previous_poll = observed;
         // At most one reply per iteration. A full reply slot blocks only the
         // worker after its metadata operation, never the controller or timer.
         match replies.try_recv() {
@@ -405,7 +416,9 @@ fn run_checked(
             .wait_bound(Instant::now())
             .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
         if !progress {
+            let before = Instant::now();
             thread::sleep(wait);
+            last_wait = Some((wait, before.elapsed()));
         }
     }
 }
