@@ -33,6 +33,33 @@ def digest(value):
     return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest()
 
 
+def repeat_cases(group,directory,run,fixture,fixture_source):
+    owners=group['build']['equal_owners']
+    need(len(owners)==1 and owners[0]['status']=='passed','one completely inspected REP owner')
+    prefix=['equal-owner-0-headers','equal-owner-0-build','header-dependencies','fixture-build']
+    for kind in ('object','final'):
+        prefix.append('equal-owner-0-'+kind+'-symbols')
+        prefix.extend('equal-owner-0-'+kind+'-body-'+name
+                      for name in sorted(owners[0][kind+'_body']['functions']))
+    prefix+=['fixture-undefined','fixture-sections']
+    need([c['name']for c in group['commands']]==prefix,
+         'complete ordered REP build, owner compilation and actual helper inspections')
+    # The original reader owns a closed six-command recipe. Give it the same
+    # actual rows, while separately requiring every added owner command above.
+    # Cases/totals share the real record; its full command list stays untouched.
+    original=cases.ORACLE_COMMANDS
+    view=dict(group,commands=[next(c for c in group['commands']if c['name']==name)
+                              for name in original[:-2]])
+    def invoke(*args,**kwargs):
+        result=run(*args,**kwargs);view['commands'].append(result[0]);return result
+    try:
+        cases.repeat(view,directory,invoke,fixture,fixture_source,0)
+    finally:
+        if 'outcomes'in view:group['outcomes']=view['outcomes']
+    need([c['name']for c in group['commands']]==prefix+original[-2:],
+         'complete augmented REP command sequence retained without filtering')
+
+
 def publish(path,r,receipt):
     result={k:r.get(k)for k in ('schema','profile','status','scope','expected_revision','source','source_unchanged',
         'started_utc','cpu','hardware','bounds','reproduce','cleanup_complete')}
@@ -166,7 +193,7 @@ def main():
             elif kind=='controls':
                 group['layout']=state['layouts'][fixture.name]
                 cases.controls(group,directory,invoke_group,fixture,FIXTURE)
-            else:cases.repeat(group,directory,invoke_group,fixture,FIXTURE,0)
+            else:repeat_cases(group,directory,invoke_group,fixture,FIXTURE)
             need(len(group['cases'])==COUNTS[kind] and sum(x['profile']=='native'for x in group['commands'])==COUNTS[kind],
                  'every required original native command attempted once')
             group['status']='passed'
