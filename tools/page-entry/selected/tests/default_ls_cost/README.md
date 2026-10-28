@@ -12,7 +12,9 @@ intervals include those observer effects; nothing is subtracted or exempted.
 No new clock authority or production recipe is added.
 
 Run the committed write-footprint oracle first at the exact same clean revision.
-Then, on one externally reserved CPU:
+Use the full private `target/evaluation/inprocess/RUN/receipt.json` from that
+run as the archive receipt; the public numeric summary lacks its retained
+build-artifact paths. Then, on one externally reserved CPU:
 
 ```sh
 python3 evaluation/inprocess/page_selected_write_footprint.py --expect-revision FULL_REVISION

@@ -252,10 +252,10 @@
       "sha256": "e8927647513805dc1684b56912cccc1a9f54260e65a267c7bbfcd3cb53831b8e"
     },
     {
-      "bytes": 38912,
+      "bytes": 42749,
       "origin": "committed composition input",
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "cc25a232a3a8c5fda27eae439b63c1bb4b7e58c7e17f0bfe6261ee18929139ec"
+      "sha256": "5958d99d3a5aa1f38eb825ccac5d9e15a8b9bd4afa6e30be565ac6a6fc8da257"
     },
     {
       "bytes": 8010,

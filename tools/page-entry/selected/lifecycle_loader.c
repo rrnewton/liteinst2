@@ -288,6 +288,9 @@ static int alias_segment_checked(const struct map_row *r,uintptr_t first,uintptr
          ((prot&PROT_WRITE) && (r->prot&PROT_EXEC)))) return check_error(e,119,0);
     return 0;
 }
+#ifdef LI2_MAPS_PHASE_REUSE
+#define alias_check_checked alias_check_direct
+#endif
 static int alias_check_checked(unsigned object,uint64_t offset,size_t bytes,unsigned prot,
                                uintptr_t except_first,uintptr_t except_end,struct check_error *e) {
     if (offset>UINT64_MAX-bytes) return check_error(e,117,0);
@@ -314,6 +317,75 @@ static int alias_check_checked(unsigned object,uint64_t offset,size_t bytes,unsi
     }
     return 0;
 }
+#ifdef LI2_MAPS_PHASE_REUSE
+#undef alias_check_checked
+/* A memo of one pure, successful RX alias predicate over one complete maps
+   acquisition. No VMA, owner, source-byte or backing observation is cached.
+   Write queries still scan both maps and current live records directly. */
+struct alias_query_key {
+    uint64_t acquisition,handler,epoch,major,minor,inode,offset;
+    uintptr_t except_first,except_end;
+    size_t bytes,rows;
+    unsigned object,prot;
+};
+static struct { unsigned valid; struct alias_query_key key; } alias_query_memo;
+#ifdef LI2_ALIAS_QUERY_TEST
+static uint64_t alias_query_hits,alias_query_direct_calls;
+#endif
+static int alias_query_equal(const struct alias_query_key *a,const struct alias_query_key *b) {
+    return a->acquisition==b->acquisition && a->handler==b->handler && a->epoch==b->epoch &&
+        a->major==b->major && a->minor==b->minor && a->inode==b->inode && a->offset==b->offset &&
+        a->except_first==b->except_first && a->except_end==b->except_end &&
+        a->bytes==b->bytes && a->rows==b->rows && a->object==b->object && a->prot==b->prot;
+}
+static int alias_query_scope(unsigned object,uint64_t offset,size_t bytes,unsigned prot,
+                             uintptr_t first,uintptr_t end,struct alias_query_key *out) {
+    if(prot!=(PROT_READ|PROT_EXEC) || !active || tx.guard || object>=object_count ||
+       !__atomic_load_n(&maps_stats.active,__ATOMIC_ACQUIRE) ||
+       __atomic_load_n(&maps_stats.poisoned,__ATOMIC_ACQUIRE) ||
+       !__atomic_load_n(&maps_stats.valid,__ATOMIC_ACQUIRE))return 0;
+    uint64_t handler=__atomic_load_n(&maps_stats.handler_id,__ATOMIC_ACQUIRE);
+    uint64_t epoch=__atomic_load_n(&maps_stats.mutation_epoch,__ATOMIC_ACQUIRE);
+    uint64_t acquisition=__atomic_load_n(&maps_stats.acquisitions,__ATOMIC_ACQUIRE);
+    if(!acquisition || maps_receipt_handler!=handler || maps_receipt_epoch!=epoch ||
+       maps_receipt.observation.acquisition_id!=acquisition ||
+       maps_receipt.observation.handler_id!=handler || maps_receipt.observation.mutation_epoch!=epoch ||
+       maps_receipt.rows!=row_count)return 0;
+    const struct object *o=&objects[object];
+    *out=(struct alias_query_key){acquisition,handler,epoch,o->major,o->minor,o->inode,offset,
+        first,end,bytes,row_count,object,prot};
+    return 1;
+}
+static int alias_check_checked(unsigned object,uint64_t offset,size_t bytes,unsigned prot,
+                               uintptr_t except_first,uintptr_t except_end,struct check_error *e) {
+    /* Preserve this first error before any memo lookup. */
+    if (offset>UINT64_MAX-bytes) return check_error(e,117,0);
+    struct alias_query_key before,after;
+    int eligible=!e->code && alias_query_scope(object,offset,bytes,prot,except_first,except_end,&before);
+    if(eligible && __atomic_load_n(&alias_query_memo.valid,__ATOMIC_ACQUIRE) &&
+       alias_query_equal(&alias_query_memo.key,&before)) {
+#ifdef LI2_ALIAS_QUERY_TEST
+        ++alias_query_hits;
+#endif
+        return 0;
+    }
+    /* Invalidate before replacement; nested event/cleanup additionally ends
+       the maps phase before it can query. No interrupted payload is valid. */
+    __atomic_store_n(&alias_query_memo.valid,0,__ATOMIC_RELEASE);
+    __atomic_thread_fence(__ATOMIC_SEQ_CST);
+#ifdef LI2_ALIAS_QUERY_TEST
+    ++alias_query_direct_calls;
+#endif
+    int result=alias_check_direct(object,offset,bytes,prot,except_first,except_end,e);
+    if(!result && eligible && alias_query_scope(object,offset,bytes,prot,except_first,except_end,&after) &&
+       alias_query_equal(&before,&after)) {
+        alias_query_memo.key=after;
+        __atomic_thread_fence(__ATOMIC_RELEASE);
+        __atomic_store_n(&alias_query_memo.valid,1,__ATOMIC_RELEASE);
+    }
+    return result;
+}
+#endif
 static void alias_check(unsigned object,uint64_t offset,size_t bytes,unsigned prot,uintptr_t except_first,uintptr_t except_end) {
     struct check_error error={0};
     if (alias_check_checked(object,offset,bytes,prot,except_first,except_end,&error)) DIE(error.code,error.detail);

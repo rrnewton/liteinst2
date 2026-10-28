@@ -81,7 +81,8 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision',required=True);ap.add_argument('--output',type=Path,required=True)
     ap.add_argument('--cpuid-nx',action='store_true',help='explicit raw CPUID NX-only diagnostic profile')
-    ap.add_argument('--archive-receipt',type=Path,required=True)
+    ap.add_argument('--archive-receipt',type=Path,required=True,
+        help='full private footprint receipt under target/evaluation/inprocess/RUN/receipt.json')
     ap.add_argument('--library-root',type=Path,default=Path('/usr/lib64'))
     args=ap.parse_args();os.chdir(ROOT)
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision) and
