@@ -240,10 +240,10 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 29118,
+      "bytes": 29567,
       "origin": "qualified exact LOCK CMPXCHG successor",
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "817a3b9ee4b786da1aaf16b70e34f70a8565b71f4b43105750e3517dad53f065"
+      "sha256": "43bdccbc38871caf9a27e85de73ebadb1b10e615d183cb328afd1e1e4432d2d2"
     },
     {
       "bytes": 2900,

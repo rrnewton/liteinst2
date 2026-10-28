@@ -67,6 +67,7 @@ def publish(path, r, private):
             rseq={k:c['rseq'][k]for k in ('counts','status','failure_code','detail_abs','detail_negative')}if c.get('rseq')else None,
             rseq_owner={k:c['rseq']['owner'][i]for k,i in (('registered',1),('held',2),('phase',3),('epoch',13))}if c.get('rseq')else None,
             registration_observed=c.get('registration_observed',False),
+            report_error_type=c['report_error'].split(':',1)[0] if c.get('report_error') else None,
             whole_process_ns=c.get('whole_process_ns'), first_touch_ns=None, steady_state_ns=None,
             namespace=c.get('namespace'), actual_launch_environment_sha256=c.get('launch_environment_sha256')))
     build = r.get('build', {})
@@ -213,7 +214,13 @@ def main():
                      launch['dependency_fds'] == [x['fd'] for x in ns['objects']], 'actual target environment/argv/carrier/FD join')
                 c.update(namespace={n: fact(directory/n) for n in ('namespace.json', 'launch.json')},
                          launch_environment_sha256=digest(target_env))
-                loader, repeat, cache, chain, rseq = reports(stderr,schema)
+                try:
+                    loader, repeat, cache, chain, rseq = reports(stderr,schema)
+                except Exception as exc:
+                    # A missing or malformed terminal report leaves this actual
+                    # process failed. Still attempt every independent workload.
+                    c['report_error'] = type(exc).__name__+': '+str(exc)
+                    continue
                 c.update(loader=loader, repeat=repeat, register=cache, chain=chain, rseq=rseq,
                          registration_observed=rseq['counts'][1]>0)
                 need(gated['exit'] == loader['status'], 'actual process exit equals report')

@@ -227,13 +227,25 @@ static void lock_refusals(void) {
         {3,{0xf0,0x41,0x0f}}, /* truncated_opcode */
     };
     _Static_assert(sizeof(cases)/sizeof(cases[0])==24,"closed exact CMPXCHG neighbors");
+    unsigned promoted=0;
     for(size_t i=0;i<sizeof(cases)/sizeof(cases[0]);i++) {
         result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,cases[i].b,cases[i].n,&refused_last);
-        need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
-             !refused_last.policy&&!refused_last.flow&&!refused_last.family,950+(unsigned)i);
-        ++result.refusals;
+        if(i==4) {
+            /* Same historical row, now separately native-qualified RIP family. */
+            need(cases[i].n==8&&!memcmp(cases[i].b,"\xf0\x0f\xb1\x15\0\0\0\0",8)&&
+                 !result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
+                 refused_last.next_pc==0x1008&&refused_last.length==8&&refused_last.code==2075&&
+                 refused_last.policy==1&&refused_last.flow==LI2_TF_FALLTHROUGH&&
+                 refused_last.family==LI2_TF_INTEGER,978);
+            ++promoted;
+        } else {
+            need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
+                 !refused_last.policy&&!refused_last.flow&&!refused_last.family,950+(unsigned)i);
+            ++result.refusals;
+        }
     }
+    need(promoted==1,979);output("LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\n");
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
@@ -254,15 +266,15 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47,130);
-    lock_refusals();need(result.refusals==71,973);
+    lock_refusals();need(result.refusals==70,973);
     prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     if(control){lock_prepare(&negative_sample,lock_fault_mismatch?13:1);lock_pair(&negative_sample);die(974);}
     for(unsigned i=0;i<LOCK_COUNT;i++){lock_prepare(&samples[i+1],i);lock_pair(&samples[i+1]);}
     need(result.completed==LOCK_PAIRS&&dump()&&write_all(3,&lock_fault,sizeof(lock_fault)),975);
 #if LOCK_CMPXCHG_GROUP==0
-    output("LI2_LOCK_CMPXCHG_TF_PASS group=0 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=19 full_memory=19 live_endpoints=19\n");
+    output("LI2_LOCK_CMPXCHG_TF_PASS group=0 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=23 full_state=19 full_memory=19 live_endpoints=19\n");
 #else
-    output("LI2_LOCK_CMPXCHG_TF_PASS group=1 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=19 full_memory=19 live_endpoints=19\n");
+    output("LI2_LOCK_CMPXCHG_TF_PASS group=1 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=23 full_state=19 full_memory=19 live_endpoints=19\n");
 #endif
     return 0;
 }

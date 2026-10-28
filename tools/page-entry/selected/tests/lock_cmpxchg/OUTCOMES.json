@@ -27,13 +27,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 71,
+        "refusals": 70,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_LOCK_CMPXCHG_TF_PASS group=0 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\nLI2_LOCK_CMPXCHG_TF_PASS group=0 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=23 full_state=19 full_memory=19 live_endpoints=19\n"
     },
     {
       "argv": [
@@ -54,13 +54,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 71,
+        "refusals": 70,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_LOCK_CMPXCHG_TF_PASS group=1 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\nLI2_LOCK_CMPXCHG_TF_PASS group=1 pairs=19 lock_cmpxchg=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=23 full_state=19 full_memory=19 live_endpoints=19\n"
     },
     {
       "argv": [
@@ -83,7 +83,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 71,
+        "refusals": 70,
         "version": 1
       },
       "name": "no-access-match",
@@ -122,7 +122,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
     },
     {
       "argv": [
@@ -145,7 +145,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 71,
+        "refusals": 70,
         "version": 1
       },
       "name": "read-only-match",
@@ -184,7 +184,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
     },
     {
       "argv": [
@@ -207,7 +207,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 71,
+        "refusals": 70,
         "version": 1
       },
       "name": "no-access-mismatch",
@@ -246,7 +246,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
     },
     {
       "argv": [
@@ -269,7 +269,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 71,
+        "refusals": 70,
         "version": 1
       },
       "name": "read-only-mismatch",
@@ -308,7 +308,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_LOCK_CMPXCHG_RIP_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
     }
   ],
   "literal_effects": "Exact RAX (unchanged including upper32 on match, zero-extended old memory on mismatch), four memory bytes and defined OF/SF/ZF/AF/CF/PF. All other GPRs/flags, initialized kernel/live FP, complete stack and other data bytes unchanged; old full native/TF comparator stays mandatory.",
@@ -318,11 +318,11 @@
   ],
   "negative_endpoint": "Genuine original-PC RMW #PF with ERR6 for populated PROT_NONE or ERR7 for populated read-only; both source pages revoke and synchronize, no TRACE/continuation/completion. Four complete failed-operand page snapshots stay byte-exact.",
   "new_lock_cmpxchg_pairs_total": 36,
-  "new_refusal_count": 24,
+  "new_refusal_count": 23,
   "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
   "old_refusal_count": 47,
-  "promoted_acceptances_per_command": 0,
-  "promotion": "None. All previous suites and negative bytes remain unchanged. Code2075 and the shared plain route already exist; only this exact LOCK prefix encoding is added.",
+  "promoted_acceptances_per_command": 1,
+  "promotion": "Exactly the original row4 f00fb11500000000 remains in order and now requires Code2075, policy1/fallthrough/integer, exact8byte PC/nextPC. All23 other new rows and47 old rows remain refusals. Independent new RIP native oracle is required; no old R13 native pair or fault is removed.",
   "prospective_only": true,
   "record_extent": "header_bytes + 22*actual sample_bytes + 40 + 16512-byte failed-operand trailer",
   "record_header_fields": [

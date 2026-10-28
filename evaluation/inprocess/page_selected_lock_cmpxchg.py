@@ -165,7 +165,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-lock-cmpxchg-oracle-v1', 'status': 'failed',
-        'scope': 'Only f0410fb15500 atomic CMPXCHG dword [R13+0],EDX at the original PC. Two additive 19-pair cohorts give 36 compare-success/failure pairs and two startup pairs, with 47 unchanged and 24 neighboring supplied refusals per command. Four genuine no-access/read-only RMW faults cover both would-match and would-mismatch inputs and remain failed operations. Full source-bound native/TF state comparisons and complete private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-program completion, performance or full-B2 qualification.',
+        'scope': 'Only f0410fb15500 atomic CMPXCHG dword [R13+0],EDX at the original PC. Two additive 19-pair cohorts give 36 compare-success/failure pairs and two startup pairs, with 47 unchanged and 23 neighboring supplied refusals and one exact promoted RIP acceptance per command. Four genuine no-access/read-only RMW faults cover both would-match and would-mismatch inputs and remain failed operations. Full source-bound native/TF state comparisons and complete private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-program completion, performance or full-B2 qualification.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -250,7 +250,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact LOCK CMPXCHG names, input environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             '45e6ed6865a0358fde5e18fda231ef8a56ee829729628589db208d20d13c72c0',
+             'a8e314c32c49e6fe659806920d9542d822018370c5b8272737b3be3fc4aeb015',
              'exact reviewed six-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -279,6 +279,7 @@ def main():
             end = header['header_bytes']+21*header['sample_bytes']
             need(not any(data[start:end]), 'all unused original sample slots remain zero')
             record['totals']['executed_refusal_checks'] += header['refusals']
+            record['totals']['promoted_acceptance_checks'] += 1
             if positive:
                 need(not any(data[end:end+header['sample_bytes']]), 'positive has no negative sample')
                 result['operation_completed'] = True
@@ -290,8 +291,8 @@ def main():
                 record['totals']['comparison_failure_pairs'] += 6 if name == 'group0' else 18
                 record['totals']['new_page_ending_pairs'] += 3
                 record['totals']['new_crossing_pairs'] += 15
-                record['totals'].update(supplied_refusal_encodings=71,
-                    old_refusal_encodings=47, new_refusal_encodings=24)
+                record['totals'].update(supplied_refusal_encodings=70,
+                    old_refusal_encodings=47, new_refusal_encodings=23)
             else:
                 need(any(data[end:end+header['sample_bytes']]), 'retain actual failed-operation sample')
                 # The authenticated C path requires actual native #PF and the
@@ -305,12 +306,12 @@ def main():
                 record['totals']['additional_negative_command_selftests'] += 1
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=38, generic_pairs=36, lock_cmpxchg_pairs=36,
-                 positive_selftest_pairs=2, supplied_refusal_encodings=71, old_refusal_encodings=47,
-                 new_refusal_encodings=24, comparison_success_pairs=12, comparison_failure_pairs=24,
+                 positive_selftest_pairs=2, supplied_refusal_encodings=70, old_refusal_encodings=47,
+                 new_refusal_encodings=23, comparison_success_pairs=12, comparison_failure_pairs=24,
                  new_page_ending_pairs=6, new_crossing_pairs=30,
                  verified_memory_fault_commands=4, actual_native_failed_operations=4,
                  actual_stepped_failed_operations=4, additional_negative_command_selftests=4,
-                 executed_refusal_checks=426, promoted_acceptance_checks=0) and
+                 executed_refusal_checks=420, promoted_acceptance_checks=6) and
              len(record['cases']) == 6 and all(c['accepted'] for c in record['cases']),
              'complete two nineteen-pair cohorts and four failed atomic-memory operations')
         record['status'] = 'passed'
