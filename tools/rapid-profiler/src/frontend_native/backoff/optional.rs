@@ -100,6 +100,7 @@ pub unsafe fn prepare_optional(
             input,
             output,
             pending: None,
+            sink: sink::Context::default(),
             cursor: Cursor::default(),
             history_number: 0,
             history_end: 0,
@@ -135,6 +136,7 @@ pub struct OptionalDriver {
     input: mpsc::Receiver<OptionalCompletedBatch>,
     output: mpsc::SyncSender<OptionalExport>,
     pending: Option<OptionalExport>,
+    pub(super) sink: sink::Context,
     cursor: Cursor,
     history_number: u64,
     history_end: u64,
@@ -178,7 +180,21 @@ impl OptionalDriver {
         }
         e
     }
+    /// Actual queue acceptances, including a delivery whose post-check failed.
+    /// This does not assert that the sink wrote or durably stored the packets.
+    pub fn accepted_exports(&self) -> u64 {
+        self.exported
+    }
     fn emit(&mut self, packet: OptionalExport) -> Result<(), Error> {
+        if self.policy.sink_backpressure() {
+            return self.sink.emit(
+                &self.output,
+                packet,
+                &mut self.pending,
+                &mut self.exported,
+                &mut self.deadline_failure,
+            );
+        }
         if self.pending.is_some() {
             return Err(Error::Sequence);
         }
@@ -334,11 +350,13 @@ impl OptionalDriver {
     pub fn run(&mut self, start: Instant) -> Result<OptionalRunSummary, Error> {
         let common = &self.shared.common;
         if self.started {
+            self.sink.budget = None;
             common.controller_failed.store(true, Ordering::Release);
             return Err(Error::AlreadyStarted);
         }
         self.started = true;
         if common.start.set(start).is_err() {
+            self.sink.budget = None;
             common.controller_failed.store(true, Ordering::Release);
             return Err(Error::AlreadyStarted);
         }
@@ -358,6 +376,7 @@ impl OptionalDriver {
             removal_completed: done.removal_completed,
             controller_completed: done.controller_completed,
         });
+        self.sink.budget = None;
         if result.is_err() {
             self.shared
                 .common
@@ -440,5 +459,7 @@ pub fn optional_matches_history(
     };
     binding_matches(raw.owner, binding, prefix)
 }
+#[cfg(test)]
+mod sink_tests;
 #[cfg(test)]
 mod tests;

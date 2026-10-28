@@ -52,3 +52,12 @@ def parse_terminal(data, k, export_bytes, worker_backpressure=False):
     assert row['accepted_exports'] == row['written_exports'] == row['call_batches'] + row['history_batches'] + row['reports']
     assert 0 < row['written_bytes'] == export_bytes <= 64*1048576 and row['actual_threads_joined'] == 3
     return row
+
+
+def parse_sink_terminal(data, k, export_bytes, worker_backpressure=False):
+    """Authenticate only the opt-in suffix, then retain every old predicate."""
+    suffix = b' sink_backpressure=bounded-poll-window sink_retry_ns=1000000 sink_poll_ns=250000\n'
+    assert 0 < len(data) <= 4096 and data.endswith(suffix) and b'\r' not in data
+    row = parse_terminal(data[:-len(suffix)] + b'\n', k, export_bytes, worker_backpressure)
+    row.update(sink_backpressure='bounded-poll-window', sink_retry_ns=1000000, sink_poll_ns=250000)
+    return row

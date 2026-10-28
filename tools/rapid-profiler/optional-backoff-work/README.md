@@ -51,3 +51,27 @@ env -u PYTHONOPTIMIZE python3 -B tools/rapid-profiler/optional-backoff-work/test
 
 The new checker and test entry point refuse optimized Python before work.
 Existing mandatory controls remain in `backoff-work/test_recipe.py` unchanged.
+
+
+To select the distinct bounded sink-wait qualification, add
+`--sink-backpressure` to the backoff wrapper together with `--optional`;
+`--worker-backpressure` remains independent. For example:
+
+```sh
+env -u PYTHONOPTIMIZE python3 -B tools/rapid-profiler/backoff-work/verify.py \
+  --revision "$REVISION" --raw "$REPO/ignored/optional-both-wait" \
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" \
+  --optional --worker-backpressure --sink-backpressure
+```
+
+The two new CLI routes use the same complete population and original deadlines.
+`parse_sink_terminal` authenticates the exact sink-policy/window/quantum suffix
+before applying every old optional-terminal predicate. The old parser refuses
+that suffix, and the new parser refuses an unmarked line. Four additional pure
+controls cover mode confusion, malformed/duplicate markers, unchanged numeric
+bounds and rejection of the sink flag without optional mode before output
+creation. Existing controls and the 13-call prerequisite remain unchanged.
+
+No waiting policy is a native qualification by its existence. Local Full or
+hard-deadline failure stops the campaign; later cases remain UNRUN. Sink-wait
+results keep their own markers and the earlier failed-campaign link.

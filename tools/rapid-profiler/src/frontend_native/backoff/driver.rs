@@ -13,6 +13,7 @@ pub struct Driver {
     input: mpsc::Receiver<CompletedBatch>,
     output: mpsc::SyncSender<Export>,
     pending: Option<Export>,
+    pub(super) sink: sink::Context,
     cursor: Cursor,
     history_number: u64,
     history_end: u64,
@@ -31,6 +32,8 @@ pub enum DeadlinePhase {
     ClockPoll,
     ArmOperation,
     FinalCompletion,
+    SinkExportPending,
+    SinkExportAccepted,
 }
 /// First deadline refusal only. Times are relative to the original start;
 /// None means before start or an unrepresentable diagnostic endpoint.
@@ -46,7 +49,7 @@ pub struct DeadlineFailure {
     pub at_limit_is_late: bool,
 }
 impl DeadlineFailure {
-    fn at(
+    pub(super) fn at(
         phase: DeadlinePhase,
         start: Instant,
         scheduled: Option<Instant>,
@@ -109,6 +112,7 @@ impl Driver {
             input,
             output,
             pending: None,
+            sink: sink::Context::default(),
             cursor: Cursor::default(),
             history_number: 0,
             history_end: 0,
@@ -132,7 +136,21 @@ impl Driver {
         }
         error
     }
+    /// Actual queue acceptances, including a delivery whose post-check failed.
+    /// This does not assert that the sink wrote or durably stored the packets.
+    pub fn accepted_exports(&self) -> u64 {
+        self.exported
+    }
     fn emit(&mut self, packet: Export) -> Result<(), Error> {
+        if self.policy.sink_backpressure() {
+            return self.sink.emit(
+                &self.output,
+                packet,
+                &mut self.pending,
+                &mut self.exported,
+                &mut self.deadline_failure,
+            );
+        }
         // A failed send retains ownership and immediately stops further progress.
         if self.pending.is_some() {
             return Err(Error::Sequence);
@@ -266,15 +284,18 @@ impl Driver {
     /// or that the caller joined either native worker or sink OS threads.
     pub fn run(&mut self, start: Instant) -> Result<RunSummary, Error> {
         if self.started {
+            self.sink.budget = None;
             self.shared.controller_failed.store(true, Ordering::Release);
             return Err(Error::AlreadyStarted);
         }
         self.started = true;
         if self.shared.start.set(start).is_err() {
+            self.sink.budget = None;
             self.shared.controller_failed.store(true, Ordering::Release);
             return Err(Error::AlreadyStarted);
         }
         let result = self.run_inner(start);
+        self.sink.budget = None;
         if result.is_err() {
             // A retained receiver does not imply that run() will drain again.
             // Publish before close/recovery, which can itself wait on metadata.
@@ -393,6 +414,31 @@ impl Clock {
             stop_reason: None,
         })
     }
+    fn export_budget(
+        &self,
+        due: Option<Instant>,
+        arm_started: Option<Instant>,
+    ) -> Result<sink::Budget, Error> {
+        sink::Budget::new(
+            self.start,
+            due,
+            self.policy.lateness(),
+            self.diagnostic_shutdown_deadline(),
+            arm_started,
+        )
+    }
+    fn body_export_budget(&self, arms: u32) -> Result<sink::Budget, Error> {
+        let due = if self.stopping.is_none() && arms < self.policy.epochs {
+            Some(
+                self.start
+                    .checked_add(self.policy.period() * arms)
+                    .ok_or(Error::Policy)?,
+            )
+        } else {
+            None
+        };
+        self.export_budget(due, None)
+    }
     /// A channel wait must not intentionally pass the next original arm/end.
     /// POLL remains only an upper bound; no deadline or schedule is renewed.
     fn wait_bound(&self, now: Instant, arms: u32) -> Duration {
@@ -407,8 +453,8 @@ impl Clock {
         };
         POLL.min(next.min(self.absolute_end).saturating_duration_since(now))
     }
-    // Diagnostic derivation only, called after an existing predicate refused.
-    // These methods neither make a scheduling decision nor change clock state.
+    // Derive the existing shutdown bound without renewing or mutating it.
+    // The opt-in export budget also copies this exact bound before transfer.
     fn diagnostic_shutdown_deadline(&self) -> Instant {
         self.stopping
             .unwrap_or(self.absolute_end)
@@ -519,6 +565,9 @@ macro_rules! both {
     };
 }
 impl DriverRef<'_> {
+    fn export_budget(&mut self, budget: sink::Budget) {
+        both!(self, d => d.sink.budget = Some(budget));
+    }
     fn policy(&self) -> Policy {
         both!(self, d => d.policy)
     }
@@ -565,14 +614,21 @@ pub(super) fn run_optional(
 ) -> Result<LoopCompletion, Error> {
     run_loop(DriverRef::Optional(driver), start)
 }
-fn run_loop(mut driver: DriverRef<'_>, start: Instant) -> Result<LoopCompletion, Error> {
+fn run_loop(driver: DriverRef<'_>, start: Instant) -> Result<LoopCompletion, Error> {
+    run_loop_with(driver, start, Instant::now)
+}
+fn run_loop_with(
+    mut driver: DriverRef<'_>,
+    start: Instant,
+    mut now: impl FnMut() -> Instant,
+) -> Result<LoopCompletion, Error> {
     let policy = driver.policy();
     let mut clock = Clock::new(start, policy)?;
     let mut max_arm_lateness = Duration::ZERO;
     let mut stop_acknowledged = None;
     let mut removal_completed = None;
     loop {
-        let polled = Instant::now();
+        let polled = now();
         let requested = driver.common().stop.load(Ordering::Acquire);
         let arms = driver.arms();
         match clock
@@ -580,16 +636,22 @@ fn run_loop(mut driver: DriverRef<'_>, start: Instant) -> Result<LoopCompletion,
             .map_err(|error| driver.remember(error, clock.poll_failure(polled, requested, arms)))?
         {
             Decision::Stop => {
-                stop_acknowledged = Instant::now().checked_duration_since(start);
+                if policy.sink_backpressure() {
+                    driver.export_budget(clock.body_export_budget(arms)?);
+                }
+                stop_acknowledged = now().checked_duration_since(start);
                 driver.common().stop.store(true, Ordering::Release);
                 driver.close()?;
-                removal_completed = Instant::now().checked_duration_since(start);
+                removal_completed = now().checked_duration_since(start);
                 driver.history()?;
             }
             Decision::Arm(due) => {
-                let arm_started = Instant::now();
+                let arm_started = now();
+                if policy.sink_backpressure() {
+                    driver.export_budget(clock.export_budget(Some(due), Some(arm_started))?);
+                }
                 driver.arm()?;
-                let completed = Instant::now();
+                let completed = now();
                 arm_due(completed, due, policy.lateness()).map_err(|error| {
                     driver.remember(
                         error,
@@ -608,17 +670,20 @@ fn run_loop(mut driver: DriverRef<'_>, start: Instant) -> Result<LoopCompletion,
             }
             Decision::Wait => (),
         }
+        if policy.sink_backpressure() {
+            driver.export_budget(clock.body_export_budget(driver.arms())?);
+        }
         // Mandatory is an exact no-op. Optional scan work remains charged to
         // the same original clock and never runs after stop acknowledgement.
         if clock.stopping.is_none() {
             driver.maintenance()?;
         }
-        let wait = clock.wait_bound(Instant::now(), driver.arms());
+        let wait = clock.wait_bound(now(), driver.arms());
         driver.receive(wait)?;
         driver.retire()?;
         if clock.stopping.is_some() && driver.ready()? {
             driver.history()?;
-            let completed = Instant::now();
+            let completed = now();
             clock.check_deadline(completed).map_err(|error| {
                 let deadline = clock.diagnostic_shutdown_deadline();
                 driver.remember(
@@ -647,5 +712,7 @@ fn run_loop(mut driver: DriverRef<'_>, start: Instant) -> Result<LoopCompletion,
 
 #[cfg(test)]
 mod backpressure_tests;
+#[cfg(test)]
+mod sink_tests;
 #[cfg(test)]
 mod tests;

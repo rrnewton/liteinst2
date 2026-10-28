@@ -155,4 +155,72 @@ class OptionalBackoffRecipe(unittest.TestCase):
         for mode in (None, 1, 'immediate'): self.refuse(VALID, wait=mode)
 
 
+class SinkBackpressureRecipe(unittest.TestCase):
+    # Independent protocol fixture; never use the parser's suffix to build it.
+    SUFFIX = b' sink_backpressure=bounded-poll-window sink_retry_ns=1000000 sink_poll_ns=250000\n'
+
+    def refuse(self, data, k=10, size=4000000, wait=False):
+        with self.assertRaises((AssertionError, UnicodeDecodeError)):
+            checker.parse_sink_terminal(data, k, size, wait)
+
+    def test_sink_modes_are_explicit_and_do_not_change_old_grammar(self):
+        data = VALID[:-1] + self.SUFFIX
+        got = checker.parse_sink_terminal(data, 10, 4000000)
+        self.assertEqual((got['sink_backpressure'], got['sink_retry_ns'], got['sink_poll_ns']),
+            ('bounded-poll-window', 1000000, 250000))
+        self.assertEqual({k: v for k, v in got.items() if not k.startswith('sink_')},
+            checker.parse_terminal(VALID, 10, 4000000))
+        both = change(data, 'worker_backpressure', 'bounded-wait')
+        self.assertEqual(checker.parse_sink_terminal(both, 10, 4000000, True)['worker_backpressure'], 'bounded-wait')
+        self.refuse(both); self.refuse(data, wait=True); self.refuse(VALID)
+        for old_data in (data, both):
+            with self.assertRaises(AssertionError): checker.parse_terminal(old_data, 10, 4000000)
+        self.assertEqual(checker.parse_terminal(VALID, 10, 4000000)['calls'], 1000)
+
+    def test_sink_suffix_is_exact_once_and_cannot_extend_the_wire_bound(self):
+        data = VALID[:-1] + self.SUFFIX
+        for key, value in (('sink_backpressure', 'immediate'), ('sink_backpressure', 'unbounded'),
+                ('sink_retry_ns', '01000000'), ('sink_retry_ns', 1000001), ('sink_retry_ns', 0),
+                ('sink_retry_ns', 'true'), ('sink_poll_ns', 250001), ('sink_poll_ns', 0)):
+            with self.subTest(key=key, value=value): self.refuse(change(data, key, value))
+        for bad in (data[:-1], data+b'\n', data+data, data[:-1]+self.SUFFIX,
+                data.replace(b' sink_retry_ns=1000000', b''),
+                data.replace(b' sink_retry_ns=1000000 sink_poll_ns=250000', b' sink_poll_ns=250000 sink_retry_ns=1000000'),
+                data.replace(b'\n', b'\r\n'), b'notice\n'+data, data+b'FAILED\n',
+                b'x'*(4097-len(self.SUFFIX))+self.SUFFIX):
+            with self.subTest(size=len(bad)): self.refuse(bad)
+
+    def test_sink_mode_keeps_full_population_clock_and_export_predicates(self):
+        data = VALID[:-1] + self.SUFFIX
+        for key, value in dict(arms=519, reports=519, actions=600, max_entry_prefix=512,
+                max_arm_late_ns=2000001, controller_done_ns=7200000000,
+                written_exports=1370, written_bytes=4000001, post_disable_rearm_coverage='qualified').items():
+            with self.subTest(key=key): self.refuse(change(data, key, value))
+        self.refuse(change(change(data, 'sampled', 799), 'unsampled', 101))
+        self.refuse(data, k=True); self.refuse(data, size=True); self.refuse(data, wait=1)
+        edge = change(change(data, 'max_arm_late_ns', 2000000), 'controller_done_ns', 7199999999)
+        self.assertEqual(checker.parse_sink_terminal(edge, 10, 4000000)['max_arm_late_ns'], 2000000)
+
+    def test_actual_sink_flag_requires_optional_before_output_creation(self):
+        tree = ast.parse((ROOT/'backoff-work/verify.py').read_text())
+        main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
+        guards = []
+        for position, statement in enumerate(main.body):
+            if not isinstance(statement, ast.Assert): continue
+            attrs = [n.attr for n in ast.walk(statement.test) if isinstance(n, ast.Attribute)
+                and isinstance(n.value, ast.Name) and n.value.id == 'a']
+            if set(attrs) == {'sink_backpressure', 'optional'}: guards.append((position, statement))
+        self.assertEqual(len(guards), 1)
+        position, guard = guards[0]
+        mkdir = next(i for i, s in enumerate(main.body) if any(isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Attribute) and n.func.attr == 'mkdir' for n in ast.walk(s)))
+        self.assertLess(position, mkdir)
+        code = compile(ast.fix_missing_locations(ast.Module(body=[guard], type_ignores=[])), '<actual sink guard>', 'exec')
+        for optional, sink in itertools.product((False, True), repeat=2):
+            scope = {'a': SimpleNamespace(optional=optional, sink_backpressure=sink)}
+            if sink and not optional:
+                with self.assertRaises(AssertionError): exec(code, scope)
+            else: exec(code, scope)
+
+
 if __name__ == '__main__': unittest.main()

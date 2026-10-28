@@ -449,3 +449,16 @@ pub(super) fn run_optional(
 ) {
     optional::run(candidate, trusted, k, epochs, calls, path, wait);
 }
+
+// The two sink-wait routes are explicit; the existing routes above stay literal.
+pub(super) fn run_optional_sink_wait(
+    candidate: &Path,
+    trusted: &Path,
+    k: usize,
+    epochs: u32,
+    calls: u64,
+    path: &Path,
+    worker_wait: bool,
+) {
+    optional::run_sink_wait(candidate, trusted, k, epochs, calls, path, worker_wait);
+}

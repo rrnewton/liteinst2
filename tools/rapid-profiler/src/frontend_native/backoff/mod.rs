@@ -23,6 +23,7 @@ use std::time::{Duration, Instant};
 
 mod driver;
 mod optional;
+mod sink;
 mod worker;
 pub use driver::{DeadlineFailure, DeadlinePhase, Driver, RunSummary, StopReason};
 pub use optional::{
@@ -70,6 +71,7 @@ pub struct Policy {
     epochs: u32,
     calls: u64,
     worker_backpressure: bool,
+    sink_backpressure: bool,
 }
 impl Policy {
     /// K10 or K1000, 10ms periods, at most 4096 epochs and 1,000,000 calls.
@@ -87,18 +89,30 @@ impl Policy {
             epochs,
             calls,
             worker_backpressure: false,
+            sink_backpressure: false,
         })
     }
     /// Opt in to waiting only for a full worker-to-controller queue, after a
     /// completed native drain. The original absolute end+shutdown is the cap;
     /// controller failure/disconnection refuses and retains the unsent packet.
-    /// Controller-to-sink Full remains fatal. The default stays immediate.
+    /// This alone leaves sink Full fatal. Sink backpressure is a separate opt-in.
     pub fn with_worker_backpressure(mut self) -> Self {
         self.worker_backpressure = true;
         self
     }
     pub fn worker_backpressure(&self) -> bool {
         self.worker_backpressure
+    }
+    /// Retry full controller-to-sink exports for one fixed 1ms window, with
+    /// 250us sleeps, always capped by the original Clock deadlines. A later
+    /// item gets a new local window but cannot renew an arm/shutdown deadline.
+    /// Default Full, worker transport, queue caps and sink ownership are unchanged.
+    pub fn with_sink_backpressure(mut self) -> Self {
+        self.sink_backpressure = true;
+        self
+    }
+    pub fn sink_backpressure(&self) -> bool {
+        self.sink_backpressure
     }
     pub fn retained(&self) -> usize {
         self.k

@@ -184,3 +184,32 @@ indefinite-service qualification. The earlier seven mandatory campaigns remain
 FAILED in [backoff-independent](../../../evaluation/backoff-independent/README.md),
 including attempts with a passing K10 prefix and a failed or unrun K1000 case.
 See [the optional recipe controls](../optional-backoff-work/README.md).
+
+
+## Optional bounded sink wait
+
+`Policy::with_sink_backpressure()` independently opts into controller-to-sink
+waiting; `sink_backpressure()` reports that choice. The default and worker-only
+routes still refuse sink Full immediately. The new optional CLI routes are
+`optional-backoff-work-sink-wait` and `optional-backoff-work-both-wait` (the latter
+also enables the existing worker wait). Their complete terminal adds exactly
+`sink_backpressure=bounded-poll-window sink_retry_ns=1000000 sink_poll_ns=250000`.
+Old routes and terminal grammars are unchanged.
+
+Use `--optional --sink-backpressure` with this wrapper, optionally adding
+`--worker-backpressure`. All 31 prerequisites still precede fresh K10/K1000
+520-epoch trials. Each emission gets one fixed 1 ms retry window with requested
+sleeps of at most 250 us, capped by its original Clock arm/shutdown limits.
+The window bounds retries, not OS scheduling or an in-progress send completion.
+Full at local expiry stays a failure; hard Clock expiry is Deadline. Queue
+capacity remains four. A send accepted after a hard deadline counts as accepted
+but fails the run, with the receiver owning that item. Acceptance is not a sink
+write, durability or native completion. Stop is acknowledged only at the next
+existing controller boundary and cannot cancel an entered call.
+
+The 2 ms arm-lateness allowance, 10 ms cadence, shutdown bounds, call ceiling,
+output cap, source/artifact/closure checks and qualification predicates remain
+unchanged. This explicit transport policy has no native result from its source
+or recipe alone, and supplies no scheduling/performance guarantee. The
+[398203e optional campaign](../../../evaluation/optional-backoff-398203e/README.md)
+remains FAILED (K10 Full; K1000 UNRUN), independently of future sink-wait trials.

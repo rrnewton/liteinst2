@@ -86,12 +86,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__); ap.add_argument('--revision', required=True)
     ap.add_argument('--worker-backpressure', action='store_true')
     ap.add_argument('--optional', action='store_true', help='require 31 prerequisites, then use the optional CALL/RET facade')
+    ap.add_argument('--sink-backpressure', action='store_true', help='bounded controller-to-sink wait; requires --optional')
     for key in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+key, type=Path, required=True)
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[3]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/backoff-work/verify.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     for p in (repo, a.toolchain, a.user_home, a.cargo_home): assert p.is_absolute() and p.resolve(strict=True) == p and p.is_dir()
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists() and raw.parent.resolve(strict=True) == raw.parent
+    assert not a.sink_backpressure or a.optional
     raw.mkdir(mode=0o700); public = raw/'public'; public.mkdir()
     receipt = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight',
         cases=[dict(k=k, status='UNRUN') for k in (10, 1000)],
@@ -108,9 +110,14 @@ def main():
         receipt['reproduce'].append('--optional')
         receipt['failure_history'].append('evaluation/backoff-independent/README.md')
         receipt['scope'] = 'finite optional driver/metadata qualification; full input/journal/return and Report-count checks are source-attested; trial aggregates do not establish post-disable Fast-before-rearm; deterministic prerequisite control is separate; no new full-state, timing, cheap-off cost, performance or indefinite-service credit'
+    if a.sink_backpressure:
+        receipt['sink_backpressure'] = dict(mode='bounded-poll-window', retry_ns=1000000, poll_ns=250000)
+        receipt['reproduce'].append('--sink-backpressure')
+        receipt['failure_history'].append('evaluation/optional-backoff-398203e/README.md')
     flags = FLAGS + ('optional-frontend', 'optional-backoff-control') if a.optional else FLAGS
     command = 'backoff-work-wait' if a.worker_backpressure else 'backoff-work'
     if a.optional: command = 'optional-'+command
+    if a.sink_backpressure: command = 'optional-backoff-work-both-wait' if a.worker_backpressure else 'optional-backoff-work-sink-wait'
     save = lambda p, v: p.write_text(json.dumps(v, indent=2, sort_keys=True, allow_nan=False)+'\n')
     try:
         cpus = sorted(os.sched_getaffinity(0))[:4]; assert len(cpus) == 4
@@ -227,6 +234,7 @@ def main():
         for case in receipt['cases']:
             k = case['k']; label = f'backoff-k{k}'
             if a.optional: label = 'optional-'+label
+            if a.sink_backpressure: label += '-both-wait' if a.worker_backpressure else '-sink-wait'
             receipt['stage'] = label; case['status'] = 'FAILED'; products_stable()
             directory = raw/label; directory.mkdir(); (directory/'tmp').mkdir()
             export = directory/'export.txt'
@@ -248,7 +256,9 @@ def main():
             assert digest(directory/'stderr.txt')['bytes'] == 0
             exported = digest(export)
             with (directory/'stdout.txt').open('rb') as stream: data = stream.read(4097)
-            if a.optional:
+            if a.sink_backpressure:
+                case.update(checker.parse_sink_terminal(data, k, exported['bytes'], worker_backpressure=a.worker_backpressure))
+            elif a.optional:
                 case.update(checker.parse_terminal(data, k, exported['bytes'], worker_backpressure=a.worker_backpressure))
             else:
                 case.update(parse_terminal(data, k, exported['bytes'], worker_backpressure=a.worker_backpressure))
@@ -268,6 +278,7 @@ def main():
             'written_bytes worker_detached actual_threads_joined export_synced result_input_rsp_checked worker_backpressure scope post_disable_rearm_coverage').split()
         columns = ['k', 'status', *fields]
     elif a.worker_backpressure: columns.append('worker_backpressure')
+    if a.sink_backpressure: columns += ['sink_backpressure', 'sink_retry_ns', 'sink_poll_ns']
     with (public/'cases.csv').open('x', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=columns, extrasaction='ignore', lineterminator='\n')
         writer.writeheader(); writer.writerows(receipt['cases'])

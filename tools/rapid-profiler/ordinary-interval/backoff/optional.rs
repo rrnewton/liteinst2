@@ -188,6 +188,36 @@ pub(super) fn run(
     } else {
         policy
     };
+    run_with_policy(candidate, trusted, path, policy);
+}
+
+pub(super) fn run_sink_wait(
+    candidate: &Path,
+    trusted: &Path,
+    k: usize,
+    epochs: u32,
+    limit: u64,
+    path: &Path,
+    worker_wait: bool,
+) {
+    let policy = api::Policy::ten_ms(k, epochs, limit)
+        .unwrap()
+        .with_sink_backpressure();
+    let policy = if worker_wait {
+        policy.with_worker_backpressure()
+    } else {
+        policy
+    };
+    run_with_policy(candidate, trusted, path, policy);
+}
+
+// One typed policy carries the orthogonal transports; native and ownership
+// checks are shared with the old routes without a wider positional signature.
+fn run_with_policy(candidate: &Path, trusted: &Path, path: &Path, policy: api::Policy) {
+    let k = policy.retained();
+    let epochs = policy.epoch_limit();
+    let limit = policy.call_limit();
+    let wait = policy.worker_backpressure();
     single_main();
     let [worker_cpu, controller_cpu, sink_cpu, main_cpu] = cpus();
     let bytes = expected_file(candidate, trusted);
@@ -318,6 +348,14 @@ pub(super) fn run(
     let (calls, call_error, finish) = worker.join();
     assert_eq!(*data, expected);
     if result.is_err() || call_error.is_some() || finish.status.error.is_some() {
+        if policy.sink_backpressure() {
+            // Queue acceptance may precede a hard-deadline refusal. It is not
+            // sink-write, durability, completed-window or native-call credit.
+            eprintln!(
+                "sink_backpressure=bounded-poll-window sink_retry_ns=1000000 sink_poll_ns=250000 accepted_exports={}",
+                driver.accepted_exports()
+            );
+        }
         eprintln!(
             "optional backoff FAILED result={result:?} call={call_error:?} worker={finish:?}"
         );
@@ -389,8 +427,13 @@ pub(super) fn run(
     let ns =
         |t: Option<Duration>| t.map_or_else(|| "none".to_string(), |d| d.as_nanos().to_string());
     let transport = if wait { "bounded-wait" } else { "immediate" };
+    let sink_transport = if policy.sink_backpressure() {
+        " sink_backpressure=bounded-poll-window sink_retry_ns=1000000 sink_poll_ns=250000"
+    } else {
+        ""
+    };
     println!(
-        "optional-backoff-work COMPLETE originals={} k={k} calls={calls} fast={} slow={} sampled={} unsampled={} arms={} reports={} disabled={} actions={} history_batches={} call_batches={} max_entry_prefix={} epoch_limit={epochs} call_limit={limit} stop_reason={stop_reason} max_arm_late_ns={} stop_ack_ns={} removed_ns={} controller_done_ns={} accepted_exports={} written_exports={} written_bytes={} worker_detached=true actual_threads_joined=3 export_synced=true result_input_rsp_checked=true worker_backpressure={transport} scope=finite-functional-raw-uncalibrated post_disable_rearm_coverage=not-qualified",
+        "optional-backoff-work COMPLETE originals={} k={k} calls={calls} fast={} slow={} sampled={} unsampled={} arms={} reports={} disabled={} actions={} history_batches={} call_batches={} max_entry_prefix={} epoch_limit={epochs} call_limit={limit} stop_reason={stop_reason} max_arm_late_ns={} stop_ack_ns={} removed_ns={} controller_done_ns={} accepted_exports={} written_exports={} written_bytes={} worker_detached=true actual_threads_joined=3 export_synced=true result_input_rsp_checked=true worker_backpressure={transport} scope=finite-functional-raw-uncalibrated post_disable_rearm_coverage=not-qualified{sink_transport}",
         LENGTHS.len(),
         sink.fast,
         sink.slow,
