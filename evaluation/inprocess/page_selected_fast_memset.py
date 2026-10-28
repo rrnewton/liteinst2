@@ -247,13 +247,17 @@ def main():
             p = interp[0];value = data[p[2]:p[2]+p[5]];need(value.startswith(b'/') and value.endswith(b'\0') and b'\0' not in value[:-1],'exact interpreter path')
             loader = pin(os.fsdecode(value[:-1]))
             _,out,err = run(mode+'-libraries',[loader,'--list',path]);need(not err,'loader dependency observation stderr')
-            libraries = {}
+            libraries = {};vdso = 0
             for line in out.decode().splitlines():
-                if re.fullmatch(r'\s*linux-vdso.so.1 \(0x[0-9a-f]+\)',line):continue
+                if re.fullmatch(r'\s*linux-vdso\.so\.1 \(0x[0-9a-f]+\)',line):vdso += 1;continue
                 m = re.fullmatch(r'\s*(?:(\S+) => )?(/\S+) \(0x[0-9a-f]+\)',line)
                 need(m is not None,'closed actual loaded-library row');key = m[1] or 'interpreter'
+                if m[1] and m[1].startswith('/'):
+                    need(pin(m[1]) == pin(m[2]) == loader, 'absolute loader aliases name the actual ELF interpreter')
+                    key = 'interpreter'
                 need(key not in libraries,'unique loaded-library identity');libraries[key] = dict(path=str(pin(m[2])),**fact(m[2]))
-            need(set(libraries) == {'libc.so.6','interpreter'} and libraries['interpreter']['path'] == str(loader), 'only actual libc and interpreter')
+            need(vdso == 1 and set(libraries) == {'libc.so.6','interpreter'} and
+                 libraries['interpreter']['path'] == str(loader), 'only actual libc and interpreter')
             r['inspection'][mode] = dict(layout=layout,body=body,libraries=libraries,elf=fact(path))
         need(sizes[0] == sizes[1], 'same actual scalar/fast slot layout');r['slot_bytes'] = sizes[0]
         r['build_status'] = 'passed';baseline = None
