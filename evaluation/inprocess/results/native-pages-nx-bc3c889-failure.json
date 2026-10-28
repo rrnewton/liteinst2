@@ -1,0 +1,52 @@
+{
+  "admitted_pages": 1139,
+  "bounds": {
+    "cpu_seconds": 30,
+    "file_bytes": 16777216,
+    "memory_bytes": 536870912,
+    "wall_seconds": 60
+  },
+  "case": "ls-default",
+  "closed_pages": 1139,
+  "completed_tf_steps": 367309,
+  "cpuid_profile": "nx-only-raw",
+  "decoder_code": 3680,
+  "failure_code": 1207,
+  "failure_stderr": {
+    "bytes": 6603,
+    "sha256": "43663eda0f0d3d5a47332b1d75bf7c33b4f88db718fc2947127094c5f673cf4c"
+  },
+  "footprint_policy": 0,
+  "gated_exit": 125,
+  "gated_whole_process_ns": 30078010811,
+  "hardware": {
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "machine": "x86_64",
+    "model": "AMD EPYC 9D85 158-Core Processor",
+    "reserved_cpu_count": 1
+  },
+  "instruction_length": 5,
+  "matrix_receipt": {
+    "bytes": 26697,
+    "sha256": "f6517ecbe78a13ecc8b7fdf435dfe330dfa4ee55b92b78eb904e405461afc4ab"
+  },
+  "native_exit": 0,
+  "output_equal": false,
+  "refused_source_borrow_released": true,
+  "refused_source_opened": false,
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_pages.py",
+    "--expect-revision",
+    "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+    "--output",
+    "evaluation/inprocess/results/native-pages-nx-bc3c889.json",
+    "--library-root",
+    "/usr/lib64",
+    "--cpuid-nx"
+  ],
+  "revision": "bc3c88937d7a0db229a4f98badbcef79baf5c49d",
+  "schema": 1,
+  "scope": "Terminal refusal prefix only. The original completion reader rejects this operation; no completion or performance qualification.",
+  "status": "failed"
+}
