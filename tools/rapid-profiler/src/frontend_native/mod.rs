@@ -107,12 +107,19 @@ pub use always_on::{
 pub use module::ordinary::TrustedFunctionSelection;
 /// Separate bounded scalar-symbol admission; no publication or interval execution.
 pub use module::ordinary::{IntegerLeafCertificate, IntegerLeafContract, LoadedIntegerLeaf};
+/// Separate ordinary-caller admission without a per-call library gate.
+pub use module::ordinary::{LoadedNormalLeaf, NormalLeafContract};
 
 /// Closed two-function admission only; execution awaits its separate tree profile.
 pub use module::ordinary::{
     CallTreeCertificate, LoadedCallTree, TreeCallEdge, TreeContract, TreeRootCertificate,
 };
 
+pub use always_on::normal::{
+    NormalAcknowledgement, NormalBatch, NormalClient, NormalRecord, NormalThread, NormalTotals,
+    PreparedNormalController,
+};
+pub use always_on::site::ordinary::{InstalledNormalSite, NormalSitePreparation};
 /// Separate ordinary scalar-function interval profile; raw, uncalibrated timing.
 pub use always_on::site::ordinary::{OrdinarySitePreparation, PreparedOriginalCall};
 pub use always_on::{

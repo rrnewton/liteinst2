@@ -3,7 +3,7 @@ use super::*;
 use rapid_profiler::frontend_native::{IntervalBatch, TrustedFunctionSelection};
 
 #[path = "../strnlen-work/cases.rs"]
-mod cases;
+pub(super) mod cases;
 mod check {
     crate::consumer_checks::consumer_check!();
 }

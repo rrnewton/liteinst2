@@ -139,19 +139,28 @@ impl LoadedIntegerLeaf {
         contract: IntegerLeafContract,
     ) -> Result<&'static mut Self, SetupRefusal> {
         contract.check()?;
-        let parsed = parse(selection)?;
-        // SAFETY: complete private parser and continuous external contract above.
-        let retained = unsafe { retain_loader(path, selection.trusted_final_elf)? };
-        let (address, bias) = resolve(retained, &parsed)?;
-        let source_start = bias.checked_add(parsed.page).ok_or(SetupRefusal::Format)?;
-        let certificate = cfg::admit(&parsed.code, address)?;
-        let loaded = Box::leak(Box::new(Self {
-            owner: retained,
-            parsed,
-            certificate,
-            source_start,
-        }));
-        loaded.verify_original()?;
-        Ok(loaded)
+        // SAFETY: the unchanged gate-exclusive selected-owner contract holds.
+        unsafe { load_selected_owner(path, selection) }
     }
+}
+
+// The caller supplies its own complete selection and continuous calling contract.
+pub(super) unsafe fn load_selected_owner(
+    path: &Path,
+    selection: &TrustedFunctionSelection<'_>,
+) -> Result<&'static mut LoadedIntegerLeaf, SetupRefusal> {
+    let parsed = parse(selection)?;
+    // SAFETY: complete private parser and continuous external contract above.
+    let retained = unsafe { retain_loader(path, selection.trusted_final_elf)? };
+    let (address, bias) = resolve(retained, &parsed)?;
+    let source_start = bias.checked_add(parsed.page).ok_or(SetupRefusal::Format)?;
+    let certificate = cfg::admit(&parsed.code, address)?;
+    let loaded = Box::leak(Box::new(LoadedIntegerLeaf {
+        owner: retained,
+        parsed,
+        certificate,
+        source_start,
+    }));
+    loaded.verify_original()?;
+    Ok(loaded)
 }
