@@ -598,15 +598,25 @@ impl Drop for Raw {
     }
 }
 
+/// Independent reference collection on the current, already masked tracer
+/// thread. The isolated backing caller separately proves main-thread singleton
+/// ownership; the ordinary test wrapper below still uses its masked worker.
+pub fn original_current_thread(fixture: &Fixture) -> Transcript {
+    assert_eq!(mask(), TRACER_MASK);
+    let mut raw = Raw::launch(fixture);
+    let result = raw.collect(fixture);
+    raw.cleanup();
+    reaped(&raw.pin);
+    assert_eq!(mask(), TRACER_MASK);
+    result
+}
+
+#[cfg(test)]
 pub fn original(fixture: Arc<Fixture>) -> Transcript {
     let (send, receive) = std::sync::mpsc::sync_channel(1);
     let worker = spawn_masked(move || {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let mut raw = Raw::launch(&fixture);
-            let result = raw.collect(&fixture);
-            raw.cleanup();
-            reaped(&raw.pin);
-            result
+            original_current_thread(&fixture)
         }));
         let _ = send.send(result);
     });
