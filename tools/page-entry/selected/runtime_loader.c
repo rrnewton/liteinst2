@@ -19,6 +19,16 @@
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_CPUID_NX_ONLY
+#if LI2_CPUID_NX_ONLY != 1 || !defined(LI2_NATIVE_PAGES) || !defined(LI2_TF_HANDOFF) || \
+    !defined(LI2_REGISTER_RUN) || !defined(LI2_MAPS_PHASE_REUSE) || !defined(LI2_RSEQ_INACTIVE)
+#error "CPUID NX-only requires the complete native-page/TF/register/maps/rseq composition"
+#endif
+#ifdef LI2_ONESHOT_PUBLICATION
+#error "CPUID NX-only is a distinct native-page profile, not a one-shot profile"
+#endif
+static void selected_cpuid_nx_report(unsigned,unsigned);
+#endif
 #include <linux/audit.h>
 #include <fcntl.h>
 
@@ -99,6 +109,8 @@ static void report(unsigned status,unsigned code,long detail) {
     uint64_t patches=0;
     for(unsigned i=0;i<selected_oneshot_used;i++)patches+=selected_oneshot_owners[i].state.published==1;
     field(&w,",\"source_patches\":",patches);
+#elif defined(LI2_CPUID_NX_ONLY)
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_native_pages_cpuid_nx\",\"source_patches\":0");
 #elif defined(LI2_NATIVE_PAGES)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_native_pages\",\"source_patches\":0");
 #elif defined(LI2_REGISTER_RUN)
@@ -153,6 +165,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_SELECTED_PROVIDER
     selected_provider_report(status,code);
+#endif
+#ifdef LI2_CPUID_NX_ONLY
+    selected_cpuid_nx_report(status,code);
 #endif
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
 #ifdef LI2_ONESHOT_PUBLICATION
@@ -495,9 +510,19 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #ifdef LI2_ONESHOT_PUBLICATION
     checked(!raw(SYS_rt_sigaction,SIGILL,(long)&action,0,8,0,0),235,1);
 #endif
+#ifdef LI2_CPUID_NX_ONLY
+    /* The real entry.S CPUID and pre-arm hardware probe already returned.
+       Never query, enable or disable CPUID in this explicit profile. */
+    checked(selected_cpuid_nx.hardware_entered==1 && selected_cpuid_nx.hardware_returned==1 &&
+            selected_hardware.abi_version==1 && !selected_hardware.reserved,1610,0);
+    int tsc=0;
+    checked(!raw(SYS_prctl,PR_GET_TSC,(long)&tsc,0,0,0,0) && tsc==PR_TSC_ENABLE,237,0);
+    checked(!raw(SYS_prctl,PR_SET_TSC,PR_TSC_SIGSEGV,0,0,0,0),238,0);
+#else
     checked(raw(SYS_arch_prctl,ARCH_GET_CPUID,0,0,0,0,0)==1,236,0);int tsc=0;
     checked(!raw(SYS_prctl,PR_GET_TSC,(long)&tsc,0,0,0,0) && tsc==PR_TSC_ENABLE,237,0);
     checked(!raw(SYS_arch_prctl,ARCH_SET_CPUID,0,0,0,0,0) && !raw(SYS_prctl,PR_SET_TSC,PR_TSC_SIGSEGV,0,0,0,0),238,0);
+#endif
     checked(!raw(SYS_prctl,PR_SET_SYSCALL_USER_DISPATCH,PR_SYS_DISPATCH_ON,(long)li2_gateway_start,li2_gateway_end-li2_gateway_start,0,0),239,0);
 #ifdef LI2_NATIVE_PAGES
     result=li2_native_seccomp_install(raw,(uintptr_t)li2_gateway_start,(uintptr_t)li2_gateway_end);

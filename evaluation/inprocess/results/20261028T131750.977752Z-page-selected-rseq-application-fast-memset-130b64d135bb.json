@@ -1,0 +1,925 @@
+{
+  "accepted_cases": 17,
+  "alias_manifest_sha256": "e32f69368185871b5507033d50670a507ede2167d5fbb337fed5d4d838d1da15",
+  "artifact_manifest_sha256": "25a7dd10a04c7c90cbded540639f1a1eacd38a4860752df7f4ab2c62d58104c6",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_evidence_sha256": "821fcc0a81bfb39cfeb25289915e13a5e450679d5f91ac12ab1d7774a5758dec",
+  "build_status": "passed",
+  "case_rows_sha256": "73fb38fb3cc58f19112aba7f2f594856d4298a308e2433f4d064ff15d8073808",
+  "cases": [
+    {
+      "accepted": true,
+      "actual_trap": 0,
+      "counts": [
+        13,
+        2,
+        2,
+        9,
+        97,
+        11,
+        0,
+        1,
+        9
+      ],
+      "error": 0,
+      "guard_kind": 0,
+      "name": "registration",
+      "namespace": {
+        "launch.json": {
+          "bytes": 851,
+          "sha256": "c50adeea45928948859fcea55b81c525c3bdae5bbadbe695cc03d0bd875931d3"
+        },
+        "namespace.json": {
+          "bytes": 1855,
+          "sha256": "fb1a4d9a4f82c6ca1f13282555629539bf449b625e78c22dc95b3357e8b3d558"
+        }
+      },
+      "native_kind": "complete_operation",
+      "new_rx_calls": 173,
+      "operation_exit": 0,
+      "outcome": "completed",
+      "source_pc": 0,
+      "status": 0,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 0,
+      "counts": [
+        3,
+        1,
+        1,
+        1,
+        76,
+        20,
+        1,
+        1,
+        3
+      ],
+      "error": 0,
+      "guard_kind": 0,
+      "name": "disjoint",
+      "namespace": {
+        "launch.json": {
+          "bytes": 843,
+          "sha256": "772d000baf231f01a1848bb7845c9c96cd1b6a90ee214e678db7600431c8b554"
+        },
+        "namespace.json": {
+          "bytes": 1835,
+          "sha256": "e64544fd8cf2acdf83dbd971e1ff3aa81c517d7c69ee3c0181267a4f8ac356c0"
+        }
+      },
+      "native_kind": "complete_operation",
+      "new_rx_calls": 140,
+      "operation_exit": 0,
+      "outcome": "completed",
+      "source_pc": 0,
+      "status": 0,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "error": 1209,
+      "guard_kind": 2,
+      "name": "nonzero_preissue",
+      "namespace": {
+        "launch.json": {
+          "bytes": 859,
+          "sha256": "153e4da76549006b8feb030464fc1055444a9ad16f02d31855870e7ee6310f6f"
+        },
+        "namespace.json": {
+          "bytes": 1875,
+          "sha256": "549cd554d02b71d2261cc5279710a41de512eba8c2563328eab5df2fa71e8f18"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198678,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 1,
+      "word_terminal": 1
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        9,
+        3,
+        0,
+        0,
+        0
+      ],
+      "error": 1205,
+      "guard_kind": 1,
+      "name": "mov_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 849,
+          "sha256": "ee82d37f31de98e4372ac4a875fdb40b2eb6eaf1b46464c4abb10515acf66a05"
+        },
+        "namespace.json": {
+          "bytes": 1850,
+          "sha256": "2e8424f5340cbcf34aa4eda182a4e491f72d0e57faca6d04bf28bb6bcea746c3"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198716,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        9,
+        3,
+        0,
+        0,
+        0
+      ],
+      "error": 1205,
+      "guard_kind": 1,
+      "name": "zero_store_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 863,
+          "sha256": "d4f0295f232535bf9c2dc78cf219439ec06aca24b9737d585d09ecaee790eafa"
+        },
+        "namespace.json": {
+          "bytes": 1885,
+          "sha256": "ffcdca438069a99c92923f0356cdaffd8ec7e2e04ce7d872d67294d06ba588be"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198716,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 1,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        10,
+        3,
+        0,
+        0,
+        0
+      ],
+      "error": 1205,
+      "guard_kind": 1,
+      "name": "trace_mov_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 861,
+          "sha256": "9297427cf0e374b04bed1baa1ea3a0253368aa5eab70817698dc56af535b3ff3"
+        },
+        "namespace.json": {
+          "bytes": 1880,
+          "sha256": "cda7e748d796fe55bd0d986402715d88efefc46ecfa85dd08787acb3ef581701"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198720,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        10,
+        3,
+        0,
+        0,
+        0
+      ],
+      "error": 1205,
+      "guard_kind": 1,
+      "name": "sse_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 849,
+          "sha256": "37f39b2de0ce8d9de0bfdb828cfb93c84a42d0c6ae25552c1f2e90da2e332cb0"
+        },
+        "namespace.json": {
+          "bytes": 1850,
+          "sha256": "bbd330ac8bf2df1afb21b84dd003e1fa3babcc8c31531afa000fe9c605805fd6"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198720,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        9,
+        3,
+        0,
+        0,
+        0
+      ],
+      "error": 1205,
+      "guard_kind": 1,
+      "name": "call_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 851,
+          "sha256": "a0e30b86a6f586c69851b8ad9da93c3804061f0e9a2f1fae0a29a2fc09df5331"
+        },
+        "namespace.json": {
+          "bytes": 1855,
+          "sha256": "8e622f6c2580f3ebf79b3d4d80da2c2f5ded3d47294ab99aafc4d0c0a805e741"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198716,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        9,
+        3,
+        0,
+        0,
+        0
+      ],
+      "error": 1205,
+      "guard_kind": 1,
+      "name": "push_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 851,
+          "sha256": "7d682916e9defa710b08f6676ead26aa472084359d67c7a91f72612d2ad653c6"
+        },
+        "namespace.json": {
+          "bytes": 1855,
+          "sha256": "be35787144ccf61e91e8c58f618961941c228e2b33e9de0f7b4a10b14557a211"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198716,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        10,
+        3,
+        1,
+        0,
+        0
+      ],
+      "error": 1205,
+      "guard_kind": 1,
+      "name": "rep_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 849,
+          "sha256": "d784c18218ab9b9f92b156247e08903499f2b73d910144887f909613ae0a3ff0"
+        },
+        "namespace.json": {
+          "bytes": 1850,
+          "sha256": "4056c4efbb9aa8549408aafe5683079f69c856ae96618400664502c51f9772d6"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198726,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        13,
+        3,
+        0,
+        0,
+        1
+      ],
+      "error": 1205,
+      "guard_kind": 2,
+      "name": "read_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 851,
+          "sha256": "3f4063b41f5ad945af55772e3f6f14caa9999cbe2838f1769e86145d1caf56df"
+        },
+        "namespace.json": {
+          "bytes": 1855,
+          "sha256": "16a2a4ad57a2de64cb47d6c014deec462d216930621869697838d891d741fe53"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198844,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        13,
+        3,
+        0,
+        0,
+        1
+      ],
+      "error": 1205,
+      "guard_kind": 2,
+      "name": "getrandom_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 861,
+          "sha256": "375ea85f19546034fb2ed7af2a6d7998589e80012d07318bfd73c8c142ce22f2"
+        },
+        "namespace.json": {
+          "bytes": 1880,
+          "sha256": "113da01e49187151c2c20e33d2531f1eb133c2db82811eaf22a10736e1d95fb0"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198766,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        13,
+        2,
+        0,
+        0,
+        1
+      ],
+      "error": 158,
+      "guard_kind": 2,
+      "name": "munmap_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 855,
+          "sha256": "51a3c6c3988d68425fe68ebf56739932d84dd6a042bd6ccce89df749a7e7849b"
+        },
+        "namespace.json": {
+          "bytes": 1865,
+          "sha256": "a24be9afd281dcec4a431370d40d6a86f4a897fbecbe71e31c40436363f0b3ec"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198766,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        13,
+        2,
+        0,
+        0,
+        1
+      ],
+      "error": 155,
+      "guard_kind": 2,
+      "name": "mprotect_overlap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 859,
+          "sha256": "7b939e83ad7e67a06e33a99802f7471734942290e8d0953ad88091e9663f4cfb"
+        },
+        "namespace.json": {
+          "bytes": 1875,
+          "sha256": "666808d06ebee3dde0e2b6d31c1a8c005e70e6d75e4fed0fd15d6905019eed10"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198766,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        8,
+        2,
+        0,
+        0,
+        0
+      ],
+      "error": 1207,
+      "guard_kind": 1,
+      "name": "pop_memory_unsupported",
+      "namespace": {
+        "launch.json": {
+          "bytes": 871,
+          "sha256": "d2c51b75d04a937e8d0e77c0c45dd05da711502758bf639c40262af0dbed5326"
+        },
+        "namespace.json": {
+          "bytes": 1905,
+          "sha256": "34549fa260e5658b4ab87a24b83527cda9ec54e88365582e7be4c8372d3a5f59"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198706,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        13,
+        2,
+        0,
+        0,
+        1
+      ],
+      "error": 1207,
+      "guard_kind": 2,
+      "name": "readv_unsupported",
+      "namespace": {
+        "launch.json": {
+          "bytes": 861,
+          "sha256": "118977b4d69725adcbd0fc36f9e9a67b0c9170d2db80c41df1306b0db5423b5b"
+        },
+        "namespace.json": {
+          "bytes": 1880,
+          "sha256": "c109d40e24cec236b617b5d2385783bf81297a353bf49705e6a2ed36afe3178f"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198844,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    },
+    {
+      "accepted": true,
+      "actual_trap": 14,
+      "counts": [
+        2,
+        1,
+        0,
+        1,
+        13,
+        2,
+        0,
+        0,
+        1
+      ],
+      "error": 1207,
+      "guard_kind": 2,
+      "name": "ioctl_unsupported",
+      "namespace": {
+        "launch.json": {
+          "bytes": 861,
+          "sha256": "289a2fd0570a7c71652e15701604934bc6681e2e43e8d415d0b8c40752a0aca2"
+        },
+        "namespace.json": {
+          "bytes": 1880,
+          "sha256": "b5601c2edaf7735d66971cf541241196a167b333a1b977e40e84e6da89fbf8ef"
+        }
+      },
+      "native_kind": "stopped_before_forbidden_operation",
+      "new_rx_calls": 0,
+      "operation_exit": 125,
+      "outcome": "required_refusal",
+      "source_pc": 4198766,
+      "status": 125,
+      "target_raw_calls": 0,
+      "word_before": 0,
+      "word_terminal": 0
+    }
+  ],
+  "command_count": 75,
+  "command_rows_sha256": "465f9246f2a4e3f0924e5f9b3e0804ba4714b32f4f50a25f0d4e2bc7364f53a6",
+  "completed_cases": 2,
+  "cpu": 1,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "130b64d135bb0275e974577fd344543b7ae2debc",
+  "failure_type": null,
+  "fast_memset_body": {
+    "bytes": 15,
+    "sha256": "9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f"
+  },
+  "final_error_count": 0,
+  "finite_command_count": 52,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "input_manifest_sha256": "f11aae30aee91b66796fe943e8403634da3bd32ee22fafaea52ebfb60b893f7a",
+  "private_receipt": {
+    "bytes": 691145,
+    "sha256": "1b1327401b831944b91ff6aa7f45d867a7787f6f2ccdc07713bae88def1dcb82"
+  },
+  "profile": "page-selected-rseq-application-fast-memset-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_rseq_application.py",
+    "--expect-revision",
+    "130b64d135bb0275e974577fd344543b7ae2debc",
+    "--fast-memset"
+  ],
+  "required_cases": 17,
+  "required_refusals": 15,
+  "rseq_build_sha256": "4de2cdc7b76987cabb1d53dff44fabb797f9568af80901c2dc69cc2a1670cadc",
+  "rseq_build_status": "passed",
+  "scope": "Two fresh-exec whole applications and15 named pre-effect refusals. No active critical sections, threads or complete B3 claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "130b64d135bb0275e974577fd344543b7ae2debc",
+    "source_manifest_sha256": "434c8a4fb7fcf88b587aed7d6eb3deb4a6b0f6adddbee512330c4e5a1ada557f",
+    "tracked_clean": true,
+    "tree": "36d134f6ac39aab0bd827e41377773152a7e2b28"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T131750.977752Z",
+  "status": "passed_finite_inactive_profile",
+  "tool_bindings_sha256": "8f455ac1bac68af69cd5eca2a538f17764ca3397fd32c57da82b178d5386640d",
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "version": 1
+}

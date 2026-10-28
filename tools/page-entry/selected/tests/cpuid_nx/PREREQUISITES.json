@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "scope": "Exact reviewed NX R1 plus the committed configured-provider source composition; no one-shot mode",
+  "files": [
+    {
+      "path": "evaluation/inprocess/page_selected_provider_libraries.py",
+      "fact": {
+        "bytes": 3748,
+        "sha256": "389e2b2b60dd6dfe760e29de4e3b48518df0f58d14c76e5eb53cb5c3bd90eb79"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/build-cpuid-nx.sh",
+      "fact": {
+        "bytes": 3433,
+        "sha256": "de2808ac31bfe6f538d2ef20f643a691c0a39090348daf6132000df6dde51300"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/build-native-pages.sh",
+      "fact": {
+        "bytes": 3419,
+        "sha256": "50905fb6cca4ff16d7f9a6cc11badd15a4ced124f936ab2e3146d0278f34bef2"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/provider.c",
+      "fact": {
+        "bytes": 10287,
+        "sha256": "ab50a5f9bca86dd836f4e5922b127de5f43007aefa9e4ab762eb90fab47ea674"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/provider_callback.h",
+      "fact": {
+        "bytes": 1483,
+        "sha256": "06e41fdedcb6a33c46e21ada3242c3e8b7333fa06bbcf99dafa7cd76fb8b59c7"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/provider_policy.h",
+      "fact": {
+        "bytes": 1887,
+        "sha256": "b17ae37da60405d5d67c342deedb639c5d08ce318e93457a76cb9fb72e67db02"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/runtime_loader.c",
+      "fact": {
+        "bytes": 26706,
+        "sha256": "feacc097a77367c976548b968567af20699544765bad523016337769b4ed8e8c"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/selected_controller.inc",
+      "fact": {
+        "bytes": 32155,
+        "sha256": "9605e573c0ad4f5938da387583aa33514fa285468a7344c4beb3dc21c54172d6"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/selected_cpuid_nx.inc",
+      "fact": {
+        "bytes": 4763,
+        "sha256": "97955af70280778d172eee4543eefd6c1141665e4f2244a14528f28605c17742"
+      }
+    },
+    {
+      "path": "tools/page-entry/selected/selected_provider.inc",
+      "fact": {
+        "bytes": 5974,
+        "sha256": "0627535af9a8a18357846f05b7f19f4fe46c1ac8d94a546e0a964e9a04d87b50"
+      }
+    }
+  ]
+}

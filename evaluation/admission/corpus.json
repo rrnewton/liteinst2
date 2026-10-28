@@ -6123,7 +6123,7 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 38
+        "tests": 45
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6282,8 +6282,8 @@
         "tests": 9
       },
       "test/frontend_native_calibrations": {
-        "ignored": 0,
-        "tests": 82
+        "ignored": 1,
+        "tests": 95
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6498,8 +6498,8 @@
         "tests": 60
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 8,
-        "tests": 352
+        "ignored": 27,
+        "tests": 378
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
