@@ -28,13 +28,20 @@ the public sample and row columns also retain each fixture/ordinal separately.
 The private timer uses raw `clock_gettime(CLOCK_MONOTONIC_RAW)` through the
 existing trusted syscall site, while TSC permission stays unchanged. It adds no
 application clock API. Each process retains 64 adjacent-read calibration pairs;
-no overhead is subtracted and zero deltas remain observations. Each selected
+no overhead is subtracted and zero deltas remain observations. This profile has
+no registered timing observer: each raw clock syscall invalidates map-phase
+reuse on entry and return. Measured handler/cycle intervals include that
+clock-induced map-reuse invalidation; they do not estimate uninstrumented runtime.
+Each selected
 row records five timestamps: outer-handler entry after its existing guard,
 checked fixture callback entry/return, outer-handler tail after owner cleanup,
 and the next genuine NX entry at the exact original successor PC. That next
 event must pass the existing source preparation, decode and fault-range guards.
-Adjacent selected effects share one entry timestamp. A missing, refused or
-different next event fails the measurement instead of supplying a duration.
+Adjacent selected effects share one entry timestamp. A matching PC on a TRACE
+completion is not an NX entry and consumes no timing read. A genuine NX entry
+sample is tentative until the selected ingress authenticates and consumes it in
+the same handler; an unconsumed sample fails, including a native retry. A missing,
+refused or different next event fails instead of supplying a duration.
 
 The reported intervals are callback return minus callback entry, handler tail
 minus entry, next NX entry minus tail, and next NX entry minus current entry.

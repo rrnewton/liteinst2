@@ -7,6 +7,13 @@ _Static_assert(sizeof(struct hc_record)==2304,"complete fixed timing record");
 static struct hc_record hc_record;
 static struct { long sec,nsec; } hc_clock_value;
 static unsigned hc_initialized,hc_mode,hc_emitted,hc_active,hc_index,hc_pending,hc_pending_index;
+/* A matching PC can also be an ordinary instruction's TRACE completion.
+   Only an authentic NX event may tentatively sample the outer-handler entry;
+   selected_fetch must consume it in this same handler before a row is active. */
+static unsigned hc_tentative,hc_tentative_index;
+static uint64_t hc_tentative_time;
+static const siginfo_t *hc_tentative_si;
+static const ucontext_t *hc_tentative_context;
 static int hc_word(const char *actual,const char *expected) {
     size_t i=0;while(expected[i] && actual[i]==expected[i])++i;
     return !actual[i] && !expected[i];
@@ -72,10 +79,17 @@ static void b2_initialize(void) {
 }
 static __attribute__((noinline,noclone)) void hc_handler_enter(int sig,const siginfo_t *si,const ucontext_t *uc) {
     if(!hc_initialized || selected_selftesting || hc_emitted)return;
-    checked(!hc_active && si && uc,1762,0);
+    checked(!hc_active && !hc_tentative && si && uc,1762,0);
     uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
     unsigned i=(unsigned)b2_script_committed;
-    unsigned start=i<B2_SCRIPT_ROWS && pc==b2_script[i].pc;
+    uint64_t mask=0;copy(&mask,&uc->uc_sigmask,8);
+    unsigned start=i<B2_SCRIPT_ROWS && pc==b2_script[i].pc &&
+        sig==SIGSEGV && si->si_signo==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
+        uc->uc_mcontext.gregs[REG_TRAPNO]==14 && uc->uc_mcontext.gregs[REG_ERR]==21 &&
+        ((uint64_t)uc->uc_mcontext.gregs[REG_CSGSFS]&0xffff)==0x33 && mask==SELECTED_MASK &&
+        ((uint64_t)uc->uc_mcontext.gregs[REG_EFL]&(SELECTED_RF|SELECTED_TF))==SELECTED_RF &&
+        (uintptr_t)si->si_addr>=pc && (uintptr_t)si->si_addr<b2_script[i].next &&
+        (uintptr_t)uc->uc_mcontext.gregs[REG_CR2]==(uintptr_t)si->si_addr;
     if(!hc_pending && !start)return;
     uint64_t now=hc_clock();
     if(hc_pending) {
@@ -95,9 +109,28 @@ static __attribute__((noinline,noclone)) void hc_handler_enter(int sig,const sig
         uint64_t *v=hc_record.rows[i].v;
         checked(!v[0] && b2_script_prepared==(sig_atomic_t)i &&
                 b2_script_accepted==(sig_atomic_t)i,1762,3);
-        v[1]=i;v[2]=b2_script[i].kind;v[3]=pc;v[4]=b2_script[i].next;v[5]=now;
-        __asm__ volatile("":::"memory");v[0]=1;hc_active=1;hc_index=i;
+        hc_tentative_index=i;hc_tentative_time=now;
+        hc_tentative_si=si;hc_tentative_context=uc;
+        __asm__ volatile("":::"memory");hc_tentative=1;
     }
+}
+static void hc_selected_enter(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    if(selected_selftesting)return;
+    unsigned i=(unsigned)b2_script_committed;
+    uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
+    if(i>=B2_SCRIPT_ROWS || pc!=b2_script[i].pc) {
+        checked(!hc_tentative,1769,0);return;
+    }
+    /* selected_fetch has already authenticated its genuine NX signal, flags
+       and mask. This is the same still-active handler, not a later retry. */
+    checked(hc_initialized && !hc_emitted && handling && !hc_active && hc_tentative==1 &&
+        sig==SIGSEGV && si==hc_tentative_si && uc==hc_tentative_context &&
+        i==hc_tentative_index && b2_script_prepared==(sig_atomic_t)i &&
+        b2_script_accepted==(sig_atomic_t)i,1769,1);
+    uint64_t *v=hc_record.rows[i].v;checked(!v[0],1769,2);
+    v[1]=i;v[2]=b2_script[i].kind;v[3]=pc;v[4]=b2_script[i].next;v[5]=hc_tentative_time;
+    __asm__ volatile("":::"memory");v[0]=1;hc_active=1;hc_index=i;
+    hc_tentative=0;hc_tentative_si=0;hc_tentative_context=0;
 }
 static void hc_next_validated(void) {
     if(!hc_pending)return;
@@ -134,6 +167,7 @@ static __attribute__((noinline,noclone)) int hc_syscall_callback(const struct li
     hc_callback_enter(LI2_SYSCALL);return hc_callback_return(b2_syscall_callback(in,out));
 }
 static void b2_entry(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    hc_selected_enter(sig,si,uc);
     if(!hc_mode) {hc_original_entry(sig,si,uc);return;}
     if(selected_selftesting)return;
     checked(b2_initialized && !b2_observation_pending && !b2_before_seen && !b2_finished,1765,0);
@@ -189,6 +223,7 @@ static void b2_after(const ucontext_t *uc) {
     v[25]=(uint64_t)b2_script_prepared;v[26]=(uint64_t)b2_script_accepted;v[27]=(uint64_t)b2_script_committed;
 }
 static __attribute__((noinline,noclone)) void hc_handler_leave(void) {
+    checked(!hc_tentative,1769,3); /* No unconsumed NX sample or retry exemption. */
     if(!hc_initialized || selected_selftesting || !hc_active)return;
     uint64_t *v=hc_record.rows[hc_index].v;
     v[28]=li2_lifecycle_fetch_interlock();v[29]=selected_step_pending;v[30]=selected_pending_route;
