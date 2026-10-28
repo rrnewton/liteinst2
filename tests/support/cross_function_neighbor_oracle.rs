@@ -114,7 +114,11 @@ fn native_foreign_neighbor_two_owners_all_heads_both_seeds() {
     let mut code = vec![0xcc; VICTIM + victim_bytes.len()];
     code[..SELECTED_BYTES.len()].copy_from_slice(&SELECTED_BYTES);
     code[VICTIM..].copy_from_slice(&victim_bytes);
-    let oracle = NativeOracle::with_seeded_memory_and_flags(&code, 0x15_57);
+    let (oracle, mut adjacent) =
+        NativeOracle::with_seeded_memory_and_flags_adjacent(&code, 0x15_57, &[GENERATED_BYTES]);
+    let generated = adjacent.pop().unwrap();
+    assert!(adjacent.is_empty());
+    assert_eq!(generated.address(), oracle.code.address() + PAGE as u64);
     let base = oracle.code.address();
     let victim = base + VICTIM as u64;
     let relay = victim + 5;
@@ -144,10 +148,10 @@ fn native_foreign_neighbor_two_owners_all_heads_both_seeds() {
     )
     .unwrap();
 
-    // Reserve once without MAP_FIXED or a clobbering retry. The two image slots
-    // and callback bridge are private, disjoint subranges of this single owner.
-    // Planning/placement failure unwinds this owner before any source redirect.
-    let generated = Mapping::new(GENERATED_BYTES);
+    // Source and this generated region came from one private reservation. The
+    // two image slots and callback bridge remain disjoint subranges of the
+    // retained generated owner, adjacent to but outside the source page.
+    // Planning/placement failure unwinds these owners before any source redirect.
     let selected_target = generated.address();
     let victim_target = selected_target + IMAGE_SLOT as u64;
     let hook_target = victim_target + IMAGE_SLOT as u64;

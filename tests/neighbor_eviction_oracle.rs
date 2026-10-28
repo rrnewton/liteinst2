@@ -514,6 +514,21 @@ fn exact_e9(source: u64, target: u64) -> [u8; 5] {
     bytes
 }
 
+// All manually encoded rel32 calibration edges stay inside one reservation.
+// Source remains a separate complete page; the five adjacent owners are victim
+// image, selected image, mutation prefix, hook prefix source and hook image.
+fn calibration_mappings(code: &[u8]) -> (NativeOracle, Vec<Mapping>) {
+    let (oracle, images) = NativeOracle::with_adjacent_code_mappings(code, &[4096; 5]);
+    assert_eq!(images.len(), 5);
+    for (index, image) in images.iter().enumerate() {
+        assert_eq!(
+            image.address(),
+            oracle.code.address() + ((index + 1) * 4096) as u64
+        );
+    }
+    (oracle, images)
+}
+
 // Independent manually encoded relay scaffold. This validates the oracle
 // itself, without asking the production T3 planner to construct the mutation.
 struct RelayCalibration {
@@ -534,7 +549,7 @@ impl RelayCalibration {
         code[2..10].copy_from_slice(&0x1357_9bdf_2468_ace0_u64.to_le_bytes());
         code[10] = 0xc3;
         code[32..35].copy_from_slice(&[0x66, 0x90, 0xc3]);
-        let oracle = NativeOracle::new(&code);
+        let (oracle, images) = calibration_mappings(&code);
         let victim = oracle.code.address();
         let selected = victim + 32;
         let mut heads: Vec<_> = (0..35)
@@ -548,15 +563,15 @@ impl RelayCalibration {
         let witness = oracle.trace_original(victim, &heads, &[oracle.return_pc()], seed);
         assert_eq!(trace.visits(), [selected, selected + 2, oracle.return_pc()]);
         assert_eq!(witness.visits(), [victim, victim + 10, oracle.return_pc()]);
-        let victim_image = Mapping::new(4096);
-        let selected_image = Mapping::new(4096);
+        let victim_image = &images[0];
+        let selected_image = &images[1];
         let target = selected_image.address();
         let mut victim_code = code[..10].to_vec();
         victim_code.extend_from_slice(&exact_e9(victim_image.address() + 10, victim + 10));
-        write_mapping(&victim_image, 0, &victim_code);
+        write_mapping(victim_image, 0, &victim_code);
         let mut selected_code = vec![0x66, 0x90];
         selected_code.extend_from_slice(&exact_e9(target + 2, selected + 2));
-        write_mapping(&selected_image, 0, &selected_code);
+        write_mapping(selected_image, 0, &selected_code);
         let mut victim_redirect = exact_e9(victim, victim_image.address()).to_vec();
         victim_redirect.extend_from_slice(&exact_e9(victim + 5, target));
         write_mapping(&oracle.code, 0, &victim_redirect);
@@ -591,7 +606,7 @@ impl RelayCalibration {
             selected,
             victim,
             target,
-            _images: vec![victim_image, selected_image],
+            _images: images,
         }
     }
 
@@ -623,14 +638,14 @@ impl RelayCalibration {
         );
     }
 
-    fn prefix(&self, bytes: &[u8]) -> Mapping {
-        let mapping = Mapping::new(4096);
+    fn prefix(&self, bytes: &[u8]) -> &Mapping {
+        let mapping = &self._images[2];
         let mut code = bytes.to_vec();
         code.extend_from_slice(&exact_e9(
             mapping.address() + code.len() as u64,
             self.selected,
         ));
-        write_mapping(&mapping, 0, &code);
+        write_mapping(mapping, 0, &code);
         mapping
     }
 }
@@ -843,8 +858,8 @@ fn rejects_extra_hook_event_before_source_relay() {
     // This additional generated prefix runs a callback and a no-op, restores
     // application state, and then enters the valid original EB gateway. Its
     // extra event must be rejected at the relay before the selected callback.
-    let prefix_source = Mapping::new(4096);
-    let prefix_image = Mapping::new(4096);
+    let prefix_source = &fixture._images[3];
+    let prefix_image = &fixture._images[4];
     let nop = [0x0f, 0x1f, 0x44, 0, 0];
     let scan = InstructionScanner::default()
         .scan(&nop, prefix_source.address())
@@ -857,10 +872,10 @@ fn rejects_extra_hook_event_before_source_relay() {
     )
     .unwrap();
     let image = plan.emit_at(prefix_image.address()).unwrap();
-    write_mapping(&prefix_image, 0, image.bytes());
+    write_mapping(prefix_image, 0, image.bytes());
     let mut prefix_code = nop.to_vec();
     prefix_code.extend_from_slice(&exact_e9(prefix_source.address() + 5, fixture.selected));
-    write_mapping(&prefix_source, 0, &prefix_code);
+    write_mapping(prefix_source, 0, &prefix_code);
     let log = HookEventLog::new();
     fixture.oracle.assert_trace_with_relays(
         &fixture.trace,
@@ -1608,7 +1623,7 @@ fn literal_victim_calibration(victim_bytes: &[u8; 10], seed: u64) -> RelayCalibr
     code[..10].copy_from_slice(victim_bytes);
     code[10] = 0xc3;
     code[32..35].copy_from_slice(&[0x66, 0x90, 0xc3]);
-    let oracle = NativeOracle::new(&code);
+    let (oracle, images) = calibration_mappings(&code);
     let victim = oracle.code.address();
     let selected = victim + 32;
     let heads: Vec<_> = (0..35)
@@ -1618,15 +1633,15 @@ fn literal_victim_calibration(victim_bytes: &[u8; 10], seed: u64) -> RelayCalibr
     let trace = oracle.trace_original(selected, &heads, &[oracle.return_pc()], seed);
     let witness = oracle.trace_original(victim, &heads, &[oracle.return_pc()], seed);
     assert_eq!(trace.visits(), [selected, selected + 2, oracle.return_pc()]);
-    let victim_image = Mapping::new(4096);
-    let selected_image = Mapping::new(4096);
+    let victim_image = &images[0];
+    let selected_image = &images[1];
     let target = selected_image.address();
     let mut victim_code = victim_bytes.to_vec();
     victim_code.extend_from_slice(&exact_e9(victim_image.address() + 10, victim + 10));
-    write_mapping(&victim_image, 0, &victim_code);
+    write_mapping(victim_image, 0, &victim_code);
     let mut selected_code = vec![0x66, 0x90];
     selected_code.extend_from_slice(&exact_e9(target + 2, selected + 2));
-    write_mapping(&selected_image, 0, &selected_code);
+    write_mapping(selected_image, 0, &selected_code);
     let mut redirect = exact_e9(victim, victim_image.address()).to_vec();
     redirect.extend_from_slice(&exact_e9(victim + 5, target));
     write_mapping(&oracle.code, 0, &redirect);
@@ -1657,7 +1672,7 @@ fn literal_victim_calibration(victim_bytes: &[u8; 10], seed: u64) -> RelayCalibr
         selected,
         victim,
         target,
-        _images: vec![victim_image, selected_image],
+        _images: images,
     }
 }
 

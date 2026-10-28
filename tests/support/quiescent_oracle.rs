@@ -138,8 +138,44 @@ struct Snapshot {
 
 impl NativeOracle {
     pub fn new(code: &[u8]) -> Self {
+        Self::with_adjacent_code_mappings(code, &[]).0
+    }
+
+    /// Reserve source and fixture images together, then transfer disjoint,
+    /// page-aligned ownership without ever unmapping a hole. Every region is
+    /// within one rel32 envelope; the source snapshot remains exactly one page.
+    /// Empty lengths preserve new()'s historical one-page code allocation.
+    pub fn with_adjacent_code_mappings(code: &[u8], lengths: &[usize]) -> (Self, Vec<Mapping>) {
         assert!(code.len() < PAGE / 2);
-        let code_mapping = Mapping::new(PAGE);
+        let mut total = PAGE;
+        for &len in lengths {
+            assert!(len != 0 && len % PAGE == 0);
+            total = total
+                .checked_add(len)
+                .expect("fixture mapping length overflow");
+        }
+        assert!(
+            total <= i32::MAX as usize,
+            "fixture exceeds one rel32 envelope"
+        );
+        // Reserve collection storage before acquiring the mapping. Later pushes
+        // cannot allocate, and every split keeps a live owner for every page.
+        let mut adjacent = Vec::with_capacity(lengths.len());
+        let mut code_mapping = Mapping::new(total);
+        for &len in lengths.iter().rev() {
+            let remaining = code_mapping.len.checked_sub(len).unwrap();
+            // SAFETY: this tail lies within the sole live private reservation.
+            // No syscall releases/replaces it; the two owners become disjoint
+            // before the infallible preallocated push below.
+            let tail = Mapping {
+                address: unsafe { code_mapping.address.add(remaining) },
+                len,
+            };
+            code_mapping.len = remaining;
+            adjacent.push(tail);
+        }
+        adjacent.reverse();
+        assert_eq!(code_mapping.len, PAGE);
         code_mapping.initialize(0, &vec![0xcc; PAGE]);
         code_mapping.initialize(0, code);
         let data = Mapping::new(PAGE);
@@ -161,15 +197,18 @@ impl NativeOracle {
             &return_pc.to_ne_bytes(),
         );
         let original_code = code_mapping.bytes().to_vec();
-        Self {
-            code: code_mapping,
-            data,
-            stack,
-            initial_rsp,
-            return_pc,
-            original_code,
-            seeded_arithmetic_flags: false,
-        }
+        (
+            Self {
+                code: code_mapping,
+                data,
+                stack,
+                initial_rsp,
+                return_pc,
+                original_code,
+                seeded_arithmetic_flags: false,
+            },
+            adjacent,
+        )
     }
 
     /// Opt-in campaign initialization. All 4096 application data bytes use
@@ -177,7 +216,16 @@ impl NativeOracle {
     /// is independent of each trace's GPR/xstate/flag seed. Existing callers
     /// of new() keep the exact historical data and flags initialization.
     pub fn with_seeded_memory_and_flags(code: &[u8], memory_seed: u64) -> Self {
-        let mut oracle = Self::new(code);
+        Self::with_seeded_memory_and_flags_adjacent(code, memory_seed, &[]).0
+    }
+
+    /// The identical seeded initializer with privately adjacent code regions.
+    pub fn with_seeded_memory_and_flags_adjacent(
+        code: &[u8],
+        memory_seed: u64,
+        lengths: &[usize],
+    ) -> (Self, Vec<Mapping>) {
+        let (mut oracle, adjacent) = Self::with_adjacent_code_mappings(code, lengths);
         let mut state = memory_seed;
         let mut memory = [0_u8; PAGE];
         for chunk in memory.chunks_exact_mut(8) {
@@ -190,7 +238,7 @@ impl NativeOracle {
         }
         oracle.data.initialize(0, &memory);
         oracle.seeded_arithmetic_flags = true;
-        oracle
+        (oracle, adjacent)
     }
 
     pub fn return_pc(&self) -> u64 {
