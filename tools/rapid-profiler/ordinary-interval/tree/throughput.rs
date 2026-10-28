@@ -4,6 +4,8 @@ use rapid_profiler::frontend_native::{TreeController, TreeThread};
 use std::collections::VecDeque;
 use std::io::Write;
 mod clocks;
+#[path = "../../tree-work/collection.rs"]
+mod collection;
 mod joins;
 
 const BLOCKS: usize = 64;
@@ -138,6 +140,7 @@ fn original(
     mut prep: TreeSitePreparation,
     input: &[Input; 4],
     expected: &[Input; 4],
+    mut collected: Option<&mut collection::Results>,
 ) -> (clocks::Snapshot, clocks::Snapshot, Vec<BlockRow>) {
     let readable = stack();
     let mut rows = Vec::with_capacity(BLOCKS);
@@ -159,6 +162,9 @@ fn original(
             assert_eq!(call.pre_call_rsp, call.resumed_rsp);
             assert_eq!(call.value, VALUES[index]);
             assert_eq!(input, expected);
+            if let Some(results) = &mut collected {
+                results.record(block * CALLS + i, call.value);
+            }
             checksum = checksum.wrapping_add(call.value);
             calls += 1;
         }
@@ -181,6 +187,7 @@ fn installed(
     k: usize,
     input: &[Input; 4],
     expected: &[Input; 4],
+    mut collected: Option<&mut collection::Results>,
 ) -> (clocks::Snapshot, clocks::Snapshot, Vec<BlockRow>) {
     let prepared = PreparedTreeController::new(
         publish_tree(prep),
@@ -244,6 +251,9 @@ fn installed(
             .unwrap();
             assert!(joins::call(&spec, i, call));
             assert_eq!(input, expected);
+            if let Some(results) = &mut collected {
+                results.record(block * CALLS + i, call.value);
+            }
             checksum = checksum.wrapping_add(call.value);
             calls.push(call);
             assert_eq!(
@@ -343,6 +353,12 @@ fn export(out: &mut impl Write, mode: Mode, rows: &[BlockRow]) {
     }
 }
 pub(crate) fn run(mode: &str, candidate: &Path, expected: &Path) {
+    run_profile(mode, candidate, expected, false);
+}
+pub(crate) fn run_matched(mode: &str, candidate: &Path, expected: &Path) {
+    run_profile(mode, candidate, expected, true);
+}
+fn run_profile(mode: &str, candidate: &Path, expected: &Path, collect: bool) {
     let mode = Mode::parse(mode);
     single_main();
     let cpu = pin(None);
@@ -352,10 +368,31 @@ pub(crate) fn run(mode: &str, candidate: &Path, expected: &Path) {
     values();
     let expected_inputs = inputs();
     let input = Box::new(expected_inputs.clone());
+    let mut collected = collect.then(collection::Results::new);
+    if collect {
+        assert_eq!((BLOCKS, CALLS), (collection::BLOCKS, collection::CALLS));
+        for call in 0..CALLS {
+            assert_eq!(label(call).2, collection::input_index(call));
+        }
+    }
     let (s1, s2, rows) = match mode.k {
-        None => original(prep, &input, &expected_inputs),
-        Some(k) => installed(prep, root, continuation, k, &input, &expected_inputs),
+        None => original(prep, &input, &expected_inputs, collected.as_mut()),
+        Some(k) => installed(
+            prep,
+            root,
+            continuation,
+            k,
+            &input,
+            &expected_inputs,
+            collected.as_mut(),
+        ),
     };
+    if let Some(results) = &collected {
+        results.complete(
+            &VALUES,
+            &rows.iter().map(|row| row.checksum).collect::<Vec<_>>(),
+        );
+    }
     assert_eq!(*input, expected_inputs);
     drop(input);
     pin(Some(cpu));
@@ -369,11 +406,24 @@ pub(crate) fn run(mode: &str, candidate: &Path, expected: &Path) {
     let m = clocks::metrics(&snapshots, resolution).expect("valid whole/loop clock brackets");
     let k = mode.k.unwrap_or(0);
     let present = mode.k.is_some();
-    write!(out, "tree-throughput FUNCTIONAL_PASS mode={} blocks=64 roots=1536 calls=1536 originals={} installed_roots={} node_rows={} sampled={} closed={} batches={} events={} reports={} epochs={} actions={} root_inclusive_instructions=509952 root_exclusive_instructions=9216 child_instructions=500736 input_unchanged=true records_joined={} clock_scope=guarded-consumer",
+    let protocol = if collect {
+        "tree-comparison"
+    } else {
+        "tree-throughput"
+    };
+    let scope = if collect {
+        "matched-consumer"
+    } else {
+        "guarded-consumer"
+    };
+    write!(out, "{protocol} FUNCTIONAL_PASS mode={} blocks=64 roots=1536 calls=1536 originals={} installed_roots={} node_rows={} sampled={} closed={} batches={} events={} reports={} epochs={} actions={} root_inclusive_instructions=509952 root_exclusive_instructions=9216 child_instructions=500736 input_unchanged=true records_joined={} clock_scope={scope}",
         mode.name, if present { 0 } else { 1536 }, if present { 1536 } else { 0 },
         if present { 3072 } else { 0 }, 128*k, if present { 3072-128*k } else { 0 },
         if present { 192 } else { 0 }, if present { 6144 } else { 0 }, 128*k,
         if present { 64 } else { 0 }, if present { 128 } else { 0 }, present).unwrap();
+    if collect {
+        write!(out, " collected_results=1536").unwrap();
+    }
     for (i, s) in snapshots.iter().enumerate() {
         write!(
             out,

@@ -222,6 +222,7 @@ def main():
     ap.add_argument('--counter-probe', action='store_true', help='also require twelve raw whole-original-API counter observations; requires --cache-work')
     ap.add_argument('--call-tree', action='store_true', help='also require four loaded caller/child state pairs and actual A/B/C ownership control; requires --cache-work and --concurrent-epochs')
     ap.add_argument('--tree-population', action='store_true', help='also require three 24-root finite populations at K=1/10/24; requires --call-tree')
+    ap.add_argument('--tree-native-baseline', action='store_true', help='also measure65 fresh five-mode comparisons; requires the full functional profile')
     ap.add_argument('--tree-throughput', action='store_true', help='also measure 52 frozen paired SDK-consumer trials; requires --tree-population')
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
@@ -242,6 +243,7 @@ def main():
     assert not a.counter_probe or a.cache_work
     assert not a.tree_population or a.call_tree
     assert not a.tree_throughput or a.tree_population
+    assert not a.tree_native_baseline or (a.tree_population and a.reference_timing and a.counter_probe)
     assert not a.call_tree or a.cache_work
     assert not a.call_tree or a.concurrent_epochs
     assert not a.concurrent_epochs or a.exact_work
@@ -267,6 +269,7 @@ def main():
     result['call_tree_requested'] = a.call_tree
     result['tree_population_requested'] = a.tree_population
     result['tree_throughput_requested'] = a.tree_throughput
+    result['tree_native_baseline_requested'] = a.tree_native_baseline
     if a.tree_throughput:
         result['tree_throughput'] = dict(status='UNRUN', trials=[],
             scope='Release guarded SDK consumer cost against original SDK, including source/input checks and installed joins; no bare-native or timing-accuracy claim')
@@ -354,6 +357,9 @@ def main():
             'tools/rapid-profiler/ordinary-interval/timed/check_tests.rs',
             'tools/rapid-profiler/timed-work/check_output.py', 'tools/rapid-profiler/timed-work/test_recipe.py',
             'tools/rapid-profiler/timed-work/README.md']
+        names.extend(['tests/support/native_native_call.rs', 'tests/support/native_native_call/tests.rs',
+            'tools/rapid-profiler/tree-work/native_call.rs', 'tools/rapid-profiler/tree-work/collection.rs',
+            'tools/rapid-profiler/native-interval/native_tree.rs'])
         if a.retire_epochs:
             names.append('tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/retirement_native.rs')
         names.extend(['tools/rapid-profiler/src/frontend_native/mod.rs',
@@ -455,6 +461,10 @@ def main():
                 'tools/rapid-profiler/tree-work/test_throughput.py',
                 'tools/rapid-profiler/tree-work/throughput_stats.py',
                 'tools/rapid-profiler/tree-work/test_throughput_stats.py'])
+        if a.tree_native_baseline:
+            spec = importlib.util.spec_from_file_location('comparison_runner', repo/'tools/rapid-profiler/tree-work/comparison_runner.py')
+            comparison_runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(comparison_runner)
+            names.extend(comparison_runner.FILES + ['tools/rapid-profiler/native-baseline/main.rs'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -470,6 +480,8 @@ def main():
                 cpu_seconds=20, wall_seconds=30, file_bytes=MIB))
             result['tree_throughput'].update(plan_digest=digest(raw/'tree-throughput-plan.json'),
                 trials=[dict(request, status='UNRUN') for request in throughput_plan])
+        if a.tree_native_baseline:
+            comparison_runner.prepare(raw, result, save, digest)
         rust_text = command([str(tools['rustc']), '--version', '--verbose']); (raw/'rustc-version.txt').write_text(rust_text)
         rust = dict(line.split(': ', 1) for line in rust_text.splitlines() if ': ' in line)
         assert re.fullmatch('[0-9A-Za-z.+_-]+', rust['release']) and re.fullmatch('[0-9a-f]{40}', rust['commit-hash'])
@@ -781,7 +793,7 @@ def main():
             observed = stage('reference-calibrations', [str(calibration_binary)], 20, 30, MIB)
             checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
             assert digest(calibration_binary) == calibration_hash
-            reference['calibrations'] = dict(status='PASS', passed=76, failed=0, ignored=0,
+            reference['calibrations'] = dict(status='PASS', passed=82, failed=0, ignored=0,
                 scope='actual state-validator mutation controls, including all inherited controls; not clock calibration')
             exact_stable(); assert digest(test_binary) == test_hash
             directory = raw/'reference-oracle-output'; reference['native_state'] = dict(status='FAILED')
@@ -838,7 +850,7 @@ def main():
             observed = stage('cache-calibrations', [str(cache_calibration)], 20, 30, MIB)
             calibration_checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
             assert digest(cache_calibration) == cache_calibration_hash
-            cache['calibrations'] = dict(status='PASS', passed=76, failed=0, ignored=0,
+            cache['calibrations'] = dict(status='PASS', passed=82, failed=0, ignored=0,
                 scope='complete inherited and new validator/model controls; no hardware-cache calibration')
             cache.update(stage='assembly-build')
             cache_trusted, cache_candidate = raw/'cache-trusted.so', raw/'cache-candidate.so'
@@ -980,6 +992,9 @@ def main():
                 statistics_digest=digest(raw/'tree-throughput-statistics.json'),
                 source_attested=parsed['source_attested'],
                 retention='All 52 trials retained. Twelve fixed warmups excluded only from the estimator; no retries, outlier discard or post-observation cohort changes.')
+        if a.tree_native_baseline:
+            comparison_runner.run(repo, raw, result, tools, binaries, stage, tree_stable,
+                tree_candidate, tree_trusted, digest, save)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:

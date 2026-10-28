@@ -34,6 +34,9 @@ fn heads(root: u64) -> Vec<u64> {
 }
 fn check_source(ready: &Ready) {
     assert_eq!(ready.profile, super::Profile::Legacy);
+    check_tree_source(ready);
+}
+fn check_tree_source(ready: &Ready) {
     let (base, _) = &ready.immutable[0];
     assert_eq!(
         bytes_at(&ready.original_source, *base, ready.entry, 23),
@@ -72,6 +75,14 @@ pub(super) struct Witness {
 impl Witness {
     pub(super) fn new(ready: &Ready, gate_rsp: u64) -> Self {
         check_source(ready);
+        Self::new_checked(ready, gate_rsp)
+    }
+    pub(super) fn new_native(ready: &Ready, gate_rsp: u64) -> Self {
+        assert_eq!(ready.profile, super::Profile::NativeCall);
+        check_tree_source(ready);
+        Self::new_checked(ready, gate_rsp)
+    }
+    fn new_checked(ready: &Ready, gate_rsp: u64) -> Self {
         let physical = |pc| ready.boundaries.iter().find(|(p, _)| *p == pc).unwrap().1;
         Self {
             root: ready.entry,
@@ -532,6 +543,146 @@ pub fn inspect(case: truth::Case, seed: u64, observed: OriginalObservation<'_>) 
     );
     assert_eq!(last.after.rax, truth::scalar(case, seed));
     assert_eq!(steps[340].before.rip, observed.continuation);
+    assert_eq!(
+        events,
+        truth::expected_events(
+            case,
+            seed,
+            root,
+            observed.input_address,
+            root_rsp,
+            observed.continuation
+        )
+        .unwrap()
+    );
+    let counts = truth::Counts {
+        instructions: body.len(),
+        root_instructions,
+        child_instructions: body.len() - root_instructions,
+        conditional,
+        taken,
+        input_reads: events
+            .iter()
+            .filter(|e| {
+                matches!(
+                    e.kind,
+                    truth::EventKind::Count | truth::EventKind::Payload | truth::EventKind::Link
+                )
+            })
+            .count(),
+        return_reads: events
+            .iter()
+            .filter(|e| {
+                matches!(
+                    e.kind,
+                    truth::EventKind::ChildReturn | truth::EventKind::RootReturn
+                )
+            })
+            .count(),
+        call_stores: events
+            .iter()
+            .filter(|e| e.kind == truth::EventKind::CallStore)
+            .count(),
+    };
+    assert_eq!(counts, truth::counts(case));
+    let model = model::check(case, observed.input_address, root_rsp, &events).unwrap();
+    assert_eq!(model.accesses, 132);
+    Stats { counts, model }
+}
+
+// Separate closed offsets; the Legacy inspector above remains literal.
+pub fn inspect_native(case: truth::Case, seed: u64, observed: OriginalObservation<'_>) -> Stats {
+    let root = observed.entry;
+    let root_bytes = bytes_at(observed.source, observed.source_address, root, 23);
+    let child_bytes = bytes_at(observed.source, observed.source_address, root + 32, 39);
+    truth::check_bytes(root_bytes, child_bytes).unwrap();
+    assert_eq!(
+        bytes_at(observed.source, observed.source_address, root + 23, 9),
+        truth::GAP_BYTES
+    );
+    let input = truth::input(case, seed);
+    assert_eq!(observed.input, &input);
+    let steps: Vec<_> = observed.steps().collect();
+    let starts: Vec<_> = steps
+        .iter()
+        .enumerate()
+        .filter_map(|(i, s)| (s.before.rip == root).then_some(i))
+        .collect();
+    assert_eq!(
+        starts,
+        [5],
+        "one real root entry after the five NativeCall stencil instructions"
+    );
+    let first = &steps[5];
+    let root_rsp = first.before.rsp;
+    assert_eq!(
+        observed.stack_address,
+        root_rsp - 144,
+        "entire unmasked child red zone"
+    );
+    assert_eq!(
+        word(first.stack, observed.stack_address, root_rsp),
+        observed.continuation
+    );
+    let expected = truth::interpret(
+        root_bytes,
+        child_bytes,
+        &input,
+        root,
+        observed.input_address,
+        root_rsp,
+        observed.continuation,
+    )
+    .unwrap();
+    assert_eq!(expected.steps.len(), 332);
+    assert_eq!(steps.len(), 338);
+    let body = &steps[5..337];
+    check_shape(body, &expected.steps, root);
+    let mut events = Vec::new();
+    let (mut conditional, mut taken, mut root_instructions) = (0, 0, 0);
+    for (i, (actual, predicted)) in body.iter().zip(&expected.steps).enumerate() {
+        assert_eq!(
+            bytes_at(
+                actual.data,
+                actual.data_address,
+                observed.input_address,
+                input.len()
+            ),
+            &input
+        );
+        let after = &observed.points[5 + i + 1];
+        assert_eq!(
+            bytes_at(
+                &after.data,
+                observed.data_address,
+                observed.input_address,
+                input.len()
+            ),
+            &input
+        );
+        if let Some(event) = check_step(
+            actual,
+            &after.application_stack,
+            predicted,
+            root,
+            observed.input_address,
+            root_rsp,
+        ) {
+            events.push(event);
+        }
+        root_instructions += usize::from(predicted.node == truth::ROOT_NODE);
+        if let Some(branch) = predicted.branch_taken {
+            conditional += 1;
+            taken += usize::from(branch);
+        }
+    }
+    let last = body.last().unwrap();
+    assert_eq!(
+        (last.after.rip, last.after.rsp, last.after.rax),
+        (observed.continuation, expected.resumed_rsp, expected.value)
+    );
+    assert_eq!(last.after.rax, truth::scalar(case, seed));
+    assert_eq!(steps[337].before.rip, observed.continuation);
     assert_eq!(
         events,
         truth::expected_events(

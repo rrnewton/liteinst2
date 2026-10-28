@@ -178,3 +178,67 @@ Keep the 64-row transcripts and process logs in `ignored/`. A compact public
 receipt should retain all 52 per-process numeric summaries (including raw clock
 endpoints), the paired statistics, exact revision, release settings, command
 and sanitized hardware. This protocol document records no measurement result.
+
+`--tree-native-baseline` adds a fresh native comparison to the full functional
+reproduction command (all thirteen prerequisite flags, including
+`--tree-population`, `--reference-timing` and `--counter-probe`). It does not
+require `--tree-throughput`; that separate 52-process experiment remains an
+independent opt-in. The new route runs the same 47 functional stages, nine
+additional prerequisite stages, and 65 fresh processes. Rust builds use release
+opt3 with assertions and overflow checks enabled; the small C timer uses
+`gcc -O3 -std=c11 -Wall -Wextra -Werror`. The source receipt records all inputs.
+
+The separately built `tree-native-baseline CANDIDATE TRUSTED` loads the same
+trusted caller/child DSO and guarded inputs. Its hot loop calls through a fixed
+15-byte SysV ABI stub without SDK planning, TLS, callbacks or repeated source
+scans. Complete source and input checks precede and follow the loop. The SDK
+comparison route is `ordinary-interval tree-comparison MODE CANDIDATE TRUSTED`;
+all existing SDK guards, retirement, journal and Report checks remain. Every
+mode collects and validates all 1,536 indexed results and 64 block sums. Native
+retains extra cycle validation during setup; the comparison therefore measures
+these complete consumers, rather than isolating instrumentation overhead.
+
+Before timing, four new native-call differential pairs compare a genuine
+five-role Tree144 no-op candidate against the original at every original head
+and every fixed-stub head: 339 full-state comparisons per pair, 1,356 total.
+The original GPR/flags/XSAVE/data/unmasked stack comparator, absolute 15-second
+pair deadline and continuous 20,000-step limit remain. Independent transfer,
+callee-save and real-return checks qualify the exact stub used by the native
+client. The inherited SDK state and ownership stages are also required. The
+complete calibration target now contains its 76 original methods plus six
+NativeCall methods, with all original expected panics retained.
+
+All five modes use `process_timer.c` under the unchanged bounded-command and
+outer process owners. The timer forks one child and records MONOTONIC immediately
+before fork and after its terminal wait4. This primary wall enclosure includes
+fork/wakeup scheduling, exec/loader/startup, setup, work, export, shutdown and
+exit. It excludes timer startup, record serialization and later helper cleanup.
+Separate wait4 user/system CPU includes the child exec stub, but excludes the
+timer parent's CPU. The timer adds no timeout, adoption, cleanup or limit reset.
+Every process retains the existing 20 CPU-second/30 wall-second/1 MiB policy;
+recorded wall must also be at most 30 seconds. The launch request, exact subject
+argv token, sidecar, functional transcript and both clean owners must all join.
+Neither a timing record nor a successful subject exit overrides a cleanup rescue.
+
+The fixed 13-by-5 order in `comparison_stats.py` was frozen before observations
+using SHA256 of `tree-native-baseline-v1`, zero-based block as u32 big endian,
+and the full ASCII mode name, sorted within each block. Three complete warmup
+blocks (15 processes) remain in the raw results; ten measured blocks (50
+processes) supply native/mode pairs for original SDK, K1, K10 and K24. Every
+process performs the same 64-by-24 worklist, for 99,840 roots across the cohort.
+The primary statistic uses process wall; child CPU and internal whole/loop
+wall/CPU are secondary. The estimator and conditional t9 interval use the same
+paired log-ratio method described above. Raw zero wait4 CPU is retained and
+makes its entire CPU comparison unresolved; no pair is dropped or replaced.
+All outliers, raw endpoints and fixed warmups remain. The source attestation
+covers every indexed result and full SDK records; compact rows do not reproduce
+those objects. No hardware-event accuracy, isolated hook latency, general-module
+coverage or completion of the A5 matrix follows from this finite experiment.
+
+The recipe executes nine new protocol methods, six estimator methods, five
+timer/join methods, four collection controls and eleven bounded live timer
+cases (two positive, nine negative). The live controls include failed exec,
+signal/nonzero exit, a child with closed output that remains alive, a killed
+timer, an acknowledged detached descendant, existing record refusal and file
+truncation. Keep full logs/64-row transcripts in `ignored/`; publish compact raw
+CSV/JSON per-process numbers and the exact revision, hardware and command.

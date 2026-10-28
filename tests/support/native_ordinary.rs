@@ -21,43 +21,49 @@ const WIRE_LIMIT: usize = 128 * 1024;
 pub enum Profile {
     Legacy,
     Reference { external_id: u64 },
+    NativeCall,
 }
 impl Profile {
     fn bytes(self) -> &'static [u8] {
         match self {
             Self::Legacy => GATE_BYTES,
             Self::Reference { .. } => reference::STENCIL,
+            Self::NativeCall => native_call::STENCIL,
         }
     }
     fn heads(self) -> &'static [u64] {
         match self {
             Self::Legacy => GATE_HEADS,
             Self::Reference { .. } => reference::HEADS,
+            Self::NativeCall => native_call::HEADS,
         }
     }
     fn after_call(self) -> u64 {
         match self {
             Self::Legacy => AFTER_CALL,
             Self::Reference { .. } => reference::AFTER_CALL,
+            Self::NativeCall => 13,
         }
     }
     fn outer_ret(self) -> u64 {
         match self {
             Self::Legacy => OUTER_RET,
             Self::Reference { .. } => reference::OUTER_RET,
+            Self::NativeCall => 14,
         }
     }
     fn pre_call_delta(self) -> u64 {
         match self {
             Self::Legacy => 8,
             Self::Reference { .. } => 24,
+            Self::NativeCall => 8,
         }
     }
     fn entry_delta(self) -> u64 {
         self.pre_call_delta() + 8
     }
     fn comparison(self, gate: u64, pc: u64) -> bool {
-        self == Self::Legacy || !reference::transient(gate, pc)
+        self == Self::NativeCall || self == Self::Legacy || !reference::transient(gate, pc)
     }
 }
 
@@ -164,6 +170,7 @@ impl Ready {
         let word = |b: &mut Vec<u8>, n: u64| b.extend_from_slice(&n.to_le_bytes());
         match self.profile {
             Profile::Legacy => word(&mut b, 0),
+            Profile::NativeCall => word(&mut b, 2),
             Profile::Reference { external_id } => {
                 word(&mut b, 1);
                 word(&mut b, external_id);
@@ -219,6 +226,7 @@ impl Ready {
             1 => Profile::Reference {
                 external_id: word(&mut bytes),
             },
+            2 => Profile::NativeCall,
             _ => panic!("unknown ordinary native profile"),
         };
         let (entry, gate, continuation) = (word(&mut bytes), word(&mut bytes), word(&mut bytes));
@@ -580,10 +588,30 @@ impl OrdinaryOracle {
         self.pair_profile(call_tree::truth::INPUT_BYTES, setup, inspect, None)
             .0
     }
+    /// Same full comparator and budget, with the private no-Frame caller and
+    /// a real five-role preserving no-op candidate. No timing runs here.
+    pub fn pair_tree_native_call<F, O>(&self, noop: u64, setup: F, inspect: O) -> PairResult
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+        O: for<'a> FnOnce(OriginalObservation<'a>),
+    {
+        assert!(matches!(self.subject, Subject::Tree { .. }));
+        assert_ne!(noop, 0);
+        self.pair_profile_requested(
+            call_tree::truth::INPUT_BYTES,
+            setup,
+            inspect,
+            None,
+            Some(noop),
+        )
+        .0
+    }
     fn stack_start(&self, profile: Profile) -> u64 {
         match self.subject {
             Subject::Tree { .. } => {
-                assert_eq!(profile, Profile::Legacy);
+                if profile != Profile::NativeCall {
+                    assert_eq!(profile, Profile::Legacy);
+                }
                 self.gate_rsp() - 160
             }
             _ => self.gate_rsp() - profile.entry_delta() - 128,
@@ -738,6 +766,24 @@ impl OrdinaryOracle {
         F: for<'a> Fn(bool, ChildContext<'a>),
         O: for<'a> FnOnce(OriginalObservation<'a>),
     {
+        self.pair_profile_requested(length, setup, inspect, reference, None)
+    }
+    fn pair_profile_requested<F, O>(
+        &self,
+        length: usize,
+        setup: F,
+        inspect: O,
+        reference: Option<(Instant, u64)>,
+        native_noop: Option<u64>,
+    ) -> (PairResult, Option<reference::Stats>)
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+        O: for<'a> FnOnce(OriginalObservation<'a>),
+    {
+        if native_noop.is_some() {
+            assert!(reference.is_none());
+            assert!(matches!(self.subject, Subject::Tree { .. }));
+        }
         match self.subject {
             Subject::Checksum => {
                 assert!(matches!(length, 1 | 64));
@@ -847,14 +893,26 @@ impl OrdinaryOracle {
         let original_map = original.validate(false);
         let candidate_map = candidate.validate(true);
         same_ready(&original, &candidate);
-        let profile = reference.map_or(Profile::Legacy, |(_, external_id)| Profile::Reference {
-            external_id,
-        });
+        let profile = if native_noop.is_some() {
+            Profile::NativeCall
+        } else {
+            reference.map_or(Profile::Legacy, |(_, external_id)| Profile::Reference {
+                external_id,
+            })
+        };
         assert_eq!(original.profile, profile, "requested fixture profile");
         let mut tree_witnesses = if matches!(self.subject, Subject::Tree { .. }) {
             Some([
-                call_tree::Witness::new(&original, self.gate_rsp()),
-                call_tree::Witness::new(&candidate, self.gate_rsp()),
+                if native_noop.is_some() {
+                    call_tree::Witness::new_native(&original, self.gate_rsp())
+                } else {
+                    call_tree::Witness::new(&original, self.gate_rsp())
+                },
+                if native_noop.is_some() {
+                    call_tree::Witness::new_native(&candidate, self.gate_rsp())
+                } else {
+                    call_tree::Witness::new(&candidate, self.gate_rsp())
+                },
             ])
         } else {
             None
@@ -875,15 +933,39 @@ impl OrdinaryOracle {
         assert_eq!(ax.len(), bx.len());
         let aw = a.child.memory(ar.rsp, 8);
         let bw = b.child.memory(br.rsp, 8);
-        let af = self.armed_frame(a.child, &ar, &original);
-        let bf = self.armed_frame(b.child, &br, &candidate);
+        let frames = if native_noop.is_some() {
+            native_call::arguments(&ar, &original, self.data.address() + 128, length);
+            native_call::arguments(&br, &candidate, self.data.address() + 128, length);
+            None
+        } else {
+            Some([
+                self.armed_frame(a.child, &ar, &original),
+                self.armed_frame(b.child, &br, &candidate),
+            ])
+        };
         let mut witnesses = match profile {
-            Profile::Legacy => None,
+            Profile::Legacy | Profile::NativeCall => None,
             Profile::Reference { external_id } => {
                 assert_eq!(ar.rcx, br.rcx, "actual same-address reference cells");
                 Some([
-                    reference::Witness::new(self, a.child, &original, ar, &af, external_id, false),
-                    reference::Witness::new(self, b.child, &candidate, br, &bf, external_id, true),
+                    reference::Witness::new(
+                        self,
+                        a.child,
+                        &original,
+                        ar,
+                        &frames.as_ref().unwrap()[0],
+                        external_id,
+                        false,
+                    ),
+                    reference::Witness::new(
+                        self,
+                        b.child,
+                        &candidate,
+                        br,
+                        &frames.as_ref().unwrap()[1],
+                        external_id,
+                        true,
+                    ),
                 ])
             }
         };
@@ -893,6 +975,13 @@ impl OrdinaryOracle {
             reference::seed_argument(a.child, ar);
             reference::seed_argument(b.child, br);
         }
+        let native_initial = native_noop.map(|noop| {
+            assert_eq!(a.child.memory(noop, 1), [0xc3]);
+            assert_eq!(b.child.memory(noop, 1), [0xc3]);
+            [a.child.registers(), b.child.registers()]
+        });
+        let mut native_callbacks = Vec::new();
+        let mut outer_calls = [0_usize; 2];
         let mut points = Vec::new();
         let mut reference_points = Vec::new();
         let mut visits = Vec::new();
@@ -926,7 +1015,13 @@ impl OrdinaryOracle {
             let transfer = tree_witnesses
                 .as_ref()
                 .and_then(|w| w[0].before(a.child, pc));
+            let outer = native_noop
+                .and_then(|_| native_call::before_outer(a.child, &original, self.gate_rsp()));
             a.step("original_body");
+            if let Some(before) = outer {
+                native_call::after_outer(a.child, &original, before);
+                outer_calls[0] += 1;
+            }
             if let Some(transfer) = transfer {
                 tree_witnesses.as_mut().unwrap()[0].after(a.child, transfer);
             }
@@ -934,6 +1029,17 @@ impl OrdinaryOracle {
         let mut next = 0;
         loop {
             let pc = b.child.registers().rip;
+            if let Some(noop) = native_noop {
+                if pc == noop {
+                    native_call::callback(
+                        b.child,
+                        &candidate,
+                        noop,
+                        self.gate_rsp(),
+                        &mut native_callbacks,
+                    );
+                }
+            }
             let logical = if profile.heads().iter().any(|p| candidate.gate + p == pc) {
                 Some(pc)
             } else {
@@ -960,7 +1066,13 @@ impl OrdinaryOracle {
             let transfer = tree_witnesses
                 .as_ref()
                 .and_then(|w| w[1].before(b.child, pc));
+            let outer = native_noop
+                .and_then(|_| native_call::before_outer(b.child, &candidate, self.gate_rsp()));
             b.step("candidate_body");
+            if let Some(before) = outer {
+                native_call::after_outer(b.child, &candidate, before);
+                outer_calls[1] += 1;
+            }
             if let Some(transfer) = transfer {
                 tree_witnesses.as_mut().unwrap()[1].after(b.child, transfer);
             }
@@ -974,12 +1086,37 @@ impl OrdinaryOracle {
                 returns,
                 BTreeSet::from([original.entry + 22, original.entry + 70])
             );
-            self.frame_after(a.child, &ar, &original, &af, None);
-            call_tree::frame_after(b.child, &br, &candidate, &bf, self.gate_rsp());
+            if native_noop.is_some() {
+                assert_eq!(outer_calls, [1, 1], "both actual outer CALLs");
+                assert_eq!(
+                    native_callbacks,
+                    [
+                        original.entry,
+                        original.entry + 32,
+                        original.entry + 70,
+                        original.entry + 14,
+                        original.entry + 22
+                    ]
+                );
+                native_call::stencil(
+                    &points,
+                    original.gate,
+                    original.entry,
+                    self.stack_start(profile),
+                );
+                for (child, seeded) in [a.child, b.child].into_iter().zip(native_initial.unwrap()) {
+                    native_call::callee_saves(&seeded, &child.registers());
+                }
+            } else {
+                let [af, bf] = frames.as_ref().unwrap();
+                self.frame_after(a.child, &ar, &original, af, None);
+                call_tree::frame_after(b.child, &br, &candidate, bf, self.gate_rsp());
+            }
         } else {
             assert_eq!(returns.len(), 1, "one real subject RET per call");
-            self.frame_after(a.child, &ar, &original, &af, None);
-            self.frame_after(b.child, &br, &candidate, &bf, returns.first().copied());
+            let [af, bf] = frames.as_ref().unwrap();
+            self.frame_after(a.child, &ar, &original, af, None);
+            self.frame_after(b.child, &br, &candidate, bf, returns.first().copied());
         }
         let value = match self.subject {
             Subject::Checksum => {
@@ -1257,3 +1394,6 @@ pub mod cache;
 // Closed real CALL tree; old leaf profiles and populations remain separate.
 #[path = "native_call_tree.rs"]
 pub mod call_tree;
+
+#[path = "native_native_call.rs"]
+pub mod native_call;
