@@ -38,6 +38,10 @@ def load(path):
     return namespace['protocol']
 
 
+if __name__ != '__main__':
+    PROTOCOL = load(Path(__file__).with_name('check_backing_singleton.py'))
+
+
 def records():
     return [json.loads(line) for line in FIXTURE.splitlines()]
 

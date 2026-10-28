@@ -1,0 +1,3080 @@
+{
+  "profile": "selected-milestone-summary-v1",
+  "runs": [
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "command_count": 112,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "profile": "page-selected-fast-zero-qualification-v1",
+      "receipt": {
+        "bytes": 78921,
+        "name": "20261028T050219.731639Z-page-selected-fast-zero-18f8c106fe41.json",
+        "sha256": "0e8c8b32b7b1ee9cad7d437d127da97180ed4a98d3d2c7c49643a5c45b117de4"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_fast_zero.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Actual opt-in bridge memset in unchanged generic, TRACE, register positive/capacity/control and REP finite oracles. All47 native commands required; raw state private. No default/runtime profile enablement or performance credit.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050219.731639Z",
+      "status": "passed",
+      "tools_index": 0
+    },
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group0",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rax, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group1",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rax, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group2",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rcx, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group3",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rcx, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group4",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rdx, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group5",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rdx, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group6",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rbx, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group7",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rbx, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group8",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rsp, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group9",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rsp, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group10",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rbp, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group11",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rbp, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group12",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rsi, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group13",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rsi, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group14",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rdi, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group15",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=rdi, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group16",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r8, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group17",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r8, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group18",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r9, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group19",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r9, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group20",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r10, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group21",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r10, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group22",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r11, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group23",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r11, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group24",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r12, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group25",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r12, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group26",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r13, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group27",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r13, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group28",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r14, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group29",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r14, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group30",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r15, comparison match",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group31",
+          "operation_completed": true,
+          "process_outcome": "Sixteen original-PC native/TF comparisons plus startup; source=r15, comparison mismatch",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rax-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rax-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rax-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rax-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rax-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rax-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rax-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rax-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rdi-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rdi-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rdi-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rdi-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rdi-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rdi-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-rdi-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rax-rdi-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rax-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rax-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rax-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rax-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rax-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rax-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rax-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rax-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-rdi-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rsp-rdi-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-rdi-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rsp-rdi-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-rdi-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rsp-rdi-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-rdi-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rsp-rdi-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rsp-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rsp-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rsp-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rsp-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rsp-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rsp-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rsp-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rsp-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-rdx-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rdx-rdx-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-rdx-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rdx-rdx-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-rdx-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rdx-rdx-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-rdx-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for rdx-rdx-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-r13-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-r13-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-r13-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-r13-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-r13-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-r13-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-r13-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-r13-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rdi-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rdi-no-access-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rdi-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rdi-read-only-match; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rdi-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rdi-no-access-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r13-rdi-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC atomic RMW for r13-rdi-read-only-mismatch; no operation completion credit.",
+          "verified_memory_fault": true
+        }
+      ],
+      "command_count": 90,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "native_commands": [
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group0",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group1",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group2",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group3",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group4",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group5",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group6",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group7",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group8",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group9",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group10",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group11",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group12",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group13",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group14",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group15",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group16",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group17",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group18",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group19",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group20",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group21",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group22",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group23",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group24",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group25",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group26",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group27",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group28",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group29",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group30",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group31",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rax-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rax-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rax-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rax-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rdi-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rdi-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rdi-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-rdi-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rax-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rax-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rax-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rax-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-rdi-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-rdi-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-rdi-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-rdi-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rsp-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rsp-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rsp-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rsp-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-rdx-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-rdx-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-rdx-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-rdx-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-r13-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-r13-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-r13-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-r13-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rdi-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rdi-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rdi-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r13-rdi-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "profile": "page-selected-lock-cmpxchg-register-oracle-v1",
+      "receipt": {
+        "bytes": 162798,
+        "name": "20261028T050316.229460Z-page-selected-lock-cmpxchg-register-18f8c106fe41.json",
+        "sha256": "ffb0bbfae5c2522e3182458481a33f1153924bdc3cb7e99b116787134fd4ced8"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_lock_cmpxchg_register.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Exactly256 canonical dword [base],r32 forms, original-PC execution.32 bounded groups retain512 full native/TF comparisons plus32startup;32 genuine protected RMW failures remain failed operations. Every source/base combination has match and mismatch, ending and one crossing; all cuts are covered collectively, not every cut of every encoding. Actual before-state4B footprint ranges and complete records retained. Old EDX-base/R13/RIP/generic suites remain separately required. No split-lock/concurrent, real-program, performance or full-B2/B3 claim.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050316.229460Z",
+      "status": "passed",
+      "tools_index": 1,
+      "totals": {
+        "actual_before_footprint_queries": 1088,
+        "actual_native_failed_operations": 32,
+        "actual_stepped_failed_operations": 32,
+        "additional_negative_command_selftests": 32,
+        "comparison_failure_pairs": 256,
+        "comparison_success_pairs": 256,
+        "executed_refusal_checks": 5312,
+        "generic_pairs": 512,
+        "lock_cmpxchg_register_pairs": 512,
+        "new_crossing_pairs": 256,
+        "new_page_ending_pairs": 256,
+        "new_refusal_encodings": 36,
+        "old_refusal_encodings": 47,
+        "positive_pairs": 544,
+        "positive_selftest_pairs": 32,
+        "promoted_acceptance_checks": 0,
+        "supplied_refusal_encodings": 83,
+        "typed_acceptance_checks": 16384,
+        "verified_memory_fault_commands": 32
+      }
+    },
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group0",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group1",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group2",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group3",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group4",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group5",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group6",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group7",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RAX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RAX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RAX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rax-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RAX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RDX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RDX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RDX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rdx-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RDX-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RSP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RSP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RSP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rsp-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RSP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rbp-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RBP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rbp-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RBP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rbp-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RBP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "rbp-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC RBP-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r12-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R12-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r12-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R12-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r12-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R12-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r12-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R12-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r15-no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R15-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r15-read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R15-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r15-no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R15-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "r15-read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC R15-base atomic RMW; no completion credit.",
+          "verified_memory_fault": true
+        }
+      ],
+      "command_count": 74,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "native_commands": [
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group0",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group1",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group2",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group3",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group4",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group5",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group6",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group7",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rax-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rdx-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rbp-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rbp-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rbp-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rbp-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r12-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r12-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r12-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r12-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r15-no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r15-read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r15-no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "r15-read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "profile": "page-selected-lock-cmpxchg-base-oracle-v1",
+      "receipt": {
+        "bytes": 88928,
+        "name": "20261028T050345.691986Z-page-selected-lock-cmpxchg-base-18f8c106fe41.json",
+        "sha256": "a39d9732383e0738f79a7a8cb48ba61083da723cb54acd26567f382aeb821860"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_lock_cmpxchg_base.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Exact16 canonical base forms only, dword memory and EDX source, original-PC execution. Eight20-pair cohorts retain152 full native/TF comparisons plus8startup;24 genuine protected RMW failures remain failed operations. Actual before-state footprint ranges and complete records retained. Old R13/RIP/generic suites remain separately required. No split-lock/concurrent, real-program, performance or full-B2/B3 claim.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050345.691986Z",
+      "status": "passed",
+      "tools_index": 1,
+      "totals": {
+        "actual_before_footprint_queries": 352,
+        "actual_native_failed_operations": 24,
+        "actual_stepped_failed_operations": 24,
+        "additional_negative_command_selftests": 24,
+        "comparison_failure_pairs": 76,
+        "comparison_success_pairs": 76,
+        "executed_refusal_checks": 2656,
+        "generic_pairs": 152,
+        "lock_cmpxchg_base_pairs": 152,
+        "new_crossing_pairs": 120,
+        "new_page_ending_pairs": 32,
+        "new_refusal_encodings": 36,
+        "old_refusal_encodings": 47,
+        "positive_pairs": 160,
+        "positive_selftest_pairs": 8,
+        "promoted_acceptance_checks": 0,
+        "supplied_refusal_encodings": 83,
+        "typed_acceptance_checks": 512,
+        "verified_memory_fault_commands": 24
+      }
+    },
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group0",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group1",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on no-access dword with equal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on read-only dword with equal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on no-access dword with unequal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on read-only dword with unequal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        }
+      ],
+      "command_count": 28,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "native_commands": [
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group0",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group1",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "profile": "page-selected-lock-cmpxchg-oracle-v1",
+      "receipt": {
+        "bytes": 25805,
+        "name": "20261028T050420.638537Z-page-selected-lock-cmpxchg-18f8c106fe41.json",
+        "sha256": "fbb8d723eaf9322db7e2675d780f23ddc5f1c0d5909d556b19db283286169334"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_lock_cmpxchg.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Only f0410fb15500 atomic CMPXCHG dword [R13+0],EDX at the original PC. Two additive 19-pair cohorts give 36 compare-success/failure pairs and two startup pairs, with 47 unchanged and 21 neighboring supplied refusals, one exact promoted RIP acceptance and two exact promoted source-register acceptances per command. Four genuine no-access/read-only RMW faults cover both would-match and would-mismatch inputs and remain failed operations. Full source-bound native/TF state comparisons and complete private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-program completion, performance or full-B2 qualification.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050420.638537Z",
+      "status": "passed",
+      "tools_index": 1,
+      "totals": {
+        "actual_native_failed_operations": 4,
+        "actual_stepped_failed_operations": 4,
+        "additional_negative_command_selftests": 4,
+        "comparison_failure_pairs": 24,
+        "comparison_success_pairs": 12,
+        "executed_refusal_checks": 408,
+        "generic_pairs": 36,
+        "lock_cmpxchg_pairs": 36,
+        "new_crossing_pairs": 30,
+        "new_page_ending_pairs": 6,
+        "new_refusal_encodings": 21,
+        "old_refusal_encodings": 47,
+        "positive_pairs": 38,
+        "positive_selftest_pairs": 2,
+        "promoted_acceptance_checks": 18,
+        "supplied_refusal_encodings": 68,
+        "verified_memory_fault_commands": 4
+      }
+    },
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group0",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group1",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "name": "group2",
+          "operation_completed": true,
+          "process_outcome": "completed finite native/TF pair cohort",
+          "verified_memory_fault": false
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "no-access-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on no-access dword with equal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "read-only-match",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on read-only dword with equal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "no-access-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on no-access dword with unequal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "name": "read-only-mismatch",
+          "operation_completed": false,
+          "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on read-only dword with unequal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+          "verified_memory_fault": true
+        }
+      ],
+      "command_count": 27,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "native_commands": [
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group0",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group1",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "group2",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "no-access-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "read-only-match",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "no-access-mismatch",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "read-only-mismatch",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "profile": "page-selected-lock-cmpxchg-rip-oracle-v1",
+      "receipt": {
+        "bytes": 26657,
+        "name": "20261028T050433.208240Z-page-selected-lock-cmpxchg-rip-18f8c106fe41.json",
+        "sha256": "daf8480074fb07fd56b77fe31d33649b9d43a2c9d53b53e6027d9edfc30daa00"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_lock_cmpxchg_rip.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Only f00fb115+disp32 atomic CMPXCHG dword [RIP+disp32],EDX at the original PC. Three additive 17-pair cohorts give 48 compare-success/failure pairs and three startup pairs, with 47 unchanged and 24 neighboring supplied refusals per command. Four genuine no-access/read-only RMW faults cover both would-match and would-mismatch inputs and remain failed operations. Both signed displacement directions and all eight fetch geometries are covered; zero displacement has separate typed classification coverage, not a native operand effect. Full source-bound native/TF state comparisons and complete private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-program completion, performance or full-B2 qualification.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050433.208240Z",
+      "status": "passed",
+      "tools_index": 1,
+      "totals": {
+        "actual_native_failed_operations": 4,
+        "actual_stepped_failed_operations": 4,
+        "additional_negative_command_selftests": 4,
+        "comparison_failure_pairs": 32,
+        "comparison_success_pairs": 16,
+        "executed_refusal_checks": 497,
+        "generic_pairs": 48,
+        "lock_cmpxchg_rip_pairs": 48,
+        "new_crossing_pairs": 42,
+        "new_page_ending_pairs": 6,
+        "new_refusal_encodings": 24,
+        "old_refusal_encodings": 47,
+        "positive_pairs": 51,
+        "positive_selftest_pairs": 3,
+        "promoted_acceptance_checks": 0,
+        "supplied_refusal_encodings": 71,
+        "verified_memory_fault_commands": 4
+      }
+    },
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "command_count": 19,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "profile": "page-selected-write-footprint-v1",
+      "receipt": {
+        "bytes": 15035,
+        "name": "20261028T050446.805127Z-page-selected-write-footprint-18f8c106fe41.json",
+        "sha256": "936819d666bc22f06302b49d2fa6ee85a54832dac18eb79162797b9630a4fc3c"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_write_footprint.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Descriptive write footprints only. No rseq registration, RX owner, kernel/REP write coverage or performance claim.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050446.805127Z",
+      "status": "passed",
+      "tools_index": 1
+    },
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "name": "positive",
+          "process_outcome": "completed finite pair cohort"
+        },
+        {
+          "accepted": true,
+          "name": "load-fault",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+        },
+        {
+          "accepted": true,
+          "name": "unowned-target",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+        },
+        {
+          "accepted": true,
+          "name": "rsp-domain",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+        }
+      ],
+      "command_count": 22,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "native_commands": [
+        {
+          "cleanup_error_count": 0,
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "positive",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "load-fault",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "unowned-target",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "cleanup_error_count": 0,
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-domain",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "profile": "page-selected-generic-oracle-v1",
+      "receipt": {
+        "bytes": 16230,
+        "name": "20261028T050453.627300Z-page-selected-generic-oracle-18f8c106fe41.json",
+        "sha256": "305ec6beeb9eebcf0f2fed1a0b6ef5587fe8716e72d0d8fd289cf7bc480778f6"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_generic_oracle.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Finite component: 21 original-address native/TF full-state and memory pairs, 47 supplied classifier refusals, three actual failed operations. No loader, performance or full-B2 claim.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050453.627300Z",
+      "status": "passed",
+      "tools_index": 1,
+      "totals": {
+        "additional_negative_command_selftests": 3,
+        "generic_pairs": 20,
+        "positive_pairs": 21,
+        "positive_selftest_pairs": 1,
+        "supplied_refusal_encodings": 47,
+        "verified_failed_operations": 3
+      }
+    },
+    {
+      "bounds_index": 0,
+      "build_status": "passed",
+      "cases": [
+        {
+          "name": "arithmetic-ending",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "arithmetic-crossing",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "sse-ending",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "sse-crossing",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "memory",
+          "outcome": {
+            "genuine_trace_entries": 3,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              4,
+              4
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "loop",
+          "outcome": {
+            "genuine_trace_entries": 6,
+            "lanes": 3,
+            "nx": [
+              2,
+              8,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              7,
+              7
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "indirect",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              3,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              2,
+              2
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "boundary-call-ret",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "selected-first",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              3
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 1,
+            "trace": [
+              0,
+              2,
+              2
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "embedded-selected",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              4
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 1,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "old-mov-fallback",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              4
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              4,
+              4
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "xgetbv-fallback",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              3
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              4,
+              4
+            ]
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "operand-fault",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 1,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 7,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "unowned-continuation",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 1,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 101,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "source-cow-change",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 6,
+            "real_effects": 1,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "writable-alias",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 6,
+            "real_effects": 1,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "generation-reuse",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 903,
+            "real_effects": 1,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "open-error",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 1,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 10,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "sync-error",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 1,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 11,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "revoke-error",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 1,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 12,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "nested-tgkill",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 7,
+            "real_effects": 0,
+            "real_signals": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "wrong-trace-int3",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 7,
+            "real_effects": 0,
+            "real_signals": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "name": "consumed-proof-replay",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 906,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "status": "accepted_observation"
+        }
+      ],
+      "command_count": 47,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "hardware_index": 0,
+      "profile": "page-selected-chain-oracle-v1",
+      "receipt": {
+        "bytes": 25792,
+        "name": "20261028T050502.523332Z-page-selected-chain-oracle-18f8c106fe41.json",
+        "sha256": "2df2421946ef6d28ba018f73ab2f166373f210519fdd6c312933804c9f395a4a"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_chain_oracle.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42"
+      ],
+      "scope": "Finite original-PC native/all-NX/chained full-state oracle;12 programs and11 failed operations. Existing cache/maps cohorts remain separate. No default enable, fullB2/B3, production dispatcher or performance claim.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050502.523332Z",
+      "status": "passed",
+      "tools_index": 1,
+      "totals": {
+        "completed_lanes": 36,
+        "completed_programs": 12,
+        "native_failed_observations": 2,
+        "old_refusal_checks": 1081,
+        "old_startup_pairs": 23,
+        "route_checks": 345,
+        "verified_failed_operations": 11
+      }
+    },
+    {
+      "accepted_cases": 17,
+      "bounds_index": 1,
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "name": "registration",
+          "outcome": "completed",
+          "status": 0
+        },
+        {
+          "accepted": true,
+          "name": "disjoint",
+          "outcome": "completed",
+          "status": 0
+        },
+        {
+          "accepted": true,
+          "name": "nonzero_preissue",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "mov_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "zero_store_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "trace_mov_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "sse_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "call_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "push_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "rep_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "read_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "getrandom_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "munmap_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "mprotect_overlap",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "pop_memory_unsupported",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "readv_unsupported",
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "name": "ioctl_unsupported",
+          "outcome": "required_refusal",
+          "status": 125
+        }
+      ],
+      "command_count": 75,
+      "completed_cases": 2,
+      "cpu": 3,
+      "environments_index": 0,
+      "failure_type": null,
+      "final_error_count": 0,
+      "finite_command_count": 52,
+      "hardware_index": 0,
+      "profile": "page-selected-rseq-application-fast-memset-v1",
+      "receipt": {
+        "bytes": 20954,
+        "name": "20261028T050520.850192Z-page-selected-rseq-application-fast-memset-18f8c106fe41.json",
+        "sha256": "0df305a3c3739ba978a78725eeb73b43dc4098706dc788e17b026ab30bae5b83"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_rseq_application.py",
+        "--expect-revision",
+        "18f8c106fe4167dce41b77956917f8e45c583b42",
+        "--fast-memset"
+      ],
+      "required_cases": 17,
+      "scope": "Two fresh-exec whole applications and15 named pre-effect refusals. No active critical sections, threads or complete B3 claim.",
+      "source_unchanged": true,
+      "started_utc": "20261028T050520.850192Z",
+      "status": "passed_finite_inactive_profile",
+      "tools_index": 1
+    }
+  ],
+  "schema_version": 1,
+  "scope": "Numeric projection of original evaluator receipts; no new qualification or performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "18f8c106fe4167dce41b77956917f8e45c583b42",
+    "source_manifest_sha256": "9ce46835e391f3c41bf464a9f59e2762b2380081039870b110609fff94280f30",
+    "tracked_clean": true,
+    "tree": "dad8495f75fd3d485b6aa805ac4bc6fdd85cb655"
+  },
+  "summary_script_sha256": "3e478b2016050245cd0ba37eb874a74c5ad0661ecf25a3532573f607a517ef97",
+  "tables": {
+    "bounds": [
+      {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      }
+    ],
+    "environments": [
+      {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      }
+    ],
+    "hardware": [
+      {
+        "affinity_cpu_count": 1,
+        "architecture": "x86_64",
+        "cpu family": "26",
+        "isa_flags": [
+          "fpu",
+          "vme",
+          "de",
+          "pse",
+          "tsc",
+          "msr",
+          "pae",
+          "mce",
+          "cx8",
+          "apic",
+          "sep",
+          "mtrr",
+          "pge",
+          "mca",
+          "cmov",
+          "pat",
+          "pse36",
+          "clflush",
+          "mmx",
+          "fxsr",
+          "sse",
+          "sse2",
+          "ht",
+          "syscall",
+          "nx",
+          "mmxext",
+          "fxsr_opt",
+          "pdpe1gb",
+          "rdtscp",
+          "lm",
+          "constant_tsc",
+          "rep_good",
+          "amd_lbr_v2",
+          "nopl",
+          "xtopology",
+          "nonstop_tsc",
+          "cpuid",
+          "extd_apicid",
+          "aperfmperf",
+          "rapl",
+          "pni",
+          "pclmulqdq",
+          "monitor",
+          "ssse3",
+          "fma",
+          "cx16",
+          "pcid",
+          "sse4_1",
+          "sse4_2",
+          "x2apic",
+          "movbe",
+          "popcnt",
+          "aes",
+          "xsave",
+          "avx",
+          "f16c",
+          "rdrand",
+          "lahf_lm",
+          "cmp_legacy",
+          "svm",
+          "extapic",
+          "cr8_legacy",
+          "abm",
+          "sse4a",
+          "misalignsse",
+          "3dnowprefetch",
+          "osvw",
+          "ibs",
+          "skinit",
+          "wdt",
+          "tce",
+          "topoext",
+          "perfctr_core",
+          "perfctr_nb",
+          "bpext",
+          "perfctr_llc",
+          "mwaitx",
+          "cpuid_fault",
+          "cpb",
+          "cat_l3",
+          "cdp_l3",
+          "hw_pstate",
+          "ssbd",
+          "mba",
+          "perfmon_v2",
+          "ibrs",
+          "ibpb",
+          "stibp",
+          "ibrs_enhanced",
+          "vmmcall",
+          "fsgsbase",
+          "tsc_adjust",
+          "bmi1",
+          "avx2",
+          "smep",
+          "bmi2",
+          "erms",
+          "invpcid",
+          "cqm",
+          "rdt_a",
+          "avx512f",
+          "avx512dq",
+          "rdseed",
+          "adx",
+          "smap",
+          "avx512ifma",
+          "clflushopt",
+          "clwb",
+          "avx512cd",
+          "sha_ni",
+          "avx512bw",
+          "avx512vl",
+          "xsaveopt",
+          "xsavec",
+          "xgetbv1",
+          "xsaves",
+          "cqm_llc",
+          "cqm_occup_llc",
+          "cqm_mbm_total",
+          "cqm_mbm_local",
+          "avx_vnni",
+          "avx512_bf16",
+          "clzero",
+          "irperf",
+          "xsaveerptr",
+          "rdpru",
+          "wbnoinvd",
+          "amd_ppin",
+          "cppc",
+          "arat",
+          "npt",
+          "lbrv",
+          "svm_lock",
+          "nrip_save",
+          "tsc_scale",
+          "vmcb_clean",
+          "flushbyasid",
+          "decodeassists",
+          "pausefilter",
+          "pfthreshold",
+          "avic",
+          "v_vmsave_vmload",
+          "vgif",
+          "x2avic",
+          "v_spec_ctrl",
+          "vnmi",
+          "avx512vbmi",
+          "umip",
+          "pku",
+          "ospke",
+          "avx512_vbmi2",
+          "gfni",
+          "vaes",
+          "vpclmulqdq",
+          "avx512_vnni",
+          "avx512_bitalg",
+          "avx512_vpopcntdq",
+          "la57",
+          "rdpid",
+          "bus_lock_detect",
+          "movdiri",
+          "movdir64b",
+          "overflow_recov",
+          "succor",
+          "smca",
+          "fsrm",
+          "avx512_vp2intersect",
+          "flush_l1d",
+          "debug_swap",
+          "amd_lbr_pmc_freeze"
+        ],
+        "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+        "kernel_version": "7.1.3",
+        "microcode": "0xb101066",
+        "model": "17",
+        "model name": "AMD EPYC 9D85 158-Core Processor",
+        "probe_cpu": 3,
+        "runner_cap_eff": "0000000000000000",
+        "runner_euid": 212630,
+        "runner_is_root": false,
+        "runner_seccomp_mode": 0,
+        "stepping": "0",
+        "vendor_id": "AuthenticAMD"
+      }
+    ],
+    "tools": [
+      {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "gdb": [
+          17,
+          2,
+          0
+        ],
+        "objcopy": [
+          2,
+          35,
+          2
+        ],
+        "objdump": [
+          2,
+          35,
+          2
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      },
+      {
+        "cargo": [
+          1,
+          97,
+          1
+        ],
+        "cc": [
+          11,
+          5,
+          0
+        ],
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rustc": [
+          1,
+          97,
+          1
+        ]
+      }
+    ]
+  }
+}

@@ -183,7 +183,8 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 213, 1),
                                   ("unit/liteinst2/lib", 219, 1),
                                   ("unit/liteinst2/lib", 227, 1),
-                                  ("unit/liteinst2/lib", 242, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 242, 1),
+                                  ("unit/liteinst2/lib", 248, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

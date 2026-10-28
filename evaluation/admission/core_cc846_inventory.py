@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 
 from parsing import require
+import core_5cda_inventory as main5c
+import core_813_inventory as main813
 
 DATA_SHA256 = 'bdea03e1f24150ab46dfa196782fb4866378d8cf00f8291745d89de21593cf14'
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,8 +19,9 @@ CURRENT = DATA['current_corpus_sha256']
 AC0963 = DATA['ac0963']
 LIVE = AC0963['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
-RECORDER_TESTS = 340
-PYTHON_CURRENT = '462da94e73e635ac5c3b46192cba7b991de92b72ec871853204e45d529943b3f'
+RECORDER_TESTS = main813.RECORDER_TESTS
+PYTHON_CURRENT = main813.PYTHON_CURRENT
+PYTHON_PRE_5CDA = '462da94e73e635ac5c3b46192cba7b991de92b72ec871853204e45d529943b3f'
 PYTHON_PREVIOUS = 'fb8adb475b7ecbafb984dfa99c674f8a60fdb59fbb5adeb5754482e1136bb3bc'
 PYTHON_MODULE = 'test_main_query_inventory'
 PYTHON_METHODS = ('test_main_query_inventory.MainQueryInventoryTests.test_exact_sources_catalog_and_historical_denominators', 'test_main_query_inventory.MainQueryInventoryTests.test_catalog_source_and_python_mutations_cannot_enter_history', 'test_main_query_inventory.MainQueryInventoryTests.test_new_harness_and_exact_242_child_shape', 'test_main_query_inventory.MainQueryInventoryTests.test_complete_new_protocol_keeps_all_four_old_trajectories', 'test_main_query_inventory.MainQueryInventoryTests.test_every_new_record_field_requires_exact_value_and_type', 'test_main_query_inventory.MainQueryInventoryTests.test_every_partial_duplicate_reordered_and_extra_protocol_refuses', 'test_main_query_inventory.MainQueryInventoryTests.test_old_descriptor_and_protocol_cannot_replace_live_new_inventory', 'test_main_query_inventory.MainQueryInventoryTests.test_header_duplicate_keys_and_nonfinite_values_cannot_hide_old_logs', 'test_main_query_inventory.MainQueryInventoryTests.test_command_failure_preserves_prefix_without_qualification', 'test_main_query_inventory.MainQueryInventoryTests.test_final_qualification_requires_new_rows_and_complete_unchanged_run')
@@ -30,6 +33,7 @@ def digest(value):
 
 def source_before_ac0963(path, data, error):
     """Authenticate the complete new source before its exact historical inverse."""
+    data = main5c.source_before(path, data, error)
     if path not in AC0963['projections']:
         return data
     row = AC0963['projections'][path]
@@ -49,6 +53,7 @@ def require_ac0963_sources():
             data = (ROOT / path).read_bytes()
         except OSError:
             require(False, 'ac0963_source_inventory_differs')
+        data = main5c.source_before(path, data, 'ac0963_source_inventory_differs')
         require(hashlib.sha256(data).hexdigest() == expected, 'ac0963_source_inventory_differs')
         if path in AC0963['methods']:
             rows = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', data.decode())
@@ -61,6 +66,7 @@ def require_ac0963_sources():
 
 def before_ac0963(declared):
     """Peel only four exact live count rows; every other catalog byte is bound."""
+    declared = main5c.peel_current(declared, 'ac0963_inventory_differs', 'ac0963_source_inventory_differs')
     require(type(declared) is dict and digest(declared) == LIVE, 'ac0963_inventory_differs')
     require_ac0963_sources()
     old = copy.deepcopy(declared)
@@ -73,7 +79,7 @@ def before_ac0963(declared):
 
 
 def peel_ac0963(declared):
-    return before_ac0963(declared) if type(declared) is dict and digest(declared) == LIVE else declared
+    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT) else declared
 
 
 def source_before_cc846(path, data, error):
@@ -145,8 +151,9 @@ def peel_current(declared):
 
 
 def peel_python(identities):
-    if type(identities) is list and digest(identities) == PYTHON_CURRENT:
-        require(len(identities) == RECORDER_TESTS and len(set(identities)) == RECORDER_TESTS,
+    identities = main5c.peel_python(identities)
+    if type(identities) is list and digest(identities) == PYTHON_PRE_5CDA:
+        require(len(identities) == 340 and len(set(identities)) == 340,
                 'cc846_python_inventory_differs')
         new = [x for x in identities if x.startswith(PYTHON_MODULE + '.')]
         old = [x for x in identities if not x.startswith(PYTHON_MODULE + '.')]
@@ -158,7 +165,7 @@ def peel_python(identities):
 
 def require_current(declared):
     """Live preflight has no historical-catalog acceptance path."""
-    require(type(declared) is dict and digest(declared) == LIVE, 'ac0963_inventory_differs')
+    require(type(declared) is dict and digest(declared) == main813.CURRENT, 'ac0963_inventory_differs')
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):

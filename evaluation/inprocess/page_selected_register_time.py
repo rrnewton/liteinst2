@@ -57,6 +57,19 @@ def publish(path, r, private):
         failure_type=r['error'].split(':', 1)[0] if r['error'] else None, final_error_count=len(r['final_errors']),
         whole_process_scope='Separate original native baseline and instrumented fresh exec for each phase. Gated duration includes namespace preparation; neither is a same-site steady interval.',
         interval_scope='All 22 CLOCK_MONOTONIC_RAW interval values from one frozen interpreter site. Service begins after source fetch/plan and ends after genuine generated NX exit/reset, before guard dispatch. API interval ends before arm. No per-site native baseline or frequency conversion.')
+    if r.get('workload', {}).get('rseq_fast_memset'):
+        result.update(environment=r.get('target_environment'),
+            fast_qualification_sha256=digest(r.get('fast_finite_build')),
+            fast_extraction_sha256=digest(r.get('extraction')),
+            fast_memset_body=r.get('fast_memset_body'),
+            rseq_programs=[dict(name=x['name'], status=x['status'],
+                chain={k:v for k,v in x.get('report', {}).get('chain', {}).items() if k in
+                    ('steps','nx_entries','trace_entries','fallbacks','preparations','releases','error','unexpected')},
+                rseq={k:v for k,v in x.get('report', {}).get('rseq', {}).items() if k in
+                    ('counts','status','failure_code','detail_abs','detail_negative')},
+                registration_owner={k:x['report']['rseq']['owner'][i] for k,i in
+                    (('registered',1),('held',2),('phase',3),('epoch',13))} if x.get('report', {}).get('rseq') else None)
+                for x in r['programs']])
     text = json.dumps(result, sort_keys=True, indent=2, allow_nan=False)+'\n'
     need(not any(x and len(x) > 1 and x in text for x in
          (str(ROOT), str(Path.home()), platform.node(), '/home/')), 'public private-location guard')
@@ -69,23 +82,34 @@ def main():
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--program', choices=('true', 'ls'), default='ls')
     ap.add_argument('--disable-rseq', action='store_true')
+    ap.add_argument('--rseq-fast-memset', action='store_true',
+                    help='Explicit inactive-rseq/TRACE bridge with qualified fast memset; old profile stays default')
     args = ap.parse_args()
     need(not sys.flags.optimize and len(os.sched_getaffinity(0)) == 1 and
          re.fullmatch('[0-9a-f]{40}', args.expect_revision), 'exact source, assertions and one reserved CPU')
     cpu = next(iter(os.sched_getaffinity(0)));os.chdir(ROOT)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem = stamp+'-page-selected-register-time-'+args.expect_revision[:12]
+    profile = 'page-selected-register-time'
+    if args.rseq_fast_memset:profile = 'page-selected-rseq-register-time-fast-memset'
+    stem = stamp+'-'+profile+'-'+args.expect_revision[:12]
     private = ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True, exist_ok=False)
     public = HERE/'results'/(stem+'.json');need(not public.exists(), 'unique public receipt')
     reproduce = ['python3', 'evaluation/inprocess/page_selected_register_time.py',
                  '--expect-revision', args.expect_revision, '--program', args.program]
     if args.disable_rseq:reproduce.append('--disable-rseq')
-    r = dict(schema=1, profile='page-selected-register-time-v1', status='failed',
+    if args.rseq_fast_memset:reproduce.append('--rseq-fast-memset')
+    profiles = dict(PROFILES)
+    if args.rseq_fast_memset:profiles['fixture_link'] = list(PROFILES['finite'])
+    r = dict(schema=1, profile=profile+'-v1', status='failed',
         scope='Finite observer qualification followed by completed discovery and one completed real-program timed run; lowest eligible interpreter offset fixed before measurement. No full B2/B3 or transparent-namespace claim.',
         expected_revision=args.expect_revision, started_utc=stamp, cpu=cpu, source=None, source_unchanged=False,
-        bounds=PROFILES, reproduce=reproduce, workload=dict(program=args.program, rseq_disabled=args.disable_rseq),
+        bounds=profiles, reproduce=reproduce, workload=dict(program=args.program, rseq_disabled=args.disable_rseq),
         commands=[], qualification=[], programs=[], timing=None, error=None, final_errors=[])
+    if args.rseq_fast_memset:
+        r['workload']['rseq_fast_memset'] = True
+        r['scope'] += ' Explicit registered-inactive rseq and TRACE composition; no active critical-section claim.'
     pins, binaries, aliases, optional = {}, {}, {}, {}
+    pending = []
     def pin(path):
         lexical = str(Path(path).absolute());p = Path(path).resolve(strict=True);value = fact(p)
         need(lexical not in aliases or aliases[lexical] == str(p), 'input resolution changed')
@@ -106,11 +130,13 @@ def main():
     stage = 'build'
     def run(label, argv, expected=0, profile='native', env=None, record=False, step=False):
         closure()
-        row = dict(name=label, stage=stage, profile=profile, argv=list(map(str, argv)), bounds=PROFILES[profile],
+        row = dict(name=label, stage=stage, profile=profile, argv=list(map(str, argv)), bounds=profiles[profile],
             capture_limit=65536 if profile in ('native','finite','program') else 4 << 20,
             expected_exit=expected, environment=dict(ENV if env is None else env), record_requested=record,
             standalone_signal_preparation=step)
         r['commands'].append(row)
+        if args.rseq_fast_memset and profile in ('build','fixture_link') and len(argv)>2 and str(argv[-2])=='-o':
+            pending.append(Path(argv[-1]))
         out, err = invoke(row, private, cpu, record=record, step=step)
         need(type(row['exit']) is int and (expected is None or row['exit'] == expected), 'actual process outcome')
         return row, out, err
@@ -138,12 +164,19 @@ def main():
             p = getattr(module, '__file__', None)
             if p and Path(p).resolve().is_relative_to(ROOT):pin(p)
         products = builder.prepare()
+        opt = None
+        if args.rseq_fast_memset:
+            import page_selected_rseq_time as opt
+            opt.validate(pin)
         builder.tools['gdb'] = pin(shutil.which('gdb', path=ENV['PATH']))
-        _, out, err = run('version-gdb', [builder.tools['gdb'], '--version'], profile='metadata', env=builder.environment)
+        gdb_environment = (dict(builder.environment, XDG_CACHE_HOME=str(private/'gdb-cache'))
+                           if opt else builder.environment)
+        _, out, err = run('version-gdb', [builder.tools['gdb'], '--version'], profile='metadata', env=gdb_environment)
         need(not err and out, 'actual file-only GDB identity')
         r['build']['versions']['gdb'] = out.decode().strip()
         r['build']['tools']['gdb'] = dict(path=str(builder.tools['gdb']), **fact(builder.tools['gdb']))
-        fixtures = link.fixtures(builder, products, ROOT, private, pin, binary, aliases, run, r, inputs)
+        build_run = opt.gdb_runner(run, builder.tools['gdb'], gdb_environment) if opt else run
+        fixtures = link.fixtures(builder, products, ROOT, private, pin, binary, aliases, build_run, r, inputs)
         outcomes = decode(pin(ROOT/'tools/page-entry/selected/tests/register_timing/OUTCOMES.json').read_bytes())
         need(len(outcomes['commands']) == len(fixtures) == 3 and outcomes['bounds'] ==
              dict(external_cpus=1, cpu_seconds=5, address_space_bytes=512 << 20, file_bytes=16 << 20, wall_seconds=15),
@@ -163,24 +196,31 @@ def main():
             item.update(status='accepted_observation', outcome=value)
         need(len(r['qualification']) == 3 and all(x['status'] == 'accepted_observation' for x in r['qualification']),
              'all observer qualifications precede real timing')
+        if opt:
+            stage = 'fast-qualification'
+            opt.qualify_fast(builder, products, ROOT, private, pin, binary, build_run, r, inputs, outcomes, pending)
         original = pin('/bin/'+args.program);interp = pin(interpreter(original))
         extra, expected_stdout = (['-d', '.'], b'.\n') if args.program == 'ls' else ([], b'')
         env = dict(ENV, **({'GLIBC_TUNABLES':'glibc.pthread.rseq=0'} if args.disable_rseq else {}))
+        if opt:r['target_environment'] = env
         stage = 'discovery'
-        bridge = link.interpreter('discovery', configuration(fact(interp)['sha256']),
+        interpreter_link = opt.interpreter if opt else link.interpreter
+        bridge = interpreter_link('discovery', configuration(fact(interp)['sha256']),
             builder, products, ROOT, private, pin, binary, aliases, run, r)
         selected = execute('discovery', 1, None, bridge, original, interp, extra, expected_stdout,
-            args.disable_rseq, namespace_api, builder, ROOT, private, pin, binary, run, r, env, digest)
+            args.disable_rseq, namespace_api, builder, ROOT, private, pin, binary, run, r, env, digest,
+            rseq_schema=opt.schema(pin) if opt else None)
         selection = private/'selection.json'
         with selection.open('x') as f:json.dump(selected, f, sort_keys=True, indent=2, allow_nan=False);f.write('\n')
         binary(selection);r['selection'] = selected;r['selection_file'] = fact(selection)
         stage = 'measurement'
         need(decode(selection.read_bytes()) == selected, 'frozen discovery identity before timed link')
         config = configuration(fact(interp)['sha256'], selected)
-        bridge = link.interpreter('measurement', config, builder, products, ROOT, private, pin, binary, aliases, run, r)
+        bridge = interpreter_link('measurement', config, builder, products, ROOT, private, pin, binary, aliases, run, r)
         r['selected_configuration'] = fact(private/'measurement/register_timing_config.h')
         r['timing'] = execute('measurement', 2, selected, bridge, original, interp, extra, expected_stdout,
-            args.disable_rseq, namespace_api, builder, ROOT, private, pin, binary, run, r, env, digest)
+            args.disable_rseq, namespace_api, builder, ROOT, private, pin, binary, run, r, env, digest,
+            rseq_schema=opt.schema(pin) if opt else None)
         need(len(r['programs']) == 2 and all(x['status'] == 'completed' for x in r['programs']), 'both real programs completed')
         r['status'] = 'passed'
     except BaseException as exc:
@@ -188,6 +228,10 @@ def main():
     finally:
         try:r['final_errors'] += builder.finish()
         except BaseException as exc:r['final_errors'].append('build finalization: '+repr(exc))
+        for output in pending:
+            try:
+                if output.is_file():binary(output)
+            except BaseException as exc:r['final_errors'].append('partial output retention: '+repr(exc))
         for command in r['commands']:
             for capture in command.get('captures', {}).values():
                 try:
