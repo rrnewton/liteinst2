@@ -19,8 +19,15 @@ abort, straddler and data-fault references remain failed operations. Wrong
 signature, inaccessible descriptor and UD2 require their exact kernel-fatal
 exit and empty output. A real BODY NX/native or successful BODY admission/gated
 prefix is written while the publication word is still zero, before the fatal
-operation. It proves actual pre-operation reachability; no terminal frame,
-unobserved cause or verified close is invented.
+operation. Their native reference observer uses SA_RESETHAND and, while the
+word is still zero, queries the actual default SIGSEGV disposition before
+returning. Native record version2 stores query-complete at h14 and the four
+actual kernel action words at h15..18; other cases retain zeros there. It proves
+actual pre-operation reachability; no terminal frame, unobserved cause or
+verified close is invented. Case12's critical interval includes its publication
+MOV and the original boundary fault, with the real signature/abort marker stub
+outside that interval at TAIL+512. Registration deliberately uses the mismatched
+signature; no scheduling gap can silently clear a published descriptor first.
 
 The gated adapter copies actual handler arguments immediately after the pure
 product preentry hook, before old generic/frame gates. It wraps the unchanged

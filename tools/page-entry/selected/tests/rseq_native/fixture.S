@@ -183,7 +183,7 @@ rn_capture:
 
 .section .text.body,"ax",@progbits
 rn_body:
-#if RN_CASE == 4
+#if RN_CASE == 4 || RN_CASE == 12
 rn_cs_start:
 #endif
 #if RN_CASE == 2 || RN_CASE == 3 || RN_CASE == 4 || RN_CASE == 5 || RN_CASE == 6 || RN_CASE == 12 || RN_CASE == 13
@@ -220,12 +220,16 @@ rn_cs_end:
 #endif
     .org 252,0x90
     .long 0x53053053
+#if RN_CASE != 12
 rn_abort:
+#endif
     movq $0x44556677,rn_abort_seen(%rip)
     jmp rn_guard
 #if RN_CASE == 5 || RN_CASE == 6 || RN_CASE == 7 || RN_CASE == 12 || RN_CASE == 13
     .org 4094,0x90
+#if RN_CASE != 12
 rn_cs_start:
+#endif
 rn_fault:
     .byte 0x48,0x89
 #if RN_CASE == 6
@@ -245,6 +249,13 @@ rn_tail:
     .byte 0xc3
     .org 256,0x90
     .byte 0x0f,0xa2 /* real unreachable selected barrier, outside source halo */
+#if RN_CASE == 12
+    .org 508,0x90
+    .long 0x53053053
+rn_abort:
+    movq $0x44556677,rn_abort_seen(%rip)
+    jmp rn_guard
+#endif
     .org 4096,0x90
 
 .section .text.guard,"ax",@progbits
@@ -325,7 +336,9 @@ rn_descriptor:
     .quad rn_cs_start
 #if RN_CASE == 6
     .quad 2
-#elif RN_CASE == 5 || RN_CASE == 7 || RN_CASE == 12 || RN_CASE == 13
+#elif RN_CASE == 12
+    .quad 4097
+#elif RN_CASE == 5 || RN_CASE == 7 || RN_CASE == 13
     .quad 3
 #else
     .quad rn_cs_end-rn_cs_start

@@ -70,7 +70,18 @@ static RSEC void handler(int sig,siginfo_t *si,void *ptr) {
      *(const volatile uint64_t *)(uintptr_t)RN_WORD)die(98);
   if(call6(10,target,4096,5,0,0,0))die(98);
   capture(&rn_native_record.after,sig,si,u);rn_native_record.h[6]=1;
-  if(prefix){rn_native_record.h[13]=1;rn_native_finish();}
+  if(prefix) {
+   /* SA_RESETHAND restored SIG_DFL before this first handler. Observe the
+      actual kernel action while the word is still zero; never report from
+      the later unsafe/fatal state or synthesize its signal. */
+   unsigned long action[4]={0};
+   if(*(const volatile uint64_t *)(uintptr_t)RN_WORD ||
+      call6(13,11,0,(long)action,8,0,0) || action[0] ||
+      *(const volatile uint64_t *)(uintptr_t)RN_WORD)die(98);
+   rn_native_record.h[14]=1;
+   for(unsigned i=0;i<4;i++)rn_native_record.h[15+i]=action[i];
+   rn_native_record.h[13]=1;rn_native_finish();
+  }
   return;
  }
  if(c!=5 && c!=7 && c!=14)die(98);
@@ -84,7 +95,7 @@ RSEC long rn_native_setup(unsigned c) {
  volatile unsigned char *z=(void *)&rn_native_record;
  for(size_t i=0;i<sizeof rn_native_record;i++)z[i]=0;
  for(size_t i=0;i<sizeof rn_altstack;i++)rn_altstack[i]=0;
- rn_native_record.h[0]=RN_MAGIC;rn_native_record.h[1]=1;
+ rn_native_record.h[0]=RN_MAGIC;rn_native_record.h[1]=2;
  rn_native_record.h[2]=sizeof rn_native_record;rn_native_record.h[3]=c;
  rn_native_record.h[8]=call6(39,0,0,0,0,0,0);rn_native_record.h[9]=call6(186,0,0,0,0,0,0);
  uint32_t low,high;__asm__ volatile("xgetbv":"=a"(low),"=d"(high):"c"(0):"memory");
@@ -99,6 +110,9 @@ RSEC long rn_native_setup(unsigned c) {
  }
  stack_t stack={.ss_sp=rn_altstack,.ss_flags=0,.ss_size=sizeof rn_altstack};
  struct {void (*function)(int,siginfo_t *,void *);unsigned long flags;void (*restorer)(void);uint64_t mask;} action={handler,0x0c000004UL,rn_restorer,0};
+ /* These three observers exist only for the safe BODY prefix. A later
+    genuine fatal signal must retain the original default disposition. */
+ if(c==12 || c==13 || c==15)action.flags|=SA_RESETHAND;
  if(call6(131,(long)&stack,0,0,0,0,0) || call6(13,11,(long)&action,0,8,0,0))return -1;
  /* Same actual application signal-mask contract as the controlled profile;
     no cross-lane mask field is discarded by the comparator. */

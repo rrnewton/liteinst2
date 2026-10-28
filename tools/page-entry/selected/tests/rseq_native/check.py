@@ -62,12 +62,20 @@ def elf(data,interpreter,case,native_policy):
     descriptor=struct.unpack_from('<IIQQQ',initial,256)
     need(descriptor==(0,0,start,end-start,TAIL if case==6 else abort) and read(abort-4,4)==bytes.fromhex('53300553'),'actual source-bound descriptor and signature')
     if case in(5,6,7,12,13):
-        need(start==symbols['rn_fault']==TAIL-2 and end==TAIL+(case!=6) and read(TAIL-4,5)==bytes.fromhex('90904889c3'),'exact real two-page MOV and coincident RET bytes')
+        need(symbols['rn_fault']==TAIL-2 and start==(BODY if case==12 else TAIL-2) and end==TAIL+(case!=6) and
+          read(TAIL-4,5)==bytes.fromhex('90904889c3'),'exact real two-page MOV and coincident RET bytes')
+        if case==12:
+            need(abort==TAIL+512 and read(BODY,4)==bytes.fromhex('48894708') and end-start==4097 and
+              not start<=abort<end and read(abort,3)==bytes.fromhex('48c705') and read(abort+7,4)==bytes.fromhex('77665544') and
+              abort+11+struct.unpack('<i',read(abort+3,4))[0]==DATA+56 and
+              abort+11+5+struct.unpack('<i',read(abort+12,4))[0]==GUARD and read(abort+11,1)==b'\xe9',
+              'wrong-signature interval includes publication with exact outside-CS signature/marker/guard stub')
     if case in(8,9,10,11):
         need(read(start,2)==bytes.fromhex('8ee8'if case<10 else'8ee0') and read(GUARD,4)==bytes.fromhex('654c8917'if case<10 else'644c8917'),'real segment load and segmented RANGE8 store')
     if case==14:need(read(symbols['rn_fault'],3)==bytes.fromhex('488b1e'),'real guarded data read')
     if case==15:need(read(symbols['rn_fault'],2)==bytes.fromhex('0f0b'),'real native UD2')
     if case==4:need(start==BODY and read(start,6)==bytes.fromhex('48894708f390'),'CS includes publication itself before real scheduling loop')
+    need(read(symbols['rn_restorer'],9)==bytes.fromhex('b80f0000000f050f0b'),'actual original rt_sigreturn restorer bytes')
     interp=interpreter.read_bytes();ih=struct.unpack_from('<16sHHIQQQIHHHHHH',interp)
     entry=bytes.fromhex('0fa248b8')+struct.pack('<Q',MAIN)+bytes.fromhex('ffe0')
     need(len(interp)==8192 and ih[1:4]==(3,62,1) and ih[4]==4096 and interp[4096:4096+len(entry)]==entry and not any(interp[4096+len(entry):]),'unchanged genuine first-interpreter CPUID then main handoff')
@@ -181,7 +189,9 @@ def native(data,layout,image,pid,exit_status):
     fatal=c in(12,13,15)
     r=Reader(data,layout,'rn_native_record');h=q(r.field(data,r.rt,'h'))
     expected=1
-    need(h[:6]==(MAGIC,1,len(data),c,expected,1) and h[6]==int(c<=4 or c in(6,8,9,10,11) or fatal) and h[7]==(125 if c in(5,7,14)else 0) and h[8:10]==(pid,pid) and h[10]&0xe7==0xe7 and h[11]>0 and h[12]==131072 and h[13]==int(fatal) and not any(h[14:]),'actual native observer/prefix and PID')
+    need(h[:6]==(MAGIC,2,len(data),c,expected,1) and h[6]==int(c<=4 or c in(6,8,9,10,11) or fatal) and h[7]==(125 if c in(5,7,14)else 0) and h[8:10]==(pid,pid) and h[10]&0xe7==0xe7 and h[11]>0 and h[12]==131072 and h[13]==int(fatal) and not any(h[19:]),'actual native observer/prefix and PID')
+    need(h[14:19]==((1,0,0x8c000004,image['symbols']['rn_restorer'],0) if fatal else (0,0,0,0,0)),
+      'actual queried default SIGSEGV disposition after one-shot safe-prefix delivery; all other cases have no query claim')
     components=r.components(r.field(data,r.rt,'xstate'))
     b,a=r.field(data,r.rt,'before'),r.field(data,r.rt,'after')
     if expected:
