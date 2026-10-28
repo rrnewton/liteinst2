@@ -10,6 +10,12 @@ use liteinst2::trampoline::HookContext;
 use std::cell::UnsafeCell;
 use std::sync::Arc;
 
+pub(super) mod reference;
+pub use reference::{
+    GateProfile, ReferenceCallResult, ReferenceInterval, ReferenceLeg, ReferenceOriginalCallResult,
+    ReferenceTimestamp,
+};
+
 const IDLE: u64 = 0;
 const ARMED: u64 = 1;
 const ENTERED: u64 = 2;
@@ -37,12 +43,17 @@ pub enum GateError {
     Return,
     /// A real resumed call lacks its exact completed pair or stack observation.
     Completion,
+    /// The requested method does not match the immutable gate ABI profile.
+    Profile,
+    /// The reference hardware contract or observed TSC/AUX ordering is unsupported.
+    ReferenceClock,
 }
 
 /// Immutable call geometry, not a publication receipt or ownership of the DSO.
 /// The site factory must retain its source, publication and every mandatory
 /// entry/RET control separately. Sharing this descriptor shares no mutable state.
 pub struct CallGate {
+    profile: GateProfile,
     target: u64,
     returns: Box<[u64]>,
     pid: u32,
@@ -381,7 +392,11 @@ impl CallGate {
         FRAME
             .try_with(|cell| {
                 // SAFETY: private actual-thread cell; no Frame reference escapes.
-                idle(unsafe { cell.get().read() })
+                let sequence = idle(unsafe { cell.get().read() })?;
+                if self.profile == GateProfile::ReferenceAmdV1 {
+                    reference::idle_checkpoint(sequence)?;
+                }
+                Ok(sequence)
             })
             .map_err(|_| GateError::ThreadStorage)?
     }
@@ -401,6 +416,7 @@ impl CallGate {
             return Err(GateError::Descriptor);
         }
         Ok(Arc::new(Self {
+            profile: GateProfile::Legacy,
             target: start,
             returns: returns.into(),
             pid: std::process::id(),
@@ -413,7 +429,17 @@ impl CallGate {
     /// Address of the ordinary MOV immediately following this library's CALL.
     /// It is derived from the compiled gate label, never a client-supplied integer.
     pub fn continuation(&self) -> u64 {
+        if self.profile == GateProfile::ReferenceAmdV1 {
+            return Self::reference_continuation();
+        }
         core::ptr::addr_of!(__rapid_profiler_ordinary_after_call_v1) as usize as u64
+    }
+    pub(super) fn require_legacy(&self) -> Result<(), GateError> {
+        if self.profile == GateProfile::Legacy {
+            Ok(())
+        } else {
+            Err(GateError::Profile)
+        }
     }
     pub(crate) fn declared_returns(&self) -> &[u64] {
         &self.returns
@@ -455,6 +481,7 @@ impl CallGate {
         len: usize,
         stack: &ReadableStack,
     ) -> Result<CallResult, GateError> {
+        self.require_legacy()?;
         let id = self.identity()?;
         FRAME
             .try_with(|cell| {
@@ -509,6 +536,7 @@ impl CallGate {
         len: usize,
         stack: &ReadableStack,
     ) -> Result<OriginalCallResult, GateError> {
+        self.require_legacy()?;
         let id = self.identity()?;
         FRAME
             .try_with(|cell| {

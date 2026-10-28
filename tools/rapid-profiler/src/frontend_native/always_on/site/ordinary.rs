@@ -1,7 +1,7 @@
 //! Ordinary scalar-symbol factory. Admission is separate from publication and timing.
 use super::super::{
     ReadableStack,
-    gate::{CallGate, GateError, OriginalCallResult},
+    gate::{CallGate, GateError, OriginalCallResult, ReferenceOriginalCallResult},
     timed_entry_callback, timed_exit_callback, timing,
 };
 use super::{
@@ -100,6 +100,46 @@ impl PreparedOriginalCall<'_> {
             .verify_original()
             .map_err(SiteError::Source)?;
         result.map_err(SiteError::Gate)
+    }
+
+    /// Original-only reference call; no callback/RET coverage is granted.
+    /// The separate reference slot stays unpublished and non-IDLE until the
+    /// complete source after-check succeeds, including on a gate refusal.
+    ///
+    /// # Safety
+    /// The continuous source/thread/ABI/lifetime contract of `invoke` holds.
+    /// Additionally the caller stays pinned to one CPU with the reference clock
+    /// contract unchanged. The immutable descriptor uses the reference profile.
+    pub unsafe fn invoke_reference(
+        self,
+        data: *const u8,
+        len: usize,
+        stack: &ReadableStack,
+        external_id: u64,
+    ) -> Result<ReferenceOriginalCallResult, SiteError> {
+        let pending = if self.pid != std::process::id() {
+            Err(GateError::Process)
+        } else if self.tid != unsafe { libc::syscall(libc::SYS_gettid) } {
+            Err(GateError::Identity)
+        } else {
+            // SAFETY: the preparation retains the whole uninstrumented source.
+            unsafe {
+                self.preparation
+                    .gate
+                    .invoke_original_reference(data, len, stack, external_id)
+            }
+        };
+        // On error Pending is dropped, poisoning both cells BEFORE any result
+        // escapes. This deliberately differs from the old already-reset path.
+        self.preparation
+            .owner
+            .verify_original()
+            .map_err(SiteError::Source)?;
+        let (call, reference) = pending
+            .map_err(SiteError::Gate)?
+            .commit()
+            .map_err(SiteError::Gate)?;
+        Ok(ReferenceOriginalCallResult { call, reference })
     }
 }
 
@@ -493,6 +533,22 @@ impl OrdinarySitePreparation {
         // SAFETY: the unchanged caller contract covers both consecutive phases.
         let call = unsafe { self.prepare_original_call() }?;
         unsafe { call.invoke(data, len, stack) }
+    }
+
+    /// Original-only independent CALL enclosure before publication.
+    ///
+    /// # Safety
+    /// `invoke_original` and `PreparedOriginalCall::invoke_reference` contracts
+    /// hold throughout both source checks and the actual call/physical return.
+    pub unsafe fn invoke_original_reference(
+        &mut self,
+        data: *const u8,
+        len: usize,
+        stack: &ReadableStack,
+        external_id: u64,
+    ) -> Result<ReferenceOriginalCallResult, SiteError> {
+        let call = unsafe { self.prepare_original_call() }?;
+        unsafe { call.invoke_reference(data, len, stack, external_id) }
     }
 
     /// Full bundle, including every image, original source page and final overlay.

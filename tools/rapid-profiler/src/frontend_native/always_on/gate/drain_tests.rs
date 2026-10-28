@@ -19,6 +19,7 @@ impl Drop for FrameScope {
 }
 pub(in crate::frontend_native::always_on) fn descriptor() -> Arc<CallGate> {
     Arc::new(CallGate {
+        profile: GateProfile::Legacy,
         target: 0x1000,
         returns: vec![0x1012].into(),
         pid: std::process::id(),
@@ -147,6 +148,7 @@ fn drain_checkpoint_requires_every_idle_word_and_preserves_sequence() {
     let before = snapshot();
     assert_eq!(descriptor().idle_checkpoint(), Ok(before[1]));
     let foreign = CallGate {
+        profile: GateProfile::Legacy,
         target: 0x1000,
         returns: vec![0x1012].into(),
         pid: 0,
