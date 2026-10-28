@@ -1,5 +1,8 @@
 /* Admission-owned fixed one-shot route. No old quiescence/publication receipt is
    synthesized. A dormant return address may name any restored source byte. */
+#if defined(LI2_ONESHOT_INITIAL_INTERPRETER) && LI2_ONESHOT_INITIAL_INTERPRETER != 1
+#error "initial-interpreter one-shot is a fixed opt-in profile"
+#endif
 static int selected_oneshot_frame_range(void *unused,const void *p,size_t n) {
     (void)unused;uintptr_t a=(uintptr_t)p,first=(uintptr_t)fork_gate_stack.ss_sp;
     return !p || !n || first>UINTPTR_MAX-fork_gate_stack.ss_size ||
@@ -119,7 +122,11 @@ static void selected_oneshot_landed(int sig,siginfo_t *si,ucontext_t *uc) {
 }
 static void selected_oneshot_report(unsigned status,unsigned code,long detail) {
     struct writer w={.used=0};
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+    text(&w,"LI2_ONESHOT {\"version\":1,\"scope\":\"singleton_initial_main_interpreter_temporary_e9\"");
+#else
     text(&w,"LI2_ONESHOT {\"version\":1,\"scope\":\"singleton_initial_main_temporary_e9\"");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);field(&w,",\"owners\":",selected_oneshot_used);
@@ -139,11 +146,16 @@ static void selected_oneshot_report(unsigned status,unsigned code,long detail) {
     field(&w,",\"active_phase\":",selected_oneshot_active?selected_oneshot_active->state.phase:0);
     text(&w,"}\n");checked(raw(SYS_write,report_fd,(long)w.bytes,w.used,0,0,0)==(long)w.used,1579,0);
 }
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+static void selected_oneshot_stage_image(unsigned image_kind,uintptr_t entry) {
+    uintptr_t base=entry&~(PAGE-1),landing=0;
+#else
 static void selected_oneshot_stage(void) {
     /* Prefault fixed controller storage before any application frame is live. */
     volatile unsigned char *storage=(void *)selected_oneshot_owners;
     for(size_t i=0;i<sizeof(selected_oneshot_owners);i++)storage[i]=0;
     uintptr_t base=original_main.entry&~(PAGE-1),landing=0;
+#endif
     if(base<LI2_ONESHOT_MIN_EXEC || base>UINTPTR_MAX-PAGE)return;
     for(unsigned i=1;i<=16 && !landing;i++) {
         uint64_t distance=(uint64_t)((i+1)/2)*UINT64_C(0x4000000);
@@ -166,5 +178,19 @@ static void selected_oneshot_stage(void) {
     bytes[0]=0x0f;bytes[1]=0x0b;
     checked(!raw(SYS_mprotect,landing,PAGE,PROT_READ|PROT_EXEC,0,0,0),1581,0);
     checked(!raw(SYS_membarrier,32,0,0,0,0,0),1582,0);
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+    checked(!li2_lifecycle_oneshot_register_landing(image_kind,landing),1583,0);
+#else
     checked(!li2_lifecycle_oneshot_register_landing(1,landing),1583,0);
+#endif
 }
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+static void selected_oneshot_stage(void) {
+    /* Same prefaulting and protected landing protocol, before application entry.
+       Backend image kinds are 1=initial main and 2=initial interpreter. */
+    volatile unsigned char *storage=(void *)selected_oneshot_owners;
+    for(size_t i=0;i<sizeof(selected_oneshot_owners);i++)storage[i]=0;
+    selected_oneshot_stage_image(1,original_main.entry);
+    selected_oneshot_stage_image(2,original_interpreter.entry);
+}
+#endif
