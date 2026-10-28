@@ -67,6 +67,9 @@ def harness_id(line):
             "invalid_harness_source_label")
     require(label != "unittests examples/verify_common_core.rs" and binary[1] != "verify_common_core",
             "invalid_harness_source_label")
+    if label == "unittests ordinary-interval/main.rs" or binary[1] == "ordinary_interval":
+        require(label == "unittests ordinary-interval/main.rs" and binary[1] == "ordinary_interval",
+                "invalid_harness_source_label")
     if label == "native-interval/calibrations.rs":
         require(binary[1] == "frontend_native_calibrations", "invalid_harness_source_label")
         return "test/frontend_native_calibrations"
@@ -179,7 +182,8 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 208, 1),
                                   ("unit/liteinst2/lib", 213, 1),
                                   ("unit/liteinst2/lib", 219, 1),
-                                  ("unit/liteinst2/lib", 227, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 227, 1),
+                                  ("unit/liteinst2/lib", 242, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

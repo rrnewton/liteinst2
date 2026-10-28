@@ -165,13 +165,13 @@ class Build:
         target = str(REPO/'target/release/libli2_page_selected_decoder.a')+': '
         need(dep.startswith(target) and '\n' not in dep, 'archive dep-info target')
         dependencies = shlex.split(dep[len(target):])
-        expected = {str(decoder/'src'/name) for name in ('lib.rs', 'abi.rs', 'arena.rs', 'decode.rs', 'scan.rs', 'tf.rs')}
-        need(set(dependencies) == expected and len(dependencies) == len(expected), 'exact six decoder sources')
+        expected = {str(decoder/'src'/name) for name in ('lib.rs', 'abi.rs', 'arena.rs', 'decode.rs', 'scan.rs', 'tf.rs', 'write_footprint.rs')}
+        need(set(dependencies) == expected and len(dependencies) == len(expected), 'exact seven decoder sources')
         self.record['dep_info'] = {str(Path(p).relative_to(REPO)): fact(self.pin(p)) for p in dependencies}
         out, err = self.run('archive-text-exports', [self.tools['nm'], '-g', '--defined-only', archive], 'inspect')
         need(not err, 'archive symbol inspection stderr')
         self.record['archive_text_exports'] = {}
-        for symbol in ('rust_eh_personality', 'li2_decoder_tf_classify'):
+        for symbol in ('rust_eh_personality', 'li2_decoder_tf_classify', 'li2_decoder_write_footprint'):
             rows = [line.split() for line in out.splitlines() if line.split()[-1:] == [symbol.encode()]]
             need(len(rows) == 1 and rows[0][-2:] == [b'T', symbol.encode()], 'one real text definition')
             self.record['archive_text_exports'][symbol] = 1

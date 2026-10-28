@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from core_cc846_inventory import source_before_cc846
 from inline_clock_inventory import peel_current as peel_inline, source_before_inline
 
 PREVIOUS = 'f748315064e4590ee4a2721c97f3b05717d271405d03271f9429bdaf5cc55d25'
@@ -83,6 +84,7 @@ def before_selected(declared):
     for path, expected in SOURCES.items():
         try:
             data = (root / path).read_bytes()
+            data = source_before_cc846(path, data, "selected_source_inventory_differs")
         except OSError:
             require(False, 'selected_source_inventory_differs')
         require(hashlib.sha256(data).hexdigest() == expected, 'selected_source_inventory_differs')

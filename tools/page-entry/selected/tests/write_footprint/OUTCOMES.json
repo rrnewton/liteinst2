@@ -1,0 +1,38 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "checked_failure": {
+    "exit": 125,
+    "no_execution_credit": true,
+    "record": "complete fixed extent with failed and unattempted rows retained"
+  },
+  "commands": [
+    {
+      "actual_instructions": 26,
+      "api_controls": 6,
+      "argv": [
+        "footprint-oracle"
+      ],
+      "cases": 34,
+      "completed": 34,
+      "decoder_abort": 0,
+      "exit": 0,
+      "failure": 0,
+      "header_bytes": 184,
+      "observation_bytes": 33400,
+      "record_bytes": 1135784,
+      "sealed_stats": "exact identical complete initial/final48-byte records",
+      "stderr": "",
+      "stdout": "FOOTPRINT_PASS cases=34 actual=26 supplied_refusals=8 api_controls=6 sealed_stats=unchanged\n",
+      "supplied_refusals": 8
+    }
+  ],
+  "schema": 1,
+  "scope": "Prospective decoder write-footprint native oracle only; no registration, owner or rseq qualification",
+  "unexpected_signal": "failed process with incomplete records possible; never accepted"
+}

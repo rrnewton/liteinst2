@@ -323,7 +323,7 @@ class BackingCleanupTests(unittest.TestCase):
     def test_recorder_exception_disqualifies_retained_helper_without_exporting_failure_text(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            (root / "corpus.json").write_text(json.dumps({"schema_version": 1} | corpus()))
+            (root / "corpus.json").write_bytes(Path(__file__).with_name("corpus.json").read_bytes())
             source = {"revision": "a" * 40, "tracked_clean": True}
             def completed(argv, env, log, timeout):
                 log.write_text("synthetic")

@@ -1,0 +1,536 @@
+{
+  "bounds": {
+    "core_bytes": 0,
+    "cores": 1,
+    "file_bytes": 16777216,
+    "native_address_bytes": 536870912,
+    "native_cpu_seconds": 5,
+    "wall_seconds": 15
+  },
+  "cardinality": {
+    "failed_operation_processes": 11,
+    "old_encoding_refusals_per_process": 47,
+    "old_startup_pairs_per_process": 1,
+    "positive_processes": 12,
+    "route_controls_per_process": 15,
+    "three_lane_programs": 12,
+    "total_native_processes": 23
+  },
+  "commands": [
+    {
+      "case": 0,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "0"
+      },
+      "exit": 0,
+      "generic_instructions": 3,
+      "mode": 0,
+      "name": "arithmetic-ending",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        4,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS arithmetic-ending\n",
+      "trace": [
+        0,
+        3,
+        3
+      ]
+    },
+    {
+      "case": 1,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "1"
+      },
+      "exit": 0,
+      "generic_instructions": 3,
+      "mode": 0,
+      "name": "arithmetic-crossing",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        4,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS arithmetic-crossing\n",
+      "trace": [
+        0,
+        3,
+        3
+      ]
+    },
+    {
+      "case": 2,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "2"
+      },
+      "exit": 0,
+      "generic_instructions": 3,
+      "mode": 0,
+      "name": "sse-ending",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        4,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS sse-ending\n",
+      "trace": [
+        0,
+        3,
+        3
+      ]
+    },
+    {
+      "case": 3,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "3"
+      },
+      "exit": 0,
+      "generic_instructions": 3,
+      "mode": 0,
+      "name": "sse-crossing",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        4,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS sse-crossing\n",
+      "trace": [
+        0,
+        3,
+        3
+      ]
+    },
+    {
+      "case": 4,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "4"
+      },
+      "exit": 0,
+      "generic_instructions": 4,
+      "mode": 0,
+      "name": "memory",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        5,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS memory\n",
+      "trace": [
+        0,
+        4,
+        4
+      ]
+    },
+    {
+      "case": 5,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "5"
+      },
+      "exit": 0,
+      "generic_instructions": 7,
+      "mode": 0,
+      "name": "loop",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        8,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS loop\n",
+      "trace": [
+        0,
+        7,
+        7
+      ]
+    },
+    {
+      "case": 6,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "6"
+      },
+      "exit": 0,
+      "generic_instructions": 2,
+      "mode": 0,
+      "name": "indirect",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        3,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS indirect\n",
+      "trace": [
+        0,
+        2,
+        2
+      ]
+    },
+    {
+      "case": 7,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "7"
+      },
+      "exit": 0,
+      "generic_instructions": 3,
+      "mode": 0,
+      "name": "boundary-call-ret",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        4,
+        2
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS boundary-call-ret\n",
+      "trace": [
+        0,
+        3,
+        3
+      ]
+    },
+    {
+      "case": 8,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "8"
+      },
+      "exit": 0,
+      "generic_instructions": 2,
+      "mode": 0,
+      "name": "selected-first",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        4,
+        3
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 1,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS selected-first\n",
+      "trace": [
+        0,
+        2,
+        2
+      ]
+    },
+    {
+      "case": 9,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "9"
+      },
+      "exit": 0,
+      "generic_instructions": 3,
+      "mode": 0,
+      "name": "embedded-selected",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        5,
+        4
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 1,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS embedded-selected\n",
+      "trace": [
+        0,
+        3,
+        3
+      ]
+    },
+    {
+      "case": 10,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "10"
+      },
+      "exit": 0,
+      "generic_instructions": 3,
+      "mode": 0,
+      "name": "old-mov-fallback",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        5,
+        4
+      ],
+      "old_instructions": 1,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS old-mov-fallback\n",
+      "trace": [
+        0,
+        4,
+        4
+      ]
+    },
+    {
+      "case": 11,
+      "chained_lanes": 1,
+      "env": {
+        "LI2_CHAIN_CASE": "11"
+      },
+      "exit": 0,
+      "generic_instructions": 4,
+      "mode": 0,
+      "name": "xgetbv-fallback",
+      "native_lanes": 1,
+      "nx": [
+        2,
+        5,
+        3
+      ],
+      "old_instructions": 0,
+      "operation": "completed",
+      "reference_lanes": 1,
+      "selected": 0,
+      "stdout": "LI2_CHAIN_PROGRAM_PASS xgetbv-fallback\n",
+      "trace": [
+        0,
+        4,
+        4
+      ]
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 0,
+      "case": 4,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "1"
+      },
+      "exit": 125,
+      "mode": 1,
+      "name": "operand-fault",
+      "native_failed_observations": 1,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 7,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE operand-fault\n"
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 0,
+      "case": 6,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "2"
+      },
+      "exit": 125,
+      "mode": 2,
+      "name": "unowned-continuation",
+      "native_failed_observations": 1,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 101,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE unowned-continuation\n"
+    },
+    {
+      "actual_effects": 1,
+      "actual_signals": 0,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "3"
+      },
+      "exit": 125,
+      "mode": 3,
+      "name": "source-cow-change",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 6,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE source-cow-change\n"
+    },
+    {
+      "actual_effects": 1,
+      "actual_signals": 0,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "4"
+      },
+      "exit": 125,
+      "mode": 4,
+      "name": "writable-alias",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 6,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE writable-alias\n"
+    },
+    {
+      "actual_effects": 1,
+      "actual_signals": 0,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "5"
+      },
+      "exit": 125,
+      "mode": 5,
+      "name": "generation-reuse",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 903,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE generation-reuse\n"
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 0,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "6"
+      },
+      "exit": 125,
+      "mode": 6,
+      "name": "open-error",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 1,
+      "operation": "failed",
+      "owner_error": 10,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE open-error\n"
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 0,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "7"
+      },
+      "exit": 125,
+      "mode": 7,
+      "name": "sync-error",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 1,
+      "operation": "failed",
+      "owner_error": 11,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE sync-error\n"
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 0,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "8"
+      },
+      "exit": 125,
+      "mode": 8,
+      "name": "revoke-error",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 1,
+      "operation": "failed",
+      "owner_error": 12,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE revoke-error\n"
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 1,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "9"
+      },
+      "exit": 125,
+      "mode": 9,
+      "name": "nested-tgkill",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 7,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE nested-tgkill\n"
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 1,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "10"
+      },
+      "exit": 125,
+      "mode": 10,
+      "name": "wrong-trace-int3",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 7,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE wrong-trace-int3\n"
+    },
+    {
+      "actual_effects": 0,
+      "actual_signals": 0,
+      "case": 0,
+      "completed": 0,
+      "env": {
+        "LI2_CHAIN_CONTROL": "11"
+      },
+      "exit": 125,
+      "mode": 11,
+      "name": "consumed-proof-replay",
+      "native_failed_observations": 0,
+      "nonissued_negative_returns": 0,
+      "operation": "failed",
+      "owner_error": 906,
+      "stdout": "LI2_CHAIN_EXPECTED_FAILURE consumed-proof-replay\n"
+    }
+  ],
+  "record": "complete record + one actual old sample + control trailer; exact retained ELF/DWARF extents; <16 MiB; retain every failure",
+  "schema": 1,
+  "scope": "Prospective source-only finite qualification; none executed",
+  "stdout": "Exact row bytes; stderr empty"
+}

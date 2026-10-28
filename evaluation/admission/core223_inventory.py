@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from core_cc846_inventory import peel_current as peel_cc846, source_before_cc846
 
 PREVIOUS = '3de828ebb4d057e7fad20da36e59a90ea9ab09dedf5a2cb6ff7cf66068118f61'
 
@@ -329,6 +330,7 @@ def digest(value):
 
 
 def source_before_core223(path, data, error):
+    data = source_before_cc846(path, data, error)
     if path not in PROJECTIONS:
         return data
     row = PROJECTIONS[path]
@@ -347,6 +349,7 @@ def require_current_sources():
     for path, expected in SOURCE_SHA256.items():
         try:
             data = (root / path).read_bytes()
+            data = source_before_cc846(path, data, "core223_source_inventory_differs")
         except OSError:
             require(False, 'core223_source_inventory_differs')
         require(hashlib.sha256(data).hexdigest() == expected, 'core223_source_inventory_differs')
@@ -357,6 +360,7 @@ def require_current_sources():
 
 
 def before_core223(declared):
+    declared = peel_cc846(declared)
     require(type(declared) is dict and digest(declared) == CURRENT, 'core223_inventory_differs')
     previous = copy.deepcopy(declared)
     rows = previous['harness_test_counts']['workspace_tests']
@@ -369,4 +373,5 @@ def before_core223(declared):
 
 
 def peel_current(declared):
+    declared = peel_cc846(declared)
     return before_core223(declared) if type(declared) is dict and digest(declared) == CURRENT else declared

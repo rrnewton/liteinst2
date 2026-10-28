@@ -208,3 +208,32 @@ pub unsafe extern "C" fn li2_decoder_tf_classify(
         Err(error) => error,
     }
 }
+
+mod write_footprint;
+pub use write_footprint::{Footprint as WriteFootprint, Registers as WriteRegisters};
+
+/// # Safety
+/// Same immutable owned source and sealed-arena/single-caller contract as
+/// li2_decoder_tf_classify. Registers and output are aligned, live, disjoint
+/// owned buffers and cannot alias the source or arena. This is descriptive
+/// only; the caller must bind all identity fields to the held instruction.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn li2_decoder_write_footprint(
+    pc: u64, bytes: *const u8, length: usize,
+    registers: *const WriteRegisters, out: *mut WriteFootprint,
+) -> u32 {
+    if out.is_null() { return abi::BAD_ARGUMENT; }
+    // SAFETY: caller supplies the uniquely writable output even on refusal.
+    unsafe { out.write(WriteFootprint::default()); }
+    if bytes.is_null() || registers.is_null() || !(1..=15).contains(&length)
+        || (bytes as usize).checked_add(length).is_none()
+    { return abi::BAD_ARGUMENT; }
+    let _call = match arena::enter() { Ok(call) => call, Err(error) => return error };
+    // SAFETY: retained immutable source and register allocations are caller obligations.
+    let source = unsafe { core::slice::from_raw_parts(bytes, length) };
+    let state = unsafe { &*registers };
+    match write_footprint::one(pc, source, state) {
+        Ok(row) => { unsafe { out.write(row); } abi::OK }
+        Err(error) => error,
+    }
+}

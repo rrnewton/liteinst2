@@ -1,0 +1,71 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vptestnmb-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 80,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VTN_TF_PASS group=0 pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=33 full_state=19 full_memory=19 live_endpoints=19\n"
+    }
+  ],
+  "literal_effects": "K0 bit i equals1 iff actual independently seeded ZMM17 byte i iszero. Three literal patterns yield all0/all1/mixed64-bit masks, each initialK0 is nonzero/distinct. All32ZMM/other7K, GPR/flags/kernelFP/liveXSAVE/stack/data exact; no XSTATE_BV/header normalization.",
+  "native_pairs_per_group": [
+    19
+  ],
+  "negative_endpoint": "No data memory operand. All47 generic plus33 new supplied encoding refusals; original actual-fault suites remain separate.",
+  "new_mask_pairs_total": 18,
+  "new_refusal_count": 33,
+  "old_refusal_count": 47,
+  "prospective_only": true,
+  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000; original21 sample slots retained, final2 unused and negative sample zero; exact appended actual CPUID/BV trailer.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Only62b2764026c1/Code2791 K0,ZMM17,ZMM17. Register-only no operand fault or real-program/performance claim."
+}
