@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "revision": "c7e4b36b0a1f706aff7df578d39627895b70593e",
+  "status": "COMPLETE_ONE_PLANNED_STUDY",
+  "attempts": 1,
+  "hardware": {
+    "description": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "family": 26,
+    "model": 17,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$CPUSET_ALLOCATOR",
+    "run",
+    "--cores",
+    "4",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-normal-reference-study-c7e4b36",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/normal-work/reference_study.py",
+    "--revision",
+    "c7e4b36b0a1f706aff7df578d39627895b70593e",
+    "--raw",
+    "$REPO/ignored/NEW_RUN",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "bounds": {
+    "outer_wall_seconds": 1200,
+    "driver_wall_seconds": 1200,
+    "study_process_cpu_seconds": 20,
+    "study_process_wall_seconds": 30,
+    "study_process_output_bytes": 1048576,
+    "compiler_jobs": 4
+  },
+  "reservation": {
+    "cores": [
+      17,
+      27,
+      50,
+      53
+    ],
+    "study_cpu": 17,
+    "method": "cpuset-alloc ledger reservation and mutation-verified systemd AllowedCPUs scope; singleton affinity for study",
+    "exclusive_host": false
+  },
+  "start_utc": "2026-10-28T22:47:08.230902+00:00",
+  "end_utc": "2026-10-28T22:54:06.717817+00:00",
+  "seconds": 418.4864762779325,
+  "load_average_before": [
+    32.87,
+    32.12,
+    32.52
+  ],
+  "load_average_after": [
+    34.27,
+    41.56,
+    38.19
+  ],
+  "load_average_periods_minutes": [
+    1,
+    5,
+    15
+  ],
+  "closure": {
+    "exit_code": 0,
+    "termination": null,
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "log_sha256": "2d4254bb72b12508170ebfe83a88afbb3c7fc89552be4cb03aa391b3f7b5cfbd"
+  },
+  "allocator": {
+    "revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "source_sha256": {
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88",
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76"
+    }
+  },
+  "source_files": 466,
+  "recipe_sha256": "f7b1d53e688b192b2853a3174ef06aadbac5cc11de26b064e45d34acbf56fa64",
+  "root_launcher_sha256": "f271cb56c17dc9c76b5359cd6495f88c45a0f0f06892d3bdee44b672c9f1a8b1",
+  "source_protocol_sha256": "4d1da58ceae96aafa74ed618f941e9728ceb63f8c8b9b21f775fdc06c2abd1a8",
+  "root_audit_sha256": "b01c48c006993a9c82080f77ee3cb095032623f3afe5fb17e719f848511f1523",
+  "root_audit_result": {
+    "bytes": 2675,
+    "sha256": "e655cec82baba1df8ee44a4b0eba549ebcc732235af855ec83495ecf758da365"
+  },
+  "review_sha256": {
+    "analysis": "f4e931e90fe75c17d20e3b4c209ae6e3472f31087fa49ba70313b377dcb6962b",
+    "driver": "f2e59f44babe45ed5c4714c426897dfeb855f18d44765007e740700ce3efa4ca",
+    "exact_head": "cabb7179b2695ced2b30876c676cf38e0fad275f5a70fc4f891db24613e44a77",
+    "root_audit": "58b278621f620a94f682afb3b9f2675a3bc9503736d23ab7c20025714029e5bf"
+  },
+  "checks": {
+    "workspace_custom_harnesses": 2,
+    "method": "Final libtest summary per Cargo target, all rustdoc batches; nested child summaries excluded",
+    "historical_mapping_allocation_cases": 8,
+    "outer_seconds": 460.33065265696496
+  },
+  "raw_policy": "Raw transcripts, mappings, commands and captures remain ignored; committed CSV endpoints are lossless numeric observations, not log dumps.",
+  "caveat": "Repeated fixed-workload processes and deterministic order identities do not establish independence, accuracy or a full A5 result. All recorded 2 ms qualification failures remain failures."
+}
