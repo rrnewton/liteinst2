@@ -1,0 +1,3 @@
+attempt,cohort,phase,committed,completed,poll_gap_ns,last_wait_requested_ns,last_wait_observed_ns,last_iteration_user_us,last_iteration_system_us,last_iteration_involuntary_switches,last_iteration_minor_faults,last_iteration_major_faults,partial_stream_sha256
+1,exact-late-long-k10,poll,491,491,9606585,1000000,9605403,1334,5,1,0,0,e52760a5c35e785c3e60663967b9e97e7669f201f6dca1d680363184c6f9cca0
+4,full-k10,poll,440,440,11461101,1000000,11459548,636,35,1,0,0,da4c47e863d8447bea104326ae860d1226855c75fe1fb40fa408fda8931763a7

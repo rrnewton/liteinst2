@@ -1,0 +1,6 @@
+attempt,status,stage,seconds,before_load_1,before_load_5,before_load_15,after_load_1,after_load_5,after_load_15
+1,FAILED,exact-late-long-k10,162.606434671,23.16,31.21,33.51,25.14,27.7,31.73
+2,PASS,complete,170.319602475,25.14,27.7,31.73,32.72,30.01,31.94
+3,PASS,complete,170.219199290,32.72,30.01,31.94,35.62,31.97,32.36
+4,FAILED,single-prerequisite,74.516168613,35.62,31.97,32.36,38.5,33.33,32.79
+5,PASS,complete,171.699139383,38.5,33.33,32.79,34.44,34.03,33.19
