@@ -3972,6 +3972,33 @@
       }
     },
     "python_metadata": {
+      "assignment_sources": [
+        [
+          2739,
+          3055,
+          "CSV_FIELDS = ('case', 'outcome', 'k', 'epochs', 'arms', 'actions', 'accepted', 'calls',\n    'sampled', 'unsampled', 'batches', 'flushes', 'detach', 'joins', 'maximum_entry_prefix',\n    'maximum_batch_calls', 'write_blocked_at_finalize', 'input_bytes', 'transcript_bytes',\n    'child_exit', 'normal_reaps', 'rescues')"
+        ],
+        [
+          2150,
+          2342,
+          "NORMAL_STAGES = ('parser-controls', 'runtime-controls', 'caller-controls', 'state-controls',\n    'child-controls', 'caller-build', 'normal-state', 'normal-work', 'drop-sampled', 'drop-closed')"
+        ],
+        [
+          466,
+          486,
+          "PYTHON_CONTROLS = 11"
+        ],
+        [
+          1491,
+          1562,
+          "SCHEDULE_PREFIX = 'frontend_native::backoff::driver::schedule::tests::'"
+        ],
+        [
+          571,
+          607,
+          "SESSION_PREFIX = 'normal::session::'"
+        ]
+      ],
       "assignments": {
         "CSV_FIELDS": [
           "case",

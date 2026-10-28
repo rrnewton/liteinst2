@@ -10,7 +10,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'eda14e46c193079bddab57931695bb2d753e7dafc41b08970668e5dafa136d15', 'main813_inventory_data_differs')
+require(hashlib.sha256(RAW).hexdigest() == '22ce936749652f1e8d34298a59bf2790a0f903e4f3aba0299d56e0db0fb7b426', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -81,7 +81,14 @@ def require_727_sources(error='main727_source_inventory_differs'):
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN727['python_metadata']
-    tree = ast.parse((ROOT / metadata['path']).read_bytes())
+    raw = (ROOT / metadata['path']).read_bytes()
+    require(hashlib.sha256(raw).hexdigest() == MAIN727['sources'][metadata['path']], error)
+    require(len(metadata['assignment_sources']) == len(metadata['assignments']) == 5, error)
+    snippets = []
+    for start, end, literal in metadata['assignment_sources']:
+        require(0 <= start <= end <= len(raw) and raw[start:end] == literal.encode(), error)
+        snippets.append(literal)
+    tree = ast.parse('\n'.join(snippets))
     for name, expected in metadata['assignments'].items():
         values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
                   and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
