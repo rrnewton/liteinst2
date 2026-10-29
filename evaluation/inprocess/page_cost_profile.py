@@ -155,7 +155,9 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
         # Hold unreaped PID identities through group cleanup and perf's final drain.
         group('target'); row['exit'] = target.wait(timeout=3); row['reaped'] = True
         row['process_reaped_ns'] = time.monotonic_ns()
-        if not select.select([pidfds['perf']], [], [], 0)[0]: os.kill(profiler.pid, signal.SIGINT)
+        if not select.select([pidfds['perf']], [], [], 0)[0]:
+            need(os.write(cw, b'stop\n') == 5, 'complete perf stop control command')
+            result['stop_control_hex'] = '73746f700a'
         need(select.select([pidfds['perf']], [], [], min(10, PERF[3]-(time.monotonic_ns()-result['perf']['start_ns'])/1e9))[0],
              'bounded perf final drain')
         group('perf'); result['perf']['exit'] = profiler.wait(timeout=3)
