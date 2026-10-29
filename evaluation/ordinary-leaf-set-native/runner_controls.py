@@ -183,5 +183,37 @@ class Controls(unittest.TestCase):
         with self.assertRaises(AssertionError):R.public_projection(bad)
 
 
+    def test_efficiency_inventory_requires_all199_and_rejects_new_ignores(self):
+        peers={key:load('_efficiency_census_'+key,ROOT/N.MODULES[key]) for key in ('legacy','normal','whole')}
+        prior=N.calibration_manifest(peers['legacy'],peers['normal'],peers['whole'])
+        inventory=list(prior)+list(R.LEAF_CALIBRATIONS)+list(R.EFFICIENCY_CALIBRATIONS)+[N.IGNORED]
+        got=R.efficiency_calibration_inventory(prior,inventory,N.IGNORED)
+        original=R.calibration_inventory(prior,list(prior)+list(R.LEAF_CALIBRATIONS)+[N.IGNORED],N.IGNORED)
+        self.assertEqual(len(got),199)
+        self.assertEqual({name:got[name] for name in original},original)
+        self.assertEqual(set(got)-set(original),set(R.EFFICIENCY_CALIBRATIONS))
+        self.assertTrue(all(got[name] is False for name in R.EFFICIENCY_CALIBRATIONS))
+        self.assertEqual((len(R.RUNNER_CONTROLS),len(R.EFFICIENCY_RUNNER_CONTROLS)),(7,8))
+        self.assertEqual(R.EFFICIENCY_RUNNER_CONTROLS[:-1],R.RUNNER_CONTROLS)
+        self.assertEqual(R.EFFICIENCY_RUNNER_CONTROLS[-1],self._testMethodName)
+        self.assertEqual(set(R.EFFICIENCY_SOURCES),{'tests/support/native_copied_capture.rs','tests/support/native_copied_capture/tests.rs'})
+        for name in inventory:
+            with self.assertRaises(AssertionError):
+                R.efficiency_calibration_inventory(prior,[n for n in inventory if n != name],N.IGNORED)
+            with self.assertRaises(AssertionError):
+                R.efficiency_calibration_inventory(prior,inventory+[name],N.IGNORED)
+        with self.assertRaises(AssertionError):
+            R.efficiency_calibration_inventory(prior,inventory+['unexpected::test'],N.IGNORED)
+        body=''.join('test '+name+(' - should panic' if panic else '')+' ... ok\n' for name,panic in got.items())
+        output=('\nrunning 200 tests\n'+body+f'test {N.IGNORED} ... ignored, {N.IGNORE_REASON}\n\n'
+                'test result: ok. 199 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
+        N.calibration_output(output,b'',got)
+        for name in R.EFFICIENCY_CALIBRATIONS:
+            with self.assertRaises(AssertionError):
+                R.efficiency_calibration_inventory(prior,inventory,name)
+            for suffix in ('ignored','ignored, new exemption','FAILED'):
+                bad=output.replace(('test '+name+' ... ok').encode(),('test '+name+' ... '+suffix).encode())
+                with self.assertRaises(AssertionError): N.calibration_output(bad,b'',got)
+
 if __name__ == '__main__':
     unittest.main()

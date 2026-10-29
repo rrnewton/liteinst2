@@ -725,3 +725,150 @@ fn leaf_set_scanner_refuses_unsupported_and_out_of_bounds_effects() {
         );
     });
 }
+
+fn repeated_read() -> (Vec<u8>, Vec<Point>) {
+    // xor eax,eax; mov ecx,2; load byte; dec ecx; jne load; ret.
+    // Both visits read '/' and leave the independently known digit count zero.
+    let code = vec![
+        0x31, 0xc0, 0xb9, 2, 0, 0, 0, 0x0f, 0xb6, 0x17, 0xff, 0xc9, 0x75, 0xf9, 0xc3,
+    ];
+    let a = Point::new(Case::new(3));
+    let mut b = a.next(2);
+    b.registers.rax = 0;
+    b.registers.eflags = 0x246;
+    let mut c = b.next(5);
+    c.registers.rcx = 2;
+    let mut d = c.next(3);
+    d.registers.rdx = 0x2f;
+    let mut e = d.next(2);
+    e.registers.rcx = 1;
+    e.registers.eflags = 0x202;
+    let mut f = e.clone();
+    f.registers.rip = ENTRY + 7;
+    let g = f.next(3);
+    let mut h = g.next(2);
+    h.registers.rcx = 0;
+    h.registers.eflags = 0x246;
+    let i = h.next(2);
+    let mut j = i.clone();
+    j.registers.rip = CONTINUATION;
+    j.registers.rsp += 8;
+    (code, vec![a, b, c, d, e, f, g, h, i, j])
+}
+
+#[test]
+fn leaf_set_scanner_cache_matches_direct_decode_at_each_runtime_base() {
+    let (code, _) = repeated_read();
+    let plan = Plan::decode(&code);
+    for entry in [ENTRY, ENTRY + 0x1_0000_0000] {
+        let mut cached = Decoded::new(&plan, entry);
+        for _ in 0..3 {
+            for &pc in &plan.declared().heads {
+                let mut decoder =
+                    Decoder::with_ip(64, &code[pc as usize..], entry + pc, DecoderOptions::NONE);
+                let direct = decoder.decode();
+                let kind = validate(&direct, &code[pc as usize..pc as usize + direct.len()]);
+                let (instruction, actual_kind) = cached.get(pc);
+                assert_eq!(instruction, &direct);
+                assert_eq!(*actual_kind, kind);
+                assert_eq!(instruction.ip(), entry + pc);
+            }
+        }
+        assert_eq!(cached.instructions.len(), plan.declared().heads.len());
+        for pc in 0..=code.len() as u64 {
+            if !plan.declared().heads.contains(&pc) {
+                refuses(|| {
+                    cached.get(pc);
+                });
+            }
+        }
+    }
+    refuses(|| {
+        Decoded::new(&plan, u64::MAX - 1);
+    });
+    let mut altered = code.clone();
+    altered[7..10].copy_from_slice(&[0x0f, 0xb6, 0x0f]);
+    let changed = Plan::decode(&altered);
+    let mut a = Decoded::new(&plan, ENTRY);
+    let mut b = Decoded::new(&changed, ENTRY);
+    assert_ne!(a.get(7).0.op_register(0), b.get(7).0.op_register(0));
+}
+
+#[test]
+fn leaf_set_scanner_cached_visits_recheck_all_dynamic_state() {
+    let (code, points) = repeated_read();
+    let result = trace(Case::new(3), &code, &points);
+    assert_eq!(
+        (
+            result.visits(),
+            result.effects_checked(),
+            result.input_reads(),
+            result.input_bytes()
+        ),
+        (9, 9, 2, 2)
+    );
+    assert_eq!(
+        result
+            .reads()
+            .iter()
+            .map(|r| (r.at, r.address, r.width))
+            .collect::<Vec<_>>(),
+        vec![(7, INPUT, 1), (7, INPUT, 1)]
+    );
+    assert_eq!(result.value(), 0);
+    assert_eq!(result.observed(), result.declared());
+    for which in 0..9 {
+        let mut bad = points.clone();
+        match which {
+            0 => bad[6].registers.rdx ^= 1,
+            1 => bad[6].registers.eflags ^= CF,
+            2 => bad[6].xstate[1000] ^= 1,
+            3 => bad[6].data[4095] ^= 1,
+            4 => bad[6].stack[0] ^= 1,
+            5 => bad[5].registers.rdi = INPUT + 1,
+            6 => bad[8].registers.rip = ENTRY + 7,
+            7 => {
+                for p in &mut bad {
+                    p.stack[248] ^= 1;
+                }
+            }
+            _ => {
+                for p in &mut bad {
+                    p.data[64] = b'z';
+                }
+            }
+        }
+        refuses(|| {
+            trace(Case::new(3), &code, &bad);
+        });
+    }
+    // Invoke a reused descriptor directly with coherent before/after addresses,
+    // so the failure is the actual per-visit complete-read bound, not adjacency.
+    let plan = Plan::decode(&code);
+    let mut cache = Decoded::new(&plan, ENTRY);
+    let _ = cache.get(7);
+    let (instruction, kind) = cache.get(7);
+    for address in [INPUT - 1, INPUT + 1, u64::MAX] {
+        let mut before = points[5].clone();
+        before.registers.rdi = address;
+        let mut after = points[6].clone();
+        after.registers.rdi = address;
+        refuses(|| {
+            effect(
+                instruction,
+                *kind,
+                Step {
+                    before: before.view(),
+                    after: after.view(),
+                },
+                Domain {
+                    input: INPUT,
+                    bound: 1,
+                    data: DATA,
+                    stack: STACK,
+                    continuation: CONTINUATION,
+                },
+            );
+        });
+    }
+}

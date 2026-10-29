@@ -542,6 +542,41 @@ impl Plan {
     }
 }
 
+// One original-trace inspection owns this cache. It borrows the exact Plan
+// bytes and fixes the actual entry address; no observed state is retained.
+struct Decoded<'a> {
+    plan: &'a Plan,
+    entry: u64,
+    instructions: BTreeMap<u64, (Instruction, Kind)>,
+}
+impl<'a> Decoded<'a> {
+    fn new(plan: &'a Plan, entry: u64) -> Self {
+        entry.checked_add(plan.code.len() as u64).unwrap();
+        Self {
+            plan,
+            entry,
+            instructions: BTreeMap::new(),
+        }
+    }
+    fn get(&mut self, pc: u64) -> &(Instruction, Kind) {
+        assert!(self.plan.declared.heads.contains(&pc));
+        let plan = self.plan;
+        let ip = self.entry.checked_add(pc).unwrap();
+        self.instructions.entry(pc).or_insert_with(|| {
+            let mut decoder =
+                Decoder::with_ip(64, &plan.code[pc as usize..], ip, DecoderOptions::NONE);
+            let i = decoder.decode();
+            let raw = &plan.code[pc as usize..pc as usize + i.len()];
+            let k = validate(&i, raw);
+            assert_eq!(
+                i.code(),
+                plan.codes[plan.heads.binary_search(&pc).unwrap()].1
+            );
+            (i, k)
+        })
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct State<'a> {
     pub registers: &'a libc::user_regs_struct,
@@ -980,6 +1015,7 @@ pub fn inspect(operation: Operation, case: Case, plan: &Plan, observed: Observat
         effects_checked: 0,
         undefined_flag_heads: BTreeSet::new(),
     };
+    let mut decoded = Decoded::new(plan, observed.entry);
     for (n, &step) in observed.steps.iter().enumerate() {
         if n > 0 {
             let previous = observed.steps[n - 1].after;
@@ -1004,20 +1040,9 @@ pub fn inspect(operation: Operation, case: Case, plan: &Plan, observed: Observat
             .checked_sub(observed.entry)
             .unwrap();
         assert!(plan.declared.heads.contains(&pc));
-        let mut decoder = Decoder::with_ip(
-            64,
-            &observed.code[pc as usize..],
-            step.before.registers.rip,
-            DecoderOptions::NONE,
-        );
-        let i = decoder.decode();
-        let raw = &observed.code[pc as usize..pc as usize + i.len()];
-        let k = validate(&i, raw);
-        assert_eq!(
-            i.code(),
-            plan.codes[plan.heads.binary_search(&pc).unwrap()].1
-        );
-        let (read, undefined) = effect(&i, k, step, domain);
+        let (i, k) = decoded.get(pc);
+        let k = *k;
+        let (read, undefined) = effect(i, k, step, domain);
         trace.observed.heads.insert(pc);
         trace.effect_heads.insert(pc);
         trace.effects_checked += 1;

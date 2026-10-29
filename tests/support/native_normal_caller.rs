@@ -9,6 +9,8 @@ pub mod csv;
 #[path = "native_normal_module.rs"]
 pub mod module;
 use module::WalkReady;
+#[path = "native_copied_capture.rs"]
+mod copied_capture;
 #[path = "native_copied_rust.rs"]
 pub mod copied_rust;
 #[path = "native_leaf_set_copied.rs"]
@@ -977,6 +979,9 @@ impl NormalOracle {
     }
     fn snapshot(&self, child: &Tracee, ready: &WalkReady, logical: u64) -> Snapshot {
         self.deadline.check();
+        if self.has_copied_caller() {
+            return copied_capture::snapshot(self, child, ready, logical);
+        }
         for (a, b) in ready.caller_immutable().iter().chain(ready.immutable()) {
             assert_eq!(
                 child.memory(*a, b.len()),
@@ -1566,6 +1571,15 @@ impl NormalOracle {
         for r in &ready {
             self.disjoint(r);
         }
+        let copied_dispatch = if let CallerProfile::CopiedRust(plan) = profile {
+            Some(
+                ready
+                    .each_ref()
+                    .map(|r| copied_capture::Dispatch::new(plan, r.caller())),
+            )
+        } else {
+            None
+        };
         let mut walks = [
             Walk {
                 child: &children[0],
@@ -1639,10 +1653,14 @@ impl NormalOracle {
             let r = &ready[index];
             loop {
                 let pc = walk.child.registers().rip;
-                let caller_pc = profile
-                    .heads()
-                    .iter()
-                    .any(|&offset| r.caller() + offset == pc);
+                let caller_pc = if let Some(dispatch) = &copied_dispatch {
+                    dispatch[index].is_head(pc)
+                } else {
+                    profile
+                        .heads()
+                        .iter()
+                        .any(|&offset| r.caller() + offset == pc)
+                };
                 let logical = if caller_pc {
                     Some(pc)
                 } else {
@@ -1676,23 +1694,28 @@ impl NormalOracle {
                         assert_state(expected, &point);
                         compared += 1;
                     }
-                    if pc == r.caller() + profile.outer_ret() {
+                    let outer = if let Some(dispatch) = &copied_dispatch {
+                        dispatch[index].outer()
+                    } else {
+                        r.caller() + profile.outer_ret()
+                    };
+                    if pc == outer {
                         break;
                     }
                 }
-                let call = profile
-                    .calls()
-                    .iter()
-                    .position(|&offset| r.caller() + offset == pc);
+                let call = if let Some(dispatch) = &copied_dispatch {
+                    dispatch[index].call(pc)
+                } else {
+                    profile
+                        .calls()
+                        .iter()
+                        .position(|&offset| r.caller() + offset == pc)
+                };
                 let ret = logical.filter(|logical| r.is_return(*logical));
                 if let Some(n) = call {
                     if let CallerProfile::CopiedRust(plan) = profile {
                         copied_rust::call_order(calls[index], returns[index].len(), n);
-                        let step = plan
-                            .steps()
-                            .iter()
-                            .find(|s| s.offset == plan.calls()[0])
-                            .unwrap();
+                        let step = copied_dispatch.as_ref().unwrap()[index].call_step();
                         assert_eq!(
                             walk.child.memory(pc, usize::from(step.length)),
                             plan.bytes()[step.offset as usize

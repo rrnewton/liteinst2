@@ -39,6 +39,11 @@ RUNNER_CONTROLS = ('test_profile_catalog_preserves_old48_and_fixed_new1280', 'te
 SDK_CONTROL = 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_roles_and_policies_cover_all_members'
 
 
+EFFICIENCY_SOURCES = ('tests/support/native_copied_capture.rs', 'tests/support/native_copied_capture/tests.rs')
+EFFICIENCY_CALIBRATIONS = ('oracle::native_ordinary::normal_caller::copied_capture::tests::copied_dispatch_matches_direct_heads_calls_and_outer', 'oracle::native_ordinary::normal_caller::copied_capture::tests::copied_capture_bounds_aliases_overflow_and_exact_ranges', 'oracle::native_ordinary::normal_caller::copied_capture::tests::copied_capture_requires_one_exact_transfer_and_fresh_storage', 'oracle::native_ordinary::normal_caller::copied_capture::tests::copied_capture_corruptions_and_dual_fault_remain_refusals', 'oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::leaf_set_scanner_cache_matches_direct_decode_at_each_runtime_base', 'oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::leaf_set_scanner_cached_visits_recheck_all_dynamic_state')
+EFFICIENCY_RUNNER_CONTROLS = RUNNER_CONTROLS + ('test_efficiency_inventory_requires_all199_and_rejects_new_ignores',)
+
+
 def calibration_inventory(prior, inventory, ignored):
     assert type(prior) is dict and len(prior) == 179 and ignored not in prior
     expected = dict(prior)
@@ -48,6 +53,19 @@ def calibration_inventory(prior, inventory, ignored):
         expected[name] = False
     assert len(expected) == 193 and len(inventory) == len(set(inventory))
     assert set(inventory) == set(expected) | {ignored}
+    return expected
+
+
+def efficiency_calibration_inventory(prior, inventory, ignored):
+    assert len(inventory) == len(set(inventory))
+    assert len(EFFICIENCY_CALIBRATIONS) == len(set(EFFICIENCY_CALIBRATIONS)) == 6
+    added = set(EFFICIENCY_CALIBRATIONS)
+    assert ignored not in added and added <= set(inventory)
+    original = [name for name in inventory if name not in added]
+    expected = calibration_inventory(prior, original, ignored)
+    assert not added.intersection(expected)
+    expected.update({name: False for name in EFFICIENCY_CALIBRATIONS})
+    assert len(expected) == 199 and set(inventory) == set(expected) | {ignored}
     return expected
 
 
@@ -295,7 +313,7 @@ def main():
     spec=importlib.util.spec_from_file_location('_leaf_whole_session',ROOT/'evaluation/ordinary-module-session/reproduce.py')
     assert spec and spec.loader
     recipe=importlib.util.module_from_spec(spec); spec.loader.exec_module(recipe)
-    required=set(recipe.MODULES.values()) | set(LEAF_SOURCES) | {
+    required=set(recipe.MODULES.values()) | set(LEAF_SOURCES) | set(EFFICIENCY_SOURCES) | {
         'evaluation/ordinary-rust-invoke-native/reproduce.py','evaluation/ordinary-rust-invoke-native/caller.py',
         'evaluation/ordinary-rust-invoke-native/rust_invoke.py','evaluation/ordinary-rust-invoke-native/controls.py',
         'evaluation/ordinary-rust-invoke-native/runner_controls.py','evaluation/ordinary-module-session/reproduce.py',
@@ -397,11 +415,13 @@ def main():
         peers={key:recipe.load('leaf_'+key,ROOT/native.MODULES[key]) for key in ('legacy','normal','whole')}
         prior=native.calibration_manifest(peers['legacy'],peers['normal'],peers['whole'])
         out,err=run.stage('state-list',[bins['state'],'--list']); inventory=modules['census'].census(out,err)
-        manifest=calibration_inventory(prior,inventory,native.IGNORED)
+        manifest=efficiency_calibration_inventory(prior,inventory,native.IGNORED)
         run.freeze(a.raw/'controls.json',dict(rust=manifest,ignored={native.IGNORED:native.IGNORE_REASON},sdk=[SDK_CONTROL],
             legacy_python=native.PYTHON_CONTROLS,session_python=recipe.PYTHON_CONTROLS,copied_python=copied.PYTHON_CONTROLS,
-            copied_runner=copied.RUNNER_CONTROLS,leaf_python=LEAF_CONTROLS,runner=RUNNER_CONTROLS))
+            copied_runner=copied.RUNNER_CONTROLS,leaf_python=LEAF_CONTROLS,runner=EFFICIENCY_RUNNER_CONTROLS))
         assert [len(x) for x in (native.PYTHON_CONTROLS,recipe.PYTHON_CONTROLS,copied.PYTHON_CONTROLS,copied.RUNNER_CONTROLS,LEAF_CONTROLS,RUNNER_CONTROLS)] == [18,26,10,4,10,7]
+        assert EFFICIENCY_RUNNER_CONTROLS[:-1] == RUNNER_CONTROLS
+        assert len(EFFICIENCY_RUNNER_CONTROLS) == len(set(EFFICIENCY_RUNNER_CONTROLS)) == 8
         out,err=run.stage('state-controls',[bins['state'],'--test-threads=1']); native.calibration_output(out,err,manifest)
         out,err=run.stage('sdk-list',[sdk,'--list']); inventory=modules['census'].census(out,err); assert SDK_CONTROL in inventory
         out,err=run.stage('sdk-control',[sdk,SDK_CONTROL,'--exact','--test-threads=1']); modules['census'].controls(out,err,[SDK_CONTROL],inventory)
@@ -410,7 +430,7 @@ def main():
             ('session-python-controls',ROOT/'evaluation/ordinary-module-session/controls.py',recipe.PYTHON_CONTROLS),
             ('copied-python-controls',ROOT/'evaluation/ordinary-rust-invoke-native/controls.py',copied.PYTHON_CONTROLS),
             ('copied-runner-controls',ROOT/'evaluation/ordinary-rust-invoke-native/runner_controls.py',copied.RUNNER_CONTROLS),
-            ('leaf-python-controls',HERE/'controls.py',LEAF_CONTROLS),('runner-controls',HERE/'runner_controls.py',RUNNER_CONTROLS)):
+            ('leaf-python-controls',HERE/'controls.py',LEAF_CONTROLS),('runner-controls',HERE/'runner_controls.py',EFFICIENCY_RUNNER_CONTROLS)):
             out,err=run.stage(name,[tools['python'],'-B',path,'-v'])
             if name == 'legacy-python-controls': native.python_output(out,err)
             elif name == 'session-python-controls': recipe.python_controls(out,err)
