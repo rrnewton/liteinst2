@@ -652,7 +652,7 @@ pub(super) fn run(candidate: &Path, expected: &Path) {
         start: start_rx,
         export: tx,
     };
-    let handle = thread::spawn(move || work(work_input));
+    let handle = joined_task::spawn(move || work(work_input));
     let mut stream = Stream {
         rx: Some(rx),
         worker: Worker {

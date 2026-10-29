@@ -134,7 +134,7 @@ pub(super) fn run(candidate: &Path, expected: &Path) {
     let clock = Arc::new(OnceLock::<(Instant, Instant)>::new());
     let worker_clock = Arc::clone(&clock);
     let worker_input = Arc::clone(&input);
-    let handle = thread::spawn(move || {
+    let handle = joined_task::spawn(move || {
         // Parent has not narrowed affinity yet; this child inherited the full set.
         pin(Some(worker_cpu));
         // SAFETY: installed immutable site; this one worker alone invokes it.

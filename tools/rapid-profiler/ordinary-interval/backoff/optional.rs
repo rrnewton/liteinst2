@@ -265,7 +265,7 @@ fn run_with_policy(candidate: &Path, trusted: &Path, path: &Path, policy: api::P
     let sink_stop = stop.clone();
     let mut sink_thread = Worker {
         resume: None,
-        handle: Some(thread::spawn(move || {
+        handle: Some(joined_task::spawn(move || {
             pin(Some(sink_cpu));
             sink(output, export, sink_stop)
         })),
@@ -276,7 +276,7 @@ fn run_with_policy(candidate: &Path, trusted: &Path, path: &Path, policy: api::P
     let worker_stop = stop.clone();
     let mut worker = Worker {
         resume: None,
-        handle: Some(thread::spawn(move || {
+        handle: Some(joined_task::spawn(move || {
             pin(Some(worker_cpu));
             // SAFETY: actual pinned worker owns its stack and new journal.
             let mut attached =
@@ -327,7 +327,7 @@ fn run_with_policy(candidate: &Path, trusted: &Path, path: &Path, policy: api::P
     let start = Instant::now() + Duration::from_millis(20);
     let mut control = Worker {
         resume: None,
-        handle: Some(thread::spawn(move || {
+        handle: Some(joined_task::spawn(move || {
             pin(Some(controller_cpu));
             let result = driver.run(start);
             (driver, result)

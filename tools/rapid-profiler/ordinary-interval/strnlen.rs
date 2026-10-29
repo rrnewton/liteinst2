@@ -129,7 +129,7 @@ pub(super) fn run(candidate: &Path, trusted: &Path, elf_va: u64, length: u64) {
     let (resume_tx, resume_rx) = mpsc::sync_channel(1);
     let worker_input = Arc::clone(&input);
     let worker_returns = returns.clone();
-    let handle = thread::spawn(move || {
+    let handle = joined_task::spawn(move || {
         pin(Some(cpu));
         let tid = unsafe { libc::syscall(libc::SYS_gettid) };
         assert!(tid > 0 && tid as u64 != u64::from(std::process::id()));

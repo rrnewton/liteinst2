@@ -105,7 +105,7 @@ pub(super) fn run(candidate: &Path, expected: &Path, name: &str, retained: usize
     let (mut controller, client) = unsafe { prepared.activate() }.unwrap();
     controller.arm(&epoch).unwrap();
     let worker_input = Arc::clone(&input);
-    let handle = thread::spawn(move || {
+    let handle = joined_task::spawn(move || {
         pin(Some(cpu));
         let mut attached =
             unsafe { client.attach(1, stack(), IntervalJournal::allocate()) }.unwrap();

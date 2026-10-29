@@ -250,7 +250,7 @@ fn run_mode(
     let sink_stop = stop.clone();
     let mut sink_thread = Worker {
         resume: None,
-        handle: Some(thread::spawn(move || {
+        handle: Some(joined_task::spawn(move || {
             pin(Some(sink_cpu));
             sink(output, export, sink_stop)
         })),
@@ -263,7 +263,7 @@ fn run_mode(
     // aborts; neither failure unwinding nor sink delay releases live input.
     let mut worker = Worker {
         resume: None,
-        handle: Some(thread::spawn(move || {
+        handle: Some(joined_task::spawn(move || {
             pin(Some(worker_cpu));
             // SAFETY: actual pinned worker and live observed stack; no native work yet.
             let mut attached =
@@ -316,7 +316,7 @@ fn run_mode(
     let start = Instant::now() + Duration::from_millis(20);
     let mut control = Worker {
         resume: None,
-        handle: Some(thread::spawn(move || {
+        handle: Some(joined_task::spawn(move || {
             pin(Some(controller_cpu));
             let result = driver.run(start);
             (driver, result)

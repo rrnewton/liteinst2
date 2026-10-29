@@ -324,9 +324,10 @@ fn run_checked(
     let (tx, rx) = mpsc::sync_channel(4);
     let (events, replies) = mpsc::sync_channel(1);
     let worker_spans = Arc::clone(&spans);
-    let mut handle = Some(thread::spawn(move || {
+    let mut handle = Some(joined_task::spawn(move || {
         worker::run(entry, client, worker_spans, rx, events, cpus[1])
     }));
+    let mut joined = None; // Kept outside the fail-stop borrowing boundary.
     // This borrowing boundary leaves engine, I/O, channels and join handles
     // alive when a recoverable controller error selects process fail-stop.
     // Returning Err from their owner scope would disconnect attached workers
@@ -489,40 +490,72 @@ fn run_checked(
             progress |= dispatch(&tx, &mut pending, schedule.is_stopping(), &mut stop_sent)?;
             loop_trace.progress(progress);
             loop_trace.mark(loop_trace::Phase::Dispatch);
-            if !final_output
-                && let Some(totals) = finished
-                && handle.as_ref().is_some_and(|h| h.is_finished())
-            {
-                assert!(schedule.is_stopping() && stop_sent && pending.is_none());
-                handle.take().unwrap().join().map_err(|_| "worker panic")?;
-                engine.retire(&mut io)?;
-                engine.history(&mut io)?;
-                assert!(engine.epochs.iter().all(Option::is_none));
-                assert_eq!(engine.banks.len(), 3);
-                assert_eq!(engine.reports.len(), schedule.armed() as usize);
-                assert_eq!(engine.committed_arms, schedule.armed());
-                assert_eq!(
-                    engine.history.last().unwrap().range().end,
-                    u64::from(schedule.armed()) + 1
-                );
-                ledger.finish(totals, &engine.reports, &mut io)?;
-                assert_eq!(ids.len(), ledger.accepted.len());
-                single_main();
-                unsafe { immutable(&spans) };
-                io.emit(format!("IO,{}\n", io.write_blocked()))?;
-                io.emit(format!(
-                    "DONE,{:?},{},{},{},{},{},{},{},{},1,1\n",
-                    schedule.stop_reason().unwrap(),
-                    schedule.armed(),
-                    engine.history.last().unwrap().range().end,
-                    ledger.accepted.len(),
-                    totals.confirmed,
-                    totals.completed,
-                    totals.unsampled,
-                    ledger.batches,
-                    ledger.flushes
-                ))?;
-                final_output = true;
+            if !final_output && let Some(totals) = finished {
+                if joined.is_none() && handle.as_ref().is_some_and(|h| h.is_finished()) {
+                    assert!(schedule.is_stopping() && stop_sent && pending.is_none());
+                    joined = Some(handle.take().unwrap().join());
+                    let captured = joined.as_ref().unwrap().tid();
+                    if u64::from(captured) != tid {
+                        return Err(format!(
+                            "joined task identity captured_tids=[{captured}] Ready={tid} observed_tasks=None"
+                        ));
+                    }
+                }
+                // One complete observation per loop. The original Schedule
+                // still bounds shutdown; unrelated tasks refuse immediately.
+                let retired = match joined.as_mut() {
+                    Some(task) => joined_task::poll_exclusive(&mut [task], || {
+                        schedule
+                            .wait_bound(Instant::now())
+                            .map(|_| ())
+                            .map_err(|error| {
+                                joined_task::Error::Clock(clock_failure(
+                                    error,
+                                    "task-retirement",
+                                    engine.committed_arms,
+                                    &schedule,
+                                ))
+                            })
+                    })
+                    .map_err(|error| error.to_string())?,
+                    None => false,
+                };
+                if retired {
+                    joined
+                        .as_ref()
+                        .unwrap()
+                        .result()
+                        .as_ref()
+                        .map_err(|_| "worker panic")?;
+                    engine.retire(&mut io)?;
+                    engine.history(&mut io)?;
+                    assert!(engine.epochs.iter().all(Option::is_none));
+                    assert_eq!(engine.banks.len(), 3);
+                    assert_eq!(engine.reports.len(), schedule.armed() as usize);
+                    assert_eq!(engine.committed_arms, schedule.armed());
+                    assert_eq!(
+                        engine.history.last().unwrap().range().end,
+                        u64::from(schedule.armed()) + 1
+                    );
+                    ledger.finish(totals, &engine.reports, &mut io)?;
+                    assert_eq!(ids.len(), ledger.accepted.len());
+                    single_main();
+                    unsafe { immutable(&spans) };
+                    io.emit(format!("IO,{}\n", io.write_blocked()))?;
+                    io.emit(format!(
+                        "DONE,{:?},{},{},{},{},{},{},{},{},1,1\n",
+                        schedule.stop_reason().unwrap(),
+                        schedule.armed(),
+                        engine.history.last().unwrap().range().end,
+                        ledger.accepted.len(),
+                        totals.confirmed,
+                        totals.completed,
+                        totals.unsampled,
+                        ledger.batches,
+                        ledger.flushes
+                    ))?;
+                    final_output = true;
+                }
             }
             loop_trace.mark(loop_trace::Phase::Finalize);
             io.write()?;
@@ -582,7 +615,10 @@ fn run_checked(
     })();
     if let Err(error) = outcome {
         let details = loop_trace.failure();
-        eprintln!("normal-session FAILED: {error}{details}");
+        let retirement = joined
+            .as_ref()
+            .map_or_else(String::new, |task| format!("; {}", task.diagnostic()));
+        eprintln!("normal-session FAILED: {error}{details}{retirement}");
         // No cancellation, checkpoint, detach or join is fabricated on failure.
         // Independent worker/callback failures keep their original fail-stop.
         std::process::exit(1);

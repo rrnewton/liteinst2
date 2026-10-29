@@ -96,7 +96,7 @@ pub(super) fn run(
     let (resume_tx, resume_rx) = mpsc::sync_channel(1);
     let worker_input = Arc::clone(&inputs.input);
     let worker_spans = Arc::clone(&inputs.spans);
-    let handle = thread::spawn(move || {
+    let handle = joined_task::spawn(move || {
         pin(Some(inputs.cpu));
         let mut caller =
             unsafe { CallerOwner::load(&inputs.caller_path, &inputs.caller_bytes) }.unwrap();
