@@ -8,6 +8,7 @@ static unsigned qa_alignment_fault;
 #include "write_footprint.h"
 #include "tests/vmovdqu64_family/promotions.inc"
 #include "tests/vmovdqu64_family/promotions256.inc"
+#include "tests/vmovdqa64_store/promotions.inc"
 #ifndef VQA64F_GROUP
 #error VQA64F_GROUP must select a bounded cohort
 #endif
@@ -341,7 +342,8 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
              write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vpc_queries,sizeof(vpc_queries))&&
              write_all(3,&vm64_promotions,sizeof(vm64_promotions))&&
-              write_all(3,&vm256_promotions,sizeof(vm256_promotions)),1206);
+              write_all(3,&vm256_promotions,sizeof(vm256_promotions))&&
+              write_all(3,&vqa_store_promotions,sizeof(vqa_store_promotions)),1206);
 }
 static void vpb_pair(struct sample *s,unsigned index) {
     current=s;fixture_target=s->pc;vpb_inputs(s);borrow(s);lane=0;native_phase=0;fixture_enter();
@@ -393,6 +395,10 @@ static void vqa_refusals(void) {
     for(size_t i=0;i<27;i++) {
         const struct vpb_refusal *v=&vqa_refused[i];result.failed_refusal=80+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(vqa_store_is_promoted(i)) {
+            vqa_store_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+            continue;
+        }
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1300+(unsigned)i);
         struct li2_write_registers registers={0};struct li2_write_footprint footprint={0};
@@ -400,10 +406,11 @@ static void vqa_refusals(void) {
              footprint.abi_version==1&&!footprint.policy&&!footprint.first&&!footprint.end,1330+(unsigned)i);
         ++vpc_queries.refusals;++result.refusals;
     }
+    vqa_store_promotions_complete();
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
-    _Static_assert(sizeof(vm256_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
+    _Static_assert(sizeof(vqa_store_promotions)+sizeof(vm256_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
                    sizeof(vpb_observations)+sizeof(v64_fault)+sizeof(vpc_queries)+sizeof(vm64_promotions)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5000,"literal trailer extent");
     _Static_assert(sizeof(v64_fault)==96,"actual failed-read trailer extent");
@@ -434,7 +441,7 @@ int fixture_main(unsigned long *stack) {
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
     vpb_refusals();need(result.refusals==72&&vm64_promotions.completed==7,1183);
-    vqa_refusals();need(result.refusals==99&&vpc_queries.refusals==27,1360);
+    vqa_refusals();need(result.refusals==98&&vpc_queries.refusals==26&&vqa_store_promotions.completed==1,1360);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     if(control){vpb_prepare(&negative_sample,v64_fault_kind<=2?64:80);vpb_pair(&negative_sample,1);die(1211);}
@@ -444,7 +451,8 @@ int fixture_main(unsigned long *stack) {
          write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vpc_queries,sizeof(vpc_queries))&&
              write_all(3,&vm64_promotions,sizeof(vm64_promotions))&&
-              write_all(3,&vm256_promotions,sizeof(vm256_promotions)),1184);
-    output("LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n");
+              write_all(3,&vm256_promotions,sizeof(vm256_promotions))&&
+              write_all(3,&vqa_store_promotions,sizeof(vqa_store_promotions)),1184);
+    output("LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n");
     return 0;
 }

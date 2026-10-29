@@ -28,15 +28,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -59,15 +61,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -90,15 +94,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group2",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -121,15 +127,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group3",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -152,15 +160,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group4",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -183,15 +193,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group5",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -214,15 +226,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group6",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -245,15 +259,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group7",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -276,15 +292,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group8",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -307,15 +325,17 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "group9",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=99 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "stdout": "LI2_VMOVDQA64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=98 prior_promoted_bytes=7 prior_supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vqa_store_typed_promotions=1 vqa_store_supplied_range_queries=1\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -341,7 +361,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "full-read-fault",
@@ -349,7 +369,9 @@
       "stderr": "",
       "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -375,7 +397,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "alignment-fault",
@@ -383,7 +405,9 @@
       "stderr": "",
       "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -409,7 +433,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "indexed-full-read-fault",
@@ -417,7 +441,9 @@
       "stderr": "",
       "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     },
     {
       "argv": [
@@ -443,7 +469,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 99,
+        "refusals": 98,
         "version": 1
       },
       "name": "indexed-alignment-fault",
@@ -451,7 +477,9 @@
       "stderr": "",
       "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
       "vm256_supplied_none_queries": 1,
-      "vm256_typed_promotions": 1
+      "vm256_typed_promotions": 1,
+      "vqa_store_supplied_range_queries": 1,
+      "vqa_store_typed_promotions": 1
     }
   ],
   "literal_effects": "Full64-byte source copied to selected ZMM; original64-bit address must be aligned64 for successful memory loads. All other full state/source/memory unchanged; faults have no retired effect.",
@@ -471,16 +499,17 @@
   "new_load_pairs_total": 93,
   "new_move_pairs_total": 160,
   "new_refusal_count": 27,
-  "new_refusals_per_process": 27,
+  "new_refusals_per_process": 26,
   "old_refusal_count": 72,
   "prior_refusals_per_process": 72,
-  "promoted_refusal_count": 8,
+  "promoted_refusal_count": 9,
   "promotion_groups": {
     "vm256": 1,
-    "vm64": 7
+    "vm64": 7,
+    "vqa_store": 1
   },
   "prospective_only": true,
-  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +10304 +2080; complete samples, refusal tail, CPUID/BV, fault, actual-before-EA and seven typed Code1605/NONE promotion records +352 exact Code1604 typed/NONE promotion bytes",
+  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +10304 +2080; complete samples, refusal tail, CPUID/BV, fault, actual-before-EA and seven typed Code1605/NONE promotion records +352 exact Code1604 typed/NONE promotion bytes +352 exact Code1838 typed/RANGE64 promotion bytes",
   "record_header_fields": [
     "magic",
     "version",
@@ -502,12 +531,12 @@
   ],
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
-  "refusals_per_process": 99,
+  "refusals_per_process": 98,
   "register_copy_pairs": 67,
   "schema_version": 1,
-  "scope": "Canonical unmasked EVEX512.W1 VMOVDQA64 Code1596 aligned load/register family;160 pairs and four genuine failed operations. Two aligned unavailable-page #PF14/error4 controls, two misaligned crossing ordinary/indexed #GP13/error0 controls. Every old supplied neighbor retained, with existing VMOVDQU64 typed promotions unchanged. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+  "scope": "Canonical unmasked EVEX512.W1 VMOVDQA64 Code1596 aligned load/register family;160 pairs and four genuine failed operations. Two aligned unavailable-page #PF14/error4 controls, two misaligned crossing ordinary/indexed #GP13/error0 controls. Every old supplied neighbor retained, with existing VMOVDQU64 typed promotions unchanged. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples. The exact original vqa_refused[10] row62e1fd487f0f remains in the27-row catalogue and must produce one separate typed Code1838/RANGE64 supplied observation in every process. Other26 rows remain refusals; new native store and registered-range cohorts are separately mandatory. This supplied promotion is not a completed native store.",
   "supplied_none_queries_per_process": 7,
-  "typed_promotions_per_process": 8,
+  "typed_promotions_per_process": 9,
   "vm256_promotion_row": {
     "bytes": "62e1fe286f0f",
     "code": 1604,
@@ -515,5 +544,13 @@
     "record_bytes": 352
   },
   "vm256_supplied_none_queries_per_process": 1,
-  "vm256_typed_promotions_per_process": 1
+  "vm256_typed_promotions_per_process": 1,
+  "vqa_store_promotion_row": {
+    "bytes": "62e1fd487f0f",
+    "code": 1838,
+    "index": 10,
+    "record_bytes": 352
+  },
+  "vqa_store_supplied_range_queries_per_process": 1,
+  "vqa_store_typed_promotions_per_process": 1
 }
