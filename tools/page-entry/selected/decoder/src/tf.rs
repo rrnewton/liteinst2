@@ -226,6 +226,17 @@ fn canonical_vpxorq128(instruction: &Instruction, bytes: &[u8]) -> bool {
                 && (*p2 & 0xf7) == 0 && (*m & 0xc0) == 0xc0)
 }
 
+// Canonical unmasked/unbroadcast EVEX.256.W1 VPXORQ. All32 register
+// roles and original64-bit ModRM/SIB/RIP memory sources are available. The CPU
+// reads the full32-byte memory operand (disp8*32); no memory writes occur.
+// Other widths, masks, zeroing/broadcast and added prefixes remain closed.
+fn canonical_vpxorq256(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpxorq_ymm_k1z_ymm_ymmm256b64
+        && matches!(bytes, [0x62, p0, p1, p2, 0xef, _, ..]
+            if (*p0 & 0x0f) == 0x01 && (*p1 & 0x87) == 0x85
+                && (*p2 & 0xf7) == 0x20)
+}
+
 // Canonical unmasked EVEX.256.W0 VPCMPNEQUB k,YMM,m256 only. The CPU
 // reads the original ModRM/SIB/RIP address (disp8*32), compares unsigned bytes,
 // and clears destination K bits63:32. No K extension, register source2,
@@ -337,6 +348,8 @@ fn classify(
         if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64 {
         if !canonical_vpxorq128(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpxorq_ymm_k1z_ymm_ymmm256b64 {
+        if !canonical_vpxorq256(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpbroadcastb_zmm_k1z_r32 {
         if !canonical_vpbroadcastb(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::VEX_Vmovdqu_xmm_xmmm128 {
@@ -712,6 +725,7 @@ fn classify(
         | Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
         | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
+        | Code::EVEX_Vpxorq_ymm_k1z_ymm_ymmm256b64
         | Code::VEX_Kmovd_r32_kr
         | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
