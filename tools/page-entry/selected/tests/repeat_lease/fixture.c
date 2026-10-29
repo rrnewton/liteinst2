@@ -626,7 +626,7 @@ int fixture_main(unsigned long *stack) {
     }
     need(seen==1,687);result.magic=UINT64_C(0x314649585446324c);result.version=1;result.pairs=PAIRS;
     setup(stack);rl_decoder_ready=1;size_t done=0,failed=0;uint32_t decoder_result=0;
-    need(!li2_tf_refusal_controls(&done,&failed,&decoder_result,&refused_last)&&done==47&&!failed&&!decoder_result,688);
+    need(!li2_tf_refusal_controls(&done,&failed,&decoder_result,&refused_last)&&done==47&&failed==SIZE_MAX&&!decoder_result,688);
     rl.old_refusals=done;prepare_case(&samples[0],0);run_pair(&samples[0]);
     need(session.self_test_complete&&!li2_lifecycle_fetch_interlock(),689);rl.startup_pairs=1;
     rl.pid=(uint64_t)session.pid;rl.tid=(uint64_t)session.tid;rl.uid=(uint64_t)RAW(SYS_getuid,0,0,0,0,0,0);
