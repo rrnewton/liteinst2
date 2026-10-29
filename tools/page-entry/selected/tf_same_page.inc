@@ -42,6 +42,8 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
         g[REG_CSGSFS]==p->before.greg[REG_CSGSFS] &&
         (uint64_t)g[REG_RSP]<(UINT64_C(1)<<47),LI2_TF_FRAME,20);
     frame(p,&p->after,uc);
+    /* Entry progress precedes the fresh stage validation observations. */
+    const struct li2_fetch_progress previous_fetch=s->fetch.progress;
     const struct li2_fetch_rx_view *v=0;
     int e=li2_lifecycle_fetch_rx_stage(&s->fetch.ref,pc,&v);
     l->transfer=*li2_lifecycle_fetch_rx_progress();chain_observe(&s->fetch);
@@ -96,7 +98,7 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
         l->origin_active=1;
     }
     l->previous=p->request;lease_frame_copy(p,&l->previous_before,&p->before);
-    l->previous_fetch=s->fetch.progress;
+    l->previous_fetch=previous_fetch;
     l->phase=LI2_LEASE_TRANSFERRING;
     /* request.pages/session/hooks and every actual open/revoke result are
        untouched. Even a nested event between these two ref stores revokes the
