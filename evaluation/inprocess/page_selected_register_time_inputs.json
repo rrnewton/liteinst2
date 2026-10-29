@@ -330,10 +330,10 @@
       "sha256": "cdc38ac5592beadef79472d0d366baef4911316b4f779bf65aa7aaf1e6a14f4b"
     },
     {
-      "bytes": 30296,
+      "bytes": 30804,
       "origin": "timing V2 3842a4be; TRACE d2f00cd3/report-route36c9 composition",
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "52497b7885006db823d1ff4a42f2e6cfb4258eb359ae17bf37c8df97e204ccd7"
+      "sha256": "6debbb2b242437fb37781c94d0303009a400dd75822c89a1d03355924ce4bee8"
     },
     {
       "bytes": 32527,

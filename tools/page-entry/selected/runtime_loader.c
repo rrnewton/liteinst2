@@ -38,6 +38,14 @@
 #endif
 static void selected_cpuid_nx_report(unsigned,unsigned);
 #endif
+#ifdef LI2_TF_SAME_PAGE_LEASE
+#if LI2_TF_SAME_PAGE_LEASE != 1 || LI2_RSEQ_TIOCGWINSZ_BTRFS != 1 || LI2_RSEQ_NATIVE_BOUNDARY != 1
+#error "same-page lease is a fixed boundary/winsz profile"
+#endif
+#if defined(LI2_ONESHOT_PUBLICATION) || defined(LI2_SELECTED_PROVIDER)
+#error "same-page lease does not compose with one-shot/configured callbacks"
+#endif
+#endif
 #include <linux/audit.h>
 #include <fcntl.h>
 
@@ -146,6 +154,8 @@ static void report(unsigned status,unsigned code,long detail) {
     uint64_t patches=0;
     for(unsigned i=0;i<selected_oneshot_used;i++)patches+=selected_oneshot_owners[i].state.published==1;
     field(&w,",\"source_patches\":",patches);
+#elif defined(LI2_TF_SAME_PAGE_LEASE)
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_same_page_tf_lease\",\"source_patches\":0");
 #elif defined(LI2_CPUID_NX_ONLY)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_native_pages_cpuid_nx\",\"source_patches\":0");
 #elif defined(LI2_NATIVE_PAGES)

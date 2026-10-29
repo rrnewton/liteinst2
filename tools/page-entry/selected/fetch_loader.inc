@@ -181,3 +181,6 @@ int li2_lifecycle_fetch_interlock(void) { return fetch.progress.held?LI2_FETCH_B
 const struct li2_fetch_progress *li2_lifecycle_fetch_progress(void) { return &fetch.progress; }
 
 #include "tf_continuation.inc"
+#ifdef LI2_TF_SAME_PAGE_LEASE
+#include "fetch_rx_transfer.inc"
+#endif

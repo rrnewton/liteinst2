@@ -259,9 +259,9 @@
       "sha256": "affcdedf14950ee0c7fd0e84c5443f3e6b9b4e3100a2ab1b8e12b60a78497f09"
     },
     {
-      "bytes": 10296,
+      "bytes": 10366,
       "path": "tools/page-entry/selected/fetch_loader.inc",
-      "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
+      "sha256": "0077b7f0a8657b32861c59ef4a6fa77a8a05e1bc20e18030f3d9f431ae7e7249"
     },
     {
       "bytes": 42749,
@@ -494,14 +494,14 @@
       "sha256": "90e4c104ee48f857a1b8a8e3267076bec9743f7b7592e331c45bfbde0343e276"
     },
     {
-      "bytes": 4524,
+      "bytes": 4728,
       "path": "tools/page-entry/selected/tf_chain.h",
-      "sha256": "5cd7f07e4f4c8429ccb1445718d65325a3c295e3cb2e6e76e7917caf34f98e5f"
+      "sha256": "2e7ce1001056ca9ea5aefc6792ccb098a473510b49566f345ca6b62f01111d50"
     },
     {
-      "bytes": 20578,
+      "bytes": 20818,
       "path": "tools/page-entry/selected/tf_chain.inc",
-      "sha256": "b4cc24f33cd1119fc0781648e67dee16f3b1cfbac9d3e08704ce26a7bcc39b4e"
+      "sha256": "5b2b00eae196bc1b604d7c79dec03656aee4a9c9de820a276815dd4ec00d41cb"
     },
     {
       "bytes": 619,

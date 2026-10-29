@@ -14,12 +14,29 @@ static void selected_generic_begin(int sig,siginfo_t *si,ucontext_t *context,uin
 static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
     enum li2_chain_result result=li2_tf_chain_trace(&selected_chain,sig,si,context);
     const struct li2_tf_chain_slot *previous=&selected_chain.slots[selected_chain.active^1];
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    if(result==LI2_CHAIN_LEASE_RUNNING) {
+        const struct li2_tf_same_page *l=&selected_chain.lease;
+        checked(l->phase==LI2_LEASE_RUNNING && l->origin_active &&
+            l->completed_event==selected_chain.event_id && l->slot==(unsigned)selected_chain.active &&
+            l->owner_generation==selected_chain.slots[selected_chain.active].generation,656,2);
+        previous=&selected_chain.slots[selected_chain.active];
+    }
+#endif
     selected_logical_flags=previous->owner.actual_post_flags&~SELECTED_TF;
     checked(!(selected_logical_flags&(SELECTED_TF|SELECTED_RF)),656,0);
     uint64_t expected=selected_logical_flags;
-    if(result==LI2_CHAIN_RUNNING)expected|=SELECTED_TF;
+    if(result==LI2_CHAIN_RUNNING
+#ifdef LI2_TF_SAME_PAGE_LEASE
+       || result==LI2_CHAIN_LEASE_RUNNING
+#endif
+       )expected|=SELECTED_TF;
     checked((uint64_t)context->uc_mcontext.gregs[REG_EFL]==expected,656,1);
-    selected_flags_known=1;selected_step_pending=result==LI2_CHAIN_RUNNING;
+    selected_flags_known=1;selected_step_pending=result==LI2_CHAIN_RUNNING
+#ifdef LI2_TF_SAME_PAGE_LEASE
+        || result==LI2_CHAIN_LEASE_RUNNING
+#endif
+        ;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
     selected_initialized();
 }
@@ -47,7 +64,11 @@ static void selected_chain_slot_report(struct writer *w,unsigned index,const str
 }
 static void selected_chain_report(unsigned status,unsigned code,long detail) {
     const struct li2_tf_chain *c=&selected_chain;struct writer w={.used=0};
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    text(&w,"LI2_CHAIN {\"version\":1,\"scope\":\"opt_in_same_page_tf_lease\"");
+#else
     text(&w,"LI2_CHAIN {\"version\":1,\"scope\":\"opt_in_trace_to_plain\"");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);field(&w,",\"active\":",c->active);
@@ -59,5 +80,17 @@ static void selected_chain_report(unsigned status,unsigned code,long detail) {
     field(&w,",\"releases\":",c->releases);field(&w,",\"unexpected\":",c->unexpected_events);
     field(&w,",\"proof_valid\":",__atomic_load_n(&c->entry.valid,__ATOMIC_ACQUIRE));
     for(unsigned i=0;i<2;i++)selected_chain_slot_report(&w,i,&c->slots[i]);
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    /* Existing counters retain actual arm/close/preparation/release meanings.
+       Total completed instructions are steps+lease_transfers; no fake opens. */
+    const struct li2_tf_same_page *l=&c->lease;
+    field(&w,",\"lease_phase\":",l->phase);field(&w,",\"lease_active\":",l->origin_active);
+    field(&w,",\"lease_candidates\":",l->candidates);field(&w,",\"lease_misses\":",l->misses);
+    field(&w,",\"lease_transfers\":",l->transfers);field(&w,",\"lease_closed\":",l->closed_leases);
+    field(&w,",\"lease_event\":",l->completed_event);
+    field(&w,",\"lease_fetch_phase\":",l->transfer.phase);
+    field(&w,",\"lease_fetch_before\":",l->transfer.before_sequence);
+    field(&w,",\"lease_fetch_after\":",l->transfer.after_sequence);
+#endif
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }

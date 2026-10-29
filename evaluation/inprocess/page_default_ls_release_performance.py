@@ -84,7 +84,7 @@ def summary(r):
             need(len(values)==5 and all(type(x)is int and x>0 for x in values),'all five unfiltered process measurements')
             aggregates[lane]=dict(min_ns=min(values),median_ns=int(statistics.median(values)),max_ns=max(values))
     captures=[(c['name'],k,v) for c in r['commands'] for k,v in c.get('captures',{}).items()]
-    return dict(schema=1,profile='page-default-ls-release-performance-v1',status=r['status'],
+    value=dict(schema=1,profile='page-default-ls-release-performance-v1',status=r['status'],
         revision=r['expected_revision'],hardware={k:r['hardware'][k] for k in HARDWARE_KEYS},reserved_cpu_count=1,
         bounds=BOUNDS,planned_pairs=5,actual_subjects=sum(type(c.get('pid'))is int and c['pid']>0 for c in r['commands'] if c['profile']=='native'),
         accepted_subjects=len(accepted),all_samples_accepted=complete,
@@ -98,8 +98,11 @@ def summary(r):
         inputs_sha256=digest(r.get('inputs',{})),artifacts_sha256=digest(r.get('artifacts',{})),
         error_type=r['error'].split(':',1)[0] if r['error'] else None,final_errors=len(r['final_errors']),
         performance_credit=complete,full_b2_complete=False,full_b3_complete=False,reproduce=r['reproduce'])
+    if r['profile']=='page-default-ls-tf-same-page-release-performance-v1':
+        support('page_default_ls_release_lease_reports').project(value,r)
+    return value
 
-def qualified(path,sha,current,pin,binary,record):
+def qualified(path,sha,current,pin,binary,record,lease_mode=False):
     """Authenticate the already qualified exact release artifact; do not requalify."""
     import page_selected_rseq_native as registered
     import page_selected_rseq_native_boundary as boundary
@@ -110,12 +113,22 @@ def qualified(path,sha,current,pin,binary,record):
     from page_selected_register_time_build import bridge_check
     path=pin(path);need(fact(path)['sha256']==sha,'explicit finite qualification receipt hash')
     q=decode(path.read_bytes());directory=path.parent
-    need(q['profile']=='page-selected-rseq-tiocgwinsz-btrfs-v1' and q['status']=='passed' and
-         q['expected_revision']==current['revision'] and q['source']==q['source_after']==current and
-         q['source_unchanged']is True and q['error']is None and not q['final_errors'],
-         'successful finite qualification at this exact committed source')
-    need(q['bounds']==dict(PROFILES,**registered.BOUNDS,**boundary.BOUNDS,**queries.BOUNDS,**queries.WINSZ_BOUNDS),
-         'all finite source-defined bounds remain exact')
+    need(type(lease_mode)is bool,'fixed literal lease mode')
+    if lease_mode:import page_selected_tf_same_page as lease
+    if lease_mode:
+        need(q['profile']=='page-selected-tf-same-page-v1' and q['status']=='passed' and
+             q['expected_revision']==current['revision'] and q['source']==q['source_after']==current and
+             q['source_unchanged']is True and q['error']is None and not q['final_errors'],
+             'successful complete lease qualification at this exact committed source')
+        need(q['bounds']==dict(PROFILES,**registered.BOUNDS,**boundary.BOUNDS,**queries.BOUNDS,**queries.WINSZ_BOUNDS,**lease.BOUNDS),
+             'all original and lease source-defined bounds remain exact')
+    else:
+        need(q['profile']=='page-selected-rseq-tiocgwinsz-btrfs-v1' and q['status']=='passed' and
+             q['expected_revision']==current['revision'] and q['source']==q['source_after']==current and
+             q['source_unchanged']is True and q['error']is None and not q['final_errors'],
+             'successful finite qualification at this exact committed source')
+        need(q['bounds']==dict(PROFILES,**registered.BOUNDS,**boundary.BOUNDS,**queries.BOUNDS,**queries.WINSZ_BOUNDS),
+             'all finite source-defined bounds remain exact')
     hkeys=(*HARDWARE_KEYS,'isa_flags','runner_euid','runner_cap_eff','runner_seccomp_mode')
     need(all(q['hardware'][k]==record['hardware'][k]for k in hkeys),'same actually observed qualified hardware/kernel/process envelope')
     for key in ('inputs','aliases','artifacts'):
@@ -142,6 +155,7 @@ def qualified(path,sha,current,pin,binary,record):
              c['bounds']==q['bounds'][c['profile']] and c['capture_limit']==(4096 if c['profile']=='rseq_native_contender'else 16<<20) and
              all(d['closed']is True for d in c['descriptors']), 'actual finite command supervision/outcome')
         observed=c['profile']in('rseq_native','rseq_native_boundary','rseq_tcgets_btrfs','rseq_tiocgwinsz_btrfs')
+        if lease_mode and c['profile']=='tf_same_page':observed=True
         need(set(c['captures'])==({'stdout','stderr','record'}if observed else{'stdout','stderr'})and
              (c['descriptors']==[dict(name='record',fd=3,closed=True)]if observed else c['descriptors']==[]),
              'exact source-defined retained record descriptor/capture inventory')
@@ -150,6 +164,11 @@ def qualified(path,sha,current,pin,binary,record):
         for stream in c['captures']:capture(c['name'],stream)
     summaries=dict(registered=registered.summary(q),boundary=boundary.summary(q),tcgets=queries.summary(q),winsz=queries.summary_winsz(q))
     need(all(v['full_finite_profile']is True for v in summaries.values()),'all16+4+20+16+17+1 finite cohorts')
+    if lease_mode:
+        summaries['lease']=lease.summary(q)
+        need(summaries['lease']['full_finite_profile']is True and summaries['lease']['accepted_subjects']==17 and
+             summaries['lease']['successful_operations']==12 and summaries['lease']['required_failed_operations']==5 and
+             summaries['lease']['accepted_pairs']==5,'all seventeen actual lease subjects, including five failed operations')
     companions=load('release_companions',ROOT/'tools/page-entry/selected/tests/oneshot_registered/companions.py')
     companion_state={}
     companions.replay(ROOT,{k:Path(v['path'])for k,v in q['companions']['receipts'].items()},current,
@@ -159,6 +178,9 @@ def qualified(path,sha,current,pin,binary,record):
     for key in('companion_namespace_aliases','rseq_native_namespace_aliases','rseq_native_boundary_namespace_aliases','rseq_tcgets_btrfs_namespace_aliases'):
         need(q.get(key),'actual finite dependency namespace rows required')
         record['qualified_namespace_aliases'].update(q[key])
+    if lease_mode:
+        need(q.get('tf_same_page_namespace_aliases'),'actual lease dependency namespace rows required')
+        record['qualified_namespace_aliases'].update(q['tf_same_page_namespace_aliases'])
     b=q['build'];need(b['status']=='passed' and b['started']is True and b['command_completed']is True and
          b['configuration_unchanged']is True and not b['final_errors'] and b['registry_before']==b['registry_after'] and
          set(b['artifacts'])==set(ARTIFACTS)|{'generic-observe'},'successful complete retained release Build')
@@ -186,22 +208,37 @@ def qualified(path,sha,current,pin,binary,record):
     need(dep.startswith(prefix)and '\n'not in dep and len(shlex.split(dep[len(prefix):]))==8 and
          set(shlex.split(dep[len(prefix):]))=={str(ROOT/k)for k in decoder},'actual retained decoder archive dep-info')
     state=q['rseq_tiocgwinsz_btrfs_fixture'];name='rseq-tiocgwinsz-btrfs-unobserved'
+    if lease_mode:state=q['tf_same_page_fixture'];name='tf-same-page-unobserved'
     builds=[x for x in state['builds']if x['name']==name];need(len(builds)==1,'one actual unobserved release bridge')
     build=builds[0];bridge=binary(pin(build['inspection']['path']));bridge_check(bridge)
-    need(bridge==directory/'rseq-tiocgwinsz-btrfs/unobserved.so' and
-         fact(bridge)==build['artifact']=={k:build['inspection'][k]for k in('bytes','sha256')} and
-         build['archive']==state['archive']==fact(archive),'actual finite release bridge/archive identity')
+    if lease_mode:
+        need(bridge==directory/'tf-same-page/unobserved.so' and
+             fact(bridge)==build['artifact']=={k:build['inspection'][k]for k in('bytes','sha256')} and
+             build['archive']==state['archive']==fact(archive),'actual qualified unobserved lease bridge/archive identity')
+    else:
+        need(bridge==directory/'rseq-tiocgwinsz-btrfs/unobserved.so' and
+             fact(bridge)==build['artifact']=={k:build['inspection'][k]for k in('bytes','sha256')} and
+             build['archive']==state['archive']==fact(archive),'actual finite release bridge/archive identity')
     selected=ROOT/'tools/page-entry/selected';recipe=pin(selected/'build-rseq-tiocgwinsz-btrfs.sh')
+    if lease_mode:recipe=pin(selected/'build-tf-same-page-lease.sh')
     builder=SimpleNamespace(tools=tools,environment=b['environment'])
     argv=recipe_commands(recipe,builder,bridge.parent,archive,pin)[0];argv[-1]=str(bridge)
     units=[str(selected.parent/p)for p in UNITS[:-1]]
     macros=(MACROS-{'-DLI2_ONESHOT_PUBLICATION=1'})|{'-DLI2_CPUID_NX_ONLY=1','-DLI2_RSEQ_NATIVE=1',
         '-DLI2_RSEQ_NATIVE_BOUNDARY=1','-DLI2_RSEQ_TCGETS_BTRFS=1','-DLI2_RSEQ_TIOCGWINSZ_BTRFS=1'}
-    need(build['recipe']==fact(recipe) and build['argv']==argv==actual[name+'-link']['argv'] and
-         build['translation_units']==len(units)==15 and [v for v in argv if v.endswith(('.c','.S'))]==units and
-         {v for v in argv if v.startswith('-DLI2_')}==macros and sum(v.startswith('-DLI2_')for v in argv)==12 and
-         all(v in argv for v in('-O2','-g','-nostdlib','-shared','-fPIC','-fvisibility=hidden','-mgeneral-regs-only','-fno-builtin','-Werror')),
-         'exact unobserved release recipe, no diagnostic or injected observation')
+    if lease_mode:
+        macros=macros|{'-DLI2_TF_SAME_PAGE_LEASE=1'}
+        need(build['recipe']==fact(recipe) and build['argv']==argv==actual[name+'-link']['argv'] and
+             build['translation_units']==len(units)==15 and [v for v in argv if v.endswith(('.c','.S'))]==units and
+             {v for v in argv if v.startswith('-DLI2_')}==macros and sum(v.startswith('-DLI2_')for v in argv)==13 and
+             all(v in argv for v in('-O2','-g','-nostdlib','-shared','-fPIC','-fvisibility=hidden','-mgeneral-regs-only','-fno-builtin','-Werror')),
+             'exact unobserved fifteen-unit thirteen-macro lease release recipe')
+    else:
+        need(build['recipe']==fact(recipe) and build['argv']==argv==actual[name+'-link']['argv'] and
+             build['translation_units']==len(units)==15 and [v for v in argv if v.endswith(('.c','.S'))]==units and
+             {v for v in argv if v.startswith('-DLI2_')}==macros and sum(v.startswith('-DLI2_')for v in argv)==12 and
+             all(v in argv for v in('-O2','-g','-nostdlib','-shared','-fPIC','-fvisibility=hidden','-mgeneral-regs-only','-fno-builtin','-Werror')),
+             'exact unobserved release recipe, no diagnostic or injected observation')
     flags=[v for v in argv[1:-2]if v not in units and v!=str(archive)and not v.startswith('-Wl,')]
     need(actual[name+'-headers']['argv']==[str(tools['cc']),*flags,'-M','-MT','li2_timing',*units] and
          actual[name+'-headers']['environment']==actual[name+'-link']['environment']==b['environment'],
@@ -211,6 +248,12 @@ def qualified(path,sha,current,pin,binary,record):
          not capture(name+'-headers','stderr'),'complete actual fifteen-unit compiler include closure')
     included={str(pin(p)):fact(p)for line in rules for p in shlex.split(line.split(': ',1)[1])}
     need(included==build['headers'] and set(units)<=set(included),'every actual conditional header and source')
+    if lease_mode:
+        required={'tf_same_page.h','tf_same_page.inc','fetch_rx_transfer.inc','tf_chain.h','tf_chain.inc','selected_chain.inc','fetch_loader.inc'}
+        need({str(selected/n)for n in required}<=set(included) and
+             not any(Path(p).is_relative_to(directory/'tf-same-page/observed')or
+                     Path(p).is_relative_to(selected/'tests/tf_same_page')for p in included),
+             'complete production lease includes without finite observer source')
     need(actual[name+'-undefined']['argv']==[str(tools['nm']),'-u',str(bridge)] and
          not capture(name+'-undefined','stdout') and not capture(name+'-undefined','stderr'),'actual no-import ELF')
     need(actual[name+'-symbols']['argv']==[str(tools['nm']),'-S','--defined-only',str(bridge)] and
@@ -219,6 +262,7 @@ def qualified(path,sha,current,pin,binary,record):
     reset=hidden_memset(bridge,body_check(bridge,capture(name+'-symbols','stdout'),capture(name+'-memset','stdout'),'fast',symbol_name='memset'))
     need(reset==build['inspection']['reset'],'same actual qualified release reset body')
     registered.finalize(q);boundary.finalize(q);queries.finalize(q);companions.finalize(q)
+    if lease_mode:lease.finalize(q)
     record['qualification']=dict(receipt=fact(path),summaries=summaries,companions=q['companion_summary'],
         bridge=fact(bridge),archive=fact(archive),build=build,commands=len(rows),
         qualification_credit='inherited exact finite receipt, not a new qualification run')
@@ -235,6 +279,7 @@ def main():
     ap.add_argument('--qualification-receipt',type=Path,required=True)
     ap.add_argument('--qualification-sha256',required=True,help='reviewed closed finite receipt SHA256, at this exact revision')
     ap.add_argument('--library-root',type=Path,default=Path('/usr/lib64'))
+    ap.add_argument('--tf-same-page-lease',action='store_true',help='require the full same-revision seventeen-subject lease qualifier')
     args=ap.parse_args();os.chdir(ROOT)
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision) and
          re.fullmatch('[0-9a-f]{64}',args.qualification_sha256) and
@@ -249,6 +294,10 @@ def main():
     r['reproduce']=['python3','evaluation/inprocess/page_default_ls_release_performance.py','--expect-revision',args.expect_revision,
         '--qualification-receipt','${SAME_REVISION_FINITE_RECEIPT}','--qualification-sha256',args.qualification_sha256,
         '--output','${NEW_PRIVATE_OUTPUT}','--library-root','${LIBRARY_ROOT}']
+    lease_reader=None
+    if args.tf_same_page_lease:
+        lease_reader=support('page_default_ls_release_lease_reports')
+        r['profile']=lease_reader.PROFILE;r['reproduce'].append('--tf-same-page-lease')
     env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1')
     def pin(path):
         alias=str(Path(path).absolute());p=Path(alias).resolve(strict=True);value=fact(p)
@@ -358,7 +407,10 @@ def main():
         r['candidate_source']={str(p.relative_to(ROOT)):fact(pin(p))for p in
             sorted(SUPPORT.iterdir())if p.is_file()}
         r['required_source_inputs']={str((ROOT/os.fsdecode(n)).resolve()):fact(ROOT/os.fsdecode(n))for n in names if n and not n.startswith(b'evaluation/inprocess/results/')}
-        tools,bridge=qualified(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r)
+        if args.tf_same_page_lease:
+            tools,bridge=qualified(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r,lease_mode=True)
+        else:
+            tools,bridge=qualified(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r)
         r['bridge']=fact(bridge)
         tools['app_python']=tools['python'];need(pin(sys.executable)==tools['python'],'same actual Python tool')
         for module in tuple(sys.modules.values()):
@@ -400,7 +452,11 @@ def main():
             if lane=='native':need(not err,'native stderr empty')
             else:
                 observe_namespace(directory)
-                gate,reports,observed=reader.check(err,command['pid'],command['exit'],command['stdout_provenance_before'],original_reports)
+                if lease_reader is not None:
+                    gate,reports,observed=lease_reader.check(err,command['pid'],command['exit'],command['stdout_provenance_before'],original_reports,reader)
+                    row['same_page_lease']=lease_reader.counters(reports)
+                else:
+                    gate,reports,observed=reader.check(err,command['pid'],command['exit'],command['stdout_provenance_before'],original_reports)
                 need(observed['application_completed']is True,'unchanged full old completion and actual two-request ENOTTY proof')
                 n=reports['native']
                 row.update(admissions=n['admissions'],closed=n['closed'],first_admission_work_ns=n['first_admission_ns'],

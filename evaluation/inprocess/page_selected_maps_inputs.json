@@ -71,9 +71,9 @@
       "sha256": "e8927647513805dc1684b56912cccc1a9f54260e65a267c7bbfcd3cb53831b8e"
     },
     {
-      "bytes": 10296,
+      "bytes": 10366,
       "path": "tools/page-entry/selected/fetch_loader.inc",
-      "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
+      "sha256": "0077b7f0a8657b32861c59ef4a6fa77a8a05e1bc20e18030f3d9f431ae7e7249"
     },
     {
       "bytes": 42749,
@@ -136,9 +136,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 30296,
+      "bytes": 30804,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "52497b7885006db823d1ff4a42f2e6cfb4258eb359ae17bf37c8df97e204ccd7"
+      "sha256": "6debbb2b242437fb37781c94d0303009a400dd75822c89a1d03355924ce4bee8"
     },
     {
       "bytes": 32527,

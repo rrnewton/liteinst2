@@ -103,14 +103,14 @@
       "sha256": "9bc0bb60c42d5e09c21184cac37b850eefb68a3cef51d49de25ea03d2078c5ed"
     },
     {
-      "bytes": 4524,
+      "bytes": 4728,
       "path": "tools/page-entry/selected/tf_chain.h",
-      "sha256": "5cd7f07e4f4c8429ccb1445718d65325a3c295e3cb2e6e76e7917caf34f98e5f"
+      "sha256": "2e7ce1001056ca9ea5aefc6792ccb098a473510b49566f345ca6b62f01111d50"
     },
     {
-      "bytes": 20578,
+      "bytes": 20818,
       "path": "tools/page-entry/selected/tf_chain.inc",
-      "sha256": "b4cc24f33cd1119fc0781648e67dee16f3b1cfbac9d3e08704ce26a7bcc39b4e"
+      "sha256": "5b2b00eae196bc1b604d7c79dec03656aee4a9c9de820a276815dd4ec00d41cb"
     },
     {
       "bytes": 619,

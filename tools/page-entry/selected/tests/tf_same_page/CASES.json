@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "subjects": 17,
+  "cases": [
+    {
+      "index": 0,
+      "name": "repeated",
+      "generic_instructions": 6,
+      "transfers": 3,
+      "exit": 0,
+      "native": true,
+      "control": 0
+    },
+    {
+      "index": 1,
+      "name": "branch",
+      "generic_instructions": 6,
+      "transfers": 2,
+      "exit": 0,
+      "native": true,
+      "control": 0
+    },
+    {
+      "index": 2,
+      "name": "selected",
+      "generic_instructions": 5,
+      "transfers": 2,
+      "exit": 0,
+      "native": true,
+      "control": 0
+    },
+    {
+      "index": 3,
+      "name": "page_end",
+      "generic_instructions": 4,
+      "transfers": 1,
+      "exit": 0,
+      "native": true,
+      "control": 0
+    },
+    {
+      "index": 4,
+      "name": "straddler",
+      "generic_instructions": 4,
+      "transfers": 0,
+      "exit": 0,
+      "native": true,
+      "control": 0
+    },
+    {
+      "index": 5,
+      "name": "rseq_overlap",
+      "generic_instructions": 1,
+      "transfers": 0,
+      "exit": 125,
+      "native": false,
+      "control": 0
+    },
+    {
+      "index": 6,
+      "name": "stale_ref",
+      "generic_instructions": 1,
+      "transfers": 0,
+      "exit": 125,
+      "native": false,
+      "control": 1
+    },
+    {
+      "index": 7,
+      "name": "closed_backing",
+      "generic_instructions": 1,
+      "transfers": 0,
+      "exit": 125,
+      "native": false,
+      "control": 2
+    },
+    {
+      "index": 8,
+      "name": "nested_staged",
+      "generic_instructions": 1,
+      "transfers": 0,
+      "exit": 125,
+      "native": false,
+      "control": 3
+    },
+    {
+      "index": 9,
+      "name": "nested_committing",
+      "generic_instructions": 1,
+      "transfers": 0,
+      "exit": 125,
+      "native": false,
+      "control": 4
+    }
+  ]
+}
