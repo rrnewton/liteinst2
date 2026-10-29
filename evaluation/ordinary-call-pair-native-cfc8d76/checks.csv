@@ -1,0 +1,8 @@
+phase,name,status,seconds,wall_limit_seconds,exit_code,rescue_reaps,terminal_observations,passed_observations,failed_observations,ignored_observations,command,log_sha256
+merged-cfc8d76-seven-checks-v1,fmt,PASS,8.215418783947825,180,0,0,0,0,0,0,cargo fmt --check,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+merged-cfc8d76-seven-checks-v1,clippy,PASS,33.45478124404326,180,0,0,0,0,0,0,cargo clippy --workspace --all-targets --all-features -- -D warnings,2bee0083a290340fccd3125083a78d76d27bb4b5104c5a9af4c8bcb0b19c02bb
+merged-cfc8d76-seven-checks-v1,check,PASS,17.639921069145203,180,0,0,0,0,0,0,cargo check --workspace --all-features --all-targets,05b3d7368388df73588e7d9e1dfe70e2d27e9bc3c75b4f81ec8b92fb3d71e081
+merged-cfc8d76-seven-checks-v1,workspace-default,TIMEOUT,360.1454168949276,360,-9,8,74,1982,0,1,cargo test --workspace,27221ba0eb2ed1358232f26451fe87f963006a79ac47757bd9f95e0b85155bd4
+merged-cfc8d76-tail-checks-v1,serial-launch,PASS,128.58547204500064,180,0,0,28,1039,0,0,cargo test -p liteinst-launch -- --test-threads=1 --nocapture,2c42dde7e1d08e48563c1d792d3f134e46eca0f80276f380173d32736544006e
+merged-cfc8d76-tail-checks-v1,staged-allocation,PASS,0.03811050113290548,180,0,0,1,3,0,0,cargo test -p liteinst2 --lib staged,5e07291823c056e6eb69c5255d8d3fc5ef707a87792d8e53ad13de6c3687cd44
+merged-cfc8d76-tail-checks-v1,prefixed-pun,PASS,1.5018398449756205,180,0,0,1,36,0,0,cargo test -p liteinst2 --test prefixed_pun_oracle,70ab10d27146021645da13acf33156d9cdad48aa18fc61641ace27868e120759
