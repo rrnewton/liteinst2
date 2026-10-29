@@ -1,0 +1,21 @@
+[workspace]
+
+[package]
+name = "li2-native-hle-d1-modes"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "hle-d1-modes"
+path = "modes.rs"
+
+[dependencies]
+iced-x86 = { version = "=1.21.0", default-features = false, features = ["std", "decoder", "op_code_info"] }
+
+[profile.release]
+opt-level = 2
+debug = 1
+panic = "abort"
+overflow-checks = true
+codegen-units = 1

@@ -30,6 +30,16 @@ static int prefix(unsigned char b) {
         b==0xf2 || b==0xf3 || b==0x26 || b==0x2e || b==0x36 ||
         b==0x3e || b==0x64 || b==0x65;
 }
+/* D1 is Group-2 rotate/shift-by-one in every supported decode mode, including
+   the redundant /6 SAL encoding. No D1 form permits LOCK or HLE. This proves
+   only the absence of HLE for one prefix candidate, not instruction validity:
+   an addressing SIB/displacement may still be incomplete. Keep an opcode and
+   ModRM inside that candidate's 15-byte envelope before using this fact. */
+static int lock_d1_nontransactional(const unsigned char *p,size_t n,
+                                   size_t first,size_t opcode) {
+    return opcode<n && n-opcode>=2 && opcode>=first && opcode-first<=13 &&
+        p[opcode]==0xd1;
+}
 unsigned li2_native_policy(const unsigned char *bytes,size_t length) {
     unsigned result=0;
     for(size_t i=0;i<length;i++) {
@@ -39,15 +49,19 @@ unsigned li2_native_policy(const unsigned char *bytes,size_t length) {
            bytes as prefixes even where they would be legacy INC/DEC. */
         if(bytes[i]!=0xf2 && bytes[i]!=0xf3)continue;
         size_t j=i+1,limit=length-i<15?length:i+15;
+        unsigned lock_after=0;
         for(;j<limit && prefix(bytes[j]);j++)
-            if(bytes[j]==0xf0)result|=LI2_NATIVE_BLOCK_TRANSACTION;
+            if(bytes[j]==0xf0)lock_after=1;
+        if(lock_after && !lock_d1_nontransactional(bytes,length,i,j))
+            result|=LI2_NATIVE_BLOCK_TRANSACTION;
         if(j<limit && (bytes[j]==0x86 || bytes[j]==0x87 ||
            (bytes[i]==0xf3 && (bytes[j]==0x88 || bytes[j]==0x89 ||
                              bytes[j]==0xc6 || bytes[j]==0xc7))))
             result|=LI2_NATIVE_BLOCK_TRANSACTION;
         /* LOCK can precede the acquire/release prefix. */
         for(size_t k=i;k && i-k<14 && prefix(bytes[k-1]);k--)
-            if(bytes[k-1]==0xf0)result|=LI2_NATIVE_BLOCK_TRANSACTION;
+            if(bytes[k-1]==0xf0 && !lock_d1_nontransactional(bytes,length,k-1,j))
+                result|=LI2_NATIVE_BLOCK_TRANSACTION;
     }
     return result;
 }
