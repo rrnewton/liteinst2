@@ -179,9 +179,10 @@ class Main813InventoryTests(unittest.TestCase):
                 inventory.require_current(old)
         read_bytes = Path.read_bytes
         for path in main813.DATA['sources']:
+            mutation_target = main813.ROOT / path
             def changed(candidate):
                 raw = read_bytes(candidate)
-                return raw + b'\n' if candidate == main813.ROOT / path else raw
+                return raw + b'\n' if candidate == mutation_target else raw
             with self.subTest(path=path), patch.object(Path, 'read_bytes', changed):
                 with self.assertRaises(parsing.InvalidEvidence):
                     main813.before_current(declared)
@@ -215,8 +216,9 @@ class Main813InventoryTests(unittest.TestCase):
                 inventory.require_current(changed)
         for path in main813.MAIN690['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -258,8 +260,9 @@ class Main813InventoryTests(unittest.TestCase):
         newest = actual  # Source mutation controls authenticate the actual current catalog.
         for path in main813.MAINC0['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -301,8 +304,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_c1(changed)
         for path in main813.MAINC1['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -347,8 +351,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_e797(changed)
         for path in main813.MAINE797['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -393,8 +398,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_f0ef(changed)
         for path in main813.MAINF0EF['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -439,8 +445,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_7cdc(changed)
         for path in main813.MAIN7CDC['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -485,8 +492,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_43d7(changed)
         for path in main813.MAIN43D7['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -539,8 +547,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_0df8(changed)
         for path in main813.MAIN0DF8['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -590,8 +599,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_0a8(changed)
         for path in main813.MAIN0A8['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -638,8 +648,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_09fe(changed)
         for path in main813.MAIN09FE['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -686,8 +697,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_727(changed)
         for path in main813.MAIN727['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -736,8 +748,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_abab(changed)
         for path in main813.MAINABAB['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
@@ -789,8 +802,9 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_83b(changed)
         for path in main813.MAIN83B['sources']:
             for missing in (False, True):
+                mutation_target = main813.ROOT / path
                 def changed(candidate):
-                    if candidate == main813.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise FileNotFoundError(path)
                         return read_bytes(candidate) + b'\n'
