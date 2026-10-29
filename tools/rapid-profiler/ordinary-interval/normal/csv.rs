@@ -20,7 +20,7 @@ const CONFIG: Config = Config {
 };
 // Literal expected counts, independent of the C scanner. An empty record has
 // one empty field. These valid records do not define a general CSV validator.
-const CASES: [(&[u8], u64); CALLS] = [
+pub(super) const CASES: [(&[u8], u64); CALLS] = [
     (b"", 1),
     (b"a", 1),
     (b"a,b,c", 3),
@@ -38,7 +38,7 @@ const CASES: [(&[u8], u64); CALLS] = [
     (b"plain,\"say \"\"hi\"\"\",,tail", 4),
     (b"\"comma,, and \"\"quote\"\"\",last,", 3),
 ];
-fn inputs() -> [[u8; 96]; CALLS] {
+pub(super) fn inputs() -> [[u8; 96]; CALLS] {
     std::array::from_fn(|i| {
         let mut bytes = [GUARD; 96];
         assert!(CASES[i].0.len() <= 64);
@@ -98,10 +98,10 @@ impl Data {
         Ok(())
     }
 }
-type Csv = unsafe extern "C" fn(*const u8, usize) -> u64;
+pub(super) type Csv = unsafe extern "C" fn(*const u8, usize) -> u64;
 #[inline(never)]
 #[unsafe(export_name = "liteinst_csv_call_and_store")]
-unsafe fn invoke(target: Csv, input: &[u8], output: &mut u64) {
+pub(super) unsafe fn invoke(target: Csv, input: &[u8], output: &mut u64) {
     // SAFETY: this caller retains the selected scalar ABI and readable input.
     let value = unsafe { target(input.as_ptr(), input.len()) };
     // A real post-call side effect forbids a tail transfer. Root must inspect the
@@ -109,7 +109,7 @@ unsafe fn invoke(target: Csv, input: &[u8], output: &mut u64) {
     unsafe { std::ptr::write_volatile(output, value) };
 }
 
-fn mapping(address: u64, permissions: &str) -> (u64, u64) {
+pub(super) fn mapping(address: u64, permissions: &str) -> (u64, u64) {
     let maps = std::fs::read_to_string("/proc/self/maps").unwrap();
     mapping_in(&maps, address, permissions).expect("exact owned mapping class")
 }
@@ -132,25 +132,25 @@ fn mapping_in(maps: &str, address: u64, permissions: &str) -> Option<(u64, u64)>
         _ => None,
     }
 }
-fn stack_bounds() -> (u64, u64) {
+pub(super) fn stack_bounds() -> (u64, u64) {
     let mut marker = 0_u64;
     std::hint::black_box(&mut marker);
     mapping(std::ptr::from_ref(&marker) as usize as u64, "rw-p")
 }
-struct Custody<'a> {
-    candidate: &'a Path,
-    trusted: &'a Path,
-    bytes: &'a [u8],
-    cpu: usize,
-    pid: u32,
-    stack: (u64, u64),
-    caller: (u64, u64),
-    source: Vec<(u64, Vec<u8>)>,
-    generated: Vec<(u64, Vec<u8>)>,
-    deadline: Instant,
+pub(super) struct Custody<'a> {
+    pub(super) candidate: &'a Path,
+    pub(super) trusted: &'a Path,
+    pub(super) bytes: &'a [u8],
+    pub(super) cpu: usize,
+    pub(super) pid: u32,
+    pub(super) stack: (u64, u64),
+    pub(super) caller: (u64, u64),
+    pub(super) source: Vec<(u64, Vec<u8>)>,
+    pub(super) generated: Vec<(u64, Vec<u8>)>,
+    pub(super) deadline: Instant,
 }
 impl Custody<'_> {
-    fn check(&self) {
+    pub(super) fn check(&self) {
         assert!(Instant::now() < self.deadline, "CSV absolute deadline");
         single_main();
         assert_eq!(std::process::id(), self.pid);
@@ -210,7 +210,7 @@ fn after_postflight<T>(
     postflight()?;
     Ok(transfer())
 }
-struct FailStop(bool);
+pub(super) struct FailStop(pub(super) bool);
 impl Drop for FailStop {
     fn drop(&mut self) {
         if self.0 {

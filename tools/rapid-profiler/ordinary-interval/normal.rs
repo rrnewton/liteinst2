@@ -23,6 +23,7 @@ use caller::{CallerOwner, Request};
 use cases::{CASES, LABEL};
 pub(super) mod csv;
 mod lifecycle;
+pub(super) mod module;
 pub(super) mod observer;
 pub(super) mod reference;
 pub(super) mod session;
