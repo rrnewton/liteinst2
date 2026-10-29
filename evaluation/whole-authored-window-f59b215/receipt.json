@@ -1,0 +1,331 @@
+{
+  "schema": 1,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "revision": "f59b21508c2991d13f6342da0248e44a1d2ac69f",
+  "profile": "offline-whole-authored-window-permits-v1",
+  "prior_receipt": "../whole-authored-1f6c043/receipt.json",
+  "prior_receipt_sha256": "b205089324a9d3536df35783a14d8903341220059b3797a9be4f9a2a5e02ee77",
+  "release_build_revision": "85e49ae297fb994555e8e742271320dd1737b290",
+  "release_binary_sha256": "2bcb83d131e08ec7e6168b52986c8ac12a218d67606a1681fad0f978dd6322ea",
+  "release_profile": {
+    "opt_level": 3,
+    "debuginfo": 0,
+    "debug_assertions": true,
+    "overflow_checks": true
+  },
+  "configuration_complete": false,
+  "qualification_complete": false,
+  "attempts_per_program": 1,
+  "programs": [
+    {
+      "program": "checksum",
+      "heads": 80,
+      "jumps": 16,
+      "tactics": {
+        "B1": 6,
+        "none": 7,
+        "T2": 3
+      },
+      "refused_site_ids": [
+        3,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12
+      ],
+      "candidate_complete": false,
+      "original_sha256": "e5369869d9d9810a112631465777eac9ec714dff8d6f55677d72d3441ec71928",
+      "ledger_sha256": "4d9d02906910f8529c9ae340ec0f141d8056fbc483de6db8a00a0035e096cfd1",
+      "policy_sha256": "d2860d572615b3fc5d6710774946278d26ac9b2923d5ce3e0b76297bd073d59c",
+      "complete_sha256": "0609721feaa4e83108ada8f774559ce00e4aa50a73958edbcb46d10c0586fbb0",
+      "authenticated_files": 39,
+      "authenticated_bytes": 195494,
+      "report_sha256": "048a804e940db05cdcd7b78f27df9ee73a1935d1a1cdcf95ec0ab35210ff69e9"
+    },
+    {
+      "program": "rle-roundtrip",
+      "heads": 107,
+      "jumps": 26,
+      "tactics": {
+        "B1": 16,
+        "none": 7,
+        "T2": 3
+      },
+      "refused_site_ids": [
+        3,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12
+      ],
+      "candidate_complete": false,
+      "original_sha256": "c69142a5fd32cf02496e19272e6212d069f01886c7020424020fb217b0419add",
+      "ledger_sha256": "8bc962767d25d5e9fef2ccfe5754d2d9c1c3492ff847defc1001c5404fb0a3e2",
+      "policy_sha256": "59f2b005959119fb69a783ba6993f6e5e70a9deca2f7e2f1f387613c2a03a519",
+      "complete_sha256": "3a5bbec803008703181845653ad8e08fb348746101e21aeb8906f9450fca9049",
+      "authenticated_files": 59,
+      "authenticated_bytes": 291514,
+      "report_sha256": "496a929011bc0a2446e39026ecf56978c8ed9e9caf9478f1b535db187832e4f5"
+    }
+  ],
+  "commands": [
+    {
+      "program": "checksum",
+      "argv": [
+        "${REPO}/target/release/examples/disassembly_sites",
+        "${REPO}/ignored/a3/whole-authored-materials-v2/checksum/original",
+        "${REPO}/ignored/a3/whole-authored-window-prepare-v1/checksum/ledger.txt",
+        "4d9d02906910f8529c9ae340ec0f141d8056fbc483de6db8a00a0035e096cfd1",
+        "${REPO}/ignored/a3/whole-authored-window-prepare-v1/checksum/policy.txt",
+        "d2860d572615b3fc5d6710774946278d26ac9b2923d5ce3e0b76297bd073d59c",
+        "${REPO}/ignored/a3/whole-authored-window-import-v1/checksum-product"
+      ],
+      "env": {
+        "PATH": "/usr/bin:/bin",
+        "LC_ALL": "C",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "limits": {
+        "cpu_seconds": 20,
+        "wall_seconds": 30,
+        "file_bytes": 16777216
+      },
+      "exit": 2,
+      "helper_exit": 1,
+      "seconds": 0.18686294299550354,
+      "absence_proof": "ECHILD",
+      "receipt_sha256": "ef268ed9065ed4c8787e8b0af60516249afcc64d3e5dd29defcc2d9bf12e3d61"
+    },
+    {
+      "program": "rle-roundtrip",
+      "argv": [
+        "${REPO}/target/release/examples/disassembly_sites",
+        "${REPO}/ignored/a3/whole-authored-materials-v2/rle-roundtrip/original",
+        "${REPO}/ignored/a3/whole-authored-window-prepare-v1/rle-roundtrip/ledger.txt",
+        "8bc962767d25d5e9fef2ccfe5754d2d9c1c3492ff847defc1001c5404fb0a3e2",
+        "${REPO}/ignored/a3/whole-authored-window-prepare-v1/rle-roundtrip/policy.txt",
+        "59f2b005959119fb69a783ba6993f6e5e70a9deca2f7e2f1f387613c2a03a519",
+        "${REPO}/ignored/a3/whole-authored-window-import-v1/rle-roundtrip-product"
+      ],
+      "env": {
+        "PATH": "/usr/bin:/bin",
+        "LC_ALL": "C",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "limits": {
+        "cpu_seconds": 20,
+        "wall_seconds": 30,
+        "file_bytes": 16777216
+      },
+      "exit": 2,
+      "helper_exit": 1,
+      "seconds": 0.15708418120630085,
+      "absence_proof": "ECHILD",
+      "receipt_sha256": "81fbc7044a3358031c61c7f185370b998486b906d32ae40884b1b8c1d24d4889"
+    }
+  ],
+  "owners": [
+    {
+      "name": "whole-authored-window-controls-v1",
+      "base_revision": "2514ec8e18cbc3811cc270dc9a73e297df841b66",
+      "dirty_source_sha256": {
+        "evaluation/offline-corpus/WHOLE_DISASSEMBLY.md": "efe028f6eafdfc595d4c43f019ce1510b77e50e20ef0623d89d127ef4fab2d1e",
+        "evaluation/offline-corpus/disassembly.py": "9f5c8782669e34f2953a50af76ba22cf8a78240195b3e13636168abf4fca3810",
+        "evaluation/offline-corpus/disassembly_controls.py": "652595f71d65091f0f72f45171255da77c002570b7ac53ad2748a8940b11f35a",
+        "evaluation/offline-corpus/head_capture.py": "7c4b56dc3399bfaafba44fed0a9873f26d553f85c063e523406561c7adfec2c7",
+        "evaluation/offline-corpus/head_capture_controls.py": "a4b8d48dfb7ff1564b29a68556ba133611ba9b638213deb5ec51588648fc529b",
+        "evaluation/offline-corpus/reproduce_whole.py": "e635458fc66c15208cfc43e3a684c33e001fc10db09d0f99c07a9ba1d83f8917"
+      },
+      "command": [
+        "/usr/local/bin/python3",
+        "-I",
+        "-B",
+        "ignored/a3/whole-authored-window-controls-v1/run.py"
+      ],
+      "cpus": [
+        93,
+        164,
+        169,
+        287
+      ],
+      "load_before": [
+        "59.85",
+        "60.67",
+        "62.62"
+      ],
+      "load_after": [
+        "59.85",
+        "60.67",
+        "62.62"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T22:08:42.195124+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.6355304610915482,
+        "private_log_sha256": "4f8aa18c17e9dd2e75be31e5e445553bb03d115e05330bffae8efc149bd23cd9",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "receipt_sha256": "29bcde42300a338ad87c6156ef6bb84de09a749f14d02e79970cc2e43bb22690"
+    },
+    {
+      "name": "whole-authored-window-prepare-v1",
+      "base_revision": "f59b21508c2991d13f6342da0248e44a1d2ac69f",
+      "dirty_source_sha256": {},
+      "command": [
+        "/usr/local/bin/python3",
+        "-I",
+        "-B",
+        "ignored/a3/whole-authored-window-prepare-v1/run.py"
+      ],
+      "cpus": [
+        55,
+        101,
+        119,
+        126
+      ],
+      "load_before": [
+        "47.88",
+        "58.26",
+        "61.74"
+      ],
+      "load_after": [
+        "47.88",
+        "58.26",
+        "61.74"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T22:09:50.669979+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.11105964216403663,
+        "private_log_sha256": "d349d706512e687a7c0eb84edd48b6d6849c5d718d0f6184dfa8297c056adab3",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "receipt_sha256": "f02f6502b36d4d7dfe4dea543d24e47b5927eb8b2aac0317b491a16db43d2e05"
+    },
+    {
+      "name": "whole-authored-window-import-v1",
+      "base_revision": "f59b21508c2991d13f6342da0248e44a1d2ac69f",
+      "dirty_source_sha256": {},
+      "command": [
+        "/usr/local/bin/python3",
+        "-I",
+        "-B",
+        "ignored/a3/whole-authored-window-import-v1/run.py"
+      ],
+      "cpus": [
+        90,
+        188,
+        225,
+        227
+      ],
+      "load_before": [
+        "40.88",
+        "55.94",
+        "60.90"
+      ],
+      "load_after": [
+        "40.88",
+        "55.94",
+        "60.90"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T22:10:09.151872+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 0.5692473379895091,
+        "private_log_sha256": "1b84faba2d3becbe270825c3e0f054d643fa3e80a5ca8f518db262b7206edf35",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "receipt_sha256": "3413618c72e3c7cd8659f3bbdcba1ceece7994a75d76fe198f98fd49bbe87524"
+    }
+  ],
+  "controls": {
+    "material": 11,
+    "heads": 6,
+    "passed": 17
+  },
+  "complete_candidates": 0,
+  "native_executions": 0,
+  "e9_producer_reruns": 0,
+  "e9_comparisons_for_this_profile": 0,
+  "reproduction_cli": {
+    "base_revision": "f59b21508c2991d13f6342da0248e44a1d2ac69f",
+    "source_sha256": {
+      "evaluation/offline-corpus/reproduce_whole_controls.py": "93d6dad62e0061f8bd992a448383f10cc6648af4f4d06d504a24d86c8a1ec763",
+      "evaluation/offline-corpus/reproduce_whole.py": "3d0b854b8c6b9cd1e07ffe2b65ed0f17998e4c8871f1b7949b1455de387ab2f0"
+    },
+    "commands": [
+      [
+        "/usr/local/fbcode/platform010/bin/python3.12",
+        "-I",
+        "-B",
+        "evaluation/offline-corpus/reproduce_whole_controls.py"
+      ],
+      [
+        "/usr/local/fbcode/platform010/bin/python3.12",
+        "-I",
+        "-B",
+        "evaluation/offline-corpus/reproduce_whole.py",
+        "--help"
+      ]
+    ],
+    "results": [
+      {
+        "exit": 0,
+        "seconds": 0.1138617570977658
+      },
+      {
+        "exit": 0,
+        "seconds": 0.06388449296355247
+      }
+    ],
+    "cpus": [
+      146,
+      164,
+      209,
+      269
+    ],
+    "load_before": [
+      "29.79",
+      "42.32",
+      "53.60"
+    ],
+    "load_after": [
+      "29.79",
+      "42.32",
+      "53.60"
+    ],
+    "closed": {
+      "start_utc": "2026-10-29T22:18:28.513262+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 0.341476215980947,
+      "private_log_sha256": "5d2c539a3a408d5964be8d4a93c61b04e99bf84958d67ad3d4ba540f79ba725d",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "owner_receipt_sha256": "63549a070c214c66f2ec0a8961fee95d4a07853c709547e81065c6b51e42b023",
+    "controls_passed": 2,
+    "full_workflow": "UNRUN",
+    "attempt_results_unchanged": true,
+    "revision": "16c0b45326ca52f6a02c3c855bc7d2d75a6f4815"
+  },
+  "source_reviews": {
+    "placement": "056b51630d53ec95cc6d06707b7b904223826e937f425b66fcd26445c79765cf",
+    "composed_placement": "4a7305a51a3e01905094e81d3b6a4702be7504a2b3907250efce1fed8505c501",
+    "cli": "364b94c92c71289c1a9afb4a520dc973d48bedb54c3c21f9ba95862c196a9634"
+  }
+}

@@ -80,9 +80,152 @@ def run_case(f):
     sites, policy = a.selection(f['selection'], f['original'], f['policy'])
     intent = a.rpc(f['rpc'], f['original'], sites, '/fixture/original', policy, None, None, False)
     outcomes, maps, bypass = a.debug(f['stderr'], sites)
-    ownership = a.artifact(f['original'], f['candidate'], f['loader'], intent, outcomes, maps, bypass)
+    ownership = synthetic_artifact(f, intent, outcomes, maps, bypass)
     a.statistics(f['stdout'], outcomes, ownership, '/fixture/original')
     return a.wire(sites, policy, outcomes, intent['trap']).decode().splitlines()[7:]
+
+
+def synthetic_artifact(f, intent, outcomes, maps, bypass):
+    # Only this synthetic control call substitutes the loader digest. Production
+    # artifact()/validate() and both real lane tuples remain unchanged on return.
+    assert f['loader'] == b'CONTROL-LOADER'
+    saved = a.PRODUCERS
+    lane = 'stock-algorithm'
+    a.PRODUCERS = {**saved, lane: (*saved[lane][:2], a.sha(f['loader']))}
+    try:
+        return a.artifact(f['original'], f['candidate'], f['loader'], intent, outcomes, maps, bypass, lane=lane)
+    finally:
+        a.PRODUCERS = saved
+
+
+def fragment_fixture(alias=False, change=None):
+    f = fixture()
+    maps = [dict(kind='trampoline', va=0x600000 + i * 4096, length=4096,
+                 prot=5, offset=4096 if alias else (i + 1) * 4096) for i in range(2)]
+    loader_offset = 8192 if alias else 12288
+    candidate = bytearray(f['original'] + bytes(loader_offset - len(f['original'])))
+    outcomes = []
+    for pc, off, low in [(0x400210, 528, 0x600010), (0x400200, 512, 0x600ffb)]:
+        candidate[off:off + 5] = b'\xe9' + struct.pack('<i', low - pc - 5)
+        body = f['original'][off:off + 5] + b'\xe9' + struct.pack('<i', pc + 5 - low - 10)
+        # Independent per-byte placement: the second page may alias the first.
+        for i, byte in enumerate(body):
+            page = (low + i - 0x600000) // 4096
+            at = maps[page]['offset'] + (low + i) % 4096
+            candidate[at] = byte
+        outcomes.append(f'debug: patched instruction {pc:#x} [size=5, tactic=B1, trampoline={low:#x}..{low + 10:#x}]\n')
+    if change is not None:
+        change(maps)
+    # Independent encoding of the finite fixture's complete mmap/close/restore
+    # stream, including coherent hostile map rows. No production encoder call.
+    stream = f['loader'] + bytes.fromhex('ba0500000041ba12000000')
+    previous = (-1, 5, -1)
+    for m in maps:
+        va, length, prot, off = (m[k] for k in ('va', 'length', 'prot', 'offset'))
+        stream += b'\xbf' + struct.pack('<i', va) if 0 <= va < 1 << 31 else b'\x48\xbf' + struct.pack('<q', va)
+        if length != previous[0]: stream += b'\xbe' + struct.pack('<i', length)
+        if prot != previous[1]: stream += b'\xba' + struct.pack('<i', prot)
+        if off != previous[2]: stream += b'\x41\xb9' + struct.pack('<i', off)
+        stream += bytes.fromhex('4489e80f054839f8740341ffe6')
+        previous = (length, prot, off)
+    stream += bytes.fromhex('4c89c7b8030000000f05b8000240005f5e5a594159415a415b415c415d415e415f4158ffe0')
+    candidate += stream
+    struct.pack_into('<Q', candidate, 24, 0x20FEDC000)
+    struct.pack_into('<IIQQQQQQ', candidate, 120, 1, 5, loader_offset, 0x20FEDC000, 0, len(stream), len(stream), 4096)
+    f['candidate'] = bytes(candidate)
+    for m in maps:
+        protection = ''.join(text + ' | ' for text, bit in [('PROT_READ', 1), ('PROT_WRITE', 2), ('PROT_EXEC', 4)] if m['prot'] & bit) + '0'
+        outcomes.append(f"debug: load trampoline: mmap({m['va']:#x}, {m['length']}, {protection}, MAP_FIXED | MAP_PRIVATE, fd, +{m['offset']})\n")
+    f['stderr'] = ''.join(outcomes).encode()
+    # Statistics are used only for the two unmutated positive fixtures.
+    physical = 1 if alias else 2
+    replacements = [
+        (b'\nL\n\n', b'\nL\x1b[36m0\x1b[0m\n\n' if alias else b'\nL6\n\n'),
+        (b'num_virtual_mappings  = 1', b'num_virtual_mappings  = 2'),
+        (b'num_physical_mappings = 1 (100.00%)', f'num_physical_mappings = {physical} ({physical / 2 * 100:.2f}%)'.encode()),
+        (b'num_virtual_bytes     = 4096', b'num_virtual_bytes     = 8192'),
+        (b'num_physical_bytes    = 4096 (100.00%)', f'num_physical_bytes    = {physical * 4096} ({physical / 2 * 100:.2f}%)'.encode()),
+    ]
+    if not alias:
+        replacements.append((b'[\x1b[33m0000000000000001\x1b[0m]', b'[\x1b[33m0000000000000001\x1b[0m][\x1b[33m0000000000000002\x1b[0m]'))
+    for old, new in replacements:
+        assert old in f['stdout']; f['stdout'] = f['stdout'].replace(old, new, 1)
+    lines = f['stdout'].decode().splitlines()
+    lines = [f'output_file_size      = {len(candidate)} ({len(candidate) / 4096 * 100:.2f}%)' if line.startswith('output_file_size ') else line for line in lines]
+    f['stdout'] = ('\n'.join(lines) + '\n').encode()
+    return f
+
+
+def fragment_controls():
+    def ownership(f):
+        sites, policy = a.selection(f['selection'], f['original'], f['policy'])
+        intent = a.rpc(f['rpc'], f['original'], sites, '/fixture/original', policy, None, None, False)
+        outcomes, maps, bypass = a.debug(f['stderr'], sites)
+        return synthetic_artifact(f, intent, outcomes, maps, bypass)
+    def rejects(reason, action):
+        try:
+            action()
+        except AssertionError as error:
+            assert str(error) == reason, (reason, str(error))
+        else:
+            raise AssertionError('fragment negative accepted: ' + reason)
+    saved = a.PRODUCERS
+    for alias in (False, True):
+        f = fragment_fixture(alias)
+        assert [r.split('\t')[4] for r in run_case(f)] == ['trampoline', 'trampoline']
+        result = ownership(f)
+        single, split = result['site_witnesses']
+        assert single.keys() == {'pc', 'trampoline_start', 'trampoline_end', 'bytes_sha256', 'mapping'}
+        assert split.keys() == {'pc', 'trampoline_start', 'trampoline_end', 'bytes_sha256', 'fragments'}
+        parts = split['fragments']
+        assert [(r['start'], r['end'], r['file_offset']) for r in parts] == [
+            (0x600ffb, 0x601000, 8187), (0x601000, 0x601005, 4096 if alias else 8192)]
+        assert [r['mapping'] for r in parts] == result['mappings']
+        body = b''.join(f['candidate'][r['file_offset']:r['file_offset'] + r['end'] - r['start']] for r in parts)
+        expected = bytes.fromhex('b801000000') + b'\xe9' + struct.pack('<i', 0x400205 - 0x601005)
+        assert body == expected and split['bytes_sha256'] == a.sha(expected)
+        assert all(r['bytes_sha256'] == a.sha(expected[i * 5:(i + 1) * 5]) for i, r in enumerate(parts))
+        assert (result['physical_pages'], result['virtual_pages']) == (1 if alias else 2, 2)
+    for reason, change in [
+        ('actual executable trampoline extent owner', lambda m: m[1].__setitem__('va', 0x602000)),
+        ('overlapping loader owners', lambda m: m[1].__setitem__('va', 0x600000)),
+        ('executable mapped fragment', lambda m: m[1].__setitem__('prot', 1)),
+        ('mapping signed address overflow', lambda m: m[1].update(va=(1 << 63) - 4096, length=8192, offset=4096)),
+        ('mapping address overflow', lambda m: m[1].__setitem__('va', -4096)),
+        ('', lambda m: m[1].__setitem__('offset', 12288)),
+    ]:
+        rejects(reason, lambda: ownership(fragment_fixture(change=change)))
+    f = fragment_fixture()
+    replace(f, 'stderr', b'0x600ffb..0x601005', b'0x600ffb..0x602005')
+    rejects('actual executable trampoline extent owner', lambda: ownership(f))
+    assert a.PRODUCERS is saved, 'synthetic lane always restored'
+    rejects('pinned loader lane', lambda: a.artifact(b'', b'', b'CONTROL-LOADER', {}, [], [], [], lane='stock-algorithm'))
+
+    # Exercise the same production fragment walker with an interior override,
+    # LOAD fallback on both sides, adjacent LOADs, partial ambiguity and holes.
+    base, page = 0x400000, 4096
+    data = b'A' * page + b'B' * page + b'C' * page + b'D' * page
+    image = {'rows': [(1, 5, 0, base, 0, 3 * page, 3 * page, page)]}
+    maps = [dict(kind='refactoring', va=base + page, length=page, offset=3 * page, prot=5)]
+    def view(img=image, ms=maps, pc=base + page - 2, size=page + 4, executable=True, mapped_only=False):
+        parts = a.extent_fragments(img, ms, pc, size, len(data), executable, mapped_only)
+        return b''.join(data[off:off + hi - lo] for lo, hi, off, _ in parts)
+    assert view() == b'AA' + b'D' * page + b'CC'
+    adjacent = {'rows': [(1, 5, i * page, base + i * page, 0, page, page, page) for i in range(3)]}
+    assert view(img=adjacent, ms=[]) == b'AA' + b'B' * page + b'CC'
+    ambiguous = {'rows': image['rows'] + [(1, 5, 0, base + page - 1, 0, 2, 2, 1)]}
+    rejects('unique file-backed ELF owner', lambda: view(img=ambiguous, ms=[]))
+    rejects('unique file-backed ELF owner', lambda: view(img={'rows': adjacent['rows'][::2]}, ms=[]))
+    rejects('executable owner', lambda: view(img={'rows': [(1, 4, 0, base, 0, 3 * page, 3 * page, page)]}, ms=[]))
+    rejects('ambiguous mapped fragment', lambda: view(ms=maps + maps))
+    rejects('ambiguous mapped fragment', lambda: view(ms=maps + [{**maps[0], 'va': base + page + 1, 'length': 2}]))
+    rejects('executable mapped fragment', lambda: view(ms=[{**maps[0], 'prot': 1}]))
+    assert view(ms=[{**maps[0], 'prot': 1}], executable=False) == b'AA' + b'D' * page + b'CC'
+    rejects('actual executable trampoline extent owner', lambda: view(mapped_only=True))
+    rejects('trampoline fragment owner', lambda: view(pc=base + page, size=page, mapped_only=True))
+    rejects('fragment file bounds', lambda: view(ms=[{**maps[0], 'offset': len(data) - 1}]))
+    rejects('view address overflow', lambda: view(pc=a.U64 - 1, size=2))
+    print('e9-sites fragment controls: adjacent/alias/override positives and exact ownership refusals; synthetic only')
 
 
 def replace(f, key, old, new):
@@ -165,6 +308,7 @@ def main():
     else:
         raise AssertionError('unowned producer accepted')
     print('e9-sites controls: 3 accepted / 24 refused; synthetic only')
+    fragment_controls()
 
 
 if __name__ == '__main__':
