@@ -21296,7 +21296,7 @@
       ]
     },
     "base": "f59b21508c2991d13f6342da0248e44a1d2ac69f",
-    "core_binding_sha256": "3871659b2bfdf628e3a904dd2f8b42cc1009d4f440cff1806a82dbb5a01ae928",
+    "core_binding_sha256": "d8db23976b95ba4598d077396dbd000dd4a39f744c1bd81bb9a3ba1e459e07e3",
     "current_corpus_sha256": "7b73e37239203ddc95e9e453f2f51471d7c9a04e1651c3a9817c757c260f8825",
     "declared_delta": {
       "doctests": 0,
@@ -21438,7 +21438,7 @@
       "evaluation/admission/parsing.py": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956",
       "src/neighbor.rs": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc",
       "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
-      "src/neighbor_short/tests.rs": "deca1ca2c491f6f0ff5a45b6a11fa336288bbd931a5d732ab2b28fd7fd90e17f"
+      "src/neighbor_short/tests.rs": "ec5037aaefb06192230728a4abf0e86930333174e5ac9839d22cd9eef50009f5"
     },
     "workspace_changes": {
       "unit/liteinst2/lib": {

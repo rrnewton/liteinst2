@@ -250,11 +250,11 @@ fn short_endpoints_preserve_whole_victims_and_all_successor_bytes() {
                 let c = f.composition(&plan);
                 assert!(c.locks().iter().any(|r| r.covers(range(f.v(), 10))));
                 let final_bytes = &c.final_bytes()[0].bytes;
-                for i in 0..f.code.len() {
+                for (i, &original) in f.code.iter().enumerate() {
                     if !(f.victim..f.victim + victim_len).contains(&i)
                         && !(f.selected..f.selected + 2).contains(&i)
                     {
-                        assert_eq!(final_bytes[i], f.code[i], "preserved byte {i}");
+                        assert_eq!(final_bytes[i], original, "preserved byte {i}");
                     }
                 }
                 assert_eq!(
