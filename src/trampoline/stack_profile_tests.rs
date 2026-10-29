@@ -105,3 +105,57 @@ fn profile_is_part_of_image_identity_not_a_byte_length_guess() {
         ObservationStackProfile::Tree144
     );
 }
+
+#[test]
+fn call_pair240_has_distinct_geometry_and_image_identity() {
+    let profile = ObservationStackProfile::CallPair240;
+    assert_eq!(profile.reserved_bytes(), 240);
+    assert_eq!(profile.context_stack_prefix_bytes(), 416);
+    assert_eq!(core::mem::size_of::<HookContext>(), 176);
+    assert_eq!(
+        core::mem::offset_of!(HookContext, saved_extended_state),
+        144
+    );
+    let image = controlled(profile).emit_at(0x4100_0000).unwrap();
+    assert_eq!(image.layout().observation_stack_profile, profile);
+    for other in [
+        ObservationStackProfile::Legacy128,
+        ObservationStackProfile::Tree144,
+    ] {
+        let mut wrong = image.clone();
+        wrong.layout.observation_stack_profile = other;
+        assert_eq!(image.bytes(), wrong.bytes());
+        assert_ne!(image, wrong);
+        assert_ne!(image, controlled(other).emit_at(0x4100_0000).unwrap());
+    }
+}
+
+#[test]
+fn call_pair240_keeps_the_same_nonlegacy_mixed_mode_refusals() {
+    let plan = controlled(ObservationStackProfile::CallPair240);
+    assert!(plan.validate_stack_profile(false).is_ok());
+    assert!(plan.validate_stack_profile(true).is_err());
+    for case in 0..5 {
+        let mut bad = plan.clone();
+        match case {
+            0 => bad.ptrace_stops = true,
+            1 => bad.actions[0].2 = true,
+            2 => bad.controls.clear(),
+            3 => bad.kind = TrampolineKind::PatchWindow,
+            4 => bad.actions.push(bad.actions[0]),
+            _ => unreachable!(),
+        }
+        assert!(bad.emit_at(0x4100_0000).is_err());
+    }
+    let mut bad = plan.clone();
+    let (selector, _) = crate::precontext::PreContextSelector::new(false);
+    unsafe extern "C" fn preserving(_: *mut HookContext, _: crate::controls::ControlIdentity<'_>) {}
+    bad.precontext_actions = vec![crate::precontext::PreContextAction::new(
+        0x4000_0000,
+        crate::precontext::PreContextRole::Entry,
+        &selector,
+        preserving,
+    )]
+    .into_boxed_slice();
+    assert!(bad.emit_at(0x4100_0000).is_err());
+}
