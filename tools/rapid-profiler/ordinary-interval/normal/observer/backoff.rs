@@ -11,6 +11,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 mod check;
+pub(crate) mod elapsed;
 pub(crate) mod pending_owner;
 #[cfg(test)]
 mod tests;
@@ -422,6 +423,10 @@ struct Export<'a> {
     arms: u32,
 }
 fn output(export: Export<'_>) -> String {
+    output_with(export, elapsed::Wire::Functional)
+}
+fn output_with(export: Export<'_>, wire: elapsed::Wire) -> String {
+    let (scope, command, timing) = wire.labels();
     let Export {
         f,
         controller,
@@ -436,7 +441,7 @@ fn output(export: Export<'_>) -> String {
     } = export;
     assert!(population(returned));
     let mut text = String::with_capacity(OUTPUT_CAP);
-    writeln!(text, "{SCOPE}\n{HEADER}").unwrap();
+    writeln!(text, "{scope}\n{HEADER}").unwrap();
     let mut sequence = 0;
     for (g, (r, record)) in returned.iter().zip(rows).enumerate() {
         let sampled = matches!(record.raw.owner, RawIntervalOwner::Sampled { .. });
@@ -473,7 +478,7 @@ fn output(export: Export<'_>) -> String {
         assert!(line.len() <= 64);
         text.push_str(&line);
     }
-    writeln!(text,"normal-observer-backoff FUNCTIONAL_PASS k={} policy=10ms-2ms epoch_limit=520 stop_reason=Requested arms={arms} committed_arms={arms} completed_arms={arms} pending_arm=none repetitions=128 calls=3072 helper_calls=1536 instructions=614400 conditional=99840 taken=96768 input_bytes=99840 ret_bytes=24576 pid={} tid={} controller_tid={controller} app_cpu={app_cpu} controller_cpu={controller_cpu} entry={} caller={} install={INSTALL} function=1 batches=128 events=6144 rows=3072 sampled={} unsampled={} reports={arms} records={} actions={} journal_words=65536 next_entry_acknowledgements=2944 checkpoint_acknowledgements=128 banks=3 observed_generations={} rearmed={} sampled_after_closed={} input_unchanged=true detached=true joined=1 deadline_scope=issued-arms-and-requested-shutdown all_elapsed_due_arms=unqualified cheap_off=false timing=none",
+    writeln!(text,"{command} FUNCTIONAL_PASS k={} policy=10ms-2ms epoch_limit=520 stop_reason=Requested arms={arms} committed_arms={arms} completed_arms={arms} pending_arm=none repetitions=128 calls=3072 helper_calls=1536 instructions=614400 conditional=99840 taken=96768 input_bytes=99840 ret_bytes=24576 pid={} tid={} controller_tid={controller} app_cpu={app_cpu} controller_cpu={controller_cpu} entry={} caller={} install={INSTALL} function=1 batches=128 events=6144 rows=3072 sampled={} unsampled={} reports={arms} records={} actions={} journal_words=65536 next_entry_acknowledgements=2944 checkpoint_acknowledgements=128 banks=3 observed_generations={} rearmed={} sampled_after_closed={} input_unchanged=true detached=true joined=1 deadline_scope=issued-arms-and-requested-shutdown all_elapsed_due_arms=unqualified cheap_off=false timing={timing}",
         f.k,f.pid,f.pid,f.entry,f.caller,counts.sampled,counts.closed,counts.sampled,arms+1,counts.generations,arms>1,counts.after_closed).unwrap();
     assert!(text.is_ascii() && text.len() <= OUTPUT_CAP);
     text
@@ -500,6 +505,12 @@ struct Setup<'a> {
     client: rapid_profiler::frontend_native::NormalClient,
 }
 fn prepare(args: &[std::ffi::OsString]) -> Setup<'_> {
+    prepare_measured(args, &mut elapsed::NoTiming)
+}
+fn prepare_measured<'a, M: elapsed::Measurement>(
+    args: &'a [std::ffi::OsString],
+    measurement: &mut M,
+) -> Setup<'a> {
     let (k, app_cpu, controller_cpu) = roles(
         args[0].to_str().unwrap(),
         args[1].to_str().unwrap(),
@@ -514,6 +525,7 @@ fn prepare(args: &[std::ffi::OsString]) -> Setup<'_> {
     assert_eq!(strnlen::number(args[6].to_str().unwrap()), 37);
     let caller_candidate = Path::new(&args[7]);
     let caller_trusted = Path::new(&args[8]);
+    measurement.mark(elapsed::Point::SetupStart, super::throughput::now);
     let subject = expected_file(candidate, trusted);
     let helper = expected_file(caller_candidate, caller_trusted);
     // SAFETY: same independently trusted complete Exact37 and 67-byte fixture;
@@ -630,17 +642,45 @@ fn call_range(
     entry: u64,
     range: std::ops::Range<usize>,
 ) {
+    call_range_measured(
+        data,
+        sums,
+        returned,
+        calling,
+        c,
+        entry,
+        (range, &mut elapsed::NoTiming),
+    );
+}
+fn call_range_measured<M: elapsed::Measurement>(
+    data: &mut Data,
+    sums: &mut [u64],
+    returned: &mut Vec<Returned>,
+    calling: &mut CallerOwner,
+    c: &Custody<'_>,
+    entry: u64,
+    measured_range: (std::ops::Range<usize>, &mut M),
+) {
+    let (range, measurement) = measured_range;
     let first = range.start;
     let last = range.end;
     for p in first..last {
         data.check(p, false);
     }
     unsafe { immutable(&c.spans) };
+    measurement.mark(
+        elapsed::Point::BodyStart { first, last },
+        super::throughput::now,
+    );
     for (p, sum) in sums.iter_mut().enumerate().take(last).skip(first) {
         // SAFETY: retained complete immutable sources and disjoint requests,
         // results and input; sole attached main, actual ordinary CALL/RET.
         *sum = unsafe { calling.invoke(entry, &data.requests[p], &mut data.results[p].values) };
     }
+    measurement.mark(
+        elapsed::Point::BodyEnd { first, last },
+        super::throughput::now,
+    );
     for (p, &sum) in sums.iter().enumerate().take(last).skip(first) {
         data.check(p, true);
         let expected = case(2 * p).value;
@@ -717,6 +757,9 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
         9,
         "normal-observer-backoff K APP_CPU CONTROLLER_CPU CANDIDATE FINAL ELF_VA LENGTH CALLER_CANDIDATE CALLER_FINAL"
     );
+    run_measured(args, elapsed::NoTiming);
+}
+fn run_measured<M: elapsed::Measurement>(args: &[std::ffi::OsString], mut measurement: M) {
     let Setup {
         k,
         app_cpu,
@@ -736,7 +779,7 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
         stream,
         engine,
         client,
-    } = prepare(args);
+    } = prepare_measured(args, &mut measurement);
     let mut data = Data::new();
     let mut sums = vec![0_u64; PAIRS];
     let mut returned = Vec::with_capacity(CALLS);
@@ -785,17 +828,18 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
     };
     let mut totals = NormalTotals::default();
     let mut high = 0;
+    measurement.mark(elapsed::Point::SetupEnd, super::throughput::now);
     for b in 0..BLOCKS {
         let first = b * BLOCK / 2;
         let last = first + BLOCK / 2;
-        call_range(
+        call_range_measured(
             &mut data,
             &mut sums,
             &mut returned,
             &mut calling,
             &c,
             entry,
-            first..last,
+            (first..last, &mut measurement),
         );
         custody(&c, &mut calling, Some(ready.tid));
         assert_eq!(*data.inputs, [input(0), input(1)]);
@@ -899,7 +943,8 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
     );
     custody(&c, &mut calling, None);
     checked_wait(&mut h.schedule);
-    let text = output(Export {
+    measurement.mark(elapsed::Point::ServiceEnd, super::throughput::now);
+    let text = measurement.output(Export {
         f,
         controller: ready.tid,
         app_cpu,

@@ -9,12 +9,12 @@ const TIMING_SCOPE: &str = "# normal throughput v1; segmented call-path and vali
 const TIMING_HEADER: &str = "kind,index,start_ns,end_ns";
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-struct Span {
-    start: u64,
-    end: u64,
+pub(super) struct Span {
+    pub(super) start: u64,
+    pub(super) end: u64,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum TimingError {
+pub(super) enum TimingError {
     Domain,
     Overflow,
     Population,
@@ -22,12 +22,12 @@ enum TimingError {
     Service,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct Timing {
-    setup: u64,
-    body: u64,
-    service: u64,
+pub(super) struct Timing {
+    pub(super) setup: u64,
+    pub(super) body: u64,
+    pub(super) service: u64,
 }
-fn nanoseconds(seconds: i64, nanos: i64) -> Result<u64, TimingError> {
+pub(super) fn nanoseconds(seconds: i64, nanos: i64) -> Result<u64, TimingError> {
     let seconds = u64::try_from(seconds).map_err(|_| TimingError::Domain)?;
     let nanos = u64::try_from(nanos).map_err(|_| TimingError::Domain)?;
     if nanos >= 1_000_000_000 {
@@ -38,7 +38,7 @@ fn nanoseconds(seconds: i64, nanos: i64) -> Result<u64, TimingError> {
         .and_then(|whole| whole.checked_add(nanos))
         .ok_or(TimingError::Overflow)
 }
-fn now() -> u64 {
+pub(super) fn now() -> u64 {
     let mut stamp = libc::timespec {
         tv_sec: 0,
         tv_nsec: 0,
@@ -53,7 +53,11 @@ fn now() -> u64 {
 fn elapsed(span: Span) -> Result<u64, TimingError> {
     span.end.checked_sub(span.start).ok_or(TimingError::Order)
 }
-fn validate_timing(setup: Span, bodies: &[Span], service: Span) -> Result<Timing, TimingError> {
+pub(super) fn validate_timing(
+    setup: Span,
+    bodies: &[Span],
+    service: Span,
+) -> Result<Timing, TimingError> {
     if bodies.len() != BLOCKS {
         return Err(TimingError::Population);
     }

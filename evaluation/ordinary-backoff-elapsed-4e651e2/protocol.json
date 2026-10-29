@@ -1,0 +1,165 @@
+{
+  "adaptive_repetition": false,
+  "bounds": {
+    "child_cpu_seconds": 20,
+    "child_output_bytes": 1048576,
+    "child_wall_seconds": 30,
+    "helper_log_bytes": 1048576,
+    "helper_wall_seconds": 55,
+    "outer_log_bytes": 8388608,
+    "outer_wall_seconds": 1200
+  },
+  "catalog": [
+    {
+      "block": 1,
+      "mode": "native",
+      "trial": 1
+    },
+    {
+      "block": 1,
+      "mode": "always-on",
+      "trial": 2
+    },
+    {
+      "block": 1,
+      "mode": "backoff-k10",
+      "trial": 3
+    },
+    {
+      "block": 1,
+      "mode": "backoff-k1000",
+      "trial": 4
+    },
+    {
+      "block": 2,
+      "mode": "always-on",
+      "trial": 5
+    },
+    {
+      "block": 2,
+      "mode": "backoff-k10",
+      "trial": 6
+    },
+    {
+      "block": 2,
+      "mode": "backoff-k1000",
+      "trial": 7
+    },
+    {
+      "block": 2,
+      "mode": "native",
+      "trial": 8
+    },
+    {
+      "block": 3,
+      "mode": "backoff-k10",
+      "trial": 9
+    },
+    {
+      "block": 3,
+      "mode": "backoff-k1000",
+      "trial": 10
+    },
+    {
+      "block": 3,
+      "mode": "native",
+      "trial": 11
+    },
+    {
+      "block": 3,
+      "mode": "always-on",
+      "trial": 12
+    },
+    {
+      "block": 4,
+      "mode": "backoff-k1000",
+      "trial": 13
+    },
+    {
+      "block": 4,
+      "mode": "native",
+      "trial": 14
+    },
+    {
+      "block": 4,
+      "mode": "always-on",
+      "trial": 15
+    },
+    {
+      "block": 4,
+      "mode": "backoff-k10",
+      "trial": 16
+    },
+    {
+      "block": 5,
+      "mode": "native",
+      "trial": 17
+    },
+    {
+      "block": 5,
+      "mode": "always-on",
+      "trial": 18
+    },
+    {
+      "block": 5,
+      "mode": "backoff-k10",
+      "trial": 19
+    },
+    {
+      "block": 5,
+      "mode": "backoff-k1000",
+      "trial": 20
+    }
+  ],
+  "design_binding_sha256": "ec31b74a213f4645357006a7208fe011eb7437415973d2362d782eef8d87c34e",
+  "exclusions": [
+    "pure observer overhead",
+    "body-only ground truth",
+    "application speedup",
+    "continuous application throughput",
+    "accuracy or full-A5 qualification"
+  ],
+  "experiment": "ordinary-four-mode-segmented-elapsed-v1",
+  "failure_policy": "Preserve20 PASS/FAILED/UNRUN rows. Only independently normally closed functional failures may advance; broken source/artifact/timer/PID/custody or prerequisites withhold the rest. Failed members have no ratios. No retries, changed bound, omitted outlier or manufactured endpoint.",
+  "measurements": [
+    "130 actual ordered MONOTONIC_RAW setup/body/service spans in each process",
+    "Guarded twelve-invoke loop per block; complete preflight/postflight retained outside the body subtotal",
+    "Existing service convention: first preflight before service start; later preflights and all postflight/journal/checkpoint/shutdown validation included",
+    "Complementary process_timer MONOTONIC enclosure and wait4 CPU with exact argv token, PID and exit joins",
+    "Actual load and roles before/after every member; all raw endpoints/counts and failure outcomes retained"
+  ],
+  "policy": "Every old strict2ms/520-epoch/Requested-shutdown and post-output completion predicate remains unchanged. Emitted success/timing is tentative until successful native/timer status and normal owned closure. No original failure replaced.",
+  "prerequisite": "Fresh unchanged 34-stage ordinary qualification, all original functional/checker/driver/timer controls and new frozen exact control census, both command-driven pending-owner controls before any measured member; no extra untimed backoff catalog.",
+  "prior_campaigns": "All prior strict2ms and fixed-work results retain their original statuses. This measures a separate additive elapsed collector at its exact future reviewed source; no previous trial is rerun or relabelled.",
+  "release": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "jobs": 4,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "required_native_owner_controls": [
+    10,
+    1000
+  ],
+  "reservation": {
+    "app": "sorted CPU1",
+    "authority": "Actual allocator reservation/hard AllowedCPUs/source/argv/log joins required; no quiet or exclusive hardware assumption",
+    "controller": "sorted CPU3; backoff only",
+    "cores": 4,
+    "producer": "sorted CPU0",
+    "timer": "sorted CPU2"
+  },
+  "retries": 0,
+  "schema": 1,
+  "source_revision": "Exact clean reviewed commit assigned after source integration; no current result used to choose catalog or bounds.",
+  "status": "FROZEN_BEFORE_IMPLEMENTATION_AND_EXECUTION",
+  "warmup_calls": 0,
+  "work": {
+    "blocks": 128,
+    "calls": 3072,
+    "helper_calls": 1536,
+    "instructions": 614400
+  }
+}

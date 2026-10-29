@@ -1,0 +1,203 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 6.777867489960045,
+        "start_utc": "2026-10-29T04:15:20.456121+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "fmt",
+      "passed": 0,
+      "terminal_summaries": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985",
+        "reaped_descendants": 0,
+        "seconds": 0.13013908290304244,
+        "start_utc": "2026-10-29T04:15:27.251003+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "clippy",
+      "passed": 0,
+      "terminal_summaries": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+        "reaped_descendants": 0,
+        "seconds": 0.10737253702245653,
+        "start_utc": "2026-10-29T04:15:27.399479+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "check",
+      "passed": 0,
+      "terminal_summaries": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "3e4338beb21cd1b95e0d73ec7185e3eb74a05a890579fb431675b2ca7a3502bf",
+        "reaped_descendants": 0,
+        "seconds": 333.93382431101054,
+        "start_utc": "2026-10-29T04:15:27.524057+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 36,
+      "name": "workspace-default",
+      "passed": 3127,
+      "terminal_summaries": 109,
+      "wall_limit_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "92a88e13c5f527b30bdf246518609f6521bb2009066d8a0aa276564304bf4083",
+        "reaped_descendants": 0,
+        "seconds": 126.8842759381514,
+        "start_utc": "2026-10-29T04:21:01.474662+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "serial-launch",
+      "passed": 1039,
+      "terminal_summaries": 28,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5",
+        "reaped_descendants": 0,
+        "seconds": 0.036478869151324034,
+        "start_utc": "2026-10-29T04:23:08.394296+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "staged-allocation",
+      "passed": 3,
+      "terminal_summaries": 1,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e0e11e92aac17942f84ccab9bcd62e57b4502f17f693f0fa054cfed75042c5ba",
+        "reaped_descendants": 0,
+        "seconds": 1.355950796045363,
+        "start_utc": "2026-10-29T04:23:08.447655+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "prefixed-pun",
+      "passed": 36,
+      "terminal_summaries": 1,
+      "wall_limit_seconds": 180
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "receipt": {
+    "bytes": 21880,
+    "sha256": "c5c98360e85d0321bdb187ff8c09d605d7fc3b0b0d35db1ed75156f7250859b5"
+  },
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+  "revision": "a29012f08baf7a5a334103ea9e8c95b3ffe45888",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Functional validation. Seconds are command wall durations, not throughput or profiler accuracy. Seven merge checks only; no repeated issue-specific campaign.",
+  "status": "PASS"
+}

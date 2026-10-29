@@ -63,7 +63,8 @@ class QualifiedFixture:
         messages=[product,dict(reason='build-finished',success=True)]
         if fault=='duplicate-product':messages.insert(0,copy.deepcopy(product))
         build=b''.join(P.encoded(m).replace(b'\n',b'')+b'\n' for m in messages)
-        inventory=[*D.RUST,*D.OWNER_RUST,'other::literal_test']
+        inventory=[*D.RUST,*D.OWNER_RUST,*D.ELAPSED_RUST,'other::literal_test']
+        if fault=='missing-elapsed':inventory.remove(D.ELAPSED_RUST[-1])
         if fault=='inventory':inventory.append(D.PREFIX+'unexpected_test')
         listing=(''.join(n+': test\n' for n in inventory)+f'\n{len(inventory)} tests, 0 benchmarks\n').encode('ascii')
         def stage(directory,name,stdout=b''):
@@ -120,7 +121,7 @@ class QualifiedFixture:
 
     def call(self):
         return P.qualified_inputs(self.repo,self.q,self.revision,self.env,self.cpus,self.before,self.tools,
-            self.pins,self.prior,C,self.fixture,D.INVENTORY_PREFIX,D.RUST+D.OWNER_RUST)
+            self.pins,self.prior,C,self.fixture,D.INVENTORY_PREFIX,D.RUST+D.OWNER_RUST+D.ELAPSED_RUST)
 
 
 class Controls(unittest.TestCase):
@@ -207,7 +208,7 @@ class Controls(unittest.TestCase):
 
     def test_qualified_inputs_refuse_mutated_context_and_artifact_authority(self):
         for fault in ('source-after','affinity','environment','tool-hash','profile','duplicate-product','inventory',
-                'stage-cwd','rescue','parent-log','helper-alias','selection-revision','population'):
+                'stage-cwd','rescue','parent-log','helper-alias','selection-revision','population','missing-elapsed'):
             with self.subTest(fault=fault),tempfile.TemporaryDirectory() as temp:
                 f=QualifiedFixture(Path(temp),fault);self.refuse(f.call)
                 self.assertEqual(f.calls,[])
@@ -225,6 +226,9 @@ class Controls(unittest.TestCase):
             path=Path(temp)/'receipt';pins=P.Pins();P.freeze(path,b'original',pins);saved=copy.deepcopy(pins.values)
             path.write_bytes(b'changed');self.refuse(pins.retain,path);self.assertEqual(pins.values,saved)
         self.assertEqual(len(P.CONTROLS),10)
+        self.assertEqual(len(D.RUST+D.OWNER_RUST+D.ELAPSED_RUST),21)
+        self.assertEqual(len(D.ELAPSED_RUST),7)
+        self.assertIn('elapsed-rust-controls',D.STAGES)
 
     def test_local_import_and_optimized_refusal(self):
         self.assertEqual(Path(D.__file__).resolve(),HERE/'backoff_probe.py')

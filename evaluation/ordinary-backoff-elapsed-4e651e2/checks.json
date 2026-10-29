@@ -1,0 +1,203 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 6.914811044000089,
+        "start_utc": "2026-10-29T03:57:28.099076+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "fmt",
+      "passed": 0,
+      "terminal_summaries": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f6e4be4a70c7e812037fa55efcc317cc4172e9d6326abc69164e149db04ba3f9",
+        "reaped_descendants": 0,
+        "seconds": 6.372881199931726,
+        "start_utc": "2026-10-29T03:57:35.029513+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "clippy",
+      "passed": 0,
+      "terminal_summaries": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "bfbfaee13e09f55db064f440d58efe1f2a9fe0984b152a71cee35de45ebdb490",
+        "reaped_descendants": 0,
+        "seconds": 17.348693307954818,
+        "start_utc": "2026-10-29T03:57:41.418174+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "check",
+      "passed": 0,
+      "terminal_summaries": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "cd63085af47a738f6cbeb2a26dbc6dd5d9e57fca692fd942f42b6f753877bd18",
+        "reaped_descendants": 0,
+        "seconds": 336.5607112450525,
+        "start_utc": "2026-10-29T03:57:58.781897+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 36,
+      "name": "workspace-default",
+      "passed": 3127,
+      "terminal_summaries": 109,
+      "wall_limit_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f58e26512e8ba2d3f2224eeac35945f44dc44e0ea6135a02508207a4d9f1330c",
+        "reaped_descendants": 0,
+        "seconds": 129.64907386386767,
+        "start_utc": "2026-10-29T04:03:35.359905+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "serial-launch",
+      "passed": 1039,
+      "terminal_summaries": 28,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f8a9305635186f5b815a269121f042a9db67dcd4051b7ac21257f1cd413eafc2",
+        "reaped_descendants": 0,
+        "seconds": 0.037851839093491435,
+        "start_utc": "2026-10-29T04:05:45.037520+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "staged-allocation",
+      "passed": 3,
+      "terminal_summaries": 1,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "60c3e3ce175ed821bc101e9f3e02d432e6789b62da7bfbf2aee5d4597bf00b24",
+        "reaped_descendants": 0,
+        "seconds": 1.4201516769826412,
+        "start_utc": "2026-10-29T04:05:45.093455+00:00",
+        "termination": null
+      },
+      "failed": 0,
+      "ignored": 0,
+      "name": "prefixed-pun",
+      "passed": 36,
+      "terminal_summaries": 1,
+      "wall_limit_seconds": 180
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "receipt": {
+    "bytes": 21878,
+    "sha256": "e2b7086e1f45e58e31282efc1505ecbdab1f5cd956399361dbe74cfcb949c886"
+  },
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+  "revision": "4e651e2f2af283c8d61191598e52b6dcda3b969d",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Functional validation. Seconds are command wall durations, not throughput or profiler accuracy. Seven merge checks only; no repeated issue-specific campaign.",
+  "status": "PASS"
+}
