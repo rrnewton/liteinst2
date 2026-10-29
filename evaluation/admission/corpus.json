@@ -6283,7 +6283,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 1,
-        "tests": 200
+        "tests": 209
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6459,7 +6459,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 262
+        "tests": 271
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6494,12 +6494,12 @@
         "tests": 0
       },
       "unit/ordinary_interval/main": {
-        "ignored": 0,
-        "tests": 235
+        "ignored": 1,
+        "tests": 425
       },
       "unit/rapid_profiler/lib": {
         "ignored": 31,
-        "tests": 499
+        "tests": 529
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
