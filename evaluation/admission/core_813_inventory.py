@@ -10,6 +10,7 @@ from parsing import require
 import inventory_syntax
 import inventory_digest
 import inventory_copy
+import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
@@ -69,7 +70,7 @@ def source_before_2754(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -121,7 +122,7 @@ def source_before_9950(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -177,7 +178,7 @@ def source_before_5a0(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -233,7 +234,7 @@ def source_before_850(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -289,7 +290,7 @@ def source_before_83b(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -369,7 +370,7 @@ def source_before_abab(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -449,7 +450,7 @@ def source_before_727(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -529,7 +530,7 @@ def source_before_09fe(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -601,7 +602,7 @@ def source_before_0a8(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -673,7 +674,7 @@ def source_before_0df8(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -745,7 +746,7 @@ def source_before_43d7(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -815,7 +816,7 @@ def source_before_7cdc(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -869,7 +870,7 @@ def source_before_f0ef(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -923,7 +924,7 @@ def source_before_e797(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -981,7 +982,7 @@ def source_before_c1(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -1032,7 +1033,7 @@ def source_before_c0(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -1083,7 +1084,7 @@ def source_before_690(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -1134,7 +1135,7 @@ def source_before(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data

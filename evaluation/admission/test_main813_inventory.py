@@ -141,6 +141,99 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(cache.cache_info().currsize, 512)
         cache.cache_clear()
 
+        # Only immutable bounded splice results are reused; validation is live.
+        splice = main813.inventory_splice.splice
+        splice_cache = main813.inventory_splice._splice
+        splice_cache.cache_clear()
+        for args, expected in (((b'abcdef', 1, 3, 'XY'), b'aXYdef'),
+                               ((b'abc', 0, 0, 'X'), b'Xabc'),
+                               ((b'abc', 0, 3, ''), b'')):
+            self.assertEqual(splice(*args), expected)
+            self.assertEqual(splice(*args), expected)
+        self.assertEqual(splice_cache.cache_info().hits, 3)
+        self.assertEqual(splice(b'abcdeg', 1, 3, 'XY'), b'aXYdeg')
+        self.assertEqual(splice(b'abcdef', 2, 3, 'XY'), b'abXYdef')
+        self.assertEqual(splice(b'abcdef', 1, 4, 'XY'), b'aXYef')
+        self.assertEqual(splice(b'abcdef', 1, 3, 'Z'), b'aZdef')
+        uncached = splice_cache.cache_info()
+        for args in ((b'abc', True, 2, 'X'), (b'abc', -1, 2, 'X'),
+                     (b'abc', 2, 1, 'X'), (b'abc', 0, 9, 'X'),
+                     (b'abc', 1, 2, '\u00e9'), (bytearray(b'abc'), 1, 2, 'X')):
+            data, start, end, old = args
+            self.assertEqual(splice(*args), data[:start] + old.encode() + data[end:])
+        for _ in range(2):
+            with self.assertRaises(UnicodeEncodeError):
+                splice(b'abc', 1, 2, '\ud800')
+        large = b'x' * 65537
+        self.assertEqual(splice(large, 0, 0, ''), large)
+        self.assertEqual(splice(b'a', 0, 1, 'x' * 26215), b'x' * 26215)
+        self.assertEqual(splice_cache.cache_info(), uncached)
+        events = []
+        class SpliceBuffer:
+            def __getitem__(self, key):
+                events.append(('slice', key.start, key.stop))
+                return b'abc'[key]
+        class SpliceText:
+            def encode(self):
+                events.append('encode')
+                return b'X'
+        self.assertEqual(splice(SpliceBuffer(), 1, 2, SpliceText()), b'aXc')
+        self.assertEqual(events, [('slice', None, 1), 'encode', ('slice', 2, None)])
+        events.clear()
+        with self.assertRaises(TypeError):
+            splice(SpliceBuffer(), 1.5, 2, SpliceText())
+        self.assertEqual(events, [('slice', None, 1.5)])
+        class SpliceBytes(bytes):
+            def __getitem__(self, key):
+                events.append('subclass slice')
+                return super().__getitem__(key)
+        class SpliceString(str):
+            def encode(self):
+                events.append('subclass encode')
+                if len(events) > 2:
+                    raise ValueError('live splice encode')
+                return b'Z'
+        events.clear()
+        self.assertEqual(splice(SpliceBytes(b'abc'), 1, 2, SpliceString('X')), b'aZc')
+        self.assertEqual(events, ['subclass slice', 'subclass encode', 'subclass slice'])
+        with self.assertRaisesRegex(ValueError, '^live splice encode$'):
+            splice(SpliceBytes(b'abc'), 1, 2, SpliceString('X'))
+        self.assertEqual(events[-2:], ['subclass slice', 'subclass encode'])
+        self.assertEqual(splice_cache.cache_info(), uncached)
+        # Mutation between live bounds checks remains visible to reversed(rows).
+        edits = [[1, 2, 'B'], [4, 5, 'E']]
+        row = {'current_sha256': hashlib.sha256(b'abcdef').hexdigest(),
+               'previous_sha256': hashlib.sha256(b'aQcdEf').hexdigest(), 'edits': edits}
+        original_require = main813.require
+        calls = []
+        def during_bounds(ok, error):
+            calls.append(ok)
+            if len(calls) == 2:
+                edits[0][2] = 'Q'
+            original_require(ok, error)
+        self.assertEqual(splice(b'abcdef', 4, 5, 'E'), b'abcdEf')
+        self.assertEqual(splice(b'abcdEf', 1, 2, 'B'), b'aBcdEf')
+        with patch.dict(main813.MAIN2754['projections'], {'splice_control': row}):
+            with patch.object(main813, 'require', during_bounds):
+                self.assertEqual(main813.source_before_2754('splice_control', b'abcdef', 'splice_live'), b'aQcdEf')
+            self.assertEqual(calls, [True, True, True, True])
+            for key in ('current_sha256', 'previous_sha256'):
+                with patch.dict(row, {key: '0' * 64}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^splice_live$'):
+                        main813.source_before_2754('splice_control', b'abcdef', 'splice_live')
+            with patch.dict(row, {'edits': [[1, 7, 'Q']]}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^splice_live$'):
+                    main813.source_before_2754('splice_control', b'abcdef', 'splice_live')
+            edits[0][2] = 'B'
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^splice_live$'):
+                main813.source_before_2754('splice_control', b'abcdef', 'splice_live')
+        splice_cache.cache_clear()
+        for i in range(2049):
+            splice(b'abc', 1, 2, str(i))
+        self.assertEqual(splice_cache.cache_info().currsize, 2048)
+        self.assertEqual(splice_cache.cache_parameters(), {'maxsize': 2048, 'typed': True})
+        splice_cache.cache_clear()
+
         # Fresh exact trees are copied; unsupported copy semantics stay live.
         plain = main813.inventory_copy
         original_copy = copy.deepcopy
