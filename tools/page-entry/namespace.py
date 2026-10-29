@@ -125,7 +125,7 @@ def parse(data):
             "soname": name(soname) if soname is not None else None, "interpreter": interp}
 
 
-def plan(original, roots, original_hash, interpreter_hash):
+def plan(original, roots, original_hash, interpreter_hash, *, late_sonames=()):
     roots = [Path(root).resolve(strict=True) for root in roots]
     if not roots or len(roots) > 8 or len(set(roots)) != len(roots) or any(not root.is_dir() for root in roots):
         raise ValueError("explicit library roots")
@@ -141,10 +141,24 @@ def plan(original, roots, original_hash, interpreter_hash):
     interp = parse(interp_source)
     if interp["elf_type"] != 3 or interp["interpreter"] is not None:
         raise ValueError("namespace interpreter is not unchained ET_DYN")
+    if type(late_sonames) not in (tuple, list) or len(late_sonames) > MAX_OBJECTS:
+        raise ValueError("late SONAME list bound/type")
+    if any(type(name) is not str or not 1 <= len(name) <= 255 or not name.isascii() or
+           name in (".", "..") or any(not (c.isalnum() or c in "._+-") for c in name)
+           for name in late_sonames):
+        raise ValueError("late dependency name is not a plain SONAME")
+    if len(late_sonames) != len(set(late_sonames)):
+        raise ValueError("duplicate late SONAME")
+    late_sonames = tuple(late_sonames)
     objects, by_path, names = [], {}, {}
     pending = list(main["needed"]) + list(interp["needed"])
-    cursor = 0
-    while cursor < len(pending):
+    cursor, startup_count = 0, None
+    while cursor < len(pending) or (late_sonames and startup_count is None):
+        if cursor == len(pending):
+            # Finish the original closure first; late authorization neither
+            # preloads objects nor changes existing startup object indexes.
+            startup_count = len(objects)
+            pending.extend(late_sonames)
         needed = pending[cursor]
         cursor += 1
         if needed in names:
@@ -186,9 +200,19 @@ def plan(original, roots, original_hash, interpreter_hash):
             names[alias] = index
             if alias not in item["names"]:
                 item["names"].append(alias)
-    return objects, {"roots": [str(root) for root in roots], "original": str(original),
-                     "original_sha256": original_hash.hex(), "interpreter": str(interp_path),
-                     "interpreter_sha256": interpreter_hash.hex()}
+    description = {"roots": [str(root) for root in roots], "original": str(original),
+                   "original_sha256": original_hash.hex(), "interpreter": str(interp_path),
+                   "interpreter_sha256": interpreter_hash.hex()}
+    if late_sonames:
+        # Indexes refer only to the ordered sealed-object manifest, not runtime
+        # object IDs, mappings, ASLR bases, or admission/publication authority.
+        description["late_preauthorization"] = {
+            "scope": "sealed_inputs_only_not_loaded_or_admitted",
+            "startup_object_count": startup_count,
+            "requested": [{"soname": name, "object_index": names[name]} for name in late_sonames],
+            "additional_object_indexes": list(range(startup_count, len(objects))),
+        }
+    return objects, description
 
 
 def sealed_bytes(name, data, inheritable):
@@ -210,8 +234,8 @@ def sealed_bytes(name, data, inheritable):
         raise
 
 
-def prepare(original, roots, directory, original_hash, interpreter_hash):
-    objects, description = plan(original, roots, original_hash, interpreter_hash)
+def prepare(original, roots, directory, original_hash, interpreter_hash, *, late_sonames=()):
+    objects, description = plan(original, roots, original_hash, interpreter_hash, late_sonames=late_sonames)
     directory = Path(directory).absolute()
     directory.mkdir(mode=0o700, parents=False, exist_ok=False)
     fds, rows = [], []
