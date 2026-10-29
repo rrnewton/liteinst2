@@ -392,7 +392,7 @@ def main():
         assert re.fullmatch(r'Ran 4 tests in [0-9]+\.[0-9]+s',lines[-3])
         final=a.raw/'fixture-final.so'; trusted=a.raw/'fixture-trusted.so'; candidate=a.raw/'fixture-candidate.so'
         code,out,err=stage('fixture-build',[tools['gcc'],'-fPIC','-shared','-nostdlib','-fcf-protection=none',
-            '-Wl,--build-id=none,-z,now,-z,noexecstack',
+            '-Wl,--build-id=none,-z,now,-z,noexecstack','-Wl,--entry=0',
             '-Wl,--version-script=tools/rapid-profiler/strnlen-work/localize.map',HERE/'preparation_refusal.S','-o',final])
         assert code==0 and out==err==b''
         final_pin=remember(final,MIB); content=read(final); geometry=elf_geometry(content)

@@ -45,6 +45,7 @@ class Controls(unittest.TestCase):
         # Actual parser seams: full extent, binding, type, duplicate name, section,
         # RX owner, offset correspondence, bytes, constructors, NOW and relocation.
         for offset,fmt,value in (
+            (24,'Q',1),(24,'Q',4096),
             (0x2a8,'Q',3),(0x2a8,'Q',5),(0x29c,'B',18),(0x29c,'B',1),
             (0x280,'I',1),(0x29e,'H',0),(0x348,'Q',7),(68,'I',7),
             (72,'Q',0x1001),(0x1000,'B',0x90),(0x200,'q',12),
