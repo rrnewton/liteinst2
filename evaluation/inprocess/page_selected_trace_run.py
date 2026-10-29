@@ -39,7 +39,7 @@ def publish(path,r,private):
         build_status=build.get('status'),finite_build_status=r.get('finite_build',{}).get('status'),
         build_sha256=digest(build),finite_build_sha256=digest(r.get('finite_build')),
         configuration_sha256=digest(r.get('configuration')),tool_versions=build.get('numeric_versions'),
-        tool_hashes={k:{a:v[a]for a in ('bytes','sha256')}for k,v in build.get('tools',{}).items()},
+        tools_sha256=digest(build.get('tools',{})),
         fixture=r.get('finite_build',{}).get('artifact'),
         failure_type=r['error'].split(':',1)[0] if r['error'] else None,final_error_count=len(r['final_errors']),
         interpretation='One completed fixed predecessor/block/whole native program and two genuine TRACE-run miss/hit executions; six required failed operations. Supplied proof mutations are named separately. Existing 4 run, 14 run-control and 23 chain processes remain separate obligations. No production-controller, rseq, capacity, application or timing claim.')
