@@ -34,7 +34,7 @@ SECTIONS {
  ASSERT(rn_body == 0x200403000 && SIZEOF(.text.body) == 4096, "complete WAIT page")
  ASSERT(rn_tail == 0x200404000 && SIZEOF(.text.tail) == 4096, "complete ADD page")
  ASSERT(tfi_wait_tail == 0x200403ffd && tfi_read == 0x200403ffe, "exact old NOP and final syscall")
- ASSERT(rn_program == 0x200404000 && (tfi_body_end-rn_program == 4 || tfi_body_end-rn_program == 1024), "fixed eligible body")
+ ASSERT(rn_program == 0x200404000 && (tfi_body_end - rn_program == 4 || tfi_body_end - rn_program == 1024), "fixed eligible body")
  ASSERT(rn_guard == 0x200405000 && SIZEOF(.text.guard) == 4096, "guarded continuation page")
  ASSERT(ADDR(.text.reference) == 0x200406000 && SIZEOF(.text.reference) == 4096, "bounded actual native observer")
  . = 0x200407000;
