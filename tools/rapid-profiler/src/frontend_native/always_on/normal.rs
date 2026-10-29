@@ -6,10 +6,24 @@ use super::*;
 mod module;
 mod two_callers;
 pub use module::{
-    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleRecord,
-    NormalModuleThread, PreparedNormalModuleController,
+    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleHistoryBatch,
+    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleRecord,
+    NormalModuleSessionController, NormalModuleThread, PreparedNormalModuleController,
+    PreparedNormalModuleSessionController,
 };
 pub use two_callers::PreparedTwoCallerNormalController;
+
+// Closed private bridges for the separately guarded module bank facade.
+pub(super) fn module_session_profile_matches(
+    profile: &BindingProfile,
+    limits: Limits,
+    config: Config,
+) -> bool {
+    module::session_profile_matches(profile, limits, config)
+}
+pub(super) fn module_session_binding_matches(binding: &Binding) -> bool {
+    module::session_binding_matches(binding)
+}
 
 const CALLS: usize = EVENTS / 2;
 
@@ -714,7 +728,7 @@ impl NormalState {
         entry: bool,
     ) -> Result<(u64, SelectedFunction), BridgeError> {
         self.binding.process()?;
-        if !(normal_binding_matches(&self.binding) || module::binding_matches(&self.binding))
+        if !(normal_binding_matches(&self.binding) || module::module_runtime_matches(&self.binding))
             || self.actual_thread != thread::current().id()
             || self.tid != tid()
             || context.stack_pointer < self.stack.start
@@ -1116,7 +1130,7 @@ impl NormalThread {
     }
     fn matches_for(&self, s: &NormalState, module: bool) -> bool {
         if module {
-            self.matches_identity(s) && module::binding_matches(&s.binding)
+            self.matches_identity(s) && module::module_runtime_matches(&s.binding)
         } else {
             self.matches(s)
         }

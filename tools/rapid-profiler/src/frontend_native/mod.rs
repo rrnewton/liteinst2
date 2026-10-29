@@ -120,8 +120,10 @@ pub use module::ordinary::{
 
 pub use always_on::normal::{
     NormalAcknowledgement, NormalBatch, NormalClient, NormalModuleBatch, NormalModuleClient,
-    NormalModuleController, NormalModuleRecord, NormalModuleThread, NormalRecord, NormalThread,
-    NormalTotals, PreparedNormalController, PreparedNormalModuleController,
+    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,
+    NormalModuleHistoryWindow, NormalModuleRecord, NormalModuleSessionController,
+    NormalModuleThread, NormalRecord, NormalThread, NormalTotals, PreparedNormalController,
+    PreparedNormalModuleController, PreparedNormalModuleSessionController,
     PreparedTwoCallerNormalController,
 };
 pub use always_on::site::ordinary::{
