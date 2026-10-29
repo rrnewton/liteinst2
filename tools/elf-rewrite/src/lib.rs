@@ -2,6 +2,7 @@
 //! No live callback pointer, executable mapping, publication receipt, or admission.
 #![forbid(unsafe_code)]
 pub mod carrier;
+pub mod disassembly;
 mod ledger;
 pub mod model;
 mod neighbor_catalogue;
@@ -59,8 +60,34 @@ pub fn prepare_with_owned_neighbors(original: &[u8], manifest: &[u8]) -> Result<
     prepare_mode(original, manifest, true)
 }
 
+/// Artifact-only code-region preparation, distinct from recovered functions.
+/// The sealed importer supplies all verified heads and private-image resumes;
+/// owned-neighbor/function catalogue planning is deliberately unavailable here.
+/// Every requested jump shares the existing all-or-nothing source/carrier pass.
+pub fn prepare_disassembly(
+    original: &[u8],
+    selected: &disassembly::DisassemblySelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_mode(original, selected.selection.clone(), false)?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.files.clone());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
+    prepare_selection_mode(original, selection, owned_neighbors)
+}
+
+fn prepare_selection_mode(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+) -> Result<Product, Error> {
     let s = &selection;
     if original.len() > s.limits.input_bytes {
         return Err(Error::new("input-limit", original.len()));

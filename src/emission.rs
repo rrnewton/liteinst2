@@ -20,9 +20,16 @@ pub struct PlanningSite<'a> {
     pub code: &'a [u8],
     /// Coordinate corresponding to code[0].
     pub base_address: u64,
-    /// Authenticated containing function.
+    /// Authenticated containing function for live/function-based frontends.
+    /// A distinct artifact-only frontend may instead bind a contiguous original
+    /// code region: complete trusted nonoverlapping disassembly, every verified
+    /// head a legal entry, no code-as-data, and private-image saved resumes.
+    /// In that contract this field bounds source/eviction ownership; it does not
+    /// certify a recovered function, ABI, call graph or whole-function controls.
+    /// Such a frontend must not use foreign-function/whole-function APIs.
     pub function: AddressRange,
-    /// Authenticated containing basic block.
+    /// Authenticated containing basic block (or a conservative artifact interval
+    /// cut at every non-Next instruction and known direct target).
     pub block: AddressRange,
     /// Original selected instruction head.
     pub logical_pc: u64,
