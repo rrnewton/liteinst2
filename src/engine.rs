@@ -198,6 +198,73 @@ pub fn plan_with_emission_after(
     plan_core(&original.with_code(&current), victim_allocation, policy).map(artifact_plan)
 }
 
+/// The same five-tactic engine with an explicit short-only T3 family.
+///
+/// Generalized pun, relocation, prefixed pun and successor eviction retain their
+/// order and exact policies. T3 considers only same-function 6..=9-byte victims;
+/// it never retries long victims or obtains a second victim/pair budget. A
+/// forced tactic remains one invocation. The full ten-byte fetch/edit requires
+/// the existing quiescent source/entry/lease contract, including its suffix.
+/// No cross-function short planning or additional publication authority exists.
+pub fn plan_with_short_neighbors(
+    request: &InstallRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family(
+        &PlanningRequest::live(request),
+        victim_allocation,
+        policy,
+        true,
+    )
+}
+
+/// Artifact counterpart of the explicit short-only engine. No live authority.
+pub fn plan_with_emission_and_short_neighbors(
+    request: &ArtifactRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    plan_core_family(
+        &PlanningRequest::artifact(request),
+        victim_allocation,
+        policy,
+        true,
+    )
+    .map(artifact_plan)
+}
+
+/// Short-only T3 against an authenticated preceding composition overlay.
+///
+/// Original instruction identity remains separate from current read bytes.
+/// As with the legacy entrypoint, the caller must append every returned step
+/// transactionally; inherited site, suffix-lock and allocation conflicts refuse.
+pub fn plan_with_emission_after_and_short_neighbors(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        true,
+    )
+    .map(artifact_plan)
+}
+
 // Explicit artifact-only continuation; all existing engine entry points stay literal.
 #[path = "engine_foreign.rs"]
 mod foreign;
@@ -218,6 +285,15 @@ fn plan_core(
     request: &PlanningRequest<'_>,
     victim_allocation: &AllocationPolicy,
     policy: EnginePolicy,
+) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family(request, victim_allocation, policy, false)
+}
+
+fn plan_core_family(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    short_only: bool,
 ) -> Result<EnginePlan, EngineFailure> {
     const ORDER: [Tactic; 5] = [
         Tactic::GeneralizedPun,
@@ -293,12 +369,21 @@ fn plan_core(
                     ),
                 }
             }
-            Tactic::NeighborEviction => match neighbor::plan_neighbor_core(
-                request,
-                victim_allocation,
-                policy.neighbor,
-                policy.bundle,
-            ) {
+            Tactic::NeighborEviction => match if short_only {
+                neighbor::plan_neighbor_short_core(
+                    request,
+                    victim_allocation,
+                    policy.neighbor,
+                    policy.bundle,
+                )
+            } else {
+                neighbor::plan_neighbor_core(
+                    request,
+                    victim_allocation,
+                    policy.neighbor,
+                    policy.bundle,
+                )
+            } {
                 Ok(plan) => (
                     Ok((
                         plan.bundle().clone(),

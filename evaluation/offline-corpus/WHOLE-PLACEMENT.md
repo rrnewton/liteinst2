@@ -12,6 +12,7 @@ Choose one profile explicitly for both programs:
 | `offline-whole-authored-null-jumps-v1` (default) | 16 MiB | Original fixed pages |
 | `offline-whole-authored-window-permits-v1` | 16 MiB | Pages in the existing carrier arena |
 | `offline-whole-authored-broad-span-2g-v1` | 2 GiB | Same seeds and carrier exclusions, with a larger final permitted interval |
+| `offline-whole-authored-short-only-2g-v1` | 2 GiB | Exact broad-profile placement; explicit ShortOnly T3 family |
 
 The broader profile is a separate resource contract. It preserves the old
 profiles and their [fixed-page](../whole-authored-1f6c043/README.md) and
@@ -50,3 +51,25 @@ loader reservation cost. Material or importer success alone supplies no native
 execution, full-state equivalence, performance or E9 comparison result. Those
 require separate complete-candidate validation; `compare.py` retains its
 existing kernel-only selection.
+
+The separate ShortOnly profile uses every BROAD_PROFILE limit, permit, seed,
+search row and allocation row unchanged. It changes only the policy header to
+`LI2DISASM-POLICY 2` and inserts `neighbor-victims short-only` immediately
+after the ledger row. It requests the importer's explicit leading
+`--short-neighbors-only` option. The first four tactic stages retain their
+ordering; the final T3 stage uses only 6..9-byte victims, with no long-family
+fallback, retry, extra allocation candidate or second program attempt.
+
+Select it with
+`--placement-profile offline-whole-authored-short-only-2g-v1` after a fresh
+capture at the integrated source. The wrapper requires the exact importer
+profile `elf-disassembly-null-jumps-short-only-v1` and
+`neighbor_victims\tshort-only` metadata. An old-profile directory cannot
+satisfy the new attempt. The full policy, indexed files, complete 187-head /
+42-jump material population, custody, configuration and release-profile gates
+remain required.
+
+The new LI2TOOL projection retains its explicit family row. The unchanged
+legacy selection parser rejects that unknown row; this profile does not strip
+it for an E9 or other comparator. No comparator qualification, fit, native,
+loader or performance result is established.

@@ -130,3 +130,38 @@ Use a fresh build capture at the current committed source. All existing capture,
 configuration and source-continuity checks still apply. Omitting the option
 retains the original fixed-page profile. The helper neither retries a failed
 profile nor executes rewritten candidates.
+
+## Explicit ShortOnly profile with unchanged broad placement
+
+`attempt(program, inputs, expected, profile=SHORT_PROFILE)` selects
+`offline-whole-authored-short-only-2g-v1`. Its placement is byte-identical to
+BROAD_PROFILE: the same fixed 2 GiB virtual-span limit, permits, preferred
+addresses, search rows and one-candidate allocation rows. Only these policy
+mode bytes differ:
+
+```text
+LI2DISASM-POLICY 2
+original ORIGINAL_SHA256
+ledger LEDGER_SHA256
+neighbor-victims short-only
+```
+
+All subsequent rows equal the broad policy. The digest covers the complete
+policy including the family row. Material production uses the same ownership,
+relocation, exact source and complete head joins; a refused input is neither
+subsetted nor retried. The three existing profiles retain their exact outputs.
+
+The reproducer's explicit placement choice adds the leading Rust importer
+flag `--short-neighbors-only` before the unchanged six positional arguments.
+It requires profile `elf-disassembly-null-jumps-short-only-v1` and the
+`neighbor_victims\tshort-only` row immediately after the profile in COMPLETE,
+verified inventory and any emitted planning/failure metadata. The stdout mode
+and candidate-complete value must also match the closed command's exit code.
+There is one importer invocation per ready program, with the existing release,
+custody, configuration, limits and complete-denominator gates.
+
+The generated selection retains `neighbor-victims short-only` after its
+original row. The ordinary selection parser rejects this new row. Neither this
+profile nor its runner adapts E9 or other comparators, removes the row for legacy
+replay, or grants comparator qualification. The additive supplied-input controls
+exercise the actual adapter and dispatch/inventory helpers.

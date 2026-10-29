@@ -68,7 +68,12 @@ pub fn prepare_disassembly(
     original: &[u8],
     selected: &disassembly::DisassemblySelection,
 ) -> Result<Product, Error> {
-    let mut product = prepare_selection_mode(original, selected.selection.clone(), false)?;
+    let mut product = prepare_selection_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        selected.short_only,
+    )?;
     product.files.remove("bundle-index.tsv");
     product.files.extend(selected.files.clone());
     product.files.insert(
@@ -80,14 +85,21 @@ pub fn prepare_disassembly(
 
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
-    prepare_selection_mode(original, selection, owned_neighbors)
+    prepare_selection_mode(original, selection, owned_neighbors, false)
 }
 
 fn prepare_selection_mode(
     original: &[u8],
     selection: Selection,
     owned_neighbors: bool,
+    short_only: bool,
 ) -> Result<Product, Error> {
+    if owned_neighbors && short_only {
+        return Err(Error::new(
+            "neighbor-mode",
+            "short-only has no foreign owner route",
+        ));
+    }
     let s = &selection;
     if original.len() > s.limits.input_bytes {
         return Err(Error::new("input-limit", original.len()));
@@ -243,6 +255,13 @@ fn prepare_selection_mode(
                     &site.victim_allocation,
                     policy,
                     &foreign,
+                )
+            } else if short_only {
+                engine::plan_with_emission_after_and_short_neighbors(
+                    &request,
+                    &composition,
+                    &site.victim_allocation,
+                    policy,
                 )
             } else {
                 engine::plan_with_emission_after(

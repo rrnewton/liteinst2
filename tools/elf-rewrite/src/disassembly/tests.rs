@@ -340,3 +340,279 @@ fn bounded_text_and_whole_program_projection_refuse_without_splitting() {
             .is_err()
     );
 }
+
+// Each positive uses a literal whole victim and literal successor instructions.
+// Targets are derived before planning from their fixed E9 suffix bytes; no
+// planning outcome chooses a fixture, a permit, or a replacement population.
+fn short_fixture(length: usize, extra_refusal: bool) -> (Vec<u8>, String, String) {
+    assert!((6..=9).contains(&length));
+    let mut victim = vec![0x2e; length - 5];
+    victim.extend_from_slice(&[0xb8, 0x27, 0x31, 0x42, 0x53]);
+    let mut chunks = vec![victim];
+    if length == 9 {
+        chunks.extend([vec![0x6a, 1], vec![0x58]]); // PUSH 1; POP RAX
+    } else {
+        chunks.push(vec![0xb8, 1, 1, 1, 1]); // MOV EAX,0x01010101
+    }
+    while chunks.iter().map(Vec::len).sum::<usize>() < 32 {
+        chunks.push(vec![0x90]);
+    }
+    assert_eq!(chunks.iter().map(Vec::len).sum::<usize>(), 32);
+    chunks.extend([vec![0x75, 0], vec![0xc3]]);
+    if extra_refusal {
+        chunks.extend([vec![0xe9, 0, 0, 0, 0], vec![0xc3]]);
+    }
+    let refs: Vec<_> = chunks.iter().map(Vec::as_slice).collect();
+    let (original, ledger) = fixture(&refs);
+    let mut displacement = [0_u8; 4];
+    displacement[length - 6..].copy_from_slice(&original[0x1100 + length..0x1100 + 10]);
+    let selected =
+        u64::try_from(i128::from(PC + 10) + i128::from(i32::from_le_bytes(displacement))).unwrap();
+    let victim_target = BASE + 0x6000080;
+    // Original LOAD end BASE+0x2000 < carrier BASE+0x8000 < both
+    // complete two-page permits. The two permits do not overlap each other.
+    let selected_page = selected & !4095;
+    let victim_page = victim_target & !4095;
+    assert!(selected_page > BASE + 0x9000 && victim_page > BASE + 0x9000);
+    assert!(selected_page + 8192 <= victim_page || victim_page + 8192 <= selected_page);
+    assert!(selected_page.max(victim_page) + 8192 - BASE < 4294967296);
+    let count = if extra_refusal { 2 } else { 1 };
+    let p = policy(&original, &ledger, count);
+    let mut rows: Vec<String> = p.lines().take(8).map(str::to_owned).collect();
+    rows[0] = "LI2DISASM-POLICY 2".into();
+    rows.insert(3, "neighbor-victims short-only".into());
+    for id in 1..=count {
+        rows.push(format!("search {id} T3 0 80 1 {PC} 1 1"));
+        rows.push(format!(
+            "allocation {id} selected {selected} 1 8192 {selected_page}:8192"
+        ));
+        rows.push(format!(
+            "allocation {id} victim {victim_target} 1 8192 {victim_page}:8192"
+        ));
+    }
+    (original, ledger, rows.join("\n") + "\n")
+}
+fn short_bind(original: &[u8], ledger: &str, p: &str) -> Result<DisassemblySelection, Error> {
+    checked(original, ledger)?.bind_short_neighbors(p.as_bytes(), ContentId::of(p.as_bytes()))
+}
+
+#[test]
+fn short_only_policy_is_explicit_digest_bound_and_not_legacy() {
+    let (o, l, p) = short_fixture(6, false);
+    let selected = short_bind(&o, &l, &p).unwrap();
+    assert_eq!(selected.profile(), SHORT_ONLY_PROFILE);
+    assert_eq!(selected.selection.manifest, selected.manifest());
+    let manifest = std::str::from_utf8(selected.manifest()).unwrap();
+    assert_eq!(
+        manifest.lines().take(3).collect::<Vec<_>>(),
+        [
+            "LI2TOOL 1",
+            &format!("original {}", digest(&o)),
+            "neighbor-victims short-only"
+        ]
+    );
+    assert!(selection::parse(selected.manifest()).is_err());
+    assert!(crate::prepare(&o, selected.manifest()).is_err());
+    assert!(bind(&o, &l, &p).is_err());
+    let old_policy = policy(&o, &l, 1);
+    assert!(short_bind(&o, &l, &old_policy).is_err());
+    assert_eq!(bind(&o, &l, &old_policy).unwrap().profile(), PROFILE);
+    let family = "neighbor-victims short-only\n";
+    for wrong in [
+        p.replace(family, ""),
+        p.replace(family, &format!("{family}{family}")),
+        p.replace(family, "neighbor-victims long-only\n"),
+        p.replace(family, "")
+            .replace("target fxsave64\n", &format!("target fxsave64\n{family}")),
+        p.replace("LI2DISASM-POLICY 2", "LI2DISASM-POLICY 1"),
+    ] {
+        assert!(short_bind(&o, &l, &wrong).is_err());
+    }
+    assert!(
+        checked(&o, &l)
+            .unwrap()
+            .bind_short_neighbors(p.as_bytes(), ContentId([0; 32]))
+            .is_err()
+    );
+    for wrong in [
+        manifest.replace(family, ""),
+        manifest.replace(family, &format!("{family}{family}")),
+        manifest.replace(family, "neighbor-victims long-only\n"),
+        manifest.replace(family, "") + family,
+    ] {
+        assert!(selection::parse_short_neighbor_projection(wrong.as_bytes()).is_err());
+    }
+    let profile = std::str::from_utf8(&selected.files["planning-profile.tsv"]).unwrap();
+    assert!(profile.starts_with(&format!(
+        "LI2PLANNING\t1\nprofile\t{SHORT_ONLY_PROFILE}\nneighbor_victims\tshort-only\n"
+    )));
+    assert!(profile.contains(&format!(
+        "selection_sha256\t{}\n",
+        digest(selected.manifest())
+    )));
+    assert!(profile.contains(&format!("policy_sha256\t{}\n", digest(p.as_bytes()))));
+    assert_ne!(
+        ContentId::of(selected.manifest()),
+        ContentId::of(manifest.replace(family, "").as_bytes())
+    );
+}
+
+#[test]
+fn short_only_disassembly_forced_t3_preserves_all_heads_and_bytes() {
+    for length in 6..=9 {
+        let (o, l, p) = short_fixture(length, false);
+        let imported = checked(&o, &l).unwrap();
+        let expected_heads: Vec<_> = imported.regions[0]
+            .instructions
+            .iter()
+            .map(|i| (i.ip(), i.len()))
+            .collect();
+        let selected = short_bind(&o, &l, &p).unwrap();
+        assert_eq!(selected.selection.sites.len(), 1);
+        assert_eq!(
+            selected.selection.sites[0].completeness,
+            EntryCompleteness::AllInstructionHeads
+        );
+        assert_eq!(
+            selected.selection.sites[0]
+                .heads
+                .iter()
+                .map(|h| h.address)
+                .collect::<Vec<_>>(),
+            expected_heads.iter().map(|(pc, _)| *pc).collect::<Vec<_>>()
+        );
+        let product = prepare_disassembly(&o, &selected).unwrap();
+        assert!(product.candidate_complete(), "{:?}", product.reports());
+        assert!(!product.qualification_complete());
+        assert_eq!(product.reports().len(), 1);
+        assert_eq!(
+            product.reports()[0].core_tactic,
+            Some(li2core::engine::Tactic::NeighborEviction)
+        );
+        assert!(product.reports()[0].candidate_emitted && product.reports()[0].refusal.is_none());
+        let candidate = &product.files()["candidate.elf"];
+        assert_eq!(&candidate[0x1120..0x1122], &[0xeb, (-29_i8) as u8]);
+        assert_eq!(candidate[0x1100], 0xe9);
+        assert_eq!(candidate[0x1105], 0xe9);
+        for (pc, width) in expected_heads {
+            if pc == PC || pc == PC + 32 {
+                continue;
+            }
+            let offset = (pc - BASE) as usize;
+            assert_eq!(
+                &candidate[offset..offset + width],
+                &o[offset..offset + width]
+            );
+        }
+        assert_eq!(
+            &candidate[0x1100 + length..0x110a],
+            &o[0x1100 + length..0x110a]
+        );
+        assert_eq!(candidate[0x1f00], 0xc3);
+        assert_eq!(product.files()["selection.txt"], selected.manifest());
+        assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+        assert!(product.files().contains_key("source.li2sparse"));
+        assert!(
+            std::str::from_utf8(&product.files()["disassembly-inventory.tsv"])
+                .unwrap()
+                .contains(&format!(
+                    "profile\t{SHORT_ONLY_PROFILE}\nneighbor_victims\tshort-only\n"
+                ))
+        );
+        let mut wrong = o.clone();
+        wrong[0x300] ^= 1;
+        assert_eq!(
+            prepare_disassembly(&wrong, &selected).unwrap_err().stage,
+            "original-identity"
+        );
+    }
+}
+
+#[test]
+fn short_only_disassembly_refusal_retains_the_complete_denominator() {
+    let (o, l, p) = short_fixture(8, true);
+    let selected = short_bind(&o, &l, &p).unwrap();
+    assert_eq!(
+        selected
+            .selection
+            .sites
+            .iter()
+            .map(|s| s.id)
+            .collect::<Vec<_>>(),
+        [1, 2]
+    );
+    let product = prepare_disassembly(&o, &selected).unwrap();
+    assert_eq!(
+        product.reports().iter().map(|s| s.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert_eq!(
+        product.reports()[0].core_tactic,
+        Some(li2core::engine::Tactic::NeighborEviction)
+    );
+    assert!(!product.reports()[0].diagnostics.is_empty());
+    assert_eq!(product.reports()[1].core_tactic, None); // original five-byte E9
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal.is_some() && !r.candidate_emitted)
+    );
+    assert!(!product.candidate_complete() && !product.qualification_complete());
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert!(!product.files().contains_key("source.li2sparse"));
+    assert!(product.files().contains_key("image-0000.bin"));
+    assert!(product.files().contains_key("image-0001.bin"));
+    assert_eq!(product.files()["disassembly.txt"], l.as_bytes());
+    assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+}
+
+#[test]
+fn short_only_projection_and_search_caps_are_not_widened() {
+    let (o, l, p) = short_fixture(7, false);
+    let selected = short_bind(&o, &l, &p).unwrap();
+    let mut exact = selected.manifest().to_vec();
+    exact.resize(TEXT_LIMIT, b'\n');
+    assert_eq!(
+        selection::parse_short_neighbor_projection(&exact)
+            .unwrap()
+            .manifest,
+        exact
+    );
+    exact.push(b'\n');
+    assert!(selection::parse_short_neighbor_projection(&exact).is_err());
+    let stripped = std::str::from_utf8(&exact)
+        .unwrap()
+        .replace("neighbor-victims short-only\n", "");
+    assert!(selection::parse(stripped.as_bytes()).is_ok()); // bound is BEFORE stripping
+    let search = format!("search 1 T3 0 80 1 {PC} 1 1\n");
+    for wrong in [
+        p.replace(&search, ""),
+        p.clone() + &search,
+        p.clone() + "search 2 T3 0 80 1 none 1 1\n",
+        p.replace("1048576 16 16", "1048576 0 16"),
+        p.replace("1048576 16 16", "1048576 1025 16"),
+        p.replace("T3 0 80", "T3 0 65537"),
+        p.replace(
+            &format!("ledger {}", digest(l.as_bytes())),
+            &format!("ledger {}", "0".repeat(64)),
+        ),
+    ] {
+        assert!(short_bind(&o, &l, &wrong).is_err());
+    }
+    for wrong in [
+        p.replace(&search, &format!("search 1 T3 0 80 1 {PC} 0 1\n")),
+        p.replace(&search, &format!("search 1 T3 0 80 1 {PC} 1 0\n")),
+        p.replace("1048576 16 16", "1048576 16 1"),
+    ] {
+        let selected = short_bind(&o, &l, &wrong).unwrap();
+        let product = prepare_disassembly(&o, &selected).unwrap();
+        assert_eq!(product.reports().len(), 1);
+        assert!(!product.candidate_complete());
+        assert!(product.reports()[0].refusal.is_some());
+        assert!(!product.files().contains_key("candidate.elf"));
+    }
+    let malformed = l.replace(&format!("head {PC} "), &format!("head {} ", PC + 1));
+    assert!(checked(&o, &malformed).is_err());
+    assert!(short_bind(&o, &l, &(p.clone() + &"x".repeat(TEXT_LIMIT))).is_err());
+}

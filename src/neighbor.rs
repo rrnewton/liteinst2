@@ -212,6 +212,15 @@ pub(crate) fn plan_neighbor_core(
     plan_neighbor_mode(request, victim_allocation, search, budget, false)
 }
 
+pub(crate) fn plan_neighbor_short_core(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode(request, victim_allocation, search, budget, true)
+}
+
 fn plan_neighbor_mode(
     request: &PlanningRequest<'_>,
     victim_allocation: &AllocationPolicy,

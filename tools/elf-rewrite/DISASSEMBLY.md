@@ -143,3 +143,57 @@ Their prospective command is `cargo test --offline --locked -p liteinst-rewrite`
 source proposal authoring did not run it. Actual loader execution, output/ABI/
 full-state/unwind preservation, real hooks, heap writes, grouping, broader
 corpus fit and performance remain unqualified.
+
+
+## Explicit same-region short-only neighbor option
+
+The default command and version-one policy continue to use the long-only
+10–15-byte T3 victim family. The separate invocation is:
+
+```
+disassembly_sites --short-neighbors-only ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY
+```
+
+It has one leading flag and the same six positional arguments (eight argv
+entries including the program). The six-position legacy form remains unchanged,
+including positional path strings that start with `--`. No fallback or retry
+selects a family from a refusal. This option changes only the T3 stage to the
+same-region, whole-original 6–9-byte victim family; it does not try a union of
+short and long victims. The other four stages, their ranking, forced tactics,
+all allocation/search/aggregate limits and all-head obligations remain identical.
+The complete ten-byte relay fetch/edit, including the unchanged successor suffix,
+retains its source, entry and quiescent-publication requirements. This is not a
+hardware-atomic ten-byte store or executable-artifact admission.
+
+The new policy starts with `LI2DISASM-POLICY 2` and requires exactly
+`neighbor-victims short-only` immediately after the original and ledger digest
+rows. Its complete bytes must match the caller's supplied policy digest. Every
+other policy row, every original jump and every refusal remains mandatory; no
+successful subset may be published. `Disassembly::bind_short_neighbors` seals
+that family. `prepare_disassembly` uses the shared engine with this mode; the
+ordinary public selection parser/prepare path rejects the new projection.
+
+The projection still starts with `LI2TOOL 1`, followed by the original digest
+and then the exact family row. Only the sealed importer removes that one row
+privately for the unchanged parser, after checking the full one-MiB input cap.
+The original full projection bytes, including the family, remain the manifest
+and metadata identity. Missing, duplicate, reordered or wrong-family rows
+refuse even with a recomputed digest. Legacy consumers, including the existing
+selection comparator, do not accept the new row; downstream comparison/runner
+integration is a separate task and is not implied by a complete candidate.
+
+The profile is `elf-disassembly-null-jumps-short-only-v1`. Inventory, planning,
+program-failure and COMPLETE index files place `neighbor_victims` / `short-only`
+immediately after their profile row (tab separated). The stdout summary adds
+`neighbor_victims=short-only` immediately after the profile token. Mode selection
+precedes input binding, so failed ledger/policy attempts retain the same explicit
+profile. Legacy file and stdout bytes are unchanged. All candidate files remain
+unqualified until independently checked and admitted.
+
+Core callers opt in through `engine::plan_with_short_neighbors`,
+`plan_with_emission_and_short_neighbors`, or
+`plan_with_emission_after_and_short_neighbors`. `EnginePolicy` is unchanged. The
+last entrypoint authenticates the predecessor's original identity and current
+overlay; callers must still append every returned step transactionally to enforce
+inherited locks, physical sites and allocation ownership. Foreign-neighbor
+planning remains on its existing long-only route.

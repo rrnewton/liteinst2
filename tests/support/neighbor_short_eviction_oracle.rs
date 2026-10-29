@@ -1130,3 +1130,351 @@ fn short_reject_fetch_or_bound_violation() {
         f.assert_entry(f.selected)
     });
 }
+
+// Engine dispatch bridge; the direct planner and NativeOracle remain unchanged.
+#[test]
+fn short_engine_overlap_bundle_matches_direct_and_native() {
+    use liteinst2::engine::{self, CandidateEvidence, EnginePolicy, SelectedMetrics, Tactic};
+    // Independent five-head bridge; do not enroll in the old 1102-head census.
+    let puzzle = ShortPuzzle::overlap();
+    let expected_heads = 5;
+    assert_eq!(puzzle.heads, [0, 6, 8, 9, 10]);
+    let selected_len = puzzle.selected_len;
+    let victim_len = puzzle.victim_len;
+    let mut head_count = 0;
+    let mut installed_count = 0;
+    let mut retired_count = 0;
+    let mut direct_victim_count = 0;
+    assert_eq!(puzzle.heads.len(), expected_heads);
+    head_count += puzzle.heads.len();
+    let mut oracle = NativeOracle::new(&puzzle.code);
+    let base = oracle.code.address();
+    let selected = base + puzzle.selected as u64;
+    let victim = base + puzzle.victim as u64;
+    let relay = victim + 5;
+    let rel8 = i8::try_from(i128::from(relay) - i128::from(selected) - 2).unwrap();
+    let heads: Vec<_> = puzzle.heads.iter().map(|&pc| base + pc as u64).collect();
+    let source = AddressRange::new(base, puzzle.function_len).unwrap();
+    let identity = CodeIdentity {
+        source: SourceIdentity([0xe7; 32]),
+        mapping: base,
+        generation: 1,
+    };
+    let entries = LegalEntrySet {
+        identity,
+        scope: source,
+        provenance: EntryProvenance::Declared("short T3 all original authored heads".into()),
+        completeness: EntryCompleteness::AllInstructionHeads,
+        entries: heads
+            .iter()
+            .map(|&address| LegalEntry {
+                address,
+                requires_endbr: false,
+            })
+            .collect(),
+        resumes: ResumeObligation::NoneExist,
+    };
+    let selected_target = suffix_target(
+        &puzzle.code,
+        base,
+        puzzle.selected,
+        puzzle.victim,
+        victim_len,
+    );
+    let victim_target = base + 0x1800_0280;
+    let mut selected_allocation = AllocationPolicy::near(selected).unwrap();
+    selected_allocation.ranges = vec![AddressRange::new(selected_target & !4095, 8192).unwrap()];
+    selected_allocation.preferred_address = Some(selected_target);
+    selected_allocation.max_candidates = 1;
+    let mut victim_allocation = AllocationPolicy::near(victim).unwrap();
+    victim_allocation.ranges = vec![AddressRange::new(victim_target & !4095, 8192).unwrap()];
+    victim_allocation.preferred_address = Some(victim_target);
+    victim_allocation.max_candidates = 1;
+    let request = InstallRequest {
+        identity,
+        code: &puzzle.code[..puzzle.function_len],
+        base_address: base,
+        function: source,
+        block: AddressRange::new(selected, selected_len).unwrap(),
+        logical_pc: selected,
+        entries: &entries,
+        hook: observe,
+        semantics: HookSemantics::Observe,
+        allocation: &selected_allocation,
+        search: SearchPolicy {
+            max_upstream_bytes: 0,
+            max_sites: 1,
+            ..SearchPolicy::default()
+        },
+    };
+    let direct = plan_neighbor_short(
+        &request,
+        &victim_allocation,
+        NeighborSearch {
+            forced_victim: Some(victim),
+            max_victims: 1,
+            max_pairs: 1,
+        },
+        BundleBudget::default(),
+    )
+    .expect("required direct short bridge refused");
+    let planned = engine::plan_with_short_neighbors(
+        &request,
+        &victim_allocation,
+        EnginePolicy {
+            forced: Some(Tactic::NeighborEviction),
+            neighbor: NeighborSearch {
+                forced_victim: Some(victim),
+                max_victims: 1,
+                max_pairs: 1,
+            },
+            ..EnginePolicy::default()
+        },
+    )
+    .expect("required engine short bridge refused");
+    assert_eq!(planned.tactic(), Tactic::NeighborEviction);
+    assert_eq!(planned.attempts().len(), 1);
+    assert_eq!(planned.attempts()[0].refusal, None);
+    let SelectedMetrics::Neighbor(geometry, metrics) = planned.metrics() else {
+        panic!("engine metrics")
+    };
+    assert_eq!(geometry, direct.geometry());
+    assert_eq!(metrics, direct.metrics());
+    assert_eq!(planned.attempts()[0].search, metrics.search);
+    let CandidateEvidence::Neighbor(rows) = &planned.attempts()[0].candidates else {
+        panic!("leaf evidence")
+    };
+    assert_eq!(rows, &metrics.attempts);
+    let a = planned.bundle();
+    let b = direct.bundle();
+    assert_eq!(a.plan().identity(), b.plan().identity());
+    assert_eq!(a.plan().originals(), b.plan().originals());
+    assert_eq!(a.plan().final_bytes(), b.plan().final_bytes());
+    assert_eq!(a.plan().steps(), b.plan().steps());
+    assert_eq!(a.plan().locks(), b.plan().locks());
+    assert_eq!(a.plan().memory(), b.plan().memory());
+    assert_eq!(a.images().len(), b.images().len());
+    for (actual, expected) in a.images().iter().zip(b.images()) {
+        assert_eq!(actual.address(), expected.address());
+        assert_eq!(actual.bytes(), expected.bytes());
+        assert_eq!(actual.entry_routes(), expected.entry_routes());
+        assert_eq!(
+            actual.instruction_boundaries(),
+            expected.instruction_boundaries()
+        );
+        assert_eq!(
+            actual.program_counter_mappings(),
+            expected.program_counter_mappings()
+        );
+    }
+    assert_eq!(geometry.selected, selected);
+    assert_eq!(geometry.selected_len, selected_len);
+    assert_eq!(geometry.victim, victim);
+    assert_eq!(geometry.victim_len, victim_len);
+    assert_eq!(geometry.relay, relay);
+    assert_eq!(geometry.rel8, rel8);
+    assert_eq!(geometry.selected_target, selected_target);
+    assert_eq!(geometry.victim_target, victim_target);
+    assert_eq!(metrics.victims_examined, 1);
+    assert_eq!(metrics.pairs_examined, 1);
+    assert_eq!(metrics.selected_fallthrough_redirects, 3);
+    assert_eq!(metrics.victim_fallthrough_redirects, 2);
+    let bundle = planned.bundle();
+    assert_eq!(bundle.plan().steps().len(), 2);
+    assert_eq!(bundle.images().len(), 2);
+    assert!(
+        bundle.plan().steps()[0].parts().physical_pc > bundle.plan().steps()[1].parts().physical_pc,
+        "T3 members must compose in descending source order"
+    );
+    let selected_step = bundle
+        .plan()
+        .steps()
+        .iter()
+        .find(|step| step.parts().physical_pc == selected)
+        .unwrap();
+    let victim_step = bundle
+        .plan()
+        .steps()
+        .iter()
+        .find(|step| step.parts().physical_pc == victim)
+        .unwrap();
+    assert_eq!(
+        selected_step.parts().displaced,
+        AddressRange::new(selected, selected_len).unwrap()
+    );
+    assert_eq!(
+        victim_step.parts().displaced,
+        AddressRange::new(victim, victim_len).unwrap()
+    );
+    assert_eq!(selected_step.parts().writes.len(), 1);
+    assert_eq!(selected_step.parts().writes[0].address, selected);
+    assert_eq!(selected_step.parts().writes[0].bytes, [0xeb, rel8 as u8]);
+    let mut victim_bytes = exact_e9(victim, victim_target).to_vec();
+    victim_bytes.extend_from_slice(&exact_e9(relay, selected_target));
+    assert_eq!(&puzzle.code[6..10], &[0xff, 0xc0, 0xc3, 0x90]);
+    assert_eq!(&victim_bytes[6..10], &[0xeb, 0xfd, 0xc3, 0x90]);
+    assert_eq!(victim_step.parts().writes.len(), 1);
+    assert_eq!(victim_step.parts().writes[0].address, victim);
+    assert_eq!(victim_step.parts().writes[0].bytes, victim_bytes);
+    let edits = vec![(selected, vec![0xeb, rel8 as u8]), (victim, victim_bytes)];
+    let mut map = TraceMap {
+        boundaries: heads
+            .iter()
+            .copied()
+            .filter(|&pc| pc != selected && pc != victim)
+            .chain([oracle.return_pc()])
+            .map(|pc| (pc, pc))
+            .collect(),
+        gateways: vec![selected, victim],
+        ..TraceMap::default()
+    };
+    for image in bundle.images() {
+        assert_eq!(image.instruction_boundaries().len(), 1);
+        let expected = if image.address() == selected_target {
+            selected
+        } else {
+            assert_eq!(image.address(), victim_target);
+            victim
+        };
+        assert_eq!(image.instruction_boundaries()[0].0, expected);
+        map.boundaries
+            .extend_from_slice(image.instruction_boundaries());
+        map.generated_ranges
+            .push(image.address()..image.address() + image.bytes().len() as u64);
+    }
+    for step in bundle.plan().steps() {
+        assert!(
+            matches!(step.parts().kind, PlanKind::Relocation),
+            "the dedicated PlannedNeighbor geometry owns the multi-member T3 identity"
+        );
+        assert!(!step.parts().requirements.sigill_router);
+        assert!(
+            step.parts()
+                .obligations
+                .iter()
+                .all(|entry| matches!(entry, EntryObligation::Preserved(_)))
+        );
+    }
+    let mut originals = Vec::new();
+    for seed in SEEDS {
+        for (&entry, &offset) in heads.iter().zip(&puzzle.heads) {
+            let trace = oracle.trace_original(entry, &heads, &[oracle.return_pc()], seed);
+            assert_eq!(
+                trace.visits(),
+                puzzle.visits(offset, base, oracle.return_pc())
+            );
+            originals.push((entry, trace));
+        }
+    }
+    let witness = &originals
+        .iter()
+        .find(|(entry, _)| *entry == victim)
+        .unwrap()
+        .1;
+    assert_eq!(witness.visits()[1], victim + victim_len as u64);
+    let relay_records = [ShortSourceRelay {
+        logical_pc: selected,
+        relay_pc: relay,
+        target: selected_target,
+        victim_trace: witness,
+    }];
+    let writable = oracle.code.writable();
+    // SAFETY: the complete private source alias remains alive through the
+    // bundle's retirement, and every original child has been reaped.
+    let aliases = [unsafe { WritableAlias::new(source, writable) }.unwrap()];
+    let mut installed = {
+        // SAFETY: exclusive source ownership excludes execution/continuations.
+        let mut lease = unsafe { QuiescenceLease::new(&mut oracle, identity, vec![source]) };
+        permissions(writable, libc::PROT_READ | libc::PROT_WRITE).unwrap();
+        // SAFETY: source exclusion remains held until executable permissions,
+        // synchronization and the complete bundle receipt are established.
+        let (installed, receipt) = unsafe {
+            bundle.publish_with(&aliases, &mut lease, || {
+                permissions(writable, libc::PROT_READ | libc::PROT_EXEC)
+            })
+        }
+        .expect("required T3 endpoint publication failed");
+        assert_eq!(receipt.plan().steps(), bundle.plan().steps());
+        assert!(!lease.is_poisoned());
+        installed
+    };
+    oracle.assert_publication(&edits);
+    let log = HookEventLog::new();
+    let enabled = [HookEvent {
+        probe_id: PROBE_ID,
+        logical_pc: selected,
+    }];
+    for (entry, trace) in &originals {
+        if *entry == victim {
+            assert!(trace.visits().contains(&selected));
+            direct_victim_count += 1;
+        }
+        oracle.assert_trace_with_short_relays(
+            trace,
+            *entry,
+            &map,
+            &relay_records,
+            &[],
+            Some(HookExpectation {
+                log: &log,
+                enabled: &enabled,
+            }),
+        );
+        installed_count += 1;
+    }
+    assert_eq!(installed.routed_entries(), 0);
+    {
+        let mut ranges = vec![source];
+        ranges.extend(bundle.plan().steps().iter().flat_map(|step| {
+            step.parts()
+                .allocations
+                .iter()
+                .map(|allocation| allocation.range)
+        }));
+        // SAFETY: every patched child is reaped; source and both generated
+        // images join the complete continuation/execution lifetime drain.
+        let mut lease = unsafe { QuiescenceLease::new(&mut oracle, identity, ranges) };
+        permissions(writable, libc::PROT_READ | libc::PROT_WRITE).unwrap();
+        // SAFETY: original bytes and final RX are restored while held.
+        unsafe {
+            installed.retire_with(&mut lease, || {
+                permissions(writable, libc::PROT_READ | libc::PROT_EXEC)
+            })
+        }
+        .expect("required T3 endpoint retirement failed");
+        assert!(!lease.is_poisoned());
+    }
+    assert!(installed.is_retired());
+    oracle.assert_publication(&[]);
+    let original_map = TraceMap {
+        boundaries: heads
+            .iter()
+            .copied()
+            .chain([oracle.return_pc()])
+            .map(|pc| (pc, pc))
+            .collect(),
+        ..TraceMap::default()
+    };
+    for (entry, trace) in &originals {
+        oracle.assert_trace(
+            trace,
+            *entry,
+            &original_map,
+            &[],
+            Some(HookExpectation {
+                log: &log,
+                enabled: &[],
+            }),
+        );
+        retired_count += 1;
+    }
+    assert_eq!(head_count, expected_heads);
+    assert_eq!(installed_count, expected_heads * SEEDS.len());
+    assert_eq!(retired_count, expected_heads * SEEDS.len());
+    assert_eq!(direct_victim_count, SEEDS.len());
+    assert_eq!(originals.len(), 10);
+    assert_eq!(originals.len() + installed_count + retired_count, 30);
+    // Own this one additional mapping through process exit, independently of
+    // the legacy endpoint census; neither a successful retry nor shared cache.
+    let _pinned_source = Box::leak(Box::new(oracle));
+}

@@ -36,19 +36,41 @@ fn write(path: &Path, bytes: &[u8]) -> Result<(), String> {
         .and_then(|()| file.sync_all())
         .map_err(|e| e.to_string())
 }
-fn run() -> Result<bool, String> {
-    let args: Vec<_> = std::env::args().collect();
-    if args.len() != 7 {
-        return Err(
-            "disassembly_sites ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY"
-                .into(),
-        );
+// Choose the profile before any input read or binding, including refusal paths.
+fn arguments(args: &[String]) -> Result<(&[String], bool), String> {
+    if args.len() == 7 {
+        Ok((&args[1..], false))
+    } else if args.len() == 8
+        && args[1] == "--short-neighbors-only"
+        && !args[2..].iter().any(|s| s == "--short-neighbors-only")
+    {
+        Ok((&args[2..], true))
+    } else {
+        Err("disassembly_sites [--short-neighbors-only] ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY".into())
     }
-    let expected_ledger = selection::id(&args[3]).map_err(|e| e.to_string())?;
-    let expected_policy = selection::id(&args[5]).map_err(|e| e.to_string())?;
-    let original = read(Path::new(&args[1]), disassembly::INPUT_LIMIT)?;
-    let ledger = read(Path::new(&args[2]), disassembly::TEXT_LIMIT)?;
-    let policy = read(Path::new(&args[4]), disassembly::TEXT_LIMIT)?;
+}
+
+fn labels(short_only: bool) -> (&'static str, &'static str, &'static str) {
+    if short_only {
+        (
+            disassembly::SHORT_ONLY_PROFILE,
+            "neighbor_victims\tshort-only\n",
+            " neighbor_victims=short-only",
+        )
+    } else {
+        (disassembly::PROFILE, "", "")
+    }
+}
+
+fn run() -> Result<bool, String> {
+    let raw_args: Vec<_> = std::env::args().collect();
+    let (args, short_only) = arguments(&raw_args)?;
+    let (profile, family, stdout_family) = labels(short_only);
+    let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
+    let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;
+    let original = read(Path::new(&args[0]), disassembly::INPUT_LIMIT)?;
+    let ledger = read(Path::new(&args[1]), disassembly::TEXT_LIMIT)?;
+    let policy = read(Path::new(&args[3]), disassembly::TEXT_LIMIT)?;
     let mut files = BTreeMap::from([
         ("disassembly.txt".to_owned(), ledger.clone()),
         ("disassembly-policy.txt".to_owned(), policy.clone()),
@@ -56,16 +78,28 @@ fn run() -> Result<bool, String> {
     let prepared = (|| {
         let imported = disassembly::import(&original, &ledger, expected_ledger)?;
         // This denominator is retained even if policy/placement/loader refuses.
-        files.insert("disassembly-inventory.tsv".into(), imported.inventory());
-        let selected = imported.bind(&policy, expected_policy)?;
+        files.insert(
+            "disassembly-inventory.tsv".into(),
+            if short_only {
+                imported.inventory_short_neighbors()
+            } else {
+                imported.inventory()
+            },
+        );
+        let selected = if short_only {
+            imported.bind_short_neighbors(&policy, expected_policy)?
+        } else {
+            imported.bind(&policy, expected_policy)?
+        };
+        assert_eq!(selected.profile(), profile);
         files.insert("selection.txt".into(), selected.manifest().to_vec());
         prepare_disassembly(&original, &selected)
     })();
     // Same input reread ordering as the existing prepare CLI: no outcome is
     // dispatched and no output is published before all three snapshots agree.
-    if read(Path::new(&args[1]), disassembly::INPUT_LIMIT)? != original
-        || read(Path::new(&args[2]), disassembly::TEXT_LIMIT)? != ledger
-        || read(Path::new(&args[4]), disassembly::TEXT_LIMIT)? != policy
+    if read(Path::new(&args[0]), disassembly::INPUT_LIMIT)? != original
+        || read(Path::new(&args[1]), disassembly::TEXT_LIMIT)? != ledger
+        || read(Path::new(&args[3]), disassembly::TEXT_LIMIT)? != policy
     {
         return Err("inputs changed during preparation".into());
     }
@@ -83,19 +117,18 @@ fn run() -> Result<bool, String> {
                 .map(|b| format!("{b:02x}"))
                 .collect();
             files.insert("program-failure.tsv".into(), format!(
-                "LI2DISASSEMBLY-FAILURE\t1\nprofile\t{}\nobserved_original_sha256\t{}\nexpected_ledger_sha256\t{}\nexpected_policy_sha256\t{}\nqualification_complete\tfalse\ndetail_hex\t{detail}\n",
-                disassembly::PROFILE, digest(&original), args[3], args[5]).into_bytes());
+                "LI2DISASSEMBLY-FAILURE\t1\nprofile\t{profile}\n{family}observed_original_sha256\t{}\nexpected_ledger_sha256\t{}\nexpected_policy_sha256\t{}\nqualification_complete\tfalse\ndetail_hex\t{detail}\n",
+                digest(&original), args[2], args[4]).into_bytes());
             false
         }
     };
-    let output = Path::new(&args[6]);
+    let output = Path::new(&args[5]);
     std::fs::DirBuilder::new()
         .mode(0o700)
         .create(output)
         .map_err(|e| e.to_string())?;
     let mut index = format!(
-        "LI2DISASSEMBLY-DIRECTORY\t1\nprofile\t{}\nobserved_original_sha256\t{}\ncandidate_complete\t{complete}\nqualification_complete\tfalse\n",
-        disassembly::PROFILE,
+        "LI2DISASSEMBLY-DIRECTORY\t1\nprofile\t{profile}\n{family}observed_original_sha256\t{}\ncandidate_complete\t{complete}\nqualification_complete\tfalse\n",
         digest(&original)
     );
     for (name, bytes) in &files {
@@ -111,8 +144,7 @@ fn run() -> Result<bool, String> {
         .and_then(|f| f.sync_all())
         .map_err(|e| e.to_string())?;
     println!(
-        "profile={} candidate_complete={complete} qualification_complete=false",
-        disassembly::PROFILE
+        "profile={profile}{stdout_family} candidate_complete={complete} qualification_complete=false"
     );
     Ok(complete)
 }
@@ -123,6 +155,68 @@ fn main() {
         Err(error) => {
             eprintln!("{error}");
             std::process::exit(1);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn short_profile_cli_labels_mode_before_policy_binding() {
+        let old: Vec<String> = [
+            "program",
+            "--literal-path",
+            "ledger",
+            "ledger-sha",
+            "policy",
+            "policy-sha",
+            "out",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+        let (positional, mode) = arguments(&old).unwrap();
+        assert_eq!(positional, &old[1..]);
+        assert!(!mode);
+        assert_eq!(labels(mode), (disassembly::PROFILE, "", ""));
+        let mut short = old.clone();
+        short.insert(1, "--short-neighbors-only".into());
+        let (positional, mode) = arguments(&short).unwrap();
+        assert_eq!(positional, &old[1..]);
+        assert!(mode);
+        let (profile, family, stdout) = labels(mode);
+        assert_eq!(profile, disassembly::SHORT_ONLY_PROFILE);
+        assert_eq!(family, "neighbor_victims\tshort-only\n");
+        assert_eq!(stdout, " neighbor_victims=short-only");
+        // These labels exist before an invalid original/ledger can be bound.
+        assert!(disassembly::import(&[], &[], ContentId::of(&[])).is_err());
+        assert_eq!(labels(mode), (profile, family, stdout));
+        for bad in [
+            short[..7]
+                .iter()
+                .cloned()
+                .chain(["extra".into(), "extra".into()])
+                .collect::<Vec<_>>(),
+            {
+                let mut a = short.clone();
+                a[1] = "--unknown".into();
+                a
+            },
+            {
+                let mut a = short.clone();
+                a.swap(1, 2);
+                a
+            },
+            {
+                let mut a = short.clone();
+                a[2] = "--short-neighbors-only".into();
+                a
+            },
+            old[..6].to_vec(),
+        ] {
+            assert!(arguments(&bad).is_err());
         }
     }
 }

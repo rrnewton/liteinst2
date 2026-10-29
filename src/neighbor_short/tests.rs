@@ -909,3 +909,476 @@ fn short_entrypoints_do_not_admit_long_victims_or_change_long_search() {
         Refusal::NoPatchWindow
     );
 }
+
+// Engine adapter controls: artifacts only, no new callback/native authority.
+fn engine_policy(
+    f: &Fixture,
+    forced: Option<crate::engine::Tactic>,
+) -> crate::engine::EnginePolicy {
+    crate::engine::EnginePolicy {
+        forced,
+        neighbor: f.search(),
+        ..Default::default()
+    }
+}
+
+fn artifact_equal(f: &Fixture, actual: &ArtifactPlan, expected: &ArtifactPlan) {
+    assert_eq!(actual.source_steps(), expected.source_steps());
+    assert_eq!(f.composition(actual), f.composition(expected));
+    let actual_images: Vec<_> = actual.images().collect();
+    let expected_images: Vec<_> = expected.images().collect();
+    assert_eq!(actual_images.len(), expected_images.len());
+    for (a, e) in actual_images.iter().zip(&expected_images) {
+        assert_eq!(a.address(), e.address());
+        assert_eq!(a.bytes(), e.bytes());
+        assert_eq!(a.entry_routes(), e.entry_routes());
+        assert_eq!(a.instruction_boundaries(), e.instruction_boundaries());
+        assert_eq!(a.program_counter_mappings(), e.program_counter_mappings());
+        assert_eq!(a.metadata().fields(), e.metadata().fields());
+        assert_eq!(a.metadata().requirements(), e.metadata().requirements());
+        assert!(!a.metadata().qualification_complete());
+    }
+    assert!(!actual.qualification_complete() && !expected.qualification_complete());
+}
+
+fn assert_neighbor_adapter(f: &Fixture, actual: &ArtifactPlan, leaf: &ArtifactPlan) {
+    use crate::engine::{SelectedMetrics, Tactic};
+    artifact_equal(f, actual, leaf);
+    let ArtifactMetrics::Engine(Tactic::NeighborEviction, SelectedMetrics::Neighbor(g, m), a) =
+        actual.metrics()
+    else {
+        panic!("engine metric kind")
+    };
+    let ArtifactMetrics::Neighbor(expected_g, expected_m) = leaf.metrics() else {
+        panic!("leaf metric kind")
+    };
+    assert_eq!(g, expected_g);
+    assert_eq!(m, expected_m);
+    assert_eq!(a.last().unwrap().refusal, None);
+    assert_eq!(a.last().unwrap().search, m.search);
+    let crate::engine::CandidateEvidence::Neighbor(rows) = &a.last().unwrap().candidates else {
+        panic!("neighbor evidence")
+    };
+    assert_eq!(rows, &m.attempts);
+}
+
+#[test]
+fn short_engine_forced_matches_direct_at_all_endpoints() {
+    use crate::engine::{self, Tactic};
+    let mut count = 0;
+    for selected in 2..=4 {
+        for victim in 6..=9 {
+            for delta in [-131, 124] {
+                let f = Fixture::new(selected, victim, delta);
+                let leaf = f.plan();
+                let actual = engine::plan_with_emission_and_short_neighbors(
+                    &f.request(),
+                    &f.victim_policy,
+                    engine_policy(&f, Some(Tactic::NeighborEviction)),
+                )
+                .unwrap();
+                assert_neighbor_adapter(&f, &actual, &leaf);
+                let ArtifactMetrics::Engine(_, _, attempts) = actual.metrics() else {
+                    unreachable!()
+                };
+                assert_eq!(attempts.len(), 1);
+                count += 1;
+            }
+        }
+    }
+    assert_eq!(count, 24);
+}
+
+#[test]
+fn short_engine_preferred_keeps_five_stage_order() {
+    use crate::engine::{self, Tactic};
+    let mut f = Fixture::new(2, 6, 124);
+    // Natural two-byte Jcc, then one-byte NOP/RET: no B1 block or T2 victim.
+    f.code[f.selected..f.selected + 4].copy_from_slice(&[0x75, 1, 0x90, 0xc3]);
+    // Both B2 and T1 target windows are independently excluded by the frozen
+    // selected permits; true source refusals precede the required T3 winner.
+    for (next, fixed, width) in [
+        (f.s() + 5, 0x90c3_9000_u32, 256),
+        (f.s() + 6, 0x9090_c390, 1),
+    ] {
+        let low = u64::try_from(i128::from(next) + i128::from(fixed as i32)).unwrap();
+        assert!(
+            f.selected_policy
+                .ranges
+                .iter()
+                .all(|p| !p.overlaps(range(low, width)))
+        );
+    }
+    let leaf = f.plan();
+    let actual = engine::plan_with_emission_and_short_neighbors(
+        &f.request(),
+        &f.victim_policy,
+        engine_policy(&f, None),
+    )
+    .unwrap();
+    assert_neighbor_adapter(&f, &actual, &leaf);
+    let ArtifactMetrics::Engine(_, _, attempts) = actual.metrics() else {
+        unreachable!()
+    };
+    assert_eq!(
+        attempts.iter().map(|a| a.tactic).collect::<Vec<_>>(),
+        [
+            Tactic::GeneralizedPun,
+            Tactic::Relocation,
+            Tactic::PrefixedPun,
+            Tactic::SuccessorEviction,
+            Tactic::NeighborEviction
+        ]
+    );
+    for (a, reason) in attempts[..4].iter().zip([
+        Refusal::AllocationUnavailable,
+        Refusal::NoPatchWindow,
+        Refusal::AllocationUnavailable,
+        Refusal::NoPatchWindow,
+    ]) {
+        assert_eq!(a.refusal.as_ref(), Some(&reason));
+    }
+    // Two independently permitted destinations: the earlier GP must win even
+    // though a forced short-neighbor transaction is also feasible.
+    let mut f = Fixture::new(2, 6, 124);
+    let gp = u64::try_from(
+        i128::from(f.s() + 5) + i128::from(i32::from_le_bytes([0, 0xc3, 0x90, 0x90])),
+    )
+    .unwrap();
+    f.selected_policy.ranges.push(range(gp & !4095, 8192));
+    f.selected_policy.preferred_address = Some(gp);
+    let short = engine::plan_with_emission_and_short_neighbors(
+        &f.request(),
+        &f.victim_policy,
+        engine_policy(&f, Some(Tactic::NeighborEviction)),
+    )
+    .unwrap();
+    let ArtifactMetrics::Engine(Tactic::NeighborEviction, _, _) = short.metrics() else {
+        panic!("short positive")
+    };
+    let preferred = engine::plan_with_emission_and_short_neighbors(
+        &f.request(),
+        &f.victim_policy,
+        engine_policy(&f, None),
+    )
+    .unwrap();
+    let old = engine::plan_with_emission(&f.request(), &f.victim_policy, engine_policy(&f, None))
+        .unwrap();
+    artifact_equal(&f, &preferred, &old);
+    let ArtifactMetrics::Engine(Tactic::GeneralizedPun, _, attempts) = preferred.metrics() else {
+        panic!("GP ranking")
+    };
+    assert_eq!(attempts.len(), 1);
+}
+
+#[test]
+fn short_engine_never_spends_a_second_neighbor_budget() {
+    use crate::engine::{self, CandidateEvidence, Tactic};
+    for mutation in 0..10 {
+        let mut f = Fixture::new(2, 9, 124);
+        let mut p = engine_policy(&f, Some(Tactic::NeighborEviction));
+        match mutation {
+            0 => p.neighbor.max_victims = 0,
+            1 => p.neighbor.max_pairs = 0,
+            2 => f.selected_policy.max_candidates = 0,
+            3 => f.victim_policy.max_candidates = 0,
+            4 => f.selected_policy.max_mapped_bytes = 4095,
+            5 => p.bundle.max_steps = 1,
+            6 => p.bundle.max_mappings = 1,
+            7 => p.bundle.max_virtual_bytes = 8191,
+            8 => p.bundle.max_backing_bytes = 8191,
+            9 => {
+                f.selected_policy.max_candidates = 2;
+                f.selected_policy.preferred_address =
+                    Some(f.selected_policy.preferred_address.unwrap() + (1 << 24) - 1);
+            }
+            _ => unreachable!(),
+        }
+        let leaf =
+            plan_neighbor_short_with_emission(&f.request(), &f.victim_policy, p.neighbor, p.bundle)
+                .unwrap_err();
+        let actual =
+            engine::plan_with_emission_and_short_neighbors(&f.request(), &f.victim_policy, p)
+                .unwrap_err();
+        assert_eq!(actual.reason, leaf.reason);
+        assert_eq!(actual.attempts.len(), 1);
+        let a = &actual.attempts[0];
+        assert_eq!(a.tactic, Tactic::NeighborEviction);
+        assert_eq!(a.refusal.as_ref(), Some(&leaf.reason));
+        assert_eq!(a.search, leaf.search);
+        assert!(a.outer_refusal.is_none());
+        let CandidateEvidence::Neighbor(rows) = &a.candidates else {
+            panic!("lost evidence")
+        };
+        assert_eq!(rows, &leaf.attempts);
+        if mutation == 9 {
+            let mut twice = p;
+            twice.neighbor.max_pairs = 2;
+            let positive = engine::plan_with_emission_and_short_neighbors(
+                &f.request(),
+                &f.victim_policy,
+                twice,
+            )
+            .unwrap();
+            let ArtifactMetrics::Engine(_, crate::engine::SelectedMetrics::Neighbor(_, m), _) =
+                positive.metrics()
+            else {
+                panic!("metrics")
+            };
+            assert_eq!((m.pairs_examined, m.attempts.len()), (2, 2));
+            let preferred = engine::plan_with_emission_and_short_neighbors(
+                &f.request(),
+                &f.victim_policy,
+                crate::engine::EnginePolicy { forced: None, ..p },
+            )
+            .unwrap_err();
+            assert_eq!(preferred.attempts.len(), 5);
+            assert_eq!(preferred.attempts.last().unwrap().search, leaf.search);
+        }
+    }
+}
+
+#[test]
+fn short_engine_after_binds_original_and_current_suffix() {
+    use crate::engine::{self, Tactic};
+    let mut f = Fixture::new(2, 6, -6); // selected EB overlaps the fixed fetch suffix
+    f.code[16..21].copy_from_slice(&[0xb8, 1, 2, 3, 4]);
+    f.entries
+        .entries
+        .retain(|e| !(f.base + 16 < e.address && e.address < f.base + 21));
+    let empty = Composition::new(
+        f.entries.identity,
+        vec![ExpectedBytes {
+            address: f.base,
+            bytes: f.code.clone(),
+        }],
+    )
+    .unwrap();
+    let policy = engine_policy(&f, Some(Tactic::NeighborEviction));
+    let plain = f.plan();
+    let after = engine::plan_with_emission_after_and_short_neighbors(
+        &f.request(),
+        &empty,
+        &f.victim_policy,
+        policy,
+    )
+    .unwrap();
+    assert_neighbor_adapter(&f, &after, &plain);
+    let prior_allocation = self::policy(f.base + 0x2000_0080);
+    let mut request = f.request();
+    request.site.logical_pc = f.base + 16;
+    request.site.block = range(f.base + 16, 5);
+    request.site.allocation = &prior_allocation;
+    let prior = engine::plan_with_emission(
+        &request,
+        &f.victim_policy,
+        engine_policy(&f, Some(Tactic::Relocation)),
+    )
+    .unwrap();
+    let mut predecessor = empty.clone();
+    for step in prior.source_steps() {
+        predecessor.append(step).unwrap();
+    }
+    let saved = predecessor.clone();
+    let next = engine::plan_with_emission_after_and_short_neighbors(
+        &f.request(),
+        &predecessor,
+        &f.victim_policy,
+        policy,
+    )
+    .unwrap();
+    assert_eq!(predecessor, saved);
+    assert_eq!(
+        next.source_steps()[0].parts().reads,
+        predecessor.final_bytes()
+    );
+    let mut complete = predecessor.clone();
+    for step in next.source_steps() {
+        complete.append(step).unwrap();
+    }
+    assert_eq!(complete.originals(), empty.originals());
+    assert_eq!(
+        &complete.final_bytes()[0].bytes[16..21],
+        &predecessor.final_bytes()[0].bytes[16..21]
+    );
+    assert_eq!(
+        &complete.final_bytes()[0].bytes[f.selected..f.selected + 2],
+        &[0xeb, (-3_i8) as u8]
+    );
+    for mutation in 0..2 {
+        let mut wrong = f.request();
+        let mut bytes = f.code.clone();
+        if mutation == 0 {
+            wrong.site.identity.generation += 1;
+        } else {
+            bytes[0] ^= 1;
+            wrong.site.code = &bytes;
+        }
+        let error = engine::plan_with_emission_after_and_short_neighbors(
+            &wrong,
+            &predecessor,
+            &f.victim_policy,
+            policy,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.reason,
+            if mutation == 0 {
+                Refusal::StaleGeneration
+            } else {
+                Refusal::ExpectedBytesChanged
+            }
+        );
+        assert!(error.attempts.is_empty());
+    }
+    // A real selected edit and a real victim relocation each invalidate the
+    // original-instruction requirement, independently of metadata lock tests.
+    let mut selected_changed = empty.clone();
+    selected_changed.append(&plain.source_steps()[0]).unwrap();
+    assert!(
+        engine::plan_with_emission_after_and_short_neighbors(
+            &f.request(),
+            &selected_changed,
+            &f.victim_policy,
+            policy
+        )
+        .is_err()
+    );
+    let mut request = f.request();
+    request.site.logical_pc = f.v();
+    request.site.block = range(f.v(), f.victim_len);
+    request.site.allocation = &prior_allocation;
+    let victim_plan = engine::plan_with_emission(
+        &request,
+        &f.victim_policy,
+        engine_policy(&f, Some(Tactic::Relocation)),
+    )
+    .unwrap();
+    let mut victim_changed = empty.clone();
+    for step in victim_plan.source_steps() {
+        victim_changed.append(step).unwrap();
+    }
+    assert!(
+        engine::plan_with_emission_after_and_short_neighbors(
+            &f.request(),
+            &victim_changed,
+            &f.victim_policy,
+            policy
+        )
+        .is_err()
+    );
+    // The after API does not waive the caller's transactional append checks.
+    // Each hostile metadata plan is structurally valid before the exact
+    // composition check. None claims instruction or executable authority.
+    for mutation in 0..3 {
+        let mut parts = next.source_steps()[0].parts().clone();
+        parts.reads = complete.final_bytes().to_vec();
+        if mutation != 1 {
+            parts.physical_pc = f.base + 32;
+            parts.logical_pc = f.base + 32;
+            parts.displaced = range(f.base + 32, 1);
+            parts.obligations = vec![EntryObligation::Preserved(f.base + 32)];
+        }
+        match mutation {
+            0 => {
+                // locked selected byte, distinct physical site and no allocation
+                parts.writes[0].bytes[1] ^= 1;
+                parts.generated.clear();
+                parts.allocations.clear();
+            }
+            1 => {
+                parts.generated.clear();
+                parts.allocations.clear();
+            } // duplicate physical site
+            2 => parts.writes.clear(), // distinct site, identical exclusive allocation
+            _ => unreachable!(),
+        }
+        let hostile = PatchPlan::checked(parts).unwrap();
+        let mut candidate = complete.clone();
+        assert_eq!(candidate.append(&hostile), Err(Refusal::OwnershipConflict));
+        assert_eq!(candidate, complete);
+    }
+    // Exact borrowed suffix lock: use a valid metadata edit to one byte that
+    // remains an original successor entry, never a synthetic positive code run.
+    let at = f.v() + 9;
+    let mut parts = next.source_steps()[1].parts().clone();
+    parts.logical_pc = f.base + 32;
+    parts.physical_pc = f.base + 32;
+    parts.displaced = range(f.base + 32, 1);
+    parts.reads = complete.final_bytes().to_vec();
+    parts.generated.clear();
+    parts.allocations.clear();
+    parts.obligations = vec![EntryObligation::Preserved(f.base + 32)];
+    parts.writes = vec![ByteEdit {
+        address: at,
+        bytes: vec![complete.final_bytes()[0].bytes[(at - f.base) as usize] ^ 1],
+    }];
+    let hostile = PatchPlan::checked(parts).unwrap();
+    let mut candidate = complete.clone();
+    assert_eq!(candidate.append(&hostile), Err(Refusal::OwnershipConflict));
+    assert_eq!(candidate, complete);
+}
+
+#[test]
+fn short_engine_defaults_and_long_schedule_are_unchanged() {
+    use crate::engine::{self, CandidateEvidence, Tactic};
+    for len in 10..=15 {
+        let mut f = Fixture::new(2, 9, -131);
+        let mut bytes = vec![0x2e; len - 10];
+        bytes.extend_from_slice(&[0x48, 0xb8, 1, 2, 3, 4, 5, 6, 7, 8]);
+        f.code[f.victim..f.victim + len].copy_from_slice(&bytes);
+        let v = f.v();
+        f.entries
+            .entries
+            .retain(|e| !(v < e.address && e.address < v + len as u64));
+        let p = engine_policy(&f, Some(Tactic::NeighborEviction));
+        let old = engine::plan_with_emission(&f.request(), &f.victim_policy, p).unwrap();
+        let leaf =
+            plan_neighbor_with_emission(&f.request(), &f.victim_policy, p.neighbor, p.bundle)
+                .unwrap();
+        assert_neighbor_adapter(&f, &old, &leaf);
+        let failure =
+            engine::plan_with_emission_and_short_neighbors(&f.request(), &f.victim_policy, p)
+                .unwrap_err();
+        assert_eq!(failure.attempts.len(), 1);
+        assert_eq!(failure.reason, Refusal::NoPatchWindow);
+    }
+    let f = Fixture::new(2, 6, 124);
+    for tactic in [
+        Tactic::GeneralizedPun,
+        Tactic::Relocation,
+        Tactic::PrefixedPun,
+        Tactic::SuccessorEviction,
+    ] {
+        let p = engine_policy(&f, Some(tactic));
+        let old = engine::plan_with_emission(&f.request(), &f.victim_policy, p);
+        let new = engine::plan_with_emission_and_short_neighbors(&f.request(), &f.victim_policy, p);
+        match (old, new) {
+            (Ok(a), Ok(b)) => {
+                artifact_equal(&f, &a, &b);
+                assert_eq!(format!("{:?}", a.metrics()), format!("{:?}", b.metrics()));
+            }
+            (Err(a), Err(b)) => {
+                assert_eq!(a.reason, b.reason);
+                assert_eq!(format!("{:?}", a.attempts), format!("{:?}", b.attempts));
+                assert_eq!(a.attempts.len(), 1);
+                assert!(!matches!(
+                    &a.attempts[0].candidates,
+                    CandidateEvidence::Neighbor(_)
+                ));
+            }
+            _ => panic!("forced non-neighbor dispatch differs"),
+        }
+    }
+    let d = crate::engine::EnginePolicy::default();
+    assert_eq!(d.forced, None);
+    assert_eq!(d.successor_puns, TacticPolicy::PreferGeneralizedPun);
+    assert_eq!(
+        format!("{:?}", d.neighbor),
+        format!("{:?}", NeighborSearch::default())
+    );
+    assert_eq!(
+        format!("{:?}", d.bundle),
+        format!("{:?}", BundleBudget::default())
+    );
+}

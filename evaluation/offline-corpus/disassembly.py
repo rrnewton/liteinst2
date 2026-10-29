@@ -20,6 +20,7 @@ PROFILE = 'offline-whole-authored-null-jumps-v1'
 WINDOW_PROFILE = 'offline-whole-authored-window-permits-v1'
 LIMITS = '1048576 32 32 131072 128 2097152 1048576 128 16777216'
 BROAD_PROFILE = 'offline-whole-authored-broad-span-2g-v1'
+SHORT_PROFILE = 'offline-whole-authored-short-only-2g-v1'
 BROAD_LIMITS = '1048576 32 32 131072 128 2097152 1048576 128 2147483648'
 CORPUS_SHA = '007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07'
 TARGET_SHA = 'de1028fa9b590a6f1ba37627ac5ff78470c9f3b225eed794f7c32959c1a1c00c'
@@ -394,10 +395,11 @@ def attempt(program, inputs, expected, *, profile=PROFILE):
     The default retains the old fixed-page profile. WINDOW_PROFILE is an explicit
     prospective choice; neither profile retries or consults planning outcomes.
     BROAD_PROFILE separately raises only the virtual hull to a fixed 2 GiB.
+    SHORT_PROFILE uses that exact placement contract with explicit ShortOnly T3.
     """
     assert program in COUNTS and type(inputs) is dict and type(expected) is dict
     assert set(inputs) == set(expected) == set(INPUTS)
-    assert profile in (PROFILE, WINDOW_PROFILE, BROAD_PROFILE), 'explicit placement profile'
+    assert profile in (PROFILE, WINDOW_PROFILE, BROAD_PROFILE, SHORT_PROFILE), 'explicit placement profile'
     files = {}
     result = dict(profile=profile, program=program, status='MATERIALS_REFUSED',
                   source_expected_heads=COUNTS[program][0], source_expected_jumps=COUNTS[program][1],
@@ -449,11 +451,14 @@ def attempt(program, inputs, expected, *, profile=PROFILE):
                 policy += [f'search {sid} preferred 64 256 64 none 256 4096',
                            f'allocation {sid} selected {a} 1 4096 {a}:4096',
                            f'allocation {sid} victim {b} 1 4096 {b}:4096']
-        elif profile == BROAD_PROFILE:
+        elif profile in (BROAD_PROFILE, SHORT_PROFILE):
             policy[6] = 'limits ' + BROAD_LIMITS
             policy += broad_policy(image, jumps)
         else:
             policy += window_policy(image, jumps)
+        if profile == SHORT_PROFILE:
+            policy[0] = 'LI2DISASM-POLICY 2'
+            policy.insert(3, 'neighbor-victims short-only')
         files['policy.txt'] = ('\n'.join(policy) + '\n').encode()
         assert all(len(v) <= CAP for v in files.values())
         result.update(status='MATERIALS_READY')

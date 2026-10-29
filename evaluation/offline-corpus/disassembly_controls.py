@@ -14,7 +14,7 @@ import unittest
 
 if sys.flags.optimize:
     raise SystemExit('assertions required')
-ADAPTER_SHA = 'fb276ba92651b02a526a6f9a037147e31131f88dfffb1f6f6a760f39387b675e'
+ADAPTER_SHA = 'e6768d5233a1ffc6f8a0bac2928599773ec3f22b130b2dfcd6aa713d6a1e2e26'
 path = Path(__file__).resolve().with_name('disassembly.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
@@ -530,6 +530,66 @@ class AuthoredDisassemblyControls(unittest.TestCase):
                 D._window_policy(image, jumps, profile)
         with self.assertRaises(TypeError):
             D.broad_policy(image, jumps, span=1 << 32)
+
+
+    def test_short_profile_changes_only_explicit_mode_policy_bytes(self):
+        self.assertEqual(D.SHORT_PROFILE, 'offline-whole-authored-short-only-2g-v1')
+        for short_jumps in (False, True):
+            totals = [0, 0]
+            for program, counts in D.COUNTS.items():
+                inputs = fixture(program, short_jumps=short_jumps)
+                expected = {key: D.sha(value) for key, value in inputs.items()}
+                broad = D.attempt(program, inputs, expected, profile=D.BROAD_PROFILE)
+                short = D.attempt(program, inputs, expected, profile=D.SHORT_PROFILE)
+                self.assertEqual((broad['status'], short['status']), ('MATERIALS_READY', 'MATERIALS_READY'))
+                self.assertEqual(short['profile'], 'offline-whole-authored-short-only-2g-v1')
+                self.assertEqual(set(short), set(broad))
+                for key in broad.keys() - {'profile', 'files'}:
+                    self.assertEqual(short[key], broad[key])
+                self.assertEqual(set(short['files']), set(broad['files']))
+                for key in ('ledger.txt', 'source-inventory.tsv'):
+                    self.assertEqual(short['files'][key], broad['files'][key])
+                old = broad['files']['policy.txt'].splitlines(keepends=True)
+                new = short['files']['policy.txt'].splitlines(keepends=True)
+                self.assertEqual(new[:4], [b'LI2DISASM-POLICY 2\n', old[1], old[2],
+                                          b'neighbor-victims short-only\n'])
+                self.assertEqual(new.count(b'neighbor-victims short-only\n'), 1)
+                self.assertEqual(b''.join([b'LI2DISASM-POLICY 1\n', *new[1:3], *new[4:]]),
+                                 broad['files']['policy.txt'])
+                self.assertNotEqual(D.sha(short['files']['policy.txt']), D.sha(broad['files']['policy.txt']))
+                self.assertEqual(new[7], b'limits 1048576 32 32 131072 128 2097152 1048576 128 2147483648\n')
+                self.assertEqual(new[9:], old[8:])
+                self.assertEqual((short['roster_checked_heads'], short['roster_checked_jumps']), counts)
+                self.assertFalse(short['importer_verified'])
+                self.assertFalse(short['qualification_complete'])
+                totals = [a + b for a, b in zip(totals, counts)]
+            self.assertEqual(totals, [187, 42])
+
+    def test_short_profile_retains_exact_material_refusals_and_placement_contract(self):
+        for key in D.INPUTS:
+            inputs = fixture()
+            expected = {name: D.sha(value) for name, value in inputs.items()}
+            inputs[key] += b'x'
+            result = D.attempt('checksum', inputs, expected, profile=D.SHORT_PROFILE)
+            self.assertEqual((result['status'], result['source_expected_heads'],
+                              result['source_expected_jumps'], result['files']),
+                             ('MATERIALS_REFUSED', 80, 16, {}))
+            self.assertFalse(result['qualification_complete'])
+        inputs = fixture()
+        expected = {key: D.sha(value) for key, value in inputs.items()}
+        for profile in ('offline-whole-authored-short-only-2g-v2',
+                        D.SHORT_PROFILE + ' ', 'short-only', None, True):
+            with self.assertRaises(AssertionError):
+                D.attempt('checksum', inputs, expected, profile=profile)
+        # The new family is not a second placement backend or wider input grammar.
+        with self.assertRaises(AssertionError):
+            D._window_policy(D.Elf(inputs['original'], 2), [(0x401000, 2, 4096)], D.SHORT_PROFILE)
+        inputs['target'] = b'target fxsave64\n'
+        result = D.attempt('checksum', inputs, {key: D.sha(value) for key, value in inputs.items()},
+                           profile=D.SHORT_PROFILE)
+        self.assertEqual((result['status'], result['roster_checked_heads'], result['roster_checked_jumps']),
+                         ('MATERIALS_REFUSED', 80, 16))
+        self.assertEqual(set(result['files']), {'ledger.txt', 'source-inventory.tsv'})
 
 
 if __name__ == '__main__':

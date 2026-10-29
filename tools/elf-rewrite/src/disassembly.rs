@@ -12,6 +12,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 pub const PROFILE: &str = "elf-disassembly-null-jumps-v1";
+/// Explicit same-region short-only neighbor family; never long+short union.
+pub const SHORT_ONLY_PROFILE: &str = "elf-disassembly-null-jumps-short-only-v1";
+const SHORT_FAMILY: &str = "neighbor_victims\tshort-only\n";
 pub const TEXT_LIMIT: usize = 1024 * 1024;
 pub const INPUT_LIMIT: usize = 256 * 1024 * 1024;
 
@@ -47,8 +50,21 @@ impl Disassembly {
         &self.jumps
     }
     pub fn inventory(&self) -> Vec<u8> {
+        self.inventory_mode(false)
+    }
+    /// Same complete verified denominator, explicitly labeled for ShortOnly.
+    pub fn inventory_short_neighbors(&self) -> Vec<u8> {
+        self.inventory_mode(true)
+    }
+    fn inventory_mode(&self, short_only: bool) -> Vec<u8> {
+        let profile = if short_only {
+            SHORT_ONLY_PROFILE
+        } else {
+            PROFILE
+        };
+        let family = if short_only { SHORT_FAMILY } else { "" };
         let mut out = format!(
-            "LI2DISASSEMBLY-INVENTORY\t1\nprofile\t{PROFILE}\noriginal_sha256\t{}\nledger_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\nid\tpc\tlength\tfile_offset\tregion_pc\tregion_length\tblock_pc\tblock_length\n",
+            "LI2DISASSEMBLY-INVENTORY\t1\nprofile\t{profile}\n{family}original_sha256\t{}\nledger_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\nid\tpc\tlength\tfile_offset\tregion_pc\tregion_length\tblock_pc\tblock_length\n",
             ledger::hex(&self.original.0),
             ledger::hex(&ContentId::of(&self.ledger).0),
             self.jumps.len()
@@ -79,14 +95,43 @@ impl Disassembly {
         policy: &[u8],
         expected_policy: ContentId,
     ) -> Result<DisassemblySelection, Error> {
+        self.bind_mode(policy, expected_policy, false)
+    }
+
+    /// Bind the explicit version-two ShortOnly policy and its complete digest.
+    /// The generated family row is retained in the selection identity; ordinary
+    /// selection replay refuses it instead of silently selecting another family.
+    pub fn bind_short_neighbors(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+    ) -> Result<DisassemblySelection, Error> {
+        self.bind_mode(policy, expected_policy, true)
+    }
+
+    fn bind_mode(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+        short_only: bool,
+    ) -> Result<DisassemblySelection, Error> {
         check(policy.len() <= TEXT_LIMIT, "policy size")?;
         check(ContentId::of(policy) == expected_policy, "policy digest")?;
         let rows = rows(policy)?;
         let ledger_id = ContentId::of(&self.ledger);
+        let shift = usize::from(short_only);
+        let header = if short_only {
+            "LI2DISASM-POLICY 2"
+        } else {
+            "LI2DISASM-POLICY 1"
+        };
         check(
-            rows.len() >= 8 && rows[0] == "LI2DISASM-POLICY 1",
+            rows.len() >= 8 + shift && rows[0] == header,
             "policy header",
         )?;
+        if short_only {
+            check(rows[3] == "neighbor-victims short-only", "neighbor family")?;
+        }
         check(
             rows[1] == format!("original {}", ledger::hex(&self.original.0)),
             "policy original",
@@ -95,13 +140,13 @@ impl Disassembly {
             rows[2] == format!("ledger {}", ledger::hex(&ledger_id.0)),
             "policy ledger",
         )?;
-        for (row, tag) in rows[3..7]
+        for (row, tag) in rows[3 + shift..7 + shift]
             .iter()
             .zip(["target", "domain", "carrier", "limits"])
         {
             check(row.starts_with(&format!("{tag} ")), "policy order")?;
         }
-        let hook = fields(rows[7], "null-hook", 2)?;
+        let hook = fields(rows[7 + shift], "null-hook", 2)?;
         let hook = selection::num(hook[1])?;
         check(
             self.regions
@@ -110,13 +155,18 @@ impl Disassembly {
                 .any(|i| i.ip() == hook && i.code() == Code::Retnq && i.len() == 1),
             "null hook is not an original C3 head",
         )?;
+        let projection_family = if short_only {
+            "neighbor-victims short-only\n"
+        } else {
+            ""
+        };
         let mut manifest = format!(
-            "LI2TOOL 1\n{}\n{}\n{}\n{}\n{}\nhook 1 {hook} 1 {}\n",
+            "LI2TOOL 1\n{}\n{projection_family}{}\n{}\n{}\n{}\nhook 1 {hook} 1 {}\n",
             rows[1],
-            rows[3],
-            rows[4],
-            rows[5],
-            rows[6],
+            rows[3 + shift],
+            rows[4 + shift],
+            rows[5 + shift],
+            rows[6 + shift],
             ledger::hex(&ContentId::of(&[0xc3]).0)
         );
         for site in &self.jumps {
@@ -149,7 +199,7 @@ impl Disassembly {
             }
             append(&mut manifest, &format!("\nresumes {} none\n", site.id))?;
         }
-        for row in &rows[8..] {
+        for row in &rows[8 + shift..] {
             check(
                 row.starts_with("search ") || row.starts_with("allocation "),
                 "policy record",
@@ -159,7 +209,11 @@ impl Disassembly {
         }
         // Inherit every old numeric ceiling, exact record cardinality and permit
         // check. No zero-site success or overflowing whole-program batching.
-        let mut selection = selection::parse(manifest.as_bytes())?;
+        let mut selection = if short_only {
+            selection::parse_short_neighbor_projection(manifest.as_bytes())?
+        } else {
+            selection::parse(manifest.as_bytes())?
+        };
         check(
             selection.sites.len() == self.jumps.len(),
             "selection denominator",
@@ -169,8 +223,14 @@ impl Disassembly {
             // verified head is conservatively legal in this artifact region.
             site.completeness = EntryCompleteness::AllInstructionHeads;
         }
+        let profile_name = if short_only {
+            SHORT_ONLY_PROFILE
+        } else {
+            PROFILE
+        };
+        let family = if short_only { SHORT_FAMILY } else { "" };
         let profile = format!(
-            "LI2PLANNING\t1\nprofile\t{PROFILE}\nscope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\n",
+            "LI2PLANNING\t1\nprofile\t{profile_name}\n{family}scope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\n",
             ledger::hex(&self.original.0),
             ledger::hex(&ledger_id.0),
             ledger::hex(&expected_policy.0),
@@ -178,12 +238,16 @@ impl Disassembly {
             self.jumps.len()
         );
         Ok(DisassemblySelection {
+            short_only,
             selection,
             files: BTreeMap::from([
                 ("planning-profile.tsv".into(), profile.into_bytes()),
                 ("disassembly.txt".into(), self.ledger.clone()),
                 ("disassembly-policy.txt".into(), policy.to_vec()),
-                ("disassembly-inventory.tsv".into(), self.inventory()),
+                (
+                    "disassembly-inventory.tsv".into(),
+                    self.inventory_mode(short_only),
+                ),
             ]),
         })
     }
@@ -193,11 +257,21 @@ impl Disassembly {
 /// selection, InstallRequest, recovered-function or owned-neighbor conversion.
 #[derive(Clone, Debug)]
 pub struct DisassemblySelection {
+    pub(crate) short_only: bool,
     pub(crate) selection: Selection,
     pub(crate) files: BTreeMap<String, Vec<u8>>,
 }
 impl DisassemblySelection {
-    /// Canonical LI2TOOL projection for the existing site comparator. Its legacy
+    /// Bound planning profile, never a runtime qualification result.
+    pub fn profile(&self) -> &'static str {
+        if self.short_only {
+            SHORT_ONLY_PROFILE
+        } else {
+            PROFILE
+        }
+    }
+    /// Canonical projection bound to this profile. ShortOnly includes an explicit
+    /// family row that legacy selection/comparator readers must reject. The
     /// `function` columns mean code regions only under the bound profile file.
     pub fn manifest(&self) -> &[u8] {
         &self.selection.manifest
