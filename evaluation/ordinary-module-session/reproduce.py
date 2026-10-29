@@ -455,7 +455,7 @@ def accept_native(run, directory, session):
     normal = load('native_normal', ROOT/n.MODULES['normal'])
     whole = load('native_whole', ROOT/n.MODULES['whole'])
     expected = n.calibration_manifest(legacy, normal, whole)
-    assert manifest == dict(expected=expected, ignored={n.IGNORED: n.IGNORE_REASON}) and len(expected) == 163
+    assert manifest == dict(expected=expected, ignored={n.IGNORED: n.IGNORE_REASON}) and len(expected) == 179
     inventory = run.m['census'].census(read(directory/'state-list/stdout.txt', MIB), read(directory/'state-list/stderr.txt', MIB))
     assert set(inventory) == set(expected) | {n.IGNORED}
     n.calibration_output(read(directory/'state-controls/stdout.txt', MIB), read(directory/'state-controls/stderr.txt', MIB), expected)

@@ -24,10 +24,12 @@ mod caller;
 use caller::CallerOwner;
 use caller_bytes::Request;
 mod check;
+pub(super) mod copied_rust;
 pub(super) mod csv;
 pub(super) mod exact;
 pub(super) mod module;
 pub(super) mod reference;
+mod rust_invoke_artifact;
 use check::{Facts, rows_match};
 use oracle::native_ordinary::strnlen::{Arguments, CASES, Deadline, LABEL, SEEDS, cases};
 use rapid_profiler::frontend::{
@@ -616,6 +618,11 @@ fn child_with(
 }
 
 fn trusted(candidate: &Path, expected: &Path) -> Vec<u8> {
+    trusted_bounded(candidate, expected, 1024 * 1024)
+}
+// Private source-only size selection: legacy DSO/helper cap remains exactly1MiB.
+fn trusted_bounded(candidate: &Path, expected: &Path, limit: u64) -> Vec<u8> {
+    assert!(matches!(limit, 1_048_576 | 536_870_912));
     let mut file = File::open(expected).unwrap();
     let before = file.metadata().unwrap();
     let other = std::fs::metadata(candidate).unwrap();
@@ -625,7 +632,7 @@ fn trusted(candidate: &Path, expected: &Path) -> Vec<u8> {
         (other.dev(), other.ino()),
         "independent whole trusted ELF"
     );
-    assert!((1..=1024 * 1024).contains(&before.len()));
+    assert!((1..=limit).contains(&before.len()));
     let stamp = |m: &std::fs::Metadata| {
         (
             m.dev(),
@@ -640,7 +647,7 @@ fn trusted(candidate: &Path, expected: &Path) -> Vec<u8> {
     };
     let mut bytes = Vec::new();
     (&mut file)
-        .take(1024 * 1024 + 1)
+        .take(limit.checked_add(1).unwrap())
         .read_to_end(&mut bytes)
         .unwrap();
     assert_eq!(stamp(&before), stamp(&file.metadata().unwrap()));

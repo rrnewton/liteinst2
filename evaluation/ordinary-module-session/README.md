@@ -32,7 +32,7 @@ The fixed order is:
 1. One fresh finite native recipe (K16 then K1), then one fresh Session native
    recipe (K10 then K1000). Each keeps its original 1,200-second owner bound,
    510-second/480-CPU-second cohorts, 15-second pairs and 20,000-step walks.
-   Both require all 163 calibration methods, the one unchanged explicit ignore,
+   Both require all 179 calibration methods (the original 163 plus sixteen copied-Rust-body controls), the one unchanged explicit ignore,
    four caller controls and eighteen Python controls. Neither native receipt
    substitutes for the owner or functional gates.
 2. A fresh release application build, exact emitted CALL/store/FUNC geometry,

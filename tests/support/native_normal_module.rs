@@ -219,6 +219,7 @@ pub struct Ready {
 pub(super) enum WalkReady {
     Single(NormalReady),
     Module(Ready),
+    CopiedRust(copied_rust::Ready),
 }
 impl WalkReady {
     pub(super) fn single(&self) -> &NormalReady {
@@ -233,39 +234,51 @@ impl WalkReady {
             _ => panic!("module readiness required"),
         }
     }
+    pub(super) fn copied_rust(&self) -> &copied_rust::Ready {
+        match self {
+            Self::CopiedRust(r) => r,
+            _ => panic!("copied Rust readiness required"),
+        }
+    }
     pub(super) fn caller(&self) -> u64 {
         match self {
             Self::Single(r) => r.caller,
             Self::Module(r) => r.caller,
+            Self::CopiedRust(r) => r.caller,
         }
     }
     pub(super) fn caller_immutable(&self) -> &Vec<(u64, Vec<u8>)> {
         match self {
             Self::Single(r) => &r.caller_immutable,
             Self::Module(r) => &r.caller_immutable,
+            Self::CopiedRust(r) => &r.caller_immutable,
         }
     }
     pub(super) fn immutable(&self) -> &Vec<(u64, Vec<u8>)> {
         match self {
             Self::Single(r) => &r.immutable,
             Self::Module(r) => &r.immutable,
+            Self::CopiedRust(r) => &r.immutable,
         }
     }
     pub(super) fn journal(&self) -> Option<&JournalReady> {
         match self {
             Self::Single(r) => r.journal.as_ref(),
             Self::Module(r) => r.journal.as_ref(),
+            Self::CopiedRust(r) => r.journal.as_ref(),
         }
     }
     pub(super) fn is_return(&self, pc: u64) -> bool {
         match self {
             Self::Single(r) => r.returns.contains(&pc),
             Self::Module(r) => r.functions.iter().any(|f| f.returns.contains(&pc)),
+            Self::CopiedRust(r) => r.target().returns.contains(&pc),
         }
     }
     pub(super) fn declared_returns(&self) -> BTreeSet<u64> {
         match self {
             Self::Single(r) => r.returns.iter().copied().collect(),
+            Self::CopiedRust(r) => r.target().returns.iter().copied().collect(),
             Self::Module(r) => r
                 .functions
                 .iter()
@@ -277,6 +290,7 @@ impl WalkReady {
         match (self, other) {
             (Self::Single(a), Self::Single(b)) => a.same_source(b),
             (Self::Module(a), Self::Module(b)) => a.same_source(b),
+            (Self::CopiedRust(a), Self::CopiedRust(b)) => a.same_source(b),
             _ => panic!("profile mismatch"),
         }
     }
@@ -287,98 +301,20 @@ impl Ready {
     }
     pub(super) fn validate(&self, candidate: bool, case: Case) -> BTreeMap<u64, u64> {
         assert_eq!(self.case, case);
-        assert_eq!(self.caller_immutable.len(), 1);
-        let (caller_page, caller_data) = &self.caller_immutable[0];
-        assert_eq!(*caller_page % PAGE as u64, 0);
-        assert_eq!(caller_data.len(), PAGE);
-        assert_eq!(
-            bytes_at(caller_data, *caller_page, self.caller, bytes::BYTES.len()),
-            bytes::BYTES
-        );
-        assert!((1..=11).contains(&self.immutable.len()));
-        let (source, source_bytes) = &self.immutable[0];
-        assert_eq!(*source % PAGE as u64, 0);
-        assert_eq!(source_bytes.len(), PAGE);
-        assert_eq!(self.original_source.len(), PAGE);
-        let mut ranges = vec![(*caller_page, caller_page.checked_add(PAGE as u64).unwrap())];
-        for (i, (a, b)) in self.immutable.iter().enumerate() {
-            assert!(!b.is_empty() && b.len() <= 8192 && (i == 0 || candidate));
-            let end = a.checked_add(b.len() as u64).unwrap();
-            assert!(ranges.iter().all(|&(x, y)| end <= x || y <= *a));
-            ranges.push((*a, end));
-        }
-        let mut physical = BTreeMap::new();
-        let mut ends = [0; 2];
-        for (semantic, &index) in case.order.iter().enumerate() {
-            let f = &self.functions[index];
-            let extent = case.extents[semantic];
-            let end = f.entry.checked_add(extent as u64).unwrap();
-            ends[index] = end;
-            let code = bytes_at(&self.original_source, *source, f.entry, extent);
-            let _ = bytes_at(source_bytes, *source, f.entry, extent);
-            let mut decoder = Decoder::with_ip(64, code, f.entry, DecoderOptions::NONE);
-            let mut heads = Vec::new();
-            let mut returns = Vec::new();
-            while decoder.can_decode() {
-                let i = decoder.decode();
-                assert!(!i.is_invalid() && i.next_ip() <= end);
-                heads.push(i.ip());
-                if i.flow_control() == FlowControl::Return {
-                    assert_eq!(
-                        &code[(i.ip() - f.entry) as usize..(i.next_ip() - f.entry) as usize],
-                        &[0xc3]
-                    );
-                    returns.push(i.ip());
-                }
-            }
-            assert_eq!(decoder.position(), extent);
-            assert_eq!(f.heads, heads);
-            assert_eq!(f.heads.first(), Some(&f.entry));
-            assert_eq!(f.returns, returns);
-            assert!((1..=4).contains(&f.returns.len()));
-            assert_eq!(f.boundaries.len(), f.heads.len());
-            let mut logical = BTreeSet::new();
-            for &(a, b) in &f.boundaries {
-                assert!(f.heads.contains(&a) && logical.insert(a));
-                assert!(
-                    physical.insert(b, a).is_none(),
-                    "injective complete union map"
-                );
-                assert!(b == a || candidate && self.immutable[1..].iter().any(|(x, y)| *x <= b && b < x.checked_add(y.len() as u64).unwrap()));
-            }
-            assert_eq!(logical, f.heads.iter().copied().collect());
-            // The same complete closed-flow census used by the old CSV body.
-            if semantic == 0 {
-                csv::validate_geometry(f.entry, &f.heads, &f.returns, code);
-            }
-        }
-        assert!(ends[0] <= self.functions[1].entry);
-        // No modified byte outside either declared function, including the gap.
-        for (offset, (&before, &after)) in self.original_source.iter().zip(source_bytes).enumerate()
-        {
-            let pc = source.checked_add(offset as u64).unwrap();
-            if !(0..2).any(|i| self.functions[i].entry <= pc && pc < ends[i]) {
-                assert_eq!(before, after);
-            }
-        }
-        if candidate {
-            let j = self.journal.as_ref().expect("module journal");
-            assert_eq!(j.address % PAGE as u64, 0);
-            let end = j.address.checked_add(PAGE as u64).unwrap();
-            assert!(ranges.iter().all(|&(a, b)| end <= a || b <= j.address));
-            assert_ne!(j.a_generation, 0);
-            assert!(j.b_generation.is_none() && j.helper_tid.is_none());
-        } else {
-            assert!(self.journal.is_none());
-            assert_eq!(self.immutable.len(), 1);
-            assert_eq!(*source_bytes, self.original_source);
-            assert!(
-                self.functions
-                    .iter()
-                    .all(|f| f.boundaries.iter().all(|(a, b)| a == b))
-            );
-        }
-        physical
+        validate_geometry(
+            Geometry {
+                caller: self.caller,
+                caller_immutable: &self.caller_immutable,
+                functions: &self.functions,
+                immutable: &self.immutable,
+                original_source: &self.original_source,
+                journal: self.journal.as_ref(),
+            },
+            candidate,
+            case.order,
+            case.extents,
+            bytes::BYTES,
+        )
     }
     fn same_source(&self, other: &Self) {
         assert_eq!(self.case, other.case);
@@ -523,6 +459,129 @@ impl Ready {
         }
     }
 }
+
+// Shared exact geometry predicate; profile-specific wire and Case guards stay above it.
+pub(super) struct Geometry<'a> {
+    pub(super) caller: u64,
+    pub(super) caller_immutable: &'a [(u64, Vec<u8>)],
+    pub(super) functions: &'a [Function; 2],
+    pub(super) immutable: &'a [(u64, Vec<u8>)],
+    pub(super) original_source: &'a [u8],
+    pub(super) journal: Option<&'a JournalReady>,
+}
+pub(super) fn validate_geometry(
+    g: Geometry<'_>,
+    candidate: bool,
+    order: [usize; 2],
+    extents: [usize; 2],
+    caller_bytes: &[u8],
+) -> BTreeMap<u64, u64> {
+    let Geometry {
+        caller,
+        caller_immutable,
+        functions,
+        immutable,
+        original_source,
+        journal,
+    } = g;
+    assert_eq!(caller_immutable.len(), 1);
+    let (caller_page, caller_data) = &caller_immutable[0];
+    assert_eq!(*caller_page % PAGE as u64, 0);
+    assert_eq!(caller_data.len(), PAGE);
+    assert_eq!(
+        bytes_at(caller_data, *caller_page, caller, caller_bytes.len()),
+        caller_bytes
+    );
+    assert!((1..=11).contains(&immutable.len()));
+    let (source, source_bytes) = &immutable[0];
+    assert_eq!(*source % PAGE as u64, 0);
+    assert_eq!(source_bytes.len(), PAGE);
+    assert_eq!(original_source.len(), PAGE);
+    let mut ranges = vec![(*caller_page, caller_page.checked_add(PAGE as u64).unwrap())];
+    for (i, (a, b)) in immutable.iter().enumerate() {
+        assert!(!b.is_empty() && b.len() <= 8192 && (i == 0 || candidate));
+        let end = a.checked_add(b.len() as u64).unwrap();
+        assert!(ranges.iter().all(|&(x, y)| end <= x || y <= *a));
+        ranges.push((*a, end));
+    }
+    let mut physical = BTreeMap::new();
+    let mut ends = [0; 2];
+    for (semantic, &index) in order.iter().enumerate() {
+        let f = &functions[index];
+        let extent = extents[semantic];
+        let end = f.entry.checked_add(extent as u64).unwrap();
+        ends[index] = end;
+        let code = bytes_at(original_source, *source, f.entry, extent);
+        let _ = bytes_at(source_bytes, *source, f.entry, extent);
+        let mut decoder = Decoder::with_ip(64, code, f.entry, DecoderOptions::NONE);
+        let mut heads = Vec::new();
+        let mut returns = Vec::new();
+        while decoder.can_decode() {
+            let i = decoder.decode();
+            assert!(!i.is_invalid() && i.next_ip() <= end);
+            heads.push(i.ip());
+            if i.flow_control() == FlowControl::Return {
+                assert_eq!(
+                    &code[(i.ip() - f.entry) as usize..(i.next_ip() - f.entry) as usize],
+                    &[0xc3]
+                );
+                returns.push(i.ip());
+            }
+        }
+        assert_eq!(decoder.position(), extent);
+        assert_eq!(f.heads, heads);
+        assert_eq!(f.heads.first(), Some(&f.entry));
+        assert_eq!(f.returns, returns);
+        assert!((1..=4).contains(&f.returns.len()));
+        assert_eq!(f.boundaries.len(), f.heads.len());
+        let mut logical = BTreeSet::new();
+        for &(a, b) in &f.boundaries {
+            assert!(f.heads.contains(&a) && logical.insert(a));
+            assert!(
+                physical.insert(b, a).is_none(),
+                "injective complete union map"
+            );
+            assert!(
+                b == a
+                    || candidate
+                        && immutable[1..]
+                            .iter()
+                            .any(|(x, y)| *x <= b && b < x.checked_add(y.len() as u64).unwrap())
+            );
+        }
+        assert_eq!(logical, f.heads.iter().copied().collect());
+        // The same complete closed-flow census used by the old CSV body.
+        if semantic == 0 {
+            csv::validate_geometry(f.entry, &f.heads, &f.returns, code);
+        }
+    }
+    assert!(ends[0] <= functions[1].entry);
+    // No modified byte outside either declared function, including the gap.
+    for (offset, (&before, &after)) in original_source.iter().zip(source_bytes).enumerate() {
+        let pc = source.checked_add(offset as u64).unwrap();
+        if !(0..2).any(|i| functions[i].entry <= pc && pc < ends[i]) {
+            assert_eq!(before, after);
+        }
+    }
+    if candidate {
+        let j = journal.expect("module journal");
+        assert_eq!(j.address % PAGE as u64, 0);
+        let end = j.address.checked_add(PAGE as u64).unwrap();
+        assert!(ranges.iter().all(|&(a, b)| end <= a || b <= j.address));
+        assert_ne!(j.a_generation, 0);
+        assert!(j.b_generation.is_none() && j.helper_tid.is_none());
+    } else {
+        assert!(journal.is_none());
+        assert_eq!(immutable.len(), 1);
+        assert_eq!(source_bytes.as_slice(), original_source);
+        assert!(
+            functions
+                .iter()
+                .all(|f| f.boundaries.iter().all(|(a, b)| a == b))
+        );
+    }
+    physical
+}
 impl NormalOracle {
     pub fn new_module(seed: u64, case: Case, deadline: Deadline) -> Self {
         deadline.check();
@@ -584,14 +643,18 @@ impl NormalOracle {
         oracle
     }
     pub(super) fn stack_below(&self) -> u64 {
-        if self.module.is_some() {
+        if let Some(p) = &self.copied_rust {
+            p.plan.protected_stack_below()
+        } else if self.module.is_some() {
             bytes::PROTECTED_STACK_BELOW_CALLER
         } else {
             PROTECTED_STACK_BELOW_CALLER
         }
     }
     pub(super) fn subject_delta(&self) -> u64 {
-        if self.module.is_some() {
+        if let Some(p) = &self.copied_rust {
+            p.plan.subject_rsp_delta()
+        } else if self.module.is_some() {
             bytes::SUBJECT_RSP_DELTA
         } else {
             SUBJECT_RSP_DELTA
@@ -613,10 +676,13 @@ impl NormalOracle {
         match ready {
             WalkReady::Single(r) => r.entry,
             WalkReady::Module(_) => self.data.address() + TARGETS as u64,
+            WalkReady::CopiedRust(r) => r.target().entry,
         }
     }
     pub(super) fn check_data(&self, ready: &WalkReady, actual: &[u8], final_check: bool) {
-        if let WalkReady::Module(r) = ready {
+        if let WalkReady::CopiedRust(r) = ready {
+            copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);
+        } else if let WalkReady::Module(r) = ready {
             check_data(self.data.bytes(), actual, r, final_check);
         } else if final_check {
             final_data(self.data.bytes(), actual, self.body.scalar());
@@ -659,11 +725,13 @@ impl NormalOracle {
 }
 impl NormalContext<'_> {
     pub fn module_case(&self) -> Case {
+        assert!(self.oracle.copied_rust.is_none());
         let case = self.any_module_case();
         assert!(!case.is_session());
         case
     }
     pub fn module_session_case(&self) -> Case {
+        assert!(self.oracle.copied_rust.is_none());
         let case = self.any_module_case();
         case.assert_session();
         case
