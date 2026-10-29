@@ -156,7 +156,7 @@ def execute(builder,products,root,private,pin,binary,aliases,owned_run,receipt):
     fixture=ROOT/'tools/page-entry/selected/tests/provider_app';selected=fixture.parents[1]
     launcher=pin(fixture/'launch.py');pin(__file__)
     app=load('pa_app',fixture/'check.py');reader=load('pa_read',fixture/'read.py')
-    need(fact(fixture/'read.py')['sha256']=='ad5d2b07ab8463e0e95c6406ab1cab2f9ca2c87db87051155ebe33853cccd41e',
+    need(fact(fixture/'read.py')['sha256']=='198d117c390999c9196a11c859725fecf32c7732f262104ee5a3c3004032a0cc',
         'reviewed complete app reader with exact physical signal alias contract')
     native=load('pa_native',fixture/'reference/read.py');seed=load('pa_seed',fixture/'seed_probe/read.py')
     fmt=load('pa_xstate',selected/'tests/b2_reference/xstate.py')
