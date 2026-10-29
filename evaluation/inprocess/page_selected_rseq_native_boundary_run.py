@@ -14,6 +14,7 @@ from page_selected_process import invoke
 from page_selected_oneshot_build import before_default
 import page_selected_rseq_native as registered
 import page_selected_rseq_native_boundary as boundary
+import page_selected_rseq_tcgets_btrfs as tcgets
 SELECTED=ROOT/'tools/page-entry/selected'
 BOUNDS=dict(BUILD_PROFILES,**registered.BOUNDS,**boundary.BOUNDS)
 H=lambda b:hashlib.sha256(b).hexdigest()
@@ -36,6 +37,8 @@ def publish(path,r,private):
         tools={k:{x:v[x]for x in ('bytes','sha256')}for k,v in r.get('tools',{}).items()},
         final_error_count=len(r['final_errors']),failure_type=r['error'].split(':',1)[0]if r.get('error')else None,
         full_b2_qualification=False,performance_credit=False)
+    if r['profile']in('page-selected-rseq-tcgets-btrfs-v1','page-selected-rseq-tiocgwinsz-btrfs-v1'):value['tcgets_btrfs']=tcgets.summary(r)
+    if r['profile']=='page-selected-rseq-tiocgwinsz-btrfs-v1':value['tiocgwinsz_btrfs']=tcgets.summary_winsz(r)
     text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(len(text.encode())<64<<10,'compact numeric registered-native and boundary summary')
     need(not any(x and len(x)>1 and x in text for x in (str(ROOT),str(Path.home()),platform.node(),'/home/')),'public private-data guard')
@@ -47,10 +50,14 @@ def publish(path,r,private):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--expect-revision',required=True)
     for name in ('positive','negative','rseq'):ap.add_argument('--'+name+'-receipt',type=Path,required=True)
+    ap.add_argument('--tcgets-btrfs',action='store_true')
+    ap.add_argument('--tiocgwinsz-btrfs',action='store_true')
     a=ap.parse_args()
+    if a.tiocgwinsz_btrfs:a.tcgets_btrfs=True;BOUNDS.update(tcgets.WINSZ_BOUNDS)
+    if a.tcgets_btrfs:BOUNDS.update(tcgets.BOUNDS)
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1 and re.fullmatch('[0-9a-f]{40}',a.expect_revision),'exact HEAD/assertions/one reserved CPU')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-page-selected-rseq-native-boundary-'+a.expect_revision[:12]
+    stem=stamp+('-page-selected-rseq-tiocgwinsz-btrfs-'if a.tiocgwinsz_btrfs else'-page-selected-rseq-tcgets-btrfs-'if a.tcgets_btrfs else'-page-selected-rseq-native-boundary-')+a.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,mode=0o700)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
     pins={};aliases={};artifacts={};presence={};commands=[]
@@ -60,6 +67,12 @@ def main():
            reproduce=['python3','evaluation/inprocess/page_selected_rseq_native_boundary_run.py','--expect-revision',a.expect_revision,
             '--positive-receipt','${SAME_REVISION_POSITIVE_RECEIPT}','--negative-receipt','${SAME_REVISION_FULL49_RECEIPT}',
             '--rseq-receipt','${SAME_REVISION_FULL17_FAST_RSEQ_RECEIPT}'])
+    if a.tcgets_btrfs:
+        r.update(profile='page-selected-rseq-tcgets-btrfs-v1',scope='Twenty actual native/gated capture TCGETS pairs plus sixteen explicit supplied refusal controls, with unchanged6/49/17 and full old16+4 registered profiles mandatory. Only trusted normal-open btrfs FD1/TCGETS/-ENOTTY is qualified; no general ioctl, application completion or performance claim.')
+        r['reproduce'].append('--tcgets-btrfs')
+    if a.tiocgwinsz_btrfs:
+        r.update(profile='page-selected-rseq-tiocgwinsz-btrfs-v1',scope='Additional17 native/gated btrfs query pairs and one supplied-result refusal, after complete unchanged macro-off20 TCGETS pairs/16 controls and6/49/17+16+4 cohorts. Actual full frames and separate TCGETS/TIOCGWINSZ result counters; no general ioctl, application completion or performance claim.')
+        r['reproduce'][-1]='--tiocgwinsz-btrfs'
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
         need(want is None or f=={k:want[k]for k in ('bytes','sha256')},'exact requested prerequisite bytes')
@@ -76,6 +89,7 @@ def main():
         need(all(os.path.lexists(p)==v for p,v in presence.items()),'loader configuration presence unchanged')
         registered.finalize(r)
         boundary.finalize(r)
+        if a.tcgets_btrfs:tcgets.finalize(r)
         if companions is not None:companions.finalize(r)
     def run(name,argv,profile='metadata',expected=0,env=None,record=False):
         stable();row=dict(name=name,argv=list(map(str,argv)),profile=profile,bounds=BOUNDS[profile],
@@ -133,6 +147,12 @@ def main():
         boundary.qualify(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
         need(r['companions']['status']==r['rseq_native_fixture']['status']==r['rseq_native_boundary_fixture']['status']=='passed',
              'all four boundary pairs, unchanged sixteen-case profile and exact same-revision prerequisite cohorts')
+        if a.tcgets_btrfs:
+            tcgets.qualify(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
+            need(r['rseq_tcgets_btrfs_fixture']['status']=='passed','all actual TCGETS pairs and supplied controls')
+        if a.tiocgwinsz_btrfs:
+            tcgets.qualify(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r,winsz=True)
+            need(r['rseq_tiocgwinsz_btrfs_fixture']['status']=='passed','all17 added pairs and one actual/supplied-result refusal')
         r['status']='passed'
     except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
     finally:
@@ -143,7 +163,7 @@ def main():
                 try:binary(p)
                 except Exception as exc:r['final_errors'].append('retain '+str(p)+': '+type(exc).__name__+': '+str(exc))
         r['inputs_before']=dict(pins);r['aliases_before']=dict(aliases);r['artifacts_before']=dict(artifacts)
-        for label,fn in (('closure',stable),('namespace',lambda:registered.finalize(r)),('boundary_namespace',lambda:boundary.finalize(r))):
+        for label,fn in (('closure',stable),('namespace',lambda:registered.finalize(r)),('boundary_namespace',lambda:boundary.finalize(r)),('tcgets_namespace',lambda:tcgets.finalize(r)if a.tcgets_btrfs else None)):
             try:fn()
             except BaseException as exc:r['final_errors'].append(label+': '+type(exc).__name__+': '+str(exc))
         try:r['source_after']=source();need(r['source_after']==r['source'],'exact committed source unchanged')

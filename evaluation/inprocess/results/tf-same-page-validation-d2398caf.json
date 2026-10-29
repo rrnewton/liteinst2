@@ -1,0 +1,499 @@
+{
+  "claims": [
+    2,
+    4
+  ],
+  "companions": [
+    {
+      "captures": 140,
+      "commands": 47,
+      "name": "chain",
+      "native_processes": 23,
+      "private_receipt": {
+        "bytes": 1505723,
+        "sha256": "e76e21ac3f7b69c6b338b13243a0b26027ebb6fbbfeebd76a97998441514a309"
+      },
+      "profile": "page-selected-chain-oracle-v1",
+      "public_receipt": {
+        "bytes": 25792,
+        "sha256": "a1a996173f01c20e0aa37ae8252b937f6302f441b412bf401fc3a54da06d5825"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_chain_oracle.py",
+        "--expect-revision",
+        "d2398caf15225303f0c9f1332f46722c324c85f2"
+      ],
+      "required_failed_operations": 11,
+      "result": {
+        "completed_lanes": 36,
+        "completed_programs": 12,
+        "native_failed_observations": 2,
+        "old_refusal_checks": 1081,
+        "old_startup_pairs": 23,
+        "route_checks": 345,
+        "verified_failed_operations": 11
+      },
+      "status": "passed"
+    },
+    {
+      "captures": 206,
+      "commands": 76,
+      "name": "maps",
+      "native_processes": 27,
+      "private_receipt": {
+        "bytes": 1155763,
+        "sha256": "e3429c2c14a061ec97f12373c96caa70cf383451e4d9821162e78c57eace7060"
+      },
+      "profile": "page-selected-maps-v1",
+      "public_receipt": {
+        "bytes": 40021,
+        "sha256": "60d30c99195186615ae2ae74bb1950dde0a5b80e8c7ffe3aa064462d39111cdd"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_maps.py",
+        "--expect-revision",
+        "d2398caf15225303f0c9f1332f46722c324c85f2"
+      ],
+      "required_failed_operations": 21,
+      "result": {
+        "maps_cases": 9,
+        "maps_failed_operations": 7,
+        "maps_successes": 2,
+        "negative": {
+          "actual_injected_signals": 1,
+          "completed_operations": 0,
+          "executed_refusal_checks": 658,
+          "explicit_raw_failure_injections": 3,
+          "failed_operations": 14,
+          "generated_executions": 0,
+          "native_reference_captures": 12,
+          "refusal_encodings": 47,
+          "startup_pairs": 14,
+          "verified_failure_controls": 14
+        },
+        "new_actual_nested_signals": 1,
+        "new_actual_partial_errors": 1,
+        "new_actual_source_corruptions": 1,
+        "new_nonissued_raw_errors": 1,
+        "new_supplied_counter_saturations": 2,
+        "positive": {
+          "capacity_fallbacks": 1,
+          "capacity_hit_after_full": 1,
+          "capacity_publications": 64,
+          "capacity_record_hashes_checked": 3,
+          "capacity_rows": 64,
+          "executed_refusal_checks": 188,
+          "fallback_trace_events": 2,
+          "full_capacity_records": 5,
+          "full_semantic_records": 18,
+          "generated_trace_events": 0,
+          "native_references": 83,
+          "refusal_encodings": 47,
+          "semantic_hits": 9,
+          "semantic_misses": 9,
+          "semantic_pairs": 18,
+          "startup_pairs": 4
+        }
+      },
+      "status": "passed"
+    },
+    {
+      "captures": 52,
+      "commands": 22,
+      "name": "generic",
+      "native_processes": 4,
+      "private_receipt": {
+        "bytes": 456617,
+        "sha256": "cc011c78e32d5f40d88be38f7e81b4322d4d87eebdb8a3f960e999fa856eb6e8"
+      },
+      "profile": "page-selected-generic-oracle-v1",
+      "public_receipt": {
+        "bytes": 16232,
+        "sha256": "667086631d6b7a6d477598f4e6e0f942442cabb3edf91ad11e12c93f84ea7cbf"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_generic_oracle.py",
+        "--expect-revision",
+        "d2398caf15225303f0c9f1332f46722c324c85f2"
+      ],
+      "required_failed_operations": 3,
+      "result": {
+        "additional_negative_command_selftests": 3,
+        "generic_pairs": 20,
+        "positive_pairs": 21,
+        "positive_selftest_pairs": 1,
+        "supplied_refusal_encodings": 47,
+        "verified_failed_operations": 3
+      },
+      "status": "passed"
+    },
+    {
+      "captures": 62,
+      "commands": 31,
+      "name": "alias",
+      "native_processes": 1,
+      "private_receipt": {
+        "bytes": 173687,
+        "sha256": "458908e0b670c39e968437721b064fe817ba7ca6a2e87a8350156ba0068842b3"
+      },
+      "profile": "page-maps-query-reuse-v1",
+      "public_receipt": {
+        "bytes": 3973,
+        "sha256": "c4a033cc595cbc007b7184d4d060bfd80404ee1784a763b18f5aa7cf89b455df"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_current_lookup.py",
+        "--expect-revision",
+        "d2398caf15225303f0c9f1332f46722c324c85f2",
+        "--maps-query-reuse"
+      ],
+      "required_failed_operations": 0,
+      "result": {
+        "checks": 120,
+        "direct_calls": 80,
+        "inputs_unchanged": 1,
+        "memo_hits": 38,
+        "old_and_literal_equal": 1,
+        "real_acquisitions": 9,
+        "real_cases": 9,
+        "refusals": 15,
+        "same_page_hits": 6,
+        "same_page_scans": 2,
+        "supplied_acquisitions": 22,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "captures": 40,
+      "commands": 19,
+      "name": "footprint",
+      "native_processes": 1,
+      "private_receipt": {
+        "bytes": 454906,
+        "sha256": "63d6379531c76343eeaf87a7b28b3f1040de2a0efc1bbbd0c62147f29dbea96a"
+      },
+      "profile": "page-selected-write-footprint-v1",
+      "public_receipt": {
+        "bytes": 15037,
+        "sha256": "3fe9f221a22de34b601b63085ea336bd49e4d5a5f29893ed12fa057807d3027a"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_write_footprint.py",
+        "--expect-revision",
+        "d2398caf15225303f0c9f1332f46722c324c85f2"
+      ],
+      "required_failed_operations": 0,
+      "result": {
+        "actual_before_instructions": 30,
+        "api_controls": 6,
+        "cases": 38,
+        "supplied_refusals": 8
+      },
+      "status": "passed"
+    }
+  ],
+  "failed_attempts": {
+    "lease_predecessor_snapshot": {
+      "commands": 680,
+      "error": "ValueError: exact predecessor request and held fetch",
+      "private_receipt": {
+        "bytes": 20395335,
+        "sha256": "a6daf5a25f61d570a03de2e4125a94b7270de1519878c91323dc9b0d7f9feba1"
+      },
+      "revision": "e4903d67a527e1618140be45b874a85835df8d52",
+      "status": "failed"
+    },
+    "legacy_generic": {
+      "accepted_finite_cases": 20,
+      "commands": 96,
+      "diagnostic": {
+        "bounds": [
+          3,
+          536870912,
+          16777216,
+          15
+        ],
+        "duration_ns": 3024882940,
+        "exit": -9,
+        "name": "gated-ls-diagnostic",
+        "reaped": true,
+        "stderr_bytes": 0,
+        "stdout_bytes": 0,
+        "timed_out": false
+      },
+      "kill_cause_proven": false,
+      "private_receipt": {
+        "bytes": 721627,
+        "sha256": "544abfd5e01a064aaa49007ced85296dbfeddb6710a7447503b9b28b3a80ec1a"
+      },
+      "public_receipt": {
+        "bytes": 133057,
+        "sha256": "d8afc79e05f398666a407ab6d91401e045dd34c60f830c2707a485409326487b"
+      },
+      "reproduce": [
+        "python3",
+        "-B",
+        "evaluation/inprocess/page_selected_generic.py",
+        "--expect-revision",
+        "d2398caf15225303f0c9f1332f46722c324c85f2"
+      ],
+      "status": "failed",
+      "terminal_pc_known": false
+    },
+    "original_sequence": {
+      "error": "RuntimeError: driver failed: generic",
+      "private_index": {
+        "bytes": 19437,
+        "sha256": "86cf3bf73ad9bceb6c7e523ee0025fa70ba412bc8a4ff069936458b32b01cf35"
+      },
+      "status": "failed"
+    },
+    "required_checks": [
+      {
+        "commands": [
+          {
+            "argv": [
+              "python3",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "evaluation/admission",
+              "-p",
+              "test_*.py"
+            ],
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "environment_delta": {},
+            "exit_code": -9,
+            "id": "recorder_tests",
+            "private_log_sha256": "df5634a1f49db5d658246baeab7ed6c640f0429b9834be247f2d832da44c66b4",
+            "reaped_descendants": 1,
+            "seconds": 180.06222546496429,
+            "start_utc": "2026-10-29T02:31:13.048224+00:00",
+            "status": "failed",
+            "termination": "timeout",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "fmt",
+              "--check"
+            ],
+            "environment_delta": {},
+            "id": "fmt",
+            "status": "not_run",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "clippy",
+              "--workspace",
+              "--all-targets",
+              "--all-features",
+              "--",
+              "-D",
+              "warnings"
+            ],
+            "environment_delta": {},
+            "id": "clippy",
+            "status": "not_run",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "test",
+              "--workspace"
+            ],
+            "environment_delta": {},
+            "id": "workspace_tests",
+            "status": "not_run",
+            "timeout_seconds": 900
+          },
+          {
+            "argv": [
+              "cargo",
+              "check",
+              "--workspace",
+              "--all-features",
+              "--all-targets"
+            ],
+            "environment_delta": {},
+            "id": "workspace_check",
+            "status": "not_run",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "test",
+              "-p",
+              "liteinst-launch",
+              "--tests",
+              "--",
+              "--test-threads=1",
+              "--nocapture"
+            ],
+            "environment_delta": {
+              "LITEINST_EVALUATION": "1"
+            },
+            "id": "serial_launch",
+            "status": "not_run",
+            "timeout_seconds": 180
+          }
+        ],
+        "public_receipt": {
+          "bytes": 7745,
+          "sha256": "e99ce0cc9ee02b97ea382efbd61ebf4105696417156da95b92f709a63d93308c"
+        },
+        "revision": "d2398caf15225303f0c9f1332f46722c324c85f2",
+        "status": "failed"
+      },
+      {
+        "commands": [
+          {
+            "argv": [
+              "python3",
+              "-m",
+              "unittest",
+              "discover",
+              "-s",
+              "evaluation/admission",
+              "-p",
+              "test_*.py"
+            ],
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "environment_delta": {},
+            "exit_code": -9,
+            "id": "recorder_tests",
+            "private_log_sha256": "dfc943da4853523a12857af546ef9fac268d51eb70a4de2ab5d2a810740dedd5",
+            "reaped_descendants": 1,
+            "seconds": 180.1060747350566,
+            "start_utc": "2026-10-29T02:41:45.629837+00:00",
+            "status": "failed",
+            "termination": "timeout",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "fmt",
+              "--check"
+            ],
+            "environment_delta": {},
+            "id": "fmt",
+            "status": "not_run",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "clippy",
+              "--workspace",
+              "--all-targets",
+              "--all-features",
+              "--",
+              "-D",
+              "warnings"
+            ],
+            "environment_delta": {},
+            "id": "clippy",
+            "status": "not_run",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "test",
+              "--workspace"
+            ],
+            "environment_delta": {},
+            "id": "workspace_tests",
+            "status": "not_run",
+            "timeout_seconds": 900
+          },
+          {
+            "argv": [
+              "cargo",
+              "check",
+              "--workspace",
+              "--all-features",
+              "--all-targets"
+            ],
+            "environment_delta": {},
+            "id": "workspace_check",
+            "status": "not_run",
+            "timeout_seconds": 180
+          },
+          {
+            "argv": [
+              "cargo",
+              "test",
+              "-p",
+              "liteinst-launch",
+              "--tests",
+              "--",
+              "--test-threads=1",
+              "--nocapture"
+            ],
+            "environment_delta": {
+              "LITEINST_EVALUATION": "1"
+            },
+            "id": "serial_launch",
+            "status": "not_run",
+            "timeout_seconds": 180
+          }
+        ],
+        "public_receipt": {
+          "bytes": 7745,
+          "sha256": "75cbc52e74031eb2d858038c12a48c6b72ae3efde7e306f0c0c10d9b6ecf2ffb"
+        },
+        "revision": "8598f9cae06d3d194971c08a5611613d1b409fe4",
+        "status": "failed"
+      }
+    ]
+  },
+  "finite": {
+    "before_operation_zero_exit_controls": 2,
+    "completed_operations": 88,
+    "new_pairs": 5,
+    "new_required_failed_operations": 5,
+    "new_subjects": 17,
+    "prerequisite_cases": [
+      6,
+      49,
+      17
+    ],
+    "private_receipt": {
+      "bytes": 22158171,
+      "sha256": "74af07195454453cceddeb93a1ea8749378a61dfa1df47358aa7ecbb9372d4f2"
+    },
+    "required_failed_operations": 58,
+    "subjects": 148
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "profile": "tf-same-page-validation-summary-v1",
+  "revision": "d2398caf15225303f0c9f1332f46722c324c85f2",
+  "schema": 1,
+  "scope": "Finite qualification and separate companion checks; required failures remain failures. The legacy diagnostic and original sequence remain failed. No performance, general application or full B2/B3 completion claim from this summary."
+}

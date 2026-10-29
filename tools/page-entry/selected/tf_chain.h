@@ -3,9 +3,16 @@
 #include "tf_owner.h"
 #include "tf_continuation.h"
 #include "tf_entry_route.h"
+#ifdef LI2_TF_SAME_PAGE_LEASE
+#include "tf_same_page.h"
+#endif
 /* Opt-in singleton owner. Fixed storage survives until process exit. No API
    creates source authority: every query still consumes the real held ref. */
-enum li2_chain_result { LI2_CHAIN_NX_FALLBACK=0, LI2_CHAIN_RUNNING=1 };
+enum li2_chain_result { LI2_CHAIN_NX_FALLBACK=0, LI2_CHAIN_RUNNING=1
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    , LI2_CHAIN_LEASE_RUNNING=2
+#endif
+};
 enum li2_chain_phase { LI2_CHAIN_EMPTY, LI2_CHAIN_PREPARING, LI2_CHAIN_ARMING,
     LI2_CHAIN_EXECUTING, LI2_CHAIN_CLOSING, LI2_CHAIN_CLOSED,
     LI2_CHAIN_FALLBACK, LI2_CHAIN_FAILED };
@@ -68,6 +75,9 @@ struct li2_tf_chain {
     struct li2_decoder_stats initial_stats;
     struct li2_tf_trace_entry entry;
     struct li2_tf_chain_slot slots[2];
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    struct li2_tf_same_page lease;
+#endif
 };
 /* Initialize before target entry. Existing session/selftest/signal/altstack,
    singleton, no-debug, source-generation and no-cross-modification contracts

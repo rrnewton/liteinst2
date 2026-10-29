@@ -91,8 +91,9 @@ class MainQueryInventoryTests(unittest.TestCase):
         read_bytes = Path.read_bytes
         for path in main5c.DATA['sources']:
             for missing in (False, True):
+                mutation_target = main5c.ROOT / path
                 def changed_source(candidate):
-                    if candidate == main5c.ROOT / path:
+                    if candidate == mutation_target:
                         if missing: raise OSError('PRIVATE_SENTINEL')
                         return read_bytes(candidate) + b'\n'
                     return read_bytes(candidate)
@@ -157,8 +158,9 @@ class MainQueryInventoryTests(unittest.TestCase):
         original_read = Path.read_bytes
         for path in inventory.AC0963['sources']:
             for missing in (False, True):
+                mutation_target = inventory.ROOT / path
                 def altered(candidate):
-                    if candidate == inventory.ROOT / path:
+                    if candidate == mutation_target:
                         if missing:
                             raise OSError('PRIVATE_SENTINEL')
                         return original_read(candidate) + b'\n'

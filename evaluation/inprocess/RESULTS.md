@@ -896,3 +896,8 @@ A final metadata audit corrected one descriptive ordinary-test module prefix and
 ## Deterministic clock/syscall effects and seven-class reference (claims 2 and 4)
 
 [Native results and reproducing commands](builtins-reference-3a3cc4fe.md) qualify deterministic RDTSC/RDTSCP and tagged getpid/gettid through in-process NX and restored one-shot entry. Fresh merged-source runs retain the finite all-seven reference and all required failures; final checks pass 2,931 workspace and 1,039 serial launch tests. The report states the remaining rseq, lifecycle and application-performance limits.
+
+
+## Default-rseq ls under in-process page admission (claims 2 and 4)
+
+ADDS end-to-end `/bin/ls -d .` with ordinary rseq registration and qualified terminal queries, without a ptrace supervisor. The [release results and reproduction commands](default-rseq-ls-db0bec0.md) record five native/page-mode pairs at each measured revision, full finite qualification, and the final merged-tree checks. At db0bec0, median process time is 5.261 ms native and 18.677 s gated; this baseline exposes substantial remaining overhead.

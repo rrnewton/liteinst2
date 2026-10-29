@@ -282,16 +282,25 @@ static void chain_begin_trace(struct li2_tf_chain *c,int sig,siginfo_t *si,ucont
     o->phase=LI2_STEP_RUNNING;o->in_handler=0;s->phase=LI2_CHAIN_EXECUTING;
     chain_count(c,&c->trace_entries);c->in_handler=0;
 }
+#ifdef LI2_TF_SAME_PAGE_LEASE
+#include "tf_same_page.inc"
+#endif
 enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc) {
     chain_need(c,chain_registered_ok(c) && c->pending && !c->in_handler && !c->first_error,
                LI2_CHAIN_STATE,4);
     c->in_handler=1;unsigned previous=c->active;struct li2_tf_chain_slot *p=chain_slot(c);
     chain_need(c,p->phase==LI2_CHAIN_EXECUTING && c->event_id>p->event_id,LI2_CHAIN_ORIGIN,5);
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    if(chain_same_page(c,sig,si,uc))return LI2_CHAIN_LEASE_RUNNING;
+#endif
     p->phase=LI2_CHAIN_CLOSING;li2_tf_trace(&p->owner,sig,si,uc);
     chain_observe(&p->fetch);
     chain_need(c,chain_trace_closed(p) && chain_frame_equal(&p->owner.step.after,uc,1),LI2_CHAIN_FRAME,4);
     chain_release(c,p,&p->release);p->phase=LI2_CHAIN_CLOSED;
     chain_need(c,chain_closed(p) && chain_frame_equal(&p->owner.step.after,uc,1),LI2_CHAIN_FRAME,4);
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    chain_same_page_closed(c,p);
+#endif
     chain_count(c,&c->steps);c->pending=0;
     struct li2_tf_chain_slot *s=chain_next(c,previous^1);s->origin=2;
     /* Predecessor has no singleton pointers. A new preparation can safely

@@ -68,9 +68,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 5014,
+      "bytes": 5300,
       "path": "tools/page-entry/selected/rseq_guard.h",
-      "sha256": "88c0a21a87d5304fd4ede60c0deae925ad31380a2425b770e248158963f92fc4"
+      "sha256": "a40b41490c60895642a6a4cefe8bcd889eb2c780e6b48dcb672921080a0b3a4b"
     },
     {
       "bytes": 14407,
@@ -103,14 +103,14 @@
       "sha256": "9bc0bb60c42d5e09c21184cac37b850eefb68a3cef51d49de25ea03d2078c5ed"
     },
     {
-      "bytes": 4524,
+      "bytes": 4728,
       "path": "tools/page-entry/selected/tf_chain.h",
-      "sha256": "5cd7f07e4f4c8429ccb1445718d65325a3c295e3cb2e6e76e7917caf34f98e5f"
+      "sha256": "2e7ce1001056ca9ea5aefc6792ccb098a473510b49566f345ca6b62f01111d50"
     },
     {
-      "bytes": 20578,
+      "bytes": 20818,
       "path": "tools/page-entry/selected/tf_chain.inc",
-      "sha256": "b4cc24f33cd1119fc0781648e67dee16f3b1cfbac9d3e08704ce26a7bcc39b4e"
+      "sha256": "5b2b00eae196bc1b604d7c79dec03656aee4a9c9de820a276815dd4ec00d41cb"
     },
     {
       "bytes": 619,
