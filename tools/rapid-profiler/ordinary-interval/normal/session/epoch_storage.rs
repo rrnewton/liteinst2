@@ -25,6 +25,17 @@ pub(in crate::normal) fn transfer<T, U, E>(
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(in crate::normal) enum OutputSnapshot {
+    Pending,
+    Emitted,
+    Failed(String),
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(in crate::normal) struct SlotSnapshot {
+    pub generation: u64,
+    pub copied: Option<(u64, usize, String, OutputSnapshot)>,
+}
 enum Output {
     Pending,
     Emitted,
@@ -55,6 +66,24 @@ impl<T: Identity> Slot<T> {
         let epoch = self.epoch.as_ref().expect("live retained epoch");
         assert_eq!(epoch.generation(), self.generation);
         epoch
+    }
+    // This snapshot owns data only; it never clones T or acquires a Report.
+    pub(in crate::normal) fn snapshot(&self) -> SlotSnapshot {
+        SlotSnapshot {
+            generation: self.epoch().generation(),
+            copied: self.copied.as_ref().map(|c| {
+                (
+                    c.generation,
+                    c.report_index,
+                    c.line.clone(),
+                    match &c.output {
+                        Output::Pending => OutputSnapshot::Pending,
+                        Output::Emitted => OutputSnapshot::Emitted,
+                        Output::Failed(e) => OutputSnapshot::Failed(e.clone()),
+                    },
+                )
+            }),
+        }
     }
     pub(in crate::normal) fn report_index(&self) -> Option<usize> {
         self.copied.as_ref().map(|copied| {

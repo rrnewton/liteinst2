@@ -19,7 +19,7 @@ const CONTRACT: NormalModuleContract = NormalModuleContract {
 };
 const HEADER: &str = "k,seed,case,length_case,csv_length,length_bound,csv_index,length_index,status,children,comparisons,visits0,visits1,visits2,visits3,original_steps,candidate_steps,value0,value1,value2,value3,outer_value,ret_offset0,ret_offset1,ret_offset2,ret_offset3,csv_heads,csv_edges,length_heads,length_edges,length_reads0,length_reads1,length_bytes0,length_bytes1,declared_returns,target_calls,target_returns,outer_returns,normal_reaps\n";
 const COVERAGE: &str = "k,seed,csv_cases,length_cases,csv_observed_heads,csv_declared_heads,csv_observed_edges,csv_declared_edges,csv_returns,length_heads,length_edges,length_returns\n";
-fn publish(prep: NormalModuleSitePreparation) -> InstalledNormalModuleSite {
+pub(super) fn publish(prep: NormalModuleSitePreparation) -> InstalledNormalModuleSite {
     current_single_main();
     let planned = prep.plan();
     assert_eq!(planned.plan().originals().len(), 1);

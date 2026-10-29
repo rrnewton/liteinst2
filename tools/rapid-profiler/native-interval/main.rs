@@ -997,6 +997,40 @@ fn main() {
         }
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-rust-invoke-state") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            11,
+            "normal-rust-invoke-state CANDIDATE FINAL CSV_VA CSV_LENGTH LENGTH_VA LENGTH_LENGTH APP APP_FINAL OUTPUT"
+        );
+        let arguments = oracle::native_ordinary::normal_caller::module::Arguments::parse(
+            "16",
+            args[4].to_str().unwrap(),
+            args[5].to_str().unwrap(),
+            args[6].to_str().unwrap(),
+            args[7].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let app = PathBuf::from(&args[8]).canonicalize().unwrap();
+        let app_expected = PathBuf::from(&args[9]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[10]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::copied_rust::run(
+            &subject,
+            &expected,
+            arguments,
+            &app,
+            &app_expected,
+            &output,
+            deadline,
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-module-state") {
         let deadline = oracle::native_ordinary::strnlen::Deadline::start();
         assert_eq!(

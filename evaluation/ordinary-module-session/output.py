@@ -314,3 +314,134 @@ def original_check(stdout, stderr, *, records, lengths, cpu):
     assert list(map(uint, rows[-1][1:])) == [len(records), 2 * len(records), 2 * len(records)]
     return dict(status='ORIGINAL_SCALAR_PASS', ready=values, results=results, raw=stdout,
                 scope='Actual original scalar rows joined to independent expected inputs; external source, caller and process custody remain required.')
+
+
+ORIGINAL_REFUSALS = (
+    'bad_magic', 'count_over_2048', 'truncated_length', 'truncated_payload',
+    'length_over_64', 'non_ascii_payload', 'malformed_csv', 'trailing_input_byte')
+
+
+def original_refusal(stdout, stderr, exit_code, reason):
+    """Typed input refusal only; source, owner closure and deadline are external."""
+    assert type(reason) is str and reason in ORIGINAL_REFUSALS
+    assert type(exit_code) is int and exit_code == 2
+    assert type(stdout) is bytes and stdout == b''
+    assert type(stderr) is bytes
+    assert stderr == b'module-session-original INPUT_REFUSED: ' + reason.encode('ascii') + b'\n'
+    return dict(status='EXPECTED_INPUT_REFUSAL', reason=reason, exit_code=exit_code)
+
+
+OWNER_PHASE_FIELDS = 'name entered ret_observed confirmed completed unsampled batches banks current_generation history_end reports held_report_copies shared_owner_refusals a_slot b_slot a_report_index_plus1 a_output_emitted checkpoint_calls a_reclaimed b_report_observation detach joins'.split()
+
+
+def owner_check(stdout, stderr, *, k, direction, geometry, cpus):
+    """Fixed owner-control wire only, never an external PID or Arc-ownership proof."""
+    assert type(k) is int and k in (10, 1000) and direction in ('csv-length', 'length-csv')
+    assert type(stdout) is bytes and len(stdout) <= 629852
+    rows = lines(stdout, stderr)
+    assert len(rows) <= 3033
+    at = 0
+    def take(tag, count):
+        nonlocal at
+        assert at < len(rows)
+        row = rows[at]; at += 1
+        assert row[:len(tag)] == tag and len(row) == len(tag) + count
+        return row[len(tag):]
+    run = take(['META', 'run'], 12)
+    assert run[:5] == ['module-session-owner-v1', 'session-absolute-v1', 'not-run', str(k), direction]
+    install, pid, controller, worker, controller_cpu, worker_cpu, registration = map(uint, run[5:])
+    assert install == INSTALL and registration == 1
+    assert 0 < pid == controller <= (1 << 31) - 1 and 0 < worker <= (1 << 31) - 1 and worker != pid
+    assert type(cpus) is tuple and len(cpus) == 2 and all(type(c) is int and 0 <= c < 1024 for c in cpus)
+    assert cpus[0] != cpus[1] and (controller_cpu, worker_cpu) == cpus
+    code = take(['META', 'code'], 10)
+    assert code[0] == '6f' * 32
+    mapping, code_generation, function0, function1, csv_entry, csv_end, length_entry, length_end, caller = map(uint, code[1:])
+    assert mapping == csv_entry and code_generation == 1 and (function0, function1) == FUNCTIONS
+    csv_length, length_length = geometry['csv_length'], geometry['length_length']
+    assert all(type(v) is int for v in (csv_length, length_length, geometry['csv_va'], geometry['length_va'], geometry['continuation']))
+    assert 5 <= csv_length <= 256 and 5 <= length_length <= 80
+    assert 0 < geometry['csv_va'] <= csv_entry and 0 < csv_entry <= U64 - csv_length and csv_end == csv_entry + csv_length
+    base = csv_entry - geometry['csv_va']
+    assert 0 < geometry['length_va'] <= U64 - base and length_entry == base + geometry['length_va']
+    assert 0 < length_entry <= U64 - length_length and length_end == length_entry + length_length
+    assert csv_end <= length_entry and csv_entry // 4096 == (length_end - 1) // 4096
+    stack_low, stack_high, caller_low, caller_high = map(uint, take(['META', 'memory'], 4))
+    assert 0 < stack_low < stack_high <= U64 and 0 < caller_low <= caller < caller_high
+    assert 0 < geometry['continuation'] <= U64 - caller
+    continuation = caller + geometry['continuation']; assert continuation < caller_high
+    assert take(['META', 'input'], 4) == ['612c622c63', '5', '3', '5']
+    returns = geometry['returns']
+    assert len(returns) == 2
+    for function, offsets in enumerate(returns):
+        assert 1 <= len(offsets) <= 4 and list(offsets) == sorted(set(offsets))
+        extent = (csv_length, length_length)[function]
+        for offset in offsets:
+            assert type(offset) is int and 0 < offset < extent
+            assert list(map(uint, take(['META', 'ret'], 2))) == [function, offset]
+    arow = take(['HISTORY'], 4)
+    assert arow[:3] == ['1', '1', 'published']; a = uint(arow[3]); assert a > 0
+    h = (k + 3) // 4
+    hot = 0 if direction == 'csv-length' else 1
+    cold = 1 - hot
+    calls, raw, phases, samples = [], [], [], []
+    def pair(ordinal, function, generation, owner, invocation, prefix, batch, ack):
+        values = take(['CALL'], 9)
+        expected = 3 if function == 0 else 5
+        assert values[5] == owner
+        numbers = [uint(v) for i, v in enumerate(values) if i != 5]
+        assert numbers == [ordinal, function, expected, expected, generation, invocation, prefix, batch]
+        words = take(['RAW'], 10)
+        assert words[8] == ack
+        nums = [uint(v) for i, v in enumerate(words) if i != 8]
+        o, rsp, return_word, offset, start, end, aux0, aux1, ack_ordinal = nums
+        assert o == ordinal and 128 <= rsp <= U64 - 8 and rsp % 16 == 8
+        assert stack_low <= rsp - 128 and rsp + 8 <= stack_high
+        assert return_word == continuation and caller_low <= return_word < caller_high
+        assert offset in returns[function] and aux0 <= U32 and aux1 <= U32
+        assert ack_ordinal == (ordinal + 1 if ack == 'next' else 0)
+        calls.append(dict(ordinal=ordinal, function=function, generation=generation, owner=owner,
+                          invocation_plus1=invocation, prefix=prefix, batch=batch, expected=expected, value=expected))
+        raw.append(dict(ordinal=o, entry_rsp=rsp, return_word=return_word, return_offset=offset,
+                        start_ticks=start, end_ticks=end, start_aux=aux0, end_aux=aux1, ack=ack, ack_ordinal=ack_ordinal))
+    def phase(expected):
+        actual = take(['PHASE'], len(OWNER_PHASE_FIELDS))
+        parsed = [v if i in (0, 19) else uint(v) for i, v in enumerate(actual)]
+        assert parsed == expected
+        phases.append(dict(zip(OWNER_PHASE_FIELDS, parsed)))
+    for i in range(1, k + 1):
+        pair(i, hot, a, 'sampled', i, 1, (i + 3) // 4, 'checkpoint' if i % 4 == 0 or i == k else 'next')
+    phase(['hot-exhaust', k, k, k, k, 0, h, 2, a, 1, 0, 0, 0, 1, 0, 0, 0, h, 0, 'not-checked', 0, 0])
+    pair(k + 1, cold, a, 'sampled', k + 1, 1, h + 1, 'checkpoint')
+    phase(['cold-available', k + 1, k + 1, k + 1, k + 1, 0, h + 1, 2, a, 1, 0, 0, 0, 1, 0, 0, 0, h + 1, 0, 'not-checked', 0, 0])
+    phase(['held', k + 2, k + 2, k + 1, k + 1, 0, h + 1, 2, a, 1, 0, 0, 0, 1, 0, 0, 0, h + 1, 0, 'not-checked', 0, 0])
+    brow = take(['HISTORY'], 4); assert brow[:3] == ['2', '2', 'published']
+    b = uint(brow[3]); assert b > a
+    assert list(map(uint, take(['META', 'epochs'], 2))) == [a, b]
+    assert list(map(uint, take(['REPORT'], 2))) == [a, k + 1]
+    phase(['refused-twice', k + 2, k + 2, k + 1, k + 1, 0, h + 1, 1, b, 2, 1, 1, 2, 1, 1, 1, 1, h + 1, 0, 'not-checked', 0, 0])
+    assert take(['HISTORY'], 4) == ['3', '3', 'removed', str(b)]
+    phase(['released-before-checkpoint', k + 3, k + 3, k + 2, k + 1, 1, h + 1, 2, 0, 3, 1, 1, 2, 0, 1, 0, 0, h + 1, 1, 'pending', 0, 0])
+    pair(k + 2, hot, a, 'closed', 0, 1, h + 2, 'next')
+    pair(k + 3, cold, b, 'sampled', 1, 2, h + 2, 'checkpoint')
+    assert list(map(uint, take(['REPORT'], 2))) == [b, 1]
+    for i, (call, clock) in enumerate(zip(calls, raw)):
+        if call['owner'] == 'closed': continue
+        generation = call['generation']; invocation = call['invocation_plus1'] - 1
+        rank = i if i < k else 0
+        sequence = i if i <= k else k + 1
+        if clock['start_aux'] != clock['end_aux']: kind, value = 'unavailable', 1
+        elif clock['end_ticks'] < clock['start_ticks']: kind, value = 'unavailable', 2
+        else: kind, value = 'value', clock['end_ticks']
+        row = take(['SAMPLE'], 8); assert row[6] == kind
+        numbers = [uint(v) for j, v in enumerate(row) if j != 6]
+        assert numbers == [generation, call['function'], invocation, rank, sequence, clock['start_ticks'], value]
+        samples.append(dict(generation=generation, function=call['function'], invocation=invocation, rank=rank,
+                            start_sequence=sequence, entry_value=clock['start_ticks'], end_kind=kind, end_value=value))
+    phase(['finish', k + 3, k + 3, k + 3, k + 2, 1, h + 2, 3, 0, 3, 2, 1, 2, 0, 0, 0, 0, h + 3, 1, 'copied', 1, 1])
+    terminal = f'module-session-owner:profile=session-absolute-v1:schedule=not-run:k={k}:direction={direction}:calls={k+3}:confirmed={k+3}:sampled={k+2}:unsampled=1:batches={h+2}:reports=2:actions=3:banks=3:shared-owner-refusals=2:held-report-copies=1:reclaimed-before-checkpoint=1:worker-joins=1:complete'
+    assert at + 1 == len(rows) and rows[at] == [terminal]
+    return dict(status='OWNER_WIRE_PASS', k=k, direction=direction, calls=calls, raw=raw, phases=phases, samples=samples,
+                stdout=stdout, generations=[a, b], pid=pid, worker_tid=worker,
+                totals=dict(calls=k+3, sampled=k+2, unsampled=1, batches=h+2, reports=2, actions=3),
+                scope='Fixed owner wire only; actual receipt/Arc, source/journal, deadline and closure are external authority.')

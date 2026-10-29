@@ -15,3 +15,9 @@ mod exact_truth;
 // Distinct four-call module accounting; old normal-check census is unchanged.
 #[path = "normal/module/check.rs"]
 mod normal_module_check;
+#[path = "normal/copied_rust/check.rs"]
+mod normal_rust_invoke_check;
+
+#[allow(dead_code)] // Production owner methods are not executed by pure calibrations.
+#[path = "normal/rust_invoke_artifact.rs"]
+mod normal_rust_invoke_artifact;

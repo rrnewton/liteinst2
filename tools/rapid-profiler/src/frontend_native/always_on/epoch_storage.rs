@@ -3,7 +3,8 @@ use super::*;
 use crate::frontend::{EpochStorage, StorageReclaimError};
 
 /// One opaque, non-Clone bank, bound to one preparation and its fixed Config.
-/// Idle storage owns no generation or live epoch permit. Dropping or forgetting
+/// Idle storage exposes no generation and owns no live epoch permit. Recycled
+/// storage retains inaccessible closed metadata. Dropping or forgetting
 /// a bank loses that capacity permanently; there is no replacement allocation.
 /// It carries no source, publication, native-return or executable-drain authority.
 pub struct IntervalEpochStorage {
@@ -114,8 +115,9 @@ fn prepare_for(
 impl IntervalController {
     /// Consume a prepared bank into a fresh generation in a vacant controller
     /// slot. Returns the same bank on every recoverable refusal. No publication
-    /// occurs and no old generation or history coordinate is reused. Two small
-    /// Arc shells still allocate; preparation is not a scheduling guarantee.
+    /// occurs and no old generation or history coordinate is reused. First use of a
+    /// bank allocates two Arc shells; subsequent stages reuse them. This is not
+    /// an allocation-free arm or a scheduling guarantee.
     #[allow(clippy::result_large_err)] // Return the same bank without a boxed error allocation.
     pub fn stage_prepared(
         &mut self,

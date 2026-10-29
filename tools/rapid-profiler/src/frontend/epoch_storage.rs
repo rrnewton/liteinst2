@@ -1,6 +1,7 @@
 //! Once-issued fixed vector banks for the explicit concurrent normal facade.
-//! Idle banks retain no SessionInner, generation or frontend Permit. Reclaim is
-//! metadata ownership only: no report-export, physical-return or code-drain proof.
+//! Idle banks retain no SessionInner or frontend Permit. Recycled banks retain
+//! inaccessible CLOSED metadata and both Arc shells. Reclaim is metadata ownership
+//! only: no report-export, physical-return or code-drain proof.
 use super::*;
 use crate::generation::storage::{self, Storage};
 
@@ -8,14 +9,82 @@ pub(crate) struct EpochStorage {
     spec: Arc<Spec>,
     index: usize,
     config: Config,
-    model: Storage,
-    payloads: Vec<OnceLock<Payload>>,
+    storage: Bank,
+}
+
+// No Clone or owner accessor. Only the successful reclaim commit constructs
+// Recycled; its old ID is inaccessible until replaced by a fresh global ID.
+enum Bank {
+    Fresh {
+        model: Storage,
+        payloads: Vec<OnceLock<Payload>>,
+    },
+    Recycled {
+        owner: Arc<FrontendEpoch>,
+    },
+}
+impl EpochStorage {
+    fn matches(&mut self, ids: &[FunctionId]) -> bool {
+        match &mut self.storage {
+            Bank::Fresh { model, payloads } => {
+                payloads.len() == self.config.max_invocations && model.matches(ids, self.config)
+            }
+            Bank::Recycled { owner } => {
+                if !Arc::ptr_eq(&self.spec, &owner.spec)
+                    || owner.storage_bank != Some(self.index)
+                    || owner._permit.is_some()
+                    || owner.payloads.len() != self.config.max_invocations
+                    || !storage::matches_recycled(&owner.epoch, ids, self.config)
+                {
+                    return false;
+                }
+                let Some(owner) = Arc::get_mut(owner) else {
+                    return false;
+                };
+                Arc::get_mut(&mut owner.epoch).is_some()
+            }
+        }
+    }
 }
 
 #[cfg(test)]
+type TestBankParts<'a> = ([(usize, usize, usize); 2], &'a Vec<OnceLock<Payload>>, bool);
+
+#[cfg(test)]
 impl EpochStorage {
+    fn test_parts(&self) -> TestBankParts<'_> {
+        match &self.storage {
+            Bank::Fresh { model, payloads } => (model.geometry(), payloads, model.clean()),
+            Bank::Recycled { owner } => (
+                storage::epoch_geometry(&owner.epoch),
+                &owner.payloads,
+                storage::recycled_clean(&owner.epoch),
+            ),
+        }
+    }
+
+    fn test_payloads_mut(&mut self) -> &mut Vec<OnceLock<Payload>> {
+        match &mut self.storage {
+            Bank::Fresh { payloads, .. } => payloads,
+            Bank::Recycled { owner } => {
+                &mut Arc::get_mut(owner).expect("exclusive test bank").payloads
+            }
+        }
+    }
+
     /// Borrowed storage identity and state; the copy retains no storage owner.
     pub(crate) fn test_fingerprint(&self) -> impl std::fmt::Debug + Eq + use<> {
+        #[derive(Debug, Eq, PartialEq)]
+        struct RecycledFingerprint {
+            shells: [usize; 2],
+            spec: usize,
+            bank: Option<usize>,
+            generation: GenerationId,
+            config: Config,
+            counts: [usize; 4],
+            state: (usize, usize),
+            permit: bool,
+        }
         #[derive(Debug, Eq, PartialEq)]
         struct Fingerprint {
             spec: usize,
@@ -24,18 +93,41 @@ impl EpochStorage {
             model: [(usize, usize, usize); 2],
             payload: (usize, usize, usize),
             clean: bool,
+            recycled: Option<RecycledFingerprint>,
         }
+        let (model, payloads, clean) = self.test_parts();
         Fingerprint {
             spec: Arc::as_ptr(&self.spec) as usize,
             index: self.index,
             config: self.config,
-            model: self.model.geometry(),
+            model,
             payload: (
-                self.payloads.as_ptr() as usize,
-                self.payloads.len(),
-                self.payloads.capacity(),
+                payloads.as_ptr() as usize,
+                payloads.len(),
+                payloads.capacity(),
             ),
-            clean: self.model.clean() && self.payloads.iter().all(|p| p.get().is_none()),
+            clean: clean && payloads.iter().all(|p| p.get().is_none()),
+            recycled: match &self.storage {
+                Bank::Fresh { .. } => None,
+                Bank::Recycled { owner } => Some(RecycledFingerprint {
+                    shells: [
+                        Arc::as_ptr(owner) as usize,
+                        Arc::as_ptr(&owner.epoch) as usize,
+                    ],
+                    spec: Arc::as_ptr(&owner.spec) as usize,
+                    bank: owner.storage_bank,
+                    generation: owner.epoch.id(),
+                    config: owner.epoch.config(),
+                    counts: [
+                        Arc::strong_count(owner),
+                        Arc::weak_count(owner),
+                        Arc::strong_count(&owner.epoch),
+                        Arc::weak_count(&owner.epoch),
+                    ],
+                    state: storage::epoch_state(&owner.epoch),
+                    permit: owner._permit.is_some(),
+                }),
+            },
         }
     }
 }
@@ -115,8 +207,7 @@ impl Session {
                 spec: Arc::clone(&inner.spec),
                 index,
                 config,
-                model,
-                payloads,
+                storage: Bank::Fresh { model, payloads },
             });
         }
         inner.storage_mode = Some(config);
@@ -124,28 +215,29 @@ impl Session {
     }
 
     /// On any recoverable refusal the exact clean bank is returned unchanged.
-    /// Standard two-Arc OOM behavior is unchanged; no A-sized Vec is allocated.
+    /// First use allocates two Arc shells; recycled stages reuse both shells.
+    /// No A-sized Vec is allocated; this is not an allocation-free arm guarantee.
     #[allow(clippy::result_large_err)] // Preserve the bank, without another Box allocation.
     pub(crate) fn stage_prepared_storage(
         &self,
         bank: EpochStorage,
     ) -> Result<EpochHandle, (SetupError, EpochStorage)> {
-        self.stage_storage_with(bank, Storage::into_epoch)
+        self.stage_storage_with(bank, Storage::into_epoch, storage::restart)
     }
 
-    // The only production constructor is Storage::into_epoch. The private seam
-    // also exercises global-ID exhaustion using a local test AtomicU64.
+    // Production always uses the unchanged global ID allocator. These private
+    // constructors also exercise exhaustion using local test AtomicU64 values.
     #[allow(clippy::result_large_err)]
     fn stage_storage_with(
         &self,
-        bank: EpochStorage,
+        mut bank: EpochStorage,
         make_epoch: impl FnOnce(Storage) -> Result<Epoch, (CreateError, Storage)>,
+        restart_epoch: impl FnOnce(&mut Epoch) -> Result<(), CreateError>,
     ) -> Result<EpochHandle, (SetupError, EpochStorage)> {
         if self.inner.storage_mode != Some(bank.config)
             || !Arc::ptr_eq(&self.inner.spec, &bank.spec)
             || bank.index >= self.inner.spec.limits.epochs
-            || bank.payloads.len() != bank.config.max_invocations
-            || !bank.model.matches(&self.inner.spec.ids, bank.config)
+            || !bank.matches(&self.inner.spec.ids)
         {
             return Err((SetupError::InvalidStorage, bank));
         }
@@ -157,39 +249,61 @@ impl Session {
             spec,
             index,
             config,
-            model,
-            payloads,
+            storage,
         } = bank;
-        let epoch = match make_epoch(model) {
-            Ok(epoch) => epoch,
-            Err((error, model)) => {
-                drop(permit);
-                return Err((
-                    SetupError::Generation(error),
-                    EpochStorage {
-                        spec,
-                        index,
-                        config,
-                        model,
-                        payloads,
-                    },
-                ));
+        let owner = match storage {
+            Bank::Fresh { model, payloads } => {
+                let epoch = match make_epoch(model) {
+                    Ok(epoch) => epoch,
+                    Err((error, model)) => {
+                        drop(permit);
+                        return Err((
+                            SetupError::Generation(error),
+                            EpochStorage {
+                                spec,
+                                index,
+                                config,
+                                storage: Bank::Fresh { model, payloads },
+                            },
+                        ));
+                    }
+                };
+                shell(FrontendEpoch {
+                    epoch: shell(epoch),
+                    spec,
+                    payloads,
+                    storage_bank: Some(index),
+                    _permit: Some(permit),
+                })
+            }
+            Bank::Recycled { mut owner } => {
+                // Preflight proved both layers unique, including weak owners.
+                // No alias can be minted from the consumed private bank.
+                let inner = Arc::get_mut(&mut owner).expect("exclusive recycled owner");
+                let epoch = Arc::get_mut(&mut inner.epoch).expect("exclusive recycled epoch");
+                if let Err(error) = restart_epoch(epoch) {
+                    drop(permit);
+                    return Err((
+                        SetupError::Generation(error),
+                        EpochStorage {
+                            spec,
+                            index,
+                            config,
+                            storage: Bank::Recycled { owner },
+                        },
+                    ));
+                }
+                // No lookup, validation or allocation follows successful ID consumption.
+                inner._permit = Some(permit);
+                owner
             }
         };
-        let handle = EpochHandle {
-            owner: Arc::new(FrontendEpoch {
-                epoch: Arc::new(epoch),
-                spec,
-                payloads,
-                storage_bank: Some(index),
-                _permit: permit,
-            }),
-        };
+        let handle = EpochHandle { owner };
         self.inner.ever_staged.store(true, Ordering::Release);
         Ok(handle)
     }
 
-    /// Both Arc layers must be uniquely borrowed before any field is extracted.
+    /// Both Arc layers must be uniquely borrowed before any field is changed.
     /// Writer and registry authority prevent publication racing the preflight.
     /// Slot/owners/records/permit remain unchanged on every Result refusal.
     pub(crate) fn reclaim_epoch_storage(
@@ -227,30 +341,63 @@ impl Session {
         let epoch = Arc::get_mut(&mut owner.epoch).ok_or(E::SharedOwner)?;
         if owner.payloads.len() != config.max_invocations
             || !storage::matches_epoch(epoch, &self.inner.spec.ids, config)
+            || owner._permit.is_none()
         {
             return Err(E::InvalidStorage);
         }
-        // Infallible commit begins. No arbitrary callback, new validation or
-        // allocation follows extraction. Original shells and Permit die here.
-        let retired = storage::extract(epoch);
-        let mut payloads = std::mem::take(&mut owner.payloads);
-        drop(slot.take());
+        // Infallible commit begins. Preserve both allocations, release only the
+        // live permit, then clear the whole A extent outside metadata locks.
+        let permit = owner._permit.take().expect("validated live permit");
+        let mut owner = slot.take().expect("validated retained slot").owner;
+        drop(permit);
         drop(r);
         drop(w);
-        // Reset the whole logical A extent, including unused tail, after locks.
-        let model = retired.reset();
-        for payload in &mut payloads {
+        let inner = Arc::get_mut(&mut owner).expect("exclusive reclaimed owner");
+        let epoch = Arc::get_mut(&mut inner.epoch).expect("exclusive reclaimed epoch");
+        storage::reset_recycled(epoch);
+        for payload in &mut inner.payloads {
             let _ = payload.take();
         }
         Ok(EpochStorage {
             spec: Arc::clone(&self.inner.spec),
             index,
             config,
-            model,
-            payloads,
+            storage: Bank::Recycled { owner },
         })
+    }
+}
+
+// The two actual first-use allocation sites share this narrow counting seam.
+// It does not replace Arc allocation or count unrelated arm-path allocations.
+fn shell<T>(value: T) -> Arc<T> {
+    #[cfg(test)]
+    shell_probe::allocated();
+    Arc::new(value)
+}
+
+#[cfg(test)]
+mod shell_probe {
+    use std::cell::Cell;
+    thread_local! { static COUNT: Cell<usize> = const { Cell::new(0) }; }
+    pub(super) struct Guard(usize);
+    pub(super) fn start() -> Guard {
+        Guard(COUNT.replace(0))
+    }
+    pub(super) fn allocated() {
+        COUNT.set(COUNT.get() + 1);
+    }
+    pub(super) fn calls() -> usize {
+        COUNT.get()
+    }
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            COUNT.set(self.0);
+        }
     }
 }
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod reuse_tests;

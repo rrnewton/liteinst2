@@ -1,0 +1,5 @@
+profile,k,status,attempts,pairs,comparisons,target_calls,target_returns,outer_returns,normal_reaps,mismatches
+finite,16,NATIVE_STATE_PASS,1,32,12284,256,256,64,64,0
+finite,1,NATIVE_STATE_PASS,1,32,12284,256,256,64,64,0
+session,10,NATIVE_SESSION_STATE_PASS,1,32,12284,256,256,64,64,0
+session,1000,NATIVE_SESSION_STATE_PASS,1,32,12284,256,256,64,64,0

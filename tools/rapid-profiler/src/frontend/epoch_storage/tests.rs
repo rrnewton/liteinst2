@@ -54,17 +54,18 @@ struct BankView {
     clean: bool,
 }
 fn bank_view(b: &EpochStorage) -> BankView {
+    let (model, payloads, clean) = b.test_parts();
     BankView {
         spec: Arc::as_ptr(&b.spec) as usize,
         index: b.index,
         config: b.config,
-        model: b.model.geometry(),
+        model,
         payload: (
-            b.payloads.as_ptr() as usize,
-            b.payloads.len(),
-            b.payloads.capacity(),
+            payloads.as_ptr() as usize,
+            payloads.len(),
+            payloads.capacity(),
         ),
-        clean: b.model.clean() && b.payloads.iter().all(|p| p.get().is_none()),
+        clean: clean && payloads.iter().all(|p| p.get().is_none()),
     }
 }
 #[derive(Debug, Eq, PartialEq)]
@@ -271,7 +272,7 @@ fn prepared_stage_refusals_return_same_bank_and_release_failed_permit() {
             0 => bank.index = 1,
             1 => bank.config.retained_per_function = 2,
             2 => {
-                let _ = bank.payloads.pop();
+                let _ = bank.test_payloads_mut().pop();
             }
             3 => {}
             _ => unreachable!(),
@@ -300,14 +301,14 @@ fn prepared_stage_refusals_return_same_bank_and_release_failed_permit() {
         match part {
             0 => bank.index = 0,
             1 => bank.config = config(),
-            2 => bank.payloads.push(OnceLock::new()),
+            2 => bank.test_payloads_mut().push(OnceLock::new()),
             _ => {}
         }
         assert_eq!(s.retained_epochs(), 0);
     }
     let before = bank_view(&bank);
     let (error, bank) = s
-        .stage_storage_with(bank, Storage::test_exhausted)
+        .stage_storage_with(bank, Storage::test_exhausted, storage::restart)
         .err()
         .unwrap();
     assert_eq!(

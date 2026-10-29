@@ -36,7 +36,12 @@ SESSION = tuple(SESSION_PREFIX + name for name in (
     'epoch_storage::tests::shared_owner_repeats_keep_one_report_output_and_exact_token_until_success',
     'epoch_storage::tests::fresh_generation_requires_new_report_and_rejects_stale_or_duplicate_marks',
     'epoch_storage::tests::output_refusal_keeps_obligation_and_token_without_retry_or_reclaim',
-    'epoch_storage::tests::consuming_error_restores_original_owner_before_propagation'))
+    'epoch_storage::tests::consuming_error_restores_original_owner_before_propagation',
+    'io::csv_tests::csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct',
+    'io::csv_tests::csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard',
+    'io::history_tests::history_stack_preserves_exact_legacy_bytes_at_numeric_extremes',
+    'io::history_tests::history_stack_and_borrowed_rows_refuse_without_output_mutation',
+    'io::history_tests::history_stack_keeps_exact_output_cap_and_refusal_state'))
 TRACE_PREFIX = SESSION_PREFIX+'loop_trace::'
 TRACE = tuple(TRACE_PREFIX+'tests::'+name for name in (
     'failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage',
@@ -391,7 +396,7 @@ def main():
             pin(listing/'stderr.txt', record['stderr'])
             inventory = census.census((listing/'stdout.txt').read_bytes(), (listing/'stderr.txt').read_bytes())
             if name == 'session':
-                # All fourteen are exact; two:: and diagnostics each have separate exact qualification.
+                # All nineteen are exact; two:: and diagnostics each have separate exact qualification.
                 assert {n for n in inventory if n.startswith(prefix)
                     and not n.startswith((prefix+'two::', TRACE_PREFIX))} == set(methods)
                 assert {n for n in inventory if n.startswith(TRACE_PREFIX)} == set(TRACE)

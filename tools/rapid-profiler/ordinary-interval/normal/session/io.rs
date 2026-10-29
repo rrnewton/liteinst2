@@ -126,13 +126,33 @@ impl Io {
         self.eof && self.input.is_empty()
     }
     pub(in crate::normal) fn emit(&mut self, line: String) -> Result<(), String> {
+        self.emit_bytes(line.as_bytes())
+    }
+    /// Format only the existing HISTORY row into bounded temporary stack storage.
+    /// Transfer retention precedes this call; append still precedes arm completion.
+    pub(in crate::normal) fn emit_history(
+        &mut self,
+        number: u64,
+        action_index: u64,
+        kind: &str,
+        generation: u64,
+    ) -> Result<(), String> {
+        use std::io::Write as _;
+        let mut bytes = [0_u8; 350];
+        let mut line = std::io::Cursor::new(&mut bytes[..]);
+        writeln!(line, "HISTORY,{number},{action_index},{kind},{generation}")
+            .map_err(|_| "session row shape")?;
+        let length = line.position() as usize; // Cursor is bounded by the 350-byte slice.
+        self.emit_bytes(&bytes[..length])
+    }
+    fn emit_bytes(&mut self, line: &[u8]) -> Result<(), String> {
         // Every fixed-format row is <=350 bytes even at maximum u64 values.
         // At most4096 RESULT-or-FLUSHED,4096 SAMPLE,4097 HISTORY,4096 REPORT,
         // plus READY/IO/DONE. The tighter per-kind layouts keep the sum below4MiB;
         // the total guard remains authoritative and never discards a row.
         if line.len() > 350
-            || line.bytes().filter(|&b| b == b'\n').count() != 1
-            || !line.ends_with('\n')
+            || line.iter().filter(|&&b| b == b'\n').count() != 1
+            || !line.ends_with(b"\n")
         {
             return Err("session row shape".into());
         }
@@ -144,7 +164,7 @@ impl Io {
         {
             return Err("session output capacity".into());
         }
-        self.output.extend_from_slice(line.as_bytes());
+        self.output.extend_from_slice(line);
         Ok(())
     }
     /// At most one 8 KiB write. All unsent bytes remain owned on backpressure.
@@ -172,6 +192,9 @@ impl Io {
             return Err("stdout made no progress".into());
         }
         Ok(())
+    }
+    pub(in crate::normal) fn output_len(&self) -> usize {
+        self.output.len()
     }
     pub(in crate::normal) fn drained(&self) -> bool {
         self.written == self.output.len()
@@ -335,5 +358,134 @@ mod csv_tests {
             io.csv_frame(false).unwrap(),
             Frame::Line { length: 64, .. }
         ));
+    }
+}
+
+#[cfg(test)]
+mod history_tests {
+    use super::*;
+    use std::os::{fd::AsRawFd, unix::net::UnixStream};
+
+    #[test]
+    fn history_stack_preserves_exact_legacy_bytes_at_numeric_extremes() {
+        let (local, _peer) = UnixStream::pair().unwrap();
+        let mut io = Io::open([local.as_raw_fd(); 2]).unwrap();
+        for (number, index, generation) in [
+            (0, 0, 0),
+            (1, 10, 100),
+            (u64::MAX, 0, 1),
+            (0, u64::MAX, u64::MAX),
+            (u64::MAX, u64::MAX, u64::MAX),
+        ] {
+            for kind in ["published", "removed"] {
+                io.output.clear();
+                io.emit(format!("HISTORY,{number},{index},{kind},{generation}\n"))
+                    .unwrap();
+                let expected = io.output.clone();
+                io.output.clear();
+                io.emit_history(number, index, kind, generation).unwrap();
+                assert_eq!(io.output, expected);
+            }
+        }
+        io.output.clear();
+        io.emit_history(0, 0, "published", 0).unwrap();
+        assert_eq!(io.output, b"HISTORY,0,0,published,0\n");
+        io.output.clear();
+        io.emit_history(u64::MAX, u64::MAX, "published", u64::MAX)
+            .unwrap();
+        assert_eq!(
+            io.output,
+            b"HISTORY,18446744073709551615,18446744073709551615,published,18446744073709551615\n"
+        );
+        assert_eq!(io.output.len(), 81);
+    }
+
+    #[test]
+    fn history_stack_and_borrowed_rows_refuse_without_output_mutation() {
+        let (local, _peer) = UnixStream::pair().unwrap();
+        let mut io = Io::open([local.as_raw_fd(); 2]).unwrap();
+        io.emit("prefix\n".into()).unwrap();
+        io.written = 2;
+        io.write_blocked = 7;
+        let before = io.output.clone();
+        for line in [
+            String::new(),
+            "missing LF".into(),
+            "first\nsecond\n".into(),
+            "LF\nthen tail".into(),
+            "x".repeat(350) + "\n",
+        ] {
+            assert_eq!(io.emit(line.clone()), Err("session row shape".into()));
+            assert_eq!(io.output, before);
+            assert_eq!(
+                io.emit_bytes(line.as_bytes()),
+                Err("session row shape".into())
+            );
+            assert_eq!(io.output, before);
+            assert_eq!((io.written, io.write_blocked), (2, 7));
+        }
+        for kind in ["published\n".to_string(), "x".repeat(336)] {
+            assert_eq!(
+                io.emit_history(1, 1, &kind, 1),
+                Err("session row shape".into())
+            );
+            assert_eq!(io.output, before);
+            assert_eq!((io.written, io.write_blocked), (2, 7));
+        }
+        // A complete 350-byte row still fits; the formatter may not lower the bound.
+        let kind = "x".repeat(335);
+        let expected = format!("HISTORY,1,1,{kind},1\n");
+        assert_eq!(expected.len(), 350);
+        io.emit_history(1, 1, &kind, 1).unwrap();
+        assert_eq!(&io.output[..before.len()], before);
+        assert_eq!(&io.output[before.len()..], expected.as_bytes());
+        assert_eq!((io.written, io.write_blocked), (2, 7));
+    }
+
+    #[test]
+    fn history_stack_keeps_exact_output_cap_and_refusal_state() {
+        let (local, _peer) = UnixStream::pair().unwrap();
+        let mut io = Io::open([local.as_raw_fd(); 2]).unwrap();
+        let expected = b"HISTORY,1,2,removed,3\n";
+        io.output.resize(OUTPUT - expected.len() + 1, b'x');
+        io.written = 13;
+        io.write_blocked = 9;
+        let before = io.output.clone();
+        assert_eq!(
+            io.emit_history(1, 2, "removed", 3),
+            Err("session output capacity".into())
+        );
+        assert_eq!(io.output, before);
+        assert_eq!((io.written, io.write_blocked), (13, 9));
+        io.output.truncate(OUTPUT - expected.len());
+        io.emit_history(1, 2, "removed", 3).unwrap();
+        assert_eq!(io.output.len(), OUTPUT);
+        assert_eq!(&io.output[OUTPUT - expected.len()..], expected);
+        assert!(
+            io.output[..OUTPUT - expected.len()]
+                .iter()
+                .all(|&b| b == b'x')
+        );
+        let full = io.output.clone();
+        for borrowed in [false, true] {
+            let result = if borrowed {
+                io.emit_bytes(b"x\n")
+            } else {
+                io.emit("x\n".into())
+            };
+            assert_eq!(result, Err("session output capacity".into()));
+            assert_eq!(io.output, full);
+        }
+        assert_eq!(
+            io.emit_history(0, 0, "published", 0),
+            Err("session output capacity".into())
+        );
+        // Shape refusal remains earlier than capacity refusal, even at a full output.
+        assert_eq!(
+            io.emit("missing LF".into()),
+            Err("session row shape".into())
+        );
+        assert_eq!(io.output, full);
+        assert_eq!((io.written, io.write_blocked), (13, 9));
     }
 }

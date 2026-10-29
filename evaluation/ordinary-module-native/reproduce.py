@@ -309,12 +309,26 @@ def _finite_calibration_manifest(legacy, normal, whole):
     return expected
 
 
-def calibration_manifest(legacy, normal, whole):
+def _session_calibration_manifest(legacy, normal, whole):
     expected = _finite_calibration_manifest(legacy, normal, whole)
     for name in SESSION_TESTS:
         assert name not in expected
         expected[name] = False
     assert len(expected) == 163 and IGNORED not in expected
+    return expected
+
+
+# Additive exact copied-body census; the prior 163 methods remain mandatory.
+COPIED_RUST_TESTS = ('oracle::native_ordinary::normal_caller::rust_invoke::tests::rust_invoke_whole_body_and_four_origins_are_required', 'oracle::native_ordinary::normal_caller::rust_invoke::tests::rust_invoke_call_clobbers_reject_volatile_output_and_reload', 'oracle::native_ordinary::normal_caller::rust_invoke::tests::rust_invoke_balanced_stack_and_callee_saves_are_required', 'oracle::native_ordinary::normal_caller::rust_invoke::tests::rust_invoke_unsupported_bytes_prefixes_flow_and_memory_refuse', 'oracle::native_ordinary::normal_caller::rust_invoke::tests::rust_invoke_steps_keep_complete_heads_and_return_geometry', 'oracle::native_ordinary::normal_caller::rust_invoke::tests::rust_invoke_copy_images_check_every_byte_and_padding', 'normal_rust_invoke_artifact::tests::rust_invoke_elf_unique_func_and_complete_extent_are_required', 'normal_rust_invoke_artifact::tests::rust_invoke_elf_load_section_permissions_and_offsets_are_exact', 'normal_rust_invoke_artifact::tests::rust_invoke_elf_overlapping_symbols_and_relocations_refuse', 'normal_rust_invoke_artifact::tests::rust_invoke_held_file_identity_and_byte_custody_refuse', 'oracle::native_ordinary::normal_caller::copied_rust::tests::closed_cases_and_profile_refuse_crossovers', 'oracle::native_ordinary::normal_caller::copied_rust::tests::ready_wire_requires_exact_parent_plan_and_geometry', 'oracle::native_ordinary::normal_caller::copied_rust::tests::single_call_order_and_full_journal_are_exact', 'oracle::native_ordinary::normal_caller::copied_rust::tests::caller_effects_cover_every_operation_and_outer_return', 'oracle::native_ordinary::normal_caller::copied_rust::tests::fixed_population_requires_complete_corpus_and_declared_returns', 'normal_rust_invoke_check::tests::one_call_metadata_payload_report_and_history_are_exact')
+
+
+def calibration_manifest(legacy, normal, whole):
+    expected = _session_calibration_manifest(legacy, normal, whole)
+    assert len(expected) == 163
+    for name in COPIED_RUST_TESTS:
+        assert name not in expected
+        expected[name] = False
+    assert len(expected) == 179 and IGNORED not in expected
     return expected
 
 

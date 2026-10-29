@@ -1,0 +1,5 @@
+profile,seed,function,cases,observed_heads,declared_heads,observed_edges,declared_edges,observed_returns,declared_returns,comparisons
+copied-rust-invoke-v1,1311768467139281696,csv,16,38,42,45,49,2,2,1419
+copied-rust-invoke-v1,1311768467139281696,length,8,13,13,14,14,2,2,826
+copied-rust-invoke-v1,18364758542526924135,csv,16,38,42,45,49,2,2,1419
+copied-rust-invoke-v1,18364758542526924135,length,8,13,13,14,14,2,2,826

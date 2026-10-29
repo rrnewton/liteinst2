@@ -272,13 +272,13 @@ class Controls(unittest.TestCase):
     def test_full_control_censuses_refuse_names_and_counts(self):
         modules={name:R.load(name,R.ROOT/R.MODULES[name]) for name in ('legacy','normal','whole')}
         manifest=R.calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
-        self.assertEqual(len(manifest),163);self.assertTrue(set(R.MODULE_TESTS)<=set(manifest))
+        self.assertEqual(len(manifest),179);self.assertTrue(set(R.MODULE_TESTS)<=set(manifest))
         self.assertEqual(len(R.MODULE_TESTS),10)
         body=''.join('test '+name+(' - should panic' if panic else '')+' ... ok\n' for name,panic in sorted(manifest.items()))
-        text=(f'\nrunning 164 tests\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\n\n'
-              'test result: ok. 163 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
+        text=(f'\nrunning 180 tests\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\n\n'
+              'test result: ok. 179 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
         R.calibration_output(text,b'',manifest)
-        for old,new in ((next(iter(manifest)).encode(),b'unknown::renamed'),(b'163 passed',b'162 passed'),(b'1 ignored',b'0 ignored')):
+        for old,new in ((next(iter(manifest)).encode(),b'unknown::renamed'),(b'179 passed',b'178 passed'),(b'1 ignored',b'0 ignored')):
             with self.assertRaises(AssertionError):R.calibration_output(text.replace(old,new,1),b'',manifest)
         output=''.join(f'{n} (__main__.Controls.{n}) ... ok\n' for n in sorted(R.PYTHON_CONTROLS))
         output+='\n----------------------------------------------------------------------\nRan 18 tests in 0.01s\n\nOK\n'
@@ -418,8 +418,12 @@ class Controls(unittest.TestCase):
         prior=R._finite_calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
         manifest=R.calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
         self.assertEqual(len(prior),159); self.assertEqual(len(R.SESSION_TESTS),4)
-        self.assertEqual({n:v for n,v in manifest.items() if n not in R.SESSION_TESTS},prior)
-        self.assertEqual(set(manifest),set(prior)|set(R.SESSION_TESTS)); self.assertEqual(len(manifest),163)
+        preserved=R._session_calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
+        self.assertEqual({n:v for n,v in preserved.items() if n not in R.SESSION_TESTS},prior)
+        self.assertEqual({n:v for n,v in manifest.items() if n not in R.COPIED_RUST_TESTS},preserved)
+        self.assertEqual(len(preserved),163); self.assertEqual(set(preserved),set(prior)|set(R.SESSION_TESTS))
+        self.assertEqual(len(R.COPIED_RUST_TESTS),16); self.assertTrue(set(preserved).isdisjoint(R.COPIED_RUST_TESTS))
+        self.assertEqual(set(manifest),set(prior)|set(R.SESSION_TESTS)|set(R.COPIED_RUST_TESTS)); self.assertEqual(len(manifest),179)
         self.assertNotIn(R.IGNORED,manifest)
         self.assertEqual(set(R.PYTHON_CONTROLS),{n for n in dir(Controls) if n.startswith('test_')})
         self.assertEqual(len(R.PYTHON_CONTROLS),18)
@@ -428,8 +432,8 @@ class Controls(unittest.TestCase):
             with patch.object(R,'SESSION_TESTS',names):
                 with self.assertRaises(AssertionError): R.calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
         body=''.join('test '+n+(' - should panic' if panic else '')+' ... ok\n' for n,panic in sorted(manifest.items()))
-        text=('\nrunning 164 tests\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\n\n'
-              'test result: ok. 163 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
+        text=('\nrunning 180 tests\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\n\n'
+              'test result: ok. 179 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
         R.calibration_output(text,b'',manifest)
         for name in R.SESSION_TESTS:
             line=('test '+name+' ... ok\n').encode()

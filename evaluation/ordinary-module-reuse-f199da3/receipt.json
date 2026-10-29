@@ -1,0 +1,755 @@
+{
+  "claim": 4,
+  "development_note": "Two development failures retained: missing qualification of Setup history-stream type, and a redundant test-only identity closure. Corrected using the existing public type and same typed Ok constructor. Every assertion and lint remains. Python proposal images were unchanged through the committed revision; reviewed final hashes are included.",
+  "development_source_maps": {
+    "04c5936d0f56c2f1e1c8f2d927c71c6e0e8119596b4a5259c77ca4dbb6267cca": {
+      "tools/rapid-profiler/ordinary-interval/main.rs": "0ddb0c13bdc1082911841a2a429f46d29ea92df327be8bfc2cf0458d57f8615b",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner.rs": "1544b651edd7730be1210391e58cdb01512491e8a4fc5a2d27b3fec7b6a4e7c1",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse.rs": "da24562fc3317862209279104286b48a9f39dfb9da7558f82477fc7dbde03356",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/check.rs": "d1cb1ed503a8d6c5b953c95c654f8ba3f17d7654b2cdbc965c78f45f2e919a80",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/tests.rs": "e913b14bcc16f10ded841d9cd7f69571dc570e85468ca5e46dd6a6eec3be705f"
+    },
+    "0ad8794cb19a91fc06aa1e568afb07f80ee78401e9977cb140b4295da3b11ff7": {
+      "tools/rapid-profiler/ordinary-interval/main.rs": "0ddb0c13bdc1082911841a2a429f46d29ea92df327be8bfc2cf0458d57f8615b",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner.rs": "9c4466096d77377d7d75593bd70b562d091928d68aa3e47a7e2cb8f62ba01b2e",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse.rs": "da24562fc3317862209279104286b48a9f39dfb9da7558f82477fc7dbde03356",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/check.rs": "d1cb1ed503a8d6c5b953c95c654f8ba3f17d7654b2cdbc965c78f45f2e919a80",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/tests.rs": "d03058abd20dd5f8c3fb99ddd6fcf15261178e50c6cdcfc959095f63e59b0c29"
+    },
+    "164ae4681b67e6588dc97c5b8b6b87e06c6e48324912895561d731ec98477cb7": {
+      "tools/rapid-profiler/ordinary-interval/main.rs": "0ddb0c13bdc1082911841a2a429f46d29ea92df327be8bfc2cf0458d57f8615b",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner.rs": "33874b487311e8a32cb8f671a3ed4904dd8c16d4a6e29b052fdabfcfd75fda2e",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse.rs": "2c941781f22de5b8bcced626a7d49e7c7c26317b9c8904fd14e388baeb2846c5",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/check.rs": "59007548c64ca976420dc0e0ac022e139c388be0a8d8ccfdda3eb38df85666f7",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/tests.rs": "f7391ebb506af986801558b81ef81c62a1637d60a7dfa2a9cca23bd563a18365"
+    },
+    "57e54f6f592ebbfdee5adfca1e2da7a357a719ad318aa10efce8e1342f384451": {
+      "tools/rapid-profiler/ordinary-interval/main.rs": "0ddb0c13bdc1082911841a2a429f46d29ea92df327be8bfc2cf0458d57f8615b",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner.rs": "1544b651edd7730be1210391e58cdb01512491e8a4fc5a2d27b3fec7b6a4e7c1",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse.rs": "da24562fc3317862209279104286b48a9f39dfb9da7558f82477fc7dbde03356",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/check.rs": "d1cb1ed503a8d6c5b953c95c654f8ba3f17d7654b2cdbc965c78f45f2e919a80",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/tests.rs": "d03058abd20dd5f8c3fb99ddd6fcf15261178e50c6cdcfc959095f63e59b0c29"
+    },
+    "d308d46c21391c93b5162e7ccb36fab6390f7b16926bbce12af7a74af953a1ee": {
+      "tools/rapid-profiler/ordinary-interval/main.rs": "0ddb0c13bdc1082911841a2a429f46d29ea92df327be8bfc2cf0458d57f8615b",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner.rs": "1544b651edd7730be1210391e58cdb01512491e8a4fc5a2d27b3fec7b6a4e7c1",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse.rs": "da24562fc3317862209279104286b48a9f39dfb9da7558f82477fc7dbde03356",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/check.rs": "d1cb1ed503a8d6c5b953c95c654f8ba3f17d7654b2cdbc965c78f45f2e919a80",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/tests.rs": "7354aec1186eb4e15a12518b1b035040826db5c2836f5547cd59b81d856de3a6"
+    }
+  },
+  "hardware": {
+    "available_affinity_cpus": 8,
+    "description": "AMD EPYC Zen 5 dev host",
+    "microcode": "0xb101066",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "kernel_version": "7.1.3",
+  "limitations": [
+    "Validation wall times are operational durations, not performance measurements.",
+    "Native reuse cases execute the actual Rust worker/caller but do not provide full architectural-state comparison.",
+    "Bank provenance follows the reviewed Engine LIFO path; numeric transcript rows alone are not opaque-owner or allocation-count proof.",
+    "The old owner profile is preserved and its controls rerun; its four native cases are not rerun by --profile reuse.",
+    "No Schedule or replacement deadline campaign ran; earlier d2 fixed-five failure and eb4 workspace timeout remain separate.",
+    "No 316-thread, timing-accuracy, arbitrary/nested-module, browser or full A5 qualification."
+  ],
+  "qualified_source_sha256": {
+    "evaluation/ordinary-module-session/README.md": "6d8e800d445aae45656e318ed153f9791c9baa7e6aca5ea85e511c1e2bc593a7",
+    "evaluation/ordinary-module-session/controls.py": "1ed31cc0e425414a5e8b912ee0612eb535adc2f841a5c3a656afa11dec0878dc",
+    "evaluation/ordinary-module-session/owners.py": "05588f0027ea70cd36f5dce35c6c050fd7d22dc2769ba586bf391bd48a0dad15",
+    "evaluation/ordinary-module-session/reproduce.py": "9f13c5d6c3977890507e1e48b822d0e4946fb2371ff6cded7d65017cb6c0a174",
+    "evaluation/ordinary-module-session/reuse_controls.py": "7e42ccfc7c5b9104c9b8fc981750424e553155cac1252f75a1bcae83bb551098",
+    "evaluation/ordinary-module-session/reuse_output.py": "17dd3edf50022d85e8e6b000cdee69fc1ce71ccc04915bf2c091e6c8c93f74ef",
+    "evaluation/ordinary-module-session/reuse_runner_controls.py": "1d69310a6d733ebd11bc07fbaaed3b9e187b2c4b6286bfd5ca5eaccfc2b288f8",
+    "tools/rapid-profiler/ordinary-interval/main.rs": "0ddb0c13bdc1082911841a2a429f46d29ea92df327be8bfc2cf0458d57f8615b",
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/owner.rs": "1544b651edd7730be1210391e58cdb01512491e8a4fc5a2d27b3fec7b6a4e7c1",
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse.rs": "da24562fc3317862209279104286b48a9f39dfb9da7558f82477fc7dbde03356",
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/check.rs": "d1cb1ed503a8d6c5b953c95c654f8ba3f17d7654b2cdbc965c78f45f2e919a80",
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/owner/reuse/tests.rs": "7354aec1186eb4e15a12518b1b035040826db5c2836f5547cd59b81d856de3a6"
+  },
+  "reuse": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "application": {
+      "bytes": 7386816,
+      "sha256": "965570e037da66640756de0df30799208a340c1bd2a99006a324cf4b5c140f5d"
+    },
+    "attempts_per_case": 1,
+    "builds": {
+      "application-build": [
+        "$TOOLCHAIN/bin/cargo",
+        "build",
+        "--bin",
+        "ordinary-interval",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--message-format=json-render-diagnostics"
+      ],
+      "module-build": [
+        "/usr/bin/gcc",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-if-conversion",
+        "-fno-if-conversion2",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,--build-id=none,-z,now,-z,noexecstack",
+        "-Wl,--version-script=tools/rapid-profiler/strnlen-work/localize.map",
+        "$REPO/tools/rapid-profiler/normal-work/csv_fields.c",
+        "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c",
+        "-o",
+        "$RAW/module-trusted.so"
+      ],
+      "ordinary-build": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "--bin",
+        "ordinary-interval",
+        "--no-run",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--message-format=json-render-diagnostics"
+      ]
+    },
+    "calls": 2040,
+    "controls_manifest_sha256": "c87c4163d725a484f01c636ba5791b680703ab162a4c9ecc7b097f8a672ab189",
+    "cpu_roles": {
+      "controller": 159,
+      "remaining_reserved_cpu": 217,
+      "supervisor_affinity": [
+        159,
+        161,
+        217
+      ],
+      "worker": 161
+    },
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "$CARGO_HOME",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_RELEASE_DEBUG": "0",
+      "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+      "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "$REPO/target",
+      "CARGO_TERM_COLOR": "never",
+      "CC": "/usr/bin/gcc",
+      "HOME": "$USER_HOME",
+      "LC_ALL": "C",
+      "LITEINST_EVALUATION": "1",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "RUSTC": "$TOOLCHAIN/bin/rustc",
+      "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+      "TMPDIR": "$RAW/tmp"
+    },
+    "existing_python_controls": 26,
+    "geometry": {
+      "bodies": [
+        {
+          "edges": 49,
+          "heads": [
+            0,
+            3,
+            5,
+            7,
+            10,
+            12,
+            14,
+            16,
+            19,
+            21,
+            25,
+            27,
+            31,
+            34,
+            37,
+            40,
+            42,
+            46,
+            50,
+            53,
+            55,
+            58,
+            60,
+            64,
+            66,
+            71,
+            73,
+            76,
+            80,
+            83,
+            85,
+            89,
+            90,
+            96,
+            99,
+            101,
+            104,
+            108,
+            114,
+            116,
+            120,
+            125
+          ],
+          "length": 126,
+          "returns": [
+            89,
+            125
+          ]
+        },
+        {
+          "edges": 14,
+          "heads": [
+            0,
+            3,
+            6,
+            8,
+            10,
+            16,
+            20,
+            23,
+            25,
+            29,
+            31,
+            34,
+            40
+          ],
+          "length": 41,
+          "returns": [
+            34,
+            40
+          ]
+        }
+      ],
+      "caller": {
+        "call_bytes": "ffd0",
+        "continuation_offset": 15,
+        "elf_va": 3261392,
+        "length": 20,
+        "store_bytes": "488903"
+      },
+      "candidate": {
+        "bytes": 13520,
+        "sha256": "768f52491d0211ac9bc5f564f69dd27504a7ec6dfe949d4e2ceb7b3ee2df7c5e"
+      },
+      "final": {
+        "bytes": 13520,
+        "sha256": "768f52491d0211ac9bc5f564f69dd27504a7ec6dfe949d4e2ceb7b3ee2df7c5e"
+      },
+      "geometry": {
+        "continuation": 15,
+        "csv_length": 126,
+        "csv_va": 4096,
+        "length_length": 41,
+        "length_va": 4224,
+        "returns": [
+          [
+            89,
+            125
+          ],
+          [
+            34,
+            40
+          ]
+        ]
+      },
+      "selections": [
+        [
+          4096,
+          126
+        ],
+        [
+          4224,
+          41
+        ]
+      ]
+    },
+    "launch": [
+      "/usr/bin/env",
+      "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+      "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+      "/usr/local/bin/python3",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "li2core-reuse-f199da3",
+      "--",
+      "/usr/local/bin/python3",
+      "-B",
+      "$REPO/evaluation/ordinary-module-session/owners.py",
+      "--profile",
+      "reuse",
+      "--revision",
+      "f199da31f174584d31409e1a6e9b4335bd8a53c4",
+      "--raw",
+      "$RAW",
+      "--reservation-tag",
+      "li2core-reuse-f199da3",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "launch_wrapper_sha256": "54f7977bb056689686552c0ea9711125fbd3519dae688adec332bcdd205a2461",
+    "load_after": [
+      73.6,
+      57.19,
+      51.29
+    ],
+    "load_before": [
+      55.81,
+      52.93,
+      49.71
+    ],
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "db4720dbf7521a9890fc763bb67f99933023264193ddff6f6ffe2426409e5ac5",
+      "reaped_descendants": 0,
+      "seconds": 60.2637286731042,
+      "start_utc": "2026-10-29T10:40:04.804357+00:00",
+      "termination": null
+    },
+    "recipe": "evaluation/ordinary-module-session/owners.py --profile reuse",
+    "recipe_sha256": "05588f0027ea70cd36f5dce35c6c050fd7d22dc2769ba586bf391bd48a0dad15",
+    "reports": 12,
+    "reservation": {
+      "cores": [
+        159,
+        161,
+        217
+      ],
+      "count": 3
+    },
+    "reservation_tag": "li2core-reuse-f199da3",
+    "restages": 4,
+    "result_sha256": "e89c8b90d8fccc05f6964df90969e55ceca4efbd9b94dcb8ae4ade6fa3a2ec3d",
+    "retained_files_authenticated": 185,
+    "retries": 0,
+    "reuse_python_controls": 11,
+    "runner_python_controls": 4,
+    "rust_controls": 52,
+    "sampled": 2036,
+    "shared_owner_refusals": 8,
+    "source_manifest_sha256": "652581da9dbbac978dd7e5a0fb7df0a4bd155f7364ede7b007ebb1331299246f",
+    "stages": [
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-cc1",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.18503105593845248,
+        "start_utc": "2026-10-29T10:40:10.002986+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-collect2",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.6386216580867767,
+        "start_utc": "2026-10-29T10:40:10.710746+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-as",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.240292401984334,
+        "start_utc": "2026-10-29T10:40:12.286899+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-ld",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.24747735587880015,
+        "start_utc": "2026-10-29T10:40:13.054551+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "module-build",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.3003572281450033,
+        "start_utc": "2026-10-29T10:40:13.818690+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "module-symbols",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.2452617408707738,
+        "start_utc": "2026-10-29T10:40:14.683542+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "csv_fields-disassembly",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.24411019193939865,
+        "start_utc": "2026-10-29T10:40:15.455784+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "strnlen-disassembly",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.24978147400543094,
+        "start_utc": "2026-10-29T10:40:16.269696+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "application-build",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 19.707956067984924,
+        "start_utc": "2026-10-29T10:40:17.034683+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "application-caller-disassembly",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.21895091189071536,
+        "start_utc": "2026-10-29T10:40:37.279225+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "application-caller-symbols",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.22751587885431945,
+        "start_utc": "2026-10-29T10:40:37.992200+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "ordinary-build",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 13.249253317946568,
+        "start_utc": "2026-10-29T10:40:38.719624+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "ordinary-list",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.18825513403862715,
+        "start_utc": "2026-10-29T10:40:52.514763+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "ordinary-controls",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.28698456892743707,
+        "start_utc": "2026-10-29T10:40:53.274426+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "python-controls",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 1.091636158991605,
+        "start_utc": "2026-10-29T10:40:54.119385+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "reuse-python-controls",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 1.0560073258820921,
+        "start_utc": "2026-10-29T10:40:55.695032+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "reuse-runner-controls",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.29865759098902345,
+        "start_utc": "2026-10-29T10:40:57.225719+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "reuse-1-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.22559813014231622,
+        "start_utc": "2026-10-29T10:40:58.163231+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "reuse-2-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.26046624197624624,
+        "start_utc": "2026-10-29T10:40:59.300142+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "reuse-3-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 1.2018160128500313,
+        "start_utc": "2026-10-29T10:41:00.530001+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "reuse-4-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 1.2845707382075489,
+        "start_utc": "2026-10-29T10:41:02.568838+00:00",
+        "termination": null
+      }
+    ],
+    "status": "REUSE_QUALIFICATION_PASS",
+    "test_artifact": {
+      "bytes": 4813928,
+      "sha256": "2b9467a66697d5ad48108ae2caee0c0b15de24e358c5e833220cd77f8145428c"
+    },
+    "tools": {
+      "$TOOLCHAIN/bin/cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "$TOOLCHAIN/bin/rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "$TOOLCHAIN/bin/rustdoc": {
+        "bytes": 13680928,
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      },
+      "/usr/bin/as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "/usr/bin/bash": {
+        "bytes": 1389072,
+        "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+      },
+      "/usr/bin/gcc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "/usr/bin/git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "/usr/bin/ld.bfd": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "/usr/bin/objdump": {
+        "bytes": 423000,
+        "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+      },
+      "/usr/bin/readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "/usr/bin/rg": {
+        "bytes": 4746600,
+        "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+      },
+      "/usr/libexec/gcc/x86_64-redhat-linux/11/cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "/usr/libexec/gcc/x86_64-redhat-linux/11/collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "/usr/local/fbcode/platform010/bin/python3.12": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      }
+    },
+    "unsampled": 4
+  },
+  "reviews": {
+    "checker": "1773383e8eacf5f8a96d29a1d3d181f950b38a3248d9d2e132fab786cc88da48",
+    "runner": "8f0c083628ecd95132d854df9ab62890f8fefd13cf4e5685d80da845e64469ef",
+    "rust": "42f73bc947729cec8475f8ad833f328e6818b6e375d2acfbe3c5f811640b4eee",
+    "wire": "14a07ddf2ebd0b7fa30fde9626004677183a421b655eb94541aa6106b3ed0cb3"
+  },
+  "revision": "f199da31f174584d31409e1a6e9b4335bd8a53c4",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Isolated native execution after epoch-bank reuse; no native-state oracle, Schedule/deadline, performance, full-campaign or retrospective qualification credit. Four fresh K10/K1000 direction cases; no retry, original call or warmup.",
+  "workspace": {
+    "checker": "evaluation/admission/check_exec_identity.py --checks-only",
+    "checker_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+    "failed": 0,
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "ignored": 36,
+    "last_log_location": "Doc-tests liteinst_launch; no result summary for that group",
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 1,
+      "private_log_sha256": "5a9c0414cde61ec5a48df4a7fd94a05ad2fedf7b698c60517e1aca479fe70076",
+      "reaped_descendants": 0,
+      "seconds": 377.7819410918746,
+      "start_utc": "2026-10-29T10:41:25.671710+00:00",
+      "termination": null
+    },
+    "passed": 3164,
+    "reservation": {
+      "cores": [
+        148,
+        92,
+        267,
+        72,
+        93,
+        146,
+        276,
+        128
+      ],
+      "count": 8
+    },
+    "status": "FAILED",
+    "suffix": {
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "81775aafccaeba4cd7ef5fdc1e6e6fdf738301e44af623b7db375b5ab14a35f5",
+        "reaped_descendants": 0,
+        "seconds": 133.18446734105237,
+        "start_utc": "2026-10-29T10:48:04.265986+00:00",
+        "termination": null
+      },
+      "reservation": {
+        "cores": [
+          112,
+          299,
+          235,
+          70,
+          185,
+          33,
+          74,
+          148
+        ],
+        "count": 8
+      },
+      "scope": "Only previously UNRUN checks; earlier workspace timeout remains FAILED.",
+      "script_sha256": "d5f37bdcb3c04d027a6556a985aec40615a0c92b7439f40ab121cf5f3f4fce36",
+      "status": "PASS"
+    },
+    "workspace_closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": -9,
+      "private_log_sha256": "d81a88ff88bac3dcf455a88b463f2fd095cbc992f5ca0c09620d4827fdd4b8c5",
+      "reaped_descendants": 1,
+      "seconds": 360.0611863071099,
+      "start_utc": "2026-10-29T10:41:43.062001+00:00",
+      "termination": "timeout"
+    },
+    "workspace_limit_seconds": 360
+  }
+}

@@ -210,7 +210,8 @@ struct FrontendEpoch {
     spec: Arc<Spec>,
     payloads: Vec<OnceLock<Payload>>,
     storage_bank: Option<usize>,
-    _permit: Permit,
+    // Some for every live owner; only a private recycled bank holds None.
+    _permit: Option<Permit>,
 }
 impl FrontendEpoch {
     fn records(&self) -> impl Iterator<Item = RecordObservation> + '_ {
@@ -529,7 +530,7 @@ impl Session {
                 spec: Arc::clone(&self.inner.spec),
                 payloads,
                 storage_bank: None,
-                _permit: permit,
+                _permit: Some(permit),
             }),
         };
         self.inner.ever_staged.store(true, Ordering::Release);

@@ -29,7 +29,7 @@ from a different revision or qualification.
 Eighteen fabricated Python controls precede all native work, retaining the twelve
 finite controls and adding six Session controls. The exact complete calibration
 inventory retains all 149 prior methods, ten finite module methods and four
-Session methods (163 nonignored controls in both modes). The one existing
+Session methods plus sixteen copied-Rust-body methods (179 nonignored controls in both modes). The one existing
 hardware-stop control remains explicitly
 ignored, with its original reason; this recipe does not claim to execute it.
 The four existing CallerOwner controls remain mandatory. No old control is
