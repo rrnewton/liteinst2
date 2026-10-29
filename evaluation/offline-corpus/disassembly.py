@@ -17,6 +17,7 @@ if sys.flags.optimize:
 
 CAP = 1048576
 PROFILE = 'offline-whole-authored-null-jumps-v1'
+WINDOW_PROFILE = 'offline-whole-authored-window-permits-v1'
 LIMITS = '1048576 32 32 131072 128 2097152 1048576 128 16777216'
 CORPUS_SHA = '007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07'
 TARGET_SHA = 'de1028fa9b590a6f1ba37627ac5ff78470c9f3b225eed794f7c32959c1a1c00c'
@@ -299,16 +300,91 @@ def code_and_relocations(image, obj, heads, program):
     assert heads['hook'] == [(0, b'\xc3')]
 
 
-def attempt(program, inputs, expected):
+def window_policy(image, jumps):
+    """Prospective source geometry only; the core still qualifies every image.
+
+    Permits are complete pages inside the unchanged non-interleaved carrier
+    span, excluding its full prospective reservation. One candidate and one
+    page per role remain; these are permissions, not allocated/accepted images.
+    Production calls this only after complete ownership/head/source joins and
+    denominator checks. A standalone return supplies none of that authority.
+    """
+    page, lane, user_limit = 4096, 65536, 1 << 47
+    limits = tuple(int(v) for v in LIMITS.split())
+    assert len(limits) == 9 and 0 < len(jumps) <= limits[1]
+    assert len(image.ph) <= limits[7]
+    loads = []
+    for ph in image.ph:
+        if ph[0] != 1:
+            continue
+        start, size = ph[3], ph[6]
+        assert type(start) is int and type(size) is int
+        assert 0 <= start < user_limit and 0 < size <= user_limit - start, 'LOAD extent'
+        loads.append((start & -page, (start + size + page - 1) & -page))
+    assert loads
+    lo, hi = min(a for a, _ in loads), max(b for _, b in loads)
+    end = lo + limits[8]
+    carrier = 0x480000  # Same literal carrier as the unchanged policy header.
+    reserve = (limits[7] * 56 + 128 + page - 1) & -page
+    carrier_end = carrier + reserve
+    assert hi <= carrier < carrier_end <= end <= user_limit, 'carrier/span extent'
+    ranges = [(a, b) for a, b in ((hi, carrier), (carrier_end, end)) if a < b]
+    assert 0 < len(ranges) <= 16 and all(a % page == b % page == 0 for a, b in ranges)
+    count = len(jumps)
+    first_victim = (max(hi, carrier_end) + lane - 1) & -lane
+    first_selected = first_victim + count * lane
+    assert first_selected + count * lane <= end, 'complete seed lanes exceed fixed span'
+    assert all(type(p) is int and type(n) is int and type(o) is int
+               and lo <= p < hi and n in (2, 5, 6) and 0 <= o <= CAP - n
+               for p, n, o in jumps)
+    assert all(a[0] + a[1] <= b[0] for a, b in zip(jumps, jumps[1:])), 'jump order'
+    permits = ' '.join(f'{a}:{b - a}' for a, b in ranges)
+    rows, pages = [], set()
+    for sid, (pc, length, _) in enumerate(jumps, 1):
+        victim_lane = first_victim + (sid - 1) * lane
+        selected_lane = first_selected + (sid - 1) * lane
+        victim, selected = victim_lane, selected_lane
+        if length == 2:
+            base = pc + 5 + 0xe900
+            delta = (selected_lane - (base & -lane)) // lane
+            assert 0 <= delta <= 255, 'successor displacement low byte'
+            victim += (pc + 7 + delta) % lane
+            displacement = victim - (pc + 7)
+            assert -(1 << 31) <= displacement < (1 << 31), 'successor rel32'
+            low, high = base + delta * lane, base + delta * lane + 256
+            assert selected_lane <= low < high <= selected_lane + lane, 'selected window lane'
+            boundary = (low + page - 1) & -page
+            selected = boundary if boundary < high else low
+            # Re-encode the proposed victim E9 independently of the lane formula.
+            # For L=2,p=0 its opcode and first two displacement bytes are fixed.
+            redirect = b'\xe9' + struct.pack('<i', displacement)
+            actual = pc + 5 + int.from_bytes(b'\0' + redirect[:3], 'little', signed=True)
+            assert actual == low and low <= selected < high, 'joint E9/pun geometry'
+        for target, start in ((victim, victim_lane), (selected, selected_lane)):
+            mapped = target & -page
+            assert start <= mapped and mapped + page <= start + lane
+            assert any(a <= mapped and mapped + page <= b for a, b in ranges)
+            assert mapped not in pages, 'preferred page collision'
+            pages.add(mapped)
+        rows += [f'search {sid} preferred 64 256 64 none 256 4096',
+                 f'allocation {sid} selected {selected} 1 4096 {permits}',
+                 f'allocation {sid} victim {victim} 1 4096 {permits}']
+    return rows
+
+
+def attempt(program, inputs, expected, *, profile=PROFILE):
     """One pure material attempt; caller retains all raw inputs on every outcome.
 
     Expected hashes come from independent source/build/capture ownership, never
     from this return value. No candidate, importer, or runtime success is minted.
+    The default retains the old fixed-page profile. WINDOW_PROFILE is an explicit
+    prospective choice; neither profile retries or consults planning outcomes.
     """
     assert program in COUNTS and type(inputs) is dict and type(expected) is dict
     assert set(inputs) == set(expected) == set(INPUTS)
+    assert profile in (PROFILE, WINDOW_PROFILE), 'explicit placement profile'
     files = {}
-    result = dict(profile=PROFILE, program=program, status='MATERIALS_REFUSED',
+    result = dict(profile=profile, program=program, status='MATERIALS_REFUSED',
                   source_expected_heads=COUNTS[program][0], source_expected_jumps=COUNTS[program][1],
                   roster_checked_heads=None, roster_checked_jumps=None,
                   qualification_complete=False, importer_verified=False, files=files)
@@ -352,11 +428,14 @@ def attempt(program, inputs, expected):
         policy = ['LI2DISASM-POLICY 1', 'original ' + sha(inputs['original']),
                   'ledger ' + sha(files['ledger.txt']), target, 'domain 1', 'carrier 4718592',
                   'limits ' + LIMITS, 'null-hook 4206592']
-        for sid in range(1, len(jumps) + 1):
-            a, b = 0x500000 + (sid - 1) * 4096, 0x600000 + (sid - 1) * 4096
-            policy += [f'search {sid} preferred 64 256 64 none 256 4096',
-                       f'allocation {sid} selected {a} 1 4096 {a}:4096',
-                       f'allocation {sid} victim {b} 1 4096 {b}:4096']
+        if profile == PROFILE:
+            for sid in range(1, len(jumps) + 1):
+                a, b = 0x500000 + (sid - 1) * 4096, 0x600000 + (sid - 1) * 4096
+                policy += [f'search {sid} preferred 64 256 64 none 256 4096',
+                           f'allocation {sid} selected {a} 1 4096 {a}:4096',
+                           f'allocation {sid} victim {b} 1 4096 {b}:4096']
+        else:
+            policy += window_policy(image, jumps)
         files['policy.txt'] = ('\n'.join(policy) + '\n').encode()
         assert all(len(v) <= CAP for v in files.values())
         result.update(status='MATERIALS_READY')

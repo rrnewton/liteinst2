@@ -14,7 +14,7 @@ import unittest
 
 if sys.flags.optimize:
     raise SystemExit('assertions required')
-ADAPTER_SHA = 'cf16eecabfa6d9d1bbf26812fcac3097f82447287db2b23fab46a127974c83bf'
+ADAPTER_SHA = '9f5c8782669e34f2953a50af76ba22cf8a78240195b3e13636168abf4fca3810'
 path = Path(__file__).resolve().with_name('disassembly.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
@@ -77,7 +77,7 @@ def symbols(rows):
     return bytes(table), strings
 
 
-def fixture(program='checksum'):
+def fixture(program='checksum', *, short_jumps=False):
     instructions, labels = D.source_roster()
     prefixes = {'lea input(%rip),%rsi': '488d35', 'lea stack_end-256(%rip),%rsp': '488d25',
                 'lea input(%rip),%rdi': '488d3d', 'lea output(%rip),%rdx': '488d15',
@@ -93,9 +93,15 @@ def fixture(program='checksum'):
         if instruction in prefixes:
             code = bytes.fromhex(prefixes[instruction]) + bytes(4)
         elif op == 'jmp':
-            code = b'\xe9' + bytes(4)
+            if short_jumps:
+                code = b'\xeb\0'
+            else:
+                code = b'\xe9' + bytes(4)
         elif op in branches:
-            code = bytes([15, 0x80 + branches[op]]) + bytes(4)
+            if short_jumps:
+                code = bytes([0x70 + branches[op], 0])
+            else:
+                code = bytes([15, 0x80 + branches[op]]) + bytes(4)
         else:
             code = b'\x90'  # No assertion of source/compiler correspondence.
         codes.append(code)
@@ -106,7 +112,10 @@ def fixture(program='checksum'):
         end = offsets[i] + len(codes[i])
         if op.startswith('j'):
             displacement = offsets[labels[instruction.split()[1]]] - end
-            codes[i] = codes[i][:-4] + struct.pack('<i', displacement)
+            if short_jumps:
+                codes[i] = codes[i][:-1] + struct.pack('<b', displacement)
+            else:
+                codes[i] = codes[i][:-4] + struct.pack('<i', displacement)
             linked[i] = codes[i]
         if instruction in prefixes:
             call = instruction == 'call kernel'
@@ -279,6 +288,131 @@ class AuthoredDisassemblyControls(unittest.TestCase):
             self.assertEqual(result['source_expected_jumps'], 16)
         inputs = fixture(); inputs['heads'] = inputs['heads'].replace(b'head start ', b'head kernel ')
         self.assertEqual(self.refused(inputs)['files'], {})
+
+
+    def test_window_permits_are_exact_existing_carrier_arena(self):
+        image = D.Elf(fixture()['original'], 2)
+        rows = D.window_policy(image, [(0x401000, 2, 4096)])
+        expected = ['4546560:172032', '4726784:16244736']
+        for row in rows[1:]:
+            fields = row.split()
+            self.assertEqual(fields[4:6], ['1', '4096'])
+            self.assertEqual(fields[6:], expected)
+        self.assertEqual(len(rows), 3)
+        # Pure arithmetic boundary fixture, not a claim that this PC is a head.
+        boundary = D.window_policy(image, [(0x402600, 2, 0x2600)])
+        self.assertEqual(int(boundary[1].split()[3]) % 4096, 0)
+        for jumps in ([], [(0x401000 + i * 2, 2, 4096 + i * 2) for i in range(33)],
+                      [(0x401000, 1, 4096)], [(0x401000, 2, 4096)] * 2,
+                      [(True, 2, 4096)], [(0x401000, 2, D.CAP)],
+                      [(0x401600, 2, 0x1600)]):
+            with self.assertRaises(AssertionError):
+                D.window_policy(image, jumps)
+        # Actual helper refusal boundaries, without manufacturing an ELF owner.
+        for start, size in ((1 << 47, 1), ((1 << 64) - 4096, 8192),
+                            (0x404000, 0x80000), (0, 0), (True, 4096)):
+            changed = list(image.ph)
+            row = list(changed[3]); row[3], row[6] = start, size
+            changed[3] = tuple(row)
+            with self.assertRaises(AssertionError):
+                D.window_policy(types.SimpleNamespace(ph=changed), [(0x401000, 2, 4096)])
+        high = (1, 4, 0, (1 << 47) - 4096, 0, 4096, 4096, 4096)
+        with self.assertRaises(AssertionError):
+            D.window_policy(types.SimpleNamespace(ph=[high]), [((1 << 47) - 4096, 2, 0)])
+
+    def test_joint_short_branch_targets_match_encoded_successor(self):
+        for program, (_, count) in D.COUNTS.items():
+            inputs = fixture(program, short_jumps=True)
+            result = D.attempt(program, inputs, {k: D.sha(v) for k, v in inputs.items()},
+                               profile=D.WINDOW_PROFILE)
+            self.assertEqual(result['status'], 'MATERIALS_READY')
+            inventory = [list(map(int, row.split()[2:])) for row in
+                         result['files']['source-inventory.tsv'].decode().splitlines()[1:]]
+            jumps = [row for row in inventory if row[3]]
+            allocations = [r.split() for r in result['files']['policy.txt'].decode().splitlines()
+                           if r.startswith('allocation ')]
+            self.assertEqual(len(jumps), count)
+            self.assertEqual(len(allocations), count * 2)
+            preferred_pages, short = set(), 0
+            for sid, (pc, _, length, _) in enumerate(jumps, 1):
+                selected_row, victim_row = allocations[2 * (sid - 1):2 * sid]
+                self.assertEqual(selected_row[:3], ['allocation', str(sid), 'selected'])
+                self.assertEqual(victim_row[:3], ['allocation', str(sid), 'victim'])
+                selected, victim = int(selected_row[3]), int(victim_row[3])
+                selected_lane = 0x490000 + (count + sid - 1) * 65536
+                victim_lane = 0x490000 + (sid - 1) * 65536
+                for target, lane in ((selected, selected_lane), (victim, victim_lane)):
+                    page = target & -4096
+                    self.assertLessEqual(lane, page)
+                    self.assertLessEqual(page + 4096, lane + 65536)
+                    self.assertNotIn(page, preferred_pages)
+                    preferred_pages.add(page)
+                if length == 2:
+                    short += 1
+                    redirect = b'\xe9' + struct.pack('<i', victim - (pc + 7))
+                    low = pc + 5 + struct.unpack('<i', b'\0' + redirect[:3])[0]
+                    self.assertLessEqual(low, selected)
+                    self.assertLess(selected, low + 256)
+                    consumed = bytes([0xe9, (selected - (pc + 5)) & 255]) + redirect[:3]
+                    self.assertEqual(pc + 5 + struct.unpack('<i', consumed[1:])[0], selected)
+                    for delta in (1, 256):
+                        changed = b'\xe9' + struct.pack('<i', victim + delta - (pc + 7))
+                        bad_low = pc + 5 + struct.unpack('<i', b'\0' + changed[:3])[0]
+                        self.assertFalse(bad_low <= selected < bad_low + 256)
+                else:
+                    self.assertEqual((selected, victim), (selected_lane, victim_lane))
+            self.assertEqual(short, 14)
+            self.assertEqual(len(preferred_pages), 2 * count)
+
+    def test_placement_profile_keeps_complete_material_denominator(self):
+        for short in (False, True):
+            totals = [0, 0]
+            for program, counts in D.COUNTS.items():
+                inputs = fixture(program, short_jumps=short)
+                expected = {k: D.sha(v) for k, v in inputs.items()}
+                old = D.attempt(program, inputs, expected)
+                self.assertEqual(old, D.attempt(program, inputs, expected, profile=D.PROFILE))
+                new = D.attempt(program, inputs, expected, profile=D.WINDOW_PROFILE)
+                self.assertEqual(new, D.attempt(program, inputs, expected, profile=D.WINDOW_PROFILE))
+                self.assertEqual(new['profile'], D.WINDOW_PROFILE)
+                self.assertEqual(new['status'], 'MATERIALS_READY')
+                self.assertEqual(set(old), set(new))
+                for key in old.keys() - {'profile', 'files'}:
+                    self.assertEqual(old[key], new[key])
+                self.assertEqual(set(old['files']), set(new['files']))
+                for key in ('ledger.txt', 'source-inventory.tsv'):
+                    self.assertEqual(old['files'][key], new['files'][key])
+                policy = new['files']['policy.txt']
+                self.assertEqual(policy.splitlines()[:8], old['files']['policy.txt'].splitlines()[:8])
+                self.assertIn(('limits ' + D.LIMITS + '\n').encode(), policy)
+                self.assertEqual(policy.count(b' preferred 64 256 64 none 256 4096\n'), counts[1])
+                self.assertEqual(policy.count(b' 1 4096 '), counts[1] * 2)
+                self.assertNotIn(b' B1 ', policy)
+                self.assertFalse(new['importer_verified'])
+                self.assertFalse(new['qualification_complete'])
+                totals = [a + b for a, b in zip(totals, counts)]
+                with self.assertRaises(AssertionError):
+                    D.attempt(program, inputs, expected, profile='unknown')
+            self.assertEqual(totals, [187, 42])
+        # A coherent in-range short-branch displacement mutation retains bytes,
+        # sizes, rows and refreshed synthetic pins; the source-label join refuses.
+        inputs = fixture(short_jumps=True)
+        rows = inputs['heads'].splitlines(); fields = rows[5].split()
+        offset = int(fields[3]); code = bytes.fromhex(fields[4].decode())
+        self.assertEqual(len(code), 2)
+        changed = code[:-1] + bytes([(code[-1] + 1) & 255])
+        for key, base in [('object', D.Elf(inputs['object'], 1).section('.text.start')[4]),
+                          ('original', 4096)]:
+            raw = bytearray(inputs[key]); raw[base + offset:base + offset + 2] = changed
+            inputs[key] = bytes(raw)
+        fields[4] = changed.hex().encode(); rows[5] = b' '.join(fields)
+        inputs['heads'] = b'\n'.join(rows) + b'\n'; rebind(inputs)
+        result = D.attempt('checksum', inputs, {k: D.sha(v) for k, v in inputs.items()},
+                           profile=D.WINDOW_PROFILE)
+        self.assertEqual(result['status'], 'MATERIALS_REFUSED')
+        self.assertEqual(result['failure']['stage'], 'relocations-and-code')
+        self.assertEqual(result['source_expected_jumps'], 16)
+        self.assertEqual(result['files'], {})
 
 
 if __name__ == '__main__':

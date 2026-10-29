@@ -94,3 +94,25 @@ actual head capture, importer/E9 comparisons, loader admission, all old/future
 functional populations and normal closure remain separate. Upstream E9 and
 whole-heap completeness, real hooks, architectural state and performance are not
 granted by this authored material adapter.
+
+## Explicit window-permit profile
+
+`attempt(program, inputs, expected, profile=WINDOW_PROFILE)` selects
+`offline-whole-authored-window-permits-v1`. The default fixed-page profile and
+its historical outcomes remain unchanged. Choose a profile before a complete
+program attempt; no fallback or retry is performed.
+
+The new profile derives permitted pages from the authenticated original LOADs
+and the existing16MiB carrier span, excluding the complete8KiB carrier
+reservation. It assigns disjoint64KiB preferred-address lanes per site and
+coordinates a short branch's selected/victim addresses using the exact E9
+low-order displacement geometry. Wider permitted address ranges do not allocate
+those ranges: one candidate and4096-byte mapping budget per role remain, along
+with the32-image aggregate limit and all core entry/overlap/image-fit checks.
+The complete187-head/42-jump population and all-or-nothing publication remain.
+
+These permissions do not establish that the core can produce a candidate.
+Page-end fit, overlap, successor qualification and aggregate-budget refusals
+remain possible. Source geometry readiness is neither execution equivalence
+nor qualification. The three additive controls use coherent synthetic object,
+ELF and head inputs; they do not establish compiler or native behavior.
