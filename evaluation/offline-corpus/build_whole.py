@@ -49,9 +49,22 @@ def configuration(repo, cargo_home):
     result = {}
     for path in sorted(paths):
         try:
-            result[str(path)] = dict(state='READ', identity=identity(path))
-        except FileNotFoundError:
-            result[str(path)] = dict(state='ABSENT')
+            s = path.lstat()
+            lookup = [s.st_dev, s.st_ino, s.st_mode, s.st_size, s.st_mtime_ns, s.st_ctime_ns]
+        except FileNotFoundError as error:
+            result[str(path)] = dict(state='ABSENT', errno=error.errno)
+            continue
+        except PermissionError as error:
+            result[str(path)] = dict(state='READ_DENIED', errno=error.errno, lookup_stat=None)
+            continue
+        try:
+            result[str(path)] = dict(state='READ', lookup_stat=lookup, identity=identity(path))
+            s = path.lstat()
+            assert lookup == [s.st_dev, s.st_ino, s.st_mode, s.st_size, s.st_mtime_ns, s.st_ctime_ns]
+        except FileNotFoundError as error:
+            result[str(path)] = dict(state='TARGET_ABSENT', errno=error.errno, lookup_stat=lookup)
+        except PermissionError as error:
+            result[str(path)] = dict(state='READ_DENIED', errno=error.errno, lookup_stat=lookup)
     return result
 
 
@@ -99,6 +112,7 @@ def main():
                repo / 'Cargo.toml', repo / 'Cargo.lock',
                *(source / (p + '.S') for p in PROGRAMS)]}
     configs = configuration(repo, args.cargo_home)
+    configuration_complete = all(c['state'] != 'READ_DENIED' for c in configs.values())
     # Freeze every command before executing the first one. Dependencies can
     # leave a phase UNRUN, but no phase is retried or replaced after its result.
     phases = []
@@ -128,6 +142,7 @@ def main():
                       '--disassemble=' + symbol, str(original)]))
     before = dict(revision=revision, hardware='AMD EPYC Zen 5 dev host', env=env,
                   tools=tools, inputs=inputs, configurations=configs, phases=phases,
+                  configuration_complete=configuration_complete,
                   affinity=sorted(os.sched_getaffinity(0)),
                   load_average=Path('/proc/loadavg').read_text().split()[:3],
                   qualification_complete=False)
@@ -216,8 +231,13 @@ def main():
     finally:
         write(raw / 'closed.json', dict(revision=revision, results=results,
             files=watched, load_average=Path('/proc/loadavg').read_text().split()[:3],
+            configuration_complete=configuration_complete,
+            configuration_scope='READ_DENIED records an observation, never inaccessible contents or proof Cargo ignored them',
             qualification_complete=False))
-    return 0 if len(results) == len(phases) and all(r['status'] == 'PASS' for r in results.values()) else 1
+    commands_complete = len(results) == len(phases) and all(r['status'] == 'PASS' for r in results.values())
+    # Retain incomplete configuration as a nonzero outcome even when the raw
+    # commands close successfully. This is useful capture, not a cleared gate.
+    return 1 if not commands_complete else 0 if configuration_complete else 2
 
 
 if __name__ == '__main__':
