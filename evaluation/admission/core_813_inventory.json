@@ -9071,6 +9071,155 @@
       }
     }
   },
+  "main8f622": {
+    "base_revision": "203d0804922935d8aadf764f6bd53e5d766a9c80",
+    "projections": {
+      "evaluation/ordinary-call-pair-session/freeze.py": {
+        "current_sha256": "c9305ce8361d1e2976f79326b618aa6d7ab4c2caca5f5fbca99f93d717286755",
+        "edits": [
+          [
+            495,
+            577,
+            "LAUNCHER_SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'\n"
+          ],
+          [
+            6206,
+            6332,
+            "    compat=root/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n    assert held(compat,MIB)==bootstrap[NATIVE_PUBLIC+'launch.py']\n"
+          ]
+        ],
+        "previous_sha256": "539cf8da310948423341b43990f63c5c5669e989127efaaa5a413cb2b34c8c44"
+      },
+      "evaluation/ordinary-call-pair-session/launch.py": {
+        "current_sha256": "18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12",
+        "edits": [
+          [
+            890,
+            972,
+            "CAMPAIGN_SHA = '00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e'\n"
+          ]
+        ],
+        "previous_sha256": "1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46"
+      },
+      "evaluation/ordinary-call-pair-session/owner_controls.py": {
+        "current_sha256": "3d028c7695825bf361900b027db23732a7bed507ba654aabb0d671a84af2f37c",
+        "edits": [
+          [
+            390,
+            463,
+            "SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'\n"
+          ]
+        ],
+        "previous_sha256": "30d27b288e976ac5bd6ef9e9cd099d1216dd289964d5ff1e51005968fc19b2aa"
+      },
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": {
+        "current_sha256": "0b3d171e6599b37c687626e1a83f123c3efd7eed334f9eec4e9032a29fb48670",
+        "edits": [
+          [
+            812,
+            882,
+            "LAUNCHER_PATH=R.ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n"
+          ]
+        ],
+        "previous_sha256": "a42f405d8bdbb77114888468c9cc01a7fd8c6ceb909f678de0285a284934000a"
+      },
+      "evaluation/ordinary-call-pair-session/reproduce.py": {
+        "current_sha256": "7a9024c00c13f8de72f8180b85e9f41e27b9a01ace674fa08fcb3c990b4dcad2",
+        "edits": [
+          [
+            902,
+            1058,
+            ""
+          ],
+          [
+            20013,
+            21356,
+            ""
+          ],
+          [
+            40205,
+            40284,
+            "    for path in (Path(__file__).resolve(), recipe_path):\n"
+          ],
+          [
+            40606,
+            40677,
+            ""
+          ],
+          [
+            40779,
+            40890,
+            ""
+          ],
+          [
+            41384,
+            41460,
+            "    required = set(REQUIRED_NATIVE) | set(HELPER_PINS) | set(recipe.MODULES.values()) | set(extra.values()) | {\n        'evaluation/ordinary-call-pair-session/'+n for n in ('reproduce.py', 'runner_controls.py', 'README.md', 'produce.py',\n            'producer_controls.py', 'receipt_controls.py', 'controls.py', 'original.c', 'original_controls.c', 'original_controls.py')}\n    source_dirs = ('evaluation/ordinary-module-session', 'evaluation/ordinary-leaf-set-session', 'evaluation/ordinary-leaf-set-whole-session')\n    for directory in source_dirs:\n        names = git('ls-files', '-z', '--', directory).decode().rstrip('\\0').split('\\0')\n        required.update(n for n in names if n.endswith(('.py', '.c', '.S', '.md')))\n    names = git('ls-files', '-z', '--', 'src', 'crates', 'tests/support', 'tools/rapid-profiler', 'Cargo.toml', 'Cargo.lock',\n                'README.md', 'build.rs', '.cargo', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\\0').split('\\0')\n    assert all(names) and len(names) == len(set(names)) and required <= set(names)\n"
+          ],
+          [
+            43620,
+            43660,
+            "        launcher = ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n"
+          ],
+          [
+            43712,
+            43780,
+            "        assert pin(launcher_bytes)['sha256'] == '5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5'\n"
+          ]
+        ],
+        "previous_sha256": "00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e"
+      },
+      "evaluation/ordinary-call-pair-session/runner_controls.py": {
+        "current_sha256": "e0abe982edb29b1b0df89bebe853f08a16297a5130737b0a06fb79579fbdf8cb",
+        "edits": [
+          [
+            4313,
+            5562,
+            ""
+          ]
+        ],
+        "previous_sha256": "628e87e2a4b1d292a5577849a0bbec85f1821e46e95267e449202f01d2f03d70"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd",
+        "edits": [
+          [
+            15992,
+            16465,
+            ""
+          ],
+          [
+            16508,
+            16531,
+            "            registers: child.registers(),\n"
+          ],
+          [
+            17207,
+            17395,
+            "            while child.registers().rip != boundary {\n"
+          ],
+          [
+            17635,
+            17995,
+            "            }\n            points.push(self.snapshot(child, logical_pc, expected_code));\n"
+          ]
+        ],
+        "previous_sha256": "12c44886e13704b366c6e52bd658190441af3442302109a8d44199148643a63a"
+      }
+    },
+    "prospective_tree": "4486d9ff7c7ba7ccc1c5c403a66181f7174253c2",
+    "scope": "Source-only exact8f622 successor; unchanged corpus, test identities, bounds and historical pins.",
+    "sources": {
+      "evaluation/ordinary-call-pair-session/freeze.py": "c9305ce8361d1e2976f79326b618aa6d7ab4c2caca5f5fbca99f93d717286755",
+      "evaluation/ordinary-call-pair-session/launch.py": "18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12",
+      "evaluation/ordinary-call-pair-session/owner_controls.py": "3d028c7695825bf361900b027db23732a7bed507ba654aabb0d671a84af2f37c",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "0b3d171e6599b37c687626e1a83f123c3efd7eed334f9eec4e9032a29fb48670",
+      "evaluation/ordinary-call-pair-session/reproduce.py": "7a9024c00c13f8de72f8180b85e9f41e27b9a01ace674fa08fcb3c990b4dcad2",
+      "evaluation/ordinary-call-pair-session/runner_controls.py": "e0abe982edb29b1b0df89bebe853f08a16297a5130737b0a06fb79579fbdf8cb",
+      "tests/support/quiescent_oracle.rs": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd"
+    },
+    "upstream_revision": "8f62276b9341c9eaccc6f8af1fa913691c7ad9a2"
+  },
   "main9950": {
     "added_methods": {
       "tests/support/native_normal_module/tests.rs": [

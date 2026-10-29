@@ -93,9 +93,9 @@ pinned Python executable:
 
 The freezer accepts optional explicit `--xdg-runtime-dir` and
 `--dbus-session-bus-address` inputs as documented there. It retains a fresh
-per-revision protocol and a `SOURCE_FROZEN_UNRUN` marker, and materializes the
-unchanged receipt-control source fixture from the tracked launcher without
-overwriting a different file. Launcher SHA256 remains
+per-revision protocol and a `SOURCE_FROZEN_UNRUN` marker. The campaign and receipt
+controls authenticate the tracked public launcher directly; they require no
+ignored source copy. Launcher SHA256 remains
 `5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5`.
 Retain the marker's original protocol path/hash, then invoke the pinned Python
 with `-B evaluation/ordinary-call-pair-native/launch.py --protocol "$PROTOCOL"

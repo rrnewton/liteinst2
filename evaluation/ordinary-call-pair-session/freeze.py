@@ -16,7 +16,7 @@ import types
 
 PUBLIC = 'evaluation/ordinary-call-pair-session/'
 NATIVE_PUBLIC = 'evaluation/ordinary-call-pair-native/'
-LAUNCHER_SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'
+LAUNCHER_SHA = '18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12'
 NATIVE_LAUNCHER_SHA = '5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5'
 NATIVE_FREEZER_SHA = 'd5988152be6b826d368f43723afd16b411e36cb1d02e3e11530349405390484f'
 OWNER = 'evaluation/admission/processes.py'
@@ -113,8 +113,8 @@ def main():
         q=Path(getattr(a,'native_'+key));data=held(q,cap)
         expected=getattr(a,'native_'+key+'_sha256');assert pin(data)['sha256']==expected
         native[key]=dict(path=str(q),**pin(data))
-    compat=root/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'
-    assert held(compat,MIB)==bootstrap[NATIVE_PUBLIC+'launch.py']
+    native_launcher=root/NATIVE_PUBLIC/'launch.py'
+    assert held(native_launcher,MIB)==bootstrap[NATIVE_PUBLIC+'launch.py']
     for parent in (root/'ignored',root/'ignored/a5',root/'target',root/'target/evaluation'):
         if not os.path.lexists(parent):parent.mkdir(mode=0o700)
         assert parent.resolve(strict=True)==parent and parent.is_dir()

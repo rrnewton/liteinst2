@@ -419,9 +419,21 @@ impl NativeOracle {
             expected_code,
             "unauthorized code write at {logical_pc:#x}"
         );
+        self.snapshot_with_registers(child, logical_pc, child.registers())
+    }
+
+    // Both callers check the complete code page before entering this helper.
+    // Registers must be this child's actual full observation at its current
+    // stop, with no intervening resume, register write, or signal delivery.
+    fn snapshot_with_registers(
+        &self,
+        child: &Tracee,
+        logical_pc: u64,
+        registers: libc::user_regs_struct,
+    ) -> Snapshot {
         Snapshot {
             logical_pc,
-            registers: child.registers(),
+            registers,
             xstate: canonical_xstate(&child.xstate()),
             data: child.memory(self.data.address(), PAGE),
             application_stack: child.memory(
@@ -442,15 +454,25 @@ impl NativeOracle {
         let mut points = Vec::new();
         let mut steps = 0;
         for (&boundary, &logical_pc) in boundary_pcs.iter().zip(logical_pcs) {
-            while child.registers().rip != boundary {
+            let registers = loop {
+                let registers = child.registers();
+                if registers.rip == boundary {
+                    break registers;
+                }
                 assert!(
                     steps < MAX_STEPS,
                     "oracle instruction budget exhausted before {logical_pc:#x}"
                 );
                 child.step(owned_sigill_heads);
                 steps += 1;
-            }
-            points.push(self.snapshot(child, logical_pc, expected_code));
+            };
+            // The matching GETREGS belongs to this uninterrupted stop.
+            assert_eq!(
+                child.memory(self.code.address(), PAGE),
+                expected_code,
+                "unauthorized code write at {logical_pc:#x}"
+            );
+            points.push(self.snapshot_with_registers(child, logical_pc, registers));
         }
         points
     }

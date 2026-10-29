@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == '6ec2d148dd1e7069310143030f419b9ccff2f1cbdf44af9e00063b60d4a44db4', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == '9e014669847221953d1ac61cf7b91f905baa9c5df022f27c40ef5296e50f5fdd', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -60,6 +60,7 @@ CURRENTE11 = MAINE11['current_corpus_sha256']
 MAIN469 = DATA['main469']
 CURRENT469 = MAIN469['current_corpus_sha256']
 MAINB66 = DATA['mainb66']
+MAIN8F622 = DATA['main8f622']
 LATEST = MAINB66['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
@@ -75,7 +76,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -96,8 +97,33 @@ def precheck_current_sources(error):
         require(inventory_digest.hexdigest(raw) == value, error)
 
 
+def source_before_8f622(path, data, error):
+    """Only the fixed incoming whole blob can recover its historical bytes."""
+    if path not in MAIN8F622['projections']:
+        return data
+    row = MAIN8F622['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_8f622_sources(error='main8f622_source_inventory_differs'):
+    for path, expected in MAIN8F622['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+
+
 def source_before_b66(path, data, error):
     """Only the fixed b66 whole blob may reach its exact historical source."""
+    data = source_before_8f622(path, data, error)
     if path not in MAINB66['projections']:
         return data
     row = MAINB66['projections'][path]
@@ -112,11 +138,13 @@ def source_before_b66(path, data, error):
 
 
 def require_b66_sources(error='mainb66_source_inventory_differs'):
+    require_8f622_sources(error)
     for path, expected in MAINB66['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_8f622(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINB66['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
