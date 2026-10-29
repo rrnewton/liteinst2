@@ -98,6 +98,9 @@ int li2_run_reuse_runtime(enum li2_run_reuse_stage stage,const struct li2_fetch_
     if(selected_step.phase!=LI2_STEP_EMPTY || selected_step.session ||
        selected_step.first_error || selected_step.in_handler ||
        !selected_run_reuse_repeat_closed())return 9;
+#ifdef LI2_REPEAT_RX_LEASE
+    if(!selected_repeat_lease_closed())return 20;
+#endif
     const struct li2_tf_run_entry *origin=0;
     if(publishing && selected_run_trace_origin) {
         if(selected_run_trace_busy!=1 || selected_run_trace_active)return 10;

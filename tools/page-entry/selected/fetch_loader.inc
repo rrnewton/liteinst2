@@ -169,6 +169,9 @@ int li2_lifecycle_fetch_validate(const struct li2_fetch_ref *ref,size_t index,in
     return 0;
 }
 int li2_lifecycle_fetch_release(const struct li2_fetch_ref *ref) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_RELEASE);
+#endif
     int result=fetch_ref(ref); if (result) return result;
     for (size_t i=0;i<fetch.page_count;i++)
         if ((result=li2_lifecycle_fetch_validate(ref,i,PROT_READ))) return result;
