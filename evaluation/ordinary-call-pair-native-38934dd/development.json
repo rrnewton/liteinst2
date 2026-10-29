@@ -1,0 +1,132 @@
+{
+  "commands": {
+    "call-pair-native-public-freeze-38934dd-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-native/freeze.py",
+      "--revision",
+      "38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--user-home",
+      "$USER_HOME",
+      "--allocator-root",
+      "$AGENT_UTILS",
+      "--xdg-runtime-dir",
+      "$RUNTIME_DIR",
+      "--dbus-session-bus-address",
+      "unix:path=$RUNTIME_DIR/bus"
+    ],
+    "call-pair-native-root-audit-38934dd-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "ignored/a5/call-pair-389-root-audit-v1/audit.py"
+    ],
+    "call-pair-session-public-freeze-38934dd-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session/freeze.py",
+      "--revision",
+      "38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--user-home",
+      "$USER_HOME",
+      "--allocator-root",
+      "$AGENT_UTILS",
+      "--hardware-label",
+      "AMD EPYC Zen 5 dev host",
+      "--native-protocol",
+      "$REPO/ignored/a5/call-pair-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/protocol.json",
+      "--native-protocol-sha256",
+      "1c8fbd720537968501c4cf81b7aa1b772ed5144a1ce0e2ec28c6a9c2d2a20ff9",
+      "--native-receipt",
+      "$REPO/ignored/a5/call-pair-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/native-receipt.json",
+      "--native-receipt-sha256",
+      "bd84af35b0eee12258203d59c8c0c7f5e29581ff982671622da26f304a4c1ac8",
+      "--xdg-runtime-dir",
+      "$RUNTIME_DIR",
+      "--dbus-session-bus-address",
+      "unix:path=$RUNTIME_DIR/bus"
+    ],
+    "validation-loop-clippy-v1": [
+      "$TOOLCHAIN/bin/cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "validation-loop-fmt-v1": [
+      "$TOOLCHAIN/bin/cargo",
+      "fmt",
+      "--check"
+    ],
+    "validation-loop-fmt-v2": [
+      "$TOOLCHAIN/bin/cargo",
+      "fmt",
+      "--check"
+    ],
+    "validation-loop-release-build-v1": [
+      "/usr/bin/env",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL=3",
+      "CARGO_PROFILE_RELEASE_DEBUG=0",
+      "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true",
+      "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true",
+      "$TOOLCHAIN/bin/cargo",
+      "build",
+      "--bin",
+      "ordinary-interval",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--message-format=json-render-diagnostics"
+    ],
+    "validation-loop-sdk-v1": [
+      "$TOOLCHAIN/bin/cargo",
+      "test",
+      "-p",
+      "rapid-profiler",
+      "--lib",
+      "frontend_native::always_on::normal::call_pair::tests::"
+    ]
+  },
+  "control_limit": "The root audit used actual closed native data. Session prerequisite acceptance is separate and failed before any session subject ran.",
+  "counts": {
+    "cleanup_complete": 8,
+    "failed": 1,
+    "invocations": 8,
+    "passed": 7,
+    "rescue_reaps": 0
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "schema": 1,
+  "scope": "Development controls, builds, source freeze and separately described root audit. No session/performance acceptance. Each base plus source-map hash records actual dirty-source provenance.",
+  "source_freeze": {
+    "marker_sha256": "c5ce8ad84d4215490f4d58a2f93d92d47a7247c3799589e7d943574775e01cd2",
+    "protocol_sha256": "1c8fbd720537968501c4cf81b7aa1b772ed5144a1ce0e2ec28c6a9c2d2a20ff9",
+    "revision": "38934ddcabe0be94820b1a25bdf5574c0c8323df"
+  },
+  "working_source_maps": {
+    "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a": {},
+    "481a29ea71f6df3a73e263656da75c98bbff16a040a30a6553d88a4ec0b96a75": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/runtime.rs": "37f02fc5ea0a06b2cfc6e183a26049de3c4d2d7e6cbf69863f8acecfd1f1fde2"
+    },
+    "f10a5a879428c4b15668f537c235107f71df7be723d67d1e0a17bbf1a04c421c": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/runtime.rs": "d739dabca94058d1887d7e227b269647c07fd0e04c94c5b1ee67d965dfd0ab29"
+    }
+  }
+}

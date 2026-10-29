@@ -1,0 +1,253 @@
+{
+  "all_762_outcomes": {
+    "bytes": 60674,
+    "sha256": "003cfd3b14df561d87bde048d70f84a165d50d880b6a2fbade7fb64c188d943f"
+  },
+  "closed": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "b256b12f840b8975728774e31d67b17ae9872af9e51555e58cd0401faf1f0bf5",
+    "reaped_descendants": 0,
+    "seconds": 53.13345419894904,
+    "start_utc": "2026-10-29T18:19:55.931263+00:00",
+    "termination": null
+  },
+  "counts": {
+    "installed_unrun": 320,
+    "malformed_unrun": 8,
+    "passed_setup_stages": 35,
+    "planned_stages": 395,
+    "qualifications_unrun": 5,
+    "references_unrun": 32,
+    "unrun_stages": 360
+  },
+  "custody_closed": true,
+  "elapsed_seconds": 61.82323633087799,
+  "end_utc": "2026-10-29T18:20:52.651386+00:00",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "limits": {
+    "build_reserve_bytes": 1073741824,
+    "evidence_bytes": 2147483648,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 7200,
+    "slot_limit_bytes": 20000000000,
+    "wrapper_bytes": 25165824
+  },
+  "load_after": [
+    31.77,
+    31.47,
+    33.94
+  ],
+  "load_before": [
+    34.06,
+    31.77,
+    34.2
+  ],
+  "native_manifest": {
+    "bytes": 1002,
+    "sha256": "bd84af35b0eee12258203d59c8c0c7f5e29581ff982671622da26f304a4c1ac8"
+  },
+  "native_prerequisite": "READER_FAILED",
+  "native_prerequisite_error": "KeyError",
+  "native_result": "Separately passed 192 pairs; this campaign did not accept the prerequisite.",
+  "owner_result": {
+    "bytes": 4197,
+    "sha256": "a5fae75acaea718c402c9386501e9728c9270710c8df51810a862120a69baa70"
+  },
+  "protocol": {
+    "bytes": 199081,
+    "sha256": "5aa71ae76acb726ffe37f7d8743c56e10243dd05be2262dd584728654050e67d"
+  },
+  "qualification": {
+    "arm_ns": 2000000,
+    "banks": 3,
+    "case_count": 32,
+    "cpus": 3,
+    "epochs": 520,
+    "installed": 320,
+    "k_order": [
+      10,
+      1000
+    ],
+    "malformed": 8,
+    "native_pairs": 192,
+    "period_ns": 10000000,
+    "qualifications": 5,
+    "recipe": "evaluation/ordinary-call-pair-session/reproduce.py",
+    "references": 32,
+    "shutdown_ns": 2000000000,
+    "stages": 395,
+    "terminal": "CALL_PAIR_SESSION_FUNCTIONAL_PASS"
+  },
+  "qualifications": [
+    {
+      "attempt": 1,
+      "failed": 0,
+      "pass": 0,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "UNRUN",
+      "unrun": 64
+    },
+    {
+      "attempt": 2,
+      "failed": 0,
+      "pass": 0,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "UNRUN",
+      "unrun": 64
+    },
+    {
+      "attempt": 3,
+      "failed": 0,
+      "pass": 0,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "UNRUN",
+      "unrun": 64
+    },
+    {
+      "attempt": 4,
+      "failed": 0,
+      "pass": 0,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "UNRUN",
+      "unrun": 64
+    },
+    {
+      "attempt": 5,
+      "failed": 0,
+      "pass": 0,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "UNRUN",
+      "unrun": 64
+    }
+  ],
+  "raw_result": {
+    "bytes": 449871,
+    "sha256": "bdcb7381b9c8e0c6a425b2b9adb4c97b9eacc675e63c72ec344cb5d2d5612149"
+  },
+  "recipe_load_after": [
+    31.77,
+    31.47,
+    33.94
+  ],
+  "recipe_load_before": [
+    32.5,
+    31.51,
+    34.09
+  ],
+  "request": {
+    "attempts": 1,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "call-pair-session-38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--",
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/ordinary-call-pair-session/reproduce.py",
+      "--revision",
+      "38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--reservation-tag",
+      "call-pair-session-38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--raw",
+      "$REPO/ignored/a5/call-pair-session-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/call-pair-session-38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--native-receipt",
+      "$REPO/ignored/a5/call-pair-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/native-receipt.json",
+      "--native-receipt-sha256",
+      "bd84af35b0eee12258203d59c8c0c7f5e29581ff982671622da26f304a4c1ac8",
+      "--native-protocol",
+      "$REPO/ignored/a5/call-pair-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/protocol.json",
+      "--native-protocol-sha256",
+      "1c8fbd720537968501c4cf81b7aa1b772ed5144a1ce0e2ec28c6a9c2d2a20ff9"
+    ],
+    "cwd": "$REPO",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=$RUNTIME_DIR/bus",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "XDG_RUNTIME_DIR": "$RUNTIME_DIR"
+    },
+    "limits": {
+      "build_reserve_bytes": 1073741824,
+      "evidence_bytes": 2147483648,
+      "outer_log_bytes": 8388608,
+      "outer_seconds": 7200,
+      "slot_limit_bytes": 20000000000,
+      "wrapper_bytes": 25165824
+    },
+    "native": {
+      "protocol": {
+        "bytes": 191325,
+        "path": "$REPO/ignored/a5/call-pair-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/protocol.json",
+        "sha256": "1c8fbd720537968501c4cf81b7aa1b772ed5144a1ce0e2ec28c6a9c2d2a20ff9"
+      },
+      "receipt": {
+        "bytes": 1002,
+        "path": "$REPO/ignored/a5/call-pair-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/native-receipt.json",
+        "sha256": "bd84af35b0eee12258203d59c8c0c7f5e29581ff982671622da26f304a4c1ac8"
+      }
+    },
+    "profile": "call-pair-session-qualification-v1",
+    "protocol_sha256": "5aa71ae76acb726ffe37f7d8743c56e10243dd05be2262dd584728654050e67d",
+    "retries": 0,
+    "tag": "call-pair-session-38934ddcabe0be94820b1a25bdf5574c0c8323df"
+  },
+  "reservation": {
+    "cores": [
+      3,
+      8,
+      75
+    ],
+    "count": 3,
+    "cpu_roles": {
+      "controller": 3,
+      "producer": 75,
+      "worker": 8
+    },
+    "ledger_readback": false,
+    "recipe_exit": 1,
+    "recipe_summary": {
+      "outcomes_sha256": "003cfd3b14df561d87bde048d70f84a165d50d880b6a2fbade7fb64c188d943f",
+      "profile": "call-pair-session-qualification-v1",
+      "status": "FAILED",
+      "summary_sha256": "0cc7fa76c0d5c3f8d50a7652542472fcd0bae4b3c1fa3be5c84cb1682b6e8f7b"
+    },
+    "status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN"
+  },
+  "retained_files_rechecked": 1552,
+  "retention_verified": true,
+  "revision": "38934ddcabe0be94820b1a25bdf5574c0c8323df",
+  "scope": "All outcomes retained; no installed subjects ran. No 2 ms deadline evidence or performance claim. No retry.",
+  "source_pins_rechecked": 1220,
+  "start_utc": "2026-10-29T18:19:50.884619+00:00",
+  "status": "FAILED",
+  "summary": {
+    "bytes": 1720,
+    "sha256": "0cc7fa76c0d5c3f8d50a7652542472fcd0bae4b3c1fa3be5c84cb1682b6e8f7b"
+  }
+}

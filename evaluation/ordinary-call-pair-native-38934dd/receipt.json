@@ -1,0 +1,504 @@
+{
+  "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+  "allocator_sources_sha256": "5a7f949da747e401075cc24741815646e16107b025da6ca5c2322567769797c4",
+  "application_timing_qualification": false,
+  "artifact": {
+    "bytes": 9343728,
+    "sha256": "75c557bc161f4ac6f223fbe49990daa06c5110c0e9ec9624158fc27cd924ebb1"
+  },
+  "attempts": 1,
+  "candidate_steps": {
+    "max": 16146,
+    "min": 14570
+  },
+  "checks": {
+    "limitation": "The three tail commands ran separately once because the fail-stop runner never started them. Their success does not replace the original workspace timeout. Terminal observation counts may include nested child summaries. First check phase did not record load; null is intentional.",
+    "phase_count": 2,
+    "phases": [
+      {
+        "command": [
+          "/usr/bin/env",
+          "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+          "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+          "/usr/local/bin/python3",
+          "-B",
+          "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+          "run",
+          "--cores",
+          "8",
+          "--sample-s",
+          "1",
+          "--tag",
+          "li2core-38934dd-checks",
+          "--",
+          "/usr/local/bin/python3",
+          "-B",
+          "evaluation/admission/check_exec_identity.py",
+          "--toolchain",
+          "$TOOLCHAIN",
+          "--cargo-home",
+          "$CARGO_HOME",
+          "--output",
+          "$REPO/ignored/a5/merged-38934dd-seven-checks-v1",
+          "--checks-only"
+        ],
+        "hard_reserved_cpus": [
+          139,
+          180,
+          181,
+          185,
+          192,
+          201,
+          230,
+          312
+        ],
+        "ledger_readback": false,
+        "load_after": null,
+        "load_before": null,
+        "name": "merged-38934dd-seven-checks-v1",
+        "outer": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 1,
+          "private_log_sha256": "457a3f5b612e6ca38de87a1a674792cc80cd7c11a985e85ed99581cfa8868b3d",
+          "reaped_descendants": 0,
+          "seconds": 380.79475606395863,
+          "start_utc": "2026-10-29T17:57:00.879850+00:00",
+          "termination": null
+        },
+        "outer_receipt": {
+          "bytes": 1251,
+          "sha256": "836bca72bb1600c2aa752ec1f0e89df9390f8a7ce6352c362f586ab94dd07ffb"
+        },
+        "receipt": {
+          "bytes": 13215,
+          "sha256": "da800f93d814c3c2da2d63d407d554be276155b59e22d2e7f7c737cd8f5e30e0"
+        },
+        "source_join": "normal_allocator_return",
+        "status": "FAILED"
+      },
+      {
+        "command": [
+          "/usr/bin/env",
+          "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+          "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+          "/usr/local/bin/python3",
+          "-B",
+          "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+          "run",
+          "--cores",
+          "8",
+          "--sample-s",
+          "1",
+          "--tag",
+          "li2core-38934dd-tail",
+          "--",
+          "/usr/local/bin/python3",
+          "-B",
+          "ignored/a5/cfc8d76-tail-checks-source-v1/successor-v2/tail_checks.py",
+          "--toolchain",
+          "$TOOLCHAIN",
+          "--cargo-home",
+          "$CARGO_HOME",
+          "--output",
+          "$REPO/ignored/a5/merged-38934dd-tail-checks-v1",
+          "--checks-only"
+        ],
+        "hard_reserved_cpus": [
+          70,
+          151,
+          161,
+          165,
+          198,
+          213,
+          226,
+          281
+        ],
+        "ledger_readback": false,
+        "load_after": [
+          55.73,
+          40.91,
+          39.21
+        ],
+        "load_before": [
+          38.22,
+          34.03,
+          37.21
+        ],
+        "name": "merged-38934dd-tail-checks-v1",
+        "outer": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "bdc32c0f89b82cf611a1cdeba03f880868b053de6ec71f130ca48e1c74cbd4dd",
+          "reaped_descendants": 0,
+          "seconds": 134.63211807399057,
+          "start_utc": "2026-10-29T18:03:36.215369+00:00",
+          "termination": null
+        },
+        "outer_receipt": {
+          "bytes": 1273,
+          "sha256": "0a048d5048e79f75738a056531aa27f256e2dd99bfb8f40882714d9af6060186"
+        },
+        "receipt": {
+          "bytes": 6928,
+          "sha256": "f1b6c03d10b407a086f8279d4e0e22f8c1209867ff1e4352e7903304a8ccf7fb"
+        },
+        "source_join": "normal_allocator_return",
+        "status": "PASS"
+      }
+    ],
+    "repeated_commands": 0,
+    "status": "FAILED"
+  },
+  "claim": 4,
+  "cpu_roles": {
+    "native_parent_and_tracees": 130,
+    "supervisor_build_controls": [
+      102,
+      130,
+      274
+    ]
+  },
+  "geometry": {
+    "caller": {
+      "body_hex": "534889cb4889f84889f74889d6ffd04889035bc3",
+      "call_offset": 13,
+      "continuation_offset": 15,
+      "elf_va": 4183200,
+      "heads": [
+        0,
+        1,
+        4,
+        7,
+        10,
+        13,
+        15,
+        18,
+        19
+      ],
+      "length": 20,
+      "lowest_stack": 8,
+      "outer_ret_offset": 19,
+      "subject_rsp_delta": 16
+    },
+    "child": {
+      "edges": 49,
+      "elf_va": 4096,
+      "heads": [
+        0,
+        3,
+        5,
+        7,
+        10,
+        12,
+        14,
+        16,
+        19,
+        21,
+        25,
+        27,
+        31,
+        34,
+        37,
+        40,
+        42,
+        46,
+        50,
+        53,
+        55,
+        58,
+        60,
+        64,
+        66,
+        71,
+        73,
+        76,
+        80,
+        83,
+        85,
+        89,
+        90,
+        96,
+        99,
+        101,
+        104,
+        108,
+        114,
+        116,
+        120,
+        125
+      ],
+      "length": 126,
+      "returns": [
+        89,
+        125
+      ]
+    },
+    "parent": {
+      "body_hex": "4883ec184889742408e872ffffff4989c0488b4424084883c41848c1e0204c09c0c3",
+      "call_offset": 9,
+      "callee_entry": 4096,
+      "child_delta": 32,
+      "continuation_offset": 14,
+      "edges": 8,
+      "elf_va": 4224,
+      "heads": [
+        0,
+        4,
+        9,
+        14,
+        17,
+        22,
+        26,
+        30,
+        33
+      ],
+      "length": 34,
+      "returns": [
+        33
+      ]
+    }
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "limitation": "Native passed all 192 pairs. Session prerequisite reader raised KeyError before subjects; all five qualifications remain UNRUN. Workspace separately timed out at its original 360-second limit.",
+  "limits": {
+    "child_steps": 20000,
+    "cohort_cpu_seconds": 480,
+    "cohort_wall_seconds": 510,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 1200,
+    "pair_wall_seconds": 15
+  },
+  "load_after": [
+    32.73,
+    30.54,
+    34.3
+  ],
+  "load_before": [
+    52.69,
+    41.88,
+    39.6
+  ],
+  "native_load_after": [
+    32.7,
+    30.5,
+    34.31
+  ],
+  "native_load_before": [
+    30.55,
+    38.13,
+    38.69
+  ],
+  "native_outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reaped_descendants": 0,
+    "seconds": 474.65339248999953,
+    "start_utc": "2026-10-29T18:09:21.323101+00:00",
+    "termination": null
+  },
+  "native_pairs": {
+    "bytes": 28487,
+    "sha256": "d3d5f0618edacbffd1c1cc96a4e4259c8a4764c1bd7011f07e0b022c5ab381a7"
+  },
+  "native_qualification": true,
+  "native_stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "native_totals": {
+    "comparisons": 18756,
+    "normal_reaps": 384,
+    "outer_returns": 384,
+    "target_calls": 768,
+    "target_returns": 768
+  },
+  "no_accepted_result_slots": 0,
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "c37a9274274cfecb7f7856d46de69aa6f4027ff975d803c3d291fef0f01682a8",
+    "reaped_descendants": 0,
+    "seconds": 647.5323292608373,
+    "start_utc": "2026-10-29T18:06:29.415696+00:00",
+    "termination": null
+  },
+  "performance_claim": false,
+  "prerequisites": {
+    "core": 8,
+    "ordinary": 14,
+    "python": 96,
+    "rust_calibrations": 208,
+    "sdk": 30,
+    "unchanged_ignored": 1
+  },
+  "protocol": {
+    "bytes": 191325,
+    "sha256": "1c8fbd720537968501c4cf81b7aa1b772ed5144a1ce0e2ec28c6a9c2d2a20ff9"
+  },
+  "qualified_pairs": 192,
+  "recipe_receipt": {
+    "bytes": 301937,
+    "sha256": "b3ae704c5f571e48ed5eaeb3489a544c772409285c22f5a59a5715627e565a35"
+  },
+  "release": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "incremental": false,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "request": {
+    "attempts": 1,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "call-pair-original-native-38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--",
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/ordinary-call-pair-native/reproduce.py",
+      "--revision",
+      "38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--reservation-tag",
+      "call-pair-original-native-38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--raw",
+      "$REPO/ignored/a5/call-pair-public-38934ddcabe0be94820b1a25bdf5574c0c8323df/call-pair-native-38934ddcabe0be94820b1a25bdf5574c0c8323df",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "cwd": "$REPO",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=$RUNTIME_DIR/bus",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "XDG_RUNTIME_DIR": "$RUNTIME_DIR"
+    },
+    "limits": {
+      "build_reserve_bytes": 1073741824,
+      "evidence_bytes": 2147483648,
+      "outer_log_bytes": 8388608,
+      "outer_seconds": 1200,
+      "slot_limit_bytes": 20000000000,
+      "wrapper_bytes": 25165824
+    },
+    "profile": "call-pair-original-native",
+    "protocol_sha256": "1c8fbd720537968501c4cf81b7aa1b772ed5144a1ce0e2ec28c6a9c2d2a20ff9",
+    "retries": 0,
+    "tag": "call-pair-original-native-38934ddcabe0be94820b1a25bdf5574c0c8323df"
+  },
+  "required_pairs": 192,
+  "reservation": {
+    "cores": [
+      102,
+      130,
+      274
+    ],
+    "count": 3,
+    "ledger_readback": false,
+    "recipe_exit": 0,
+    "recipe_summary": {
+      "attempts": 1,
+      "cohort_status": "LOCAL_NATIVE_CHECKS_COMPLETE",
+      "custody_closed": true,
+      "external_owner_required": true,
+      "observed_rows": 192,
+      "profile": "normal-call-pair-original-rust-v1",
+      "scope": "Actual original-address admitted Rust caller and nested parent E8/body only; no threaded application, Schedule, K exhaustion, reuse, timing or full-A5 credit. External hard reservation and final exact-command outer closure remain required.",
+      "status": "CALL_PAIR_ORIGINAL_NATIVE_LOCAL_COMPLETE"
+    },
+    "status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN"
+  },
+  "retention": {
+    "bytes": 59195375,
+    "closed_files_rechecked": true,
+    "files": 324
+  },
+  "retries": 0,
+  "revision": "38934ddcabe0be94820b1a25bdf5574c0c8323df",
+  "root_receipt": {
+    "bytes": 3614,
+    "sha256": "a393138515239d762aef83e15840e71d78423ef5200f290e34c45bfbc166349f"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Actual original-address admitted Rust caller and nested parent E8/body only; no threaded application, Schedule, K exhaustion, reuse, timing or full-A5 credit. External hard reservation and final exact-command outer closure remain required.",
+  "source_pins_verified": 1171,
+  "source_verified_after": true,
+  "status": "NATIVE_PASS_SESSION_UNRUN",
+  "tools": {
+    "bash": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "du": {
+      "bytes": 152832,
+      "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rg": {
+      "bytes": 4746600,
+      "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustdoc": {
+      "bytes": 13680928,
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "systemd-run": {
+      "bytes": 111360,
+      "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+    },
+    "true": {
+      "bytes": 27936,
+      "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+    }
+  }
+}
