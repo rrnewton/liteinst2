@@ -155,7 +155,26 @@ class LateNamespace(unittest.TestCase):
         self.assertEqual(call.call_args.kwargs,
                          {"disable_rseq": False, "provider_policy": None,
                           "late_sonames": ["liblate.so", "libleaf.so"]})
-        self.assertEqual(call.call_args.args[4], ["--", "original"])
+        self.assertEqual(call.call_args.args[4], ["original"])
+        self.assertEqual(call.call_args.args,
+                         (Path("carrier"), Path("original"), [self.root],
+                          self.root / "unused", ["original"]))
+        # argparse consumes an option delimiter; it is not application argv.
+        # The no-late invocation retains all original parser/dispatch defaults.
+        for delimiter in ([], ["--"]):
+            argv = ["carrier.py", "exec-loader", "--library-root", str(self.root),
+                    "--namespace", str(self.root / "unused"), "carrier", "original"]
+            argv += delimiter + ["original", "native"]
+            with self.subTest(delimiter=delimiter), mock.patch.object(sys, "argv", argv), \
+                    mock.patch.object(carrier, "execute_loader") as call:
+                carrier.main()
+            self.assertEqual(call.call_count, 1)
+            self.assertEqual(call.call_args.args,
+                             (Path("carrier"), Path("original"), [self.root],
+                              self.root / "unused", ["original", "native"]))
+            self.assertEqual(call.call_args.kwargs,
+                             {"disable_rseq": False, "provider_policy": None,
+                              "late_sonames": []})
 
 
 if __name__ == "__main__":
