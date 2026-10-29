@@ -24,7 +24,7 @@ Each input must be a regular file; final-component symlinks refuse. Reads check 
 | JSON status | Exit | Meaning |
 | --- | ---: | --- |
 | `DECODED_UNQUALIFIED` | 0 | Supported syntax/profile decoded; adverse or unresolved observations may remain. |
-| `REFUSED` | 2 | Invalid input, authority mismatch or wrapper failure. |
+| `REFUSED` | 2 | Input or supported-profile mismatch, authority mismatch or wrapper failure; not necessarily malformed file syntax. |
 | `UNSUPPORTED` | 3 | Unsupported format or semantic extension, with error offset and retained prefix counts. |
 
 The CLI emits one complete ASCII JSON summary: hashes, counts, type inventory, decoded-prefix period sum, error offset, and adverse/unresolved fields. The Python API also retains private input bytes, decoded records and feature contents in memory; filenames, argv and private data are excluded from the CLI summary. Unknown records are not skipped or retried.
