@@ -3,6 +3,7 @@ use super::*;
 use shared::worker::Runtime;
 use std::time::{Duration, Instant};
 mod check;
+pub(crate) mod reuse;
 #[cfg(test)]
 mod tests;
 type Engine = shared::engine::Engine<NormalModuleSessionController>;
@@ -50,6 +51,7 @@ enum Command {
     Cold,
     Hold,
     Release,
+    Recycle,
     Finish,
 }
 enum Message {
@@ -147,41 +149,65 @@ fn run_worker(
         k,
         hot,
     } = start;
-    let mut worker = worker::Worker::attach(entries, client, custody, cpu);
+    let worker = worker::Worker::attach(entries, client, custody, cpu);
     send_message(&tx, Message::Ready(worker.identity()), deadline);
+    let (worker, checkpoints) = worker_prefix(worker, record, k, hot, &rx, &tx, deadline);
+    worker_finish(worker, checkpoints, &rx, &tx, deadline, 5)
+}
+// The original hot/cold/held/release sequence is shared without a second worker loop.
+fn worker_prefix(
+    mut worker: worker::Worker,
+    record: Arc<input::Record>,
+    k: usize,
+    hot: usize,
+    rx: &mpsc::Receiver<Command>,
+    tx: &mpsc::SyncSender<Message>,
+    deadline: Deadline,
+) -> (worker::Worker, u64) {
     let mut checkpoints = 0;
-    command(&rx, Command::Hot, deadline);
+    command(rx, Command::Hot, deadline);
     for i in 0..k {
         deadline.check().unwrap();
         worker.call_one(Arc::clone(&record), hot);
         deadline.check().unwrap();
         if (i + 1) % 4 == 0 || i + 1 == k {
-            flush(&mut worker, &tx, &mut checkpoints, deadline);
+            flush(&mut worker, tx, &mut checkpoints, deadline);
         }
     }
-    barrier(&worker, &tx, 0, checkpoints, deadline);
-    command(&rx, Command::Cold, deadline);
+    barrier(&worker, tx, 0, checkpoints, deadline);
+    command(rx, Command::Cold, deadline);
     worker.call_one(Arc::clone(&record), 1 - hot);
-    flush(&mut worker, &tx, &mut checkpoints, deadline);
-    barrier(&worker, &tx, 1, checkpoints, deadline);
-    command(&rx, Command::Hold, deadline);
+    flush(&mut worker, tx, &mut checkpoints, deadline);
+    barrier(&worker, tx, 1, checkpoints, deadline);
+    command(rx, Command::Hold, deadline);
     worker.call_one(Arc::clone(&record), hot);
-    barrier(&worker, &tx, 2, checkpoints, deadline); // No idle flush on this separate route.
-    command(&rx, Command::Release, deadline);
+    barrier(&worker, tx, 2, checkpoints, deadline); // No idle flush on this separate route.
+    command(rx, Command::Release, deadline);
     worker.call_one(record, 1 - hot);
-    barrier(&worker, &tx, 4, checkpoints, deadline); // B remains pending here.
-    command(&rx, Command::Finish, deadline);
-    flush(&mut worker, &tx, &mut checkpoints, deadline);
+    barrier(&worker, tx, 4, checkpoints, deadline); // B remains pending here.
+    (worker, checkpoints)
+}
+fn worker_finish(
+    mut worker: worker::Worker,
+    mut checkpoints: u64,
+    rx: &mpsc::Receiver<Command>,
+    tx: &mpsc::SyncSender<Message>,
+    deadline: Deadline,
+    phase: usize,
+) -> WorkerState {
+    command(rx, Command::Finish, deadline);
+    flush(&mut worker, tx, &mut checkpoints, deadline);
     let totals = worker.finish(); // Same postflight, empty checkpoint, detach and postflight.
     checkpoints += 1;
     let state = WorkerState {
         totals,
         checkpoints,
     };
-    send_message(&tx, Message::State { phase: 5, state }, deadline);
+    send_message(tx, Message::State { phase, state }, deadline);
     deadline.check().unwrap();
     state
 }
+
 fn next_message(
     replies: &mpsc::Receiver<Message>,
     retained: &mut Vec<Message>,
@@ -287,6 +313,25 @@ fn metadata(
     geometry: Geometry<'_>,
     io: &mut Io,
 ) -> Result<(), String> {
+    metadata_for(
+        id,
+        cpus,
+        k,
+        direction,
+        geometry,
+        io,
+        "module-session-owner-v1",
+    )
+}
+fn metadata_for(
+    id: worker::Identity,
+    cpus: [usize; 2],
+    k: usize,
+    direction: &str,
+    geometry: Geometry<'_>,
+    io: &mut Io,
+    schema: &str,
+) -> Result<(), String> {
     let Geometry {
         entries,
         ends,
@@ -311,7 +356,7 @@ fn metadata(
     worker::cpu_is(cpus[0]);
     let caller = csv::invoke as *const () as usize as u64;
     assert!(id.caller.0 <= caller && caller < id.caller.1 && id.stack.0 < id.stack.1);
-    io.emit(format!("META,run,module-session-owner-v1,session-absolute-v1,not-run,{k},{direction},{INSTALL},{},{},{},{},{},1\n",
+    io.emit(format!("META,run,{schema},session-absolute-v1,not-run,{k},{direction},{INSTALL},{},{},{},{},{},1\n",
         id.pid, id.pid, id.tid, cpus[0], cpus[1]))?;
     io.emit(format!(
         "META,code,{},{},1,101,202,{},{},{},{},{caller}\n",
@@ -336,15 +381,22 @@ fn metadata(
     }
     Ok(())
 }
-pub(crate) fn run(args: &[std::ffi::OsString]) {
-    let deadline = Deadline::new(Instant::now());
-    if let Err(error) = run_checked(args, deadline) {
-        eprintln!("normal-module-session-owner FAILED: {error}");
-        std::process::exit(1);
-    }
+struct Setup<'a> {
+    fail_stop: csv::FailStop,
+    entries: [u64; 2],
+    ends: [u64; 2],
+    returns: [Vec<u64>; 2],
+    cpus: [usize; 2],
+    k: usize,
+    hot: usize,
+    direction: &'a str,
+    custody: Arc<worker::Custody>,
+    engine: Engine,
+    stream: rapid_profiler::frontend_native::NormalModuleHistoryStream,
+    client: rapid_profiler::frontend_native::NormalModuleClient,
+    record: Arc<input::Record>,
 }
-fn run_checked(args: &[std::ffi::OsString], deadline: Deadline) -> Result<(), String> {
-    deadline.check()?;
+fn prepare(args: &[std::ffi::OsString]) -> Result<Setup<'_>, String> {
     if args.len() != 8 {
         return Err("normal-module-session-owner CANDIDATE TRUSTED_FINAL CSV_VA CSV_LENGTH LENGTH_VA LENGTH_LENGTH K DIRECTION".into());
     }
@@ -414,7 +466,7 @@ fn run_checked(args: &[std::ffi::OsString], deadline: Deadline) -> Result<(), St
     }
     let mut custody = worker::Custody::new(candidate, trusted, bytes.clone());
     // From publication onward, an unwind must not release executable/attached owners.
-    let mut fail_stop = csv::FailStop(true);
+    let fail_stop = csv::FailStop(true);
     let prep = NormalModuleSitePreparation::new_with_policies(
         owner,
         identity(entries[0]),
@@ -456,7 +508,7 @@ fn run_checked(args: &[std::ffi::OsString], deadline: Deadline) -> Result<(), St
         .map_err(failure)?
         .stream()
         .clone();
-    let mut engine = shared::engine::Engine {
+    let engine = shared::engine::Engine {
         controller,
         epochs: [None, None, None],
         banks,
@@ -468,6 +520,47 @@ fn run_checked(args: &[std::ffi::OsString], deadline: Deadline) -> Result<(), St
     };
     let record = Arc::new(input::Record::new(1, b"a,b,c").unwrap());
     assert_eq!((record.fields, record.length), (3, 5));
+    Ok(Setup {
+        fail_stop,
+        entries,
+        ends,
+        returns,
+        cpus,
+        k,
+        hot,
+        direction,
+        custody,
+        engine,
+        stream,
+        client,
+        record,
+    })
+}
+
+pub(crate) fn run(args: &[std::ffi::OsString]) {
+    let deadline = Deadline::new(Instant::now());
+    if let Err(error) = run_checked(args, deadline) {
+        eprintln!("normal-module-session-owner FAILED: {error}");
+        std::process::exit(1);
+    }
+}
+fn run_checked(args: &[std::ffi::OsString], deadline: Deadline) -> Result<(), String> {
+    deadline.check()?;
+    let Setup {
+        entries,
+        ends,
+        returns,
+        cpus,
+        k,
+        hot,
+        direction,
+        custody,
+        mut engine,
+        stream,
+        client,
+        record,
+        mut fail_stop,
+    } = prepare(args)?;
     let mut io = Io::new()?;
     let (tx, rx) = mpsc::sync_channel(1);
     let (events, replies) = mpsc::sync_channel(1);
@@ -652,36 +745,15 @@ fn run_checked(args: &[std::ffi::OsString], deadline: Deadline) -> Result<(), St
             io: &mut io,
         }
         .state(5, deadline)?;
-        while !handle.as_ref().unwrap().is_finished() {
-            deadline.check()?;
-            std::thread::yield_now();
-        }
-        deadline.check()?;
-        joined = Some(handle.take().unwrap().join());
-        let task = joined.as_mut().unwrap();
-        assert_eq!(u64::from(task.tid()), id.tid);
-        while !joined_task::poll_exclusive(&mut [&mut *task], || {
-            deadline.check().map_err(joined_task::Error::Clock)
-        })
-        .map_err(failure)?
-        {
-            deadline.check()?;
-            std::thread::yield_now();
-        }
-        assert_eq!(
-            task.result().as_ref().map_err(|_| "owner worker panic")?,
-            &state
-        );
-        match replies.try_recv() {
-            Err(mpsc::TryRecvError::Disconnected) => {}
-            Err(mpsc::TryRecvError::Empty) => {
-                return Err("owner sender survived native join".into());
-            }
-            Ok(extra) => {
-                retained.push(extra);
-                return Err("extra owner event after completion".into());
-            }
-        }
+        finish_join(
+            &mut handle,
+            &mut joined,
+            &replies,
+            &mut retained,
+            id,
+            state,
+            deadline,
+        )?;
         progress.joins = 1;
         progress.detach = true;
         single_main();
@@ -723,5 +795,47 @@ fn run_checked(args: &[std::ffi::OsString], deadline: Deadline) -> Result<(), St
     }
     active_fail_stop.0 = false;
     fail_stop.0 = false;
+    Ok(())
+}
+
+fn finish_join(
+    handle: &mut Option<joined_task::Handle<WorkerState>>,
+    joined: &mut Option<joined_task::Joined<WorkerState>>,
+    replies: &mpsc::Receiver<Message>,
+    retained: &mut Vec<Message>,
+    id: worker::Identity,
+    state: WorkerState,
+    deadline: Deadline,
+) -> Result<(), String> {
+    while !handle.as_ref().unwrap().is_finished() {
+        deadline.check()?;
+        std::thread::yield_now();
+    }
+    deadline.check()?;
+    *joined = Some(handle.take().unwrap().join());
+    let task = joined.as_mut().unwrap();
+    assert_eq!(u64::from(task.tid()), id.tid);
+    while !joined_task::poll_exclusive(&mut [&mut *task], || {
+        deadline.check().map_err(joined_task::Error::Clock)
+    })
+    .map_err(failure)?
+    {
+        deadline.check()?;
+        std::thread::yield_now();
+    }
+    assert_eq!(
+        task.result().as_ref().map_err(|_| "owner worker panic")?,
+        &state
+    );
+    match replies.try_recv() {
+        Err(mpsc::TryRecvError::Disconnected) => {}
+        Err(mpsc::TryRecvError::Empty) => {
+            return Err("owner sender survived native join".into());
+        }
+        Ok(extra) => {
+            retained.push(extra);
+            return Err("extra owner event after completion".into());
+        }
+    }
     Ok(())
 }

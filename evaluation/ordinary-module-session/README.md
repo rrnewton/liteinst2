@@ -36,7 +36,7 @@ The fixed order is:
    four caller controls and eighteen Python controls. Neither native receipt
    substitutes for the owner or functional gates.
 2. A fresh release application build, exact emitted CALL/store/FUNC geometry,
-   all 47 ordinary regression/control methods, and four owner controls in
+   all 52 ordinary regression/control methods, and four owner controls in
    K10 CSV→length, K10 length→CSV, K1000 CSV→length, K1000 length→CSV order.
    Every owner RAW/PHASE/REPORT/SAMPLE row is checked, with actual empty stderr
    and normal exit 0. This route does not run Schedule.
@@ -153,7 +153,7 @@ python3 -B evaluation/ordinary-module-session/owners.py \
 This builds a fresh fixed C module, retains separate candidate/trusted inodes
 with equal pinned bytes, checks both complete selected functions, builds the release application and
 test artifact, and checks the actual emitted Rust CALL/store/FUNC geometry.
-It requires all 47 ordinary Rust controls and all 26 Python controls, then runs
+It requires all 52 ordinary Rust controls and all 26 Python controls, then runs
 K10 CSV→length, K10 length→CSV, K1000 CSV→length and K1000 length→CSV exactly once.
 Each retains the existing 15-second application deadline, 20 CPU seconds,
 30 wall seconds, 1 MiB streams and 55-second enclosing owner. The controller
@@ -171,3 +171,26 @@ The existing cases stage A, then B while A remains held, reclaim A at phase 4,
 and reclaim B at the end. They do not restage a recycled bank or qualify native
 execution after shell restaging. Pure Session controls cover that separate
 storage transition without supplying native execution credit.
+
+
+For native execution after reuse of a reclaimed epoch bank, run the same
+isolated qualification with `--profile reuse`. The default `owner` profile
+keeps its original cases and grammar. Both profiles require all previous
+47 Rust controls plus five additional reuse controls; namespace matching
+remains exact. Reuse additionally requires eleven independent wire controls
+and four qualification-control tests, then four fresh native cases in the
+same K10/K1000 and direction order, exactly once each (2,040 actual calls).
+
+Each reuse case reclaims A while B remains pending, immediately restages the
+returned bank as fresh C, then executes both functions through C. A's copied
+Report must remain byte-for-byte intact; B completes on C's first entry and
+C's last call completes only at the final checkpoint. The final transfer
+contains four calls with exact generations, function ranks, acknowledgements
+and all journal words. No original/warmup call is inserted. The separate
+`REUSE_QUALIFICATION_PASS` requires all three Reports, four history actions,
+fresh generations, retained A copy, exact eight phases, unchanged bounds,
+normal closure, all source/tool/artifact pins and every case passing. Closed
+failures remain failed while later independent cases run once; uncertain
+custody stops the qualification and keeps remaining cases UNRUN. This is
+functional native reuse evidence, without full architectural-state, Schedule,
+performance or retrospective campaign credit.

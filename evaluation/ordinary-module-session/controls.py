@@ -387,8 +387,8 @@ class Controls(unittest.TestCase):
         runner=load('reproduce');repo=Path(__file__).resolve().parents[2]
         single=runner.load('control_single_inventory',repo/runner.MODULES['single'])
         module=runner.load('control_module_inventory',repo/runner.MODULES['module'])
-        wanted=tuple(single.SESSION)+tuple(single.TRACE)+runner.CONSUMER+tuple(module.MODULE_TESTS)+tuple(module.CSV_TESTS)+runner.OWNER_CONTROLS
-        self.assertEqual(len(wanted),47)
+        wanted=tuple(single.SESSION)+tuple(single.TRACE)+runner.CONSUMER+tuple(module.MODULE_TESTS)+tuple(module.CSV_TESTS)+runner.OWNER_CONTROLS+runner.REUSE_CONTROLS
+        self.assertEqual(len(wanted),52)
         unrelated=(
             'normal::session::two::tests::partial_broadcast_full_acknowledgements_and_stop_keep_exact_custody',
             'normal::session::two::check::tests::global_slots_and_retained_ranks_accept_out_of_order_but_refuse_corruption',

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Four targeted module-session owner cases, once each; no Schedule/state oracle.
+"""Four targeted module-session owner or reuse cases, once each; no Schedule/state oracle.
 
 Use an external 1200-second/8 MiB process owner with three reserved CPUs.
 This isolated qualification cannot replace a full campaign prerequisite/result.
@@ -32,15 +32,81 @@ SCOPE = ('Isolated module-session ownership qualification only; no native-state 
          'Existing cases preserve owners/refusals/reclamation; they do not restage a reclaimed '
          'bank or qualify execution after shell restaging.')
 
+REUSE_STAGES = STAGES[:-4] + ('reuse-python-controls', 'reuse-runner-controls') + tuple(f'reuse-{i}-outer' for i in range(1, 5))
+REUSE_SCOPE = ('Isolated native execution after epoch-bank reuse; no native-state oracle, '
+               'Schedule/deadline, performance, full-campaign or retrospective qualification credit. '
+               'Four fresh K10/K1000 direction cases; no retry, original call or warmup.')
+REUSE_PYTHON_CONTROLS = ('test_complete_four_cases_preserve_all_rows_and_bounds', 'test_numeric_domains_framing_and_caps', 'test_expected_identity_geometry_and_continuation_are_exact', 'test_generation_reset_and_sample_ranks_sequences', 'test_history_reports_and_retained_copy_claims', 'test_every_phase_field_and_order_are_exact', 'test_missing_extra_and_reordered_rows_refuse', 'test_final_four_acknowledgements_and_batch_boundaries', 'test_zero_maximum_and_unavailable_clock_precedence', 'test_completion_and_actual_stderr_are_exact', 'test_optimized_refusal_and_source_local_import')
+RUNNER_CONTROLS = ('test_owner_default_and_reuse_profiles_have_distinct_fixed_stages',
+    'test_all_four_exact_requests_are_frozen_before_first_launch',
+    'test_closed_failure_is_retained_and_each_later_case_runs_once',
+    'test_uncertain_custody_preserves_remaining_unrun')
+
+
+def profile_spec(profile):
+    assert profile in ('owner', 'reuse')
+    if profile == 'owner':
+        return dict(stages=STAGES, scope=SCOPE, kind='module-session-owner-target-v1',
+                    case_pass='OWNER_FUNCTIONAL_PASS', qualification_pass='OWNER_QUALIFICATION_PASS')
+    return dict(stages=REUSE_STAGES, scope=REUSE_SCOPE, kind='module-session-reuse-target-v1',
+                case_pass='REUSE_FUNCTIONAL_PASS', qualification_pass='REUSE_QUALIFICATION_PASS')
+
+
+def reuse_gate(run, binary, geometry, candidate, trusted, recipe):
+    gate = run.result['prerequisites']['reuse']
+    assert gate['status'] == 'UNRUN' and gate['attempts'] == 0
+    rows = [dict(k=k, direction=direction, status='UNRUN', attempts=0)
+            for k in (10, 1000) for direction in ('csv-length', 'length-csv')]
+    for index, row in enumerate(rows, 1):
+        d = run.raw/f'reuse-{index}'
+        row['request'] = run.request(d, [binary, 'normal-module-session-reuse', candidate, trusted,
+            geometry['csv_va'], geometry['csv_length'], geometry['length_va'], geometry['length_length'],
+            row['k'], row['direction']], cap=recipe.MIB)
+        row['directory'] = str(d)
+        run.plan_bounded(f'reuse-{index}-outer', d, row['request'])
+    gate.update(status='FAILED', attempts=1, rows=rows)
+    run.freeze(run.raw/'reuse-plan.json', rows)
+    for index, row in enumerate(rows, 1):
+        run.unchanged(); assert row['attempts'] == 0
+        recipe.bounded_ready(run, row['request'])
+        row.update(status='FAILED', attempts=1)
+        code, stdout, stderr = run.bounded(f'reuse-{index}-outer', Path(row['directory']), row['request'])
+        try:
+            assert code == 0
+            parsed = run.m['reuse_output'].check(stdout, stderr, k=row['k'], direction=row['direction'],
+                geometry=geometry, cpus=tuple(run.cpus[:2]))
+            row.update(status='REUSE_FUNCTIONAL_PASS', totals=parsed['totals'],
+                       pid=parsed['pid'], worker_tid=parsed['worker_tid'])
+        except (AssertionError, ValueError, KeyError, IndexError, UnicodeError) as error:
+            row['error'] = type(error).__name__
+        run.unchanged(); run.freeze(run.raw/f'reuse-{index}-outcome.json', row)
+    assert all(row['status'] == 'REUSE_FUNCTIONAL_PASS' for row in rows)
+    gate['status'] = 'REUSE_FUNCTIONAL_PASS'
+
+
+def reuse_python_controls(stdout, stderr, names=REUSE_PYTHON_CONTROLS):
+    assert stdout == b'' and type(stderr) is bytes
+    assert names and len(names) == len(set(names))
+    lines = stderr.decode('ascii').splitlines()
+    assert len(lines) == len(names) + 5
+    for name, line in zip(sorted(names), lines):
+        assert re.fullmatch(re.escape(name)+r' \(__main__\.Controls(?:\.'+re.escape(name)+r')?\) \.\.\. ok', line)
+    tail = lines[len(names):]
+    assert tail[0] == tail[3] == '' and tail[4] == 'OK' and re.fullmatch('-+', tail[1])
+    assert re.fullmatch(rf'Ran {len(names)} tests in [0-9]+\.[0-9]+s', tail[2])
+
 
 def main():
     started = time.monotonic()
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--profile', choices=('owner', 'reuse'), default='owner')
     ap.add_argument('--revision', required=True)
     ap.add_argument('--reservation-tag', required=True)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'):
         ap.add_argument('--' + name, type=Path, required=True)
     a = ap.parse_args()
+    profile = profile_spec(a.profile)
+    stages, scope = profile['stages'], profile['scope']
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     assert re.fullmatch('[A-Za-z0-9_.-]{1,128}', a.reservation_tag)
     assert HERE == ROOT/'evaluation/ordinary-module-session'
@@ -83,6 +149,10 @@ def main():
         'evaluation/ordinary-module-session/controls.py', 'tools/unwind-oracle/bounded_command.py',
         'tests/call_tree_truth.rs', 'tools/rapid-profiler/normal-work/csv_fields.c',
         'tools/rapid-profiler/strnlen-work/strnlen.c', 'tools/rapid-profiler/strnlen-work/localize.map'}
+    if a.profile == 'reuse':
+        required |= {'evaluation/ordinary-module-session/reuse_output.py',
+                     'evaluation/ordinary-module-session/reuse_controls.py',
+                     'evaluation/ordinary-module-session/reuse_runner_controls.py'}
     names = git('ls-files', '-z', '--', 'src', 'tests/support', 'tools/rapid-profiler',
                 'Cargo.toml', 'Cargo.lock', 'README.md', 'build.rs', ':(glob)**/Cargo.toml',
                 *sorted(required)).decode().rstrip('\0').split('\0')
@@ -100,6 +170,8 @@ def main():
     assert git('rev-parse', 'HEAD').decode().strip() == a.revision
     assert git('status', '--porcelain', '--untracked-files=no') == b''
     modules = {key: recipe.load(key, ROOT/path) for key, path in recipe.MODULES.items()}
+    if a.profile == 'reuse':
+        modules['reuse_output'] = recipe.load('reuse_output', HERE/'reuse_output.py')
     native = modules['native']
     assert sources[str(ROOT/'tools/rapid-profiler/normal-work/csv_fields.c')]['sha256'] == native.CSV_SOURCE_SHA
     assert sources[str(ROOT/'tools/rapid-profiler/strnlen-work/strnlen.c')]['sha256'] == native.LENGTH_SOURCE_SHA
@@ -109,17 +181,19 @@ def main():
     run.deadline = started + 1200
     cases = [dict(k=k, direction=direction, status='UNRUN', attempts=0)
              for k in (10, 1000) for direction in ('csv-length', 'length-csv')]
-    run.result.update(kind='module-session-owner-target-v1', scope=SCOPE, originals=[], installed=[], controls=[],
-        prerequisites={'owner': dict(status='UNRUN', attempts=0, rows=cases)},
-        planned_stages=[dict(name=n, status='UNRUN') for n in STAGES])
+    run.result.update(kind=profile['kind'], profile=a.profile, scope=scope, originals=[], installed=[], controls=[],
+        prerequisites={a.profile: dict(status='UNRUN', attempts=0, rows=cases)},
+        planned_stages=[dict(name=n, status='UNRUN') for n in stages])
     try:
         run.result['sources_before'] = run.freeze(a.raw/'sources-before.json', sources, cap=16*recipe.MIB)
         run.result['plan'] = run.freeze(a.raw/'initial-plan.json', dict(revision=a.revision, cases=cases,
-            stages=list(STAGES), attempts_per_case=1, retries=0, outer_seconds=1200, outer_log_bytes=8*recipe.MIB,
+            profile=a.profile, stages=list(stages), attempts_per_case=1, retries=0, outer_seconds=1200, outer_log_bytes=8*recipe.MIB,
             application_seconds=15, cpu_seconds=20, inner_wall_seconds=30, owner_wall_seconds=55,
-            stream_bytes=recipe.MIB, rust_controls=47, python_controls=26,
+            stream_bytes=recipe.MIB, rust_controls=52, python_controls=26,
+            reuse_python_controls=len(REUSE_PYTHON_CONTROLS) if a.profile == 'reuse' else 0,
+            reuse_runner_controls=len(RUNNER_CONTROLS) if a.profile == 'reuse' else 0,
             affinity=run.cpus, reservation_tag=a.reservation_tag, reservation_authority='external owner only',
-            evidence_limit=recipe.EVIDENCE_LIMIT, final_allowance=recipe.FINAL_ALLOWANCE, scope=SCOPE))
+            evidence_limit=recipe.EVIDENCE_LIMIT, final_allowance=recipe.FINAL_ALLOWANCE, scope=scope))
         for name in ('cc1', 'collect2', 'as', 'ld'):
             out, err = run.stage('tool-'+name, [tools['gcc'], '-print-prog-name='+name])
             assert err == b'' and out.endswith(b'\n') and out.count(b'\n') == 1
@@ -173,22 +247,33 @@ def main():
         out, err = run.stage('ordinary-list', [test_binary, '--list'])
         inventory = modules['census'].census(out, err)
         expected = recipe.ordinary_inventory(inventory, modules['single'], modules['module'], recipe.OWNER_CONTROLS)
-        assert len(expected) == 47
-        run.result['control_manifest'] = run.freeze(a.raw/'controls.json', dict(rust=list(expected), python=list(recipe.PYTHON_CONTROLS)))
+        assert len(expected) == 52
+        run.result['control_manifest'] = run.freeze(a.raw/'controls.json', dict(rust=list(expected),
+            python=list(recipe.PYTHON_CONTROLS), reuse_python=list(REUSE_PYTHON_CONTROLS) if a.profile == 'reuse' else [],
+            reuse_runner=list(RUNNER_CONTROLS) if a.profile == 'reuse' else []))
         out, err = run.stage('ordinary-controls', [test_binary, *expected, '--exact', '--test-threads=1'])
         run.result['rust_controls'] = modules['census'].controls(out, err, expected, inventory)
         out, err = run.stage('python-controls', [tools['python'], '-B', HERE/'controls.py', '-v'])
         recipe.python_controls(out, err)
         assert len(recipe.PYTHON_CONTROLS) == 26
         run.result['python_controls'] = dict(status='PASS', names=list(recipe.PYTHON_CONTROLS), count=26)
-        recipe.owner_gate(run, binary, geometry, candidate, trusted)
-        rows = run.result['prerequisites']['owner']['rows']
+        if a.profile == 'owner':
+            recipe.owner_gate(run, binary, geometry, candidate, trusted)
+        else:
+            out, err = run.stage('reuse-python-controls', [tools['python'], '-B', HERE/'reuse_controls.py', '-v'])
+            reuse_python_controls(out, err)
+            run.result['reuse_python_controls'] = dict(status='PASS', names=list(REUSE_PYTHON_CONTROLS), count=len(REUSE_PYTHON_CONTROLS))
+            out, err = run.stage('reuse-runner-controls', [tools['python'], '-B', HERE/'reuse_runner_controls.py', '-v'])
+            reuse_python_controls(out, err, RUNNER_CONTROLS)
+            run.result['reuse_runner_controls'] = dict(status='PASS', names=list(RUNNER_CONTROLS), count=len(RUNNER_CONTROLS))
+            reuse_gate(run, binary, geometry, candidate, trusted, recipe)
+        rows = run.result['prerequisites'][a.profile]['rows']
         assert [(row['k'], row['direction']) for row in rows] == [(row['k'], row['direction']) for row in cases]
-        assert all(row['attempts'] == 1 and row['status'] == 'OWNER_FUNCTIONAL_PASS' for row in rows)
-        assert tuple(row['name'] for row in run.result['stages']) == STAGES
+        assert all(row['attempts'] == 1 and row['status'] == profile['case_pass'] for row in rows)
+        assert tuple(row['name'] for row in run.result['stages']) == stages
         run.unchanged()
         run.result['sources_after'] = run.freeze(a.raw/'sources-after.json', sources, cap=16*recipe.MIB)
-        run.result['status'] = 'OWNER_QUALIFICATION_PASS'
+        run.result['status'] = profile['qualification_pass']
     except BaseException as error:
         run.result['error'] = type(error).__name__
     finally:
@@ -198,7 +283,7 @@ def main():
             custody_closed=run.safe, retained=dict(run.retained), tool_pins=dict(run.tool_pins),
             evidence_budget=run.budget.summary(), build_space_exclusions=[str(p) for p in run.build_scratch])
         seen = {row['name']: row for row in run.result['stages']}
-        run.result['planned_stages'] = [seen.get(name, dict(name=name, status='UNRUN')) for name in STAGES]
+        run.result['planned_stages'] = [seen.get(name, dict(name=name, status='UNRUN')) for name in stages]
         try:
             assert run.safe and not run.budget.exceeded
             run.closed_inventory(a.raw)
@@ -209,10 +294,10 @@ def main():
             run.result.update(status='FAILED', final_error=type(error).__name__)
         run.result.update(retained=dict(run.retained), evidence_budget=run.budget.summary())
         recipe.save(a.raw/'result.json', run.result, 16*recipe.MIB)
-    rows = run.result['prerequisites']['owner']['rows']
+    rows = run.result['prerequisites'][a.profile]['rows']
     print(json.dumps(dict(status=run.result['status'], cases=[dict(k=row['k'], direction=row['direction'],
-        status=row['status'], attempts=row['attempts']) for row in rows], custody_closed=run.safe, scope=SCOPE)))
-    return 0 if run.result['status'] == 'OWNER_QUALIFICATION_PASS' else 1
+        status=row['status'], attempts=row['attempts']) for row in rows], custody_closed=run.safe, scope=scope)))
+    return 0 if run.result['status'] == profile['qualification_pass'] else 1
 
 
 if __name__ == '__main__':

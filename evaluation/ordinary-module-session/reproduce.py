@@ -66,6 +66,12 @@ OWNER_CONTROLS = tuple('normal::module::session::owner::tests::' + name for name
     'owner_population_preserves_hot_cold_slots_ranks_and_sequences',
     'owner_snapshot_refusals_keep_all_retained_state',
     'owner_completion_refuses_wrong_identity_missing_calls_and_renewed_deadline'))
+REUSE_CONTROLS = tuple('normal::module::session::owner::reuse::tests::' + name for name in (
+    'recycled_population_requires_new_generation_and_both_function_rank_zero',
+    'recycled_transfer_checks_every_journal_word_and_final_four_acknowledgements',
+    'old_report_copy_remains_exact_after_restage_and_new_completions',
+    'reuse_phase_order_and_generation_bound_slot_state_are_exact',
+    'reuse_deadline_and_channel_refusals_retain_owned_values'))
 NATIVE_STAGES = tuple('tool-' + n for n in ('cc1', 'collect2', 'as', 'ld')) + (
     'python-controls', 'native-build', 'state-build', 'caller-build', 'state-list',
     'state-controls', 'caller-list', 'caller-controls', 'module-c-build', 'caller-c-build',
@@ -192,8 +198,9 @@ def ordinary_inventory(inventory, single, module, owner_controls):
     assert owner_controls is not None and len(owner_controls) == 4
     old = tuple(single.SESSION) + tuple(single.TRACE)
     assert len(old) == 21 and len(CONSUMER) == 11
-    wanted = old + CONSUMER + tuple(module.MODULE_TESTS) + tuple(module.CSV_TESTS) + tuple(owner_controls)
-    assert len(wanted) == len(set(wanted)) == 47
+    wanted = old + CONSUMER + tuple(module.MODULE_TESTS) + tuple(module.CSV_TESTS) + tuple(owner_controls) + REUSE_CONTROLS
+    assert len(REUSE_CONTROLS) == 5
+    assert len(wanted) == len(set(wanted)) == 52
     prefixes = ('normal::session::tests::', 'normal::session::check::tests::',
                 'normal::session::epoch_storage::tests::', 'normal::session::io::tests::',
                 'normal::session::io::csv_tests::', 'normal::session::io::history_tests::',
