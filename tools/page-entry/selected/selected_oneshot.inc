@@ -1,5 +1,8 @@
 /* Admission-owned fixed one-shot route. No old quiescence/publication receipt is
    synthesized. A dormant return address may name any restored source byte. */
+#if defined(LI2_ONESHOT_INITIAL_INTERPRETER) && LI2_ONESHOT_INITIAL_INTERPRETER != 1
+#error "initial-interpreter one-shot is a fixed opt-in profile"
+#endif
 static int selected_oneshot_frame_range(void *unused,const void *p,size_t n) {
     (void)unused;uintptr_t a=(uintptr_t)p,first=(uintptr_t)fork_gate_stack.ss_sp;
     return !p || !n || first>UINTPTR_MAX-fork_gate_stack.ss_size ||
@@ -44,6 +47,35 @@ static int selected_oneshot_try(int sig,siginfo_t *si,ucontext_t *uc) {
     if(rs->registered) {checked(rs->registered==1 && rs->phase==LI2_RSEQ_ACTIVE && rs->held==1,1563,1);return 0;}
     checked(!rs->held,1563,0);
     checked(rs->phase==LI2_RSEQ_IDLE,1563,2);
+#endif
+#ifdef LI2_ONESHOT_CPUID_NX
+    /* A valid two-byte instruction can leave a shorter borrow than its five-byte
+       publication window. Unknown/non-code extra pages keep the original
+       untouched refusal below; known_code is only a prefilter, never a permit. */
+    if(selected_view.length<5 && li2_lifecycle_known_code(selected_decoded.pc,5)) {
+        const struct li2_decoded original=selected_decoded;
+        checked(original.length==2 && original.available>=2 && original.available<5 &&
+            original.available==selected_view.length && selected_view.pc==original.pc &&
+            (uintptr_t)uc->uc_mcontext.gregs[REG_CR2]==original.pc &&
+            equal(selected_view.bytes,original.bytes,original.available),1584,0);
+        selected_release(); /* Authenticates the complete old borrow before ending it. */
+        checked(!li2_lifecycle_fetch_prepare(original.pc,5,&selected_borrow),1585,0);
+        checked(!li2_lifecycle_fetch_view(&selected_borrow,&selected_view),1586,0);
+        checked(!li2_decoder_decode(original.pc,selected_view.bytes,selected_view.length,
+            &selected_decoded),1587,0);
+        checked(selected_view.pc==original.pc && selected_view.length==5 &&
+            selected_decoded.available==5 && selected_decoded.pc==original.pc &&
+            selected_decoded.next_pc==original.next_pc &&
+            selected_decoded.abi_version==original.abi_version &&
+            selected_decoded.decode_status==original.decode_status &&
+            selected_decoded.code==original.code && selected_decoded.kind==original.kind &&
+            selected_decoded.destination==original.destination &&
+            selected_decoded.width_bits==original.width_bits &&
+            selected_decoded.step_disposition==original.step_disposition &&
+            selected_decoded.length==original.length && selected_decoded.reserved==original.reserved &&
+            equal(selected_decoded.bytes,original.bytes,original.available) &&
+            selected_oneshot_kind()==kind,1589,0);
+    }
 #endif
     uintptr_t original_pc=selected_decoded.pc,original_next=selected_decoded.next_pc;
     selected_pending_route=SELECTED_ONESHOT;selected_step_pending=1;
@@ -119,7 +151,11 @@ static void selected_oneshot_landed(int sig,siginfo_t *si,ucontext_t *uc) {
 }
 static void selected_oneshot_report(unsigned status,unsigned code,long detail) {
     struct writer w={.used=0};
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+    text(&w,"LI2_ONESHOT {\"version\":1,\"scope\":\"singleton_initial_main_interpreter_temporary_e9\"");
+#else
     text(&w,"LI2_ONESHOT {\"version\":1,\"scope\":\"singleton_initial_main_temporary_e9\"");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);field(&w,",\"owners\":",selected_oneshot_used);
@@ -139,11 +175,16 @@ static void selected_oneshot_report(unsigned status,unsigned code,long detail) {
     field(&w,",\"active_phase\":",selected_oneshot_active?selected_oneshot_active->state.phase:0);
     text(&w,"}\n");checked(raw(SYS_write,report_fd,(long)w.bytes,w.used,0,0,0)==(long)w.used,1579,0);
 }
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+static void selected_oneshot_stage_image(unsigned image_kind,uintptr_t entry) {
+    uintptr_t base=entry&~(PAGE-1),landing=0;
+#else
 static void selected_oneshot_stage(void) {
     /* Prefault fixed controller storage before any application frame is live. */
     volatile unsigned char *storage=(void *)selected_oneshot_owners;
     for(size_t i=0;i<sizeof(selected_oneshot_owners);i++)storage[i]=0;
     uintptr_t base=original_main.entry&~(PAGE-1),landing=0;
+#endif
     if(base<LI2_ONESHOT_MIN_EXEC || base>UINTPTR_MAX-PAGE)return;
     for(unsigned i=1;i<=16 && !landing;i++) {
         uint64_t distance=(uint64_t)((i+1)/2)*UINT64_C(0x4000000);
@@ -166,5 +207,19 @@ static void selected_oneshot_stage(void) {
     bytes[0]=0x0f;bytes[1]=0x0b;
     checked(!raw(SYS_mprotect,landing,PAGE,PROT_READ|PROT_EXEC,0,0,0),1581,0);
     checked(!raw(SYS_membarrier,32,0,0,0,0,0),1582,0);
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+    checked(!li2_lifecycle_oneshot_register_landing(image_kind,landing),1583,0);
+#else
     checked(!li2_lifecycle_oneshot_register_landing(1,landing),1583,0);
+#endif
 }
+#ifdef LI2_ONESHOT_INITIAL_INTERPRETER
+static void selected_oneshot_stage(void) {
+    /* Same prefaulting and protected landing protocol, before application entry.
+       Backend image kinds are 1=initial main and 2=initial interpreter. */
+    volatile unsigned char *storage=(void *)selected_oneshot_owners;
+    for(size_t i=0;i<sizeof(selected_oneshot_owners);i++)storage[i]=0;
+    selected_oneshot_stage_image(1,original_main.entry);
+    selected_oneshot_stage_image(2,original_interpreter.entry);
+}
+#endif

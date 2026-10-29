@@ -50,6 +50,11 @@ def publish(path,r,private):
         tools={k:{x:v[x]for x in ('bytes','sha256')}for k,v in r.get('tools',{}).items()},
         final_error_count=len(r['final_errors']),failure_type=r['error'].split(':',1)[0]if r.get('error')else None,
         full_b2_qualification=False,performance_credit=False)
+    if r.get('profile')=='page-selected-oneshot-cpuid-v1':
+        import page_selected_oneshot_cpuid as combined
+        import page_selected_oneshot_registered as registered
+        import page_selected_oneshot_interpreter as initial_interpreter
+        value.update(oneshot_cpuid=combined.summary(r),registered=registered.summary(r),interpreter=initial_interpreter.summary(r),companions=r.get('companion_summary'))
     text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(len(text.encode())<64<<10,'compact numeric CPUID-NX summary')
     need(not any(x and len(x)>1 and x in text for x in (str(ROOT),str(Path.home()),platform.node(),'/home/')),'public private-data guard')
@@ -59,10 +64,20 @@ def publish(path,r,private):
 
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--expect-revision',required=True);a=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('--expect-revision',required=True)
+    ap.add_argument('--oneshot-interpreter',action='store_true',help='also qualify the explicit raw CPUID-NX/initial-interpreter one-shot combination')
+    for name in ('positive','negative','rseq'):ap.add_argument('--'+name+'-receipt',type=Path)
+    a=ap.parse_args();companions=combined=registered=initial_interpreter=None
+    need(all((getattr(a,n+'_receipt') is not None)==a.oneshot_interpreter for n in ('positive','negative','rseq')),'three exact private prerequisite receipts only with combined mode')
+    if a.oneshot_interpreter:
+        import page_selected_oneshot_cpuid as combined
+        import page_selected_oneshot_registered as registered
+        import page_selected_oneshot_interpreter as initial_interpreter
+        for name,value in dict(registered.BOUNDS,**combined.BOUNDS).items():
+            need(name not in BOUNDS or BOUNDS[name]==value,'unchanged shared bound');BOUNDS[name]=value
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1 and re.fullmatch('[0-9a-f]{40}',a.expect_revision),'exact HEAD/assertions/one reserved CPU')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-page-selected-cpuid-nx-'+a.expect_revision[:12]
+    stem=stamp+('-page-selected-oneshot-cpuid-' if a.oneshot_interpreter else '-page-selected-cpuid-nx-')+a.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,mode=0o700)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
     pins={};aliases={};artifacts={};presence={};commands=[]
@@ -70,8 +85,13 @@ def main():
            status='failed',expected_revision=a.expect_revision,started_utc=stamp,source=None,source_unchanged=False,
            hardware=hardware(cpu),bounds=BOUNDS,commands=commands,error=None,final_errors=[],
            reproduce=['python3','evaluation/inprocess/page_selected_cpuid_nx_run.py','--expect-revision',a.expect_revision])
-    def pin(path):
+    if a.oneshot_interpreter:
+        r['profile']='page-selected-oneshot-cpuid-v1'
+        r['scope']='Actual raw CPUID-NX with restored initial-main/interpreter one-shot windows; full old385/51/57,6/49/17,registered2 and ordinary3 remain mandatory; finite combined entry/PC+2/capacity/registered interactions, no full B2 or performance credit'
+        r['reproduce']+=['--oneshot-interpreter','--positive-receipt','${SAME_REVISION_POSITIVE_RECEIPT}','--negative-receipt','${SAME_REVISION_FULL49_RECEIPT}','--rseq-receipt','${SAME_REVISION_FULL17_FAST_RSEQ_RECEIPT}']
+    def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
+        need(want is None or f=={k:want[k]for k in ('bytes','sha256')},'exact requested prerequisite bytes')
         need(str(alias)not in aliases or aliases[str(alias)]==str(p),'input alias changed')
         need(str(p)not in pins or pins[str(p)]==f,'input bytes changed')
         aliases[str(alias)]=str(p);pins[str(p)]=f;return p
@@ -84,6 +104,9 @@ def main():
         need(all(dict(fact(p),mode=Path(p).stat().st_mode&0o777)==v for p,v in artifacts.items()),'all artifacts unchanged')
         need(all(os.path.lexists(p)==v for p,v in presence.items()),'loader configuration presence unchanged')
         qualification.finalize(r)
+        if combined is not None:
+            combined.finalize(r);registered.finalize(r);initial_interpreter.finalize(r)
+        if companions is not None:companions.finalize(r)
     def run(name,argv,profile='metadata',expected=0,env=None,record=False):
         stable();row=dict(name=name,argv=list(map(str,argv)),profile=profile,bounds=BOUNDS[profile],
             capture_limit=8192 if profile=='provider'else 16<<20,environment=dict(ENV if env is None else env),expected_exit=expected)
@@ -121,6 +144,9 @@ def main():
         _,out,err=run('source-paths',[git,'-C',ROOT,'ls-files','-z','tools/page-entry','evaluation/inprocess']);need(not err,'source enumeration stderr')
         for name in out.split(b'\0'):
             if name and not name.startswith(b'evaluation/inprocess/results/'):pin(ROOT/os.fsdecode(name))
+        if combined is not None:
+            support=pin(SELECTED/'tests/oneshot_registered/companions.py')
+            spec=importlib.util.spec_from_file_location('combined_oneshot_companions',support);companions=importlib.util.module_from_spec(spec);spec.loader.exec_module(companions)
         for module in tuple(sys.modules.values()):
             p=getattr(module,'__file__',None)
             if p and Path(p).resolve().is_relative_to(ROOT)and Path(p).suffix=='.py':pin(p)
@@ -128,12 +154,20 @@ def main():
             presence[name]=os.path.lexists(name)
             if presence[name]:pin(name)
         need(not presence['/etc/ld.so.preload'],'no global preload');r['configuration_presence']=presence
+        if companions is not None:
+            library_root=companions.replay(ROOT,{n:getattr(a,n+'_receipt').absolute()for n in ('positive','negative','rseq')},r['source'],pin,binary,r)
+            r['companion_summary']=companions.summary(r)
         products=builder.prepare();builder.tools['objdump']=pin(shutil.which('objdump',path=ENV['PATH']))
         r['tools']={k:dict(path=str(p),**fact(p))for k,p in builder.tools.items()};r['archive']=fact(products['archive'])
         original_provider(builder,products,private,pin,binary,run,r)
         callback.component(builder,products,ROOT,private,pin,binary,aliases,run,r)
         qualification.qualify(builder,products,ROOT,private,pin,binary,aliases,run,r)
         need(r['original_provider']['status']==r['provider_callback']['status']==r['cpuid_nx']['status']=='passed','all385 original,51 callback and57 CPUID-NX controls')
+        if combined is not None:
+            registered.registered(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
+            initial_interpreter.interpreter(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
+            combined.qualify(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
+            need(all(r[n]['status']=='passed'for n in ('companions','oneshot_registered','oneshot_interpreter','oneshot_cpuid')),'all unchanged prerequisites and all combined actual interactions')
         r['status']='passed'
     except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
     finally:
@@ -156,6 +190,7 @@ def main():
                 except BaseException as exc:r['final_errors'].append(table+' '+p+': '+type(exc).__name__)
         r['source_unchanged']=r['source']is not None and r.get('source_after')==r['source']and r['inputs_before']==r['inputs_after']and r['aliases_before']==r['aliases_after']
         if r['error']or r['final_errors']or not r['source_unchanged']or r['artifacts_before']!=r['artifacts_after']:r['status']='failed'
+        if companions is not None:r['companion_summary']=companions.summary(r)
         save(private/'receipt.json',r);publish(public,r,private)
         print(json.dumps(dict(status=r['status'],receipt=str(public.relative_to(ROOT)),commands=len(commands),failure_type=r['error'].split(':',1)[0]if r['error']else None)))
     return 0 if r['status']=='passed'else 1

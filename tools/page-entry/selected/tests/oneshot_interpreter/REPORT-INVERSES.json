@@ -1,0 +1,18 @@
+[
+  {
+    "before": "singleton_initial_main_temporary_e9",
+    "after": "singleton_initial_main_interpreter_temporary_e9"
+  },
+  {
+    "before": "completion requires all six below",
+    "after": "completion requires both actual patch kinds below"
+  },
+  {
+    "before": "def completed(parsed, pid):",
+    "after": "def completed(parsed, pid, comparison=None):"
+  },
+  {
+    "before": "    # Fixture-specific assertions supplement every unchanged old completion\n    # predicate above. Exit's effect never returns: its owner stays RESTORED7.\n    o = parsed['oneshot']\n    need(o['owners'] == o['published'] == o['restored'] == o['effect_started'] == 6 and\n         o['completed'] == o['effect_returned'] == 5 and o['syscall_patches'] == 4 and\n         o['rdtsc_patches'] == 2 and o['active_phase'] == 7,\n         'six actual publications restored; five returned effects; honest nonreturning exit')\n    need(loader['rdtsc'] >= 2 and loader['source_syscalls'] >= 4 and\n         native['main_admissions'] == 2 and native['main_refaults'] == 0,\n         'both actual native flag-capture entries and selected effects')",
+    "after": "    # This ordinary program has different sites; the six-site fixture above\n    # remains a mandatory unchanged prerequisite in the enclosing driver.\n    o = parsed['oneshot']\n    need(2 <= o['published'] == o['restored'] == o['effect_started'] <= o['owners'] <= 8 and\n         o['completed'] == o['effect_returned'] and\n         o['syscall_patches'] >= 1 and o['rdtsc_patches'] >= 1 and\n         ((o['active_phase'] == 0 and o['completed'] == o['restored']) or\n          (o['active_phase'] == 7 and o['completed'] + 1 == o['restored'])),\n         'both actual patch kinds; every publication restored; honest returned or nonreturning effect')\n    need(loader['rdtsc'] >= o['rdtsc_patches'] and loader['source_syscalls'] >= o['syscall_patches'],\n         'actual selected effect counters include every restored publication')\n    if comparison is not None:\n        for key in ('owners','published','restored','completed','syscall_patches','rdtsc_patches',\n                    'effect_started','effect_returned','active_phase'):\n            need(o[key] == comparison[key], 'actual full-record/report count '+key)\n        need(comparison['interpreter_clock'] == comparison['continuation'] == 1,\n             'genuine attributed interpreter clock and original PC+2 continuation')"
+  }
+]

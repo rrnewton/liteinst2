@@ -35,6 +35,9 @@ def publish(path,r,private):
         tools={k:{x:v[x]for x in ('bytes','sha256')}for k,v in r.get('tools',{}).items()},
         final_error_count=len(r['final_errors']),failure_type=r['error'].split(':',1)[0]if r.get('error')else None,
         full_b2_qualification=False,performance_credit=False)
+    if 'oneshot_interpreter' in r:
+        import page_selected_oneshot_interpreter as initial_interpreter
+        value['interpreter']=initial_interpreter.summary(r)
     text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(len(text.encode())<64<<10,'compact numeric registered-fallback summary')
     need(not any(x and len(x)>1 and x in text for x in (str(ROOT),str(Path.home()),platform.node(),'/home/')),'public private-data guard')
@@ -46,10 +49,14 @@ def publish(path,r,private):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--expect-revision',required=True)
     for name in ('positive','negative','rseq'):ap.add_argument('--'+name+'-receipt',type=Path,required=True)
+    ap.add_argument('--initial-interpreter',action='store_true',help='also qualify actual initial-interpreter syscall/RDTSC publication in ordinary /bin/true')
     a=ap.parse_args()
+    initial_interpreter=None
+    if a.initial_interpreter:
+        import page_selected_oneshot_interpreter as initial_interpreter
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1 and re.fullmatch('[0-9a-f]{40}',a.expect_revision),'exact HEAD/assertions/one reserved CPU')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-page-selected-oneshot-registered-'+a.expect_revision[:12]
+    stem=stamp+('-page-selected-oneshot-interpreter-' if a.initial_interpreter else '-page-selected-oneshot-registered-')+a.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,mode=0o700)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
     pins={};aliases={};artifacts={};presence={};commands=[]
@@ -59,6 +66,10 @@ def main():
            reproduce=['python3','evaluation/inprocess/page_selected_oneshot_registered_run.py','--expect-revision',a.expect_revision,
             '--positive-receipt','${SAME_REVISION_POSITIVE_RECEIPT}','--negative-receipt','${SAME_REVISION_FULL49_RECEIPT}',
             '--rseq-receipt','${SAME_REVISION_FULL17_FAST_RSEQ_RECEIPT}'])
+    if a.initial_interpreter:
+        r['profile']='page-selected-oneshot-interpreter-v1'
+        r['scope']='Ordinary true with actual initial-main/interpreter temporary syscall and RDTSC publication; original PC+2 continuation; unchanged six/49/17 and registered fallback prerequisites; no CPUID-NX, whole-program transparency or performance claim'
+        r['reproduce'].append('--initial-interpreter')
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
         need(want is None or f=={k:want[k]for k in ('bytes','sha256')},'exact requested prerequisite bytes')
@@ -74,6 +85,7 @@ def main():
         need(all(dict(fact(p),mode=Path(p).stat().st_mode&0o777)==v for p,v in artifacts.items()),'all artifacts unchanged')
         need(all(os.path.lexists(p)==v for p,v in presence.items()),'loader configuration presence unchanged')
         registered.finalize(r)
+        if initial_interpreter is not None:initial_interpreter.finalize(r)
         if companions is not None:companions.finalize(r)
     def run(name,argv,profile='metadata',expected=0,env=None,record=False):
         stable();row=dict(name=name,argv=list(map(str,argv)),profile=profile,bounds=BOUNDS[profile],
@@ -129,6 +141,9 @@ def main():
         r['tools']={k:dict(path=str(p),**fact(p))for k,p in builder.tools.items()};r['archive']=fact(products['archive'])
         registered.registered(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
         need(r['companions']['status']==r['oneshot_registered']['status']=='passed','new real pair and all unchanged prerequisite cohorts')
+        if initial_interpreter is not None:
+            initial_interpreter.interpreter(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
+            need(r['oneshot_interpreter']['status']=='passed','all actual ordinary-program interpreter lanes')
         r['status']='passed'
     except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
     finally:
