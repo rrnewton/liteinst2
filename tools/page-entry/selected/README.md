@@ -179,6 +179,25 @@ builds the current product sources and retains raw records privately. The
 public receipt records actual iteration counts and preserves the fault as a
 failed operation.
 
+The optional `build-repeat-lease.sh` profile keeps one sealed source page RX
+while the same canonical 64-bit-address REP STOSD/STOSQ instruction makes
+progress. Each real TRACE consumes a return ticket and validates the unchanged
+source, full machine frame, current rseq registration and remaining write span.
+The final TRACE closes the page, verifies the next PC and releases the original
+borrow. Anonymous sources and two-page windows use the original REP owner.
+Unexpected events terminate through the actual cleanup prefix; this does not
+add arbitrary signal restart or multithreaded support.
+
+Run `python3 evaluation/inprocess/page_selected_repeat_lease.py
+--expect-revision REVISION` on one reserved CPU for the finite native oracle.
+Keep the original Dword and Qword REP oracles as separate regressions.
+`page_selected_repeat_lease_app.py` checks both complete native-state pairs
+before either 9,216-effect stress lane; `page_selected_repeat_lease_ls.py`
+compares native and gated real `/bin/ls -d .` in a release build. Both commands
+require `--expect-revision REVISION`. Reports separate retained transfers from
+actual closes and releases. Completion and timing claims require the recorded
+outcome of each command; service timings do not measure native throughput.
+
 `tests/padding` covers the exact 1–10-byte palette and the observed eleven-byte
 `66 66 2e 0f 1f 84 00 00 00 00 00`, without permitting other repeated or segment
 prefixes. Run

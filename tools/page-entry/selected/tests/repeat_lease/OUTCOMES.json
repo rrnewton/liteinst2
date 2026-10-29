@@ -1,0 +1,531 @@
+{
+  "schema": 1,
+  "commands": [
+    {
+      "name": "lease-4-df0-short",
+      "mode": 0,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "0"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "lease-4-df0-24",
+      "mode": 1,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "1"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "lease-4-df1-short",
+      "mode": 2,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "2"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "lease-4-df1-24",
+      "mode": 3,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "3"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "lease-8-df0-short",
+      "mode": 4,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "4"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "lease-8-df0-24",
+      "mode": 5,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "5"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "lease-8-df1-short",
+      "mode": 6,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "6"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "lease-8-df1-24",
+      "mode": 7,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "7"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "anonymous-fallback",
+      "mode": 8,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "8"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "crossing-fallback",
+      "mode": 9,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "9"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "two-borrow-fallback",
+      "mode": 10,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "10"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "unregistered",
+      "mode": 11,
+      "exit": 0,
+      "operation": "completed",
+      "evidence": "real-pair",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "11"
+      },
+      "stdout": "LI2_REPEAT_LEASE_PASS\n"
+    },
+    {
+      "name": "later-store-df0",
+      "mode": 12,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "real-fault",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "12"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "later-store-df1",
+      "mode": 13,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "real-fault",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "13"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "nested-seeding",
+      "mode": 14,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "real-signal",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "14"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "nested-entry",
+      "mode": 15,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "real-signal",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "15"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "nested-return",
+      "mode": 16,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "real-signal",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "16"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "nested-revoking",
+      "mode": 17,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "real-signal",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "17"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "copied-owner",
+      "mode": 18,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "18"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "replayed-ticket",
+      "mode": 19,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "19"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "changed-source-descriptor",
+      "mode": 20,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "20"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "supplied-fstat-identity",
+      "mode": 21,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "21"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "nonzero-rseq-word",
+      "mode": 22,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "22"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "changed-pin-snapshot",
+      "mode": 23,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "23"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "protected-rseq-overlap",
+      "mode": 24,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "24"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "remaining-overflow",
+      "mode": 25,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "25"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "revoke-result",
+      "mode": 26,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "26"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "sync-result",
+      "mode": 27,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "27"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "query-result",
+      "mode": 28,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "28"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "release-result",
+      "mode": 29,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "29"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-registered-4-df0",
+      "mode": 30,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "30"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-registered-4-df0",
+      "mode": 31,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "31"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-registered-4-df1",
+      "mode": 32,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "32"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-registered-4-df1",
+      "mode": 33,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "33"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-registered-8-df0",
+      "mode": 34,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "34"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-registered-8-df0",
+      "mode": 35,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "35"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-registered-8-df1",
+      "mode": 36,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "36"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-registered-8-df1",
+      "mode": 37,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "37"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-unregistered-4-df0",
+      "mode": 38,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "38"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-unregistered-4-df0",
+      "mode": 39,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "39"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-unregistered-4-df1",
+      "mode": 40,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "40"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-unregistered-4-df1",
+      "mode": 41,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "41"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-unregistered-8-df0",
+      "mode": 42,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "42"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-unregistered-8-df0",
+      "mode": 43,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "43"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-partial-unregistered-8-df1",
+      "mode": 44,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "44"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    },
+    {
+      "name": "private-overflow-unregistered-8-df1",
+      "mode": 45,
+      "exit": 125,
+      "operation": "failed",
+      "evidence": "supplied-negative",
+      "env": {
+        "LI2_REPEAT_LEASE_MODE": "45"
+      },
+      "stdout": "LI2_REPEAT_LEASE_EXPECTED_FAILURE\n"
+    }
+  ],
+  "cardinality": {
+    "processes": 46,
+    "successful_processes": 12,
+    "actual_failed_operations": 6,
+    "supplied_negative_processes": 28,
+    "native_completed": 24,
+    "native_failed": 2,
+    "startup_pairs": 46,
+    "old_refusals_per_process": 47
+  },
+  "bounds": {
+    "core_bytes": 0,
+    "cores": 1,
+    "native_cpu_seconds": 5,
+    "wall_seconds": 15,
+    "native_address_bytes": 536870912,
+    "file_bytes": 16777216,
+    "capture_bytes": 8192
+  },
+  "old_regressions": "Original D/Q positive and first-store fault processes remain mandatory and unchanged."
+}
