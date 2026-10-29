@@ -7,6 +7,7 @@
 #include "write_footprint.h"
 #define VTN_PROMOTED_INDICES 0,1,2,3,4,5,6,7,11,12
 #include "tests/vptestnmb_family/promotions.inc"
+#include "tests/vpxorq128/promotions256.inc"
 #ifndef KORTESTQ_GROUP
 #error KORTESTQ_GROUP must select a bounded cohort
 #endif
@@ -255,6 +256,10 @@ static void vpx_refusals(void) {
     for(size_t i=0;i<sizeof(vpx_refused)/sizeof(vpx_refused[0]);i++) {
         const struct vpx_refusal *v=&vpx_refused[i];result.failed_refusal=47+73+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(vpx256_is_promoted(i)) {
+            vpx256_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+            continue;
+        }
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1200+(unsigned)i);
         struct li2_write_registers registers={0};struct li2_write_footprint footprint={0};
@@ -295,7 +300,7 @@ static void kortestq_refusals(void) {
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
-    _Static_assert(sizeof(vtn_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
+    _Static_assert(sizeof(vpx256_promotions)+sizeof(vtn_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
                    sizeof(vpb_observations)+sizeof(vpc_queries)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==4824,"literal trailer extent");
     _Static_assert(sizeof(vpx_refused)/sizeof(vpx_refused[0])==37,"closed VPXORQ neighbors");
@@ -311,23 +316,25 @@ int fixture_main(unsigned long *stack) {
     vpc_queries.magic=UINT64_C(0x315158565056324c);vpc_queries.version=1;
     vpc_queries.bytes=sizeof(vpc_queries);vpc_queries.group=KORTESTQ_GROUP;
     vpb_refusals();need(result.refusals==109&&vpc_queries.refusals==62&&promoted_count==1,1183);
-    vpx_refusals();need(result.refusals==146&&vpc_queries.refusals==99&&promoted_count==1,1239);
-    bzhi_refusals();need(result.refusals==177&&vpc_queries.refusals==130&&promoted_count==1,1333);
-    kortestq_refusals();need(result.refusals==206&&vpc_queries.refusals==159&&promoted_count==1,1431);
+    vpx_refusals();need(result.refusals==145&&vpc_queries.refusals==98&&promoted_count==1,1239);
+    bzhi_refusals();need(result.refusals==176&&vpc_queries.refusals==129&&promoted_count==1,1333);
+    kortestq_refusals();need(result.refusals==205&&vpc_queries.refusals==158&&promoted_count==1,1431);
     vtn_promotions_complete();
+    vpx256_promotions_complete();
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     for(unsigned i=0;i<VPB_COUNT;i++){vpb_prepare(&samples[i+1],i);vpb_pair(&samples[i+1],i+1);}
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          vpc_queries.checked==2*VPB_COUNT&&write_all(3,&vpb_observations,sizeof(vpb_observations))&&
          write_all(3,&vpc_queries,sizeof(vpc_queries))&&
-         write_all(3,&vtn_promotions,sizeof(vtn_promotions)),1184);
+         write_all(3,&vtn_promotions,sizeof(vtn_promotions))&&
+         write_all(3,&vpx256_promotions,sizeof(vpx256_promotions)),1184);
     static const char *const passed[5]={
-        "LI2_KORTESTQ_TF_PASS group=0 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
-        "LI2_KORTESTQ_TF_PASS group=1 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
-        "LI2_KORTESTQ_TF_PASS group=2 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
-        "LI2_KORTESTQ_TF_PASS group=3 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
-        "LI2_KORTESTQ_TF_PASS group=4 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+        "LI2_KORTESTQ_TF_PASS group=0 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=176 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10 vpx256_typed_promotions=1 vpx256_supplied_none_queries=1\n",
+        "LI2_KORTESTQ_TF_PASS group=1 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=176 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10 vpx256_typed_promotions=1 vpx256_supplied_none_queries=1\n",
+        "LI2_KORTESTQ_TF_PASS group=2 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=176 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10 vpx256_typed_promotions=1 vpx256_supplied_none_queries=1\n",
+        "LI2_KORTESTQ_TF_PASS group=3 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=176 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10 vpx256_typed_promotions=1 vpx256_supplied_none_queries=1\n",
+        "LI2_KORTESTQ_TF_PASS group=4 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=176 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10 vpx256_typed_promotions=1 vpx256_supplied_none_queries=1\n",
     };
     output(passed[KORTESTQ_GROUP]);
     return 0;

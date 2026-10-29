@@ -138,3 +138,7 @@ int li2_native_epoch_nx(int sig,siginfo_t *si,ucontext_t *uc,uint64_t *logical_f
     ++epoch.ready;epoch.phase=LI2_NATIVE_IDLE;epoch.in_handler=0;
     return LI2_NATIVE_READY;
 }
+
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair_control.inc"
+#endif

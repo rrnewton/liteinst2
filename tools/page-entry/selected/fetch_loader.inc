@@ -97,6 +97,9 @@ static int fetch_initial_page(size_t index,uintptr_t address) {
     return fetch_backing_check(p,&fetch.backing[index]);
 }
 int li2_lifecycle_fetch_prepare(uintptr_t pc,size_t bytes,struct li2_fetch_ref *out) {
+#ifdef LI2_NATIVE_PAIR
+    if(li2_native_pair_effect_guard())return LI2_NP_STATE;
+#endif
     if (!out || !bytes || bytes>15 || pc>UINTPTR_MAX-bytes) return LI2_FETCH_ARGUMENT;
     if (fetch.progress.held) return LI2_FETCH_BUSY;
     if (!active || tx.guard || (tx.phase!=IDLE && tx.phase!=REVOKED && tx.phase!=ADMITTED) ||

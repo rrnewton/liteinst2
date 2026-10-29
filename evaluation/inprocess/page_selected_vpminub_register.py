@@ -12,6 +12,7 @@ from page_selected_generic import digest
 from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
 from page_selected_vptestnmb_promotions import promotions as vtn_promotions
+from page_selected_vpxorq256_promotions import promotions as vpx256_promotions
 from page_selected_components import plain_executable
 from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
@@ -22,7 +23,7 @@ HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/vpminub_register'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='7ff7ee347cc57e8469d9f92ba70a6b54ed3cb2eab3ff9087111643237d865f79'
+OUTCOMES_SHA='0c11fac7d7376eada77179c6814cabdc95accdb792039daf2e14cc39ff1ab7e2'
 CASES_SHA='34c0dfd6dd8646952f1ac21b3b35b769a1d4d206ae6fbf770eeaf6662568f222'
 TABLE_SHA='55b23a49867e26ab073e9fab208bb74a2e3b3618d6d3ecd0fb34cd03a393fa73'
 MASK=(1<<64)-1
@@ -65,6 +66,8 @@ def catalogue():
 
 
 def record(data,expected,sample_bytes,rows):
+    need(352<len(data)<16<<20,'complete mandatory Code2460 trailer within unchanged cap')
+    vpx256=vpx256_promotions(data[-352:]);data=data[:-352]
     need(3232<len(data)<16<<20,'complete typed Code2791 promotions within unchanged cap')
     promoted=vtn_promotions(data[-3232:],'vpxorq128');data=data[:-3232]
     need(len(data)>=136,'complete retained header')
@@ -77,7 +80,7 @@ def record(data,expected,sample_bytes,rows):
          'all17 positive slots occupied; four unused slots and whole negative sample zero')
     obs=observations(data[-12056:-7232],expected['group'],h)
     need(obs['cpuid_basic'][2][3]&(1<<31),'actual AVX512VL prerequisite in addition to unchanged F/BW')
-    q=data[-7232:];need(struct.unpack_from('<8Q',q)==(0x31514e4d5056324c,1,7232,expected['group'],32,127,0,0),
+    q=data[-7232:];need(struct.unpack_from('<8Q',q)==(0x31514e4d5056324c,1,7232,expected['group'],32,126,0,0),
          'actual-before query trailer identity, completion and refusal counts')
     queries=[]
     for i,c in enumerate(rows):
@@ -94,7 +97,7 @@ def record(data,expected,sample_bytes,rows):
             pair.append((before,pc,next_pc,first,end,version,policy,code,length))
         need(pair[0]==pair[1],'native and stepped actual-before registers and NONE results agree completely')
         queries.append(pair[0])
-    return dict(operation='completed',pairs=17,new_pairs=16,refusals=h['refusals'],vtn_promotions=promoted,vtn_typed_promotions=10,vtn_supplied_none_queries=10,
+    return dict(operation='completed',pairs=17,new_pairs=16,refusals=h['refusals'],vpx256_promotions=vpx256,vpx256_typed_promotions=1,vpx256_supplied_none_queries=1,vtn_promotions=promoted,vtn_typed_promotions=10,vtn_supplied_none_queries=10,
         promoted_encoding_checks=1,promoted_footprint_queries=1,actual_before_queries=32,
         ending_pairs=sum(c['tail']==6 for c in rows),crossing_pairs=sum(c['tail']<6 for c in rows),
         header=h,observations=obs,query_bytes=len(q),query_sha256=hashlib.sha256(q).hexdigest(),
@@ -134,11 +137,11 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile='page-selected-vpminub-register-v1',status='failed',
-        scope='Canonical unmasked EVEX512.W0 register-only VPMINUB Code2285,96 complete64-byte minimum pairs+6startup. All32 source/destination roles, alias classes and every six-byte fetch tail for both actual libc triples. Full unchanged native/TF/GPR/flags/kernelFP/liveXSAVE/memory comparisons and192 actual-before NONE queries.174 supplied refusals per process retain all prior110 rows and47 common controls with mandatory old2785/2791 positives;28 new neighbors. No memory or application/performance claim.',
+        scope='Canonical unmasked EVEX512.W0 register-only VPMINUB Code2285,96 complete64-byte minimum pairs+6startup. All32 source/destination roles, alias classes and every six-byte fetch tail for both actual libc triples. Full unchanged native/TF/GPR/flags/kernelFP/liveXSAVE/memory comparisons and192 actual-before NONE queries.173 supplied refusals per process retain all prior110 rows and47 common controls with mandatory old2785/2791 positives;28 new neighbors. No memory or application/performance claim. Original vpx_refused row9 remains a mandatory supplied Code2460 typed/NONE positive, with separate full native qualification.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vpminub_register.py','--expect-revision',args.expect_revision],
         commands=[],cases=[],error=None,final_errors=[],
-        totals=dict(vtn_typed_promotions=0,vtn_supplied_none_queries=0,pairs=0,new_pairs=0,startup_pairs=0,refusals=0,promoted_encoding_checks=0,
+        totals=dict(vpx256_typed_promotions=0,vpx256_supplied_none_queries=0,vtn_typed_promotions=0,vtn_supplied_none_queries=0,pairs=0,new_pairs=0,startup_pairs=0,refusals=0,promoted_encoding_checks=0,
                     promoted_footprint_queries=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
@@ -200,7 +203,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'vtn_promotions','samples','negative_sample','result','refused_last','vpb_observations','vpc_queries'}
+            need(not err,'actual symbol inspection stderr');roots={'vpx256_promotions','vtn_promotions','samples','negative_sample','result','refused_last','vpb_observations','vpc_queries'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -216,10 +219,10 @@ def main():
             state['symbols']=symbols;sample=symbols['negative_sample']['bytes']
             need(symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
                 symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==4824 and
-                symbols['vtn_promotions']['bytes']==3232 and symbols['vpc_queries']['bytes']==7232 and 3232+136+22*sample+40+4824+7232<16<<20,
+                symbols['vpx256_promotions']['bytes']==352 and symbols['vtn_promotions']['bytes']==3232 and symbols['vpc_queries']['bytes']==7232 and 352+3232+136+22*sample+40+4824+7232<16<<20,
                 'actual ELF-sized complete sample array/trailers below unchanged cap');samples[name]=sample
             r['fixture_build'][name]=dict(artifact=state['artifact'],elf=state['elf'],symbols_sha256=digest(symbols),
-                record_bytes=3232+136+22*sample+40+4824+7232,headers_sha256=digest(state['headers']))
+                record_bytes=352+3232+136+22*sample+40+4824+7232,headers_sha256=digest(state['headers']))
         for expected in commands:
             item=dict(name=expected['name'],status='failed',environment_delta=expected['environment_delta'],actual_exit=None);r['cases'].append(item)
             row,out,err=run(expected['name'],[output/expected['argv'][0]],expected['exit'],env=dict(ENV,**expected['environment_delta']))
@@ -230,7 +233,7 @@ def main():
             need(value['operation']=='completed','no failed operation relabelled completed')
             for key in r['totals']:r['totals'][key]+=1 if key=='startup_pairs'else value[key]
             item.update(status='accepted_observation',outcome=value)
-        need(r['totals']==dict(vtn_typed_promotions=60,vtn_supplied_none_queries=60,pairs=102,new_pairs=96,startup_pairs=6,refusals=1044,promoted_encoding_checks=6,
+        need(r['totals']==dict(vpx256_typed_promotions=6,vpx256_supplied_none_queries=6,vtn_typed_promotions=60,vtn_supplied_none_queries=60,pairs=102,new_pairs=96,startup_pairs=6,refusals=1038,promoted_encoding_checks=6,
             promoted_footprint_queries=6,actual_before_queries=192,ending_pairs=16,crossing_pairs=80) and
             len(r['cases'])==6 and all(c['status']=='accepted_observation'for c in r['cases']),'whole exact six-command cohort')
         r['status']='passed'

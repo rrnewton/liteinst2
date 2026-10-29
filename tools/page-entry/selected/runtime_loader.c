@@ -5,6 +5,9 @@
 #ifdef LI2_NATIVE_PAGES
 #include "native_pages.h"
 #include "native_epoch.h"
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair.h"
+#endif
 #include "native_seccomp.h"
 #endif
 #ifdef LI2_RSEQ_INACTIVE
@@ -144,6 +147,9 @@ static _Noreturn void selected_run_unexpected(int,siginfo_t *,ucontext_t *);
 #endif
 
 #include "fork_profile.h"
+#ifdef LI2_NATIVE_PAIR
+static void selected_native_pair_report(unsigned,unsigned,long);
+#endif
 
 /* All 99 numeric fields use at most 3,872 bytes at uint64 width;
    the fixed prefix/suffix adds 97 bytes (3,969 total <= 4,096).
@@ -182,6 +188,9 @@ static void selected_repeat_lease_end(const ucontext_t *);
 static const struct li2_run_protection selected_run_protection;
 #endif
 static void selected_repeat_report(unsigned,unsigned,long);
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair_report.inc"
+#endif
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
@@ -240,6 +249,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
     text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 #ifdef LI2_NATIVE_PAGES
+#ifdef LI2_NATIVE_PAIR
+    selected_native_pair_report(status,code,detail);
+#endif
     const struct li2_native_counts *nc=li2_lifecycle_native_counts();
     const struct li2_native_epoch *ne=li2_native_epoch_progress();
     const struct li2_native_close *cl=li2_lifecycle_native_close_progress();
@@ -331,7 +343,11 @@ static void fail(unsigned code,long detail) {
 #endif
     if(selected_step_pending) li2_step_abort(&selected_step,code,detail);
 #ifdef LI2_NATIVE_PAGES
+#ifdef LI2_NATIVE_PAIR
+    li2_native_pair_abort(code,detail);
+#else
     li2_native_epoch_abort(code,detail);
+#endif
 #endif
     li2_lifecycle_abort(); report(125,code,detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0); __builtin_trap();
@@ -419,6 +435,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
     checked(n!=SYS_rseq && n!=SYS_fork && n!=SYS_clone && n!=SYS_vfork,601,n);
 #endif
 #ifdef LI2_NATIVE_PAGES
+#ifdef LI2_NATIVE_PAIR
+    checked(!li2_native_pair_effect_guard(),LI2_NP_STATE,n);
+#endif
     /* No native source remains executable across a mapping or rseq change. */
     li2_lifecycle_native_close();
 #endif
@@ -589,6 +608,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "entry_timing.inc"
 #endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_NATIVE_PAIR
+    li2_native_pair_preentry();
+#endif
 #ifdef LI2_ONESHOT_REUSABLE
     li2_rseq_publication_preentry();
 #endif
@@ -811,5 +833,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #ifdef LI2_NATIVE_PAGES
     int native_error=li2_native_epoch_initialize(&selected_session);
     checked(!native_error,(unsigned)native_error,0);
+#ifdef LI2_NATIVE_PAIR
+    native_error=li2_native_pair_initialize(&selected_session);
+    checked(!native_error,(unsigned)native_error,1);
+#endif
 #endif
 }

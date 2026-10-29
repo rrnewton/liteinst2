@@ -1,5 +1,9 @@
 #define _GNU_SOURCE
 #include "lifecycle_loader.h"
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair.h"
+static int np_life_admission_guard(uintptr_t);
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
 #include "repeat_custody.h"
 #endif
@@ -479,6 +483,9 @@ void li2_lifecycle_initialize(const int *fds,size_t n,const struct li2_lifecycle
 }
 
 void li2_lifecycle_register_initial(const struct image *image) {
+#ifdef LI2_NATIVE_PAIR
+    if(li2_native_pair_effect_guard())DIE(LI2_NP_STATE,64);
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
     li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
 #endif
@@ -537,6 +544,9 @@ int li2_lifecycle_known_code(uintptr_t first,size_t bytes) {
     return 1;
 }
 int li2_lifecycle_admit(uintptr_t pc,uintptr_t fault_address) {
+#ifdef LI2_NATIVE_PAIR
+    if(!np_life_admission_guard(pc) || pc!=fault_address)DIE(LI2_NP_STATE,60);
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
     li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
 #endif
@@ -731,6 +741,9 @@ static long unmap_call(const long a[6]) {
     ++counts.reconciliations; tx.phase=REVOKED; finish(); return result;
 }
 int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
+#ifdef LI2_NATIVE_PAIR
+    if(li2_native_pair_effect_guard())DIE(LI2_NP_STATE,61);
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
     li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
 #endif
@@ -745,6 +758,9 @@ int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
     return 1;
 }
 void li2_lifecycle_before_other(long n,const long a[6]) {
+#ifdef LI2_NATIVE_PAIR
+    if(li2_native_pair_effect_guard())DIE(LI2_NP_STATE,61);
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
     li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
 #endif
@@ -873,6 +889,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 
 #ifdef LI2_NATIVE_PAGES
 #include "native_lifecycle.inc"
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair_lifecycle.inc"
+#endif
 #endif
 
 #ifdef LI2_ONESHOT_PUBLICATION

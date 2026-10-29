@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == '4e193eb7e723dc042d1e6bc96fdf7885bd59f7e673928ede5eeb667caedf2d9f', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == '937c13ea0d88ce7eb140a07f8cc5cf1482dc220208396dfaabf3663e4d25d2b4', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -60,6 +60,8 @@ CURRENTE11 = MAINE11['current_corpus_sha256']
 MAIN469 = DATA['main469']
 CURRENT469 = MAIN469['current_corpus_sha256']
 MAINB66 = DATA['mainb66']
+MAIN8F622 = DATA['main8f622']
+MAIN8F622_CURRENT = DATA['main8f622_current']
 CURRENTB66 = MAINB66['current_corpus_sha256']
 MAIN12E = DATA['main12e']
 CURRENT12E = MAIN12E['current_corpus_sha256']
@@ -83,7 +85,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -205,6 +207,50 @@ def peel_short(declared, error, source_error):
     return before_short(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTSHORT else declared
 
 
+def source_at_8f622(path, data, error):
+    """Authenticate only the two newer whole blobs before the retained 8f622 proof."""
+    data = source_before_short_native(path, data, error)
+    if path not in MAIN8F622_CURRENT:
+        return data
+    row = MAIN8F622_CURRENT[path]
+    require(row['current_sha256'] == MAIN12E['sources'][path] and
+            row['previous_sha256'] == MAIN8F622['sources'][path], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def source_before_8f622(path, data, error):
+    """Only the fixed incoming whole blob can recover its historical bytes."""
+    if path not in MAIN8F622['projections']:
+        return data
+    data = source_at_8f622(path, data, error)
+    row = MAIN8F622['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_8f622_sources(error='main8f622_source_inventory_differs'):
+    for path, expected in MAIN8F622['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        raw = source_at_8f622(path, raw, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+
+
 def source_before_c6f(path, data, error):
     """Only the fixed c6f whole blob may reach its exact historical source."""
     data = source_before_short(path, data, error)
@@ -260,9 +306,12 @@ def peel_c6f(declared, error, source_error):
 
 def source_before_12e(path, data, error):
     """Only the fixed 12e whole blob may reach its exact historical source."""
+    unprojected = data
     data = source_before_c6f(path, data, error)
     if path not in MAIN12E['projections']:
         return data
+    historical8f = (source_before_8f622(path, unprojected, error)
+                    if path in MAIN8F622['projections'] else None)
     row = MAIN12E['projections'][path]
     require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
@@ -271,11 +320,14 @@ def source_before_12e(path, data, error):
         data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    if historical8f is not None:
+        require(data == historical8f, error)
     return data
 
 
 def require_12e_sources(error='main12e_source_inventory_differs'):
     require_c6f_sources(error)
+    require_8f622_sources(error)
     for path, expected in MAIN12E['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()

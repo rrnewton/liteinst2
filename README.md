@@ -250,6 +250,15 @@ wait4 calls with their actual results. Each process remains single-threaded;
 unsupported signal, process and mapping operations refuse. Its documented
 identity and loader-search restrictions apply.
 
+The opt-in [selected controller](tools/page-entry/selected/README.md) adds actual
+temporary CPUID, SYSCALL and RDTSC patches. Its two-page owner keeps certified
+source pages executable across native calls and returns, then closes them on
+selected effects or incompatible execution. Release runs complete dynamically
+linked `/bin/ls` and a sustained `strrchr` workload without ptrace; the
+[measurements and reproduction commands](evaluation/inprocess/results/2026-10-29-native-pair.md)
+also report the substantial remaining overhead. This is a finite singleton
+profile; general thread, signal and mapping lifecycle coverage remains open.
+
 [liteinst-launch](crates/liteinst-launch/README.md) captures an ELF process at
 its exec stop before the executable/interpreter's first instruction. Its
 restricted controller gates initial executable mappings and admits scanned

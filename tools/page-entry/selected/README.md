@@ -394,3 +394,32 @@ admission it retains at most 16 revisits to that same address, allocation and
 generation. This measures repeated admission service, not native instruction
 throughput. `evaluation/inprocess/native_pages.py` runs native and gated real
 programs with the same explicit environment and preserves failed cases.
+
+A separate two-page profile is built with
+`sh tools/page-entry/selected/build-native-pair.sh ARCHIVE OUTPUT`, using the
+fresh decoder archive and producing `OUTPUT/bridge-native-pair.so`. It admits
+one authenticated page on genuine first-byte NX, then may retain it while
+admitting one other page. Calls and returns between these pages execute
+without per-instruction TRACE. Policy refusal, a third-page capacity boundary,
+or transition to a selected instruction or syscall closes and synchronizes
+occupied pages. Cross-page fetches retain the actual frame, close occupied pages,
+and require a genuine first-byte refault before the original instruction owner
+continues. Failure paths retain actual cleanup outcomes. Registered-rseq
+operation checks the current registration, pin and zero word before RAW work;
+stale or unsafe state terminates without repair.
+
+On one reserved CPU, run the finite qualification with same-revision receipts
+for all six positive, 49 refusal/failure and 17 inactive-rseq prerequisites:
+
+```sh
+python3 evaluation/inprocess/page_selected_rseq_native_boundary_run.py \
+  --expect-revision REVISION --native-pair \
+  --positive-receipt POSITIVE_RECEIPT --negative-receipt NEGATIVE_RECEIPT \
+  --rseq-receipt RSEQ_RECEIPT
+```
+
+It retains the original registered 16 and boundary four cases before the 22
+pair profiles. Release workload measurements use the separate
+`python3 evaluation/inprocess/page_native_pair_performance.py --expect-revision REVISION`
+command. Finite qualification does not establish application completion or
+throughput; results require their own closed receipts.

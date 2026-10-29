@@ -12,6 +12,7 @@ from page_selected_generic import digest
 from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
 from page_selected_vptestnmb_promotions import promotions as vtn_promotions
+from page_selected_vpxorq256_promotions import promotions as vpx256_promotions
 from page_selected_components import plain_executable
 from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
@@ -21,7 +22,7 @@ HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/kortestq'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='e220d8834b56f9f654dcf52ce87b7f72722cfcd704f8a3b427a8a8c516b8cbe0'
+OUTCOMES_SHA='21eb4d8ff1f71f236f2d31d85d65e786dca2d4ac3b1a73880c660a91db0522e9'
 CASES_SHA='980b75c85b5fabeb4113b1554786b00d1939c3fc61b5519f74afc4062ee9312d'
 TABLE_SHA='fa5082ec821904dbfe193d3e07f79c4b75c46b238b850b42fc6c823b2dcc2366'
 MASK=(1<<64)-1
@@ -107,6 +108,8 @@ def observations(data, group, header):
 
 
 def record(data,expected,sample_bytes,rows):
+    need(352<len(data)<16<<20,'complete mandatory Code2460 trailer within unchanged cap')
+    vpx256=vpx256_promotions(data[-352:]);data=data[:-352]
     need(3232<len(data)<16<<20,'complete typed Code2791 promotions within unchanged cap')
     promoted=vtn_promotions(data[-3232:],'bzhi');data=data[:-3232]
     count=16;start=16*expected['group']
@@ -120,7 +123,7 @@ def record(data,expected,sample_bytes,rows):
     need(h['completed']==h['pairs']==count+1 and not any(data[136+(count+1)*sample_bytes:136+22*sample_bytes]),
          'all declared positive slots occupied; every unused slot and whole negative sample zero')
     obs=observations(data[-12056:-7232],expected['group'],h)
-    q=data[-7232:];need(struct.unpack_from('<8Q',q)==(0x315158565056324c,1,7232,expected['group'],2*count,159,0,0),
+    q=data[-7232:];need(struct.unpack_from('<8Q',q)==(0x315158565056324c,1,7232,expected['group'],2*count,158,0,0),
          'actual-before query trailer identity, completion and refusal counts')
     need(not any(q[64+448*count:]),'all unused actual-before query rows zero')
     queries=[]
@@ -138,7 +141,7 @@ def record(data,expected,sample_bytes,rows):
             pair.append((before,pc,next_pc,first,end,version,policy,code,length))
         need(pair[0]==pair[1],'native and stepped actual-before registers and NONE results agree completely')
         queries.append(pair[0])
-    return dict(operation='completed',pairs=count+1,new_pairs=count,refusals=h['refusals'],vtn_promotions=promoted,vtn_typed_promotions=10,vtn_supplied_none_queries=10,
+    return dict(operation='completed',pairs=count+1,new_pairs=count,refusals=h['refusals'],vpx256_promotions=vpx256,vpx256_typed_promotions=1,vpx256_supplied_none_queries=1,vtn_promotions=promoted,vtn_typed_promotions=10,vtn_supplied_none_queries=10,
         promoted_encoding_checks=1,promoted_footprint_queries=1,actual_before_queries=2*count,
         ending_pairs=sum(c['tail']==5 for c in rows),crossing_pairs=sum(c['tail']<5 for c in rows),
         header=h,observations=obs,query_bytes=len(q),query_sha256=hashlib.sha256(q).hexdigest(),
@@ -178,11 +181,11 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile='page-selected-kortestq-v1',status='failed',
-        scope='Canonical c4e1f898/m Code1935 KORTESTQ;80 pairs cover8 self/8 cyclic source roles at all five fetch tails plus5 startup pairs. Exact full flags from64-bit OR; all GPR/K/ZMM, initialized FP/live XSAVE, memory/source comparisons unchanged.160 actual-before NONE queries;177 donor refusals+29 additive neighbors per process, original Code2785 and10 Code2791/NONE promotions retained. No application completion/performance or other-encoding authority.',
+        scope='Canonical c4e1f898/m Code1935 KORTESTQ;80 pairs cover8 self/8 cyclic source roles at all five fetch tails plus5 startup pairs. Exact full flags from64-bit OR; all GPR/K/ZMM, initialized FP/live XSAVE, memory/source comparisons unchanged.160 actual-before NONE queries;176 donor refusals plus one mandatory supplied Code2460 typed/NONE row+29 additive neighbors per process, original Code2785 and10 Code2791/NONE promotions retained. No application completion/performance or other-encoding authority.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_kortestq.py','--expect-revision',args.expect_revision],
         commands=[],cases=[],error=None,final_errors=[],
-        totals=dict(vtn_typed_promotions=0,vtn_supplied_none_queries=0,pairs=0,new_pairs=0,startup_pairs=0,refusals=0,promoted_encoding_checks=0,
+        totals=dict(vpx256_typed_promotions=0,vpx256_supplied_none_queries=0,vtn_typed_promotions=0,vtn_supplied_none_queries=0,pairs=0,new_pairs=0,startup_pairs=0,refusals=0,promoted_encoding_checks=0,
                     promoted_footprint_queries=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
@@ -244,7 +247,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'vtn_promotions','samples','negative_sample','result','refused_last','vpb_observations','vpc_queries'}
+            need(not err,'actual symbol inspection stderr');roots={'vpx256_promotions','vtn_promotions','samples','negative_sample','result','refused_last','vpb_observations','vpc_queries'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -260,10 +263,10 @@ def main():
             state['symbols']=symbols;sample=symbols['negative_sample']['bytes']
             need(symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
                 symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==4824 and
-                symbols['vtn_promotions']['bytes']==3232 and symbols['vpc_queries']['bytes']==7232 and 3232+136+22*sample+40+4824+7232<16<<20,
+                symbols['vpx256_promotions']['bytes']==352 and symbols['vtn_promotions']['bytes']==3232 and symbols['vpc_queries']['bytes']==7232 and 352+3232+136+22*sample+40+4824+7232<16<<20,
                 'actual ELF-sized complete sample array/trailers below unchanged cap');samples[name]=sample
             r['fixture_build'][name]=dict(artifact=state['artifact'],elf=state['elf'],symbols_sha256=digest(symbols),
-                record_bytes=3232+136+22*sample+40+4824+7232,headers_sha256=digest(state['headers']))
+                record_bytes=352+3232+136+22*sample+40+4824+7232,headers_sha256=digest(state['headers']))
         for expected in commands:
             item=dict(name=expected['name'],status='failed',environment_delta=expected['environment_delta'],actual_exit=None);r['cases'].append(item)
             row,out,err=run(expected['name'],[output/expected['argv'][0]],expected['exit'],env=dict(ENV,**expected['environment_delta']))
@@ -274,7 +277,7 @@ def main():
             need(value['operation']=='completed','no failed operation relabelled completed')
             for key in r['totals']:r['totals'][key]+=1 if key=='startup_pairs'else value[key]
             item.update(status='accepted_observation',outcome=value)
-        need(r['totals']==dict(vtn_typed_promotions=50,vtn_supplied_none_queries=50,pairs=85,new_pairs=80,startup_pairs=5,refusals=1030,promoted_encoding_checks=5,
+        need(r['totals']==dict(vpx256_typed_promotions=5,vpx256_supplied_none_queries=5,vtn_typed_promotions=50,vtn_supplied_none_queries=50,pairs=85,new_pairs=80,startup_pairs=5,refusals=1025,promoted_encoding_checks=5,
             promoted_footprint_queries=5,actual_before_queries=160,ending_pairs=16,crossing_pairs=64) and
             len(r['cases'])==5 and all(c['status']=='accepted_observation'for c in r['cases']),'whole exact five-command cohort')
         r['status']='passed'

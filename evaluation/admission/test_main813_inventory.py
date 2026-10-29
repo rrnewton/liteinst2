@@ -1733,6 +1733,68 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual({row['harness'] for row in main813.MAINB66['new_instances']}, {'unit/ordinary_interval/main'})
 
 
+        # Source-only8f622 changes no declared tests, corpus or historical pin.
+        self.assertEqual(set(main813.MAIN8F622['sources']), {
+            'evaluation/ordinary-call-pair-session/freeze.py',
+            'evaluation/ordinary-call-pair-session/launch.py',
+            'evaluation/ordinary-call-pair-session/owner_controls.py',
+            'evaluation/ordinary-call-pair-session/receipt_controls.py',
+            'evaluation/ordinary-call-pair-session/reproduce.py',
+            'evaluation/ordinary-call-pair-session/runner_controls.py',
+            'tests/support/quiescent_oracle.rs'})
+        self.assertEqual(set(main813.MAIN8F622['sources']), set(main813.MAIN8F622['projections']))
+        main813.require_8f622_sources()
+        for path, row in main813.MAIN8F622['projections'].items():
+            target = main813.ROOT / path
+            raw = read_bytes(target)
+            # The historical hash follows the exact current-to-8f622 adapter.
+            projected = main813.source_at_8f622(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(projected).hexdigest(), row['current_sha256'])
+            restored = main813.source_before_8f622(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main8f622_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_8f622(path, bad, 'changed')
+            for index in range(len(row['edits'])):
+                altered = plain.deepcopy(row)
+                altered['edits'][index][2] += '\n'
+                with patch.dict(main813.MAIN8F622['projections'], {path: altered}):
+                    with self.subTest(main8f622_span=(path,index)), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                        main813.source_before_8f622(path, raw, 'changed')
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return raw + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main8f622_source=(path,missing)), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_8f622_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+
+        self.assertEqual(set(main813.MAIN8F622_CURRENT), {
+            'evaluation/ordinary-call-pair-session/receipt_controls.py',
+            'evaluation/ordinary-call-pair-session/reproduce.py'})
+        for path, row in main813.MAIN8F622_CURRENT.items():
+            raw = read_bytes(main813.ROOT / path)
+            restored = main813.source_at_8f622(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), row['current_sha256'])
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            self.assertEqual(main813.source_before_8f622(path, raw, 'changed'),
+                             main813.source_before_12e(path, raw, 'changed'))
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main8f622_current=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_at_8f622(path, bad, 'changed')
+            for index in range(len(row['edits'])):
+                altered = plain.deepcopy(row)
+                altered['edits'][index][2] += '\n'
+                with patch.dict(main813.MAIN8F622_CURRENT, {path: altered}):
+                    with self.subTest(main8f622_current_span=(path,index)), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                        main813.source_before_12e(path, raw, 'changed')
+
+
         # The additive layer restores the exact historical catalog and source;
         # none of its current declarations can be supplied by the old blobs.
         self.assertEqual(main813.digest(main813.before_12e(actual)), main813.CURRENTB66)
@@ -2159,6 +2221,21 @@ class Main813InventoryTests(unittest.TestCase):
                             {path: hashlib.sha256(modified).hexdigest()}):
                         with self.assertRaises(parsing.InvalidEvidence):
                             main813.require_short_native_sources()
+
+        # The independent 8f622 branch receives the original current bytes,
+        # never a second attempt to authenticate an already projected blob.
+        shared_path = 'tests/support/quiescent_oracle.rs'
+        shared_raw = read_bytes(main813.ROOT / shared_path)
+        shared_prior = main813.source_before_short_native(shared_path, shared_raw, 'changed')
+        self.assertEqual(main813.source_at_8f622(shared_path, shared_raw, 'changed'), shared_prior)
+        shared_old = main813.source_before_8f622(shared_path, shared_raw, 'changed')
+        self.assertEqual(main813.source_before_12e(shared_path, shared_raw, 'changed'), shared_old)
+        for already_projected in (shared_prior, shared_old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                main813.source_at_8f622(shared_path, already_projected, 'changed')
+        with patch.object(main813, 'source_before_8f622', return_value=shared_old + b'\n'):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                main813.source_before_12e(shared_path, shared_raw, 'changed')
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
