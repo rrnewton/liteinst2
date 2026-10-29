@@ -906,3 +906,9 @@ ADDS end-to-end `/bin/ls -d .` with ordinary rseq registration and qualified ter
 ## First-entry and operation-batch workload (claims 2 and 4)
 
 ADDS a pipe-released page-boundary fixture with native/full-state comparisons and release measurements for one entry and a 256-operation batch. The [report, commands and all 20 samples](tf-interval-5dc4ed89.md) retain the measured revision and distinguish GO-to-DONE workload time from isolated fault or steady-state latency. All six required checks pass on the merged inventory and recorder successor.
+
+## Sealed-page custody release measurements (claims 2 and 4)
+
+ADDS reuse of an exact sealed page's VMA and negative-alias proof across eligible same-page TF handoffs, with fresh source, descriptor, owner/frame and registered-rseq checks and actual final revoke/release. The [report, reproduction commands and all 60 samples](results/page-custody-762a6615/REPORT.md) retain full finite qualification and separate baseline/custody batches at `762a66157c4c0103acd59605554c216ac5e8db18`. Gated N=256 GO-to-DONE medians are 11.340 ms and 5.629 ms; these are workload round trips, not isolated steady-state latency. Gated `/bin/ls -d .` process medians are 16.164 s and 14.661 s, with native medians 5.390 ms and 15.980 ms; that variability prevents a causal ls speedup claim. Default rseq remains enabled with zero source patches. Full generic B2/B3 and low overhead remain open.
+
+All six [required checks](results/page-custody-762a6615/checks.json) passed separately at `1acb42c4e95fc210c6a627104b18ad2189aa7d4d`: 350 recorder, formatting, strict Clippy, 3,179 workspace passed plus 36 existing ignores across 103 harnesses, workspace check, and 1,039 serial launch tests across 27 harnesses. Independent saved-check replay also passed. Runtime/evaluator bytes remain identical to measured 762a, and seven earlier actual failures remain failed in the compact history. Later upstream `9c70b1af` is outside this check result.
