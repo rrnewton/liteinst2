@@ -1834,7 +1834,7 @@ class Main813InventoryTests(unittest.TestCase):
         # The disassembly importer adds eight library tests, no default example
         # harness. Old source/catalog checks receive exact pre-importer images.
         self.assertEqual(main813.digest(main813.before_c6f(actual)), main813.CURRENT12E)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_short(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 3582, 37))
         self.assertEqual(main813.MAINC6F['declared_delta'],
@@ -1923,6 +1923,107 @@ class Main813InventoryTests(unittest.TestCase):
             return raw
         with patch.object(Path, 'read_bytes', enabled_example), self.assertRaises(parsing.InvalidEvidence):
             inventory.require_current(actual)
+
+        # Explicit short-only neighbor layer: every prior assertion remains above.
+        self.assertEqual(main813.digest(actual), main813.LATEST)
+        previous_short = main813.before_short(actual)
+        self.assertEqual(main813.digest(previous_short), main813.CURRENTC6F)
+        self.assertEqual(main813.CURRENTC6F, main813.MAINC6F['current_corpus_sha256'])
+        short_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(short_rows), sum(x['tests'] for x in short_rows.values()),
+                          sum(x['ignored'] for x in short_rows.values())), (103, 3589, 37))
+        self.assertEqual(short_rows['unit/liteinst2/lib'], {'tests': 278, 'ignored': 1})
+        self.assertEqual(previous_short['harness_test_counts']['workspace_tests']['unit/liteinst2/lib'],
+                         {'tests': 271, 'ignored': 1})
+        self.assertEqual(short_rows['test/neighbor_eviction_oracle'], {'tests': 80, 'ignored': 0})
+        self.assertEqual(actual['recorder_tests'], 350)
+        self.assertEqual(main813.MAINSHORT['declared_delta'],
+                         {'rust_declarations': 7, 'rust_tests': 7, 'harnesses': 0, 'ignored': 0, 'doctests': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(previous_short)
+        main813.require_short_sources()
+        inventory.require_current(actual)
+        for value in (277, 279, True, 278.0):
+            changed = plain.deepcopy(actual)
+            changed['harness_test_counts']['workspace_tests']['unit/liteinst2/lib']['tests'] = value
+            with self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        changed = plain.deepcopy(actual)
+        del changed['harness_test_counts']['workspace_tests']['unit/liteinst2/lib']
+        with self.assertRaises(parsing.InvalidEvidence):
+            main813.before_short(changed)
+        for key in actual:
+            changed = plain.deepcopy(actual)
+            changed[key] = None
+            with self.assertRaises(parsing.InvalidEvidence):
+                main813.before_short(changed)
+        self.assertEqual(set(main813.MAINSHORT['sources']),
+                         {'src/neighbor.rs', 'src/neighbor_short.rs', 'src/neighbor_short/tests.rs',
+                          'evaluation/admission/parsing.py'})
+        short_read_bytes = Path.read_bytes
+        for path in main813.MAINSHORT['sources']:
+            mutation_target = main813.ROOT / path
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == mutation_target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return short_read_bytes(candidate) + b'\n'
+                    return short_read_bytes(candidate)
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        self.assertEqual(set(main813.MAINSHORT['projections']),
+                         {'src/neighbor.rs', 'evaluation/admission/parsing.py'})
+        for path, row in main813.MAINSHORT['projections'].items():
+            raw = short_read_bytes(main813.ROOT / path)
+            restored = main813.source_before_short(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            self.assertEqual(main813.source_before_c6f(path, raw, 'changed'), restored)
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_short(path, bad, 'changed')
+            mutations = [dict(row, current_sha256='0' * 64),
+                         dict(row, previous_sha256='0' * 64),
+                         dict(row, edits=[[len(raw) + 1, len(raw) + 1, '']]),
+                         dict(row, edits=[[0, 0, 'changed inverse']])]
+            for changed_row in mutations:
+                with patch.dict(main813.MAINSHORT['projections'], {path: changed_row}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                        main813.source_before_short(path, raw, 'changed')
+            mutation_target = main813.ROOT / path
+            def historical(candidate):
+                return restored if candidate == mutation_target else short_read_bytes(candidate)
+            with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(actual)
+        neighbor = short_read_bytes(main813.ROOT / 'src/neighbor.rs')
+        self.assertEqual(hashlib.sha256(main813.source_before('src/neighbor.rs', neighbor, 'changed')).hexdigest(),
+                         '7ffea697019b497757032b92dd8db2dadad0e43ed0bae047810dd02168af49ea')
+        test_source = 'src/neighbor_short/tests.rs'
+        methods = main813.MAINSHORT['methods'][test_source]
+        self.assertEqual(len(methods['all']), 7)
+        self.assertEqual(methods['ignored'], [])
+        self.assertEqual(main813.MAINSHORT['instances'],
+                         {test_source: {'unit/liteinst2/lib': 'neighbor::short::tests::'}})
+        self.assertEqual(main813.MAINSHORT['listed_additions']['unit/liteinst2/lib'],
+                         ['neighbor::short::tests::' + name for name in methods['all']])
+        for changed in ([dict(methods, all=methods['all'][:i] + methods['all'][i + 1:])
+                         for i in range(7)] +
+                        [dict(methods, all=methods['all'] + ['not_registered']),
+                         dict(methods, all=list(reversed(methods['all']))),
+                         dict(methods, ignored=[methods['all'][0]])]):
+            with patch.dict(main813.MAINSHORT['methods'], {test_source: changed}):
+                with self.assertRaises(parsing.InvalidEvidence):
+                    main813.require_short_sources()
+        for path, literals in main813.MAINSHORT['module_chains'].items():
+            for i in range(len(literals)):
+                changed = list(literals)
+                changed[i] += ' invalid_module_route'
+                with patch.dict(main813.MAINSHORT['module_chains'], {path: changed}):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_sources()
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -2203,3 +2304,37 @@ class Main813InventoryTests(unittest.TestCase):
         row = parsing.parse_harnesses(failed, expected, 1)[0]
         self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']), ('FAILED', 46, 1))
         self.assertEqual(row['partitions'][1]['summary']['failed'], 1)
+
+        # Seven short-neighbor unit controls retain the exact existing child shape.
+        raw = '\n'.join((header('liteinst2'), 'running 278 tests',
+                         'running 1 test', summary(1, filtered=277),
+                         'running 1 test', summary(1, filtered=277),
+                         'running 1 test',
+                         'test trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack ... ok',
+                         summary(277, ignored=1)))
+        expected = {'unit/liteinst2/lib': counts(278, 1)}
+        row = parsing.parse_harnesses(raw, expected, 0)[0]
+        self.assertEqual(row['outer']['passed'], 277)
+        self.assertEqual(row['outer']['ignored'], 1)
+        self.assertEqual([x['passed'] for x in row['nested']], [1, 1])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((277, 1, 1), (279, 1, 1), (278, 0, 1),
+                                       (278, 2, 1), (278, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                             f'running {nested} tests', summary(total - ignored, ignored=ignored)))
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        changes = [raw.replace('liteinst2', 'other'),
+                   raw.replace('running 278 tests', 'running 279 tests'),
+                   raw.replace(summary(1, filtered=277), summary(1, filtered=276), 1),
+                   raw.replace(summary(277, ignored=1), summary(277, ignored=1, filtered=1)),
+                   raw.replace(summary(277, ignored=1), summary(276, ignored=1, measured=1)),
+                   raw.replace(summary(277, ignored=1), summary(276, ignored=1, failed=1)),
+                   raw.replace(summary(277, ignored=1), summary(277, ignored=1, result='FAILED')),
+                   raw.replace('test trampoline::tests::live::ptrace',
+                               'running 1 test\ntest trampoline::tests::live::ptrace'),
+                   raw.replace(summary(277, ignored=1), ''),
+                   raw + '\n' + summary(277, ignored=1)]
+        for bad in changes:
+            with self.subTest(core_short=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)

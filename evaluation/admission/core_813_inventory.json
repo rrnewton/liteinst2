@@ -21095,6 +21095,176 @@
       "prefix": "frontend_native::backoff::optional::tests::native"
     }
   },
+  "neighbor_short": {
+    "added_methods": {
+      "src/neighbor_short/tests.rs": [
+        "short_endpoints_preserve_whole_victims_and_all_successor_bytes",
+        "short_window_sign_endpoints_and_reencoding_are_exact",
+        "selected_inside_suffix_uses_exact_prospective_overlay",
+        "full_fetch_scope_original_identity_and_boundaries_fail_closed",
+        "suffix_locks_and_leases_keep_all_ten_bytes_protected",
+        "short_search_charges_real_pairs_and_keeps_full_mapping_limits",
+        "short_entrypoints_do_not_admit_long_victims_or_change_long_search"
+      ]
+    },
+    "base": "f59b21508c2991d13f6342da0248e44a1d2ac69f",
+    "core_binding_sha256": "3871659b2bfdf628e3a904dd2f8b42cc1009d4f440cff1806a82dbb5a01ae928",
+    "current_corpus_sha256": "7b73e37239203ddc95e9e453f2f51471d7c9a04e1651c3a9817c757c260f8825",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 7,
+      "rust_tests": 7
+    },
+    "instances": {
+      "src/neighbor_short/tests.rs": {
+        "unit/liteinst2/lib": "neighbor::short::tests::"
+      }
+    },
+    "listed_additions": {
+      "unit/liteinst2/lib": [
+        "neighbor::short::tests::short_endpoints_preserve_whole_victims_and_all_successor_bytes",
+        "neighbor::short::tests::short_window_sign_endpoints_and_reencoding_are_exact",
+        "neighbor::short::tests::selected_inside_suffix_uses_exact_prospective_overlay",
+        "neighbor::short::tests::full_fetch_scope_original_identity_and_boundaries_fail_closed",
+        "neighbor::short::tests::suffix_locks_and_leases_keep_all_ten_bytes_protected",
+        "neighbor::short::tests::short_search_charges_real_pairs_and_keeps_full_mapping_limits",
+        "neighbor::short::tests::short_entrypoints_do_not_admit_long_victims_or_change_long_search"
+      ]
+    },
+    "methods": {
+      "src/neighbor_short/tests.rs": {
+        "all": [
+          "short_endpoints_preserve_whole_victims_and_all_successor_bytes",
+          "short_window_sign_endpoints_and_reencoding_are_exact",
+          "selected_inside_suffix_uses_exact_prospective_overlay",
+          "full_fetch_scope_original_identity_and_boundaries_fail_closed",
+          "suffix_locks_and_leases_keep_all_ten_bytes_protected",
+          "short_search_charges_real_pairs_and_keeps_full_mapping_limits",
+          "short_entrypoints_do_not_admit_long_victims_or_change_long_search"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "src/neighbor.rs": [
+        "#[path = \"neighbor_short.rs\"]\nmod short;"
+      ],
+      "src/neighbor_short.rs": [
+        "#[cfg(test)]\n#[path = \"neighbor_short/tests.rs\"]\nmod tests;"
+      ]
+    },
+    "previous_corpus_sha256": "b5aca5395ff169068a092a2913511fbb8d7c18d64b579b6d1a914bbcc1755e15",
+    "projections": {
+      "evaluation/admission/parsing.py": {
+        "current_sha256": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956",
+        "edits": [
+          [
+            13311,
+            13631,
+            "                                  (\"unit/liteinst2/lib\", 271, 1), (\"test/stress\", 7, 3))\n"
+          ]
+        ],
+        "previous_sha256": "1b8a24575b82938f50b5af310622ee5eea5ca6412ffd75243835cecbe55012f0"
+      },
+      "src/neighbor.rs": {
+        "current_sha256": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc",
+        "edits": [
+          [
+            2120,
+            2200,
+            "    /// Whole original victim instruction length, 10..=15.\n"
+          ],
+          [
+            8298,
+            8602,
+            ""
+          ],
+          [
+            11356,
+            11898,
+            ""
+          ],
+          [
+            13810,
+            14185,
+            "                let victim_range = qualify_victim_core(request, &scan, victim, 10)?;\n"
+          ],
+          [
+            14416,
+            14689,
+            "                Ok((victim_range, relay, rel8, patch))\n"
+          ],
+          [
+            14707,
+            14804,
+            "            let (victim_range, relay, rel8, selected_patch) = match qualification {\n"
+          ],
+          [
+            17496,
+            18135,
+            "                for selected_candidate in 0..request.allocation.max_candidates {\n"
+          ],
+          [
+            18778,
+            19257,
+            "                    let selected_target = quiescent::candidate_target(\n                        relay,\n                        [false; 4],\n                        request.allocation.preferred_address,\n                        selected_candidate,\n                    );\n"
+          ],
+          [
+            21162,
+            21208,
+            ""
+          ],
+          [
+            23241,
+            23688,
+            "                    quiescent::candidate_target_proof(\n                        relay,\n                        [false; 4],\n                        request.allocation.preferred_address,\n                        request.allocation.max_candidates,\n                    ),\n"
+          ],
+          [
+            27840,
+            27880,
+            ""
+          ],
+          [
+            28220,
+            28334,
+            ""
+          ],
+          [
+            28709,
+            28874,
+            ""
+          ],
+          [
+            29709,
+            29947,
+            ""
+          ]
+        ],
+        "previous_sha256": "7ffea697019b497757032b92dd8db2dadad0e43ed0bae047810dd02168af49ea"
+      }
+    },
+    "scope": "Exact explicit same-function short-only6..9 core source; source declarations only, no native oracle or execution qualification.",
+    "sources": {
+      "evaluation/admission/parsing.py": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956",
+      "src/neighbor.rs": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc",
+      "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+      "src/neighbor_short/tests.rs": "deca1ca2c491f6f0ff5a45b6a11fa336288bbd931a5d732ab2b28fd7fd90e17f"
+    },
+    "workspace_changes": {
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 278
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 271
+        }
+      }
+    }
+  },
   "precontext_inventory": {
     "workspace_tests": [
       {
