@@ -1,0 +1,513 @@
+{
+  "schema": 1,
+  "source_revision": "5fb97c53d5d5fc330bdceecb6cb7bf843b03da49",
+  "merge_validation_revision": "aff7bc65856ff316217586772eed605f9386d096",
+  "merged_main": "781209b92dbe17010a9777da86e769245f88197e",
+  "claim": 4,
+  "hardware": {
+    "architecture": "x86_64",
+    "build_cpus": 4,
+    "caller_and_helper_shared_cpus": 1,
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "state_allowed_cpus": 4,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "rust": {
+    "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+    "host": "x86_64-unknown-linux-gnu",
+    "release": "1.97.1"
+  },
+  "binary": {
+    "bytes": 6264280,
+    "sha256": "2cf5d771a4150910ac82d914aa3d1e85d90529c616ca4168bec5f89763b93ef6"
+  },
+  "release_profile": {
+    "opt_level": "3",
+    "debuginfo": 0,
+    "test": false,
+    "debug_assertions": true,
+    "overflow_checks": true
+  },
+  "incremental": false,
+  "compiler_jobs": 4,
+  "probe": {
+    "status": "CAPTURED_UNQUALIFIED",
+    "attempts_with_capture": 1,
+    "prior_pre_capture_failures": 3,
+    "prerequisite_stages": 34,
+    "probe_stages": 30,
+    "limiter_controls": 20,
+    "decode_commands": 3,
+    "work": {
+      "calls": 3072,
+      "helper_calls": 1536,
+      "instructions": 614400,
+      "repetitions": 128,
+      "conditional": 99840,
+      "taken": 96768
+    },
+    "data": {
+      "bytes": 644256,
+      "sha256": "5b46da1edb6017ab187c2c7760054a43ef6bf4628d5d0fd0247f07fa70bf4aef"
+    },
+    "reservation": [
+      90,
+      159,
+      170,
+      199
+    ],
+    "application_cpu": 90,
+    "whole_probe_load_before": [
+      36.04,
+      36.16,
+      38.65
+    ],
+    "whole_probe_load_after": [
+      81.59,
+      52.85,
+      44.37
+    ],
+    "capture_load_before": [
+      78.77,
+      51.82,
+      43.99
+    ],
+    "capture_load_after": [
+      81.59,
+      52.85,
+      44.37
+    ],
+    "outer": {
+      "start_utc": "2026-10-29T00:49:39.817597+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 159.81217870302498,
+      "private_log_sha256": "5cf6dea5bba3b70b0ed26828bb4b00ae7ecdd603e5ec4083b0af8574132e2e65",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "event_options": [
+      "record",
+      "-e",
+      "instructions:uDS",
+      "-c",
+      "4096",
+      "-P",
+      "-T",
+      "--sample-cpu",
+      "--sample-identifier",
+      "--running-time",
+      "-s",
+      "--inherit",
+      "-m",
+      "256",
+      "--no-buildid-cache",
+      "--no-buildid-mmap",
+      "--buildid-all"
+    ],
+    "limits": {
+      "capture_cpu_seconds": 20,
+      "capture_wall_seconds": 30,
+      "capture_file_bytes": 16777216,
+      "application_file_bytes": 1048576,
+      "ring_pages": 256,
+      "decode_cpu_seconds": 20,
+      "decode_wall_seconds": 30,
+      "decode_file_bytes": 67108864,
+      "max_decoded_records": 100000,
+      "record_size_min": 8,
+      "record_size_max": 65535
+    },
+    "perf_binary": {
+      "bytes": 12270728,
+      "sha256": "1be5e150695f3bc2b2f6df3cd937fe12527d5b1c7140716e9beb23b9cdd35f46"
+    },
+    "reported_evlist": "instructions:uDS: type: 4 (cpu), size: 144, config: 0xc0 (instructions), { sample_period, sample_freq }: 4096, sample_type: IP|TID|TIME|READ|CPU|PERIOD|IDENTIFIER, read_format: TOTAL_TIME_ENABLED|TOTAL_TIME_RUNNING|ID|LOST, disabled: 1, inherit: 1, pinned: 1, exclude_kernel: 1, exclude_hv: 1, mmap: 1, comm: 1, inherit_stat: 1, enable_on_exec: 1, task: 1, sample_id_all: 1, mmap2: 1, comm_exec: 1, ksymbol: 1, bpf_event: 1",
+    "capability": {
+      "decoded_record_limit": 100000,
+      "record_size_max": 65535,
+      "record_size_min": 8,
+      "scope": "These are subsequent decoder obligations, not inferred from text or exit zero.",
+      "status": "UNREVIEWED"
+    },
+    "raw_result": {
+      "bytes": 123368,
+      "sha256": "79123f9d9af316bdf8f367d732a1581d98395ff33549944c6b181d18bcbe6757"
+    },
+    "qual_result": {
+      "bytes": 143865,
+      "sha256": "ddd7f059d1bfedad41e624337cd49964510196c32e0225fe93ba8e7a68d917c9"
+    },
+    "raw_capture_retained_in_ignored": true
+  },
+  "stops": {
+    "status": "PASS",
+    "runs": [
+      {
+        "name": "t1-stop-k10",
+        "status": "PASS",
+        "numbers": {
+          "accepted": 64,
+          "actions": 2,
+          "arms": 1,
+          "batches": 17,
+          "calls": 64,
+          "child_exit": 0,
+          "detach": 1,
+          "flushes": 0,
+          "input_bytes": 9157,
+          "joins": 1,
+          "normal_reaps": 1,
+          "rescues": 0,
+          "sampled": 10,
+          "transcript_bytes": 7980,
+          "unsampled": 54
+        },
+        "seconds": 0.3872248900588602
+      },
+      {
+        "name": "t2-stop-k10",
+        "status": "PASS",
+        "numbers": {
+          "accepted": 64,
+          "actions": 2,
+          "admitted": 10,
+          "arms": 1,
+          "batches": 51,
+          "calls": 64,
+          "cancelled": 0,
+          "child_exit": 0,
+          "detaches": 2,
+          "dropped": 0,
+          "flushes": 0,
+          "input_bytes": 9157,
+          "joins": 2,
+          "normal_reaps": 1,
+          "rescues": 0,
+          "retained": 10,
+          "transcript_bytes": 8749,
+          "unfinished": 0,
+          "unsampled": 54
+        },
+        "seconds": 0.33198349503800273
+      }
+    ],
+    "reservation": [
+      92,
+      113,
+      230,
+      313
+    ],
+    "load_before": [
+      90.76,
+      74.68,
+      54.63
+    ],
+    "load_after": [
+      90.62,
+      74.92,
+      54.81
+    ],
+    "outer": {
+      "start_utc": "2026-10-29T00:55:08.533423+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 5.4537984831258655,
+      "private_log_sha256": "032c40539d0642aedbd3a4f0935fab24b706732abc3228a7b227cbe6938f1a1b",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "raw_result": {
+      "bytes": 6197,
+      "sha256": "8cb3cc42f9ed23eae02d1a551b598320ae3a7ed36b2e025b4b3c4a552f187bb9"
+    },
+    "csv": {
+      "bytes": 337,
+      "sha256": "8b3f188f4498b5a17977c261ef6bac7ab60c2678c57b1518ceeabba45655b605"
+    },
+    "source_count": 527,
+    "source_sha256": "e29bcd6d35f7f73f50116f185220e833ea4ca4c0f5f44afdf8a000e01e0e3c93",
+    "reproducer": {
+      "bytes": 14379,
+      "sha256": "4c70b162c82a5b4776557a49e4994103ea6053f0439a5c53460de2254917a094"
+    }
+  },
+  "checks": [
+    {
+      "revision": "5fb97c53d5d5fc330bdceecb6cb7bf843b03da49",
+      "checks": [
+        {
+          "check": "fmt",
+          "status": "PASS",
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 6.734154931036755,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "check": "clippy",
+          "status": "PASS",
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 6.630500623025,
+          "log_sha256": "f8ff54b6b512e577449224abf94148d4bc9e7cfcb1547f1d01e772bbadff349a"
+        },
+        {
+          "check": "check",
+          "status": "PASS",
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 18.339713774155825,
+          "log_sha256": "445ea51081fe2e5bffe92d2e51189ee7c2972f7e68f7d78581d1dc79ae7e5eda"
+        },
+        {
+          "check": "workspace-default",
+          "status": "PASS",
+          "passed": 3093,
+          "failed": 0,
+          "ignored": 36,
+          "seconds": 337.48485342995264,
+          "log_sha256": "bf532bca7df58b36b8a8b42bc7fc54fd445a138ac428c56eefea644443f5ba8c"
+        },
+        {
+          "check": "serial-launch",
+          "status": "PASS",
+          "passed": 1039,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 124.91298904293217,
+          "log_sha256": "bb86e8d4ffd0c3e13ff173f7fb89654361745df99603beef04337b36f78f851f"
+        },
+        {
+          "check": "staged-allocation",
+          "status": "PASS",
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 0.03423779993318021,
+          "log_sha256": "f8a9305635186f5b815a269121f042a9db67dcd4051b7ac21257f1cd413eafc2"
+        },
+        {
+          "check": "prefixed-pun",
+          "status": "PASS",
+          "passed": 36,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 1.3029430331662297,
+          "log_sha256": "d56a2482324a0e5941b2571e250bd07f2dfb2c9a0027b3b42c89141943a8c19d"
+        }
+      ],
+      "custom_harnesses": [
+        "tests/exec_backing_cleanup.rs",
+        "tests/precontext_native.rs"
+      ],
+      "historical_regressions": [
+        "admitted_exec_native_first_user_and_retired_history_are_exact",
+        "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+        "admitted_exec_native_source_profile_bound_refuses_after_exec",
+        "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+        "original_exec_replacement_matches_raw_replay_and_native_full_state",
+        "dropping_staged_image_releases_its_exact_mapping",
+        "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+        "native_state_covers_every_prefixed_pun_and_original_successor"
+      ],
+      "retirement_controls": [
+        "captured_kernel_tid_survives_success_and_panic",
+        "complete_census_refuses_malformed_duplicate_or_missing_main",
+        "retirement_preserves_result_until_exact_tid_absence",
+        "exclusive_retirement_refuses_unknown_tasks_and_waits_for_both",
+        "retirement_uses_one_absolute_deadline_and_checks_after_observation"
+      ],
+      "receipt": {
+        "bytes": 21875,
+        "sha256": "aab11df63a29ca7a402c0718e5c6a138ed99eb14a30dd1ac9689447a080fafa3"
+      },
+      "outer": {
+        "start_utc": "2026-10-29T00:41:11.374573+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 495.6587035921402,
+        "private_log_sha256": "1ba0f1dcc09f1ccefb5322c57340935f0d3c9abfce765a7399919a79a29b7665",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "revision": "aff7bc65856ff316217586772eed605f9386d096",
+      "checks": [
+        {
+          "check": "fmt",
+          "status": "PASS",
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 7.060930201085284,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "check": "clippy",
+          "status": "PASS",
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 0.18158120987936854,
+          "log_sha256": "dda7980e8da1041233b9bd7cd86f479320cbe44ef953019bb06c5f1c023ea622"
+        },
+        {
+          "check": "check",
+          "status": "PASS",
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 0.135242568096146,
+          "log_sha256": "63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191"
+        },
+        {
+          "check": "workspace-default",
+          "status": "PASS",
+          "passed": 3093,
+          "failed": 0,
+          "ignored": 36,
+          "seconds": 337.39486018382013,
+          "log_sha256": "07092bc1be88762c59ad378e1ed27c139b1f1dcfd2eb424650ae754a1f66a619"
+        },
+        {
+          "check": "serial-launch",
+          "status": "PASS",
+          "passed": 1039,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 124.84083005413413,
+          "log_sha256": "604624061573a8c2cc7e4782ceb245727800ba8c8c4af3c3d2aab39380385bf8"
+        },
+        {
+          "check": "staged-allocation",
+          "status": "PASS",
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 0.0339514440856874,
+          "log_sha256": "f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5"
+        },
+        {
+          "check": "prefixed-pun",
+          "status": "PASS",
+          "passed": 36,
+          "failed": 0,
+          "ignored": 0,
+          "seconds": 1.291771997930482,
+          "log_sha256": "b04b9fd12d5925f97c002e782e8ef5a639ef3318481388610855c536f36a11be"
+        }
+      ],
+      "custom_harnesses": [
+        "tests/exec_backing_cleanup.rs",
+        "tests/precontext_native.rs"
+      ],
+      "historical_regressions": [
+        "admitted_exec_native_first_user_and_retired_history_are_exact",
+        "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+        "admitted_exec_native_source_profile_bound_refuses_after_exec",
+        "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+        "original_exec_replacement_matches_raw_replay_and_native_full_state",
+        "dropping_staged_image_releases_its_exact_mapping",
+        "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+        "native_state_covers_every_prefixed_pun_and_original_successor"
+      ],
+      "retirement_controls": [
+        "captured_kernel_tid_survives_success_and_panic",
+        "complete_census_refuses_malformed_duplicate_or_missing_main",
+        "retirement_preserves_result_until_exact_tid_absence",
+        "exclusive_retirement_refuses_unknown_tasks_and_waits_for_both",
+        "retirement_uses_one_absolute_deadline_and_checks_after_observation"
+      ],
+      "receipt": {
+        "bytes": 21877,
+        "sha256": "569af5efc2fbe45fb80a7fb8ddadcd4b7f34c80bb9b82b49d5116426068563d6"
+      },
+      "outer": {
+        "start_utc": "2026-10-29T00:57:39.050421+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 471.24686143081635,
+        "private_log_sha256": "1ba0f1dcc09f1ccefb5322c57340935f0d3c9abfce765a7399919a79a29b7665",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    }
+  ],
+  "commands": {
+    "checks": [
+      "python3",
+      "-B",
+      "evaluation/admission/check_exec_identity.py",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--output",
+      "$REPO/ignored/NEW_CHECKS",
+      "--checks-only"
+    ],
+    "probe": [
+      "python3",
+      "-B",
+      "tools/rapid-profiler/normal-work/perf_probe.py",
+      "--revision",
+      "5fb97c53d5d5fc330bdceecb6cb7bf843b03da49",
+      "--raw",
+      "$REPO/ignored/NEW_PROBE",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "stops": [
+      "python3",
+      "-B",
+      "$STOP_REPRO",
+      "--revision",
+      "5fb97c53d5d5fc330bdceecb6cb7bf843b03da49",
+      "--raw",
+      "$REPO/ignored/NEW_STOPS",
+      "--binary",
+      "$QUALIFIED_BINARY",
+      "--binary-sha256",
+      "2cf5d771a4150910ac82d914aa3d1e85d90529c616ca4168bec5f89763b93ef6",
+      "--candidate",
+      "$QUALIFICATION/strnlen-prerequisite/candidate.so",
+      "--final",
+      "$QUALIFICATION/strnlen-prerequisite/final.so",
+      "--manifest",
+      "$QUALIFICATION/strnlen-prerequisite/selection.json",
+      "--manifest-sha256",
+      "32e40c987e720b0c620a167b160be0e231b70a5ec956c69a90429fced5e7ada5",
+      "--cpus",
+      "92,113,230,313"
+    ]
+  },
+  "source_review": {
+    "merge_continuity": "2d73c9591bff82e7559b9a4979f0c55656f0c838a340f9537be75e07e6e44c9d",
+    "implementation": "fc3fb896459cf85b0936f59ac1900da7b61507c78ed89a2398c0feabb697ecdf",
+    "stop_launcher": "0e76d444210d35b7fc61ae9aa092cd2edcfcaac0bb54b2d00702abb9292171c8",
+    "scope": "Independent source-only review, no runtime credit"
+  },
+  "limitations": [
+    "Procfs observation is not unconditional kernel-unlink proof. Prior extra TID cause unestablished.",
+    "STOP controls do not force the transient window or qualify a full timed cohort.",
+    "Perf capture remains unqualified pending finite binary decoding, identity, loss/throttle and final accounting.",
+    "Historical five timing outcomes remain FAILED,PASS,PASS,FAILED,PASS. No retry of that campaign.",
+    "No throughput, accuracy, overhead comparison or A5 completion claim."
+  ]
+}

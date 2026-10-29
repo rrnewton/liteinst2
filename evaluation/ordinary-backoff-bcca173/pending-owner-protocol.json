@@ -1,0 +1,46 @@
+{
+  "adaptive_repetition": false,
+  "catalog": [
+    {
+      "control": 1,
+      "hold_ordinal": 22,
+      "k": 10
+    },
+    {
+      "control": 2,
+      "hold_ordinal": 1006,
+      "k": 1000
+    }
+  ],
+  "child_bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "experiment": "ordinary-backoff-pending-owner-functional-v1",
+  "failure_policy": "A normal closed native failure remains FAILED and continues the second declared control. Source/artifact/closure uncertainty stops remaining controls as UNRUN. Either FAILED or UNRUN control blocks all ten timed functional trials; every outcome is retained.",
+  "fixed_work": {
+    "batches": 128,
+    "calls": 3072,
+    "calls_per_batch": 24,
+    "helper_calls": 1536,
+    "journal_words": 65536
+  },
+  "native_absolute_seconds": 15,
+  "parent_protocol_sha256": "8bc5ec049eb2d53561544b46d0cbc50541313a1c14fa2f6aa23ccad5c2719c20",
+  "qualifications": 1,
+  "required": {
+    "actual_join_and_retirement": true,
+    "actual_next_entry_release_before_checkpoint": true,
+    "final_banks": 3,
+    "old_report_copies": 1,
+    "shared_owner_refusals": 2
+  },
+  "retries": 0,
+  "revision_and_reservation": "Same exact clean release build and four-CPU reservation as parent qualification; record actual load/roles/source/tool/artifact/request hashes and successful process closure.",
+  "schema": 1,
+  "scope": "Separate deterministic command-driven functional prerequisite; Schedule not run, no strict2ms/520-arm/performance credit.",
+  "status": "FROZEN_BEFORE_NATIVE_QUALIFICATION",
+  "warmup_calls": 0,
+  "wire_binding_sha256": "f35723cf291e8666e046937459494c9cd4b27b079663e074209075b18c9c8206"
+}

@@ -1,0 +1,121 @@
+{
+  "adaptive_repetition": false,
+  "bounds": {
+    "outer_log_bytes": 8388608,
+    "outer_wall_seconds": 1200,
+    "per_child_cpu_seconds": 20,
+    "per_child_file_bytes": 1048576,
+    "per_child_wall_seconds": 30
+  },
+  "catalog": [
+    {
+      "k": 10,
+      "qualification": 1,
+      "trial": 1
+    },
+    {
+      "k": 1000,
+      "qualification": 1,
+      "trial": 2
+    },
+    {
+      "k": 10,
+      "qualification": 2,
+      "trial": 3
+    },
+    {
+      "k": 1000,
+      "qualification": 2,
+      "trial": 4
+    },
+    {
+      "k": 10,
+      "qualification": 3,
+      "trial": 5
+    },
+    {
+      "k": 1000,
+      "qualification": 3,
+      "trial": 6
+    },
+    {
+      "k": 10,
+      "qualification": 4,
+      "trial": 7
+    },
+    {
+      "k": 1000,
+      "qualification": 4,
+      "trial": 8
+    },
+    {
+      "k": 10,
+      "qualification": 5,
+      "trial": 9
+    },
+    {
+      "k": 1000,
+      "qualification": 5,
+      "trial": 10
+    }
+  ],
+  "excluded_claims": [
+    "Elapsed time or throughput",
+    "Raw callback tick accuracy",
+    "Cheap inactive calls",
+    "520-arm qualification",
+    "Full A5 completion"
+  ],
+  "experiment": "ordinary-fixed-work-backoff-functional-v1",
+  "failure_policy": "Retain all ten PASS, FAILED or UNRUN outcomes. A fully closed native functional refusal is final for that trial and continues the next predeclared entry. Broken source/artifact identity, owner custody or prerequisites stop the remainder as UNRUN. No retry or changed bounds.",
+  "fixed_work": {
+    "blocks": 128,
+    "calls": 3072,
+    "calls_per_block": 24,
+    "helper_calls": 1536,
+    "specified_target_instructions": 614400
+  },
+  "observations": [
+    "Exact revision, hardware label, source/tool/build/artifact hashes and commands",
+    "Reservation and load average before/after each trial",
+    "Complete3072 call rows and publication/Report summaries privately; public compact exact counts and raw result CSV/JSON",
+    "Observed/unexercised rearming, FunctionClosed and later-generation sampled coverage",
+    "Normal process closure and cleanup evidence"
+  ],
+  "prerequisite": "Fresh unchanged verify_normal_interval.py with --reference-exact --reference-work --reference-leg --observer-work, all34 stages and complete source/artifact/request/process joins; collector/checker/driver controls and separate deterministic native pending-owner control required before claiming full cohort validation.",
+  "prior_deadline_campaign": "The closed fixed-five strict2ms outcomes remain FAILED,PASS,PASS,FAILED,PASS; this is a distinct fixed-work cohort, not a sixth deadline attempt.",
+  "purpose": "Complete ordinary work with independently scheduled metadata admission; functional ownership and population evidence only.",
+  "qualifications": 5,
+  "release_profile": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "opt_level": "3",
+    "overflow_checks": true
+  },
+  "reservation": {
+    "allocator": "cpuset-alloc",
+    "application": "sorted reserved CPU1",
+    "authority": "Root must join actual allocator command/log and hard AllowedCPUs; reservation is cooperative and does not guarantee scheduler-quiet or exclusive hardware.",
+    "controller": "sorted reserved CPU3",
+    "cores": 4,
+    "prerequisites": "four reserved CPUs",
+    "producer": "sorted reserved CPU0",
+    "spare": "sorted reserved CPU2 unused during cohort"
+  },
+  "retries": 0,
+  "schedule": {
+    "arm_lateness_ms": 2,
+    "epoch_limit": 520,
+    "period_ms": 10,
+    "scope": "Issued arms and original requested shutdown; no claim every elapsed due arm was evaluated.",
+    "shutdown_ms": 2000,
+    "stop": "Requested after all fixed work returns, validates and detaches"
+  },
+  "schema": 1,
+  "source_revision": "Exact clean commit required by launch; assigned after source review, controls and commit.",
+  "status": "FROZEN_BEFORE_NATIVE_QUALIFICATION",
+  "warmup_calls": 0,
+  "wire_binding_sha256": "d94108be83f0b55212e533f5a3aae9214975dcb8b39631d4df29a364b2424e1d"
+}

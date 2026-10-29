@@ -270,7 +270,7 @@ pub(super) fn run(
     let worker_input = Arc::clone(&input);
     let worker_spans = Arc::clone(&spans);
     let caller_path = caller_candidate.to_owned();
-    let handle = thread::spawn(move || {
+    let handle = joined_task::spawn(move || {
         pin(Some(cpu));
         let tid = unsafe { libc::syscall(libc::SYS_gettid) } as u64;
         assert_ne!(tid, u64::from(std::process::id()));

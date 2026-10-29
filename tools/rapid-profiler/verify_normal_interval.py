@@ -197,6 +197,7 @@ def main():
     assert git('rev-parse', 'HEAD').decode().strip() == a.revision
     assert git('status', '--porcelain', '--untracked-files=no') == b''
     required = {'tools/rapid-profiler/verify_normal_interval.py',
+        'tools/rapid-profiler/ordinary-interval/joined_task.rs',
         'tools/rapid-profiler/verify_strnlen_interval.py', 'evaluation/admission/processes.py',
         'tools/unwind-oracle/bounded_command.py', 'tools/rapid-profiler/selected-work/check_output.py',
         'tools/rapid-profiler/normal-work/check_output.py', 'tests/call_tree_truth.rs'}

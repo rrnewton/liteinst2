@@ -1,0 +1,213 @@
+{
+  "capture": {
+    "application_cpu": 90,
+    "bytes": 644256,
+    "expected_command_json_sha256": "067de69478dbdd0ed7d4ce5eed23bd9f16461adfc0bd96902983cb2307ef0eaa",
+    "immediate_load_after": [
+      81.59,
+      52.85,
+      44.37
+    ],
+    "immediate_load_before": [
+      78.77,
+      51.82,
+      43.99
+    ],
+    "new_captures": 0,
+    "profile": "release opt3 debug0 assertions=true overflow=true; capture provenance only, no performance comparison",
+    "provenance": "../ordinary-task-retirement-5fb97c5/receipt.json",
+    "reservation_cpus": [
+      90,
+      159,
+      170,
+      199
+    ],
+    "revision": "5fb97c53d5d5fc330bdceecb6cb7bf843b03da49",
+    "sha256": "5b46da1edb6017ab187c2c7760054a43ef6bf4628d5d0fd0247f07fa70bf4aef"
+  },
+  "checks": [
+    {
+      "check": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "passed": 0,
+      "seconds": 6.67496770597063,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "check": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "0d98453604949fc4ffbde797e1fa6856b36183fad00f88242969890c5aff3af4",
+      "passed": 0,
+      "seconds": 25.39317430811934,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "check": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "7a959e6741f9e5b9ae04b1c3e2cb4c59951c7d86b83fc089b2076426f5af8d1b",
+      "passed": 0,
+      "seconds": 4.128708231030032,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "check": "workspace-default",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "failed": 0,
+      "ignored": 36,
+      "log_sha256": "cf66c7e0c962865d3a16aeda79f8eef52b79efc53d0d97f3d6d5024274aa3268",
+      "passed": 3093,
+      "seconds": 330.9375761409756,
+      "status": "PASS",
+      "wall_limit_seconds": 360
+    },
+    {
+      "check": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "0b772c8d1430b0d11aa5ff6347b27383dfc1694418dff2ece9294b2942d9a6a8",
+      "passed": 1039,
+      "seconds": 127.01174109405838,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "check": "staged-allocation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5",
+      "passed": 3,
+      "seconds": 0.03760788799263537,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "check": "prefixed-pun",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "88c9b5c32ddc104b0a32ebf9dddc253d9dd0161f1412a6afd65c11568358be06",
+      "passed": 36,
+      "seconds": 1.5739722161088139,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    }
+  ],
+  "checks_outer_receipt": {
+    "bytes": 890,
+    "sha256": "58d8841203d8cd04a184cd54e89975be0dfc4ae7f0e33787b420011d79cd850a"
+  },
+  "checks_outer_seconds": 495.984031697968,
+  "checks_raw_receipt": {
+    "bytes": 21759,
+    "sha256": "676fb47bcbf3d42e34959ab867c4e0c19d968906bd6c044e83676eeae9bb7a28"
+  },
+  "claim_support": [
+    4
+  ],
+  "custom_workspace_harnesses": [
+    "tests/exec_backing_cleanup.rs",
+    "tests/precontext_native.rs"
+  ],
+  "decoder_revision": "f7469e2cd600795142e0821f81def129c0cc7dff",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "historical_regressions": [
+    "admitted_exec_native_first_user_and_retired_history_are_exact",
+    "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+    "admitted_exec_native_source_profile_bound_refuses_after_exec",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+    "original_exec_replacement_matches_raw_replay_and_native_full_state",
+    "dropping_staged_image_releases_its_exact_mapping",
+    "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+    "native_state_covers_every_prefixed_pun_and_original_successor"
+  ],
+  "limitations": [
+    "The reproducer exit0 means report emission; nested strict and diagnostic results remain REFUSED.",
+    "Mode1 headers are outside the supported host-user decoder profile, not proof of corrupt perf data or kernel counting.",
+    "Prefix unequal READs are not by themselves proof of active-event multiplexing; task/event/CPU final accounting is not performed.",
+    "No complete-file period total, APP share, per-call estimate, accuracy or overhead claim.",
+    "Prior v3 working-tree refusal is historical; exact working hashes are retained, while reproducible current source is committed at decoder_revision.",
+    "All raw captures, logs and full private argv remain ignored; public commands use named path placeholders."
+  ],
+  "python_version": "3.12.15",
+  "qualification": {
+    "accuracy": "UNQUALIFIED",
+    "complete_semantic_decode": false,
+    "event_meaning": "UNRESOLVED",
+    "full_A5": "OPEN",
+    "mapping_identity": "UNRESOLVED",
+    "strict_command_join": "REFUSED",
+    "terminal_counter": "UNRESOLVED"
+  },
+  "reproducer_sha256": "cf97e7b9c14aa902bc27fb04920400b60486259c4a1b18565a50ade6dd75a1cc",
+  "rust_version": "1.97.1",
+  "source_reviews": {
+    "cli": "9722e69e41de92368e3f8fdfe76592ff4b0ae0c30a5c36579124baa1e52d4892",
+    "decoder": "7e8ff057a5ad5612823f82185abe10a44ad06a61fb1abbeb2279edd7422344a2",
+    "reproducer": "14729e6247f9a8b430357b6dff7b53931b59db5042d6f24264dafecffae85369"
+  },
+  "sources": {
+    "tools/rapid-profiler/tree-work/decode_perf.py": "dcbade5e4af319918da5ea12b008b3671507e1fe55666bdde7b85936931d5482",
+    "tools/rapid-profiler/tree-work/perf_data.py": "038c19d1de3e8a7e9a167c836a9178d725d6e8d29286f1378dfd2a2f8bf5e1ab",
+    "tools/rapid-profiler/tree-work/perf_records.py": "d1825f7273e8a175d9e152854f73cb38a8084edebc5ce33cc29eecf8d4f2c117",
+    "tools/rapid-profiler/tree-work/test_decode_perf.py": "800c89127fbdfc0ca0917deb89506a73a441edf80c9956fef203b8d47316dbe3",
+    "tools/rapid-profiler/tree-work/test_perf_data.py": "4e1dec025b4d57e9d22c3db955f49ecfaff8f039f8cb15d160f93041bfb92562"
+  },
+  "status": "DIAGNOSTIC_REFUSALS_RECORDED"
+}

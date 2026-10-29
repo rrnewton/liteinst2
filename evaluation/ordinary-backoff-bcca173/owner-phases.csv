@@ -1,0 +1,7 @@
+control,k,record,number,kind,hold_ordinal,generation_a,generation_b,entered,ret_observed,confirmed,completed,unsampled,a_present,copied_index,reports,records,banks,current,history_actions,reclaim_attempts,completed_batches
+1,10,PHASE,1,shared-owner,22,1,2,22,22,21,10,11,true,0,1,10,1,2,2,1,0
+1,10,PHASE,2,shared-owner,22,1,2,22,22,21,10,11,true,0,1,10,1,2,2,2,0
+1,10,PHASE,3,reclaimed,22,1,2,24,24,23,11,12,false,0,1,10,2,2,2,3,0
+2,1000,PHASE,1,shared-owner,1006,1,2,1006,1006,1005,1000,5,true,0,1,1000,1,2,2,1,41
+2,1000,PHASE,2,shared-owner,1006,1,2,1006,1006,1005,1000,5,true,0,1,1000,1,2,2,2,41
+2,1000,PHASE,3,reclaimed,1006,1,2,1008,1008,1007,1001,6,false,0,1,1000,2,2,2,3,41

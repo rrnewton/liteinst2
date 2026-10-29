@@ -1,0 +1,185 @@
+{
+  "checks": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup_complete": true,
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "fmt",
+      "rescues": 0,
+      "seconds": 6.813918962143362,
+      "terminal_count": 0,
+      "termination": null,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup_complete": true,
+      "exit": 0,
+      "log_sha256": "7ad68dda2739cccaf129d0c45cea115479e30cb7214cba9e430b41a60dd4846f",
+      "name": "clippy",
+      "rescues": 0,
+      "seconds": 28.25364762195386,
+      "terminal_count": 0,
+      "termination": null,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup_complete": true,
+      "exit": 0,
+      "log_sha256": "b74ea8f1950f092ab5774328b3e8269c6f062b7753298cdd7cf2d2fa8f3ac5f3",
+      "name": "check",
+      "rescues": 0,
+      "seconds": 4.482734273886308,
+      "terminal_count": 0,
+      "termination": null,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup_complete": true,
+      "exit": 0,
+      "log_sha256": "246a69675cd2866b28cb94d1d8d3de509cef896b67f26a23f5e8860adce1bbd7",
+      "name": "workspace-default",
+      "rescues": 0,
+      "seconds": 355.24544454482384,
+      "terminal_count": 109,
+      "termination": null,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 36,
+        "passed": 3120
+      },
+      "wall_limit_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "cleanup_complete": true,
+      "exit": 0,
+      "log_sha256": "0d7afd6975a37a456a8c65ca06cf9aeef7989c79fbd56ce54e24fe52f91004dd",
+      "name": "serial-launch",
+      "rescues": 0,
+      "seconds": 139.608553300146,
+      "terminal_count": 28,
+      "termination": null,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1039
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "cleanup_complete": true,
+      "exit": 0,
+      "log_sha256": "34080e22a778d86390d122196140f117de41ccbe42ad740ab02647a3cd546c9b",
+      "name": "staged-allocation",
+      "rescues": 0,
+      "seconds": 0.05333672487176955,
+      "terminal_count": 1,
+      "termination": null,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 3
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "cleanup_complete": true,
+      "exit": 0,
+      "log_sha256": "cf33b9055ea47d8bccf42c91a20e4c0dce66eab114252fc2b6ae1349c5084b23",
+      "name": "prefixed-pun",
+      "rescues": 0,
+      "seconds": 1.5968382249120623,
+      "terminal_count": 1,
+      "termination": null,
+      "test_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 36
+      },
+      "wall_limit_seconds": 180
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "receipt_sha256": "5a17e7915719e8c56acf5a4cc5170c09bafac34ebd999968c5dbf404c9db0188",
+  "revision": "bcca1737a4a0fd451a46075406e0c91116fabee4",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Functional validation only; seconds are operational durations, not performance measurements.",
+  "status": "PASS"
+}

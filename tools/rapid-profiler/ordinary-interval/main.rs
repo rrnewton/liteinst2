@@ -2,6 +2,7 @@
 #![deny(warnings)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
+use joined_task::Handle as JoinHandle;
 use liteinst2::bundle::WritableAlias;
 use liteinst2::contracts::*;
 use rapid_profiler::frontend::{Limits, Observation, PayloadOutcome, RecordObservation, Report};
@@ -17,7 +18,7 @@ use std::io::Read;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::{Arc, mpsc};
-use std::thread::{self, JoinHandle};
+use std::thread;
 use std::time::{Duration, Instant};
 
 mod backoff;
@@ -25,6 +26,7 @@ mod backoff;
 mod consumer_checks;
 mod counter;
 mod exact;
+mod joined_task;
 mod normal;
 mod selected;
 mod streamed;
@@ -285,8 +287,7 @@ struct Worker<T> {
     handle: Option<JoinHandle<T>>,
 }
 impl<T> Worker<T> {
-    fn wait(&self) {
-        let until = Instant::now() + WAIT;
+    fn wait(&self, until: Instant) {
         while !self.handle.as_ref().unwrap().is_finished() {
             if Instant::now() >= until {
                 eprintln!("ordinary worker FAILED to close within 2 seconds");
@@ -295,17 +296,27 @@ impl<T> Worker<T> {
             thread::sleep(Duration::from_millis(1));
         }
     }
+    fn finish(&mut self) -> thread::Result<T> {
+        // One existing WAIT covers closure completion, native join and task
+        // retirement. No second allowance begins when pthread_join returns.
+        let until = Instant::now() + WAIT;
+        self.wait(until);
+        let mut joined = self.handle.take().unwrap().join();
+        if let Err(error) = joined.wait_until(until) {
+            eprintln!("ordinary worker FAILED to retire: {error}");
+            std::process::abort(); // Keep result and caller owners until fail-stop.
+        }
+        joined.into_result()
+    }
     fn join(&mut self) -> T {
-        self.wait();
-        self.handle.take().unwrap().join().expect("worker failure")
+        self.finish().expect("worker failure")
     }
 }
 impl<T> Drop for Worker<T> {
     fn drop(&mut self) {
         self.resume.take(); // Disconnect a parked worker on main-thread failure.
         if self.handle.is_some() {
-            self.wait();
-            let _ = self.handle.take().unwrap().join();
+            let _ = self.finish();
         }
     }
 }
@@ -352,6 +363,18 @@ fn check_report(report: &Report, rows: &[RawInterval], generation: u64, sequence
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-observer-backoff-pending-owner") {
+        normal::observer::backoff::pending_owner::run(&args[2..]);
+        return;
+    }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-observer-backoff") {
+        normal::observer::backoff::run(&args[2..]);
+        return;
+    }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-observer-throughput") {
+        normal::observer::throughput::run(&args[2..]);
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-observer-work") {
         normal::observer::run(&args[2..]);
         return;
@@ -779,7 +802,7 @@ fn main() {
     let (park_tx, park_rx) = mpsc::sync_channel(1);
     let (resume_tx, resume_rx) = mpsc::sync_channel(1);
     let worker_input = Arc::clone(&input);
-    let handle = thread::spawn(move || {
+    let handle = joined_task::spawn(move || {
         pin(Some(cpu));
         let readable = stack();
         // SAFETY: matching sealed site, actual worker/VMA, only this worker calls

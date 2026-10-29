@@ -1,0 +1,274 @@
+{
+  "attempts": {
+    "adaptive": false,
+    "measured_processes": 10,
+    "pairs": 5,
+    "qualifications": 1,
+    "retries": 0,
+    "warmup_calls": 0
+  },
+  "claim_support": [
+    4
+  ],
+  "commands": {
+    "actual_comparison": "env XDG_RUNTIME_DIR=\"$XDG_RUNTIME_DIR\" DBUS_SESSION_BUS_ADDRESS=\"$DBUS_SESSION_BUS_ADDRESS\" python3 -B \"$CPUSET_ALLOCATOR_SOURCE\" run --cores 4 --sample-s 1 --tag li2core-normal-throughput-6332c8f -- python3 -B \"$REPO/tools/rapid-profiler/normal-work/throughput_probe.py\" --revision 6332c8f229833e7f6b9a7c99c9101c410e6cb0cb --raw \"$REPO/ignored/normal-throughput-6332c8f-attempt1\" --toolchain \"$TOOLCHAIN\" --user-home \"$HOME\" --cargo-home \"$CARGO_HOME\" --reservation-tag li2core-normal-throughput-6332c8f",
+    "owner_bounds": {
+      "log_bytes": 8388608,
+      "wall_seconds": 1200
+    },
+    "publication_reproducer": "reproduce.py",
+    "reproducer_scope": "One equivalent fixed comparison at exact source; caller-supplied allocator entry and new private destination. This wrapper was source-reviewed, not separately launched."
+  },
+  "counts": {
+    "failed": 0,
+    "pairs": 5,
+    "passed": 10,
+    "timing_rows": 1300,
+    "unrun": 0
+  },
+  "driver_receipt": {
+    "bytes": 13208,
+    "sha256": "eeb422fd8ad86d292d2d5c17e2ae35003a129655b32e53ce5a4d5b2aa68b0438"
+  },
+  "fixed_work": {
+    "blocks": 128,
+    "calls": 3072,
+    "helper_calls": 1536,
+    "specified_target_instructions": 614400,
+    "target_calls_per_block": 24
+  },
+  "full_A5": "OPEN",
+  "hardware": {
+    "available_affinity": 316,
+    "cpu": {
+      "cpu cores": "158",
+      "cpu family": "26",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "siblings": "316",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "kernel": "7.1.3",
+    "label": "AMD EPYC Zen 5 dev host"
+  },
+  "limits": [
+    "Five fixed pairs, ten fresh measured processes, no warmup/retry/adaptive repetition or performance threshold. One preceding release qualification is not cold-cache preparation.",
+    "Segmented call path includes helper wrapper, loops/stores and installed next-entry confirmations; service and whole process include different mode-specific validation paths.",
+    "Native executes verify_original after each block and final; installed validates checkpoints and Reports. Whole-process ratios cannot isolate observer overhead or establish application speedup.",
+    "RAW collector and MONOTONIC process clocks have separate origins. Wall durations include descheduling. No subtraction, outlier removal or statistical confidence claim.",
+    "The strict2ms campaign is unchanged; these observations do not qualify interval accuracy, cheap-off behavior, ordinary application throughput or full A5.",
+    "The original 360-second workspace resource guard timed out and remains failed; the single separate600-second completion run supplies functional completion with default316-CPU libtest parallelism.",
+    "Draft development control observations identify a base plus working-source digest, not an exact committed-tree run. The committed8/6/10/5 controls were rerun in the release qualification.",
+    "Raw logs, functional transcripts, local paths and captures remain ignored. Public CSV/JSON contains compact observations and hashes only."
+  ],
+  "load_after_qualification_and_trials": [
+    107.38,
+    112.59,
+    89.46
+  ],
+  "load_before_qualification": [
+    117.78,
+    100.31,
+    80.27
+  ],
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "bb6c62488107ae48f0e80f15a179a11fe87eb7ee262f4144e499673c5719a9b2",
+    "reaped_descendants": 0,
+    "seconds": 203.27062696497887,
+    "start_utc": "2026-10-29T02:43:57.782844+00:00",
+    "termination": null
+  },
+  "private_result": {
+    "bytes": 337339,
+    "sha256": "2228b1d5c1497afdc25fd08d550ebe720e76b99e7dd94ebfb92b9a787f6380de"
+  },
+  "profile": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "opt_level": "3",
+    "overflow_checks": true
+  },
+  "public_files": {
+    "README.md": {
+      "bytes": 6203,
+      "sha256": "00a096f1677e079090b76038ce18ae4f5648dfcdc1c97b9d9ea79aa405c880be"
+    },
+    "checks.csv": {
+      "bytes": 1458,
+      "sha256": "5035e2af2f1c2c60020dcc629fbec47c28530b9c4c0b8f6b7ab04f2db1c472db"
+    },
+    "development-controls.csv": {
+      "bytes": 1317,
+      "sha256": "a3fb8a5d56bf60a5d0b0db842875b6e239ae709862e47b4533b484e459a304c5"
+    },
+    "driver-receipt.json": {
+      "bytes": 13208,
+      "sha256": "eeb422fd8ad86d292d2d5c17e2ae35003a129655b32e53ce5a4d5b2aa68b0438"
+    },
+    "pairs.json": {
+      "bytes": 1443,
+      "sha256": "de33558c26e089ccc2b2c00bd10f49d3a702410829df9f690141bfcdb9b0cf3c"
+    },
+    "protocol.json": {
+      "bytes": 3779,
+      "sha256": "dc2925c6a562dcb444d824623fb2b5099621c23dc3280db757f3e81792b47671"
+    },
+    "reproduce.py": {
+      "bytes": 6754,
+      "sha256": "ad52f25e6a780aebf7379b8c7450ecb03a078b701a2fd2451ec76d59cd766284"
+    },
+    "timing.csv": {
+      "bytes": 57583,
+      "sha256": "22db2108c465891efc6c98d41cfc4fc0e14141232bb6c1c2d40b1eea5b44d2c0"
+    },
+    "trials.csv": {
+      "bytes": 3053,
+      "sha256": "79ff8e71cef66d63746dc5d229ee33a739882b3b8bf0d101908c52b1c84b2ef9"
+    }
+  },
+  "python_version": "3.12.15",
+  "reservation": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_sources": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "application_cpu": 224,
+    "authority": "Exact outer argv/tag, pinned allocator implementation and reserved/AllowedCPUs transcript; cooperative disjoint logical CPUs, no scheduler-quiet or exclusive-hardware assertion.",
+    "cpus": [
+      215,
+      224,
+      251,
+      297
+    ],
+    "prerequisite_cpus": [
+      215,
+      224,
+      251,
+      297
+    ],
+    "producer_cpu": 215,
+    "root_verified_hard_AllowedCPUs": true,
+    "tag": "li2core-normal-throughput-6332c8f",
+    "timer_cpu": 251
+  },
+  "revision": "6332c8f229833e7f6b9a7c99c9101c410e6cb0cb",
+  "root_audit": {
+    "bytes": 1256,
+    "sha256": "f26937ca1e831173e1a37d8af3d7b265dfbe4016c9b094f552dcb26a7121faf2"
+  },
+  "root_launch": {
+    "bytes": 3127,
+    "sha256": "bf9e7d0db87741e186aea034f81c3ce6d607ef04998af798c0065676725274e2"
+  },
+  "rust_version": "1.97.1",
+  "schema": 1,
+  "source_files": 489,
+  "source_manifest": {
+    "bytes": 78714,
+    "sha256": "bc731bc06f1e535c21a8cc63dfe503d275da4b76c228a2b9be23ad281677af7c"
+  },
+  "source_reviews": {
+    "checker": "5b017d74e83e0676ac0e15e2ed61c5a870464d097cf63f0071534eed637ef08f",
+    "collector": "634b6d16276e0228dab7380ba2c881912dc15c0a3708b2e850fcf6e75ff9c5cf",
+    "collector_layout": "20b0c1655b1e3622940fc143c7982e36f330b404710f38b3f48e013b0b7eb26c",
+    "documentation": "a2615989fc79318687b4ea91db4f14d01da1d8412f65164aa32bdb8bc00c026f",
+    "fixture_correction": "57aee73f4472f37b389679a901adbee21c15ec78f63fedff8bb27015e8c26619",
+    "reproducer": "fcbcb9998e195d4bf67239e269c8f229912a0ea5eec7c14d6bc72effa18bb732",
+    "runner": "a359bdf75a38a360e38eddf41e2a7668e698c8dc38ed94571377a37ea122f573",
+    "validation_composition": "30081a52d0f7582b4613cac7b0a688f8132af63edeba58ce1a743216dd2e9499"
+  },
+  "status": "FIXED_COMPARISON_COMPLETE",
+  "validation": {
+    "checker_controls": 6,
+    "checks": "checks.csv",
+    "completion_environment_additions": {
+      "IS_FBPYTHON": "1",
+      "KMP_AFFINITY": "disabled",
+      "KMP_LIBRARY": "multiuser",
+      "LIBOMP_NUM_HIDDEN_HELPER_THREADS": "0",
+      "LIBOMP_USE_HIDDEN_HELPER_TASK": "0"
+    },
+    "completion_environment_sha256": "cd7421dbe23aa1ea94022457159cb02d7d28744162fa9d9c31cc9b614001a6cc",
+    "completion_receipt": {
+      "bytes": 6936,
+      "sha256": "fcbc96d285eba8aab311c703a58bde2ebee0ef1eca1de29638a83f0a32370c3a"
+    },
+    "custom_harnesses": [
+      "tests/exec_backing_cleanup.rs",
+      "tests/precontext_native.rs"
+    ],
+    "driver_controls": 10,
+    "historical_regressions": [
+      "admitted_exec_native_first_user_and_retired_history_are_exact",
+      "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+      "admitted_exec_native_source_profile_bound_refuses_after_exec",
+      "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+      "original_exec_replacement_matches_raw_replay_and_native_full_state",
+      "dropping_staged_image_releases_its_exact_mapping",
+      "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+      "native_state_covers_every_prefixed_pun_and_original_successor"
+    ],
+    "initial_receipt": {
+      "bytes": 12867,
+      "sha256": "acf1c88b8e7ee82bb5505b04b9f27a56a7656f0a8a88d82731f82f7391d23b81"
+    },
+    "original_workspace_timeout": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": -9,
+      "private_log_sha256": "41a5eebcabc44a7af4558d312eeb3cc75976c8701ea89e58387cebb1a704e2d2",
+      "reaped_descendants": 2,
+      "seconds": 360.05642899894156,
+      "start_utc": "2026-10-29T02:27:33.773849+00:00",
+      "termination": "timeout"
+    },
+    "outers": [
+      {
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 1,
+          "private_log_sha256": "c20ca4f83994c82100e2e67e5dbd9020683100eaf60ce145e0cacc8913984d81",
+          "reaped_descendants": 0,
+          "seconds": 394.1894685558509,
+          "start_utc": "2026-10-29T02:26:59.696410+00:00",
+          "termination": null
+        },
+        "label": "gates",
+        "receipt": {
+          "bytes": 891,
+          "sha256": "f3face334baca35baa006976dd15c9f359b36f574baf05a277f70393dfae75ef"
+        }
+      },
+      {
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "9f5f208ba79b71740db10f2383e3ffb256ced7f54736f7c6b9e9e5dc0b4cd385",
+          "reaped_descendants": 0,
+          "seconds": 501.91894683102146,
+          "start_utc": "2026-10-29T02:34:50.864671+00:00",
+          "termination": null
+        },
+        "label": "completion",
+        "receipt": {
+          "bytes": 618,
+          "sha256": "ac96726e591176631a956ad3c6e3543dc2a7bc0c1e9407910a252b24c6e2e476"
+        }
+      }
+    ],
+    "rust_throughput_controls": 8,
+    "status": "FUNCTIONAL_CHECKS_COMPLETE_ORIGINAL_WORKSPACE_TIMEOUT",
+    "timer_controls": 5
+  }
+}

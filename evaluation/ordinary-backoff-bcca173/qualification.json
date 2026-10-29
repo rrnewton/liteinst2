@@ -1,0 +1,555 @@
+{
+  "artifacts": {
+    "binary": {
+      "bytes": 6647528,
+      "sha256": "7d25d19c46eb46870a850d49ef2b8fb611f7e34361ab17e040e256947078d36f"
+    },
+    "caller": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "caller_candidate": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "libtest": {
+      "bytes": 4318608,
+      "sha256": "142efc1262c4963caa5fa7ca89de04b10b4ac6c47524092bee98b7175bd75021"
+    },
+    "selection": {
+      "bytes": 586,
+      "sha256": "5a83b5b8a8e811534e586702986eb7850c05b7c8354ea0cf7359a6fc25cfaa49"
+    },
+    "subject": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    },
+    "trusted": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    }
+  },
+  "catalog": {
+    "bytes": 624,
+    "sha256": "a8ba3af587e91eb15272ea720b6e71f0fd4ab29fe036588e5d40181faa6c640f"
+  },
+  "commands": {
+    "bytes": 25874,
+    "sha256": "21260bc9e4be646023c8205c6fc665c53c17604b613edb494845f66b1222a06f"
+  },
+  "completion_authority": "Require final private result and root-owned normal outer closure/source join; public projection alone grants neither completion nor reservation.",
+  "counts": {
+    "failed_count": 1,
+    "pass_count": 9,
+    "unrun_count": 0,
+    "wire_rows": 27648
+  },
+  "error_type": null,
+  "exports": {
+    "trials": {
+      "bytes": 5120,
+      "sha256": "ed4fdf9eec68463472b878cb08186b3cc35fc7b1b4d751ff89df30087bd47e0b"
+    }
+  },
+  "failure": null,
+  "hardware": {
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "identity_scope": "PID/TID and singleton roles are authenticated collector self-observations. bounded_command authenticates exact requests, streams and normal closure but exports no direct-child PID; no external receipt-to-terminal PID join is claimed.",
+  "normal_outer_owners": 19,
+  "observations": [
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          138.55,
+          112.65,
+          81.16
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:13.816190+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          140.74,
+          112.19,
+          80.67
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:06.729090+00:00"
+      },
+      "trial": 1
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          139.23,
+          113.22,
+          81.51
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:21.715629+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          138.55,
+          112.65,
+          81.16
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:15.151410+00:00"
+      },
+      "trial": 2
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          135.52,
+          112.88,
+          81.57
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:25.122450+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          135.52,
+          112.88,
+          81.57
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:23.123703+00:00"
+      },
+      "trial": 3
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          131.64,
+          112.45,
+          81.6
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:28.171868+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          135.52,
+          112.88,
+          81.57
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:26.552169+00:00"
+      },
+      "trial": 4
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          131.64,
+          112.45,
+          81.6
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:30.667365+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          131.64,
+          112.45,
+          81.6
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:29.586391+00:00"
+      },
+      "trial": 5
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          126.46,
+          111.7,
+          81.52
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:33.759302+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          131.64,
+          112.45,
+          81.6
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:32.393757+00:00"
+      },
+      "trial": 6
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          126.46,
+          111.7,
+          81.52
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:35.735986+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          126.46,
+          111.7,
+          81.52
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:34.973721+00:00"
+      },
+      "trial": 7
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          126.46,
+          111.7,
+          81.52
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:37.340573+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          126.46,
+          111.7,
+          81.52
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:36.760289+00:00"
+      },
+      "trial": 8
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          120.98,
+          110.81,
+          81.4
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:38.741349+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          120.98,
+          110.81,
+          81.4
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:38.265035+00:00"
+      },
+      "trial": 9
+    },
+    {
+      "after": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          120.98,
+          110.81,
+          81.4
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:40.220275+00:00"
+      },
+      "before": {
+        "affinity": [
+          198
+        ],
+        "load_average": [
+          120.98,
+          110.81,
+          81.4
+        ],
+        "reservation_tag": "li2core-normal-backoff-bcca173",
+        "utc": "2026-10-29T03:33:39.677854+00:00"
+      },
+      "trial": 10
+    }
+  ],
+  "outcome": "COMPLETE_WITH_FAILURES",
+  "outer_owner_required": {
+    "log_bytes": 8388608,
+    "wall_seconds": 1200
+  },
+  "owner_catalog": {
+    "bytes": 201,
+    "sha256": "a36ea48581143ddc1e3198ad16dc8fc62e27059de8369c3d61c15b2441b3c137"
+  },
+  "owner_commands": {
+    "bytes": 5339,
+    "sha256": "4fe163e693ff0f4a6540a68d410b32d61fac6f93e28bd117680d877da0054fc3"
+  },
+  "owner_controls": [
+    {
+      "control": 1,
+      "exit": 0,
+      "hold_ordinal": 22,
+      "k": 10,
+      "name": "pending-owner-k10",
+      "reason": null,
+      "result": {
+        "bytes": 4981,
+        "sha256": "287b4c8860326efed38d5a9d1a5a3ff11acb873d00c5e078ec8b912cf5bc91e2"
+      },
+      "status": "PASS",
+      "wire_rows": 3072
+    },
+    {
+      "control": 2,
+      "exit": 0,
+      "hold_ordinal": 1006,
+      "k": 1000,
+      "name": "pending-owner-k1000",
+      "reason": null,
+      "result": {
+        "bytes": 5033,
+        "sha256": "5c76c6a9e13137b642a38a762599ae4a64a04d98db9827a4728d14bad3430abc"
+      },
+      "status": "PASS",
+      "wire_rows": 3072
+    }
+  ],
+  "owner_protocol_sha256": "145c1932ab600bf0d482e7c999216c0ec88922fe747a69ecbc4731b0edb5a985",
+  "owner_wire_rows": 6144,
+  "owner_wire_sha256": "807fc9c3f4e3b8296322bfb6d31c939aabd30f772143792a4bd40064b149a38e",
+  "prerequisite": {
+    "closure": {
+      "nested_normal_helpers": 46,
+      "nested_outer_owners": 48,
+      "owned_stages": 34,
+      "rescues": 0
+    },
+    "result": {
+      "bytes": 143865,
+      "sha256": "fe826df34c640934d5f9dde814365a4603b1c4cdc7e6d9060e8cc500ad78753c"
+    },
+    "tools": {
+      "as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "gcc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "ld": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "strip": {
+        "bytes": 189816,
+        "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+      }
+    }
+  },
+  "protocol_sha256": "8bc5ec049eb2d53561544b46d0cbc50541313a1c14fa2f6aa23ccad5c2719c20",
+  "reservation": {
+    "app_cpu": 204,
+    "authority": "External allocator and hard AllowedCPUs must be joined by root; affinity and tag prove no reservation or quiet hardware.",
+    "controller_cpu": 313,
+    "inherited_cpus": [
+      198,
+      204,
+      312,
+      313
+    ],
+    "producer_cpu": 198,
+    "spare_cpu": 312,
+    "tag": "li2core-normal-backoff-bcca173",
+    "verified": false
+  },
+  "revision": "bcca1737a4a0fd451a46075406e0c91116fabee4",
+  "scope": "Fixed ten-process functional catalog only. No timing, throughput, accuracy, cheap-off, 520-arm or full-A5 qualification. Both separate pending-owner controls must pass first; they run no timed Schedule and add no scheduling credit. Prior strict deadline qualifications remain separate and unchanged.",
+  "sources": {
+    "after": {
+      "bytes": 80812,
+      "sha256": "01b41b5e038204927902ddd8e0755996e47a30353343277674ba6faf070b53f9"
+    },
+    "count": 501,
+    "manifest": {
+      "bytes": 80812,
+      "sha256": "01b41b5e038204927902ddd8e0755996e47a30353343277674ba6faf070b53f9"
+    }
+  },
+  "stages": [
+    {
+      "name": "prerequisite",
+      "result": {
+        "bytes": 651,
+        "sha256": "d553d1d6452b1f747fbe55aa82ba3e850f3161868002fb48560ea7ac989e2648"
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "checker-controls",
+      "result": {
+        "bytes": 1494,
+        "sha256": "177aa9f408b4e6d55a73dae56c2f8ae9b919a3135e18c3496911aaa9f9993558"
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "pending-checker-controls",
+      "result": {
+        "bytes": 1503,
+        "sha256": "9ba78c887059da0ea6f1aa5698ec6f02ab8b5cbccd1e44903342795b7109718d"
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "shared-controls",
+      "result": {
+        "bytes": 1494,
+        "sha256": "8d17c26744a5de1b5700f761d13641f0467a26995fce185a33cc660b8c66a185"
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "driver-controls",
+      "result": {
+        "bytes": 1494,
+        "sha256": "dba3404d88890082cbe64e398333f805a7c2d7bbc518935af37c5770ed93a3f1"
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "rust-controls",
+      "result": {
+        "bytes": 1493,
+        "sha256": "59283ab4b89e4ebcde9bae9585780ece8c00215c69ee6a6fbe3c2cc3e06bec16"
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "pending-rust-controls",
+      "result": {
+        "bytes": 1500,
+        "sha256": "b27a02fadb7c64c50893264e4f7de7111652cd6fdf5b2de07fe3abaf3bc17d41"
+      },
+      "status": "PASS"
+    }
+  ],
+  "status": "COMPLETE_OBSERVATIONS_UNQUALIFIED",
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "taskset": {
+      "bytes": 23784,
+      "sha256": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741"
+    }
+  },
+  "wire_sha256": "b0d27d0aac38e5a834a1c3e98a9bb1a8c24daabcda6d6d901e4e208fd4973b4a"
+}

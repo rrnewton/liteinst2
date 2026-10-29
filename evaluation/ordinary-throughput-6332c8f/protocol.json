@@ -1,0 +1,85 @@
+{
+  "adaptive_repetition": false,
+  "analysis": "Publish all trial raw elapsed totals and pair ratios only where both fixed members are functionally valid with positive denominator. Report missing/failed/unresolved pairs explicitly; no outlier exclusion, correction subtraction, performance acceptance threshold, confidence claim or accuracy inference.",
+  "deadline_campaign": "The separate fixed-five strict2ms campaign is closed and unchanged; this is not a retry of it.",
+  "experiment": "ordinary-module-native-versus-always-on-throughput-v1",
+  "failure_policy": "Retain every scheduled outcome. A fully closed independent functional trial failure does not erase or retry that trial. Shared source/artifact drift, failed prerequisites or broken owner custody stop remaining entries as explicit UNRUN with reason. No failed pair earns a ratio.",
+  "fixed_work": {
+    "blocks": 128,
+    "calls": 3072,
+    "helper_calls": 1536,
+    "specified_target_instructions": 614400,
+    "target_calls_per_block": 24
+  },
+  "measured_processes": 10,
+  "observations": [
+    "Exact revision/source/tool/artifact hashes and release profile",
+    "Reservation receipt, actual application CPU/PID/TID",
+    "Load average immediately before and after each trial",
+    "Every128 RAW-clock body start/end pair, separate setup endpoints and unsubtracted service start/end",
+    "Full functional transcript and process-owner closure retained privately",
+    "Full process CPU/wall usage from authenticated process_timer, separately labelled CLOCK_MONOTONIC"
+  ],
+  "pair_order": [
+    [
+      "native",
+      "always-on"
+    ],
+    [
+      "always-on",
+      "native"
+    ],
+    [
+      "native",
+      "always-on"
+    ],
+    [
+      "always-on",
+      "native"
+    ],
+    [
+      "native",
+      "always-on"
+    ]
+  ],
+  "per_process_bounds": {
+    "cpu_seconds": 20,
+    "output_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "prerequisite": "Unchanged fresh verify_normal_interval.py with --reference-exact --reference-work --reference-leg --observer-work; all34 stages and exact closure/identity checks required.",
+  "purpose": "Descriptive release-build elapsed wall time for identical fixed ordinary-module work; no interval-accuracy, continuous-service or full-A5 claim.",
+  "qualifications": 1,
+  "release_profile": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "opt_level": "3",
+    "overflow_checks": true
+  },
+  "reservation": {
+    "allocator": "cpuset-alloc",
+    "authority": "cooperative disjoint reservation and affinity; no scheduler-quiet or exclusive-hardware assertion",
+    "build_prerequisites": "all four reserved CPUs",
+    "controller": "none in these two modes",
+    "cores": 4,
+    "measured_application": "sorted reserved CPU1",
+    "measurement_producer": "sorted reserved CPU0"
+  },
+  "retries": 0,
+  "schema": 1,
+  "source_revision": "Bound by launch receipt after reviewed implementation is committed; no measurement allowed with dirty tracked source.",
+  "status": "FROZEN_BEFORE_IMPLEMENTATION_QUALIFICATION",
+  "timing": {
+    "clock": "CLOCK_MONOTONIC_RAW",
+    "clock_origins": "Do not compare RAW absolute timestamps to process_timer MONOTONIC absolute timestamps",
+    "output": "outside service, included only by separately labelled whole-process measurement",
+    "segmented": "sum of128 call-path spans; includes unchanged helper-wrapper checks and loop/stores",
+    "service": "first body start through all final results/custody/checkpoints/detach/disarm/Report-history validation; no subtraction",
+    "units": "nanoseconds",
+    "zero": "retained; division unresolved"
+  },
+  "warmup_calls": 0,
+  "wire_binding_sha256": "e86f954e7de86a0433d2e35130c2ccab28066002baf611b98bcd69e4481c5821"
+}

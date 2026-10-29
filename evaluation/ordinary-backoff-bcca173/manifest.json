@@ -1,0 +1,56 @@
+{
+  "revision": "bcca1737a4a0fd451a46075406e0c91116fabee4",
+  "scope": "Compact numeric observations and reproduction; raw captures remain private.",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4612,
+      "sha256": "137a26e4473cdb22017519414b7b8bc93766c6aeb51b174caa9016e20c432c43"
+    },
+    {
+      "path": "checks.json",
+      "bytes": 4550,
+      "sha256": "e33647ac84629f76cc671046ce7a97ecdbe3c2c960e5324bb10ecb7d085fdd32"
+    },
+    {
+      "path": "development.json",
+      "bytes": 10829,
+      "sha256": "175dfdf097999113904d5d6b09d2f8bc95455ab6fa092d82f082c470407bc2a1"
+    },
+    {
+      "path": "owner-phases.csv",
+      "bytes": 681,
+      "sha256": "0d85ed31d6d89287f3bb94976b7401bc29c8dde07e7466c2b0e51ebe367c6942"
+    },
+    {
+      "path": "pending-owner-protocol.json",
+      "bytes": 1678,
+      "sha256": "145c1932ab600bf0d482e7c999216c0ec88922fe747a69ecbc4731b0edb5a985"
+    },
+    {
+      "path": "protocol.json",
+      "bytes": 4035,
+      "sha256": "8bc5ec049eb2d53561544b46d0cbc50541313a1c14fa2f6aa23ccad5c2719c20"
+    },
+    {
+      "path": "qualification.json",
+      "bytes": 14492,
+      "sha256": "53ead31f90527e65fee589312803b0a60d65e37f18bbe3234be30205521aef85"
+    },
+    {
+      "path": "receipt.json",
+      "bytes": 5058,
+      "sha256": "dd8326cd065960017f362db9dd51566592d14d508e8bcb026d2abb6dfb37e8e2"
+    },
+    {
+      "path": "reproduce.py",
+      "bytes": 6864,
+      "sha256": "2ce41b6a49f2c8cb68f7347aa0205d4ebad28d056855eed49764816784b88b35"
+    },
+    {
+      "path": "trials.csv",
+      "bytes": 5120,
+      "sha256": "ed4fdf9eec68463472b878cb08186b3cc35fc7b1b4d751ff89df30087bd47e0b"
+    }
+  ]
+}
