@@ -1659,7 +1659,7 @@ class Main813InventoryTests(unittest.TestCase):
                          {'test/frontend_native_calibrations': 20, 'unit/ordinary_interval/main': 4})
 
         self.assertEqual(main813.digest(main813.before_b66(actual)), main813.CURRENT469)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_12e(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 3558, 37))
         self.assertEqual(sum(len(x) for x in main813.MAINB66['added_methods'].values()), 65)
@@ -1731,6 +1731,104 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(sum(row['ignored'] for row in main813.MAINB66['new_instances']), 1)
         self.assertEqual(sum(map(len, main813.MAINB66['listed_additions'].values())), 238)
         self.assertEqual({row['harness'] for row in main813.MAINB66['new_instances']}, {'unit/ordinary_interval/main'})
+
+
+        # The additive layer restores the exact historical catalog and source;
+        # none of its current declarations can be supplied by the old blobs.
+        self.assertEqual(main813.digest(main813.before_12e(actual)), main813.CURRENTB66)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 3574, 37))
+        self.assertEqual(main813.MAIN12E['declared_delta'],
+                         {'rust_tests': 16, 'rust_declarations': 8, 'ignored': 0, 'harnesses': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_12e(actual))
+        for name, change in main813.MAIN12E['workspace_changes'].items():
+            self.assertEqual(current_rows[name], change['current'])
+            self.assertEqual(change['previous'], main813.MAINB66['workspace_changes'][name]['current'])
+            count = current_rows[name]['tests']
+            for value in (count - 1, count + 1, True, float(count)):
+                changed = plain.deepcopy(actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(main12e_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+            changed = plain.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaises(parsing.InvalidEvidence):
+                main813.before_12e(changed)
+        for path in main813.MAIN12E['sources']:
+            for missing in (False, True):
+                mutation_target = main813.ROOT / path
+                def changed(candidate):
+                    if candidate == mutation_target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main12e_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_12e_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        self.assertEqual(len(main813.MAIN12E['projections']), 20)
+        for path, row in main813.MAIN12E['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_12e(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            historical_sources = (main813.MAINC0['sources'] if path == 'tests/support/quiescent_oracle.rs'
+                                  else main813.MAINB66['sources'])
+            self.assertEqual(row['previous_sha256'], historical_sources[path])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main12e_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_12e(path, bad, 'changed')
+            # A coherent historical file cannot stand in for the current source.
+            mutation_target = main813.ROOT / path
+            def historical(candidate):
+                return restored if candidate == mutation_target else read_bytes(candidate)
+            with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(actual)
+        new_sources = {'tests/support/native_call_pair/trace_join.rs',
+                       'tests/support/native_call_pair/trace_join/tests.rs',
+                       'tests/support/native_call_pair/witness.rs',
+                       'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs'}
+        self.assertEqual(set(main813.MAIN12E['sources']) - (set(main813.MAINB66['sources']) |
+                         set(main813.MAINC0['sources'])), new_sources)
+        direct = 'tests/support/native_call_pair/tests.rs'
+        nested = 'tests/support/native_call_pair/trace_join/tests.rs'
+        prefix = 'oracle::native_ordinary::normal_caller::call_pair::'
+        self.assertEqual({p: len(row['all']) for p, row in main813.MAIN12E['methods'].items()},
+                         {direct: 12, nested: 5})
+        self.assertEqual({p: len(row) for p, row in main813.MAIN12E['added_methods'].items()},
+                         {direct: 3, nested: 5})
+        self.assertEqual([name for name in main813.MAIN12E['methods'][direct]['all']
+                          if name not in main813.MAIN12E['added_methods'][direct]],
+                         main813.MAINB66['methods'][direct]['all'])
+        for harness in main813.MAIN12E['workspace_changes']:
+            self.assertEqual(main813.MAIN12E['instances'][direct][harness], prefix + 'tests::')
+            self.assertEqual(main813.MAIN12E['instances'][nested][harness], prefix + 'trace_join::tests::')
+            complete = [main813.MAIN12E['instances'][p][harness] + name
+                        for p, row in main813.MAIN12E['methods'].items() for name in row['all']]
+            self.assertEqual(len(complete), 17)
+            self.assertEqual(len(set(complete)), 17)
+            additions = sorted(main813.MAIN12E['instances'][p][harness] + name
+                               for p, names in main813.MAIN12E['added_methods'].items() for name in names)
+            self.assertEqual(main813.MAIN12E['listed_additions'][harness], additions)
+            self.assertEqual(len(additions), 8)
+        # Coherent source pins alone do not replace declaration/module guards.
+        for path, row in main813.MAIN12E['methods'].items():
+            mutations = [dict(row, all=row['all'][:i] + row['all'][i + 1:])
+                         for i in range(len(row['all']))]
+            mutations += [dict(row, all=row['all'] + ['not_registered']),
+                          dict(row, ignored=[row['all'][0]])]
+            for changed in mutations:
+                with patch.dict(main813.MAIN12E['methods'], {path: changed}), self.assertRaises(parsing.InvalidEvidence):
+                    main813.require_12e_sources()
+        for path, literals in main813.MAIN12E['module_chains'].items():
+            for i in range(len(literals)):
+                changed = list(literals)
+                changed[i] += ' invalid_module_route'
+                with patch.dict(main813.MAIN12E['module_chains'], {path: changed}), self.assertRaises(parsing.InvalidEvidence):
+                    main813.require_12e_sources()
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'

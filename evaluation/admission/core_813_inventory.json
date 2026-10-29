@@ -3470,6 +3470,740 @@
       }
     }
   },
+  "main12e": {
+    "added_methods": {
+      "tests/support/native_call_pair/tests.rs": [
+        "call_pair_postflight_fits_without_reader_and_closes_after_one_send",
+        "call_pair_postflight_rejects_empty_and_oversized_before_writing",
+        "call_pair_postflight_drop_without_finish_emits_no_packet"
+      ],
+      "tests/support/native_call_pair/trace_join/tests.rs": [
+        "postflight_codec_roundtrip_and_canonical_bounds_refuse",
+        "trace_join_stable_rearm_removed_preserves_instruction_membership",
+        "trace_join_rejects_changed_record_report_history_identity",
+        "trace_join_rejects_shifted_and_duplicated_reference_boundaries",
+        "trace_join_timestamp_consistency_preserves_observations"
+      ]
+    },
+    "base": "12e50f491139b8a5cb4058b273acddf263de0dd8",
+    "current_corpus_sha256": "4a8a3a8d5671c413ffbb299273b0e6cb2e36d3b628528494991e4d5dc13b853f",
+    "declared_delta": {
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 8,
+      "rust_tests": 16
+    },
+    "instances": {
+      "tests/support/native_call_pair/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::call_pair::tests::",
+        "unit/ordinary_interval/main": "oracle::native_ordinary::normal_caller::call_pair::tests::"
+      },
+      "tests/support/native_call_pair/trace_join/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::",
+        "unit/ordinary_interval/main": "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::"
+      }
+    },
+    "listed_additions": {
+      "test/frontend_native_calibrations": [
+        "oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_postflight_drop_without_finish_emits_no_packet",
+        "oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_postflight_fits_without_reader_and_closes_after_one_send",
+        "oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_postflight_rejects_empty_and_oversized_before_writing",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::postflight_codec_roundtrip_and_canonical_bounds_refuse",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_rejects_changed_record_report_history_identity",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_rejects_shifted_and_duplicated_reference_boundaries",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_stable_rearm_removed_preserves_instruction_membership",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_timestamp_consistency_preserves_observations"
+      ],
+      "unit/ordinary_interval/main": [
+        "oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_postflight_drop_without_finish_emits_no_packet",
+        "oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_postflight_fits_without_reader_and_closes_after_one_send",
+        "oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_postflight_rejects_empty_and_oversized_before_writing",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::postflight_codec_roundtrip_and_canonical_bounds_refuse",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_rejects_changed_record_report_history_identity",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_rejects_shifted_and_duplicated_reference_boundaries",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_stable_rearm_removed_preserves_instruction_membership",
+        "oracle::native_ordinary::normal_caller::call_pair::trace_join::tests::trace_join_timestamp_consistency_preserves_observations"
+      ]
+    },
+    "methods": {
+      "tests/support/native_call_pair/tests.rs": {
+        "all": [
+          "call_pair_postflight_fits_without_reader_and_closes_after_one_send",
+          "call_pair_postflight_rejects_empty_and_oversized_before_writing",
+          "call_pair_postflight_drop_without_finish_emits_no_packet",
+          "call_pair_case_matrix_and_profile_refuse_old_discriminators",
+          "call_pair_ready_joins_original_caller_pages_functions_and_layout",
+          "call_pair_nested_order_requires_physical_child_landing_before_ack",
+          "call_pair_e8_target_stack_words_and_roles_are_exact",
+          "call_pair_control_ack_preserves_own_generations_and_removed_child",
+          "call_pair_complete_stack_capture_bounds_and_deep_tail_refuse",
+          "call_pair_parent_effects_preserve_defined_flags_and_scalar",
+          "call_pair_pair_population_and_full_cfg_coverage_refuse",
+          "call_pair_all_journal_words_and_phase_counts_refuse"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_call_pair/trace_join/tests.rs": {
+        "all": [
+          "postflight_codec_roundtrip_and_canonical_bounds_refuse",
+          "trace_join_stable_rearm_removed_preserves_instruction_membership",
+          "trace_join_rejects_changed_record_report_history_identity",
+          "trace_join_rejects_shifted_and_duplicated_reference_boundaries",
+          "trace_join_timestamp_consistency_preserves_observations"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tests/support/native_call_pair.rs": [
+        "#[path = \"native_call_pair/parent.rs\"]\nmod parent;",
+        "#[path = \"native_call_pair/phase.rs\"]\npub(super) mod phase;",
+        "#[path = \"native_call_pair/trace.rs\"]\nmod trace;",
+        "#[cfg(test)]\n#[path = \"native_call_pair/tests.rs\"]\nmod tests;",
+        "#[path = \"native_call_pair/trace_join.rs\"]\npub mod trace_join;",
+        "#[path = \"native_call_pair/witness.rs\"]\npub mod witness;"
+      ],
+      "tests/support/native_call_pair/trace_join.rs": [
+        "#[cfg(test)]\n#[path = \"trace_join/tests.rs\"]\nmod tests;"
+      ],
+      "tests/support/native_interval_oracle.rs": [
+        "#[allow(dead_code)]\n#[path = \"process_text.rs\"]\npub mod process_text;",
+        "#[path = \"native_interval.rs\"]\npub mod native_interval;",
+        "#[path = \"native_ordinary.rs\"]\npub mod native_ordinary;",
+        "include!(\"entry_signal.rs\");",
+        "include!(\"parked_signal.rs\");",
+        "include!(\"boundary_signal.rs\");",
+        "include!(\"word_sync.rs\");",
+        "include!(\"word_trace_method.rs\");",
+        "include!(\"native_point.rs\");"
+      ],
+      "tests/support/native_normal_caller.rs": [
+        "#[path = \"native_normal_csv.rs\"]\npub mod csv;",
+        "#[path = \"native_normal_module.rs\"]\npub mod module;",
+        "#[path = \"native_call_pair.rs\"]\npub mod call_pair;",
+        "#[path = \"native_copied_capture.rs\"]\nmod copied_capture;",
+        "#[path = \"native_copied_rust.rs\"]\npub mod copied_rust;",
+        "#[path = \"native_leaf_set_copied.rs\"]\npub mod leaf_set_copied;",
+        "#[path = \"native_normal_reference.rs\"]\npub mod reference;",
+        "#[path = \"native_rust_invoke.rs\"]\npub mod rust_invoke;",
+        "register_native_fixture!(caller_bytes);"
+      ],
+      "tests/support/native_ordinary.rs": [
+        "#[path = \"native_precontext.rs\"]\npub mod precontext;",
+        "#[path = \"native_optional_frontend.rs\"]\npub mod optional_frontend;",
+        "#[path = \"native_reference.rs\"]\npub mod reference;",
+        "#[path = \"native_cache.rs\"]\npub mod cache;",
+        "#[path = \"native_call_tree.rs\"]\npub mod call_tree;",
+        "#[path = \"native_native_call.rs\"]\npub mod native_call;",
+        "#[path = \"native_tree_hardware.rs\"]\nmod hardware;",
+        "#[path = \"native_tree_batch.rs\"]\npub mod tree_batch;",
+        "#[path = \"native_selected.rs\"]\npub mod selected;",
+        "#[path = \"native_strnlen.rs\"]\npub mod strnlen;",
+        "#[path = \"native_normal_caller.rs\"]\npub mod normal_caller;"
+      ],
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[macro_use]\n#[path = \"../../../tests/support/native_fixture_registration.rs\"]\nmod native_fixture_registration;",
+        "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/main.rs": [
+        "mod normal;",
+        "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;",
+        "macro_rules! register_native_fixture {\n    (cache_truth) => {\n        pub use crate::counter::truth;\n    };\n    (tree_truth) => {\n        pub use crate::tree::truth;\n    };\n    (strnlen_cases) => {\n        pub use crate::strnlen::cases;\n    };\n    (caller_bytes) => {\n        pub use crate::normal::caller_bytes;\n    };\n    (reference_bytes) => {\n        pub use crate::normal::caller::reference_bytes as bytes;\n    };\n}"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal.rs": [
+        "pub(super) mod call_pair;",
+        "pub(super) mod call_pair_state;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": [
+        "#[path = \"../../native-interval/normal/rust_invoke_artifact.rs\"]\nmod artifact;",
+        "mod caller;",
+        "mod check;",
+        "mod witness;"
+      ]
+    },
+    "previous_corpus_sha256": "d24c11181043d5c24294d40af33dde62009a496317ce14fdd64c87e7654818b3",
+    "projections": {
+      "evaluation/ordinary-call-pair-native/call_pair_native.py": {
+        "current_sha256": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "edits": [
+          [
+            1421,
+            1810,
+            ""
+          ],
+          [
+            9951,
+            13366,
+            ""
+          ]
+        ],
+        "previous_sha256": "7e70899470d8f732909796a429145090b00195d61dd6eea9b8fb35bd000bca3c"
+      },
+      "evaluation/ordinary-call-pair-native/controls.py": {
+        "current_sha256": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "edits": [
+          [
+            3127,
+            4827,
+            ""
+          ],
+          [
+            13392,
+            15886,
+            ""
+          ]
+        ],
+        "previous_sha256": "33293f4a201d8b717cfa2d46dde16a31e67e257ef4bdab994c0e8a847f07c059"
+      },
+      "evaluation/ordinary-call-pair-native/reproduce.py": {
+        "current_sha256": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "edits": [
+          [
+            1579,
+            6374,
+            "ORACLE_CONTROLS=('oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_case_matrix_and_profile_refuse_old_discriminators', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_ready_joins_original_caller_pages_functions_and_layout', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_nested_order_requires_physical_child_landing_before_ack', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_e8_target_stack_words_and_roles_are_exact', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_control_ack_preserves_own_generations_and_removed_child', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_complete_stack_capture_bounds_and_deep_tail_refuse', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_parent_effects_preserve_defined_flags_and_scalar', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_pair_population_and_full_cfg_coverage_refuse', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_all_journal_words_and_phase_counts_refuse')\nORDINARY_CONTROLS=('oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_case_matrix_and_profile_refuse_old_discriminators', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_ready_joins_original_caller_pages_functions_and_layout', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_nested_order_requires_physical_child_landing_before_ack', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_e8_target_stack_words_and_roles_are_exact', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_control_ack_preserves_own_generations_and_removed_child', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_complete_stack_capture_bounds_and_deep_tail_refuse', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_parent_effects_preserve_defined_flags_and_scalar', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_pair_population_and_full_cfg_coverage_refuse', 'oracle::native_ordinary::normal_caller::call_pair::tests::call_pair_all_journal_words_and_phase_counts_refuse', 'normal::call_pair_state::check::tests::call_pair_records_join_lifo_sequences_actual_and_sampled_children', 'normal::call_pair_state::check::tests::call_pair_reports_history_and_owner_closure_are_complete', 'normal::call_pair_state::caller::tests::running_caller_requires_distinct_files_actual_entry_and_load_bias', 'normal::call_pair_state::caller::tests::running_caller_rejects_mapping_device_inode_offset_and_bytes', 'normal::call_pair_state::caller::tests::running_caller_page_union_refuses_gaps_overlap_and_overflow')\n"
+          ],
+          [
+            10468,
+            11432,
+            "PYTHON_CONTROLS=('test_complete192_pairs_and12_groups_keep_exact_original_address_scope', 'test_matrix_order_missing_duplicate_and_coherent_subset_refuse', 'test_literal_csv_inputs_fields_and_packed_results', 'test_independent_complete_caller_parent_child_geometry', 'test_nested_stack_historical_excursion_and_child_delta', 'test_scenarios_generations_lifo_sequences_and_history', 'test_every_raw_counter_and_step_bound', 'test_csv_observed_union_and_all_declared_returns', 'test_canonical_bytes_numbers_framing_caps_and_stderr', 'test_terminal_population_comparisons_and_old_profiles', 'test_coherent_geometry_corruptions_require_external_authority', 'test_source_local_import_and_optimization_guard')\n"
+          ],
+          [
+            12621,
+            12699,
+            "    assert len(expected) == 208 and set(inventory) == set(expected)|{ignored}\n"
+          ],
+          [
+            23256,
+            23450,
+            "    for name,cap in [('stdout.txt',MIB),('stderr.txt',MIB),('output/call-pair-state-pairs.csv',524288),('output/call-pair-state-coverage.csv',16384)]:\n"
+          ],
+          [
+            24916,
+            25253,
+            "    assert {p.name for p in output.iterdir()}=={'call-pair-state-pairs.csv','call-pair-state-coverage.csv'}\n    parsed=checker.check(recipe.read(output/'call-pair-state-pairs.csv',524288),recipe.read(output/'call-pair-state-coverage.csv',16384),\n"
+          ],
+          [
+            39630,
+            39904,
+            "        groups=[('ordinary',ORDINARY_CONTROLS,[('ordinary-oracle-controls',ORACLE_CONTROLS[0].rsplit('::',1)[0]+'::'),('ordinary-check-controls','normal::call_pair_state::check::tests::'),('ordinary-owner-controls','normal::call_pair_state::caller::tests::')]),\n"
+          ],
+          [
+            41610,
+            41678,
+            "        assert [len(n) for _,_,n in python]==[18,26,10,4,10,8,12,8]\n"
+          ]
+        ],
+        "previous_sha256": "d9e99f6c4caf7a1672ad3a888cd10a889cab83605a916146d7774dd54b343f48"
+      },
+      "evaluation/ordinary-call-pair-native/runner_controls.py": {
+        "current_sha256": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "edits": [
+          [
+            2948,
+            3025,
+            ""
+          ],
+          [
+            3331,
+            3427,
+            "        got=R.calibration_inventory(L,prior,inventory,N.IGNORED);self.assertEqual(len(got),208)\n"
+          ],
+          [
+            4213,
+            4317,
+            "        self.assertEqual((len(R.ORDINARY_CONTROLS),len(R.SDK_CONTROLS),len(R.CORE_CONTROLS)),(14,30,8))\n"
+          ],
+          [
+            4940,
+            5021,
+            "        self.assertEqual((len(R.PYTHON_CONTROLS),len(R.RUNNER_CONTROLS)),(12,8))\n"
+          ]
+        ],
+        "previous_sha256": "02259af44baa5aeb481f7dfb2b1e21cb75578deb6a6bd4ec6b2f0c1ac9d55d48"
+      },
+      "evaluation/ordinary-call-pair-session/freeze.py": {
+        "current_sha256": "c9305ce8361d1e2976f79326b618aa6d7ab4c2caca5f5fbca99f93d717286755",
+        "edits": [
+          [
+            495,
+            577,
+            "LAUNCHER_SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'\n"
+          ],
+          [
+            6206,
+            6332,
+            "    compat=root/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n    assert held(compat,MIB)==bootstrap[NATIVE_PUBLIC+'launch.py']\n"
+          ]
+        ],
+        "previous_sha256": "539cf8da310948423341b43990f63c5c5669e989127efaaa5a413cb2b34c8c44"
+      },
+      "evaluation/ordinary-call-pair-session/launch.py": {
+        "current_sha256": "18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12",
+        "edits": [
+          [
+            890,
+            972,
+            "CAMPAIGN_SHA = '00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e'\n"
+          ]
+        ],
+        "previous_sha256": "1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46"
+      },
+      "evaluation/ordinary-call-pair-session/native_receipt.py": {
+        "current_sha256": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "edits": [
+          [
+            741,
+            2817,
+            "SOURCE_PINS = {'evaluation/ordinary-module-session/reproduce.py': {'bytes': 57511, 'sha256': '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'}, 'evaluation/ordinary-module-native/reproduce.py': {'bytes': 44878, 'sha256': '5cce60e76d7ec2011c8facb0a5c1101e0100e13aac8ed9b6317846de35fd3146'}, 'evaluation/ordinary-call-pair-native/reproduce.py': {'bytes': 42539, 'sha256': 'd9e99f6c4caf7a1672ad3a888cd10a889cab83605a916146d7774dd54b343f48'}, 'evaluation/ordinary-csv/reproduce.py': {'bytes': 13439, 'sha256': 'ae70dac850876452d1f09a8480d4381a5814846e1a7e394a33f620bb00699cf3'}, 'evaluation/ordinary-module/reproduce.py': {'bytes': 17353, 'sha256': '60a73415980261fa1f1176f58423da8c77bf6775c2033def4f7469c74677c84c'}, 'evaluation/ordinary-rust-invoke-native/caller.py': {'bytes': 3565, 'sha256': 'aa2d28441c9b477e5e85fea0a61b160cb5026c55bbc129c2b40502c3a5d12d4c'}, 'evaluation/ordinary-call-pair-native/call_pair_native.py': {'bytes': 9562, 'sha256': '7e70899470d8f732909796a429145090b00195d61dd6eea9b8fb35bd000bca3c'}, 'tools/rapid-profiler/selected-work/check_output.py': {'bytes': 7232, 'sha256': '5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9'}, 'evaluation/ordinary-rust-invoke-native/reproduce.py': {'bytes': 23732, 'sha256': '434ffdc1be5107a408767d81e85a77ee1a21878b482b8bcb0951e0ee4c4f38de'}, 'evaluation/ordinary-leaf-set-native/reproduce.py': {'bytes': 38376, 'sha256': 'b0aee80e836f0e78fba601d12cdbdbc86cff21a95bf8c1add71b490a5a7f6349'}, 'evaluation/ordinary-leaf-set-session/reproduce.py': {'bytes': 39802, 'sha256': 'dadf0cbe90c162d133a86f6452c393593bdc7469cf868fcd1b0979b81a0a3932'}, 'tools/rapid-profiler/reference-work/check_output.py': {'bytes': 17495, 'sha256': 'a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189'}, 'tools/rapid-profiler/verify_normal_interval.py': {'bytes': 58210, 'sha256': '7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7'}, 'tools/rapid-profiler/verify_strnlen_interval.py': {'bytes': 34037, 'sha256': '9a37fa20311984d5ba755458e7858578165e0d7a2df583599a1b2057e50e6126'}}\n"
+          ],
+          [
+            3690,
+            6535,
+            "REQUIRED_NATIVE = ('evaluation/admission/processes.py', 'evaluation/ordinary-call-pair-native/README.md', 'evaluation/ordinary-call-pair-native/call_pair_native.py', 'evaluation/ordinary-call-pair-native/controls.py', 'evaluation/ordinary-call-pair-native/reproduce.py', 'evaluation/ordinary-call-pair-native/runner_controls.py', 'evaluation/ordinary-csv/reproduce.py', 'evaluation/ordinary-leaf-set-native/controls.py', 'evaluation/ordinary-leaf-set-native/leaf_set_native.py', 'evaluation/ordinary-leaf-set-native/reproduce.py', 'evaluation/ordinary-leaf-set-native/runner_controls.py', 'evaluation/ordinary-leaf-set-session/reproduce.py', 'evaluation/ordinary-module-native/controls.py', 'evaluation/ordinary-module-native/module_native.py', 'evaluation/ordinary-module-native/reproduce.py', 'evaluation/ordinary-module-session/controls.py', 'evaluation/ordinary-module-session/corpus.py', 'evaluation/ordinary-module-session/output.py', 'evaluation/ordinary-module-session/produce.py', 'evaluation/ordinary-module-session/reproduce.py', 'evaluation/ordinary-module/reproduce.py', 'evaluation/ordinary-rust-invoke-native/caller.py', 'evaluation/ordinary-rust-invoke-native/controls.py', 'evaluation/ordinary-rust-invoke-native/reproduce.py', 'evaluation/ordinary-rust-invoke-native/runner_controls.py', 'evaluation/ordinary-rust-invoke-native/rust_invoke.py', 'tests/call_tree_truth.rs', 'tests/support/native_call_pair.rs', 'tests/support/native_call_pair/parent.rs', 'tests/support/native_call_pair/phase.rs', 'tests/support/native_call_pair/tests.rs', 'tests/support/native_call_pair/trace.rs', 'tests/support/native_copied_capture.rs', 'tests/support/native_copied_rust.rs', 'tests/support/native_copied_rust/effects.rs', 'tests/support/native_normal_caller.rs', 'tests/support/native_normal_module.rs', 'tools/rapid-profiler/native-interval/normal/rust_invoke_artifact.rs', 'tools/rapid-profiler/normal-work/call_pair.c', 'tools/rapid-profiler/normal-work/csv_fields.c', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/caller.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/check.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/check/tests.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/held.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs', 'tools/rapid-profiler/selected-work/check_output.py', 'tools/rapid-profiler/strnlen-work/localize.map', 'tools/rapid-profiler/verify_normal_session.py', 'tools/unwind-oracle/bounded_command.py')\n"
+          ],
+          [
+            18361,
+            18487,
+            "    for target,subgroups in [('ordinary',[('ordinary-oracle-controls',r.ORACLE_CONTROLS[0].rsplit('::',1)[0]+'::'),\n"
+          ],
+          [
+            23071,
+            23287,
+            "    parsed=h['checker'].check(get(raw/'native/output/call-pair-state-pairs.csv',524288),get(raw/'native/output/call-pair-state-coverage.csv',16384),\n"
+          ],
+          [
+            35302,
+            35437,
+            "    assert {q.name for q in output.iterdir()}=={'call-pair-state-pairs.csv','call-pair-state-coverage.csv'}\n"
+          ]
+        ],
+        "previous_sha256": "cfbd3bb00da550e72fb72214e5d77f9ccd53b7e1689ea43e9ce2da2cd31d989a"
+      },
+      "evaluation/ordinary-call-pair-session/owner_controls.py": {
+        "current_sha256": "3d028c7695825bf361900b027db23732a7bed507ba654aabb0d671a84af2f37c",
+        "edits": [
+          [
+            390,
+            463,
+            "SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'\n"
+          ]
+        ],
+        "previous_sha256": "30d27b288e976ac5bd6ef9e9cd099d1216dd289964d5ff1e51005968fc19b2aa"
+      },
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": {
+        "current_sha256": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "edits": [
+          [
+            648,
+            756,
+            "assert R._pin(fixture_source)['sha256']=='33293f4a201d8b717cfa2d46dde16a31e67e257ef4bdab994c0e8a847f07c059'\n"
+          ],
+          [
+            812,
+            882,
+            "LAUNCHER_PATH=R.ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n"
+          ],
+          [
+            11995,
+            12087,
+            ""
+          ],
+          [
+            13644,
+            13699,
+            ""
+          ],
+          [
+            14133,
+            14263,
+            "        for name in ('output/call-pair-state-pairs.csv','output/call-pair-state-coverage.csv'):\n"
+          ]
+        ],
+        "previous_sha256": "a42f405d8bdbb77114888468c9cc01a7fd8c6ceb909f678de0285a284934000a"
+      },
+      "evaluation/ordinary-call-pair-session/reproduce.py": {
+        "current_sha256": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "edits": [
+          [
+            902,
+            1058,
+            ""
+          ],
+          [
+            14807,
+            19728,
+            "REQUIRED_NATIVE = ('evaluation/admission/processes.py', 'evaluation/ordinary-call-pair-native/README.md', 'evaluation/ordinary-call-pair-native/call_pair_native.py', 'evaluation/ordinary-call-pair-native/controls.py', 'evaluation/ordinary-call-pair-native/reproduce.py', 'evaluation/ordinary-call-pair-native/runner_controls.py', 'evaluation/ordinary-csv/reproduce.py', 'evaluation/ordinary-leaf-set-native/controls.py', 'evaluation/ordinary-leaf-set-native/leaf_set_native.py', 'evaluation/ordinary-leaf-set-native/reproduce.py', 'evaluation/ordinary-leaf-set-native/runner_controls.py', 'evaluation/ordinary-leaf-set-session/reproduce.py', 'evaluation/ordinary-module-native/controls.py', 'evaluation/ordinary-module-native/module_native.py', 'evaluation/ordinary-module-native/reproduce.py', 'evaluation/ordinary-module-session/controls.py', 'evaluation/ordinary-module-session/corpus.py', 'evaluation/ordinary-module-session/output.py', 'evaluation/ordinary-module-session/produce.py', 'evaluation/ordinary-module-session/reproduce.py', 'evaluation/ordinary-module/reproduce.py', 'evaluation/ordinary-rust-invoke-native/caller.py', 'evaluation/ordinary-rust-invoke-native/controls.py', 'evaluation/ordinary-rust-invoke-native/reproduce.py', 'evaluation/ordinary-rust-invoke-native/runner_controls.py', 'evaluation/ordinary-rust-invoke-native/rust_invoke.py', 'tests/call_tree_truth.rs', 'tests/support/native_call_pair.rs', 'tests/support/native_call_pair/parent.rs', 'tests/support/native_call_pair/phase.rs', 'tests/support/native_call_pair/tests.rs', 'tests/support/native_call_pair/trace.rs', 'tests/support/native_copied_capture.rs', 'tests/support/native_copied_rust.rs', 'tests/support/native_copied_rust/effects.rs', 'tests/support/native_normal_caller.rs', 'tests/support/native_normal_module.rs', 'tools/rapid-profiler/native-interval/normal/rust_invoke_artifact.rs', 'tools/rapid-profiler/normal-work/call_pair.c', 'tools/rapid-profiler/normal-work/csv_fields.c', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/caller.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/check.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/check/tests.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/held.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs', 'tools/rapid-profiler/selected-work/check_output.py', 'tools/rapid-profiler/strnlen-work/localize.map', 'tools/rapid-profiler/verify_normal_session.py', 'tools/unwind-oracle/bounded_command.py')\nHELPER_PINS = {'evaluation/ordinary-module-session/reproduce.py': {'bytes': 57511, 'sha256': '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'}, 'evaluation/ordinary-module-native/reproduce.py': {'bytes': 44878, 'sha256': '5cce60e76d7ec2011c8facb0a5c1101e0100e13aac8ed9b6317846de35fd3146'}, 'evaluation/ordinary-call-pair-native/reproduce.py': {'bytes': 42539, 'sha256': 'd9e99f6c4caf7a1672ad3a888cd10a889cab83605a916146d7774dd54b343f48'}, 'evaluation/ordinary-csv/reproduce.py': {'bytes': 13439, 'sha256': 'ae70dac850876452d1f09a8480d4381a5814846e1a7e394a33f620bb00699cf3'}, 'evaluation/ordinary-module/reproduce.py': {'bytes': 17353, 'sha256': '60a73415980261fa1f1176f58423da8c77bf6775c2033def4f7469c74677c84c'}, 'evaluation/ordinary-rust-invoke-native/caller.py': {'bytes': 3565, 'sha256': 'aa2d28441c9b477e5e85fea0a61b160cb5026c55bbc129c2b40502c3a5d12d4c'}, 'evaluation/ordinary-call-pair-native/call_pair_native.py': {'bytes': 9562, 'sha256': '7e70899470d8f732909796a429145090b00195d61dd6eea9b8fb35bd000bca3c'}, 'tools/rapid-profiler/selected-work/check_output.py': {'bytes': 7232, 'sha256': '5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9'}, 'evaluation/ordinary-rust-invoke-native/reproduce.py': {'bytes': 23732, 'sha256': '434ffdc1be5107a408767d81e85a77ee1a21878b482b8bcb0951e0ee4c4f38de'}, 'evaluation/ordinary-leaf-set-native/reproduce.py': {'bytes': 38376, 'sha256': 'b0aee80e836f0e78fba601d12cdbdbc86cff21a95bf8c1add71b490a5a7f6349'}, 'evaluation/ordinary-leaf-set-session/reproduce.py': {'bytes': 39802, 'sha256': 'dadf0cbe90c162d133a86f6452c393593bdc7469cf868fcd1b0979b81a0a3932'}, 'tools/rapid-profiler/reference-work/check_output.py': {'bytes': 17495, 'sha256': 'a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189'}, 'tools/rapid-profiler/verify_normal_interval.py': {'bytes': 58210, 'sha256': '7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7'}, 'tools/rapid-profiler/verify_strnlen_interval.py': {'bytes': 34037, 'sha256': '9a37fa20311984d5ba755458e7858578165e0d7a2df583599a1b2057e50e6126'}}\n"
+          ],
+          [
+            20237,
+            21580,
+            ""
+          ],
+          [
+            40429,
+            40508,
+            "    for path in (Path(__file__).resolve(), recipe_path):\n"
+          ],
+          [
+            40830,
+            40901,
+            ""
+          ],
+          [
+            41003,
+            41114,
+            ""
+          ],
+          [
+            41608,
+            41684,
+            "    required = set(REQUIRED_NATIVE) | set(HELPER_PINS) | set(recipe.MODULES.values()) | set(extra.values()) | {\n        'evaluation/ordinary-call-pair-session/'+n for n in ('reproduce.py', 'runner_controls.py', 'README.md', 'produce.py',\n            'producer_controls.py', 'receipt_controls.py', 'controls.py', 'original.c', 'original_controls.c', 'original_controls.py')}\n    source_dirs = ('evaluation/ordinary-module-session', 'evaluation/ordinary-leaf-set-session', 'evaluation/ordinary-leaf-set-whole-session')\n    for directory in source_dirs:\n        names = git('ls-files', '-z', '--', directory).decode().rstrip('\\0').split('\\0')\n        required.update(n for n in names if n.endswith(('.py', '.c', '.S', '.md')))\n    names = git('ls-files', '-z', '--', 'src', 'crates', 'tests/support', 'tools/rapid-profiler', 'Cargo.toml', 'Cargo.lock',\n                'README.md', 'build.rs', '.cargo', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\\0').split('\\0')\n    assert all(names) and len(names) == len(set(names)) and required <= set(names)\n"
+          ],
+          [
+            43844,
+            43884,
+            "        launcher = ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n"
+          ],
+          [
+            43936,
+            44004,
+            "        assert pin(launcher_bytes)['sha256'] == '5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5'\n"
+          ]
+        ],
+        "previous_sha256": "00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e"
+      },
+      "evaluation/ordinary-call-pair-session/runner_controls.py": {
+        "current_sha256": "e0abe982edb29b1b0df89bebe853f08a16297a5130737b0a06fb79579fbdf8cb",
+        "edits": [
+          [
+            4313,
+            5562,
+            ""
+          ]
+        ],
+        "previous_sha256": "628e87e2a4b1d292a5577849a0bbec85f1821e46e95267e449202f01d2f03d70"
+      },
+      "tests/support/native_call_pair.rs": {
+        "current_sha256": "5fd91c5e99b25c9c2e84ed6d381e18afccb65dfa9aee36d3b4660f705721e0fd",
+        "edits": [
+          [
+            255,
+            375,
+            ""
+          ],
+          [
+            933,
+            1800,
+            ""
+          ],
+          [
+            20716,
+            20843,
+            "    pub fn pair_call_pair<F>(&self, setup: F) -> (NormalPairResult<2>, Trace)\n"
+          ],
+          [
+            21080,
+            21216,
+            "        let (pair, trace, stats) =\n            self.pair_engine_ready::<F, _, _, 2>(setup, |r, candidate, points| {\n"
+          ],
+          [
+            21312,
+            21628,
+            ""
+          ],
+          [
+            21700,
+            21740,
+            "                (trace, visits)\n"
+          ],
+          [
+            21852,
+            21880,
+            "        (pair, trace)\n"
+          ],
+          [
+            21913,
+            22179,
+            ""
+          ],
+          [
+            22658,
+            22759,
+            "        assert!(self.control.is_none() && self.output.is_none());\n"
+          ]
+        ],
+        "previous_sha256": "db014749f6e57f0514e4ee015515168b0ed29e2c95e1f0b02111e30369443bb9"
+      },
+      "tests/support/native_call_pair/tests.rs": {
+        "current_sha256": "feace8a1e414180e0b8b741f1ef428c27c9b68530390cb6623b72bd1f2554f50",
+        "edits": [
+          [
+            235,
+            1773,
+            ""
+          ]
+        ],
+        "previous_sha256": "a6e02d2fc02cfa4d1a09bfaee6beac90513ab532cfbe83e87b0002de3a7b8d24"
+      },
+      "tests/support/native_copied_rust.rs": {
+        "current_sha256": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "edits": [
+          [
+            12120,
+            12170,
+            ""
+          ]
+        ],
+        "previous_sha256": "7c4a2540ec3337c7d8283478fa40e6ec37b36159475e4486a986e81841df0fc6"
+      },
+      "tests/support/native_leaf_set_copied.rs": {
+        "current_sha256": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "edits": [
+          [
+            21969,
+            22019,
+            ""
+          ]
+        ],
+        "previous_sha256": "921b7905e9a224aab1a14f7423d506322307e4778d2058678c8c849e0cffd685"
+      },
+      "tests/support/native_normal_caller.rs": {
+        "current_sha256": "a36b574cd4da0874514086be07d156a3d85ae6ac641aa3c8a8a1f0892ca61268",
+        "edits": [
+          [
+            27537,
+            27571,
+            ""
+          ],
+          [
+            29540,
+            29590,
+            ""
+          ],
+          [
+            30174,
+            30224,
+            ""
+          ],
+          [
+            50357,
+            50483,
+            "        self.pair_engine_ready(setup, |original, _candidate, points| {\n"
+          ],
+          [
+            50767,
+            50864,
+            "        O: FnOnce(&WalkReady, &WalkReady, &[Snapshot]) -> (T, [usize; N]),\n"
+          ],
+          [
+            51597,
+            51943,
+            ""
+          ],
+          [
+            53179,
+            53670,
+            ""
+          ],
+          [
+            54887,
+            54933,
+            ""
+          ],
+          [
+            56102,
+            56222,
+            ""
+          ],
+          [
+            77445,
+            77737,
+            ""
+          ],
+          [
+            79079,
+            79303,
+            "        let (trace, visits) = inspect(&ready[0], &ready[1], &points);\n"
+          ]
+        ],
+        "previous_sha256": "0f60fef8ce0fae7d440e6ec2d221719c0601139d0f67421d2d071f7ff241c280"
+      },
+      "tests/support/native_normal_module.rs": {
+        "current_sha256": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "edits": [
+          [
+            28895,
+            28945,
+            ""
+          ]
+        ],
+        "previous_sha256": "0f0130ce61a2ad7efbba32f1ffbb951ccc0b0cb6b815698ce929bbd6a7f6618c"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd",
+        "edits": [
+          [
+            15992,
+            16465,
+            ""
+          ],
+          [
+            16508,
+            16531,
+            "            registers: child.registers(),\n"
+          ],
+          [
+            17207,
+            17395,
+            "            while child.registers().rip != boundary {\n"
+          ],
+          [
+            17635,
+            17995,
+            "            }\n            points.push(self.snapshot(child, logical_pc, expected_code));\n"
+          ]
+        ],
+        "previous_sha256": "12c44886e13704b366c6e52bd658190441af3442302109a8d44199148643a63a"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": {
+        "current_sha256": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "edits": [
+          [
+            838,
+            851,
+            ""
+          ],
+          [
+            4499,
+            4514,
+            ""
+          ],
+          [
+            6701,
+            6804,
+            ""
+          ],
+          [
+            11203,
+            11230,
+            ""
+          ],
+          [
+            11584,
+            11727,
+            "        owner.finish(&ready, &batch, &mut thread, deadline);\n"
+          ],
+          [
+            12307,
+            12522,
+            ""
+          ],
+          [
+            13998,
+            14063,
+            ""
+          ],
+          [
+            14725,
+            14809,
+            "        let (pair, trace) = oracle.pair_call_pair(|candidate, context| {\n"
+          ],
+          [
+            15001,
+            15023,
+            ""
+          ],
+          [
+            17075,
+            17340,
+            ""
+          ],
+          [
+            17517,
+            17560,
+            ""
+          ]
+        ],
+        "previous_sha256": "120c52cff02b23b914b526c75bea606ce94363235f8d6ec341f732a9dd846341"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": {
+        "current_sha256": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3",
+        "edits": [
+          [
+            4364,
+            4402,
+            "    ) {\n"
+          ],
+          [
+            6184,
+            6254,
+            ""
+          ],
+          [
+            7038,
+            7055,
+            ""
+          ]
+        ],
+        "previous_sha256": "3c7fbeeb4329befe5a8f541434b74e5073e5e7b08c3d6b4c65d20423b71efae6"
+      }
+    },
+    "scope": "Exact current source to retained mainb66 source projection; declaration inventory only, no execution credit.",
+    "sources": {
+      "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+      "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+      "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+      "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+      "evaluation/ordinary-call-pair-session/freeze.py": "c9305ce8361d1e2976f79326b618aa6d7ab4c2caca5f5fbca99f93d717286755",
+      "evaluation/ordinary-call-pair-session/launch.py": "18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12",
+      "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+      "evaluation/ordinary-call-pair-session/owner_controls.py": "3d028c7695825bf361900b027db23732a7bed507ba654aabb0d671a84af2f37c",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+      "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+      "evaluation/ordinary-call-pair-session/runner_controls.py": "e0abe982edb29b1b0df89bebe853f08a16297a5130737b0a06fb79579fbdf8cb",
+      "tests/support/native_call_pair.rs": "5fd91c5e99b25c9c2e84ed6d381e18afccb65dfa9aee36d3b4660f705721e0fd",
+      "tests/support/native_call_pair/tests.rs": "feace8a1e414180e0b8b741f1ef428c27c9b68530390cb6623b72bd1f2554f50",
+      "tests/support/native_call_pair/trace_join.rs": "c1054287f4116c2ea3af5f7903be8e38aef7ad095221e103e989ac68b42babde",
+      "tests/support/native_call_pair/trace_join/tests.rs": "64036f49583eb636d0e9e5c87d1a50bc3463b1ad85c85a20ee6257fe1bac75ba",
+      "tests/support/native_call_pair/witness.rs": "914635b4513af8dcf0fa3740cb1a748869a2cf2bb154c3b010bdc823b637acc0",
+      "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+      "tests/support/native_normal_caller.rs": "a36b574cd4da0874514086be07d156a3d85ae6ac641aa3c8a8a1f0892ca61268",
+      "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+      "tests/support/native_ordinary.rs": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571",
+      "tests/support/quiescent_oracle.rs": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "d4124fd68e98b820cc220d5854f6e145152b3eca020fcdd6d9dd685d28996b81",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "a075f9cc44787b49b4c7d41571323e487a53da41b0dd778aa9390f4c9b474de9",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "228d8aee63c9dc1ac8e67444617738647ec838a27325d6bfb0d196929ce1ff34",
+      "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+      "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3",
+      "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "7f8e652436765abfc2e6b8a4daaa150ba955605d6ce9d5b6022089514211674d"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 217
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 209
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 1,
+          "tests": 433
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 425
+        }
+      }
+    }
+  },
   "main2754": {
     "added_methods": {
       "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": [
