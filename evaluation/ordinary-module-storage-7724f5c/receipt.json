@@ -1,0 +1,555 @@
+{
+  "changes_since_workspace": [
+    "evaluation/ordinary-module-session/README.md",
+    "evaluation/ordinary-module-session/owners.py"
+  ],
+  "claim": 4,
+  "development_note": "One strict Clippy development failure (test helper type complexity) is retained; fixed with a test-only tuple alias. Development working trees are not committed qualification results.",
+  "development_source_maps": {
+    "3ecd9aa1adefe74c8712dbc2ee46ad179b0cd5038073eaff2356c319c695e4d3": {
+      "tools/rapid-profiler/ordinary-interval/normal/session/engine.rs": "cbff51074a968f696a2d91b89b646909ccdce0310dc6eb4813ccd89cad9e5c6a",
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": "9919c730eb23a494c96a0e85fc69fa697d1b06c26d7a2f2c0ed6cd47dc8fbc87",
+      "tools/rapid-profiler/verify_normal_session.py": "13b01a51ee2de06c9b60b799bbe3edb1477ef3bbeb4b766b3fbcc2b95adc257e",
+      "tools/rapid-profiler/verify_normal_session_two.py": "e43cc75bf1f9b30a6948cbc43443283409554bd7b059ae909aeda904b9ab5c3b"
+    },
+    "af8320a9387d20ac5fe760a0cb2097f7f759621778f31312c1d5a84951405a85": {
+      "tools/rapid-profiler/src/frontend.rs": "6f5ee8e11f0c7f47e2f9103d6b3fa2c329fddbef3040271d5c3699e6fe837e38",
+      "tools/rapid-profiler/src/frontend/epoch_storage.rs": "67ee898928eec245fd35f6c7bda12de5af478f819975b20ad52348e0f9070930",
+      "tools/rapid-profiler/src/frontend/epoch_storage/reuse_tests.rs": "47fbbea37228c22a086d23ba8a65a27245da9b2407d05381ccdd6f1359e28cbf",
+      "tools/rapid-profiler/src/frontend/epoch_storage/tests.rs": "2cfb01b3dd66674715e308afd090afa97092ca2dad51ce8118e1b2353166c451",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "dc6751d245a50199e724b2cc9ea2d84a3fab7eb6dfecd51826847b57dc187338",
+      "tools/rapid-profiler/src/generation/storage.rs": "0c157b0dc76df9940013e14a8253b29c2b922a9448bb24d8c4c504875ceed53f"
+    },
+    "c23f8ab3a417ee32a1e76fe5c6d7ee58304b022f3c0d38772206eb87fabaf8a3": {
+      "tools/rapid-profiler/ordinary-interval/normal/session/engine.rs": "cbff51074a968f696a2d91b89b646909ccdce0310dc6eb4813ccd89cad9e5c6a",
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": "63b8e5c5763a2d5d2f370e84992386c0876ad7c62125caabaa68d0d8b4298ac6",
+      "tools/rapid-profiler/verify_normal_session.py": "13b01a51ee2de06c9b60b799bbe3edb1477ef3bbeb4b766b3fbcc2b95adc257e",
+      "tools/rapid-profiler/verify_normal_session_two.py": "e43cc75bf1f9b30a6948cbc43443283409554bd7b059ae909aeda904b9ab5c3b"
+    },
+    "e2ddeb14ebd843090327ddabdccb0ac2bff3f9ad2d0aae27d95e3becf4aba4e2": {
+      "tools/rapid-profiler/src/frontend.rs": "6f5ee8e11f0c7f47e2f9103d6b3fa2c329fddbef3040271d5c3699e6fe837e38",
+      "tools/rapid-profiler/src/frontend/epoch_storage.rs": "40c2a7fe35211b3c29e321c4b6fad5c7fce3da2f111f4f0c9118d233eb7607a1",
+      "tools/rapid-profiler/src/frontend/epoch_storage/reuse_tests.rs": "35ff94aeda47a1964c4ab3d9e3ca85bce706cbda26ea69c8c0c887798f31c95c",
+      "tools/rapid-profiler/src/frontend/epoch_storage/tests.rs": "2cfb01b3dd66674715e308afd090afa97092ca2dad51ce8118e1b2353166c451",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "dc6751d245a50199e724b2cc9ea2d84a3fab7eb6dfecd51826847b57dc187338",
+      "tools/rapid-profiler/src/generation/storage.rs": "a818ce543ec98f6bf70149571e529aac021dad85089a64874e8963323a56ecb6"
+    },
+    "f6f6171edcea9f90ee83cb7034c975ce9c326ae0156b4434cfa435f69f6a31b5": {
+      "tools/rapid-profiler/src/frontend.rs": "6f5ee8e11f0c7f47e2f9103d6b3fa2c329fddbef3040271d5c3699e6fe837e38",
+      "tools/rapid-profiler/src/frontend/epoch_storage.rs": "609b7d37402ea165e7e14eccbe9fb70853c174c569e9c76a289e46697558e648",
+      "tools/rapid-profiler/src/frontend/epoch_storage/reuse_tests.rs": "47fbbea37228c22a086d23ba8a65a27245da9b2407d05381ccdd6f1359e28cbf",
+      "tools/rapid-profiler/src/frontend/epoch_storage/tests.rs": "2cfb01b3dd66674715e308afd090afa97092ca2dad51ce8118e1b2353166c451",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "dc6751d245a50199e724b2cc9ea2d84a3fab7eb6dfecd51826847b57dc187338",
+      "tools/rapid-profiler/src/generation/storage.rs": "0c157b0dc76df9940013e14a8253b29c2b922a9448bb24d8c4c504875ceed53f"
+    }
+  },
+  "hardware": {
+    "available_affinity_cpus": 8,
+    "host_affinity_cpu_count": 316,
+    "microcode": "0xb101066",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "kernel_version": "7.1.3",
+  "limitations": [
+    "Durations are validation wall time, not performance measurements.",
+    "Workspace and profiler target checks bind the storage commit; ownership commit changes only the new Python recipe and README.",
+    "Recycled-shell restaging is covered by pure Session controls; these four native cases exercise owner refusal/reclamation without restaging.",
+    "No Schedule, 2 ms deadline, full Rust-caller architectural-state or full A5 qualification.",
+    "Earlier d2d81c9 five-attempt campaign remains FAILED and eb4c90b workspace timeout remains FAILED."
+  ],
+  "ownership": {
+    "affinity": [
+      6,
+      13,
+      16
+    ],
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "application": {
+      "bytes": 7310368,
+      "sha256": "de2269ce8744028cd54a06e029df7c2937459350f7e77039a4b6614ede9a48c3"
+    },
+    "attempts_per_case": 1,
+    "builds": {
+      "application-build": [
+        "$TOOLCHAIN/bin/cargo",
+        "build",
+        "--bin",
+        "ordinary-interval",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--message-format=json-render-diagnostics"
+      ],
+      "module-build": [
+        "/usr/bin/gcc",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-if-conversion",
+        "-fno-if-conversion2",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,--build-id=none,-z,now,-z,noexecstack",
+        "-Wl,--version-script=tools/rapid-profiler/strnlen-work/localize.map",
+        "$REPO/tools/rapid-profiler/normal-work/csv_fields.c",
+        "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c",
+        "-o",
+        "$RAW/module-trusted.so"
+      ],
+      "ordinary-build": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "--bin",
+        "ordinary-interval",
+        "--no-run",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--message-format=json-render-diagnostics"
+      ]
+    },
+    "calls": 2032,
+    "controls_manifest_sha256": "49cae2fb871dd9c8d0059967320d19fd89c522f8373e5a0b6fe17eac1c41f4ee",
+    "cpu_roles": {
+      "controller": 6,
+      "remaining_reserved_cpu": 16,
+      "supervisor_affinity": [
+        6,
+        13,
+        16
+      ],
+      "worker": 13
+    },
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "$CARGO_HOME",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_RELEASE_DEBUG": "0",
+      "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+      "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "$REPO/target",
+      "CARGO_TERM_COLOR": "never",
+      "CC": "/usr/bin/gcc",
+      "HOME": "$USER_HOME",
+      "LC_ALL": "C",
+      "LITEINST_EVALUATION": "1",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "RUSTC": "$TOOLCHAIN/bin/rustc",
+      "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+      "TMPDIR": "$RAW/tmp"
+    },
+    "launch": [
+      "/usr/bin/env",
+      "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+      "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+      "/usr/local/bin/python3",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "li2core-owners-7724f5c",
+      "--",
+      "/usr/local/bin/python3",
+      "-B",
+      "$REPO/evaluation/ordinary-module-session/owners.py",
+      "--revision",
+      "7724f5cfecf5de9ac087c2ea80fbd03f21016369",
+      "--raw",
+      "$RAW",
+      "--reservation-tag",
+      "li2core-owners-7724f5c",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "launch_wrapper_sha256": "13fdc5b0b31a18bfe7839fdf552c5772dc4d0f3c9b3b9e07561895894264ce4d",
+    "load_after": [
+      44.54,
+      51.73,
+      52.74
+    ],
+    "load_before": [
+      47.26,
+      53.31,
+      53.27
+    ],
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "dbb0480f2db89123b8cbee2ca7edaec921ee2408aa665de2df8ccd7f4566295d",
+      "reaped_descendants": 0,
+      "seconds": 55.77366578299552,
+      "start_utc": "2026-10-29T10:21:22.232089+00:00",
+      "termination": null
+    },
+    "python_controls": 26,
+    "recipe": "evaluation/ordinary-module-session/owners.py",
+    "recipe_sha256": "8637ba30048e7c903826c590e96bc7ca2b34c85a4bfdea1db40af2fccd19bd95",
+    "reports": 8,
+    "reservation_tag": "li2core-owners-7724f5c",
+    "result_sha256": "4a0ade78848d5aab70b551a1116543926a2ac69bddb9332b2509e37a8838fa2b",
+    "retained_files_authenticated": 169,
+    "retries": 0,
+    "rust_controls": 47,
+    "sampled": 2028,
+    "shared_owner_refusals": 8,
+    "source_manifest_sha256": "c9bdf778f21d23d33f875b6f8356ced5fac265d7feebe5812dc8f122bf72eac0",
+    "stages": [
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-cc1",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17298093298450112,
+        "start_utc": "2026-10-29T10:21:26.080875+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-collect2",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17206592811271548,
+        "start_utc": "2026-10-29T10:21:26.642689+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-as",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17103503085672855,
+        "start_utc": "2026-10-29T10:21:27.221911+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "tool-ld",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17381656705401838,
+        "start_utc": "2026-10-29T10:21:27.807811+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "module-build",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.2382997120730579,
+        "start_utc": "2026-10-29T10:21:28.411133+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "module-symbols",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.1782255379948765,
+        "start_utc": "2026-10-29T10:21:29.067501+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "csv_fields-disassembly",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17792698903940618,
+        "start_utc": "2026-10-29T10:21:29.668159+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "strnlen-disassembly",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17771959700621665,
+        "start_utc": "2026-10-29T10:21:30.264524+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "application-build",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 25.090174815850332,
+        "start_utc": "2026-10-29T10:21:30.864855+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "application-caller-disassembly",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.18454981199465692,
+        "start_utc": "2026-10-29T10:21:56.388667+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "application-caller-symbols",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.19956318312324584,
+        "start_utc": "2026-10-29T10:21:57.012996+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "ordinary-build",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 11.3643950431142,
+        "start_utc": "2026-10-29T10:21:57.660596+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "ordinary-list",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.17468568217009306,
+        "start_utc": "2026-10-29T10:22:09.477663+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "ordinary-controls",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.2015810830052942,
+        "start_utc": "2026-10-29T10:22:10.110193+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "python-controls",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 1.0366292800754309,
+        "start_utc": "2026-10-29T10:22:10.768812+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "owner-1-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.2011097411159426,
+        "start_utc": "2026-10-29T10:22:12.428567+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "owner-2-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.20395786315202713,
+        "start_utc": "2026-10-29T10:22:13.408272+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "owner-3-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.7874452089890838,
+        "start_utc": "2026-10-29T10:22:14.460809+00:00",
+        "termination": null
+      },
+      {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "name": "owner-4-outer",
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.7889542819466442,
+        "start_utc": "2026-10-29T10:22:16.046492+00:00",
+        "termination": null
+      }
+    ],
+    "status": "OWNER_QUALIFICATION_PASS",
+    "test_artifact": {
+      "bytes": 4708848,
+      "sha256": "b5a91c1d50334728e2fcfc96aaa15a1e8040ebeb8b746ced0a9ef0c14d5dbad6"
+    },
+    "tools": {
+      "$TOOLCHAIN/bin/cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "$TOOLCHAIN/bin/rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "$TOOLCHAIN/bin/rustdoc": {
+        "bytes": 13680928,
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      },
+      "/usr/bin/as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "/usr/bin/bash": {
+        "bytes": 1389072,
+        "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+      },
+      "/usr/bin/gcc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "/usr/bin/git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "/usr/bin/ld.bfd": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "/usr/bin/objdump": {
+        "bytes": 423000,
+        "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+      },
+      "/usr/bin/readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "/usr/bin/rg": {
+        "bytes": 4746600,
+        "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+      },
+      "/usr/libexec/gcc/x86_64-redhat-linux/11/cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "/usr/libexec/gcc/x86_64-redhat-linux/11/collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "/usr/local/fbcode/platform010/bin/python3.12": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      }
+    },
+    "unsampled": 4
+  },
+  "reviews": {
+    "history": "3a116e65c66366e9aba7802fd1cf970fae10b47038cbdf1ec2dd54951321cee3",
+    "ownership_recipe": "e42b60b35e4a9528f62a404c147954957db9dafc4cf1d8b1fb80525a36de1bc0",
+    "storage": "2f590bc848311ae15813b5d814f777fd214466d89fcb9b567b1343bdfd0d4c7e"
+  },
+  "revisions": {
+    "history": "507abb0b92ebdec379bfee9ab9c0a4bc0d9b420e",
+    "ownership": "7724f5cfecf5de9ac087c2ea80fbd03f21016369",
+    "storage": "076a42a7b6d1f01890355cee629fd76583ac49d2"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Isolated module-session ownership qualification only; no native-state oracle, Schedule/deadline, performance, full-campaign or retrospective qualification credit. Existing cases preserve owners/refusals/reclamation; they do not restage a reclaimed bank or qualify execution after shell restaging.",
+  "workspace": {
+    "checker": "evaluation/admission/check_exec_identity.py --checks-only",
+    "checker_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+    "cpus": [
+      163,
+      205,
+      214,
+      226,
+      229,
+      246,
+      264,
+      293
+    ],
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "dc95230a826c6892a75e4c72d6bca9ef8c08203a922a2eaa0209a022cbb593b5",
+      "reaped_descendants": 0,
+      "seconds": 526.0983019280247,
+      "start_utc": "2026-10-29T10:12:04.840251+00:00",
+      "termination": null
+    },
+    "status": "PASS",
+    "workspace_failed": 0,
+    "workspace_ignored": 36,
+    "workspace_limit_seconds": 360,
+    "workspace_passed": 3214
+  }
+}
