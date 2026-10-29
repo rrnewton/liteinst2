@@ -118,7 +118,7 @@ impl Owner {
         batch: &NormalCallPairBatch,
         thread: &mut NormalCallPairThread,
         deadline: Deadline,
-    ) {
+    ) -> super::witness::FinalFacts {
         if ready.case.scenario == Scenario::StableA {
             self.controller.disarm(&self.a).unwrap();
         }
@@ -164,6 +164,7 @@ impl Owner {
             .unwrap()
             .expect("complete history");
         check::final_history(&self.controller, ready, batch, &history);
+        let observed = super::witness::copy_final(&copies, &history);
         assert!(self.controller.drain_history().unwrap().is_none());
         assert_eq!(thread.totals().unwrap(), check::totals(ready.case, true));
         assert!(
@@ -184,6 +185,7 @@ impl Owner {
         }
         assert_eq!(self.banks.len(), 3);
         deadline.check();
+        observed
     }
 }
 pub(super) enum Controller {

@@ -815,6 +815,7 @@ impl NormalContext<'_> {
         self.ready_module_wire(ready.encode_session());
     }
     fn ready_module_wire(self, wire: Vec<u8>) {
+        assert!(self.call_pair_output.is_none());
         write_all(self.write.0, &wire, self.oracle.deadline);
         drop(self.write);
         self.oracle.deadline.check();

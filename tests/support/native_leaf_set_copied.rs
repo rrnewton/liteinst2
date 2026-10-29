@@ -612,6 +612,7 @@ impl NormalContext<'_> {
             self.oracle.leaf_set_copied.as_ref().unwrap().plan
         );
         assert!(self.control.is_none() && self.output.is_none());
+        assert!(self.call_pair_output.is_none());
         write_all(self.write.0, &ready.encode(), self.oracle.deadline);
         drop(self.write);
         self.oracle.deadline.check();
