@@ -26,3 +26,8 @@ Python control command in the receipt. `TOOLCHAIN`, `CARGO_HOME` and `REPO` are
 local path substitutions; use a fresh ignored output directory. Use the
 cpuset-alloc reservation tool for disjoint hard CPU allocation. Raw logs stay
 ignored. Command durations are operational data, not performance numbers.
+
+The same seven checks also passed after merging main `eca64fde` at
+`6c260b32725c46065eab96cf05b20c0002258be7`. All 33 reviewed source files
+and 71 pinned dependencies are unchanged. The receipt and CSV retain both
+complete runs; the second used a fresh hard eight-CPU reservation.
