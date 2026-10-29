@@ -287,9 +287,12 @@ int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(tr)+sizeof(samples[0])<16*1024*1024,"complete fixed TRACE oracle below16MiB");
     const char *const *env=(const void *)(stack+3);unsigned found=0;
     need(stack[0]==1,445);
-    for(size_t i=0;env[i];i++)if(length(env[i])>=18&&!memcmp(env[i],"LI2_TRACE_RUN_MODE=",18)) {
-        need(!found&&env[i][18]>='0'&&env[i][18]<'0'+TR_MODES&&!env[i][19],446);
-        tr_mode=(unsigned)(env[i][18]-'0');++found;
+    static const char key[]="LI2_TRACE_RUN_MODE=";
+    const size_t key_bytes=sizeof(key)-1;
+    for(size_t i=0;env[i];i++)if(length(env[i])>=key_bytes&&!memcmp(env[i],key,key_bytes)) {
+        need(!found&&length(env[i])==key_bytes+1&&env[i][key_bytes]>='0'&&
+             env[i][key_bytes]<'0'+TR_MODES&&!env[i][key_bytes+1],446);
+        tr_mode=(unsigned)(env[i][key_bytes]-'0');++found;
     }
     need(found==1,447);setup(stack);
     size_t done=0,failed=0;uint32_t rc=0;
