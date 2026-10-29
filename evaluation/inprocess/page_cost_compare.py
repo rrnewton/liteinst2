@@ -116,6 +116,7 @@ def program_invoke(row, directory, cpu, record=False, step=False):
         with paths['stdout'].open('xb') as stdout, paths['stderr'].open('xb') as stderr:
             row['stdout_provenance_before']=provenance.observe(stdout.fileno())
             try:
+                usage_before = resource.getrusage(resource.RUSAGE_CHILDREN)
                 row['process_start_ns'] = time.monotonic_ns()
                 process = subprocess.Popen(row['argv'], cwd=directory, env=row.get('environment', ENV),
                                            stdout=stdout, stderr=stderr, start_new_session=True,
@@ -169,6 +170,12 @@ def program_invoke(row, directory, cpu, record=False, step=False):
                 row['cleanup_errors'].append(state['name']+'_close: '+repr(exc))
         if 'process_reaped_ns' in row:
             row['process_ns'] = row['process_reaped_ns']-row['process_start_ns']
+            usage_after = resource.getrusage(resource.RUSAGE_CHILDREN)
+            for name,field in (('user_cpu_ns','ru_utime'),('system_cpu_ns','ru_stime')):
+                row[name] = round((getattr(usage_after,field)-getattr(usage_before,field))*1e9)
+            for name,field in (('minor_faults','ru_minflt'),('major_faults','ru_majflt'),
+                               ('voluntary_switches','ru_nvcsw'),('involuntary_switches','ru_nivcsw')):
+                row[name] = getattr(usage_after,field)-getattr(usage_before,field)
         row['duration_ns'] = time.monotonic_ns()-start
         row['captures'] = {}
         for name, path in paths.items():
@@ -242,7 +249,7 @@ def dr_diagnostics(drrun,client,states,private,pin,binary,run,r,env):
         try:
             row,out,err=run('dr-proof-'+name,[trace,'-f','-qq','-yy','-s','4096','-o',path,
                 '-e','trace=execve,open,openat,mmap,mprotect,close,exit,exit_group',
-                drrun,'-c',client,'--',program,*args],profile='program',env=env,expected=expected)
+                drrun,'-quiet','-64','-root',drrun.parent.parent,'-c',client,'--',program,*args],profile='program_dr',env=env,expected=expected)
             data=binary(path).read_bytes();text=data.decode()
             # Default drrun execs DR itself; DR's private loader maps the target.
             # Both executable file mappings must occur in one actual PID.
@@ -278,13 +285,14 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,sdk):
         name=NAMES[ordinal];s=states[kind];case=r['cases'][ordinal]
         case['status']='failed';env=PROGRAM_ENV
         if lane=='native':argv=s['argv']
-        elif lane=='dynamorio':argv=[drrun,'-c',client,'--',*s['argv']];env=dr_env
+        elif lane=='dynamorio':
+            argv=[drrun,'-quiet','-64','-root',drrun.parent.parent,'-c',client,'--',*s['argv']];env=dr_env
         else:
             ns=private/(name+'-namespace')
             argv=[builder.tools['python'],'-B',s['carrier_tool'],'exec-loader','--library-root','/usr/lib64',
                 '--namespace',ns,s['carrier'],s['original'],'--',*s['argv']]
         try:
-            row,out,err=run(name,argv,profile='program',env=env)
+            row,out,err=run(name,argv,profile='program_dr' if lane=='dynamorio' else 'program',env=env)
             need(out==(b'.\n' if kind=='ls' else b''),'exact real program output')
             if lane=='gated':
                 pair.namespace_join(s,ns,binary,r,namespace)
@@ -303,7 +311,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,sdk):
             attempted=[c for c in r['commands'] if c['name']==name]
             if attempted:
                 actual=attempted[-1]
-                case.update({k:actual.get(k) for k in ('exit','process_ns','timed_out','reaped')})
+                case.update({k:actual.get(k) for k in ('exit','process_ns','timed_out','reaped','user_cpu_ns','system_cpu_ns',
+                    'minor_faults','major_faults','voluntary_switches','involuntary_switches')})
                 case['captures']={k:{f:v[f] for f in ('bytes','sha256')} for k,v in actual.get('captures',{}).items()}
             print(json.dumps({k:case.get(k) for k in ('ordinal','workload','lane','status','exit','process_ns','error')}),flush=True)
     need(len(r['cases'])==60 and all(c['status']=='passed' for c in r['cases']),
@@ -312,7 +321,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,sdk):
 
 def publish(path,r,private):
     stream=io.StringIO(newline='');writer=csv.writer(stream,lineterminator='\n')
-    fields=['ordinal','workload','repeat','lane','status','exit','process_ns','timed_out','reaped']
+    fields=['ordinal','workload','repeat','lane','status','exit','process_ns','timed_out','reaped',
+        'user_cpu_ns','system_cpu_ns','minor_faults','major_faults','voluntary_switches','involuntary_switches']
     writer.writerow(fields)
     for case in r['cases']:writer.writerow([case.get(k) for k in fields])
     data=stream.getvalue().encode();csv_path=path.with_suffix('.csv')
@@ -332,10 +342,11 @@ def publish(path,r,private):
     value.update(hardware=hw,private_receipt=fact(private/'receipt.json'),statistics=stats,
         quantiles='Python statistics.quantiles(n=4, method=inclusive), linear interpolation at (n-1)*p; IQR=Q3-Q1',
         whole_process_scope='Monotonic pre-Popen through wait/reap: spawn, exec, runtime/loader, program, and exit. Gated includes Python launch and sealed namespace preparation. Offline bridge/carrier/client builds excluded. No cache-cold claim.',
+        cpu_scope='RUSAGE_CHILDREN difference around each sole sequential child, reported CPU seconds converted to ns; microsecond accounting precision. Includes child threads and reaped descendants, excludes measuring parent.',
         order='Ten rounds; program order alternates; lane order cycles all six permutations. All sixty attempts retained; no resampling.',
         commands=len(r['commands']),command_rows_sha256=digest(r['commands']),
         sdk=r.get('dynamorio_sdk'),dr_diagnostics=[{k:v for k,v in x.items() if k!='error'} for x in r.get('dr_diagnostics',[])],
-        sdk_scope='Existing DBT-vendored DynamoRIO 11.91.0 SDK; empty client; no DBT application client.',
+        sdk_scope='Existing DBT-vendored DynamoRIO 11.91.0 SDK; empty client, default release runtime options, frontend quiet/64/root. DR alone has 16 GiB virtual-address allowance for default reservations; native/gated retain 512 MiB. Earlier 512 MiB DR failures remain separate.',
         program_inputs=r.get('system_inputs'),tool_versions=r.get('build',{}).get('numeric_versions'),
         bridge=r.get('release_build',{}).get('bridge'),release_build_status=r.get('release_build',{}).get('status'),
         reader_controls={k:len(v['refusals']) for k,v in r.get('reader_controls',{}).items()},
@@ -347,7 +358,7 @@ def publish(path,r,private):
         recipes=dict(native_ls=['/bin/ls','-d','.'],native_true=['/bin/true'],
             gated=['python3','-B','tools/page-entry/carrier.py','exec-loader','--library-root','/usr/lib64',
                 '--namespace','${UNIQUE_NAMESPACE}','${CARRIER}','${ORIGINAL}','--','${ORIGINAL}','${ARGS}'],
-            dynamorio=['${SDK}/bin64/drrun','-c','${NULL_CLIENT}','--','${ORIGINAL}','${ARGS}'],
+            dynamorio=['${SDK}/bin64/drrun','-quiet','-64','-root','${SDK}','-c','${NULL_CLIENT}','--','${ORIGINAL}','${ARGS}'],
             release=['sh','tools/page-entry/selected/build-native-pair.sh','${FRESH_ARCHIVE}','${OUTPUT}'],
             environment='PATH=/usr/bin:/bin LANG=C LC_ALL=C TZ=UTC LD_BIND_NOW=1; DR private HOME; gated sealed dependency environment; same private cwd'))
     # Terminal detail stays private; retain only numerical route/closure totals.
@@ -367,9 +378,11 @@ def main():
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
     stem=stamp+'-page-cost-compare-'+a.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem
     private.mkdir(parents=True,mode=0o700);public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
-    bounds=dict(BUILD_PROFILES,**BOUNDS)
+    # DR reserves 1 GiB VM plus 8 GiB heap by default; this comparator has its
+    # own virtual-address allowance. Original native/gated bounds stay exact.
+    bounds=dict(BUILD_PROFILES,**BOUNDS,program_dr=[30,16<<30,16<<20,60])
     pins={};aliases={};artifacts={};presence={};commands=[]
-    r=dict(schema=1,profile='page-cost-compare-v1',scope='Sixty fixed whole-process release attempts; existing gated qualification and limits retained',
+    r=dict(schema=1,profile='page-cost-compare-v2',scope='Sixty fixed whole-process release attempts; existing gated qualification and limits retained',
         status='failed',expected_revision=a.expect_revision,started_utc=stamp,source=None,source_unchanged=False,
         cpu=cpu,hardware=hardware(cpu),bounds=bounds,commands=commands,cases=[dict(ordinal=i,workload=k,repeat=n,lane=l,status='not_run') for i,(k,n,l) in enumerate(ORDER)],error=None,final_errors=[],
         reproduce=['python3','evaluation/inprocess/page_cost_compare.py','--expect-revision',a.expect_revision,'--sdk','${SDK}'])

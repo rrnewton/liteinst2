@@ -1,19 +1,78 @@
 """Exact terminal acceptance for the whole-process ls/true comparison.
 
-The old ls/hot reader is unchanged. True is a separate named profile and
-inherits its positive pair/REP/cache requirements: an exit0 without those
-proofs remains unsupported. No report field or recorded state is rewritten.
+The old ls/hot reader is unchanged. True requires positive pair/cache closure
+and an initialized, entirely unused REP owner. It has no REP instruction or
+source identity. Actual report fields and recorded state are never rewritten.
 """
 import copy
 from functools import partial
 import hashlib
 import json
+import struct
 
 from page_selected import need
 import page_native_pair_reports as original
-from page_native_pair_reports import external_source, legacy_source
+from page_selected_repeat_lease_app_reports import carrier_extent
 
 H = lambda value: hashlib.sha256(value).hexdigest()
+
+
+def _unused_repeat(parsed):
+    """The actual initialized owner never armed; no completed REP credit."""
+    r = parsed['repeat_lease']
+    expected = dict.fromkeys(original.LEASE_SCALARS, 0)
+    expected['version'] = 1
+    for key, size in original.LEASE_ARRAYS.items():
+        expected[key] = [0] * size
+    expected['owner'][-1] = 1
+    expected['custody'][0] = 1
+    need(r == expected, 'entire unused REP report is canonical empty, with only initialization flags')
+    need(parsed['repeat'] is None, 'true unused-REP profile has no legacy REP observation')
+    return dict(scope='initialized unused REP owner', attempts=0, completed=0,
+                traces=0, retained=0, closes=0, releases=0, queries=0,
+                source_observed=False, native_qualification_credit=False)
+
+
+def _retained_inputs(images, image_bytes, carrier, carrier_bytes):
+    """Whole input identity/ELF checks, without inventing an unused REP source."""
+    need(type(images)is list and type(image_bytes)is list and len(images)==len(image_bytes)>0,
+         'complete independent external original/interpreter/dependency inputs')
+    identities=set();main_rx=[];mask=(1<<64)-1
+    for index,(image,data)in enumerate(zip(images,image_bytes,strict=True)):
+        need(type(image)is dict and set(image)=={'bytes','sha256','roles'}and type(image['bytes'])is int and
+             type(image['sha256'])is str and type(image['roles'])is list and image['roles'] and
+             all(type(role)is str for role in image['roles']) and type(data)is bytes and
+             len(data)==image['bytes'] and H(data)==image['sha256'] and len(data)>=64,
+             'each exact retained external ELF identity and bytes')
+        need(('original'in image['roles'])==(index==0),'one explicit original-main role at the first retained input')
+        if index==0:
+            need(type(carrier_bytes)is bytes and
+                 len(carrier_bytes)==carrier_extent(carrier,image['bytes']) and H(carrier_bytes)==carrier['sha256'],
+                 'whole exact carrier bytes independently built and joined to actual sealed launch')
+        need(image['sha256']not in identities,'one retained input per complete external content identity')
+        identities.add(image['sha256'])
+        h=struct.unpack_from('<16sHHIQQQIHHHHHH',data)
+        need(h[0][:7]==b'\x7fELF\x02\x01\x01'and h[1]in(2,3)and h[2:4]==(62,1)and
+             h[8:10]==(64,56)and 0<h[10]<=32 and h[5]<=len(data)and 56*h[10]<=len(data)-h[5],
+             'bounded actual x86-64 external ELF program headers')
+        for i in range(h[10]):
+            load=struct.unpack_from('<IIQQQQQQ',data,h[5]+56*i)
+            if load[0]!=1:continue
+            _,prot,offset,va,_,size,memory,align=load
+            need(offset<=len(data)and size<=len(data)-offset and size<=memory and va<=mask-memory,
+                 'complete actual external load extent')
+            if prot!=5:continue
+            need(align in(0,1)or align&(align-1)==0,'power-of-two actual ELF load alignment')
+            need((offset&4095)==(va&4095),'file and virtual RX page offsets agree')
+            if index==0:
+                need(carrier_bytes[offset:offset+size]==data[offset:offset+size],
+                     'actual carrier preserves the complete original main RX file-load bytes')
+                main_rx.append((offset,size))
+    need(any(size>0 for offset,size in main_rx), 'actual main has a nonempty RX file load')
+    return dict(scope='whole input identities and ELF RX geometry only',
+                inputs=len(images), main_rx_loads=main_rx,
+                source_observed=False, allocation_mapping_provenance=False,
+                aslr_bias_inferred=False, object_identity_inferred=False)
 
 
 def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
@@ -34,9 +93,8 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
     lease = original.lease.counters(parsed)
     original.effect_exit(parsed)
     trace = original.trace_completed(parsed)
-    binding = external_source(parsed, images, image_bytes, carrier, carrier_bytes)
-    retained = original.lease_completed(parsed, pid, binding, images, carrier)
-    legacy = legacy_source(parsed, images, image_bytes)
+    retained = _unused_repeat(parsed)
+    inputs = _retained_inputs(images, image_bytes, carrier, carrier_bytes)
     native, effect, oneshot = parsed['native'], parsed['effect'], parsed['oneshot']
     return parsed, dict(
         workload='true', application_completed=True,
@@ -44,7 +102,7 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
         default_rseq_registered=parsed['rseq']['owner'][1] == 1,
         cache_reuse=original.reuse_completed(parsed['run'], parsed['reuse']),
         gate=gate, lease=lease, trace_run=trace, repeat_lease=retained,
-        repeat_lease_source=binding, legacy_repeat_source=legacy,
+        repeat_lease_source=None, legacy_repeat_source=None, input_authentication=inputs,
         selected=dict(attempts=effect['attempts'], completed=effect['completed'],
                       classes=effect['classes'], unreturned_exit=1),
         publication={k: oneshot[k] for k in (
@@ -59,8 +117,8 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
             revisit_count=native['revisit_count'], revisit_ns=native['revisit_ns']))
 
 
-# Exact donor mutation generators, with a reader callable instead of binding
-# their global ls/hot check. Their actual records and predicates are preserved.
+# The complete pair-control generator is retained. True's REP controls below
+# exercise its exact unused-state contract, not fabricated completed REP rows.
 def _pair_controls(stderr, args, workload, *, read):
     accepted,_=read(stderr,*args,workload=workload);actual_hash=H(stderr)
     p=accepted['native_pair']
@@ -122,36 +180,14 @@ def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carr
         ('source_validation_passes', 'run', 'attempt', 11, 3),
     )
     rr=accepted['repeat_lease']
-    cases+=(
-        ('lease_literal','repeat_lease','request',5,rr['request'][5]^1),
-        ('lease_following_byte','repeat_lease','request',5,rr['request'][5]^(1<<16)),
-        ('lease_next_pc','repeat_lease','request',1,rr['request'][1]+1),
-        ('lease_source_offset_alignment','repeat_lease','source',3,rr['source'][3]+1),
-        ('lease_source_allocation_zero','repeat_lease','source',1,0),
-        ('lease_two_page','repeat_lease','request',7,2),
-        ('lease_available','repeat_lease','request',4,1),
-        ('lease_progress','repeat_lease','frames',10,rr['frames'][10]^4),
-        ('lease_close','repeat_lease','closes',None,rr['closes']+1),
-        ('lease_retained','repeat_lease','retained',None,rr['retained']+1),
-        ('lease_release','repeat_lease','release',1,0),
-        ('lease_revoke','repeat_lease','io',3,0),
-        ('lease_final_query','repeat_lease','query',3,0),
-        ('lease_ticket','repeat_lease','custody',4,1),
-        ('lease_event_count','repeat_lease','custody',10,rr['custody'][10]+1),
-        ('lease_return_count','repeat_lease','custody',14,rr['custody'][14]+1),
-        ('lease_epoch','repeat_lease','custody',8,rr['custody'][8]+1),
-        ('lease_borrow','repeat_lease','borrow',1,1),
-        ('lease_rseq_checks','repeat_lease','progress',11,rr['progress'][11]+1),
-        ('lease_write_checks','repeat_lease','writes',0,rr['writes'][0]+1),
-        ('lease_registration','repeat_lease','registration',10,rr['registration'][10]+1),
-        ('lease_seals','repeat_lease','backing',2,0),
-        ('lease_elf_size','repeat_lease','backing',8,rr['backing'][8]+1),
-        ('lease_event_kind','repeat_lease','event',7,1),
-        ('lease_event_complete','repeat_lease','event',8,0),
-    )
-    if workload=='true'and accepted['repeat']is not None:
-        cases+=(('legacy_rep_captured_byte','repeat','request',5,accepted['repeat']['request'][5]^(1<<16)),
-                ('legacy_rep_file_page','repeat','source0',3,accepted['repeat']['source0'][3]+1))
+    # Mutate each actual scalar and every array element, including retained
+    # unused tails and both initialization flags. No source/frame is invented
+    # in the accepted baseline and no mutation is a native operation.
+    cases+=tuple(('unused_lease_'+field,'repeat_lease',field,None,rr[field]^1)
+                 for field in original.LEASE_SCALARS)
+    cases+=tuple(('unused_lease_'+field+'_'+str(index),'repeat_lease',field,index,value^1)
+                 for field in original.LEASE_ARRAYS for index,value in enumerate(rr[field]))
+    need(len(cases)==191, 'eleven original general plus all 180 unused REP fields')
     names=[]
     for name, key, field, index, value in cases:
         changed=copy.deepcopy(accepted[key])
@@ -169,36 +205,34 @@ def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carr
         except ValueError:refused=True
         need(refused, 'same complete reader refuses supplied '+name)
         names.append(name)
-    # Supplied external-input changes exercise the limited byte join, not
-    # actual native events or changes to the retained production evidence.
-    binding=external_source(accepted,images,image_bytes,carrier,carrier_bytes)
-    for name in ('external_instruction_byte','external_duplicate_candidate'):
+    # Every complete input and carrier remains authenticated. There is no
+    # actual REP source to match, so input controls target actual identity,
+    # ELF geometry, duplicate content and the original/carrier RX byte join.
+    inputs=_retained_inputs(images,image_bytes,carrier,carrier_bytes)
+    for name in ('external_identity','external_duplicate_identity','external_elf_magic',
+                 'external_original_role','carrier_rx_byte','carrier_extent'):
         altered_images=copy.deepcopy(images);altered_bytes=list(image_bytes)
-        if name=='external_instruction_byte':
-            i=binding['module'];data=bytearray(altered_bytes[i]);data[binding['file_offset']]^=1
-            altered_bytes[i]=bytes(data);altered_images[i]['sha256']=H(altered_bytes[i])
-        else:
-            altered_images.append(copy.deepcopy(images[binding['module']]))
-            altered_bytes.append(image_bytes[binding['module']])
+        altered_carrier=dict(carrier);altered_carrier_bytes=carrier_bytes
+        if name in ('external_identity','external_elf_magic'):
+            data=bytearray(altered_bytes[0]);data[0]^=1;altered_bytes[0]=bytes(data)
+            if name=='external_elf_magic':altered_images[0]['sha256']=H(altered_bytes[0])
+        elif name=='external_duplicate_identity':
+            altered_images.append(dict(images[0],roles=['supplied-duplicate']))
+            altered_bytes.append(image_bytes[0])
+        elif name=='external_original_role':
+            altered_images[0]['roles']=['supplied-nonoriginal']
+        elif name=='carrier_rx_byte':
+            offset=next(offset for offset,size in inputs['main_rx_loads'] if size>0)
+            data=bytearray(carrier_bytes);data[offset]^=1;altered_carrier_bytes=bytes(data)
+            altered_carrier['sha256']=H(altered_carrier_bytes)
+        else:altered_carrier['bytes']+=1
         refused=False
-        try:read(stderr,pid,exit_code,parent,altered_images,altered_bytes,carrier,carrier_bytes,workload=workload)
+        try:read(stderr,pid,exit_code,parent,altered_images,altered_bytes,
+                 altered_carrier,altered_carrier_bytes,workload=workload)
         except ValueError:refused=True
         need(refused,'same complete reader refuses supplied '+name);names.append(name)
-    changed_carrier=dict(carrier,bytes=carrier['bytes']+1);refused=False
-    try:read(stderr,pid,exit_code,parent,images,image_bytes,changed_carrier,carrier_bytes,workload=workload)
-    except ValueError:refused=True
-    need(refused,'same complete reader refuses supplied mismatched carrier extent');names.append('carrier_extent')
-    legacy=legacy_source(accepted,images,image_bytes)if workload=='true'else None
-    if legacy is not None:
-        altered_images=copy.deepcopy(images);altered_bytes=list(image_bytes)
-        i=legacy['module'];data=bytearray(altered_bytes[i]);data[legacy['file_offset']]^=1
-        altered_bytes[i]=bytes(data);altered_images[i]['sha256']=H(altered_bytes[i])
-        refused=False
-        try:read(stderr,pid,exit_code,parent,altered_images,altered_bytes,carrier,carrier_bytes,workload=workload)
-        except ValueError:refused=True
-        need(refused,'same complete reader refuses supplied legacy external instruction byte')
-        names.append('legacy_external_instruction_byte')
     names.extend(_pair_controls(stderr,(pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes),workload,read=read))
+    need(len(names)==216, '191 general/unused-field plus six input and nineteen pair refusals')
     need(hashlib.sha256(stderr).hexdigest()==actual_hash, 'actual report bytes unchanged')
     return dict(scope='supplied-reader mutations after actual completion',actual_subjects=0,
         original_stderr_sha256=actual_hash,refusals=names,native_qualification_credit=False)
