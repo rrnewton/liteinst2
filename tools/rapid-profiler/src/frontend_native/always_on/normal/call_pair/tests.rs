@@ -1304,7 +1304,88 @@ fn old_profile_exclusions_remain() {
 
 #[test]
 fn compact_journal_validation_keeps_all_words_at_every_phase() {
+    // Independently retain the old per-event construction: no entry cache and
+    // no kind/PC substitution. These are real receipts, not native callbacks.
+    fn old_page(s: &NormalState) -> [u64; 512] {
+        let pair = s.call_pair.as_ref().unwrap();
+        let words =
+            |function, summary, ordinal, [entry, rsp, word]: [u64; 3], returned: Option<u64>| {
+                let (kind, generation, bits) =
+                    history::packed_for_function(&s.binding.session, function, summary).unwrap();
+                assert!(prefix(summary) <= s.binding.session.history_committed_end());
+                [
+                    kind + u64::from(returned.is_some()),
+                    ordinal,
+                    returned.unwrap_or(entry),
+                    rsp,
+                    word,
+                    generation,
+                    bits,
+                ]
+            };
+        let mut events = [None; 4];
+        for node in 0..2 {
+            if let Some(p) = &pair.frames[node] {
+                let summary = p.summary.unwrap();
+                events[node] = Some(words(
+                    p.function,
+                    summary,
+                    p.ordinal,
+                    [p.entry_pc, p.rsp, p.word],
+                    None,
+                ));
+                if let Some(r) = p.returned {
+                    events[3 - node] = Some(words(
+                        p.function,
+                        summary,
+                        p.ordinal,
+                        [p.entry_pc, p.rsp, p.word],
+                        Some(r.pc),
+                    ));
+                }
+            } else if let Some(r) = pair.rows[node] {
+                events[node] = Some(words(
+                    r.function,
+                    r.summary,
+                    r.raw.ordinal,
+                    [r.raw.entry_pc, r.entry_rsp, r.return_word],
+                    None,
+                ));
+                events[3 - node] = Some(words(
+                    r.function,
+                    r.summary,
+                    r.raw.ordinal,
+                    [r.raw.entry_pc, r.entry_rsp, r.return_word],
+                    Some(r.raw.return_pc),
+                ));
+            }
+        }
+        let used = events.iter().take_while(|e| e.is_some()).count();
+        assert!(events[used..].iter().all(Option::is_none));
+        let mut page = [0u64; 512];
+        page[0] = used as u64;
+        page[2] = s.tid;
+        page[3] = pair.depth() as u64;
+        for (i, event) in events.into_iter().take(used).enumerate() {
+            page[4 + i * 7..11 + i * 7].copy_from_slice(&event.unwrap());
+        }
+        page
+    }
+    fn equivalent(f: &Fixture) {
+        let before = snapshot(&f.state);
+        assert_eq!(old_page(&f.state), f.state.journal.page.0);
+        assert!(
+            f.state
+                .call_pair
+                .as_ref()
+                .unwrap()
+                .validate(View::of(&f.state))
+                .is_ok()
+        );
+        assert_eq!(snapshot(&f.state), before);
+    }
     fn check(f: &mut Fixture) {
+        equivalent(f);
         let before = snapshot(&f.state);
         assert!(
             f.state
@@ -1343,4 +1424,125 @@ fn compact_journal_validation_keeps_all_words_at_every_phase() {
     assert_eq!(batch.after().roots, 1);
     assert_eq!(batch.after().child_acks, 1);
     check(&mut f);
+    // Initial means genuinely never published, not Removed relabeled as Initial.
+    fn initial() -> Fixture {
+        let mut p = prepared(10);
+        let mut banks = p.prepare_epoch_storage().unwrap();
+        // SAFETY: inert metadata only, as in Fixture::new; no native dispatch.
+        let (mut controller, client) = unsafe { p.activate_concurrent() }.unwrap();
+        drop(client);
+        let epoch = controller.stage_prepared(banks.pop().unwrap()).unwrap();
+        let binding = Arc::clone(&controller.0.binding);
+        let model = binding.session.register_thread(7).unwrap();
+        let mut state = NormalState::new(
+            binding,
+            7,
+            ReadableStack {
+                start: 0x6000,
+                end: 0xb000,
+            },
+            IntervalJournal::allocate(),
+            model,
+        );
+        state.call_pair = Some(Box::new(runtime::State::new()));
+        state.journal.header(state.tid, 0);
+        Fixture {
+            state,
+            controller,
+            epoch: Some(epoch),
+            banks,
+        }
+    }
+    // All unsampled classes and both mixed-generation/closed directions, at
+    // each real entry, pre-RET, acknowledgement, checkpoint and reset phase.
+    for scenario in 0..7 {
+        let mut f = if scenario == 0 {
+            initial()
+        } else {
+            Fixture::new(10)
+        };
+        if scenario == 1 {
+            f.controller.disarm(f.epoch.as_ref().unwrap()).unwrap();
+        }
+        if scenario == 2 || scenario == 5 {
+            for _ in 0..10 {
+                f.run();
+            }
+        }
+        if scenario == 6 {
+            f.enter(0);
+            let old = f.rearm();
+            f.enter(1);
+            f.observe(1);
+            f.ack();
+            f.observe(0);
+            f.transfer();
+            drop(reclaim(&mut f.controller, old));
+            for _ in 0..9 {
+                f.run();
+            }
+        }
+        equivalent(&f);
+        f.enter(0);
+        equivalent(&f);
+        let old = if scenario == 3 || scenario == 5 {
+            Some(f.rearm())
+        } else {
+            None
+        };
+        if scenario == 4 {
+            f.controller.disarm(f.epoch.as_ref().unwrap()).unwrap();
+        }
+        equivalent(&f);
+        f.enter(1);
+        equivalent(&f);
+        let frames = &f.state.call_pair.as_ref().unwrap().frames;
+        let owners = frames
+            .each_ref()
+            .map(|p| timing::owner(p.as_ref().unwrap().summary.unwrap()));
+        match scenario {
+            0 => assert_eq!(owners, [RawIntervalOwner::InitialDisarmed; 2]),
+            1 => assert!(
+                owners
+                    .iter()
+                    .all(|o| matches!(o, RawIntervalOwner::Removed { .. }))
+            ),
+            2 => assert!(
+                owners
+                    .iter()
+                    .all(|o| matches!(o, RawIntervalOwner::FunctionClosed { .. }))
+            ),
+            3 => assert!(
+                matches!(owners, [RawIntervalOwner::Sampled { generation: a, .. }, RawIntervalOwner::Sampled { generation: b, .. }] if a != b)
+            ),
+            4 => assert!(matches!(
+                owners,
+                [
+                    RawIntervalOwner::Sampled { .. },
+                    RawIntervalOwner::Removed { .. }
+                ]
+            )),
+            5 => assert!(
+                matches!(owners, [RawIntervalOwner::FunctionClosed { generation: a }, RawIntervalOwner::Sampled { generation: b, .. }] if a != b)
+            ),
+            _ => assert!(matches!(
+                owners,
+                [
+                    RawIntervalOwner::Sampled { .. },
+                    RawIntervalOwner::FunctionClosed { .. }
+                ]
+            )),
+        }
+        f.observe(1);
+        equivalent(&f);
+        f.ack();
+        equivalent(&f);
+        f.observe(0);
+        equivalent(&f);
+        let mut expected = old_page(&f.state);
+        expected[3] = 0;
+        assert_eq!(f.transfer().journal(), &expected);
+        equivalent(&f);
+        drop(old);
+    }
 }

@@ -103,52 +103,43 @@ impl State {
             bits,
         ])
     }
+    fn return_words(mut entry: [u64; 7], pc: u64) -> [u64; 7] {
+        // words(..., None) has kind 1 or 3. Only kind and PC differ at return.
+        entry[0] += 1;
+        entry[2] = pc;
+        entry
+    }
     // Derive all four headers and four possible events from live receipt
     // summaries / completed immutable rows. Every later page word must be zero;
     // journal_matches_prefix still reads and checks all 512 words. No receipt is consumed.
-    fn expected_prefix(&self, v: View<'_>) -> Result<[u64; 32], BridgeError> {
+    fn expected_prefix(
+        &self,
+        v: View<'_>,
+        frame_entries: [[u64; 7]; 2],
+    ) -> Result<[u64; 32], BridgeError> {
         let mut page = [0u64; 32];
         page[2] = v.tid;
         page[3] = self.depth() as u64;
         let mut events = [None; 4];
         for node in 0..2 {
             if let Some(p) = &self.frames[node] {
-                let summary = p.summary.ok_or(error(Cause::Invariant))?;
-                events[node] = Some(Self::words(
-                    v,
-                    p.function,
-                    summary,
-                    p.ordinal,
-                    [p.entry_pc, p.rsp, p.word],
-                    None,
-                )?);
+                // validate already encoded this live frame at its original guard.
+                let entry = frame_entries[node];
+                events[node] = Some(entry);
                 if let Some(r) = p.returned {
-                    events[3 - node] = Some(Self::words(
-                        v,
-                        p.function,
-                        summary,
-                        p.ordinal,
-                        [p.entry_pc, p.rsp, p.word],
-                        Some(r.pc),
-                    )?);
+                    events[3 - node] = Some(Self::return_words(entry, r.pc));
                 }
             } else if let Some(r) = self.rows[node] {
-                events[node] = Some(Self::words(
+                let entry = Self::words(
                     v,
                     r.function,
                     r.summary,
                     r.raw.ordinal,
                     [r.raw.entry_pc, r.entry_rsp, r.return_word],
                     None,
-                )?);
-                events[3 - node] = Some(Self::words(
-                    v,
-                    r.function,
-                    r.summary,
-                    r.raw.ordinal,
-                    [r.raw.entry_pc, r.entry_rsp, r.return_word],
-                    Some(r.raw.return_pc),
-                )?);
+                )?;
+                events[node] = Some(entry);
+                events[3 - node] = Some(Self::return_words(entry, r.raw.return_pc));
             }
         }
         let used = events.iter().take_while(|e| e.is_some()).count();
@@ -244,6 +235,10 @@ impl State {
             .entered
             .checked_add(1)
             .ok_or(error(Cause::Capacity))?;
+        // Invocation-local only: the same immutable frames/receipts survive all
+        // following guards. Bounded monotonic history publication cannot change
+        // an accepted encoding; no cache crosses a callback or state mutation.
+        let mut frame_entries = [[0u64; 7]; 2];
         for (node, &function) in functions.iter().enumerate() {
             if let Some(p) = &self.frames[node] {
                 let summary = p.summary.ok_or(error(Cause::Invariant))?;
@@ -271,7 +266,7 @@ impl State {
                         return Err(error(Cause::Return));
                     }
                 }
-                Self::words(
+                frame_entries[node] = Self::words(
                     v,
                     p.function,
                     summary,
@@ -321,7 +316,7 @@ impl State {
                 return Err(error(Cause::Return));
             }
         }
-        if !journal_matches_prefix(v.journal, &self.expected_prefix(v)?) {
+        if !journal_matches_prefix(v.journal, &self.expected_prefix(v, frame_entries)?) {
             return Err(error(Cause::Invariant));
         }
         Ok(())
