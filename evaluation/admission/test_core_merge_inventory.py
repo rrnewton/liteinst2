@@ -378,7 +378,10 @@ class CoreMergeInventoryTests(unittest.TestCase):
         for target, row in core223.PROJECTIONS.items():
             data = (Path(__file__).resolve().parents[2] / target).read_bytes()
             restored = core223.source_before_core223(target, data, 'core223_source_inventory_differs')
-            self.assertEqual(hashlib.sha256(data).hexdigest(), row['current_sha256'])
+            # This row names the core223 epoch. Authenticate the live source
+            # through every newer layer before checking that historical hash.
+            projected = corecc846.source_before_cc846(target, data, 'core223_source_inventory_differs')
+            self.assertEqual(hashlib.sha256(projected).hexdigest(), row['current_sha256'])
             self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
             for bad in (restored, data + b'\nPRIVATE_SENTINEL\n'):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^core223_source_inventory_differs$'):

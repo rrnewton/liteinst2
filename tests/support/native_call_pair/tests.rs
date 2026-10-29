@@ -4,6 +4,50 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 fn refuses(f: impl FnOnce()) {
     assert!(catch_unwind(AssertUnwindSafe(f)).is_err());
 }
+#[test]
+fn call_pair_postflight_fits_without_reader_and_closes_after_one_send() {
+    let deadline = Deadline::start();
+    let [read, write] = postflight_pipe();
+    for fd in [&read, &write] {
+        let descriptor_flags = unsafe { libc::fcntl(fd.0, libc::F_GETFD) };
+        let status_flags = unsafe { libc::fcntl(fd.0, libc::F_GETFL) };
+        assert!(descriptor_flags >= 0 && status_flags >= 0);
+        assert_ne!(descriptor_flags & libc::FD_CLOEXEC, 0);
+        assert_ne!(status_flags & libc::O_NONBLOCK, 0);
+    }
+    let bytes: Vec<_> = (0..POSTFLIGHT_LIMIT).map(|i| (i % 251) as u8).collect();
+    PostflightOutput {
+        fd: write,
+        deadline,
+    }
+    .finish(&bytes);
+    assert_eq!(read_closed(read.0, deadline, POSTFLIGHT_LIMIT), bytes);
+}
+#[test]
+fn call_pair_postflight_rejects_empty_and_oversized_before_writing() {
+    for length in [0, POSTFLIGHT_LIMIT + 1] {
+        let deadline = Deadline::start();
+        let [read, write] = postflight_pipe();
+        refuses(|| {
+            PostflightOutput {
+                fd: write,
+                deadline,
+            }
+            .finish(&vec![1; length])
+        });
+        assert!(read_closed(read.0, deadline, POSTFLIGHT_LIMIT).is_empty());
+    }
+}
+#[test]
+fn call_pair_postflight_drop_without_finish_emits_no_packet() {
+    let deadline = Deadline::start();
+    let [read, write] = postflight_pipe();
+    drop(PostflightOutput {
+        fd: write,
+        deadline,
+    });
+    assert!(read_closed(read.0, deadline, POSTFLIGHT_LIMIT).is_empty());
+}
 fn caller_plan() -> Plan {
     rust_invoke::admit(&[
         0x53, 0x48, 0x89, 0xcb, 0x48, 0x89, 0xf8, 0x48, 0x89, 0xf7, 0x48, 0x89, 0xd6, 0xff, 0xd0,

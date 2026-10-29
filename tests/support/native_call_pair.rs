@@ -6,6 +6,10 @@ mod parent;
 pub(super) mod phase;
 #[path = "native_call_pair/trace.rs"]
 mod trace;
+#[path = "native_call_pair/trace_join.rs"]
+pub mod trace_join;
+#[path = "native_call_pair/witness.rs"]
+pub mod witness;
 pub use trace::Trace;
 pub type Coverage = trace::Coverage;
 pub type Population = trace::Population;
@@ -21,6 +25,28 @@ pub fn absolute_end(deadline: Deadline) -> Instant {
 pub const PROFILE: &str = "normal-call-pair-original-rust-v1";
 pub const FUNCTIONS: [u64; 2] = [501, 502];
 pub const INSTALL: u64 = 0x6361_6c6c_7061_6972;
+pub const POSTFLIGHT_LIMIT: usize = 4096;
+pub(super) fn postflight_pipe() -> [Fd; 2] {
+    let endpoints = pipe();
+    let capacity = unsafe { libc::fcntl(endpoints[1].0, libc::F_GETPIPE_SZ) };
+    assert!(capacity >= POSTFLIGHT_LIMIT as i32);
+    let atomic_limit = unsafe { libc::fpathconf(endpoints[1].0, libc::_PC_PIPE_BUF) };
+    assert!(atomic_limit >= POSTFLIGHT_LIMIT as libc::c_long);
+    endpoints
+}
+/// Candidate-only, once-consumed export after the application's full postflight.
+/// The receiving parent authenticates the packet after both normal child reaps.
+pub struct PostflightOutput {
+    fd: Fd,
+    deadline: Deadline,
+}
+impl PostflightOutput {
+    pub fn finish(self, bytes: &[u8]) {
+        assert!(!bytes.is_empty() && bytes.len() <= POSTFLIGHT_LIMIT);
+        write_all(self.fd.0, bytes, self.deadline);
+        self.deadline.check();
+    }
+}
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Scenario {
     StableA,
@@ -575,24 +601,42 @@ impl NormalOracle {
             .set_diagnostic_origin(origin);
         self
     }
-    pub fn pair_call_pair<F>(&self, setup: F) -> (NormalPairResult<2>, Trace)
+    pub fn pair_call_pair<F>(
+        &self,
+        setup: F,
+    ) -> (NormalPairResult<2>, Trace, [trace_join::WorkRow; 2])
     where
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
     {
         let p = self.call_pair.as_ref().expect("call-pair profile");
         assert!(self.module.is_none() && self.reference.is_none() && !self.has_copied_caller());
-        let (pair, trace, stats) =
-            self.pair_engine_ready::<F, _, _, 2>(setup, |r, candidate, points| {
+        let (pair, (trace, work), stats) =
+            self.pair_engine_ready::<F, _, _, 2>(setup, |r, candidate, points, postflight| {
                 let trace = trace::inspect(self, r.call_pair(), candidate.call_pair(), points);
+                let work = trace_join::join(
+                    self.seed,
+                    r.call_pair(),
+                    candidate.call_pair(),
+                    points,
+                    &trace,
+                    postflight.expect("candidate postflight after both normal reaps"),
+                );
                 let visits = [trace.parent_visits, trace.child.visits];
-                (trace, visits)
+                ((trace, work), visits)
             });
         assert!(stats.is_none());
         trace::validate_pair(p.case, &p.plan, &pair, &trace);
-        (pair, trace)
+        (pair, trace, work)
     }
 }
 impl NormalContext<'_> {
+    pub fn take_call_pair_output(&mut self) -> Option<PostflightOutput> {
+        assert!(self.oracle.call_pair.is_some());
+        self.call_pair_output.take().map(|fd| PostflightOutput {
+            fd,
+            deadline: self.oracle.deadline,
+        })
+    }
     pub fn call_pair_case(&self) -> Case {
         self.oracle
             .call_pair
@@ -606,7 +650,7 @@ impl NormalContext<'_> {
         assert_eq!(ready.plan, p.plan);
         assert_eq!(ready.caller, p.caller);
         assert_eq!(ready.caller_immutable, p.caller_pages);
-        assert!(self.control.is_none() && self.output.is_none());
+        assert!(self.control.is_none() && self.output.is_none() && self.call_pair_output.is_none());
         write_all(self.write.0, &ready.encode(), self.oracle.deadline);
         drop(self.write);
         self.oracle.deadline.check();

@@ -32,3 +32,7 @@ test = true
 name = "verify_common_core"
 path = "examples/verify_common_core.rs"
 test = true
+
+[[example]]
+name = "disassembly_sites"
+path = "examples/disassembly_sites.rs"

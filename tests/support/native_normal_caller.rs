@@ -794,6 +794,7 @@ pub struct NormalContext<'a> {
     write: Fd,
     control: Option<ControlChild>,
     output: Option<reference::Output>,
+    call_pair_output: Option<Fd>,
 }
 impl NormalContext<'_> {
     pub fn input(&self) -> &[u8] {
@@ -856,6 +857,7 @@ impl NormalContext<'_> {
         assert_eq!(self.oracle.profile(), CallerProfile::Reference);
         assert_eq!(Some(ready.cells), self.reference_cells_address());
         assert!(self.control.is_none() && self.output.is_none());
+        assert!(self.call_pair_output.is_none());
         write_all(self.write.0, &ready.encode(), self.oracle.deadline);
         drop(self.write);
         self.oracle.deadline.check();
@@ -869,6 +871,7 @@ impl NormalContext<'_> {
         assert!(self.oracle.copied_rust.is_none());
         assert!(self.oracle.module.is_none());
         assert!(self.oracle.reference.is_none() && self.output.is_none());
+        assert!(self.call_pair_output.is_none());
         assert!(
             self.control.is_none(),
             "helper endpoint must be consumed before readiness"
@@ -1453,7 +1456,8 @@ impl NormalOracle {
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
         O: FnOnce(&WalkReady, &[Snapshot]) -> (T, [usize; N]),
     {
-        self.pair_engine_ready(setup, |original, _candidate, points| {
+        self.pair_engine_ready(setup, |original, _candidate, points, postflight| {
+            assert!(postflight.is_none());
             inspect(original, points)
         })
     }
@@ -1464,7 +1468,7 @@ impl NormalOracle {
     ) -> (NormalPairResult<N>, T, Option<reference::Stats>)
     where
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
-        O: FnOnce(&WalkReady, &WalkReady, &[Snapshot]) -> (T, [usize; N]),
+        O: FnOnce(&WalkReady, &WalkReady, &[Snapshot], Option<(u32, &[u8])>) -> (T, [usize; N]),
     {
         self.deadline.check();
         assert_eq!(
@@ -1489,6 +1493,13 @@ impl NormalOracle {
         );
         let pipes = [pipe(), pipe()];
         let output_pipes = self.reference.as_ref().map(|_| [pipe(), pipe()]);
+        // A single candidate writer emits at most one bounded packet. The
+        // parent reads only after normal reaping, so the fresh pipe must hold
+        // that complete packet without a concurrent reader.
+        let call_pair_pipe = self
+            .call_pair
+            .as_ref()
+            .map(|_| call_pair::postflight_pipe());
         let control = (self.mode == Mode::CrossedOwner
             || self
                 .call_pair
@@ -1522,6 +1533,19 @@ impl NormalOracle {
                     }
                     reference::Output::new(Fd(pipes[index][1].0), self.deadline)
                 });
+                let call_pair_output = call_pair_pipe.as_ref().and_then(|endpoints| {
+                    unsafe {
+                        libc::close(endpoints[0].0);
+                    }
+                    if index == 0 {
+                        unsafe {
+                            libc::close(endpoints[1].0);
+                        }
+                        None
+                    } else {
+                        Some(Fd(endpoints[1].0))
+                    }
+                });
                 let child_control = control.as_ref().and_then(|(command, ack)| {
                     unsafe {
                         libc::close(command[1].0);
@@ -1551,6 +1575,7 @@ impl NormalOracle {
                             write: Fd(pipes[index][1].0),
                             control: child_control,
                             output,
+                            call_pair_output,
                         },
                     )
                 }));
@@ -1586,6 +1611,10 @@ impl NormalOracle {
                 drop(write);
                 read
             })
+        });
+        let call_pair_read = call_pair_pipe.map(|[read, write]| {
+            drop(write);
+            read
         });
         let mut control = control.map(|(command, ack)| {
             let [read, write] = command;
@@ -2068,6 +2097,10 @@ impl NormalOracle {
             }
             _ => panic!("reference postflight ownership mismatch"),
         };
+        // Neither a packet nor EOF can replace either child's successful exit,
+        // normal reap, ECHILD, source/outer-return checks or original deadline.
+        let call_pair_export =
+            call_pair_read.map(|fd| read_closed(fd.0, self.deadline, call_pair::POSTFLIGHT_LIMIT));
         // Original effects/body interpretations happen only after both normal reaps.
         if profile == CallerProfile::Legacy {
             caller_effects(
@@ -2108,7 +2141,10 @@ impl NormalOracle {
                 self.stack_start(),
             );
         }
-        let (trace, visits) = inspect(&ready[0], &ready[1], &points);
+        let postflight = call_pair_export
+            .as_deref()
+            .map(|bytes| (u32::try_from(children[1].pid).unwrap(), bytes));
+        let (trace, visits) = inspect(&ready[0], &ready[1], &points, postflight);
         let (values, outer_value) = if let Some(profile) = &self.call_pair {
             assert_eq!(N, 2);
             (

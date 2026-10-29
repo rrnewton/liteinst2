@@ -16,7 +16,7 @@ R=importlib.util.module_from_spec(spec);spec.loader.exec_module(R)
 H=R._helpers()
 FIXTURE_PATH=R.ROOT/'evaluation/ordinary-call-pair-native/controls.py'
 fixture_source=R._read(FIXTURE_PATH,R.MIB)
-assert R._pin(fixture_source)['sha256']=='33293f4a201d8b717cfa2d46dde16a31e67e257ef4bdab994c0e8a847f07c059'
+assert R._pin(fixture_source)['sha256']=='0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb'
 F=R._module('wire_fixture',FIXTURE_PATH,fixture_source)
 LAUNCHER_PATH=R.ROOT/'evaluation/ordinary-call-pair-native/launch.py'
 launcher_source=R._read(LAUNCHER_PATH,R.MIB)
@@ -126,6 +126,7 @@ def output_fixture():
     f=F.fixture();geometry=dict(zip(('parent','child','caller'),f[2:]));files[RAW/'geometry.json']=R._canonical(geometry)
     for name,data in zip(('output/call-pair-state-pairs.csv','output/call-pair-state-coverage.csv','stdout.txt','stderr.txt'),F.encoded(f)):
         files[RAW/'native'/name]=data
+    files[RAW/'native/output/call-pair-state-work.csv']=F.table(F.W.WORK,F.work_fixture(f))
     return files,result_metadata(),geometry
 
 
@@ -151,12 +152,13 @@ class Controls(unittest.TestCase):
     def test_exact_source_native_geometry_and_original_receipt_joins(self):
         files,result,geometry=output_fixture();got,parsed=R._outputs(H,reader(files),result,RAW)
         self.assertEqual(got,geometry);self.assertEqual((len(parsed['rows']),len(parsed['coverage'])),(192,12))
+        self.assertEqual(len(parsed['work_rows']),384)
         self.assertEqual(R._derive(H,*geometry_streams()),geometry)
         for index,old,new in [(0,b'LOCAL',b'GLOBAL'),(1,b'e8 fa',b'e8 fb'),(2,b'je 1107',b'je 1106'),(3,b'ff d0',b'ff d1'),(4,b' 11 FUNC',b' 12 FUNC')]:
             streams=list(geometry_streams());streams[index]=streams[index].replace(old,new)
             with self.assertRaises(AssertionError):
                 value=R._derive(H,*streams);R._equal(value,geometry)
-        for name in ('output/call-pair-state-pairs.csv','output/call-pair-state-coverage.csv'):
+        for name in ('output/call-pair-state-pairs.csv','output/call-pair-state-coverage.csv','output/call-pair-state-work.csv'):
             bad=dict(files);path=RAW/'native'/name;lines=bad[path].splitlines(keepends=True);bad[path]=b''.join(lines[:-1])
             with self.assertRaises(AssertionError):R._outputs(H,reader(bad),result,RAW)
         for key in ('parent','child','caller'):

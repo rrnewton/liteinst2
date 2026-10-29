@@ -59,6 +59,35 @@ def check(f):
     p,c,h=f[2:]; return W.check(*encoded(f),parent=p,child=c,caller=h)
 
 
+def work_fixture(f):
+    rows=[]
+    for i,p in enumerate(f[0]):
+        for node in (0,1):
+            sampled=p['scenario']!=3
+            observed=node==0 or sampled
+            entry=0x100000+f[2+node]['elf_va']
+            rsp=0x300000-16*node
+            word=0x200006 if node==0 else 0x101006
+            r=dict(zip(W.WORK.split(','),[0]*33))
+            r.update(k=p['k'],seed=p['seed'],case=p['case'],scenario=p['scenario'],pid=1000+i,tid=1000+i,
+                registration=1,install=0x63616c6c70616972,batch=1,node=node,function=501+node,ordinal=node+1,
+                parent_ordinal=1,entry_pc=entry,return_pc=entry+(14 if node==0 else p['child_ret_offset']),
+                entry_rsp=rsp,return_word=word,resume_pc=word,resume_rsp=rsp+8,value=p['packed' if node==0 else 'fields'],
+                owner=1 if observed else 3,generation=p['child_generation'] if node==1 and sampled else p['parent_generation'],
+                invocation_plus_one=2 if node==1 and p['scenario']==1 else 1 if observed else 0,
+                rank_plus_one=int(observed),history_prefix=1 if node==0 or p['scenario']==1 else 2,sequence_before=0,
+                actual_children=1-node,sampled_children_plus_one=1+int(sampled) if node==0 else int(sampled),
+                ack=2 if node==0 else 1,caller_entry=0x200000,own_body_instructions=6 if node==0 else 5,
+                inclusive_body_instructions=11 if node==0 else 5,entry_to_pre_ret_instructions=10 if node==0 else 4)
+            rows.append(r)
+    return rows
+
+
+def check_work(f,rows):
+    pairs,coverage,stdout,stderr=encoded(f)
+    return W.check_with_work(pairs,coverage,table(W.WORK,rows),stdout,stderr,parent=f[2],child=f[3],caller=f[4])
+
+
 class Controls(unittest.TestCase):
     def refuse(self,f):
         with self.assertRaises((AssertionError,ValueError,KeyError,IndexError,TypeError)): check(f)
@@ -188,6 +217,47 @@ class Controls(unittest.TestCase):
         self.assertEqual(Path(W.__file__).resolve(),HERE/'call_pair_native.py')
         result=subprocess.run([sys.executable,'-O','-B',str(HERE/'call_pair_native.py')],capture_output=True,timeout=10)
         self.assertNotEqual(result.returncode,0);self.assertEqual(result.stdout,b'');self.assertIn(b'assertions required',result.stderr)
+
+    def test_work_complete384_rows_keep_removed_child_and_ret_boundaries(self):
+        f=fixture();rows=work_fixture(f);parsed=check_work(f,rows)
+        self.assertEqual(parsed['work_rows'],rows)
+        self.assertEqual(parsed['work_table'],table(W.WORK,rows))
+        root,child=rows[4:6]
+        self.assertEqual((child['owner'],child['invocation_plus_one'],child['rank_plus_one']),(3,0,0))
+        self.assertEqual((root['own_body_instructions'],root['inclusive_body_instructions'],root['entry_to_pre_ret_instructions']),(6,11,10))
+        self.assertEqual((child['own_body_instructions'],child['inclusive_body_instructions'],child['entry_to_pre_ret_instructions']),(5,5,4))
+
+    def test_work_each_field_mutation_and_coherent_ret_shift_refuse(self):
+        f=fixture()
+        for index in range(6):
+            for name in W.WORK.split(','):
+                rows=work_fixture(f);rows[index][name]+=1
+                with self.assertRaises(AssertionError):check_work(f,rows)
+        rows=work_fixture(f)
+        for r in rows:r['entry_to_pre_ret_instructions']+=1
+        with self.assertRaises(AssertionError):check_work(f,rows)
+        rows=work_fixture(f)
+        for r in rows:
+            if r['owner']==3:
+                for n in ('own_body_instructions','inclusive_body_instructions','entry_to_pre_ret_instructions'):r[n]=0
+        with self.assertRaises(AssertionError):check_work(f,rows)
+
+    def test_work_requires_complete_ordered_canonical_table(self):
+        f=fixture()
+        for change in (lambda r:r.pop(),lambda r:r.append(r[-1]),lambda r:r.reverse(),lambda r:r.__setitem__(1,dict(r[0]))):
+            rows=work_fixture(f);change(rows)
+            with self.assertRaises(AssertionError):check_work(f,rows)
+        pairs,coverage,stdout,stderr=encoded(f);work=table(W.WORK,work_fixture(f))
+        for bad in (b'',work[:-1],work+b'\n',work.replace(b'\n',b'\r\n'),work.replace(b'1000,1000',b'01000,1000',1)):
+            with self.assertRaises(AssertionError):W.check_with_work(pairs,coverage,bad,stdout,stderr,parent=f[2],child=f[3],caller=f[4])
+
+    def test_work_coherent_pid_and_address_changes_still_need_native_authority(self):
+        f=fixture();rows=work_fixture(f)
+        for r in rows:
+            for n in ('pid','tid'):r[n]+=9000
+            for n in ('entry_pc','return_pc','return_word','resume_pc','caller_entry'):r[n]+=0x400000
+        result=check_work(f,rows)
+        self.assertIn('require the authenticated native adapter',result['authority'])
 
 
 if __name__=='__main__':unittest.main()

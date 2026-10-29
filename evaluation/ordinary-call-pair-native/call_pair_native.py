@@ -13,6 +13,7 @@ RECORDS=((b'',1),(b'a',1),(b'a,b,c',3),(b',',2),(b',,',3),(b'a,',2),(b',a',2),
          (b'""""',1),(b'"",""',2),(b'plain,"say ""hi""",,tail',4),(b'"comma,, and ""quote""",last,',3))
 HEADER='k,seed,case,scenario,input_len,fields,packed,caller_extent,caller_heads,caller_call,caller_continuation,caller_ret,caller_delta,stack_bytes,parent_extent,parent_heads,parent_edges,parent_returns,parent_visits,parent_ret_offset,child_delta,child_extent,child_heads,child_edges,child_declared_heads,child_declared_edges,child_declared_returns,child_visits,child_ret_offset,comparisons,original_steps,candidate_steps,parent_generation,child_generation,child_sampled,parent_actual_children,parent_sampled_children,child_end_sequence,parent_end_sequence,history_actions,journal_events,target_calls,target_returns,outer_returns,normal_reaps'
 COVERAGE='k,scenario,seed,cases,parent_heads,parent_edges,parent_returns,child_heads,child_edges,child_returns,child_declared_heads,child_declared_edges,child_declared_returns'
+WORK='k,seed,case,scenario,pid,tid,registration,install,batch,node,function,ordinal,parent_ordinal,entry_pc,return_pc,entry_rsp,return_word,resume_pc,resume_rsp,value,owner,generation,invocation_plus_one,rank_plus_one,history_prefix,sequence_before,actual_children,sampled_children_plus_one,ack,caller_entry,own_body_instructions,inclusive_body_instructions,entry_to_pre_ret_instructions'
 AUTHORITY='Numeric joins only; full actual state/XSAVE/stack/source/input/journal/Report/history, original-address mapping, physical returns and normal reaps require the authenticated native adapter and final owned closure. No Schedule, K exhaustion, threaded application or performance credit.'
 
 
@@ -147,3 +148,55 @@ def check(pairs,coverage,stdout,stderr,*,parent,child,caller):
     assert lines(stdout,1024) == [terminal(comparisons)]
     return dict(status=STATUS,profile=PROFILE,required=192,pairs=192,children=384,comparisons=comparisons,groups=12,
         rows=rows,coverage=covered,pairs_table=pairs,coverage_table=coverage,stdout=stdout,authority=AUTHORITY)
+
+
+def check_work(work,validated,*,parent,child,caller):
+    """Numeric projection of the native original-frame/actual-record join.
+
+    P/C include each body's RET; the recorded interval ends before its own RET.
+    These are instruction counts, not elapsed-time or hardware-counter truth.
+    Actual byte/state/Report/history authority remains in the native adapter.
+    """
+    assert validated['status']==STATUS and len(validated['rows'])==192
+    rows=table(work,WORK,384,524288)
+    for i,(p,key) in enumerate(zip(validated['rows'],catalog())):
+        root,nested=rows[2*i:2*i+2]
+        sampled=key[3]!=3
+        for node,r in enumerate((root,nested)):
+            assert tuple(r[n] for n in ('k','seed','case','scenario'))==key
+            assert 0 < r['pid'] <= (1 << 32)-1 and r['pid']==r['tid']==root['pid']
+            assert (r['registration'],r['install'],r['batch'])==(1,0x63616c6c70616972,1)
+            assert (r['node'],r['function'],r['ordinal'],r['parent_ordinal'])==(node,501+node,node+1,1)
+            assert r['entry_pc']>0 and r['entry_rsp']>0 and r['caller_entry']==root['caller_entry']>0
+            assert r['return_pc']==r['entry_pc']+p['parent_ret_offset' if node==0 else 'child_ret_offset'] <= U64
+            assert r['resume_pc']==r['return_word']>0 and r['resume_rsp']==r['entry_rsp']+8 <= U64
+            assert r['value']==p['packed' if node==0 else 'fields']
+            observed=node==0 or sampled
+            assert r['owner']==(1 if observed else 3)
+            generation=p['child_generation'] if node==1 and sampled else p['parent_generation']
+            assert r['generation']==generation
+            assert r['invocation_plus_one']==(2 if node==1 and key[3]==1 else 1 if observed else 0)
+            assert r['rank_plus_one']==int(observed)
+            assert r['history_prefix']==(1 if node==0 or key[3]==1 else 2)
+            assert r['sequence_before']==0 and r['actual_children']==1-node
+            assert r['sampled_children_plus_one']==(1+int(sampled) if node==0 else int(sampled))
+            assert r['ack']==(2 if node==0 else 1)
+            own=p['parent_visits' if node==0 else 'child_visits']
+            inclusive=own+(p['child_visits'] if node==0 else 0)
+            assert (r['own_body_instructions'],r['inclusive_body_instructions'],r['entry_to_pre_ret_instructions'])==(own,inclusive,inclusive-1)
+        assert root['entry_pc']-parent['elf_va']==nested['entry_pc']-child['elf_va']
+        assert nested['entry_rsp']==root['entry_rsp']-p['child_delta']
+        assert root['return_word']==root['caller_entry']+caller['continuation_offset'] <= U64
+        assert nested['return_word']==root['entry_pc']+parent['continuation_offset'] <= U64
+        assert root['inclusive_body_instructions']==root['own_body_instructions']+nested['own_body_instructions']
+        # This numeric equality does not equate the two instruction sets: the
+        # left side includes child RET and excludes parent RET.
+        assert root['entry_to_pre_ret_instructions']-nested['entry_to_pre_ret_instructions']==root['own_body_instructions']
+    return rows
+
+
+def check_with_work(pairs,coverage,work,stdout,stderr,*,parent,child,caller):
+    validated=check(pairs,coverage,stdout,stderr,parent=parent,child=child,caller=caller)
+    validated['work_rows']=check_work(work,validated,parent=parent,child=child,caller=caller)
+    validated['work_table']=work
+    return validated

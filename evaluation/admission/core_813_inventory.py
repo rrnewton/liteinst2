@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == '9e014669847221953d1ac61cf7b91f905baa9c5df022f27c40ef5296e50f5fdd', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == 'fa170832e8a9caf3e2002e7c29310d0db7e76106b74be131a1519d0f818c69d6', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -61,7 +61,12 @@ MAIN469 = DATA['main469']
 CURRENT469 = MAIN469['current_corpus_sha256']
 MAINB66 = DATA['mainb66']
 MAIN8F622 = DATA['main8f622']
-LATEST = MAINB66['current_corpus_sha256']
+MAIN8F622_CURRENT = DATA['main8f622_current']
+CURRENTB66 = MAINB66['current_corpus_sha256']
+MAIN12E = DATA['main12e']
+CURRENT12E = MAIN12E['current_corpus_sha256']
+MAINC6F = DATA['mainc6f']
+LATEST = MAINC6F['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -76,7 +81,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -97,10 +102,28 @@ def precheck_current_sources(error):
         require(inventory_digest.hexdigest(raw) == value, error)
 
 
+def source_at_8f622(path, data, error):
+    """Authenticate only the two newer whole blobs before the retained 8f622 proof."""
+    if path not in MAIN8F622_CURRENT:
+        return data
+    row = MAIN8F622_CURRENT[path]
+    require(row['current_sha256'] == MAIN12E['sources'][path] and
+            row['previous_sha256'] == MAIN8F622['sources'][path], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
 def source_before_8f622(path, data, error):
     """Only the fixed incoming whole blob can recover its historical bytes."""
     if path not in MAIN8F622['projections']:
         return data
+    data = source_at_8f622(path, data, error)
     row = MAIN8F622['projections'][path]
     require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
@@ -118,12 +141,119 @@ def require_8f622_sources(error='main8f622_source_inventory_differs'):
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_at_8f622(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
+
+
+def source_before_c6f(path, data, error):
+    """Only the fixed c6f whole blob may reach its exact historical source."""
+    if path not in MAINC6F['projections']:
+        return data
+    row = MAINC6F['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_c6f_sources(error='mainc6f_source_inventory_differs'):
+    for path, expected in MAINC6F['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAINC6F['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAINC6F['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAINC6F['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAINC6F['module_chains'][path]), error)
+
+
+def before_c6f(declared, error='mainc6f_inventory_differs', source_error='mainc6f_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_c6f_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAINC6F['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAINC6F['previous_corpus_sha256'] == CURRENT12E, error)
+    return old
+
+
+def peel_c6f(declared, error, source_error):
+    return before_c6f(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
+def source_before_12e(path, data, error):
+    """Only the fixed 12e whole blob may reach its exact historical source."""
+    data = source_before_c6f(path, data, error)
+    if path not in MAIN12E['projections']:
+        return data
+    historical8f = (source_before_8f622(path, data, error)
+                    if path in MAIN8F622['projections'] else None)
+    row = MAIN12E['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    if historical8f is not None:
+        require(data == historical8f, error)
+    return data
+
+
+def require_12e_sources(error='main12e_source_inventory_differs'):
+    require_c6f_sources(error)
+    require_8f622_sources(error)
+    for path, expected in MAIN12E['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        raw = source_before_c6f(path, raw, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN12E['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN12E['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN12E['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN12E['module_chains'][path]), error)
+
+
+def before_12e(declared, error='main12e_inventory_differs', source_error='main12e_source_inventory_differs'):
+    declared = peel_c6f(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT12E, error)
+    require_12e_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN12E['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN12E['previous_corpus_sha256'] == CURRENTB66, error)
+    return old
+
+
+def peel_12e(declared, error, source_error):
+    declared = peel_c6f(declared, error, source_error)
+    return before_12e(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT12E else declared
 
 
 def source_before_b66(path, data, error):
     """Only the fixed b66 whole blob may reach its exact historical source."""
-    data = source_before_8f622(path, data, error)
+    data = source_before_12e(path, data, error)
     if path not in MAINB66['projections']:
         return data
     row = MAINB66['projections'][path]
@@ -138,13 +268,13 @@ def source_before_b66(path, data, error):
 
 
 def require_b66_sources(error='mainb66_source_inventory_differs'):
-    require_8f622_sources(error)
+    require_12e_sources(error)
     for path, expected in MAINB66['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
-        raw = source_before_8f622(path, raw, error)
+        raw = source_before_12e(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINB66['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -160,7 +290,8 @@ def require_b66_sources(error='mainb66_source_inventory_differs'):
 
 
 def before_b66(declared, error='mainb66_inventory_differs', source_error='mainb66_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_12e(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTB66, error)
     require_b66_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -172,7 +303,8 @@ def before_b66(declared, error='mainb66_inventory_differs', source_error='mainb6
 
 
 def peel_b66(declared, error, source_error):
-    return before_b66(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_12e(declared, error, source_error)
+    return before_b66(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTB66 else declared
 
 
 def source_before_469(path, data, error):
