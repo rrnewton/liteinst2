@@ -1406,8 +1406,12 @@ impl NormalOracle {
         self.deadline.check();
         let ready = reads.map(|p| {
             let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);
-            if self.module.is_some() {
-                WalkReady::Module(module::Ready::decode(&wire))
+            if let Some(case) = self.module {
+                WalkReady::Module(if case.is_session() {
+                    module::Ready::decode_session(&wire)
+                } else {
+                    module::Ready::decode(&wire)
+                })
             } else {
                 WalkReady::Single(match &self.reference {
                     None => NormalReady::decode(&wire),

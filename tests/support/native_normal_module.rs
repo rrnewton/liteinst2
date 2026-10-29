@@ -7,6 +7,8 @@ pub mod bytes;
 mod trace;
 pub use trace::Trace;
 pub type Population = trace::Population;
+pub type SessionPopulation = trace::SessionPopulation;
+pub type Coverage = trace::Coverage;
 #[path = "native_normal_module/witness.rs"]
 mod witness;
 pub(super) fn caller_effects(points: &[Snapshot], ready: &Ready, data: u64, stack: u64) {
@@ -48,8 +50,48 @@ impl Arguments {
         )
     }
 }
+/// Explicit Absolute/Concurrent session arguments; no finite-K substitution.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SessionArguments {
+    pub k: usize,
+    pub csv: csv::Arguments,
+    pub length: strnlen::Arguments,
+}
+impl SessionArguments {
+    pub fn parse(k: &str, csv_va: &str, csv_len: &str, length_va: &str, length_len: &str) -> Self {
+        let k = match k {
+            "10" => 10,
+            "1000" => 1000,
+            _ => panic!("session K must be 10 or 1000"),
+        };
+        let csv = csv::Arguments::parse(csv_va, csv_len);
+        let length = strnlen::Arguments::parse(length_va, length_len);
+        assert!((5..=256).contains(&csv.length));
+        assert!((5..=80).contains(&length.length));
+        let a = csv.elf_va.checked_add(csv.length as u64).unwrap();
+        let b = length.elf_va.checked_add(length.length as u64).unwrap();
+        assert!(a <= length.elf_va || b <= csv.elf_va);
+        Self { k, csv, length }
+    }
+    pub fn case(self, index: usize) -> Case {
+        Case::new_session(
+            index,
+            self.k,
+            self.csv.length,
+            self.length.length,
+            usize::from(self.csv.elf_va > self.length.elf_va),
+        )
+    }
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Profile {
+    FiniteLegacy,
+    SessionAbsolute,
+}
+const SESSION_WIRE: u64 = 0x6d6f_6473_6573_7331;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Case {
+    profile: Profile,
     pub csv: csv::Case,
     pub length: strnlen::Case,
     pub k: usize,
@@ -67,7 +109,58 @@ impl Case {
     ) -> Self {
         assert!(index < 16 && matches!(k, 1 | 16) && csv_index < 2);
         assert!((5..=256).contains(&csv_extent) && (5..=80).contains(&length_extent));
+        Self::work(
+            index,
+            k,
+            csv_extent,
+            length_extent,
+            csv_index,
+            Profile::FiniteLegacy,
+        )
+    }
+    pub fn new_session(
+        index: usize,
+        k: usize,
+        csv_extent: usize,
+        length_extent: usize,
+        csv_index: usize,
+    ) -> Self {
+        assert!(index < 16 && matches!(k, 10 | 1000) && csv_index < 2);
+        assert!((5..=256).contains(&csv_extent) && (5..=80).contains(&length_extent));
+        Self::work(
+            index,
+            k,
+            csv_extent,
+            length_extent,
+            csv_index,
+            Profile::SessionAbsolute,
+        )
+    }
+    pub fn is_session(self) -> bool {
+        self.profile == Profile::SessionAbsolute
+    }
+    fn assert_session(self) {
+        assert_eq!(
+            self,
+            Self::new_session(
+                self.csv.id() - 1,
+                self.k,
+                self.extents[0],
+                self.extents[1],
+                self.order[0]
+            )
+        );
+    }
+    fn work(
+        index: usize,
+        k: usize,
+        csv_extent: usize,
+        length_extent: usize,
+        csv_index: usize,
+        profile: Profile,
+    ) -> Self {
         Self {
+            profile,
             csv: csv::Case::new(index),
             length: CASES[index % 8],
             k,
@@ -301,6 +394,19 @@ impl Ready {
         }
     }
     fn encode(&self) -> Vec<u8> {
+        assert!(!self.case.is_session());
+        self.encode_fields()
+    }
+    fn encode_session(&self) -> Vec<u8> {
+        self.case.assert_session();
+        let fields = self.encode_fields();
+        let mut out = Vec::new();
+        word(&mut out, SESSION_WIRE);
+        out.extend(fields);
+        assert!(out.len() <= WIRE_LIMIT);
+        out
+    }
+    fn encode_fields(&self) -> Vec<u8> {
         let mut out = Vec::new();
         for n in [
             self.caller,
@@ -345,11 +451,19 @@ impl Ready {
         assert!(out.len() <= WIRE_LIMIT);
         out
     }
-    pub(super) fn decode(mut wire: &[u8]) -> Self {
+    pub(super) fn decode(wire: &[u8]) -> Self {
+        Self::decode_fields(wire, Case::new)
+    }
+    pub(super) fn decode_session(mut wire: &[u8]) -> Self {
+        assert!(wire.len() <= WIRE_LIMIT);
+        assert_eq!(take_word(&mut wire), SESSION_WIRE);
+        Self::decode_fields(wire, Case::new_session)
+    }
+    fn decode_fields(mut wire: &[u8], make: fn(usize, usize, usize, usize, usize) -> Case) -> Self {
         assert!(wire.len() <= WIRE_LIMIT);
         let caller = take_word(&mut wire);
         let mut usize_word = || usize::try_from(take_word(&mut wire)).unwrap();
-        let case = Case::new(
+        let case = make(
             usize_word(),
             usize_word(),
             usize_word(),
@@ -423,6 +537,24 @@ impl NormalOracle {
                 case.order[0]
             )
         );
+        Self::new_module_data(seed, case, deadline)
+    }
+    pub fn new_module_session(seed: u64, case: Case, deadline: Deadline) -> Self {
+        deadline.check();
+        csv::profile(seed, case.csv, case.extents[0]);
+        assert_eq!(
+            case,
+            Case::new_session(
+                case.csv.id() - 1,
+                case.k,
+                case.extents[0],
+                case.extents[1],
+                case.order[0]
+            )
+        );
+        Self::new_module_data(seed, case, deadline)
+    }
+    fn new_module_data(seed: u64, case: Case, deadline: Deadline) -> Self {
         let mut oracle = Self::new_body(
             seed,
             Body::Csv(case.csv),
@@ -497,6 +629,23 @@ impl NormalOracle {
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
     {
         let case = self.module.expect("module profile");
+        assert!(!case.is_session());
+        self.pair_module_common(setup)
+    }
+    pub fn pair_module_session<F>(&self, setup: F) -> (NormalPairResult<4>, Trace)
+    where
+        F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
+    {
+        self.module
+            .expect("session module profile")
+            .assert_session();
+        self.pair_module_common(setup)
+    }
+    fn pair_module_common<F>(&self, setup: F) -> (NormalPairResult<4>, Trace)
+    where
+        F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
+    {
+        let case = self.module.expect("module profile");
         let (pair, trace, reference) = self.pair_engine::<F, _, _, 4>(setup, |ready, points| {
             let trace = trace::inspect(self, ready.module(), points);
             let visits = trace.visits();
@@ -510,20 +659,38 @@ impl NormalOracle {
 }
 impl NormalContext<'_> {
     pub fn module_case(&self) -> Case {
+        let case = self.any_module_case();
+        assert!(!case.is_session());
+        case
+    }
+    pub fn module_session_case(&self) -> Case {
+        let case = self.any_module_case();
+        case.assert_session();
+        case
+    }
+    fn any_module_case(&self) -> Case {
         self.oracle.module.expect("module context")
     }
     pub fn length_input(&self) -> &[u8] {
-        let _ = self.module_case();
+        let _ = self.any_module_case();
         &self.oracle.data.bytes()[LENGTH_INPUT..LENGTH_INPUT + 64]
     }
     pub fn targets_address(&self) -> u64 {
-        let _ = self.module_case();
+        let _ = self.any_module_case();
         self.data_address() + TARGETS as u64
     }
     pub fn ready_module(self, ready: &Ready) {
         assert_eq!(self.module_case(), ready.case);
         assert!(self.oracle.reference.is_none() && self.output.is_none() && self.control.is_none());
-        write_all(self.write.0, &ready.encode(), self.oracle.deadline);
+        self.ready_module_wire(ready.encode());
+    }
+    pub fn ready_module_session(self, ready: &Ready) {
+        assert_eq!(self.module_session_case(), ready.case);
+        assert!(self.oracle.reference.is_none() && self.output.is_none() && self.control.is_none());
+        self.ready_module_wire(ready.encode_session());
+    }
+    fn ready_module_wire(self, wire: Vec<u8>) {
+        write_all(self.write.0, &wire, self.oracle.deadline);
         drop(self.write);
         self.oracle.deadline.check();
         // SAFETY: dedicated child, same existing trace handshake; no tracing of
@@ -686,6 +853,9 @@ pub fn journal_words(
     }
     out
 }
+#[cfg(test)]
+#[path = "native_normal_module/session_tests.rs"]
+mod session_tests;
 #[cfg(test)]
 #[path = "native_normal_module/tests.rs"]
 mod tests;

@@ -10,6 +10,7 @@ use rapid_profiler::frontend_native::{
 };
 mod check;
 mod owner;
+pub(crate) mod session;
 use check::{FUNCTIONS, INSTALL, identity};
 const CONTRACT: NormalModuleContract = NormalModuleContract {
     single_external_entry_per_function: true,
@@ -68,10 +69,15 @@ fn child(
     selections: [&TrustedFunctionSelection<'_>; 2],
     caller_path: &Path,
     caller_elf: &[u8],
+    session_profile: bool,
 ) -> i32 {
     current_single_main();
     context.deadline().check();
-    let case = context.module_case();
+    let case = if session_profile {
+        context.module_session_case()
+    } else {
+        context.module_case()
+    };
     assert_eq!(context.input(), case.csv.input());
     assert_eq!(context.length_input(), cases::input(case.length));
     // SAFETY: independently trusted complete same-ELF selections; one actual
@@ -217,30 +223,9 @@ fn child(
             }
         }
         let site = publish(prep);
-        let mut prepared = PreparedNormalModuleController::new(
-            site,
-            INSTALL,
-            FUNCTIONS,
-            Limits {
-                epochs: 1,
-                threads: 1,
-                depth: 1,
-                records_per_epoch: 32,
-                actions: 2,
-            },
-        )
-        .unwrap();
-        let epoch = prepared
-            .stage(Config {
-                retained_per_function: case.k,
-                max_inflight: 1,
-                max_invocations: 32,
-            })
-            .unwrap();
+        let (mut controller, client, epoch) = session::Candidate::prepare(site, case);
         let generation = epoch.generation().get();
-        // SAFETY: same actual child, continuous union-wide sequential contract.
-        let (mut controller, client) = unsafe { prepared.activate() }.unwrap();
-        controller.arm(&epoch).unwrap();
+        controller.arm(&epoch, &ready);
         let (low, high) = context.stack_range();
         let stack = unsafe { ReadableStack::new(low, high) }.unwrap();
         let journal = IntervalJournal::allocate();
@@ -256,7 +241,7 @@ fn child(
         caller.verify();
         check_live(&ready.immutable);
         deadline.check();
-        context.ready_module(&ready);
+        session::ready(context, &ready);
         // SAFETY: actual four-call C helper, live disjoint arrays/inputs. The one
         // parent walk checks each physical CALL/C3 and outer RET before resuming.
         let (sum, values) = {
@@ -304,6 +289,7 @@ fn child(
             batch.records(),
             batch.journal(),
         );
+        controller.batch(&ready, &batch);
         assert_eq!(attached.totals().unwrap(), check::totals(case, 4));
         assert!(
             unsafe { attached.checkpoint_after_returns() }
@@ -311,26 +297,25 @@ fn child(
                 .is_none()
         );
         assert_eq!(attached.detach().unwrap(), check::totals(case, 4));
-        controller.disarm(&epoch).unwrap();
-        let report = controller
-            .report(&epoch)
-            .unwrap()
-            .expect("closed zero-reservation module Report");
+        controller.disarm(&epoch, &ready);
+        let report = controller.report(&epoch);
         check::records(
             &ready,
             batch.records(),
             report.generation().get(),
             &report.records().collect::<Vec<_>>(),
         );
-        history(&controller.history().unwrap(), &[generation], true);
+        controller.history(&ready);
         caller.verify();
         check_live(&ready.immutable);
-        drop((report, batch, epoch, client, controller));
+        drop(report);
+        controller.reclaim(epoch, &ready);
+        drop((batch, client, controller));
     } else {
         loaded.verify_original().unwrap();
         caller.verify();
         deadline.check();
-        context.ready_module(&ready);
+        session::ready(context, &ready);
         let (sum, values) = {
             let results = unsafe { &mut *(results_address as usize as *mut [u64; 4]) };
             let sum = unsafe { caller.invoke(targets, requests, results) };
@@ -356,34 +341,59 @@ pub(crate) fn run(
     caller_path: &Path,
     caller_expected: &Path,
     output: &Path,
+    deadline: Deadline,
+) {
+    run_profile(
+        subject,
+        expected,
+        session::Run::Finite(arguments),
+        caller_path,
+        caller_expected,
+        output,
+        deadline,
+    )
+}
+fn run_profile(
+    subject: &Path,
+    expected: &Path,
+    arguments: session::Run,
+    caller_path: &Path,
+    caller_expected: &Path,
+    output: &Path,
     mut deadline: Deadline,
 ) {
     deadline.check();
     current_single_main();
+    let (k, csv_args, length_args) = arguments.fields();
     let elf = trusted(subject, expected);
     let caller_elf = trusted(caller_path, caller_expected);
     let csv_selection = TrustedFunctionSelection::new(
         &elf,
-        arguments.csv.elf_va,
-        arguments.csv.length,
+        csv_args.elf_va,
+        csv_args.length,
         native_module::CSV_LABEL,
     )
     .unwrap();
     let length_selection = TrustedFunctionSelection::new(
         &elf,
-        arguments.length.elf_va,
-        arguments.length.length,
+        length_args.elf_va,
+        length_args.length,
         native_module::LENGTH_LABEL,
     )
     .unwrap();
-    let selections = if arguments.csv.elf_va < arguments.length.elf_va {
+    let selections = if csv_args.elf_va < length_args.elf_va {
         [&csv_selection, &length_selection]
     } else {
         [&length_selection, &csv_selection]
     };
-    let mut population = ModulePopulation::default();
-    let mut rows = String::from(HEADER);
-    let mut coverage = String::from(COVERAGE);
+    let mut population = arguments.population();
+    let prefix = if arguments.is_session() {
+        "profile,"
+    } else {
+        ""
+    };
+    let mut rows = format!("{prefix}{HEADER}");
+    let mut coverage = format!("{prefix}{COVERAGE}");
     let mut count = 0;
     let mut covered = 0;
     for seed in SEEDS {
@@ -392,8 +402,8 @@ pub(crate) fn run(
                 deadline = Deadline::start();
             }
             let case = arguments.case(index);
-            let oracle = NormalOracle::new_module(seed, case, deadline);
-            let (pair, trace) = oracle.pair_module(|candidate, context| {
+            let oracle = arguments.oracle(seed, case, deadline);
+            let (pair, trace) = arguments.pair(&oracle, |candidate, context| {
                 // Dedicated child only. Fail-stop precedes every child-local owner.
                 std::panic::set_hook(Box::new(|info| {
                     eprintln!("native module child FAILED: {info}");
@@ -406,14 +416,18 @@ pub(crate) fn run(
                     selections,
                     caller_path,
                     &caller_elf,
+                    arguments.is_session(),
                 )
             });
             if let Some(c) = population.record(seed, case, &pair, &trace) {
                 assert_eq!(index, 15);
                 covered += 1;
+                if arguments.is_session() {
+                    coverage.push_str("session-absolute-v1,");
+                }
                 coverage.push_str(&format!(
                     "{},{seed},16,8,{},{},{},{},{},{},{},{}\n",
-                    arguments.k,
+                    k,
                     c.csv_heads,
                     c.csv_declared_heads,
                     c.csv_edges,
@@ -426,7 +440,7 @@ pub(crate) fn run(
             }
             let offsets = trace.offsets();
             let mut fields = vec![
-                arguments.k.to_string(),
+                k.to_string(),
                 seed.to_string(),
                 case.csv.id().to_string(),
                 (index % 8 + 1).to_string(),
@@ -472,11 +486,18 @@ pub(crate) fn run(
                 .map(|n| n.to_string()),
             );
             assert_eq!(fields.len(), 39);
+            if arguments.is_session() {
+                fields.insert(0, "session-absolute-v1".to_owned());
+            }
             rows.push_str(&fields.join(","));
             rows.push('\n');
             // Only complete paired records, after both normal reaps and all truth checks.
-            std::fs::write(output.join("normal-module-pairs.csv"), &rows).unwrap();
-            std::fs::write(output.join("normal-module-coverage.csv"), &coverage).unwrap();
+            let (pairs_name, coverage_name) = arguments.files();
+            if arguments.is_session() {
+                assert!(rows.len() <= 65_536 && coverage.len() <= 65_536);
+            }
+            std::fs::write(output.join(pairs_name), &rows).unwrap();
+            std::fs::write(output.join(coverage_name), &coverage).unwrap();
             drop(oracle);
             deadline.check();
             count += 1;
@@ -487,7 +508,16 @@ pub(crate) fn run(
     current_single_main();
     deadline.check();
     let mut out = std::io::stdout().lock();
-    writeln!(out,"native-normal-module:k={}:required=32:pairs=32:children=64:comparisons={comparisons}:coverage-seeds=2:csv-cases-per-seed=16:length-cases-per-seed=8:target-calls=256:target-returns=256:real-outer-ret=64:normal-reaps=64:complete",arguments.k).unwrap();
+    if arguments.is_session() {
+        let terminal = format!(
+            "native-normal-module-session:profile=session-absolute-v1:k={k}:e=3:t=1:d=1:m=1:a={}:resident-actions=8:required=32:pairs=32:children=64:comparisons={comparisons}:coverage-seeds=2:csv-cases-per-seed=16:length-cases-per-seed=8:target-calls=256:target-returns=256:real-outer-ret=64:normal-reaps=64:complete",
+            k.checked_mul(2).unwrap()
+        );
+        assert!(terminal.len() < 65_536);
+        writeln!(out, "{terminal}").unwrap();
+    } else {
+        writeln!(out,"native-normal-module:k={}:required=32:pairs=32:children=64:comparisons={comparisons}:coverage-seeds=2:csv-cases-per-seed=16:length-cases-per-seed=8:target-calls=256:target-returns=256:real-outer-ret=64:normal-reaps=64:complete",k).unwrap();
+    }
     out.flush().unwrap();
     deadline.check();
 }

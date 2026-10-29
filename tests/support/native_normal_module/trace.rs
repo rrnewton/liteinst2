@@ -232,6 +232,16 @@ impl Population {
         pair: &NormalPairResult<4>,
         trace: &Trace,
     ) -> Option<Coverage> {
+        assert!(!case.is_session());
+        self.record_common(seed, case, pair, trace)
+    }
+    fn record_common(
+        &mut self,
+        seed: u64,
+        case: Case,
+        pair: &NormalPairResult<4>,
+        trace: &Trace,
+    ) -> Option<Coverage> {
         assert!(self.next < 32);
         assert_eq!(
             (seed, case.csv.id()),
@@ -305,5 +315,24 @@ impl Population {
         );
         assert_eq!(self.length_observed, BodyCoverage::default());
         self.comparisons
+    }
+}
+
+/// Distinct admission wrapper over the same complete body/coverage reducer.
+#[derive(Default)]
+pub struct SessionPopulation(Population);
+impl SessionPopulation {
+    pub fn record(
+        &mut self,
+        seed: u64,
+        case: Case,
+        pair: &NormalPairResult<4>,
+        trace: &Trace,
+    ) -> Option<Coverage> {
+        case.assert_session();
+        self.0.record_common(seed, case, pair, trace)
+    }
+    pub fn finish(self) -> usize {
+        self.0.finish()
     }
 }
