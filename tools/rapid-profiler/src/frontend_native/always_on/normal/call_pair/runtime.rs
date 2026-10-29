@@ -115,11 +115,12 @@ impl State {
     fn expected_prefix(
         &self,
         v: View<'_>,
-        frame_entries: [[u64; 7]; 2],
+        frame_entries: &[[u64; 7]; 2],
+        live_depth: usize,
     ) -> Result<[u64; 32], BridgeError> {
         let mut page = [0u64; 32];
         page[2] = v.tid;
-        page[3] = self.depth() as u64;
+        page[3] = live_depth as u64;
         let mut events = [None; 4];
         for node in 0..2 {
             if let Some(p) = &self.frames[node] {
@@ -129,7 +130,7 @@ impl State {
                 if let Some(r) = p.returned {
                     events[3 - node] = Some(Self::return_words(entry, r.pc));
                 }
-            } else if let Some(r) = self.rows[node] {
+            } else if let Some(r) = &self.rows[node] {
                 let entry = Self::words(
                     v,
                     r.function,
@@ -182,16 +183,16 @@ impl State {
         {
             return Err(error(Cause::Invariant));
         }
-        let entries = self.frames.iter().filter(|p| p.is_some()).count()
-            + self.rows.iter().filter(|p| p.is_some()).count();
+        let live_depth = self.depth();
+        let confirmed = self.rows.iter().filter(|p| p.is_some()).count();
+        let entries = live_depth + confirmed;
         let observed = self
             .frames
             .iter()
             .flatten()
             .filter(|p| p.returned.is_some())
             .count()
-            + self.rows.iter().filter(|p| p.is_some()).count();
-        let confirmed = self.rows.iter().filter(|p| p.is_some()).count();
+            + confirmed;
         if self.totals.roots != self.before.roots
             || self.before.pairs.entered.checked_add(entries as u64)
                 != Some(self.totals.pairs.entered)
@@ -287,7 +288,7 @@ impl State {
                     return Err(error(Cause::Return));
                 }
             }
-            if let Some(child) = self.rows[1] {
+            if let Some(child) = &self.rows[1] {
                 if child.node != 1
                     || child.function != functions[1]
                     || child.parent_ordinal != parent.ordinal
@@ -302,7 +303,7 @@ impl State {
                     || child.sequence_before != self.sequence[1]
                     || child.sampled_children != child.completion.map(|_| 0)
                     || child.raw.owner != timing::owner(child.summary)
-                    || !record_outcome_ok(&child, v.registration)
+                    || !record_outcome_ok(child, v.registration)
                 {
                     return Err(error(Cause::Invariant));
                 }
@@ -316,7 +317,10 @@ impl State {
                 return Err(error(Cause::Return));
             }
         }
-        if !journal_matches_prefix(v.journal, &self.expected_prefix(v, frame_entries)?) {
+        if !journal_matches_prefix(
+            v.journal,
+            &self.expected_prefix(v, &frame_entries, live_depth)?,
+        ) {
             return Err(error(Cause::Invariant));
         }
         Ok(())
@@ -743,9 +747,12 @@ fn journal_matches_prefix(journal: &IntervalJournal, prefix: &[u64; 32]) -> bool
         // SAFETY: only this attached thread owns/writes the complete retained page.
         difference |= unsafe { journal.page.0.as_ptr().add(i).read_volatile() } ^ expected;
     }
-    for i in prefix.len()..512 {
-        // SAFETY: the same retained page; read its entire zero tail after the prefix.
-        difference |= unsafe { journal.page.0.as_ptr().add(i).read_volatile() };
+    // Exactly 480 words: fifteen complete 32-word chunks, with no remainder.
+    for chunk in journal.page.0[32..512].chunks_exact(32) {
+        for word in chunk {
+            // SAFETY: the same retained page, in order, without an ordinary word load.
+            difference |= unsafe { std::ptr::from_ref(word).read_volatile() };
+        }
     }
     difference == 0
 }
