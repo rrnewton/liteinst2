@@ -280,6 +280,7 @@ int li2_rseq_before_syscall(long n,const long a[6]) {
     case SYS_uname:return span((uintptr_t)a[0],sizeof(struct utsname));
     case SYS_sysinfo:return span((uintptr_t)a[0],sizeof(struct sysinfo));
     case SYS_clock_gettime:return span((uintptr_t)a[1],sizeof(struct timespec));
+    case SYS_clock_getres:return optional_span(a[1],sizeof(struct timespec));
     case SYS_gettimeofday: {
         int e=optional_span(a[0],sizeof(struct timeval));return e?e:optional_span(a[1],8);
     }

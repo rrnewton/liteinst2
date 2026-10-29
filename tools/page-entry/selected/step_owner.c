@@ -1,5 +1,8 @@
 #define _GNU_SOURCE
 #include "step_owner.h"
+#ifdef LI2_REPEAT_RX_LEASE
+#include "repeat_lease.h"
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
 #include "maps_phase.h"
 #endif
@@ -71,6 +74,9 @@ static void revoke_pages(struct li2_step_owner *o) {
     }
 }
 _Noreturn void li2_step_abort(struct li2_step_owner *o,unsigned code,long detail) {
+#ifdef LI2_REPEAT_RX_LEASE
+    if(li2_repeat_lease_owns_step(o))li2_repeat_lease_abort_step(o,code,detail);
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_fail();
 #endif
@@ -263,6 +269,9 @@ void li2_step_trace(struct li2_step_owner *o,int sig,siginfo_t *si,ucontext_t *u
 
 #include "tf_owner.inc"
 #include "repeat_owner.inc"
+#ifdef LI2_REPEAT_RX_LEASE
+#include "repeat_lease.inc"
+#endif
 #ifdef LI2_TF_HANDOFF
 #include "tf_chain.inc"
 #endif

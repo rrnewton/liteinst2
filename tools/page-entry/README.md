@@ -31,6 +31,14 @@ performs mapping, relocation, TLS setup and initializers. A generic carrier can
 be prepared with `carrier.py make ORIGINAL BRIDGE OUTPUT`; unsupported runtime
 operations then refuse instead of returning synthetic success.
 
+For an explicitly authorized late dependency, add `--late-soname libplugin.so`
+to `exec-loader`. This repeatable option seals the named object and its
+transitive dependencies after resolving the startup closure, within the same
+32-object limit. It does not preload the object or admit its pages. The
+application still calls `dlopen`; actual mapping and execution remain subject
+to the runtime gate. The namespace manifest records the requested names and
+sealed-object indexes separately from runtime mapping identities.
+
 Run the committed-source validation with:
 
 ```sh

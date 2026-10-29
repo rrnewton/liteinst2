@@ -10,6 +10,9 @@ static uint64_t maps_receipt_handler,maps_receipt_epoch;
 #define MAPS_LOAD(p) __atomic_load_n((p),__ATOMIC_ACQUIRE)
 #define MAPS_STORE(p,v) __atomic_store_n((p),(v),__ATOMIC_RELEASE)
 static void maps_poison(void) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_ERROR);
+#endif
 #ifdef LI2_TF_SEALED_CUSTODY
     li2_page_custody_discard(LI2_CUSTODY_ERROR);
 #endif
@@ -37,6 +40,9 @@ void li2_maps_phase_end(void) {
     maps_invalidate();
 }
 void li2_maps_phase_fail(void) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_ERROR);
+#endif
 #ifdef LI2_TF_SEALED_CUSTODY
     li2_page_custody_discard(LI2_CUSTODY_ERROR);
 #endif
@@ -89,6 +95,9 @@ static int maps_nonmutating(long n,long a,long b,long c,long d,long e,long f) {
     return 0;
 }
 void li2_maps_before_raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_REPEAT_RX_LEASE
+    if(!maps_nonmutating(n,a,b,c,d,e,f))li2_repeat_custody_invalidate(LI2_REP_CUSTODY_RAW);
+#endif
 #ifdef LI2_TF_SEALED_CUSTODY
     if(!maps_nonmutating(n,a,b,c,d,e,f))li2_page_custody_discard(LI2_CUSTODY_EFFECT);
 #endif

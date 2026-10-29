@@ -4,6 +4,8 @@
 #include "tests/generic/fixture.c"
 #undef fixture_main
 #include "write_footprint.h"
+#define VDQ_STORE_PROMOTED_INDICES 16
+#include "tests/vmovdqu64_store/promotions.inc"
 #include "tests/vmovdqu64_family/promotions.inc"
 #include "tests/vmovdqu64_family/promotions256.inc"
 #include "cases.inc"
@@ -234,7 +236,8 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
         need(write_all(3,&vpb_observations,sizeof(vpb_observations))&&
              write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vm64_promotions,sizeof(vm64_promotions))&&
-              write_all(3,&vm256_promotions,sizeof(vm256_promotions)),1206);
+              write_all(3,&vm256_promotions,sizeof(vm256_promotions))&&
+             write_all(3,&vdq_store_promotions,sizeof(vdq_store_promotions)),1206);
 }
 static void vpb_pair(struct sample *s,unsigned index) {
     current=s;fixture_target=s->pc;vpb_inputs(s);borrow(s);lane=0;native_phase=0;fixture_enter();
@@ -266,6 +269,10 @@ static void vpb_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(vdq_store_is_promoted(i)) {
+            vdq_store_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+            continue;
+        }
         if(vm256_is_promoted(i)) {
             vm256_promote(i,v->b,v->n,result.decoder_result,&refused_last);
             continue;
@@ -281,7 +288,7 @@ static void vpb_refusals(void) {
     vm64_promotions_complete();vm256_promotions_complete();result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
-    _Static_assert(sizeof(vm256_promotions)+sizeof(vm64_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
+    _Static_assert(sizeof(vm256_promotions)+sizeof(vm64_promotions)+sizeof(vdq_store_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
                    sizeof(vpb_observations)+sizeof(v64_fault)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5000,"literal trailer extent");
     _Static_assert(sizeof(v64_fault)==96,"actual failed-read trailer extent");
@@ -304,7 +311,7 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==72,1183);
+    vpb_refusals();vdq_store_promotions_complete();need(result.refusals==71,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     if(control){vpb_prepare(&negative_sample,v64_fault_kind-1);vpb_pair(&negative_sample,1);die(1211);}
@@ -313,11 +320,12 @@ int fixture_main(unsigned long *stack) {
          write_all(3,&vpb_observations,sizeof(vpb_observations))&&
          write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vm64_promotions,sizeof(vm64_promotions))&&
-              write_all(3,&vm256_promotions,sizeof(vm256_promotions)),1184);
+              write_all(3,&vm256_promotions,sizeof(vm256_promotions))&&
+             write_all(3,&vdq_store_promotions,sizeof(vdq_store_promotions)),1184);
 #if VM64_GROUP==0
-    output("LI2_VM64_TF_PASS group=0 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=25 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n");
+    output("LI2_VM64_TF_PASS group=0 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vdq_store_typed_promotions=1 vdq_store_supplied_range_queries=1\n");
 #else
-    output("LI2_VM64_TF_PASS group=1 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=25 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n");
+    output("LI2_VM64_TF_PASS group=1 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vm256_typed_promotions=1 vm256_supplied_none_queries=1 vdq_store_typed_promotions=1 vdq_store_supplied_range_queries=1\n");
 #endif
     return 0;
 }

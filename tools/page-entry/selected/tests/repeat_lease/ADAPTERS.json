@@ -1,0 +1,91 @@
+[
+  {
+    "source": "tests/generic/fixture.c",
+    "target": "repeat_lease_support.inc",
+    "before_sha256": "b0c758cb466ef3f8a35442f7cecbda77eb58c269a7ac90270d769c53440b2910",
+    "after_sha256": "071e1a4ca63b1c62763d9ca6c111794bb47f65add3a508ae1a388e68a391ac56",
+    "before_bytes": 34870,
+    "after_bytes": 34624,
+    "edits": [
+      [
+        "static int dump(void) {\n    result.header_bytes=sizeof(result);result.sample_bytes=sizeof(struct sample);\n    return write_all(3,&result,sizeof(result)) && write_all(3,samples,sizeof(samples)) &&\n           write_all(3,&negative_sample,sizeof(negative_sample)) && write_all(3,&refused_last,sizeof(refused_last));\n}",
+        "static int dump(void) { return rl_dump(); }"
+      ],
+      [
+        "long raw(long n,long a,long b,long c,long d,long e,long f) {",
+        "static long fixture_kernel_raw(long n,long a,long b,long c,long d,long e,long f) {"
+      ],
+      [
+        "int fd=sealed_elf();const struct li2_lifecycle_hooks hooks={raw,lifecycle_fail,protected_range};",
+        "int fd=rl_sealed_elf();const struct li2_lifecycle_hooks hooks={raw,lifecycle_fail,protected_range};"
+      ]
+    ]
+  },
+  {
+    "source": "step_owner.c",
+    "target": "step_owner.c",
+    "before_sha256": "6b3aebbf6cf39712c238ffaf8e29bd334cc950c68381a8b4b465e9ac40b9124d",
+    "after_sha256": "b0a8e979629a205ff12637bb3d661a3dd3df9690278afba8d8e8f8ecc05d2193",
+    "before_bytes": 14644,
+    "after_bytes": 14726,
+    "edits": [
+      [
+        "#include \"step_owner.h\"",
+        "#include \"step_owner.h\"\nextern void rl_revoke_observe(struct li2_step_owner *);"
+      ],
+      [
+        "    o->phase=LI2_STEP_REVOKING;",
+        "    o->phase=LI2_STEP_REVOKING;\n    rl_revoke_observe(o);"
+      ]
+    ]
+  },
+  {
+    "source": "repeat_lease.inc",
+    "target": "repeat_lease.inc",
+    "before_sha256": "8af311ee4dba8db59fba7bb4922ee5d25583de179eb71621411097d663a8c6ad",
+    "after_sha256": "4d37e39a9f42a20db5af477126ecc36f13384a44acf9634159f7556f276d6307",
+    "before_bytes": 21474,
+    "after_bytes": 21636,
+    "edits": [
+      [
+        "#include \"repeat_custody.h\"",
+        "#include \"repeat_custody.h\"\nextern void rl_guard_observe(struct li2_repeat_lease_owner *,const ucontext_t *);\nextern int rl_release_observe(const struct li2_fetch_ref *);"
+      ],
+      [
+        "static void repeat_lease_write(struct li2_repeat_lease_owner *o,const ucontext_t *uc) {",
+        "static void repeat_lease_write(struct li2_repeat_lease_owner *o,const ucontext_t *uc) {\n    rl_guard_observe(o,uc);"
+      ],
+      [
+        "o->release_result=li2_lifecycle_fetch_release(&o->borrow);",
+        "o->release_result=rl_release_observe(&o->borrow);"
+      ]
+    ]
+  },
+  {
+    "source": "repeat_custody.inc",
+    "target": "repeat_custody.inc",
+    "before_sha256": "91f0b5c6e50d0b67ed3472d3eba68318165cd0f62dcb6d04fc972dfda6a48fd9",
+    "after_sha256": "ad93d58f9870ebe5a1627ecb947dc85e24465e7437bb0d7c1c0243ea5bb564ac",
+    "before_bytes": 25300,
+    "after_bytes": 25386,
+    "edits": [
+      [
+        "#include \"register_run_publish.h\"",
+        "#include \"register_run_publish.h\"\nextern void rl_seed_observe(struct li2_repeat_lease_owner *);"
+      ],
+      [
+        "    if((e=rep_phase(LI2_REP_CUSTODY_BOUND,LI2_REP_CUSTODY_SEEDING)))return e;",
+        "    if((e=rep_phase(LI2_REP_CUSTODY_BOUND,LI2_REP_CUSTODY_SEEDING)))return e;\n    rl_seed_observe(o);"
+      ]
+    ]
+  },
+  {
+    "source": "lifecycle_loader.c",
+    "target": "lifecycle_loader.c",
+    "before_sha256": "88e9145322449b141408a0025d057ab9214073e675592314e5139af89df0ee5b",
+    "after_sha256": "88e9145322449b141408a0025d057ab9214073e675592314e5139af89df0ee5b",
+    "before_bytes": 43689,
+    "after_bytes": 43689,
+    "edits": []
+  }
+]

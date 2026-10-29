@@ -174,6 +174,13 @@ static void selected_report(struct writer *,unsigned,unsigned,long);
 #else
 static void selected_report(struct writer *);
 #endif
+#ifdef LI2_REPEAT_RX_LEASE
+static void selected_repeat_lease_report(unsigned,unsigned,long);
+static void selected_repeat_lease_initialize(void);
+static void selected_repeat_lease_boundary(void);
+static void selected_repeat_lease_end(const ucontext_t *);
+static const struct li2_run_protection selected_run_protection;
+#endif
 static void selected_repeat_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
@@ -266,6 +273,9 @@ static void report(unsigned status,unsigned code,long detail) {
     selected_cpuid_nx_report(status,code);
 #endif
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
+#ifdef LI2_REPEAT_RX_LEASE
+    selected_repeat_lease_report(status,code,detail);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     selected_oneshot_report(status,code,detail);
 #endif
@@ -308,6 +318,10 @@ static void fail(unsigned code,long detail) {
 
 #ifdef LI2_REGISTER_RUN
     if(selected_pending_route==SELECTED_REGISTER_RUN)selected_run_abort(code,detail);
+#endif
+#ifdef LI2_REPEAT_RX_LEASE
+    if(selected_pending_route==SELECTED_REPEAT_LEASE)
+        li2_repeat_lease_abort(&selected_repeat_lease,code,detail);
 #endif
     if(selected_pending_route==SELECTED_REPEAT) li2_repeat_abort(&selected_repeat,code,detail);
 #ifdef LI2_TF_HANDOFF
@@ -380,7 +394,7 @@ static int ordinary(long n) {
     case SYS_readlink: case SYS_readlinkat: case SYS_getcwd:
     case SYS_getuid: case SYS_geteuid: case SYS_getgid: case SYS_getegid:
     case SYS_getpid: case SYS_gettid: case SYS_uname: case SYS_sysinfo:
-    case SYS_getrandom: case SYS_clock_gettime: case SYS_gettimeofday:
+    case SYS_getrandom: case SYS_clock_gettime: case SYS_clock_getres: case SYS_gettimeofday:
     case SYS_getxattr: case SYS_lgetxattr: case SYS_fgetxattr:
     case SYS_listxattr: case SYS_llistxattr: case SYS_flistxattr:
     case SYS_brk: case SYS_futex: case SYS_fcntl: case SYS_prlimit64:
@@ -590,6 +604,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
         !selected_oneshot_active || selected_oneshot_active->state.phase!=LI2_ONESHOT_PUBLISHED ||
         sig!=SIGILL || !si || !ptr))selected_oneshot_abort(1561,sig);
 #endif
+#ifdef LI2_REPEAT_RX_LEASE
+    selected_repeat_lease_boundary();
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_event_boundary(); /* First action, including nested/foreign events. */
 #endif
@@ -606,6 +623,16 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
        (handling || !selected_step_pending || !si || !ptr ||
         selected_run_owner.phase!=LI2_RUN_RUNNING))
         selected_run_unexpected(sig,si,ptr);
+#endif
+#ifdef LI2_REPEAT_RX_LEASE
+    if(selected_pending_route==SELECTED_REPEAT_LEASE) {
+        ucontext_t *uc=ptr;
+        if(handling || !selected_step_pending || !si || !uc || sig!=SIGTRAP ||
+           si->si_signo!=SIGTRAP || si->si_code!=TRAP_TRACE || si->si_errno ||
+           uc->uc_mcontext.gregs[REG_TRAPNO]!=1 || uc->uc_mcontext.gregs[REG_ERR] ||
+           (uintptr_t)si->si_addr!=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP])
+            li2_repeat_lease_unexpected(&selected_repeat_lease,sig,si,uc);
+    }
 #endif
     if(selected_pending_route==SELECTED_REPEAT) {
         /* Preserve a real running REP fault before any generic guard. Nested
@@ -656,6 +683,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
         selected_run_exit(sig,si,ptr);
     } else
 #endif
+#ifdef LI2_REPEAT_RX_LEASE
+    if(selected_pending_route==SELECTED_REPEAT_LEASE) {
+        selected_repeat_lease_trace(sig,si,ptr);
+    } else
+#endif
     if(selected_pending_route==SELECTED_REPEAT) {
         selected_repeat_trace(sig,si,ptr);
     } else if(selected_pending_route==SELECTED_GENERIC_TF) {
@@ -679,6 +711,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_TF_HANDOFF
     li2_tf_chain_handler_end(&selected_chain);
+#endif
+#ifdef LI2_REPEAT_RX_LEASE
+    selected_repeat_lease_end(ptr);
 #endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_end(); /* Before sigreturn, hence before generated/app execution. */
@@ -767,6 +802,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     checked(!result,1431,result);
 #endif
     selected_selftest();
+#ifdef LI2_REPEAT_RX_LEASE
+    selected_repeat_lease_initialize();
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     selected_oneshot_stage();
 #endif

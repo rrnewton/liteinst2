@@ -1,0 +1,492 @@
+{
+  "aliases_sha256": "7c2a2fa37516a7df4486aaebecb5b9c13b501d5d481d6af8a107ed92e662cda3",
+  "archive": {
+    "bytes": 11161366,
+    "sha256": "ab946a232f091ade8bad1a24d7bbb5e6cdf76764475ed1edaed4bc460401cc88"
+  },
+  "artifacts_sha256": "c47b64aa4eaf7d648943f6bfa3cb66c9e85c00ea1c2373711766814a68d04d44",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ]
+  },
+  "build_status": "passed",
+  "cases": [
+    {
+      "case": 0,
+      "controls": 6,
+      "duration_ns": 4900126,
+      "exit": 0,
+      "kind": "component",
+      "result": {
+        "actual_kernel_queries": 2,
+        "case": 0,
+        "component_pin_supplied": true,
+        "gpr_words": 17,
+        "kernel_fp_bytes": 2444,
+        "kernel_registration_credit": false,
+        "output_bytes": 4096,
+        "pairs": 1,
+        "qualified_xstate_bytes": 2227,
+        "source_bytes": 8192,
+        "stack_bytes": 512
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 1,
+      "controls": 6,
+      "duration_ns": 4941699,
+      "exit": 0,
+      "kind": "component",
+      "result": {
+        "actual_kernel_queries": 2,
+        "case": 1,
+        "component_pin_supplied": true,
+        "gpr_words": 17,
+        "kernel_fp_bytes": 2444,
+        "kernel_registration_credit": false,
+        "output_bytes": 4096,
+        "pairs": 1,
+        "qualified_xstate_bytes": 2227,
+        "source_bytes": 8192,
+        "stack_bytes": 512
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 2,
+      "controls": 6,
+      "duration_ns": 4978825,
+      "exit": 0,
+      "kind": "component",
+      "result": {
+        "actual_kernel_queries": 2,
+        "case": 2,
+        "component_pin_supplied": true,
+        "gpr_words": 17,
+        "kernel_fp_bytes": 2444,
+        "kernel_registration_credit": false,
+        "output_bytes": 4096,
+        "pairs": 1,
+        "qualified_xstate_bytes": 2227,
+        "source_bytes": 8192,
+        "stack_bytes": 512
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 3,
+      "controls": 6,
+      "duration_ns": 4539946,
+      "exit": 0,
+      "kind": "component",
+      "result": {
+        "actual_kernel_queries": 2,
+        "case": 3,
+        "component_pin_supplied": true,
+        "gpr_words": 17,
+        "kernel_fp_bytes": 2444,
+        "kernel_registration_credit": false,
+        "output_bytes": 4096,
+        "pairs": 1,
+        "qualified_xstate_bytes": 2227,
+        "source_bytes": 8192,
+        "stack_bytes": 512
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 4,
+      "controls": 6,
+      "duration_ns": 4506024,
+      "exit": 0,
+      "kind": "component",
+      "result": {
+        "actual_kernel_queries": 2,
+        "case": 4,
+        "component_pin_supplied": true,
+        "gpr_words": 17,
+        "kernel_fp_bytes": 2444,
+        "kernel_registration_credit": false,
+        "output_bytes": 4096,
+        "pairs": 1,
+        "qualified_xstate_bytes": 2227,
+        "source_bytes": 8192,
+        "stack_bytes": 512
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 0,
+      "controls": 20,
+      "duration_ns": 3069207,
+      "exit": 0,
+      "kind": "supplied",
+      "result": null,
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 0,
+      "controls": 0,
+      "duration_ns": 3627786,
+      "exit": 0,
+      "kind": "native",
+      "result": null,
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 0,
+      "controls": 5,
+      "duration_ns": 9637848548,
+      "exit": 0,
+      "kind": "gated",
+      "result": {
+        "case": 0,
+        "output_bytes": 4096,
+        "page_sha256": "d74868063bfaf810f8c0e741d9a29adf015947d967fb2386d669575f573f91ee",
+        "result": 0
+      },
+      "status": "passed",
+      "terminal_sha256": "e8c4d6b6ae0cb5253dad43ba40a4309480bbc3157a5583b24f80d5f982c6240b"
+    },
+    {
+      "case": 1,
+      "controls": 0,
+      "duration_ns": 3504882,
+      "exit": 0,
+      "kind": "native",
+      "result": null,
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 1,
+      "controls": 5,
+      "duration_ns": 9614859836,
+      "exit": 0,
+      "kind": "gated",
+      "result": {
+        "case": 1,
+        "output_bytes": 4096,
+        "page_sha256": "f600eca824e84a43f0691b267bd620e462c50da165c5b80e17aecb7a924f1fa8",
+        "result": 0
+      },
+      "status": "passed",
+      "terminal_sha256": "40cb22ea2ac07346e60cec38e63ec7677784c6e5c86b00f0396fe46303961d4c"
+    },
+    {
+      "case": 2,
+      "controls": 0,
+      "duration_ns": 3314126,
+      "exit": 0,
+      "kind": "native",
+      "result": null,
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 2,
+      "controls": 5,
+      "duration_ns": 9726166118,
+      "exit": 0,
+      "kind": "gated",
+      "result": {
+        "case": 2,
+        "output_bytes": 4096,
+        "page_sha256": "f600eca824e84a43f0691b267bd620e462c50da165c5b80e17aecb7a924f1fa8",
+        "result": -22
+      },
+      "status": "passed",
+      "terminal_sha256": "1dede85600536516546c925b27ce2e3249840ac99ace8486c151402e0bdd4add"
+    },
+    {
+      "case": 3,
+      "controls": 0,
+      "duration_ns": 3398352,
+      "exit": 0,
+      "kind": "native",
+      "result": null,
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 3,
+      "controls": 5,
+      "duration_ns": 9719519017,
+      "exit": 0,
+      "kind": "gated",
+      "result": {
+        "case": 3,
+        "output_bytes": 4096,
+        "page_sha256": "f600eca824e84a43f0691b267bd620e462c50da165c5b80e17aecb7a924f1fa8",
+        "result": -22
+      },
+      "status": "passed",
+      "terminal_sha256": "c67b6a2b8a9f22b13943ac44d946b7445eefc9474d803c2956cbef836ddf4ff5"
+    },
+    {
+      "case": 4,
+      "controls": 0,
+      "duration_ns": 3314314,
+      "exit": 0,
+      "kind": "native",
+      "result": null,
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 4,
+      "controls": 5,
+      "duration_ns": 9674618304,
+      "exit": 0,
+      "kind": "gated",
+      "result": {
+        "case": 4,
+        "output_bytes": 4096,
+        "page_sha256": "f600eca824e84a43f0691b267bd620e462c50da165c5b80e17aecb7a924f1fa8",
+        "result": -14
+      },
+      "status": "passed",
+      "terminal_sha256": "286f36c412effde49e923a166356bd72100487f3e404fd614aaf695653a67f04"
+    },
+    {
+      "case": 5,
+      "controls": 6,
+      "duration_ns": 7691920839,
+      "exit": 125,
+      "kind": "refusal",
+      "result": {
+        "case": 5,
+        "detail": 0,
+        "error": 1205,
+        "exit": 125,
+        "native_entered": 0,
+        "overflow": false,
+        "raw_entered": 0,
+        "raw_returned": 0,
+        "registered": true,
+        "trace_run": {
+          "attempts": 665,
+          "candidates": 5399,
+          "completed": 665,
+          "entries": 665,
+          "full_misses": 0,
+          "plan_misses": 0,
+          "preflight_misses": 4734
+        },
+        "write_bytes": 16
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 6,
+      "controls": 6,
+      "duration_ns": 7664313488,
+      "exit": 125,
+      "kind": "refusal",
+      "result": {
+        "case": 6,
+        "detail": 0,
+        "error": 1205,
+        "exit": 125,
+        "native_entered": 0,
+        "overflow": false,
+        "raw_entered": 0,
+        "raw_returned": 0,
+        "registered": true,
+        "trace_run": {
+          "attempts": 665,
+          "candidates": 5399,
+          "completed": 665,
+          "entries": 665,
+          "full_misses": 0,
+          "plan_misses": 0,
+          "preflight_misses": 4734
+        },
+        "write_bytes": 16
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 7,
+      "controls": 6,
+      "duration_ns": 7646617468,
+      "exit": 125,
+      "kind": "refusal",
+      "result": {
+        "case": 7,
+        "detail": 0,
+        "error": 1205,
+        "exit": 125,
+        "native_entered": 0,
+        "overflow": false,
+        "raw_entered": 0,
+        "raw_returned": 0,
+        "registered": true,
+        "trace_run": {
+          "attempts": 665,
+          "candidates": 5399,
+          "completed": 665,
+          "entries": 665,
+          "full_misses": 0,
+          "plan_misses": 0,
+          "preflight_misses": 4734
+        },
+        "write_bytes": 16
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "case": 8,
+      "controls": 6,
+      "duration_ns": 7699521260,
+      "exit": 125,
+      "kind": "refusal",
+      "result": {
+        "case": 8,
+        "detail": 1,
+        "error": 1208,
+        "exit": 125,
+        "native_entered": 0,
+        "overflow": true,
+        "raw_entered": 0,
+        "raw_returned": 0,
+        "registered": true,
+        "trace_run": {
+          "attempts": 665,
+          "candidates": 5399,
+          "completed": 665,
+          "entries": 665,
+          "full_misses": 0,
+          "plan_misses": 0,
+          "preflight_misses": 4734
+        },
+        "write_bytes": 16
+      },
+      "status": "passed",
+      "terminal_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    }
+  ],
+  "cleanup_complete": true,
+  "command_sha256": "afa8cfc50b890abaac8ca0cd99e0336aa7c9c977deccec5e64936e6d26fd3301",
+  "commands": 58,
+  "component_kernel_registration_credit": false,
+  "configuration_unchanged": true,
+  "cpu": 1,
+  "expected_revision": "05585ca348739c2541d3aca4939d816fe7d4887f",
+  "failure_type": null,
+  "final_error_count": 0,
+  "full_bridge_xsave_comparison": false,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "a0ca3f0343e949e7dc991af889ab042a4c13e9ae1ddd9326eb72e393ed8073a8",
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 1740785,
+    "sha256": "742a0f72234ecdee9d5f0fe437cd7cea3c43461805b840332b06a56020ebb900"
+  },
+  "profile": "page-selected-clock-getres-v1",
+  "release_build_status": "passed",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_clock_getres.py",
+    "--expect-revision",
+    "05585ca348739c2541d3aca4939d816fe7d4887f"
+  ],
+  "schema": 1,
+  "scope": "Five full qualified-state native/NX component pairs using supplied guard state, twenty supplied arithmetic controls, five real default-rseq normal-loader native/gated query pairs and four actual pre-issue refusals. Components do not qualify production-dispatch XSAVE or kernel registration; actual application reports separately qualify registration/dispatch closure. No timing credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "05585ca348739c2541d3aca4939d816fe7d4887f",
+    "source_manifest_sha256": "0546f88e38b21e8016556316ad95a2656a1ea915fa404b2fdb8ae5a6e6d7387d",
+    "tracked_clean": true,
+    "tree": "0e23028a129e48a575ccac55123ba833b5d8e266"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261029T180845.593725Z",
+  "status": "passed",
+  "tool_bindings_sha256": "8f455ac1bac68af69cd5eca2a538f17764ca3397fd32c57da82b178d5386640d",
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  }
+}

@@ -1,5 +1,8 @@
 #define _GNU_SOURCE
 #include "lifecycle_loader.h"
+#ifdef LI2_REPEAT_RX_LEASE
+#include "repeat_custody.h"
+#endif
 #include "bridge.h"
 #include <errno.h>
 #include <elf.h>
@@ -416,6 +419,9 @@ static void finish(void) {
     counts.last_result_negative=tx.result<0; counts.last_phase=tx.phase; tx.guard=0;
 }
 void li2_lifecycle_abort(void) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_ERROR);
+#endif
     if (!active || !tx.guard) return;
     /* Fatal paths never return to application code. Revoke every mapped page,
        including fragments after holes, rather than one partial-range mprotect. */
@@ -473,6 +479,9 @@ void li2_lifecycle_initialize(const int *fds,size_t n,const struct li2_lifecycle
 }
 
 void li2_lifecycle_register_initial(const struct image *image) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
+#endif
     if (!active || object_count==OBJECTS || !image || !image->source || image->backing_fd<0 ||
         (image->kind!=IMAGE_MAIN && image->kind!=IMAGE_INTERPRETER)) DIE(185,0);
     unsigned object=(unsigned)object_count; struct object *o=&objects[object];
@@ -528,6 +537,9 @@ int li2_lifecycle_known_code(uintptr_t first,size_t bytes) {
     return 1;
 }
 int li2_lifecycle_admit(uintptr_t pc,uintptr_t fault_address) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,1);
 #endif
@@ -719,6 +731,9 @@ static long unmap_call(const long a[6]) {
     ++counts.reconciliations; tx.phase=REVOKED; finish(); return result;
 }
 int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,n);
 #endif
@@ -730,6 +745,9 @@ int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
     return 1;
 }
 void li2_lifecycle_before_other(long n,const long a[6]) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,n);
 #endif
@@ -775,6 +793,9 @@ static size_t fork_protected_used;
 static unsigned fork_protected_complete;
 
 void li2_lifecycle_fork_verify(void) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,2);
 #endif
@@ -805,6 +826,9 @@ void li2_lifecycle_fork_verify(void) {
 }
 
 void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
+#ifdef LI2_REPEAT_RX_LEASE
+    li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
+#endif
     if (fork_protected_complete || fork_protected_used || !n || n>128) DIE(196,0);
     li2_lifecycle_fork_verify();
     for (size_t i=0;i<n;i++) {
@@ -831,6 +855,10 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_ONESHOT_PUBLICATION
 #undef li2_lifecycle_fetch_prepare
 #undef li2_lifecycle_fetch_interlock
+#endif
+
+#ifdef LI2_REPEAT_RX_LEASE
+#include "repeat_custody.inc"
 #endif
 
 #ifdef LI2_EFFECT_PROVIDER

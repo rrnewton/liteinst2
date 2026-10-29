@@ -1,0 +1,146 @@
+{
+  "inputs": {
+    "evaluation/inprocess/page_selected_rseq_application_compare.py": {
+      "bytes": 7811,
+      "sha256": "066fdb81c807a45cbaabee5db24c599ac97cacecbcbad2a8721cc7a53312e26a"
+    },
+    "evaluation/inprocess/page_selected_rseq_application_images.py": {
+      "bytes": 12746,
+      "sha256": "14f49e4da57f1a8934d3c3b2312e0cda28f79b35e694d824439309f28c74a435"
+    },
+    "tools/page-entry/selected/tests/rseq_application/observe.c": {
+      "bytes": 6438,
+      "sha256": "6160c83d6e37778ee855e49fa66e5898622808f278629edbc27155dd493c6d78"
+    }
+  },
+  "operations": [
+    {
+      "after": "p.op('sse_store','62e1fd487f0f')",
+      "after_sha256": "d81f9c4c57d6ca427c3797fceed68e1ba1bf4b7e5806e37a11e5a6a6aac1018d",
+      "before": "p.op('sse_store','f30f7f07')",
+      "before_sha256": "14f49e4da57f1a8934d3c3b2312e0cda28f79b35e694d824439309f28c74a435",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "target=p.pc;operation='62e1fd487f0f'",
+      "after_sha256": "51de785f532ea9526f59d751544fb051eeb3de783230b80e0931ebf6cd4f4925",
+      "before": "target=p.pc;operation='f30f7f07'",
+      "before_sha256": "d81f9c4c57d6ca427c3797fceed68e1ba1bf4b7e5806e37a11e5a6a6aac1018d",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "            if name=='trace_mov_overlap':\n                p.mov('vector_address',7,DATA+1664);p.op('vector_load','62e1fd486f0f')\n            p.mov('target_address',7,WORD-8 if name=='trace_mov_overlap' else WORD);p.mov('target_value',0,0 if name=='zero_store_overlap' else DATA+1024)",
+      "after_sha256": "c19f8f526f965425cdbe9cb96a6a0948392f7c64fb8f18f492acc54b39ae464c",
+      "before": "            p.mov('target_address',7,WORD);p.mov('target_value',0,0 if name=='zero_store_overlap' else DATA+1024)",
+      "before_sha256": "51de785f532ea9526f59d751544fb051eeb3de783230b80e0931ebf6cd4f4925",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "            target=p.pc;operation='62e1fd487f0f' if name=='trace_mov_overlap' else '488907'",
+      "after_sha256": "6397fc23974899750ebf28ecdaeb6d5174db22b525974cdc91cd08c42a5df250",
+      "before": "            target=p.pc;operation='488907'",
+      "before_sha256": "c19f8f526f965425cdbe9cb96a6a0948392f7c64fb8f18f492acc54b39ae464c",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "    store_pc=next(x['pc']for x in spec['rows']if x['name']=='sse_store') if spec['index']==1 else spec['target_pc']\n    mode={1:0,6:1,5:2}[spec['index']]\n    struct.pack_into('<8Q',data,64,0x3152465453515256,store_pc,mode,1838,6,64,0,0)\n    data[1536:1552]=struct.pack('<QQ',0x1122334455667788,DATA+1024)",
+      "after_sha256": "6909df1dd66c15d3ca28ed2492fdd273e4f043fb0f0c9ce957deb7f04da7de0d",
+      "before": "    data[1536:1552]=struct.pack('<QQ',0x1122334455667788,DATA+1024)",
+      "before_sha256": "6397fc23974899750ebf28ecdaeb6d5174db22b525974cdc91cd08c42a5df250",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "MAGIC=0x3150504151455352\nSTORE_WORDS=(0x1122334455667788,DATA+1024,0x1021324354657687,0x98a9bacbdcedfe0f,0x0123456789abcdef,0xfedcba9876543210,0x0f1e2d3c4b5a6978,0x8877665544332211)",
+      "after_sha256": "91898060280dabafa6b8b551e33075b5a062194aec79a4717df11ab1f10b394a",
+      "before": "MAGIC=0x3150504151455352",
+      "before_sha256": "6909df1dd66c15d3ca28ed2492fdd273e4f043fb0f0c9ce957deb7f04da7de0d",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "p.mov('sse_input',7,DATA+1664);p.op('sse_load','62e1fd486f0f')",
+      "after_sha256": "a37cec3dbf672886a7d381b3160ab7c1466f2acf2ba2ecaf6be6d651fa04f10e",
+      "before": "p.mov('sse_input',7,DATA+1536);p.op('sse_load','f30f6f07')",
+      "before_sha256": "91898060280dabafa6b8b551e33075b5a062194aec79a4717df11ab1f10b394a",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "p.mov('sse_destination',7,AREA_PAGE+192)",
+      "after_sha256": "4a467fff15a6cd79f1fc1a2dc993e4835158da149d023fe3ebb2b1282a794c07",
+      "before": "p.mov('sse_destination',7,AREA_PAGE+160)",
+      "before_sha256": "a37cec3dbf672886a7d381b3160ab7c1466f2acf2ba2ecaf6be6d651fa04f10e",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "elif name=='sse_overlap':\n            p.mov('vector_address',7,DATA+1664);p.op('vector_load','62e1fd486f0f')",
+      "after_sha256": "cec95b8248c9dfedcf2b945034bc261829a615d88767c5258024e0165f6c812b",
+      "before": "elif name=='sse_overlap':\n            p.mov('vector_address',7,DATA+1536);p.op('vector_load','f30f6f07')",
+      "before_sha256": "4a467fff15a6cd79f1fc1a2dc993e4835158da149d023fe3ebb2b1282a794c07",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "('sse_low',AREA_PAGE+192,0x1122334455667788),('sse_high',AREA_PAGE+200,DATA+1024),\n             *((f'store_word_{i}',AREA_PAGE+192+8*i,v)for i,v in enumerate(STORE_WORDS)if i>=2),",
+      "after_sha256": "41d06a7a33dcf4dd0d810ace73267e30ac0b0a2a11f2fd40e2c18c2e2bdb9284",
+      "before": "('sse_low',AREA_PAGE+160,0x1122334455667788),('sse_high',AREA_PAGE+168,DATA+1024),",
+      "before_sha256": "cec95b8248c9dfedcf2b945034bc261829a615d88767c5258024e0165f6c812b",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "    struct.pack_into('<QQ',data,1568,WORD,8)\n    struct.pack_into('<8Q',data,1664,*STORE_WORDS)",
+      "after_sha256": "94d70e36667dfe4cbc852702261a885cd9b802e0bca06da62911aee82de28348",
+      "before": "    struct.pack_into('<QQ',data,1568,WORD,8)",
+      "before_sha256": "41d06a7a33dcf4dd0d810ace73267e30ac0b0a2a11f2fd40e2c18c2e2bdb9284",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_images.py"
+    },
+    {
+      "after": "#include \"store_observe.inc\"\nstatic int watched(long n,long a,long b) {",
+      "after_sha256": "13486644d6e2ae7ef5dba3721d066864fc7a869f1d6d84f55d34e3adfe431f7d",
+      "before": "static int watched(long n,long a,long b) {",
+      "before_sha256": "6160c83d6e37778ee855e49fa66e5898622808f278629edbc27155dd493c6d78",
+      "count": 1,
+      "path": "tools/page-entry/selected/tests/rseq_application/observe.c"
+    },
+    {
+      "after": "    int store_observed=store_begin(d,uc);\n    int observed=begin(1,d?d->pc:0,uc,d,-1);",
+      "after_sha256": "ea05836933d5d2072f457f13083382fa45888e61443d06deccb0d6e5a83f6745",
+      "before": "    int observed=begin(1,d?d->pc:0,uc,d,-1);",
+      "before_sha256": "13486644d6e2ae7ef5dba3721d066864fc7a869f1d6d84f55d34e3adfe431f7d",
+      "count": 1,
+      "path": "tools/page-entry/selected/tests/rseq_application/observe.c"
+    },
+    {
+      "after": "    if(observed)after(uc,result);\n    if(store_observed)store_after(uc,result);\n    return result;\n}\nint li2_rseq_before_syscall",
+      "after_sha256": "5c0588fbe5dccaf00d41efe6c634a80fef0765db09e854d3de4e02416b8331ce",
+      "before": "    if(observed)after(uc,result);\n    return result;\n}\nint li2_rseq_before_syscall",
+      "before_sha256": "ea05836933d5d2072f457f13083382fa45888e61443d06deccb0d6e5a83f6745",
+      "count": 1,
+      "path": "tools/page-entry/selected/tests/rseq_application/observe.c"
+    },
+    {
+      "after": "        at+=(size_t)n;\n    }\n    store_emit();\n}",
+      "after_sha256": "4fec88fa793a3584a7511c1453e6d7ee1ed776c2375bb4fe182b569a805864f2",
+      "before": "        at+=(size_t)n;\n    }\n}",
+      "before_sha256": "5c0588fbe5dccaf00d41efe6c634a80fef0765db09e854d3de4e02416b8331ce",
+      "count": 1,
+      "path": "tools/page-entry/selected/tests/rseq_application/observe.c"
+    },
+    {
+      "after": "struct.pack_into('<8Q',expected_page,192,*(0x1122334455667788,DATA+1024,0x1021324354657687,0x98a9bacbdcedfe0f,0x0123456789abcdef,0xfedcba9876543210,0x0f1e2d3c4b5a6978,0x8877665544332211))",
+      "after_sha256": "6fe03c83863794a6e0cee40072a2bb7c837ddce6cee0df2e35fce6722aaa553d",
+      "before": "struct.pack_into('<QQ',expected_page,160,0x1122334455667788,DATA+1024)",
+      "before_sha256": "066fdb81c807a45cbaabee5db24c599ac97cacecbcbad2a8721cc7a53312e26a",
+      "count": 1,
+      "path": "evaluation/inprocess/page_selected_rseq_application_compare.py"
+    }
+  ]
+}

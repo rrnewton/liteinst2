@@ -111,7 +111,7 @@ def execute(carrier, argv):
     os.execve(fd, argv or [str(carrier)], os.environ.copy())
 
 
-def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None):
+def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=()):
     # This separate command intentionally supplies a private namespace and a
     # closed environment. The original fixture's make/exec path is unchanged.
     if provider_policy not in (None, "mask-random-v1", "deterministic-builtins-v1"):
@@ -129,7 +129,7 @@ def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, chi
         raise ValueError("loader carrier metadata")
     if size != META.size + meta[4] * PH.size + meta[6]:
         raise ValueError("loader carrier metadata extent")
-    fds, directory = namespace.prepare(original, roots, directory, meta[10], meta[11])
+    fds, directory = namespace.prepare(original, roots, directory, meta[10], meta[11], late_sonames=late_sonames)
     fd = None
     try:
         fd = namespace.sealed_bytes("li2-private-loader-carrier", data, False)
@@ -183,6 +183,8 @@ def main():
     loader = sub.add_parser("exec-loader", help="explicit sealed dependency namespace; separate loader backend")
     loader.add_argument("--library-root", action="append", type=Path, required=True)
     loader.add_argument("--namespace", type=Path, required=True)
+    loader.add_argument("--late-soname", action="append", default=[], metavar="NAME",
+                        help="preauthorize a sealed late DSO and its dependencies; does not preload or admit it")
     loader.add_argument("--disable-rseq", action="store_true", help="explicit glibc.pthread.rseq=0 workload")
     loader.add_argument("--provider-policy", choices=("mask-random-v1", "deterministic-builtins-v1"),
                         help="explicit configured selected-provider policy; native behavior remains the default")
@@ -208,7 +210,7 @@ def main():
                        (args.report_parent, args.report_child), args.child_failure)
     else:
         execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv,
-                       disable_rseq=args.disable_rseq, provider_policy=args.provider_policy)
+                       disable_rseq=args.disable_rseq, provider_policy=args.provider_policy, late_sonames=args.late_soname)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,10 @@
+[
+  {
+    "old": "            need(owner->signal_number==SIGSEGV&&owner->signal_code==SEGV_ACCERR&&owner->signal_address==data_fault,155);}",
+    "new": "            if(qa_alignment_fault)need(owner->signal_number==SIGSEGV&&owner->signal_code==SI_KERNEL&&\n                !owner->signal_address&&owner->after.greg[REG_TRAPNO]==13&&!owner->after.greg[REG_ERR],155);\n            else need(owner->signal_number==SIGSEGV&&owner->signal_code==SEGV_ACCERR&&owner->signal_address==data_fault,155);}"
+  },
+  {
+    "old": "                need(sig==SIGSEGV&&si->si_code==SEGV_ACCERR&&!si->si_errno&&\n                     (uintptr_t)si->si_addr==data_fault&&(uintptr_t)g[REG_RIP]==s->pc&&\n                     g[REG_TRAPNO]==14&&g[REG_ERR]==4,47);s->native_fault=1;",
+    "new": "                if(qa_alignment_fault)need(sig==SIGSEGV&&si->si_code==SI_KERNEL&&!si->si_errno&&\n                     !si->si_addr&&(uintptr_t)g[REG_RIP]==s->pc&&g[REG_TRAPNO]==13&&!g[REG_ERR],47);\n                else need(sig==SIGSEGV&&si->si_code==SEGV_ACCERR&&!si->si_errno&&\n                     (uintptr_t)si->si_addr==data_fault&&(uintptr_t)g[REG_RIP]==s->pc&&\n                     g[REG_TRAPNO]==14&&g[REG_ERR]==store_fault_error,47);s->native_fault=1;"
+  }
+]

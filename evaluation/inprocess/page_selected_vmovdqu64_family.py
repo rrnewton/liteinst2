@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime,timezone
 import hashlib,json,os,platform,re,shutil,struct,sys
 from pathlib import Path
+# Original row16 now requires a mandatory supplied Code1847/RANGE64 record; native populations and every other check remain.
 sys.dont_write_bytecode=True
 from checks import source
 from run import hardware
@@ -16,13 +17,14 @@ from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
 from page_selected_vmovdqu64_promotions import PROMOTED,promotions
 from page_selected_vmovdqu64_256_promotions import promotions as promotions256
+from page_selected_vmovdqu64_store_promotions import promotions as vdq_store_promotions
 
 ROOT=Path(__file__).resolve().parents[2]
 HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/vmovdqu64_family'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='8e6757b01a1bb804f9562837cb27d939adbb47db89cf444582cc440526de2c9e'
+OUTCOMES_SHA='379b9e7e89d2294e890b848d423bfcce93ca8b9cd244b4c5e43e1fa07f4b97cc'
 CASES_SHA='f1dfbd43f81757bd583589dd71be3cdd8d25b588d912fdfefa9f5b7623d296eb'
 CASES_C_SHA='9a4c5c51a1ee72a2cfd0128f0af960c4c6c7781fc3d00b8d03f000a36e811259'
 MASK=(1<<64)-1
@@ -35,14 +37,14 @@ def configuration(vector_bits):
     need(type(vector_bits)is int and vector_bits in (512,256),'exact requested VMOVDQU64 width')
     if vector_bits==512:
         return dict(code=1605,width=64,prefix=32,p2=0x48,cpu_mask=0x40010000,
-            obs_magic=0x314636343156324c,query_magic=0x314736343156324c,refusals=72,
+            obs_magic=0x314636343156324c,query_magic=0x314736343156324c,refusals=71,
             cases_json='cases.json',cases_inc='cases.inc',cases_sha=CASES_SHA,cases_c_sha=CASES_C_SHA,
             outcomes='OUTCOMES.json',outcomes_sha=OUTCOMES_SHA,build='build.sh',
             name='vmovdqu64-family',profile='page-selected-vmovdqu64-family-v1')
     return dict(code=1604,width=32,prefix=16,p2=0x28,cpu_mask=0xc0010000,
-        obs_magic=0x314632333156324c,query_magic=0x314732333156324c,refusals=97,
+        obs_magic=0x314632333156324c,query_magic=0x314732333156324c,refusals=96,
         cases_json='cases256.json',cases_inc='cases256.inc',cases_sha='22a97810689ed0a8503fa6226d686e2fee09f5c27f3812b25396d528dc007b5b',cases_c_sha='24ef9eeb99c07aba087db74dddad2ef26d13ad42a4fd494ee42ce3267a8310ac',
-        outcomes='OUTCOMES256.json',outcomes_sha='c8b2905263bcd5068199acb4ae91f8688503bb49e4465e0b7d73f3efae432de1',build='build256.sh',
+        outcomes='OUTCOMES256.json',outcomes_sha='a643cd50a0c57546fc637a994f6ffe36c465b9ab0618aee1e7a91d83f0cf4650',build='build256.sh',
         name='vmovdqu64-256-family',profile='page-selected-vmovdqu64-256-family-v1')
 
 
@@ -225,6 +227,8 @@ def queries(data,header,rows,group,kind,vector_bits=512):
 
 
 def record(data,expected,sample_bytes,rows,vector_bits=512):
+    need(352<len(data)<16<<20,'complete Code1847 trailer within unchanged full cap')
+    vdq_store_promoted=vdq_store_promotions(data[-352:]);data=data[:-352]
     cfg=configuration(vector_bits)
     need(352<len(data)<16<<20,'complete mandatory Code1604 promotion below original cap')
     new_promoted=promotions256(data[-352:]);data=data[:-352]
@@ -246,7 +250,7 @@ def record(data,expected,sample_bytes,rows,vector_bits=512):
     obs=observations(data[-15400:-10400],group,h,kind,vector_bits)
     failed=fault_observations(data[-10400:-10304],kind,h,vector_bits)
     footprint=queries(data[-10304:],h,rows,group,kind,vector_bits)
-    return dict(operation='completed'if positive else 'failed_memory_read',
+    return dict(vdq_store_promotions=vdq_store_promoted,vdq_store_typed_promotions=1,vdq_store_supplied_range_queries=1,operation='completed'if positive else 'failed_memory_read',
         promotions=promoted,typed_promotions=7,supplied_none_queries=7,
         vm256_promotions=new_promoted,vm256_typed_promotions=1,vm256_supplied_none_queries=1,vector_bits=vector_bits,
         pairs=17 if positive else 0,new_pairs=16 if positive else 0,startup_pairs=1,
@@ -292,11 +296,11 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile=cfg['profile'],vector_bits=args.vector_bits,status='failed',
-        scope='Canonical EVEX512.W1 Code1605 load/register family.160 structural pairs in10 cohorts, all32 ZMM source/destination roles, all16 bases/all15 indices/scales, original64-bit ModRM/SIB/RIP/disp8*64 and all42 length/tail combinations. Complete unchanged native/TF state/source/stack/data/flags comparisons; four genuine full/cross32-byte ordinary/indexed read failures. All25 remaining original negative neighbors and47 common refusals remain, seven exact old rows remain mandatory Code1605/NONE promotions and native pairs; the exact former vl256 negative is a separate mandatory Code1604/NONE promotion with native coverage in the separately required256 cohort. No other width/mask/store/prefix, exhaustive numerical address, application completion or performance claim.'if args.vector_bits==512 else 'Canonical EVEX256.W1 Code1604 load/register family.160 structural pairs in10 cohorts, all32 YMM source/destination roles/self-copies, all16 bases/all15 indices/scales, original64-bit ModRM/SIB/RIP/disp8*32 and all42 length/tail combinations. Complete unchanged native/TF state/source/stack/data/flags comparisons; exact low256 result and mandatory zero upper256 destination bits. Four genuine full/cross16-byte ordinary/indexed failed reads retain full original state. All47 common and25 remaining original neighbors plus25 VL256 neighbors refuse; seven prior Code1605 and one Code1604 positive promotions remain mandatory. No other width/mask/store/prefix, numerical-address exhaustiveness, application completion or performance claim.',
+        scope='Canonical EVEX512.W1 Code1605 load/register family.160 structural pairs in10 cohorts, all32 ZMM source/destination roles, all16 bases/all15 indices/scales, original64-bit ModRM/SIB/RIP/disp8*64 and all42 length/tail combinations. Complete unchanged native/TF state/source/stack/data/flags comparisons; four genuine full/cross32-byte ordinary/indexed read failures. All24 remaining original negative neighbors and47 common refusals remain, seven exact old rows remain mandatory Code1605/NONE promotions and native pairs; the exact former vl256 negative is a separate mandatory Code1604/NONE promotion with native coverage in the separately required256 cohort. No other width/mask/store/prefix, exhaustive numerical address, application completion or performance claim. Original row16 additionally requires exact Code1847/FALLTHROUGH/SIMD and full RANGE64 in a separate352-byte trailer in every success/fault record; native Code1847 coverage is a separately mandatory cohort.'if args.vector_bits==512 else 'Canonical EVEX256.W1 Code1604 load/register family.160 structural pairs in10 cohorts, all32 YMM source/destination roles/self-copies, all16 bases/all15 indices/scales, original64-bit ModRM/SIB/RIP/disp8*32 and all42 length/tail combinations. Complete unchanged native/TF state/source/stack/data/flags comparisons; exact low256 result and mandatory zero upper256 destination bits. Four genuine full/cross16-byte ordinary/indexed failed reads retain full original state. All47 common and24 remaining original neighbors plus25 VL256 neighbors refuse; seven prior Code1605 and one Code1604 positive promotions remain mandatory. No other width/mask/store/prefix, numerical-address exhaustiveness, application completion or performance claim. Original row16 additionally requires exact Code1847/FALLTHROUGH/SIMD and full RANGE64 in a separate352-byte trailer in every success/fault record; native Code1847 coverage is a separately mandatory cohort.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vmovdqu64_family.py','--expect-revision',args.expect_revision]+([]if args.vector_bits==512 else ['--vector-bits','256']),
         commands=[],cases=[],error=None,final_errors=[],
-        totals=dict(pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
+        totals=dict(vdq_store_typed_promotions=0,vdq_store_supplied_range_queries=0,pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
                     refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0,typed_promotions=0,supplied_none_queries=0,vm256_typed_promotions=0,vm256_supplied_none_queries=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
@@ -359,7 +363,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'samples','negative_sample','result','refused_last','vpb_observations','v64_fault','vpc_queries','vm64_promotions','vm256_promotions'}
+            need(not err,'actual symbol inspection stderr');roots={'vdq_store_promotions','samples','negative_sample','result','refused_last','vpb_observations','v64_fault','vpc_queries','vm64_promotions','vm256_promotions'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -373,12 +377,12 @@ def main():
             intervals=sorted((v['address'],v['address']+v['bytes'])for v in symbols.values())
             need(all(a[1]<=b[0]for a,b in zip(intervals,intervals[1:])),'all record objects disjoint')
             state['symbols']=symbols;sample=symbols['negative_sample']['bytes']
-            need(symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
+            need(symbols['vdq_store_promotions']['bytes']==352 and symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
                 symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5000 and symbols['v64_fault']['bytes']==96 and
-                symbols['vpc_queries']['bytes']==10304 and symbols['vm64_promotions']['bytes']==2080 and symbols['vm256_promotions']['bytes']==352 and 136+22*sample+40+5000+96+10304+2080+352<16<<20,
+                symbols['vpc_queries']['bytes']==10304 and symbols['vm64_promotions']['bytes']==2080 and symbols['vm256_promotions']['bytes']==352 and 352+136+22*sample+40+5000+96+10304+2080+352<16<<20,
                 'actual ELF-sized complete sample array/trailers below unchanged cap');samples[name]=sample
             r['fixture_build'][name]=dict(artifact=state['artifact'],elf=state['elf'],symbols_sha256=digest(symbols),
-                record_bytes=136+22*sample+40+5000+96+10304+2080+352,headers_sha256=digest(state['headers']))
+                record_bytes=352+136+22*sample+40+5000+96+10304+2080+352,headers_sha256=digest(state['headers']))
         for expected in commands:
             item=dict(name=expected['name'],status='failed',environment_delta=expected['environment_delta'],actual_exit=None);r['cases'].append(item)
             row,out,err=run(expected['name'],[output/expected['argv'][0]],expected['exit'],env=dict(ENV,**expected['environment_delta']))
@@ -390,7 +394,7 @@ def main():
                  'no failed operation relabelled completed')
             for key in r['totals']:r['totals'][key]+=value[key]
             item.update(status='accepted_observation',outcome=value)
-        need(r['totals']==dict(pairs=170,new_pairs=160,startup_pairs=14,verified_memory_failures=4,
+        need(r['totals']==dict(vdq_store_typed_promotions=14,vdq_store_supplied_range_queries=14,pairs=170,new_pairs=160,startup_pairs=14,verified_memory_failures=4,
             refusals=14*cfg['refusals'],actual_before_queries=328,ending_pairs=123,crossing_pairs=37,typed_promotions=98,supplied_none_queries=98,vm256_typed_promotions=14,vm256_supplied_none_queries=14) and
             len(r['cases'])==14 and all(c['status']=='accepted_observation'for c in r['cases']),
             'ten complete17-pair cohorts and four genuine failed-read controls')
