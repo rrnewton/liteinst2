@@ -1852,6 +1852,41 @@ class Main813InventoryTests(unittest.TestCase):
             with self.assertRaises(parsing.InvalidEvidence):
                 parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
 
+        # Exact b66 cohort: two summarized children and one authenticated
+        # ptrace child exit. None of the nested rows adds to outer test counts.
+        raw = '\n'.join((header('liteinst2'), 'running 271 tests',
+                         'running 1 test', summary(1, filtered=270),
+                         'running 1 test', summary(1, filtered=270),
+                         'running 1 test',
+                         'test trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack ... ok',
+                         summary(270, ignored=1)))
+        expected = {'unit/liteinst2/lib': counts(271, 1)}
+        row = parsing.parse_harnesses(raw, expected, 0)[0]
+        self.assertEqual(row['outer']['passed'], 270)
+        self.assertEqual(row['outer']['ignored'], 1)
+        self.assertEqual([x['passed'] for x in row['nested']], [1, 1])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((270, 1, 1), (272, 1, 1), (271, 0, 1),
+                                       (271, 2, 1), (271, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                             f'running {nested} tests', summary(total - ignored, ignored=ignored)))
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        changes = [raw.replace('liteinst2', 'other'),
+                   raw.replace('running 271 tests', 'running 272 tests'),
+                   raw.replace(summary(1, filtered=270), summary(1, filtered=269), 1),
+                   raw.replace(summary(270, ignored=1), summary(270, ignored=1, filtered=1)),
+                   raw.replace(summary(270, ignored=1), summary(269, ignored=1, measured=1)),
+                   raw.replace(summary(270, ignored=1), summary(269, ignored=1, failed=1)),
+                   raw.replace(summary(270, ignored=1), summary(270, ignored=1, result='FAILED')),
+                   raw.replace('test trampoline::tests::live::ptrace',
+                               'running 1 test\ntest trampoline::tests::live::ptrace'),
+                   raw.replace(summary(270, ignored=1), ''),
+                   raw + '\n' + summary(270, ignored=1)]
+        for bad in changes:
+            with self.subTest(core_b66=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+
         doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
                          'running 36 tests', summary(36),
                          'all doctests ran in 0.51s; merged doctests compilation took 0.21s'))
