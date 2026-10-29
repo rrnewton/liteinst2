@@ -21,6 +21,7 @@ mod caller_bytes;
 use super::strnlen::cases;
 use caller::{CallerOwner, Request};
 use cases::{CASES, LABEL};
+pub(super) mod call_pair;
 pub(super) mod csv;
 pub(super) mod leaf_set;
 mod lifecycle;

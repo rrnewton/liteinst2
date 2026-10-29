@@ -25,6 +25,13 @@ The [four-mode elapsed comparison](NORMAL_BACKOFF_ELAPSED.md) adds setup,
 call-loop and service measurements for native, always-on, K10 and K1000
 configurations, with a fixed twenty-trial order and every outcome retained.
 
+The [ordinary nested-call example](normal-work/CALL_PAIR_SESSION.md) admits a
+selected parent and its original direct child CALL. It retains separate frame
+receipts, acknowledges the child at its original continuation, and checks the
+parent after the caller returns. Its input-driven session shares the existing
+controller and worker loops. Native preservation and timing qualification remain
+separate requirements; source and control tests alone do not establish them.
+
 ## Entry-to-exit sampling
 
 An armed entry callback reads the original return address from the application

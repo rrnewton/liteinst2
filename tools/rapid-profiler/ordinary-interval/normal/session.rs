@@ -258,6 +258,7 @@ fn run_checked(
 mod application_sealed {
     pub trait Sealed {}
     impl Sealed for super::SingleApplication {}
+    impl Sealed for crate::normal::call_pair::Application {}
     impl Sealed for crate::normal::module::session::Application {}
     impl<const N: usize> Sealed for crate::normal::leaf_set::Application<N> {}
 }
