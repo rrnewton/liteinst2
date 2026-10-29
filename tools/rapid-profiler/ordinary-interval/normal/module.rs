@@ -8,6 +8,7 @@ use rapid_profiler::frontend_native::{
 use std::fmt::Write as _;
 use std::io::Write as _;
 mod check;
+pub(crate) mod session;
 #[cfg(test)]
 mod tests;
 const CALLS: usize = 32;

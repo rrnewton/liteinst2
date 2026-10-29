@@ -1031,6 +1031,40 @@ fn main() {
         );
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-module-session-state") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            12,
+            "normal-module-session-state K CANDIDATE FINAL CSV_VA CSV_LENGTH LENGTH_VA LENGTH_LENGTH CALLER_CANDIDATE CALLER_FINAL OUTPUT"
+        );
+        let arguments = oracle::native_ordinary::normal_caller::module::SessionArguments::parse(
+            args[2].to_str().unwrap(),
+            args[5].to_str().unwrap(),
+            args[6].to_str().unwrap(),
+            args[7].to_str().unwrap(),
+            args[8].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[4]).canonicalize().unwrap();
+        let caller = PathBuf::from(&args[9]).canonicalize().unwrap();
+        let caller_expected = PathBuf::from(&args[10]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[11]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::module::session::run(
+            &subject,
+            &expected,
+            arguments,
+            &caller,
+            &caller_expected,
+            &output,
+            deadline,
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-csv-state") {
         let deadline = oracle::native_ordinary::strnlen::Deadline::start();
         assert_eq!(

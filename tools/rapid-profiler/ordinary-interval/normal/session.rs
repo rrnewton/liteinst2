@@ -5,142 +5,22 @@ use rapid_profiler::frontend_native::{
     HistoryBatch, HistoryBinding, IntervalController, IntervalEpoch, IntervalEpochStorage,
 };
 use std::sync::mpsc::{TryRecvError, TrySendError};
-mod check;
+pub(in crate::normal) mod check;
+pub(in crate::normal) mod engine;
 mod epoch_storage;
-mod io;
-mod loop_trace;
+pub(in crate::normal) mod io;
+pub(in crate::normal) mod loop_trace;
 mod protocol;
 pub(crate) mod two;
-mod worker;
+pub(in crate::normal) mod worker;
 use check::Ledger;
 use epoch_storage::Slot;
 use io::Io;
 use protocol::Command;
 
-struct Engine {
-    controller: IntervalController,
-    epochs: [Option<Slot<IntervalEpoch>>; 3],
-    banks: Vec<IntervalEpochStorage>,
-    current: Option<usize>,
-    history: Vec<HistoryBatch>,
-    reports: Vec<(u64, Vec<RecordObservation>)>,
-    k: usize,
-    committed_arms: u32,
-}
-impl Engine {
-    fn history(&mut self, io: &mut Io) -> Result<(), String> {
-        if let Some(chunk) = self.controller.drain_history().map_err(failure)? {
-            if let Some(previous) = self.history.last() {
-                assert!(chunk.follows(previous));
-            } else {
-                assert_eq!(chunk.number(), 1);
-                assert_eq!(chunk.range().start, 0);
-                assert_eq!(chunk.before(), HistoryBinding::Initial);
-            }
-            assert_eq!(
-                chunk.range().end - chunk.range().start,
-                chunk.actions().len() as u64
-            );
-            // Retain the actual transfer before any output operation may refuse.
-            self.history.push(chunk);
-            let h = self.history.last().unwrap();
-            for (i, action) in h.actions().iter().enumerate() {
-                assert_eq!(action.function, None);
-                assert_eq!(action.group, None);
-                let kind = match action.kind {
-                    rapid_profiler::frontend::ActionKind::Published => {
-                        assert_eq!(action.current, Some(action.generation));
-                        "published"
-                    }
-                    rapid_profiler::frontend::ActionKind::Removed => {
-                        assert_eq!(action.current, None);
-                        "removed"
-                    }
-                    _ => panic!("unexpected mandatory session action"),
-                };
-                io.emit(format!(
-                    "HISTORY,{},{},{kind},{}\n",
-                    h.number(),
-                    h.range().start + i as u64 + 1,
-                    action.generation.get()
-                ))?;
-            }
-        }
-        Ok(())
-    }
-    fn retire(&mut self, io: &mut Io) -> Result<(), String> {
-        for i in 0..3 {
-            if self.current == Some(i) {
-                continue;
-            }
-            let Some(slot) = self.epochs[i].as_mut() else {
-                continue;
-            };
-            if slot.report_index().is_none() {
-                let Some(report) = self.controller.report(slot.epoch()).map_err(failure)? else {
-                    continue;
-                };
-                let generation = report.generation().get();
-                let records: Vec<_> = report.records().collect();
-                assert!(records.len() <= self.k);
-                let n = records.len();
-                let index = self.reports.len();
-                self.reports.push((generation, records));
-                slot.copied(generation, index, format!("REPORT,{generation},{n}\n"));
-                drop(report);
-            }
-            let index = slot.report_index().unwrap();
-            assert_eq!(self.reports[index].0, slot.epoch().generation().get());
-            slot.emit(|line| io.emit(line))?;
-            if let Some(bank) = slot
-                .reclaim(|epoch| self.controller.reclaim_storage(epoch))
-                .map_err(failure)?
-            {
-                self.banks.push(bank); // At most the original E prepared banks.
-                self.epochs[i] = None;
-            }
-        }
-        Ok(())
-    }
-    fn arm(&mut self, io: &mut Io) -> Result<(), String> {
-        self.retire(io)?;
-        let i = self
-            .epochs
-            .iter()
-            .position(Option::is_none)
-            .ok_or("retained epoch capacity")?;
-        let mut bank = Some(self.banks.pop().ok_or("retained epoch capacity")?);
-        #[allow(clippy::result_large_err)]
-        // Keep the returned bank inline until custody is restored.
-        let epoch =
-            match epoch_storage::transfer(&mut bank, |bank| self.controller.stage_prepared(bank)) {
-                Ok(epoch) => epoch,
-                Err(error) => {
-                    self.banks.push(bank.take().unwrap());
-                    return Err(failure(error));
-                }
-            };
-        // Retain the staged token before the fallible publication, including
-        // its failure path. Only a successful arm changes current/counts.
-        self.epochs[i] = Some(Slot::new(epoch));
-        self.controller
-            .arm(self.epochs[i].as_ref().unwrap().epoch())
-            .map_err(failure)?;
-        self.committed_arms += 1; // Publication remains real if history later fails.
-        self.current = Some(i);
-        self.history(io)
-    }
-    fn stop(&mut self, io: &mut Io) -> Result<(), String> {
-        if let Some(i) = self.current {
-            self.controller
-                .disarm(self.epochs[i].as_ref().unwrap().epoch())
-                .map_err(failure)?;
-            self.current = None;
-        }
-        self.history(io)
-    }
-}
-fn failure(e: impl std::fmt::Debug) -> String {
+use engine::{Engine, History};
+use worker::Work;
+pub(in crate::normal) fn failure(e: impl std::fmt::Debug) -> String {
     format!("{e:?}")
 }
 fn clock_failure(
@@ -156,9 +36,9 @@ fn clock_failure(
     )
 }
 
-fn dispatch(
-    tx: &mpsc::SyncSender<Command>,
-    pending: &mut Option<Command>,
+pub(in crate::normal) fn dispatch<C: worker::Work>(
+    tx: &mpsc::SyncSender<C>,
+    pending: &mut Option<C>,
     stopping: bool,
     stop_sent: &mut bool,
 ) -> Result<bool, String> {
@@ -174,7 +54,7 @@ fn dispatch(
         }
     }
     if stopping && pending.is_none() && !*stop_sent {
-        match tx.try_send(Command::Stop) {
+        match tx.try_send(C::stop()) {
             Ok(()) => {
                 *stop_sent = true;
                 progress = true;
@@ -208,7 +88,7 @@ fn guarded_wait(
     )
 }
 
-fn cpus() -> [usize; 2] {
+pub(in crate::normal) fn cpus() -> [usize; 2] {
     // Read before narrowing main's mask; the worker inherits this complete mask.
     let mut set = unsafe { std::mem::zeroed::<libc::cpu_set_t>() };
     assert_eq!(
@@ -333,285 +213,34 @@ fn run_checked(
     // Returning Err from their owner scope would disconnect attached workers
     // and close epochs before the outer wrapper could choose exit(1).
     let mut loop_trace = loop_trace::Trace::default();
+    let mut application = None;
+    let mut state = LoopState::default();
     let outcome = (|| -> Result<(), String> {
         pin(Some(cpus[0]));
         let worker::Event::Ready { tid } = replies.recv_timeout(WAIT).map_err(failure)? else {
             return Err("worker attachment handshake".into());
         };
-        let mut ledger = Ledger::new(tid, entry, returns, stream, k);
-        let mut ids = protocol::Ids::default();
-        let mut pending = None;
-        let mut requested = false;
-        let mut stop_sent = false;
-        let mut finished = None;
-        let mut final_output = false;
+        application = Some(SingleApplication {
+            ledger: Ledger::new(tid, entry, returns, stream, k),
+            ids: protocol::Ids::default(),
+        });
         io.emit(format!(
             "READY,normal-session-v1,{k},{epochs},10,2,4096,4096,4,1\n"
         ))?;
-        let started = Instant::now();
-        let mut schedule = Schedule::new(started, policy).map_err(failure)?;
-        let mut previous_poll = started;
-        let mut last_wait: Option<(Duration, Duration)> = None;
-        loop {
-            let mut progress = false;
-            let observed = Instant::now();
-            let waited = last_wait.take();
-            let decision = schedule.poll(observed, requested).map_err(|e| {
-                loop_trace.refused_poll(
-                    observed,
-                    loop_trace::State {
-                        pending: match pending.as_ref() {
-                            None => 0,
-                            Some(Command::Call { .. }) => 1,
-                            Some(Command::Flush { .. }) => 2,
-                            Some(Command::Stop) => 3,
-                        },
-                        requested,
-                        stopping: schedule.is_stopping(),
-                        accepted: ledger.accepted.len(),
-                        history: engine.history.last().map_or(0, |h| h.range().end),
-                        reports: engine.reports.len(),
-                        finished: u8::from(finished.is_some()),
-                        write_blocked: io.write_blocked(),
-                        output_drained: io.drained(),
-                    },
-                );
-                format!(
-                    "{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}",
-                    clock_failure(e, "poll", engine.committed_arms, &schedule),
-                    observed.duration_since(started).as_nanos(),
-                    observed.duration_since(previous_poll).as_nanos(),
-                    waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))
-                )
-            })?;
-            loop_trace.begin(
-                observed,
-                loop_trace::State {
-                    pending: match pending.as_ref() {
-                        None => 0,
-                        Some(Command::Call { .. }) => 1,
-                        Some(Command::Flush { .. }) => 2,
-                        Some(Command::Stop) => 3,
-                    },
-                    requested,
-                    stopping: schedule.is_stopping(),
-                    accepted: ledger.accepted.len(),
-                    history: engine.history.last().map_or(0, |h| h.range().end),
-                    reports: engine.reports.len(),
-                    finished: u8::from(finished.is_some()),
-                    write_blocked: io.write_blocked(),
-                    output_drained: io.drained(),
-                },
-            );
-            match decision {
-                ScheduleDecision::Arm { .. } => {
-                    loop_trace.decision("arm");
-                    if let Err(error) = engine.arm(&mut io) {
-                        return Err(format!(
-                            "arm/history failed: committed={} completed={} {error}",
-                            engine.committed_arms,
-                            schedule.armed()
-                        ));
-                    }
-                    schedule.arm_completed(Instant::now()).map_err(|e| {
-                        clock_failure(e, "arm-completed", engine.committed_arms, &schedule)
-                    })?;
-                    progress = true;
-                }
-                ScheduleDecision::Stop => {
-                    loop_trace.decision("stop");
-                    engine.stop(&mut io)?;
-                    progress = true;
-                }
-                ScheduleDecision::Wait => loop_trace.decision("wait"),
-            }
-            previous_poll = observed;
-            loop_trace.mark(loop_trace::Phase::PollArm);
-            // At most one reply per iteration. A full reply slot blocks only the
-            // worker after its metadata operation, never the controller or timer.
-            match replies.try_recv() {
-                Ok(worker::Event::Batch { calls, native }) => {
-                    loop_trace.reply("batch", 1, calls.len());
-                    engine.history(&mut io)?;
-                    ledger.batch(calls, *native, &engine.history, &mut io)?;
-                    progress = true;
-                }
-                Ok(worker::Event::Flushed { id, totals }) => {
-                    loop_trace.reply("flushed", 1, 0);
-                    ledger.flushed(id, totals, &mut io)?;
-                    progress = true;
-                }
-                Ok(worker::Event::Finished(totals)) => {
-                    loop_trace.reply("finished", 1, 0);
-                    assert!(finished.replace(totals).is_none());
-                    progress = true;
-                }
-                Ok(worker::Event::Ready { .. }) => return Err("duplicate worker handshake".into()),
-                Err(TryRecvError::Disconnected) if finished.is_none() => {
-                    return Err("worker disconnected before completion".into());
-                }
-                Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),
-            }
-            loop_trace.progress(progress);
-            loop_trace.mark(loop_trace::Phase::ReplyHistory);
-            engine.retire(&mut io)?;
-            loop_trace.mark(loop_trace::Phase::Retire);
-            if !schedule.is_stopping() && !requested && pending.is_none() {
-                if let Some(command) = io.command()? {
-                    loop_trace.command(match &command {
-                        Command::Call { .. } => "call",
-                        Command::Flush { .. } => "flush",
-                        Command::Stop => "stop",
-                    });
-                    if command == Command::Stop {
-                        requested = true;
-                    } else {
-                        ids.accept(&command).map_err(str::to_string)?;
-                        // Acceptance reserves both ledger space and this owned
-                        // pending cell. Queue Full never loses an accepted request.
-                        ledger.accepted.push(match &command {
-                            Command::Call { id, bound, bytes } => Command::Call {
-                                id: *id,
-                                bound: *bound,
-                                bytes: bytes.clone(),
-                            },
-                            Command::Flush { id } => Command::Flush { id: *id },
-                            Command::Stop => unreachable!(),
-                        });
-                        pending = Some(command);
-                    }
-                    progress = true;
-                } else if io.eof() {
-                    return Err("EOF before STOP or scheduled shutdown".into());
-                }
-            }
-            loop_trace.progress(progress);
-            loop_trace.mark(loop_trace::Phase::Input);
-            progress |= dispatch(&tx, &mut pending, schedule.is_stopping(), &mut stop_sent)?;
-            loop_trace.progress(progress);
-            loop_trace.mark(loop_trace::Phase::Dispatch);
-            if !final_output && let Some(totals) = finished {
-                if joined.is_none() && handle.as_ref().is_some_and(|h| h.is_finished()) {
-                    assert!(schedule.is_stopping() && stop_sent && pending.is_none());
-                    joined = Some(handle.take().unwrap().join());
-                    let captured = joined.as_ref().unwrap().tid();
-                    if u64::from(captured) != tid {
-                        return Err(format!(
-                            "joined task identity captured_tids=[{captured}] Ready={tid} observed_tasks=None"
-                        ));
-                    }
-                }
-                // One complete observation per loop. The original Schedule
-                // still bounds shutdown; unrelated tasks refuse immediately.
-                let retired = match joined.as_mut() {
-                    Some(task) => joined_task::poll_exclusive(&mut [task], || {
-                        schedule
-                            .wait_bound(Instant::now())
-                            .map(|_| ())
-                            .map_err(|error| {
-                                joined_task::Error::Clock(clock_failure(
-                                    error,
-                                    "task-retirement",
-                                    engine.committed_arms,
-                                    &schedule,
-                                ))
-                            })
-                    })
-                    .map_err(|error| error.to_string())?,
-                    None => false,
-                };
-                if retired {
-                    joined
-                        .as_ref()
-                        .unwrap()
-                        .result()
-                        .as_ref()
-                        .map_err(|_| "worker panic")?;
-                    engine.retire(&mut io)?;
-                    engine.history(&mut io)?;
-                    assert!(engine.epochs.iter().all(Option::is_none));
-                    assert_eq!(engine.banks.len(), 3);
-                    assert_eq!(engine.reports.len(), schedule.armed() as usize);
-                    assert_eq!(engine.committed_arms, schedule.armed());
-                    assert_eq!(
-                        engine.history.last().unwrap().range().end,
-                        u64::from(schedule.armed()) + 1
-                    );
-                    ledger.finish(totals, &engine.reports, &mut io)?;
-                    assert_eq!(ids.len(), ledger.accepted.len());
-                    single_main();
-                    unsafe { immutable(&spans) };
-                    io.emit(format!("IO,{}\n", io.write_blocked()))?;
-                    io.emit(format!(
-                        "DONE,{:?},{},{},{},{},{},{},{},{},1,1\n",
-                        schedule.stop_reason().unwrap(),
-                        schedule.armed(),
-                        engine.history.last().unwrap().range().end,
-                        ledger.accepted.len(),
-                        totals.confirmed,
-                        totals.completed,
-                        totals.unsampled,
-                        ledger.batches,
-                        ledger.flushes
-                    ))?;
-                    final_output = true;
-                }
-            }
-            loop_trace.mark(loop_trace::Phase::Finalize);
-            io.write()?;
-            loop_trace.mark(loop_trace::Phase::Write);
-            if final_output && io.drained() {
-                schedule.check_completion(Instant::now()).map_err(|e| {
-                    clock_failure(e, "final-output", engine.committed_arms, &schedule)
-                })?;
-                return Ok(());
-            }
-            let observed = Instant::now();
-            let bound = schedule
-                .wait_bound(observed)
-                .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
-            loop_trace.mark(loop_trace::Phase::WaitBound);
-            if !progress {
-                let wait = guarded_wait(started, observed, policy, &schedule, bound);
-                if wait.is_zero() {
-                    // Service the complete nonblocking loop again; do not wait past
-                    // the guard or claim that spinning prevents preemption.
-                    std::hint::spin_loop();
-                } else {
-                    let before = Instant::now();
-                    if schedule.is_stopping() {
-                        thread::sleep(wait);
-                    } else {
-                        // A normal scheduler cannot bound wakeup after sleep. Spend
-                        // a controller CPU during this finite timed portion instead.
-                        // One immutable target, at most the existing 1ms cap; after
-                        // preemption the next real poll still refuses lateness.
-                        let until = observed.checked_add(wait).ok_or("idle wait extent")?;
-                        while Instant::now() < until {
-                            std::hint::spin_loop();
-                        }
-                    }
-                    last_wait = Some((wait, before.elapsed()));
-                }
-            }
-            loop_trace.mark(loop_trace::Phase::Wait);
-            loop_trace.complete(loop_trace::State {
-                pending: match pending.as_ref() {
-                    None => 0,
-                    Some(Command::Call { .. }) => 1,
-                    Some(Command::Flush { .. }) => 2,
-                    Some(Command::Stop) => 3,
-                },
-                requested,
-                stopping: schedule.is_stopping(),
-                accepted: ledger.accepted.len(),
-                history: engine.history.last().map_or(0, |h| h.range().end),
-                reports: engine.reports.len(),
-                finished: u8::from(finished.is_some()),
-                write_blocked: io.write_blocked(),
-                output_drained: io.drained(),
-            });
-        }
+        drive(Loop {
+            app: application.as_mut().unwrap(),
+            engine: &mut engine,
+            io: &mut io,
+            tx: &tx,
+            replies: &replies,
+            handle: &mut handle,
+            joined: &mut joined,
+            state: &mut state,
+            loop_trace: &mut loop_trace,
+            tid,
+            policy,
+            spans: &spans,
+        })
     })();
     if let Err(error) = outcome {
         let details = loop_trace.failure();
@@ -624,6 +253,420 @@ fn run_checked(
         std::process::exit(1);
     }
     Ok(())
+}
+
+mod application_sealed {
+    pub trait Sealed {}
+    impl Sealed for super::SingleApplication {}
+    impl Sealed for crate::normal::module::session::Application {}
+}
+pub(in crate::normal) trait Application: application_sealed::Sealed {
+    type Controller: engine::Controller;
+    type Command: worker::Work;
+    type Call;
+    type Batch;
+    type Completion;
+    fn accepted_len(&self) -> usize;
+    fn input(&mut self, io: &mut Io) -> Result<Option<Self::Command>, String>;
+    fn accept(&mut self, command: &Self::Command) -> Result<(), String>;
+    fn batch(
+        &mut self,
+        calls: Vec<Self::Call>,
+        batch: Self::Batch,
+        history: &[<Self::Controller as engine::Controller>::History],
+        io: &mut Io,
+    ) -> Result<(), String>;
+    fn flushed(&mut self, id: u64, totals: NormalTotals, io: &mut Io) -> Result<(), String>;
+    fn finish(
+        &mut self,
+        totals: NormalTotals,
+        reports: &[(u64, Vec<RecordObservation>)],
+        history: &[<Self::Controller as engine::Controller>::History],
+        io: &mut Io,
+    ) -> Result<(), String>;
+    fn final_checks(&self) -> Result<(), String>;
+    fn final_custody(&self) -> Result<(), String>;
+    fn terminal(
+        &self,
+        schedule: &Schedule,
+        history_end: u64,
+        totals: NormalTotals,
+        io: &mut Io,
+    ) -> Result<(), String>;
+    fn completion(&self) -> Self::Completion;
+}
+struct SingleApplication {
+    ledger: Ledger,
+    ids: protocol::Ids,
+}
+impl Application for SingleApplication {
+    type Controller = IntervalController;
+    type Command = Command;
+    type Call = worker::Call;
+    type Batch = NormalBatch;
+    type Completion = ();
+    fn accepted_len(&self) -> usize {
+        self.ledger.accepted.len()
+    }
+    fn input(&mut self, io: &mut Io) -> Result<Option<Command>, String> {
+        let command = io.command()?;
+        if command.is_none() && io.eof() {
+            return Err("EOF before STOP or scheduled shutdown".into());
+        }
+        Ok(command)
+    }
+    fn accept(&mut self, command: &Command) -> Result<(), String> {
+        self.ids.accept(command).map_err(str::to_string)?;
+        self.ledger.accepted.push(match command {
+            Command::Call { id, bound, bytes } => Command::Call {
+                id: *id,
+                bound: *bound,
+                bytes: bytes.clone(),
+            },
+            Command::Flush { id } => Command::Flush { id: *id },
+            Command::Stop => unreachable!(),
+        });
+        Ok(())
+    }
+    fn batch(
+        &mut self,
+        calls: Vec<worker::Call>,
+        batch: NormalBatch,
+        history: &[HistoryBatch],
+        io: &mut Io,
+    ) -> Result<(), String> {
+        self.ledger.batch(calls, batch, history, io)
+    }
+    fn flushed(&mut self, id: u64, totals: NormalTotals, io: &mut Io) -> Result<(), String> {
+        self.ledger.flushed(id, totals, io)
+    }
+    fn finish(
+        &mut self,
+        totals: NormalTotals,
+        reports: &[(u64, Vec<RecordObservation>)],
+        _history: &[HistoryBatch],
+        io: &mut Io,
+    ) -> Result<(), String> {
+        self.ledger.finish(totals, reports, io)
+    }
+    fn final_checks(&self) -> Result<(), String> {
+        assert_eq!(self.ids.len(), self.ledger.accepted.len());
+        Ok(())
+    }
+    fn final_custody(&self) -> Result<(), String> {
+        Ok(())
+    }
+    fn terminal(
+        &self,
+        schedule: &Schedule,
+        history_end: u64,
+        totals: NormalTotals,
+        io: &mut Io,
+    ) -> Result<(), String> {
+        io.emit(format!(
+            "DONE,{:?},{},{},{},{},{},{},{},{},1,1\n",
+            schedule.stop_reason().unwrap(),
+            schedule.armed(),
+            history_end,
+            self.ledger.accepted.len(),
+            totals.confirmed,
+            totals.completed,
+            totals.unsampled,
+            self.ledger.batches,
+            self.ledger.flushes
+        ))
+    }
+    fn completion(&self) {}
+}
+pub(in crate::normal) struct LoopState<C> {
+    pending: Option<C>,
+    requested: bool,
+    stop_sent: bool,
+    finished: Option<NormalTotals>,
+    final_output: bool,
+}
+impl<C> Default for LoopState<C> {
+    fn default() -> Self {
+        Self {
+            pending: None,
+            requested: false,
+            stop_sent: false,
+            finished: None,
+            final_output: false,
+        }
+    }
+}
+// The borrowing context does not own any lifecycle object. Callers retain all
+// fields outside the error-selecting closure, including its accepted pending cell.
+pub(in crate::normal) struct Loop<'a, A: Application> {
+    pub app: &'a mut A,
+    pub engine: &'a mut Engine<A::Controller>,
+    pub io: &'a mut Io,
+    pub tx: &'a mpsc::SyncSender<A::Command>,
+    pub replies: &'a mpsc::Receiver<worker::Event<A::Call, A::Batch>>,
+    pub handle: &'a mut Option<JoinHandle<()>>,
+    pub joined: &'a mut Option<joined_task::Joined<()>>,
+    pub state: &'a mut LoopState<A::Command>,
+    pub loop_trace: &'a mut loop_trace::Trace,
+    pub tid: u64,
+    pub policy: Policy,
+    pub spans: &'a [(u64, Vec<u8>)],
+}
+pub(in crate::normal) fn drive<A: Application>(
+    context: Loop<'_, A>,
+) -> Result<A::Completion, String> {
+    let Loop {
+        app,
+        engine,
+        io,
+        tx,
+        replies,
+        handle,
+        joined,
+        state,
+        loop_trace,
+        tid,
+        policy,
+        spans,
+    } = context;
+    let started = Instant::now();
+    let mut schedule = Schedule::new(started, policy).map_err(failure)?;
+    let mut previous_poll = started;
+    let mut last_wait: Option<(Duration, Duration)> = None;
+    loop {
+        let mut progress = false;
+        let observed = Instant::now();
+        let waited = last_wait.take();
+        let decision = schedule.poll(observed, state.requested).map_err(|e| {
+            loop_trace.refused_poll(
+                observed,
+                loop_trace::State {
+                    pending: state.pending.as_ref().map_or(0, worker::Work::kind),
+                    requested: state.requested,
+                    stopping: schedule.is_stopping(),
+                    accepted: app.accepted_len(),
+                    history: engine.history.last().map_or(0, |h| h.range().end),
+                    reports: engine.reports.len(),
+                    finished: u8::from(state.finished.is_some()),
+                    write_blocked: io.write_blocked(),
+                    output_drained: io.drained(),
+                },
+            );
+            format!(
+                "{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}",
+                clock_failure(e, "poll", engine.committed_arms, &schedule),
+                observed.duration_since(started).as_nanos(),
+                observed.duration_since(previous_poll).as_nanos(),
+                waited.map(|(wait_requested, elapsed)| (
+                    wait_requested.as_nanos(),
+                    elapsed.as_nanos()
+                ))
+            )
+        })?;
+        loop_trace.begin(
+            observed,
+            loop_trace::State {
+                pending: state.pending.as_ref().map_or(0, worker::Work::kind),
+                requested: state.requested,
+                stopping: schedule.is_stopping(),
+                accepted: app.accepted_len(),
+                history: engine.history.last().map_or(0, |h| h.range().end),
+                reports: engine.reports.len(),
+                finished: u8::from(state.finished.is_some()),
+                write_blocked: io.write_blocked(),
+                output_drained: io.drained(),
+            },
+        );
+        match decision {
+            ScheduleDecision::Arm { .. } => {
+                loop_trace.decision("arm");
+                if let Err(error) = engine.arm(io) {
+                    return Err(format!(
+                        "arm/history failed: committed={} completed={} {error}",
+                        engine.committed_arms,
+                        schedule.armed()
+                    ));
+                }
+                schedule.arm_completed(Instant::now()).map_err(|e| {
+                    clock_failure(e, "arm-completed", engine.committed_arms, &schedule)
+                })?;
+                progress = true;
+            }
+            ScheduleDecision::Stop => {
+                loop_trace.decision("stop");
+                engine.stop(io)?;
+                progress = true;
+            }
+            ScheduleDecision::Wait => loop_trace.decision("wait"),
+        }
+        previous_poll = observed;
+        loop_trace.mark(loop_trace::Phase::PollArm);
+        // At most one reply per iteration. A full reply slot blocks only the
+        // worker after its metadata operation, never the controller or timer.
+        match replies.try_recv() {
+            Ok(worker::Event::Batch { calls, native }) => {
+                loop_trace.reply("batch", 1, calls.len());
+                engine.history(io)?;
+                app.batch(calls, *native, &engine.history, io)?;
+                progress = true;
+            }
+            Ok(worker::Event::Flushed { id, totals }) => {
+                loop_trace.reply("flushed", 1, 0);
+                app.flushed(id, totals, io)?;
+                progress = true;
+            }
+            Ok(worker::Event::Finished(totals)) => {
+                loop_trace.reply("finished", 1, 0);
+                assert!(state.finished.replace(totals).is_none());
+                progress = true;
+            }
+            Ok(worker::Event::Ready { .. }) => return Err("duplicate worker handshake".into()),
+            Err(TryRecvError::Disconnected) if state.finished.is_none() => {
+                return Err("worker disconnected before completion".into());
+            }
+            Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),
+        }
+        loop_trace.progress(progress);
+        loop_trace.mark(loop_trace::Phase::ReplyHistory);
+        engine.retire(io)?;
+        loop_trace.mark(loop_trace::Phase::Retire);
+        if !schedule.is_stopping() && !state.requested && state.pending.is_none() {
+            if let Some(command) = app.input(io)? {
+                loop_trace.command(command.name());
+                if command.kind() == 3 {
+                    state.requested = true;
+                } else {
+                    app.accept(&command)?;
+                    state.pending = Some(command);
+                }
+                progress = true;
+            }
+        }
+        loop_trace.progress(progress);
+        loop_trace.mark(loop_trace::Phase::Input);
+        progress |= dispatch(
+            tx,
+            &mut state.pending,
+            schedule.is_stopping(),
+            &mut state.stop_sent,
+        )?;
+        loop_trace.progress(progress);
+        loop_trace.mark(loop_trace::Phase::Dispatch);
+        if !state.final_output
+            && let Some(totals) = state.finished
+        {
+            if joined.is_none() && handle.as_ref().is_some_and(|h| h.is_finished()) {
+                assert!(schedule.is_stopping() && state.stop_sent && state.pending.is_none());
+                *joined = Some(handle.take().unwrap().join());
+                let captured = joined.as_ref().unwrap().tid();
+                if u64::from(captured) != tid {
+                    return Err(format!(
+                        "joined task identity captured_tids=[{captured}] Ready={tid} observed_tasks=None"
+                    ));
+                }
+            }
+            // One complete observation per loop. The original Schedule
+            // still bounds shutdown; unrelated tasks refuse immediately.
+            let retired = match joined.as_mut() {
+                Some(task) => joined_task::poll_exclusive(&mut [task], || {
+                    schedule
+                        .wait_bound(Instant::now())
+                        .map(|_| ())
+                        .map_err(|error| {
+                            joined_task::Error::Clock(clock_failure(
+                                error,
+                                "task-retirement",
+                                engine.committed_arms,
+                                &schedule,
+                            ))
+                        })
+                })
+                .map_err(|error| error.to_string())?,
+                None => false,
+            };
+            if retired {
+                joined
+                    .as_ref()
+                    .unwrap()
+                    .result()
+                    .as_ref()
+                    .map_err(|_| "worker panic")?;
+                engine.retire(io)?;
+                engine.history(io)?;
+                assert!(engine.epochs.iter().all(Option::is_none));
+                assert_eq!(engine.banks.len(), 3);
+                assert_eq!(engine.reports.len(), schedule.armed() as usize);
+                assert_eq!(engine.committed_arms, schedule.armed());
+                assert_eq!(
+                    engine.history.last().unwrap().range().end,
+                    u64::from(schedule.armed()) + 1
+                );
+                engine.final_check()?;
+                app.finish(totals, &engine.reports, &engine.history, io)?;
+                app.final_checks()?;
+                single_main();
+                unsafe { immutable(spans) };
+                app.final_custody()?;
+                io.emit(format!("IO,{}\n", io.write_blocked()))?;
+                app.terminal(
+                    &schedule,
+                    engine.history.last().unwrap().range().end,
+                    totals,
+                    io,
+                )?;
+                state.final_output = true;
+            }
+        }
+        loop_trace.mark(loop_trace::Phase::Finalize);
+        io.write()?;
+        loop_trace.mark(loop_trace::Phase::Write);
+        if state.final_output && io.drained() {
+            schedule
+                .check_completion(Instant::now())
+                .map_err(|e| clock_failure(e, "final-output", engine.committed_arms, &schedule))?;
+            return Ok(app.completion());
+        }
+        let observed = Instant::now();
+        let bound = schedule
+            .wait_bound(observed)
+            .map_err(|e| clock_failure(e, "wait", engine.committed_arms, &schedule))?;
+        loop_trace.mark(loop_trace::Phase::WaitBound);
+        if !progress {
+            let wait = guarded_wait(started, observed, policy, &schedule, bound);
+            if wait.is_zero() {
+                // Service the complete nonblocking loop again; do not wait past
+                // the guard or claim that spinning prevents preemption.
+                std::hint::spin_loop();
+            } else {
+                let before = Instant::now();
+                if schedule.is_stopping() {
+                    thread::sleep(wait);
+                } else {
+                    // A normal scheduler cannot bound wakeup after sleep. Spend
+                    // a controller CPU during this finite timed portion instead.
+                    // One immutable target, at most the existing 1ms cap; after
+                    // preemption the next real poll still refuses lateness.
+                    let until = observed.checked_add(wait).ok_or("idle wait extent")?;
+                    while Instant::now() < until {
+                        std::hint::spin_loop();
+                    }
+                }
+                last_wait = Some((wait, before.elapsed()));
+            }
+        }
+        loop_trace.mark(loop_trace::Phase::Wait);
+        loop_trace.complete(loop_trace::State {
+            pending: state.pending.as_ref().map_or(0, worker::Work::kind),
+            requested: state.requested,
+            stopping: schedule.is_stopping(),
+            accepted: app.accepted_len(),
+            history: engine.history.last().map_or(0, |h| h.range().end),
+            reports: engine.reports.len(),
+            finished: u8::from(state.finished.is_some()),
+            write_blocked: io.write_blocked(),
+            output_drained: io.drained(),
+        });
+    }
 }
 
 #[cfg(test)]

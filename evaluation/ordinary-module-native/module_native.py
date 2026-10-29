@@ -47,9 +47,7 @@ def terminal(k, comparisons):
             'target-returns=256:real-outer-ret=64:normal-reaps=64:complete')
 
 
-def check(pairs, coverage, stdout, stderr, k, geometry, csv_index):
-    """geometry is CSV then length, authenticated from complete trusted ELF disassembly."""
-    assert type(k) is int and k in (16, 1) and type(csv_index) is int and csv_index in (0, 1)
+def _geometry(stderr, geometry):
     assert type(stderr) is bytes and stderr == b'' and len(geometry) == 2
     for g, ceiling in zip(geometry, (256, 80)):
         assert type(g['length']) is int and 5 <= g['length'] <= ceiling
@@ -58,8 +56,9 @@ def check(pairs, coverage, stdout, stderr, k, geometry, csv_index):
         assert g['returns'] == sorted(set(g['returns'])) and 1 <= len(g['returns']) <= 4
         assert set(g['returns']) <= set(g['heads']) and all(x > 0 for x in g['returns'])
         assert type(g['edges']) is int and len(g['heads'])-len(g['returns']) <= g['edges'] <= 2*(len(g['heads'])-len(g['returns']))
-    rows = table(pairs, HEADER, 32, 32768)
-    covered = table(coverage, COVERAGE, 2, 1024)
+
+
+def _population(rows, covered, k, geometry, csv_index):
     total_returns = sum(len(g['returns']) for g in geometry)
     for i, r in enumerate(rows):
         case = i % 16; length_case = case % 8
@@ -102,9 +101,63 @@ def check(pairs, coverage, stdout, stderr, k, geometry, csv_index):
                 else:
                     assert max(counts) <= c['length_'+field] == declared <= sum(counts)
     comparisons = sum(r['comparisons'] for r in rows)
+    return comparisons
+
+
+def check(pairs, coverage, stdout, stderr, k, geometry, csv_index):
+    """geometry is CSV then length, authenticated from complete trusted ELF disassembly."""
+    assert type(k) is int and k in (16, 1) and type(csv_index) is int and csv_index in (0, 1)
+    _geometry(stderr, geometry)
+    rows = table(pairs, HEADER, 32, 32768)
+    covered = table(coverage, COVERAGE, 2, 1024)
+    comparisons = _population(rows, covered, k, geometry, csv_index)
     assert comparisons <= U64 and lines(stdout, 1024) == [terminal(k, comparisons)]
     return dict(status='NATIVE_STATE_TRANSCRIPT_VALIDATED', k=k, pairs=32, children=64,
                 target_calls=256, target_returns=256, outer_returns=64, normal_reaps=64,
                 comparisons=comparisons, rows=rows, coverage=covered, pairs_table=pairs,
                 coverage_table=coverage, terminal=stdout, scope=SCOPE,
                 source_attested='Full state/XSAVE/stack/data/source/journal/Reports, actual four calls/returns and normal reaps; tables do not replay those checks.')
+
+
+SESSION_PROFILE = 'session-absolute-v1'
+SESSION_HEADER = 'profile,' + HEADER
+SESSION_COVERAGE = 'profile,' + COVERAGE
+SESSION_SCOPE = ('Native streaming module body-state under the unchanged four-call helper only; '
+                 'no pending-owner, Rust-caller, timing, accuracy, performance or full-A5 qualification.')
+
+
+def session_table(data, header, count):
+    text = lines(data, 65536)
+    assert len(text) == count + 1 and text[0] == header
+    names = header.split(','); rows = []
+    for line in text[1:]:
+        words = line.split(','); assert len(words) == len(names)
+        row = dict(zip(names, words))
+        assert row['profile'] == SESSION_PROFILE
+        if 'status' in row: assert row['status'] == 'PASS'
+        rows.append({k: v if k in ('profile', 'status') else uint(v) for k, v in row.items()})
+    return rows
+
+
+def session_terminal(k, comparisons):
+    return (f'native-normal-module-session:profile=session-absolute-v1:k={k}:'
+            f'e=3:t=1:d=1:m=1:a={2*k}:resident-actions=8:'
+            f'required=32:pairs=32:children=64:comparisons={comparisons}:'
+            'coverage-seeds=2:csv-cases-per-seed=16:length-cases-per-seed=8:target-calls=256:'
+            'target-returns=256:real-outer-ret=64:normal-reaps=64:complete')
+
+
+def check_session(pairs, coverage, stdout, stderr, k, geometry, csv_index):
+    """Parse the actual Session wire directly; geometry remains separately authenticated."""
+    assert type(k) is int and k in (10, 1000) and type(csv_index) is int and csv_index in (0, 1)
+    _geometry(stderr, geometry)
+    rows = session_table(pairs, SESSION_HEADER, 32)
+    covered = session_table(coverage, SESSION_COVERAGE, 2)
+    comparisons = _population(rows, covered, k, geometry, csv_index)
+    assert comparisons <= U64 and lines(stdout, 1024) == [session_terminal(k, comparisons)]
+    return dict(status='NATIVE_SESSION_STATE_TRANSCRIPT_VALIDATED', profile=SESSION_PROFILE,
+                k=k, pairs=32, children=64, target_calls=256, target_returns=256,
+                outer_returns=64, normal_reaps=64, comparisons=comparisons, rows=rows,
+                coverage=covered, pairs_table=pairs, coverage_table=coverage, terminal=stdout,
+                scope=SESSION_SCOPE,
+                source_attested='Full state/XSAVE/stack/data/source/journal/Report/history/reclaim and normal reaps remain native-source authority; tables do not replay those checks.')

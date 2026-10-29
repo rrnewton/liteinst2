@@ -1,7 +1,7 @@
 //! Fixed-slot consumer custody; this is not an SDK storage or return proof.
 use rapid_profiler::frontend_native::{BridgeError, EpochStorageReclaimError, IntervalEpoch};
 
-pub(super) trait Identity {
+pub(in crate::normal) trait Identity {
     fn generation(&self) -> u64;
 }
 impl Identity for IntervalEpoch {
@@ -12,7 +12,7 @@ impl Identity for IntervalEpoch {
 
 // The same consuming restore path handles stage and reclaim errors. The caller
 // keeps this owner cell in its fail-stop scope; no map_err drops the returned T.
-pub(super) fn transfer<T, U, E>(
+pub(in crate::normal) fn transfer<T, U, E>(
     owner: &mut Option<T>,
     operation: impl FnOnce(T) -> Result<U, (E, T)>,
 ) -> Result<U, E> {
@@ -36,13 +36,13 @@ struct Copied {
     line: String,
     output: Output,
 }
-pub(super) struct Slot<T> {
+pub(in crate::normal) struct Slot<T> {
     epoch: Option<T>,
     generation: u64,
     copied: Option<Copied>,
 }
 impl<T: Identity> Slot<T> {
-    pub(super) fn new(epoch: T) -> Self {
+    pub(in crate::normal) fn new(epoch: T) -> Self {
         let generation = epoch.generation();
         assert_ne!(generation, 0);
         Self {
@@ -51,12 +51,12 @@ impl<T: Identity> Slot<T> {
             copied: None,
         }
     }
-    pub(super) fn epoch(&self) -> &T {
+    pub(in crate::normal) fn epoch(&self) -> &T {
         let epoch = self.epoch.as_ref().expect("live retained epoch");
         assert_eq!(epoch.generation(), self.generation);
         epoch
     }
-    pub(super) fn report_index(&self) -> Option<usize> {
+    pub(in crate::normal) fn report_index(&self) -> Option<usize> {
         self.copied.as_ref().map(|copied| {
             assert_eq!(copied.generation, self.epoch().generation());
             copied.report_index
@@ -64,7 +64,7 @@ impl<T: Identity> Slot<T> {
     }
     // The Engine has already checked and retained the complete record copy.
     // Retain its exact index and one output obligation before dropping Report.
-    pub(super) fn copied(&mut self, generation: u64, report_index: usize, line: String) {
+    pub(in crate::normal) fn copied(&mut self, generation: u64, report_index: usize, line: String) {
         assert_eq!(generation, self.epoch().generation());
         assert!(self.copied.is_none(), "one copied Report per generation");
         self.copied = Some(Copied {
@@ -74,7 +74,7 @@ impl<T: Identity> Slot<T> {
             output: Output::Pending,
         });
     }
-    pub(super) fn emit(
+    pub(in crate::normal) fn emit(
         &mut self,
         emit: impl FnOnce(String) -> Result<(), String>,
     ) -> Result<(), String> {
@@ -98,7 +98,7 @@ impl<T: Identity> Slot<T> {
             }
         }
     }
-    pub(super) fn reclaim<B>(
+    pub(in crate::normal) fn reclaim<B>(
         &mut self,
         reclaim: impl FnOnce(T) -> Result<B, (EpochStorageReclaimError, T)>,
     ) -> Result<Option<B>, BridgeError> {

@@ -26,12 +26,14 @@ and overflow checks, four jobs and no incremental build. Exact Cargo JSON joins
 the target, manifest, source, executable and profile. No artifact is borrowed
 from a different revision or qualification.
 
-Twelve fabricated Python controls precede all native work. The exact complete
-calibration inventory retains all 149 prior methods and requires ten additional
-module methods. The one existing hardware-stop control remains explicitly
+Eighteen fabricated Python controls precede all native work, retaining the twelve
+finite controls and adding six Session controls. The exact complete calibration
+inventory retains all 149 prior methods, ten finite module methods and four
+Session methods (163 nonignored controls in both modes). The one existing
+hardware-stop control remains explicitly
 ignored, with its original reason; this recipe does not claim to execute it.
-The four existing CallerOwner controls remain mandatory. No older recipe or
-control is removed or modified.
+The four existing CallerOwner controls remain mandatory. No old control is
+removed; existing census expectations grow with the required additions.
 
 The mixed module uses the same explicit flags and source hashes as the functional
 module recipe. Complete LOCAL symbol extents and disassembly establish the two
@@ -67,3 +69,33 @@ PIDs. This qualifies only the selected bodies under this helper. It supplies no
 Rust application-caller state, opposite first-direction, timing, accuracy,
 performance, arbitrary-module or full-A5 qualification. All proposal controls
 and native execution remain UNRUN until the root performs them.
+
+
+## Separate Absolute session profile
+
+Add `--session-absolute` to the same command to select exactly K10 then K1000.
+The default remains finite-only K16 then K1. Each Session cohort uses the exact
+Absolute/Concurrent E3/T1/D1/M1/A=2K profile with eight resident history actions,
+three prepared banks and the same complete 32-pair corpus. The overall matrix,
+caller, independent ELF preparation, resource bounds and once-only failure
+handling remain unchanged. This is a source recipe; no execution result is
+asserted here.
+
+The separate `check_session` parser accepts actual 40-column pair and 13-column
+coverage tables with `profile=session-absolute-v1` on every row, and the distinct
+session terminal. Each complete table is bounded to 65,536 bytes. It retains all
+rows and raw bytes and executes the shared complete geometry/population checks.
+The finite `check`, finite `--native-request` branch and old wire remain strict;
+Session uses a separate expected-profile `--native-session-request` branch.
+Neither chooses a mode from the transcript, synthesizes finite output nor retries
+another decoder after refusal.
+
+Session `result.json` uses `NATIVE_SESSION_STATE_PASS` only after both ordered
+cohorts, every prerequisite and final source/custody/immutable-pin checks pass.
+It records the exact revision, source/tool/artifact/geometry/request/output and
+closure authority through retained hashes. The two cohort rows retain every
+attempted failure and the UNRUN remainder. `pending_owner_controls` stays
+`UNRUN_SEPARATE_REQUIRED_GATE`: these four-call state trials neither exhaust K
+nor exercise the four deterministic retained-owner scenarios, and cannot alone
+qualify the streaming functional campaign. There is no timing, performance,
+application-caller or full-A5 claim.

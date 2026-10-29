@@ -50,6 +50,29 @@ def encode(rows,coverage,k=16,csv_index=0):
             (C.terminal(k,sum(r['comparisons'] for r in rows))+'\n').encode('ascii'),b'',k,copy.deepcopy(GEOMETRY),csv_index]
 
 
+def session_fixture(k=10, csv_index=0):
+    rows, coverage = fixture(k, csv_index)
+    return ([dict(profile=C.SESSION_PROFILE, **r) for r in rows],
+            [dict(profile=C.SESSION_PROFILE, **r) for r in coverage])
+
+
+def session_encode(rows, coverage, k=10, csv_index=0):
+    def table(header, rows):
+        return (header+'\n'+''.join(','.join(str(r[n]) for n in header.split(','))+'\n' for r in rows)).encode('ascii')
+    return [table(C.SESSION_HEADER, rows), table(C.SESSION_COVERAGE, coverage),
+            (C.session_terminal(k, sum(r['comparisons'] for r in rows))+'\n').encode('ascii'),
+            b'', k, copy.deepcopy(GEOMETRY), csv_index]
+
+
+def session_request(raw, k):
+    d = raw/f'k{k}'
+    argv = [str(R.ROOT/'target/release/frontend-native-oracle'), 'normal-module-session-state', str(k),
+            str(raw/'module-candidate.so'), str(raw/'module-trusted.so'), '4096', '126', '4224', '41',
+            str(raw/'caller-candidate.so'), str(raw/'caller-trusted.so'), str(d/'native-output')]
+    return dict(argv=argv, cwd=str(R.ROOT), env={}, stdout=str(d/'stdout.txt'), stderr=str(d/'stderr.txt'),
+                pins={p:{} for p in (str(HERE/'reproduce.py'), argv[0], *argv[3:5], *argv[9:11])})
+
+
 class Controls(unittest.TestCase):
     def refuses(self,rows,coverage,k=16,csv_index=0):
         with self.assertRaises(AssertionError):C.check(*encode(rows,coverage,k,csv_index))
@@ -249,19 +272,169 @@ class Controls(unittest.TestCase):
     def test_full_control_censuses_refuse_names_and_counts(self):
         modules={name:R.load(name,R.ROOT/R.MODULES[name]) for name in ('legacy','normal','whole')}
         manifest=R.calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
-        self.assertEqual(len(manifest),159);self.assertTrue(set(R.MODULE_TESTS)<=set(manifest))
+        self.assertEqual(len(manifest),163);self.assertTrue(set(R.MODULE_TESTS)<=set(manifest))
         self.assertEqual(len(R.MODULE_TESTS),10)
         body=''.join('test '+name+(' - should panic' if panic else '')+' ... ok\n' for name,panic in sorted(manifest.items()))
-        text=(f'\nrunning 160 tests\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\n\n'
-              'test result: ok. 159 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
+        text=(f'\nrunning 164 tests\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\n\n'
+              'test result: ok. 163 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
         R.calibration_output(text,b'',manifest)
-        for old,new in ((next(iter(manifest)).encode(),b'unknown::renamed'),(b'159 passed',b'158 passed'),(b'1 ignored',b'0 ignored')):
+        for old,new in ((next(iter(manifest)).encode(),b'unknown::renamed'),(b'163 passed',b'162 passed'),(b'1 ignored',b'0 ignored')):
             with self.assertRaises(AssertionError):R.calibration_output(text.replace(old,new,1),b'',manifest)
         output=''.join(f'{n} (__main__.Controls.{n}) ... ok\n' for n in sorted(R.PYTHON_CONTROLS))
-        output+='\n----------------------------------------------------------------------\nRan 12 tests in 0.01s\n\nOK\n'
+        output+='\n----------------------------------------------------------------------\nRan 18 tests in 0.01s\n\nOK\n'
         R.python_output(b'',output.encode())
-        for old,new in (('Ran 12','Ran 11'),(R.PYTHON_CONTROLS[0],'renamed_control')):
+        for old,new in (('Ran 18','Ran 17'),(R.PYTHON_CONTROLS[0],'renamed_control')):
             with self.assertRaises(AssertionError):R.python_output(b'',output.replace(old,new).encode())
+
+
+    def test_session_complete_profile_and_canonical_indices(self):
+        for k in (10, 1000):
+            for index in (0, 1):
+                rows, coverage = session_fixture(k, index)
+                args = session_encode(rows, coverage, k, index); got = C.check_session(*args)
+                self.assertEqual(got['status'], 'NATIVE_SESSION_STATE_TRANSCRIPT_VALIDATED')
+                self.assertEqual(got['profile'], 'session-absolute-v1')
+                self.assertEqual((got['rows'], got['coverage']), (rows, coverage))
+                self.assertTrue(all(r['profile'] == got['profile'] for r in got['rows']+got['coverage']))
+                self.assertEqual((got['pairs_table'], got['coverage_table'], got['terminal']), tuple(args[:3]))
+                self.assertEqual((got['pairs'], got['children'], got['normal_reaps'], got['target_calls'],
+                                  got['target_returns'], got['outer_returns']), (32, 64, 64, 256, 256, 64))
+                self.assertEqual(got['comparisons'], 1792)
+                self.assertEqual((got['rows'][0]['length_reads0'], got['rows'][0]['length_bytes0']), (0, 0))
+                self.assertIn('no pending-owner', got['scope'])
+
+    def test_session_framing_and_profile_crossover_refusals(self):
+        rows, coverage = session_fixture(); args = session_encode(rows, coverage)
+        for index, data in ((0,args[0][:-1]), (0,args[0]+b'\n'), (0,args[0].replace(b'\n',b'\r\n')),
+                            (0,args[0].replace(b'session-absolute-v1',b'finite',1)),
+                            (1,args[1].replace(b'session-absolute-v1',b'session-absolute-v2',1)),
+                            (0,args[0].replace(b'PASS',b'FAILED',1)), (0,b'x'*65537), (1,b'x'*65537),
+                            (2,args[2]+b'\n'), (3,b'warning\n'),
+                            (2,args[2].replace(b'a=20:',b'a=2000:')), (2,args[2].replace(b'e=3:',b'e=1:')),
+                            (2,args[2].replace(b'resident-actions=8:',b'resident-actions=2:'))):
+            bad=args.copy(); bad[index]=data
+            with self.assertRaises(AssertionError): C.check_session(*bad)
+        for index, header in ((0,C.SESSION_HEADER), (1,C.SESSION_COVERAGE)):
+            for column, key in enumerate(header.split(',')):
+                if key in ('profile','status'): continue
+                for value in ('00','+1','-1',' 1','1.0',str(1<<64)):
+                    bad=args.copy(); text=bad[index].decode('ascii').splitlines()
+                    fields=text[1].split(','); fields[column]=value; text[1]=','.join(fields)
+                    bad[index]=('\n'.join(text)+'\n').encode('ascii')
+                    with self.assertRaises(AssertionError): C.check_session(*bad)
+        with self.assertRaises(AssertionError): C.check(*args)
+        with self.assertRaises(AssertionError): C.check_session(*encode(*fixture()))
+        for index, value in ((4,True),(4,16),(4,1),(6,True),(6,2)):
+            bad=args.copy(); bad[index]=value
+            with self.assertRaises(AssertionError): C.check_session(*bad)
+        for k in (16,1):
+            with self.assertRaises(AssertionError): C.check_session(*session_encode(*session_fixture(k),k=k))
+
+    def test_session_population_mutations_and_raw_retention(self):
+        rows, coverage = session_fixture(1000)
+        def refuses(r, c):
+            with self.assertRaises(AssertionError): C.check_session(*session_encode(r,c,1000))
+        for key in ('k','seed','case','length_case','csv_length','length_bound','csv_index','length_index',
+                    'value0','value1','value2','value3','outer_value','children','target_calls',
+                    'target_returns','outer_returns','normal_reaps','declared_returns','comparisons'):
+            bad=copy.deepcopy(rows); bad[0][key]+=1; refuses(bad,coverage)
+        for key, value in (('visits0',0),('visits2',5),('original_steps',55),('candidate_steps',20001),
+                           ('ret_offset2',125),('length_reads1',1),('length_bytes1',1)):
+            bad=copy.deepcopy(rows); bad[0][key]=value; refuses(bad,coverage)
+        refuses(rows[:-1],coverage); refuses(rows+[rows[-1]],coverage)
+        bad=copy.deepcopy(rows); bad[0],bad[1]=bad[1],bad[0]; refuses(bad,coverage)
+        for key in ('csv_cases','length_cases','csv_declared_heads','csv_declared_edges','csv_returns',
+                    'length_heads','length_edges','length_returns'):
+            bad=copy.deepcopy(coverage); bad[1][key]+=1; refuses(rows,bad)
+        refuses(rows,coverage[:1]); refuses(rows,list(reversed(coverage)))
+        for f, ret in ((0,89),(1,34)):
+            bad=copy.deepcopy(rows)
+            for row in bad[16:]: row['ret_offset'+str(f)]=row['ret_offset'+str(f+2)]=ret
+            refuses(bad,coverage)
+        bad=copy.deepcopy(rows)
+        for key in ('value0','value2','outer_value'): bad[0][key],bad[2][key]=bad[2][key],bad[0][key]
+        self.assertEqual(sum(r['value0'] for r in bad),sum(r['value0'] for r in rows)); refuses(bad,coverage)
+        for row in rows: row['original_steps']=row['candidate_steps']=20000
+        args=session_encode(rows,coverage,1000); got=C.check_session(*args)
+        self.assertEqual(got['rows'],rows); self.assertEqual(got['pairs_table'],args[0])
+        self.assertLess(got['coverage'][0]['csv_observed_heads'],got['coverage'][0]['csv_declared_heads'])
+        bad=args.copy(); bad[2]=bad[2].replace(b'comparisons=1792',b'comparisons=1791')
+        with self.assertRaises(AssertionError): C.check_session(*bad)
+
+    def test_session_request_profile_and_fixed_bounds(self):
+        with tempfile.TemporaryDirectory(dir=R.ROOT/'ignored',prefix='module-session-request-control-') as temporary:
+            raw=Path(temporary)
+            for k in (10,1000):
+                d=raw/f'k{k}'; d.mkdir(); req=session_request(raw,k)
+                self.assertEqual(R.request_shape_session(req),d)
+                with self.assertRaises(AssertionError): R.request_shape(req)
+                for index, value in ((1,'normal-module-state'),(2,'16'),(2,'1'),(2,'010'),(2,'1001'),
+                                     (6,'257'),(8,'81'),(5,str(1<<64)),(7,'4100'),(11,str(d/'other'))):
+                    bad=copy.deepcopy(req); bad['argv'][index]=value
+                    with self.assertRaises(AssertionError): R.request_shape_session(bad)
+                bad=copy.deepcopy(req); bad['pins'].pop(req['argv'][0])
+                with self.assertRaises(AssertionError): R.request_shape_session(bad)
+                reverse=copy.deepcopy(req); reverse['argv'][5:9]=['4224','126','4096','41']
+                self.assertEqual(R.request_shape_session(reverse),d)
+                # Actual exec entry validates its externally selected profile before any OS effect.
+                for invoke, request in ((R.native_exec,req), (R.native_exec_session,dict(req,argv=req['argv'][:1]+['normal-module-state']+req['argv'][2:]))):
+                    data=R.canonical(request)
+                    with patch.object(R,'read',return_value=data), patch.object(R,'pins_ok') as pins, \
+                         patch.object(R.os,'fstat') as fstat, \
+                         patch.object(R.os,'open',side_effect=AssertionError('unexpected open')) as opened, \
+                         patch.object(R.os,'execve',side_effect=AssertionError('unexpected exec')) as executed:
+                        with self.assertRaises(AssertionError): invoke(d/'request.json',R.hashlib.sha256(data).hexdigest())
+                        pins.assert_not_called(); fstat.assert_not_called(); opened.assert_not_called(); executed.assert_not_called()
+                data=R.canonical(req)
+                with patch.object(R,'read',return_value=data), patch.object(R,'request_shape_session') as shape:
+                    with self.assertRaises(AssertionError): R.native_exec_session(d/'request.json','0'*64)
+                    shape.assert_not_called()
+
+    def test_profile_catalog_and_failure_retention(self):
+        for session, ks, status, flag, checker, files, caps in (
+            (False,(16,1),'NATIVE_STATE_PASS','--native-request','check',
+             ('normal-module-pairs.csv','normal-module-coverage.csv'),(32768,1024)),
+            (True,(10,1000),'NATIVE_SESSION_STATE_PASS','--native-session-request','check_session',
+             ('normal-module-session-pairs.csv','normal-module-session-coverage.csv'),(65536,65536))):
+            profile=R._profile(session); rows=R._native_rows(profile)
+            self.assertEqual(tuple(r['k'] for r in rows),ks)
+            self.assertEqual((profile['status'],profile['request_flag'],profile['checker']),(status,flag,checker))
+            self.assertEqual((profile['pair_file'],profile['coverage_file']),files)
+            self.assertEqual((profile['pair_cap'],profile['coverage_cap']),caps)
+            self.assertTrue(all(r['status']=='UNRUN' and r['attempts']==0 and r['required_pairs']==32 and
+                                r['required_normal_reaps']==64 and r['required_target_calls']==256 for r in rows))
+            closed=dict(exit_code=1,termination=None,cleanup_complete=True,reaped_descendants=0)
+            self.assertEqual(R.once(rows[0],lambda:closed),closed)
+            with self.assertRaises(AssertionError): R.closed_ok(rows[0]['closed'])
+            self.assertEqual((rows[0]['status'],rows[0]['attempts'],rows[1]['status'],rows[1]['attempts']),('FAILED',1,'UNRUN',0))
+            with self.assertRaises(AssertionError): R.once(rows[0],lambda:self.fail('retry'))
+            result=dict(status='FAILED',native=rows); R.final_retention(result,{},True)
+            self.assertTrue(result['retention_verified']); self.assertEqual(result['native'],rows)
+        for value in (0,1,None,'session'):
+            with self.assertRaises(AssertionError): R._profile(value)
+
+    def test_session_calibration_union_and_missing_controls(self):
+        modules={name:R.load(name,R.ROOT/R.MODULES[name]) for name in ('legacy','normal','whole')}
+        prior=R._finite_calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
+        manifest=R.calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
+        self.assertEqual(len(prior),159); self.assertEqual(len(R.SESSION_TESTS),4)
+        self.assertEqual({n:v for n,v in manifest.items() if n not in R.SESSION_TESTS},prior)
+        self.assertEqual(set(manifest),set(prior)|set(R.SESSION_TESTS)); self.assertEqual(len(manifest),163)
+        self.assertNotIn(R.IGNORED,manifest)
+        self.assertEqual(set(R.PYTHON_CONTROLS),{n for n in dir(Controls) if n.startswith('test_')})
+        self.assertEqual(len(R.PYTHON_CONTROLS),18)
+        for names in (R.SESSION_TESTS[:-1],R.SESSION_TESTS+(R.SESSION_TESTS[0],),
+                      (next(iter(prior)),)+R.SESSION_TESTS[1:]):
+            with patch.object(R,'SESSION_TESTS',names):
+                with self.assertRaises(AssertionError): R.calibration_manifest(modules['legacy'],modules['normal'],modules['whole'])
+        body=''.join('test '+n+(' - should panic' if panic else '')+' ... ok\n' for n,panic in sorted(manifest.items()))
+        text=('\nrunning 164 tests\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\n\n'
+              'test result: ok. 163 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n').encode()
+        R.calibration_output(text,b'',manifest)
+        for name in R.SESSION_TESTS:
+            line=('test '+name+' ... ok\n').encode()
+            with self.assertRaises(AssertionError): R.calibration_output(text.replace(line,b'',1),b'',manifest)
+            with self.assertRaises(AssertionError): R.calibration_output(text.replace(name.encode(),b'renamed::session',1),b'',manifest)
 
 
 if __name__ == '__main__':

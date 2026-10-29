@@ -34,7 +34,11 @@ NATIVE_SOURCES = (
     'tools/rapid-profiler/native-interval/normal/module/check.rs',
     'tools/rapid-profiler/native-interval/normal/module/check_tests.rs',
     'tools/rapid-profiler/normal-work/module_caller.c',
-    'tools/rapid-profiler/normal-work/module_caller_bytes.rs')
+    'tools/rapid-profiler/normal-work/module_caller_bytes.rs',
+    'tests/support/native_normal_module/session_tests.rs',
+    'tools/rapid-profiler/native-interval/normal/module/session.rs',
+    'tools/rapid-profiler/native-interval/normal/module/session_check.rs',
+    'tools/rapid-profiler/native-interval/normal/module/session_check_tests.rs')
 MODULE_FLAGS = ('-O2', '-fPIC', '-shared', '-nostdlib', '-fno-builtin', '-fno-stack-protector',
     '-fomit-frame-pointer', '-fno-tree-vectorize', '-fno-tree-slp-vectorize', '-fno-if-conversion',
     '-fno-if-conversion2', '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-fcf-protection=none',
@@ -59,6 +63,12 @@ MODULE_TESTS = (
     'normal_module_check::tests::module_rows_join_function_owner_ack_and_all_512_words',
     'normal_module_check::tests::module_report_keeps_global_slots_and_function_local_ranks',
 )
+SESSION_TESTS = (
+    'oracle::native_ordinary::normal_caller::module::session_tests::module_session_profile_and_ready_wire_keep_finite_modes_separate',
+    'oracle::native_ordinary::normal_caller::module::session_tests::module_session_ready_retains_complete_geometry_and_identity',
+    'normal_module_check::session::tests::module_session_batch_checks_history_and_every_journal_word',
+    'normal_module_check::session::tests::module_session_report_reclaim_requires_exact_payloads_and_closed_history',
+)
 SELECTED = tuple('oracle::native_ordinary::selected::tests::' + n for n in (
     'selected_arguments_require_canonical_complete_extent',
     'selected_population_requires_order_counts_and_scalar',
@@ -80,6 +90,12 @@ PYTHON_CONTROLS = (
     'test_original_evidence_pins_and_closure_failure',
     'test_once_only_cohorts_preserve_failed_and_unrun',
     'test_full_control_censuses_refuse_names_and_counts',
+    'test_session_complete_profile_and_canonical_indices',
+    'test_session_framing_and_profile_crossover_refusals',
+    'test_session_population_mutations_and_raw_retention',
+    'test_session_request_profile_and_fixed_bounds',
+    'test_profile_catalog_and_failure_retention',
+    'test_session_calibration_union_and_missing_controls',
 )
 
 MODULES = {
@@ -275,7 +291,7 @@ def caller_geometry(data, symbols):
                 continuations=[35,54,74,97], stores=[39,58,81,100], outer_ret=122)
 
 
-def calibration_manifest(legacy, normal, whole):
+def _finite_calibration_manifest(legacy, normal, whole):
     expected = dict(legacy.CALIBRATION_TESTS)
     groups = (SELECTED, whole.STATE, normal.EXACT_STATE, normal.REFERENCE_WITNESS,
               normal.REFERENCE_GEOMETRY, normal.REFERENCE_CHILD, CSV_TESTS, MODULE_TESTS,
@@ -290,6 +306,15 @@ def calibration_manifest(legacy, normal, whole):
             assert name not in expected
             expected[name] = False
     assert len(expected) == 159 and IGNORED not in expected
+    return expected
+
+
+def calibration_manifest(legacy, normal, whole):
+    expected = _finite_calibration_manifest(legacy, normal, whole)
+    for name in SESSION_TESTS:
+        assert name not in expected
+        expected[name] = False
+    assert len(expected) == 163 and IGNORED not in expected
     return expected
 
 
@@ -320,7 +345,7 @@ def python_output(stdout, stderr):
         assert re.fullmatch(re.escape(name) + r' \(__main__\.Controls(?:\.' + re.escape(name) + r')?\) \.\.\. ok', line)
     tail = lines[len(PYTHON_CONTROLS):]
     assert re.fullmatch('-+', tail[1]) and tail[0] == tail[3] == '' and tail[4] == 'OK'
-    assert re.fullmatch(r'Ran 12 tests in [0-9]+\.[0-9]+s', tail[2])
+    assert re.fullmatch(r'Ran 18 tests in [0-9]+\.[0-9]+s', tail[2])
 
 
 def request_shape(request):
@@ -329,6 +354,19 @@ def request_shape(request):
     assert isinstance(argv, list) and len(argv) == 12 and all(type(x) is str and '\0' not in x for x in argv)
     assert argv[:2] == [str(ROOT/'target/release/frontend-native-oracle'), 'normal-module-state']
     assert argv[2] in ('16','1'); k = int(argv[2])
+    return _request_coordinates(request, argv, k)
+
+
+def request_shape_session(request):
+    assert set(request) == {'argv', 'cwd', 'env', 'stdout', 'stderr', 'pins'}
+    argv = request['argv']
+    assert isinstance(argv, list) and len(argv) == 12 and all(type(x) is str and '\0' not in x for x in argv)
+    assert argv[:2] == [str(ROOT/'target/release/frontend-native-oracle'), 'normal-module-session-state']
+    assert argv[2] in ('10','1000'); k = int(argv[2])
+    return _request_coordinates(request, argv, k)
+
+
+def _request_coordinates(request, argv, k):
     assert all(re.fullmatch('[1-9][0-9]{0,19}', argv[i]) for i in (5,6,7,8))
     csv_va, csv_len, length_va, length_len = map(int,argv[5:9])
     assert 5 <= csv_len <= 256 and 5 <= length_len <= 80
@@ -349,12 +387,20 @@ def request_shape(request):
 
 
 def native_exec(path, expected_hash):
+    return _native_exec(path, expected_hash, request_shape)
+
+
+def native_exec_session(path, expected_hash):
+    return _native_exec(path, expected_hash, request_shape_session)
+
+
+def _native_exec(path, expected_hash, expected_shape):
     """Fixed same-PID limit/redirect/exec branch; the parent owns all waiting."""
     assert re.fullmatch('[0-9a-f]{64}', expected_hash)
     data = read(path, MIB)
     assert hashlib.sha256(data).hexdigest() == expected_hash
     request = json.loads(data)
-    raw = request_shape(request)
+    raw = expected_shape(request)
     assert path == raw/'request.json'
     pins_ok(request['pins'])
     for fd in (0, 1, 2):
@@ -389,12 +435,35 @@ def once(row, invoke):
     return closed
 
 
+def _profile(session):
+    """Only the explicit public flag selects a closed profile; never infer from output."""
+    assert type(session) is bool
+    if session:
+        return dict(k_order=(10,1000), mode='normal-module-session-state',
+                    request_flag='--native-session-request', request_shape=request_shape_session,
+                    checker='check_session', status='NATIVE_SESSION_STATE_PASS',
+                    pair_file='normal-module-session-pairs.csv', coverage_file='normal-module-session-coverage.csv',
+                    pair_cap=65536, coverage_cap=65536)
+    return dict(k_order=(16,1), mode='normal-module-state',
+                request_flag='--native-request', request_shape=request_shape,
+                checker='check', status='NATIVE_STATE_PASS',
+                pair_file='normal-module-pairs.csv', coverage_file='normal-module-coverage.csv',
+                pair_cap=32768, coverage_cap=1024)
+
+
+def _native_rows(profile):
+    return [dict(k=k, status='UNRUN', attempts=0, required_pairs=32,
+                 required_normal_reaps=64, required_target_calls=256) for k in profile['k_order']]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--revision', required=True)
     for name in ('toolchain', 'user-home', 'cargo-home', 'output'):
         ap.add_argument('--' + name, type=Path, required=True)
+    ap.add_argument('--session-absolute', action='store_true')
     a = ap.parse_args()
+    profile = _profile(a.session_absolute)
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     assert HERE == ROOT/'evaluation/ordinary-module-native'
     for p in (ROOT, a.toolchain, a.user_home, a.cargo_home):
@@ -404,10 +473,15 @@ def main():
     assert raw.is_relative_to(ROOT/'ignored') and not raw.exists()
     raw.mkdir(mode=0o700)
     result = dict(status='FAILED', revision=a.revision, scope='Two module bodies under the 123-byte helper; no Rust-caller, performance or full-A5 claim.',
-                  native=[dict(k=k, status='UNRUN', attempts=0, required_pairs=32, required_normal_reaps=64, required_target_calls=256) for k in (16,1)], stages=[])
-    save(raw/'plan.json', dict(revision=a.revision, native=result['native'],
-         mode='normal-module-state', seeds=[1311768467139281696, 18364758542526924135], cases=list(range(1, 17)),
-         native_invocations=2, k_order=[16,1], retries=0, pair_seconds=15, steps_per_child=20000, whole_wall_seconds=510))
+                  native=_native_rows(profile), stages=[])
+    plan = dict(revision=a.revision, native=result['native'],
+         mode=profile['mode'], seeds=[1311768467139281696, 18364758542526924135], cases=list(range(1, 17)),
+         native_invocations=2, k_order=list(profile['k_order']), retries=0, pair_seconds=15, steps_per_child=20000, whole_wall_seconds=510)
+    if a.session_absolute:
+        result.update(profile='session-absolute-v1', pending_owner_controls='UNRUN_SEPARATE_REQUIRED_GATE')
+        result['scope'] = 'Native streaming module body-state under the four-call helper; no pending-owner, Rust-caller, timing, accuracy, performance or full-A5 qualification.'
+        plan['profile'] = result['profile']
+    save(raw/'plan.json', plan)
     safe = True
     artifacts = {}
     result['plan'] = retain(artifacts, raw/'plan.json')
@@ -457,7 +531,7 @@ def main():
         result['affinity'] = affinity
         save(raw/'catalog.json', [dict(k=k, seed=s, case=i+1, csv_length=n, csv_value=v,
              length_case=i%8+1, length_bound=modules['module'].LENGTH_BOUNDS[i%8], length_value=modules['module'].LENGTH_VALUES[i%8])
-             for k in (16,1) for s in modules['module'].SEEDS
+             for k in profile['k_order'] for s in modules['module'].SEEDS
              for i,(n,v) in enumerate(zip(modules['module'].CSV_LENGTHS,modules['module'].CSV_VALUES))])
         result['catalog'] = retain(artifacts, raw/'catalog.json')
         def unchanged():
@@ -576,13 +650,13 @@ def main():
         retain(artifacts,raw/'selection.json')
         for row in result['native']:
             unchanged(); k=row['k']; cohort=raw/f'k{k}';cohort.mkdir()
-            request=dict(argv=[str(test_bins['native']),'normal-module-state',str(k),
+            request=dict(argv=[str(test_bins['native']),profile['mode'],str(k),
                 str(raw/'module-candidate.so'),str(raw/'module-trusted.so'),
                 *[str(n) for pair in selections for n in pair],str(raw/'caller-candidate.so'),str(raw/'caller-trusted.so'),str(cohort/'native-output')],
                 cwd=str(ROOT),env=env,stdout=str(cohort/'stdout.txt'),stderr=str(cohort/'stderr.txt'),pins=before|tool_pins|artifacts)
-            request_shape(request);save(cohort/'request.json',request)
+            profile['request_shape'](request);save(cohort/'request.json',request)
             request_pin=retain(artifacts,cohort/'request.json')
-            argv=[str(tools['python']),'-B',str(HERE/'reproduce.py'),'--native-request',str(cohort/'request.json'),request_pin['sha256']]
+            argv=[str(tools['python']),'-B',str(HERE/'reproduce.py'),profile['request_flag'],str(cohort/'request.json'),request_pin['sha256']]
             save(cohort/'native-command.json',dict(argv=argv,env=env,wall_seconds=510,log_bytes=MIB,
                 cpu_seconds_per_process=480,file_bytes=MIB,core_bytes=0,pair_seconds=15,steps_per_child=20000))
             retain(artifacts,cohort/'native-command.json')
@@ -600,37 +674,37 @@ def main():
                 expected_log=dict(bytes=len(native_log),sha256=closed['private_log_sha256'])
                 retain(artifacts,logs/f'native-k{k}.log',expected_log)
                 retain(artifacts,cohort/'native-parent.log',expected_log)
-                for name in ('stdout.txt','stderr.txt','native-output/normal-module-pairs.csv','native-output/normal-module-coverage.csv'):
+                for name in ('stdout.txt','stderr.txt','native-output/'+profile['pair_file'],'native-output/'+profile['coverage_file']):
                     path=cohort/name
                     if path.exists():retain(artifacts,path,limit=MIB)
             closed_ok(closed);assert native_log==b''
             assert digest(logs/f'native-k{k}.log')['sha256']==closed['private_log_sha256']
             unchanged();assert digest(cohort/'request.json')==request_pin
-            files=(cohort/'native-output'/'normal-module-pairs.csv',cohort/'native-output'/'normal-module-coverage.csv')
+            files=(cohort/'native-output'/profile['pair_file'],cohort/'native-output'/profile['coverage_file'])
             assert set(p.name for p in (cohort/'native-output').iterdir())=={p.name for p in files}
-            parsed=modules['module'].check(read(files[0],32768),read(files[1],1024),
+            parsed=getattr(modules['module'],profile['checker'])(read(files[0],profile['pair_cap']),read(files[1],profile['coverage_cap']),
                 read(cohort/'stdout.txt',1024),read(cohort/'stderr.txt',MIB),k,bodies,csv_index)
             for path,data in ((files[0],parsed['pairs_table']),(files[1],parsed['coverage_table']),
                               (cohort/'stdout.txt',parsed['terminal']),(cohort/'stderr.txt',b'')):
                 retain(artifacts,path,dict(bytes=len(data),sha256=hashlib.sha256(data).hexdigest()))
             unchanged()
-            row.update(status='NATIVE_STATE_PASS',comparisons=parsed['comparisons'],pairs=32,normal_reaps=64,
+            row.update(status=profile['status'],comparisons=parsed['comparisons'],pairs=32,normal_reaps=64,
                 target_calls=256,target_returns=256,outer_returns=64,rows=parsed['rows'],coverage=parsed['coverage'],source_attested=parsed['source_attested'])
         unchanged(); save(raw/'sources-after.json', before)
         result['sources_after'] = retain(artifacts, raw/'sources-after.json')
-        result['status'] = 'NATIVE_STATE_PASS'
+        result['status'] = profile['status']
     except BaseException as error:
         result['error'] = type(error).__name__
         # Never relabel a failed final closure/source check after printed success.
         # Completed earlier cohorts remain explicit; overall acceptance still fails.
         for row in result['native']:
-            if row['attempts'] and row['status'] != 'NATIVE_STATE_PASS': row['status'] = 'FAILED'
+            if row['attempts'] and row['status'] != profile['status']: row['status'] = 'FAILED'
     finally:
         final_retention(result, artifacts, safe)
         save(raw/'result.json', result)
     print(json.dumps(dict(status=result['status'],cohorts=[{key:row[key] for key in ('k','status','attempts')} for row in result['native']],
           result_sha256=digest(raw/'result.json')['sha256'],scope='Module native state only; no performance/full-A5 claim'),sort_keys=True))
-    return 0 if result['status'] == 'NATIVE_STATE_PASS' else 1
+    return 0 if result['status'] == profile['status'] else 1
 
 
 if __name__ == '__main__':
@@ -639,5 +713,11 @@ if __name__ == '__main__':
             native_exec(Path(sys.argv[2]), sys.argv[3])
         except BaseException as error:
             print('module-native exec FAILED: '+type(error).__name__, file=sys.stderr, flush=True)
+            raise SystemExit(127)
+    if len(sys.argv) == 4 and sys.argv[1] == '--native-session-request':
+        try:
+            native_exec_session(Path(sys.argv[2]), sys.argv[3])
+        except BaseException as error:
+            print('module-session-native exec FAILED: '+type(error).__name__, file=sys.stderr, flush=True)
             raise SystemExit(127)
     raise SystemExit(main())

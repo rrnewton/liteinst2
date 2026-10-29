@@ -168,6 +168,8 @@ pub(super) fn records(
         );
     }
 }
+#[path = "session_check.rs"]
+pub(super) mod session;
 #[cfg(test)]
 #[path = "check_tests.rs"]
 mod tests;

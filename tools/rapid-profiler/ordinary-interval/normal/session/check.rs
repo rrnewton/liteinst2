@@ -302,7 +302,7 @@ fn owner_slot(owner: RawIntervalOwner, slots: &mut BTreeMap<u64, usize>, k: usiz
         RawIntervalOwner::InitialDisarmed | RawIntervalOwner::Removed { .. } => (),
     }
 }
-fn check_journal(records: &[NormalRecord], page: &[u64], tid: u64) {
+pub(in crate::normal) fn check_journal(records: &[NormalRecord], page: &[u64], tid: u64) {
     assert!(!records.is_empty() && records.len() <= 4);
     assert_eq!(page.len(), 512);
     assert_eq!(&page[..4], &[records.len() as u64 * 2, 0, tid, 0]);

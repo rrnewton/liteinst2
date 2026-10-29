@@ -6,7 +6,7 @@ use std::time::Instant;
 
 #[derive(Clone, Copy)]
 #[repr(usize)]
-pub(super) enum Phase {
+pub(in crate::normal) enum Phase {
     Poll,
     PollReturned,
     PollArm,
@@ -36,7 +36,7 @@ const NAMES: [&str; 12] = [
 ];
 
 #[derive(Clone, Copy, Default)]
-pub(super) struct State {
+pub(in crate::normal) struct State {
     // pending: 0 none, 1 CALL, 2 FLUSH, 3 unexpected T1 STOP. No input/IDs.
     // before/after are loop endpoint snapshots, not a concurrent worker view.
     pub pending: u8,
@@ -180,15 +180,15 @@ struct Iteration {
     progress: bool,
 }
 #[derive(Default)]
-pub(super) struct Trace {
+pub(in crate::normal) struct Trace {
     last: Option<Iteration>,
     current: Option<Iteration>,
 }
 impl Trace {
-    pub(super) fn begin(&mut self, observed: Instant, state: State) {
+    pub(in crate::normal) fn begin(&mut self, observed: Instant, state: State) {
         self.begin_with(observed, state, Bracket::read());
     }
-    pub(super) fn refused_poll(&mut self, observed: Instant, state: State) {
+    pub(in crate::normal) fn refused_poll(&mut self, observed: Instant, state: State) {
         self.begin(observed, state);
         self.decision("refused");
     }
@@ -210,37 +210,37 @@ impl Trace {
             progress: false,
         });
     }
-    pub(super) fn at(&mut self, phase: Phase, at: Instant) {
+    pub(in crate::normal) fn at(&mut self, phase: Phase, at: Instant) {
         if let Some(current) = &mut self.current {
             current.marks[phase as usize] = Some(at);
         }
     }
-    pub(super) fn mark(&mut self, phase: Phase) {
+    pub(in crate::normal) fn mark(&mut self, phase: Phase) {
         self.at(phase, Instant::now());
     }
-    pub(super) fn decision(&mut self, name: &'static str) {
+    pub(in crate::normal) fn decision(&mut self, name: &'static str) {
         if let Some(current) = &mut self.current {
             current.decision = name;
         }
     }
-    pub(super) fn reply(&mut self, name: &'static str, worker: usize, calls: usize) {
+    pub(in crate::normal) fn reply(&mut self, name: &'static str, worker: usize, calls: usize) {
         if let Some(current) = &mut self.current {
             current.reply = name;
             current.worker = worker;
             current.reply_calls = calls;
         }
     }
-    pub(super) fn command(&mut self, name: &'static str) {
+    pub(in crate::normal) fn command(&mut self, name: &'static str) {
         if let Some(current) = &mut self.current {
             current.command = name;
         }
     }
-    pub(super) fn progress(&mut self, value: bool) {
+    pub(in crate::normal) fn progress(&mut self, value: bool) {
         if let Some(current) = &mut self.current {
             current.progress = value;
         }
     }
-    pub(super) fn complete(&mut self, state: State) {
+    pub(in crate::normal) fn complete(&mut self, state: State) {
         self.complete_with(state, Bracket::read());
     }
     fn complete_with(&mut self, state: State, sample: Bracket) {
@@ -254,7 +254,7 @@ impl Trace {
             current.after = state;
         }
     }
-    pub(super) fn failure(&mut self) -> String {
+    pub(in crate::normal) fn failure(&mut self) -> String {
         // Keep the prior complete iteration; a failed poll must not replace it.
         if self.current.is_some() {
             self.end_with(Bracket::read(), None);
