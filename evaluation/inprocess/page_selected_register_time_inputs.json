@@ -48,10 +48,10 @@
   "scope": "Exact reviewed mechanism and current committed build/context. A later source successor requires explicit row rebinding; the runtime revision is separately checked by --expect-revision.",
   "sources": [
     {
-      "bytes": 7592,
+      "bytes": 7782,
       "origin": "committed composition input",
       "path": "evaluation/inprocess/checks.py",
-      "sha256": "81f439c54c5a14498621b24c0a131b4d494394ce3c185d355743b8b16d8e9e23"
+      "sha256": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39"
     },
     {
       "bytes": 29973,
@@ -264,16 +264,16 @@
       "sha256": "1a6476c364586b1563701e1a82484eb63ac907e0a33508b392bc69fc11f88d7a"
     },
     {
-      "bytes": 1711,
+      "bytes": 1773,
       "origin": "timing V2 3842a4be",
       "path": "tools/page-entry/selected/maps_phase.h",
-      "sha256": "69126941704abc1015d4a7f0aaf6076395203d75cf3d32c27844a2354db029fe"
+      "sha256": "0b5197a0fefcef50567792970ffd6bcb62d58a410ae12710224f11042d4fe7ef"
     },
     {
-      "bytes": 7480,
+      "bytes": 7849,
       "origin": "timing V2 3842a4be",
       "path": "tools/page-entry/selected/maps_phase.inc",
-      "sha256": "42acd97b5b004b35416be99d58d29343d99636efcad2e7615538340a22871b2b"
+      "sha256": "8c4fcdfa95a22f65f7c902f13ef750089dbbb93e8463b40733e2d74949bef9f4"
     },
     {
       "bytes": 6351,
@@ -330,10 +330,10 @@
       "sha256": "cdc38ac5592beadef79472d0d366baef4911316b4f779bf65aa7aaf1e6a14f4b"
     },
     {
-      "bytes": 30804,
+      "bytes": 31042,
       "origin": "timing V2 3842a4be; TRACE d2f00cd3/report-route36c9 composition",
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "6debbb2b242437fb37781c94d0303009a400dd75822c89a1d03355924ce4bee8"
+      "sha256": "8711e47b5dd17686e21b2f2c88d8d5ab3d7a4a77cd996ed711b59bc3efba0a31"
     },
     {
       "bytes": 32527,
