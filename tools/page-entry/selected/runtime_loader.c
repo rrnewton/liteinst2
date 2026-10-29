@@ -154,6 +154,8 @@ static void report(unsigned status,unsigned code,long detail) {
     uint64_t patches=0;
     for(unsigned i=0;i<selected_oneshot_used;i++)patches+=selected_oneshot_owners[i].state.published==1;
     field(&w,",\"source_patches\":",patches);
+#elif defined(LI2_TF_SEALED_CUSTODY)
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_sealed_page_custody\",\"source_patches\":0");
 #elif defined(LI2_TF_SAME_PAGE_LEASE)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_same_page_tf_lease\",\"source_patches\":0");
 #elif defined(LI2_CPUID_NX_ONLY)
@@ -338,6 +340,9 @@ static int ordinary(long n) {
     }
 }
 static void dispatch_operation(long n,ucontext_t *context) {
+#ifdef LI2_TF_SEALED_CUSTODY
+    li2_page_custody_discard(LI2_CUSTODY_SYSCALL);
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_end(); /* Even a query syscall crosses the application boundary. */
 #endif

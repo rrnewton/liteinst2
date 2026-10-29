@@ -80,3 +80,6 @@ int li2_lifecycle_fetch_rx_commit(const struct li2_fetch_ref *ref,
     rx_view.after_sequence=fetch.progress.sequence;
     __asm__ volatile("":::"memory");rx_view.phase=LI2_RX_COMMITTED;return 0;
 }
+#ifdef LI2_TF_SEALED_CUSTODY
+#include "fetch_page_custody.inc"
+#endif

@@ -92,6 +92,7 @@ class Reader(old.Reader):
   self.data,self.layout,self.types=data,layout,layout['types'];self.rt=self.types[record];self.ft=self.types['rn_frame'];self.ucn=layout['uc_bytes'];self.go=layout['offsets']['greg'];self.fo=layout['offsets']['fp_pointer']
   names={'rn_frame','tfi_endpoint',record}
   if record=='tfi_record':names.update('tfi_event tfi_trace_frame tfi_owner li2_tf_chain li2_tf_trace_entry li2_tf_chain_slot li2_tf_owner li2_step_owner li2_step_request li2_step_page li2_step_frame li2_chain_fetch li2_chain_release li2_tf_continuation li2_tf_same_page li2_fetch_rx_view li2_fetch_ref li2_fetch_progress li2_fetch_page li2_fetch_backing stat li2_fetch_map_progress li2_maps_observation li2_lifecycle_page_view li2_rseq_state li2_rseq_transaction li2_rseq_data li2_write_footprint li2_decoded li2_tf_classification'.split())
+  names=self.extra_names(names)
   need(set(self.types)==names,'exact source-defined emitted layout type inventory')
   need(type(self.ucn)is int and 0<self.ucn<=2048 and len(data)==self.rt['bytes']<16<<20 and layout['offsets']==dict(greg=40,fp_pointer=224,mask=296,stack_sp=16,stack_flags=24,stack_size=32),'exact complete native x86-64 UC/DWARF layout')
   need(layout['siginfo']==dict(bytes=128,offsets=dict(si_signo=0,si_errno=4,si_code=8,si_addr=16,si_pid=16,si_uid=20),widths=dict(si_signo=4,si_errno=4,si_code=4,si_addr=8,si_pid=4,si_uid=4)),'actual complete signal ABI')
@@ -105,6 +106,7 @@ class Reader(old.Reader):
    forms['tfi_event']=dict(h=128,counts_before=128,counts_after=128,before=z('tfi_trace_frame'),after=z('tfi_trace_frame'),owner_before=z('tfi_owner'),owner_after=z('tfi_owner'),transfer=z('li2_fetch_rx_view'),rseq_before=z('li2_rseq_state'),rseq_after=z('li2_rseq_state'))
    forms['stat']=dict(st_dev=8,st_ino=8,st_nlink=8,st_mode=4,st_uid=4,st_gid=4,__pad0=4,st_rdev=8,st_size=8,st_blksize=8,st_blocks=8,st_atim=16,st_mtim=16,st_ctim=16,__glibc_reserved=24)
    forms[record]=dict(h=512,xstate=128,hardware=56,endpoints=2*z('tfi_endpoint'),read=z('tfi_endpoint'),read_decoded=z('li2_decoded'),read_fetch=z('li2_chain_fetch'),read_released=z('li2_fetch_progress'),read_maps=z('li2_fetch_map_progress'),read_page=z('li2_lifecycle_page_view'),read_rseq=z('li2_rseq_state'),opening=z('li2_tf_chain_slot'),closing=z('li2_tf_chain_slot'),body_lease_before=z('li2_tf_same_page'),closed_lease=z('li2_tf_same_page'),opened=frame,last_before=frame,last_after=frame,events=256*z('tfi_event'),terminal_chain=z('li2_tf_chain'),terminal_rseq=z('li2_rseq_state'),terminal_source=24576,terminal_data=16384,terminal_page=4096)
+  self.extra_forms(forms)
   for name,shape in self.types.items():
    need(type(shape)is dict and set(shape)=={'bytes','fields'}and type(shape['bytes'])is int and shape['bytes']>0,'actual typed shape')
    last=0
@@ -115,6 +117,16 @@ class Reader(old.Reader):
   need(self.ft['bytes']==frame and all(self.ft['fields'][k]['offset']==sum(list(forms['rn_frame'].values())[:i])for i,k in enumerate(forms['rn_frame'])),'exact complete original raw frame')
   if record=='tfi_record':need(z('stat')==144 and all(self.types['stat']['fields'][k]['offset']==sum(list(forms['stat'].values())[:i])for i,k in enumerate(forms['stat'])),'complete fixed x86-64 stat layout and every field extent')
   self.padding_tree(data,record)
+ def extra_names(self,names):return names
+ def extra_forms(self,forms):pass
+ def body_prepare(self,image,pid,opening,anchor,page_identity):pass
+ def body_event(self,index,row):pass
+ def body_complete(self):return {}
+ def preparation(self,b,ref):self.maps(self.field(b,'li2_fetch_progress','preparation'))
+ def transfer_maps(self,tx,index):
+  I,F=self.integer,self.field;vt='li2_fetch_rx_view'
+  self.maps(F(tx,vt,'maps'));o=F(F(tx,vt,'maps'),'li2_fetch_map_progress','observation')
+  need(I(o,'li2_maps_observation','kind')==I(o,'li2_maps_observation','io_performed')==1,'actual fresh RX acquisition at each body trace')
  def padding(self,b,t):
   t=self.types[t]if isinstance(t,str)else t;at=0
   for f in sorted(t['fields'].values(),key=lambda f:f['offset']):
@@ -185,7 +197,7 @@ class Reader(old.Reader):
   I=self.integer;t='li2_fetch_progress';seq=I(ref,'li2_fetch_ref','sequence')
   self.padding(b,t);self.padding(ref,'li2_fetch_ref')
   need(type(fresh)is bool and I(ref,'li2_fetch_ref','owner')>0 and seq>0 and I(b,t,'sequence')==seq and tuple(I(b,t,k)for k in('held','complete','first_error','identity_observed','first_detail','pages_copied','bytes_copied'))==(held,1,0,1,0,1,n)and I(b,t,'last_backing_page')==0,'actual held/released singleton and complete copied source')
-  self.maps(self.field(b,t,'preparation'))
+  self.preparation(b,ref)
   if fresh:need(held==1 and I(b,t,'validation_calls')==I(b,t,'last_backing_observed')==0 and not any(self.field(b,t,'validation')),'exact new prepare/transfer progress before any later validation')
   else:
    need(I(b,t,'validation_calls')>0 and I(b,t,'last_backing_observed')==1,'actual positive original/released validation prefix');self.maps(self.field(b,t,'validation'))
@@ -272,9 +284,9 @@ def control_output(data,image,control,go_fd,notify_fd,cpu):
  need(ids['cpu']==cpu and data[:16384]==expected,'every complete controlled output byte, with only its independently supplied literal control input')
  return dict(output_validated=True,protocol_accepted=False,control=control,bytes=len(data),sha256=hashlib.sha256(data).hexdigest(),count=1,flags=states(image,go_fd)[-1][1],cpu=cpu,node=ids['node'],mm_cid=ids['mm_cid'])
 
-def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
+def _gated(data,layout,image,pid,exit_status,go,notify,cpu,reader=Reader):
  fixed(image['count'],go,notify,cpu);need(type(pid)is int and pid>0 and type(exit_status)is int and exit_status==0,'actual reaped successful observed gated process')
- r=Reader(data,layout,'tfi_record');I,F=r.integer,r.field;h=q(F(data,r.rt,'h'));N=image['count'];states_=states(image,go)
+ r=reader(data,layout,'tfi_record');I,F=r.integer,r.field;h=q(F(data,r.rt,'h'));N=image['count'];states_=states(image,go)
  need(h[:6]==(MAGIC,2,len(data),N,r.ucn,r.types['tfi_event']['bytes'])and h[6]&0xe7==0xe7 and h[7:15]==(1,0,1,0,0,0,N,0)and h[15]>0 and h[16]==512*1024 and h[17:22]==(1,1,pid,pid,0)and not any(h[22:]),'complete original gated record and exact N rows/terminal success')
  hw=struct.unpack('<14I',F(data,r.rt,'hardware'));need(hw[:2]==(1,0)and hw[2]>=13 and hw[8]&0x18000000==0x18000000 and hw[11]&0x40010000==0x40010000,'actual pre-arm complete required hardware')
  components=r.components(F(data,r.rt,'xstate'));nt=r.types['tfi_endpoint']['bytes'];endbytes=F(data,r.rt,'endpoints')
@@ -322,6 +334,7 @@ def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
  need(z==16 and body_anchor[0]==backing_anchor[0]and body_anchor[1][:a]==backing_anchor[1][:a]and body_anchor[1][a+z:]==backing_anchor[1][a+z:],'same READ/BODY descriptor and every raw stat byte except source-mutable atime')
  backing_anchor=body_anchor
  need(body_identity==(read_identity[0],read_identity[1]+1,read_identity[2]),'adjacent initial WAIT/BODY pages retain exact append generations in one main allocation')
+ r.body_prepare(image,pid,opening,backing_anchor,body_identity)
  identity=None
  def registration(b):
   nonlocal identity
@@ -356,6 +369,7 @@ def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
   bf=r.compact(F(row,et,'before'),states_[i+1],nextpc,0x100,h[15],h[16],ends[0]['h'][2]);af=r.compact(F(row,et,'after'),states_[i+1],nextpc,0x100 if transfer else 0,h[15],h[16],ends[0]['h'][2])
   changed=bytearray(bf['raw']);tf=r.types['tfi_trace_frame'];put(changed,tf['fields']['greg']['offset']+17*8,states_[i+1][1]|(0x100 if transfer else 0))
   need(bytes(changed)==af['raw'],'entire retained local TRACE bytes unchanged except actual final TF clear')
+  r.body_event(i,row)
   ob,oa=F(row,et,'owner_before'),F(row,et,'owner_after');old_event=I(opening,st,'event_id')if i==0 else previous[0]
   bv,bseq,brq,bref,bpr=owner(ob,pc,states_[i][1],1,3,old_event,0 if i==0 else pc,0 if i==0 else states_[i][1]|0x100)
   av,aseq,arq,aref,apr=owner(oa,nextpc if transfer else pc,states_[i+1 if transfer else i][1],int(transfer),3 if transfer else 5,bc[0]if transfer else old_event,nextpc,states_[i+1][1]|0x100)
@@ -372,8 +386,7 @@ def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
   tx=F(row,et,'transfer');vt='li2_fetch_rx_view'
   need(tuple(I(tx,vt,k)for k in('phase','complete','result','before_sequence','after_sequence','pc','length','pid','tid'))==(4 if transfer else 5,1,0,bseq,bseq+1 if transfer else 0,nextpc,15,pid,pid)and I(tx,vt,'serial')>0 and F(tx,vt,'bytes')==bytes.fromhex(image['source_hex'])[nextpc-MAIN:nextpc-MAIN+15],'actual complete same-page staging/commit or cancel and full source window')
   need(aseq==bseq+int(transfer)and I(aref,'li2_fetch_ref','owner')==I(bref,'li2_fetch_ref','owner'),'exact single-use borrow sequence; no fabricated owner turnover')
-  r.maps(F(tx,vt,'maps'));o=F(F(tx,vt,'maps'),'li2_fetch_map_progress','observation')
-  need(I(o,'li2_maps_observation','kind')==I(o,'li2_maps_observation','io_performed')==1,'actual fresh RX acquisition at each body trace')
+  r.transfer_maps(tx,i)
   r.padding(tx,vt);tpg=F(tx,vt,'page');backing=r.backing(F(tx,vt,'backing'),image['backing'],backing_anchor);r.page(tpg,BODY,backing,body_identity)
   rb,ra=F(row,et,'rseq_before'),F(row,et,'rseq_after');registration(rb);registration(ra);rt='li2_rseq_state'
   checked_next=transfer
@@ -453,15 +466,15 @@ def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
  rs=F(data,r.rt,'terminal_rseq');registration(rs)
  need(I(tc,'li2_tf_chain','initialized')==1 and all(I(tc,'li2_tf_chain',k)==0 for k in('pending','in_handler','first_error','first_detail','unexpected_events'))and F(data,r.rt,'terminal_source')==bytes.fromhex(image['source_hex'])and F(data,r.rt,'terminal_data')==memory(image,'gated',go,notify,page,True)and F(data,r.rt,'terminal_page')==page,'complete successful terminal/no pending owner/source/full data/rseq page')
  terminal_lease=F(tc,'li2_tf_chain','lease');need(I(terminal_lease,lt,'origin_active')==0 and I(terminal_lease,lt,'transfers')>=last_counts[10]and I(terminal_lease,lt,'closed_leases')>=last_counts[11],'every later actual lease also terminates under the unchanged owner contract')
- return r,ends,dict(accepted=True,operation_status='completed',count=N,exit=0,nx_endpoints=2,read_ingress_frames=1,read_return_body_protection=1,trace_records=N,body_transfers=N-1,body_real_closes=1,body_established_lease_closes=int(N==256),full_fp_endpoints=2,full_fp_per_trace=False,cpu=cpu)
+ return r,ends,dict(accepted=True,operation_status='completed',count=N,exit=0,nx_endpoints=2,read_ingress_frames=1,read_return_body_protection=1,trace_records=N,body_transfers=N-1,body_real_closes=1,body_established_lease_closes=int(N==256),full_fp_endpoints=2,full_fp_per_trace=False,cpu=cpu,**r.body_complete())
 
-def gated(data,layout,image,pid,exit_status,go_fd,notify_fd,cpu):
- return _gated(data,layout,image,pid,exit_status,go_fd,notify_fd,cpu)[2]
+def gated(data,layout,image,pid,exit_status,go_fd,notify_fd,cpu,reader=Reader):
+ return _gated(data,layout,image,pid,exit_status,go_fd,notify_fd,cpu,reader)[2]
 
-def pair(nrec,grec,nout,gout,layouts,image,npid,gpid,cpu,native_fds,gated_fds):
+def pair(nrec,grec,nout,gout,layouts,image,npid,gpid,cpu,native_fds,gated_fds,reader=Reader):
  need(type(layouts)is dict and set(layouts)=={'native','gated'}and type(npid)is type(gpid)is int and npid!=gpid and all(type(x)in(tuple,list)and len(x)==2 for x in(native_fds,gated_fds)),'two independent actual subjects and exact paired layout inputs')
  nr,nf,n=_native(nrec,layouts['native'],image,npid,0,*native_fds,cpu)
- gr,gf,g=_gated(grec,layouts['gated'],image,gpid,0,*gated_fds,cpu)
+ gr,gf,g=_gated(grec,layouts['gated'],image,gpid,0,*gated_fds,cpu,reader)
  no=output(nout,image,'reference',*native_fds,cpu);go=output(gout,image,'gated',*gated_fds,cpu)
  need(layouts['native']['offsets']==layouts['gated']['offsets']and layouts['native']['siginfo']==layouts['gated']['siginfo']and nr.ucn==gr.ucn and nr.field(nrec,nr.rt,'xstate')==gr.field(grec,gr.rt,'xstate')and word(nr.field(nrec,nr.rt,'h'),80)==word(gr.field(grec,gr.rt,'h'),48),'actual same UC/FP layout/XCR0 in both independently executed lanes')
  for a,b in zip(nf,gf):
@@ -505,7 +518,7 @@ def capture_identity(snapshot,size,child=False):
   need(type(snapshot['fd'])is int and snapshot['fd']==1 and type(snapshot['query_duplicate'])is int and snapshot['query_duplicate']==snapshot['parent_fd']>=100 and snapshot['query_duplicate_closed']is True and type(snapshot['statfs_result'])is int and snapshot['statfs_result']==0 and len(fs)==120 and fs.hex()==snapshot['statfs_hex']and word(fs,0)==0x9123683e,'actual closed same-OFD query and full Btrfs statfs result')
  return ids
 
-def terminal(row,stdout,stderr,record,preparation,*,image,layout,cpu,expected_command,profile):
+def terminal(row,stdout,stderr,record,preparation,*,image,layout,cpu,expected_command,profile,reader=Reader,report_reader=reports):
  """Strict callback for pipe_run.invoke, with an explicitly bound profile.
 
  expected_command is the immutable original command(...) template retained
@@ -561,14 +574,14 @@ def terminal(row,stdout,stderr,record,preparation,*,image,layout,cpu,expected_co
   result=native(record,layout,image,row['pid'],0,go,notify,cpu)
  elif profile=='gated-observed':
   need(layout is not None,'explicit observed gated layout')
-  result=gated(record,layout,image,row['pid'],0,go,notify,cpu)
+  result=gated(record,layout,image,row['pid'],0,go,notify,cpu,reader)
  else:
   need(layout is None and record==b'','explicit unobserved timing profile has no invented binary observation')
   if profile=='native-timing':need(stderr==b'','native timing stderr empty')
   result=dict(accepted=True,operation_status='completed',endpoint_frame_claim=False,body_transfer_claim=False)
  if mode=='gated':
-  parsed=reports.reports(stderr);reports.completed(parsed,row['pid']);counts=semantic_counts(parsed)
-  if profile=='gated-observed':reports.join(parsed,Reader(record,layout,'tfi_record'),record)
+  parsed=report_reader.reports(stderr);report_reader.completed(parsed,row['pid']);counts=semantic_counts(parsed)
+  if profile=='gated-observed':report_reader.join(parsed,reader(record,layout,'tfi_record'),record)
  result.update(profile=profile,operations=image['count'],pid=row['pid'],cpu=cpu,output=out,output_bytes=out['bytes'],output_sha256=out['sha256'])
  if parsed is not None:
   result.update(reports=parsed,global_semantic_counts=counts,global_semantic_sha256=hashlib.sha256(json.dumps(counts,sort_keys=True,separators=(',',':')).encode()).hexdigest())

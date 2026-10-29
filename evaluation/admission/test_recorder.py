@@ -156,6 +156,32 @@ class RecorderTests(unittest.TestCase):
         for invalid in ([], identities + identities[:1], [1], tuple(identities)):
             with self.assertRaises(ValueError):
                 parallel.partition(invalid, 1)
+        # The long inventory module gets one whole worker without changing coverage.
+        heavy = ['test_main813_inventory.Inventory.test_one',
+                 'test_main813_inventory.Inventory.test_two']
+        mixed = identities[:1] + heavy[:1] + identities[1:3] + heavy[1:] + identities[3:]
+        self.assertEqual(parallel.partition(mixed, 1), [mixed])
+        self.assertEqual(parallel.partition(mixed, 2), [heavy, identities])
+        self.assertEqual(parallel.partition(mixed, 3),
+                         [heavy, identities[:2] + identities[3:4], identities[2:3] + identities[4:]])
+        self.assertEqual(parallel.partition(mixed, 4),
+                         [heavy, identities[:2] + identities[4:], identities[2:3], identities[3:4]])
+        for workers in (2, 3, 4):
+            dedicated = parallel.partition(mixed, workers)
+            self.assertEqual(sorted(name for group in dedicated for name in group), sorted(mixed))
+            self.assertTrue(all(dedicated))
+            for group in dedicated:
+                self.assertEqual(group, [name for name in mixed if name in group])
+        renamed = [name.replace('test_main813_inventory.', 'test_main813_inventory_extra.')
+                   for name in mixed]
+        renamed_heavy = [name.replace('test_main813_inventory.', 'test_main813_inventory_extra.')
+                         for name in heavy]
+        self.assertEqual(parallel.partition(renamed, 4),
+                         [identities[:2] + identities[4:], renamed_heavy, identities[2:3], identities[3:4]])
+        self.assertEqual(parallel.partition(heavy, 1), [heavy])
+        for population, workers in ((heavy, 2), (heavy + identities[:1], 3), (mixed, 0)):
+            with self.assertRaises(ValueError):
+                parallel.partition(population, workers)
         events = []
         class ParallelSuccess(unittest.TestCase):
             @classmethod

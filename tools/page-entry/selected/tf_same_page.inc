@@ -45,7 +45,13 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
     /* Entry progress precedes the fresh stage validation observations. */
     const struct li2_fetch_progress previous_fetch=s->fetch.progress;
     const struct li2_fetch_rx_view *v=0;
+#ifdef LI2_TF_SEALED_CUSTODY
+    const struct li2_custody_owner custody_owner={.chain=c,.owner=p,.slot=s->index,
+        .generation=s->generation,.event=c->event_id};
+    int e=li2_lifecycle_fetch_rx_stage_custody(&s->fetch.ref,pc,&custody_owner,&v);
+#else
     int e=li2_lifecycle_fetch_rx_stage(&s->fetch.ref,pc,&v);
+#endif
     l->transfer=*li2_lifecycle_fetch_rx_progress();chain_observe(&s->fetch);
     chain_need(c,!e && v && v->phase==LI2_RX_STAGED && v->complete &&
         v->before_sequence==s->fetch.ref.sequence && v->pid==c->session->pid &&
@@ -77,6 +83,9 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
                               LI2_CHAIN_DECODE,22);
     }
     if(!eligible) {
+#ifdef LI2_TF_SEALED_CUSTODY
+        li2_page_custody_discard(LI2_CUSTODY_MISS);
+#endif
         e=li2_lifecycle_fetch_rx_cancel(&s->fetch.ref,v);
         l->transfer=*li2_lifecycle_fetch_rx_progress();
         chain_need(c,!e && chain_frame_equal(&p->after,uc,0),LI2_CHAIN_FRAME,e);
@@ -103,7 +112,11 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
     /* request.pages/session/hooks and every actual open/revoke result are
        untouched. Even a nested event between these two ref stores revokes the
        original real page; stale authentication is terminal, never a release. */
+#ifdef LI2_TF_SEALED_CUSTODY
+    e=li2_lifecycle_fetch_rx_commit_custody(&s->fetch.ref,v,&custody_owner,&s->fetch.ref);
+#else
     e=li2_lifecycle_fetch_rx_commit(&s->fetch.ref,v,&s->fetch.ref);
+#endif
     l->transfer=*li2_lifecycle_fetch_rx_progress();chain_observe(&s->fetch);
     chain_need(c,!e && l->transfer.phase==LI2_RX_COMMITTED &&
         l->transfer.after_sequence==s->fetch.ref.sequence && s->fetch.progress.held &&
@@ -117,7 +130,12 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
     ++l->transfers;chain_stats(c);
     chain_need(c,chain_frame_equal(&p->after,uc,0),LI2_CHAIN_FRAME,22);
     /* TF stays set; no application register, flag, mask or FP byte was edited. */
-    l->phase=LI2_LEASE_RUNNING;p->in_handler=0;c->in_handler=0;return 1;
+    l->phase=LI2_LEASE_RUNNING;p->in_handler=0;c->in_handler=0;
+#ifdef LI2_TF_SEALED_CUSTODY
+    e=li2_lifecycle_fetch_rx_publish_custody(&s->fetch.ref,v,&custody_owner);
+    chain_need(c,!e,LI2_CHAIN_PREPARE,e);
+#endif
+    return 1;
 }
 static void chain_same_page_closed(struct li2_tf_chain *c,const struct li2_tf_chain_slot *s) {
     struct li2_tf_same_page *l=&c->lease;
