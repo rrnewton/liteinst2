@@ -33,3 +33,11 @@ qualification is pending. This finite sequential module does not establish
 nested/general module support, whole-application coverage, accuracy or full A5.
 Earlier fixed five strict 2 ms results remain FAILED, PASS, PASS, FAILED, PASS;
 this is a different functional experiment and does not add a sixth attempt.
+
+After merging main 5a0bcf651e6b41d318a6202fb061c9fcd8351af0, all seven
+checks passed at afe0629e3bd77d210ed0aba4a370586809494dfd: workspace
+3,160 passed, zero failed, 36 ignored in 338.192 seconds; serial launch 1,039;
+staged allocation three; prefixed-pun 36. The source, functional driver and
+custody helpers are unchanged from the functional revision, and all 84 original
+retained pins still match. merged-checks.json records the exact commands and
+closure. This does not claim the separate admission evaluation pipeline ran.
