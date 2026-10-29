@@ -334,6 +334,36 @@ def loader_mmap(row, previous):
     return out, (length, prot, off)
 
 
+def extent_fragments(image, maps, pc, size, file_length, executable=True, mapped_only=False):
+    # Partition at every ownership boundary. A partial MAP_FIXED override must
+    # never disappear into a whole-span LOAD fallback. File aliases are allowed;
+    # ambiguous virtual ownership is not. Callers validate complete maps first.
+    assert 0 < size <= MAX_FILE and -(1 << 63) < pc <= U64
+    assert (pc & U64) <= U64 - size, 'view address overflow'
+    end = pc + size
+    boundaries = {pc, end}
+    ranges = [(r['va'], r['length']) for r in maps]
+    ranges += [(p[3], p[5]) for p in image['rows'] if p[0] == 1]
+    for start, length in ranges:
+        boundaries.update(edge for edge in (start, start + length) if pc < edge < end)
+    points = sorted(boundaries)
+    result = []
+    for low, high in zip(points, points[1:]):
+        rows = [r for r in maps if r['va'] <= low and high <= r['va'] + r['length']]
+        assert len(rows) <= 1, 'ambiguous mapped fragment'
+        mapping = rows[0] if rows else None
+        if mapping is not None:
+            assert not executable or mapping['prot'] & 4, 'executable mapped fragment'
+            assert not mapped_only or mapping['kind'] == 'trampoline', 'trampoline fragment owner'
+            at = mapping['offset'] + low - mapping['va']
+        else:
+            assert not mapped_only, 'actual executable trampoline extent owner'
+            at = owner(image, low, high - low, executable)
+        assert 0 <= at and at + high - low <= file_length, 'fragment file bounds'
+        result.append((low, high, at, mapping))
+    return result
+
+
 def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lane):
     assert lane in PRODUCERS and sha(loader) == PRODUCERS[lane][2], 'pinned loader lane'
     old, new = elf(original, 2), elf(candidate, 2)
@@ -352,6 +382,9 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lan
     for row in maps:
         assert row['va'] % PAGE == row['length'] % PAGE == row['offset'] % PAGE == 0
         assert 0 < row['length'] <= MAX_FILE and row['offset'] + row['length'] <= p[2]
+        assert row['offset'] >= 0, 'mapping file offset'
+        assert -(1 << 63) < row['va'] <= (1 << 63) - row['length'], 'mapping signed address overflow'
+        assert (row['va'] & U64) <= U64 - row['length'], 'mapping address overflow'
         assert row['prot'] in (1, 2, 3, 4, 5, 6), 'no RWX or empty mapping'
         encoded, previous = loader_mmap(row, previous)
         stream += encoded
@@ -386,15 +419,8 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lan
         permitted.update(range(off, off + length))
     assert all(a == b or i in permitted for i, (a, b) in enumerate(zip(original, candidate[:len(original)]))), 'unowned original-file change'
     def view(pc, size, executable=True):
-        rows = [r for r in maps if r['va'] <= pc and pc + size <= r['va'] + r['length']]
-        assert len(rows) <= 1
-        if rows:
-            r = rows[0]
-            assert not executable or r['prot'] & 4
-            at = r['offset'] + pc - r['va']
-        else:
-            at = owner(new, pc, size, executable)
-        return candidate[at:at + size]
+        fragments = extent_fragments(new, maps, pc, size, len(candidate), executable)
+        return b''.join(candidate[at:at + high - low] for low, high, at, _ in fragments)
     for r in refactors:
         off = executable_page_owner(old, r['va'], r['length'], len(original))
         data = view(r['va'], r['length'])
@@ -413,8 +439,7 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lan
         if row['tactic'] is None:
             continue
         pc, low, high = row['pc'], row['low'], row['high']
-        own = [r for r in trampolines if r['va'] <= low and high <= r['va'] + r['length'] and r['prot'] & 4]
-        assert len(own) == 1, 'actual executable trampoline extent owner'
+        fragments = extent_fragments(new, trampolines, low, high - low, len(candidate), mapped_only=True)
         at = pc
         if row['tactic'] == 'T3':
             b = view(at, 2)
@@ -432,9 +457,15 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lan
             assert 1 <= prefix < row['length']
         target = at + prefix + 5 + struct.unpack_from('<i', b, 1)[0]
         assert target == low, 'source gateway reaches reported emitted trampoline'
-        body = view(low, high - low)
+        body = b''.join(candidate[off:off + stop - start] for start, stop, off, _ in fragments)
         assert bool(body[0] == 0xcc) == intent['trap'], 'trap cannot be relabelled as trampoline'
-        witnesses.append(dict(pc=pc, trampoline_start=low, trampoline_end=high, bytes_sha256=sha(body), mapping=own[0]))
+        witness = dict(pc=pc, trampoline_start=low, trampoline_end=high, bytes_sha256=sha(body))
+        if len(fragments) == 1:
+            witness['mapping'] = fragments[0][3]  # Preserve the old single-map shape.
+        else:
+            witness['fragments'] = [dict(start=start, end=stop, file_offset=off, mapping=mapping,
+                bytes_sha256=sha(candidate[off:off + stop - start])) for start, stop, off, mapping in fragments]
+        witnesses.append(witness)
     for pc, _ in bypass:
         assert any(address_ == pc for address_, _ in intent['instructions'].values()), 'bypass source owner'
     return dict(loader_offset=p[2], loader_bytes=p[5], loader_sha256=sha(stream), loader_progress=loader_progress, mappings=maps,
