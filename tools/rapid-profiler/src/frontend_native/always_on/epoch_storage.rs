@@ -48,6 +48,21 @@ enum Profile {
     Normal,
     ModuleSession,
     LeafSetSession,
+    CallPairSession,
+}
+
+pub(super) fn prepare_call_pair(
+    prepared: &mut PreparedIntervalController,
+    config: Config,
+) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
+    prepare_for(prepared, config, Profile::CallPairSession)
+}
+#[allow(clippy::result_large_err)] // Preserve the same bank on refusal.
+pub(super) fn stage_call_pair(
+    controller: &mut IntervalController,
+    bank: IntervalEpochStorage,
+) -> Result<IntervalEpoch, (BridgeError, IntervalEpochStorage)> {
+    controller.stage_prepared_for(bank, Profile::CallPairSession)
 }
 
 pub(super) fn prepare_leaf_set(
@@ -93,6 +108,13 @@ fn prepare_for(
 ) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
     let _scope = ControllerScope::enter()?;
     match profile {
+        Profile::CallPairSession => {
+            if !normal::call_pair::profile_matches(&prepared.profile, prepared.limits, config)
+                || prepared.session.history_mode() != HistoryMode::Absolute
+            {
+                return Err(error(Cause::Identity));
+            }
+        }
         Profile::Normal => {
             if !normal_profile(prepared.profile.single()?.0, prepared.limits) {
                 return Err(error(Cause::Identity));
@@ -165,6 +187,11 @@ impl IntervalController {
             return Err((error(Cause::Epoch), bank));
         }
         match profile {
+            Profile::CallPairSession => {
+                if !normal::call_pair::binding_matches(&self.binding) {
+                    return Err((error(Cause::Identity), bank));
+                }
+            }
             Profile::Normal => {
                 if !self
                     .binding

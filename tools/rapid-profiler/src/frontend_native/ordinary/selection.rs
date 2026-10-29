@@ -70,6 +70,20 @@ pub(super) fn parse(selection: &TrustedFunctionSelection<'_>) -> Result<Parsed, 
     )
 }
 
+// Separate private admission policy for a complete normal caller. The existing
+// leaf wrapper above is literal and never accepts a caller certificate.
+pub(super) fn parse_with(
+    selection: &TrustedFunctionSelection<'_>,
+    admit: fn(&[u8], u64) -> Result<(), SetupRefusal>,
+) -> Result<Parsed, SetupRefusal> {
+    parse_admitted_selection(
+        selection.trusted_final_elf,
+        selection.label,
+        Some((selection.elf_virtual_address, selection.length)),
+        admit,
+    )
+}
+
 // Pure predicates shared with the metadata controls; no injected loader API.
 pub(super) fn relocated_entry(bias: u64, entry: u64) -> Result<u64, SetupRefusal> {
     let address = bias.checked_add(entry).ok_or(SetupRefusal::SymbolOwner)?;

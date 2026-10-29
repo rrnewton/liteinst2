@@ -318,7 +318,7 @@ pub(super) struct ModuleFunctionSource<'a> {
     pub(super) certificate: &'a IntegerLeafCertificate,
     pub(super) source_range: (u64, u64),
 }
-fn module_budget() -> BundleBudget {
+pub(super) fn module_budget() -> BundleBudget {
     BundleBudget {
         max_steps: 10,
         max_mappings: 10,
@@ -505,7 +505,11 @@ pub(super) fn prepare_functions(
     Ok((planned, sites, all_roles))
 }
 
-fn projection(pages: &[ExpectedBytes], start: u64, len: usize) -> Result<Vec<u8>, SiteError> {
+pub(super) fn projection(
+    pages: &[ExpectedBytes],
+    start: u64,
+    len: usize,
+) -> Result<Vec<u8>, SiteError> {
     let wanted = AddressRange::new(start, len)?;
     let mut result = Vec::with_capacity(len);
     let mut cursor = start;
@@ -527,7 +531,7 @@ fn projection(pages: &[ExpectedBytes], start: u64, len: usize) -> Result<Vec<u8>
     }
     Ok(result)
 }
-fn replace_projection(
+pub(super) fn replace_projection(
     pages: &mut [ExpectedBytes],
     start: u64,
     bytes: &[u8],

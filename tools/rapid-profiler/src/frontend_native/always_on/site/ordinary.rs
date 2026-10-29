@@ -22,6 +22,11 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::Arc;
 
+pub(in crate::frontend_native::always_on) mod call_pair;
+pub use call_pair::{
+    InstalledNormalCallPairSite, NormalCallPairFunctionSite, NormalCallPairRole,
+    NormalCallPairRoleKind, NormalCallPairSitePreparation,
+};
 mod normal;
 mod normal_leaf_set;
 mod normal_module;
