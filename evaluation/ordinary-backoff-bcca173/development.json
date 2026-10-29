@@ -1,0 +1,281 @@
+{
+  "checks": [
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/DEVELOPMENT_TMP",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_work.py"
+      ],
+      "exit": 0,
+      "log_sha256": "fb5d370249e8775bb73235f5c7e345333af9ddd70acae78b36c192efa6042f7e",
+      "name": "normal-backoff-checker-development-v1",
+      "receipt_sha256": "bc5e35deef913c28ed2e067c56d0d369e230eca7c4fe01bef9d3d7ac7614fbfc",
+      "rescues": 0,
+      "seconds": 11.333815222140402,
+      "termination": null,
+      "working_source_manifest_sha256": "743f21e0c742b775ad44118867348061496093cc29185a93268344ba2643570a"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "fmt",
+        "--all"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "normal-backoff-format-v1",
+      "receipt_sha256": "1b65bcb10bf75038aa45566f24c2dd80320f1d66378684be4217fdc0e2d4b22c",
+      "rescues": 0,
+      "seconds": 6.700687198899686,
+      "termination": null,
+      "working_source_manifest_sha256": "6b2cfefb66369b57cee21b5cdcb66f072d8bb3551b5d7444aa3adabf18668dcc"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "normal::observer::backoff::tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "log_sha256": "2e2ad977cc9f6b4a7ef567e351da63bed5f76557472f27b32695e6108f062295",
+      "name": "normal-backoff-rust-development-v1",
+      "receipt_sha256": "470a2bc3dad0b8d2ab41dcae2d3a32d1ae10133c2ace583c864aaaf815768245",
+      "rescues": 0,
+      "seconds": 3.2889571459963918,
+      "termination": null,
+      "working_source_manifest_sha256": "a6ea44111f2527088043cf581367f673a461bfdcc77733d8edde8f4dda6c8108"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "clippy",
+        "-p",
+        "rapid-profiler",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 101,
+      "log_sha256": "166d9ff0655bbeadfefcda647f4a2f02e57c91da94b29eff59b25fd91e0efa20",
+      "name": "normal-backoff-clippy-development-v1",
+      "receipt_sha256": "69419e5a3f85abd0b7a3dca7c229699a967c1c318e274f14eb83b6b76f643513",
+      "rescues": 0,
+      "seconds": 9.890190303092822,
+      "termination": null,
+      "working_source_manifest_sha256": "a6ea44111f2527088043cf581367f673a461bfdcc77733d8edde8f4dda6c8108"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "clippy",
+        "-p",
+        "rapid-profiler",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "log_sha256": "8c1f68ce4332244c074bb44fa1cf850727bfcff8d97939e8c74964255303055c",
+      "name": "normal-backoff-clippy-development-v2",
+      "receipt_sha256": "c7534b2c9a6afe9a427fd1903420a3933df1327875a8589a45c344b0b04eb5cb",
+      "rescues": 0,
+      "seconds": 3.35890483786352,
+      "termination": null,
+      "working_source_manifest_sha256": "e90fb96a03474e3c911d5511349732e6d05c98476c28eb1cea21e9259f21f20c"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "normal::observer::backoff::tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "log_sha256": "38da2d7449f5e34f357890612ef455026f40555202da527c8b8a48913836b0c3",
+      "name": "normal-backoff-rust-development-v2",
+      "receipt_sha256": "6078f8d93b0b071956e00d4713e2ec9add1f25667b7b05d5ea778b5defc708e5",
+      "rescues": 0,
+      "seconds": 3.3540110317990184,
+      "termination": null,
+      "working_source_manifest_sha256": "e90fb96a03474e3c911d5511349732e6d05c98476c28eb1cea21e9259f21f20c"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "fmt",
+        "--all"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "normal-backoff-owner-format-v1",
+      "receipt_sha256": "5309fb4583a2fc7174b4e88500cb2fdd2c4b1c9578e8ebdf0eae74796ab1df5b",
+      "rescues": 0,
+      "seconds": 6.966731976019219,
+      "termination": null,
+      "working_source_manifest_sha256": "f3c8141753b7675fa9b429caa0fcf15568060044a2af21a3a50e1b1710ff666e"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "normal::observer::backoff::",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "log_sha256": "ec7ab3071033345ba083c4ca44ad6008a29de10f50729fec7f1f66d29c3ac96f",
+      "name": "normal-backoff-owner-rust-development-v1",
+      "receipt_sha256": "de806b12688f2a60696c2e4e4cd7929aab75ec37c570519167a4f13f913a986a",
+      "rescues": 0,
+      "seconds": 3.487933917203918,
+      "termination": null,
+      "working_source_manifest_sha256": "5f34d207d1c4d79c1a82c6d11da161cf684eea3c7bafa45c64a795aedfc32ec6"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/DEVELOPMENT_TMP",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_pending_owner.py"
+      ],
+      "exit": 0,
+      "log_sha256": "e5a1b6ca52bcf3b567d39f4cfe803d24b1ea503c79e677b77a30d973646b92f1",
+      "name": "normal-backoff-owner-checker-development-v1",
+      "receipt_sha256": "3266e9d686d542857ccf8980b6a64031a3bd3bdc1a7b25872d73eb6ef435cfde",
+      "rescues": 0,
+      "seconds": 16.30203750007786,
+      "termination": null,
+      "working_source_manifest_sha256": "5f34d207d1c4d79c1a82c6d11da161cf684eea3c7bafa45c64a795aedfc32ec6"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/DEVELOPMENT_TMP",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_work.py"
+      ],
+      "exit": 0,
+      "log_sha256": "c39c79d6f5896729a5c68846f3d83abeae4fad3420f270128be1687b3df34c4e",
+      "name": "normal-backoff-shared-checker-development-v2",
+      "receipt_sha256": "2b9b408b23405e9721867af1d9c0d13a6cfaa7266d2dc44189dd8d16307e9500",
+      "rescues": 0,
+      "seconds": 11.3606039469596,
+      "termination": null,
+      "working_source_manifest_sha256": "5f34d207d1c4d79c1a82c6d11da161cf684eea3c7bafa45c64a795aedfc32ec6"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "$TOOLCHAIN/bin/cargo",
+        "clippy",
+        "-p",
+        "rapid-profiler",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "log_sha256": "f95436792821cfec94d29f176dd36502ead559745254d4d6b78f67eadb5cbcd6",
+      "name": "normal-backoff-owner-clippy-development-v1",
+      "receipt_sha256": "c11f7a3a39fe111de4c55710292126de60056d48edb4223bf0648ee95468c086",
+      "rescues": 0,
+      "seconds": 3.72379506402649,
+      "termination": null,
+      "working_source_manifest_sha256": "5f34d207d1c4d79c1a82c6d11da161cf684eea3c7bafa45c64a795aedfc32ec6"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/DEVELOPMENT_TMP",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_probe.py"
+      ],
+      "exit": 2,
+      "log_sha256": "9fc81ea98fd609004f5ac4e56052c6fe623a45532c5857e3baddf3788b6dea52",
+      "name": "normal-backoff-probe-development-v1",
+      "receipt_sha256": "b9604d78ea3fcbb8734f0140288833a9018de1da27f2a484580b943ab9df5616",
+      "rescues": 0,
+      "seconds": 0.14176961802877486,
+      "termination": null,
+      "working_source_manifest_sha256": "7b032c3dfb98fc7eebb04bdb7f7765e32399d82331831e475b2b1f4a26d032de"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/DEVELOPMENT_TMP",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_probe.py"
+      ],
+      "exit": 0,
+      "log_sha256": "8ee2d24ae572984e7aafd9a9ed95852028ec3abc0ff779de0cfa7f53b08b2b1c",
+      "name": "normal-backoff-probe-development-v2",
+      "receipt_sha256": "641ebf292a9263773cb1a211b1a2be1750de2269c6fa74a40a49e43476b4870a",
+      "rescues": 0,
+      "seconds": 0.969643312972039,
+      "termination": null,
+      "working_source_manifest_sha256": "eca82714670c8d630ee5478ebc3f33ce389c5db07a7ca4f520a46509f10b27b8"
+    },
+    {
+      "base_revision": "92e0772dbb963111e82a3db840533f6676e0186b",
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/DEVELOPMENT_TMP",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_throughput_probe.py"
+      ],
+      "exit": 0,
+      "log_sha256": "7a8878bee5faee3c6644436b810dc5bc340964cc6ef0cadcb880e7ff05ff7432",
+      "name": "normal-backoff-throughput-regression-v1",
+      "receipt_sha256": "fb895fca67133b242ece5ead6fdd4b25cbecef4a9d91366e343b5c0bc35a307d",
+      "rescues": 0,
+      "seconds": 0.3038406390696764,
+      "termination": null,
+      "working_source_manifest_sha256": "eca82714670c8d630ee5478ebc3f33ce389c5db07a7ca4f520a46509f10b27b8"
+    }
+  ],
+  "failures": {
+    "normal-backoff-clippy-development-v1": "Clippy int_plus_one refused line.len()+1 <= ROW_CAP. Rewritten equivalently as line.len() < ROW_CAP; no bound/assertion change.",
+    "normal-backoff-probe-development-v1": "Root invoked the checker before its source import completed; Python exited2 for missing source. No tests/native subject ran. v2 followed completed import without source or bound change."
+  },
+  "scope": "Dirty-source development records, not native qualification. Exact clean-source release controls are in qualification.json; private immutable source snapshots and raw receipts are retained by manifest/hash."
+}

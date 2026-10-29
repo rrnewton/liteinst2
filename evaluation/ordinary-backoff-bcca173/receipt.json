@@ -1,0 +1,128 @@
+{
+  "accepted_rows": {
+    "owner": 6144,
+    "timed": 27648
+  },
+  "attempts": {
+    "failed": 1,
+    "owner_controls": 2,
+    "owner_passed": 2,
+    "passed": 9,
+    "retries": 0,
+    "timed": 10,
+    "unrun": 0
+  },
+  "claim": 4,
+  "command": "cpuset-alloc run --cores 4 --sample-s 1 --tag li2core-normal-backoff-bcca173 -- python3 -B tools/rapid-profiler/normal-work/backoff_probe.py --revision bcca1737a4a0fd451a46075406e0c91116fabee4 --reservation-tag li2core-normal-backoff-bcca173 --raw \"$REPO/ignored/FRESH_OUTPUT\" --toolchain \"$TOOLCHAIN\" --user-home \"$USER_HOME\" --cargo-home \"$CARGO_HOME\"",
+  "command_scope": "Original absolute paths/session coordinates remain private; command is normalized with explicit parameter roles. reproduce.py creates one fresh equivalent invocation; it does not rerun automatically.",
+  "evidence": {
+    "cpuset_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "cpuset_source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "gate_receipt_sha256": "5a17e7915719e8c56acf5a4cc5170c09bafac34ebd999968c5dbf404c9db0188",
+    "launch_sha256": "60ab9d64002c60f057178581579aa6320ae4b57dd115102b0b21408b2fd36b3f",
+    "launcher_sha256": "b875bf13715cad25aa4eec642ba6c72430b350a8f6577795538912716a20ac6c",
+    "private_result": {
+      "bytes": 85838,
+      "sha256": "b983fe96e238a0e8e54b2667b74971b47ba597ebadab54bbbf361c9fd6941bb6"
+    },
+    "root_audit_script_sha256": "1cad1634f656930c0a85cd11824da76127f151e3506ac4dccbc2f9fd5e5adeaa",
+    "root_audit_sha256": "6b913f318e2d2840576f1936ed054817a3e231ba4570f661263a96b0afb32d49"
+  },
+  "failure": {
+    "exit": -6,
+    "k": 10,
+    "location": "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs:331",
+    "observed": "assertion failed: announced && signals.stop.load(Ordering::Acquire)",
+    "signal": "SIGABRT",
+    "source_inference": "Clock::poll can reach this failed Stop guard only via EpochLimit before the application requested shutdown; this is inferred from authenticated source, not an exported arm count.",
+    "stderr_sha256": "d3c430e9ecd1ed61c11430f238ef5810a6dcc15ee1d1c4e2a0d7f8bc4dd1cc1d",
+    "stdout_bytes": 0,
+    "trial": 1,
+    "unknown": "No complete work/arm transcript or scheduler-causation evidence for this trial. Original 520-epoch limit and requested-stop check remain unchanged."
+  },
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "kernel": "7.1.3",
+    "observed": {
+      "cpu family": "26",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "load_one_minute": {
+    "max": 140.74,
+    "min": 120.98
+  },
+  "original_argv_template": [
+    "/usr/bin/env",
+    "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+    "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+    "/usr/local/bin/python3",
+    "-B",
+    "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+    "run",
+    "--cores",
+    "4",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-normal-backoff-bcca173",
+    "--",
+    "/usr/local/bin/python3",
+    "-B",
+    "$REPO/tools/rapid-profiler/normal-work/backoff_probe.py",
+    "--revision",
+    "bcca1737a4a0fd451a46075406e0c91116fabee4",
+    "--raw",
+    "$REPO/ignored/a5/normal-backoff-bcca173-attempt1",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--reservation-tag",
+    "li2core-normal-backoff-bcca173"
+  ],
+  "outer": {
+    "cleanup_complete": true,
+    "exit": 1,
+    "log_sha256": "55bb5df80336a8132c510c16e5e4aa126bfe5544a8dd364a518d07f0d1ba232e",
+    "rescues": 0,
+    "seconds": 261.9020970452111,
+    "termination": null
+  },
+  "release": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "reservation": {
+    "app_cpu": 204,
+    "controller_cpu": 313,
+    "producer_cpu": 198,
+    "reservation": "Actual allocator argv/log/hard AllowedCPUs joined against pinned allocator source; cooperative disjoint reservation, no quiet-host claim",
+    "reservation_tag": "li2core-normal-backoff-bcca173",
+    "reserved_cpus": [
+      198,
+      204,
+      312,
+      313
+    ]
+  },
+  "revision": "bcca1737a4a0fd451a46075406e0c91116fabee4",
+  "schema": 1,
+  "scope": "Fixed ordinary-work functional ownership and scheduling evidence only. No timing, throughput, cheap-off, full 520-arm qualification or full-A5 claim. Prior fixed-five strict2ms outcomes FAILED,PASS,PASS,FAILED,PASS remain unchanged; this is a distinct catalog, not a retry. Cooperative CPU reservation does not prove quiet/exclusive hardware.",
+  "status": "COMPLETE_WITH_ONE_FAILED_TIMED_TRIAL"
+}
