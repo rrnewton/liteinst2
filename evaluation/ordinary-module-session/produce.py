@@ -68,7 +68,7 @@ def remaining(deadline):
     return left
 
 
-def main():
+def _main(*, call_pair=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--plan', type=Path, required=True)
     ap.add_argument('--plan-sha', required=True)
@@ -86,7 +86,12 @@ def main():
     for name in ('output.py', 'corpus.py'):
         assert str(own.with_name(name)) in plan['pins']
     assert plan['pins'][str(own.with_name('corpus.py'))] == CORPUS
-    checker = load('_module_session_output', own.with_name('output.py'))
+    if call_pair is None:
+        checker = load('_module_session_output', own.with_name('output.py'))
+    else:
+        call_pair.check_sources(repo, plan['pins'])
+        call_pair.check_plan(plan)
+        checker = load('_call_pair_session_output', repo / call_pair.checker_path)
     corpus = load('_module_session_corpus', own.with_name('corpus.py'))
     case = case_spec(corpus, plan['case'])
     assert case['name'] == plan['name']
@@ -96,9 +101,12 @@ def main():
     assert os.sched_getaffinity(0) == set(cpus)
     geometry = plan['geometry']
     argv = plan['argv']
-    assert argv == [plan['binary'], 'normal-module-session', plan['candidate'], plan['trusted'],
-                    str(geometry['csv_va']), str(geometry['csv_length']),
-                    str(geometry['length_va']), str(geometry['length_length']), str(plan['k']), '520']
+    if call_pair is None:
+        assert argv == [plan['binary'], 'normal-module-session', plan['candidate'], plan['trusted'],
+                        str(geometry['csv_va']), str(geometry['csv_length']),
+                        str(geometry['length_va']), str(geometry['length_length']), str(plan['k']), '520']
+    else:
+        call_pair.arguments(plan, case, corpus)
     assert plan['k'] in (10, 1000)
     assert all(str(Path(path).resolve(strict=True)) == path and path in plan['pins']
                for path in (plan['binary'], plan['candidate'], plan['trusted']))
@@ -111,6 +119,8 @@ def main():
     normal_reaps = 0
     failure = None
     result = dict(status='FAILED', case=plan['case'], name=case['name'], k=plan['k'])
+    if call_pair is not None:
+        result.update(call_pair.fields(plan))
     deadline = time.monotonic() + 15
     child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
@@ -128,6 +138,8 @@ def main():
             row = raw.decode('ascii').split(',')
             if row[0] == 'READY':
                 assert phase == 0
+                if call_pair is not None:
+                    call_pair.ready(bytes(raw), child.pid, plan)
                 outgoing.extend(case['data'])
                 phase = 1
                 if plan['case'] == 31:
@@ -135,7 +147,7 @@ def main():
                     hold_until = time.monotonic() + .250
             elif row[0] == 'HISTORY':
                 assert len(row) == 5
-                prefix = checker.uint(row[2])
+                prefix = checker.uint(row[2]) if call_pair is None else call_pair.uint(row[2])
                 if plan['case'] == 30 and phase == 1 and prefix >= 513:
                     outgoing.extend(corpus.framed(corpus.LITERALS * 2))
                     phase = 2
@@ -185,25 +197,37 @@ def main():
         expected_bytes = corpus.framed(case['records']) if plan['case'] >= 30 else case['data']
         assert sent == len(expected_bytes)
         assert type(code) is int and code == (0 if case['outcome'] == 'eof' else 1)
-        checked = checker.check(bytes(transcript), bytes(errors), records=tuple((r.payload, r.fields) for r in case['records']),
-                                k=plan['k'], epochs=520, outcome=case['outcome'], input_error=case['input_error'],
-                                lengths=(geometry['csv_length'], geometry['length_length']),
-                                returns=tuple(tuple(values) for values in geometry['returns']),
-                                continuation=geometry['continuation'], cpus=tuple(cpus[:2]))
+        if call_pair is None:
+            checked = checker.check(bytes(transcript), bytes(errors), records=tuple((r.payload, r.fields) for r in case['records']),
+                                    k=plan['k'], epochs=520, outcome=case['outcome'], input_error=case['input_error'],
+                                    lengths=(geometry['csv_length'], geometry['length_length']),
+                                    returns=tuple(tuple(values) for values in geometry['returns']),
+                                    continuation=geometry['continuation'], cpus=tuple(cpus[:2]))
+        else:
+            checked = call_pair.check(checker, bytes(transcript), bytes(errors), plan, case)
         assert checked['rows']['READY'][0]['pid'] == child.pid
         if plan['case'] == 30:
-            assert phase == 2 and checked['totals']['epochs'] == 520
-            assert checked['rows']['DONE'][0]['history_end'] == 521
-            assert any(row['owner'] == 'sampled' and row['history_prefix'] >= 513 for row in checked['rows']['CALL'])
+            if call_pair is None:
+                assert phase == 2 and checked['totals']['epochs'] == 520
+                assert checked['rows']['DONE'][0]['history_end'] == 521
+                assert any(row['owner'] == 'sampled' and row['history_prefix'] >= 513 for row in checked['rows']['CALL'])
+            else:
+                call_pair.history_complete(checked, phase)
         if plan['case'] == 31:
-            assert checked['rows']['IO'][0]['write_blocked'] > 0
+            if call_pair is None:
+                assert checked['rows']['IO'][0]['write_blocked'] > 0
+            else:
+                assert checked['rows']['IO'][0]['write_blocked_count'] > 0
         pins_unchanged(plan['pins'])
         assert sha(a.plan) == a.plan_sha
         remaining(deadline)
-        result.update(status='PASS', totals=checked['totals'], done=checked['rows']['DONE'][0],
-                      write_blocked=checked['rows']['IO'][0]['write_blocked'],
-                      original_values=[[row['id'], row['length'], row['checksum'], row['csv_value'], row['length_value']]
-                                       for row in checked['rows']['RESULT']])
+        if call_pair is None:
+            result.update(status='PASS', totals=checked['totals'], done=checked['rows']['DONE'][0],
+                          write_blocked=checked['rows']['IO'][0]['write_blocked'],
+                          original_values=[[row['id'], row['length'], row['checksum'], row['csv_value'], row['length_value']]
+                                           for row in checked['rows']['RESULT']])
+        else:
+            result.update(call_pair.project(checked))
     except BaseException as error:
         failure = type(error).__name__ + ': ' + str(error)
         result.update(error=failure)
@@ -236,6 +260,10 @@ def main():
     if result['status'] == 'PASS':
         remaining(deadline)
     return 0 if result['status'] == 'PASS' and not rescue else 1
+
+
+def main():
+    return _main()
 
 
 if __name__ == '__main__':
