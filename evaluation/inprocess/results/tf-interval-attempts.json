@@ -1,0 +1,170 @@
+{
+  "attempts": [
+    {
+      "accepted_interval_subjects": 0,
+      "commands": 11,
+      "id": "fixture_link",
+      "interval_qualification_credit": false,
+      "interval_subjects": 0,
+      "performance_started": false,
+      "public_receipt": {
+        "bytes": 2213,
+        "file": "tf-interval-failed-link-e951814f.json",
+        "sha256": "835bf28345cdcc50d6a416b74d9403c1b1222e0c6d1cbb5c593ff40e2968108f"
+      },
+      "reason": "The fixed N=1 fixture link rejected an unspaced subtraction token before any interval subject ran.",
+      "receipt": {
+        "bytes": 5265132,
+        "sha256": "c0d5982ab59ccb5e0ae36d1ffaa9bad31213dc4a76772d2736ccaffbc5221a94"
+      },
+      "revision": "e951814f062dd9087fee4c12ff17952d9bb46a13",
+      "sequence": {
+        "bytes": 10771,
+        "sha256": "ca7c77088840daf73f1ec2a44db16f4d05fe01804c1e9f716b321d71d55506b9"
+      },
+      "stage": "interval_finite",
+      "status": "failed"
+    },
+    {
+      "accepted_interval_subjects": 0,
+      "commands": 751,
+      "id": "source_stability",
+      "incident": {
+        "bytes": 756,
+        "sha256": "131a0f173f24aaae75c25929bddae85bb0a433b1a1497b8feb4742458de3c252"
+      },
+      "interval_qualification_credit": false,
+      "interval_subjects": 0,
+      "performance_started": false,
+      "reason": "A review-side import created an untracked Python bytecode file. The unchanged final source guard rejected the run after its lease commands; no interval or timing child ran.",
+      "receipt": {
+        "bytes": 22175386,
+        "sha256": "2435bb73a8307a96b5dcc1af5088200a5236a67a6a446a99888b314e0762f7ec"
+      },
+      "revision": "4d322c973c5a05c74f5cd3cc2db5aa89532c3528",
+      "sequence": {
+        "bytes": 8438,
+        "sha256": "9cbb99fb904c77d5a1e5c728c058e3e58f152b1d1fbe03fa1171bbf1368c3f04"
+      },
+      "source_unchanged": false,
+      "stage": "lease_prerequisite",
+      "status": "failed"
+    },
+    {
+      "accepted_interval_subjects": 1,
+      "commands": 18,
+      "id": "reader_contract",
+      "interval_qualification_credit": false,
+      "interval_subjects": 2,
+      "performance_started": false,
+      "public_receipt": {
+        "bytes": 2550,
+        "file": "tf-interval-failed-reader-4d322c97.json",
+        "sha256": "3fd127708a6cb9463626967657ef16f3a1c2ab69c06893cc1fa13c2ec4cf32d9"
+      },
+      "reason": "The N=1 native reference passed. The observed target exited zero but the strict read-transition contract rejected its record; a separate namespace environment mismatch also rejected the case.",
+      "receipt": {
+        "bytes": 5407277,
+        "sha256": "dd75ab93b105902681d57976fbe1cb51c727dc3f4ab58ffc4bbc91b1ab6daf25"
+      },
+      "revision": "4d322c973c5a05c74f5cd3cc2db5aa89532c3528",
+      "sequence": {
+        "bytes": 10768,
+        "sha256": "7e248726e878764603ecc90df35ea42e4931cc3af2e06a39b8406fbac29e64d5"
+      },
+      "stage": "interval_finite",
+      "status": "failed"
+    },
+    {
+      "commands_not_run": 6,
+      "commands_run": 0,
+      "id": "required_checks_preflight",
+      "public_receipt": {
+        "bytes": 7413,
+        "file": "20261029T051312.661835Z-checks-5dc4ed8987fb.json",
+        "sha256": "cd5d0e6bc818ec2d1148bf23365bb2d07945bfb08d82d2332d212ee989b9b667"
+      },
+      "reason": "The historical source inventory lacked the newly merged ordinary-profiler source and test-count successor. Preflight rejected the source before any required command ran.",
+      "revision": "5dc4ed8987fbbc8f3906c50fd4913d177e8e21af",
+      "stage": "source_inventory",
+      "status": "failed"
+    },
+    {
+      "commands_not_run": 5,
+      "commands_run": 1,
+      "id": "required_checks_recorder_timeout",
+      "public_receipt": {
+        "bytes": 7746,
+        "file": "20261029T052021.686852Z-checks-8cfcd6f773cf.json",
+        "sha256": "5ab1db99f51f8469a88048d5583e5f34e36edef8685c1ce2831f3d7e6f9c6e20"
+      },
+      "reason": "The recorder reached its unchanged 180-second deadline and exited -9 after 307 completion markers. There is no complete suite result or pass credit; the other five required commands were not run. Native qualification and timing remain attributed to measured revision 5dc.",
+      "recorder": {
+        "cleanup_complete": true,
+        "complete_suite_result": false,
+        "completed_success_markers": 307,
+        "exit_code": -9,
+        "expected_test_identities": 350,
+        "next_uncompleted_method_ordinal": 308,
+        "seconds": 180.05798804294318,
+        "termination": "timeout",
+        "timeout_seconds": 180
+      },
+      "required_checks_credit": false,
+      "revision": "8cfcd6f773cf805a1c62c9aa76fa4ae4adb04321",
+      "stage": "recorder_tests",
+      "status": "failed"
+    },
+    {
+      "commands_not_run": 5,
+      "commands_run": 1,
+      "id": "required_checks_copy_recorder_timeout",
+      "public_receipt": {
+        "bytes": 7745,
+        "file": "20261029T053540.856868Z-checks-5142f8e81e62.json",
+        "sha256": "d1b9aaa09bde7133acc3e88877138110a5120a46a014fd54d080a4b8d9047c9c"
+      },
+      "reason": "The recorder reached its unchanged 180-second deadline and exited -9. There is no complete suite result or pass credit; the other five required commands were not run. Native qualification and timing remain attributed to measured revision 5dc.",
+      "recorder": {
+        "cleanup_complete": true,
+        "complete_suite_result": false,
+        "exit_code": -9,
+        "expected_test_identities": 350,
+        "private_log_bytes": 732,
+        "private_log_sha256": "96122c8f002585257b01faaf250af3d596b6b12aed0363ba29557669041fcdfc",
+        "seconds": 180.06962646101601,
+        "termination": "timeout",
+        "timeout_seconds": 180
+      },
+      "required_checks_credit": false,
+      "revision": "5142f8e81e623b7fcd21d507e7cfd4929660f29b",
+      "stage": "recorder_tests",
+      "status": "failed"
+    }
+  ],
+  "profile": "tf-interval-selected-attempt-history-v1",
+  "schema": 1,
+  "scope": "Selected closed development failures and the separate supplied-data test result. Every failure remains failed. Successful current finite and timing receipts are separate exact producer projections.",
+  "standalone_projection_tests": {
+    "native_qualification_credit": false,
+    "performance_credit": false,
+    "private_receipt": {
+      "bytes": 7565,
+      "sha256": "674b793888c6860ab9a2e9ebdbb159eeb7c883be9e85da6aa33ecac1deb188a4"
+    },
+    "public_receipt": {
+      "bytes": 2083,
+      "file": "tf-interval-projection-5dc4ed89.json",
+      "sha256": "87f0aaadc8e249e51b0f796042d7f7c42d00c4d962800c8ded128c361d11697e"
+    },
+    "revision": "5dc4ed8987fbbc8f3906c50fd4913d177e8e21af",
+    "status": "passed",
+    "tests": {
+      "discovered": 2,
+      "errors": 0,
+      "failed": 0,
+      "passed": 2,
+      "skipped": 0
+    }
+  }
+}

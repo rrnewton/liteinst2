@@ -901,3 +901,8 @@ A final metadata audit corrected one descriptive ordinary-test module prefix and
 ## Default-rseq ls under in-process page admission (claims 2 and 4)
 
 ADDS end-to-end `/bin/ls -d .` with ordinary rseq registration and qualified terminal queries, without a ptrace supervisor. The [release results and reproduction commands](default-rseq-ls-db0bec0.md) record five native/page-mode pairs at each measured revision, full finite qualification, and the final merged-tree checks. At db0bec0, median process time is 5.261 ms native and 18.677 s gated; this baseline exposes substantial remaining overhead.
+
+
+## First-entry and operation-batch workload (claims 2 and 4)
+
+ADDS a pipe-released page-boundary fixture with native/full-state comparisons and release measurements for one entry and a 256-operation batch. The [report, commands and all 20 samples](tf-interval-5dc4ed89.md) retain the measured revision and distinguish GO-to-DONE workload time from isolated fault or steady-state latency. All six required checks pass on the merged inventory and recorder successor.
