@@ -1753,7 +1753,8 @@ impl NormalOracle {
                 resume.rip = continuation;
                 resume.rsp = saved[index].rsp.checked_add(8).unwrap();
                 resume.rax = actual.rax;
-                resume.eflags = walk.child.registers().eflags;
+                // The actual RET flags were compared above; now restore the
+                // separate saved harness state together with its GPRs/XSAVE.
                 walk.child.set_xstate(&xstate[index]);
                 resume
             } else {
