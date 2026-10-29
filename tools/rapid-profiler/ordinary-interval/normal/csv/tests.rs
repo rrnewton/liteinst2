@@ -362,3 +362,34 @@ fn csv_output_keeps_all_cases_and_full_width_endpoint_words() {
     assert!(lines[17].contains("caller_entry=8320"));
     assert!(text.ends_with('\n') && text.len() <= OUTPUT_CAP);
 }
+
+#[test]
+fn csv_mapping_classes_keep_private_source_and_shared_images_distinct() {
+    let maps = "1000-2000 r-xp 00000000 00:00 1 /source\n\
+                3000-4000 r-xs 00000000 00:00 2 /image\n\
+                5000-6000 rw-p 00000000 00:00 0 [stack]\n";
+    for (address, mode, end) in [
+        (0x1000, "r-xp", 0x2000),
+        (0x3000, "r-xs", 0x4000),
+        (0x5000, "rw-p", 0x6000),
+    ] {
+        assert_eq!(mapping_in(maps, address, mode), Some((address, end)));
+        assert_eq!(mapping_in(maps, end - 1, mode), Some((address, end)));
+        assert_eq!(mapping_in(maps, end, mode), None);
+        for wrong in [
+            "r-xp", "r-xs", "rw-p", "rw-s", "rwxp", "rwxs", "r--p", "---p",
+        ] {
+            if wrong != mode {
+                assert_eq!(mapping_in(maps, address, wrong), None);
+            }
+        }
+    }
+    assert_eq!(mapping_in(maps, 0x2000, "r-xp"), None);
+    assert_eq!(mapping_in("", 0x1000, "r-xp"), None);
+    let overlapping = format!("{maps}1000-1800 r-xp 00000000 00:00 1 /duplicate\n");
+    assert_eq!(mapping_in(&overlapping, 0x1000, "r-xp"), None);
+    assert_eq!(
+        mapping_in(&maps.replace("r-xs", "rwxs"), 0x3000, "r-xs"),
+        None
+    );
+}

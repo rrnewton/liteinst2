@@ -111,6 +111,9 @@ unsafe fn invoke(target: Csv, input: &[u8], output: &mut u64) {
 
 fn mapping(address: u64, permissions: &str) -> (u64, u64) {
     let maps = std::fs::read_to_string("/proc/self/maps").unwrap();
+    mapping_in(&maps, address, permissions).expect("exact owned mapping class")
+}
+fn mapping_in(maps: &str, address: u64, permissions: &str) -> Option<(u64, u64)> {
     let found: Vec<_> = maps
         .lines()
         .filter_map(|line| {
@@ -124,9 +127,10 @@ fn mapping(address: u64, permissions: &str) -> (u64, u64) {
             (a <= address && address < b).then_some((a, b, mode))
         })
         .collect();
-    assert_eq!(found.len(), 1);
-    assert_eq!(found[0].2, permissions);
-    (found[0].0, found[0].1)
+    match found.as_slice() {
+        [(a, b, mode)] if *mode == permissions => Some((*a, *b)),
+        _ => None,
+    }
 }
 fn stack_bounds() -> (u64, u64) {
     let mut marker = 0_u64;
@@ -141,7 +145,8 @@ struct Custody<'a> {
     pid: u32,
     stack: (u64, u64),
     caller: (u64, u64),
-    spans: Vec<(u64, Vec<u8>)>,
+    source: Vec<(u64, Vec<u8>)>,
+    generated: Vec<(u64, Vec<u8>)>,
     deadline: Instant,
 }
 impl Custody<'_> {
@@ -173,18 +178,26 @@ impl Custody<'_> {
             .read_to_end(&mut actual)
             .unwrap();
         assert_eq!(actual, self.bytes);
-        for (address, bytes) in &self.spans {
-            let (a, b) = mapping(*address, "r-xp");
-            assert!(
-                a <= *address
-                    && address
-                        .checked_add(bytes.len() as u64)
-                        .is_some_and(|end| end <= b)
-            );
+        // Loaded ELF source remains private. Planned executable images come
+        // from the core's shared memfd trampoline owner. Select the exact class
+        // by that owner provenance, never by accepting whichever mode appears.
+        for (spans, permissions) in [(&self.source, "r-xp"), (&self.generated, "r-xs")] {
+            for (address, bytes) in spans {
+                let (a, b) = mapping(*address, permissions);
+                assert!(
+                    a <= *address
+                        && address
+                            .checked_add(bytes.len() as u64)
+                            .is_some_and(|end| end <= b)
+                );
+            }
         }
         // SAFETY: process-lived loaded/sealed owners and continuous no-unmap,
         // no-writer contract; scans do not establish those lifetime facts.
-        unsafe { immutable(&self.spans) };
+        unsafe {
+            immutable(&self.source);
+            immutable(&self.generated);
+        };
         assert!(Instant::now() < self.deadline, "CSV postflight deadline");
     }
 }
@@ -244,7 +257,8 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
         pid,
         stack: stack_bounds(),
         caller: mapping(invoke as *const () as usize as u64, "r-xp"),
-        spans: vec![(owner.source_range().0, owner.original_source().to_vec())],
+        source: vec![(owner.source_range().0, owner.original_source().to_vec())],
+        generated: Vec::new(),
         deadline,
     };
     let mut data = Data::new();
@@ -281,19 +295,19 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
             .chain(returns.iter().copied())
             .collect::<Vec<_>>()
     );
-    custody.spans = prep
+    custody.source = prep
         .plan()
         .plan()
         .final_bytes()
         .iter()
         .map(|s| (s.address, s.bytes.clone()))
         .collect();
-    custody.spans.extend(
-        prep.plan()
-            .images()
-            .iter()
-            .map(|i| (i.address(), i.bytes().to_vec())),
-    );
+    custody.generated = prep
+        .plan()
+        .images()
+        .iter()
+        .map(|i| (i.address(), i.bytes().to_vec()))
+        .collect();
     let site = publish(prep); // Existing full transaction and partial-publication abort.
     let mut prepared = PreparedNormalController::new(
         site,
