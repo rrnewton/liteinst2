@@ -8452,6 +8452,1058 @@
       }
     }
   },
+  "main9c70": {
+    "added_methods": {
+      "tests/support/native_normal_module/session_tests.rs": [
+        "module_session_profile_and_ready_wire_keep_finite_modes_separate",
+        "module_session_ready_retains_complete_geometry_and_identity"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/session_check_tests.rs": [
+        "module_session_batch_checks_history_and_every_journal_word",
+        "module_session_report_reclaim_requires_exact_payloads_and_closed_history"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module/session.rs": [
+        "canonical_numeric_cli_never_normalizes_signs_spaces_or_overflow",
+        "accepted_module_pending_owner_survives_full_queue_and_disconnect_before_stop"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/check.rs": [
+        "ordered_module_population_keeps_global_slots_and_function_ranks",
+        "complete_population_identity_ack_stack_and_all_journal_words_refuse",
+        "absolute_history_owner_prefix_and_independent_closed_budget_refuse",
+        "report_payloads_keep_function_rank_sequence_and_raw_unavailability"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/input.rs": [
+        "grammar_preserves_literals_empty_fields_quotes_and_limits",
+        "actual_frame_acceptance_distinguishes_eof_refusal_and_incomplete",
+        "owned_record_checks_entire_guard_and_exact_input",
+        "accepted_snapshot_refuses_same_shape_in_range_payload_change",
+        "typed_completion_keeps_all_refusals_incomplete_and_exact_stderr"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": [
+        "csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct",
+        "csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard"
+      ]
+    },
+    "base": "755ecab03a990eab40dbf422f85fa17981ea1653",
+    "current_corpus_sha256": "8323e85ed9accc1acca2762998555c69879768c6c86181f04e933f199cc90d63",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 17,
+      "rust_tests": 17
+    },
+    "doctests": {},
+    "instances": {
+      "tests/support/native_normal_module/session_tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::module::session_tests::"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/session_check_tests.rs": {
+        "test/frontend_native_calibrations": "normal_module_check::session::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/session.rs": {
+        "unit/ordinary_interval/main": "normal::module::session::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/check.rs": {
+        "unit/ordinary_interval/main": "normal::module::session::check::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/input.rs": {
+        "unit/ordinary_interval/main": "normal::module::session::input::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
+        "unit/ordinary_interval/main": "normal::session::io::tests::"
+      }
+    },
+    "listed_additions": {
+      "test/frontend_native_calibrations": [
+        "normal_module_check::session::tests::module_session_batch_checks_history_and_every_journal_word",
+        "normal_module_check::session::tests::module_session_report_reclaim_requires_exact_payloads_and_closed_history",
+        "oracle::native_ordinary::normal_caller::module::session_tests::module_session_profile_and_ready_wire_keep_finite_modes_separate",
+        "oracle::native_ordinary::normal_caller::module::session_tests::module_session_ready_retains_complete_geometry_and_identity"
+      ],
+      "unit/ordinary_interval/main": [
+        "normal::module::session::check::tests::absolute_history_owner_prefix_and_independent_closed_budget_refuse",
+        "normal::module::session::check::tests::complete_population_identity_ack_stack_and_all_journal_words_refuse",
+        "normal::module::session::check::tests::ordered_module_population_keeps_global_slots_and_function_ranks",
+        "normal::module::session::check::tests::report_payloads_keep_function_rank_sequence_and_raw_unavailability",
+        "normal::module::session::input::tests::accepted_snapshot_refuses_same_shape_in_range_payload_change",
+        "normal::module::session::input::tests::actual_frame_acceptance_distinguishes_eof_refusal_and_incomplete",
+        "normal::module::session::input::tests::grammar_preserves_literals_empty_fields_quotes_and_limits",
+        "normal::module::session::input::tests::owned_record_checks_entire_guard_and_exact_input",
+        "normal::module::session::input::tests::typed_completion_keeps_all_refusals_incomplete_and_exact_stderr",
+        "normal::module::session::tests::accepted_module_pending_owner_survives_full_queue_and_disconnect_before_stop",
+        "normal::module::session::tests::canonical_numeric_cli_never_normalizes_signs_spaces_or_overflow",
+        "normal::session::io::tests::csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct",
+        "normal::session::io::tests::csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard"
+      ]
+    },
+    "macros": {},
+    "merge_base": "2754cbfff93960913a08a71fe62d2d8b4c37df93",
+    "methods": {
+      "tests/support/native_normal_module/session_tests.rs": {
+        "all": [
+          "module_session_profile_and_ready_wire_keep_finite_modes_separate",
+          "module_session_ready_retains_complete_geometry_and_identity"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/native-interval/normal/module/session_check_tests.rs": {
+        "all": [
+          "module_session_batch_checks_history_and_every_journal_word",
+          "module_session_report_reclaim_requires_exact_payloads_and_closed_history"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/session.rs": {
+        "all": [
+          "canonical_numeric_cli_never_normalizes_signs_spaces_or_overflow",
+          "accepted_module_pending_owner_survives_full_queue_and_disconnect_before_stop"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/check.rs": {
+        "all": [
+          "ordered_module_population_keeps_global_slots_and_function_ranks",
+          "complete_population_identity_ack_stack_and_all_journal_words_refuse",
+          "absolute_history_owner_prefix_and_independent_closed_budget_refuse",
+          "report_payloads_keep_function_rank_sequence_and_raw_unavailability"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/input.rs": {
+        "all": [
+          "grammar_preserves_literals_empty_fields_quotes_and_limits",
+          "actual_frame_acceptance_distinguishes_eof_refusal_and_incomplete",
+          "owned_record_checks_entire_guard_and_exact_input",
+          "accepted_snapshot_refuses_same_shape_in_range_payload_change",
+          "typed_completion_keeps_all_refusals_incomplete_and_exact_stderr"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
+        "all": [
+          "partial_input_eof_and_multiple_lines_preserve_exact_frames",
+          "full_output_retains_exact_unsent_bytes_then_drains_without_duplication",
+          "csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct",
+          "csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tests/support/native_interval_oracle.rs": [
+        "#[path = \"native_ordinary.rs\"]\npub mod native_ordinary;"
+      ],
+      "tests/support/native_normal_caller.rs": [
+        "#[path = \"native_normal_module.rs\"]\npub mod module;"
+      ],
+      "tests/support/native_normal_module.rs": [
+        "#[cfg(test)]\n#[path = \"native_normal_module/session_tests.rs\"]\nmod session_tests;"
+      ],
+      "tests/support/native_ordinary.rs": [
+        "#[path = \"native_normal_caller.rs\"]\npub mod normal_caller;"
+      ],
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;",
+        "#[path = \"normal/module/check.rs\"]\nmod normal_module_check;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/check.rs": [
+        "#[path = \"session_check.rs\"]\npub(super) mod session;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/session_check.rs": [
+        "#[cfg(test)]\n#[path = \"session_check_tests.rs\"]\nmod tests;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/main.rs": [
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal.rs": [
+        "pub(super) mod module;",
+        "pub(super) mod session;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module.rs": [
+        "pub(crate) mod session;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module/session.rs": [
+        "pub(in crate::normal) mod check;",
+        "pub(in crate::normal) mod input;",
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/check.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/input.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": [
+        "pub(in crate::normal) mod io;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ]
+    },
+    "origin": "9c70b1af4c10cbf66d1cab26c66561d03bb463fb",
+    "previous_corpus_sha256": "1aba8961fd7178f24e229150c09d7eb2251eed5c665fc4b9f091f5075b53e45f",
+    "projections": {
+      "evaluation/ordinary-module-native/controls.py": {
+        "current_sha256": "bca97824ecca066e02798107d91596b6f06e7864bb7bca3bc001f31e969b49ed",
+        "edits": [
+          [
+            1939,
+            3160,
+            ""
+          ],
+          [
+            18334,
+            18430,
+            "        self.assertEqual(len(manifest),159);self.assertTrue(set(R.MODULE_TESTS)<=set(manifest))\n"
+          ],
+          [
+            18606,
+            18831,
+            "        text=(f'\\nrunning 160 tests\\n'+body+f'test {R.IGNORED} ... ignored, {R.IGNORE_REASON}\\n\\n'\n              'test result: ok. 159 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s\\n\\n').encode()\n"
+          ],
+          [
+            18879,
+            19015,
+            "        for old,new in ((next(iter(manifest)).encode(),b'unknown::renamed'),(b'159 passed',b'158 passed'),(b'1 ignored',b'0 ignored')):\n"
+          ],
+          [
+            19224,
+            19346,
+            "        output+='\\n----------------------------------------------------------------------\\nRan 12 tests in 0.01s\\n\\nOK\\n'\n"
+          ],
+          [
+            19391,
+            19478,
+            "        for old,new in (('Ran 12','Ran 11'),(R.PYTHON_CONTROLS[0],'renamed_control')):\n"
+          ],
+          [
+            19583,
+            31280,
+            ""
+          ]
+        ],
+        "previous_sha256": "a97fd145b4884c53c29caf0787c9fa4dfe88c5643bda609521a36b75691eaff7"
+      },
+      "evaluation/ordinary-module-native/module_native.py": {
+        "current_sha256": "17e90fa9e26f9174f715056af39e700ad1158c8d27abec43c9259205edac3697",
+        "edits": [
+          [
+            2381,
+            2414,
+            "def check(pairs, coverage, stdout, stderr, k, geometry, csv_index):\n    \"\"\"geometry is CSV then length, authenticated from complete trusted ELF disassembly.\"\"\"\n    assert type(k) is int and k in (16, 1) and type(csv_index) is int and csv_index in (0, 1)\n"
+          ],
+          [
+            3074,
+            3132,
+            "    rows = table(pairs, HEADER, 32, 32768)\n    covered = table(coverage, COVERAGE, 2, 1024)\n"
+          ],
+          [
+            5834,
+            6306,
+            ""
+          ],
+          [
+            6893,
+            9311,
+            ""
+          ]
+        ],
+        "previous_sha256": "e8208da5b7641c40458e0df0722bc553615945fcf0980213454620d8408696dd"
+      },
+      "evaluation/ordinary-module-native/reproduce.py": {
+        "current_sha256": "8f7f5e4517b6ed79689d7fd324edbbe49464b9e80593fef79354ef9d78d005bc",
+        "edits": [
+          [
+            1602,
+            1949,
+            "    'tools/rapid-profiler/normal-work/module_caller_bytes.rs')\n"
+          ],
+          [
+            4112,
+            4617,
+            ""
+          ],
+          [
+            5837,
+            6176,
+            ""
+          ],
+          [
+            14769,
+            14826,
+            "def calibration_manifest(legacy, normal, whole):\n"
+          ],
+          [
+            15715,
+            16011,
+            ""
+          ],
+          [
+            17380,
+            17449,
+            "    assert re.fullmatch(r'Ran 12 tests in [0-9]+\\.[0-9]+s', tail[2])\n"
+          ],
+          [
+            17843,
+            18402,
+            ""
+          ],
+          [
+            19797,
+            20030,
+            ""
+          ],
+          [
+            20286,
+            20320,
+            "    raw = request_shape(request)\n"
+          ],
+          [
+            21752,
+            22888,
+            ""
+          ],
+          [
+            23134,
+            23197,
+            ""
+          ],
+          [
+            23221,
+            23264,
+            ""
+          ],
+          [
+            23862,
+            24620,
+            "                  native=[dict(k=k, status='UNRUN', attempts=0, required_pairs=32, required_normal_reaps=64, required_target_calls=256) for k in (16,1)], stages=[])\n    save(raw/'plan.json', dict(revision=a.revision, native=result['native'],\n         mode='normal-module-state', seeds=[1311768467139281696, 18364758542526924135], cases=list(range(1, 17)),\n         native_invocations=2, k_order=[16,1], retries=0, pair_seconds=15, steps_per_child=20000, whole_wall_seconds=510))\n"
+          ],
+          [
+            28386,
+            28460,
+            "             for k in (16,1) for s in modules['module'].SEEDS\n"
+          ],
+          [
+            37526,
+            37606,
+            "            request=dict(argv=[str(test_bins['native']),'normal-module-state',str(k),\n"
+          ],
+          [
+            37971,
+            38053,
+            "            request_shape(request);save(cohort/'request.json',request)\n"
+          ],
+          [
+            38117,
+            38260,
+            "            argv=[str(tools['python']),'-B',str(HERE/'reproduce.py'),'--native-request',str(cohort/'request.json'),request_pin['sha256']]\n"
+          ],
+          [
+            39451,
+            39588,
+            "                for name in ('stdout.txt','stderr.txt','native-output/normal-module-pairs.csv','native-output/normal-module-coverage.csv'):\n"
+          ],
+          [
+            39913,
+            40025,
+            "            files=(cohort/'native-output'/'normal-module-pairs.csv',cohort/'native-output'/'normal-module-coverage.csv')\n"
+          ],
+          [
+            40125,
+            40265,
+            "            parsed=modules['module'].check(read(files[0],32768),read(files[1],1024),\n"
+          ],
+          [
+            40686,
+            40794,
+            "            row.update(status='NATIVE_STATE_PASS',comparisons=parsed['comparisons'],pairs=32,normal_reaps=64,\n"
+          ],
+          [
+            41092,
+            41137,
+            "        result['status'] = 'NATIVE_STATE_PASS'\n"
+          ],
+          [
+            41424,
+            41520,
+            "            if row['attempts'] and row['status'] != 'NATIVE_STATE_PASS': row['status'] = 'FAILED'\n"
+          ],
+          [
+            41904,
+            41965,
+            "    return 0 if result['status'] == 'NATIVE_STATE_PASS' else 1\n"
+          ],
+          [
+            42300,
+            42630,
+            ""
+          ]
+        ],
+        "previous_sha256": "6c338cb742dc45e2b9b6c1e9ddc8a158841eff62e54218957be505592c20bfba"
+      },
+      "tests/support/native_normal_caller.rs": {
+        "current_sha256": "d9ee963ef3f5c909730b03d0f68b34f39fbba3e54f6d04377f78ae0096132f12",
+        "edits": [
+          [
+            47399,
+            47652,
+            "            if self.module.is_some() {\n                WalkReady::Module(module::Ready::decode(&wire))\n"
+          ]
+        ],
+        "previous_sha256": "f3b204870a1fcea226d27655fccac715783f8d5c1a02eab38e24a0fb249105ba"
+      },
+      "tests/support/native_normal_module.rs": {
+        "current_sha256": "0f1e7733f5224173e6846e32407575e09ad5cfc4b8e2a7b442e610c7d3b44718",
+        "edits": [
+          [
+            374,
+            466,
+            ""
+          ],
+          [
+            1970,
+            3349,
+            ""
+          ],
+          [
+            3412,
+            3434,
+            ""
+          ],
+          [
+            3957,
+            5196,
+            ""
+          ],
+          [
+            5211,
+            5232,
+            ""
+          ],
+          [
+            14069,
+            14468,
+            ""
+          ],
+          [
+            15974,
+            16392,
+            "    pub(super) fn decode(mut wire: &[u8]) -> Self {\n"
+          ],
+          [
+            16558,
+            16583,
+            "        let case = Case::new(\n"
+          ],
+          [
+            18919,
+            19524,
+            ""
+          ],
+          [
+            21998,
+            22582,
+            ""
+          ],
+          [
+            23043,
+            23323,
+            ""
+          ],
+          [
+            23423,
+            23463,
+            "        let _ = self.module_case();\n"
+          ],
+          [
+            23579,
+            23619,
+            "        let _ = self.module_case();\n"
+          ],
+          [
+            23870,
+            24312,
+            "        write_all(self.write.0, &ready.encode(), self.oracle.deadline);\n"
+          ],
+          [
+            28949,
+            29031,
+            ""
+          ]
+        ],
+        "previous_sha256": "85b8aba6f06adbf0a67b5a6b2ef74d32ed5ead40e125dd27c0e0259c68b2f3a9"
+      },
+      "tests/support/native_normal_module/trace.rs": {
+        "current_sha256": "d5d83b0fff284021891d20cb8da587d54bcab829c6dd3fee0b307bb84096b3e7",
+        "edits": [
+          [
+            7086,
+            7348,
+            ""
+          ],
+          [
+            10135,
+            10621,
+            ""
+          ]
+        ],
+        "previous_sha256": "5de94e9604f9b3c29f3837b76d6a29cbd8337226941b4da0392044dd5bb7d0a7"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "4ae890b1c019464a429227d0519d906e2467e8f916919751e6c8df5bedf68950",
+        "edits": [
+          [
+            41047,
+            42486,
+            ""
+          ]
+        ],
+        "previous_sha256": "510778142906e7bdb1ec8ca05b84bdec535f58c84f8dee7e497b0ffadeb5a2c7"
+      },
+      "tools/rapid-profiler/native-interval/normal/module.rs": {
+        "current_sha256": "6a3e4c977a531f41ee6c2ba09701c01ef725d37f1fb5df2b26bc3285f73206c0",
+        "edits": [
+          [
+            468,
+            492,
+            ""
+          ],
+          [
+            3227,
+            3254,
+            ""
+          ],
+          [
+            3324,
+            3448,
+            "    let case = context.module_case();\n"
+          ],
+          [
+            9373,
+            9460,
+            "        let mut prepared = PreparedNormalModuleController::new(\n            site,\n            INSTALL,\n            FUNCTIONS,\n            Limits {\n                epochs: 1,\n                threads: 1,\n                depth: 1,\n                records_per_epoch: 32,\n                actions: 2,\n            },\n        )\n        .unwrap();\n        let epoch = prepared\n            .stage(Config {\n                retained_per_function: case.k,\n                max_inflight: 1,\n                max_invocations: 32,\n            })\n            .unwrap();\n"
+          ],
+          [
+            9511,
+            9551,
+            "        // SAFETY: same actual child, continuous union-wide sequential contract.\n        let (mut controller, client) = unsafe { prepared.activate() }.unwrap();\n        controller.arm(&epoch).unwrap();\n"
+          ],
+          [
+            10183,
+            10224,
+            "        context.ready_module(&ready);\n"
+          ],
+          [
+            12112,
+            12154,
+            ""
+          ],
+          [
+            12438,
+            12529,
+            "        controller.disarm(&epoch).unwrap();\n        let report = controller\n            .report(&epoch)\n            .unwrap()\n            .expect(\"closed zero-reservation module Report\");\n"
+          ],
+          [
+            12703,
+            12739,
+            "        history(&controller.history().unwrap(), &[generation], true);\n"
+          ],
+          [
+            12802,
+            12910,
+            "        drop((report, batch, epoch, client, controller));\n"
+          ],
+          [
+            13017,
+            13058,
+            "        context.ready_module(&ready);\n"
+          ],
+          [
+            13823,
+            14189,
+            ""
+          ],
+          [
+            14270,
+            14327,
+            ""
+          ],
+          [
+            14498,
+            14548,
+            "        arguments.csv.elf_va,\n        arguments.csv.length,\n"
+          ],
+          [
+            14675,
+            14731,
+            "        arguments.length.elf_va,\n        arguments.length.length,\n"
+          ],
+          [
+            14789,
+            14852,
+            "    let selections = if arguments.csv.elf_va < arguments.length.elf_va {\n"
+          ],
+          [
+            14960,
+            15206,
+            "    let mut population = ModulePopulation::default();\n    let mut rows = String::from(HEADER);\n    let mut coverage = String::from(COVERAGE);\n"
+          ],
+          [
+            15441,
+            15585,
+            "            let oracle = NormalOracle::new_module(seed, case, deadline);\n            let (pair, trace) = oracle.pair_module(|candidate, context| {\n"
+          ],
+          [
+            16068,
+            16112,
+            ""
+          ],
+          [
+            16291,
+            16416,
+            ""
+          ],
+          [
+            16524,
+            16547,
+            "                    arguments.k,\n"
+          ],
+          [
+            16953,
+            16984,
+            "                arguments.k.to_string(),\n"
+          ],
+          [
+            18753,
+            18875,
+            ""
+          ],
+          [
+            19041,
+            19380,
+            "            std::fs::write(output.join(\"normal-module-pairs.csv\"), &rows).unwrap();\n            std::fs::write(output.join(\"normal-module-coverage.csv\"), &coverage).unwrap();\n"
+          ],
+          [
+            19655,
+            20457,
+            "    writeln!(out,\"native-normal-module:k={}:required=32:pairs=32:children=64:comparisons={comparisons}:coverage-seeds=2:csv-cases-per-seed=16:length-cases-per-seed=8:target-calls=256:target-returns=256:real-outer-ret=64:normal-reaps=64:complete\",arguments.k).unwrap();\n"
+          ]
+        ],
+        "previous_sha256": "cd35d212e713e692a450c959c0c59778a49de5dda4e07d83ce938d2d9b2f0da3"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/check.rs": {
+        "current_sha256": "99171471d21c315136c950f09ffc74802a9afec8181dc1d26c565a0e5769ec14",
+        "edits": [
+          [
+            5439,
+            5492,
+            ""
+          ]
+        ],
+        "previous_sha256": "40931bb5633b9beec0f4d1cce5ecd2607499639a5c53377bfc0481a4f9a14ed7"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "af3809971471c2810d0ba7fc173e2e7fe653fc1219e6cd868fab8ec819ff66e5",
+        "edits": [
+          [
+            12751,
+            12902,
+            ""
+          ]
+        ],
+        "previous_sha256": "a7f474e6a52a382fcac9041d0074ff0c31a044b43a6056f74ab2956218914fa4"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module.rs": {
+        "current_sha256": "11a4fbbbd5d14fac2af8c4d99c61e0580a387e48ab82604163eafe88933fbb8b",
+        "edits": [
+          [
+            464,
+            488,
+            ""
+          ]
+        ],
+        "previous_sha256": "49bb81e5da089cb9fca46b90ade55dc8c7692789a50cea65dec08752ec5da790"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+        "current_sha256": "7111682c7389f648d0a44b91c6e5cb161caa69507111a6334eb7161855c6b6b3",
+        "edits": [
+          [
+            362,
+            429,
+            "mod check;\n"
+          ],
+          [
+            448,
+            516,
+            "mod io;\nmod loop_trace;\n"
+          ],
+          [
+            550,
+            584,
+            "mod worker;\n"
+          ],
+          [
+            664,
+            783,
+            "struct Engine {\n    controller: IntervalController,\n    epochs: [Option<Slot<IntervalEpoch>>; 3],\n    banks: Vec<IntervalEpochStorage>,\n    current: Option<usize>,\n    history: Vec<HistoryBatch>,\n    reports: Vec<(u64, Vec<RecordObservation>)>,\n    k: usize,\n    committed_arms: u32,\n}\nimpl Engine {\n    fn history(&mut self, io: &mut Io) -> Result<(), String> {\n        if let Some(chunk) = self.controller.drain_history().map_err(failure)? {\n            if let Some(previous) = self.history.last() {\n                assert!(chunk.follows(previous));\n            } else {\n                assert_eq!(chunk.number(), 1);\n                assert_eq!(chunk.range().start, 0);\n                assert_eq!(chunk.before(), HistoryBinding::Initial);\n            }\n            assert_eq!(\n                chunk.range().end - chunk.range().start,\n                chunk.actions().len() as u64\n            );\n            // Retain the actual transfer before any output operation may refuse.\n            self.history.push(chunk);\n            let h = self.history.last().unwrap();\n            for (i, action) in h.actions().iter().enumerate() {\n                assert_eq!(action.function, None);\n                assert_eq!(action.group, None);\n                let kind = match action.kind {\n                    rapid_profiler::frontend::ActionKind::Published => {\n                        assert_eq!(action.current, Some(action.generation));\n                        \"published\"\n                    }\n                    rapid_profiler::frontend::ActionKind::Removed => {\n                        assert_eq!(action.current, None);\n                        \"removed\"\n                    }\n                    _ => panic!(\"unexpected mandatory session action\"),\n                };\n                io.emit(format!(\n                    \"HISTORY,{},{},{kind},{}\\n\",\n                    h.number(),\n                    h.range().start + i as u64 + 1,\n                    action.generation.get()\n                ))?;\n            }\n        }\n        Ok(())\n    }\n    fn retire(&mut self, io: &mut Io) -> Result<(), String> {\n        for i in 0..3 {\n            if self.current == Some(i) {\n                continue;\n            }\n            let Some(slot) = self.epochs[i].as_mut() else {\n                continue;\n            };\n            if slot.report_index().is_none() {\n                let Some(report) = self.controller.report(slot.epoch()).map_err(failure)? else {\n                    continue;\n                };\n                let generation = report.generation().get();\n                let records: Vec<_> = report.records().collect();\n                assert!(records.len() <= self.k);\n                let n = records.len();\n                let index = self.reports.len();\n                self.reports.push((generation, records));\n                slot.copied(generation, index, format!(\"REPORT,{generation},{n}\\n\"));\n                drop(report);\n            }\n            let index = slot.report_index().unwrap();\n            assert_eq!(self.reports[index].0, slot.epoch().generation().get());\n            slot.emit(|line| io.emit(line))?;\n            if let Some(bank) = slot\n                .reclaim(|epoch| self.controller.reclaim_storage(epoch))\n                .map_err(failure)?\n            {\n                self.banks.push(bank); // At most the original E prepared banks.\n                self.epochs[i] = None;\n            }\n        }\n        Ok(())\n    }\n    fn arm(&mut self, io: &mut Io) -> Result<(), String> {\n        self.retire(io)?;\n        let i = self\n            .epochs\n            .iter()\n            .position(Option::is_none)\n            .ok_or(\"retained epoch capacity\")?;\n        let mut bank = Some(self.banks.pop().ok_or(\"retained epoch capacity\")?);\n        #[allow(clippy::result_large_err)]\n        // Keep the returned bank inline until custody is restored.\n        let epoch =\n            match epoch_storage::transfer(&mut bank, |bank| self.controller.stage_prepared(bank)) {\n                Ok(epoch) => epoch,\n                Err(error) => {\n                    self.banks.push(bank.take().unwrap());\n                    return Err(failure(error));\n                }\n            };\n        // Retain the staged token before the fallible publication, including\n        // its failure path. Only a successful arm changes current/counts.\n        self.epochs[i] = Some(Slot::new(epoch));\n        self.controller\n            .arm(self.epochs[i].as_ref().unwrap().epoch())\n            .map_err(failure)?;\n        self.committed_arms += 1; // Publication remains real if history later fails.\n        self.current = Some(i);\n        self.history(io)\n    }\n    fn stop(&mut self, io: &mut Io) -> Result<(), String> {\n        if let Some(i) = self.current {\n            self.controller\n                .disarm(self.epochs[i].as_ref().unwrap().epoch())\n                .map_err(failure)?;\n            self.current = None;\n        }\n        self.history(io)\n    }\n}\nfn failure(e: impl std::fmt::Debug) -> String {\n"
+          ],
+          [
+            1088,
+            1199,
+            "fn dispatch(\n    tx: &mpsc::SyncSender<Command>,\n    pending: &mut Option<Command>,\n"
+          ],
+          [
+            1743,
+            1782,
+            "        match tx.try_send(Command::Stop) {\n"
+          ],
+          [
+            2762,
+            2810,
+            "fn cpus() -> [usize; 2] {\n"
+          ],
+          [
+            7304,
+            7378,
+            ""
+          ],
+          [
+            7620,
+            7787,
+            "        let mut ledger = Ledger::new(tid, entry, returns, stream, k);\n        let mut ids = protocol::Ids::default();\n        let mut pending = None;\n        let mut requested = false;\n        let mut stop_sent = false;\n        let mut finished = None;\n        let mut final_output = false;\n"
+          ],
+          [
+            7897,
+            8289,
+            "        let started = Instant::now();\n        let mut schedule = Schedule::new(started, policy).map_err(failure)?;\n        let mut previous_poll = started;\n        let mut last_wait: Option<(Duration, Duration)> = None;\n        loop {\n            let mut progress = false;\n            let observed = Instant::now();\n            let waited = last_wait.take();\n            let decision = schedule.poll(observed, requested).map_err(|e| {\n                loop_trace.refused_poll(\n                    observed,\n                    loop_trace::State {\n                        pending: match pending.as_ref() {\n                            None => 0,\n                            Some(Command::Call { .. }) => 1,\n                            Some(Command::Flush { .. }) => 2,\n                            Some(Command::Stop) => 3,\n                        },\n                        requested,\n                        stopping: schedule.is_stopping(),\n                        accepted: ledger.accepted.len(),\n                        history: engine.history.last().map_or(0, |h| h.range().end),\n                        reports: engine.reports.len(),\n                        finished: u8::from(finished.is_some()),\n                        write_blocked: io.write_blocked(),\n                        output_drained: io.drained(),\n                    },\n                );\n                format!(\n                    \"{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}\",\n                    clock_failure(e, \"poll\", engine.committed_arms, &schedule),\n                    observed.duration_since(started).as_nanos(),\n                    observed.duration_since(previous_poll).as_nanos(),\n                    waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))\n                )\n            })?;\n            loop_trace.begin(\n                observed,\n                loop_trace::State {\n                    pending: match pending.as_ref() {\n                        None => 0,\n                        Some(Command::Call { .. }) => 1,\n                        Some(Command::Flush { .. }) => 2,\n                        Some(Command::Stop) => 3,\n                    },\n                    requested,\n                    stopping: schedule.is_stopping(),\n                    accepted: ledger.accepted.len(),\n                    history: engine.history.last().map_or(0, |h| h.range().end),\n                    reports: engine.reports.len(),\n                    finished: u8::from(finished.is_some()),\n                    write_blocked: io.write_blocked(),\n                    output_drained: io.drained(),\n                },\n            );\n            match decision {\n                ScheduleDecision::Arm { .. } => {\n                    loop_trace.decision(\"arm\");\n                    if let Err(error) = engine.arm(&mut io) {\n                        return Err(format!(\n                            \"arm/history failed: committed={} completed={} {error}\",\n                            engine.committed_arms,\n                            schedule.armed()\n                        ));\n                    }\n                    schedule.arm_completed(Instant::now()).map_err(|e| {\n                        clock_failure(e, \"arm-completed\", engine.committed_arms, &schedule)\n                    })?;\n                    progress = true;\n                }\n                ScheduleDecision::Stop => {\n                    loop_trace.decision(\"stop\");\n                    engine.stop(&mut io)?;\n                    progress = true;\n                }\n                ScheduleDecision::Wait => loop_trace.decision(\"wait\"),\n            }\n            previous_poll = observed;\n            loop_trace.mark(loop_trace::Phase::PollArm);\n            // At most one reply per iteration. A full reply slot blocks only the\n            // worker after its metadata operation, never the controller or timer.\n            match replies.try_recv() {\n                Ok(worker::Event::Batch { calls, native }) => {\n                    loop_trace.reply(\"batch\", 1, calls.len());\n                    engine.history(&mut io)?;\n                    ledger.batch(calls, *native, &engine.history, &mut io)?;\n                    progress = true;\n                }\n                Ok(worker::Event::Flushed { id, totals }) => {\n                    loop_trace.reply(\"flushed\", 1, 0);\n                    ledger.flushed(id, totals, &mut io)?;\n                    progress = true;\n                }\n                Ok(worker::Event::Finished(totals)) => {\n                    loop_trace.reply(\"finished\", 1, 0);\n                    assert!(finished.replace(totals).is_none());\n                    progress = true;\n                }\n                Ok(worker::Event::Ready { .. }) => return Err(\"duplicate worker handshake\".into()),\n                Err(TryRecvError::Disconnected) if finished.is_none() => {\n                    return Err(\"worker disconnected before completion\".into());\n                }\n                Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),\n            }\n            loop_trace.progress(progress);\n            loop_trace.mark(loop_trace::Phase::ReplyHistory);\n            engine.retire(&mut io)?;\n            loop_trace.mark(loop_trace::Phase::Retire);\n            if !schedule.is_stopping() && !requested && pending.is_none() {\n                if let Some(command) = io.command()? {\n                    loop_trace.command(match &command {\n                        Command::Call { .. } => \"call\",\n                        Command::Flush { .. } => \"flush\",\n                        Command::Stop => \"stop\",\n                    });\n                    if command == Command::Stop {\n                        requested = true;\n                    } else {\n                        ids.accept(&command).map_err(str::to_string)?;\n                        // Acceptance reserves both ledger space and this owned\n                        // pending cell. Queue Full never loses an accepted request.\n                        ledger.accepted.push(match &command {\n                            Command::Call { id, bound, bytes } => Command::Call {\n                                id: *id,\n                                bound: *bound,\n                                bytes: bytes.clone(),\n                            },\n                            Command::Flush { id } => Command::Flush { id: *id },\n                            Command::Stop => unreachable!(),\n                        });\n                        pending = Some(command);\n                    }\n                    progress = true;\n                } else if io.eof() {\n                    return Err(\"EOF before STOP or scheduled shutdown\".into());\n                }\n            }\n            loop_trace.progress(progress);\n            loop_trace.mark(loop_trace::Phase::Input);\n            progress |= dispatch(&tx, &mut pending, schedule.is_stopping(), &mut stop_sent)?;\n            loop_trace.progress(progress);\n            loop_trace.mark(loop_trace::Phase::Dispatch);\n            if !final_output && let Some(totals) = finished {\n                if joined.is_none() && handle.as_ref().is_some_and(|h| h.is_finished()) {\n                    assert!(schedule.is_stopping() && stop_sent && pending.is_none());\n                    joined = Some(handle.take().unwrap().join());\n                    let captured = joined.as_ref().unwrap().tid();\n                    if u64::from(captured) != tid {\n                        return Err(format!(\n                            \"joined task identity captured_tids=[{captured}] Ready={tid} observed_tasks=None\"\n                        ));\n                    }\n                }\n                // One complete observation per loop. The original Schedule\n                // still bounds shutdown; unrelated tasks refuse immediately.\n                let retired = match joined.as_mut() {\n                    Some(task) => joined_task::poll_exclusive(&mut [task], || {\n                        schedule\n                            .wait_bound(Instant::now())\n                            .map(|_| ())\n                            .map_err(|error| {\n                                joined_task::Error::Clock(clock_failure(\n                                    error,\n                                    \"task-retirement\",\n                                    engine.committed_arms,\n                                    &schedule,\n                                ))\n                            })\n                    })\n                    .map_err(|error| error.to_string())?,\n                    None => false,\n                };\n                if retired {\n                    joined\n                        .as_ref()\n                        .unwrap()\n                        .result()\n                        .as_ref()\n                        .map_err(|_| \"worker panic\")?;\n                    engine.retire(&mut io)?;\n                    engine.history(&mut io)?;\n                    assert!(engine.epochs.iter().all(Option::is_none));\n                    assert_eq!(engine.banks.len(), 3);\n                    assert_eq!(engine.reports.len(), schedule.armed() as usize);\n                    assert_eq!(engine.committed_arms, schedule.armed());\n                    assert_eq!(\n                        engine.history.last().unwrap().range().end,\n                        u64::from(schedule.armed()) + 1\n                    );\n                    ledger.finish(totals, &engine.reports, &mut io)?;\n                    assert_eq!(ids.len(), ledger.accepted.len());\n                    single_main();\n                    unsafe { immutable(&spans) };\n                    io.emit(format!(\"IO,{}\\n\", io.write_blocked()))?;\n                    io.emit(format!(\n                        \"DONE,{:?},{},{},{},{},{},{},{},{},1,1\\n\",\n                        schedule.stop_reason().unwrap(),\n                        schedule.armed(),\n                        engine.history.last().unwrap().range().end,\n                        ledger.accepted.len(),\n                        totals.confirmed,\n                        totals.completed,\n                        totals.unsampled,\n                        ledger.batches,\n                        ledger.flushes\n                    ))?;\n                    final_output = true;\n                }\n            }\n            loop_trace.mark(loop_trace::Phase::Finalize);\n            io.write()?;\n            loop_trace.mark(loop_trace::Phase::Write);\n            if final_output && io.drained() {\n                schedule.check_completion(Instant::now()).map_err(|e| {\n                    clock_failure(e, \"final-output\", engine.committed_arms, &schedule)\n                })?;\n                return Ok(());\n            }\n            let observed = Instant::now();\n            let bound = schedule\n                .wait_bound(observed)\n                .map_err(|e| clock_failure(e, \"wait\", engine.committed_arms, &schedule))?;\n            loop_trace.mark(loop_trace::Phase::WaitBound);\n            if !progress {\n                let wait = guarded_wait(started, observed, policy, &schedule, bound);\n                if wait.is_zero() {\n                    // Service the complete nonblocking loop again; do not wait past\n                    // the guard or claim that spinning prevents preemption.\n                    std::hint::spin_loop();\n                } else {\n                    let before = Instant::now();\n                    if schedule.is_stopping() {\n                        thread::sleep(wait);\n                    } else {\n                        // A normal scheduler cannot bound wakeup after sleep. Spend\n                        // a controller CPU during this finite timed portion instead.\n                        // One immutable target, at most the existing 1ms cap; after\n                        // preemption the next real poll still refuses lateness.\n                        let until = observed.checked_add(wait).ok_or(\"idle wait extent\")?;\n                        while Instant::now() < until {\n                            std::hint::spin_loop();\n                        }\n                    }\n                    last_wait = Some((wait, before.elapsed()));\n                }\n            }\n            loop_trace.mark(loop_trace::Phase::Wait);\n            loop_trace.complete(loop_trace::State {\n                pending: match pending.as_ref() {\n                    None => 0,\n                    Some(Command::Call { .. }) => 1,\n                    Some(Command::Flush { .. }) => 2,\n                    Some(Command::Stop) => 3,\n                },\n                requested,\n                stopping: schedule.is_stopping(),\n                accepted: ledger.accepted.len(),\n                history: engine.history.last().map_or(0, |h| h.range().end),\n                reports: engine.reports.len(),\n                finished: u8::from(finished.is_some()),\n                write_blocked: io.write_blocked(),\n                output_drained: io.drained(),\n            });\n        }\n"
+          ],
+          [
+            8795,
+            24743,
+            ""
+          ]
+        ],
+        "previous_sha256": "a81aff508bc17661fa9577714f38ef1f129e28eba911b76f859345bfeed34cba"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/check.rs": {
+        "current_sha256": "f1cce4bc08e1921f4c745f28124b30c66e8488756d6750b6a71872d78bc80f03",
+        "edits": [
+          [
+            11240,
+            11331,
+            "fn check_journal(records: &[NormalRecord], page: &[u64], tid: u64) {\n"
+          ]
+        ],
+        "previous_sha256": "9da7e5937a62d4bcb4f7b16782ee79e74c0660fae42cd0569f519370daa0e6d5"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/epoch_storage.rs": {
+        "current_sha256": "4c4060fed90b0c8de732a58511e314349dfbbcaaf906e498361bf928cdb153d3",
+        "edits": [
+          [
+            171,
+            210,
+            "pub(super) trait Identity {\n"
+          ],
+          [
+            530,
+            574,
+            "pub(super) fn transfer<T, U, E>(\n"
+          ],
+          [
+            1048,
+            1087,
+            "pub(super) struct Slot<T> {\n"
+          ],
+          [
+            1188,
+            1241,
+            "    pub(super) fn new(epoch: T) -> Self {\n"
+          ],
+          [
+            1434,
+            1484,
+            "    pub(super) fn epoch(&self) -> &T {\n"
+          ],
+          [
+            1632,
+            1700,
+            "    pub(super) fn report_index(&self) -> Option<usize> {\n"
+          ],
+          [
+            2020,
+            2121,
+            "    pub(super) fn copied(&mut self, generation: u64, report_index: usize, line: String) {\n"
+          ],
+          [
+            2415,
+            2450,
+            "    pub(super) fn emit(\n"
+          ],
+          [
+            3298,
+            3339,
+            "    pub(super) fn reclaim<B>(\n"
+          ]
+        ],
+        "previous_sha256": "f918a6a63b82435a4cd83402b204830e5c05be232fed0c081e538d2ff9442776"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
+        "current_sha256": "7743594a0b0706731550932979d5faa91c0d377fe59914d80b519f38463cdca6",
+        "edits": [
+          [
+            121,
+            272,
+            ""
+          ],
+          [
+            311,
+            345,
+            "pub(super) struct Io {\n"
+          ],
+          [
+            497,
+            558,
+            "    pub(super) fn new() -> Result<Self, String> {\n"
+          ],
+          [
+            2956,
+            4615,
+            "    pub(super) fn eof(&self) -> bool {\n"
+          ],
+          [
+            4663,
+            4746,
+            "    pub(super) fn emit(&mut self, line: String) -> Result<(), String> {\n"
+          ],
+          [
+            5630,
+            5700,
+            "    pub(super) fn write(&mut self) -> Result<(), String> {\n"
+          ],
+          [
+            6686,
+            6740,
+            "    pub(super) fn drained(&self) -> bool {\n"
+          ],
+          [
+            6788,
+            6847,
+            "    pub(super) fn write_blocked(&self) -> u64 {\n"
+          ],
+          [
+            10374,
+            12684,
+            ""
+          ]
+        ],
+        "previous_sha256": "9277c2b288f7dd95fad68274135846e28a5456d380f5ddb042c083fffcd7ebd3"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": {
+        "current_sha256": "f84f6463e6d77ce3adaf47c4e6f6824a5dc65b33ddadd48fbd8c906de5106b42",
+        "edits": [
+          [
+            337,
+            372,
+            "pub(super) enum Phase {\n"
+          ],
+          [
+            776,
+            813,
+            "pub(super) struct State {\n"
+          ],
+          [
+            5305,
+            5342,
+            "pub(super) struct Trace {\n"
+          ],
+          [
+            5418,
+            5499,
+            "    pub(super) fn begin(&mut self, observed: Instant, state: State) {\n"
+          ],
+          [
+            5564,
+            5652,
+            "    pub(super) fn refused_poll(&mut self, observed: Instant, state: State) {\n"
+          ],
+          [
+            6319,
+            6391,
+            "    pub(super) fn at(&mut self, phase: Phase, at: Instant) {\n"
+          ],
+          [
+            6512,
+            6573,
+            "    pub(super) fn mark(&mut self, phase: Phase) {\n"
+          ],
+          [
+            6619,
+            6690,
+            "    pub(super) fn decision(&mut self, name: &'static str) {\n"
+          ],
+          [
+            6794,
+            6891,
+            "    pub(super) fn reply(&mut self, name: &'static str, worker: usize, calls: usize) {\n"
+          ],
+          [
+            7070,
+            7140,
+            "    pub(super) fn command(&mut self, name: &'static str) {\n"
+          ],
+          [
+            7243,
+            7307,
+            "    pub(super) fn progress(&mut self, value: bool) {\n"
+          ],
+          [
+            7412,
+            7477,
+            "    pub(super) fn complete(&mut self, state: State) {\n"
+          ],
+          [
+            7971,
+            8031,
+            "    pub(super) fn failure(&mut self) -> String {\n"
+          ]
+        ],
+        "previous_sha256": "c09c6cfd2933e8a6976d3a6eb34809c07ceb83b3b93ddb7e959f7f707dcb19c1"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": {
+        "current_sha256": "79aecd64e1d825bf766c547849b5ad76e2b3cf7e73abd57dece97161073a6990",
+        "edits": [
+          [
+            84,
+            120,
+            "pub(super) struct Call {\n"
+          ],
+          [
+            225,
+            403,
+            "pub(super) enum Event {\n    Ready {\n        tid: u64,\n    },\n    Batch {\n        calls: Vec<Call>,\n        native: Box<NormalBatch>,\n    },\n    Flushed {\n        id: u64,\n        totals: NormalTotals,\n    },\n"
+          ],
+          [
+            2185,
+            2280,
+            "    let mut attached = unsafe { client.attach(1, stack(), IntervalJournal::allocate()) }.unwrap();\n"
+          ],
+          [
+            2389,
+            2428,
+            "    let mut calls = Vec::with_capacity(4);\n"
+          ],
+          [
+            2624,
+            3997,
+            ""
+          ],
+          [
+            4208,
+            4292,
+            "                if !calls.is_empty() {\n                    flush(&mut attached, &mut calls, &spans, &tx);\n"
+          ],
+          [
+            4494,
+            4667,
+            "        match command {\n            Command::Call { id, bound, bytes } => {\n                assert!(calls.len() < 4 && bound <= bytes.len() && bytes.len() <= protocol::INPUT);\n                let mut guard = vec![0xa5; bytes.len() + 32];\n                guard[16..16 + bytes.len()].copy_from_slice(&bytes);\n                guard[16 + bytes.len()..].fill(0x5a);\n                // SAFETY: immutable owned readable bytes, exact bound, sole attached\n                // thread and normal CALL/RET. The compiled call site uses its result\n                // immediately below, so this is not a tail transfer to the subject.\n                let value = unsafe { target(guard[16..].as_ptr(), bound) };\n                assert_eq!(value, scalar(&bytes, bound));\n                calls.push(Call {\n                    id,\n                    bound,\n                    bytes,\n                    value,\n                    guard,\n                });\n                if calls.len() == 4 {\n                    flush(&mut attached, &mut calls, &spans, &tx);\n"
+          ],
+          [
+            4699,
+            4830,
+            "            Command::Flush { id } => {\n                flush(&mut attached, &mut calls, &spans, &tx);\n"
+          ],
+          [
+            4895,
+            4941,
+            "                    totals: attached.totals().unwrap(),\n"
+          ],
+          [
+            5001,
+            5103,
+            "            Command::Stop => {\n                flush(&mut attached, &mut calls, &spans, &tx);\n                // Explicit second idle checkpoint must transfer nothing.\n                unsafe { immutable(&spans) };\n                assert!(\n                    unsafe { attached.checkpoint_after_returns() }\n                        .unwrap()\n                        .is_none()\n                );\n                let totals = attached.totals().unwrap();\n                assert_eq!(attached.detach().unwrap(), totals);\n"
+          ],
+          [
+            5200,
+            5258,
+            ""
+          ],
+          [
+            5276,
+            7399,
+            ""
+          ]
+        ],
+        "previous_sha256": "f03a04be7bad14a40a33c5aca7d364bc7cc0ecfd7217f05654ff25e0d6f8c7ea"
+      }
+    },
+    "prospective_tree": "1ed5a6c02bf6a74bfcad4e9c0799fc9ca9fc17ec",
+    "python_methods": {},
+    "scope": "17 exact new declarations: four calibration tests and thirteen ordinary-interval tests, each compiled once under existing harness wiring. All old declarations, ignored/doc/automatic harness and serial counts, historical layers,350 recorder identities, failures and limits remain exact. Source derivation is not compiled-list or test execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/ordinary-module-native/controls.py": "bca97824ecca066e02798107d91596b6f06e7864bb7bca3bc001f31e969b49ed",
+      "evaluation/ordinary-module-native/module_native.py": "17e90fa9e26f9174f715056af39e700ad1158c8d27abec43c9259205edac3697",
+      "evaluation/ordinary-module-native/reproduce.py": "8f7f5e4517b6ed79689d7fd324edbbe49464b9e80593fef79354ef9d78d005bc",
+      "evaluation/ordinary-module-session/controls.py": "604d79fccc9bc13d96afc565158aa0e269b319ce5ae84825e03281f3d9fc5b7b",
+      "evaluation/ordinary-module-session/corpus.py": "6feddb81816cc509e1357edec646ab60ba433a4a857d094ddce4d09a0c3ee738",
+      "evaluation/ordinary-module-session/original.c": "028103dd5aeb1f1ac9b95a2e73c6527220dbe619c127f6783e1342c91eed6a5a",
+      "evaluation/ordinary-module-session/output.py": "b49ba0a5ca68829e05a61b51938077184d72d03cabc0c4ade90ad6343e00c313",
+      "evaluation/ordinary-module-session/produce.py": "72cc6b36c66a6ea7f147bd477666deeef6db233672900bd069c45c8d0d5ecf9b",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_normal_caller.rs": "d9ee963ef3f5c909730b03d0f68b34f39fbba3e54f6d04377f78ae0096132f12",
+      "tests/support/native_normal_module.rs": "0f1e7733f5224173e6846e32407575e09ad5cfc4b8e2a7b442e610c7d3b44718",
+      "tests/support/native_normal_module/session_tests.rs": "2cc91187665d8ab4aeba84790585b9207c40aa13f4fbf09a69a06794a6087160",
+      "tests/support/native_normal_module/trace.rs": "d5d83b0fff284021891d20cb8da587d54bcab829c6dd3fee0b307bb84096b3e7",
+      "tests/support/native_ordinary.rs": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "dea04da1176e8cdbaec40f80467baaa8611889bdc7fa250eac4d06b0ecbefb0b",
+      "tools/rapid-profiler/native-interval/main.rs": "4ae890b1c019464a429227d0519d906e2467e8f916919751e6c8df5bedf68950",
+      "tools/rapid-profiler/native-interval/normal/module.rs": "6a3e4c977a531f41ee6c2ba09701c01ef725d37f1fb5df2b26bc3285f73206c0",
+      "tools/rapid-profiler/native-interval/normal/module/check.rs": "99171471d21c315136c950f09ffc74802a9afec8181dc1d26c565a0e5769ec14",
+      "tools/rapid-profiler/native-interval/normal/module/session.rs": "b69d381a5dbe806c63cd40973fcd95d87d337c4f4faa88e76cd3b317f9e81acd",
+      "tools/rapid-profiler/native-interval/normal/module/session_check.rs": "cfdc23277776d3f1f808466f7bbdbc72c191d8bce25ac9f4b238e1b12dea4e7e",
+      "tools/rapid-profiler/native-interval/normal/module/session_check_tests.rs": "fde98673930579314ecbb5494449bb00da55be64e265f267ee28482f3c35e73b",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "af3809971471c2810d0ba7fc173e2e7fe653fc1219e6cd868fab8ec819ff66e5",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "b8470a0f514e796c98dd2e843b51468e85ebc8c9bdc4495c077e3d25c4b6c97d",
+      "tools/rapid-profiler/ordinary-interval/normal/module.rs": "11a4fbbbd5d14fac2af8c4d99c61e0580a387e48ab82604163eafe88933fbb8b",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session.rs": "a0af2f9a318ba4aa114de36aac7e1b70bd8c2ea714796dcefe674306be79b9d7",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/check.rs": "9e018490996641a9cb6f6cdd53bf224814d09429bde9b157d82ff3c13d6a4a32",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/input.rs": "f09d1832b35ca59e83fb9ef9b86cb741a202e8ab449df671e1a729d3a97d7d26",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": "4dd74aacda246d56c7b8b431b46b7535e402fd8f5bf93eb66006335a943aea5e",
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": "7111682c7389f648d0a44b91c6e5cb161caa69507111a6334eb7161855c6b6b3",
+      "tools/rapid-profiler/ordinary-interval/normal/session/check.rs": "f1cce4bc08e1921f4c745f28124b30c66e8488756d6750b6a71872d78bc80f03",
+      "tools/rapid-profiler/ordinary-interval/normal/session/engine.rs": "b49875ecbdcf534e7c18a2924710188a9464a912bf5d9d45bdbbd6ac6481d394",
+      "tools/rapid-profiler/ordinary-interval/normal/session/epoch_storage.rs": "4c4060fed90b0c8de732a58511e314349dfbbcaaf906e498361bf928cdb153d3",
+      "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": "7743594a0b0706731550932979d5faa91c0d377fe59914d80b519f38463cdca6",
+      "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": "f84f6463e6d77ce3adaf47c4e6f6824a5dc65b33ddadd48fbd8c906de5106b42",
+      "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": "79aecd64e1d825bf766c547849b5ad76e2b3cf7e73abd57dece97161073a6990"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 164
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 160
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 207
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 194
+        }
+      }
+    }
+  },
   "mainabab": {
     "added_methods": {
       "tests/support/native_normal_caller.rs": [
