@@ -394,7 +394,7 @@ static int ordinary(long n) {
     case SYS_readlink: case SYS_readlinkat: case SYS_getcwd:
     case SYS_getuid: case SYS_geteuid: case SYS_getgid: case SYS_getegid:
     case SYS_getpid: case SYS_gettid: case SYS_uname: case SYS_sysinfo:
-    case SYS_getrandom: case SYS_clock_gettime: case SYS_gettimeofday:
+    case SYS_getrandom: case SYS_clock_gettime: case SYS_clock_getres: case SYS_gettimeofday:
     case SYS_getxattr: case SYS_lgetxattr: case SYS_fgetxattr:
     case SYS_listxattr: case SYS_llistxattr: case SYS_flistxattr:
     case SYS_brk: case SYS_futex: case SYS_fcntl: case SYS_prlimit64:

@@ -331,9 +331,9 @@
       "sha256": "76ae070a52a3c2cadc9e886f14e675e88e63079eea8d2c68d6305921042625c5"
     },
     {
-      "bytes": 25872,
+      "bytes": 25950,
       "path": "tools/page-entry/selected/rseq_guard.c",
-      "sha256": "d894e686a3771282d4215bf1fed41746b8298f512b1877429ff388dc84661118"
+      "sha256": "45b6db8b35c6f3d14618f33abef83425adaec4c95f020fc1e6e40881f1be34bb"
     },
     {
       "bytes": 5575,
@@ -346,9 +346,9 @@
       "sha256": "20ab3a150b7537be684a438dfcec93ec49506cd79725ea871b86e8f3aa53c42f"
     },
     {
-      "bytes": 38110,
+      "bytes": 38133,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "fdcb80d7485d47410572d910cd6079ec67b66cfc594896d159c3b5f0a7805386"
+      "sha256": "02a7ce23fcc0f6ac10869e326e58d6a7c46051605b40d4be8cd83146d770db03"
     },
     {
       "bytes": 6497,
@@ -678,9 +678,9 @@
       "sha256": "76ae070a52a3c2cadc9e886f14e675e88e63079eea8d2c68d6305921042625c5"
     },
     {
-      "bytes": 25872,
+      "bytes": 25950,
       "path": "tools/page-entry/selected/rseq_guard.c",
-      "sha256": "d894e686a3771282d4215bf1fed41746b8298f512b1877429ff388dc84661118"
+      "sha256": "45b6db8b35c6f3d14618f33abef83425adaec4c95f020fc1e6e40881f1be34bb"
     },
     {
       "bytes": 5575,
@@ -693,9 +693,9 @@
       "sha256": "20ab3a150b7537be684a438dfcec93ec49506cd79725ea871b86e8f3aa53c42f"
     },
     {
-      "bytes": 38110,
+      "bytes": 38133,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "fdcb80d7485d47410572d910cd6079ec67b66cfc594896d159c3b5f0a7805386"
+      "sha256": "02a7ce23fcc0f6ac10869e326e58d6a7c46051605b40d4be8cd83146d770db03"
     },
     {
       "bytes": 6497,
