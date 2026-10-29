@@ -56,6 +56,7 @@ def body(path,nm_text,disassembly,wrapper,helper):
             if s['value']<=at<s['value']+s['bytes']:
                 code=bytes.fromhex(m[2]);asm=m[3].strip().split('#',1)[0].strip()
                 if code==b'\xc3'and asm=='retq':asm='ret'
+                if len(code)==5 and code[0]==0xe9 and asm.startswith('jmpq '):asm='jmp '+asm[5:]
                 s['insns'].append((at,code,asm))
     for s in functions.values():
         at=s['value']
