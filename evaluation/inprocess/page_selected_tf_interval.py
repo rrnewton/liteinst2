@@ -28,8 +28,10 @@ FD_CONTROLS=('fd3-alias','nonfifo-go','wrong-direction','same-fifo')
 SEMANTIC=('generic_tf_attempts','generic_tf_steps','source_syscalls','cpuid','rdtsc','selected_steps')
 H=lambda b:hashlib.sha256(b).hexdigest()
 def digest(v):return H(json.dumps(v,sort_keys=True,separators=(',',':'),allow_nan=False).encode())
-def inventory():
+def inventory(sealed_custody=False):
+ need(type(sealed_custody)is bool,'explicit fixed interval mode')
  result=[('source-paths','metadata'),('interval-gdb-version','metadata'),('interval-objdump-version','metadata')]
+ if sealed_custody:result += [('interval-unobserved-'+suffix,profile)for suffix,profile in(('headers','metadata'),('link','interval_build'),('undefined','inspect'),('symbols','inspect'),('memset','inspect'))]
  result += [('interval-observed-'+suffix,profile)for suffix,profile in
             (('headers','metadata'),('link','interval_build'),('undefined','inspect'),('symbols','inspect'),('memset','inspect'),('layout','metadata'))]
  for count in(1,256):
@@ -40,10 +42,12 @@ def inventory():
   result += [('interval-'+str(count)+'-'+lane,'interval')for lane in LANES]
  result += [('interval-control-'+c,'interval')for c in CONTROLS]
  result += [('interval-fd-'+c,'interval')for c in FD_CONTROLS]
- need(len(result)==40 and len({n for n,_ in result})==40,'fixed forty distinct commands')
+ need(len(result)==(45 if sealed_custody else 40) and len({n for n,_ in result})==len(result),'fixed complete distinct command inventory')
  return result
 
 def summary(r):
+ sealed_custody=r['profile']=='page-selected-tf-interval-custody-v1'
+ need(r['profile']in('page-selected-tf-interval-v1','page-selected-tf-interval-custody-v1'),'literal finite profile')
  cases=r['cases'];commands=r['commands'];plan=[(n,p,'normal')for n in(1,256)for p in LANES]
  plan += [(1,'gated-timing',c)for c in CONTROLS]+[(1,'launcher',c)for c in FD_CONTROLS]
  need(len(cases)<=17 and [(c['operations'],c['profile'],c['control'])for c in cases]==plan[:len(cases)],'exact attempted seventeen-child prefix')
@@ -62,7 +66,7 @@ def summary(r):
  complete=r['status']=='passed'
  if complete:
   need(len(accepted)==17 and len(r['pairs'])==2 and all(x['comparison']['accepted']is True and x['comparison']['operations']==x['operations']for x in r['pairs'])and
-       [(x['name'],x['profile'])for x in commands]==inventory()and r['source_unchanged']and not r['error']and not r['final_errors'],
+       [(x['name'],x['profile'])for x in commands]==inventory(sealed_custody)and r['source_unchanged']and not r['error']and not r['final_errors'],
        'complete fixed cohort and all final custody before finite qualification')
  captures=[(c['name'],k,v)for c in commands for k,v in c.get('captures',{}).items()]
  value=dict(schema=1,profile=r['profile'],revision=r['expected_revision'],status=r['status'],
@@ -77,6 +81,11 @@ def summary(r):
   source_unchanged=r['source_unchanged'],finite_qualification=complete,performance_credit=False,full_b2_complete=False,full_b3_complete=False,
   error_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),reproduce=r['reproduce'],
   scope='Same-revision original148 plus6/49/17 prerequisite; two actual native/observed full-state pairs, four output-only timing calibration lanes, five rejected protocols and four actual pre-exec descriptor refusals. No benchmark aggregates or unobserved BODY-local transfer claims.')
+ if sealed_custody:
+  for label,key in(('custody_prerequisite','custody_qualification'),('baseline_interval_prerequisite','baseline_interval_qualification')):
+   prerequisite=r.get(key,{}).get('receipt')
+   value[label]={k:prerequisite[k]for k in('bytes','sha256')}if prerequisite else None
+  value['scope']='Same-revision original148 plus6/49/17, original interval17 and custody17 prerequisites; fresh custody N1/N256 full-state pairs and identical protocol/FD refusals. Explicit FRESH/RETAINED BODY authority; timing lanes have no binary or BODY-local custody claim. No benchmark credit.'
  text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
  need(len(text.encode())<64<<10 and not any(x and len(x)>1 and x in text for x in(str(ROOT),str(Path.home()),platform.node(),'/home/')),'bounded numeric public projection without private paths')
  return value
@@ -85,15 +94,21 @@ def main():
  ap=argparse.ArgumentParser(description=__doc__)
  ap.add_argument('--expect-revision',required=True);ap.add_argument('--qualification-receipt',type=Path,required=True)
  ap.add_argument('--qualification-sha256',required=True);ap.add_argument('--output',type=Path,required=True)
+ ap.add_argument('--sealed-custody',action='store_true')
+ ap.add_argument('--custody-receipt',type=Path);ap.add_argument('--custody-sha256')
+ ap.add_argument('--baseline-interval-receipt',type=Path);ap.add_argument('--baseline-interval-sha256')
  a=ap.parse_args();os.chdir(ROOT)
+ need(all(x is not None for x in(a.custody_receipt,a.custody_sha256,a.baseline_interval_receipt,a.baseline_interval_sha256))if a.sealed_custody else all(x is None for x in(a.custody_receipt,a.custody_sha256,a.baseline_interval_receipt,a.baseline_interval_sha256)),'explicit custody mode requires both complete additional prerequisite identities')
+ if a.sealed_custody:need(all(re.fullmatch('[0-9a-f]{64}',x)for x in(a.custody_sha256,a.baseline_interval_sha256)),'exact additional prerequisite hashes')
  need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',a.expect_revision)and re.fullmatch('[0-9a-f]{64}',a.qualification_sha256)and len(os.sched_getaffinity(0))==1,
       'exact revision/receipt hash, assertions and one reserved CPU')
  private=a.output.resolve();need(private.is_relative_to(ROOT/'target')and not private.exists(),'fresh private output');private.mkdir(parents=True,mode=0o700)
  cpu=next(iter(os.sched_getaffinity(0)));selected=ROOT/'tools/page-entry/selected';fixture=selected/'tests/tf_interval'
- r=dict(schema=1,profile='page-selected-tf-interval-v1',expected_revision=a.expect_revision,source=None,source_unchanged=False,
+ r=dict(schema=1,profile='page-selected-tf-interval-custody-v1'if a.sealed_custody else'page-selected-tf-interval-v1',expected_revision=a.expect_revision,source=None,source_unchanged=False,
         hardware=hardware(cpu),bounds=BOUNDS,status='failed',error=None,final_errors=[],commands=[],cases=[],pairs=[],builds=[],programs=[],generated={})
  r['reproduce']=['python3','-B','evaluation/inprocess/page_selected_tf_interval.py','--expect-revision',a.expect_revision,
   '--qualification-receipt','${SAME_REVISION_FULL_LEASE_RECEIPT}','--qualification-sha256',a.qualification_sha256,'--output','${FRESH_PRIVATE_OUTPUT}']
+ if a.sealed_custody:r['reproduce'] += ['--sealed-custody','--custody-receipt','${SAME_REVISION_CUSTODY_RECEIPT}','--custody-sha256',a.custody_sha256,'--baseline-interval-receipt','${SAME_REVISION_BASELINE_INTERVAL_RECEIPT}','--baseline-interval-sha256',a.baseline_interval_sha256]
  pins={};aliases={};artifacts={};presence={};namespace_links={};pending=[]
  def pin(path):
   alias=str(Path(path).absolute());p=Path(alias).resolve(strict=True);v=fact(p)
@@ -109,13 +124,15 @@ def main():
   if 'prerequisite_configuration'in r:
    v=r['prerequisite_configuration'];need(admission.cargo_configuration(v['environment'])==v['cargo_configuration'],'qualified Build configuration unchanged')
   need(all(Path(p).is_symlink()and os.readlink(p)==v for p,v in r.get('qualified_namespace_aliases',{}).items()),'qualified namespace links unchanged')
+  for name in('custody_namespace_aliases','baseline_interval_namespace_aliases'):
+   need(all(Path(p).is_symlink()and os.readlink(p)==v for p,v in r.get(name,{}).items()),'additional qualified namespace links unchanged')
   need(all(Path(p).is_symlink()and os.readlink(p)==v for p,v in namespace_links.items()),'new namespace links unchanged')
   need(all(os.path.lexists(p)==v for p,v in presence.items()),'loader configuration presence unchanged')
   need(all(str(Path(p).resolve(strict=True))==v for p,v in aliases.items()),'all input aliases unchanged')
   need(all(fact(p)==v for p,v in pins.items()),'all actual source/tool/input bytes unchanged')
   need(all(dict(fact(p),mode=Path(p).stat().st_mode&0o777)==v for p,v in artifacts.items()),'all actual retained artifacts unchanged')
  def start(name,argv,profile,env,expected=0):
-  closure();i=len(r['commands']);need(i<40 and(name,profile)==inventory()[i],'exact forty-command ordered prefix')
+  closure();i=len(r['commands']);plan=inventory(a.sealed_custody);need(i<len(plan)and(name,profile)==plan[i],'exact fixed-command ordered prefix')
   row=dict(name=name,argv=list(map(str,argv)),profile=profile,bounds=BOUNDS[profile],environment=dict(env),capture_limit=16<<20,expected_exit=expected)
   r['commands'].append(row);return row
  def captured(row):
@@ -148,6 +165,7 @@ def main():
   tools,unobserved=qualified(a.qualification_receipt,a.qualification_sha256,r['source'],pin,binary,r,lease_mode=True)
   r['prerequisite_receipt']=dict(path=str(pin(a.qualification_receipt)),**fact(a.qualification_receipt))
   r['unobserved_bridge']=dict(path=str(unobserved),**fact(unobserved))
+  if a.sealed_custody:r['prerequisite_bridge']=r.pop('unobserved_bridge')
   prerequisite=decode(pin(a.qualification_receipt).read_bytes());archive=pin(prerequisite['build']['artifacts']['decoder.a']['path'])
   builder=SimpleNamespace(tools=tools,environment=r['prerequisite_configuration']['environment'])
   r['archive']=dict(path=str(archive),**fact(archive))
@@ -155,11 +173,22 @@ def main():
   gd=prerequisite['tf_same_page_fixture']['tools']['gdb'];tools['gdb']=pin(gd['path'])
   need(fact(tools['gdb'])=={k:gd[k]for k in('bytes','sha256')},'exact qualified actual-DWARF tool')
   r['tools']={k:dict(path=str(p),**fact(p))for k,p in tools.items()}
-  prepare=load('tf_interval_prepare',fixture/'prepare.py');check=load('tf_interval_check',fixture/'check.py')
+  if a.sealed_custody:
+   baseline_auth=load('tci_baseline_auth',HERE/'page_tf_interval_qualified.py')
+   scratch=dict(cpu=cpu,hardware=r['hardware'],required_source_inputs=r['required_source_inputs'])
+   baseline_assets=baseline_auth.authenticate(a.baseline_interval_receipt,a.baseline_interval_sha256,r['source'],pin,binary,scratch)
+   need(scratch['qualification']==r['qualification']and scratch['prerequisite_configuration']==r['prerequisite_configuration']and baseline_assets['tools']==tools,'same exact original lease prerequisite and baseline interval tools')
+   r['baseline_interval_receipt']=dict(path=str(pin(a.baseline_interval_receipt)),**fact(a.baseline_interval_receipt))
+   r['baseline_interval_qualification']=scratch['interval_qualification'];r['baseline_interval_namespace_aliases']=scratch['interval_namespace_aliases']
+   custody_auth=load('tci_custody_auth',HERE/'page_tf_custody_qualified.py');r['cpu']=cpu
+   custody_assets=custody_auth.authenticate(a.custody_receipt,a.custody_sha256,r['source'],pin,binary,r)
+   need(custody_assets['tools']==tools and custody_assets['archive']==archive and custody_assets['prerequisite_bridge']==unobserved and custody_assets['prerequisite_configuration']==r['prerequisite_configuration'],'custody and interval prerequisites share exact original tools/archive/bridge/configuration')
+   r['custody_receipt']=dict(path=str(pin(a.custody_receipt)),**fact(a.custody_receipt))
+  prepare=load('tf_interval_prepare',fixture/('custody_prepare.py'if a.sealed_custody else'prepare.py'));check=load('tf_interval_check',fixture/('custody.py'if a.sealed_custody else'check.py'))
   pipe=load('tf_interval_pipe',fixture/'pipe_run.py');images=load('tf_interval_images',selected/'tests/provider_launch/interpreter.py')
   namespace=load('tf_interval_namespace',ROOT/'tools/page-entry/namespace.py')
   policy=load('tf_interval_policy',selected/'tests/oneshot_integrated/check.py')
-  reports=load('tf_interval_reports',selected/'tests/tf_same_page/reports.py')
+  reports=check.reports if a.sealed_custody else load('tf_interval_reports',selected/'tests/tf_same_page/reports.py')
   need(pipe.BOUNDS==BOUNDS['interval']and pipe.CONTROLS=={'normal':'0','bad-ready':'1','extra-done':'2','missing-done':'3','wrong-go':'0','eof-go':'0'},'fixed actual protocol bounds and controls')
   for name in('launch.py','negative_launch.py','fixture.S','native_reference.c','record.h','linker.ld','build.sh','layout.py','observe.inc'):pin(fixture/name)
   for module in tuple(sys.modules.values()):
@@ -182,8 +211,10 @@ def main():
    if bridge:
     _,assembly,err=run(name+'-memset',[tools['objdump'],'-d','-w','-M','att','--disassemble=memset',path],profile='inspect',env=builder.environment)
     need(not err,'complete actual reset assembly');result['reset']=hidden_memset(path,body_check(path,symbols,assembly,'fast',symbol_name='memset'))
+   if record is None:
+    need(a.sealed_custody and name=='interval-unobserved'and bridge,'only the exact unobserved custody release artifact has no observation layout');return result
    _,out,err=run(name+'-layout',[tools['gdb'],'-q','-nx','-batch','-iex','set auto-load off','-iex','set debuginfod enabled off',
-    '-iex','set index-cache enabled off','-iex','maintenance set worker-threads 1','--readnow','--se='+str(path),'-x',fixture/'layout.py'],env=gdb_env)
+    '-iex','set index-cache enabled off','-iex','maintenance set worker-threads 1','--readnow','--se='+str(path),'-x',fixture/('custody_layout.py'if a.sealed_custody else'layout.py')],env=gdb_env)
    need(not err,'actual file-only DWARF');layout=decode(out);result['layout']=layout
    rows=[x.split()for x in symbols.splitlines()if x.split()[-1:]==[record.encode()]];_,_,ph=elf(path)
    need(layout['record']==record and len(rows)==1 and len(rows[0])==4 and rows[0][2]==b'b'and
@@ -192,23 +223,33 @@ def main():
     'complete actual native or gated record in one writable NX load')
    return result
   observed=output/'observed';r['adapters']=prepare.prepare(ROOT,observed,pin)
-  for name in(*prepare.FILES,'tf_interval_observe.inc','tf_interval_record.h','tf_interval_old_record.h'):
+  generated_names=prepare.GENERATED if a.sealed_custody else(*prepare.FILES,'tf_interval_observe.inc','tf_interval_record.h','tf_interval_old_record.h')
+  for name in generated_names:
    r['generated'][name]=fact(binary(observed/name))
-  recipe_path=pin(selected/'build-tf-same-page-lease.sh');argv=commands(recipe_path,builder,output,archive,pin)[0]
+  recipe_path=pin(selected/('build-tf-sealed-custody.sh'if a.sealed_custody else'build-tf-same-page-lease.sh'));argv=commands(recipe_path,builder,output,archive,pin)[0]
   units=[str(selected.parent/p)for p in UNITS[:-1]]
   macros=(MACROS-{'-DLI2_ONESHOT_PUBLICATION=1'})|{'-DLI2_CPUID_NX_ONLY=1','-DLI2_RSEQ_NATIVE=1','-DLI2_RSEQ_NATIVE_BOUNDARY=1','-DLI2_RSEQ_TCGETS_BTRFS=1','-DLI2_RSEQ_TIOCGWINSZ_BTRFS=1','-DLI2_TF_SAME_PAGE_LEASE=1'}
+  if a.sealed_custody:macros=macros|{'-DLI2_TF_SEALED_CUSTODY=1'}
   need([x for x in argv if x.endswith(('.c','.S'))]==units and len(units)==15 and
-       set(x for x in argv if x.startswith('-DLI2_'))==macros and sum(x.startswith('-DLI2_')for x in argv)==len(macros)==13 and
-       argv[-2:]==['-o',str(output/'bridge-tf-same-page-lease.so')]and
+       set(x for x in argv if x.startswith('-DLI2_'))==macros and sum(x.startswith('-DLI2_')for x in argv)==len(macros)==(14 if a.sealed_custody else 13) and
+       argv[-2:]==['-o',str(output/('bridge-tf-sealed-custody.so'if a.sealed_custody else'bridge-tf-same-page-lease.so'))]and
        all(x in argv for x in('-O2','-g','-nostdlib','-shared','-fPIC','-fvisibility=hidden','-mgeneral-regs-only','-fno-builtin','-Werror')),
        'unchanged exact fifteen-unit thirteen-macro release recipe')
+  if a.sealed_custody:
+   unobserved=output/'bridge-tf-sealed-custody.so';pending.append(unobserved)
+   release=dict(name='interval-unobserved',recipe=fact(recipe_path),argv=argv,archive=fact(archive),translation_units=15,status='failed');r['builds'].append(release)
+   headers('interval-unobserved-headers',argv,units,archive,builder,pin,aliases,run,release)
+   try:run('interval-unobserved-link',argv,profile='interval_build',env=builder.environment)
+   finally:release['artifact']=retain(unobserved)
+   release['inspection']=inspect('interval-unobserved',unobserved,None,True);release['status']='passed'
+   r['unobserved_bridge']=dict(path=str(unobserved),**fact(unobserved))
   actual=argv.copy();actual[-1]=str(output/'observed.so');sources=units.copy()
   for basename in('runtime_loader.c','lifecycle_loader.c'):
    old,new=str(selected/basename),str(observed/basename);need(actual.count(old)==1,'one exact observation TU replacement')
    actual=[new if x==old else x for x in actual];sources=[new if x==old else x for x in sources]
   build=dict(name='interval-observed',recipe=fact(recipe_path),argv=actual,archive=fact(archive),translation_units=15,status='failed');r['builds'].append(build)
   headers('interval-observed-headers',actual,sources,archive,builder,pin,aliases,run,build)
-  need({str(observed/n)for n in(*prepare.FILES,'tf_interval_observe.inc','tf_interval_record.h','tf_interval_old_record.h')}<=set(build['headers']),'complete actual generated observation include view')
+  need({str(observed/n)for n in generated_names}<=set(build['headers']),'complete actual generated observation include view')
   bridge=output/'observed.so';pending.append(bridge)
   try:run('interval-observed-link',actual,profile='interval_build',env=builder.environment)
   finally:build['artifact']=retain(bridge)
