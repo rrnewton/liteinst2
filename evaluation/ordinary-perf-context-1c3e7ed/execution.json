@@ -1,0 +1,135 @@
+[
+  {
+    "closure": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "19a4bbf324d9ae6175777dfdb891cd2ad3965504fc6fa65edcc889d3e7e4ec03",
+      "reaped_descendants": 0,
+      "seconds": 1.3008251290302724,
+      "start_utc": "2026-10-29T01:39:58.196877+00:00",
+      "termination": null
+    },
+    "command": [
+      "/usr/bin/env",
+      "TMPDIR=$REPO/ignored/a5/normal-perf-decode-root-v1/tmp",
+      "/usr/local/bin/python3",
+      "-B",
+      "tools/rapid-profiler/tree-work/test_perf_context.py"
+    ],
+    "executed_base_revision": "e26ffb42005a49fdb312c506d872f1952c0218d6",
+    "name": "perf-context-controls-v1",
+    "private_receipt": {
+      "bytes": 1238,
+      "sha256": "668a1829f1d0511c0d4c6d83b35f6b4e88ea4a57f5bb470c00c6620675e740aa"
+    },
+    "verified_source_revision": "1c3e7ed337e74dab01d30c3da7a0152e99fd8872",
+    "wall_limit_seconds": 1200,
+    "working_source_sha256": {
+      "tools/rapid-profiler/tree-work/PERF_DATA.md": "f58a7ad8f0e1601a3471c56ee36c513c03c77b38181605a41de992c36c690ce4",
+      "tools/rapid-profiler/tree-work/perf_data.py": "348988e5ab76300cdba3c953b2d447aebf3d73d4b59421d6a9195d50d654b6c3",
+      "tools/rapid-profiler/tree-work/perf_records.py": "86847d833115242dfcf502df973f1c916a45b5dcdc07c9aed416de869de1a4b7",
+      "tools/rapid-profiler/tree-work/test_perf_context.py": "10bb3d7c798e4a91e167be9feb7288fb6e83bb5135ff52f0215f0165aa1d378f"
+    }
+  },
+  {
+    "closure": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "df187e5f0779583b8cd9580859223f5eb02ea5f2874ebd521b250238e1fbf802",
+      "reaped_descendants": 0,
+      "seconds": 1.1654739219229668,
+      "start_utc": "2026-10-29T01:40:01.908886+00:00",
+      "termination": null
+    },
+    "command": [
+      "/usr/bin/env",
+      "TMPDIR=$REPO/ignored/a5/normal-perf-decode-root-v1/tmp",
+      "/usr/local/bin/python3",
+      "-B",
+      "tools/rapid-profiler/tree-work/test_perf_data.py"
+    ],
+    "executed_base_revision": "e26ffb42005a49fdb312c506d872f1952c0218d6",
+    "name": "perf-context-strict-controls-v1",
+    "private_receipt": {
+      "bytes": 1235,
+      "sha256": "b274e7245cfbbb0038d7cdd5695845e62066a6b67cb77a874f67445a5c6abd73"
+    },
+    "verified_source_revision": "1c3e7ed337e74dab01d30c3da7a0152e99fd8872",
+    "wall_limit_seconds": 1200,
+    "working_source_sha256": {
+      "tools/rapid-profiler/tree-work/PERF_DATA.md": "f58a7ad8f0e1601a3471c56ee36c513c03c77b38181605a41de992c36c690ce4",
+      "tools/rapid-profiler/tree-work/perf_data.py": "348988e5ab76300cdba3c953b2d447aebf3d73d4b59421d6a9195d50d654b6c3",
+      "tools/rapid-profiler/tree-work/perf_records.py": "86847d833115242dfcf502df973f1c916a45b5dcdc07c9aed416de869de1a4b7",
+      "tools/rapid-profiler/tree-work/test_perf_context.py": "10bb3d7c798e4a91e167be9feb7288fb6e83bb5135ff52f0215f0165aa1d378f"
+    }
+  },
+  {
+    "closure": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bec10e85e2ed31acdc101cc7af06b2f938a5919148111b87bc8378eadf2fc599",
+      "reaped_descendants": 0,
+      "seconds": 1.3677124900277704,
+      "start_utc": "2026-10-29T01:40:04.207648+00:00",
+      "termination": null
+    },
+    "command": [
+      "/usr/bin/env",
+      "TMPDIR=$REPO/ignored/a5/normal-perf-decode-root-v1/tmp",
+      "/usr/local/bin/python3",
+      "-B",
+      "tools/rapid-profiler/tree-work/test_decode_perf.py"
+    ],
+    "executed_base_revision": "e26ffb42005a49fdb312c506d872f1952c0218d6",
+    "name": "perf-context-cli-controls-v1",
+    "private_receipt": {
+      "bytes": 1237,
+      "sha256": "bc84e862d5a3b8c7ee759b6ccde2822e984f836903456768d28cd05617402e6d"
+    },
+    "verified_source_revision": "1c3e7ed337e74dab01d30c3da7a0152e99fd8872",
+    "wall_limit_seconds": 1200,
+    "working_source_sha256": {
+      "tools/rapid-profiler/tree-work/PERF_DATA.md": "f58a7ad8f0e1601a3471c56ee36c513c03c77b38181605a41de992c36c690ce4",
+      "tools/rapid-profiler/tree-work/perf_data.py": "348988e5ab76300cdba3c953b2d447aebf3d73d4b59421d6a9195d50d654b6c3",
+      "tools/rapid-profiler/tree-work/perf_records.py": "86847d833115242dfcf502df973f1c916a45b5dcdc07c9aed416de869de1a4b7",
+      "tools/rapid-profiler/tree-work/test_perf_context.py": "10bb3d7c798e4a91e167be9feb7288fb6e83bb5135ff52f0215f0165aa1d378f"
+    }
+  },
+  {
+    "closure": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bf7a6b9c2aed58397b60c244e91e51ebf6fd515d8533b0ed55512304fe1e589d",
+      "reaped_descendants": 0,
+      "seconds": 0.18788515194319189,
+      "start_utc": "2026-10-29T01:40:40.420622+00:00",
+      "termination": null
+    },
+    "command": [
+      "/usr/local/bin/python3",
+      "-B",
+      "evaluation/ordinary-perf-context-1c3e7ed/reproduce.py",
+      "--data",
+      "$CAPTURE",
+      "--sha256",
+      "5b46da1edb6017ab187c2c7760054a43ef6bf4628d5d0fd0247f07fa70bf4aef",
+      "--command-json",
+      "$COMMAND_JSON",
+      "--command-sha256",
+      "067de69478dbdd0ed7d4ce5eed23bd9f16461adfc0bd96902983cb2307ef0eaa"
+    ],
+    "executed_base_revision": "1c3e7ed337e74dab01d30c3da7a0152e99fd8872",
+    "name": "perf-context-report-1c3e7ed-v1",
+    "private_receipt": {
+      "bytes": 976,
+      "sha256": "ee3c4cf9c92f6946265ac76c77028ad82b09502c8aab20068c9ba20cf601a92d"
+    },
+    "verified_source_revision": "1c3e7ed337e74dab01d30c3da7a0152e99fd8872",
+    "wall_limit_seconds": 1200,
+    "working_source_sha256": {}
+  }
+]
