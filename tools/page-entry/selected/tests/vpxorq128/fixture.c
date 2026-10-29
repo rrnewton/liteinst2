@@ -1,3 +1,7 @@
+#ifndef VPX_BITS
+#define VPX_BITS 128
+#endif
+#if VPX_BITS == 128
 /* Canonical unmasked EVEX128 VPXORQ register triples. Original common
    full-state comparisons, capture assembly and old refusal rows remain exact. */
 #define fixture_main li2_unchanged_generic_fixture_main
@@ -5,6 +9,7 @@
 #undef fixture_main
 #include "cases.inc"
 #include "write_footprint.h"
+#include "promotions256.inc"
 #define VTN_PROMOTED_INDICES 0,1,2,3,4,5,6,7,11,12
 #include "tests/vptestnmb_family/promotions.inc"
 #ifndef VPX_GROUP
@@ -253,6 +258,10 @@ static void vpx_refusals(void) {
     for(size_t i=0;i<sizeof(vpx_refused)/sizeof(vpx_refused[0]);i++) {
         const struct vpx_refusal *v=&vpx_refused[i];result.failed_refusal=47+73+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        if(vpx256_is_promoted(i)) {
+            vpx256_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+            continue;
+        }
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1200+(unsigned)i);
         struct li2_write_registers registers={0};struct li2_write_footprint footprint={0};
@@ -263,7 +272,7 @@ static void vpx_refusals(void) {
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
-    _Static_assert(sizeof(vtn_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
+    _Static_assert(sizeof(vpx256_promotions)+sizeof(vtn_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
                    sizeof(vpb_observations)+sizeof(vpc_queries)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==4824,"literal trailer extent");
     _Static_assert(sizeof(vpx_refused)/sizeof(vpx_refused[0])==37,"closed VPXORQ neighbors");
@@ -277,7 +286,8 @@ int fixture_main(unsigned long *stack) {
     vpc_queries.magic=UINT64_C(0x315158565056324c);vpc_queries.version=1;
     vpc_queries.bytes=sizeof(vpc_queries);vpc_queries.group=VPX_GROUP;
     vpb_refusals();need(result.refusals==109&&vpc_queries.refusals==62&&promoted_count==1,1183);
-    vpx_refusals();need(result.refusals==146&&vpc_queries.refusals==99&&promoted_count==1,1239);
+    vpx_refusals();need(result.refusals==145&&vpc_queries.refusals==98&&promoted_count==1,1239);
+    vpx256_promotions_complete();
     vtn_promotions_complete();
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
@@ -285,7 +295,13 @@ int fixture_main(unsigned long *stack) {
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          vpc_queries.checked==32&&write_all(3,&vpb_observations,sizeof(vpb_observations))&&
          write_all(3,&vpc_queries,sizeof(vpc_queries))&&
-         write_all(3,&vtn_promotions,sizeof(vtn_promotions)),1184);
-    output("LI2_VPXORQ128_TF_PASS pairs=17 xor_tests=16 selftest=1 old_refusal_bytes=109 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n");
+         write_all(3,&vtn_promotions,sizeof(vtn_promotions))&&
+         write_all(3,&vpx256_promotions,sizeof(vpx256_promotions)),1184);
+    output("LI2_VPXORQ128_TF_PASS pairs=17 xor_tests=16 selftest=1 old_refusal_bytes=109 new_refusal_bytes=36 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10 vpx256_typed_promotions=1 vpx256_supplied_none_queries=1\n");
     return 0;
 }
+#elif VPX_BITS == 256
+#include "profile256.inc"
+#else
+#error "only the two explicitly qualified VPXORQ profiles are supported"
+#endif

@@ -9805,6 +9805,194 @@
       }
     }
   },
+  "main8f622": {
+    "base_revision": "203d0804922935d8aadf764f6bd53e5d766a9c80",
+    "projections": {
+      "evaluation/ordinary-call-pair-session/freeze.py": {
+        "current_sha256": "c9305ce8361d1e2976f79326b618aa6d7ab4c2caca5f5fbca99f93d717286755",
+        "edits": [
+          [
+            495,
+            577,
+            "LAUNCHER_SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'\n"
+          ],
+          [
+            6206,
+            6332,
+            "    compat=root/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n    assert held(compat,MIB)==bootstrap[NATIVE_PUBLIC+'launch.py']\n"
+          ]
+        ],
+        "previous_sha256": "539cf8da310948423341b43990f63c5c5669e989127efaaa5a413cb2b34c8c44"
+      },
+      "evaluation/ordinary-call-pair-session/launch.py": {
+        "current_sha256": "18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12",
+        "edits": [
+          [
+            890,
+            972,
+            "CAMPAIGN_SHA = '00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e'\n"
+          ]
+        ],
+        "previous_sha256": "1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46"
+      },
+      "evaluation/ordinary-call-pair-session/owner_controls.py": {
+        "current_sha256": "3d028c7695825bf361900b027db23732a7bed507ba654aabb0d671a84af2f37c",
+        "edits": [
+          [
+            390,
+            463,
+            "SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'\n"
+          ]
+        ],
+        "previous_sha256": "30d27b288e976ac5bd6ef9e9cd099d1216dd289964d5ff1e51005968fc19b2aa"
+      },
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": {
+        "current_sha256": "0b3d171e6599b37c687626e1a83f123c3efd7eed334f9eec4e9032a29fb48670",
+        "edits": [
+          [
+            812,
+            882,
+            "LAUNCHER_PATH=R.ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n"
+          ]
+        ],
+        "previous_sha256": "a42f405d8bdbb77114888468c9cc01a7fd8c6ceb909f678de0285a284934000a"
+      },
+      "evaluation/ordinary-call-pair-session/reproduce.py": {
+        "current_sha256": "7a9024c00c13f8de72f8180b85e9f41e27b9a01ace674fa08fcb3c990b4dcad2",
+        "edits": [
+          [
+            902,
+            1058,
+            ""
+          ],
+          [
+            20013,
+            21356,
+            ""
+          ],
+          [
+            40205,
+            40284,
+            "    for path in (Path(__file__).resolve(), recipe_path):\n"
+          ],
+          [
+            40606,
+            40677,
+            ""
+          ],
+          [
+            40779,
+            40890,
+            ""
+          ],
+          [
+            41384,
+            41460,
+            "    required = set(REQUIRED_NATIVE) | set(HELPER_PINS) | set(recipe.MODULES.values()) | set(extra.values()) | {\n        'evaluation/ordinary-call-pair-session/'+n for n in ('reproduce.py', 'runner_controls.py', 'README.md', 'produce.py',\n            'producer_controls.py', 'receipt_controls.py', 'controls.py', 'original.c', 'original_controls.c', 'original_controls.py')}\n    source_dirs = ('evaluation/ordinary-module-session', 'evaluation/ordinary-leaf-set-session', 'evaluation/ordinary-leaf-set-whole-session')\n    for directory in source_dirs:\n        names = git('ls-files', '-z', '--', directory).decode().rstrip('\\0').split('\\0')\n        required.update(n for n in names if n.endswith(('.py', '.c', '.S', '.md')))\n    names = git('ls-files', '-z', '--', 'src', 'crates', 'tests/support', 'tools/rapid-profiler', 'Cargo.toml', 'Cargo.lock',\n                'README.md', 'build.rs', '.cargo', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\\0').split('\\0')\n    assert all(names) and len(names) == len(set(names)) and required <= set(names)\n"
+          ],
+          [
+            43620,
+            43660,
+            "        launcher = ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'\n"
+          ],
+          [
+            43712,
+            43780,
+            "        assert pin(launcher_bytes)['sha256'] == '5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5'\n"
+          ]
+        ],
+        "previous_sha256": "00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e"
+      },
+      "evaluation/ordinary-call-pair-session/runner_controls.py": {
+        "current_sha256": "e0abe982edb29b1b0df89bebe853f08a16297a5130737b0a06fb79579fbdf8cb",
+        "edits": [
+          [
+            4313,
+            5562,
+            ""
+          ]
+        ],
+        "previous_sha256": "628e87e2a4b1d292a5577849a0bbec85f1821e46e95267e449202f01d2f03d70"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd",
+        "edits": [
+          [
+            15992,
+            16465,
+            ""
+          ],
+          [
+            16508,
+            16531,
+            "            registers: child.registers(),\n"
+          ],
+          [
+            17207,
+            17395,
+            "            while child.registers().rip != boundary {\n"
+          ],
+          [
+            17635,
+            17995,
+            "            }\n            points.push(self.snapshot(child, logical_pc, expected_code));\n"
+          ]
+        ],
+        "previous_sha256": "12c44886e13704b366c6e52bd658190441af3442302109a8d44199148643a63a"
+      }
+    },
+    "prospective_tree": "4486d9ff7c7ba7ccc1c5c403a66181f7174253c2",
+    "scope": "Source-only exact8f622 successor; unchanged corpus, test identities, bounds and historical pins.",
+    "sources": {
+      "evaluation/ordinary-call-pair-session/freeze.py": "c9305ce8361d1e2976f79326b618aa6d7ab4c2caca5f5fbca99f93d717286755",
+      "evaluation/ordinary-call-pair-session/launch.py": "18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12",
+      "evaluation/ordinary-call-pair-session/owner_controls.py": "3d028c7695825bf361900b027db23732a7bed507ba654aabb0d671a84af2f37c",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "0b3d171e6599b37c687626e1a83f123c3efd7eed334f9eec4e9032a29fb48670",
+      "evaluation/ordinary-call-pair-session/reproduce.py": "7a9024c00c13f8de72f8180b85e9f41e27b9a01ace674fa08fcb3c990b4dcad2",
+      "evaluation/ordinary-call-pair-session/runner_controls.py": "e0abe982edb29b1b0df89bebe853f08a16297a5130737b0a06fb79579fbdf8cb",
+      "tests/support/quiescent_oracle.rs": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd"
+    },
+    "upstream_revision": "8f62276b9341c9eaccc6f8af1fa913691c7ad9a2"
+  },
+  "main8f622_current": {
+    "evaluation/ordinary-call-pair-session/receipt_controls.py": {
+      "current_sha256": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+      "edits": [
+        [
+          648,
+          756,
+          "assert R._pin(fixture_source)['sha256']=='33293f4a201d8b717cfa2d46dde16a31e67e257ef4bdab994c0e8a847f07c059'\n"
+        ],
+        [
+          11995,
+          12087,
+          ""
+        ],
+        [
+          13644,
+          13699,
+          ""
+        ],
+        [
+          14133,
+          14263,
+          "        for name in ('output/call-pair-state-pairs.csv','output/call-pair-state-coverage.csv'):\n"
+        ]
+      ],
+      "previous_sha256": "0b3d171e6599b37c687626e1a83f123c3efd7eed334f9eec4e9032a29fb48670"
+    },
+    "evaluation/ordinary-call-pair-session/reproduce.py": {
+      "current_sha256": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+      "edits": [
+        [
+          14807,
+          19728,
+          "REQUIRED_NATIVE = ('evaluation/admission/processes.py', 'evaluation/ordinary-call-pair-native/README.md', 'evaluation/ordinary-call-pair-native/call_pair_native.py', 'evaluation/ordinary-call-pair-native/controls.py', 'evaluation/ordinary-call-pair-native/reproduce.py', 'evaluation/ordinary-call-pair-native/runner_controls.py', 'evaluation/ordinary-csv/reproduce.py', 'evaluation/ordinary-leaf-set-native/controls.py', 'evaluation/ordinary-leaf-set-native/leaf_set_native.py', 'evaluation/ordinary-leaf-set-native/reproduce.py', 'evaluation/ordinary-leaf-set-native/runner_controls.py', 'evaluation/ordinary-leaf-set-session/reproduce.py', 'evaluation/ordinary-module-native/controls.py', 'evaluation/ordinary-module-native/module_native.py', 'evaluation/ordinary-module-native/reproduce.py', 'evaluation/ordinary-module-session/controls.py', 'evaluation/ordinary-module-session/corpus.py', 'evaluation/ordinary-module-session/output.py', 'evaluation/ordinary-module-session/produce.py', 'evaluation/ordinary-module-session/reproduce.py', 'evaluation/ordinary-module/reproduce.py', 'evaluation/ordinary-rust-invoke-native/caller.py', 'evaluation/ordinary-rust-invoke-native/controls.py', 'evaluation/ordinary-rust-invoke-native/reproduce.py', 'evaluation/ordinary-rust-invoke-native/runner_controls.py', 'evaluation/ordinary-rust-invoke-native/rust_invoke.py', 'tests/call_tree_truth.rs', 'tests/support/native_call_pair.rs', 'tests/support/native_call_pair/parent.rs', 'tests/support/native_call_pair/phase.rs', 'tests/support/native_call_pair/tests.rs', 'tests/support/native_call_pair/trace.rs', 'tests/support/native_copied_capture.rs', 'tests/support/native_copied_rust.rs', 'tests/support/native_copied_rust/effects.rs', 'tests/support/native_normal_caller.rs', 'tests/support/native_normal_module.rs', 'tools/rapid-profiler/native-interval/normal/rust_invoke_artifact.rs', 'tools/rapid-profiler/normal-work/call_pair.c', 'tools/rapid-profiler/normal-work/csv_fields.c', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/caller.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/check.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/check/tests.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/held.rs', 'tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs', 'tools/rapid-profiler/selected-work/check_output.py', 'tools/rapid-profiler/strnlen-work/localize.map', 'tools/rapid-profiler/verify_normal_session.py', 'tools/unwind-oracle/bounded_command.py')\nHELPER_PINS = {'evaluation/ordinary-module-session/reproduce.py': {'bytes': 57511, 'sha256': '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'}, 'evaluation/ordinary-module-native/reproduce.py': {'bytes': 44878, 'sha256': '5cce60e76d7ec2011c8facb0a5c1101e0100e13aac8ed9b6317846de35fd3146'}, 'evaluation/ordinary-call-pair-native/reproduce.py': {'bytes': 42539, 'sha256': 'd9e99f6c4caf7a1672ad3a888cd10a889cab83605a916146d7774dd54b343f48'}, 'evaluation/ordinary-csv/reproduce.py': {'bytes': 13439, 'sha256': 'ae70dac850876452d1f09a8480d4381a5814846e1a7e394a33f620bb00699cf3'}, 'evaluation/ordinary-module/reproduce.py': {'bytes': 17353, 'sha256': '60a73415980261fa1f1176f58423da8c77bf6775c2033def4f7469c74677c84c'}, 'evaluation/ordinary-rust-invoke-native/caller.py': {'bytes': 3565, 'sha256': 'aa2d28441c9b477e5e85fea0a61b160cb5026c55bbc129c2b40502c3a5d12d4c'}, 'evaluation/ordinary-call-pair-native/call_pair_native.py': {'bytes': 9562, 'sha256': '7e70899470d8f732909796a429145090b00195d61dd6eea9b8fb35bd000bca3c'}, 'tools/rapid-profiler/selected-work/check_output.py': {'bytes': 7232, 'sha256': '5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9'}, 'evaluation/ordinary-rust-invoke-native/reproduce.py': {'bytes': 23732, 'sha256': '434ffdc1be5107a408767d81e85a77ee1a21878b482b8bcb0951e0ee4c4f38de'}, 'evaluation/ordinary-leaf-set-native/reproduce.py': {'bytes': 38376, 'sha256': 'b0aee80e836f0e78fba601d12cdbdbc86cff21a95bf8c1add71b490a5a7f6349'}, 'evaluation/ordinary-leaf-set-session/reproduce.py': {'bytes': 39802, 'sha256': 'dadf0cbe90c162d133a86f6452c393593bdc7469cf868fcd1b0979b81a0a3932'}, 'tools/rapid-profiler/reference-work/check_output.py': {'bytes': 17495, 'sha256': 'a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189'}, 'tools/rapid-profiler/verify_normal_interval.py': {'bytes': 58210, 'sha256': '7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7'}, 'tools/rapid-profiler/verify_strnlen_interval.py': {'bytes': 34037, 'sha256': '9a37fa20311984d5ba755458e7858578165e0d7a2df583599a1b2057e50e6126'}}\n"
+        ]
+      ],
+      "previous_sha256": "7a9024c00c13f8de72f8180b85e9f41e27b9a01ace674fa08fcb3c990b4dcad2"
+    }
+  },
   "main9950": {
     "added_methods": {
       "tests/support/native_normal_module/tests.rs": [

@@ -1,6 +1,9 @@
 /* Included by lifecycle_loader.c. This is an unchanged-byte page owner;
    selected source publication is a separate, still required capability. */
 #include "native_pages.h"
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair.h"
+#endif
 #include "native_policy.h"
 #ifdef LI2_RSEQ_NATIVE
 #include "rseq_guard.h"
@@ -247,6 +250,9 @@ static int native_close_all(void) {
 }
 
 void li2_lifecycle_native_close(void) {
+#ifdef LI2_NATIVE_PAIR
+    if(li2_native_pair_effect_guard())DIE(LI2_NP_STATE,65);
+#endif
     int result=native_close_all();
     if(result)DIE(native_close.first_error,native_close.first_detail);
 }
