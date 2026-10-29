@@ -49,10 +49,11 @@ class Controls(unittest.TestCase):
         self.assertEqual(R.PROFILE,'normal-call-pair-original-rust-v1')
 
     def test_exact208_calibrations_preserve_old199(self):
+        # Retain the published control name; eight additions now require216.
         peers={k:load('_pair_census_'+k,ROOT/N.MODULES[k]) for k in ('legacy','normal','whole')}
         prior=N.calibration_manifest(peers['legacy'],peers['normal'],peers['whole'])
         inventory=list(prior)+list(L.LEAF_CALIBRATIONS)+list(L.EFFICIENCY_CALIBRATIONS)+list(R.ORACLE_CONTROLS)+[N.IGNORED]
-        got=R.calibration_inventory(L,prior,inventory,N.IGNORED);self.assertEqual(len(got),208)
+        got=R.calibration_inventory(L,prior,inventory,N.IGNORED);self.assertEqual(len(got),216)
         old=L.efficiency_calibration_inventory(prior,[n for n in inventory if n not in R.ORACLE_CONTROLS],N.IGNORED)
         self.assertEqual({n:got[n] for n in old},old);self.assertEqual(len(old),199)
         self.assertTrue(all(got[n] is False for n in R.ORACLE_CONTROLS))
@@ -63,7 +64,7 @@ class Controls(unittest.TestCase):
         with self.assertRaises(AssertionError):R.calibration_inventory(L,prior,inventory,R.ORACLE_CONTROLS[0])
 
     def test_selected_native_sdk_core_censuses_are_exact(self):
-        self.assertEqual((len(R.ORDINARY_CONTROLS),len(R.SDK_CONTROLS),len(R.CORE_CONTROLS)),(14,30,8))
+        self.assertEqual((len(R.ORDINARY_CONTROLS),len(R.SDK_CONTROLS),len(R.CORE_CONTROLS)),(22,30,8))
         for names in (R.ORDINARY_CONTROLS,R.SDK_CONTROLS,R.CORE_CONTROLS):
             inventory=list(names)+['unrelated::test'];self.assertEqual(R.selected_inventory(inventory,names),names)
             for name in names:
@@ -71,7 +72,7 @@ class Controls(unittest.TestCase):
                 with self.assertRaises(AssertionError):R.selected_inventory(inventory+[name],names)
             for prefix in {n.rsplit('::',1)[0]+'::' for n in names}:
                 with self.assertRaises(AssertionError):R.selected_inventory(inventory+[prefix+'unexpected'],names)
-        self.assertEqual((len(R.PYTHON_CONTROLS),len(R.RUNNER_CONTROLS)),(12,8))
+        self.assertEqual((len(R.PYTHON_CONTROLS),len(R.RUNNER_CONTROLS)),(16,8))
 
     def test_request_original_executable_identity_geometry_and_cpu(self):
         req=request();cpus=[3,5,7]

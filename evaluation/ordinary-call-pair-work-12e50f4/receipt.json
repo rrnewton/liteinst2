@@ -1,0 +1,1095 @@
+{
+  "schema": 1,
+  "claim": 4,
+  "scope": "Original nested-frame instruction membership joined to actual finalized batch/Report/history. No timing, throughput, session deadline or full-A5 claim.",
+  "native_revision": "12e50f491139b8a5cb4058b273acddf263de0dd8",
+  "inventory_revision": "8a7e4711e3291766097cf713d474b8d67c8db0d3",
+  "main_parent": "8f62276b9341c9eaccc6f8af1fa913691c7ad9a2",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "performance_claim": false,
+  "release_native": true,
+  "compiler_jobs": 4,
+  "incremental": false,
+  "native_attempts": 1,
+  "session_attempts": 0,
+  "counts": {
+    "comparisons": 18756,
+    "controls_ignored": 1,
+    "controls_passed": 376,
+    "coverage_groups": 12,
+    "normal_reaps": 384,
+    "outer_returns": 384,
+    "pairs": 192,
+    "stages": 37,
+    "target_calls": 768,
+    "target_returns": 768,
+    "work_rows": 384
+  },
+  "native": {
+    "status": "PASS",
+    "seconds": 474.860375813907,
+    "limits": {
+      "build_reserve_bytes": 1073741824,
+      "evidence_bytes": 2147483648,
+      "outer_log_bytes": 8388608,
+      "outer_seconds": 1200,
+      "slot_limit_bytes": 20000000000,
+      "wrapper_bytes": 25165824
+    },
+    "pair_seconds": 15,
+    "pair_steps": 20000,
+    "cohort_cpu_seconds": 480,
+    "cohort_wall_seconds": 510,
+    "protocol": {
+      "bytes": 192060,
+      "sha256": "8910bb3c9df13ce2fd54969f633931440d7950ca5e2cfedd7562ddc26dceaab5"
+    },
+    "source_frozen": {
+      "bytes": 269370,
+      "sha256": "74eece87803d715407eaf71422b7eeccf9de88ed736dbb43e32174abfaf4f603"
+    },
+    "closed_audit": {
+      "bytes": 361931,
+      "sha256": "3c10ffb0833bbf8b057dfa9ab5f32e1e2f2941af2a10815d5cb9c76b70fb812d"
+    },
+    "recipe_result": {
+      "bytes": 302241,
+      "sha256": "05649b78405d9d3c6819779ec0466bcc7a00f20220c1859aa0541a7e15f4d0c5"
+    },
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "a3cae265909dc76bef38dc6569ddf15ebec13ff74a27eb15f8cf2c88fc46214c",
+      "reaped_descendants": 0,
+      "seconds": 691.1750057439785,
+      "start_utc": "2026-10-29T20:37:31.885655+00:00",
+      "termination": null
+    },
+    "hard_reserved_cpus": [
+      1,
+      128,
+      129
+    ],
+    "cpu_roles": {
+      "native_parent_and_tracees": 128,
+      "supervisor_build_controls": [
+        1,
+        128,
+        129
+      ]
+    },
+    "owner_load_before": [
+      38.21,
+      71.93,
+      70.43
+    ],
+    "owner_load_after": [
+      54.85,
+      50.02,
+      57.31
+    ],
+    "cohort_load_before": [
+      41.84,
+      55.9,
+      64.22
+    ],
+    "cohort_load_after": [
+      55.27,
+      50.02,
+      57.35
+    ],
+    "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "call-pair-original-native-12e50f491139b8a5cb4058b273acddf263de0dd8",
+      "--",
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-call-pair-native/reproduce.py",
+      "--revision",
+      "12e50f491139b8a5cb4058b273acddf263de0dd8",
+      "--reservation-tag",
+      "call-pair-original-native-12e50f491139b8a5cb4058b273acddf263de0dd8",
+      "--raw",
+      "$REPO/ignored/a5/call-pair-public-12e50f491139b8a5cb4058b273acddf263de0dd8/call-pair-native-12e50f491139b8a5cb4058b273acddf263de0dd8",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_map_sha256": "5f47ef0ee344f8e28bdb200e2ae21bab2c4a276d2746d73c204410a2a798d212",
+    "source_count": 1176,
+    "source_map_sha256": "c98d89efdac330779fbcba96f74425fc076572026d8cdf75038d91e72054c474",
+    "retained_files": 320,
+    "retained_bytes": 59636134,
+    "geometry": {
+      "caller": {
+        "body_hex": "534889cb4889f84889f74889d6ffd04889035bc3",
+        "call_offset": 13,
+        "continuation_offset": 15,
+        "elf_va": 2317648,
+        "heads": [
+          0,
+          1,
+          4,
+          7,
+          10,
+          13,
+          15,
+          18,
+          19
+        ],
+        "length": 20,
+        "lowest_stack": 8,
+        "outer_ret_offset": 19,
+        "subject_rsp_delta": 16
+      },
+      "child": {
+        "edges": 49,
+        "elf_va": 4096,
+        "heads": [
+          0,
+          3,
+          5,
+          7,
+          10,
+          12,
+          14,
+          16,
+          19,
+          21,
+          25,
+          27,
+          31,
+          34,
+          37,
+          40,
+          42,
+          46,
+          50,
+          53,
+          55,
+          58,
+          60,
+          64,
+          66,
+          71,
+          73,
+          76,
+          80,
+          83,
+          85,
+          89,
+          90,
+          96,
+          99,
+          101,
+          104,
+          108,
+          114,
+          116,
+          120,
+          125
+        ],
+        "length": 126,
+        "returns": [
+          89,
+          125
+        ]
+      },
+      "parent": {
+        "body_hex": "4883ec184889742408e872ffffff4989c0488b4424084883c41848c1e0204c09c0c3",
+        "call_offset": 9,
+        "callee_entry": 4096,
+        "child_delta": 32,
+        "continuation_offset": 14,
+        "edges": 8,
+        "elf_va": 4224,
+        "heads": [
+          0,
+          4,
+          9,
+          14,
+          17,
+          22,
+          26,
+          30,
+          33
+        ],
+        "length": 34,
+        "returns": [
+          33
+        ]
+      }
+    },
+    "map_hash_encoding": "Sorted compact ASCII JSON with trailing newline"
+  },
+  "checks_status": "FAILED",
+  "checks": [
+    {
+      "name": "fmt",
+      "phase": "seven",
+      "command": "cargo fmt --check",
+      "status": "PASS",
+      "seconds": 9.749929412035272,
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "rescue_reaps": 0,
+      "terminal_observations": 0,
+      "passed_observations": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "clippy",
+      "phase": "seven",
+      "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+      "status": "PASS",
+      "seconds": 39.27141455584206,
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "rescue_reaps": 0,
+      "terminal_observations": 0,
+      "passed_observations": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "a64312041be6349fa7dc81c6a5a35f5cd4018e99ea76fd89f78c7737806d04a1"
+    },
+    {
+      "name": "check",
+      "phase": "seven",
+      "command": "cargo check --workspace --all-features --all-targets",
+      "status": "PASS",
+      "seconds": 7.3826930350624025,
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "rescue_reaps": 0,
+      "terminal_observations": 0,
+      "passed_observations": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "6c5b5d84808e2b4c8f334a596e1e6a5f9661b872b89955e2bbc24dfa178611dd"
+    },
+    {
+      "name": "workspace-default",
+      "phase": "seven",
+      "command": "cargo test --workspace",
+      "status": "TIMEOUT",
+      "seconds": 360.1791888298467,
+      "wall_limit_seconds": 360,
+      "exit_code": -9,
+      "rescue_reaps": 9,
+      "terminal_observations": 74,
+      "passed_observations": 1982,
+      "failed_observations": 0,
+      "ignored_observations": 1,
+      "log_sha256": "8da0e5387c9caaac1efabcaea947e07fcffc45101167a1f25e60fa66a4018562"
+    },
+    {
+      "name": "serial-launch",
+      "phase": "tail",
+      "command": "cargo test -p liteinst-launch -- --test-threads=1 --nocapture",
+      "status": "TIMEOUT",
+      "seconds": 180.07432054611854,
+      "wall_limit_seconds": 180,
+      "exit_code": -9,
+      "rescue_reaps": 2,
+      "terminal_observations": 8,
+      "passed_observations": 804,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "da798d5c0a7ae7bd7631a7ed79e9e1a3df172ea455460194605b8021022710dd"
+    },
+    {
+      "name": "staged-allocation",
+      "phase": "allocation",
+      "command": "cargo test -p liteinst2 --lib staged",
+      "status": "PASS",
+      "seconds": 4.5393832749687135,
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "rescue_reaps": 0,
+      "terminal_observations": 1,
+      "passed_observations": 3,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "5090da2955a8df19c7602026d23e38d541dd08cc3c9de58a2dfcc022cb6933c7"
+    },
+    {
+      "name": "prefixed-pun",
+      "phase": "allocation",
+      "command": "cargo test -p liteinst2 --test prefixed_pun_oracle",
+      "status": "PASS",
+      "seconds": 5.514801339013502,
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "rescue_reaps": 0,
+      "terminal_observations": 1,
+      "passed_observations": 36,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "e36e5fcf940a0786d4aa1f67dbc881471899d53397cf24d3bdb4b579cee11ae7"
+    }
+  ],
+  "check_phases": [
+    {
+      "name": "seven",
+      "status": "FAILED",
+      "command": [
+        "/usr/bin/env",
+        "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+        "/usr/local/bin/python3",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "8",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-12e50f4-seven-v1",
+        "--",
+        "/usr/local/bin/python3",
+        "-B",
+        "evaluation/admission/check_exec_identity.py",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--cargo-home",
+        "$CARGO_HOME",
+        "--output",
+        "$REPO/ignored/a5/merged-12e50f4-seven-checks-v1",
+        "--checks-only"
+      ],
+      "hard_reserved_cpus": [
+        43,
+        52,
+        75,
+        103,
+        186,
+        188,
+        214,
+        265
+      ],
+      "load_before": [
+        58.05,
+        53.88,
+        53.63
+      ],
+      "load_after": [
+        114.7,
+        89.85,
+        68.99
+      ],
+      "reservation_join": "normal_allocator_return",
+      "ledger_readback": false,
+      "outer": {
+        "start_utc": "2026-10-29T20:23:58.595650+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 418.89296643598936,
+        "private_log_sha256": "a578b6201268a51534b5823129e911d953bacd581a221ee635af02b8c0e9fd65",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "receipt": {
+        "bytes": 12282,
+        "sha256": "6a4df1c648bfa04af2a499c65d9f8df9daadc3f1960ae8c0c78ad9e5c418f11f"
+      },
+      "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5"
+    },
+    {
+      "name": "tail",
+      "status": "FAILED",
+      "command": [
+        "/usr/bin/env",
+        "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+        "/usr/local/bin/python3",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "8",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-12e50f4-tail-v1",
+        "--",
+        "/usr/local/bin/python3",
+        "-B",
+        "ignored/a5/cfc8d76-tail-checks-source-v1/successor-v2/tail_checks.py",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--cargo-home",
+        "$CARGO_HOME",
+        "--output",
+        "$REPO/ignored/a5/merged-12e50f4-tail-checks-v1",
+        "--checks-only"
+      ],
+      "hard_reserved_cpus": [
+        37,
+        131,
+        199,
+        229,
+        275,
+        277,
+        284,
+        291
+      ],
+      "load_before": [
+        115.2,
+        93.6,
+        71.25
+      ],
+      "load_after": [
+        81.35,
+        94.94,
+        76.2
+      ],
+      "reservation_join": "normal_allocator_return",
+      "ledger_readback": false,
+      "outer": {
+        "start_utc": "2026-10-29T20:31:50.542431+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 181.8546358142048,
+        "private_log_sha256": "c632368c7b63d92637749e0c2108c968f464009c3a4e1acd442eb1f3f321852d",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "receipt": {
+        "bytes": 3036,
+        "sha256": "7bfbe1f1f6eee4b78a3a225a40d8e4d24ce38b0f98f60d8c9fc1cc676dc0a24e"
+      },
+      "runner_sha256": "ebab52f268da2fa53cdcb47b38799b73e0f754b9cff0e8aadc43ef1eacde6b5e"
+    },
+    {
+      "name": "allocation",
+      "status": "PASS",
+      "command": [
+        "/usr/bin/env",
+        "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+        "/usr/local/bin/python3",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "8",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-12e50f4-allocation-v1",
+        "--",
+        "/usr/local/bin/python3",
+        "-B",
+        "ignored/a5/cfc8d76-tail-checks-source-v1/successor-v3/tail_checks.py",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--cargo-home",
+        "$CARGO_HOME",
+        "--output",
+        "$REPO/ignored/a5/merged-12e50f4-allocation-tail-v1",
+        "--checks-only"
+      ],
+      "hard_reserved_cpus": [
+        34,
+        45,
+        82,
+        85,
+        176,
+        247,
+        313,
+        315
+      ],
+      "load_before": [
+        63.16,
+        88.57,
+        74.84
+      ],
+      "load_after": [
+        58.91,
+        86.82,
+        74.42
+      ],
+      "reservation_join": "normal_allocator_return",
+      "ledger_readback": false,
+      "outer": {
+        "start_utc": "2026-10-29T20:35:28.886786+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 11.867998047964647,
+        "private_log_sha256": "cb24e0940ba786991961451b2f1af0e9616d9264679b58e8d8475a22748aa3e3",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "receipt": {
+        "bytes": 2963,
+        "sha256": "89cdf639da2f11afdd33c0088480d38b37a3ba6e01eb3e05c2ce90f7092c7a2b"
+      },
+      "runner_sha256": "6e7bb45250ea92ce6cb5a48b5839cfd43caf27c3d80a57d2b71963002862dde6"
+    }
+  ],
+  "development": [
+    {
+      "name": "call-pair-work-parser-v1",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "bd357bf1e5075221365e0dd450648a33a86fb9659d7396fa48367f6797a52129",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "00bd210bad0242bdd762214d6697cf683ca4f61f5c49be6abd6b3c8f1272fe81",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "d02ee5c45194f2ee8aac9ec43d3f604dfaab638b9ea561bb62386510282fb4ac",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "d22e1a8e04ae6de16948479d5ee25f6d85361241202fb58abf79ce5ce64498a4",
+        "tests/support/native_call_pair.rs": "50cc50ee9c1ac7d7319e91ecde6c05288929ac61167ecca798e2a59779e837c3",
+        "tests/support/native_call_pair/tests.rs": "4c401d022e0d94c1dbe3ee2a1f63ba8734da04742ed38001d33d29a6857ab279",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "668fbd6241b55efdcd4754c5bfce85b723e4de6340f7e5fea3027b0337bea25b",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3"
+      },
+      "command": [
+        "/usr/local/bin/python3",
+        "-B",
+        "evaluation/ordinary-call-pair-native/controls.py",
+        "-v"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:10:32.306548+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 6.906988337170333,
+        "private_log_sha256": "2a8809799407c273e02af26c5b6d7bf4b89638e5496d921cc190a1e86931589d",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 16,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-work-runner-controls-v2",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "4613caf4bdfc3599696e97350d8c0694e527e5c5f2f650b7318403f963fe952a",
+        "tests/support/native_call_pair/trace_join/tests.rs": "d231a46a3b8e6806dfdb437ea380b849b03b55a82559b1b1ebc8f2485cceda59",
+        "tests/support/native_call_pair/witness.rs": "5635c012ecc8566fe7bdf5b36bb0f340fe9e8f741d74e740db3cfb6e46cf3505",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "22ba02ce967584d645277b9d11a2016bd0ec313634de0a6f607303fe88fca7e0",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "50cc50ee9c1ac7d7319e91ecde6c05288929ac61167ecca798e2a59779e837c3",
+        "tests/support/native_call_pair/tests.rs": "4c401d022e0d94c1dbe3ee2a1f63ba8734da04742ed38001d33d29a6857ab279",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "668fbd6241b55efdcd4754c5bfce85b723e4de6340f7e5fea3027b0337bea25b",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "/usr/local/bin/python3",
+        "-B",
+        "evaluation/ordinary-call-pair-native/runner_controls.py",
+        "-v"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:16:33.573819+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.22056595305912197,
+        "private_log_sha256": "2df30f3dc1c377b37b3f1d9938d2494742c0786a12301470dfde9f249196838b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 8,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-work-receipt-controls-v2",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "4613caf4bdfc3599696e97350d8c0694e527e5c5f2f650b7318403f963fe952a",
+        "tests/support/native_call_pair/trace_join/tests.rs": "d231a46a3b8e6806dfdb437ea380b849b03b55a82559b1b1ebc8f2485cceda59",
+        "tests/support/native_call_pair/witness.rs": "5635c012ecc8566fe7bdf5b36bb0f340fe9e8f741d74e740db3cfb6e46cf3505",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "22ba02ce967584d645277b9d11a2016bd0ec313634de0a6f607303fe88fca7e0",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "50cc50ee9c1ac7d7319e91ecde6c05288929ac61167ecca798e2a59779e837c3",
+        "tests/support/native_call_pair/tests.rs": "4c401d022e0d94c1dbe3ee2a1f63ba8734da04742ed38001d33d29a6857ab279",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "668fbd6241b55efdcd4754c5bfce85b723e4de6340f7e5fea3027b0337bea25b",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "/usr/local/bin/python3",
+        "-B",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py",
+        "-v"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:16:33.439088+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.6155835730023682,
+        "private_log_sha256": "6ef0d3290314bded398fc2b792ab35810d6c0c0bd85e0a0db9faf4e3a704e39e",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 6,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-work-fmt-v1",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "4613caf4bdfc3599696e97350d8c0694e527e5c5f2f650b7318403f963fe952a",
+        "tests/support/native_call_pair/trace_join/tests.rs": "d231a46a3b8e6806dfdb437ea380b849b03b55a82559b1b1ebc8f2485cceda59",
+        "tests/support/native_call_pair/witness.rs": "5635c012ecc8566fe7bdf5b36bb0f340fe9e8f741d74e740db3cfb6e46cf3505",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "22ba02ce967584d645277b9d11a2016bd0ec313634de0a6f607303fe88fca7e0",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "50cc50ee9c1ac7d7319e91ecde6c05288929ac61167ecca798e2a59779e837c3",
+        "tests/support/native_call_pair/tests.rs": "4c401d022e0d94c1dbe3ee2a1f63ba8734da04742ed38001d33d29a6857ab279",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "668fbd6241b55efdcd4754c5bfce85b723e4de6340f7e5fea3027b0337bea25b",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:20:16.667703+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 7.940394019940868,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 0,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-work-rust-controls-v1",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "1f2310b2866902fedaadfe6afe24fcd4e0a95e94213aa5c22901de732a5ecfba",
+        "tests/support/native_call_pair/trace_join/tests.rs": "d231a46a3b8e6806dfdb437ea380b849b03b55a82559b1b1ebc8f2485cceda59",
+        "tests/support/native_call_pair/witness.rs": "914635b4513af8dcf0fa3740cb1a748869a2cf2bb154c3b010bdc823b637acc0",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "7f8e652436765abfc2e6b8a4daaa150ba955605d6ce9d5b6022089514211674d",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "5fd91c5e99b25c9c2e84ed6d381e18afccb65dfa9aee36d3b4660f705721e0fd",
+        "tests/support/native_call_pair/tests.rs": "feace8a1e414180e0b8b741f1ef428c27c9b68530390cb6623b72bd1f2554f50",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "a36b574cd4da0874514086be07d156a3d85ae6ac641aa3c8a8a1f0892ca61268",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--test",
+        "frontend-native-calibrations",
+        "call_pair::",
+        "--",
+        "--test-threads=1"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:20:28.829403+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 7.8524800629820675,
+        "private_log_sha256": "210a46011730215ccf0f7e9afb262636c6609604b227ab736684ecb705f3735f",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 24,
+      "ignored_observations": 0,
+      "coverage_status": "NOT_ACCEPTED_WRONG_MODULE_INVENTORY"
+    },
+    {
+      "name": "call-pair-work-fmt-v2",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "c1054287f4116c2ea3af5f7903be8e38aef7ad095221e103e989ac68b42babde",
+        "tests/support/native_call_pair/trace_join/tests.rs": "d231a46a3b8e6806dfdb437ea380b849b03b55a82559b1b1ebc8f2485cceda59",
+        "tests/support/native_call_pair/witness.rs": "914635b4513af8dcf0fa3740cb1a748869a2cf2bb154c3b010bdc823b637acc0",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "7f8e652436765abfc2e6b8a4daaa150ba955605d6ce9d5b6022089514211674d",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "5fd91c5e99b25c9c2e84ed6d381e18afccb65dfa9aee36d3b4660f705721e0fd",
+        "tests/support/native_call_pair/tests.rs": "feace8a1e414180e0b8b741f1ef428c27c9b68530390cb6623b72bd1f2554f50",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "a36b574cd4da0874514086be07d156a3d85ae6ac641aa3c8a8a1f0892ca61268",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:20:56.630622+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 8.007533758878708,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 0,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-work-rust-controls-v2",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "c1054287f4116c2ea3af5f7903be8e38aef7ad095221e103e989ac68b42babde",
+        "tests/support/native_call_pair/trace_join/tests.rs": "64036f49583eb636d0e9e5c87d1a50bc3463b1ad85c85a20ee6257fe1bac75ba",
+        "tests/support/native_call_pair/witness.rs": "914635b4513af8dcf0fa3740cb1a748869a2cf2bb154c3b010bdc823b637acc0",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "7f8e652436765abfc2e6b8a4daaa150ba955605d6ce9d5b6022089514211674d",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "5fd91c5e99b25c9c2e84ed6d381e18afccb65dfa9aee36d3b4660f705721e0fd",
+        "tests/support/native_call_pair/tests.rs": "feace8a1e414180e0b8b741f1ef428c27c9b68530390cb6623b72bd1f2554f50",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "a36b574cd4da0874514086be07d156a3d85ae6ac641aa3c8a8a1f0892ca61268",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--test",
+        "frontend-native-calibrations",
+        "call_pair::",
+        "--",
+        "--test-threads=1"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:21:29.138261+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 7.739645240828395,
+        "private_log_sha256": "fc2f9b5bc12dffd290af4b8c52ab994e8b189419be389cbf665b8ca36aba9b29",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 17,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-work-ordinary-controls-v1",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "c1054287f4116c2ea3af5f7903be8e38aef7ad095221e103e989ac68b42babde",
+        "tests/support/native_call_pair/trace_join/tests.rs": "64036f49583eb636d0e9e5c87d1a50bc3463b1ad85c85a20ee6257fe1bac75ba",
+        "tests/support/native_call_pair/witness.rs": "914635b4513af8dcf0fa3740cb1a748869a2cf2bb154c3b010bdc823b637acc0",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "7f8e652436765abfc2e6b8a4daaa150ba955605d6ce9d5b6022089514211674d",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "5fd91c5e99b25c9c2e84ed6d381e18afccb65dfa9aee36d3b4660f705721e0fd",
+        "tests/support/native_call_pair/tests.rs": "feace8a1e414180e0b8b741f1ef428c27c9b68530390cb6623b72bd1f2554f50",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "a36b574cd4da0874514086be07d156a3d85ae6ac641aa3c8a8a1f0892ca61268",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "call_pair",
+        "--",
+        "--test-threads=1"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:21:42.178376+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 10.64322707010433,
+        "private_log_sha256": "965c254bc143ee3d8dffd5efa30b94ab632be3197590c3c9b3da1159bd30412a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 38,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-work-clippy-v1",
+      "base": "99bfa965779e981e71636def84e2d8bfdde967bd",
+      "working_source_sha256": {
+        "tests/support/native_call_pair/trace_join.rs": "c1054287f4116c2ea3af5f7903be8e38aef7ad095221e103e989ac68b42babde",
+        "tests/support/native_call_pair/trace_join/tests.rs": "64036f49583eb636d0e9e5c87d1a50bc3463b1ad85c85a20ee6257fe1bac75ba",
+        "tests/support/native_call_pair/witness.rs": "914635b4513af8dcf0fa3740cb1a748869a2cf2bb154c3b010bdc823b637acc0",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/witness.rs": "7f8e652436765abfc2e6b8a4daaa150ba955605d6ce9d5b6022089514211674d",
+        "evaluation/ordinary-call-pair-native/README.md": "109fb21e575e89f0d9f03580ddf2d8b524f6088cfe7e0d321a40de27967646d3",
+        "evaluation/ordinary-call-pair-native/call_pair_native.py": "928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c",
+        "evaluation/ordinary-call-pair-native/controls.py": "0dd9262c67e91ac020aa5555f874f34a7a6a71cf82fcc36e46d44d78adc692fb",
+        "evaluation/ordinary-call-pair-native/reproduce.py": "540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6",
+        "evaluation/ordinary-call-pair-native/runner_controls.py": "b7bdb5ef1020df017c592fc5beea5a5812bf3b47752f9b3fea0d90996e21bf65",
+        "evaluation/ordinary-call-pair-session/native_receipt.py": "6f8e9a15a6e7356ba68a78f90877c1d1bfabce7e7635df696040ce5d53b8f281",
+        "evaluation/ordinary-call-pair-session/receipt_controls.py": "eea468225769948e9341aa0266e58d5a780a1101cd72a88fa3ae81362d48955a",
+        "evaluation/ordinary-call-pair-session/reproduce.py": "a0994f2b1948f10cfe2568e1b943902372863bf3d622f4f751d77b9b076b32cb",
+        "tests/support/native_call_pair.rs": "5fd91c5e99b25c9c2e84ed6d381e18afccb65dfa9aee36d3b4660f705721e0fd",
+        "tests/support/native_call_pair/tests.rs": "feace8a1e414180e0b8b741f1ef428c27c9b68530390cb6623b72bd1f2554f50",
+        "tests/support/native_copied_rust.rs": "f458343dcc859d155cb210e03a9673c96a85a4fd1df0c14b6a162e6f88ec808a",
+        "tests/support/native_leaf_set_copied.rs": "9d02e472ae4deba21fc05250165871277b738439a36f6509aef9e7c2e4c4e511",
+        "tests/support/native_normal_caller.rs": "a36b574cd4da0874514086be07d156a3d85ae6ac641aa3c8a8a1f0892ca61268",
+        "tests/support/native_normal_module.rs": "b5e5cd1b359977a79234c78fe8d3c7e9b68857642654361c3460c59dd52ab5c3",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state.rs": "bee27032ca82e749c6c404c87f8c02b20376245a33b335b899bd195166462edf",
+        "tools/rapid-profiler/ordinary-interval/normal/call_pair_state/lifecycle.rs": "4cc06b0f03fffeefc64678ba1fe668bd4d73a12716b62dd86764152c6c9500d3"
+      },
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "rapid-profiler",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:21:58.652822+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 20.752360944868997,
+        "private_log_sha256": "6c93697937af1d65ac0656fb2daaff4d636590e369b937e624f419689236efd3",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 0,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-12e-native-audit-v1",
+      "base": "12e50f491139b8a5cb4058b273acddf263de0dd8",
+      "working_source_sha256": {},
+      "command": [
+        "/usr/local/bin/python3",
+        "-B",
+        "ignored/a5/call-pair-12e-root-audit-v1/audit.py"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:49:49.661346+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.4549677520990372,
+        "private_log_sha256": "0bcb68c2293a4aa8217d793e33b4cf665e690907936396f8f8058eb4b54eba4f",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 0,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-12e-inventory-controls-v1",
+      "base": "12e50f491139b8a5cb4058b273acddf263de0dd8",
+      "working_source_sha256": {
+        "evaluation/admission/core_813_inventory.json": "13e4682129ed7b2a89c782564109c246fb8bd068accefdc67c8d8bd92d3092fd",
+        "evaluation/admission/core_813_inventory.py": "a584a3aed0b514f57b0bbb25264ed4873ec8ef4f530f957d7ff53948236749b6",
+        "evaluation/admission/core_cc846_inventory.py": "563ea1cc99b0acda559f29cb0770edff39ad74592abd0b5c2905fc73aff31448",
+        "evaluation/admission/corpus.json": "a4d2296cdf74a7dec3e814bcff3c7b2e262ed7e70ec1a8a377d186aa98c385ae",
+        "evaluation/admission/test_main813_inventory.py": "6d5fd854dd53978853e714ad507db905177bb0e7e52fc216f017129974e95df5"
+      },
+      "command": [
+        "/usr/local/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_main813_inventory.py",
+        "-v"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:50:10.691079+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 54.982711248099804,
+        "private_log_sha256": "e2bd2de6afec72b0ddc762ca1b8a48f07a3907344cbb64a420c2b36af49aea11",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 5,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    },
+    {
+      "name": "call-pair-8a7-inventory-suite-v1",
+      "base": "8a7e4711e3291766097cf713d474b8d67c8db0d3",
+      "working_source_sha256": {},
+      "command": [
+        "/usr/local/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_*.py"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T20:51:28.604940+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 166.01661260589026,
+        "private_log_sha256": "0cbb39cd420de2e3f3e4462bec8b84f8b0f62a3708e71032c5352dc857249d99",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "passed_observations": 350,
+      "ignored_observations": 0,
+      "coverage_status": "PASS"
+    }
+  ],
+  "reviews": {
+    "combined": "629d028a627b9f8f143e0eeba87f11ac20a01a3eab5380419fdc3ac248f2d5bd",
+    "inventory": "9aaf8cdd2b1a2902d46f5bd8382726f2a5040533829757cb3f051f08d7917aea"
+  },
+  "limitations": "Workspace and serial launch timed out at unchanged bounds. Counts are completed prefix observations, possibly nested. Neither whole-suite nor 316-thread pass is claimed. The earlier fixed-five session campaign remains one PASS and four FAILED, with no rerun.",
+  "allocation_generator_check": {
+    "command": [
+      "python3",
+      "-B",
+      "evaluation/ordinary-call-pair-work-12e50f4/reproduce_allocation_tail.py"
+    ],
+    "closed": {
+      "start_utc": "2026-10-29T20:55:51.602107+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 0.08231677813455462,
+      "private_log_sha256": "670b83e8aa65d31c8628ff27b6d355db5d7169f293c3647c3874bc8758d006f0",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    }
+  },
+  "public_tables": {
+    "work.csv": {
+      "bytes": 85798,
+      "sha256": "e82afe00b2e481773de2631306716c55eef9aa3da6082b406e74f5ceee05c2cc"
+    },
+    "pairs.csv": {
+      "bytes": 28487,
+      "sha256": "d3d5f0618edacbffd1c1cc96a4e4259c8a4764c1bd7011f07e0b022c5ab381a7"
+    },
+    "coverage.csv": {
+      "bytes": 784,
+      "sha256": "7f85e338ed1f6782e14d4ca39a577352b47907de7e1a60a2772f87c644fb0ce8"
+    },
+    "checks.csv": {
+      "bytes": 1360,
+      "sha256": "ef2b1257223aa130e2da68d5526e690ec70f487147e60fbc089c4001e50d3310"
+    }
+  }
+}

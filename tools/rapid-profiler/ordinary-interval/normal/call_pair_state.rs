@@ -18,6 +18,7 @@ mod caller;
 mod check;
 mod held;
 mod lifecycle;
+mod witness;
 use caller::RunningCaller;
 const CONTRACT: NormalCallPairContract = NormalCallPairContract {
     parent_only_external_entry: true,
@@ -122,6 +123,7 @@ fn child(
     selections: [&TrustedFunctionSelection<'_>; 2],
     sources: &held::Sources,
     caller: &RunningCaller,
+    seed: u64,
 ) -> i32 {
     crate::single_main();
     let deadline = context.deadline();
@@ -183,6 +185,8 @@ fn child(
     let rsp = context.caller_rsp();
     let range = context.stack_range();
     let control = context.take_control();
+    let postflight = context.take_call_pair_output();
+    assert_eq!(postflight.is_some(), candidate);
     let output_address = context.results_address();
     let mut expected_data =
         unsafe { std::slice::from_raw_parts(data as usize as *const u8, 4096) }.to_vec();
@@ -284,6 +288,7 @@ fn child(
     unsafe { caller.verify() }.unwrap();
     live(&ready.immutable, ready.original_sources.len());
     deadline.check();
+    let mut export = None;
     if let Some(mut thread) = attached {
         assert_eq!(thread.totals().unwrap(), check::totals(case, false));
         let batch = unsafe { thread.checkpoint_after_returns() }
@@ -291,7 +296,8 @@ fn child(
             .unwrap();
         check::batch(&ready, rsp, std::process::id(), &batch);
         let owner = control_owner.take().unwrap().join(deadline);
-        owner.finish(&ready, &batch, &mut thread, deadline);
+        let facts = owner.finish(&ready, &batch, &mut thread, deadline);
+        export = Some(witness::capture(&ready, seed, &batch, facts));
         let page = unsafe {
             std::slice::from_raw_parts(
                 ready.journal.as_ref().unwrap().address as usize as *const u64,
@@ -309,6 +315,11 @@ fn child(
     unsafe { caller.verify() }.unwrap();
     live(&ready.immutable, ready.original_sources.len());
     deadline.check();
+    match (postflight, export) {
+        (Some(output), Some(observed)) => output.finish(&native::witness::encode(&observed)),
+        (None, None) => {}
+        _ => panic!("candidate postflight ownership"),
+    }
     fail.0 = false;
     0
 }
@@ -360,6 +371,7 @@ pub(crate) fn run(
     ];
     let mut population = native::Population::default();
     let mut rows = String::from(HEADER);
+    let mut work = String::from(native::trace_join::CSV_HEADER);
     let mut comparisons = 0usize;
     let mut last_deadline = None;
     for (k, seed, index, scenario) in native::keys() {
@@ -378,7 +390,7 @@ pub(crate) fn run(
             deadline,
         )
         .with_call_pair_diagnostic_origin(caller.diagnostic_origin());
-        let (pair, trace) = oracle.pair_call_pair(|candidate, context| {
+        let (pair, trace, work_rows) = oracle.pair_call_pair(|candidate, context| {
             child(
                 candidate,
                 context,
@@ -386,6 +398,7 @@ pub(crate) fn run(
                 [&parent, &child_selection],
                 &sources,
                 &caller,
+                seed,
             )
         });
         population.record(seed, case, caller.plan(), &pair, &trace);
@@ -443,12 +456,19 @@ pub(crate) fn run(
         rows.push('\n');
         assert!(rows.len() <= 524288);
         std::fs::write(output.join("call-pair-state-pairs.csv"), &rows).unwrap();
+        for row in work_rows {
+            work.push_str(&row.values().map(|v| v.to_string()).join(","));
+            work.push('\n');
+        }
+        assert!(work.len() <= 524288);
+        std::fs::write(output.join("call-pair-state-work.csv"), &work).unwrap();
         sources.verify().unwrap();
         unsafe { caller.verify() }.unwrap();
         deadline.check();
     }
     let deadline = last_deadline.unwrap();
     deadline.check();
+    assert_eq!(work.lines().count(), 385);
     let mut coverage = String::from(COVERAGE);
     for c in population.finish() {
         let row = [
