@@ -21265,6 +21265,161 @@
       }
     }
   },
+  "neighbor_short_native": {
+    "added_methods": {
+      "tests/support/neighbor_short_eviction_oracle.rs": [
+        "short_endpoint_census",
+        "short_endpoint_back_l6",
+        "short_endpoint_forward_l6",
+        "short_endpoint_back_l7",
+        "short_endpoint_forward_l7",
+        "short_endpoint_back_l8",
+        "short_endpoint_forward_l8",
+        "short_endpoint_back_l9",
+        "short_endpoint_forward_l9",
+        "short_selected_suffix_overlap",
+        "short_rip_read_effect",
+        "short_conditional_fallthrough_and_taken",
+        "short_independent_native_calibration",
+        "short_reject_foreign_or_wrong_grammar",
+        "short_reject_suffix_overlay_corruption",
+        "short_reject_head_gateway_image_mismatch",
+        "short_reject_displacement_or_visit_corruption",
+        "short_reject_full_state_or_hook_corruption",
+        "short_reject_fetch_or_bound_violation"
+      ]
+    },
+    "base": "c76839e49a11169edc48d6b724adf35081f01b84",
+    "core_inventory_review_sha256": "7e8d169032c2892fcdcde0d8b1fef1e804078d167863f5c00ca08d03911de0c2",
+    "current_corpus_sha256": "696357f3804090e7db9e5db428937c29c51099840df0da7862be5bca52829e81",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 19,
+      "rust_tests": 19
+    },
+    "instances": {
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "test/neighbor_eviction_oracle": "short_neighbor::"
+      }
+    },
+    "listed_additions": {
+      "test/neighbor_eviction_oracle": [
+        "short_neighbor::short_endpoint_census",
+        "short_neighbor::short_endpoint_back_l6",
+        "short_neighbor::short_endpoint_forward_l6",
+        "short_neighbor::short_endpoint_back_l7",
+        "short_neighbor::short_endpoint_forward_l7",
+        "short_neighbor::short_endpoint_back_l8",
+        "short_neighbor::short_endpoint_forward_l8",
+        "short_neighbor::short_endpoint_back_l9",
+        "short_neighbor::short_endpoint_forward_l9",
+        "short_neighbor::short_selected_suffix_overlap",
+        "short_neighbor::short_rip_read_effect",
+        "short_neighbor::short_conditional_fallthrough_and_taken",
+        "short_neighbor::short_independent_native_calibration",
+        "short_neighbor::short_reject_foreign_or_wrong_grammar",
+        "short_neighbor::short_reject_suffix_overlay_corruption",
+        "short_neighbor::short_reject_head_gateway_image_mismatch",
+        "short_neighbor::short_reject_displacement_or_visit_corruption",
+        "short_neighbor::short_reject_full_state_or_hook_corruption",
+        "short_neighbor::short_reject_fetch_or_bound_violation"
+      ]
+    },
+    "methods": {
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "all": [
+          "short_endpoint_census",
+          "short_endpoint_back_l6",
+          "short_endpoint_forward_l6",
+          "short_endpoint_back_l7",
+          "short_endpoint_forward_l7",
+          "short_endpoint_back_l8",
+          "short_endpoint_forward_l8",
+          "short_endpoint_back_l9",
+          "short_endpoint_forward_l9",
+          "short_selected_suffix_overlap",
+          "short_rip_read_effect",
+          "short_conditional_fallthrough_and_taken",
+          "short_independent_native_calibration",
+          "short_reject_foreign_or_wrong_grammar",
+          "short_reject_suffix_overlay_corruption",
+          "short_reject_head_gateway_image_mismatch",
+          "short_reject_displacement_or_visit_corruption",
+          "short_reject_full_state_or_hook_corruption",
+          "short_reject_fetch_or_bound_violation"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tests/neighbor_eviction_oracle.rs": [
+        "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;",
+        "#[path = \"support/neighbor_short_eviction_oracle.rs\"]\nmod short_neighbor;"
+      ]
+    },
+    "native_binding_sha256": "8fa92b6726ac24a1b7bdeab4302982816925404abcad626f74e213a2ac073c37",
+    "native_source_base": "f2aa72189583fc8914998884ee84e09d81ace942",
+    "previous_corpus_sha256": "7b73e37239203ddc95e9e453f2f51471d7c9a04e1651c3a9817c757c260f8825",
+    "projections": {
+      "tests/neighbor_eviction_oracle.rs": {
+        "current_sha256": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc",
+        "edits": [
+          [
+            64399,
+            64552,
+            ""
+          ]
+        ],
+        "previous_sha256": "b50f2059826bc9951593f6fd70bfe6631b327b4d50823589aac7df3db1723fd4"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a",
+        "edits": [
+          [
+            26638,
+            29121,
+            ""
+          ],
+          [
+            33498,
+            35523,
+            ""
+          ],
+          [
+            36928,
+            37406,
+            "            let relay_map = self.validate_relays(trace, map, &physical, relays);\n"
+          ],
+          [
+            59399,
+            78816,
+            ""
+          ]
+        ],
+        "previous_sha256": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd"
+      }
+    },
+    "scope": "Prospective exact separate same-function short-relay oracle source; all historical 80 tests and core278 remain; no execution, native acceptance or performance credit.",
+    "sources": {
+      "tests/neighbor_eviction_oracle.rs": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc",
+      "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f",
+      "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a"
+    },
+    "workspace_changes": {
+      "test/neighbor_eviction_oracle": {
+        "current": {
+          "ignored": 0,
+          "tests": 99
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 80
+        }
+      }
+    }
+  },
   "precontext_inventory": {
     "workspace_tests": [
       {

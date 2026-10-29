@@ -6339,7 +6339,7 @@
       },
       "test/neighbor_eviction_oracle": {
         "ignored": 0,
-        "tests": 80
+        "tests": 99
       },
       "test/oracle": {
         "ignored": 0,

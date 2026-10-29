@@ -697,6 +697,81 @@ mod ordered_trace {
         pub victim_trace: &'a NativeTrace,
     }
 
+    /// Independent short-original witness; length/grammar are never supplied.
+    pub struct ShortSourceRelay<'a> {
+        pub logical_pc: u64,
+        pub relay_pc: u64,
+        pub target: u64,
+        pub victim_trace: &'a NativeTrace,
+    }
+
+    /// Negative controls only: each variant corrupts an actual captured witness.
+    #[cfg(test)]
+    pub enum ShortWitnessMutation {
+        NoFirstStep,
+        InteriorFirstStep,
+        RemoveFirstSnapshot,
+        RemoveSecondSnapshot,
+        RemoveOriginalByte,
+        ChangeObservedRax,
+        ChangeObservedRcx,
+        PartialFetch,
+    }
+
+    struct RelayCoordinates {
+        logical_pc: u64,
+        relay_pc: u64,
+        target: u64,
+    }
+
+    // Constructed only after the corresponding private relay validator.
+    struct ValidatedTrace<'a> {
+        map: &'a TraceMap,
+        physical: BTreeMap<u64, u64>,
+        relay_map: BTreeMap<u64, usize>,
+        relays: Vec<RelayCoordinates>,
+    }
+
+    impl Mapping {
+        /// One checked non-clobbering page attempt for hand-emitted calibration.
+        /// Unavailable/nonexact mappings fail; there is no alternative or retry.
+        #[cfg(test)]
+        pub fn exact_page(address: u64) -> Self {
+            assert_eq!(address % PAGE as u64, 0, "unaligned exact fixture page");
+            address
+                .checked_add(PAGE as u64)
+                .expect("exact fixture page overflow");
+            let pointer = usize::try_from(address).expect("unrepresentable fixture address");
+            // SAFETY: MAP_FIXED_NOREPLACE cannot replace existing ownership.
+            let actual = unsafe {
+                libc::mmap(
+                    pointer as *mut libc::c_void,
+                    PAGE,
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED_NOREPLACE,
+                    -1,
+                    0,
+                )
+            };
+            assert_ne!(
+                actual,
+                libc::MAP_FAILED,
+                "required exact fixture page unavailable"
+            );
+            // Own even an unexpected returned mapping before any assertion.
+            let owned = Self {
+                address: actual.cast(),
+                len: PAGE,
+            };
+            assert_eq!(
+                owned.address(),
+                address,
+                "exact fixture page was not honored"
+            );
+            owned
+        }
+    }
+
     pub struct NativeTrace {
         baseline: Baseline,
         heads: BTreeSet<u64>,
@@ -807,6 +882,65 @@ mod ordered_trace {
             owned_sigill_heads: &[u64],
             hooks: Option<HookExpectation<'_>>,
         ) {
+            let physical = self.ordered_physical(trace, map);
+            let relay_map = self.validate_relays(trace, map, &physical, relays);
+            let coordinates = relays
+                .iter()
+                .map(|r| RelayCoordinates {
+                    logical_pc: r.logical_pc,
+                    relay_pc: r.relay_pc,
+                    target: r.target,
+                })
+                .collect();
+            self.assert_validated_trace(
+                trace,
+                entry,
+                ValidatedTrace {
+                    map,
+                    physical,
+                    relay_map,
+                    relays: coordinates,
+                },
+                owned_sigill_heads,
+                hooks,
+            );
+        }
+
+        /// Separately proved short relays; the long relay validator is unchanged.
+        pub fn assert_trace_with_short_relays(
+            &self,
+            trace: &NativeTrace,
+            entry: u64,
+            map: &TraceMap,
+            relays: &[ShortSourceRelay<'_>],
+            owned_sigill_heads: &[u64],
+            hooks: Option<HookExpectation<'_>>,
+        ) {
+            let physical = self.ordered_physical(trace, map);
+            let relay_map = self.validate_short_relays(trace, map, &physical, relays);
+            let coordinates = relays
+                .iter()
+                .map(|r| RelayCoordinates {
+                    logical_pc: r.logical_pc,
+                    relay_pc: r.relay_pc,
+                    target: r.target,
+                })
+                .collect();
+            self.assert_validated_trace(
+                trace,
+                entry,
+                ValidatedTrace {
+                    map,
+                    physical,
+                    relay_map,
+                    relays: coordinates,
+                },
+                owned_sigill_heads,
+                hooks,
+            );
+        }
+
+        fn ordered_physical(&self, trace: &NativeTrace, map: &TraceMap) -> BTreeMap<u64, u64> {
             let logical: BTreeSet<_> = trace.heads.union(&trace.terminals).copied().collect();
             let mut physical = BTreeMap::new();
             for &(original, generated) in &map.boundaries {
@@ -840,7 +974,24 @@ mod ordered_trace {
                     "gateway is a restored boundary"
                 );
             }
-            let relay_map = self.validate_relays(trace, map, &physical, relays);
+            physical
+        }
+
+        fn assert_validated_trace(
+            &self,
+            trace: &NativeTrace,
+            entry: u64,
+            validated: ValidatedTrace<'_>,
+            owned_sigill_heads: &[u64],
+            hooks: Option<HookExpectation<'_>>,
+        ) {
+            let ValidatedTrace {
+                map,
+                physical,
+                relay_map,
+                relays,
+            } = validated;
+            let relays = &relays;
             if let Some(hooks) = &hooks {
                 let mut ids = BTreeSet::new();
                 for event in hooks.enabled {
@@ -1352,6 +1503,429 @@ mod ordered_trace {
                 child.step(owned_sigill_heads);
             }
             unreachable!()
+        }
+
+        /// Consumes an actual capture; no corrupted witness escapes. This seam
+        /// never forks or executes generated code. The positive validation and
+        /// original owned capture are outside the expected-refusal catcher.
+        #[cfg(test)]
+        pub fn assert_short_witness_rejected(
+            &self,
+            trace: &NativeTrace,
+            mut witness: NativeTrace,
+            map: &TraceMap,
+            coordinates: [u64; 3],
+            mutation: ShortWitnessMutation,
+        ) {
+            let [logical_pc, relay_pc, target] = coordinates;
+            let physical = self.ordered_physical(trace, map);
+            self.validate_short_relays(
+                trace,
+                map,
+                &physical,
+                &[ShortSourceRelay {
+                    logical_pc,
+                    relay_pc,
+                    target,
+                    victim_trace: &witness,
+                }],
+            );
+            let reason = match mutation {
+                ShortWitnessMutation::NoFirstStep => {
+                    witness.first_step = None;
+                    "short victim lacks native first step"
+                }
+                ShortWitnessMutation::InteriorFirstStep => {
+                    let (victim, next) = witness.first_step.unwrap();
+                    witness.first_step = Some((victim.checked_add(1).unwrap(), next));
+                    "short witness entry mismatch"
+                }
+                ShortWitnessMutation::RemoveFirstSnapshot => {
+                    witness.baseline.points.remove(0);
+                    "short initial logical PC mismatch"
+                }
+                ShortWitnessMutation::RemoveSecondSnapshot => {
+                    witness.baseline.points.truncate(1);
+                    "missing short second snapshot"
+                }
+                ShortWitnessMutation::RemoveOriginalByte => {
+                    witness.original_code.pop().unwrap();
+                    "foreign short witness page"
+                }
+                ShortWitnessMutation::ChangeObservedRax => {
+                    witness.baseline.points[1].registers.rax ^= 1;
+                    "rax mismatch"
+                }
+                ShortWitnessMutation::ChangeObservedRcx => {
+                    witness.baseline.points[1].registers.rcx ^= 1;
+                    "rcx mismatch"
+                }
+                ShortWitnessMutation::PartialFetch => {
+                    let victim = self.code.address().checked_add(PAGE as u64 - 6).unwrap();
+                    witness.baseline.initial.rip = victim;
+                    witness.baseline.points[0].logical_pc = victim;
+                    witness.baseline.points[0].registers.rip = victim;
+                    witness.first_step = Some((victim, victim.checked_add(6).unwrap()));
+                    "short fetch outside source"
+                }
+            };
+            let failure = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.validate_short_relays(
+                    trace,
+                    map,
+                    &physical,
+                    &[ShortSourceRelay {
+                        logical_pc,
+                        relay_pc,
+                        target,
+                        victim_trace: &witness,
+                    }],
+                );
+            }))
+            .expect_err("corrupted captured short witness accepted");
+            let message = failure
+                .downcast_ref::<String>()
+                .map(String::as_str)
+                .or_else(|| failure.downcast_ref::<&str>().copied())
+                .expect("nontext short refusal");
+            assert!(
+                message.contains(reason),
+                "expected {reason:?}, observed {message:?}"
+            );
+        }
+
+        fn validate_short_relays(
+            &self,
+            trace: &NativeTrace,
+            map: &TraceMap,
+            physical: &BTreeMap<u64, u64>,
+            relays: &[ShortSourceRelay<'_>],
+        ) -> BTreeMap<u64, usize> {
+            let source_start = self.code.address();
+            let source_end = source_start.checked_add(PAGE as u64).unwrap();
+            let source_range = source_start..source_end;
+            assert_eq!(self.original_code.len(), PAGE, "incomplete original page");
+            assert_eq!(
+                trace.source_base, source_start,
+                "foreign short execution trace"
+            );
+            assert_eq!(
+                trace.original_code, self.original_code,
+                "foreign short original page"
+            );
+            let mut expected_page = self.original_code.clone();
+            let mut edits = BTreeMap::<u64, u8>::new();
+            for relay in relays {
+                let next = relay.logical_pc.checked_add(2).expect("short EB overflow");
+                assert!(
+                    source_range.contains(&relay.logical_pc) && next <= source_end,
+                    "short EB outside source"
+                );
+                let displacement = i8::try_from(i128::from(relay.relay_pc) - i128::from(next))
+                    .expect("short EB outside signed reach");
+                let offset = usize::try_from(relay.logical_pc - source_start).unwrap();
+                let patch = [0xeb, displacement as u8];
+                assert_eq!(
+                    &self.code.bytes()[offset..offset + 2],
+                    &patch,
+                    "short selected EB mismatch"
+                );
+                for (i, byte) in patch.into_iter().enumerate() {
+                    let address = relay.logical_pc.checked_add(i as u64).unwrap();
+                    if let Some(old) = edits.insert(address, byte) {
+                        assert_eq!(old, byte, "incompatible short source overlap");
+                    }
+                    expected_page[offset + i] = byte;
+                }
+            }
+            let mut result = BTreeMap::new();
+            let mut victims = Vec::<Range<u64>>::new();
+            for (index, relay) in relays.iter().enumerate() {
+                let witness = relay.victim_trace;
+                assert_eq!(
+                    witness.source_base, source_start,
+                    "foreign short victim witness"
+                );
+                assert_eq!(
+                    witness.original_code, self.original_code,
+                    "foreign short witness page"
+                );
+                assert_eq!(
+                    witness.heads, trace.heads,
+                    "short witness head set mismatch"
+                );
+                assert_eq!(
+                    witness.terminals, trace.terminals,
+                    "short witness terminal mismatch"
+                );
+                let (victim, native_next) = witness
+                    .first_step
+                    .expect("short victim lacks native first step");
+                assert_eq!(
+                    witness.baseline.initial.rip, victim,
+                    "short witness entry mismatch"
+                );
+                let before = witness
+                    .baseline
+                    .points
+                    .first()
+                    .expect("missing short first snapshot");
+                let after = witness
+                    .baseline
+                    .points
+                    .get(1)
+                    .expect("missing short second snapshot");
+                assert_eq!(
+                    before.logical_pc, victim,
+                    "short initial logical PC mismatch"
+                );
+                assert_eq!(
+                    before.registers.rip, victim,
+                    "short initial raw PC mismatch"
+                );
+                assert!(
+                    source_range.contains(&victim),
+                    "short victim outside source"
+                );
+                let fetch_end = victim.checked_add(10).expect("short fetch overflow");
+                assert!(fetch_end <= source_end, "short fetch outside source");
+                let offset = usize::try_from(victim - source_start).unwrap();
+                let original = self
+                    .original_code
+                    .get(offset..)
+                    .expect("short original bytes missing");
+                assert!(original.len() >= 10, "partial short original fetch");
+                let prefixes = original.iter().take(4).take_while(|&&b| b == 0x2e).count();
+                let opcode = &original[prefixes..];
+                let mut registers = before.registers;
+                let victim_len = if (1..=4).contains(&prefixes) && opcode.first() == Some(&0xb8) {
+                    let immediate = opcode.get(1..5).expect("short MOV immediate missing");
+                    registers.rax = u64::from(u32::from_le_bytes(immediate.try_into().unwrap()));
+                    prefixes + 5
+                } else if prefixes <= 2 && opcode.starts_with(&[0x48, 0x8b, 0x0d]) {
+                    let displacement = i32::from_le_bytes(
+                        opcode
+                            .get(3..7)
+                            .expect("short RIP displacement missing")
+                            .try_into()
+                            .unwrap(),
+                    );
+                    let len = prefixes + 7;
+                    let next = victim.checked_add(len as u64).unwrap();
+                    let target = u64::try_from(i128::from(next) + i128::from(displacement))
+                        .expect("short RIP target overflow");
+                    let start = usize::try_from(
+                        target
+                            .checked_sub(source_start)
+                            .expect("short RIP read below owned source"),
+                    )
+                    .unwrap();
+                    let end = start.checked_add(8).expect("short RIP read overflow");
+                    let bytes = self
+                        .original_code
+                        .get(start..end)
+                        .expect("short RIP read outside owned source");
+                    registers.rcx = u64::from_le_bytes(bytes.try_into().unwrap());
+                    len
+                } else if prefixes <= 3 && opcode.starts_with(&[0x0f, 0x85]) {
+                    let displacement = i32::from_le_bytes(
+                        opcode
+                            .get(2..6)
+                            .expect("short JNZ displacement missing")
+                            .try_into()
+                            .unwrap(),
+                    );
+                    assert_ne!(
+                        witness.baseline.initial.eflags & (1 << 6),
+                        0,
+                        "short JNZ needs initial ZF-set fallthrough witness"
+                    );
+                    assert_ne!(
+                        before.registers.eflags & (1 << 6),
+                        0,
+                        "short JNZ needs observed ZF-set fallthrough witness"
+                    );
+                    let len = prefixes + 6;
+                    let next = victim.checked_add(len as u64).unwrap();
+                    let target = u64::try_from(i128::from(next) + i128::from(displacement))
+                        .expect("short JNZ target overflow");
+                    assert!(
+                        trace.heads.contains(&target) || trace.terminals.contains(&target),
+                        "short JNZ target is not declared original entry"
+                    );
+                    len
+                } else {
+                    panic!("short victim lacks independent MOV/RIP/JNZ grammar");
+                };
+                assert!(
+                    (6..=9).contains(&victim_len),
+                    "short victim length outside6..9"
+                );
+                let victim_end = victim.checked_add(victim_len as u64).unwrap();
+                assert_eq!(
+                    native_next, victim_end,
+                    "short raw step does not prove full fallthrough"
+                );
+                assert_eq!(
+                    after.logical_pc, victim_end,
+                    "short second logical PC mismatch"
+                );
+                assert_eq!(
+                    after.registers.rip, victim_end,
+                    "short second raw PC mismatch"
+                );
+                registers.rip = victim_end;
+                let expected_after = Snapshot {
+                    logical_pc: victim_end,
+                    registers,
+                    xstate: before.xstate.clone(),
+                    data: before.data.clone(),
+                    application_stack: before.application_stack.clone(),
+                };
+                assert_state(&expected_after, after);
+                assert_eq!(
+                    relay.relay_pc,
+                    victim.checked_add(5).unwrap(),
+                    "short relay offset mismatch"
+                );
+                let victim_range = victim..victim_end;
+                assert!(
+                    trace.heads.contains(&victim),
+                    "undeclared relay victim head"
+                );
+                assert!(
+                    trace.heads.contains(&relay.logical_pc),
+                    "undeclared relay logical head"
+                );
+                assert!(
+                    map.gateways.contains(&victim) && map.gateways.contains(&relay.logical_pc),
+                    "relay requires both original source gateways"
+                );
+                assert!(
+                    !victim_range.contains(&relay.logical_pc),
+                    "selected relay head overlaps victim"
+                );
+                for &head in trace
+                    .heads
+                    .iter()
+                    .chain(&trace.terminals)
+                    .chain(&witness.heads)
+                    .chain(&witness.terminals)
+                {
+                    assert!(
+                        head == victim || !victim_range.contains(&head),
+                        "original head overlaps relay victim interior"
+                    );
+                }
+                assert!(
+                    physical.keys().all(|pc| !victim_range.contains(pc)),
+                    "restored boundary overlaps relay victim span"
+                );
+                assert!(
+                    map.gateways
+                        .iter()
+                        .all(|pc| *pc == victim || !victim_range.contains(pc)),
+                    "source gateway overlaps relay victim interior"
+                );
+                assert!(
+                    victims
+                        .iter()
+                        .all(|range| range.end <= victim || victim_end <= range.start),
+                    "overlapping relay victim spans"
+                );
+                victims.push(victim_range);
+                assert!(
+                    result.insert(relay.relay_pc, index).is_none(),
+                    "duplicate source relay"
+                );
+                let relay_offset = usize::try_from(relay.relay_pc - source_start).unwrap();
+                let relay_bytes = &self.code.bytes()[relay_offset..relay_offset + 5];
+                assert_eq!(
+                    relay_bytes,
+                    exact_e9(relay.relay_pc, relay.target),
+                    "short E9 target mismatch"
+                );
+                let victim_bytes = &self.code.bytes()[offset..offset + 5];
+                assert_eq!(victim_bytes[0], 0xe9, "short victim entry is not E9");
+                let victim_target = u64::try_from(
+                    i128::from(victim)
+                        + 5
+                        + i128::from(i32::from_le_bytes(victim_bytes[1..].try_into().unwrap())),
+                )
+                .expect("short victim target overflow");
+                assert_ne!(
+                    victim_target, relay.target,
+                    "victim and selected images coincide"
+                );
+                let mut owned_images = Vec::<Range<u64>>::new();
+                for (target, logical) in [(victim_target, victim), (relay.target, relay.logical_pc)]
+                {
+                    let images: Vec<_> = map
+                        .generated_ranges
+                        .iter()
+                        .filter(|range| range.start == target)
+                        .collect();
+                    assert_eq!(images.len(), 1, "relay target is not one exact image entry");
+                    let image = images[0];
+                    assert!(image.start < image.end, "malformed relay image range");
+                    assert!(
+                        owned_images
+                            .iter()
+                            .all(|range| range.end <= image.start || image.end <= range.start),
+                        "relay image ranges overlap"
+                    );
+                    owned_images.push((*image).clone());
+                    assert!(
+                        image.end <= source_start || source_end <= image.start,
+                        "relay image overlaps original source"
+                    );
+                    assert!(
+                        map.boundaries
+                            .iter()
+                            .any(|&(pc, generated)| pc == logical && image.contains(&generated)),
+                        "relay image has no matching logical restored boundary"
+                    );
+                    assert!(
+                        map.boundaries
+                            .iter()
+                            .all(|&(pc, generated)| !image.contains(&generated) || pc == logical),
+                        "relay image owns a different logical instruction"
+                    );
+                }
+                let free = victim_len - 6;
+                let mut fixed = [0_u8; 4];
+                fixed[free..].copy_from_slice(&expected_page[offset + victim_len..offset + 10]);
+                let start =
+                    u64::try_from(i128::from(fetch_end) + i128::from(i32::from_le_bytes(fixed)))
+                        .expect("short window start overflow");
+                let end = start
+                    .checked_add(1_u64 << (8 * free))
+                    .expect("short window end overflow");
+                assert!(
+                    (start..end).contains(&relay.target),
+                    "short target outside fixed-suffix window"
+                );
+                let mut patch = exact_e9(victim, victim_target).to_vec();
+                patch.extend_from_slice(&exact_e9(relay.relay_pc, relay.target));
+                assert_eq!(
+                    &patch[victim_len..],
+                    &expected_page[offset + victim_len..offset + 10],
+                    "short relay changes authenticated successor overlay"
+                );
+                for (i, byte) in patch.into_iter().enumerate() {
+                    let address = victim.checked_add(i as u64).unwrap();
+                    if let Some(old) = edits.insert(address, byte) {
+                        assert_eq!(old, byte, "incompatible short source overlap");
+                    }
+                    expected_page[offset + i] = byte;
+                }
+            }
+            assert_eq!(
+                self.code.bytes(),
+                expected_page,
+                "unauthorized short source publication"
+            );
+            result
         }
 
         fn validate_relays(

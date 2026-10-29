@@ -1929,7 +1929,7 @@ class Main813InventoryTests(unittest.TestCase):
         previous_short = main813.before_short(actual)
         self.assertEqual(main813.digest(previous_short), main813.CURRENTC6F)
         self.assertEqual(main813.CURRENTC6F, main813.MAINC6F['current_corpus_sha256'])
-        short_rows = actual['harness_test_counts']['workspace_tests']
+        short_rows = main813.before_short_native(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(short_rows), sum(x['tests'] for x in short_rows.values()),
                           sum(x['ignored'] for x in short_rows.values())), (103, 3589, 37))
         self.assertEqual(short_rows['unit/liteinst2/lib'], {'tests': 278, 'ignored': 1})
@@ -2024,6 +2024,141 @@ class Main813InventoryTests(unittest.TestCase):
                 with patch.dict(main813.MAINSHORT['module_chains'], {path: changed}):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_short_sources()
+
+        # A distinct source layer adds nineteen native controls, not native results.
+        native_layer = main813.MAINSHORTNATIVE
+        native_previous = main813.before_short_native(actual)
+        self.assertEqual(main813.digest(native_previous), main813.CURRENTSHORT)
+        self.assertEqual(main813.CURRENTSHORT, main813.MAINSHORT['current_corpus_sha256'])
+        self.assertEqual(main813.before_short(native_previous), main813.before_short(actual))
+        self.assertEqual(native_previous['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle'],
+                         {'tests': 80, 'ignored': 0})
+        native_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(native_rows['test/neighbor_eviction_oracle'], {'tests': 99, 'ignored': 0})
+        self.assertEqual(native_rows['unit/liteinst2/lib'], {'tests': 278, 'ignored': 1})
+        self.assertEqual((len(native_rows), sum(x['tests'] for x in native_rows.values()),
+                          sum(x['ignored'] for x in native_rows.values())), (103, 3608, 37))
+        self.assertEqual(native_layer['declared_delta'],
+                         {'rust_declarations': 19, 'rust_tests': 19, 'harnesses': 0, 'ignored': 0, 'doctests': 0})
+        self.assertEqual(set(native_layer['workspace_changes']), {'test/neighbor_eviction_oracle'})
+        self.assertEqual(actual['recorder_tests'], 350)
+        main813.require_short_native_sources()
+        inventory.require_current(actual)
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(native_previous)
+        for count in (80, 98, 100, True, 99.0):
+            changed = plain.deepcopy(actual)
+            changed['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle']['tests'] = count
+            with self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        changed = plain.deepcopy(actual)
+        del changed['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle']
+        with self.assertRaises(parsing.InvalidEvidence):
+            main813.before_short_native(changed)
+        changed = plain.deepcopy(actual)
+        changed['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle']['ignored'] = 1
+        with self.assertRaises(parsing.InvalidEvidence):
+            main813.before_short_native(changed)
+        changed = plain.deepcopy(actual)
+        changed['harness_test_counts']['workspace_tests']['test/extra'] = {'tests': 1, 'ignored': 0}
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(changed)
+        for key in actual:
+            changed = plain.deepcopy(actual)
+            changed[key] = None
+            with self.assertRaises(parsing.InvalidEvidence):
+                main813.before_short_native(changed)
+        native_source = 'tests/support/neighbor_short_eviction_oracle.rs'
+        self.assertEqual(set(native_layer['sources']),
+                         {'tests/support/quiescent_oracle.rs', 'tests/neighbor_eviction_oracle.rs', native_source})
+        self.assertEqual(set(native_layer['projections']),
+                         {'tests/support/quiescent_oracle.rs', 'tests/neighbor_eviction_oracle.rs'})
+        native_read_bytes = Path.read_bytes
+        for path in native_layer['sources']:
+            mutation_target = main813.ROOT / path
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == mutation_target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return native_read_bytes(candidate) + b'\n'
+                    return native_read_bytes(candidate)
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_native_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        for path, row in native_layer['projections'].items():
+            raw = native_read_bytes(main813.ROOT / path)
+            restored = main813.source_before_short_native(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            prior_layer = main813.MAIN12E if path == 'tests/support/quiescent_oracle.rs' else main813.MAINC0
+            self.assertEqual(row['previous_sha256'], prior_layer['sources'][path])
+            self.assertEqual(main813.source_before_short(path, raw, 'changed'), restored)
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_short_native(path, bad, 'changed')
+            mutations = [dict(row, current_sha256='0' * 64),
+                         dict(row, previous_sha256='0' * 64),
+                         dict(row, edits=[[len(raw) + 1, len(raw) + 1, '']]),
+                         dict(row, edits=[[0, 0, 'changed inverse']])]
+            for changed_row in mutations:
+                with patch.dict(native_layer['projections'], {path: changed_row}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                        main813.source_before_short_native(path, raw, 'changed')
+            mutation_target = main813.ROOT / path
+            def historical(candidate):
+                return restored if candidate == mutation_target else native_read_bytes(candidate)
+            with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(actual)
+        native_methods = native_layer['methods'][native_source]
+        self.assertEqual(native_methods['all'], [
+            'short_endpoint_census', 'short_endpoint_back_l6', 'short_endpoint_forward_l6',
+            'short_endpoint_back_l7', 'short_endpoint_forward_l7', 'short_endpoint_back_l8',
+            'short_endpoint_forward_l8', 'short_endpoint_back_l9', 'short_endpoint_forward_l9',
+            'short_selected_suffix_overlap', 'short_rip_read_effect',
+            'short_conditional_fallthrough_and_taken', 'short_independent_native_calibration',
+            'short_reject_foreign_or_wrong_grammar', 'short_reject_suffix_overlay_corruption',
+            'short_reject_head_gateway_image_mismatch', 'short_reject_displacement_or_visit_corruption',
+            'short_reject_full_state_or_hook_corruption', 'short_reject_fetch_or_bound_violation'])
+        self.assertEqual(native_methods['ignored'], [])
+        self.assertEqual(native_layer['added_methods'], {native_source: native_methods['all']})
+        self.assertEqual(native_layer['instances'],
+                         {native_source: {'test/neighbor_eviction_oracle': 'short_neighbor::'}})
+        self.assertEqual(native_layer['listed_additions']['test/neighbor_eviction_oracle'],
+                         ['short_neighbor::' + name for name in native_methods['all']])
+        for changed in ([dict(native_methods, all=native_methods['all'][:i] + native_methods['all'][i + 1:])
+                         for i in range(19)] +
+                        [dict(native_methods, all=native_methods['all'] + ['not_registered']),
+                         dict(native_methods, all=list(reversed(native_methods['all']))),
+                         dict(native_methods, ignored=[native_methods['all'][0]])]):
+            with patch.dict(native_layer['methods'], {native_source: changed}):
+                with self.assertRaises(parsing.InvalidEvidence):
+                    main813.require_short_native_sources()
+        # Coherently changed source hashes still cannot change the declarations or route.
+        raw = native_read_bytes(main813.ROOT / native_source)
+        for modified in (raw.replace(b'fn short_endpoint_census(', b'fn renamed_endpoint_census(', 1),
+                         raw.replace(b'#[test]', b'#[test] #[ignore]', 1),
+                         raw + b'\n#[test] fn extra_native_control() {}\n'):
+            def changed(candidate):
+                return modified if candidate == main813.ROOT / native_source else native_read_bytes(candidate)
+            with patch.object(Path, 'read_bytes', changed), patch.dict(native_layer['sources'],
+                    {native_source: hashlib.sha256(modified).hexdigest()}):
+                with self.assertRaises(parsing.InvalidEvidence):
+                    main813.require_short_native_sources()
+        for path, literals in native_layer['module_chains'].items():
+            raw = native_read_bytes(main813.ROOT / path)
+            for literal in literals:
+                for modified in (raw.replace(literal.encode(), b'// missing module route', 1),
+                                 raw + b'\n' + literal.encode() + b'\n'):
+                    def changed(candidate):
+                        return modified if candidate == main813.ROOT / path else native_read_bytes(candidate)
+                    with patch.object(Path, 'read_bytes', changed), patch.dict(native_layer['sources'],
+                            {path: hashlib.sha256(modified).hexdigest()}):
+                        with self.assertRaises(parsing.InvalidEvidence):
+                            main813.require_short_native_sources()
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -2338,3 +2473,35 @@ class Main813InventoryTests(unittest.TestCase):
         for bad in changes:
             with self.subTest(core_short=bad), self.assertRaises(parsing.InvalidEvidence):
                 parsing.parse_harnesses(bad, expected, 0)
+
+        # Native oracle outer counts use the unchanged generic parser. Historical
+        # 80 remains replayable only with its historical expected catalog; the
+        # new current catalog requires all 99 and introduces no child exception.
+        native_header = ('     Running tests/neighbor_eviction_oracle.rs '
+                         '(target/debug/deps/neighbor_eviction_oracle-0123456789abcdef)')
+        native_id = 'test/neighbor_eviction_oracle'
+        for total in (80, 99):
+            raw = '\n'.join((native_header, f'running {total} tests', summary(total)))
+            expected = {native_id: counts(total)}
+            row = parsing.parse_harnesses(raw, expected, 0)[0]
+            self.assertEqual(row['outer'], dict(passed=total, failed=0, ignored=0,
+                                               measured=0, filtered=0, result='ok'))
+            self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+            for other in (79, 81, 98, 100, 99 if total == 80 else 80):
+                with self.assertRaises(parsing.InvalidEvidence):
+                    parsing.parse_harnesses(raw, {native_id: counts(other)}, 0)
+            changes = [raw.replace(summary(total), summary(total - 1, ignored=1)),
+                       raw.replace(summary(total), summary(total, filtered=1)),
+                       raw.replace(summary(total), summary(total - 1, measured=1)),
+                       raw.replace(summary(total), summary(total - 1, failed=1)),
+                       raw.replace(summary(total), summary(total, result='FAILED')),
+                       raw.replace(summary(total), ''), raw + '\n' + summary(total),
+                       raw.replace(summary(total), 'running 1 test\n' + summary(total)),
+                       raw + '\n' + raw]
+            for bad in changes:
+                with self.subTest(native_count=total, raw=bad), self.assertRaises(parsing.InvalidEvidence):
+                    parsing.parse_harnesses(bad, expected, 0)
+            failed = raw.replace(summary(total), summary(total - 1, failed=1))
+            row = parsing.parse_harnesses(failed, expected, 1)[0]
+            self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                             ('FAILED', total - 1, 1))
