@@ -24,6 +24,126 @@ def rseq_data(d):
         [m.number(k)for k in('bytes','rows','opened','close_started','closed')]+
         [o.number(k)for k in('acquisition_id','handler_id','mutation_epoch','kind','io_performed')])
 
+MASK=shared.repetition.MASK
+closed_io=shared.repetition.closed_io
+query=shared.repetition.query
+
+def repeat_request(r):
+    pc,nxt,code,length,available,opcode,flags,pages=r['request']
+    need((code,length)in((346,3),(345,2)) and 0<pc<=MASK-length and nxt==pc+length and
+         length<=available<=15 and 0<=opcode<1<<24 and flags&0x10100==0,
+         'exact canonical STOSQ or STOSD original request')
+    width=8 if code==346 else 4
+    emitted=opcode.to_bytes(3,'little')
+    need(emitted==b'\xf3\x48\xab' if width==8 else
+         emitted[:2]==b'\xf3\xab' and (available>2 or emitted[2]==0),
+         'exact instruction bytes and zero-initialized decoder tail only when unavailable')
+    count=1 if pc//4096==(nxt-1)//4096 else 2
+    need(pages==count,'exact source bundle')
+    for i in range(count):
+        p=r['source'+str(i)]
+        need(p[0]==(pc&~4095)+4096*i and p[1]>0 and p[2]>0 and p[3]%4096==0 and p[4:]==[1,5],
+             'authenticated source page identity')
+    if count==1:need(r['source1']==[0]*6,'unused source descriptor stays zero')
+    need(r['borrow'][0]>0,'retained genuine borrow identity')
+    return pc,nxt,flags,(1<<count)-1,width
+
+def repeat_completed(r):
+    pc,nxt,flags,mask,width=repeat_request(r)
+    n,remaining,traces,closed,reopened,final,post_pc,post_flags,started,complete,err,neg=r['progress']
+    need(r['attempts']==r['completed']>0 and r['traces']>=traces>=1 and
+         r['traces']>=r['completed'] and r['queries']==traces,'completed instruction and actual trace counts')
+    if r['attempts']==1:need(r['traces']==traces,'single instruction owns every recorded trace')
+    need((n==0 and traces==1) or (n>0 and traces<=n),'positive bounded hardware iteration progress')
+    need([remaining,closed,reopened,final,post_pc,post_flags,started,complete,err,neg]==
+         [0,traces,traces-1,1,nxt,flags|0x100,1,1,0,0],'full final original-PC progress')
+    need(r['owner']==[5,0,0,0,0,1,0] and r['event']==[5,0,2,0,0,0,nxt],'genuine final TRACE')
+    f=r['frames']
+    need(f[:3]==[pc,flags|0x10000,n] and f[4]<(1<<47) and 512<=f[5]<=65536 and f[6]==f[5] and
+         f[7:10]==[nxt,flags|0x100,0] and f[11:]==[f[4],f[5],f[5]],'actual before/final frame association')
+    expected=(f[3]+(-width if flags&0x400 else width)*n)&MASK
+    need(f[10]==expected,'literal final RDI progress')
+    closed_io(r['io'],mask);closed_io(r['last_closed'],mask)
+    query(r['query'],nxt)
+    if traces==1:need(r['previous_query']==[0]*31,'no invented earlier query')
+    else:query(r['previous_query'],pc)
+    for q in (r['query'],r['previous_query']):
+        if not q[1]:continue
+        matches=[r['source'+str(i)] for i in range(r['request'][7]) if r['source'+str(i)][0]==q[17]]
+        if matches:
+            p=matches[0]
+            need(q[17:23]==p[:4]+[p[5],p[4]],'query identity matches its actual retained source page')
+    need(r['release']==[1,1,0,0] and r['borrow'][1]==0,'completed actual release after closed query')
+
+def repeat_source(p,raw,layout,result,record,images,image_bytes):
+    rr=p['repeat']
+    if rr is None:return None
+    pc,nxt,flags,mask,width=repeat_request(rr)
+    need(type(images)is list and type(image_bytes)is list and len(images)==len(image_bytes)==2,
+         'same two independently authenticated complete original app images')
+    root=record.View(raw,layout,'pao_record')
+    biases=words(root.blob('module_bias'))
+    need(biases==list(result['application']['header'][12:14])and len(biases)==2 and
+         all(type(b)is int and 0<b<=MASK and b%4096==0 for b in biases),
+         'actual full-reader module biases, never inferred from the REP report')
+    modules=root.sub('bootstrap','pab_state').array('modules','pab_module')
+    need(len(modules)==2,'same two trusted bootstrap bindings')
+    captured=min(rr['request'][4],3);matches=[]
+    for module,(data,image,bias)in enumerate(zip(image_bytes,images,biases,strict=True)):
+        need(type(data)is bytes and len(data)==image['bytes']and H(data)==image['sha256']and len(data)>=64,
+             'whole exact original ELF bytes already parsed by the unchanged app reader')
+        h=struct.unpack_from('<16sHHIQQQIHHHHHH',data)
+        need(h[0][:7]==b'\x7fELF\x02\x01\x01'and h[1:4]==(3,62,1)and h[8:10]==(64,56)and
+             0<h[10]<=32 and h[5]<=len(data)and 56*h[10]<=len(data)-h[5],
+             'actual bounded x86-64 PIE/DSO program headers')
+        loads=[p for i in range(h[10])if (p:=struct.unpack_from('<IIQQQQQQ',data,h[5]+56*i))[0]==1]
+        need(loads==image['loads'],'actual ELF headers equal the original accepted load metadata')
+        for load in loads:
+            _,prot,offset,va,_,size,memory,alignment=load
+            need(size<=memory and offset<=len(data)and size<=len(data)-offset and
+                 va<=MASK-memory and bias<=MASK-va-memory,
+                 'bounded original ELF file and runtime load geometry')
+            if prot!=5 or pc<bias+va or captured>size or pc-(bias+va)>size-captured:continue
+            matches.append((module,data,image,bias,load,offset+pc-(bias+va)))
+    need(len(matches)==1,'one actual file-backed RX load owns the retained REP source')
+    module,data,image,bias,load,offset=matches[0]
+    expected=data[offset:offset+captured]+bytes(3-captured)
+    need(rr['request'][5]==int.from_bytes(expected,'little'),
+         'all three emitted source bytes equal original ELF, including the actual following byte')
+    _,prot,file_start,va,_,file_size,memory,_=load
+    need(va<=image['page'] and image['page']-va<=file_size and
+         4096<=file_size-(image['page']-va) and
+         file_start+image['page']-va==image['page_offset']and
+         (file_start&4095)==(va&4095),
+         'REP and independently captured fixture page belong to the same original RX load')
+    binding=modules[module].sub('binding','li2_effect_object_binding')
+    need(binding.number('complete')==1 and binding.number('object_id')>0,
+         'retained trusted sealed-object binding')
+    sampled=[row for row in root.array('rows','pao_row')if row.number('module')==module]
+    need(sampled,'independent actual source observations exist for this module')
+    allocations=set()
+    for row in sampled:
+        page=row.sub('source','li2_fetch_page')
+        need(page.number('address')==bias+image['page']and page.number('offset')==image['page_offset']and
+             page.number('object')+1==binding.number('object_id')and page.number('backing')==1 and
+             page.number('allocation')>0,
+             'accepted sampled page connects actual allocation to the separate sealed object identity')
+        allocations.add(page.number('allocation'))
+    need(len(allocations)==1,'one actually observed RX allocation, not assumed equal to object ID')
+    allocation=next(iter(allocations));first=bias+(va&~4095)
+    end=(bias+va+memory+4095)&~4095
+    need(end<=MASK,'bounded rounded actual source mapping')
+    for i in range(rr['request'][7]):
+        page=rr['source'+str(i)];at=page[0]
+        need(first<=at<end and page[1]==allocation and
+             page[3]==(file_start&~4095)+at-first,
+             'actual REP page allocation and file offset match that source mapping')
+    return dict(module=module,image_sha256=H(data),file_offset=offset,emitted_bytes=expected.hex(),
+        code=rr['request'][2],length=rr['request'][3],width=width,available=rr['request'][4],
+        allocation=allocation,object_id=binding.number('object_id'),
+        source_binding='original ELF plus accepted bias and independently sampled same-RX-load allocation')
+
+
 def binary_join(p,raw,layout,result,record):
     need(type(raw)is bytes and 0<len(raw)<16<<20 and result['accepted']is True and
         result['record_bytes']==len(raw) and result['record_sha256']==H(raw),
@@ -138,7 +258,7 @@ def run_completed(loader, repeat, run, reuse, scripted_syscalls):
          loader['source_syscalls'] == loader['syscalls'] == loader['forwarded']+scripted_syscalls, 'actual successful whole process')
     generic.check_completed_owner(loader)
     if repeat is not None:
-        repetition.completed(repeat)
+        repeat_completed(repeat)
         need(repeat['route'] == repeat['pending'] == 0, 'no pending REP owner')
     need(run['cache_present'] == 1 and run['completed_runs'] > 0, 'actual cache use required for cache completion credit')
     c = run['cache']; slots, attempts, hits, full = c[4], c[6], c[7], c[8]
@@ -413,11 +533,12 @@ def gate(p,pid,exit_code,parent,scripted_syscalls):
         original_completed_rejected=not completed)
 
 
-def check(stderr,pid,exit_code,parent,raw,layout,result,record):
+def check(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes):
     need(type(pid)is int and pid>0 and type(exit_code)is int and exit_code==0 and
         result['pid']==pid,'actual successful app process and original binary reader identity')
     parsed=shared.reports(stderr);shared.extensions(parsed)
     joined=binary_join(parsed,raw,layout,result,record)
+    joined['repeat_source']=repeat_source(parsed,raw,layout,result,record,images,image_bytes)
     _,same,tty=gate(parsed,pid,exit_code,parent,joined['scripted_syscalls'])
     need(same is parsed,'actual reports are never normalized or rewritten')
     lease=shared.lease.counters(parsed);trace=shared.trace_completed(parsed)
@@ -426,9 +547,9 @@ def check(stderr,pid,exit_code,parent,raw,layout,result,record):
         full_state_reader_unchanged=True,performance_credit=False)
 
 
-def supplied_controls(stderr,pid,exit_code,parent,raw,layout,result,record):
+def supplied_controls(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes):
     """Supplied report-only mutations after genuine acceptance; zero subjects."""
-    accepted,_=check(stderr,pid,exit_code,parent,raw,layout,result,record)
+    accepted,_=check(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes)
     actual_hash=H(stderr);raw_hash=H(raw)
     cases=(
         ('generation','reuse','state',0,accepted['reuse']['state'][0]+1),
@@ -451,8 +572,23 @@ def supplied_controls(stderr,pid,exit_code,parent,raw,layout,result,record):
         ('startup_query_returned','tcgets','query',1,0),
         ('startup_mount_complete','tcgets','mount',4,0),
     )
+    if accepted['repeat']is not None:
+        rr=accepted['repeat'];width=8 if rr['request'][2]==346 else 4
+        initial=rr['progress'][0];direction=-1 if rr['request'][6]&0x400 else 1
+        wrong=(rr['frames'][3]+direction*(12-width)*initial)&MASK
+        if wrong==rr['frames'][10]:wrong=rr['frames'][10]^width
+        cases+=(
+            ('repeat_literal','repeat','request',5,rr['request'][5]^1),
+            ('repeat_following_byte','repeat','request',5,rr['request'][5]^(1<<16)),
+            ('repeat_next_pc','repeat','request',1,rr['request'][1]+1),
+            ('repeat_element_width','repeat','frames',10,wrong),
+            ('repeat_source_offset','repeat','source0',3,rr['source0'][3]+4096),
+            ('repeat_source_allocation','repeat','source0',1,rr['source0'][1]+1),
+            ('repeat_available','repeat','request',4,1),
+            ('repeat_code_length','repeat','request',2,345 if rr['request'][2]==346 else 346),
+        )
     prefixes=dict(reuse=b'LI2_RUN_REUSE ',run=b'LI2_RUN ',effect=b'LI2_SELECTED_EFFECT ',
-                  rseq=b'LI2_RSEQ ',tcgets=b'LI2_RSEQ_BTRFS_TTY_QUERY ',loader=b'LI2_LOADER ')
+                  rseq=b'LI2_RSEQ ',tcgets=b'LI2_RSEQ_BTRFS_TTY_QUERY ',loader=b'LI2_LOADER ',repeat=b'LI2_REPEAT ')
     names=[]
     for name,key,field,index,value in cases:
         changed=copy.deepcopy(accepted[key]);before=changed[field]if index is None else changed[field][index]
@@ -463,7 +599,7 @@ def supplied_controls(stderr,pid,exit_code,parent,raw,layout,result,record):
         need(len(places)==1,'one actual report mutation target')
         lines[places[0]]=prefix+json.dumps(changed,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
         refused=False
-        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,raw,layout,result,record)
+        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,raw,layout,result,record,images,image_bytes)
         except ValueError:refused=True
         need(refused,'same complete reader refuses supplied '+name);names.append(name)
     need(H(stderr)==actual_hash and H(raw)==raw_hash,'actual stderr and whole binary record unchanged')
