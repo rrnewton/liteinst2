@@ -19,12 +19,21 @@
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_ONESHOT_CPUID_NX
+#if LI2_ONESHOT_CPUID_NX != 1 || LI2_CPUID_NX_ONLY != 1 || \
+    LI2_ONESHOT_PUBLICATION != 1 || LI2_ONESHOT_INITIAL_INTERPRETER != 1
+#error "one-shot CPUID-NX requires its fixed initial-image composition"
+#endif
+#if defined(LI2_SELECTED_PROVIDER) || defined(LI2_SELECTED_PROVIDER_BUILTINS)
+#error "one-shot CPUID-NX uses the native selected effects"
+#endif
+#endif
 #ifdef LI2_CPUID_NX_ONLY
 #if LI2_CPUID_NX_ONLY != 1 || !defined(LI2_NATIVE_PAGES) || !defined(LI2_TF_HANDOFF) || \
     !defined(LI2_REGISTER_RUN) || !defined(LI2_MAPS_PHASE_REUSE) || !defined(LI2_RSEQ_INACTIVE)
 #error "CPUID NX-only requires the complete native-page/TF/register/maps/rseq composition"
 #endif
-#ifdef LI2_ONESHOT_PUBLICATION
+#if defined(LI2_ONESHOT_PUBLICATION) && !defined(LI2_ONESHOT_CPUID_NX)
 #error "CPUID NX-only is a distinct native-page profile, not a one-shot profile"
 #endif
 static void selected_cpuid_nx_report(unsigned,unsigned);
@@ -126,7 +135,11 @@ static void report(unsigned status,unsigned code,long detail) {
     if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
 #if defined(LI2_ONESHOT_PUBLICATION)
+#ifdef LI2_ONESHOT_CPUID_NX
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_oneshot_cpuid_nx\"");
+#else
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_oneshot\"");
+#endif
     uint64_t patches=0;
     for(unsigned i=0;i<selected_oneshot_used;i++)patches+=selected_oneshot_owners[i].state.published==1;
     field(&w,",\"source_patches\":",patches);

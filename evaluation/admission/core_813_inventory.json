@@ -4666,6 +4666,1753 @@
       }
     }
   },
+  "mainabab": {
+    "added_methods": {
+      "tests/support/native_normal_caller.rs": [
+        "exact_normal_closed_cases_input_and_counts",
+        "exact_normal_pair_rejects_count_step_return_value_or_reap_drift"
+      ],
+      "tests/support/native_normal_reference_tests.rs": [
+        "ready_envelope_requires_owned_cells_and_exact_tail",
+        "helper_effects_preserve_complete_state",
+        "rdtscp_outputs_require_actual_width_and_store_identity",
+        "reader_restoration_and_head_order_are_exact",
+        "calls_returns_keep_actual_words_and_full_stack",
+        "postflight_requires_outer_return_and_complete_cells",
+        "cell_page_requires_full_guards_and_disjoint_ranges",
+        "pair_counts_require_all_heads_readers_stores_and_reaps"
+      ],
+      "tools/rapid-profiler/native-interval/normal/check.rs": [
+        "normal_reference_rows_require_fixed_continuations_and_complete_journal",
+        "normal_reference_postflight_requires_exact_cells_identity_stack_and_order"
+      ],
+      "tools/rapid-profiler/native-interval/ordinary/exact_body/tests.rs": [
+        "exact_normal_source_requires_all_bytes_heads_and_ret36",
+        "exact_normal_body_accepts_two_real_continuation_shapes_and_closed_lengths",
+        "exact_normal_body_mutations_refuse_without_omitted_suffix_or_read"
+      ],
+      "tools/rapid-profiler/normal-work/reference_bytes.rs": [
+        "normal_reference_body_every_opcode_bit_and_extent",
+        "normal_reference_labels_require_exact_addresses_and_no_wrap",
+        "normal_reference_reader_boundaries_and_cell_isolation",
+        "normal_reference_fresh_identity_phase_stack_result_and_canary",
+        "normal_reference_endpoint_high_words_aux_and_regression",
+        "normal_reference_zero_and_full_width_endpoints_are_retained",
+        "returned_view_requires_exact_identity_phase_value_and_cell_words",
+        "returned_view_checks_whole_stack_range_without_wrap_or_holes",
+        "returned_view_retains_zero_full_width_and_refuses_reversed_endpoints"
+      ],
+      "tools/rapid-profiler/normal-work/reference_owner.rs": [
+        "reference_owner_profiles_keep_exact_function_body_and_legacy_identity",
+        "reference_owner_all_hidden_labels_require_exact_shape_and_address",
+        "reference_owner_linker_localization_is_closed_not_candidate_selected",
+        "reference_owner_retains_segment_dynamic_cet_and_section_refusals"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/reference.rs": [
+        "fixed_population_preserves_inputs_scalars_and_complete_work",
+        "full_cell_page_guards_and_disjoint_extents_are_required",
+        "original_rows_keep_sdk_fields_absent_and_full_width_endpoints"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check.rs": [
+        "reference_population_requires_all48_ordered_case_identity_and_values",
+        "reference_record_joins_stack_continuation_owner_ack_and_metadata",
+        "reference_journal_checks_every_word_and_coherent_prefix_corruption",
+        "reference_report_requires_all_slots_ranks_payloads_and_terminal_identity",
+        "reference_history_requires_exact_publish_remove_and_no_failed_owner",
+        "reference_gap_arithmetic_retains_zero_and_refuses_aux_order_or_overflow"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check/leg_tests.rs": [
+        "leg_valid_local_population_and_zero_endpoints",
+        "leg_identity_and_48_row_boundary_are_distinct",
+        "leg_population_scalar_case_and_order_are_exact",
+        "leg_clock_aux_stack_and_pair_rsp_are_exact",
+        "installed_leg_keeps_metadata_record_and_full_journal_joins",
+        "installed_leg_keeps_report_and_history_joins"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/reference/leg.rs": [
+        "leg_arguments_require_closed_phase_mode_and_canonical_nonzero_trial",
+        "leg_storage_requires_exact_fresh_or_completed_prefix",
+        "leg_rows_and_terminal_preserve_manifest_and_original_absence"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": [
+        "failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage",
+        "accounting_units_unavailable_and_regression_never_become_off_cpu_claims"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/exact.rs": [
+        "exact_subject_authenticates_every_byte_head_extent_and_return",
+        "exact_domain_refusal_precedes_actual_shared_id_acceptance",
+        "exact_value_validator_checks_the_complete_input_and_full_u64_result",
+        "exact_return_validator_refuses_other_exits_and_address_overflow",
+        "exact_metadata_keeps_fixed_selection_labels_and_extents_distinct",
+        "exact_output_envelope_preserves_legacy_and_all_capacity_refusals"
+      ]
+    },
+    "base": "2370e234541f8d038c99b81292336450b1e35ddd",
+    "current_corpus_sha256": "64b3483adbd3a1bca842ae0828058f5150f649c990142dad5a192c7a466b7c04",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "new_instances_of_existing_declarations": 6,
+      "rust_declarations": 54,
+      "rust_tests": 69,
+      "second_instances_of_new_declarations": 9
+    },
+    "doctests": {},
+    "instances": {
+      "tests/support/native_normal_caller.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::exact_tests::"
+      },
+      "tests/support/native_normal_reference_tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::reference::tests::"
+      },
+      "tools/rapid-profiler/native-interval/normal/check.rs": {
+        "test/frontend_native_calibrations": "normal_check::reference_tests::"
+      },
+      "tools/rapid-profiler/native-interval/ordinary/exact_body/tests.rs": {
+        "test/frontend_native_calibrations": "exact_body::tests::"
+      },
+      "tools/rapid-profiler/normal-work/reference_bytes.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::reference::bytes::",
+        "unit/ordinary_interval/main": "normal::caller::reference_bytes::"
+      },
+      "tools/rapid-profiler/normal-work/reference_owner.rs": {
+        "unit/ordinary_interval/main": "normal::caller::reference::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference.rs": {
+        "unit/ordinary_interval/main": "normal::reference::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check.rs": {
+        "unit/ordinary_interval/main": "normal::reference::check::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check/leg_tests.rs": {
+        "unit/ordinary_interval/main": "normal::reference::check::leg_tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference/leg.rs": {
+        "unit/ordinary_interval/main": "normal::reference::leg::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": {
+        "unit/ordinary_interval/main": "normal::session::loop_trace::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/exact.rs": {
+        "unit/ordinary_interval/main": "normal::session::two::exact::tests::"
+      }
+    },
+    "listed_additions": {
+      "test/frontend_native_calibrations": [
+        "exact_body::tests::exact_normal_body_accepts_two_real_continuation_shapes_and_closed_lengths",
+        "exact_body::tests::exact_normal_body_mutations_refuse_without_omitted_suffix_or_read",
+        "exact_body::tests::exact_normal_source_requires_all_bytes_heads_and_ret36",
+        "exact_truth::tests::changed_opcode_displacement_immediate_and_extent_all_refuse",
+        "exact_truth::tests::every_length_matches_algebra_input_order_and_scalar_model",
+        "exact_truth::tests::invalid_length_and_address_wrap_refuse",
+        "exact_truth::tests::literal_one_iteration_trace_includes_real_ret_read",
+        "exact_truth::tests::unsigned_loop_comparison_is_independent_of_input_xor_zero_flag",
+        "normal_check::reference_tests::normal_reference_postflight_requires_exact_cells_identity_stack_and_order",
+        "normal_check::reference_tests::normal_reference_rows_require_fixed_continuations_and_complete_journal",
+        "oracle::native_ordinary::normal_caller::exact_tests::exact_normal_closed_cases_input_and_counts",
+        "oracle::native_ordinary::normal_caller::exact_tests::exact_normal_pair_rejects_count_step_return_value_or_reap_drift",
+        "oracle::native_ordinary::normal_caller::reference::bytes::returned_tests::returned_view_checks_whole_stack_range_without_wrap_or_holes",
+        "oracle::native_ordinary::normal_caller::reference::bytes::returned_tests::returned_view_requires_exact_identity_phase_value_and_cell_words",
+        "oracle::native_ordinary::normal_caller::reference::bytes::returned_tests::returned_view_retains_zero_full_width_and_refuses_reversed_endpoints",
+        "oracle::native_ordinary::normal_caller::reference::bytes::tests::normal_reference_body_every_opcode_bit_and_extent",
+        "oracle::native_ordinary::normal_caller::reference::bytes::tests::normal_reference_endpoint_high_words_aux_and_regression",
+        "oracle::native_ordinary::normal_caller::reference::bytes::tests::normal_reference_fresh_identity_phase_stack_result_and_canary",
+        "oracle::native_ordinary::normal_caller::reference::bytes::tests::normal_reference_labels_require_exact_addresses_and_no_wrap",
+        "oracle::native_ordinary::normal_caller::reference::bytes::tests::normal_reference_reader_boundaries_and_cell_isolation",
+        "oracle::native_ordinary::normal_caller::reference::bytes::tests::normal_reference_zero_and_full_width_endpoints_are_retained",
+        "oracle::native_ordinary::normal_caller::reference::tests::calls_returns_keep_actual_words_and_full_stack",
+        "oracle::native_ordinary::normal_caller::reference::tests::cell_page_requires_full_guards_and_disjoint_ranges",
+        "oracle::native_ordinary::normal_caller::reference::tests::helper_effects_preserve_complete_state",
+        "oracle::native_ordinary::normal_caller::reference::tests::pair_counts_require_all_heads_readers_stores_and_reaps",
+        "oracle::native_ordinary::normal_caller::reference::tests::postflight_requires_outer_return_and_complete_cells",
+        "oracle::native_ordinary::normal_caller::reference::tests::rdtscp_outputs_require_actual_width_and_store_identity",
+        "oracle::native_ordinary::normal_caller::reference::tests::reader_restoration_and_head_order_are_exact",
+        "oracle::native_ordinary::normal_caller::reference::tests::ready_envelope_requires_owned_cells_and_exact_tail"
+      ],
+      "unit/ordinary_interval/main": [
+        "normal::caller::reference::tests::reference_owner_all_hidden_labels_require_exact_shape_and_address",
+        "normal::caller::reference::tests::reference_owner_linker_localization_is_closed_not_candidate_selected",
+        "normal::caller::reference::tests::reference_owner_profiles_keep_exact_function_body_and_legacy_identity",
+        "normal::caller::reference::tests::reference_owner_retains_segment_dynamic_cet_and_section_refusals",
+        "normal::caller::reference_bytes::returned_tests::returned_view_checks_whole_stack_range_without_wrap_or_holes",
+        "normal::caller::reference_bytes::returned_tests::returned_view_requires_exact_identity_phase_value_and_cell_words",
+        "normal::caller::reference_bytes::returned_tests::returned_view_retains_zero_full_width_and_refuses_reversed_endpoints",
+        "normal::caller::reference_bytes::tests::normal_reference_body_every_opcode_bit_and_extent",
+        "normal::caller::reference_bytes::tests::normal_reference_endpoint_high_words_aux_and_regression",
+        "normal::caller::reference_bytes::tests::normal_reference_fresh_identity_phase_stack_result_and_canary",
+        "normal::caller::reference_bytes::tests::normal_reference_labels_require_exact_addresses_and_no_wrap",
+        "normal::caller::reference_bytes::tests::normal_reference_reader_boundaries_and_cell_isolation",
+        "normal::caller::reference_bytes::tests::normal_reference_zero_and_full_width_endpoints_are_retained",
+        "normal::reference::check::leg_tests::installed_leg_keeps_metadata_record_and_full_journal_joins",
+        "normal::reference::check::leg_tests::installed_leg_keeps_report_and_history_joins",
+        "normal::reference::check::leg_tests::leg_clock_aux_stack_and_pair_rsp_are_exact",
+        "normal::reference::check::leg_tests::leg_identity_and_48_row_boundary_are_distinct",
+        "normal::reference::check::leg_tests::leg_population_scalar_case_and_order_are_exact",
+        "normal::reference::check::leg_tests::leg_valid_local_population_and_zero_endpoints",
+        "normal::reference::check::tests::reference_gap_arithmetic_retains_zero_and_refuses_aux_order_or_overflow",
+        "normal::reference::check::tests::reference_history_requires_exact_publish_remove_and_no_failed_owner",
+        "normal::reference::check::tests::reference_journal_checks_every_word_and_coherent_prefix_corruption",
+        "normal::reference::check::tests::reference_population_requires_all48_ordered_case_identity_and_values",
+        "normal::reference::check::tests::reference_record_joins_stack_continuation_owner_ack_and_metadata",
+        "normal::reference::check::tests::reference_report_requires_all_slots_ranks_payloads_and_terminal_identity",
+        "normal::reference::hardware::tests::admission_requires_every_explicit_feature_and_user_access",
+        "normal::reference::leg::tests::leg_arguments_require_closed_phase_mode_and_canonical_nonzero_trial",
+        "normal::reference::leg::tests::leg_rows_and_terminal_preserve_manifest_and_original_absence",
+        "normal::reference::leg::tests::leg_storage_requires_exact_fresh_or_completed_prefix",
+        "normal::reference::tests::fixed_population_preserves_inputs_scalars_and_complete_work",
+        "normal::reference::tests::full_cell_page_guards_and_disjoint_extents_are_required",
+        "normal::reference::tests::original_rows_keep_sdk_fields_absent_and_full_width_endpoints",
+        "normal::session::loop_trace::tests::accounting_units_unavailable_and_regression_never_become_off_cpu_claims",
+        "normal::session::loop_trace::tests::failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage",
+        "normal::session::two::exact::tests::exact_domain_refusal_precedes_actual_shared_id_acceptance",
+        "normal::session::two::exact::tests::exact_metadata_keeps_fixed_selection_labels_and_extents_distinct",
+        "normal::session::two::exact::tests::exact_output_envelope_preserves_legacy_and_all_capacity_refusals",
+        "normal::session::two::exact::tests::exact_return_validator_refuses_other_exits_and_address_overflow",
+        "normal::session::two::exact::tests::exact_subject_authenticates_every_byte_head_extent_and_return",
+        "normal::session::two::exact::tests::exact_value_validator_checks_the_complete_input_and_full_u64_result"
+      ]
+    },
+    "macros": {},
+    "merge_base": "4818d7c8079bed2dc228573e996782a0993cd021",
+    "method_scopes": {
+      "tools/rapid-profiler/normal-work/reference_bytes.rs": {
+        "normal_reference_body_every_opcode_bit_and_extent": "tests::",
+        "normal_reference_endpoint_high_words_aux_and_regression": "tests::",
+        "normal_reference_fresh_identity_phase_stack_result_and_canary": "tests::",
+        "normal_reference_labels_require_exact_addresses_and_no_wrap": "tests::",
+        "normal_reference_reader_boundaries_and_cell_isolation": "tests::",
+        "normal_reference_zero_and_full_width_endpoints_are_retained": "tests::",
+        "returned_view_checks_whole_stack_range_without_wrap_or_holes": "returned_tests::",
+        "returned_view_requires_exact_identity_phase_value_and_cell_words": "returned_tests::",
+        "returned_view_retains_zero_full_width_and_refuses_reversed_endpoints": "returned_tests::"
+      }
+    },
+    "methods": {
+      "tests/support/native_normal_caller.rs": {
+        "all": [
+          "normal_ready_refuses_wrong_caller_maps_and_extents",
+          "normal_wire_refuses_truncation_tail_and_journal_profile",
+          "normal_transfers_refuse_wrong_target_word_rsp_and_order",
+          "normal_epilogue_data_and_pending_journal_refuse",
+          "normal_original_caller_transition_effects_refuse",
+          "normal_control_ack_refuses_wrong_stage_identity_owner_and_tail",
+          "normal_population_refuses_missing_second_body_order_and_coverage",
+          "normal_mode_and_completion_counts_preserve_fixed_bounds",
+          "exact_normal_closed_cases_input_and_counts",
+          "exact_normal_pair_rejects_count_step_return_value_or_reap_drift"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_normal_reference_tests.rs": {
+        "all": [
+          "ready_envelope_requires_owned_cells_and_exact_tail",
+          "helper_effects_preserve_complete_state",
+          "rdtscp_outputs_require_actual_width_and_store_identity",
+          "reader_restoration_and_head_order_are_exact",
+          "calls_returns_keep_actual_words_and_full_stack",
+          "postflight_requires_outer_return_and_complete_cells",
+          "cell_page_requires_full_guards_and_disjoint_ranges",
+          "pair_counts_require_all_heads_readers_stores_and_reaps"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/exact-work/truth.rs": {
+        "all": [
+          "literal_one_iteration_trace_includes_real_ret_read",
+          "every_length_matches_algebra_input_order_and_scalar_model",
+          "unsigned_loop_comparison_is_independent_of_input_xor_zero_flag",
+          "changed_opcode_displacement_immediate_and_extent_all_refuse",
+          "invalid_length_and_address_wrap_refuse"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/native-interval/normal/check.rs": {
+        "all": [
+          "normal_native_rows_require_exact_next_entry_and_checkpoint",
+          "normal_native_rows_bind_continuation_owner_prefix_and_complete_journal",
+          "normal_reference_rows_require_fixed_continuations_and_complete_journal",
+          "normal_reference_postflight_requires_exact_cells_identity_stack_and_order"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/native-interval/ordinary/exact_body/tests.rs": {
+        "all": [
+          "exact_normal_source_requires_all_bytes_heads_and_ret36",
+          "exact_normal_body_accepts_two_real_continuation_shapes_and_closed_lengths",
+          "exact_normal_body_mutations_refuse_without_omitted_suffix_or_read"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/normal-work/reference_bytes.rs": {
+        "all": [
+          "normal_reference_body_every_opcode_bit_and_extent",
+          "normal_reference_labels_require_exact_addresses_and_no_wrap",
+          "normal_reference_reader_boundaries_and_cell_isolation",
+          "normal_reference_fresh_identity_phase_stack_result_and_canary",
+          "normal_reference_endpoint_high_words_aux_and_regression",
+          "normal_reference_zero_and_full_width_endpoints_are_retained",
+          "returned_view_requires_exact_identity_phase_value_and_cell_words",
+          "returned_view_checks_whole_stack_range_without_wrap_or_holes",
+          "returned_view_retains_zero_full_width_and_refuses_reversed_endpoints"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/normal-work/reference_owner.rs": {
+        "all": [
+          "reference_owner_profiles_keep_exact_function_body_and_legacy_identity",
+          "reference_owner_all_hidden_labels_require_exact_shape_and_address",
+          "reference_owner_linker_localization_is_closed_not_candidate_selected",
+          "reference_owner_retains_segment_dynamic_cet_and_section_refusals"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference.rs": {
+        "all": [
+          "fixed_population_preserves_inputs_scalars_and_complete_work",
+          "full_cell_page_guards_and_disjoint_extents_are_required",
+          "original_rows_keep_sdk_fields_absent_and_full_width_endpoints"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check.rs": {
+        "all": [
+          "reference_population_requires_all48_ordered_case_identity_and_values",
+          "reference_record_joins_stack_continuation_owner_ack_and_metadata",
+          "reference_journal_checks_every_word_and_coherent_prefix_corruption",
+          "reference_report_requires_all_slots_ranks_payloads_and_terminal_identity",
+          "reference_history_requires_exact_publish_remove_and_no_failed_owner",
+          "reference_gap_arithmetic_retains_zero_and_refuses_aux_order_or_overflow"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check/leg_tests.rs": {
+        "all": [
+          "leg_valid_local_population_and_zero_endpoints",
+          "leg_identity_and_48_row_boundary_are_distinct",
+          "leg_population_scalar_case_and_order_are_exact",
+          "leg_clock_aux_stack_and_pair_rsp_are_exact",
+          "installed_leg_keeps_metadata_record_and_full_journal_joins",
+          "installed_leg_keeps_report_and_history_joins"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/reference/leg.rs": {
+        "all": [
+          "leg_arguments_require_closed_phase_mode_and_canonical_nonzero_trial",
+          "leg_storage_requires_exact_fresh_or_completed_prefix",
+          "leg_rows_and_terminal_preserve_manifest_and_original_absence"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": {
+        "all": [
+          "failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage",
+          "accounting_units_unavailable_and_regression_never_become_off_cpu_claims"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/exact.rs": {
+        "all": [
+          "exact_subject_authenticates_every_byte_head_extent_and_return",
+          "exact_domain_refusal_precedes_actual_shared_id_acceptance",
+          "exact_value_validator_checks_the_complete_input_and_full_u64_result",
+          "exact_return_validator_refuses_other_exits_and_address_overflow",
+          "exact_metadata_keeps_fixed_selection_labels_and_extents_distinct",
+          "exact_output_envelope_preserves_legacy_and_all_capacity_refusals"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference/hardware.rs": {
+        "all": [
+          "admission_requires_every_explicit_feature_and_user_access"
+        ],
+        "ignored": []
+      }
+    },
+    "new_instances": {
+      "tools/rapid-profiler/exact-work/truth.rs": {
+        "test/frontend_native_calibrations": "exact_truth::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference/hardware.rs": {
+        "unit/ordinary_interval/main": "normal::reference::hardware::tests::"
+      }
+    },
+    "origin": "abab69594a19140fe5e6f78492da883803dfbe4c",
+    "predecessor": "0d1f6db865c64f8086863fdee00eac350ef0e97a",
+    "previous_corpus_sha256": "240bc11bb4f6b592dc684856f530f699e3d4fb50720b995cb17a3fa762d412bd",
+    "projections": {
+      "tests/support/native_normal_caller.rs": {
+        "current_sha256": "bf3c11ddd177ef642cf482f5b2a206320d88407637578b5ec4c2cb70fbb259b3",
+        "edits": [
+          [
+            305,
+            1461,
+            ""
+          ],
+          [
+            1636,
+            3541,
+            ""
+          ],
+          [
+            3790,
+            6053,
+            ""
+          ],
+          [
+            7601,
+            8065,
+            ""
+          ],
+          [
+            8347,
+            8539,
+            "            bytes_at(caller_bytes, *caller_page, self.caller, BYTES.len()),\n            BYTES\n"
+          ],
+          [
+            22202,
+            22218,
+            "    case: Case,\n"
+          ],
+          [
+            22277,
+            22318,
+            ""
+          ],
+          [
+            22431,
+            22470,
+            ""
+          ],
+          [
+            23218,
+            23437,
+            "        self.oracle.case\n"
+          ],
+          [
+            23614,
+            24509,
+            ""
+          ],
+          [
+            24555,
+            24630,
+            ""
+          ],
+          [
+            25698,
+            26583,
+            ""
+          ],
+          [
+            26744,
+            26809,
+            "        bytes[INPUT..INPUT + 64].copy_from_slice(&strnlen::cases::input(case));\n"
+          ],
+          [
+            26979,
+            27069,
+            "            bytes[at + 8..at + 16].copy_from_slice(&(case.bound as u64).to_le_bytes());\n"
+          ],
+          [
+            27757,
+            27775,
+            "            case,\n"
+          ],
+          [
+            27835,
+            27864,
+            ""
+          ],
+          [
+            30480,
+            30747,
+            "        assert_eq!(walk.child.memory(ready.caller, BYTES.len()), BYTES);\n"
+          ],
+          [
+            36617,
+            39655,
+            ""
+          ],
+          [
+            39971,
+            40009,
+            ""
+          ],
+          [
+            40047,
+            40125,
+            ""
+          ],
+          [
+            40677,
+            41220,
+            ""
+          ],
+          [
+            42401,
+            42437,
+            ""
+          ],
+          [
+            43447,
+            43618,
+            ""
+          ],
+          [
+            43987,
+            44295,
+            "        let ready =\n            reads.map(|p| NormalReady::decode(&read_closed(p.0, self.deadline, WIRE_LIMIT)));\n"
+          ],
+          [
+            44591,
+            45028,
+            "        let maps = [\n            ready[0].validate(false, self.extent, self.mode),\n            ready[1].validate(true, self.extent, self.mode),\n        ];\n"
+          ],
+          [
+            45984,
+            46564,
+            ""
+          ],
+          [
+            46601,
+            46650,
+            ""
+          ],
+          [
+            46941,
+            47099,
+            "                let caller_pc = HEADS.iter().any(|&offset| r.caller + offset == pc);\n"
+          ],
+          [
+            47267,
+            47313,
+            ""
+          ],
+          [
+            47433,
+            47885,
+            ""
+          ],
+          [
+            47921,
+            48051,
+            ""
+          ],
+          [
+            48095,
+            48353,
+            "                    } else {\n                        let expected = points.get(compared).expect(\"extra normal comparison point\");\n"
+          ],
+          [
+            48447,
+            48530,
+            "                            \"complete ordered caller and both subject traces\"\n"
+          ],
+          [
+            48674,
+            48736,
+            "                    if pc == r.caller + OUTER_RET {\n"
+          ],
+          [
+            48807,
+            48965,
+            "                let call = CALLS.iter().position(|&offset| r.caller + offset == pc);\n"
+          ],
+          [
+            49235,
+            49276,
+            "                    call_before(\n"
+          ],
+          [
+            49467,
+            49510,
+            "                        self.case.bound,\n"
+          ],
+          [
+            49912,
+            50010,
+            "                    ret_before(\n                        &regs,\n                        r,\n                        n,\n                        self.caller_rsp(),\n                        strnlen::cases::scalar(self.case),\n                        word,\n                    );\n"
+          ],
+          [
+            50161,
+            50223,
+            "                        let expected = journal_words(\n"
+          ],
+          [
+            51456,
+            51731,
+            ""
+          ],
+          [
+            51919,
+            51997,
+            "                    call_after(&regs, r, n, self.caller_rsp(), word);\n"
+          ],
+          [
+            52361,
+            52458,
+            "                    ret_after(\n                        &regs,\n                        r,\n                        n,\n                        self.caller_rsp(),\n                        strnlen::cases::scalar(self.case),\n                        word,\n                    );\n"
+          ],
+          [
+            52680,
+            52752,
+            "            assert_eq!(\n                actual.rax,\n                strnlen::cases::scalar(self.case).wrapping_mul(2)\n            );\n"
+          ],
+          [
+            52874,
+            52910,
+            "                strnlen::cases::scalar(self.case),\n"
+          ],
+          [
+            52935,
+            53095,
+            "        assert_eq!(compared, points.len());\n"
+          ],
+          [
+            53258,
+            53337,
+            "            assert_eq!(actual.rip, ready[index].caller + OUTER_RET);\n"
+          ],
+          [
+            54075,
+            54202,
+            ""
+          ],
+          [
+            55306,
+            55731,
+            ""
+          ],
+          [
+            55817,
+            56178,
+            "        caller_effects(\n            &points,\n            ready[0].caller,\n            ready[0].entry,\n            self.data.address(),\n            self.stack_start(),\n        );\n        let trace = self.inspect(&ready[0], &points);\n        let value = strnlen::cases::scalar(self.case);\n"
+          ],
+          [
+            56342,
+            56362,
+            "            visits: trace.bodies.each_ref().map(|t| t.visits),\n"
+          ],
+          [
+            56707,
+            56707,
+            "        validate_pair(self.case, &result, &trace);\n"
+          ],
+          [
+            56738,
+            56769,
+            "        (result, trace)\n"
+          ],
+          [
+            57059,
+            57159,
+            ""
+          ],
+          [
+            57754,
+            58357,
+            ""
+          ],
+          [
+            59132,
+            59170,
+            "        let bodies = std::array::from_fn(|index| {\n"
+          ],
+          [
+            59209,
+            59354,
+            "            assert_eq!(steps[start - 1].before.rip, ready.caller + CALLS[index]);\n"
+          ],
+          [
+            59555,
+            60155,
+            "            assert_eq!(steps[finish].after.rip, ready.caller + CONTINUATIONS[index]);\n            strnlen::inspect_normal_body(\n                self.case,\n                ready.entry,\n                ready.caller + CONTINUATIONS[index],\n                self.data.address() + INPUT as u64,\n                code,\n                &steps[start..=finish],\n"
+          ],
+          [
+            60169,
+            60180,
+            "        });\n        NormalTrace { bodies }\n"
+          ],
+          [
+            68264,
+            69142,
+            ""
+          ],
+          [
+            87028,
+            91581,
+            ""
+          ]
+        ],
+        "previous_sha256": "8001944f45162ed502e3754e6f6408a5bf0cabd81fc6d32736fec684bafce660"
+      },
+      "tools/rapid-profiler/native-interval/calibrations.rs": {
+        "current_sha256": "60c2e699e3d4224aab090c9163075380384a564863c6c5fdbb9193fae150c0f2",
+        "edits": [
+          [
+            239,
+            420,
+            ""
+          ]
+        ],
+        "previous_sha256": "2cf67cd6947e006bbb8bd8adb3e65a49c09c069a5a817f80c44cab75bc40be4c"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "0b0dc8b3094728b799ebb945ae09c4b9ca858144aea6d74c0acf446049775a48",
+        "edits": [
+          [
+            39640,
+            42132,
+            ""
+          ]
+        ],
+        "previous_sha256": "f1d9b198149aafe77f21fed31a07955380a0b8643a8e7e20b92782c278887be5"
+      },
+      "tools/rapid-profiler/native-interval/normal.rs": {
+        "current_sha256": "ba8d8e8a7298457cb312fbb6a1572db0d5a63f6f650ab37dc3540f7587dac433",
+        "edits": [
+          [
+            384,
+            778,
+            ""
+          ],
+          [
+            890,
+            938,
+            ""
+          ],
+          [
+            8768,
+            8800,
+            "    mut context: NormalContext<'_>,\n"
+          ],
+          [
+            8940,
+            9379,
+            ""
+          ],
+          [
+            9484,
+            10091,
+            "    let case = context.case();\n    let input = cases::input(case);\n    assert_eq!(context.input(), input);\n    assert_eq!(selection.label(), LABEL);\n    // SAFETY: independently pinned complete final strnlen ELF and compiler\n"
+          ],
+          [
+            10353,
+            10466,
+            "    let mut caller = unsafe { CallerOwner::load(caller_path, caller_elf) }.unwrap();\n"
+          ],
+          [
+            10609,
+            10729,
+            ""
+          ],
+          [
+            11946,
+            11993,
+            "            (data_address + 128, case.bound as u64)\n"
+          ],
+          [
+            12300,
+            12300,
+            "    let expected = cases::scalar(case);\n"
+          ],
+          [
+            18691,
+            18730,
+            "        context.ready(&ready);\n"
+          ],
+          [
+            19627,
+            19676,
+            ""
+          ],
+          [
+            20685,
+            20727,
+            "        batch(&completed, &facts);\n"
+          ],
+          [
+            22022,
+            22061,
+            "        context.ready(&ready);\n"
+          ],
+          [
+            22765,
+            22814,
+            ""
+          ],
+          [
+            22820,
+            22841,
+            ""
+          ]
+        ],
+        "previous_sha256": "59072fa7ad05beba616455ee462168869e69bbf2bf323599aefc0e8f5a4a92e5"
+      },
+      "tools/rapid-profiler/native-interval/normal/check.rs": {
+        "current_sha256": "d65dcc4d1b21632d7bd32b8e6763e2bd7176cfbf407691811e3312f925216fec",
+        "edits": [
+          [
+            632,
+            1310,
+            ""
+          ],
+          [
+            2347,
+            2466,
+            "            || row.entry_rsp != f.caller_rsp - SUBJECT_RSP_DELTA\n            || row.return_word != f.caller + CONTINUATIONS[i]\n"
+          ],
+          [
+            3257,
+            3335,
+            "    fn fixture(crossed: bool) -> (Vec<NormalRecord>, [u64; 512]) {\n"
+          ],
+          [
+            5299,
+            5358,
+            "    fn facts(crossed: bool) -> Facts<'static> {\n"
+          ],
+          [
+            8464,
+            12852,
+            ""
+          ]
+        ],
+        "previous_sha256": "81504fe68e92e8f5cd5940e9cbc98377742a1d901f0633cd3ff56e1930d11000"
+      },
+      "tools/rapid-profiler/native-interval/ordinary.rs": {
+        "current_sha256": "0d06512523f65462c98edae326094f7d2fd3aff0f1eec1f7e53f7b49378cdfe9",
+        "edits": [
+          [
+            818,
+            880,
+            ""
+          ],
+          [
+            20992,
+            21306,
+            "    let first = &steps[starts[0]];\n    assert_eq!(\n        (first.before.rdi, first.before.rsi),\n        (observed.input_address, observed.input.len() as u64)\n"
+          ],
+          [
+            21313,
+            21313,
+            "    let input = bytes_at(\n        first.data,\n        first.data_address,\n        first.before.rdi,\n        observed.input.len(),\n    );\n    assert_eq!(input, observed.input);\n    let return_word = u64::from_le_bytes(\n        bytes_at(first.stack, first.stack_address, first.before.rsp, 8)\n            .try_into()\n            .unwrap(),\n    );\n    assert_eq!(return_word, observed.continuation);\n    let expected = truth::interpret(\n        code,\n        input,\n        observed.entry,\n        first.before.rdi,\n        first.before.rsp,\n        return_word,\n    )\n    .unwrap();\n    let body = &steps[starts[0]..starts[0].checked_add(expected.steps.len()).unwrap()];\n    assert_eq!(\n        body.iter()\n            .map(|s| s.before.rip - observed.entry)\n            .collect::<BTreeSet<_>>(),\n        truth::HEADS\n            .iter()\n            .map(|&p| u64::from(p))\n            .collect::<BTreeSet<_>>()\n    );\n    let (mut conditional, mut taken, mut reads) = (0, 0, 0);\n    for (actual, predicted) in body.iter().zip(&expected.steps) {\n        assert_eq!(\n            (actual.before.rip, actual.after.rip),\n            (predicted.pc, predicted.next_pc)\n        );\n        assert_eq!(\n            bytes_at(\n                actual.data,\n                actual.data_address,\n                observed.input_address,\n                input.len()\n            ),\n            input\n        );\n        if let Some(branch) = predicted.branch_taken {\n            conditional += 1;\n            let actual_taken = actual.before.eflags & 1 != 0; // Fixed JB consumes CMP's CF.\n            assert_eq!(actual_taken, branch);\n            taken += usize::from(actual_taken);\n        }\n        if let Some(read) = predicted.read {\n            reads += 1;\n            match read.kind {\n                truth::ReadKind::InputByte => {\n                    assert_eq!((read.address, read.width), (actual.before.rdi, 1));\n                    assert_eq!(\n                        read.value,\n                        u64::from(\n                            bytes_at(actual.data, actual.data_address, actual.before.rdi, 1)[0]\n                        )\n                    );\n                    assert_eq!(actual.after.rcx, read.value); // MOVZX really consumed that byte.\n                }\n                truth::ReadKind::ReturnWord => {\n                    assert_eq!((read.address, read.width), (actual.before.rsp, 8));\n                    assert_eq!(\n                        read.value,\n                        u64::from_le_bytes(\n                            bytes_at(actual.stack, actual.stack_address, actual.before.rsp, 8)\n                                .try_into()\n                                .unwrap()\n                        )\n                    );\n                    assert_eq!(actual.after.rip, read.value);\n                    assert_eq!(actual.after.rsp, actual.before.rsp.checked_add(8).unwrap());\n                }\n            }\n        }\n    }\n    let last = body.last().unwrap();\n    assert_eq!(last.before.rip, observed.entry + 36);\n    assert_eq!(\n        (last.after.rip, last.after.rsp, last.after.rax),\n        (return_word, expected.resumed_rsp, expected.value)\n    );\n    assert_eq!(last.after.rax, truth::checksum(input).unwrap());\n"
+          ],
+          [
+            21488,
+            21488,
+            "    let counts = (body.len(), conditional, taken, reads);\n    assert_eq!(counts, truth::counts(input.len()).unwrap());\n"
+          ]
+        ],
+        "previous_sha256": "7c2b2f7b9d48ef45bf72e0c0c35e3292229ee6431cff8983c2ad62851398d22a"
+      },
+      "tools/rapid-profiler/normal-work/caller.rs": {
+        "current_sha256": "250448bd7ef3cd854d378c7f2d62bac3e8da6c8db1330a88e99922ae30adcb70",
+        "edits": [
+          [
+            512,
+            831,
+            "use super::caller_bytes as bytes;\n"
+          ],
+          [
+            1119,
+            1184,
+            "type Result<T> = std::result::Result<T, CallerError>;\n"
+          ],
+          [
+            1242,
+            1310,
+            "fn require(ok: bool, error: CallerError) -> Result<()> {\n"
+          ],
+          [
+            5108,
+            5135,
+            "struct Parsed {\n"
+          ],
+          [
+            5196,
+            6273,
+            ""
+          ],
+          [
+            6318,
+            6576,
+            ""
+          ],
+          [
+            10950,
+            10985,
+            "            s.name() == Ok(SYMBOL)\n"
+          ],
+          [
+            11070,
+            11123,
+            "                && s.size() == BYTES.len() as u64\n"
+          ],
+          [
+            12084,
+            12136,
+            "            && rx[0].size == BYTES.len() as u64,\n"
+          ],
+          [
+            12173,
+            12230,
+            "    body(slice(trusted, rx[0].offset, rx[0].size)?)?;\n"
+          ],
+          [
+            12492,
+            12593,
+            "                s.name() == Ok(SYMBOL) && s.address() == entry && s.size() == BYTES.len() as u64,\n"
+          ],
+          [
+            12667,
+            12714,
+            ""
+          ],
+          [
+            16853,
+            16980,
+            "/// Local fixture handle; its fd and loader reference remain retained even on later refusal/Drop.\npub struct CallerOwner {\n"
+          ],
+          [
+            17053,
+            17080,
+            ""
+          ],
+          [
+            17113,
+            17263,
+            ""
+          ],
+          [
+            18044,
+            20196,
+            "        let parsed = parse(trusted)?;\n"
+          ],
+          [
+            21969,
+            22001,
+            ""
+          ],
+          [
+            22173,
+            22205,
+            "        let name = c\"normal_caller\";\n"
+          ],
+          [
+            23268,
+            23331,
+            ""
+          ],
+          [
+            24798,
+            24798,
+            "    }\n    /// Execute the same actual C helper used by the separate state qualification.\n    ///\n    /// # Safety\n    /// All load contracts remain true. `target` is a retained admitted normal leaf with\n    /// exactly the declared SysV ABI and normal returns. Both request pointers remain\n    /// valid/readable for their full bounds; requests/results/input are disjoint, immutable\n    /// where read and live through both returns. Adequate writable callback stack is present.\n    /// Publication/attachment/checkpoint authority belongs to the surrounding consumer.\n    /// No SDK invoke, source scan, automatic checkpoint or native eligibility proof is supplied.\n    pub unsafe fn invoke(\n        &mut self,\n        target: u64,\n        requests: &[Request; 2],\n        results: &mut [u64; 2],\n    ) -> u64 {\n        assert_eq!(self.retained.pid, std::process::id());\n        assert_ne!(target, 0);\n        let caller: bytes::Caller = unsafe { std::mem::transmute(self.entry as usize) };\n        let target: bytes::Target = unsafe { std::mem::transmute(target as usize) };\n        let value = unsafe { caller(target, requests.as_ptr(), results.as_mut_ptr()) };\n        // Real post-call work prevents a tail transfer into the helper. The\n        // oracle separately authenticates the actual CALL and its pushed word.\n        assert_eq!(value, results[0].wrapping_add(results[1]));\n        value\n"
+          ],
+          [
+            27952,
+            27989,
+            "    fn elf() -> Vec<u8> {\n"
+          ]
+        ],
+        "previous_sha256": "ee25dd9124ef285cce24273400b3c760a4734fa55afda41dae2373df2e65d2cb"
+      },
+      "tools/rapid-profiler/normal-work/check_session_two.py": {
+        "current_sha256": "106f256d7bedf4f05ee3c5e5b9995c84579928b51337e141dabd41e900907e61",
+        "edits": [
+          [
+            321,
+            463,
+            ""
+          ],
+          [
+            805,
+            1154,
+            ""
+          ],
+          [
+            1603,
+            1805,
+            "    assert rows[0] == ['READY', 'normal-two-session-v1', str(k), str(epochs)] + READY\n"
+          ],
+          [
+            2305,
+            2374,
+            ""
+          ],
+          [
+            5731,
+            6136,
+            "            zero = data[:bound].find(b'\\0')\n            assert value == (bound if zero < 0 else zero)\n            assert ret == (34 if bound == 0 or zero >= 0 else 40)\n"
+          ],
+          [
+            13376,
+            13474,
+            "    return dict(arms=arms, actions=actions, accepted=accepted, calls=calls, admitted=admitted,\n"
+          ],
+          [
+            14277,
+            14659,
+            ""
+          ]
+        ],
+        "previous_sha256": "c0ba76a40822335dd69d006426e48c847cf04b43f8772f02c129bbfd407490eb"
+      },
+      "tools/rapid-profiler/normal-work/session_driver.py": {
+        "current_sha256": "e65e60f2a92cc673acb768dad38eea83d1b78f8fd1ccd47f828ea69a4ababb99",
+        "edits": [
+          [
+            1422,
+            1888,
+            ""
+          ],
+          [
+            12484,
+            12640,
+            ""
+          ],
+          [
+            12843,
+            12969,
+            ""
+          ],
+          [
+            14713,
+            14777,
+            "            assert code != 0 and b'DONE,' not in transcript and b'normal-session FAILED:' in errors\n            assert (b'duplicate request ID' if a.mode == 'duplicate' else b'overlong or unterminated request') in errors\n            summary = dict(control=a.mode, expected_refusal=True, exit_code=code)\n"
+          ]
+        ],
+        "previous_sha256": "07be978b32c82af931cf915aa49b264b86db8a4a813ab1b89dcc2cbb114b4ca5"
+      },
+      "tools/rapid-profiler/normal-work/session_two_driver.py": {
+        "current_sha256": "0a196f320ecd7df7c1e64f0a9c11aedba97c977c90a3a040d4c96b0e15ccaaa6",
+        "edits": [
+          [
+            587,
+            729,
+            ""
+          ],
+          [
+            2281,
+            2554,
+            "    parser.add_argument('--mode', choices=('full', 'stop', 'duplicate', 'eof', 'backpressure'), required=True)\n"
+          ],
+          [
+            2772,
+            3232,
+            "    authenticate(a.candidate, a.trusted, a.elf_va, a.length)\n"
+          ],
+          [
+            3249,
+            3863,
+            "    argv = [str(a.binary), 'normal-session-two', str(a.candidate), str(a.trusted), str(a.elf_va), str(a.length), str(a.k), str(epochs)]\n"
+          ],
+          [
+            4436,
+            4611,
+            ""
+          ],
+          [
+            5559,
+            5975,
+            "            assert phase == 0 and row == ['READY', 'normal-two-session-v1', str(a.k), '520']+READY\n            if a.mode == 'duplicate':\n"
+          ],
+          [
+            7032,
+            7128,
+            ""
+          ],
+          [
+            7314,
+            7470,
+            ""
+          ],
+          [
+            7667,
+            7793,
+            ""
+          ],
+          [
+            9924,
+            11098,
+            "            summary = check(transcript.decode('ascii'), expected, a.k, epochs,\n                'Requested' if a.mode == 'stop' else 'EpochLimit')\n            cohort(summary, a.mode)\n            if a.mode == 'full': assert phase == 4 and flush_seen == {100, 101, 102, 103, 104}\n        authenticate(a.candidate, a.trusted, a.elf_va, a.length)\n"
+          ],
+          [
+            12003,
+            12082,
+            ""
+          ]
+        ],
+        "previous_sha256": "20af473d83fdc9d2be66c9665a9caf06d246aae992c69429a7d3bce7ea09c56d"
+      },
+      "tools/rapid-profiler/normal-work/test_session.py": {
+        "current_sha256": "94af5fa80a81240a4e7616fb478d3318dd55166ae09e977ec41b887121bde858",
+        "edits": [
+          [
+            290,
+            379,
+            "from session_driver import authenticate, check, checksum, main, remaining, reap\n"
+          ],
+          [
+            7436,
+            7512,
+            "        for fail_at in ('selector', 'descriptor'):\n"
+          ],
+          [
+            7850,
+            8373,
+            ""
+          ],
+          [
+            8662,
+            9247,
+            "                     patch('session_driver.os.sched_getaffinity', return_value={0, 1, 2, 3}), \\\n                     patch('session_driver.os.sched_setaffinity'), patch('builtins.print'), \\\n                     patch('session_driver.subprocess.Popen', return_value=child), \\\n                     patch('session_driver.selectors.DefaultSelector', side_effect=OSError('setup') if fail_at == 'selector' else None, return_value=selector), \\\n                     patch('session_driver.os.set_blocking', side_effect=OSError('setup')):\n"
+          ],
+          [
+            9603,
+            11397,
+            ""
+          ]
+        ],
+        "previous_sha256": "a9c479072658e6d35ed314610839873f800fe09fdad3c7928585387aae506fc4"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "2ad1384b1e8f93faf8261e05f60290fbf02d53f29b41bef5ac4a672d2a623631",
+        "edits": [
+          [
+            12245,
+            13628,
+            ""
+          ]
+        ],
+        "previous_sha256": "5c91930a5b19cebb761c53f5b026a45b92a3994794f4d5d51da24fa8f45ecdc5"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal.rs": {
+        "current_sha256": "d7f4202b87c5adc27a3567c2c7a65c9f0369d22dfebd022abbd1e0b34095df34",
+        "edits": [
+          [
+            310,
+            665,
+            ""
+          ],
+          [
+            880,
+            906,
+            ""
+          ]
+        ],
+        "previous_sha256": "c4c713562dfe681059260882799121e2213266d38949cfbba0ef535f61f7b0f1"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+        "current_sha256": "99c5e5d7a25c8b0ac197a8575a29d8a165caa0054a0f938bedfe92209b5c3caf",
+        "edits": [
+          [
+            359,
+            375,
+            ""
+          ],
+          [
+            10093,
+            14425,
+            "    pin(Some(cpus[0]));\n    let worker::Event::Ready { tid } = replies.recv_timeout(WAIT).map_err(failure)? else {\n        return Err(\"worker attachment handshake\".into());\n    };\n    let mut ledger = Ledger::new(tid, entry, returns, stream, k);\n    let mut ids = protocol::Ids::default();\n    let mut pending = None;\n    let mut requested = false;\n    let mut stop_sent = false;\n    let mut finished = None;\n    let mut final_output = false;\n    io.emit(format!(\n        \"READY,normal-session-v1,{k},{epochs},10,2,4096,4096,4,1\\n\"\n    ))?;\n    let started = Instant::now();\n    let mut schedule = Schedule::new(started, policy).map_err(failure)?;\n    let mut previous_poll = started;\n    let mut last_wait: Option<(Duration, Duration)> = None;\n    loop {\n        let mut progress = false;\n        let observed = Instant::now();\n        let waited = last_wait.take();\n        match schedule.poll(observed, requested).map_err(|e| {\n            format!(\n                \"{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}\",\n                clock_failure(e, \"poll\", engine.committed_arms, &schedule),\n                observed.duration_since(started).as_nanos(),\n                observed.duration_since(previous_poll).as_nanos(),\n                waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))\n            )\n        })? {\n            ScheduleDecision::Arm { .. } => {\n                if let Err(error) = engine.arm(&mut io) {\n                    return Err(format!(\n                        \"arm/history failed: committed={} completed={} {error}\",\n                        engine.committed_arms,\n                        schedule.armed()\n                    ));\n"
+          ],
+          [
+            14443,
+            20059,
+            "                schedule.arm_completed(Instant::now()).map_err(|e| {\n                    clock_failure(e, \"arm-completed\", engine.committed_arms, &schedule)\n"
+          ],
+          [
+            20080,
+            20111,
+            "                progress = true;\n"
+          ],
+          [
+            20125,
+            21605,
+            "            ScheduleDecision::Stop => {\n                engine.stop(&mut io)?;\n                progress = true;\n"
+          ],
+          [
+            21619,
+            22397,
+            "            ScheduleDecision::Wait => (),\n"
+          ],
+          [
+            22407,
+            22748,
+            "        previous_poll = observed;\n        // At most one reply per iteration. A full reply slot blocks only the\n        // worker after its metadata operation, never the controller or timer.\n        match replies.try_recv() {\n            Ok(worker::Event::Batch { calls, native }) => {\n                engine.history(&mut io)?;\n                ledger.batch(calls, *native, &engine.history, &mut io)?;\n                progress = true;\n            }\n            Ok(worker::Event::Flushed { id, totals }) => {\n                ledger.flushed(id, totals, &mut io)?;\n                progress = true;\n            }\n            Ok(worker::Event::Finished(totals)) => {\n                assert!(finished.replace(totals).is_none());\n                progress = true;\n            }\n            Ok(worker::Event::Ready { .. }) => return Err(\"duplicate worker handshake\".into()),\n            Err(TryRecvError::Disconnected) if finished.is_none() => {\n                return Err(\"worker disconnected before completion\".into());\n            }\n            Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),\n        }\n        engine.retire(&mut io)?;\n        if !schedule.is_stopping() && !requested && pending.is_none() {\n            if let Some(command) = io.command()? {\n                if command == Command::Stop {\n                    requested = true;\n                } else {\n                    ids.accept(&command).map_err(str::to_string)?;\n                    // Acceptance reserves both ledger space and this owned\n                    // pending cell. Queue Full never loses an accepted request.\n                    ledger.accepted.push(match &command {\n                        Command::Call { id, bound, bytes } => Command::Call {\n                            id: *id,\n                            bound: *bound,\n                            bytes: bytes.clone(),\n                        },\n                        Command::Flush { id } => Command::Flush { id: *id },\n                        Command::Stop => unreachable!(),\n                    });\n                    pending = Some(command);\n                }\n                progress = true;\n            } else if io.eof() {\n                return Err(\"EOF before STOP or scheduled shutdown\".into());\n            }\n        }\n        progress |= dispatch(&tx, &mut pending, schedule.is_stopping(), &mut stop_sent)?;\n        if !final_output\n            && let Some(totals) = finished\n            && handle.as_ref().is_some_and(|h| h.is_finished())\n        {\n            assert!(schedule.is_stopping() && stop_sent && pending.is_none());\n            handle.take().unwrap().join().map_err(|_| \"worker panic\")?;\n            engine.retire(&mut io)?;\n            engine.history(&mut io)?;\n            assert!(engine.epochs.iter().all(Option::is_none));\n            assert_eq!(engine.reports.len(), schedule.armed() as usize);\n            assert_eq!(engine.committed_arms, schedule.armed());\n            assert_eq!(\n                engine.history.last().unwrap().range().end,\n                u64::from(schedule.armed()) + 1\n            );\n            ledger.finish(totals, &engine.reports, &mut io)?;\n            assert_eq!(ids.len(), ledger.accepted.len());\n            single_main();\n            unsafe { immutable(&spans) };\n            io.emit(format!(\"IO,{}\\n\", io.write_blocked()))?;\n            io.emit(format!(\n                \"DONE,{:?},{},{},{},{},{},{},{},{},1,1\\n\",\n                schedule.stop_reason().unwrap(),\n                schedule.armed(),\n                engine.history.last().unwrap().range().end,\n                ledger.accepted.len(),\n                totals.confirmed,\n                totals.completed,\n                totals.unsampled,\n                ledger.batches,\n                ledger.flushes\n            ))?;\n            final_output = true;\n        }\n        io.write()?;\n        if final_output && io.drained() {\n            schedule\n                .check_completion(Instant::now())\n                .map_err(|e| clock_failure(e, \"final-output\", engine.committed_arms, &schedule))?;\n            return Ok(());\n        }\n        let observed = Instant::now();\n        let bound = schedule\n            .wait_bound(observed)\n            .map_err(|e| clock_failure(e, \"wait\", engine.committed_arms, &schedule))?;\n        if !progress {\n            let wait = guarded_wait(started, observed, policy, &schedule, bound);\n            if wait.is_zero() {\n                // Service the complete nonblocking loop again; do not wait past\n                // the guard or claim that spinning prevents preemption.\n                std::hint::spin_loop();\n            } else {\n                let before = Instant::now();\n                if schedule.is_stopping() {\n                    thread::sleep(wait);\n                } else {\n                    // A normal scheduler cannot bound wakeup after sleep. Spend\n                    // a controller CPU during this finite timed portion instead.\n                    // One immutable target, at most the existing 1ms cap; after\n                    // preemption the next real poll still refuses lateness.\n                    let until = observed.checked_add(wait).ok_or(\"idle wait extent\")?;\n                    while Instant::now() < until {\n                        std::hint::spin_loop();\n                    }\n                }\n                last_wait = Some((wait, before.elapsed()));\n            }\n        }\n"
+          ],
+          [
+            22754,
+            22765,
+            ""
+          ]
+        ],
+        "previous_sha256": "030d10b200da2a23ac8eadcc0efc017d3e025a768a71bf4b3178cd182be36e75"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two.rs": {
+        "current_sha256": "832a04f895e6b6b2da9bbed3b316056cad1fd3076fa0b8d28377e90c8a7ce477",
+        "edits": [
+          [
+            342,
+            353,
+            ""
+          ],
+          [
+            384,
+            404,
+            ""
+          ],
+          [
+            11599,
+            12083,
+            ""
+          ],
+          [
+            12099,
+            12418,
+            ""
+          ],
+          [
+            12682,
+            12936,
+            "    assert_eq!(\n        length, 41,\n        \"qualified strnlen extent, not arbitrary discovery\"\n    );\n"
+          ],
+          [
+            13121,
+            13146,
+            "        LABEL,\n"
+          ],
+          [
+            13176,
+            13257,
+            "    // SAFETY: independently authenticated unchanged strnlen ELF/extent, exact ABI,\n"
+          ],
+          [
+            13965,
+            14280,
+            "    assert_eq!(returns, [entry + 34, entry + 40].into());\n"
+          ],
+          [
+            16298,
+            16521,
+            "            worker::run(entry, client, spans, rx, events, cpus[i + 1], i as u64 + 1)\n"
+          ],
+          [
+            16693,
+            17772,
+            "    pin(Some(cpus[0]));\n    let mut tids = [0; 2];\n    for (i, replies) in replies.iter().enumerate() {\n        let now = Instant::now();\n        if now >= setup_limit {\n            return Err(\"worker setup deadline\".into());\n"
+          ],
+          [
+            17782,
+            17987,
+            "        let worker::Event::Ready { tid } = replies\n            .recv_timeout(setup_limit.duration_since(now))\n            .map_err(failure)?\n        else {\n            return Err(\"worker attachment handshake\".into());\n"
+          ],
+          [
+            17998,
+            18575,
+            "        if Instant::now() >= setup_limit {\n            return Err(\"worker setup completion deadline\".into());\n"
+          ],
+          [
+            18585,
+            22097,
+            "        tids[i] = tid;\n    }\n    let mut ledger = Ledger::new(tids, entry, returns, stream, k);\n    let mut ids = protocol::Ids::default();\n    let mut dispatch = Dispatch::default();\n    let mut requested = false;\n    let mut finished = [None; 2];\n    let mut prefer = 0;\n    let mut final_output = false;\n    io.emit(format!(\n        \"READY,normal-two-session-v1,{k},{epochs},10,2,4096,4096,2,1,2,1,4,2,4096\\n\"\n    ))?;\n    for (i, tid) in tids.into_iter().enumerate() {\n        io.emit(format!(\"WORKER,{},{},{tid}\\n\", i + 1, i + 1))?;\n    }\n    let started = Instant::now();\n    let mut schedule = Schedule::new(started, policy).map_err(failure)?;\n    let mut previous_poll = started;\n    let mut last_wait: Option<(Duration, Duration)> = None;\n    loop {\n        let mut progress = false;\n        let observed = Instant::now();\n        let waited = last_wait.take();\n        match schedule.poll(observed, requested).map_err(|e| {\n            format!(\n                \"{} elapsed_ns={} poll_gap_ns={} last_wait_ns={:?}\",\n                clock_failure(e, \"poll\", engine.committed_arms, &schedule),\n                observed.duration_since(started).as_nanos(),\n                observed.duration_since(previous_poll).as_nanos(),\n                waited.map(|(requested, elapsed)| (requested.as_nanos(), elapsed.as_nanos()))\n            )\n        })? {\n            ScheduleDecision::Arm { .. } => {\n                if let Err(error) = engine.arm(&mut io) {\n                    return Err(format!(\n                        \"arm/history failed: committed={} completed={} {error}\",\n                        engine.committed_arms,\n                        schedule.armed()\n                    ));\n"
+          ],
+          [
+            22115,
+            24429,
+            "                schedule.arm_completed(Instant::now()).map_err(|e| {\n                    clock_failure(e, \"arm-completed\", engine.committed_arms, &schedule)\n                })?;\n"
+          ],
+          [
+            24476,
+            25506,
+            "            ScheduleDecision::Stop => {\n                engine.stop(&mut io)?;\n                progress = true;\n"
+          ],
+          [
+            25520,
+            30621,
+            "            ScheduleDecision::Wait => (),\n"
+          ],
+          [
+            30631,
+            30931,
+            "        previous_poll = observed;\n        // At most one reply, rotating preference. Metadata/timer never wait on a queue.\n        let mut event = None;\n        for offset in 0..2 {\n            let i = (prefer + offset) % 2;\n            match replies[i].try_recv() {\n                Ok(value) => {\n                    event = Some((i, value));\n                    prefer = (i + 1) % 2;\n                    break;\n                }\n                Err(TryRecvError::Disconnected) if finished[i].is_none() => {\n                    return Err(\"worker disconnected before completion\".into());\n                }\n                Err(TryRecvError::Disconnected | TryRecvError::Empty) => (),\n            }\n"
+          ],
+          [
+            30941,
+            31132,
+            "        if let Some((i, event)) = event {\n            match event {\n                worker::Event::Batch { calls, native } => {\n                    assert!(finished[i].is_none());\n                    engine.history(&mut io)?;\n                    ledger.batch(i, calls, *native, &engine.history, &mut io)?;\n                }\n                worker::Event::Flushed { id, totals } => {\n                    ledger.totals(i, totals);\n                    if dispatch.flushed(i, id, totals)? {\n                        ledger.flushed(id, &mut io)?;\n                    }\n                }\n                worker::Event::Finished(totals) => {\n                    ledger.totals(i, totals);\n                    dispatch.finished(i, totals)?;\n                    assert!(finished[i].replace(totals).is_none());\n                }\n                worker::Event::Ready { .. } => return Err(\"duplicate worker handshake\".into()),\n            }\n            progress = true;\n        }\n        engine.retire(&mut io)?;\n        if !schedule.is_stopping() && !requested && dispatch.pending.is_none() {\n            if let Some(command) = io.command()? {\n                if command == Command::Stop {\n                    requested = true;\n                } else {\n                    ids.accept(&command).map_err(str::to_string)?;\n                    dispatch.pending = Some(ledger.accept(command));\n                }\n                progress = true;\n            } else if io.eof() {\n                return Err(\"EOF before STOP or scheduled shutdown\".into());\n            }\n        }\n        progress |= dispatch.advance(&tx, schedule.is_stopping(), ledger.prefixes())?;\n        if !final_output\n            && finished.iter().all(Option::is_some)\n            && handles\n                .iter()\n                .all(|h| h.as_ref().is_some_and(|h| h.is_finished()))\n        {\n            assert!(schedule.is_stopping() && dispatch.complete());\n            for handle in &mut handles {\n                handle.take().unwrap().join().map_err(|_| \"worker panic\")?;\n            }\n            engine.retire(&mut io)?;\n            engine.history(&mut io)?;\n            assert!(engine.epochs.iter().all(Option::is_none));\n            assert_eq!(engine.reports.len(), schedule.armed() as usize);\n            assert_eq!(engine.committed_arms, schedule.armed());\n            assert_eq!(\n                engine.history.last().unwrap().range().end,\n                u64::from(schedule.armed()) + 1\n            );\n            let counts = ledger.finish(&engine.reports, &mut io)?;\n            assert!(output_bound(ledger.calls, ledger.flushes, schedule.armed()) < 4 * 1024 * 1024);\n            assert_eq!(ids.len(), ledger.accepted.len());\n            single_main();\n            unsafe { immutable(&spans) };\n            for (i, totals) in finished.iter().enumerate() {\n                let t = totals.unwrap();\n                ledger.totals(i, t);\n                io.emit(format!(\n                    \"WORKER_DONE,{},{},{},{},{},{},{},1,1\\n\",\n                    i + 1,\n                    ledger.local[i].batches,\n                    t.entered,\n                    t.ret_observed,\n                    t.confirmed,\n                    t.completed,\n                    t.unsampled\n                ))?;\n            }\n            io.emit(format!(\"IO,{}\\n\", io.write_blocked()))?;\n            io.emit(format!(\n                \"DONE,{:?},{},{},{},{},{},{},{},{},{},{},0,0,2,2\\n\",\n                schedule.stop_reason().unwrap(),\n                schedule.armed(),\n                engine.history.last().unwrap().range().end,\n                ledger.accepted.len(),\n                ledger.calls,\n                counts.admitted,\n                counts.retained,\n                counts.dropped,\n                ledger.local.iter().map(|c| c.totals.unsampled).sum::<u64>(),\n                ledger.local.iter().map(|c| c.batches).sum::<u64>(),\n                ledger.flushes\n            ))?;\n            final_output = true;\n        }\n        io.write()?;\n        if final_output && io.drained() {\n            schedule\n                .check_completion(Instant::now())\n                .map_err(|e| clock_failure(e, \"final-output\", engine.committed_arms, &schedule))?;\n            return Ok(());\n        }\n        let observed = Instant::now();\n        let bound = schedule\n            .wait_bound(observed)\n            .map_err(|e| clock_failure(e, \"wait\", engine.committed_arms, &schedule))?;\n        if !progress {\n            let wait = guarded_wait(started, observed, policy, &schedule, bound);\n            if wait.is_zero() {\n                std::hint::spin_loop();\n            } else {\n                let before = Instant::now();\n                if schedule.is_stopping() {\n                    thread::sleep(wait);\n                } else {\n                    let until = observed.checked_add(wait).ok_or(\"idle wait extent\")?;\n                    while Instant::now() < until {\n                        std::hint::spin_loop();\n                    }\n                }\n                last_wait = Some((wait, before.elapsed()));\n            }\n        }\n"
+          ],
+          [
+            31138,
+            31149,
+            ""
+          ]
+        ],
+        "previous_sha256": "33c0e910141f117f07d42850245912c836be37bf2d8fcbf2ceec292c5201780c"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/check.rs": {
+        "current_sha256": "fc73b93da66e2b941edf425a78341d3a894c0fdedd4ab0fb4dd476c3237b6118",
+        "edits": [
+          [
+            902,
+            924,
+            ""
+          ],
+          [
+            1097,
+            1615,
+            ""
+          ],
+          [
+            1684,
+            1871,
+            "        assert_eq!(returns, [entry + 34, entry + 40].into());\n"
+          ],
+          [
+            2247,
+            2268,
+            ""
+          ],
+          [
+            2513,
+            2616,
+            ""
+          ],
+          [
+            4905,
+            5134,
+            "            assert_eq!(call.value, scalar(&call.bytes, call.bound));\n"
+          ],
+          [
+            5343,
+            5724,
+            "            assert_eq!(\n                raw.return_pc - self.entry,\n                if call.bound != 0 && call.value == call.bound as u64 {\n                    40\n                } else {\n                    34\n"
+          ],
+          [
+            5742,
+            5837,
+            "            );\n"
+          ]
+        ],
+        "previous_sha256": "e8900d13f439cb80528bda26ee0a929e207a2a573e741bef0f89ae95455c4277"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/worker.rs": {
+        "current_sha256": "372f52f22f0dec5b5b4f292895144e47d117bffc826714e4cd56740b662e496e",
+        "edits": [
+          [
+            480,
+            502,
+            ""
+          ],
+          [
+            1004,
+            1212,
+            "        assert_eq!(call.value, scalar(&call.bytes, call.bound));\n"
+          ],
+          [
+            1914,
+            1942,
+            "    entry: u64,\n"
+          ],
+          [
+            2147,
+            2182,
+            ""
+          ],
+          [
+            3223,
+            3299,
+            "                    flush(&mut attached, &mut calls, &spans, &tx);\n"
+          ],
+          [
+            3677,
+            3804,
+            ""
+          ],
+          [
+            4322,
+            4532,
+            "                assert_eq!(value, scalar(&bytes, bound));\n"
+          ],
+          [
+            4756,
+            4832,
+            "                    flush(&mut attached, &mut calls, &spans, &tx);\n"
+          ],
+          [
+            4903,
+            4975,
+            "                flush(&mut attached, &mut calls, &spans, &tx);\n"
+          ],
+          [
+            5187,
+            5259,
+            "                flush(&mut attached, &mut calls, &spans, &tx);\n"
+          ]
+        ],
+        "previous_sha256": "9041c120c83bd61485107cc9378b54f401b483b7ed77a75dc0926993819e6d6c"
+      },
+      "tools/rapid-profiler/verify_normal_interval.py": {
+        "current_sha256": "50fad5a13495fe0ccc0957039577620f5bfdb6856e302324c0f97731856c2c50",
+        "edits": [
+          [
+            2712,
+            9056,
+            ""
+          ],
+          [
+            9580,
+            10099,
+            ""
+          ],
+          [
+            10249,
+            10491,
+            ""
+          ],
+          [
+            12237,
+            13520,
+            ""
+          ],
+          [
+            14424,
+            15197,
+            ""
+          ],
+          [
+            15831,
+            17586,
+            ""
+          ],
+          [
+            29577,
+            50426,
+            ""
+          ],
+          [
+            50516,
+            50797,
+            "        assert tuple(r['name'] for r in result['stages']) == STAGES and all(r['status'] == 'PASS' for r in result['stages'])\n"
+          ],
+          [
+            51691,
+            51963,
+            "            closure=dict(owned_stages=10, nested_normal_helpers=46, nested_outer_owners=48, rescues=0),\n"
+          ]
+        ],
+        "previous_sha256": "f73058be6c7556be6cd153817b7ec0edb73eca47bc290bc476390f83c32ebe58"
+      },
+      "tools/rapid-profiler/verify_normal_session.py": {
+        "current_sha256": "7fb4c6a89369858558652f10bcbd7a967d20e3efd5a4258f0581f159d4113bf2",
+        "edits": [
+          [
+            466,
+            487,
+            "PYTHON_CONTROLS = 11\n"
+          ],
+          [
+            1491,
+            1754,
+            ""
+          ],
+          [
+            2808,
+            2921,
+            "STAGES = ('parser-controls', 'session-controls', 'schedule-controls', *(r[0] for r in TRIALS))\n"
+          ],
+          [
+            6965,
+            7044,
+            ""
+          ],
+          [
+            25593,
+            25692,
+            "                # Only the new two:: namespace has its own separate exact qualification.\n"
+          ],
+          [
+            25761,
+            25941,
+            "                    and not n.startswith(prefix+'two::')} == set(methods)\n"
+          ],
+          [
+            26477,
+            26855,
+            ""
+          ]
+        ],
+        "previous_sha256": "18ad942efa6a59c6c10befca5003278a69bb7173be532837c5a27b5ddd438c5b"
+      },
+      "tools/rapid-profiler/verify_normal_session_two.py": {
+        "current_sha256": "195533e2eeba5d66215fc1bcd996abbe832b5554064a65297c4a043248895006",
+        "edits": [
+          [
+            2102,
+            3922,
+            ""
+          ],
+          [
+            4901,
+            5016,
+            ""
+          ],
+          [
+            7291,
+            7465,
+            ""
+          ],
+          [
+            7956,
+            8351,
+            ""
+          ],
+          [
+            9560,
+            10272,
+            ""
+          ],
+          [
+            11442,
+            12027,
+            ""
+          ],
+          [
+            15493,
+            15651,
+            "        assert old['closure'] == dict(owned_stages=9, normal_helper_reaps=9, absence='ECHILD', producer_child_reaps=6, producer_rescues=0, owner_rescues=0)\n"
+          ],
+          [
+            22116,
+            22144,
+            "        for label, target, source, kind, crate_type in (\n"
+          ],
+          [
+            22240,
+            22548,
+            "            ('whole-front', 'rapid_profiler', 'src/lib.rs', 'lib', 'lib')):\n"
+          ],
+          [
+            24772,
+            24994,
+            "        assert {n for n in bin_inventory if n.startswith(CONSUMER_PREFIX)} == set(CONSUMER)\n"
+          ],
+          [
+            31727,
+            41270,
+            ""
+          ],
+          [
+            41360,
+            41467,
+            ""
+          ],
+          [
+            41648,
+            41872,
+            "            closure=dict(owned_stages=12, normal_helper_reaps=12, absence='ECHILD', producer_child_reaps=6, producer_rescues=0, owner_rescues=0),\n"
+          ]
+        ],
+        "previous_sha256": "9a59195040714ec69b2bee3625b98d1f200c3ee94b18a9070062f072682adcb0"
+      }
+    },
+    "python_metadata": {
+      "assignment_sources": [
+        [
+          635,
+          1586,
+          "RUNTIME = ('pending_ret_is_not_completion_and_k1_next_entry_finishes_before_admission',\n    'pending_function_closed_retains_epoch_permit_after_report_retirement',\n    'old_a_and_b_pending_receipts_keep_original_owner_across_rearm_c',\n    'geometry_duplicate_ret_recursion_and_wrong_ack_refuse_before_consumption',\n    'thirty_two_call_bound_preserves_last_return_and_rejects_next_admission',\n    'checkpoint_validates_whole_journal_and_pending_identity_before_finish',\n    'allocation_refusal_and_caught_busy_unwind_keep_pending_first_error',\n    'transfer_reuses_buffers_without_resetting_absolute_identity_or_model_sequence',\n    'gated_site_cannot_be_relabelled_into_normal_preparation',\n    'streaming_normal_pending_owner_survives_600_actions_without_return_acknowledgement',\n    'streaming_normal_closed_and_removed_records_join_after_repeated_idle_drains',\n    'streaming_normal_upper_prefix_corruption_refuses_before_consuming_pending_owner')"
+        ],
+        [
+          1587,
+          1869,
+          "CALLER = ('normal_caller_literal_body_and_every_changed_byte_refuse',\n    'normal_caller_dynamic_refuses_load_time_execution_and_dependencies',\n    'normal_caller_mapping_requires_complete_exact_rx_owner',\n    'normal_caller_complete_elf_refuses_wrong_symbol_body_load_and_dynamic')"
+        ],
+        [
+          1870,
+          2374,
+          "STATE = ('normal_ready_refuses_wrong_caller_maps_and_extents',\n    'normal_wire_refuses_truncation_tail_and_journal_profile',\n    'normal_transfers_refuse_wrong_target_word_rsp_and_order',\n    'normal_epilogue_data_and_pending_journal_refuse',\n    'normal_original_caller_transition_effects_refuse',\n    'normal_control_ack_refuses_wrong_stage_identity_owner_and_tail',\n    'normal_population_refuses_missing_second_body_order_and_coverage',\n    'normal_mode_and_completion_counts_preserve_fixed_bounds')"
+        ],
+        [
+          2375,
+          2523,
+          "CHILD = ('normal_native_rows_require_exact_next_entry_and_checkpoint',\n    'normal_native_rows_bind_continuation_owner_prefix_and_complete_journal')"
+        ],
+        [
+          2524,
+          2709,
+          "STAGES = ('parser-controls', 'runtime-controls', 'caller-controls', 'state-controls',\n    'child-controls', 'caller-build', 'normal-state', 'normal-work', 'drop-sampled', 'drop-closed')"
+        ]
+      ],
+      "assignments": {
+        "CALLER": [
+          "normal_caller_literal_body_and_every_changed_byte_refuse",
+          "normal_caller_dynamic_refuses_load_time_execution_and_dependencies",
+          "normal_caller_mapping_requires_complete_exact_rx_owner",
+          "normal_caller_complete_elf_refuses_wrong_symbol_body_load_and_dynamic"
+        ],
+        "CHILD": [
+          "normal_native_rows_require_exact_next_entry_and_checkpoint",
+          "normal_native_rows_bind_continuation_owner_prefix_and_complete_journal"
+        ],
+        "RUNTIME": [
+          "pending_ret_is_not_completion_and_k1_next_entry_finishes_before_admission",
+          "pending_function_closed_retains_epoch_permit_after_report_retirement",
+          "old_a_and_b_pending_receipts_keep_original_owner_across_rearm_c",
+          "geometry_duplicate_ret_recursion_and_wrong_ack_refuse_before_consumption",
+          "thirty_two_call_bound_preserves_last_return_and_rejects_next_admission",
+          "checkpoint_validates_whole_journal_and_pending_identity_before_finish",
+          "allocation_refusal_and_caught_busy_unwind_keep_pending_first_error",
+          "transfer_reuses_buffers_without_resetting_absolute_identity_or_model_sequence",
+          "gated_site_cannot_be_relabelled_into_normal_preparation",
+          "streaming_normal_pending_owner_survives_600_actions_without_return_acknowledgement",
+          "streaming_normal_closed_and_removed_records_join_after_repeated_idle_drains",
+          "streaming_normal_upper_prefix_corruption_refuses_before_consuming_pending_owner"
+        ],
+        "STAGES": [
+          "parser-controls",
+          "runtime-controls",
+          "caller-controls",
+          "state-controls",
+          "child-controls",
+          "caller-build",
+          "normal-state",
+          "normal-work",
+          "drop-sampled",
+          "drop-closed"
+        ],
+        "STATE": [
+          "normal_ready_refuses_wrong_caller_maps_and_extents",
+          "normal_wire_refuses_truncation_tail_and_journal_profile",
+          "normal_transfers_refuse_wrong_target_word_rsp_and_order",
+          "normal_epilogue_data_and_pending_journal_refuse",
+          "normal_original_caller_transition_effects_refuse",
+          "normal_control_ack_refuses_wrong_stage_identity_owner_and_tail",
+          "normal_population_refuses_missing_second_body_order_and_coverage",
+          "normal_mode_and_completion_counts_preserve_fixed_bounds"
+        ]
+      },
+      "path": "tools/rapid-profiler/verify_normal_interval.py",
+      "qualification_facts": {
+        "tools/rapid-profiler/verify_normal_interval.py": [
+          "EXACT_PREFIXES = ('oracle::native_ordinary::normal_caller::exact_tests::', 'exact_body::', 'exact_truth::')",
+          "EXACT_STATE = (\n    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_closed_cases_input_and_counts',\n    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_pair_rejects_count_step_return_value_or_reap_drift',\n    'exact_body::tests::exact_normal_source_requires_all_bytes_heads_and_ret36',\n    'exact_body::tests::exact_normal_body_accepts_two_real_continuation_shapes_and_closed_lengths',\n    'exact_body::tests::exact_normal_body_mutations_refuse_without_omitted_suffix_or_read',\n    'exact_truth::tests::literal_one_iteration_trace_includes_real_ret_read',\n    'exact_truth::tests::every_length_matches_algebra_input_order_and_scalar_model',\n    'exact_truth::tests::unsigned_loop_comparison_is_independent_of_input_xor_zero_flag',\n    'exact_truth::tests::changed_opcode_displacement_immediate_and_extent_all_refuse',\n    'exact_truth::tests::invalid_length_and_address_wrap_refuse')",
+          "REFERENCE_WITNESS_PREFIX = 'oracle::native_ordinary::normal_caller::reference::tests::'",
+          "REFERENCE_WITNESS = tuple(REFERENCE_WITNESS_PREFIX+n for n in (\n    'ready_envelope_requires_owned_cells_and_exact_tail',\n    'helper_effects_preserve_complete_state',\n    'rdtscp_outputs_require_actual_width_and_store_identity',\n    'reader_restoration_and_head_order_are_exact',\n    'calls_returns_keep_actual_words_and_full_stack',\n    'postflight_requires_outer_return_and_complete_cells',\n    'cell_page_requires_full_guards_and_disjoint_ranges',\n    'pair_counts_require_all_heads_readers_stores_and_reaps'))"
+        ],
+        "tools/rapid-profiler/verify_normal_session.py": [
+          "PYTHON_CONTROLS = 12",
+          "TRACE_PREFIX = SESSION_PREFIX+'loop_trace::'",
+          "TRACE = tuple(TRACE_PREFIX+'tests::'+name for name in (\n    'failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage',\n    'accounting_units_unavailable_and_regression_never_become_off_cpu_claims'))",
+          "SESSION = tuple(SESSION_PREFIX + name for name in (\n    'check::tests::coherent_shift_and_premature_closed_cannot_relabel_sample_population',\n    'check::tests::whole_journal_tail_prefix_and_return_word_corruptions_refuse',\n    'check::tests::report_payload_sequence_endpoint_and_terminal_are_independently_joined',\n    'io::tests::partial_input_eof_and_multiple_lines_preserve_exact_frames',\n    'io::tests::full_output_retains_exact_unsent_bytes_then_drains_without_duplication',\n    'protocol::tests::exact_requests_include_empty_nul_and_arbitrary_external_ids',\n    'protocol::tests::malformed_requests_never_enter_the_population',\n    'protocol::tests::duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers',\n    'tests::accepted_full_queue_retains_pending_before_stop_and_disconnect',\n    'tests::guarded_wait_preserves_original_due_end_and_shutdown_boundaries'))",
+          "SCHEDULE = tuple(SCHEDULE_PREFIX + name for name in (\n    'pending_arm_refuses_another_poll_without_count_or_deadline_reset',\n    'post_arm_history_observation_accepts_equality_but_refuses_one_nanosecond_late',\n    'arm_acknowledgements_require_a_grant_and_cannot_precede_due',\n    'missed_original_arm_and_incomplete_epoch_limit_refuse_without_catchup',\n    'requested_stop_is_once_only_and_uses_exclusive_original_capped_shutdown',\n    'wait_caps_follow_original_due_end_and_stop_without_poll_extension',\n    'both_fixed_policies_issue_520_arms_and_complete_only_after_original_end'))",
+          "STAGES = ('parser-controls', 'session-controls', 'trace-controls', 'schedule-controls', *(r[0] for r in TRIALS))",
+          "PROFILE = dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True)"
+        ],
+        "tools/rapid-profiler/verify_normal_session_two.py": [
+          "PYTHON_CONTROLS = 15",
+          "EXACT_PREFIX = CONSUMER_PREFIX+'exact::tests::'",
+          "EXACT_CONSUMER = tuple(EXACT_PREFIX+n for n in (\n    'exact_subject_authenticates_every_byte_head_extent_and_return',\n    'exact_domain_refusal_precedes_actual_shared_id_acceptance',\n    'exact_value_validator_checks_the_complete_input_and_full_u64_result',\n    'exact_return_validator_refuses_other_exits_and_address_overflow',\n    'exact_metadata_keeps_fixed_selection_labels_and_extents_distinct',\n    'exact_output_envelope_preserves_legacy_and_all_capacity_refusals'))",
+          "EXACT_STATE = (\n    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_closed_cases_input_and_counts',\n    'oracle::native_ordinary::normal_caller::exact_tests::exact_normal_pair_rejects_count_step_return_value_or_reap_drift',\n    'exact_body::tests::exact_normal_source_requires_all_bytes_heads_and_ret36',\n    'exact_body::tests::exact_normal_body_accepts_two_real_continuation_shapes_and_closed_lengths',\n    'exact_body::tests::exact_normal_body_mutations_refuse_without_omitted_suffix_or_read',\n    'exact_truth::tests::literal_one_iteration_trace_includes_real_ret_read',\n    'exact_truth::tests::every_length_matches_algebra_input_order_and_scalar_model',\n    'exact_truth::tests::unsigned_loop_comparison_is_independent_of_input_xor_zero_flag',\n    'exact_truth::tests::changed_opcode_displacement_immediate_and_extent_all_refuse',\n    'exact_truth::tests::invalid_length_and_address_wrap_refuse')",
+          "EXACT_TRIALS = tuple(('exact-'+schedule+'-k'+str(k), schedule, k)\n    for schedule in ('short', 'long', 'alternating', 'late-long') for k in (10, 1000))",
+          "EXACT_STAGES = ('exact-fixture-controls', 'exact-parser-controls', 'exact-native-parser-controls',\n    'exact-consumer-controls', 'exact-state-controls', 'exact-build', 'exact-state',\n    *(row[0] for row in EXACT_TRIALS))"
+        ]
+      },
+      "tuple_assignments": [
+        "RUNTIME",
+        "CALLER",
+        "STATE",
+        "CHILD",
+        "STAGES"
+      ]
+    },
+    "scope": "54 new declarations plus9 second instances and6 newly included existing tests; no old identity/ignore removed or changed. Exact new module-qualified additions; no docs/harness/recorder/serial/native protocol or bounds changes. Static source inventory is not execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/precontext/verify.py": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_normal_caller.rs": "bf3c11ddd177ef642cf482f5b2a206320d88407637578b5ec4c2cb70fbb259b3",
+      "tests/support/native_normal_reference.rs": "0b9b10e7bff070198e18d194c420c844cd7d96608a64744ea4fcad3e966e8aeb",
+      "tests/support/native_normal_reference_tests.rs": "08fc2d740c5ee43b67c1b5f8f35ee287e1a833a999a7e5e129dbc5fd7ef1fded",
+      "tests/support/native_ordinary.rs": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/diagnose_normal_session.py": "4e70cfb5d49fa51d41baa570f56c30cad37e632f96657507f3f0f84f74104d04",
+      "tools/rapid-profiler/exact-work/truth.rs": "66d341133f358bd28864d304f7407d262642d0f88979536ca003b4843b75b305",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "60c2e699e3d4224aab090c9163075380384a564863c6c5fdbb9193fae150c0f2",
+      "tools/rapid-profiler/native-interval/main.rs": "0b0dc8b3094728b799ebb945ae09c4b9ca858144aea6d74c0acf446049775a48",
+      "tools/rapid-profiler/native-interval/normal.rs": "ba8d8e8a7298457cb312fbb6a1572db0d5a63f6f650ab37dc3540f7587dac433",
+      "tools/rapid-profiler/native-interval/normal/check.rs": "d65dcc4d1b21632d7bd32b8e6763e2bd7176cfbf407691811e3312f925216fec",
+      "tools/rapid-profiler/native-interval/normal/exact.rs": "d204076dffdb18958624064cbe0fa7453451cdefe3450e5af15e1b9e319822b1",
+      "tools/rapid-profiler/native-interval/normal/reference.rs": "4cc87da4eb3d20f32836c241998a4a6f2d4a0680639fd09855c5bf664d6bb0a9",
+      "tools/rapid-profiler/native-interval/ordinary.rs": "0d06512523f65462c98edae326094f7d2fd3aff0f1eec1f7e53f7b49378cdfe9",
+      "tools/rapid-profiler/native-interval/ordinary/exact_body.rs": "ae0a33f972733180865becd5132349e03b047d84eadc18fb012d367b1bcd8f52",
+      "tools/rapid-profiler/native-interval/ordinary/exact_body/tests.rs": "0a24f8bd257deb85800e0e27cd4a98d69a29fe9ade06d7e31f86cc3070b3e7a5",
+      "tools/rapid-profiler/normal-work/caller.rs": "250448bd7ef3cd854d378c7f2d62bac3e8da6c8db1330a88e99922ae30adcb70",
+      "tools/rapid-profiler/normal-work/check_session_two.py": "106f256d7bedf4f05ee3c5e5b9995c84579928b51337e141dabd41e900907e61",
+      "tools/rapid-profiler/normal-work/exact_fixture.py": "f1be213ecdb7d1501c9b5421ce729049c47552adf8f19a68a3a257d85c3fb15a",
+      "tools/rapid-profiler/normal-work/exact_native.py": "9cd4833ae1f08caebf902fa6c240033ae22e19f5270081e51bca684a5c4c5989",
+      "tools/rapid-profiler/normal-work/exact_session.py": "d10800f57aad3de4f07a33d2d6d4d270d3eb214ceb7f0d90021258ccbe02742e",
+      "tools/rapid-profiler/normal-work/reference_bytes.rs": "17fc025fbb8b95b69345389be3a8770cfae01add4836ad10b6a99826d7defccc",
+      "tools/rapid-profiler/normal-work/reference_caller.S": "c56a6539e17f79201040eed16a18478c42f4949b13aaa2498245a45af061ba5d",
+      "tools/rapid-profiler/normal-work/reference_leg.py": "4074972ca0af5050d8650e4dfe0de9d0898c2e89b0e4fe66db4ea4f20a7343ae",
+      "tools/rapid-profiler/normal-work/reference_native.py": "ea92bc6ba1d1147a36e483e1e95b8386ff2a97ab3af0d2e24c8b41b005f71ee9",
+      "tools/rapid-profiler/normal-work/reference_owner.rs": "7efca0bc99718b9b396642cd21649b7919703382a1d223f8aa9d54abb8f08049",
+      "tools/rapid-profiler/normal-work/reference_work.py": "bfa03a2d4808241a8fbf2f544d9788cd5a4f882822bb0c56074bc38c127c0449",
+      "tools/rapid-profiler/normal-work/session_driver.py": "e65e60f2a92cc673acb768dad38eea83d1b78f8fd1ccd47f828ea69a4ababb99",
+      "tools/rapid-profiler/normal-work/session_two_driver.py": "0a196f320ecd7df7c1e64f0a9c11aedba97c977c90a3a040d4c96b0e15ccaaa6",
+      "tools/rapid-profiler/normal-work/test_exact_fixture.py": "566a3aa2a1ee628be8e03a9071a1dcdbcc471eb1f6b59c43af6e29c448f5846d",
+      "tools/rapid-profiler/normal-work/test_exact_native.py": "5999834687e167a9149fb03d302978e9bf71a46f2dd0a0b5e350d1bc51b89a6c",
+      "tools/rapid-profiler/normal-work/test_exact_session.py": "2505867260a22a09b876b773f4b9a3babcb7cf9506d6dd87a3de8f594b1c3909",
+      "tools/rapid-profiler/normal-work/test_reference_leg.py": "25e9f4cbafb22277673e09733cca236abd27cf97e9b0b1c3852c1f5f1428e76f",
+      "tools/rapid-profiler/normal-work/test_reference_native.py": "5ab4b52307f54abea6a73301fede49344ffce9186617eda7d448f06cb978627e",
+      "tools/rapid-profiler/normal-work/test_reference_work.py": "b0106a92a1762da730514088d92c2bd93537bd14031e368cbc39f18a120c50bc",
+      "tools/rapid-profiler/normal-work/test_session.py": "94af5fa80a81240a4e7616fb478d3318dd55166ae09e977ec41b887121bde858",
+      "tools/rapid-profiler/ordinary-interval/exact.rs": "cdf5acd93e0a1ab35c4eee6dce1e40cf902aca5978f94ed7cdc4f228fb9d59cd",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "2ad1384b1e8f93faf8261e05f60290fbf02d53f29b41bef5ac4a672d2a623631",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "d7f4202b87c5adc27a3567c2c7a65c9f0369d22dfebd022abbd1e0b34095df34",
+      "tools/rapid-profiler/ordinary-interval/normal/reference.rs": "e8c1c2d83a0a25180fbb8a40e84f223d6d2460b9537801c516dedcfe8e5bd150",
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check.rs": "66c086645d0c055ecadbecc3607b722e7d247e374a807cd791986553d6c4ded9",
+      "tools/rapid-profiler/ordinary-interval/normal/reference/check/leg_tests.rs": "d95fe81b88b8a2596110f2f3e845b2925f5af92d6e42ec2defb9b4f77cc053db",
+      "tools/rapid-profiler/ordinary-interval/normal/reference/leg.rs": "613ce9ee3702ce75a555d6949cda2027e8db5b87d123c16df859b7f3269bcbce",
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": "99c5e5d7a25c8b0ac197a8575a29d8a165caa0054a0f938bedfe92209b5c3caf",
+      "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": "c09c6cfd2933e8a6976d3a6eb34809c07ceb83b3b93ddb7e959f7f707dcb19c1",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two.rs": "832a04f895e6b6b2da9bbed3b316056cad1fd3076fa0b8d28377e90c8a7ce477",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/check.rs": "fc73b93da66e2b941edf425a78341d3a894c0fdedd4ab0fb4dd476c3237b6118",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/exact.rs": "a5841463161d608bde2efe1a888654dc90c3fc9c39d35dba30d8ea1eb3c8ee60",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two/worker.rs": "372f52f22f0dec5b5b4f292895144e47d117bffc826714e4cd56740b662e496e",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/reference/hardware.rs": "136fc74e25b8ec34dc3d39b0280201379365c8a2a35484ef431bf76b8be39cb4",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
+      "tools/rapid-profiler/verify_normal_interval.py": "50fad5a13495fe0ccc0957039577620f5bfdb6856e302324c0f97731856c2c50",
+      "tools/rapid-profiler/verify_normal_session.py": "7fb4c6a89369858558652f10bcbd7a967d20e3efd5a4258f0581f159d4113bf2",
+      "tools/rapid-profiler/verify_normal_session_two.py": "195533e2eeba5d66215fc1bcd996abbe832b5554064a65297c4a043248895006"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 144
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 115
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 138
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 98
+        }
+      }
+    }
+  },
   "mainc0": {
     "base": "d81a77a658cef48075eac62eb128822e33f33a64",
     "current_corpus_sha256": "748713582eb3ae3cbd1fc92301f532a35e485603a20741711e46e2778e81c4bf",
