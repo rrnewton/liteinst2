@@ -481,6 +481,18 @@ impl State {
         resume_rsp: u64,
     ) -> Result<NormalCallPairRecord, BridgeError> {
         self.validate(x.view())?;
+        self.completion_after_validation(x, node, resume_pc, resume_rsp)
+    }
+    // Only after validate on these same borrows, with no intervening local
+    // mutation or callback. Receipt summaries are immutable; concurrent absolute
+    // history publication only advances its bounded end and preserves the prefix.
+    fn completion_after_validation(
+        &self,
+        x: &Context<'_>,
+        node: usize,
+        resume_pc: u64,
+        resume_rsp: u64,
+    ) -> Result<NormalCallPairRecord, BridgeError> {
         let (_, functions) = table(x.binding)?;
         let p = self.frames[node].as_ref().ok_or(error(Cause::Return))?;
         let returned = p.returned.ok_or(error(Cause::Return))?;
@@ -611,7 +623,7 @@ impl State {
         {
             return Err(error(Cause::Return));
         }
-        let row = self.prepare_completion(x, 1, pc, rsp)?;
+        let row = self.completion_after_validation(x, 1, pc, rsp)?;
         let row = self.consume(x, row)?;
         self.rows[1] = Some(row);
         self.totals.child_acks += 1;

@@ -349,6 +349,240 @@ fn ret_observation_is_not_ack_and_rejects_identity() {
     f.observe(0);
     assert_eq!(f.state.model.depth(), 1);
     f.transfer();
+    // Corrupt existing preflight predicates before actual ack. The retained
+    // core receipts and model must remain unconsumed on every refusal.
+    fn ack_refused(f: &mut Fixture) {
+        let metadata = |s: &NormalState| {
+            let p = s.call_pair.as_ref().unwrap();
+            (
+                p.slots,
+                p.sequence,
+                p.arguments,
+                p.before,
+                p.number,
+                p.frames
+                    .each_ref()
+                    .map(|p| p.as_ref().map(|p| (p.start_sequence, p.entry_pc))),
+            )
+        };
+        let before = metadata(&f.state);
+        refused(f, |s| {
+            with_context(s, |p, x| {
+                p.ack(x, ENTRY[0] + 14, RSP - 24, ENTRY[0] + 14, 4)
+            })
+        });
+        assert_eq!(metadata(&f.state), before);
+    }
+    let mut f = Fixture::new(10);
+    f.enter(0);
+    f.enter(1);
+    f.observe(1);
+    let initial = snapshot(&f.state);
+    let page = f.state.journal.page.0;
+    for (i, word) in page.into_iter().enumerate() {
+        f.state.journal.word(i, word ^ u64::MAX);
+        ack_refused(&mut f);
+        // The standalone wrapper remains validating, even for an otherwise
+        // well-formed completion and before either receipt is consumed.
+        if i == 0 || i == 511 {
+            refused(&mut f, |s| {
+                with_context(s, |p, x| {
+                    p.prepare_completion(x, 1, ENTRY[0] + 14, RSP - 24)
+                        .map(|_| ())
+                })
+            });
+        }
+        f.state.journal.word(i, word);
+    }
+    let child_returned = f.state.call_pair.as_ref().unwrap().frames[1]
+        .as_ref()
+        .unwrap()
+        .returned;
+    for node in 0..2 {
+        for field in 0..13 {
+            let frame = f.state.call_pair.as_ref().unwrap().frames[node]
+                .as_ref()
+                .unwrap();
+            let saved = (
+                Arc::clone(&frame.key),
+                frame.function,
+                frame.registration,
+                frame.ordinal,
+                frame.rsp,
+                frame.word,
+                frame.slot,
+                frame.summary,
+                frame.start_sequence,
+                frame.entry_pc,
+                frame.returned,
+            );
+            let frame = f.state.call_pair.as_mut().unwrap().frames[node]
+                .as_mut()
+                .unwrap();
+            match field {
+                0 => frame.key = Arc::new(()),
+                1 => frame.function = IDS[1 - node],
+                2 => frame.registration += 1,
+                3 => frame.ordinal += 1,
+                4 => frame.rsp += 16,
+                5 => frame.word = 0,
+                6 => frame.slot.identity ^= 1,
+                7 => frame.slot.word ^= 1,
+                8 => frame.summary = None,
+                9 => frame.start_sequence = Some(1),
+                10 => frame.entry_pc = ENTRY[1 - node],
+                11 => frame.returned = if node == 0 { child_returned } else { None },
+                _ => match frame.summary.as_mut().unwrap() {
+                    IntervalEntrySummary::Admitted { invocation, .. } => *invocation += 1,
+                    _ => panic!("expected sampled receipt"),
+                },
+            }
+            ack_refused(&mut f);
+            let frame = f.state.call_pair.as_mut().unwrap().frames[node]
+                .as_mut()
+                .unwrap();
+            (
+                frame.key,
+                frame.function,
+                frame.registration,
+                frame.ordinal,
+                frame.rsp,
+                frame.word,
+                frame.slot,
+                frame.summary,
+                frame.start_sequence,
+                frame.entry_pc,
+                frame.returned,
+            ) = saved;
+        }
+        let frame = f.state.call_pair.as_mut().unwrap().frames[node]
+            .take()
+            .unwrap();
+        let summary = frame.receipt.summary();
+        ack_refused(&mut f);
+        assert_eq!(frame.receipt.summary(), summary);
+        f.state.call_pair.as_mut().unwrap().frames[node] = Some(frame);
+        let saved = f.state.call_pair.as_ref().unwrap().slots[node];
+        f.state.call_pair.as_mut().unwrap().slots[node] = None;
+        ack_refused(&mut f);
+        f.state.call_pair.as_mut().unwrap().slots[node] = saved;
+        f.state.call_pair.as_mut().unwrap().sequence[node] += 1;
+        ack_refused(&mut f);
+        f.state.call_pair.as_mut().unwrap().sequence[node] -= 1;
+    }
+    for field in 0..4 {
+        let frame = f.state.call_pair.as_mut().unwrap().frames[1]
+            .as_mut()
+            .unwrap();
+        let saved = frame.returned;
+        let returned = frame.returned.as_mut().unwrap();
+        match field {
+            0 => returned.pc += 1,
+            1 => returned.rsp += 16,
+            2 => returned.word ^= 1,
+            _ => returned.value ^= 1,
+        }
+        ack_refused(&mut f);
+        f.state.call_pair.as_mut().unwrap().frames[1]
+            .as_mut()
+            .unwrap()
+            .returned = saved;
+    }
+    // Swap actual receipts, not fabricated ownership; cached summaries must not
+    // authenticate the other frame's global admission slot.
+    for restore in [false, true] {
+        let frames = &mut f.state.call_pair.as_mut().unwrap().frames;
+        let (parent, child) = frames.split_at_mut(1);
+        std::mem::swap(
+            &mut parent[0].as_mut().unwrap().receipt,
+            &mut child[0].as_mut().unwrap().receipt,
+        );
+        if !restore {
+            ack_refused(&mut f);
+        }
+    }
+    for baseline in [false, true] {
+        for field in 0..7 {
+            let p = f.state.call_pair.as_mut().unwrap();
+            let saved = (p.totals, p.before);
+            let t = if baseline {
+                &mut p.before
+            } else {
+                &mut p.totals
+            };
+            match field {
+                0 => t.roots += 1,
+                1 => t.child_acks += 1,
+                2 => t.pairs.entered += 1,
+                3 => t.pairs.ret_observed += 1,
+                4 => t.pairs.confirmed += 1,
+                5 => t.pairs.completed += 1,
+                _ => t.pairs.unsampled += 1,
+            }
+            ack_refused(&mut f);
+            let p = f.state.call_pair.as_mut().unwrap();
+            (p.totals, p.before) = saved;
+        }
+    }
+    for number in [false, true] {
+        let p = f.state.call_pair.as_mut().unwrap();
+        let saved = (p.next, p.number);
+        if number {
+            p.number += 1;
+        } else {
+            p.next += 1;
+        }
+        ack_refused(&mut f);
+        let p = f.state.call_pair.as_mut().unwrap();
+        (p.next, p.number) = saved;
+    }
+    let mut other = Fixture::new(10);
+    let rows = *other.run().records();
+    for (node, row) in rows.into_iter().enumerate() {
+        f.state.call_pair.as_mut().unwrap().rows[node] = Some(row);
+        ack_refused(&mut f);
+        f.state.call_pair.as_mut().unwrap().rows[node] = None;
+    }
+    std::mem::swap(&mut f.state.model, &mut other.state.model);
+    ack_refused(&mut f);
+    std::mem::swap(&mut f.state.model, &mut other.state.model);
+    for field in 0..4 {
+        let saved = (
+            f.state.registration,
+            f.state.tid,
+            f.state.stack.start,
+            f.state.stack.end,
+        );
+        match field {
+            0 => f.state.registration = 0,
+            1 => f.state.tid ^= 1,
+            2 => f.state.stack.start = RSP + 8,
+            _ => f.state.stack.end = RSP,
+        }
+        ack_refused(&mut f);
+        (
+            f.state.registration,
+            f.state.tid,
+            f.state.stack.start,
+            f.state.stack.end,
+        ) = saved;
+    }
+    assert_eq!(snapshot(&f.state), initial);
+    with_context(&mut f.state, |p, x| {
+        p.prepare_completion(x, 1, ENTRY[0] + 14, RSP - 24)
+    })
+    .unwrap();
+    assert_eq!(snapshot(&f.state), initial);
+    f.ack();
+    assert_eq!(f.state.model.depth(), 1);
+    assert_eq!(f.state.model.completed_sequence(), 1);
+    f.observe(0);
+    let batch = f.transfer();
+    assert_eq!(
+        batch.records().map(|r| r.sampled_children()),
+        [Some(1), Some(0)]
+    );
+    assert_eq!(batch.after().pairs.completed, 2);
 }
 #[test]
 fn stack_envelope_requires_exact_layout_and_ranges() {
@@ -762,6 +996,53 @@ fn history_stream_and_batch_identity_are_exact() {
     let later = f.run();
     assert_eq!(later.records()[0].raw().ordinal, 3);
     assert_eq!(later.records()[0].sequence_before(), 2);
+    // Real publication and draining can advance the absolute high-water while
+    // both receipts and the complete local journal remain unchanged before ack.
+    let mut f = Fixture::new(10);
+    f.enter(0);
+    f.enter(1);
+    f.observe(1);
+    let before = snapshot(&f.state);
+    let first_end = f.state.binding.session.history_committed_end();
+    let old = f.rearm();
+    let later_end = f.state.binding.session.history_committed_end();
+    assert!(later_end > first_end);
+    f.controller.drain_history().unwrap().unwrap();
+    assert_eq!(f.state.binding.session.history_committed_end(), later_end);
+    assert_eq!(snapshot(&f.state), before);
+    for (node, &function) in IDS.iter().enumerate() {
+        let frame = f.state.call_pair.as_ref().unwrap().frames[node]
+            .as_ref()
+            .unwrap();
+        let summary = frame.receipt.summary().unwrap();
+        assert_eq!(Some(summary), frame.summary);
+        let prefix = prefix(summary);
+        assert!(prefix > 0);
+        let encoded = history::packed_absolute(summary, function, prefix).unwrap();
+        for end in [first_end, later_end, crate::frontend::MAX_HISTORY_POSITION] {
+            assert_eq!(
+                history::packed_absolute(summary, function, end).unwrap(),
+                encoded
+            );
+        }
+        assert!(history::packed_absolute(summary, function, prefix - 1).is_err());
+        assert!(
+            history::packed_absolute(summary, function, crate::frontend::MAX_HISTORY_POSITION + 1)
+                .is_err()
+        );
+    }
+    f.ack();
+    f.observe(0);
+    let batch = f.transfer();
+    assert_eq!(batch.history_end(), later_end);
+    let report = f.controller.report(&old).unwrap().unwrap();
+    for record in batch.records() {
+        assert!(record.matches_report(&report).unwrap());
+        assert_eq!(
+            record.completion().unwrap().admission.generation,
+            old.generation()
+        );
+    }
 }
 #[test]
 fn lost_handle_retains_owner_and_sticky_failure() {
