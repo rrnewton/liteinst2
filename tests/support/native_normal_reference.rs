@@ -1,10 +1,8 @@
 //! Closed ReferenceAmdV1 normal-caller witness. Not a timestamp-accuracy oracle.
 //! Every helper instruction is stepped; transient reader heads are checked
 //! against the SAME child's actual RDTSCP outputs, never normalized across children.
-pub use super::caller_bytes;
 use super::*;
-#[path = "../../tools/rapid-profiler/normal-work/reference_bytes.rs"]
-pub mod bytes;
+register_native_fixture!(reference_bytes);
 
 const CELLS_AT: usize = 128;
 const MAGIC: u64 = 0x6e72656672647931;

@@ -2,6 +2,10 @@
 #![deny(warnings)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[macro_use]
+#[path = "support/native_fixture_registration.rs"]
+mod native_fixture_registration;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[allow(dead_code)]
 #[expect(
     unused_imports,

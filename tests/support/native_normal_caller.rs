@@ -2,13 +2,14 @@
 //! Both target calls are fully compared. No timing or native execution claim.
 use super::*;
 use iced_x86::{Decoder, DecoderOptions, FlowControl};
-#[path = "../../tools/rapid-profiler/normal-work/caller_bytes.rs"]
-pub mod caller_bytes;
+register_native_fixture!(caller_bytes);
 #[path = "native_normal_csv.rs"]
 pub mod csv;
 #[path = "native_normal_module.rs"]
 pub mod module;
 use module::WalkReady;
+#[path = "native_call_pair.rs"]
+pub mod call_pair;
 #[path = "native_copied_capture.rs"]
 mod copied_capture;
 #[path = "native_copied_rust.rs"]
@@ -25,6 +26,7 @@ enum CallerProfile<'a> {
     Reference,
     Module,
     CopiedRust(&'a rust_invoke::Plan),
+    OriginalRust(&'a rust_invoke::Plan),
 }
 impl<'a> CallerProfile<'a> {
     fn bytes(self) -> &'a [u8] {
@@ -33,6 +35,7 @@ impl<'a> CallerProfile<'a> {
             Self::Reference => reference::bytes::BYTES,
             Self::Module => module::bytes::BYTES,
             Self::CopiedRust(plan) => plan.bytes(),
+            Self::OriginalRust(plan) => plan.bytes(),
         }
     }
     fn heads(self) -> &'a [u64] {
@@ -41,6 +44,7 @@ impl<'a> CallerProfile<'a> {
             Self::Reference => reference::bytes::HEADS,
             Self::Module => module::bytes::HEADS,
             Self::CopiedRust(plan) => plan.heads(),
+            Self::OriginalRust(plan) => plan.heads(),
         }
     }
     fn calls(self) -> &'a [u64] {
@@ -49,6 +53,7 @@ impl<'a> CallerProfile<'a> {
             Self::Reference => &reference::bytes::CALLS,
             Self::Module => &module::bytes::CALLS,
             Self::CopiedRust(plan) => plan.calls(),
+            Self::OriginalRust(plan) => plan.calls(),
         }
     }
     fn continuations(self) -> &'a [u64] {
@@ -57,6 +62,7 @@ impl<'a> CallerProfile<'a> {
             Self::Reference => &reference::bytes::CONTINUATIONS,
             Self::Module => &module::bytes::CONTINUATIONS,
             Self::CopiedRust(plan) => plan.continuations(),
+            Self::OriginalRust(plan) => plan.continuations(),
         }
     }
     fn outer_ret(self) -> u64 {
@@ -65,6 +71,7 @@ impl<'a> CallerProfile<'a> {
             Self::Reference => reference::bytes::OUTER_RET,
             Self::Module => module::bytes::OUTER_RET,
             Self::CopiedRust(plan) => plan.outer_ret(),
+            Self::OriginalRust(plan) => plan.outer_ret(),
         }
     }
     fn compare(self, offset: u64) -> bool {
@@ -86,6 +93,7 @@ impl CallerProfile<'_> {
         bound: usize,
     ) {
         match self {
+            Self::OriginalRust(_) => panic!("nested phase required"),
             Self::Legacy => call_before(r, ready.single(), index, rsp, data, bound),
             Self::Reference => reference::call_before(r, ready.single(), index, rsp, data, bound),
             Self::Module => module::call_before(r, ready.module(), index, rsp, data, bound),
@@ -107,6 +115,7 @@ impl CallerProfile<'_> {
         word: u64,
     ) {
         match self {
+            Self::OriginalRust(_) => panic!("nested phase required"),
             Self::Legacy => call_after(r, ready.single(), index, rsp, word),
             Self::Reference => reference::call_after(r, ready.single(), index, rsp, word),
             Self::Module => module::call_after(r, ready.module(), index, rsp, word),
@@ -129,6 +138,7 @@ impl CallerProfile<'_> {
         word: u64,
     ) {
         match self {
+            Self::OriginalRust(_) => panic!("nested phase required"),
             Self::Legacy => ret_before(r, ready.single(), index, rsp, value, word),
             Self::Reference => reference::ret_before(r, ready.single(), index, rsp, value, word),
             Self::Module => module::ret_before(r, ready.module(), index, rsp, value, word),
@@ -151,6 +161,7 @@ impl CallerProfile<'_> {
         word: u64,
     ) {
         match self {
+            Self::OriginalRust(_) => panic!("nested phase required"),
             Self::Legacy => ret_after(r, ready.single(), index, rsp, value, word),
             Self::Reference => reference::ret_after(r, ready.single(), index, rsp, value, word),
             Self::Module => module::ret_after(r, ready.module(), index, rsp, value, word),
@@ -172,6 +183,7 @@ impl CallerProfile<'_> {
         returns: &[u64],
     ) -> [u64; 512] {
         match self {
+            Self::OriginalRust(_) => panic!("nested phase required"),
             Self::Legacy => journal_words(ready.single(), mode, pid, rsp, returns),
             Self::Reference => reference::journal_words(ready.single(), mode, pid, rsp, returns),
             Self::Module => module::journal_words(ready.module(), pid, rsp, returns, true),
@@ -733,6 +745,11 @@ fn check_ack(words: &[u64], stage: usize, pid: u64, j: &JournalReady) {
 }
 impl ControlParent {
     fn request(&mut self, stage: usize, child: &Tracee, j: &JournalReady, deadline: Deadline) {
+        self.request_with(stage, deadline, |words| {
+            check_ack(words, stage, child.pid as u64, j)
+        });
+    }
+    fn request_with(&mut self, stage: usize, deadline: Deadline, check: impl FnOnce(&[u64])) {
         assert_eq!(stage, self.next);
         assert!((1..=2).contains(&stage));
         let bytes: Vec<_> = [ACK_MAGIC, stage as u64]
@@ -746,7 +763,7 @@ impl ControlParent {
             .chunks_exact(8)
             .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
             .collect();
-        check_ack(&words, stage, child.pid as u64, j);
+        check(&words);
         self.next += 1;
     }
     fn finish(self, deadline: Deadline) {
@@ -770,6 +787,7 @@ pub struct NormalOracle {
     module: Option<module::Case>,
     copied_rust: Option<copied_rust::Profile>,
     leaf_set_copied: Option<leaf_set_copied::Profile>,
+    call_pair: Option<call_pair::Profile>,
 }
 pub struct NormalContext<'a> {
     oracle: &'a NormalOracle,
@@ -898,6 +916,17 @@ impl NormalOracle {
         oracle
     }
     fn profile(&self) -> CallerProfile<'_> {
+        if let Some(profile) = &self.call_pair {
+            assert!(
+                self.copied_rust.is_none()
+                    && self.leaf_set_copied.is_none()
+                    && self.module.is_none()
+                    && self.reference.is_none()
+            );
+            assert_eq!(self.mode, Mode::Stable);
+            profile.case.assert_valid();
+            return CallerProfile::OriginalRust(&profile.plan);
+        }
         if let Some(profile) = &self.leaf_set_copied {
             assert!(
                 self.copied_rust.is_none() && self.module.is_none() && self.reference.is_none()
@@ -918,6 +947,9 @@ impl NormalOracle {
         } else {
             CallerProfile::Legacy
         }
+    }
+    fn has_rust_caller(&self) -> bool {
+        self.call_pair.is_some() || self.has_copied_caller()
     }
     fn has_copied_caller(&self) -> bool {
         self.copied_rust.is_some() || self.leaf_set_copied.is_some()
@@ -964,6 +996,7 @@ impl NormalOracle {
             module: None,
             copied_rust: None,
             leaf_set_copied: None,
+            call_pair: None,
         }
     }
     fn caller_rsp(&self) -> u64 {
@@ -979,6 +1012,9 @@ impl NormalOracle {
     }
     fn snapshot(&self, child: &Tracee, ready: &WalkReady, logical: u64) -> Snapshot {
         self.deadline.check();
+        if self.call_pair.is_some() {
+            return copied_capture::nested_snapshot(self, child, ready, logical);
+        }
         if self.has_copied_caller() {
             return copied_capture::snapshot(self, child, ready, logical);
         }
@@ -1024,7 +1060,13 @@ impl NormalOracle {
             instruction.next_ip()
         );
         assert_eq!(after.rsp % 16, 8);
-        if self.leaf_set_copied.is_some() {
+        if self.call_pair.is_some() {
+            copied_rust::entry_arguments_view(
+                &after,
+                ready.call_pair().view(),
+                self.data.address(),
+            );
+        } else if self.leaf_set_copied.is_some() {
             copied_rust::entry_arguments_view(&after, ready.copied_view(), self.data.address());
         } else if self.copied_rust.is_some() {
             copied_rust::entry_arguments(&after, ready.copied_rust(), self.data.address());
@@ -1368,6 +1410,19 @@ impl NormalOracle {
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
         O: FnOnce(&WalkReady, &[Snapshot]) -> (T, [usize; N]),
     {
+        self.pair_engine_ready(setup, |original, _candidate, points| {
+            inspect(original, points)
+        })
+    }
+    fn pair_engine_ready<F, O, T, const N: usize>(
+        &self,
+        setup: F,
+        inspect: O,
+    ) -> (NormalPairResult<N>, T, Option<reference::Stats>)
+    where
+        F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
+        O: FnOnce(&WalkReady, &WalkReady, &[Snapshot]) -> (T, [usize; N]),
+    {
         self.deadline.check();
         assert_eq!(
             unsafe { libc::syscall(libc::SYS_gettid) },
@@ -1391,7 +1446,12 @@ impl NormalOracle {
         );
         let pipes = [pipe(), pipe()];
         let output_pipes = self.reference.as_ref().map(|_| [pipe(), pipe()]);
-        let control = (self.mode == Mode::CrossedOwner).then(|| (pipe(), pipe()));
+        let control = (self.mode == Mode::CrossedOwner
+            || self
+                .call_pair
+                .as_ref()
+                .is_some_and(|p| p.case.scenario.helper()))
+        .then(|| (pipe(), pipe()));
         let mut pids = [0; 2];
         for index in 0..2 {
             let pid = unsafe { libc::fork() };
@@ -1498,7 +1558,9 @@ impl NormalOracle {
         self.deadline.check();
         let ready = reads.map(|p| {
             let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);
-            if let Some(expected) = &self.leaf_set_copied {
+            if let Some(expected) = &self.call_pair {
+                WalkReady::CallPair(call_pair::Ready::decode(&wire, expected))
+            } else if let Some(expected) = &self.leaf_set_copied {
                 WalkReady::LeafSetCopied(leaf_set_copied::Ready::decode(
                     &wire,
                     expected.case,
@@ -1529,7 +1591,12 @@ impl NormalOracle {
             assert!(libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP);
             child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         }
-        let maps = if let Some(expected) = &self.leaf_set_copied {
+        let maps = if let Some(expected) = &self.call_pair {
+            [
+                ready[0].call_pair().validate(false, expected),
+                ready[1].call_pair().validate(true, expected),
+            ]
+        } else if let Some(expected) = &self.leaf_set_copied {
             [
                 ready[0].leaf_set_copied().validate(false, expected),
                 ready[1].leaf_set_copied().validate(true, expected),
@@ -1598,7 +1665,7 @@ impl NormalOracle {
             (saved[0].rdi, saved[0].rsi, saved[0].rdx),
             (saved[1].rdi, saved[1].rsi, saved[1].rdx)
         );
-        if self.has_copied_caller() {
+        if self.has_rust_caller() {
             assert_eq!(saved[0].rcx, saved[1].rcx);
         }
         let xstate = children.each_ref().map(|child| child.xstate());
@@ -1610,7 +1677,7 @@ impl NormalOracle {
             self.seed(&children[0], saved[0]),
             self.seed(&children[1], saved[1]),
         ];
-        let seeded = if self.has_copied_caller() {
+        let seeded = if self.has_rust_caller() {
             assert_eq!(words[0], words[1], "one actual bridge continuation");
             let continuation = u64::from_le_bytes(words[0].as_slice().try_into().unwrap());
             std::array::from_fn(|index| {
@@ -1651,6 +1718,10 @@ impl NormalOracle {
         for index in 0..2 {
             let walk = &mut walks[index];
             let r = &ready[index];
+            let mut nested = self
+                .call_pair
+                .as_ref()
+                .map(|_| call_pair::Phase::new(r.call_pair()));
             loop {
                 let pc = walk.child.registers().rip;
                 let caller_pc = if let Some(dispatch) = &copied_dispatch {
@@ -1668,6 +1739,9 @@ impl NormalOracle {
                 };
                 let mut helper_before = None;
                 if let Some(logical) = logical {
+                    if let Some(nested) = nested.as_mut() {
+                        nested.logical(self, walk.child, r.call_pair(), logical);
+                    }
                     let point = self.snapshot(walk.child, r, logical);
                     if let Some(witnesses) = witnesses.as_mut() {
                         witnesses[index].unchanged(walk.child);
@@ -1702,6 +1776,28 @@ impl NormalOracle {
                     if pc == outer {
                         break;
                     }
+                }
+                if let Some(nested) = nested.as_mut() {
+                    let event = nested.before(self, walk, r.call_pair(), logical, &mut control);
+                    self.step(
+                        walk,
+                        if index == 0 {
+                            "nested original"
+                        } else {
+                            "nested candidate"
+                        },
+                    );
+                    nested.after(event, self, walk, r.call_pair());
+                    match event {
+                        call_pair::phase::Event::ParentCall
+                        | call_pair::phase::Event::ChildCall => calls[index] += 1,
+                        call_pair::phase::Event::ChildReturn
+                        | call_pair::phase::Event::ParentReturn => {
+                            returns[index].push(logical.unwrap())
+                        }
+                        call_pair::phase::Event::None => {}
+                    }
+                    continue;
                 }
                 let call = if let Some(dispatch) = &copied_dispatch {
                     dispatch[index].call(pc)
@@ -1797,11 +1893,14 @@ impl NormalOracle {
                     profile.ret_after(&regs, r, n, self.caller_rsp(), self.value(n), word);
                 }
             }
+            if let Some(nested) = &nested {
+                nested.finish();
+            }
             assert_eq!(calls[index], N);
             assert_eq!(returns[index].len(), N);
             let actual = walk.child.registers();
             callee_saves(&seeded[index], &actual);
-            if !self.has_copied_caller() {
+            if !self.has_rust_caller() {
                 assert_eq!(actual.rax, self.sum());
             }
             self.check_data(r, &walk.child.memory(self.data.address(), PAGE), true);
@@ -1818,7 +1917,7 @@ impl NormalOracle {
             assert_eq!(actual.rip, ready[index].caller() + profile.outer_ret());
             assert_eq!(walk.child.memory(saved[index].rsp, 8), words[index]);
             let continuation = u64::from_le_bytes(words[index].as_slice().try_into().unwrap());
-            let mut after = if self.has_copied_caller() {
+            let mut after = if self.has_rust_caller() {
                 assert_eq!(walk.child.memory(self.caller_rsp(), 8), words[index]);
                 let before = self.snapshot(walk.child, &ready[index], actual.rip);
                 self.step(walk, "copied Rust actual outer RET before restoration");
@@ -1917,7 +2016,14 @@ impl NormalOracle {
                 self.stack_start(),
             );
         }
-        if self.leaf_set_copied.is_some() {
+        if self.call_pair.is_some() {
+            copied_rust::caller_effects_view(
+                &points,
+                ready[0].call_pair().view(),
+                self.data.address(),
+                self.stack_start(),
+            );
+        } else if self.leaf_set_copied.is_some() {
             copied_rust::caller_effects_view(
                 &points,
                 ready[0].copied_view(),
@@ -1932,8 +2038,20 @@ impl NormalOracle {
                 self.stack_start(),
             );
         }
-        let (trace, visits) = inspect(&ready[0], &points);
-        let (values, outer_value) = if let Some(profile) = &self.leaf_set_copied {
+        let (trace, visits) = inspect(&ready[0], &ready[1], &points);
+        let (values, outer_value) = if let Some(profile) = &self.call_pair {
+            assert_eq!(N, 2);
+            (
+                std::array::from_fn(|i| {
+                    if i == 0 {
+                        profile.case.value()
+                    } else {
+                        profile.case.fields()
+                    }
+                }),
+                points.last().unwrap().registers.rax,
+            )
+        } else if let Some(profile) = &self.leaf_set_copied {
             (
                 [profile.case.value(); N],
                 points.last().unwrap().registers.rax,

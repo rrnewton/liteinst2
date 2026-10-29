@@ -28,6 +28,28 @@ mod counter;
 mod exact;
 mod joined_task;
 mod normal;
+// The additive oracle shares the existing ordinary fixture definitions.
+// These aliases add no second set of fixture tests or type identities.
+macro_rules! register_native_fixture {
+    (cache_truth) => {
+        pub use crate::counter::truth;
+    };
+    (tree_truth) => {
+        pub use crate::tree::truth;
+    };
+    (strnlen_cases) => {
+        pub use crate::strnlen::cases;
+    };
+    (caller_bytes) => {
+        pub use crate::normal::caller_bytes;
+    };
+    (reference_bytes) => {
+        pub use crate::normal::caller::reference_bytes as bytes;
+    };
+}
+#[allow(dead_code)]
+#[path = "../../../tests/support/native_interval_oracle.rs"]
+mod oracle;
 mod selected;
 mod streamed;
 mod strnlen;
@@ -363,6 +385,33 @@ fn check_report(report: &Report, rows: &[RawInterval], generation: u64, sequence
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-call-pair-state") {
+        assert_eq!(
+            args.len(),
+            12,
+            "normal-call-pair-state SUBJECT EXPECTED PARENT_VA PARENT_LENGTH CHILD_VA CHILD_LENGTH EXECUTABLE TRUSTED_EXECUTABLE OUTDIR CPU"
+        );
+        let number = |i: usize| {
+            let s = args[i].to_str().unwrap();
+            let n = s.parse::<u64>().unwrap();
+            assert_eq!(n.to_string(), s);
+            n
+        };
+        normal::call_pair_state::run(normal::call_pair_state::Request {
+            subject: Path::new(&args[2]),
+            expected: Path::new(&args[3]),
+            selections: [number(4), number(6)],
+            extents: [
+                usize::try_from(number(5)).unwrap(),
+                usize::try_from(number(7)).unwrap(),
+            ],
+            executable: Path::new(&args[8]),
+            trusted: Path::new(&args[9]),
+            output: Path::new(&args[10]),
+            cpu: usize::try_from(number(11)).unwrap(),
+        });
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-call-pair-session") {
         normal::call_pair::run(&args[2..]);
         return;

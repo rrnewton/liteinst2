@@ -15,13 +15,14 @@ macro_rules! register_reference_fixture {
     };
 }
 #[path = "../normal-work/caller.rs"]
-mod caller;
+pub(super) mod caller;
 #[path = "../normal-work/caller_bytes.rs"]
-mod caller_bytes;
+pub mod caller_bytes;
 use super::strnlen::cases;
 use caller::{CallerOwner, Request};
 use cases::{CASES, LABEL};
 pub(super) mod call_pair;
+pub(super) mod call_pair_state;
 pub(super) mod csv;
 pub(super) mod leaf_set;
 mod lifecycle;

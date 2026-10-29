@@ -2,7 +2,7 @@
 use super::*;
 use rust_invoke::Plan;
 #[path = "native_copied_rust/effects.rs"]
-mod effects;
+pub(super) mod effects;
 #[path = "native_copied_rust/trace.rs"]
 mod trace;
 pub use trace::Trace;

@@ -60,7 +60,10 @@ struct CapturePlan {
 }
 impl CapturePlan {
     fn new(ranges: &[(u64, usize)]) -> Self {
-        assert!(!ranges.is_empty() && ranges.len() <= MAX_RANGES);
+        Self::with_limits(ranges, MAX_RANGES, MAX_BYTES)
+    }
+    fn with_limits(ranges: &[(u64, usize)], max_ranges: usize, max_bytes: usize) -> Self {
+        assert!(!ranges.is_empty() && ranges.len() <= max_ranges);
         let mut ends = Vec::with_capacity(ranges.len());
         let mut checked = Vec::with_capacity(ranges.len());
         let mut total = 0_usize;
@@ -72,7 +75,7 @@ impl CapturePlan {
             assert!(ends.iter().all(|&(a, b)| end <= a || b <= address));
             ends.push((address, end));
             total = total.checked_add(len).unwrap();
-            assert!(total <= MAX_BYTES && isize::try_from(total).is_ok());
+            assert!(total <= max_bytes && isize::try_from(total).is_ok());
             checked.push((start, len));
         }
         Self {
@@ -187,3 +190,46 @@ pub(super) fn snapshot(
 #[cfg(test)]
 #[path = "native_copied_capture/tests.rs"]
 mod tests;
+
+// Separate nested capture envelope. Old copied MAX_STACK and its profile guard
+// remain unchanged. Bounds include2 caller pages,2 source pages,10 images,
+// one data page and the full456-byte enclosing-caller/tree stack window.
+fn nested_plan(ranges: &[(u64, usize)]) -> CapturePlan {
+    CapturePlan::with_limits(ranges, 16, 102_856)
+}
+#[cfg(test)]
+pub(super) fn nested_bounds(ranges: &[(u64, usize)]) {
+    let _ = nested_plan(ranges);
+}
+pub(super) fn nested_snapshot(
+    oracle: &NormalOracle,
+    child: &Tracee,
+    ready: &WalkReady,
+    logical: u64,
+) -> Snapshot {
+    assert!(matches!(ready, WalkReady::CallPair(_)));
+    let stack_len = usize::try_from(oracle.stack_below().checked_add(8).unwrap()).unwrap();
+    assert!(stack_len <= 456);
+    let mut ranges: Vec<_> = ready
+        .caller_immutable()
+        .iter()
+        .chain(ready.immutable())
+        .map(|(a, b)| (*a, b.len()))
+        .collect();
+    ranges.push((oracle.data.address(), PAGE));
+    ranges.push((oracle.stack_start(), stack_len));
+    let mut captured = nested_plan(&ranges).read(child);
+    let stack = captured.pop().unwrap();
+    let data = captured.pop().unwrap();
+    compare_images(&captured, ready.caller_immutable(), ready.immutable());
+    let point = Snapshot {
+        logical_pc: logical,
+        registers: child.registers(),
+        xstate: canonical_xstate(&child.xstate()),
+        data,
+        application_stack: stack,
+    };
+    oracle.check_data(ready, &point.data, false);
+    oracle.deadline.check();
+    point
+}

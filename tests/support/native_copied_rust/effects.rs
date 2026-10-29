@@ -2,14 +2,14 @@
 use super::*;
 use iced_x86::{Code, Register};
 use rust_invoke::{Operand, Operation};
-pub(super) fn offset(base: u64, delta: i32) -> u64 {
+pub(in super::super) fn offset(base: u64, delta: i32) -> u64 {
     if delta < 0 {
         base.checked_sub(u64::from(delta.unsigned_abs())).unwrap()
     } else {
         base.checked_add(delta as u64).unwrap()
     }
 }
-pub(super) fn register(r: &libc::user_regs_struct, n: Register) -> u64 {
+pub(in super::super) fn register(r: &libc::user_regs_struct, n: Register) -> u64 {
     match n {
         Register::RAX => r.rax,
         Register::RBX => r.rbx,
@@ -30,7 +30,7 @@ pub(super) fn register(r: &libc::user_regs_struct, n: Register) -> u64 {
         _ => panic!("full GPR only"),
     }
 }
-fn set(r: &mut libc::user_regs_struct, n: Register, value: u64) {
+pub(in super::super) fn set(r: &mut libc::user_regs_struct, n: Register, value: u64) {
     *match n {
         Register::RAX => &mut r.rax,
         Register::RBX => &mut r.rbx,
@@ -51,7 +51,7 @@ fn set(r: &mut libc::user_regs_struct, n: Register, value: u64) {
         _ => panic!("full GPR only"),
     } = value;
 }
-fn copy(p: &Snapshot) -> Snapshot {
+pub(in super::super) fn copy(p: &Snapshot) -> Snapshot {
     Snapshot {
         logical_pc: p.logical_pc,
         registers: p.registers,
@@ -60,7 +60,7 @@ fn copy(p: &Snapshot) -> Snapshot {
         application_stack: p.application_stack.clone(),
     }
 }
-fn read(p: &Snapshot, operand: Operand, stack: u64) -> u64 {
+pub(in super::super) fn read(p: &Snapshot, operand: Operand, stack: u64) -> u64 {
     match operand {
         Operand::Register(r) => register(&p.registers, r),
         Operand::Memory { base, displacement } => word_at(
