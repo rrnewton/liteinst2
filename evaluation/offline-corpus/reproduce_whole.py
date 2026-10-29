@@ -113,10 +113,24 @@ def inventory(directory, original, material, exit_code):
     return exit_code == 0
 
 
-def main():
+def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', type=Path, required=True); parser.add_argument('--capture-sha256', required=True)
-    parser.add_argument('--output', type=Path, required=True); args = parser.parse_args()
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE), default=D.PROFILE,
+                        help='fixed placement policy for both programs; default preserves fixed-page placement')
+    return parser.parse_args(argv)
+
+
+def material_attempt(program, inputs, expected, profile):
+    assert profile in (D.PROFILE, D.WINDOW_PROFILE), 'explicit placement profile'
+    if profile == D.PROFILE:
+        return D.attempt(program, inputs, expected)
+    return D.attempt(program, inputs, expected, profile=D.WINDOW_PROFILE)
+
+
+def main():
+    args = arguments()
     capture, output = args.capture, args.output
     assert capture.is_absolute() and capture.resolve(strict=True) == capture and capture.is_relative_to(ROOT / 'ignored')
     assert output.is_absolute() and output.is_relative_to(ROOT / 'ignored') and not output.is_relative_to(capture)
@@ -125,6 +139,8 @@ def main():
     report = dict(capture=str(capture), capture_sha256=args.capture_sha256, configuration_complete=False,
                   qualification_complete=False, scope='Material/structural importer only; no candidate execution, native or performance qualification',
                   programs={p: dict(status='UNRUN') for p in B.PROGRAMS})
+    if args.placement_profile != D.PROFILE:
+        report['placement_profile'] = args.placement_profile
     try:
         raw = read(capture / 'closed.json', cap=1048576); assert sha(raw) == args.capture_sha256
         captured, plan = json.loads(raw), jread(capture / 'planned.json'); env, tools = plan['env'], plan['tools']
@@ -190,7 +206,7 @@ def main():
                 inputs['heads'] = H.capture(program, inputs['original'], inputs['object'], captures)
                 with (directory / 'heads.txt').open('xb') as stream: stream.write(inputs['heads'])
                 expected = {k: sha(v) for k, v in inputs.items()}
-                B.write(directory / 'input-hashes.json', expected); result = D.attempt(program, inputs, expected); material = result.pop('files')
+                B.write(directory / 'input-hashes.json', expected); result = material_attempt(program, inputs, expected, args.placement_profile); material = result.pop('files')
                 for name, data in material.items():
                     with (directory / name).open('xb') as stream: stream.write(data)
                     assert read(directory / name) == data

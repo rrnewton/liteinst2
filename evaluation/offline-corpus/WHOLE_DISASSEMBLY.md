@@ -116,3 +116,17 @@ Page-end fit, overlap, successor qualification and aggregate-budget refusals
 remain possible. Source geometry readiness is neither execution equivalence
 nor qualification. The three additive controls use coherent synthetic object,
 ELF and head inputs; they do not establish compiler or native behavior.
+
+The bounded reproduction helper accepts the same explicit choice for both
+programs, fixed before capture inspection:
+
+```sh
+python3 -I -B evaluation/offline-corpus/reproduce_whole.py \
+  --capture "$CAPTURE" --capture-sha256 "$CLOSED_SHA256" --output "$OUTPUT" \
+  --placement-profile offline-whole-authored-window-permits-v1
+```
+
+Use a fresh build capture at the current committed source. All existing capture,
+configuration and source-continuity checks still apply. Omitting the option
+retains the original fixed-page profile. The helper neither retries a failed
+profile nor executes rewritten candidates.
