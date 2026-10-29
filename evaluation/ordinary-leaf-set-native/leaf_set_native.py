@@ -54,7 +54,7 @@ def maximum_extent(operation):
 
 def lines(data, cap):
     assert type(data) is bytes and 0 < len(data) <= cap and data.endswith(b'\n')
-    assert all(c == 10 or 32 <= c < 127 for c in data)
+    assert re.fullmatch(rb'[\x20-\x7e\n]+', data)
     return data[:-1].decode('ascii').split('\n')
 
 

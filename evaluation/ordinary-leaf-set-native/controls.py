@@ -257,6 +257,29 @@ class Controls(unittest.TestCase):
         recount(rows,coverage); self.assertEqual(C.check(**encode(rows,coverage))['comparisons'],25600000)
         rows[0]['candidate_steps']=20001; self.refuses(rows,coverage)
 
+        # Exhaustive byte alphabet at the actual production lines() boundary.
+        # These are parser controls, not native or process evidence.
+        for value in range(256):
+            data=bytes([value])+b'\n'
+            if value == 10 or 32 <= value < 127:
+                self.assertEqual(C.lines(data,2), ['', ''] if value == 10 else [chr(value)])
+            else:
+                with self.assertRaises(AssertionError): C.lines(data,2)
+        self.assertEqual(C.lines(b'\n',1), [''])
+        self.assertEqual(C.lines(b' ~\n',3), [' ~'])
+        self.assertEqual(C.lines(b'\n \n~\n',5), ['', ' ', '~'])
+        class BytesSubclass(bytes):
+            pass
+        for data in (None,'x\n',bytearray(b'x\n'),memoryview(b'x\n'),BytesSubclass(b'x\n'),
+                     b'',b'x',b'\r\n',b'\x7f\n'):
+            with self.assertRaises(AssertionError): C.lines(data,8)
+        with self.assertRaises(AssertionError): C.lines(b'\n',0)
+        for cap in (1024,65536,1048576):
+            data=b'~'*(cap-1)+b'\n'
+            self.assertEqual(C.lines(data,cap), ['~'*(cap-1)])
+            with self.assertRaises(AssertionError): C.lines(data,cap-1)
+            with self.assertRaises(AssertionError): C.lines(data+b'\n',cap)
+
     def test_partial_failed_unrun_or_unclosed_population_cannot_qualify(self):
         rows,coverage=fixture(); args=encode(rows,coverage)
         for status in ('FAILED','UNRUN','PASS '):
