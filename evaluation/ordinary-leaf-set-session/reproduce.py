@@ -32,6 +32,12 @@ SCOPE = ('Release scalar functional qualification with required original referen
          'remain separate; no timing, pure overhead, arbitrary/nested-module or full-A5 claim.')
 RECIPE_SHA = '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'
 APP_CONTROLS = ('normal::leaf_set::tests::canonical_table_cli_keeps_all_functions_and_refuses_invalid_last', 'normal::leaf_set::tests::operations_match_accepted_encoded_bytes_without_calling_targets', 'normal::leaf_set::tests::typed_completion_and_wire_bounds_keep_all_outcomes', 'normal::leaf_set::tests::accepted_pending_leaf_record_survives_full_queue_and_disconnect', 'normal::leaf_set::worker::tests::command_flush_boundary_is_exact_for_each_cardinality_and_old_default', 'normal::leaf_set::worker::tests::guarded_return_checks_all_operations_and_owner_retention', 'normal::leaf_set::check::tests::ordered_population_n1_through_n4_keeps_global_and_local_coordinates', 'normal::leaf_set::check::tests::population_refuses_full_table_identity_and_each_journal_word', 'normal::leaf_set::check::tests::mixed_history_and_full_budget_keep_one_based_call_and_zero_based_sample', 'normal::leaf_set::check::tests::report_payload_and_wire_refuse_shift_missing_duplicate_and_unavailable_corruption', 'normal::module::session::input::leaf_set_tests::bounded_frame_limit_preserves_extra_byte_eof_and_accepted_snapshot', 'normal::session::worker::leaf_set_tests::actual_drive_flushes_each_three_call_command_before_next')
+APP_CONTROLS += (
+    'normal::leaf_set::preparation_diagnostic::tests::fixed_site_classes_keep_failure_framing',
+    'normal::leaf_set::preparation_diagnostic::tests::fixed_reasons_never_format_dynamic_error_strings',
+    'normal::leaf_set::preparation_diagnostic::tests::planning_metadata_uses_only_retained_lengths_and_flags',
+    'normal::leaf_set::preparation_diagnostic::tests::maximum_counters_and_overflow_keep_one_bounded_failure_line',
+)
 SDK_CONTROLS = ('frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_selection_count_order_and_source_are_exact', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_page_union_refuses_conflicts_gaps_and_third_page', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_overlay_retains_every_unselected_byte', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_last_selection_refuses_before_loader', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_roles_and_policies_cover_all_members', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_budget_refuses_aggregate_overflow', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_identity_and_complete_union_are_required', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_control_lookup_keeps_exact_function', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_profile_requires_exact_count_k_history_and_mode', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_banks_prepare_once_and_preserve_refused_identity', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_runtime_keeps_saved_function_and_closed_receipt', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_validates_every_row_and_journal_word', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_refusals_leave_receipt_and_cursors_unchanged', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_output_captures_complete_identity_before_consumption', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_reclaim_preserves_shared_owners_and_fresh_generation', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_handles_refuse_all_old_profiles', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_full_identity_and_replay_are_exact', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_streams_do_not_retain_epochs')
 CHECKER_CONTROLS = ('test_all_cardinalities_empty_and_complete_populations', 'test_input_grammar_and_four_operation_results_are_independent', 'test_selected_table_and_runtime_geometry_require_complete_exact_identity', 'test_each_wire_family_missing_duplicate_reordered_or_extra_refuses', 'test_history_starts_at_one_and_keeps_multi_action_chunks_and_empty_reports', 'test_global_slots_local_ranks_and_mixed_generation_record', 'test_full_budget_call_sample_boundary_and_function_closed', 'test_three_call_records_checkpoint_without_six_call_batches', 'test_stack_continuation_return_and_acknowledgement_domains', 'test_report_sample_bijection_copy_order_and_payload_observation', 'test_zero_maximum_and_unavailable_precedence_are_lossless', 'test_coverage_and_terminal_conserve_all_rows', 'test_exact_stderr_expected_outcomes_and_hard_failures_remain_distinct', 'test_framing_numeric_caps_and_optimization_refusal')
 RUNNER_CONTROLS = ('test_fixed_catalog_and_literal_accepted_bytes', 'test_reference_gate_requires_exact_source_table_and_all_results', 'test_immutable_commands_source_and_first_pins', 'test_complete_closure_pid_stderr_exit_and_scalar_joins', 'test_exact_control_censuses_reject_missing_extra_and_keep_t2', 'test_failures_keep_all_attempts_and_stop_uncertain_custody', 'test_geometry_keeps_symbols_operation_identity_and_continuation', 'test_aggregate_budget_and_public_projection_preserve_all_rows', 'test_producer_plan_and_ready_domains')
@@ -63,9 +69,9 @@ def ordinary_inventory(inventory, recipe, single, module):
     assert set(n for n in inventory if n.startswith(prefixes)) == set(APP_CONTROLS)
     prior = recipe.ordinary_inventory([n for n in inventory if n not in APP_CONTROLS],
                                      single, module, recipe.OWNER_CONTROLS)
-    assert len(prior) == 52 and len(APP_CONTROLS) == 12
+    assert len(prior) == 52 and len(APP_CONTROLS) == 16
     wanted = tuple(prior) + APP_CONTROLS
-    assert len(wanted) == len(set(wanted)) == 64
+    assert len(wanted) == len(set(wanted)) == 68
     return wanted
 
 
@@ -156,6 +162,13 @@ def confirm_producer_custody(run, result, code, out, err, app_out, app_err, chec
     run.safe = True
 
 
+def confirm_profile_custody(binding, plan, run, result, code, out, err, app_out, app_err, checked, case, index, pin):
+    # Profile identity is part of the continuation envelope, before either mutation.
+    assert run.safe is False and run.budget.active is True
+    binding.check_result(plan, result)
+    confirm_producer_custody(run, result, code, out, err, app_out, app_err, checked, case, index, pin)
+
+
 def producer_join(producer, code, stdout, stderr, checked, case, pin):
     assert producer['normal_reaps'] == 1 and producer['rescue'] is False and producer['cleanup_error'] is None
     assert type(producer['child_pid']) is int and producer['child_pid'] == checked['rows']['READY'][0]['pid']
@@ -203,7 +216,9 @@ def execute_once(rows, invoke):
         assert row['status'] == 'UNRUN' and row['attempts'] == 0
         invoke(row)
 
-def freeze_campaign(run, recipe, catalog, producer, checker, binary, original, leaves, shape, original_shape, candidate, trusted, original_dso):
+def freeze_campaign(run, recipe, catalog, producer, checker, binary, original, leaves, shape, original_shape, candidate, trusted, original_dso, *, binding=None):
+    profile_fields = {} if binding is None else binding.fields()
+    producer_entry = HERE/'produce.py' if binding is None else ROOT/binding.producer_path
     plans = run.raw/'plans'; plans.mkdir()
     static = {path: value['sha256'] for path, value in (run.sources | run.tool_pins | run.retained).items()}
     tables = {n: selected_table(leaves, n, catalog, checker) for n in range(1, 5)}
@@ -229,10 +244,13 @@ def freeze_campaign(run, recipe, catalog, producer, checker, binary, original, l
         plan = dict(index=row['index'], n=row['n'], k=row['k'], kind=row['kind'], name=case['name'], epochs=520,
                     data_sha256=hashlib.sha256(case['data']).hexdigest(), cpus=run.cpus, table=list(table),
                     caller=shape, binary=str(binary), candidate=str(candidate), trusted=str(trusted), pins=static, argv=argv)
+        if binding is not None:
+            plan.update(profile_fields)
+            binding.check_plan(plan)
         producer.plan_arguments(plan, catalog, checker)
         path = plans/(label+'.json'); digest = run.freeze(path, plan)
         directory, child_raw = run.raw/label, run.raw/(label+'-child')
-        request = run.request(directory, [run.tools['python'], '-B', HERE/'produce.py', '--plan', path,
+        request = run.request(directory, [run.tools['python'], '-B', producer_entry, '--plan', path,
                                           '--plan-sha', digest['sha256'], '--raw', child_raw])
         row.update(directory=str(directory), child_raw=str(child_raw), plan=str(path), request=request)
         run.plan_bounded(label+'-owner', directory, request)
@@ -240,12 +258,12 @@ def freeze_campaign(run, recipe, catalog, producer, checker, binary, original, l
         tables=tables, caller=shape, original_caller=original_shape, whole_qualifications=5, reference_children=24,
         installed_children=120, epochs=520, attempts_per_slot=1, retries=0,
         accepted=[dict(**row, records_hex=[p.hex() for p in catalog.case(row['n'],row['k'],row['kind'])['records']])
-                  for row in catalog.references()]), cap=16*MIB)
+                  for row in catalog.references()], **profile_fields), cap=16*MIB)
     run.unchanged()
     return tables
 
 
-def campaign(run, recipe, catalog, checker, producer, original_output, tables, shape, original_shape):
+def campaign(run, recipe, catalog, checker, producer, original_output, tables, shape, original_shape, *, binding=None):
     references = {}
     def reference(row):
         run.unchanged(); recipe.bounded_ready(run, row['request'])
@@ -282,7 +300,10 @@ def campaign(run, recipe, catalog, checker, producer, original_output, tables, s
             plan = json.loads(recipe.read(Path(row['plan']), MIB))
             case, args = producer.plan_arguments(plan, catalog, checker)
             checked = checker.check(app_out, app_err, **args)
-            confirm_producer_custody(run, result, code, out, err, app_out, app_err, checked, case, row['index'], recipe.pin)
+            if binding is None:
+                confirm_producer_custody(run, result, code, out, err, app_out, app_err, checked, case, row['index'], recipe.pin)
+            else:
+                confirm_profile_custody(binding, plan, run, result, code, out, err, app_out, app_err, checked, case, row['index'], recipe.pin)
             producer_join(result, code, app_out, app_err, checked, case, recipe.pin)
             assert err == b'' and json.loads(out) == result
             assert result['index'] == row['index']
@@ -320,8 +341,9 @@ def original_setup(run, recipe, owners):
     return original,dict(extent=shape['length'],continuation=shape['continuation_offset'])
 
 
-def main():
-    started = time.monotonic()
+def _main(started, *, binding=None):
+    profile_fields = {} if binding is None else binding.fields()
+    pass_status = PASS if binding is None else binding.status
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--revision', required=True); ap.add_argument('--reservation-tag', required=True)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+name, type=Path, required=True)
@@ -360,6 +382,8 @@ def main():
     recipe = importlib.util.module_from_spec(spec); spec.loader.exec_module(recipe)
     extra = dict(catalog=HERE/'catalog.py', producer=HERE/'produce.py', output=HERE/'output.py',
                  original_output=HERE/'original_output.py', owners=ROOT/'evaluation/ordinary-module-session/owners.py')
+    if binding is not None:
+        extra['catalog'] = ROOT/binding.catalog_path
     required = set(recipe.MODULES.values()) | {str(path.relative_to(ROOT)) for path in extra.values()} | {
         'evaluation/ordinary-leaf-set-session/reproduce.py', 'evaluation/ordinary-leaf-set-session/runner_controls.py',
         'evaluation/ordinary-leaf-set-session/controls.py', 'evaluation/ordinary-leaf-set-session/original.c',
@@ -369,6 +393,8 @@ def main():
         'tools/unwind-oracle/bounded_command.py',
         'tests/call_tree_truth.rs', 'tools/rapid-profiler/normal-work/leaf_set.c',
         'tools/rapid-profiler/normal-work/csv_fields.c', 'tools/rapid-profiler/strnlen-work/localize.map'}
+    if binding is not None:
+        required.update(binding.required_sources())
     names = git('ls-files','-z','--','src','tests/support','tools/rapid-profiler','Cargo.toml','Cargo.lock',
                 'README.md','build.rs',':(glob)**/Cargo.toml',*sorted(required)).decode().rstrip('\0').split('\0')
     assert all(names) and len(names) == len(set(names)) and required <= set(names)
@@ -379,18 +405,27 @@ def main():
     for name, expected in (('evaluation/admission/processes.py',recipe.OWNER_SHA),
         ('tools/unwind-oracle/bounded_command.py',recipe.BOUNDED_SHA),('evaluation/ordinary-module-session/corpus.py',recipe.CORPUS_SHA)):
         assert sources[str(ROOT/name)]['sha256'] == expected
+    if binding is not None:
+        binding.check_sources(ROOT, sources)
     tool_pins = {str(path): recipe.pin(recipe.read(path,512*MIB)) for path in tools.values()}
     assert git('rev-parse','HEAD').decode().strip() == a.revision
     assert git('status','--porcelain','--untracked-files=no') == b''
     modules = {key: recipe.load(key, ROOT/path) for key,path in recipe.MODULES.items()}
     new = {key: recipe.load('leaf_'+key,path) for key,path in extra.items()}
     assert sources[str(HERE/'catalog.py')]['sha256'] == new['producer'].CATALOG
+    if binding is not None:
+        assert new['catalog'].PROFILE == binding.identity and new['catalog'].POLICIES == binding.policies
     a.raw.mkdir(mode=0o700); (a.raw/'tmp').mkdir()
     run = recipe.Run(a,a.raw,tools,env,sources,modules,started,tool_pins)
     originals, installed = initial_rows(new['catalog'])
     run.result.update(status='FAILED', originals=originals, installed=installed, controls=[], prerequisites={},
         reference_complete=False, native_state='UNRUN_SEPARATE_REQUIRED', scope=SCOPE)
+    if binding is not None:
+        run.result.update(profile_fields)
     stages = PLANNED_STAGES
+    if binding is not None:
+        index = stages.index('mount-controls-build')
+        stages = stages[:index] + ('whole-profile-controls',) + stages[index:]
     run.result['planned_stages'] = [dict(name=name,status='UNRUN') for name in stages]
     try:
         run.freeze(a.raw/'sources-before.json',sources,cap=16*MIB)
@@ -398,7 +433,7 @@ def main():
             attempts=5,retries=0,epochs=520,resident_banks=3,outer_seconds=7200,producer_seconds=15,
             cpu_seconds=20,inner_wall_seconds=30,owner_wall_seconds=55,stream_bytes=recipe.CAP,
             cpus=run.cpus,reservation_tag=a.reservation_tag,reservation_authority='external hard owner only',
-            scope=SCOPE,evidence_limit=recipe.EVIDENCE_LIMIT,final_allowance=recipe.FINAL_ALLOWANCE))
+            scope=SCOPE,evidence_limit=recipe.EVIDENCE_LIMIT,final_allowance=recipe.FINAL_ALLOWANCE,**profile_fields))
         for name in ('cc1','collect2','as','ld'):
             out,err = run.stage('tool-'+name,[tools['gcc'],'-print-prog-name='+name])
             assert err == b'' and out.endswith(b'\n') and out.count(b'\n') == 1
@@ -449,14 +484,19 @@ def main():
         out,err=run.stage('old-python-controls',[tools['python'],'-B',ROOT/'evaluation/ordinary-module-session/controls.py','-v']);recipe.python_controls(out,err)
         for label,name,names in (('checker-controls','controls.py',CHECKER_CONTROLS),('runner-controls','runner_controls.py',RUNNER_CONTROLS)):
             out,err=run.stage(label,[tools['python'],'-B',HERE/name,'-v']);new['owners'].reuse_python_controls(out,err,names)
+        if binding is not None:
+            control_path=(ROOT/binding.catalog_path).with_name('profile_controls.py')
+            out,err=run.stage('whole-profile-controls',[tools['python'],'-B',control_path,'-v'])
+            new['owners'].reuse_python_controls(out,err,binding.control_names())
+            run.freeze(a.raw/'whole-controls.json',dict(profile_fields,controls=list(binding.control_names())))
         original,original_shape = original_setup(run,recipe,new['owners'])
         run.freeze(a.raw/'geometry.json',dict(leaves=leaves,bodies=body_geometry,caller=caller,original_caller=original_shape,
             trusted=run.retained[str(trusted)],candidate=run.retained[str(candidate)],original_dso=run.retained[str(original_dso)]))
-        tables=freeze_campaign(run,recipe,new['catalog'],new['producer'],new['output'],binary,original,leaves,shape,original_shape,candidate,trusted,original_dso)
-        campaign(run,recipe,new['catalog'],new['output'],new['producer'],new['original_output'],tables,shape,original_shape)
+        tables=freeze_campaign(run,recipe,new['catalog'],new['producer'],new['output'],binary,original,leaves,shape,original_shape,candidate,trusted,original_dso,binding=binding)
+        campaign(run,recipe,new['catalog'],new['output'],new['producer'],new['original_output'],tables,shape,original_shape,binding=binding)
         run.unchanged();run.freeze(a.raw/'sources-after.json',sources,cap=16*MIB)
         assert tuple(row['name'] for row in run.result['stages']) == tuple(stages)
-        if all(row['status']=='PASS' for row in originals+installed):run.result['status']=PASS
+        if all(row['status']=='PASS' for row in originals+installed):run.result['status']=pass_status
     except BaseException as error:
         run.result['error']=type(error).__name__
     finally:
@@ -472,10 +512,17 @@ def main():
         except BaseException as error:
             run.result.update(status='FAILED',final_error=type(error).__name__)
         public=projection(run.result)
+        if binding is not None:
+            public.update(profile_fields)
         recipe.save(a.raw/'result.json',run.result,32*MIB)
         recipe.save(a.raw/'summary.json',public,PUBLIC_CAP)
         print(json.dumps({key:value for key,value in public.items() if key not in ('originals','installed','stages')},sort_keys=True))
-    return 0 if run.result['status']==PASS and time.monotonic()<run.deadline else 1
+    return 0 if run.result['status']==pass_status and time.monotonic()<run.deadline else 1
+
+
+def main():
+    started = time.monotonic()
+    return _main(started)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,8 @@
+name,command,status,passed,failed,ignored,seconds,wall_limit_seconds,log_sha256
+fmt,cargo fmt --check,PASS,0,0,0,7.924080026103184,180,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+clippy,cargo clippy --workspace --all-targets --all-features -- -D warnings,PASS,0,0,0,0.15527770784683526,180,63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191
+check,cargo check --workspace --all-features --all-targets,PASS,0,0,0,3.2215984500944614,180,6b348ac07d2569ea0f39ec784fd9059e303260ff0f85293342def33b8c3ea9e9
+workspace-default,cargo test --workspace,PASS,3289,0,36,357.9195030289702,360,a453484f05bc05ba953636f8946bae4182426a5c0db2d76451f5e14e4b29bce2
+serial-launch,cargo test -p liteinst-launch -- --test-threads=1 --nocapture,PASS,1039,0,0,126.8759863958694,180,08e33730453abb7dfe8f7607a750d66f2142235aa88b073894df68efcc09a26c
+staged-allocation,cargo test -p liteinst2 --lib staged,PASS,3,0,0,0.037359667010605335,180,f8a9305635186f5b815a269121f042a9db67dcd4051b7ac21257f1cd413eafc2
+prefixed-pun,cargo test -p liteinst2 --test prefixed_pun_oracle,PASS,36,0,0,1.3833692879416049,180,2f90e1ef1d59e005ee007b31efd7144b83abe5484eb44b88e3c63aeca858368d

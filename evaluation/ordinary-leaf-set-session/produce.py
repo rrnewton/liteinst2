@@ -75,7 +75,7 @@ def remaining(deadline):
     return left
 
 
-def main():
+def _main(*, binding=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--plan', type=Path, required=True)
     ap.add_argument('--plan-sha', required=True)
@@ -93,8 +93,11 @@ def main():
     for name in ('output.py', 'catalog.py'):
         assert str(own.with_name(name)) in plan['pins']
     assert plan['pins'][str(own.with_name('catalog.py'))] == CATALOG
+    if binding is not None:
+        binding.check_sources(repo, plan['pins'])
+        binding.check_plan(plan)
     checker = load('_leaf_set_session_output', own.with_name('output.py'))
-    catalog = load('_leaf_set_session_catalog', own.with_name('catalog.py'))
+    catalog = load('_leaf_set_session_catalog', own.with_name('catalog.py') if binding is None else repo/binding.catalog_path)
     case, checker_args = plan_arguments(plan, catalog, checker)
     cpus, argv = plan['cpus'], plan['argv']
     assert os.sched_getaffinity(0) == set(cpus)
@@ -108,6 +111,8 @@ def main():
     normal_reaps = 0
     failure = None
     result = dict(status='FAILED', index=plan['index'], name=case['name'], n=plan['n'], k=plan['k'])
+    if binding is not None:
+        result.update(binding.fields())
     deadline = time.monotonic() + 15
     child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
@@ -209,6 +214,10 @@ def main():
     if result['status'] == 'PASS':
         remaining(deadline)
     return 0 if result['status'] == 'PASS' and not rescue else 1
+
+
+def main():
+    return _main()
 
 
 if __name__ == '__main__':

@@ -220,6 +220,7 @@ pub(super) enum WalkReady {
     Single(NormalReady),
     Module(Ready),
     CopiedRust(copied_rust::Ready),
+    LeafSetCopied(leaf_set_copied::Ready),
 }
 impl WalkReady {
     pub(super) fn single(&self) -> &NormalReady {
@@ -240,11 +241,25 @@ impl WalkReady {
             _ => panic!("copied Rust readiness required"),
         }
     }
+    pub(super) fn leaf_set_copied(&self) -> &leaf_set_copied::Ready {
+        match self {
+            Self::LeafSetCopied(r) => r,
+            _ => panic!("LeafSet readiness required"),
+        }
+    }
+    pub(super) fn copied_view(&self) -> copied_rust::CallerView<'_> {
+        match self {
+            Self::CopiedRust(r) => r.view(),
+            Self::LeafSetCopied(r) => r.view(),
+            _ => panic!("admitted copied machine profile required"),
+        }
+    }
     pub(super) fn caller(&self) -> u64 {
         match self {
             Self::Single(r) => r.caller,
             Self::Module(r) => r.caller,
             Self::CopiedRust(r) => r.caller,
+            Self::LeafSetCopied(r) => r.caller,
         }
     }
     pub(super) fn caller_immutable(&self) -> &Vec<(u64, Vec<u8>)> {
@@ -252,6 +267,7 @@ impl WalkReady {
             Self::Single(r) => &r.caller_immutable,
             Self::Module(r) => &r.caller_immutable,
             Self::CopiedRust(r) => &r.caller_immutable,
+            Self::LeafSetCopied(r) => &r.caller_immutable,
         }
     }
     pub(super) fn immutable(&self) -> &Vec<(u64, Vec<u8>)> {
@@ -259,6 +275,7 @@ impl WalkReady {
             Self::Single(r) => &r.immutable,
             Self::Module(r) => &r.immutable,
             Self::CopiedRust(r) => &r.immutable,
+            Self::LeafSetCopied(r) => &r.immutable,
         }
     }
     pub(super) fn journal(&self) -> Option<&JournalReady> {
@@ -266,6 +283,7 @@ impl WalkReady {
             Self::Single(r) => r.journal.as_ref(),
             Self::Module(r) => r.journal.as_ref(),
             Self::CopiedRust(r) => r.journal.as_ref(),
+            Self::LeafSetCopied(r) => r.journal.as_ref(),
         }
     }
     pub(super) fn is_return(&self, pc: u64) -> bool {
@@ -273,12 +291,14 @@ impl WalkReady {
             Self::Single(r) => r.returns.contains(&pc),
             Self::Module(r) => r.functions.iter().any(|f| f.returns.contains(&pc)),
             Self::CopiedRust(r) => r.target().returns.contains(&pc),
+            Self::LeafSetCopied(r) => r.target().returns.contains(&pc),
         }
     }
     pub(super) fn declared_returns(&self) -> BTreeSet<u64> {
         match self {
             Self::Single(r) => r.returns.iter().copied().collect(),
             Self::CopiedRust(r) => r.target().returns.iter().copied().collect(),
+            Self::LeafSetCopied(r) => r.target().returns.iter().copied().collect(),
             Self::Module(r) => r
                 .functions
                 .iter()
@@ -291,6 +311,7 @@ impl WalkReady {
             (Self::Single(a), Self::Single(b)) => a.same_source(b),
             (Self::Module(a), Self::Module(b)) => a.same_source(b),
             (Self::CopiedRust(a), Self::CopiedRust(b)) => a.same_source(b),
+            (Self::LeafSetCopied(a), Self::LeafSetCopied(b)) => a.same_source(b),
             _ => panic!("profile mismatch"),
         }
     }
@@ -643,7 +664,9 @@ impl NormalOracle {
         oracle
     }
     pub(super) fn stack_below(&self) -> u64 {
-        if let Some(p) = &self.copied_rust {
+        if let Some(p) = &self.leaf_set_copied {
+            p.plan.protected_stack_below()
+        } else if let Some(p) = &self.copied_rust {
             p.plan.protected_stack_below()
         } else if self.module.is_some() {
             bytes::PROTECTED_STACK_BELOW_CALLER
@@ -652,7 +675,9 @@ impl NormalOracle {
         }
     }
     pub(super) fn subject_delta(&self) -> u64 {
-        if let Some(p) = &self.copied_rust {
+        if let Some(p) = &self.leaf_set_copied {
+            p.plan.subject_rsp_delta()
+        } else if let Some(p) = &self.copied_rust {
             p.plan.subject_rsp_delta()
         } else if self.module.is_some() {
             bytes::SUBJECT_RSP_DELTA
@@ -677,10 +702,13 @@ impl NormalOracle {
             WalkReady::Single(r) => r.entry,
             WalkReady::Module(_) => self.data.address() + TARGETS as u64,
             WalkReady::CopiedRust(r) => r.target().entry,
+            WalkReady::LeafSetCopied(r) => r.target().entry,
         }
     }
     pub(super) fn check_data(&self, ready: &WalkReady, actual: &[u8], final_check: bool) {
-        if let WalkReady::CopiedRust(r) = ready {
+        if let WalkReady::LeafSetCopied(r) = ready {
+            copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);
+        } else if let WalkReady::CopiedRust(r) = ready {
             copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);
         } else if let WalkReady::Module(r) = ready {
             check_data(self.data.bytes(), actual, r, final_check);
@@ -725,12 +753,14 @@ impl NormalOracle {
 }
 impl NormalContext<'_> {
     pub fn module_case(&self) -> Case {
+        assert!(self.oracle.leaf_set_copied.is_none());
         assert!(self.oracle.copied_rust.is_none());
         let case = self.any_module_case();
         assert!(!case.is_session());
         case
     }
     pub fn module_session_case(&self) -> Case {
+        assert!(self.oracle.leaf_set_copied.is_none());
         assert!(self.oracle.copied_rust.is_none());
         let case = self.any_module_case();
         case.assert_session();

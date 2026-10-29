@@ -83,6 +83,14 @@ pub(in super::super) fn outer_effect(before: &Snapshot, after: &Snapshot, stack:
     assert_state(&expected, after);
 }
 pub(in super::super) fn caller_effects(points: &[Snapshot], ready: &Ready, data: u64, stack: u64) {
+    caller_effects_view(points, ready.view(), data, stack);
+}
+pub(in super::super) fn caller_effects_view(
+    points: &[Snapshot],
+    ready: CallerView<'_>,
+    data: u64,
+    stack: u64,
+) {
     let seen: Vec<_> = points
         .iter()
         .filter_map(|p| {
@@ -102,11 +110,14 @@ pub(in super::super) fn caller_effects(points: &[Snapshot], ready: &Ready, data:
             .checked_sub(ready.caller)
             .is_some_and(|o| ready.plan.heads().contains(&o))
         {
-            step(&pair[0], &pair[1], ready, data, stack);
+            step_view(&pair[0], &pair[1], ready, data, stack);
         }
     }
 }
 pub(super) fn step(before: &Snapshot, after: &Snapshot, ready: &Ready, data: u64, stack: u64) {
+    step_view(before, after, ready.view(), data, stack);
+}
+fn step_view(before: &Snapshot, after: &Snapshot, ready: CallerView<'_>, data: u64, stack: u64) {
     let at = before.logical_pc.checked_sub(ready.caller).unwrap();
     let s = ready.plan.steps().iter().find(|s| s.offset == at).unwrap();
     let instruction = Decoder::with_ip(

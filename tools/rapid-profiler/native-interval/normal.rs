@@ -27,6 +27,7 @@ mod check;
 pub(super) mod copied_rust;
 pub(super) mod csv;
 pub(super) mod exact;
+pub(super) mod leaf_set_copied;
 pub(super) mod module;
 pub(super) mod reference;
 mod rust_invoke_artifact;

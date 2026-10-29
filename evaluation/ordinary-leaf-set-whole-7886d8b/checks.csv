@@ -1,0 +1,15 @@
+revision,check,status,seconds,wall_limit_seconds,passed,failed,ignored,log_sha256,command
+baf5168d0dc05cade7003eeec3b1b24a437d3afd,fmt,PASS,7.349889519857243,180,0,0,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,cargo fmt --check
+baf5168d0dc05cade7003eeec3b1b24a437d3afd,clippy,PASS,0.13313833205029368,180,0,0,0,9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c,cargo clippy --workspace --all-targets --all-features -- -D warnings
+baf5168d0dc05cade7003eeec3b1b24a437d3afd,check,PASS,4.329755045007914,180,0,0,0,716387bf6633799866779e735cd6e8941dfdff3e7331f0f5db78109ef3e35ebc,cargo check --workspace --all-features --all-targets
+baf5168d0dc05cade7003eeec3b1b24a437d3afd,workspace-default,PASS,346.05241331108846,360,3283,0,36,c2885201c7e01e011f42ab0d669fe7a895a9042d099365e2067d9ff36f007efa,cargo test --workspace
+baf5168d0dc05cade7003eeec3b1b24a437d3afd,serial-launch,PASS,127.26151893706992,180,1039,0,0,22656f010966d0c03461e4fea9253d4e5506a39e2893cd19107a38d28ec56764,cargo test -p liteinst-launch -- --test-threads=1 --nocapture
+baf5168d0dc05cade7003eeec3b1b24a437d3afd,staged-allocation,PASS,0.03601259412243962,180,3,0,0,f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5,cargo test -p liteinst2 --lib staged
+baf5168d0dc05cade7003eeec3b1b24a437d3afd,prefixed-pun,PASS,1.3203009800054133,180,36,0,0,0c5ce1c574c337ff88865df6b6682506669a3f9382df7ef529473ea18c59e5df,cargo test -p liteinst2 --test prefixed_pun_oracle
+7886d8b12bfb3dbe0021605a810720c658ad7c45,fmt,PASS,7.525105082895607,180,0,0,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,cargo fmt --check
+7886d8b12bfb3dbe0021605a810720c658ad7c45,clippy,PASS,0.30792119982652366,180,0,0,0,615dc0f87f2386eb8e2200efa18c1e08b62ad7d5693eb55db8a8915ee3f4c26a,cargo clippy --workspace --all-targets --all-features -- -D warnings
+7886d8b12bfb3dbe0021605a810720c658ad7c45,check,PASS,16.63986342586577,180,0,0,0,864ed342aa84e39affc567bd64c241e41e3f9f6eeeb611fbb5dbb899ba7bcd83,cargo check --workspace --all-features --all-targets
+7886d8b12bfb3dbe0021605a810720c658ad7c45,workspace-default,PASS,347.63846242497675,360,3283,0,36,695008dbc5b22df5be6c12010d51ae557418201b22ab51ae40be0a05aeecc87b,cargo test --workspace
+7886d8b12bfb3dbe0021605a810720c658ad7c45,serial-launch,PASS,127.45054361014627,180,1039,0,0,36d2c6d609e6ad0d8087d75a7175698ff22accdabf7d005ccb9b927c27547d0d,cargo test -p liteinst-launch -- --test-threads=1 --nocapture
+7886d8b12bfb3dbe0021605a810720c658ad7c45,staged-allocation,PASS,0.03549676714465022,180,3,0,0,f8a9305635186f5b815a269121f042a9db67dcd4051b7ac21257f1cd413eafc2,cargo test -p liteinst2 --lib staged
+7886d8b12bfb3dbe0021605a810720c658ad7c45,prefixed-pun,PASS,1.3404136130120605,180,36,0,0,b07ac44cd4aef4d48ac25e553202ead65efebeb5928b66d14f4ab6cc7416e256,cargo test -p liteinst2 --test prefixed_pun_oracle

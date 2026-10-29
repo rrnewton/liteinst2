@@ -1,0 +1,1128 @@
+{
+  "checks": [
+    {
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "95031e63c76b70105ffef42177ba81a9ffe47e059cfad065a9f41fcdd66a873e",
+        "reaped_descendants": 0,
+        "seconds": 488.3303047111258,
+        "start_utc": "2026-10-29T13:07:26.975186+00:00",
+        "termination": null
+      },
+      "cpus": [
+        273,
+        286,
+        90,
+        307,
+        141,
+        245,
+        193,
+        215
+      ],
+      "hardware": {
+        "available_affinity_cpus": 8,
+        "observed_cpu": {
+          "cpu family": "26",
+          "model": "17",
+          "stepping": "0",
+          "vendor_id": "AuthenticAMD"
+        },
+        "owner_label": "AMD EPYC Zen 5 dev host"
+      },
+      "kernel_version": "7.1.3",
+      "outer_receipt": {
+        "bytes": 1263,
+        "sha256": "fea54113032a5c8e58cdb367665cb0f198b3425061598de745c07d081a034649"
+      },
+      "receipt": {
+        "bytes": 21877,
+        "sha256": "460a2f5b662191c7edcf7c8e45717fb4e67e4cc4ee5dbd62a23b85907660200d"
+      },
+      "revision": "baf5168d0dc05cade7003eeec3b1b24a437d3afd",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    {
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "3088c8dc40f668a744ed3d1f538becc694aed3f26423fed81bd9abf1ceacb769",
+        "reaped_descendants": 0,
+        "seconds": 502.8617563541047,
+        "start_utc": "2026-10-29T13:51:20.883239+00:00",
+        "termination": null
+      },
+      "cpus": [
+        34,
+        54,
+        60,
+        67,
+        164,
+        167,
+        171,
+        185
+      ],
+      "hardware": {
+        "available_affinity_cpus": 8,
+        "observed_cpu": {
+          "cpu family": "26",
+          "model": "17",
+          "stepping": "0",
+          "vendor_id": "AuthenticAMD"
+        },
+        "owner_label": "AMD EPYC Zen 5 dev host"
+      },
+      "kernel_version": "7.1.3",
+      "outer_receipt": {
+        "bytes": 1263,
+        "sha256": "aa1143ec1b406cd2df191fd69d5ff66a9a25f85c9bfd3f86dc98997243240575"
+      },
+      "receipt": {
+        "bytes": 21877,
+        "sha256": "9b45d5165fbdb920e826bcedd0b338135d827512603afa7162b431e0341c1b72"
+      },
+      "revision": "7886d8b12bfb3dbe0021605a810720c658ad7c45",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    }
+  ],
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "counts_note": "Cargo terminal totals can include nested child summaries; hard eight-CPU checks do not claim 316-thread coverage.",
+  "cpu": {
+    "family": 26,
+    "model": 17,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "historical_failure_notes": [
+    {
+      "kind": "preparation",
+      "reason": "Fixture ELF entry was 4096 while the unchanged recipe parser requires zero. Application build/control UNRUN. Fixed by explicit linker entry zero, preserving parser.",
+      "revision": "baf5168d0dc05cade7003eeec3b1b24a437d3afd"
+    },
+    {
+      "kind": "whole-native",
+      "reason": "Negative controls ended SIGKILL with RLIMIT_CPU20, wall_timeout=false, elapsed20.278s. Consistent with CPU limit; neither native cohort started. Equivalent byte-whitelist scan correction preserves all cases and bounds.",
+      "revision": "baf5168d0dc05cade7003eeec3b1b24a437d3afd"
+    },
+    {
+      "kind": "whole-native",
+      "reason": "New cohort exceeded510s wall limit;789 observed prefix rows and95878 comparisons remain unqualified,491 slots lack accepted results including interrupted work. Two rescue reaps; no rerun.",
+      "revision": "7886d8b12bfb3dbe0021605a810720c658ad7c45"
+    }
+  ],
+  "kernel": "7.1.3",
+  "release_profile": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "runs": [
+    {
+      "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+      "allocator_source_map_sha256": "5f47ef0ee344f8e28bdb200e2ae21bab2c4a276d2746d73c204410a2a798d212",
+      "attempts": 1,
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "2",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-leaf-preparation-baf5168",
+        "--",
+        "$PYTHON",
+        "-B",
+        "$REPO/evaluation/ordinary-leaf-set-session/preparation_refusal.py",
+        "--revision",
+        "baf5168d0dc05cade7003eeec3b1b24a437d3afd",
+        "--reservation-tag",
+        "li2core-leaf-preparation-baf5168",
+        "--raw",
+        "$REPO/ignored/a5/normal-leaf-preparation-baf5168-run1",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "control": {
+        "attempts": 0,
+        "name": "leaf_set_preparation_refusal_retains_fail_stop_and_aborts",
+        "status": "UNRUN",
+        "wait": {}
+      },
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "DBUS_SESSION_BUS_ADDRESS": "unix:path=$XDG_RUNTIME_DIR/bus",
+        "HOME": "$USER_HOME",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "XDG_RUNTIME_DIR": "$XDG_RUNTIME_DIR"
+      },
+      "final_error": null,
+      "kind": "preparation",
+      "ledger_readback": false,
+      "limits": {
+        "build_reserve_bytes": 1073741824,
+        "evidence_bytes": 2147483648,
+        "outer_log_bytes": 8388608,
+        "outer_seconds": 1200,
+        "slot_limit_bytes": 20000000000,
+        "wrapper_bytes": 25165824
+      },
+      "load_after": [
+        27.83,
+        36.72,
+        39.36
+      ],
+      "load_before": [
+        28.34,
+        37.29,
+        39.58
+      ],
+      "mutable_release_products_rechecked": false,
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "103d272e1d6f57e3100ab04ca5421468e23265c4861fff29113e019b9eaa2b07",
+        "reaped_descendants": 0,
+        "seconds": 8.459829695057124,
+        "start_utc": "2026-10-29T13:20:24.388814+00:00",
+        "termination": null
+      },
+      "protocol": {
+        "bytes": 184110,
+        "sha256": "ad31151499e3a649a4040c86b5011eae0565155405430ed8842743c1fa5a6737"
+      },
+      "recipe": "evaluation/ordinary-leaf-set-session/preparation_refusal.py",
+      "recipe_custody_closed": true,
+      "recipe_error": "AssertionError",
+      "recipe_receipt": {
+        "bytes": 260516,
+        "sha256": "640981b4f0fe19a0154dc6201831b941ca349834aecfee58c3fd958147478819"
+      },
+      "recipe_retention_verified": true,
+      "reservation_status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN",
+      "reserved_cpus": [
+        27,
+        50
+      ],
+      "retained_archive_files_verified": 47,
+      "retained_bytes": 921590,
+      "retained_files": 47,
+      "retries": 0,
+      "revision": "baf5168d0dc05cade7003eeec3b1b24a437d3afd",
+      "root_readback_record": {
+        "bytes": 656,
+        "sha256": "a6ec315b51750748e8c2fe8ca1b9eb17778500606562b41f30ec4dc4ca88c4e7"
+      },
+      "root_receipt": {
+        "bytes": 3088,
+        "sha256": "f42af1652af288cac71aa66a8fd63d81c36de2fc57973e41d3d62fab19ca603f"
+      },
+      "source_verified_after": true,
+      "status": "FAILED",
+      "tools": {
+        "bash": {
+          "bytes": 1389072,
+          "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+        },
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "du": {
+          "bytes": 152832,
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "objdump": {
+          "bytes": 423000,
+          "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+        },
+        "python": {
+          "bytes": 13542408,
+          "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+        },
+        "readelf": {
+          "bytes": 683296,
+          "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+        },
+        "rg": {
+          "bytes": 4746600,
+          "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+        },
+        "systemd-run": {
+          "bytes": 111360,
+          "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+        },
+        "true": {
+          "bytes": 27936,
+          "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+        }
+      }
+    },
+    {
+      "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+      "allocator_source_map_sha256": "5f47ef0ee344f8e28bdb200e2ae21bab2c4a276d2746d73c204410a2a798d212",
+      "attempts": 1,
+      "cohorts": [
+        {
+          "attempts": 0,
+          "closed": null,
+          "comparisons": null,
+          "name": "legacy",
+          "observed_prefix_comparisons": 0,
+          "observed_rows": 0,
+          "prefix_error": null,
+          "required_pairs": 48,
+          "status": "UNRUN",
+          "unaccepted_slots": 48
+        },
+        {
+          "attempts": 0,
+          "closed": null,
+          "comparisons": null,
+          "name": "leaf",
+          "observed_prefix_comparisons": 0,
+          "observed_rows": 0,
+          "prefix_error": null,
+          "required_pairs": 1280,
+          "status": "UNRUN",
+          "unaccepted_slots": 1280
+        }
+      ],
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "3",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-leaf-whole-native-baf5168",
+        "--",
+        "$PYTHON",
+        "-B",
+        "$REPO/evaluation/ordinary-leaf-set-native/reproduce.py",
+        "--revision",
+        "baf5168d0dc05cade7003eeec3b1b24a437d3afd",
+        "--reservation-tag",
+        "li2core-leaf-whole-native-baf5168",
+        "--raw",
+        "$REPO/ignored/a5/normal-leaf-whole-native-baf5168-run1",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "DBUS_SESSION_BUS_ADDRESS": "unix:path=$XDG_RUNTIME_DIR/bus",
+        "HOME": "$USER_HOME",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "XDG_RUNTIME_DIR": "$XDG_RUNTIME_DIR"
+      },
+      "final_error": "AssertionError",
+      "kind": "whole-native",
+      "ledger_readback": false,
+      "limits": {
+        "build_reserve_bytes": 1073741824,
+        "evidence_bytes": 2147483648,
+        "outer_log_bytes": 8388608,
+        "outer_seconds": 1200,
+        "slot_limit_bytes": 20000000000,
+        "wrapper_bytes": 25165824
+      },
+      "load_after": [
+        36.02,
+        36.4,
+        38.75
+      ],
+      "load_before": [
+        35.82,
+        36.96,
+        39.22
+      ],
+      "mutable_release_products_rechecked": false,
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "74f60e3a4d1d0332bea83aa15233f490ec2e49962942fc6795b0524917239dc3",
+        "reaped_descendants": 0,
+        "seconds": 95.83615205995739,
+        "start_utc": "2026-10-29T13:21:58.116731+00:00",
+        "termination": null
+      },
+      "protocol": {
+        "bytes": 185091,
+        "sha256": "78d62401f192cbe34c231b46ec74145f562413734d0e2de3ce7c29c50b6dd9b3"
+      },
+      "recipe": "evaluation/ordinary-leaf-set-native/reproduce.py",
+      "recipe_custody_closed": false,
+      "recipe_error": "AssertionError",
+      "recipe_receipt": {
+        "bytes": 129841,
+        "sha256": "c26c59980968e2fb930d92b83b2f60e0e24ee06b2cc9db0b909f73994fd4a731"
+      },
+      "recipe_retention_verified": false,
+      "reservation_status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN",
+      "reserved_cpus": [
+        13,
+        55,
+        63
+      ],
+      "retained_archive_files_verified": 248,
+      "retained_bytes": 47549164,
+      "retained_files": 252,
+      "retries": 0,
+      "revision": "baf5168d0dc05cade7003eeec3b1b24a437d3afd",
+      "root_readback_record": {
+        "bytes": 15407,
+        "sha256": "f874c093bc53c632960db142901c2ac21996f4aacefce75f9682db083d5f45f2"
+      },
+      "root_receipt": {
+        "bytes": 3439,
+        "sha256": "8e2521d562c69c4191fd603719bbeaf12f78b2ad23c10fb01f2564484cfb87ec"
+      },
+      "source_verified_after": true,
+      "status": "FAILED",
+      "tools": {
+        "bash": {
+          "bytes": 1389072,
+          "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+        },
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "du": {
+          "bytes": 152832,
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "objdump": {
+          "bytes": 423000,
+          "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+        },
+        "python": {
+          "bytes": 13542408,
+          "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+        },
+        "readelf": {
+          "bytes": 683296,
+          "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+        },
+        "rg": {
+          "bytes": 4746600,
+          "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+        },
+        "systemd-run": {
+          "bytes": 111360,
+          "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+        },
+        "true": {
+          "bytes": 27936,
+          "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+        }
+      }
+    },
+    {
+      "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+      "allocator_source_map_sha256": "5f47ef0ee344f8e28bdb200e2ae21bab2c4a276d2746d73c204410a2a798d212",
+      "attempts": 1,
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "2",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-leaf-preparation-7886d8b",
+        "--",
+        "$PYTHON",
+        "-B",
+        "$REPO/evaluation/ordinary-leaf-set-session/preparation_refusal.py",
+        "--revision",
+        "7886d8b12bfb3dbe0021605a810720c658ad7c45",
+        "--reservation-tag",
+        "li2core-leaf-preparation-7886d8b",
+        "--raw",
+        "$REPO/ignored/a5/normal-leaf-preparation-7886d8b-run1",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "control": {
+        "attempts": 1,
+        "name": "leaf_set_preparation_refusal_retains_fail_stop_and_aborts",
+        "status": "EXPECTED_PREPARATION_REFUSAL",
+        "wait": {
+          "absence_proof": "ECHILD",
+          "core_dump": true,
+          "normal_reaps": 1,
+          "raw_status": 134,
+          "signal": 6,
+          "signaled": true
+        }
+      },
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "DBUS_SESSION_BUS_ADDRESS": "unix:path=$XDG_RUNTIME_DIR/bus",
+        "HOME": "$USER_HOME",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "XDG_RUNTIME_DIR": "$XDG_RUNTIME_DIR"
+      },
+      "final_error": null,
+      "kind": "preparation",
+      "ledger_readback": false,
+      "limits": {
+        "build_reserve_bytes": 1073741824,
+        "evidence_bytes": 2147483648,
+        "outer_log_bytes": 8388608,
+        "outer_seconds": 1200,
+        "slot_limit_bytes": 20000000000,
+        "wrapper_bytes": 25165824
+      },
+      "load_after": [
+        55.64,
+        44.27,
+        40.51
+      ],
+      "load_before": [
+        50.15,
+        40.16,
+        38.97
+      ],
+      "mutable_release_products_rechecked": false,
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "48def23ed43e66df90a1064a2a4ae9d11c33f845155848422453201caac65922",
+        "reaped_descendants": 0,
+        "seconds": 73.11740826698951,
+        "start_utc": "2026-10-29T13:30:43.637833+00:00",
+        "termination": null
+      },
+      "protocol": {
+        "bytes": 184097,
+        "sha256": "6424f2848497298ec42b193af1997d2962c3a88c5e111a477a719697ef0e8c3d"
+      },
+      "recipe": "evaluation/ordinary-leaf-set-session/preparation_refusal.py",
+      "recipe_custody_closed": true,
+      "recipe_error": null,
+      "recipe_receipt": {
+        "bytes": 267617,
+        "sha256": "aff768b50e07bd5d587cab64f4133ce1148be1abff1886543fbf81c170c808b0"
+      },
+      "recipe_retention_verified": true,
+      "reservation_status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN",
+      "reserved_cpus": [
+        70,
+        85
+      ],
+      "retained_archive_files_verified": 73,
+      "retained_bytes": 16797234,
+      "retained_files": 74,
+      "retries": 0,
+      "revision": "7886d8b12bfb3dbe0021605a810720c658ad7c45",
+      "root_readback_record": {
+        "bytes": 1050,
+        "sha256": "1b8bd446708f826be30953afa1bffa9eb7424df59e487736a06fc20c02681f12"
+      },
+      "root_receipt": {
+        "bytes": 3409,
+        "sha256": "8d380c04285dd314ceec274646dd2ee203f7d3a3ed1d3ab65fb1ceca9cfb8baa"
+      },
+      "source_verified_after": true,
+      "status": "EXPECTED_PREPARATION_REFUSAL",
+      "tools": {
+        "bash": {
+          "bytes": 1389072,
+          "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+        },
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "du": {
+          "bytes": 152832,
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "objdump": {
+          "bytes": 423000,
+          "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+        },
+        "python": {
+          "bytes": 13542408,
+          "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+        },
+        "readelf": {
+          "bytes": 683296,
+          "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+        },
+        "rg": {
+          "bytes": 4746600,
+          "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+        },
+        "systemd-run": {
+          "bytes": 111360,
+          "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+        },
+        "true": {
+          "bytes": 27936,
+          "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+        }
+      }
+    },
+    {
+      "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+      "allocator_source_map_sha256": "5f47ef0ee344f8e28bdb200e2ae21bab2c4a276d2746d73c204410a2a798d212",
+      "attempts": 1,
+      "cohorts": [
+        {
+          "attempts": 1,
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reaped_descendants": 0,
+            "seconds": 25.426181284012273,
+            "start_utc": "2026-10-29T13:34:48.127130+00:00",
+            "termination": null
+          },
+          "comparisons": 4490,
+          "name": "legacy",
+          "observed_prefix_comparisons": 4490,
+          "observed_rows": 48,
+          "prefix_error": null,
+          "required_pairs": 48,
+          "status": "LOCAL_NATIVE_CHECKS_COMPLETE",
+          "unaccepted_slots": 0
+        },
+        {
+          "attempts": 1,
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": -9,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reaped_descendants": 2,
+            "seconds": 510.0645942541305,
+            "start_utc": "2026-10-29T13:35:14.192046+00:00",
+            "termination": "timeout"
+          },
+          "comparisons": null,
+          "name": "leaf",
+          "observed_prefix_comparisons": 95878,
+          "observed_rows": 789,
+          "prefix_error": null,
+          "required_pairs": 1280,
+          "status": "FAILED",
+          "unaccepted_slots": 491
+        }
+      ],
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "3",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-leaf-whole-native-7886d8b",
+        "--",
+        "$PYTHON",
+        "-B",
+        "$REPO/evaluation/ordinary-leaf-set-native/reproduce.py",
+        "--revision",
+        "7886d8b12bfb3dbe0021605a810720c658ad7c45",
+        "--reservation-tag",
+        "li2core-leaf-whole-native-7886d8b",
+        "--raw",
+        "$REPO/ignored/a5/normal-leaf-whole-native-7886d8b-run1",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "DBUS_SESSION_BUS_ADDRESS": "unix:path=$XDG_RUNTIME_DIR/bus",
+        "HOME": "$USER_HOME",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "XDG_RUNTIME_DIR": "$XDG_RUNTIME_DIR"
+      },
+      "final_error": null,
+      "kind": "whole-native",
+      "ledger_readback": false,
+      "limits": {
+        "build_reserve_bytes": 1073741824,
+        "evidence_bytes": 2147483648,
+        "outer_log_bytes": 8388608,
+        "outer_seconds": 1200,
+        "slot_limit_bytes": 20000000000,
+        "wrapper_bytes": 25165824
+      },
+      "load_after": [
+        38.26,
+        41.23,
+        41.07
+      ],
+      "load_before": [
+        55.48,
+        44.61,
+        40.66
+      ],
+      "mutable_release_products_rechecked": false,
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "27f21edd43f201498d9680b29a92346fceb89b70a965a139c33c74eecde0c5f2",
+        "reaped_descendants": 0,
+        "seconds": 688.8619912900031,
+        "start_utc": "2026-10-29T13:32:15.911683+00:00",
+        "termination": null
+      },
+      "protocol": {
+        "bytes": 185078,
+        "sha256": "600aa79b9364db951d53f4c024c043612b457eed7de35ccff120d9fa1526a54f"
+      },
+      "recipe": "evaluation/ordinary-leaf-set-native/reproduce.py",
+      "recipe_custody_closed": true,
+      "recipe_error": "AssertionError",
+      "recipe_receipt": {
+        "bytes": 665387,
+        "sha256": "b8ea173310cedf58b991566443d210ebe5413ae9a2f7bf2864704693b92a7824"
+      },
+      "recipe_retention_verified": true,
+      "reservation_status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN",
+      "reserved_cpus": [
+        121,
+        217,
+        282
+      ],
+      "retained_archive_files_verified": 276,
+      "retained_bytes": 48596652,
+      "retained_files": 280,
+      "retries": 0,
+      "revision": "7886d8b12bfb3dbe0021605a810720c658ad7c45",
+      "root_readback_record": {
+        "bytes": 3597,
+        "sha256": "58d2d104eb4a6dab7228563a3ab739d6318fec7b71d958d7e4f904e0bc19d485"
+      },
+      "root_receipt": {
+        "bytes": 3468,
+        "sha256": "26b32b65ec739f43ac1bf7d1315d338031c06f62ce1719dbe404c6ea585cc7cb"
+      },
+      "source_verified_after": true,
+      "status": "FAILED",
+      "tools": {
+        "bash": {
+          "bytes": 1389072,
+          "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+        },
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "du": {
+          "bytes": 152832,
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "objdump": {
+          "bytes": 423000,
+          "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+        },
+        "python": {
+          "bytes": 13542408,
+          "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+        },
+        "readelf": {
+          "bytes": 683296,
+          "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+        },
+        "rg": {
+          "bytes": 4746600,
+          "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+        },
+        "systemd-run": {
+          "bytes": 111360,
+          "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+        },
+        "true": {
+          "bytes": 27936,
+          "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+        }
+      }
+    },
+    {
+      "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+      "allocator_source_map_sha256": "5f47ef0ee344f8e28bdb200e2ae21bab2c4a276d2746d73c204410a2a798d212",
+      "attempts": 1,
+      "catalog_sha256": "68836b6094e77ff46412d18c7f4db6fe24ed12a487e487648edddcdbe6877470",
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "3",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-leaf-whole-session-7886d8b",
+        "--",
+        "$PYTHON",
+        "-B",
+        "$REPO/evaluation/ordinary-leaf-set-whole-session/reproduce.py",
+        "--revision",
+        "7886d8b12bfb3dbe0021605a810720c658ad7c45",
+        "--reservation-tag",
+        "li2core-leaf-whole-session-7886d8b",
+        "--raw",
+        "$REPO/ignored/a5/normal-leaf-whole-session-7886d8b-run1",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "cpu_roles": {
+        "controller": 19,
+        "producer": 235,
+        "worker": 126
+      },
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "DBUS_SESSION_BUS_ADDRESS": "unix:path=$XDG_RUNTIME_DIR/bus",
+        "HOME": "$USER_HOME",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "XDG_RUNTIME_DIR": "$XDG_RUNTIME_DIR"
+      },
+      "final_error": null,
+      "installed_cases": 120,
+      "kind": "whole-session",
+      "ledger_readback": false,
+      "limits": {
+        "build_reserve_bytes": 1073741824,
+        "evidence_bytes": 2147483648,
+        "outer_log_bytes": 8388608,
+        "outer_seconds": 7200,
+        "slot_limit_bytes": 20000000000,
+        "wrapper_bytes": 25165824
+      },
+      "load_after": [
+        28.87,
+        34.47,
+        38.11
+      ],
+      "load_before": [
+        36.38,
+        40.03,
+        40.67
+      ],
+      "mutable_release_products_rechecked": false,
+      "native_state": "UNRUN_SEPARATE_REQUIRED",
+      "original_cases": 24,
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "87265a38406ab59591ab1bcb08dfb8133716a702d38d9f0050aca0136d4239ba",
+        "reaped_descendants": 0,
+        "seconds": 352.4924798500724,
+        "start_utc": "2026-10-29T13:45:16.876026+00:00",
+        "termination": null
+      },
+      "policies": [
+        "certified",
+        "whole",
+        "whole",
+        "whole"
+      ],
+      "profile": "leaf-set-whole-session-v1",
+      "protocol": {
+        "bytes": 186900,
+        "sha256": "a02ef0add2be6c099edc468d22712ee0d3ec263286618ef077d9aaf3e85a4c83"
+      },
+      "qualifications": [
+        {
+          "attempt": 1,
+          "calls": 10160,
+          "cases": 24,
+          "epochs": 738,
+          "exhausted_generations": 0,
+          "function_closed": 0,
+          "normal_reaps": 24,
+          "records": 4064,
+          "sampled": 10026,
+          "status": "PASS",
+          "unsampled": 134
+        },
+        {
+          "attempt": 2,
+          "calls": 10160,
+          "cases": 24,
+          "epochs": 779,
+          "exhausted_generations": 0,
+          "function_closed": 0,
+          "normal_reaps": 24,
+          "records": 4064,
+          "sampled": 10025,
+          "status": "PASS",
+          "unsampled": 135
+        },
+        {
+          "attempt": 3,
+          "calls": 10160,
+          "cases": 24,
+          "epochs": 709,
+          "exhausted_generations": 0,
+          "function_closed": 0,
+          "normal_reaps": 24,
+          "records": 4064,
+          "sampled": 10024,
+          "status": "PASS",
+          "unsampled": 136
+        },
+        {
+          "attempt": 4,
+          "calls": 10160,
+          "cases": 24,
+          "epochs": 718,
+          "exhausted_generations": 0,
+          "function_closed": 0,
+          "normal_reaps": 24,
+          "records": 4064,
+          "sampled": 10023,
+          "status": "PASS",
+          "unsampled": 137
+        },
+        {
+          "attempt": 5,
+          "calls": 10160,
+          "cases": 24,
+          "epochs": 707,
+          "exhausted_generations": 0,
+          "function_closed": 0,
+          "normal_reaps": 24,
+          "records": 4064,
+          "sampled": 10026,
+          "status": "PASS",
+          "unsampled": 134
+        }
+      ],
+      "recipe": "evaluation/ordinary-leaf-set-whole-session/reproduce.py",
+      "recipe_custody_closed": true,
+      "recipe_error": null,
+      "recipe_receipt": {
+        "bytes": 1014528,
+        "sha256": "fa4f193a34d4f27a802689ef4cd50bd8abe8cb93f1270cd1286c8e45f890c96a"
+      },
+      "recipe_retention_verified": true,
+      "reference_complete": true,
+      "reservation_status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN",
+      "reserved_cpus": [
+        19,
+        235,
+        126
+      ],
+      "retained_archive_files_verified": 2065,
+      "retained_bytes": 60179327,
+      "retained_files": 2068,
+      "retries": 0,
+      "revision": "7886d8b12bfb3dbe0021605a810720c658ad7c45",
+      "root_readback_record": {
+        "bytes": 1845,
+        "sha256": "2272ce3855d7be3fbb9a719f85769e7b367d602603975c5f4c75ca8c36916dee"
+      },
+      "root_receipt": {
+        "bytes": 4732,
+        "sha256": "920d9c405a1258fa2d2618f6814e96834dfc16b3bac4848560ed30e4d4f70bd4"
+      },
+      "source_verified_after": true,
+      "status": "LEAF_SET_WHOLE_FUNCTIONAL_PASS",
+      "tools": {
+        "bash": {
+          "bytes": 1389072,
+          "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+        },
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "du": {
+          "bytes": 152832,
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "objdump": {
+          "bytes": 423000,
+          "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+        },
+        "python": {
+          "bytes": 13542408,
+          "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+        },
+        "readelf": {
+          "bytes": 683296,
+          "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+        },
+        "rg": {
+          "bytes": 4746600,
+          "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+        },
+        "systemd-run": {
+          "bytes": 111360,
+          "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+        },
+        "true": {
+          "bytes": 27936,
+          "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+        }
+      }
+    }
+  ],
+  "scope": "Functional validation only; no performance or full-A5 credit. Failures and incomplete cohorts remain failures.",
+  "source_reviews": {
+    "generic_launcher_v3": "da00d401eab47126acede47bec0a2007a740f1ee54feb31d4f14429387538c27",
+    "native_release_recipe": "687d04a8becf42b3980a9ae3da62e2e02e6e80df8dd10c2e682ff19a9fa3624f",
+    "preparation_child_v3": "0022e809f071fe4dd3e1e517a4834f466ec1f5b5c5464448653134155147ed99",
+    "preparation_entry_correction": "10900823767f9d7dbff4ddf392844532182c3626f39732a25805b185a443aee1",
+    "scalar_launcher": "5e752a0ccdd985e1c11bad7ef239c91130abe8aa10f70ed99a04a6498a4da99e",
+    "scalar_recipe": "cabe5265383f3f550b4c3cdd34ba09101d74c0d195da116ec2a4a6afb48067dc",
+    "wire_scan_equivalence": "9998be083d7ecedbd3554d356358c26b26f34dfa1640259af0cd14bcaf1a2ea0"
+  }
+}
