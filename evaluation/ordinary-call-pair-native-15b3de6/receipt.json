@@ -1,0 +1,385 @@
+{
+  "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+  "allocator_sources_sha256": "5a7f949da747e401075cc24741815646e16107b025da6ca5c2322567769797c4",
+  "application_timing_qualification": false,
+  "artifact": {
+    "bytes": 9342424,
+    "sha256": "2a3535396fb6245092ef6f9eeb946eac24504d20e430de45968f03fec52f4832"
+  },
+  "attempts": 1,
+  "attribution": {
+    "buckets": [
+      "reach_caller",
+      "nested_stage_0",
+      "nested_stage_1",
+      "nested_stage_2",
+      "nested_stage_3",
+      "nested_stage_4",
+      "nested_stage_5",
+      "outer_ret"
+    ],
+    "completed": [
+      34,
+      6,
+      3142,
+      6804,
+      7346,
+      2668,
+      0,
+      0
+    ],
+    "containing_symbol": "_RNvNtNtNtNtNtCscSlFm8SmQTP_14rapid_profiler15frontend_native9always_on6normal9call_pair7runtime22journal_matches_prefix",
+    "executable_relative_rip": 5327720,
+    "exhausted_bucket": 5,
+    "exhausted_phase": "Parent continuation after child acknowledgement, before parent RET completes",
+    "file_backed_executable_segment_join": true,
+    "first_pair": {
+      "case": 1,
+      "k": 10,
+      "scenario": 1,
+      "seed": 1311768467139281696
+    },
+    "kind": "completed parent-side single-step requests; not retired-instruction or throughput data",
+    "offset_in_symbol": 504,
+    "symbol_bytes": 576,
+    "symbol_elf_va": 5327216
+  },
+  "claim": 4,
+  "completed_pairs": 0,
+  "cpu_roles": {
+    "native_parent_and_tracees": 154,
+    "supervisor_build_controls": [
+      37,
+      154,
+      176
+    ]
+  },
+  "failure": "First candidate reached unchanged 20000-step bound; no complete pair rows.",
+  "geometry": {
+    "caller": {
+      "body_hex": "534889cb4889f84889f74889d6ffd04889035bc3",
+      "call_offset": 13,
+      "continuation_offset": 15,
+      "elf_va": 4182960,
+      "heads": [
+        0,
+        1,
+        4,
+        7,
+        10,
+        13,
+        15,
+        18,
+        19
+      ],
+      "length": 20,
+      "lowest_stack": 8,
+      "outer_ret_offset": 19,
+      "subject_rsp_delta": 16
+    },
+    "child": {
+      "edges": 49,
+      "elf_va": 4096,
+      "heads": [
+        0,
+        3,
+        5,
+        7,
+        10,
+        12,
+        14,
+        16,
+        19,
+        21,
+        25,
+        27,
+        31,
+        34,
+        37,
+        40,
+        42,
+        46,
+        50,
+        53,
+        55,
+        58,
+        60,
+        64,
+        66,
+        71,
+        73,
+        76,
+        80,
+        83,
+        85,
+        89,
+        90,
+        96,
+        99,
+        101,
+        104,
+        108,
+        114,
+        116,
+        120,
+        125
+      ],
+      "length": 126,
+      "returns": [
+        89,
+        125
+      ]
+    },
+    "parent": {
+      "body_hex": "4883ec184889742408e872ffffff4989c0488b4424084883c41848c1e0204c09c0c3",
+      "call_offset": 9,
+      "callee_entry": 4096,
+      "child_delta": 32,
+      "continuation_offset": 14,
+      "edges": 8,
+      "elf_va": 4224,
+      "heads": [
+        0,
+        4,
+        9,
+        14,
+        17,
+        22,
+        26,
+        30,
+        33
+      ],
+      "length": 34,
+      "returns": [
+        33
+      ]
+    }
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "limits": {
+    "child_steps": 20000,
+    "cohort_cpu_seconds": 480,
+    "cohort_wall_seconds": 510,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 1200,
+    "pair_wall_seconds": 15
+  },
+  "load_after": [
+    44.97,
+    45.37,
+    46.4
+  ],
+  "load_before": [
+    39.05,
+    48.85,
+    47.66
+  ],
+  "native_load_after": [
+    44.8,
+    45.35,
+    46.4
+  ],
+  "native_load_before": [
+    44.8,
+    45.35,
+    46.4
+  ],
+  "native_outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 101,
+    "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reaped_descendants": 0,
+    "seconds": 3.80723920208402,
+    "start_utc": "2026-10-29T15:56:37.184521+00:00",
+    "termination": null
+  },
+  "native_qualification": false,
+  "native_stderr": {
+    "bytes": 595,
+    "sha256": "f3d9ee176d12e74007598b65b0ebe9b4194f29b104bd5c82b0768a07e855f9ef"
+  },
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "50e450143576e54f0a1ea7d005e1c90844f6c8255c6a8af9d7526b7755edc37c",
+    "reaped_descendants": 0,
+    "seconds": 179.35319558507763,
+    "start_utc": "2026-10-29T15:53:42.166899+00:00",
+    "termination": null
+  },
+  "performance_claim": false,
+  "prerequisites": {
+    "core": 8,
+    "ordinary": 14,
+    "python": 96,
+    "rust_calibrations": 208,
+    "sdk": 30,
+    "unchanged_ignored": 1
+  },
+  "protocol": {
+    "bytes": 191225,
+    "sha256": "0657a6e7301464c9fb77f753b5b178d07e244b31497696cc6377bf4568b76526"
+  },
+  "recipe_receipt": {
+    "bytes": 114663,
+    "sha256": "a6310845b43e25f5ee18997ed98b8faacc743b2d6419dbc4799eae2e3bfb07ef"
+  },
+  "release": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "incremental": false,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "request": {
+    "attempts": 1,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "li2core-call-pair-original-native-15b3de6",
+      "--",
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/ordinary-call-pair-native/reproduce.py",
+      "--revision",
+      "15b3de612e3d8466cdb3e4f77c0ff9d61d2c300a",
+      "--reservation-tag",
+      "li2core-call-pair-original-native-15b3de6",
+      "--raw",
+      "$REPO/ignored/a5/normal-call-pair-original-native-15b3de6-run1",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "cwd": "$REPO",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=$RUNTIME_DIR/bus",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "XDG_RUNTIME_DIR": "$RUNTIME_DIR"
+    },
+    "limits": {
+      "build_reserve_bytes": 1073741824,
+      "evidence_bytes": 2147483648,
+      "outer_log_bytes": 8388608,
+      "outer_seconds": 1200,
+      "slot_limit_bytes": 20000000000,
+      "wrapper_bytes": 25165824
+    },
+    "profile": "call-pair-original-native",
+    "protocol_sha256": "0657a6e7301464c9fb77f753b5b178d07e244b31497696cc6377bf4568b76526",
+    "retries": 0,
+    "tag": "li2core-call-pair-original-native-15b3de6"
+  },
+  "required_pairs": 192,
+  "reservation": {
+    "cores": [
+      37,
+      154,
+      176
+    ],
+    "count": 3,
+    "ledger_readback": false,
+    "recipe_exit": 1,
+    "recipe_summary": {
+      "attempts": 1,
+      "cohort_status": "FAILED",
+      "custody_closed": true,
+      "external_owner_required": true,
+      "observed_rows": 0,
+      "profile": "normal-call-pair-original-rust-v1",
+      "scope": "Actual original-address admitted Rust caller and nested parent E8/body only; no threaded application, Schedule, K exhaustion, reuse, timing or full-A5 credit. External hard reservation and final exact-command outer closure remain required.",
+      "status": "FAILED"
+    },
+    "status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN"
+  },
+  "retention": {
+    "bytes": 58769349,
+    "closed_files_rechecked": true,
+    "files": 321
+  },
+  "retries": 0,
+  "revision": "15b3de612e3d8466cdb3e4f77c0ff9d61d2c300a",
+  "root_receipt": {
+    "bytes": 3560,
+    "sha256": "10eb8f4d3a7a2ca6073a2a9884bd0623b4143b11729d0504a1c190e7c64b0527"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Actual original-address admitted Rust caller and nested parent E8/body only; no threaded application, Schedule, K exhaustion, reuse, timing or full-A5 credit. External hard reservation and final exact-command outer closure remain required.",
+  "source_pins_verified": 1171,
+  "source_verified_after": true,
+  "status": "FAILED",
+  "tools": {
+    "bash": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "du": {
+      "bytes": 152832,
+      "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rg": {
+      "bytes": 4746600,
+      "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustdoc": {
+      "bytes": 13680928,
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "systemd-run": {
+      "bytes": 111360,
+      "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+    },
+    "true": {
+      "bytes": 27936,
+      "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+    }
+  }
+}

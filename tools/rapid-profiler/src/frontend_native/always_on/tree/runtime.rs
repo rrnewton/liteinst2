@@ -1,29 +1,7 @@
 use super::*;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct Returned {
-    pc: u64,
-    rsp: u64,
-    word: u64,
-    value: u64,
-    end: RawTimestamp,
-}
-struct Pair {
-    key: Arc<()>,
-    function: FunctionId,
-    registration: u64,
-    ordinal: u64,
-    rsp: u64,
-    word: u64,
-    slot: ModelReturnSlot,
-    receipt: IntervalEntry,
-    summary: Option<IntervalEntrySummary>,
-    gate: Option<gate::GateEntry>,
-    start: RawTimestamp,
-    start_sequence: Option<u64>,
-    entry_pc: u64,
-    returned: Option<Returned>,
-}
+type Pair = super::super::frame::Frame<Option<gate::GateEntry>>;
+
 #[derive(Clone, Copy)]
 struct Invocation {
     external: u64,
@@ -386,24 +364,17 @@ impl State {
         } else {
             self.binding.site.child + 38
         };
-        if pair.returned.is_some()
-            || pair.rsp != c.stack_pointer
-            || pair.word != word
-            || c.instruction_pointer != pc
-            || !Arc::ptr_eq(&pair.key, &self.binding.key)
-            || pair.function != self.binding.functions[node]
-            || pair.registration != self.registration
-            || pair.slot.identity != pair.ordinal
-        {
-            return Err(error(Cause::Return));
-        }
-        pair.returned = Some(Returned {
-            pc,
-            rsp: c.stack_pointer,
+        pair.observe(
+            c,
             word,
-            value: c.rax,
             end,
-        });
+            pc,
+            super::super::frame::Identity {
+                key: &self.binding.key,
+                function: self.binding.functions[node],
+                registration: self.registration,
+            },
+        )?;
         #[cfg(test)]
         if node == 1 {
             if let Some(pauses) = self.binding.native_pauses.get() {
@@ -505,19 +476,7 @@ impl State {
         if self.journal.used() >= EVENTS {
             return Err(error(Cause::Capacity));
         }
-        let exit = self
-            .model
-            .finish_interval(&mut pair.receipt, &mut pair.slot, row.raw.observation())
-            .map_err(|e| error(Cause::Exit(e)))?;
-        if exit.summary() != summary
-            || pair.slot
-                != (ModelReturnSlot {
-                    identity: pair.ordinal,
-                    word: TOKEN,
-                })
-        {
-            return Err(error(Cause::Invariant));
-        }
+        super::super::frame::finish(pair, &mut self.model, row.raw.observation(), summary)?;
         self.journal.row([
             kind + 1,
             pair.ordinal,

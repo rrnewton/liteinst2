@@ -12,6 +12,13 @@ use std::os::fd::AsRawFd;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
+mod call_pair;
+#[cfg(test)]
+pub(in crate::frontend_native) use call_pair::admit_pair_for_planner_test;
+pub use call_pair::{
+    LoadedNormalCallPair, NormalCallPairChild, NormalCallPairContract, NormalCallPairEdge,
+    NormalCallPairParent, NormalCallPairParentCertificate,
+};
 mod cfg;
 mod normal;
 pub use normal::{LoadedNormalLeaf, NormalLeafContract};

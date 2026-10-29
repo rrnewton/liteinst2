@@ -166,7 +166,7 @@ fn sh(b: &mut [u8], n: usize, fields: (u32, u32, u64, u64, u64, u32, u64)) {
     w64(b, p + 48, if n == 1 || n == 3 || n == 5 { 1 } else { 8 });
     w64(b, p + 56, entsize);
 }
-fn fixture() -> Vec<u8> {
+pub(super) fn fixture() -> Vec<u8> {
     let mut b = vec![0; 0x3400];
     b[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
     w16(&mut b, 16, 3);

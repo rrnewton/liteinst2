@@ -6,8 +6,7 @@ use iced_x86::{
     OpKind, Register,
 };
 use std::collections::{BTreeMap, BTreeSet};
-#[path = "../../tools/rapid-profiler/strnlen-work/cases.rs"]
-pub mod cases;
+register_native_fixture!(strnlen_cases);
 pub use super::selected::SEEDS;
 pub use cases::{CASES, Case};
 pub const LABEL: &str = cases::LABEL;

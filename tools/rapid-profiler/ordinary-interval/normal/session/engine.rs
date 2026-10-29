@@ -9,10 +9,12 @@ use std::ops::Range;
 mod sealed {
     pub trait Controller {}
     impl Controller for rapid_profiler::frontend_native::IntervalController {}
+    impl Controller for crate::normal::call_pair::Controller {}
     impl Controller for rapid_profiler::frontend_native::NormalModuleSessionController {}
     impl<const N: usize> Controller for crate::normal::leaf_set::Controller<N> {}
     pub trait History {}
     impl History for rapid_profiler::frontend_native::HistoryBatch {}
+    impl History for rapid_profiler::frontend_native::NormalCallPairHistoryBatch {}
     impl History for rapid_profiler::frontend_native::NormalModuleHistoryBatch {}
     impl History for rapid_profiler::frontend_native::NormalLeafSetHistoryBatch {}
 }
@@ -72,6 +74,23 @@ impl History for rapid_profiler::frontend_native::NormalLeafSetHistoryBatch {
     }
     fn follows(&self, previous: &Self) -> bool {
         rapid_profiler::frontend_native::NormalLeafSetHistoryBatch::follows(self, previous)
+    }
+}
+impl History for rapid_profiler::frontend_native::NormalCallPairHistoryBatch {
+    fn number(&self) -> u64 {
+        self.number()
+    }
+    fn range(&self) -> Range<u64> {
+        self.range()
+    }
+    fn before(&self) -> HistoryBinding {
+        self.before()
+    }
+    fn actions(&self) -> &[Action] {
+        self.actions()
+    }
+    fn follows(&self, previous: &Self) -> bool {
+        self.follows(previous)
     }
 }
 pub(in crate::normal) trait Controller: sealed::Controller {

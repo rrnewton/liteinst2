@@ -700,6 +700,10 @@ pub enum ObservationStackProfile {
     Legacy128,
     /// Depth-two tree storage envelope; context prefix 320. No unwind admission.
     Tree144,
+    /// Normal CALL-pair envelope; context prefix 416. No unwind admission.
+    /// Preserves the admitted enclosing caller's earlier 256-byte excursion as
+    /// well as the parent/child red zones; writable callback space remains external.
+    CallPair240,
 }
 
 impl ObservationStackProfile {
@@ -708,6 +712,7 @@ impl ObservationStackProfile {
         match self {
             Self::Legacy128 => SYSTEM_V_RED_ZONE_BYTES as usize,
             Self::Tree144 => 144,
+            Self::CallPair240 => 240,
         }
     }
 
@@ -1640,8 +1645,10 @@ impl TrampolinePlan {
     ///
     /// All ordinary action checks still apply. No replacement, ptrace-owned
     /// stack, optional pre-context, inline-clock or artifact mode is exposed by
-    /// this constructor. Tree144 requires the extra writable stack extent and
-    /// does not itself authenticate a call tree or a preserving callback.
+    /// this constructor. Tree144 and CallPair240 require their complete reserved
+    /// extent, aligned saved-state allocation and callback stack to remain writable.
+    /// Selecting either profile does not authenticate a call tree, preserving
+    /// callback or native execution.
     pub fn from_controlled_actions_with_stack_profile(
         scan: &ScanResult,
         physical: u64,

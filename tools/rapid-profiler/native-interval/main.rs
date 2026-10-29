@@ -9,6 +9,10 @@ mod exact_truth;
 mod native_tree;
 mod normal;
 mod optional;
+// Preserve this entrypoint's original fixture module registrations.
+#[macro_use]
+#[path = "../../../tests/support/native_fixture_registration.rs"]
+mod native_fixture_registration;
 #[allow(dead_code)]
 #[path = "../../../tests/support/native_interval_oracle.rs"]
 mod oracle;

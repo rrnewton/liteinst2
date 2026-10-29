@@ -1,0 +1,96 @@
+{
+  "bounds_unchanged": true,
+  "checks": {
+    "command": [
+      "/usr/bin/env",
+      "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+      "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "8",
+      "--sample-s",
+      "1",
+      "--tag",
+      "li2core-call-pair-checks-27f809b",
+      "--",
+      "$PYTHON",
+      "-B",
+      "evaluation/admission/check_exec_identity.py",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--output",
+      "$REPO/ignored/a5/normal-call-pair-27f809b-checks",
+      "--checks-only"
+    ],
+    "compiler_jobs": 4,
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 1,
+      "private_log_sha256": "137492d589e4db2af288506c627b758ec9e1152c530266f7e51016800e8d77fe",
+      "reaped_descendants": 0,
+      "seconds": 395.45717376004905,
+      "start_utc": "2026-10-29T14:58:52.818416+00:00",
+      "termination": null
+    },
+    "outer_receipt": {
+      "bytes": 1262,
+      "sha256": "155d204f425baa00a501f6f1c679e51032b19a58e2c12eadeb356ccf30b7f17c"
+    },
+    "parallelism": "Default libtest inside a hard eight-CPU reservation; serial-launch uses one thread. No 316-thread campaign claim.",
+    "receipt": {
+      "bytes": 12283,
+      "sha256": "8288107a9e99b3eb8814dc908d6ff79be5e3776a00a9147a0893210528994870"
+    },
+    "reservation": {
+      "cores": [
+        23,
+        33,
+        40,
+        113,
+        139,
+        156,
+        175,
+        181
+      ],
+      "count": 8
+    },
+    "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5"
+  },
+  "claim": 4,
+  "development": {
+    "attempts": 17,
+    "failed": 6,
+    "snapshots": "Base revision plus dirty-source manifest digest; development outcomes are not clean-revision qualifications."
+  },
+  "hardware": {
+    "available_affinity_cpus": 8,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "kernel": "7.1.3",
+  "reviews": {
+    "application_correction": "6377fc4370739a6d14cdb8bff5341bba2e9131b4b26dfd1fe4bdd09bf88613be",
+    "sdk": "07bdc362aa1e434ccebfbb046f68ff4d2c9e94c405e523638030bcf850795819"
+  },
+  "revision": "27f809b323af79178e7e178a08cde657d9031040",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Functional SDK/application integration and stack-state model checks. Original-address nested native qualification UNRUN; no timing, throughput, whole-application or A5 completion claim.",
+  "source_manifest": {
+    "bytes": 5026,
+    "sha256": "d41fe82c63b9d18b419b0c4dec9d709b43cb51f065476c8d98cbb7323497056b"
+  },
+  "status": "FAILED"
+}

@@ -1,13 +1,11 @@
 //! Fixed loaded CALL tree: real transfer witnesses and original operand checks.
 //! No callback readiness, model token or relocated PC replaces a physical RET.
-use super::cache::truth as leaf;
 use super::{OriginalObservation, OriginalStep, Ready, Tracee};
 use std::collections::BTreeSet;
 
 #[path = "../../tools/rapid-profiler/tree-work/model.rs"]
 pub mod model;
-#[path = "../../tools/rapid-profiler/tree-work/truth.rs"]
-pub mod truth;
+register_native_fixture!(tree_truth);
 
 pub struct Stats {
     pub counts: truth::Counts,

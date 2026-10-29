@@ -13,10 +13,10 @@ mod tests;
 
 const CAP: usize = 512 * 1024 * 1024;
 const SYMBOL: &str = "liteinst_csv_call_and_store";
-fn require(ok: bool, error: Error) -> Result<()> {
+pub(super) fn require(ok: bool, error: Error) -> Result<()> {
     if ok { Ok(()) } else { Err(error) }
 }
-fn slice(b: &[u8], at: u64, len: u64) -> Result<&[u8]> {
+pub(super) fn slice(b: &[u8], at: u64, len: u64) -> Result<&[u8]> {
     let end = at.checked_add(len).ok_or(Error::Format)?;
     b.get(
         usize::try_from(at).map_err(|_| Error::Format)?
@@ -24,19 +24,19 @@ fn slice(b: &[u8], at: u64, len: u64) -> Result<&[u8]> {
     )
     .ok_or(Error::Format)
 }
-fn u16_at(b: &[u8], at: u64) -> Result<u16> {
+pub(super) fn u16_at(b: &[u8], at: u64) -> Result<u16> {
     Ok(u16::from_le_bytes(slice(b, at, 2)?.try_into().unwrap()))
 }
-fn u32_at(b: &[u8], at: u64) -> Result<u32> {
+pub(super) fn u32_at(b: &[u8], at: u64) -> Result<u32> {
     Ok(u32::from_le_bytes(slice(b, at, 4)?.try_into().unwrap()))
 }
-fn u64_at(b: &[u8], at: u64) -> Result<u64> {
+pub(super) fn u64_at(b: &[u8], at: u64) -> Result<u64> {
     Ok(u64::from_le_bytes(slice(b, at, 8)?.try_into().unwrap()))
 }
-fn end(start: u64, size: u64) -> Result<u64> {
+pub(super) fn end(start: u64, size: u64) -> Result<u64> {
     start.checked_add(size).ok_or(Error::Format)
 }
-fn overlaps(a: u64, an: u64, b: u64, bn: u64) -> Result<bool> {
+pub(super) fn overlaps(a: u64, an: u64, b: u64, bn: u64) -> Result<bool> {
     Ok(an != 0 && bn != 0 && a < end(b, bn)? && b < end(a, an)?)
 }
 
@@ -396,15 +396,15 @@ pub fn extract(b: &[u8]) -> Result<(Selection, Plan)> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct Stamp {
-    dev: u64,
-    ino: u64,
-    len: u64,
+pub(super) struct Stamp {
+    pub(super) dev: u64,
+    pub(super) ino: u64,
+    pub(super) len: u64,
     mode: u32,
     modified: (i64, i64),
     changed: (i64, i64),
 }
-fn stamp(file: &File) -> Result<Stamp> {
+pub(super) fn stamp(file: &File) -> Result<Stamp> {
     let m = file.metadata().map_err(|_| Error::Io)?;
     require(m.is_file() && m.len() <= CAP as u64, Error::Source)?;
     Ok(Stamp {
@@ -433,7 +433,7 @@ fn source_matches(
         Error::Source,
     )
 }
-fn verify_file(file: &File, original: Stamp, expected: &[u8]) -> Result<()> {
+pub(super) fn verify_file(file: &File, original: Stamp, expected: &[u8]) -> Result<()> {
     let before = stamp(file)?;
     require(
         before == original && expected.len() as u64 == original.len && expected.len() <= CAP,

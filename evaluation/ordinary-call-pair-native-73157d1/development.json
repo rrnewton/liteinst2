@@ -1,0 +1,285 @@
+{
+  "commands": {
+    "call-pair-native-public-freeze-73157d1-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-native/freeze.py",
+      "--revision",
+      "73157d117ee3eca82512f9f6f8c3c24be1ff5251",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--user-home",
+      "$USER_HOME",
+      "--allocator-root",
+      "$AGENT_UTILS",
+      "--xdg-runtime-dir",
+      "$RUNTIME_DIR",
+      "--dbus-session-bus-address",
+      "unix:path=$RUNTIME_DIR/bus"
+    ],
+    "call-pair-native-public-freezer-cli-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-native/freeze.py",
+      "--help"
+    ],
+    "call-pair-native-public-freezer-refusal-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "-c",
+      "import subprocess,sys; p=\"evaluation/ordinary-call-pair-native/freeze.py\"; expected=b\"use Python -I -B with assertions enabled\\n\"; results=[subprocess.run([sys.executable,*flags,p,\"--help\"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=5) for flags in ((\"-B\",),(\"-I\",\"-B\",\"-O\"))]; assert all(r.returncode==1 and r.stdout==b\"\" and r.stderr==expected for r in results); print(\"FREEZER_EARLY_REFUSALS_PASS controls=2\")"
+    ],
+    "call-pair-session-checker-v1": [
+      "$PYTHON",
+      "-B",
+      "evaluation/ordinary-call-pair-session/controls.py",
+      "-v"
+    ],
+    "call-pair-session-module-regression-v1": [
+      "$PYTHON",
+      "-B",
+      "evaluation/ordinary-module-session/controls.py",
+      "-v"
+    ],
+    "call-pair-session-original-build-v1": [
+      "/usr/bin/gcc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-fomit-frame-pointer",
+      "-fcf-protection=none",
+      "-fno-builtin",
+      "-Wl,--build-id=none,-z,now,-z,noexecstack",
+      "evaluation/ordinary-call-pair-session/original.c",
+      "-ldl",
+      "-o",
+      "target/evaluation/selected-native-development/call-pair-original-v1"
+    ],
+    "call-pair-session-original-c-build-v1": [
+      "/usr/bin/gcc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "evaluation/ordinary-call-pair-session/original_controls.c",
+      "-ldl",
+      "-o",
+      "target/evaluation/selected-native-development/call-pair-original-control-v1"
+    ],
+    "call-pair-session-original-c-v1": [
+      "target/evaluation/selected-native-development/call-pair-original-control-v1"
+    ],
+    "call-pair-session-original-python-v1": [
+      "$PYTHON",
+      "-B",
+      "evaluation/ordinary-call-pair-session/original_controls.py",
+      "-v"
+    ],
+    "call-pair-session-public-freezer-cli-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session/freeze.py",
+      "--help"
+    ],
+    "call-pair-session-public-owner-cli-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session/launch.py",
+      "--help"
+    ],
+    "call-pair-session-public-owner-controls-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session/owner_controls.py"
+    ],
+    "call-pair-session-runner-v1": [
+      "$PYTHON",
+      "-B",
+      "evaluation/ordinary-call-pair-session/runner_controls.py",
+      "-v"
+    ],
+    "call-pair-session-runner-v2": [
+      "$PYTHON",
+      "-B",
+      "evaluation/ordinary-call-pair-session/runner_controls.py",
+      "-v"
+    ],
+    "word-reuse-clippy-v1": [
+      "$TOOLCHAIN/bin/cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "word-reuse-format-v1": [
+      "$TOOLCHAIN/bin/cargo",
+      "fmt",
+      "--all"
+    ],
+    "word-reuse-format-v2": [
+      "$TOOLCHAIN/bin/cargo",
+      "fmt",
+      "--all"
+    ],
+    "word-reuse-sdk-v1": [
+      "$TOOLCHAIN/bin/cargo",
+      "test",
+      "-p",
+      "liteinst-profiler",
+      "--lib",
+      "frontend_native::always_on::normal::call_pair::tests::"
+    ],
+    "word-reuse-sdk-v2": [
+      "$TOOLCHAIN/bin/cargo",
+      "test",
+      "-p",
+      "rapid-profiler",
+      "--lib",
+      "frontend_native::always_on::normal::call_pair::tests::"
+    ],
+    "word-reuse-sdk-v3": [
+      "$TOOLCHAIN/bin/cargo",
+      "test",
+      "-p",
+      "rapid-profiler",
+      "--lib",
+      "frontend_native::always_on::normal::call_pair::tests::"
+    ]
+  },
+  "control_limit": "Four launcher unit controls exercise fabricated guard fixtures and the actual final return expression. They do not execute the owner lifecycle or qualify native/session work.",
+  "counts": {
+    "cleanup_complete": 20,
+    "failed": 3,
+    "invocations": 20,
+    "passed": 17,
+    "rescue_reaps": 0
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "schema": 1,
+  "scope": "Development controls, builds, CLI checks and source freeze only. No native/session/performance acceptance. Each base plus source-map hash records actual dirty-source provenance.",
+  "source_freeze": {
+    "marker_sha256": "b09a6f479843f0eef758c49182256da333f540a85115439598766aeda1e509f6",
+    "protocol_sha256": "ce8f9b9cec2e7c3bc5bd1172ae288b084f059febca2dc3dc9819fdf436b5d5bf",
+    "revision": "73157d117ee3eca82512f9f6f8c3c24be1ff5251"
+  },
+  "working_source_maps": {
+    "1fda1cf4f117f7c6958bd785919b13d197c8effb724163925e48f76daa72671d": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/runtime.rs": "715dd307b228d55d64bbec2bc394e8f6557f3a744dde29a890bdd91fb9302bb4",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/tests.rs": "037f9fa41cd4853ba7c2d120d0e257715b0a7c06d0d62447215de2d51575cf72"
+    },
+    "2f34d4a25132964bbd261168f019aa96028ae7d1f4337d0a82532d501a2867a7": {
+      "evaluation/ordinary-call-pair-session/ROOT_PROTOCOL.md": "d2c66d66745f6811aac0c4703f324f8d76249100d2dc84a86f65ab4358e5a7a8",
+      "evaluation/ordinary-call-pair-session/freeze.py": "539cf8da310948423341b43990f63c5c5669e989127efaaa5a413cb2b34c8c44",
+      "evaluation/ordinary-call-pair-session/launch.py": "1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46"
+    },
+    "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a": {},
+    "4a84b2816a9d9841782d385d37ba054b74e376bf2ff5e741088e5401e735943b": {
+      "evaluation/ordinary-call-pair-native/ROOT_PROTOCOL.md": "6022a1759775e9bd3549d0feb0ffc5f8c0498e4979b8437249af0f506d4054c7",
+      "evaluation/ordinary-call-pair-native/freeze.py": "d5988152be6b826d368f43723afd16b411e36cb1d02e3e11530349405390484f",
+      "evaluation/ordinary-call-pair-native/launch.py": "5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5",
+      "evaluation/ordinary-call-pair-session/PRODUCER.md": "1d4cd90c5bacb778325182dc5c1f419dc9bf14f7d9be93d7304ae0adde7c32bf",
+      "evaluation/ordinary-call-pair-session/README.md": "9e18937a17e9a68429ba2c2f537c9da466ec5566834700ee8ab8a3cd27ea3020",
+      "evaluation/ordinary-call-pair-session/controls.py": "aaafe6fad66b3c7afef116ddb4430212da491e12ebe08410bba4c3bd24179987",
+      "evaluation/ordinary-call-pair-session/native_receipt.py": "cfbd3bb00da550e72fb72214e5d77f9ccd53b7e1689ea43e9ce2da2cd31d989a",
+      "evaluation/ordinary-call-pair-session/original.c": "e56c0ce683e9b5ceff03391e528452e851b2587f9038f6cac6862aa6346e9c6c",
+      "evaluation/ordinary-call-pair-session/original_controls.c": "fa03af648fc5bed3e659fc67bded28e675d8438a1f48c9cca70c966d5103e812",
+      "evaluation/ordinary-call-pair-session/original_controls.py": "e9532c2827782ff396ee0cfb2548b15dc14dd4fe2dcecd8973a35383f9e48169",
+      "evaluation/ordinary-call-pair-session/original_output.py": "9933fe3c83356ce876971313a65132cb0b0b5916b866974ffa8110c73ff13f12",
+      "evaluation/ordinary-call-pair-session/output.py": "555e481bb1d87b9736027701ea11a15eca9df679c11b0baa39fd169f7f20c77f",
+      "evaluation/ordinary-call-pair-session/produce.py": "ad44997db396cd84d524070a7cc0f01a9f0af3ce52e65e27e7527837756bd6fa",
+      "evaluation/ordinary-call-pair-session/producer_controls.py": "192803ecd8187fe40fd6980c52b66a1a8259e175d4bf51a8c7eac1545c12f379",
+      "evaluation/ordinary-call-pair-session/profile.py": "b518e41cb0a21a624a28e79754af4d354afdd4c3f2c80d1db0700e7b0630eab0",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "a42f405d8bdbb77114888468c9cc01a7fd8c6ceb909f678de0285a284934000a",
+      "evaluation/ordinary-call-pair-session/reproduce.py": "00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e",
+      "evaluation/ordinary-call-pair-session/runner_controls.py": "628e87e2a4b1d292a5577849a0bbec85f1821e46e95267e449202f01d2f03d70",
+      "evaluation/ordinary-module-session/produce.py": "2c844bdb54b7d085bc2d199cccde59f7e3e4bac1fb10efc3f720249dfdc9794f"
+    },
+    "59917f5701d758a3409c58131b7b05825bb69dd28fb305e5fc61cb122834ec38": {
+      "evaluation/ordinary-call-pair-native/ROOT_PROTOCOL.md": "6022a1759775e9bd3549d0feb0ffc5f8c0498e4979b8437249af0f506d4054c7",
+      "evaluation/ordinary-call-pair-native/freeze.py": "d5988152be6b826d368f43723afd16b411e36cb1d02e3e11530349405390484f",
+      "evaluation/ordinary-call-pair-native/launch.py": "5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5",
+      "evaluation/ordinary-call-pair-session/PRODUCER.md": "1d4cd90c5bacb778325182dc5c1f419dc9bf14f7d9be93d7304ae0adde7c32bf",
+      "evaluation/ordinary-call-pair-session/README.md": "9e18937a17e9a68429ba2c2f537c9da466ec5566834700ee8ab8a3cd27ea3020",
+      "evaluation/ordinary-call-pair-session/controls.py": "aaafe6fad66b3c7afef116ddb4430212da491e12ebe08410bba4c3bd24179987",
+      "evaluation/ordinary-call-pair-session/native_receipt.py": "cfbd3bb00da550e72fb72214e5d77f9ccd53b7e1689ea43e9ce2da2cd31d989a",
+      "evaluation/ordinary-call-pair-session/original.c": "e56c0ce683e9b5ceff03391e528452e851b2587f9038f6cac6862aa6346e9c6c",
+      "evaluation/ordinary-call-pair-session/original_controls.c": "fa03af648fc5bed3e659fc67bded28e675d8438a1f48c9cca70c966d5103e812",
+      "evaluation/ordinary-call-pair-session/original_controls.py": "e9532c2827782ff396ee0cfb2548b15dc14dd4fe2dcecd8973a35383f9e48169",
+      "evaluation/ordinary-call-pair-session/original_output.py": "9933fe3c83356ce876971313a65132cb0b0b5916b866974ffa8110c73ff13f12",
+      "evaluation/ordinary-call-pair-session/output.py": "555e481bb1d87b9736027701ea11a15eca9df679c11b0baa39fd169f7f20c77f",
+      "evaluation/ordinary-call-pair-session/produce.py": "ad44997db396cd84d524070a7cc0f01a9f0af3ce52e65e27e7527837756bd6fa",
+      "evaluation/ordinary-call-pair-session/producer_controls.py": "192803ecd8187fe40fd6980c52b66a1a8259e175d4bf51a8c7eac1545c12f379",
+      "evaluation/ordinary-call-pair-session/profile.py": "b518e41cb0a21a624a28e79754af4d354afdd4c3f2c80d1db0700e7b0630eab0",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "a42f405d8bdbb77114888468c9cc01a7fd8c6ceb909f678de0285a284934000a",
+      "evaluation/ordinary-call-pair-session/reproduce.py": "00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e",
+      "evaluation/ordinary-call-pair-session/runner_controls.py": "107c1a6be98a3930492ffb355f1f56f42c64b940fd8929505a706755e1f54ca7",
+      "evaluation/ordinary-module-session/produce.py": "2c844bdb54b7d085bc2d199cccde59f7e3e4bac1fb10efc3f720249dfdc9794f"
+    },
+    "5b4d87f91d9a3fa251ae3592ce66ddba8ec6351287eeb9c309116c05427ed44d": {
+      "evaluation/ordinary-call-pair-session/PRODUCER.md": "1d4cd90c5bacb778325182dc5c1f419dc9bf14f7d9be93d7304ae0adde7c32bf",
+      "evaluation/ordinary-call-pair-session/README.md": "9e18937a17e9a68429ba2c2f537c9da466ec5566834700ee8ab8a3cd27ea3020",
+      "evaluation/ordinary-call-pair-session/controls.py": "aaafe6fad66b3c7afef116ddb4430212da491e12ebe08410bba4c3bd24179987",
+      "evaluation/ordinary-call-pair-session/native_receipt.py": "cfbd3bb00da550e72fb72214e5d77f9ccd53b7e1689ea43e9ce2da2cd31d989a",
+      "evaluation/ordinary-call-pair-session/original.c": "e56c0ce683e9b5ceff03391e528452e851b2587f9038f6cac6862aa6346e9c6c",
+      "evaluation/ordinary-call-pair-session/original_controls.c": "fa03af648fc5bed3e659fc67bded28e675d8438a1f48c9cca70c966d5103e812",
+      "evaluation/ordinary-call-pair-session/original_controls.py": "e9532c2827782ff396ee0cfb2548b15dc14dd4fe2dcecd8973a35383f9e48169",
+      "evaluation/ordinary-call-pair-session/original_output.py": "9933fe3c83356ce876971313a65132cb0b0b5916b866974ffa8110c73ff13f12",
+      "evaluation/ordinary-call-pair-session/output.py": "555e481bb1d87b9736027701ea11a15eca9df679c11b0baa39fd169f7f20c77f",
+      "evaluation/ordinary-call-pair-session/produce.py": "ad44997db396cd84d524070a7cc0f01a9f0af3ce52e65e27e7527837756bd6fa",
+      "evaluation/ordinary-call-pair-session/producer_controls.py": "192803ecd8187fe40fd6980c52b66a1a8259e175d4bf51a8c7eac1545c12f379",
+      "evaluation/ordinary-call-pair-session/profile.py": "b518e41cb0a21a624a28e79754af4d354afdd4c3f2c80d1db0700e7b0630eab0",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "a42f405d8bdbb77114888468c9cc01a7fd8c6ceb909f678de0285a284934000a",
+      "evaluation/ordinary-call-pair-session/reproduce.py": "00dc82bc29b00c158f68a9a0f6fe3ed2167758835b7327d49ba12fe502ed742e",
+      "evaluation/ordinary-call-pair-session/runner_controls.py": "107c1a6be98a3930492ffb355f1f56f42c64b940fd8929505a706755e1f54ca7",
+      "evaluation/ordinary-module-session/produce.py": "2c844bdb54b7d085bc2d199cccde59f7e3e4bac1fb10efc3f720249dfdc9794f"
+    },
+    "9418c245b95071cf4df3a4c784daee2ef52c6fef666c07585483359507e58717": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/runtime.rs": "715dd307b228d55d64bbec2bc394e8f6557f3a744dde29a890bdd91fb9302bb4",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/tests.rs": "db9147deb4083da0afbfe3027ef55789c72783fc68117395dde815cef22291d6"
+    },
+    "94d38dbf9eebc3eab368fc4171e79349da6e6fd7a8f293511c36aacb2a519eb1": {
+      "evaluation/ordinary-call-pair-session/ROOT_PROTOCOL.md": "d2c66d66745f6811aac0c4703f324f8d76249100d2dc84a86f65ab4358e5a7a8",
+      "evaluation/ordinary-call-pair-session/freeze.py": "539cf8da310948423341b43990f63c5c5669e989127efaaa5a413cb2b34c8c44",
+      "evaluation/ordinary-call-pair-session/launch.py": "1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46",
+      "evaluation/ordinary-call-pair-session/owner_controls.py": "30d27b288e976ac5bd6ef9e9cd099d1216dd289964d5ff1e51005968fc19b2aa"
+    },
+    "bc2740aeba41c6ae984ecc26ac0d99226013223fd3b4446cedeb0c7fdaf57990": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/runtime.rs": "715dd307b228d55d64bbec2bc394e8f6557f3a744dde29a890bdd91fb9302bb4",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/tests.rs": "73ba4d13e20822c2f8e90cd52f90b9f5c2cd7332a9df2aa4d189054a6ddf8a61"
+    },
+    "de4bff2c62758863b561768ed6a558a43ab680b77d35ff5ff91c2dcd69d00d33": {
+      "evaluation/ordinary-call-pair-session/PRODUCER.md": "1d4cd90c5bacb778325182dc5c1f419dc9bf14f7d9be93d7304ae0adde7c32bf",
+      "evaluation/ordinary-call-pair-session/controls.py": "aaafe6fad66b3c7afef116ddb4430212da491e12ebe08410bba4c3bd24179987",
+      "evaluation/ordinary-call-pair-session/native_receipt.py": "cfbd3bb00da550e72fb72214e5d77f9ccd53b7e1689ea43e9ce2da2cd31d989a",
+      "evaluation/ordinary-call-pair-session/original.c": "e56c0ce683e9b5ceff03391e528452e851b2587f9038f6cac6862aa6346e9c6c",
+      "evaluation/ordinary-call-pair-session/original_controls.c": "fa03af648fc5bed3e659fc67bded28e675d8438a1f48c9cca70c966d5103e812",
+      "evaluation/ordinary-call-pair-session/original_controls.py": "e9532c2827782ff396ee0cfb2548b15dc14dd4fe2dcecd8973a35383f9e48169",
+      "evaluation/ordinary-call-pair-session/original_output.py": "9933fe3c83356ce876971313a65132cb0b0b5916b866974ffa8110c73ff13f12",
+      "evaluation/ordinary-call-pair-session/output.py": "555e481bb1d87b9736027701ea11a15eca9df679c11b0baa39fd169f7f20c77f",
+      "evaluation/ordinary-call-pair-session/produce.py": "ad44997db396cd84d524070a7cc0f01a9f0af3ce52e65e27e7527837756bd6fa",
+      "evaluation/ordinary-call-pair-session/producer_controls.py": "192803ecd8187fe40fd6980c52b66a1a8259e175d4bf51a8c7eac1545c12f379",
+      "evaluation/ordinary-call-pair-session/profile.py": "b518e41cb0a21a624a28e79754af4d354afdd4c3f2c80d1db0700e7b0630eab0",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "a42f405d8bdbb77114888468c9cc01a7fd8c6ceb909f678de0285a284934000a",
+      "evaluation/ordinary-module-session/produce.py": "2c844bdb54b7d085bc2d199cccde59f7e3e4bac1fb10efc3f720249dfdc9794f"
+    },
+    "e580761835cb8e5630f0d489384d2ac389ea511b35326030328ac47cd349ad18": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/runtime.rs": "715dd307b228d55d64bbec2bc394e8f6557f3a744dde29a890bdd91fb9302bb4",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/call_pair/tests.rs": "da394a7d4e93a3c97ff2f2708e5b90e4e069171064c6b1e5d591a5b864b6262c"
+    }
+  }
+}

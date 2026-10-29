@@ -3,7 +3,14 @@
 //! caller checkpoint acknowledges return. Neither acknowledgement observes C3
 //! execution or grants executable reclamation. All code owners are process-lived.
 use super::*;
+pub(super) mod call_pair;
 pub(super) mod leaf_set;
+pub use call_pair::{
+    NormalCallPairAcknowledgement, NormalCallPairBatch, NormalCallPairClient,
+    NormalCallPairHistoryBatch, NormalCallPairHistoryStream, NormalCallPairHistoryWindow,
+    NormalCallPairRecord, NormalCallPairSessionController, NormalCallPairThread,
+    NormalCallPairTotals, PreparedNormalCallPairSessionController,
+};
 mod module;
 pub use leaf_set::{
     NormalLeafSetBatch, NormalLeafSetClient, NormalLeafSetHistoryBatch, NormalLeafSetHistoryStream,
@@ -385,6 +392,7 @@ struct Pending {
     returned: Option<RawInterval>,
 }
 struct NormalState {
+    call_pair: Option<Box<call_pair::runtime::State>>,
     binding: Arc<Binding>,
     actual_thread: ThreadId,
     tid: u64,
@@ -468,6 +476,15 @@ fn attach_ready(
     stack: ReadableStack,
     journal: IntervalJournal,
 ) -> Result<NormalThread, BridgeError> {
+    attach_profile(binding, registration, stack, journal, None)
+}
+fn attach_profile(
+    binding: &Arc<Binding>,
+    registration: u64,
+    stack: ReadableStack,
+    journal: IntervalJournal,
+    call_pair: Option<Box<call_pair::runtime::State>>,
+) -> Result<NormalThread, BridgeError> {
     NORMAL
         .try_with(|cell| {
             if NORMAL_POISON.get() {
@@ -493,6 +510,7 @@ fn attach_ready(
                 journal,
                 model,
             ));
+            state.call_pair = call_pair;
             state.journal.header(tid, 0);
             storage.0 = Some(state);
             Ok(NormalThread {
@@ -689,6 +707,7 @@ impl NormalState {
         model: ThreadModel,
     ) -> Self {
         Self {
+            call_pair: None,
             binding,
             actual_thread: thread::current().id(),
             tid: tid(),
@@ -788,6 +807,7 @@ impl NormalState {
             BindingProfile::LeafSet { site, .. } => site
                 .resolve(context.instruction_pointer, control, entry)
                 .ok_or(error(Cause::Identity))?,
+            BindingProfile::CallPair { .. } => return Err(error(Cause::Identity)),
         };
         let selected = self.selection(index)?;
         // SAFETY: unsafe attachment certifies the current exact eight-byte slot.

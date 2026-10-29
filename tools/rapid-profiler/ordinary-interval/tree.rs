@@ -9,7 +9,7 @@ use rapid_profiler::frontend_native::{
 mod check;
 pub(super) mod throughput;
 #[path = "../tree-work/truth.rs"]
-mod truth;
+pub mod truth;
 use check::{Batch, ReportRow, Spec};
 
 const CALLS: usize = 24;

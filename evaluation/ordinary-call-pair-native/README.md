@@ -1,0 +1,20 @@
+This recipe qualifies one fixed original-address nested CallPair population. It builds a fresh release `ordinary-interval` and the unchanged `call_pair.c` DSO, retains distinct candidate/trusted files, and joins complete final-ELF symbol extents and instruction bytes. The retained application-candidate is both the executable and the native route's EXECUTABLE argument. The parent’s original E8 calls the selected child; there is no copied caller or separately invoked child.
+
+Run once from the exact clean source revision under an external hard three-CPU reservation and an external 1200-second / 8-MiB process owner:
+
+```
+python3 -B evaluation/ordinary-call-pair-native/reproduce.py \
+  --revision EXACT_SOURCE_REVISION --reservation-tag UNIQUE_TAG \
+  --raw /ABS/IGNORED/FRESH_RUN --toolchain /ABS/TOOLCHAIN \
+  --user-home /ABS/USER_HOME --cargo-home /ABS/CARGO_HOME
+```
+
+The tag and observed affinity record launch identity; they do not prove a hard reservation. The external owner must retain the exact command, reservation/load observations, final normal closure and allocator release outcome. Native parent and tracees use the middle reserved CPU. Shared build cache and the explicitly declared `raw/tmp` compiler scratch are outside the prospective 2-GiB evidence budget; evidence may not be placed in scratch. Each evidence stage reserves its complete bounded allowance before execution and charges original retained bytes once. This is not a filesystem quota or a promise that compilation or the cohort fits.
+
+The fixed 37 stages require all old 199 calibration controls plus nine new shared oracle controls (208 and the unchanged single hardware ignore), all 14 new ordinary native controls, 30 SDK CallPair controls (including the additive full-word journal corruption control), and eight core stack controls. The six old Python cohorts retain their 76 methods; the new checker and runner add 12 and eight methods. Existing recipes and their methods are unchanged. The native cohort runs exactly once after those prerequisites: K10/K1000 × two seeds × all 16 CSV cases × stable-A/rearm-B/removed-child = 192 pairs, 384 normally reaped children, 768 target CALLs/RETs and 384 real outer returns. No native case retry, fallback, filter or population override exists.
+
+Per-pair bounds remain 15 seconds and 20,000 cumulative Walk steps. Native execution uses the existing same-PID 480-CPU-second / 1-MiB limit/exec helper and 510-second owner. Prerequisite checks retain their existing 20-CPU-second / 30-second / 1-MiB limits; builds retain 120 CPU / 180 wall / 128 MiB. Unsupported emitted code, missing RET coverage or exceeded bounds remain failure.
+
+`call_pair_native.py` checks all 45 fields of each of 192 pair rows and all 13 fields of 12 coverage rows, including the full nested stack extent `max(L,D+d+128)+8 <= 456`, fixed scalar/packed results, independent complete caller/parent/child geometry, actual-versus-sampled child counts, independent generations, LIFO completion sequences, history and journal counts. Every parent head and every declared child RET must be covered; observed CSV head/edge unions remain explicit bounded subsets. Full architectural state, XSAVE, all stack/source/input bytes, all 512 journal words, Report payloads and history are checked by the authenticated native adapter, not reconstructed from numeric summaries.
+
+Private logs, binary copies, exact original pins and failed outcomes remain under the fresh ignored destination. `public-result.json` always marks numeric rows `OBSERVED_UNQUALIFIED`, missing keys `UNRUN`, and requires the final external receipt. Local success additionally requires normal exit zero, no unexpected descendants, hash-joined owner logs and unchanged final source/tool/artifact pins. No Schedule, 2/10/2000-ms gate, K-exhaustion, owner reuse, threaded application, performance or full-A5 credit follows from this native matrix. Source-authored controls are fabricated inputs to actual validators and provide no native execution authority.

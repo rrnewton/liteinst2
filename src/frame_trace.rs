@@ -543,6 +543,14 @@ impl HelperFrames {
     // Tree annotations must describe the actual producer instructions, not
     // merely a plausible 320-byte final offset. Legacy metadata is unchanged.
     fn validate_tree_instructions(&self, source: &[Instruction]) -> Result<(), FrameTraceRefusal> {
+        self.validate_reserved_instructions(source, 144)
+    }
+    // Same instruction/annotation checks, with only the reserved prefix varied.
+    fn validate_reserved_instructions(
+        &self,
+        source: &[Instruction],
+        reserve: i32,
+    ) -> Result<(), FrameTraceRefusal> {
         use iced_x86::{Mnemonic, OpKind};
         let bad = FrameTraceRefusal::InvalidProducerAnnotation;
         let lea = |i: &Instruction, dst, displacement: i64| {
@@ -574,7 +582,7 @@ impl HelperFrames {
         match self.stage {
             FrameStage::SaveAndCall => {
                 expected.extend([
-                    FrameEffect::Reserve(144),
+                    FrameEffect::Reserve(reserve),
                     FrameEffect::Reserve(32),
                     FrameEffect::SaveFlags,
                 ]);
@@ -597,7 +605,7 @@ impl HelperFrames {
                     .checked_sub(2)
                     .and_then(|index| source.get(index))
                     .ok_or(bad)?;
-                if !lea(recovery, Register::RAX, 304) {
+                if !lea(recovery, Register::RAX, i64::from(reserve) + 160) {
                     return Err(bad);
                 }
             }
@@ -613,7 +621,7 @@ impl HelperFrames {
                 expected.extend([
                     FrameEffect::RestoreFlags,
                     FrameEffect::Release(32),
-                    FrameEffect::Release(144),
+                    FrameEffect::Release(reserve),
                 ]);
                 if self.effects.last().map(|row| row.0) != Some(source.len()) {
                     return Err(bad);
@@ -678,6 +686,9 @@ impl HelperFrames {
         }
         if self.profile == ObservationStackProfile::Tree144 {
             self.validate_tree_instructions(source)?;
+        }
+        if self.profile == ObservationStackProfile::CallPair240 {
+            self.validate_reserved_instructions(source, 240)?;
         }
         let mut rows = Vec::new();
         let mut state = match self.stage {

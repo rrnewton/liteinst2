@@ -5,8 +5,7 @@ use std::collections::BTreeSet;
 
 #[path = "../../tools/rapid-profiler/cache-work/model.rs"]
 pub mod model;
-#[path = "../../tools/rapid-profiler/cache-work/truth.rs"]
-pub mod truth;
+register_native_fixture!(cache_truth);
 
 pub struct Stats {
     pub counts: truth::Counts,

@@ -104,11 +104,20 @@ pub use always_on::{
     ReadableStack,
 };
 
+pub use always_on::site::ordinary::{
+    InstalledNormalCallPairSite, NormalCallPairFunctionSite, NormalCallPairRole,
+    NormalCallPairRoleKind, NormalCallPairSitePreparation,
+};
 pub use module::ordinary::LoadedNormalLeafSet;
 /// Explicit final-ELF-bound selection; loading still requires its unsafe contract.
 pub use module::ordinary::TrustedFunctionSelection;
 /// Separate bounded scalar-symbol admission; no publication or interval execution.
 pub use module::ordinary::{IntegerLeafCertificate, IntegerLeafContract, LoadedIntegerLeaf};
+/// Bounded normal CALL-pair admission/preparation only; runtime is separate.
+pub use module::ordinary::{
+    LoadedNormalCallPair, NormalCallPairChild, NormalCallPairContract, NormalCallPairEdge,
+    NormalCallPairParent, NormalCallPairParentCertificate,
+};
 /// Separate ordinary-caller admission without a per-call library gate.
 pub use module::ordinary::{LoadedNormalLeaf, NormalLeafContract};
 pub use module::ordinary::{LoadedNormalModule, NormalModuleContract, NormalModuleFunction};
@@ -128,6 +137,12 @@ pub use always_on::normal::{
     NormalModuleThread, NormalRecord, NormalThread, NormalTotals, PreparedNormalController,
     PreparedNormalLeafSetSessionController, PreparedNormalModuleController,
     PreparedNormalModuleSessionController, PreparedTwoCallerNormalController,
+};
+pub use always_on::normal::{
+    NormalCallPairAcknowledgement, NormalCallPairBatch, NormalCallPairClient,
+    NormalCallPairHistoryBatch, NormalCallPairHistoryStream, NormalCallPairHistoryWindow,
+    NormalCallPairRecord, NormalCallPairSessionController, NormalCallPairThread,
+    NormalCallPairTotals, PreparedNormalCallPairSessionController,
 };
 pub use always_on::site::ordinary::{
     InstalledNormalLeafSetSite, InstalledNormalModuleSite, NormalLeafSetSitePreparation,

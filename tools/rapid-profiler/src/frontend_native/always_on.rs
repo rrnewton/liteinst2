@@ -2,6 +2,7 @@
 //! This facade owns metadata only; site::seal retains the actual publication.
 mod drain;
 mod epoch_storage;
+mod frame;
 pub use epoch_storage::{EpochStorageReclaimError, IntervalEpochStorage};
 mod history;
 pub(super) mod normal;
@@ -69,6 +70,10 @@ fn error(cause: Cause) -> BridgeError {
 
 // Closed installation profiles. A module cannot stand in for a leaf or gate.
 enum BindingProfile {
+    CallPair {
+        site: Arc<site::ordinary::call_pair::CallPairSite>,
+        functions: [FunctionId; 2],
+    },
     Single {
         site: Arc<site::Site>,
         function: FunctionId,
@@ -88,6 +93,7 @@ impl BindingProfile {
             Self::Single { site, function } => Ok((site, *function)),
             Self::Module { .. } => Err(error(Cause::Identity)),
             Self::LeafSet { .. } => Err(error(Cause::Identity)),
+            Self::CallPair { .. } => Err(error(Cause::Identity)),
         }
     }
 }

@@ -217,12 +217,19 @@ pub struct Ready {
 }
 /// Closed adapter, not a conversion between leaf and module certificates.
 pub(super) enum WalkReady {
+    CallPair(call_pair::Ready),
     Single(NormalReady),
     Module(Ready),
     CopiedRust(copied_rust::Ready),
     LeafSetCopied(leaf_set_copied::Ready),
 }
 impl WalkReady {
+    pub(super) fn call_pair(&self) -> &call_pair::Ready {
+        match self {
+            Self::CallPair(r) => r,
+            _ => panic!("nested original caller readiness required"),
+        }
+    }
     pub(super) fn single(&self) -> &NormalReady {
         match self {
             Self::Single(r) => r,
@@ -260,6 +267,7 @@ impl WalkReady {
             Self::Module(r) => r.caller,
             Self::CopiedRust(r) => r.caller,
             Self::LeafSetCopied(r) => r.caller,
+            Self::CallPair(r) => r.caller,
         }
     }
     pub(super) fn caller_immutable(&self) -> &Vec<(u64, Vec<u8>)> {
@@ -268,6 +276,7 @@ impl WalkReady {
             Self::Module(r) => &r.caller_immutable,
             Self::CopiedRust(r) => &r.caller_immutable,
             Self::LeafSetCopied(r) => &r.caller_immutable,
+            Self::CallPair(r) => &r.caller_immutable,
         }
     }
     pub(super) fn immutable(&self) -> &Vec<(u64, Vec<u8>)> {
@@ -276,6 +285,7 @@ impl WalkReady {
             Self::Module(r) => &r.immutable,
             Self::CopiedRust(r) => &r.immutable,
             Self::LeafSetCopied(r) => &r.immutable,
+            Self::CallPair(r) => &r.immutable,
         }
     }
     pub(super) fn journal(&self) -> Option<&JournalReady> {
@@ -284,6 +294,7 @@ impl WalkReady {
             Self::Module(r) => r.journal.as_ref(),
             Self::CopiedRust(r) => r.journal.as_ref(),
             Self::LeafSetCopied(r) => r.journal.as_ref(),
+            Self::CallPair(r) => r.journal.as_ref(),
         }
     }
     pub(super) fn is_return(&self, pc: u64) -> bool {
@@ -292,6 +303,7 @@ impl WalkReady {
             Self::Module(r) => r.functions.iter().any(|f| f.returns.contains(&pc)),
             Self::CopiedRust(r) => r.target().returns.contains(&pc),
             Self::LeafSetCopied(r) => r.target().returns.contains(&pc),
+            Self::CallPair(r) => r.functions.iter().any(|f| f.returns.contains(&pc)),
         }
     }
     pub(super) fn declared_returns(&self) -> BTreeSet<u64> {
@@ -299,6 +311,11 @@ impl WalkReady {
             Self::Single(r) => r.returns.iter().copied().collect(),
             Self::CopiedRust(r) => r.target().returns.iter().copied().collect(),
             Self::LeafSetCopied(r) => r.target().returns.iter().copied().collect(),
+            Self::CallPair(r) => r
+                .functions
+                .iter()
+                .flat_map(|f| f.returns.iter().copied())
+                .collect(),
             Self::Module(r) => r
                 .functions
                 .iter()
@@ -312,6 +329,7 @@ impl WalkReady {
             (Self::Module(a), Self::Module(b)) => a.same_source(b),
             (Self::CopiedRust(a), Self::CopiedRust(b)) => a.same_source(b),
             (Self::LeafSetCopied(a), Self::LeafSetCopied(b)) => a.same_source(b),
+            (Self::CallPair(a), Self::CallPair(b)) => a.same_source(b),
             _ => panic!("profile mismatch"),
         }
     }
@@ -664,6 +682,9 @@ impl NormalOracle {
         oracle
     }
     pub(super) fn stack_below(&self) -> u64 {
+        if let Some(p) = &self.call_pair {
+            return p.stack_below();
+        }
         if let Some(p) = &self.leaf_set_copied {
             p.plan.protected_stack_below()
         } else if let Some(p) = &self.copied_rust {
@@ -675,6 +696,9 @@ impl NormalOracle {
         }
     }
     pub(super) fn subject_delta(&self) -> u64 {
+        if let Some(p) = &self.call_pair {
+            return p.plan.subject_rsp_delta();
+        }
         if let Some(p) = &self.leaf_set_copied {
             p.plan.subject_rsp_delta()
         } else if let Some(p) = &self.copied_rust {
@@ -703,10 +727,13 @@ impl NormalOracle {
             WalkReady::Module(_) => self.data.address() + TARGETS as u64,
             WalkReady::CopiedRust(r) => r.target().entry,
             WalkReady::LeafSetCopied(r) => r.target().entry,
+            WalkReady::CallPair(r) => r.parent().entry,
         }
     }
     pub(super) fn check_data(&self, ready: &WalkReady, actual: &[u8], final_check: bool) {
-        if let WalkReady::LeafSetCopied(r) = ready {
+        if let WalkReady::CallPair(r) = ready {
+            copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);
+        } else if let WalkReady::LeafSetCopied(r) = ready {
             copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);
         } else if let WalkReady::CopiedRust(r) = ready {
             copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);

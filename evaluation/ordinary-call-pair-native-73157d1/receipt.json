@@ -1,0 +1,504 @@
+{
+  "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+  "allocator_sources_sha256": "5a7f949da747e401075cc24741815646e16107b025da6ca5c2322567769797c4",
+  "application_timing_qualification": false,
+  "artifact": {
+    "bytes": 9337528,
+    "sha256": "3b8cdb4bb44a360a7414a24a6ceb11322985af5c22f6641a48289d8bab1894d5"
+  },
+  "attempts": 1,
+  "candidate_steps": {
+    "max": 17537,
+    "min": 15967
+  },
+  "checks": {
+    "limitation": "The three tail commands ran separately once because the fail-stop runner never started them. Their success does not replace the original workspace timeout. Terminal observation counts may include nested child summaries. First check phase did not record load; null is intentional.",
+    "phase_count": 2,
+    "phases": [
+      {
+        "command": [
+          "/usr/bin/env",
+          "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+          "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+          "/usr/local/bin/python3",
+          "-B",
+          "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+          "run",
+          "--cores",
+          "8",
+          "--sample-s",
+          "1",
+          "--tag",
+          "li2core-73157d1-checks",
+          "--",
+          "/usr/local/bin/python3",
+          "-B",
+          "evaluation/admission/check_exec_identity.py",
+          "--toolchain",
+          "$TOOLCHAIN",
+          "--cargo-home",
+          "$CARGO_HOME",
+          "--output",
+          "$REPO/ignored/a5/merged-73157d1-seven-checks-v1",
+          "--checks-only"
+        ],
+        "hard_reserved_cpus": [
+          30,
+          43,
+          64,
+          113,
+          154,
+          173,
+          233,
+          234
+        ],
+        "ledger_readback": false,
+        "load_after": null,
+        "load_before": null,
+        "name": "merged-73157d1-seven-checks-v1",
+        "outer": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 1,
+          "private_log_sha256": "df223620e448ea1bd2ed1316779ce75681026534caaad3c8cbeb3644fdc34d13",
+          "reaped_descendants": 0,
+          "seconds": 405.54266027896665,
+          "start_utc": "2026-10-29T17:24:11.376020+00:00",
+          "termination": null
+        },
+        "outer_receipt": {
+          "bytes": 1251,
+          "sha256": "8e643af212d82107cafa282fc6f93063fb096dbc989f1139cb222511b395f494"
+        },
+        "receipt": {
+          "bytes": 13214,
+          "sha256": "5c5170d46ddd92f54c55748f3e3004de666d564aed4895e49c19a2ee074adf0c"
+        },
+        "source_join": "normal_allocator_return",
+        "status": "FAILED"
+      },
+      {
+        "command": [
+          "/usr/bin/env",
+          "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+          "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+          "/usr/local/bin/python3",
+          "-B",
+          "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+          "run",
+          "--cores",
+          "8",
+          "--sample-s",
+          "1",
+          "--tag",
+          "li2core-73157d1-tail",
+          "--",
+          "/usr/local/bin/python3",
+          "-B",
+          "ignored/a5/cfc8d76-tail-checks-source-v1/successor-v2/tail_checks.py",
+          "--toolchain",
+          "$TOOLCHAIN",
+          "--cargo-home",
+          "$CARGO_HOME",
+          "--output",
+          "$REPO/ignored/a5/merged-73157d1-tail-checks-v1",
+          "--checks-only"
+        ],
+        "hard_reserved_cpus": [
+          16,
+          101,
+          131,
+          138,
+          159,
+          181,
+          206,
+          298
+        ],
+        "ledger_readback": false,
+        "load_after": [
+          55.02,
+          54.44,
+          63.42
+        ],
+        "load_before": [
+          43.19,
+          53.87,
+          64.69
+        ],
+        "name": "merged-73157d1-tail-checks-v1",
+        "outer": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "f592c3aeea9a4dedc4fb12c986332428f5c4135020d505f021cefc4ed75b3c2d",
+          "reaped_descendants": 0,
+          "seconds": 137.1096890780609,
+          "start_utc": "2026-10-29T17:31:02.824717+00:00",
+          "termination": null
+        },
+        "outer_receipt": {
+          "bytes": 1272,
+          "sha256": "d64391913dd8f26f14efbb81dcdc2db33a04d242923e21e665800bb4eeb88af5"
+        },
+        "receipt": {
+          "bytes": 6928,
+          "sha256": "8ba4237ec66aa4d784495ec070a373d4e209a71c9c95a13cdb9f1d76b0a7d528"
+        },
+        "source_join": "normal_allocator_return",
+        "status": "PASS"
+      }
+    ],
+    "repeated_commands": 0,
+    "status": "FAILED"
+  },
+  "claim": 4,
+  "cpu_roles": {
+    "native_parent_and_tracees": 139,
+    "supervisor_build_controls": [
+      6,
+      139,
+      162
+    ]
+  },
+  "failure": "Native cohort timed out at the unchanged 510-second limit. All 187 prefix rows remain unqualified; 5 slots lack accepted results, including interrupted work. Workspace separately timed out at its original 360-second limit.",
+  "geometry": {
+    "caller": {
+      "body_hex": "534889cb4889f84889f74889d6ffd04889035bc3",
+      "call_offset": 13,
+      "continuation_offset": 15,
+      "elf_va": 4183040,
+      "heads": [
+        0,
+        1,
+        4,
+        7,
+        10,
+        13,
+        15,
+        18,
+        19
+      ],
+      "length": 20,
+      "lowest_stack": 8,
+      "outer_ret_offset": 19,
+      "subject_rsp_delta": 16
+    },
+    "child": {
+      "edges": 49,
+      "elf_va": 4096,
+      "heads": [
+        0,
+        3,
+        5,
+        7,
+        10,
+        12,
+        14,
+        16,
+        19,
+        21,
+        25,
+        27,
+        31,
+        34,
+        37,
+        40,
+        42,
+        46,
+        50,
+        53,
+        55,
+        58,
+        60,
+        64,
+        66,
+        71,
+        73,
+        76,
+        80,
+        83,
+        85,
+        89,
+        90,
+        96,
+        99,
+        101,
+        104,
+        108,
+        114,
+        116,
+        120,
+        125
+      ],
+      "length": 126,
+      "returns": [
+        89,
+        125
+      ]
+    },
+    "parent": {
+      "body_hex": "4883ec184889742408e872ffffff4989c0488b4424084883c41848c1e0204c09c0c3",
+      "call_offset": 9,
+      "callee_entry": 4096,
+      "child_delta": 32,
+      "continuation_offset": 14,
+      "edges": 8,
+      "elf_va": 4224,
+      "heads": [
+        0,
+        4,
+        9,
+        14,
+        17,
+        22,
+        26,
+        30,
+        33
+      ],
+      "length": 34,
+      "returns": [
+        33
+      ]
+    }
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "limits": {
+    "child_steps": 20000,
+    "cohort_cpu_seconds": 480,
+    "cohort_wall_seconds": 510,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 1200,
+    "pair_wall_seconds": 15
+  },
+  "load_after": [
+    24.02,
+    31.69,
+    47.03
+  ],
+  "load_before": [
+    55.83,
+    54.67,
+    63.02
+  ],
+  "native_load_after": [
+    23.5,
+    31.72,
+    47.13
+  ],
+  "native_load_before": [
+    50.44,
+    52.39,
+    60.61
+  ],
+  "native_outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": -9,
+    "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reaped_descendants": 2,
+    "seconds": 510.06664703204297,
+    "start_utc": "2026-10-29T17:37:19.092670+00:00",
+    "termination": "timeout"
+  },
+  "native_pairs": {
+    "bytes": 27727,
+    "sha256": "cc09ba0dc503cfad0054bc234a5dd536c1a1a5a5c09b73500d98f56b10e31e08"
+  },
+  "native_qualification": false,
+  "native_stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "no_accepted_result_slots": 5,
+  "observed_prefix_totals": {
+    "comparisons": 17243,
+    "normal_reaps": 374,
+    "outer_returns": 374,
+    "target_calls": 748,
+    "target_returns": 748
+  },
+  "observed_unqualified_pairs": 187,
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "2489d3f70e11a537df6fe2ff07627d2c50d964e855cce426311f457e94eb5699",
+    "reaped_descendants": 0,
+    "seconds": 694.4568805138115,
+    "start_utc": "2026-10-29T17:34:15.204054+00:00",
+    "termination": null
+  },
+  "performance_claim": false,
+  "prerequisites": {
+    "core": 8,
+    "ordinary": 14,
+    "python": 96,
+    "rust_calibrations": 208,
+    "sdk": 30,
+    "unchanged_ignored": 1
+  },
+  "protocol": {
+    "bytes": 191325,
+    "sha256": "ce8f9b9cec2e7c3bc5bd1172ae288b084f059febca2dc3dc9819fdf436b5d5bf"
+  },
+  "recipe_receipt": {
+    "bytes": 297836,
+    "sha256": "d91ba012e3a64d59c3f1c14828c5a362ca37419081e26c8a28fb424a57d2d3ad"
+  },
+  "release": {
+    "compiler_jobs": 4,
+    "debug_assertions": true,
+    "incremental": false,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "request": {
+    "attempts": 1,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "call-pair-original-native-73157d117ee3eca82512f9f6f8c3c24be1ff5251",
+      "--",
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/ordinary-call-pair-native/reproduce.py",
+      "--revision",
+      "73157d117ee3eca82512f9f6f8c3c24be1ff5251",
+      "--reservation-tag",
+      "call-pair-original-native-73157d117ee3eca82512f9f6f8c3c24be1ff5251",
+      "--raw",
+      "$REPO/ignored/a5/call-pair-public-73157d117ee3eca82512f9f6f8c3c24be1ff5251/call-pair-native-73157d117ee3eca82512f9f6f8c3c24be1ff5251",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "cwd": "$REPO",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=$RUNTIME_DIR/bus",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "XDG_RUNTIME_DIR": "$RUNTIME_DIR"
+    },
+    "limits": {
+      "build_reserve_bytes": 1073741824,
+      "evidence_bytes": 2147483648,
+      "outer_log_bytes": 8388608,
+      "outer_seconds": 1200,
+      "slot_limit_bytes": 20000000000,
+      "wrapper_bytes": 25165824
+    },
+    "profile": "call-pair-original-native",
+    "protocol_sha256": "ce8f9b9cec2e7c3bc5bd1172ae288b084f059febca2dc3dc9819fdf436b5d5bf",
+    "retries": 0,
+    "tag": "call-pair-original-native-73157d117ee3eca82512f9f6f8c3c24be1ff5251"
+  },
+  "required_pairs": 192,
+  "reservation": {
+    "cores": [
+      6,
+      139,
+      162
+    ],
+    "count": 3,
+    "ledger_readback": false,
+    "recipe_exit": 1,
+    "recipe_summary": {
+      "attempts": 1,
+      "cohort_status": "FAILED",
+      "custody_closed": true,
+      "external_owner_required": true,
+      "observed_rows": 187,
+      "profile": "normal-call-pair-original-rust-v1",
+      "scope": "Actual original-address admitted Rust caller and nested parent E8/body only; no threaded application, Schedule, K exhaustion, reuse, timing or full-A5 credit. External hard reservation and final exact-command outer closure remain required.",
+      "status": "FAILED"
+    },
+    "status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN"
+  },
+  "retention": {
+    "bytes": 59026816,
+    "closed_files_rechecked": true,
+    "files": 322
+  },
+  "retries": 0,
+  "revision": "73157d117ee3eca82512f9f6f8c3c24be1ff5251",
+  "root_receipt": {
+    "bytes": 3558,
+    "sha256": "3b064e45d3744d4dd60b1ac8431ecef46a95d9d1c0a3ed6a1b087d0ed98e2c2f"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Actual original-address admitted Rust caller and nested parent E8/body only; no threaded application, Schedule, K exhaustion, reuse, timing or full-A5 credit. External hard reservation and final exact-command outer closure remain required.",
+  "source_pins_verified": 1171,
+  "source_verified_after": true,
+  "status": "FAILED",
+  "tools": {
+    "bash": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "du": {
+      "bytes": 152832,
+      "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rg": {
+      "bytes": 4746600,
+      "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustdoc": {
+      "bytes": 13680928,
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "systemd-run": {
+      "bytes": 111360,
+      "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+    },
+    "true": {
+      "bytes": 27936,
+      "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+    }
+  }
+}
