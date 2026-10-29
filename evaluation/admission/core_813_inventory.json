@@ -18635,6 +18635,154 @@
       }
     }
   },
+  "mainc6f": {
+    "added_methods": {
+      "tools/elf-rewrite/src/disassembly/tests.rs": [
+        "complete_jump_denominator_ignores_names_reachability_and_call_cycles",
+        "whole_hash_and_each_head_byte_length_and_location_are_independent_gates",
+        "complete_ledger_checks_rx_inverse_owner_and_known_entry_contradictions",
+        "policy_cannot_omit_add_select_replace_or_increase_existing_caps",
+        "null_hook_must_be_original_single_c3_and_endbr_heads_stay_marked",
+        "shared_prepare_retains_every_refusal_and_never_emits_partial_candidate",
+        "one_original_jump_uses_shared_carrier_and_hook_guard_without_live_authority",
+        "bounded_text_and_whole_program_projection_refuse_without_splitting"
+      ]
+    },
+    "base": "c6f5707cabca1c1bf795f034308f6cd5c6844951",
+    "current_corpus_sha256": "b5aca5395ff169068a092a2913511fbb8d7c18d64b579b6d1a914bbcc1755e15",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 8,
+      "rust_tests": 8
+    },
+    "example": {
+      "name": "disassembly_sites",
+      "path": "examples/disassembly_sites.rs",
+      "test_field": "absent; Cargo default false",
+      "workspace_test_harness": false
+    },
+    "instances": {
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "unit/liteinst_rewrite/lib": "disassembly::tests::"
+      }
+    },
+    "listed_additions": {
+      "unit/liteinst_rewrite/lib": [
+        "disassembly::tests::complete_jump_denominator_ignores_names_reachability_and_call_cycles",
+        "disassembly::tests::whole_hash_and_each_head_byte_length_and_location_are_independent_gates",
+        "disassembly::tests::complete_ledger_checks_rx_inverse_owner_and_known_entry_contradictions",
+        "disassembly::tests::policy_cannot_omit_add_select_replace_or_increase_existing_caps",
+        "disassembly::tests::null_hook_must_be_original_single_c3_and_endbr_heads_stay_marked",
+        "disassembly::tests::shared_prepare_retains_every_refusal_and_never_emits_partial_candidate",
+        "disassembly::tests::one_original_jump_uses_shared_carrier_and_hook_guard_without_live_authority",
+        "disassembly::tests::bounded_text_and_whole_program_projection_refuse_without_splitting"
+      ]
+    },
+    "methods": {
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "all": [
+          "complete_jump_denominator_ignores_names_reachability_and_call_cycles",
+          "whole_hash_and_each_head_byte_length_and_location_are_independent_gates",
+          "complete_ledger_checks_rx_inverse_owner_and_known_entry_contradictions",
+          "policy_cannot_omit_add_select_replace_or_increase_existing_caps",
+          "null_hook_must_be_original_single_c3_and_endbr_heads_stay_marked",
+          "shared_prepare_retains_every_refusal_and_never_emits_partial_candidate",
+          "one_original_jump_uses_shared_carrier_and_hook_guard_without_live_authority",
+          "bounded_text_and_whole_program_projection_refuse_without_splitting"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tools/elf-rewrite/Cargo.toml": [
+        "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\"",
+        "[[example]]\nname = \"common_sites\"\npath = \"examples/common_sites.rs\"\ntest = true",
+        "[[example]]\nname = \"verify_common_core\"\npath = \"examples/verify_common_core.rs\"\ntest = true",
+        "[[example]]\nname = \"disassembly_sites\"\npath = \"examples/disassembly_sites.rs\"\n"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod disassembly;"
+      ]
+    },
+    "previous_corpus_sha256": "4a8a3a8d5671c413ffbb299273b0e6cb2e36d3b628528494991e4d5dc13b853f",
+    "projections": {
+      "src/emission.rs": {
+        "current_sha256": "346886835e47e6a4b8aa83678f91c84e512df5e7e53aab189d8d8fc519f2013b",
+        "edits": [
+          [
+            965,
+            1521,
+            "    /// Authenticated containing function.\n"
+          ],
+          [
+            1553,
+            1703,
+            "    /// Authenticated containing basic block.\n"
+          ]
+        ],
+        "previous_sha256": "ae43e2b42c0e575cf8ec227f61a6866cacd7fcedb00c94627dd5ce5ebd2d6d51"
+      },
+      "tools/elf-rewrite/Cargo.toml": {
+        "current_sha256": "fd41c1fbcf572779e4b7b36b5dda5df1e90ead0a3398671b8ba67a1a44a4e160",
+        "edits": [
+          [
+            902,
+            981,
+            ""
+          ]
+        ],
+        "previous_sha256": "efa2528a5905f3a0d4d4424dfedff8d5fcba7365a03d63f969b4a613629e544f"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "4867c48de7de26eea9d66c9f572f63132d94ae73f5aaad6b5be40070a0386cba",
+        "edits": [
+          [
+            206,
+            227,
+            ""
+          ],
+          [
+            2321,
+            3112,
+            ""
+          ],
+          [
+            3262,
+            3461,
+            ""
+          ]
+        ],
+        "previous_sha256": "26844d6c499c2e5cfb7667f39fcdc2aa4b113d25f47118d38f9335a4fe3246a9"
+      }
+    },
+    "scope": "Exact seven-image trusted-disassembly source successor; source declarations only, no execution or complete-corpus qualification.",
+    "sources": {
+      "src/emission.rs": "346886835e47e6a4b8aa83678f91c84e512df5e7e53aab189d8d8fc519f2013b",
+      "tools/elf-rewrite/Cargo.toml": "fd41c1fbcf572779e4b7b36b5dda5df1e90ead0a3398671b8ba67a1a44a4e160",
+      "tools/elf-rewrite/DISASSEMBLY.md": "5a0306bff539d480eb781aeb0ded17238b37ac85f9bf6222dbdee8228edf6515",
+      "tools/elf-rewrite/examples/disassembly_sites.rs": "120541423ad48547203a086f8eeca85ea8802253613caacce26c0e08acb0c6a7",
+      "tools/elf-rewrite/src/disassembly.rs": "c001c29dd8c036e048d8925e34dab102eaa16b6f5065c27bb5811ee4f83a3555",
+      "tools/elf-rewrite/src/disassembly/tests.rs": "b0d4d9775640e7c3da2f54274106485e0dbfc04c4950467dd51d67ecfae855d4",
+      "tools/elf-rewrite/src/lib.rs": "4867c48de7de26eea9d66c9f572f63132d94ae73f5aaad6b5be40070a0386cba"
+    },
+    "workspace_changes": {
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 94
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 86
+        }
+      }
+    }
+  },
   "maine11": {
     "added_methods": {
       "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": [

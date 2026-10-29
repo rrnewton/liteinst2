@@ -1736,7 +1736,7 @@ class Main813InventoryTests(unittest.TestCase):
         # The additive layer restores the exact historical catalog and source;
         # none of its current declarations can be supplied by the old blobs.
         self.assertEqual(main813.digest(main813.before_12e(actual)), main813.CURRENTB66)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_c6f(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 3574, 37))
         self.assertEqual(main813.MAIN12E['declared_delta'],
@@ -1829,6 +1829,100 @@ class Main813InventoryTests(unittest.TestCase):
                 changed[i] += ' invalid_module_route'
                 with patch.dict(main813.MAIN12E['module_chains'], {path: changed}), self.assertRaises(parsing.InvalidEvidence):
                     main813.require_12e_sources()
+
+
+        # The disassembly importer adds eight library tests, no default example
+        # harness. Old source/catalog checks receive exact pre-importer images.
+        self.assertEqual(main813.digest(main813.before_c6f(actual)), main813.CURRENT12E)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 3582, 37))
+        self.assertEqual(main813.MAINC6F['declared_delta'],
+                         {'rust_declarations': 8, 'rust_tests': 8, 'harnesses': 0, 'ignored': 0, 'doctests': 0})
+        harness = 'unit/liteinst_rewrite/lib'
+        self.assertEqual(current_rows[harness], {'tests': 94, 'ignored': 0})
+        self.assertEqual(main813.before_c6f(actual)['harness_test_counts']['workspace_tests'][harness],
+                         {'tests': 86, 'ignored': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_c6f(actual))
+        for count in (93, 95, True, 94.0):
+            changed = plain.deepcopy(actual)
+            changed['harness_test_counts']['workspace_tests'][harness]['tests'] = count
+            with self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        changed = plain.deepcopy(actual)
+        del changed['harness_test_counts']['workspace_tests'][harness]
+        with self.assertRaises(parsing.InvalidEvidence):
+            main813.before_c6f(changed)
+        for path in main813.MAINC6F['sources']:
+            for missing in (False, True):
+                mutation_target = main813.ROOT / path
+                def changed(candidate):
+                    if candidate == mutation_target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(mainc6f_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_c6f_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        self.assertEqual(len(main813.MAINC6F['sources']), 7)
+        self.assertEqual(set(main813.MAINC6F['projections']),
+                         {'src/emission.rs', 'tools/elf-rewrite/Cargo.toml', 'tools/elf-rewrite/src/lib.rs'})
+        for path, row in main813.MAINC6F['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_c6f(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            # The full existing source helper chain must retain this inverse.
+            self.assertEqual(main813.source_before(path, raw, 'changed'), restored)
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_c6f(path, bad, 'changed')
+            mutation_target = main813.ROOT / path
+            def historical(candidate):
+                return restored if candidate == mutation_target else read_bytes(candidate)
+            with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(actual)
+        test_source = 'tools/elf-rewrite/src/disassembly/tests.rs'
+        methods = main813.MAINC6F['methods'][test_source]
+        self.assertEqual(len(methods['all']), 8)
+        self.assertEqual(methods['ignored'], [])
+        self.assertEqual(main813.MAINC6F['instances'], {test_source: {harness: 'disassembly::tests::'}})
+        self.assertEqual(main813.MAINC6F['listed_additions'][harness],
+                         ['disassembly::tests::' + name for name in methods['all']])
+        for changed in ([dict(methods, all=methods['all'][:i] + methods['all'][i + 1:])
+                         for i in range(8)] +
+                        [dict(methods, all=methods['all'] + ['not_registered']),
+                         dict(methods, ignored=[methods['all'][0]])]):
+            with patch.dict(main813.MAINC6F['methods'], {test_source: changed}), self.assertRaises(parsing.InvalidEvidence):
+                main813.require_c6f_sources()
+        for path, literals in main813.MAINC6F['module_chains'].items():
+            for i in range(len(literals)):
+                changed = list(literals)
+                changed[i] += ' invalid_module_route'
+                with patch.dict(main813.MAINC6F['module_chains'], {path: changed}), self.assertRaises(parsing.InvalidEvidence):
+                    main813.require_c6f_sources()
+        # Cargo examples are compiled by workspace tests but are not run as a
+        # libtest target by default; this new declaration does not set test=true.
+        self.assertEqual(main813.MAINC6F['example'],
+                         {'name': 'disassembly_sites', 'path': 'examples/disassembly_sites.rs',
+                          'test_field': 'absent; Cargo default false', 'workspace_test_harness': False})
+        self.assertNotIn('unit/disassembly_sites/disassembly_sites', current_rows)
+        changed = plain.deepcopy(actual)
+        changed['harness_test_counts']['workspace_tests']['unit/disassembly_sites/disassembly_sites'] = {'tests': 0, 'ignored': 0}
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(changed)
+        mutation_target = main813.ROOT / 'tools/elf-rewrite/Cargo.toml'
+        def enabled_example(candidate):
+            raw = read_bytes(candidate)
+            if candidate == mutation_target:
+                return raw.replace(b'path = "examples/disassembly_sites.rs"\n',
+                                   b'path = "examples/disassembly_sites.rs"\ntest = true\n')
+            return raw
+        with patch.object(Path, 'read_bytes', enabled_example), self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(actual)
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
