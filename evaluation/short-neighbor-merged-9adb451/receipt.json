@@ -1,0 +1,713 @@
+{
+  "schema": 1,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "revision": "9adb4512cb2151c1976b4a34ef15f1f222eb33a8",
+  "main_ancestor": "97d14d89e1d32f3c0f08233d687053d8c1a13bcc",
+  "supports_claims": [
+    4
+  ],
+  "status": "PARTIAL_VALIDATION_WORKSPACE_TIMEOUT",
+  "complete_workspace_qualified": false,
+  "performance_claim": false,
+  "untracked_evidence_during_checks": {
+    "evaluation/short-neighbor-c2696f8/README.md": "45478c59aa0dc2e65d89e11aec3bb8868c4b82e514d6d1dc001ed8dc4634edf5",
+    "evaluation/short-neighbor-c2696f8/receipt.json": "a2be705cbb81040c89f332d6966c0529badc18a37c3b80ce1ba244f2bdaa8b7c",
+    "evaluation/short-neighbor-c2696f8/tests.csv": "5e1aced1989b272e9fa2aac92ec8f5b1841cf74219836993a9cc28c05e07badd"
+  },
+  "tracked_source_clean": true,
+  "records": [
+    {
+      "name": "short-neighbor-merged-static-4447179",
+      "revision": "4447179325709bc16b60d6a0cbfd222369f9a172",
+      "cpus": [
+        157,
+        167,
+        188,
+        205
+      ],
+      "load_before": [
+        "31.96",
+        "32.29",
+        "34.57"
+      ],
+      "load_after": [
+        "38.71",
+        "34.05",
+        "35.06"
+      ],
+      "owner_receipt_sha256": "e8a689f96b4ead3ac530512a4640d55f7145f2cddb6183c794bc8a1f9b88186c",
+      "owner_closed": {
+        "start_utc": "2026-10-29T23:03:33.255610+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 47.90254067303613,
+        "private_log_sha256": "fc41a7fe7e9401d425903c4e1e358e446dbfb4a0b340e4e069761bfe033f3d5d",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "commands": [
+        {
+          "name": "fmt",
+          "command": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:03:33.309711+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 8.134809331968427,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "31.96",
+            "32.29",
+            "34.57"
+          ],
+          "load_after": [
+            "33.01",
+            "32.50",
+            "34.63"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        },
+        {
+          "name": "clippy",
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:03:41.445170+00:00",
+            "exit_code": 101,
+            "termination": null,
+            "seconds": 12.445501341018826,
+            "private_log_sha256": "cf368c28a3713e3051f13f77ac006aa061e39a0a0c5637e557bc1f288e12f1a8",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "33.01",
+            "32.50",
+            "34.63"
+          ],
+          "load_after": [
+            "35.47",
+            "33.11",
+            "34.79"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "FAILED"
+        },
+        {
+          "name": "check",
+          "command": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:03:53.891451+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 27.205575951142237,
+            "private_log_sha256": "d41dfabb7ded7ce393f7306f1564f939c33f50e24660a61a53f9a2484fd082c0",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "35.47",
+            "33.11",
+            "34.79"
+          ],
+          "load_after": [
+            "38.71",
+            "34.05",
+            "35.06"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "name": "short-neighbor-merged-static-9adb451",
+      "revision": "9adb4512cb2151c1976b4a34ef15f1f222eb33a8",
+      "cpus": [
+        15,
+        64,
+        65,
+        72
+      ],
+      "load_before": [
+        "35.61",
+        "34.66",
+        "35.23"
+      ],
+      "load_after": [
+        "38.74",
+        "35.62",
+        "35.53"
+      ],
+      "owner_receipt_sha256": "cc110da37769f177487ca4206aa50ace687cb53fbbe1e8488948e7808749886a",
+      "owner_closed": {
+        "start_utc": "2026-10-29T23:05:34.795578+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 47.4010084529873,
+        "private_log_sha256": "d192e7e8daf12508ada15537971079857c455338909ddf2e306ae22d5a2e0495",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "commands": [
+        {
+          "name": "fmt",
+          "command": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:05:34.847499+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 8.028586802072823,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "35.61",
+            "34.66",
+            "35.23"
+          ],
+          "load_after": [
+            "35.62",
+            "34.69",
+            "35.23"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        },
+        {
+          "name": "clippy",
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:05:42.876548+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 36.29902965086512,
+            "private_log_sha256": "f657beaa36c355323c58a1e727fe9d7d113bca1bb37fbe1abe498ce3ec2d9e3f",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "35.62",
+            "34.69",
+            "35.23"
+          ],
+          "load_after": [
+            "39.06",
+            "35.63",
+            "35.53"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        },
+        {
+          "name": "check",
+          "command": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:06:19.176055+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 2.8961700189393014,
+            "private_log_sha256": "c2be9b29f679547b5aade3fe8393407550688cf3f827eeb87d8511afcac54171",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "39.06",
+            "35.63",
+            "35.53"
+          ],
+          "load_after": [
+            "38.74",
+            "35.62",
+            "35.53"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "name": "short-neighbor-merged-workspace-9adb451",
+      "revision": "9adb4512cb2151c1976b4a34ef15f1f222eb33a8",
+      "cpus": [
+        35,
+        103,
+        172,
+        203
+      ],
+      "load_before": [
+        "38.36",
+        "35.72",
+        "35.56"
+      ],
+      "load_after": [
+        "36.80",
+        "36.35",
+        "36.05"
+      ],
+      "owner_receipt_sha256": "9acbdd3d5fb5f6277567ad8c8818c84264db00d8552be53c600d6e42a48db714",
+      "owner_closed": {
+        "start_utc": "2026-10-29T23:06:45.317439+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 360.21224142005667,
+        "private_log_sha256": "d92cfb74ec1d50a4388cea7a73b9ab9f295240c0b59ffab9960890cf9fff1164",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "commands": [
+        {
+          "name": "workspace",
+          "command": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:06:45.376727+00:00",
+            "exit_code": -9,
+            "termination": "timeout",
+            "seconds": 360.09874466084875,
+            "private_log_sha256": "d8959527d230d1fed0a6630cc7df72757b0562460107686f912c0eb420c8c6c1",
+            "cleanup_complete": true,
+            "reaped_descendants": 5,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "38.36",
+            "35.72",
+            "35.56"
+          ],
+          "load_after": [
+            "36.80",
+            "36.35",
+            "36.05"
+          ],
+          "wall_limit_seconds": 360,
+          "output_cap": 8388608,
+          "status": "TIMEOUT"
+        }
+      ]
+    },
+    {
+      "name": "short-neighbor-merged-targeted-9adb451",
+      "revision": "9adb4512cb2151c1976b4a34ef15f1f222eb33a8",
+      "cpus": [
+        25,
+        200,
+        227,
+        314
+      ],
+      "load_before": [
+        "32.51",
+        "35.43",
+        "35.76"
+      ],
+      "load_after": [
+        "49.02",
+        "39.61",
+        "37.13"
+      ],
+      "owner_receipt_sha256": "787d1a72aef134cb40c290e10bd6e9dd4b860fe3fdf2971ff219fcecd7845485",
+      "owner_closed": {
+        "start_utc": "2026-10-29T23:13:26.001751+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 189.9345845079515,
+        "private_log_sha256": "6f4b4799f5e07508162b4749369f434344ef0584c6ff32df76cf19ed308467a0",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "commands": [
+        {
+          "name": "serial-launch",
+          "command": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--",
+            "--test-threads=1"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:13:26.056756+00:00",
+            "exit_code": 1,
+            "termination": null,
+            "seconds": 116.46279884502292,
+            "private_log_sha256": "ff5e8f4e45e2c7a66b2ee70e8f5306c42616ee9f791e6248e3eae602ef3503b6",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "32.51",
+            "35.43",
+            "35.76"
+          ],
+          "load_after": [
+            "39.30",
+            "36.05",
+            "35.87"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "FAILED"
+        },
+        {
+          "name": "staged-allocation",
+          "command": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--lib",
+            "staged_"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:15:22.520663+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 0.040050016017630696,
+            "private_log_sha256": "a738d6e823307fa061b92cd37c9db65fbe95c345d8653d3333d707f9efa042d4",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "39.30",
+            "36.05",
+            "35.87"
+          ],
+          "load_after": [
+            "39.30",
+            "36.05",
+            "35.87"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        },
+        {
+          "name": "prefixed-allocation",
+          "command": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--test",
+            "prefixed_pun_oracle"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:15:22.561286+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 1.421981975901872,
+            "private_log_sha256": "c241fa61049fcc506d54f165c53f74182e600e657138f2eefe3a37355d5262f5",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "39.30",
+            "36.05",
+            "35.87"
+          ],
+          "load_after": [
+            "39.30",
+            "36.05",
+            "35.87"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        },
+        {
+          "name": "inventory",
+          "command": [
+            "${PYTHON}",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "evaluation/admission",
+            "-p",
+            "test_main813_inventory.py",
+            "-v"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:15:23.984019+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 71.89428420504555,
+            "private_log_sha256": "3cac11a3d982b9f6108a493e243968d484b5ad9c11f6a19a1a59d196b7f1efea",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "39.30",
+            "36.05",
+            "35.87"
+          ],
+          "load_after": [
+            "49.02",
+            "39.61",
+            "37.13"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "name": "short-neighbor-merged-serial-9adb451",
+      "revision": "9adb4512cb2151c1976b4a34ef15f1f222eb33a8",
+      "cpus": [
+        85,
+        93,
+        181,
+        186
+      ],
+      "load_before": [
+        "42.45",
+        "38.79",
+        "36.92"
+      ],
+      "load_after": [
+        "45.17",
+        "40.28",
+        "37.64"
+      ],
+      "owner_receipt_sha256": "ea298209a1789d094703d57237221f167a49ca55a11b34b54577176311241f81",
+      "owner_closed": {
+        "start_utc": "2026-10-29T23:16:57.553136+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 127.58985410491005,
+        "private_log_sha256": "5a3f1eea16db639acda3454eef830b77ab6b361eb1cc86123b76d5420c96aabf",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "commands": [
+        {
+          "name": "serial-launch",
+          "command": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:16:57.607028+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 127.46350548113696,
+            "private_log_sha256": "cc63cdce8842e0c4ba4f6b336c4a8fe40366e42fa062653d6d2fb5598998f846",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "42.45",
+            "38.79",
+            "36.92"
+          ],
+          "load_after": [
+            "45.17",
+            "40.28",
+            "37.64"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "name": "short-neighbor-merged-receipts-9adb451",
+      "revision": "9adb4512cb2151c1976b4a34ef15f1f222eb33a8",
+      "cpus": [
+        27,
+        72,
+        92,
+        173
+      ],
+      "load_before": [
+        "47.89",
+        "41.34",
+        "38.10"
+      ],
+      "load_after": [
+        "47.89",
+        "41.34",
+        "38.10"
+      ],
+      "owner_receipt_sha256": "3b524659dc13a714f40a4fa4913006d1f59088a2673bb1d85a5d100500c59c1b",
+      "owner_closed": {
+        "start_utc": "2026-10-29T23:19:46.432498+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.33205553400330245,
+        "private_log_sha256": "5b9032b8f05fcfd868cc7d39f539801f734f6b4739f94a028809811b034ecca7",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "commands": [
+        {
+          "name": "parse",
+          "command": [
+            "${PYTHON}",
+            "-B",
+            "${REPO}/ignored/a3/short-neighbor-merged-receipts-9adb451/parse.py"
+          ],
+          "result": {
+            "start_utc": "2026-10-29T23:19:46.490375+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 0.22486059903167188,
+            "private_log_sha256": "f2bfa56366b418b202394654b629d34a3ba3044b05c9c6b414b68effd625bd32",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "47.89",
+            "41.34",
+            "38.10"
+          ],
+          "load_after": [
+            "47.89",
+            "41.34",
+            "38.10"
+          ],
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "status": "PASS"
+        }
+      ]
+    }
+  ],
+  "workspace": {
+    "status": "TIMEOUT",
+    "complete_libtest_harnesses": 69,
+    "completed_outer_passes": 1992,
+    "completed_outer_ignores": 1,
+    "additional_neighbor_pass_observations": 80,
+    "total_completed_pass_observations": 2072,
+    "reported_failed_tests": 0,
+    "neighbor_harness_complete": false,
+    "new_short_tests_observed": 0,
+    "parse_errors": {
+      "precontext_native_parse_error": "missing_precontext_harness",
+      "parse_error": "missing_outer_summary"
+    },
+    "backing_cleanup_status": "complete"
+  },
+  "serial_launch": {
+    "status": "PASS",
+    "libtest_harnesses": 27,
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "protocol": "complete",
+    "field_counts": {
+      "native_cases": 50,
+      "dynamic_admission_fixtures": 15,
+      "dynamic_matrix_cases": 388,
+      "native_validation_fixtures": 110,
+      "backing_cleanup_harnesses": 1
+    }
+  },
+  "focused": {
+    "staged_allocation_passes": 3,
+    "prefixed_oracle_passes": 36,
+    "inventory_controls_passed": 5
+  },
+  "prior_failures": {
+    "clippy_4447179": "needless_range_loop in new test; same byte comparisons now use enumerate, no lint exemption",
+    "serial_first_attempt": "Omitted --nocapture required by ordinary-main cleanup helper; failed command retained; corrected tracked command includes --tests -- --test-threads=1 --nocapture",
+    "full_recorder": "Prior 180-second timeout remains; latest five inventory controls do not substitute for all 350"
+  },
+  "native_result": "../short-neighbor-c2696f8/receipt.json",
+  "native_source_unchanged": {
+    "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a",
+    "tests/neighbor_eviction_oracle.rs": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc",
+    "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f"
+  },
+  "reviews": {
+    "neighbor-short-main97-inventory-review-v1": "f4ffafbca0f20c285e59c4790654a2e094f09ddfa4dbcf108e743dc092d615ab",
+    "neighbor-short-style-review-v1": "778363e623ff05b24de7a66906254df1b23925b75c3c157ca3c312cc1d1be481"
+  },
+  "tool_hashes": {
+    "cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "python": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b",
+    "rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+  },
+  "reproduction": "evaluation/admission/run.py --expect-revision 9adb4512cb2151c1976b4a34ef15f1f222eb33a8"
+}
