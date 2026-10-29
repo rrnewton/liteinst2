@@ -5,6 +5,27 @@ static void np_report_array(struct writer *w,const char *key,const uint64_t *val
     for(size_t i=0;i<n;i++){if(i)text(w,",");number(w,values[i]);}
     text(w,"]");
 }
+#ifdef LI2_COST_PROFILE
+static void selected_cost_report(unsigned status,unsigned code,long detail,
+                                 const struct li2_native_pair_cost *c,
+                                 const struct li2_maps_stats *m) {
+    /* Both snapshots precede the first terminal report write. No hot-path
+       clock/syscall is added. This new row never qualifies the old rows. */
+    struct writer w={0};text(&w,"LI2_COST {\"version\":1,\"scope\":\"native_pair_existing_admission_clocks\"");
+    field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+    field(&w,",\"detail_negative\":",detail<0);
+    field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
+    field(&w,",\"clock_id\":",4);
+    const uint64_t admission[]={c->initialized,c->valid,c->busy,c->overflow,
+        c->count,c->sum_ns,c->min_ns,c->max_ns};
+    const uint64_t maps[]={m->fresh_calls,m->acquisitions,m->reuses,m->invalidations,
+        m->handler_id,m->mutation_epoch,m->active,m->valid,m->poisoned,m->reserved};
+    _Static_assert(18*21+512<4096,"bounded diagnostic counter row");
+    np_report_array(&w,",\"admission\":",admission,sizeof admission/sizeof admission[0]);
+    np_report_array(&w,",\"maps\":",maps,sizeof maps/sizeof maps[0]);
+    text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+}
+#endif
 static void selected_native_pair_report(unsigned status,unsigned code,long detail) {
     const struct li2_native_pair_progress *p=li2_native_pair_progress();
     const struct li2_native_pair_lifecycle *l=li2_lifecycle_pair_progress();

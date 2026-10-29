@@ -94,6 +94,20 @@ void li2_native_pair_abort(unsigned,long);
 const struct li2_native_pair_progress *li2_native_pair_progress(void);
 const struct li2_native_pair_lifecycle *li2_lifecycle_pair_progress(void);
 const struct li2_rseq_pair_progress *li2_rseq_pair_progress(void);
+#ifdef LI2_COST_PROFILE
+#if LI2_COST_PROFILE != 1
+#error "cost profile is an explicit diagnostic opt-in"
+#endif
+/* Diagnostic only. These fields are never read by an execution owner.
+   count/sum/min/max cover only successful prepare-to-publication intervals
+   already measured by native_clock, not ingress, native execution or close.
+   valid is computed by the snapshot against actual publication counts. */
+struct li2_native_pair_cost {
+    uint64_t count,sum_ns,min_ns,max_ns;
+    unsigned initialized,valid,busy,overflow;
+};
+void li2_lifecycle_pair_cost_snapshot(struct li2_native_pair_cost *);
+#endif
 /* Fixed linked cross-TU seams. Exact private owner pointer + current stage
    checked independently in each module; parameters are never authority. */
 int li2_native_pair_owner_check(const struct li2_native_pair_owner *,unsigned phase);

@@ -5,6 +5,28 @@ static struct li2_native_pair_lifecycle np_life;
 static struct owned_page np_original[LI2_NATIVE_PAIR_SLOTS];
 static unsigned char np_disk[LI2_NATIVE_PAIR_WINDOW];
 static uint64_t np_started;
+#ifdef LI2_COST_PROFILE
+static struct li2_native_pair_cost np_cost;
+static void np_cost_add(uint64_t ns) {
+    if(!np_cost.initialized || np_cost.overflow)return;
+    np_cost.busy=1;__asm__ volatile("":::"memory");
+    if(np_cost.count==UINT64_MAX || ns>UINT64_MAX-np_cost.sum_ns) {
+        /* Keep the last representable tuple; never wrap or change the route. */
+        np_cost.overflow=1;
+    } else {
+        if(!np_cost.count || ns<np_cost.min_ns)np_cost.min_ns=ns;
+        if(ns>np_cost.max_ns)np_cost.max_ns=ns;
+        np_cost.sum_ns+=ns;++np_cost.count;
+    }
+    __asm__ volatile("":::"memory");np_cost.busy=0;
+}
+void li2_lifecycle_pair_cost_snapshot(struct li2_native_pair_cost *out) {
+    if(!out)return;
+    *out=np_cost;
+    out->valid=out->initialized && np_life.initialized && !out->busy && !out->overflow &&
+        out->count==np_life.published && out->count==native_counts.admissions;
+}
+#endif
 const struct li2_native_pair_lifecycle *li2_lifecycle_pair_progress(void) { return &np_life; }
 static int np_life_bad(unsigned code,long detail) {
     if(!np_life.first_error){np_life.first_error=code;np_life.first_detail=detail;}
@@ -36,6 +58,9 @@ int li2_lifecycle_pair_initialize(const struct li2_native_pair_owner *o) {
         return np_life_bad(LI2_NP_STATE,0);
     for(size_t i=0;i<used;i++)if(records[i].live && records[i].admitted)
         return np_life_bad(LI2_NP_STATE,1);
+#ifdef LI2_COST_PROFILE
+    np_cost.initialized=1;
+#endif
     np_life.owner=o;np_life.initialized=1;return 0;
 }
 /* The entire actual admitted set must equal the owner's retained identities.
@@ -194,6 +219,9 @@ int li2_lifecycle_pair_publish(const struct li2_native_pair_owner *o,uintptr_t p
     if(read_maps_checked(&e,&np_life.after))return np_life_check(&e);
     if(np_life_set() || np_life_validate_live())return (int)np_life.first_error;
     uint64_t ended=native_clock();if(ended<np_started)return np_life_bad(LI2_NP_STATE,5);
+#ifdef LI2_COST_PROFILE
+    np_cost_add(ended-np_started);
+#endif
     if(native_counts.admissions==1) {
         native_counts.first_admission_ns=ended-np_started;native_counts.first_source_offset=p->offset;
         native_timed_page=p->address;native_timed_allocation=p->allocation;native_timed_generation=p->generation;
