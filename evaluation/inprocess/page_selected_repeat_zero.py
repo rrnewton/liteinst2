@@ -102,7 +102,7 @@ def body(path,nm_text,disassembly,wrapper,helper):
                 else:
                     need(op=='jmp'and symbol in functions and destination==functions[symbol]['value'],'only local helper tail');pending.append(symbol);edges.append((name,symbol))
                 continue
-            need(op in ('mov','movzbl','movzbq','cmp','cmpb','cmpq','test','testb','testq','add','sub','and','xor','lea','nop','nopl','nopw','xchg','sete','setne'),
+            need(op in ('mov','movzbl','movzbq','cmp','cmpb','cmpq','test','testb','testq','add','sub','and','or','xor','lea','nop','nopl','nopw','xchg','sete','setne'),
                  'only ordinary integer equality operations, no call/string/vector/privileged effects')
             if op in ('nop','nopl','nopw'):continue
             args=operands(args)
@@ -118,12 +118,16 @@ def body(path,nm_text,disassembly,wrapper,helper):
                 need(args[-1].startswith('%'),'no memory-writing helper instruction')
                 need(re.fullmatch(r'%(?:[re]?(?:bx|bp|sp)|b[lh]|bpl|spl|r(?:1[2-5])(?:d|w|b)?)',args[-1])is None,
                      'callee-saved registers and actual stack pointer untouched')
+            if op=='or':
+                need(len(args)==2 and re.fullmatch('%'+reg64,args[1])is not None and
+                     (re.fullmatch('%'+reg64,args[0])is not None or re.fullmatch(address,args[0])is not None),
+                     'only exact 64-bit read-only OR reduction into a GPR')
             if op=='xchg':need(len(args)==2 and args[0]==args[1],'only actual register self-exchange padding')
             memory=[x for x in args if '('in x]
             if not memory or op=='lea':continue
-            need(op in ('mov','movzbl','movzbq','cmp','cmpb','cmpq')and len(args)==2 and len(memory)==1 and
+            need(op in ('mov','movzbl','movzbq','cmp','cmpb','cmpq','or')and len(args)==2 and len(memory)==1 and
                  not re.search(r'%(?:rip|eip|rsp|rbp|fs|gs)',memory[0]),'only input-register addressing')
-            if op.startswith('mov'):need(memory[0]==args[0],'load, never store')
+            if op.startswith('mov')or op=='or':need(memory[0]==args[0],'load, never store')
             register=next(x for x in args if x not in memory)
             if register.startswith('$'):
                 need(register in ('$0','$0x0')and op in ('cmpb','cmpq')and memory[0]==args[1],

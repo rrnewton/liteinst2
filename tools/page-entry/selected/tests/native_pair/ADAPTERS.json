@@ -4,12 +4,12 @@
     {
       "name": "runtime_loader.c",
       "before": {
-        "bytes": 38806,
-        "sha256": "fc3994d27b98c85227eb685993f62c0248819e235d2ebd03beaf4978b27d8c11"
+        "bytes": 39243,
+        "sha256": "33fa6699e7626869a878f9b245e1a44a64c21b53ff4afcb6d4900762c722fb2f"
       },
       "after": {
-        "bytes": 39015,
-        "sha256": "d5ac24127713ba31ca62d06d7fcd5d05d55a314365d3e70b51679e93ffe086a3"
+        "bytes": 39452,
+        "sha256": "98df75b3542f054d63e232ff4eb5dfefcd9d909d1a389017ea15c1ffec6823df"
       },
       "operations": [
         {
@@ -141,12 +141,12 @@
     {
       "name": "native_pair_lifecycle.inc",
       "before": {
-        "bytes": 14527,
-        "sha256": "9c59593ee0d783d516a947d05a704c063c3633e8e3dc15acec9fcc6b2501541c"
+        "bytes": 15564,
+        "sha256": "4784dc61ce918eb6592aca2b054b171f0399124ba11f312391d4e8d12d1fc2a5"
       },
       "after": {
-        "bytes": 15844,
-        "sha256": "9d5b8f94c69343e81ad5b0ef8767b7601c009bdfc092478c84988c20e9164458"
+        "bytes": 16881,
+        "sha256": "1e80bac5220e247172194fe1948b5729bf396ca60cc1b7df68eefdf887155d8d"
       },
       "operations": [
         {
