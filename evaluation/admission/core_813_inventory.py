@@ -8,10 +8,11 @@ import re
 
 from parsing import require
 import inventory_syntax
+import inventory_digest
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'b493e5ef510147bc73ea07249370df3f9eb53c31202a8e9e443ccdc061718a6b', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == 'b493e5ef510147bc73ea07249370df3f9eb53c31202a8e9e443ccdc061718a6b', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -47,7 +48,7 @@ RECORDER_TESTS = 350
 
 
 def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+    return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())
 
 
 def source_before_83b(path, data, error):
@@ -55,13 +56,13 @@ def source_before_83b(path, data, error):
     if path not in MAIN83B['projections']:
         return data
     row = MAIN83B['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -71,7 +72,7 @@ def require_83b_sources(error='main83b_source_inventory_differs'):
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN83B['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN83B['methods'][path]
@@ -87,7 +88,7 @@ def require_83b_sources(error='main83b_source_inventory_differs'):
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN83B['python_metadata']
     raw = (ROOT / metadata['path']).read_bytes()
-    require(hashlib.sha256(raw).hexdigest() == MAIN83B['sources'][metadata['path']], error)
+    require(inventory_digest.hexdigest(raw) == MAIN83B['sources'][metadata['path']], error)
     require(len(metadata['assignment_sources']) == len(metadata['assignments']) == 5, error)
     snippets = []
     for start, end, literal in metadata['assignment_sources']:
@@ -130,13 +131,13 @@ def source_before_abab(path, data, error):
     if path not in MAINABAB['projections']:
         return data
     row = MAINABAB['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -148,7 +149,7 @@ def require_abab_sources(error='mainabab_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_83b(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINABAB['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAINABAB['methods'][path]
@@ -165,7 +166,7 @@ def require_abab_sources(error='mainabab_source_inventory_differs'):
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAINABAB['python_metadata']
     raw = source_before_83b(metadata['path'], (ROOT / metadata['path']).read_bytes(), error)
-    require(hashlib.sha256(raw).hexdigest() == MAINABAB['sources'][metadata['path']], error)
+    require(inventory_digest.hexdigest(raw) == MAINABAB['sources'][metadata['path']], error)
     require(len(metadata['assignment_sources']) == len(metadata['assignments']) == 5, error)
     snippets = []
     for start, end, literal in metadata['assignment_sources']:
@@ -210,13 +211,13 @@ def source_before_727(path, data, error):
     if path not in MAIN727['projections']:
         return data
     row = MAIN727['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -228,7 +229,7 @@ def require_727_sources(error='main727_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_abab(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN727['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN727['methods'][path]
@@ -245,7 +246,7 @@ def require_727_sources(error='main727_source_inventory_differs'):
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN727['python_metadata']
     raw = source_before_abab(metadata['path'], (ROOT / metadata['path']).read_bytes(), error)
-    require(hashlib.sha256(raw).hexdigest() == MAIN727['sources'][metadata['path']], error)
+    require(inventory_digest.hexdigest(raw) == MAIN727['sources'][metadata['path']], error)
     require(len(metadata['assignment_sources']) == len(metadata['assignments']) == 5, error)
     snippets = []
     for start, end, literal in metadata['assignment_sources']:
@@ -290,13 +291,13 @@ def source_before_09fe(path, data, error):
     if path not in MAIN09FE['projections']:
         return data
     row = MAIN09FE['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -308,7 +309,7 @@ def require_09fe_sources(error='main09fe_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_727(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN09FE['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN09FE['methods'][path]
@@ -362,13 +363,13 @@ def source_before_0a8(path, data, error):
     if path not in MAIN0A8['projections']:
         return data
     row = MAIN0A8['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -380,7 +381,7 @@ def require_0a8_sources(error='main0a8_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_09fe(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN0A8['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN0A8['methods'][path]
@@ -434,13 +435,13 @@ def source_before_0df8(path, data, error):
     if path not in MAIN0DF8['projections']:
         return data
     row = MAIN0DF8['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -452,7 +453,7 @@ def require_0df8_sources(error='main0df8_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_0a8(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN0DF8['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN0DF8['methods'][path]
@@ -506,13 +507,13 @@ def source_before_43d7(path, data, error):
     if path not in MAIN43D7['projections']:
         return data
     row = MAIN43D7['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -524,7 +525,7 @@ def require_43d7_sources(error='main43d7_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_0df8(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN43D7['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN43D7['methods'][path]
@@ -576,13 +577,13 @@ def source_before_7cdc(path, data, error):
     if path not in MAIN7CDC['projections']:
         return data
     row = MAIN7CDC['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -594,7 +595,7 @@ def require_7cdc_sources(error='main7cdc_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_43d7(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN7CDC['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN7CDC['methods'][path]
@@ -630,13 +631,13 @@ def source_before_f0ef(path, data, error):
     if path not in MAINF0EF['projections']:
         return data
     row = MAINF0EF['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -648,7 +649,7 @@ def require_f0ef_sources(error='mainf0ef_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_7cdc(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINF0EF['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAINF0EF['methods'][path]
@@ -684,13 +685,13 @@ def source_before_e797(path, data, error):
     if path not in MAINE797['projections']:
         return data
     row = MAINE797['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -702,7 +703,7 @@ def require_e797_sources(error='maine797_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_f0ef(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINE797['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAINE797['methods'][path]
@@ -742,13 +743,13 @@ def source_before_c1(path, data, error):
     if path not in MAINC1['projections']:
         return data
     row = MAINC1['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -760,7 +761,7 @@ def require_c1_sources(error='mainc1_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_e797(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINC1['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAINC1['methods'][path]
@@ -793,13 +794,13 @@ def source_before_c0(path, data, error):
     if path not in MAINC0['projections']:
         return data
     row = MAINC0['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -811,7 +812,7 @@ def require_c0_sources(error='mainc0_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_c1(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINC0['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAINC0['methods'][path]
@@ -844,13 +845,13 @@ def source_before_690(path, data, error):
     if path not in MAIN690['projections']:
         return data
     row = MAIN690['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -862,7 +863,7 @@ def require_690_sources(error='main690_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_c0(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN690['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = MAIN690['methods'][path]
@@ -895,13 +896,13 @@ def source_before(path, data, error):
     if path not in DATA['projections']:
         return data
     row = DATA['projections'][path]
-    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
         data = data[:start] + old.encode() + data[end:]
         last = start
-    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
@@ -913,7 +914,7 @@ def require_sources(error='main813_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_690(path, raw, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
         if path in DATA['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = DATA['methods'][path]

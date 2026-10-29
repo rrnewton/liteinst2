@@ -46,6 +46,101 @@ class Main813InventoryTests(unittest.TestCase):
         return protocol.separate(raw, [protocol.specification()], succeeded)
 
     def test_exact_inventory_sources_docs_and_historical_denominators(self):
+        # Cache only pure bytes-to-digest work; expectations and reads stay live.
+        digest = main813.inventory_digest.hexdigest
+        cache = main813.inventory_digest._hexdigest
+        original_sha256 = hashlib.sha256
+        cache.cache_clear()
+        for raw in (b'', b'inventory', b'\x00\xff'):
+            expected = original_sha256(raw).hexdigest()
+            self.assertEqual(digest(raw), expected)
+            self.assertEqual(digest(raw), expected)
+            self.assertEqual(digest(raw + b'!'), original_sha256(raw + b'!').hexdigest())
+        self.assertEqual(cache.cache_info().hits, 3)
+        mutable = bytearray(b'first')
+        before = cache.cache_info()
+        self.assertEqual(digest(mutable), original_sha256(mutable).hexdigest())
+        mutable[0] = ord('F')
+        self.assertEqual(digest(mutable), original_sha256(mutable).hexdigest())
+        self.assertEqual(digest(memoryview(mutable)), original_sha256(mutable).hexdigest())
+        class BytesSubclass(bytes):
+            pass
+        self.assertEqual(digest(BytesSubclass(b'inventory')),
+                         original_sha256(b'inventory').hexdigest())
+        self.assertEqual(cache.cache_info(), before)
+        for invalid in (None, 1, 'text', [1]):
+            with self.assertRaises(TypeError):
+                digest(invalid)
+        with patch.object(hashlib, 'sha256', side_effect=[original_sha256(b'a'),
+                original_sha256(b'b'), ValueError('live hash failure')]) as changed_hash:
+            self.assertEqual(digest(b'inventory'), original_sha256(b'a').hexdigest())
+            self.assertEqual(digest(b'inventory'), original_sha256(b'b').hexdigest())
+            with self.assertRaisesRegex(ValueError, '^live hash failure$'):
+                digest(b'inventory')
+            self.assertEqual(changed_hash.call_count, 3)
+        class UnhashableHash:
+            __hash__ = None
+            def __call__(self, raw):
+                return original_sha256(raw + b'changed')
+        with patch.object(hashlib, 'sha256', UnhashableHash()):
+            self.assertEqual(digest(b'inventory'), original_sha256(b'inventorychanged').hexdigest())
+        self.assertEqual(digest(b'inventory'), original_sha256(b'inventory').hexdigest())
+        # A replacement present before importing the helper is never trusted.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('_inventory_digest_preimport',
+            main813.inventory_digest.__file__)
+        fresh = importlib.util.module_from_spec(spec)
+        with patch.object(hashlib, 'sha256', side_effect=[original_sha256(b'a'),
+                original_sha256(b'b'), ValueError('preimport hash failure')]) as changed_hash:
+            spec.loader.exec_module(fresh)
+            self.assertEqual(fresh.hexdigest(b'inventory'), original_sha256(b'a').hexdigest())
+            self.assertEqual(fresh.hexdigest(b'inventory'), original_sha256(b'b').hexdigest())
+            with self.assertRaisesRegex(ValueError, '^preimport hash failure$'):
+                fresh.hexdigest(b'inventory')
+            self.assertEqual(changed_hash.call_count, 3)
+        self.assertEqual(fresh._hexdigest.cache_info().currsize, 0)
+        self.assertEqual(fresh.hexdigest(b'inventory'), original_sha256(b'inventory').hexdigest())
+        self.assertEqual(fresh.hexdigest(b'inventory'), original_sha256(b'inventory').hexdigest())
+        with patch.object(hashlib, 'sha256', side_effect=[original_sha256(b'c'),
+                original_sha256(b'd'), ValueError('warm hash failure')]) as changed_hash:
+            self.assertEqual(fresh.hexdigest(b'inventory'), original_sha256(b'c').hexdigest())
+            self.assertEqual(fresh.hexdigest(b'inventory'), original_sha256(b'd').hexdigest())
+            with self.assertRaisesRegex(ValueError, '^warm hash failure$'):
+                fresh.hexdigest(b'inventory')
+            self.assertEqual(changed_hash.call_count, 3)
+        self.assertEqual(fresh.hexdigest(b'inventory'), original_sha256(b'inventory').hexdigest())
+        value = {'nested': [1]}
+        first = main813.digest(value)
+        value['nested'][0] = 2
+        self.assertNotEqual(main813.digest(value), first)
+        expected = original_sha256(json.dumps(value, sort_keys=True,
+            separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+        self.assertEqual(main813.digest(value), expected)
+        with patch.object(main813.json, 'dumps', side_effect=['1', '2']) as serialize:
+            self.assertEqual(main813.digest(value), original_sha256(b'1').hexdigest())
+            self.assertEqual(main813.digest(value), original_sha256(b'2').hexdigest())
+            self.assertEqual(serialize.call_count, 2)
+        with self.assertRaises(ValueError):
+            main813.digest(float('nan'))
+        with self.assertRaises(TypeError):
+            main813.digest(object())
+        path, row = next(iter(main813.MAIN83B['projections'].items()))
+        raw = (main813.ROOT / path).read_bytes()
+        for _ in range(2):
+            restored = main813.source_before_83b(path, raw, 'digest_control')
+            self.assertEqual(original_sha256(restored).hexdigest(), row['previous_sha256'])
+        for name in ('current_sha256', 'previous_sha256'):
+            with patch.dict(row, {name: '0' * 64}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^digest_control$'):
+                    main813.source_before_83b(path, raw, 'digest_control')
+        for changed in (raw + b'\n', raw[:-1], restored):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^digest_control$'):
+                main813.source_before_83b(path, changed, 'digest_control')
+        for i in range(513):
+            digest(str(i).encode())
+        self.assertEqual(cache.cache_info().currsize, 512)
+        cache.cache_clear()
+
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
         actual = copy.deepcopy(declared)
