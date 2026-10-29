@@ -1,6 +1,6 @@
 /* Fixture-only gateway and supplied counter controls. No production setter. */
 #define li2_step_raw li2_reuse_control_raw
-#include "../../../register_run_publish.c"
+#include "../../register_run_publish.c"
 void li2_reuse_supplied_counter(unsigned mode) {
     if(mode==20)cache.reuse.generation=UINT64_MAX;
     else if(mode==21)cache.diagnostic.attempts=UINT64_MAX;
