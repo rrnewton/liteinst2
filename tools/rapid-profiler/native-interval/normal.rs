@@ -26,6 +26,7 @@ use caller_bytes::Request;
 mod check;
 pub(super) mod csv;
 pub(super) mod exact;
+pub(super) mod module;
 pub(super) mod reference;
 use check::{Facts, rows_match};
 use oracle::native_ordinary::strnlen::{Arguments, CASES, Deadline, LABEL, SEEDS, cases};

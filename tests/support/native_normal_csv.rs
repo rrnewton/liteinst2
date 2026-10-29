@@ -64,12 +64,12 @@ pub(super) fn profile(seed: u64, case: Case, extent: usize) {
     assert!((5..=256).contains(&extent), "CSV certified extent");
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct Graph {
-    heads: BTreeSet<u64>,
-    edges: BTreeSet<(u64, u64)>,
-    returns: BTreeSet<u64>,
+pub(super) struct Graph {
+    pub(super) heads: BTreeSet<u64>,
+    pub(super) edges: BTreeSet<(u64, u64)>,
+    pub(super) returns: BTreeSet<u64>,
 }
-fn graph(code: &[u8]) -> Graph {
+pub(super) fn graph(code: &[u8]) -> Graph {
     assert!((5..=256).contains(&code.len()));
     // Relative IPs make declared geometry stable across fresh child mappings.
     let mut decoder = Decoder::with_ip(64, code, 0, DecoderOptions::NONE);
@@ -141,6 +141,23 @@ pub(super) fn validate_ready(
     );
     maps
 }
+pub(super) fn validate_geometry(entry: u64, heads: &[u64], returns: &[u64], code: &[u8]) {
+    let declared = graph(code);
+    assert_eq!(
+        heads
+            .iter()
+            .map(|p| p.checked_sub(entry).unwrap())
+            .collect::<BTreeSet<_>>(),
+        declared.heads
+    );
+    assert_eq!(
+        returns
+            .iter()
+            .map(|p| p.checked_sub(entry).unwrap())
+            .collect::<BTreeSet<_>>(),
+        declared.returns
+    );
+}
 #[derive(Clone, Debug)]
 pub struct BodyTrace {
     pub entry: u64,
@@ -148,29 +165,36 @@ pub struct BodyTrace {
     pub ret_offset: u64,
     pub heads: BTreeSet<u64>,
     pub edges: BTreeSet<(u64, u64)>,
-    code: Vec<u8>,
-    declared: Graph,
+    pub(super) code: Vec<u8>,
+    pub(super) declared: Graph,
 }
 #[derive(Clone, Debug)]
 pub struct Trace {
     pub bodies: [BodyTrace; 2],
 }
 pub(super) fn inspect(case: Case, ready: &NormalReady, body: OriginalBody<'_>) -> BodyTrace {
-    assert_eq!(body.entry, ready.entry);
+    inspect_geometry(case, ready.entry, &ready.heads, &ready.returns, body)
+}
+pub(super) fn inspect_geometry(
+    case: Case,
+    entry: u64,
+    heads: &[u64],
+    returns: &[u64],
+    body: OriginalBody<'_>,
+) -> BodyTrace {
+    assert_eq!(body.entry, entry);
     assert_eq!(body.input, &case.input()[..case.length()]);
     assert!(!body.steps.is_empty() && body.steps.len() <= MAX_STEPS);
     let declared = graph(body.code);
     assert_eq!(
-        ready
-            .heads
+        heads
             .iter()
             .map(|p| p.checked_sub(body.entry).unwrap())
             .collect::<BTreeSet<_>>(),
         declared.heads
     );
     assert_eq!(
-        ready
-            .returns
+        returns
             .iter()
             .map(|p| p.checked_sub(body.entry).unwrap())
             .collect::<BTreeSet<_>>(),

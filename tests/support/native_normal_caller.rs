@@ -6,46 +6,55 @@ use iced_x86::{Decoder, DecoderOptions, FlowControl};
 pub mod caller_bytes;
 #[path = "native_normal_csv.rs"]
 pub mod csv;
+#[path = "native_normal_module.rs"]
+pub mod module;
+use module::WalkReady;
 #[path = "native_normal_reference.rs"]
 pub mod reference;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum CallerProfile {
     Legacy,
     Reference,
+    Module,
 }
 impl CallerProfile {
     fn bytes(self) -> &'static [u8] {
         match self {
             Self::Legacy => BYTES,
             Self::Reference => reference::bytes::BYTES,
+            Self::Module => module::bytes::BYTES,
         }
     }
     fn heads(self) -> &'static [u64] {
         match self {
             Self::Legacy => HEADS,
             Self::Reference => reference::bytes::HEADS,
+            Self::Module => module::bytes::HEADS,
         }
     }
-    fn calls(self) -> [u64; 2] {
+    fn calls(self) -> &'static [u64] {
         match self {
-            Self::Legacy => CALLS,
-            Self::Reference => reference::bytes::CALLS,
+            Self::Legacy => &CALLS,
+            Self::Reference => &reference::bytes::CALLS,
+            Self::Module => &module::bytes::CALLS,
         }
     }
-    fn continuations(self) -> [u64; 2] {
+    fn continuations(self) -> &'static [u64] {
         match self {
-            Self::Legacy => CONTINUATIONS,
-            Self::Reference => reference::bytes::CONTINUATIONS,
+            Self::Legacy => &CONTINUATIONS,
+            Self::Reference => &reference::bytes::CONTINUATIONS,
+            Self::Module => &module::bytes::CONTINUATIONS,
         }
     }
     fn outer_ret(self) -> u64 {
         match self {
             Self::Legacy => OUTER_RET,
             Self::Reference => reference::bytes::OUTER_RET,
+            Self::Module => module::bytes::OUTER_RET,
         }
     }
     fn compare(self, offset: u64) -> bool {
-        self == Self::Legacy || reference::bytes::RESTORED_HEADS.contains(&offset)
+        self != Self::Reference || reference::bytes::RESTORED_HEADS.contains(&offset)
     }
 }
 use super::strnlen::{CASES, Case, Deadline, SEEDS};
@@ -56,69 +65,74 @@ impl CallerProfile {
     fn call_before(
         self,
         r: &libc::user_regs_struct,
-        ready: &NormalReady,
+        ready: &WalkReady,
         index: usize,
         rsp: u64,
         data: u64,
         bound: usize,
     ) {
         match self {
-            Self::Legacy => call_before(r, ready, index, rsp, data, bound),
-            Self::Reference => reference::call_before(r, ready, index, rsp, data, bound),
+            Self::Legacy => call_before(r, ready.single(), index, rsp, data, bound),
+            Self::Reference => reference::call_before(r, ready.single(), index, rsp, data, bound),
+            Self::Module => module::call_before(r, ready.module(), index, rsp, data, bound),
         }
     }
     fn call_after(
         self,
         r: &libc::user_regs_struct,
-        ready: &NormalReady,
+        ready: &WalkReady,
         index: usize,
         rsp: u64,
         word: u64,
     ) {
         match self {
-            Self::Legacy => call_after(r, ready, index, rsp, word),
-            Self::Reference => reference::call_after(r, ready, index, rsp, word),
+            Self::Legacy => call_after(r, ready.single(), index, rsp, word),
+            Self::Reference => reference::call_after(r, ready.single(), index, rsp, word),
+            Self::Module => module::call_after(r, ready.module(), index, rsp, word),
         }
     }
     fn ret_before(
         self,
         r: &libc::user_regs_struct,
-        ready: &NormalReady,
+        ready: &WalkReady,
         index: usize,
         rsp: u64,
         value: u64,
         word: u64,
     ) {
         match self {
-            Self::Legacy => ret_before(r, ready, index, rsp, value, word),
-            Self::Reference => reference::ret_before(r, ready, index, rsp, value, word),
+            Self::Legacy => ret_before(r, ready.single(), index, rsp, value, word),
+            Self::Reference => reference::ret_before(r, ready.single(), index, rsp, value, word),
+            Self::Module => module::ret_before(r, ready.module(), index, rsp, value, word),
         }
     }
     fn ret_after(
         self,
         r: &libc::user_regs_struct,
-        ready: &NormalReady,
+        ready: &WalkReady,
         index: usize,
         rsp: u64,
         value: u64,
         word: u64,
     ) {
         match self {
-            Self::Legacy => ret_after(r, ready, index, rsp, value, word),
-            Self::Reference => reference::ret_after(r, ready, index, rsp, value, word),
+            Self::Legacy => ret_after(r, ready.single(), index, rsp, value, word),
+            Self::Reference => reference::ret_after(r, ready.single(), index, rsp, value, word),
+            Self::Module => module::ret_after(r, ready.module(), index, rsp, value, word),
         }
     }
     fn journal_words(
         self,
-        ready: &NormalReady,
+        ready: &WalkReady,
         mode: Mode,
         pid: u64,
         rsp: u64,
         returns: &[u64],
     ) -> [u64; 512] {
         match self {
-            Self::Legacy => journal_words(ready, mode, pid, rsp, returns),
-            Self::Reference => reference::journal_words(ready, mode, pid, rsp, returns),
+            Self::Legacy => journal_words(ready.single(), mode, pid, rsp, returns),
+            Self::Reference => reference::journal_words(ready.single(), mode, pid, rsp, returns),
+            Self::Module => module::journal_words(ready.module(), pid, rsp, returns, true),
         }
     }
 }
@@ -696,6 +710,7 @@ pub struct NormalOracle {
     deadline: Deadline,
     mode: Mode,
     reference: Option<reference::Cells>,
+    module: Option<module::Case>,
 }
 pub struct NormalContext<'a> {
     oracle: &'a NormalOracle,
@@ -772,6 +787,7 @@ impl NormalContext<'_> {
         }
     }
     pub fn ready(self, ready: &NormalReady) {
+        assert!(self.oracle.module.is_none());
         assert!(self.oracle.reference.is_none() && self.output.is_none());
         assert!(
             self.control.is_none(),
@@ -820,7 +836,10 @@ impl NormalOracle {
         oracle
     }
     fn profile(&self) -> CallerProfile {
-        if self.reference.is_some() {
+        if self.module.is_some() {
+            assert!(self.reference.is_none());
+            CallerProfile::Module
+        } else if self.reference.is_some() {
             CallerProfile::Reference
         } else {
             CallerProfile::Legacy
@@ -865,22 +884,23 @@ impl NormalOracle {
             deadline,
             mode,
             reference: None,
+            module: None,
         }
     }
     fn caller_rsp(&self) -> u64 {
         self.stack.address() + STACK_BYTES as u64 - 8
     }
     fn stack_start(&self) -> u64 {
-        self.caller_rsp() - PROTECTED_STACK_BELOW_CALLER
+        self.caller_rsp() - self.stack_below()
     }
     fn step(&self, walk: &mut Walk<'_>, phase: &str) {
         self.deadline.check();
         walk.step(phase);
         self.deadline.check();
     }
-    fn snapshot(&self, child: &Tracee, ready: &NormalReady, logical: u64) -> Snapshot {
+    fn snapshot(&self, child: &Tracee, ready: &WalkReady, logical: u64) -> Snapshot {
         self.deadline.check();
-        for (a, b) in ready.caller_immutable.iter().chain(&ready.immutable) {
+        for (a, b) in ready.caller_immutable().iter().chain(ready.immutable()) {
             assert_eq!(
                 child.memory(*a, b.len()),
                 *b,
@@ -892,20 +912,17 @@ impl NormalOracle {
             registers: child.registers(),
             xstate: canonical_xstate(&child.xstate()),
             data: child.memory(self.data.address(), PAGE),
-            application_stack: child.memory(
-                self.stack_start(),
-                (PROTECTED_STACK_BELOW_CALLER + 8) as usize,
-            ),
+            application_stack: child.memory(self.stack_start(), (self.stack_below() + 8) as usize),
         };
-        guard_data(self.data.bytes(), &point.data);
+        self.check_data(ready, &point.data, false);
         self.deadline.check();
         point
     }
-    fn reach_caller(&self, walk: &mut Walk<'_>, ready: &NormalReady) -> libc::user_regs_struct {
+    fn reach_caller(&self, walk: &mut Walk<'_>, ready: &WalkReady) -> libc::user_regs_struct {
         // Enforce the post-ready deadline without tracing supervisory clock code.
         self.deadline.check();
         let mut last = None;
-        while walk.child.registers().rip != ready.caller {
+        while walk.child.registers().rip != ready.caller() {
             let before = walk.child.registers();
             let code = walk.child.memory(before.rip, 15);
             let instruction =
@@ -928,14 +945,14 @@ impl NormalOracle {
         assert_eq!(
             (after.rdi, after.rsi, after.rdx),
             (
-                ready.entry,
+                self.first_argument(ready),
                 self.data.address() + REQUESTS as u64,
                 self.data.address() + RESULTS as u64
             )
         );
         assert_eq!(
             walk.child
-                .memory(ready.caller, self.profile().bytes().len()),
+                .memory(ready.caller(), self.profile().bytes().len()),
             self.profile().bytes()
         );
         if let Some(cells) = &self.reference {
@@ -1133,14 +1150,14 @@ fn check_journal(actual: &[u8], expected: &[u64; 512]) {
 }
 
 /// All values are joined after two actual normal child reaps; no gate sequence.
-pub struct NormalPairResult {
+pub struct NormalPairResult<const N: usize = 2> {
     pub comparisons: usize,
     pub original_steps: usize,
     pub candidate_steps: usize,
-    pub visits: [usize; 2],
-    pub returns: [u64; 2],
+    pub visits: [usize; N],
+    pub returns: [u64; N],
     pub declared_returns: BTreeSet<u64>,
-    pub values: [u64; 2],
+    pub values: [u64; N],
     pub outer_value: u64,
     pub target_calls: usize,
     pub target_returns: usize,
@@ -1249,6 +1266,18 @@ impl NormalOracle {
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
         O: FnOnce(&NormalReady, &[Snapshot]) -> (T, [usize; 2]),
     {
+        assert!(self.module.is_none());
+        self.pair_engine::<F, _, T, 2>(setup, |ready, points| inspect(ready.single(), points))
+    }
+    fn pair_engine<F, O, T, const N: usize>(
+        &self,
+        setup: F,
+        inspect: O,
+    ) -> (NormalPairResult<N>, T, Option<reference::Stats>)
+    where
+        F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
+        O: FnOnce(&WalkReady, &[Snapshot]) -> (T, [usize; N]),
+    {
         self.deadline.check();
         assert_eq!(
             unsafe { libc::syscall(libc::SYS_gettid) },
@@ -1260,6 +1289,14 @@ impl NormalOracle {
             "single-main native parent"
         );
         let profile = self.profile();
+        assert_eq!(
+            N,
+            if profile == CallerProfile::Module {
+                4
+            } else {
+                2
+            }
+        );
         let pipes = [pipe(), pipe()];
         let output_pipes = self.reference.as_ref().map(|_| [pipe(), pipe()]);
         let control = (self.mode == Mode::CrossedOwner).then(|| (pipe(), pipe()));
@@ -1369,9 +1406,13 @@ impl NormalOracle {
         self.deadline.check();
         let ready = reads.map(|p| {
             let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);
-            match &self.reference {
-                None => NormalReady::decode(&wire),
-                Some(cells) => reference::ReferenceReady::decode(&wire, cells.address()),
+            if self.module.is_some() {
+                WalkReady::Module(module::Ready::decode(&wire))
+            } else {
+                WalkReady::Single(match &self.reference {
+                    None => NormalReady::decode(&wire),
+                    Some(cells) => reference::ReferenceReady::decode(&wire, cells.address()),
+                })
             }
         });
         for child in &children {
@@ -1380,23 +1421,32 @@ impl NormalOracle {
             assert!(libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP);
             child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         }
-        let maps = if let Body::Csv(case) = self.body {
+        let maps = if let Some(case) = self.module {
+            [
+                ready[0].module().validate(false, case),
+                ready[1].module().validate(true, case),
+            ]
+        } else if let Body::Csv(case) = self.body {
             assert_eq!(profile, CallerProfile::Legacy);
             assert_eq!(self.mode, Mode::Stable);
             csv::profile(self.seed, case, self.extent);
             [
-                csv::validate_ready(&ready[0], false, self.extent),
-                csv::validate_ready(&ready[1], true, self.extent),
+                csv::validate_ready(ready[0].single(), false, self.extent),
+                csv::validate_ready(ready[1].single(), true, self.extent),
             ]
         } else if profile == CallerProfile::Legacy {
             [
-                ready[0].validate(false, self.extent, self.mode),
-                ready[1].validate(true, self.extent, self.mode),
+                ready[0].single().validate(false, self.extent, self.mode),
+                ready[1].single().validate(true, self.extent, self.mode),
             ]
         } else {
             [
-                ready[0].validate_profile(false, self.extent, self.mode, profile),
-                ready[1].validate_profile(true, self.extent, self.mode, profile),
+                ready[0]
+                    .single()
+                    .validate_profile(false, self.extent, self.mode, profile),
+                ready[1]
+                    .single()
+                    .validate_profile(true, self.extent, self.mode, profile),
             ]
         };
         ready[0].same_source(&ready[1]);
@@ -1440,10 +1490,9 @@ impl NormalOracle {
         } else {
             seeded
         };
-        let mut witnesses = self
-            .reference
-            .as_ref()
-            .map(|_| std::array::from_fn::<_, 2, _>(|i| reference::Witness::new(self, &ready[i])));
+        let mut witnesses = self.reference.as_ref().map(|_| {
+            std::array::from_fn::<_, 2, _>(|i| reference::Witness::new(self, ready[i].single()))
+        });
         let mut points = Vec::new();
         let mut comparison_indices = Vec::new();
         let mut returns = [Vec::new(), Vec::new()];
@@ -1457,7 +1506,7 @@ impl NormalOracle {
                 let caller_pc = profile
                     .heads()
                     .iter()
-                    .any(|&offset| r.caller + offset == pc);
+                    .any(|&offset| r.caller() + offset == pc);
                 let logical = if caller_pc {
                     Some(pc)
                 } else {
@@ -1473,7 +1522,7 @@ impl NormalOracle {
                             helper_before = Some(reference::copy_snapshot(&point));
                         }
                     }
-                    let compare = !caller_pc || profile.compare(pc - r.caller);
+                    let compare = !caller_pc || profile.compare(pc - r.caller());
                     if index == 0 {
                         if compare {
                             comparison_indices.push(points.len());
@@ -1491,37 +1540,46 @@ impl NormalOracle {
                         assert_state(expected, &point);
                         compared += 1;
                     }
-                    if pc == r.caller + profile.outer_ret() {
+                    if pc == r.caller() + profile.outer_ret() {
                         break;
                     }
                 }
                 let call = profile
                     .calls()
                     .iter()
-                    .position(|&offset| r.caller + offset == pc);
-                let ret = logical.filter(|logical| r.returns.contains(logical));
+                    .position(|&offset| r.caller() + offset == pc);
+                let ret = logical.filter(|logical| r.is_return(*logical));
                 if let Some(n) = call {
-                    call_order(calls[index], returns[index].len(), n);
-                    assert_eq!(walk.child.memory(pc, 3), [0x41, 0xff, 0xd5]);
+                    if profile == CallerProfile::Module {
+                        module::call_order(calls[index], returns[index].len(), n);
+                        assert_eq!(walk.child.memory(pc, 4), module::call_bytes(n));
+                    } else {
+                        call_order(calls[index], returns[index].len(), n);
+                        assert_eq!(walk.child.memory(pc, 3), [0x41, 0xff, 0xd5]);
+                    }
                     profile.call_before(
                         &walk.child.registers(),
                         r,
                         n,
                         self.caller_rsp(),
                         self.data.address(),
-                        self.body.bound(),
+                        self.bound(n),
                     );
                 }
                 if let Some(logical_ret) = ret {
                     let n = returns[index].len();
-                    ret_order(calls[index], n);
+                    if profile == CallerProfile::Module {
+                        module::ret_order(calls[index], n);
+                    } else {
+                        ret_order(calls[index], n);
+                    }
                     assert_eq!(walk.child.memory(pc, 1), [0xc3]);
                     let regs = walk.child.registers();
                     let word = word_at(&walk.child.memory(regs.rsp, 8), regs.rsp, regs.rsp);
-                    profile.ret_before(&regs, r, n, self.caller_rsp(), self.body.scalar(), word);
+                    profile.ret_before(&regs, r, n, self.caller_rsp(), self.value(n), word);
                     returns[index].push(logical_ret);
                     if index == 1 {
-                        let j = r.journal.as_ref().unwrap();
+                        let j = r.journal().unwrap();
                         let expected = profile.journal_words(
                             r,
                             self.mode,
@@ -1561,31 +1619,27 @@ impl NormalOracle {
                 if ret.is_some() {
                     let n = returns[index].len() - 1;
                     let regs = walk.child.registers();
-                    let address = self.caller_rsp() - SUBJECT_RSP_DELTA;
+                    let address = self.caller_rsp() - self.subject_delta();
                     let word = word_at(&walk.child.memory(address, 8), address, address);
-                    profile.ret_after(&regs, r, n, self.caller_rsp(), self.body.scalar(), word);
+                    profile.ret_after(&regs, r, n, self.caller_rsp(), self.value(n), word);
                 }
             }
-            assert_eq!(calls[index], 2);
-            assert_eq!(returns[index].len(), 2);
+            assert_eq!(calls[index], N);
+            assert_eq!(returns[index].len(), N);
             let actual = walk.child.registers();
             callee_saves(&seeded[index], &actual);
-            assert_eq!(actual.rax, self.body.scalar().wrapping_mul(2));
-            final_data(
-                self.data.bytes(),
-                &walk.child.memory(self.data.address(), PAGE),
-                self.body.scalar(),
-            );
+            assert_eq!(actual.rax, self.sum());
+            self.check_data(r, &walk.child.memory(self.data.address(), PAGE), true);
         }
         assert_eq!(compared, comparison_indices.len());
-        if profile == CallerProfile::Legacy {
+        if profile != CallerProfile::Reference {
             assert_eq!(compared, points.len());
         }
         assert_eq!(returns[0], returns[1]);
         for index in 0..2 {
             let walk = &mut walks[index];
             let actual = walk.child.registers();
-            assert_eq!(actual.rip, ready[index].caller + profile.outer_ret());
+            assert_eq!(actual.rip, ready[index].caller() + profile.outer_ret());
             assert_eq!(walk.child.memory(saved[index].rsp, 8), words[index]);
             let continuation = u64::from_le_bytes(words[index].as_slice().try_into().unwrap());
             let mut restored = saved[index];
@@ -1646,32 +1700,45 @@ impl NormalOracle {
         if profile == CallerProfile::Legacy {
             caller_effects(
                 &points,
-                ready[0].caller,
-                ready[0].entry,
+                ready[0].caller(),
+                ready[0].single().entry,
+                self.data.address(),
+                self.stack_start(),
+            );
+        }
+        if profile == CallerProfile::Module {
+            module::caller_effects(
+                &points,
+                ready[0].module(),
                 self.data.address(),
                 self.stack_start(),
             );
         }
         let (trace, visits) = inspect(&ready[0], &points);
-        let value = self.body.scalar();
+        let (values, outer_value) = if let Some(case) = self.module {
+            (std::array::from_fn(|n| case.value(n)), case.sum())
+        } else {
+            let value = self.body.scalar();
+            ([value; N], value.wrapping_mul(2))
+        };
         let result = NormalPairResult {
             comparisons: compared,
             original_steps: walks[0].steps,
             candidate_steps: walks[1].steps,
             visits,
             returns: returns[0].clone().try_into().unwrap(),
-            declared_returns: ready[0].returns.iter().copied().collect(),
-            values: [value; 2],
-            outer_value: value.wrapping_mul(2),
-            target_calls: 4,
-            target_returns: 4,
+            declared_returns: ready[0].declared_returns(),
+            values,
+            outer_value,
+            target_calls: 2 * N,
+            target_returns: 2 * N,
             outer_returns: 2,
             normal_reaps: 2,
         };
         self.deadline.check();
         (result, trace, stats)
     }
-    fn disjoint(&self, ready: &NormalReady) {
+    fn disjoint(&self, ready: &WalkReady) {
         let owned = [
             (self.data.address(), self.data.address() + PAGE as u64),
             (
@@ -1680,13 +1747,13 @@ impl NormalOracle {
             ),
         ];
         if let Some(cells) = &self.reference {
-            cells.disjoint(ready, &owned);
+            cells.disjoint(ready.single(), &owned);
         }
-        for (a, b) in ready.caller_immutable.iter().chain(&ready.immutable) {
+        for (a, b) in ready.caller_immutable().iter().chain(ready.immutable()) {
             let end = a.checked_add(b.len() as u64).unwrap();
             assert!(owned.iter().all(|&(low, high)| end <= low || high <= *a));
         }
-        if let Some(j) = &ready.journal {
+        if let Some(j) = ready.journal() {
             let end = j.address.checked_add(PAGE as u64).unwrap();
             assert!(
                 owned
