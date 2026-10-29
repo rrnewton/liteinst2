@@ -129,7 +129,10 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
         // Canonical unmasked EVEX512 aligned store/reverse-copy. A memory
         // destination potentially writes all64 bytes, including faulting or
         // misaligned operands; the range does not predict successful execution.
-        Code::EVEX_Vmovdqa64_zmmm512_k1z_zmm => {
+        // The separately gated unaligned Code has the identical full64-byte
+        // potential write range, including page crossings and failed writes.
+        Code::EVEX_Vmovdqa64_zmmm512_k1z_zmm
+        | Code::EVEX_Vmovdqu64_zmmm512_k1z_zmm => {
             if instruction.op0_kind() == OpKind::Register { return Ok(no_write(out)); }
             if instruction.op0_kind() != OpKind::Memory { return Ok(out); }
             let Some(first) = instruction.virtual_address(0, 0, |register, index, element_size| {

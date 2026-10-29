@@ -354,6 +354,12 @@ fn classify(
         // and write faults retain the original PC and unchanged owner closure.
         if !matches!(&source[..instruction.len()], [0x62, p0, 0xfd, 0x48, 0x7f, _, ..]
             if (*p0 & 0x0f) == 0x01) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vmovdqu64_zmmm512_k1z_zmm {
+        // Canonical unmasked EVEX512.W1 unaligned store/reverse-register-copy.
+        // Original addresses and complete64-byte effects stay with the CPU;
+        // page-crossing writes retain the same checked owner/fault contract.
+        if !matches!(&source[..instruction.len()], [0x62, p0, 0xfe, 0x48, 0x7f, _, ..]
+            if (*p0 & 0x0f) == 0x01) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpminub_zmm_k1z_zmm_zmmm512 {
         // All32 original register roles; exact W0/66/map1/L512/unmasked form.
         // No memory, broadcast, zeroing, other width or ignored prefix authority.
@@ -696,6 +702,7 @@ fn classify(
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vmovdqa64_zmm_k1z_zmmm512
         | Code::EVEX_Vmovdqa64_zmmm512_k1z_zmm
+        | Code::EVEX_Vmovdqu64_zmmm512_k1z_zmm
         | Code::EVEX_Vpminub_zmm_k1z_zmm_zmmm512
         | Code::VEX_Vmovdqu_xmm_xmmm128
         | Code::VEX_Vmovdqu_xmmm128_xmm

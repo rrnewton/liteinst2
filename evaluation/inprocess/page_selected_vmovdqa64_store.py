@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One current-source store/load/rseq qualification; unchanged per-process bounds."""
+"""Both exact EVEX512 store families, old loads and both rseq cohorts; unchanged bounds."""
 import argparse
 from datetime import datetime,timezone
 import hashlib,json,os,platform,re,shutil,sys
@@ -20,35 +20,43 @@ from page_selected_vmovdqa64_store_rseq import registered_controls
 ROOT=Path(__file__).resolve().parents[2];HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected';FIXTURE=SELECTED/'tests/vmovdqa64_store'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='b8ac14eb15f4ce0957c8b54cfc03cbb23d711d5cad64876424c5778242e1d044'
+OUTCOMES_SHA={1838:'55dff933533e771c5fe73be6ae06d89851aa7d6f65c4ecfd4cddeeef9e593301',1847:'dbd49a6d33af85e4a70a27f5d4effd0e0969ee1e1b9f92160a82175855a1b9d6'}
 GENERATED_COMMON={'bytes':35305,'sha256':'74ed49741f7712f0defb06108735a971d9d409156836ef111789a8481a1d1c90'}
 EXPECTED={
- 'store':dict(vm256_typed_promotions=18,vm256_supplied_none_queries=18,vpe_typed_promotions=18,vpe_supplied_none_queries=18,
-    pairs=171,new_pairs=161,startup_pairs=18,verified_memory_failures=8,refusals=2736,actual_before_queries=338,actual_range_queries=204,actual_none_queries=134,
-    ending_pairs=124,crossing_pairs=37,typed_promotions=234,supplied_none_queries=216,supplied_range_queries=18,
-    vpcm_typed_promotions=90,vpcm_supplied_none_queries=90,supplied_range_end_controls=54),
- 'load':dict(vqa_store_typed_promotions=14,vqa_store_supplied_range_queries=14,vm256_typed_promotions=14,
+ 'store':dict(vdq_store_typed_promotions=36,vdq_store_supplied_range_queries=36,
+    vm256_typed_promotions=18,vm256_supplied_none_queries=18,vpe_typed_promotions=18,vpe_supplied_none_queries=18,
+    pairs=171,new_pairs=161,startup_pairs=18,verified_memory_failures=8,refusals=2700,actual_before_queries=338,
+    actual_range_queries=204,actual_none_queries=134,ending_pairs=124,crossing_pairs=37,typed_promotions=234,
+    supplied_none_queries=216,supplied_range_queries=18,vpcm_typed_promotions=90,vpcm_supplied_none_queries=90,supplied_range_end_controls=54),
+ 'store1847':dict(vdq_store_typed_promotions=42,vdq_store_supplied_range_queries=42,
+    vm256_typed_promotions=21,vm256_supplied_none_queries=21,vpe_typed_promotions=21,vpe_supplied_none_queries=21,
+    pairs=189,new_pairs=178,startup_pairs=21,verified_memory_failures=10,refusals=3822,actual_before_queries=376,
+    actual_range_queries=242,actual_none_queries=134,ending_pairs=141,crossing_pairs=37,typed_promotions=273,
+    supplied_none_queries=252,supplied_range_queries=21,vpcm_typed_promotions=105,vpcm_supplied_none_queries=105,supplied_range_end_controls=63),
+ 'load':dict(vdq_store_typed_promotions=14,vdq_store_supplied_range_queries=14,
+    vqa_store_typed_promotions=14,vqa_store_supplied_range_queries=14,vm256_typed_promotions=14,
     vm256_supplied_none_queries=14,pairs=170,new_pairs=160,startup_pairs=14,verified_memory_failures=4,
-    refusals=1372,actual_before_queries=328,ending_pairs=123,crossing_pairs=37,typed_promotions=98,supplied_none_queries=98)}
+    refusals=1358,actual_before_queries=328,ending_pairs=123,crossing_pairs=37,typed_promotions=98,supplied_none_queries=98)}
 
 
 def protocol(family,pin):
-    fixture=FIXTURE if family=='store'else load.FIXTURE
-    path=pin(fixture/'OUTCOMES.json')
-    need(fact(path)['sha256']==(OUTCOMES_SHA if family=='store'else load.OUTCOMES_SHA),'exact full cohort protocol')
-    p=decode(path.read_bytes());commands=p['commands']
-    faults=store.FAULT_NAMES if family=='store'else('full-read-fault','alignment-fault','indexed-full-read-fault','indexed-alignment-fault')
-    stem='vmovdqa64-store-'if family=='store'else'vmovdqa64-family-'
-    selector='LI2_VQA64S_CONTROL'if family=='store'else'LI2_VQA64F_CONTROL'
+    is_store=family!='load';code=1847 if family=='store1847'else 1838
+    p=store.profile(code);fixture=FIXTURE if is_store else load.FIXTURE
+    path=pin(fixture/('OUTCOMES'+(p['suffix']if is_store else'')+'.json'))
+    need(fact(path)['sha256']==(OUTCOMES_SHA[code]if is_store else load.OUTCOMES_SHA),'exact full cohort protocol')
+    declared=decode(path.read_bytes());commands=declared['commands'];groups=len(p['counts'])if is_store else 10
+    faults=p['faults']if is_store else('full-read-fault','alignment-fault','indexed-full-read-fault','indexed-alignment-fault')
+    stem='vmovdqu64-store-'if family=='store1847'else'vmovdqa64-store-'if is_store else'vmovdqa64-family-'
+    selector='LI2_VQU64S_CONTROL'if family=='store1847'else'LI2_VQA64S_CONTROL'if is_store else'LI2_VQA64F_CONTROL'
     n=len(faults)
-    need(p['bounds']==dict(cpu_seconds=5,address_space_bytes=512<<20,file_size_bytes=16<<20,wall_seconds=15,cpu_affinity_count=1)
-      and p['record_header_fields']==list(store.NAMES) and p['record_header_format']=='<17Q'
-      and len(commands)==10+n and [c['exit']for c in commands]==[0]*10+[125]*n
-      and [c['name']for c in commands]==['group'+str(g)for g in range(10)]+list(faults)
-      and [c['argv']for c in commands]==[[stem+str(g)]for g in range(10)]+[[stem+'0']]*n
-      and [c['environment_delta']for c in commands]==[{}]*10+[{selector:name}for name in faults]
-      and [c['group']for c in commands]==list(range(10))+[0]*n
-      and [c['fault_kind']for c in commands]==[0]*10+list(range(1,n+1)),
+    need(declared['bounds']==dict(cpu_seconds=5,address_space_bytes=512<<20,file_size_bytes=16<<20,wall_seconds=15,cpu_affinity_count=1)
+      and declared['record_header_fields']==list(store.NAMES) and declared['record_header_format']=='<17Q'
+      and len(commands)==groups+n and [c['exit']for c in commands]==[0]*groups+[125]*n
+      and [c['name']for c in commands]==['group'+str(g)for g in range(groups)]+list(faults)
+      and [c['argv']for c in commands]==[[stem+str(g)]for g in range(groups)]+[[stem+'0']]*n
+      and [c['environment_delta']for c in commands]==[{}]*groups+[{selector:name}for name in faults]
+      and [c['group']for c in commands]==list(range(groups))+[0]*n
+      and [c['fault_kind']for c in commands]==[0]*groups+list(range(1,n+1)),
       'every original/new process, selector, failed exit and unchanged bound')
     return fixture,commands,stem
 
@@ -56,9 +64,9 @@ def protocol(family,pin):
 def symbol_layout(path,text,family):
     sizes=dict(result=136,refused_last=40,vpb_observations=5000,v64_fault=96,vpc_queries=10304,
                vm64_promotions=2080,vm256_promotions=352)
-    if family=='store':sizes.update(vpe_promotions=1216,v128_promotions=3808,vpcm_promotions=1504,
-                                   store_memory=store.MEMORY_BYTES,store_ranges=800)
-    else:sizes['vqa_store_promotions']=352
+    if family!='load':sizes.update(vpe_promotions=1216,v128_promotions=3808,vpcm_promotions=1504,
+                                   store_memory=store.MEMORY_BYTES,store_ranges=800,vdq_store_promotions=640)
+    else:sizes.update(vqa_store_promotions=352,vdq_store_promotions=352)
     roots=set(sizes)|{'samples','negative_sample'}
     symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
     for line in text.decode().splitlines():
@@ -80,27 +88,30 @@ def symbol_layout(path,text,family):
 
 
 def publish(path,r,private):
-    columns=['name','expected_exit','actual_exit','duration_ns','pid','record_bytes','record_sha256','declared_pairs','completed_prefix','refusals','actual_before_queries']
+    columns=['name','expected_exit','actual_exit','duration_ns','record_bytes','declared_pairs','completed_prefix','refusals','actual_before_queries']
     outcomes={family+'-'+case['name']:case.get('outcome',{})for family,cohort in r['cohorts'].items()for case in cohort['cases']}
-    rows=[]
+    rows=[];captures=[]
     for c in r['commands']:
         if c['profile']!='native':continue
         capture=c.get('captures',{}).get('record',{});value=outcomes.get(c['name'],{});head=value.get('header',{})
-        rows.append([c['name'],c['expected_exit'],c.get('exit'),c.get('duration_ns'),c.get('pid'),capture.get('bytes'),capture.get('sha256'),
+        rows.append([c['name'],c['expected_exit'],c.get('exit'),c.get('duration_ns'),capture.get('bytes'),
                      head.get('pairs'),head.get('completed'),value.get('refusals'),value.get('actual_before_queries')])
-    b=r.get('build',{});registered=r.get('store_rseq',{})
+        captures.append(dict(name=c['name'],pid=c.get('pid'),record=capture))
+    b=r.get('build',{});registered={code:r.get(key,{})for code,key in((1838,'store_rseq'),(1847,'store_rseq_1847'))}
     public={k:r.get(k)for k in('schema','profile','status','scope','expected_revision','started_utc','cpu','source','source_unchanged','hardware','bounds','reproduce','cleanup_complete')}
     public.update(private_receipt=fact(private/'receipt.json'),command_count=len(r['commands']),commands_sha256=digest(r['commands']),
         inputs_sha256=digest(r['inputs_before']),binaries_sha256=digest(r['binaries_before']),aliases_sha256=digest(r['aliases']),
         build_status=b.get('status'),tool_versions=b.get('numeric_versions'),tools_sha256=digest(b.get('tools',{})),
         archive={k:b.get('artifacts',{}).get('decoder.a',{}).get(k)for k in('bytes','sha256')},
+        family_codes=dict(store=1838,store1847=1847,load=1596),
         cohorts={k:dict(accepted_processes=sum(x['status']=='accepted_observation'for x in v['cases']),totals=v['totals'])for k,v in r['cohorts'].items()},
-        rseq=dict(status=registered.get('status','not_started'),accepted_cases=sum(c.get('accepted',False)for c in registered.get('cases',[])),
-                  completed_operations=sum(c.get('outcome')=='completed'for c in registered.get('cases',[])),
-                  required_refusals=sum(c.get('outcome')=='required_refusal'for c in registered.get('cases',[])),
-                  guard_columns=['operation_exit','code','policy','length','first','end','guard_result','actual_trap','guard_calls','raw_calls_during_guard','rx_calls_during_guard'],
-                  guards=[[c.get('operation_exit')]+[c.get('store_guard',{}).get(k)for k in('code','policy','length','first','end','guard_result','actual_trap','guard_calls','raw_calls_during_guard','rx_calls_during_guard')]for c in registered.get('cases',[])]),
-        process_columns=columns,processes=rows,final_error_count=len(r['final_errors']),failure_type=r['error'].split(':',1)[0]if r['error']else None)
+        rseq={str(code):dict(status=q.get('status','not_started'),accepted_cases=sum(c.get('accepted',False)for c in q.get('cases',[])),
+                  completed_operations=sum(c.get('outcome')=='completed'for c in q.get('cases',[])),
+                  required_refusals=sum(c.get('outcome')=='required_refusal'for c in q.get('cases',[])),
+                  guards=[[c.get('operation_exit')]+[c.get('store_guard',{}).get(k)for k in('code','policy','length','first','end','guard_result','actual_trap','guard_calls','raw_calls_during_guard','rx_calls_during_guard')]for c in q.get('cases',[])])for code,q in registered.items()},
+        rseq_guard_columns=['operation_exit','code','policy','length','first','end','guard_result','actual_trap','guard_calls','raw_calls_during_guard','rx_calls_during_guard'],
+        process_columns=columns,processes=rows,capture_rows_sha256=digest(captures),
+        final_error_count=len(r['final_errors']),failure_type=r['error'].split(':',1)[0]if r['error']else None)
     text=json.dumps(public,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(len(text.encode())<16<<10,'compact public receipt below16KiB')
     need(not any(x and len(x)>1 and x in text for x in(str(ROOT),str(Path.home()),platform.node(),'/home/')),'public private-location guard')
@@ -117,8 +128,8 @@ def main():
     stem=stamp+'-page-selected-vmovdqa64-store-'+args.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
-    r=dict(schema=1,profile='page-selected-vmovdqa64-store-v1',status='failed',
-        scope='Exact unmasked Code1838:161 native/TF pairs plus8 genuine failed stores; all14 old aligned-load processes and3 registered-store applications mandatory. Full C architectural oracle plus independent literal source, actual-before footprint and complete memory replay. Typed promotions and overflow tuples are supplied controls. No Code1847, late-DSO completion or performance claim.',
+    r=dict(schema=1,profile='page-selected-evex512-store-v2',status='failed',
+        scope='Exact unmasked Code1838/1847:161/178 selected native/TF pairs and8/10 genuine failed stores; all14 old aligned-load processes and both3-case registered-store cohorts mandatory. Full C architecture plus independent literal/EA/complete-memory replay. Promotions/overflow tuples are supplied controls. No late-DSO completion or performance claim.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vmovdqa64_store.py','--expect-revision',args.expect_revision],
         commands=[],cohorts={},error=None,final_errors=[],totals={})
@@ -154,22 +165,23 @@ def main():
         for module in tuple(sys.modules.values()):
             path=getattr(module,'__file__',None)
             if path and Path(path).resolve().is_relative_to(ROOT):pin(path)
-        specs={name:protocol(name,pin)for name in('store','load')}
-        tables=dict(store=store.catalogue(),load=load.catalogue())
-        r['catalogues']={name:dict(source=fact(fixture/'cases.json'),compiled=fact(fixture/'cases.inc'),rows_sha256=digest(tables[name]))for name,(fixture,_,_)in specs.items()}
+        specs={name:protocol(name,pin)for name in('store','store1847','load')}
+        tables=dict(store=store.catalogue(),store1847=store.catalogue(family=1847),load=load.catalogue())
+        r['catalogues']={name:dict(source=fact(fixture/('cases1847.json'if name=='store1847'else'cases.json')),compiled=fact(fixture/('cases1847.inc'if name=='store1847'else'cases.inc')),rows_sha256=digest(tables[name]))for name,(fixture,_,_)in specs.items()}
         products=builder.prepare();r['fixture_build']={}
-        for family in('store','load'):
+        for family in('store','store1847','load'):
+            is_store=family!='load';code=1847 if family=='store1847'else 1838;groups=len(store.profile(code)['counts'])if is_store else 10
             fixture,commands,stem=specs[family];cases=tables[family]
             cohort=r['cohorts'][family]=dict(cases=[],totals={k:0 for k in EXPECTED[family]})
-            recipe_path=pin(fixture/'build.sh');lines=recipe(recipe_path,'"$cc_bin"');need(len(lines)==1,'one exact bounded link template')
-            generators=recipe(recipe_path,'"$python_bin"');need(len(generators)==int(family=='store'),'exact source-generator population')
+            recipe_path=pin(fixture/('build1847.sh'if family=='store1847'else'build.sh'));lines=recipe(recipe_path,'"$cc_bin"');need(len(lines)==1,'one exact bounded link template')
+            generators=recipe(recipe_path,'"$python_bin"');need(len(generators)==int(is_store),'exact source-generator population')
             samples={};paths={}
-            for group in range(10):
+            for group in range(groups):
                 name=stem+str(group);output=private/family/('group'+str(group));output.mkdir(parents=True)
                 path=output/name;fixture_outputs.append(path);paths[name]=path
                 values={'$cc_bin':builder.tools['cc'],'$python_bin':builder.tools['python'],'$source_dir':fixture,'$selected_dir':SELECTED,
                     '$parent_dir':SELECTED.parent,'$decoder_archive':products['archive'],'$output_dir':output,'$group':group}
-                if family=='store':
+                if is_store:
                     prepared=output/'common.inc';generated_outputs.append(prepared)
                     pin(fixture/'prepare.py')
                     _,gout,gerr=run(name+'-prepare',expand(generators[0],values),profile='metadata',env=builder.environment)
@@ -195,17 +207,17 @@ def main():
                 item['actual_exit']=row['exit'];need(out==expected['stdout'].encode()and err==expected['stderr'].encode(),'exact finite output')
                 captured=row['captures']['record'];path=binary(private/captured['file'])
                 need(fact(path)=={k:captured[k]for k in('bytes','sha256')},'complete actual capture binding');item['record']=fact(path)
-                reader=store if family=='store'else load
-                value=reader.record(path.read_bytes(),expected,samples[expected['argv'][0]],cases)
-                align=expected['fault_kind']in((3,4)if family=='store'else(2,4))
-                need(value['operation']==('completed'if expected['exit']==0 else 'failed_alignment'if align else 'failed_memory_write'if family=='store'else 'failed_memory_read'),
+                value=store.record(path.read_bytes(),expected,samples[expected['argv'][0]],cases,family=code)if is_store else load.record(path.read_bytes(),expected,samples[expected['argv'][0]],cases)
+                align=expected['fault_kind']in((3,4)if family=='store'else()if family=='store1847'else(2,4))
+                need(value['operation']==('completed'if expected['exit']==0 else 'failed_alignment'if align else 'failed_memory_write'if is_store else 'failed_memory_read'),
                      'no failed operation relabelled completed')
                 for key in cohort['totals']:cohort['totals'][key]+=value[key]
                 item.update(status='accepted_observation',outcome=value)
             need(cohort['totals']==EXPECTED[family]and len(cohort['cases'])==len(commands)and
                  all(c['status']=='accepted_observation'for c in cohort['cases']),'complete exact cohort with all required failed operations')
-        registered_controls(builder,products,private,pin,binary,run,r,cpu)
-        need(r['store_rseq']['status']=='passed_three_store_controls','all actual registered store guards')
+        for code,key in((1838,'store_rseq'),(1847,'store_rseq_1847')):
+            registered_controls(builder,products,private,pin,binary,run,r,cpu,family=code)
+            need(r[key]['status']=='passed_three_store_controls','all actual registered store guards for family'+str(code))
         r['status']='passed'
     except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
     finally:
