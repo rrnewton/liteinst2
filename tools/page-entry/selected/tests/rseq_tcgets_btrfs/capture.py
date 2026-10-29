@@ -11,7 +11,8 @@ def check(actual,route,layout):
          (identity['offset']is None or type(identity['offset'])is int and identity['offset']==0),
          'typed complete actual capture FD identity/initial position')
     need(actual['major']==os.major(identity['device'])and actual['minor']==os.minor(identity['device'])and
-         type(actual['mount_id'])is int and actual['mount_id']>0,'actual ordinary mount-ID/device components')
+         type(actual['mount_id'])is int and (actual['mount_id']==0 if route=='memfd'else actual['mount_id']>0),
+         'actual retained memfd zero or ordinary positive mount-ID/device components')
     calls=actual['calls'];need(type(calls)is list and all(type(x)is dict and 'error'not in x for x in calls),'complete actual FD construction calls')
     opened=[];closed=[];alive=set()
     for row in calls:

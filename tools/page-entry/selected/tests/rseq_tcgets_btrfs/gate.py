@@ -138,6 +138,10 @@ def check(r,data,h,image,pid,capture,injected):
     if init_failure:
         need([x[1]for x in groups[0]]==([5,72]if c==16 else[5,72,138]if c==19 else[5])and not groups[1],
              'exact initial O_PATH/type/filesystem refusal before application entry')
+        if c==19:
+            need(all(x[2]==1 for x in groups[0])and
+                 all(I(F(b,st,'filesystem'),'statfs','f_type')==capture['filesystem_type']==0x01021994 for b in(stages[0],stages[6])),
+                 'actual same-FD SHMEM result joins parent at both initial-refusal snapshots')
     elif not success and not injected:need(not groups[1],'rejected FD/request/invalidation performs no revalidation query')
     elif injected in(1,2,3,4,5,6,8,9,16):
         expected={1:[5],2:[5,72],3:[5,72,138],4:[5,72,138,332],5:[5,72,138,332],6:[5,72,138,332],

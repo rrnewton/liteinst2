@@ -50,7 +50,9 @@ def prepare_capture(route,path,layout_path,retained):
             fd=os.memfd_create('li2-tcgets-wrong-fs',os.MFD_CLOEXEC);owned_fd(fd);note('memfd',fd=fd,identity=info(fd))
         before=info(fd);fs=query(138,fd,120);sx=query(332,fd,256)
         val=lambda k:int.from_bytes(sx[fields[k]['offset']:fields[k]['offset']+fields[k]['bytes']],'little')
-        if val('stx_mask')&0x1103!=0x1103 or val('stx_mask')&0x4000 or not val('stx_mnt_id')or val('stx_mode')!=before['mode']or val('stx_ino')!=before['inode']or (val('stx_dev_major'),val('stx_dev_minor'))!=(os.major(before['device']),os.minor(before['device'])):raise ValueError('actual FD stat/statx identity')
+        # This retained memfd control has actual ordinary mount ID zero.
+        mount_matches=(val('stx_mnt_id')==0 and int.from_bytes(fs[:8],'little')==0x01021994 and stat.S_ISREG(before['mode']))if route=='memfd'else val('stx_mnt_id')>0
+        if val('stx_mask')&0x1103!=0x1103 or val('stx_mask')&0x4000 or not mount_matches or val('stx_mode')!=before['mode']or val('stx_ino')!=before['inode']or (val('stx_dev_major'),val('stx_dev_minor'))!=(os.major(before['device']),os.minor(before['device'])):raise ValueError('actual FD stat/statx identity')
         subvolume=None
         if route=='subvolume':
             # Actual future ELF DWARF and the pinned native UAPI both own
