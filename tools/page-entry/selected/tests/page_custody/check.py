@@ -23,7 +23,7 @@ class Reader(interval.Reader):
   need(type(data)is bytes and type(layout)is dict and set(layout)=={'types','record','offsets','siginfo','uc_bytes'}and layout['record']=='cso_stream','explicit complete actual custody stream/layout')
   types=layout['types'];names='cso_stream cso_record cso_row cso_meta cso_snapshot lso_record lso_event lso_native_row rn_frame li2_tf_chain li2_tf_chain_slot li2_tf_trace_entry li2_decoder_stats li2_tf_owner li2_tf_hooks li2_tf_shstk_observation li2_step_owner li2_step_hooks li2_step_session li2_step_request li2_step_page li2_step_frame li2_chain_fetch li2_chain_release li2_tf_continuation li2_tf_same_page li2_fetch_rx_view li2_fetch_ref li2_fetch_progress li2_fetch_page li2_fetch_backing stat li2_fetch_map_progress li2_maps_observation li2_maps_stats li2_page_custody_receipt li2_page_custody_stats li2_rseq_state li2_rseq_transaction li2_rseq_data li2_write_footprint li2_decoded li2_tf_classification'.split()
   need(type(types)is dict and set(types)==set(names),'exact source-defined actual custody type inventory')
-  self.page_keys={};self.retained_sequences=set();self.session_bytes=None;self.registration_identity=None;self.fetch_owner=None;self.hook_functions=None
+  self.page_keys={};self.retained_sequences=set();self.session_bytes=None;self.registration_identity=None;self.registration_transaction=None;self.fetch_owner=None;self.hook_functions=None
   self.history_anchors={};self.history_views={} # Each observed RX serial keeps its own exact history.
   root=types['cso_stream'];need(set(root['fields'])=={'base','custody'},'exact stream children')
   n=types['lso_record']['bytes'];cn=types['cso_record']['bytes']
@@ -232,6 +232,20 @@ class Reader(interval.Reader):
   need(ob[:n]==sb[:n]and not any(ob[n:]),'exact copy-only partial source and zero unused observer capacity')
   if previous is not None:need(sb[n:]==self.field(previous,t,'bytes')[n:],'every unassigned persistent slot source-tail byte retained')
   self.changed(slot,observed,t,('bytes '+changed).strip())
+ def registration_maps(self,b):
+  # dispatch_operation ends the phase before the original rseq transaction.
+  # These successful historical reads have real I/O/acquisition/epoch facts,
+  # but no handler-scoped FRESH/REUSED authority. Never use this for transfers.
+  I,F=self.integer,self.field;t='li2_fetch_map_progress';ot='li2_maps_observation';o=F(b,t,'observation')
+  self.padding(b,t);self.padding(o,ot)
+  need(I(b,t,'fd')>3 and I(b,t,'last_read')==I(b,t,'close_result')==0 and
+       0<I(b,t,'bytes')<=256*1024 and 0<I(b,t,'rows')<=2048 and
+       all(I(b,t,k)==1 for k in('opened','close_started','closed')),
+       'complete actual historical registration maps acquisition/EOF/close')
+  need(self.values(o,ot,'handler_id kind io_performed')==(0,0,1)and
+       I(o,ot,'acquisition_id')>0 and I(o,ot,'mutation_epoch')>0,
+       'exact unscoped DIRECT original registration receipt')
+  return self.values(o,ot,'acquisition_id mutation_epoch')
  def registration(self,b,pid):
   I,F=self.integer,self.field;t='li2_rseq_state';d=F(b,t,'data');dt='li2_rseq_data'
   need(self.values(b,t,'initialized registered held phase pid tid address page length signature epoch fs_base gs_base fs_result gs_result tls_attempted tls_complete calls registrations unregistrations kernel_errors')==
@@ -239,7 +253,7 @@ class Reader(interval.Reader):
        'complete actual singleton registered identity, original TLS and one real registration')
   need(self.values(d,dt,'address page pid tid attempted complete error detail')==(AREA,PAGE,pid,pid,1,1,0,0)and
        I(d,dt,'allocation')>0 and I(d,dt,'generation')>0 and I(d,dt,'offset')%4096==0,'actual complete anonymous rseq data pin')
-  self.maps(F(d,dt,'maps'))
+  self.registration_maps(F(d,dt,'maps'))
   identity=self.values(d,dt,'address page allocation generation offset pid tid')
   if self.registration_identity is None:self.registration_identity=identity
   need(identity==self.registration_identity,'no cached per-instruction rseq answer; same actual allocation identity')
@@ -251,8 +265,19 @@ class Reader(interval.Reader):
   for raw in(before,after):
    need(self.values(raw,dt,'address page allocation generation offset pid tid')==identity and
         self.values(raw,dt,'attempted complete error detail')==(1,1,0,0),'both complete original actual registration pin observations')
-   self.maps(F(raw,dt,'maps'))
+   self.registration_maps(F(raw,dt,'maps'))
+  before_id,before_epoch=self.registration_maps(F(before,dt,'maps'))
+  after_id,after_epoch=self.registration_maps(F(after,dt,'maps'))
+  # Between the two observations: one successful rseq (+2), one fresh maps
+  # invalidation (+1), open/EOF/close (+6), and k positive reads (+2*k).
+  # Each positive read contributes at least one retained byte; no read-count
+  # field is invented and the observed one-read case is not a fixed constant.
+  delta=after_epoch-before_epoch;size=I(F(after,dt,'maps'),'li2_fetch_map_progress','bytes')
+  need(after_id==before_id+1 and delta>=11 and delta%2==1 and delta<=9+2*size,
+       'consecutive original registration acquisitions and exact raw-call epoch domain')
   need(d==after,'retained registration data is the actual post-syscall pin observation')
+  if self.registration_transaction is None:self.registration_transaction=tx
+  need(tx==self.registration_transaction,'every byte of the one original registration transaction remains immutable')
   return identity
  def remember_backing(self,v,anchor):
   serial=self.integer(v,'li2_fetch_rx_view','serial')
@@ -675,13 +700,15 @@ def _body_anchor_boundary(r,image,index,rows,events,base,extra,context,overlap):
 
 def _terminal_anchor_boundary(r,image,rows,events,base,extra,context,exit_status,meta,view):
  I,F=r.integer,r.field;stack=context is not None;guard=GUARD+128 if stack else GUARD
+ need(0<len(events)<=len(rows),'nonempty exact modeled event prefix within retained row capacity')
+ final_row=rows[len(events)-1]
  need(exit_status==0 and image['case']<5 and events[-1]['kind']in('jump_guard','jump_again')and events[-1]['next']==guard,
       'only successful fixed post-body path can establish a later historical stat')
- _closed_anchor_boundary(r,rows[-1],guard)
+ _closed_anchor_boundary(r,final_row,guard)
  endpoint=r.array(extra,'cso_record','stack_endpoints','lso_native_row')[1]if stack else r.array(base,'lso_record','endpoints','lso_native_row')[1]
  raw=F(endpoint,'lso_native_row','before');h=q(F(endpoint,'lso_native_row','h'));f=r.frame(raw,image)
  need(raw==F(endpoint,'lso_native_row','after')and h[:5]==(1,3 if stack else 1,guard,guard,1)and not any(h[5:24]+h[28:])and
-      f['greg'][16]==f['h'][8]==guard and meta['event']>q(F(rows[-1],'lso_event','counts_after'))[0]and
+      f['greg'][16]==f['h'][8]==guard and meta['event']>q(F(final_row,'lso_event','counts_after'))[0]and
       image['symbols']['rn_finish']<=I(view,'li2_fetch_rx_view','pc')<GUARD+4096,
       'new terminal history is on the exact genuine GUARD/capture/finish path after full body close')
 
@@ -790,8 +817,8 @@ def _audit(r,image,pid,exit_status,cpu,control,context,overlap):
           'candidate preparation is fresh source receipt or exact retained zero')
      need(F(cf,'li2_chain_fetch','pages')[:r.types['li2_fetch_page']['bytes']]==F(cx,'li2_fetch_rx_view','page')and
           F(cf,'li2_chain_fetch','backing')[:r.types['li2_fetch_backing']['bytes']]==F(cx,'li2_fetch_rx_view','backing')and
-          F(cf,'li2_chain_fetch','last_backing')==F(sf,'li2_chain_fetch','last_backing'),
-          'complete committed page/backing and actual predecessor backing payload')
+          not any(F(cf,'li2_chain_fetch','last_backing')),
+          'complete committed page/backing and exact absent partial-view last backing')
     else:
      cx=F(cm,'cso_meta','rx');r.changed(sx,cx,'li2_fetch_rx_view','result')
      need(I(cx,'li2_fetch_rx_view','result')==302,'actual close invalidates authority before exact STALE refusal')
@@ -806,7 +833,11 @@ def _audit(r,image,pid,exit_status,cpu,control,context,overlap):
     _delta(commit['custody'],ret['custody'],dict(phase=1,seeds=int(kind==1),commits=1),'actual publish to RETURN')
     need(ret['maps']==commit['maps']and F(F(co,ot,'returned'),'cso_meta','rx')==F(F(cb,'cso_snapshot','meta'),'cso_meta','rx'),
          'no maps or receipt mutation between commit and actual trace return')
-    r.partial_slot(F(cb,'cso_snapshot','fetch'),af,previous=bf)
+    # The new fetch has observed=0, so its fresh partial snapshot is zero.
+    # chain_observe preserves the real post-stage payload in its existing slot.
+    need(F(af,'li2_chain_fetch','last_backing')==F(sf,'li2_chain_fetch','last_backing'),
+         'persistent returned slot keeps the exact validated stage backing')
+    r.partial_slot(F(cb,'cso_snapshot','fetch'),af,previous=bf,changed='last_backing')
     origin=proof;r.accepted_transfers[index]=F(F(row,et,'lease'),'li2_tf_same_page','transfer')
     need(r.accepted_transfers[index]==F(F(cb,'cso_snapshot','meta'),'cso_meta','rx'),'original lease transfer retains exact actual outer commit')
    elif v[4]==1:
@@ -831,7 +862,13 @@ def _audit(r,image,pid,exit_status,cpu,control,context,overlap):
    need(end['custody']['phase']==(1 if v[5]==2 else 0)and end['maps']==hb['maps'],'handler end changes custody only; global maps invalidation remains later')
    need(F(co,ot,'ready_frame')==after and F(ready,'cso_snapshot','rseq')==F(row,et,'rseq'),
         'entire actual READY frame/FP/source/data/rseq/fetch equals returned state')
-   r.partial_slot(fetch,F(row,et,'next_fetch'),previous=bf if v[5]==2 else None)
+   if v[5]==2:
+    need(I(F(fetch,'li2_chain_fetch','progress'),'li2_fetch_progress','last_backing_observed')==0 and
+         not any(F(fetch,'li2_chain_fetch','last_backing'))and
+         F(F(row,et,'next_fetch'),'li2_chain_fetch','last_backing')==F(sf,'li2_chain_fetch','last_backing'),
+         'READY fresh partial snapshot is absent and persistent slot keeps exact stage backing')
+    r.partial_slot(fetch,F(row,et,'next_fetch'),previous=bf,changed='last_backing')
+   else:r.partial_slot(fetch,F(row,et,'next_fetch'))
    if v[5]==2:need(owner==oa,'same actual permission owner survives handler end')
    last_ready=dict(custody=end['custody'],maps=end['maps'],rx=F(rm,'cso_meta','rx'),record=ready)
    if v[5]!=2:origin=None
