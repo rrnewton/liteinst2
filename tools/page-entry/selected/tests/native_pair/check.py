@@ -487,6 +487,64 @@ def application_frame(reader, raw, image, event, native, pid, leaf0, components,
     return f
 
 
+def fp_platform(h,xcr0,components,native,case):
+    """Actual pre-arm CPUID/PKRU, plus a separate live nested-handler value."""
+    need(all(v < 1 << 32 for v in h[36:47]) and h[44]&0x40010000 == 0x40010000,
+         'complete actual native/gated CPUID7 and typed optional PKRU observations')
+    active = bool(xcr0 & (1 << 9))
+    layout = None
+    if active:
+        size,offset,flags,reserved = h[36:40]
+        need(h[45]&0x18 == 0x18 and size == 8 and 576 <= offset <= 65536-8 and
+             not flags&1 and reserved == 0 and h[41:43] == (0,1) and
+             all(offset+size <= first or first+count <= offset
+                 for first,count in components.values()),
+             'actual enabled user PKRU component, disjoint standard layout and completed RDPKRU')
+        layout = (offset,size)
+    else:need(not any(h[36:43]), 'absent PKRU has no descriptor, value or invented execution')
+    live = active and not native and case == 11
+    if live:
+        need(h[47] < 1 << 32 and h[48:50] == (0,1),
+             'actual live outer-handler RDPKRU immediately before nested tgkill')
+    else:need(not any(h[47:50]), 'no fabricated nested-handler PKRU observation')
+    return dict(layout=layout,initial=h[40] if active else None,
+                handler=h[47] if live else None)
+
+
+def initialized_handler_fp(outer,platform,components):
+    """Linux saves the app frame before initializing live handler FP state.
+
+    The full standard XSAVE buffer is modeled, including all unused bytes.
+    Dynamic or otherwise unmodeled software features are refused. MXCSR_MASK
+    is a same-CPU capability; live PKRU comes from the separate actual read
+    immediately before tgkill, never from a guessed kernel default.
+    """
+    saved = outer['fp'];size = outer['h'][2];layout = platform['layout']
+    features = 0xe7 | (0x200 if layout is not None else 0)
+    ends = [first+count for first,count in components.values()]
+    if layout is not None:
+        offset,count = layout;ends.append(offset+count)
+        need(platform['handler'] is not None and
+             struct.unpack_from('<II',saved,offset) == (platform['initial'],0),
+             'suspended application PKRU still equals its independently observed initial value')
+    need(size == max(ends)+4 and 580 <= size <= 65536 and
+         struct.unpack_from('<IIQI',saved,464) == (0x46505853,size,features,size-4) and
+         not any(saved[484:512]) and word(saved,512) == features and
+         not any(saved[520:576]) and
+         struct.unpack_from('<I',saved,size-4)[0] == 0x46505845,
+         'complete closed FP/SSE/AVX512/optional-PKRU signal ABI; no dynamic or unknown component')
+    mask = struct.unpack_from('<I',saved,28)[0]
+    need(mask&0x1f80 == 0x1f80, 'same-hardware MXCSR mask admits the architectural initial control')
+    expected = bytearray(65536)
+    struct.pack_into('<H',expected,0,0x037f)
+    struct.pack_into('<II',expected,24,0x1f80,mask)
+    struct.pack_into('<IIQI',expected,464,0x46505853,size,features,size-4)
+    put(expected,512,3 | (0x200 if layout is not None else 0))
+    if layout is not None:struct.pack_into('<I',expected,layout[0],platform['handler'])
+    struct.pack_into('<I',expected,size-4,0x46505845)
+    return bytes(expected)
+
+
 def native(data,layout,image,pid,exit_status):
     spec = image['spec']['case'];events = image['spec']['native_flow']
     need(type(pid) is int and pid > 0 and type(exit_status) is int and
@@ -496,11 +554,12 @@ def native(data,layout,image,pid,exit_status):
     want = [0]*64
     want[:6] = [MAGIC,1,len(data),image['case'],len(events),1]
     want[7:13] = [125 if image['case'] == 10 else 0,pid,pid,h[10],h[11],131072]
-    want[21] = image['control'];want[32:36] = h[32:36]
+    want[21] = image['control'];want[32:47] = h[32:47]
     need(tuple(want) == h and h[10]&0xe7 == 0xe7 and h[11] == image['symbols']['npf_altstack'] and
          all(v < 1 << 32 for v in h[32:36]) and h[32] >= 13,
          'whole native header, actual process/stack/XSTATE/CPUID and every unused word')
     components = r.components(r.field(data,r.rt,'xstate'))
+    platform = fp_platform(h,h[10],components,True,image['case'])
     rows = r.field(data,r.rt,'rows');shape = r.types['npf_native_row'];size = shape['bytes']
     need(len(events) <= ROWS and not any(rows[len(events)*size:]),
          'native exact event population and entire unused capture tail')
@@ -523,7 +582,7 @@ def native(data,layout,image,pid,exit_status):
         if frames:need(f['fp'] == frames[0]['fp'],
                        'complete native initialized FP/x87/MXCSR/XSTATE preserved through every leaf')
         frames.append(f)
-    return dict(reader=r,frames=frames,header=h,leaf0=h[32:36],components=components,
+    return dict(reader=r,frames=frames,header=h,leaf0=h[32:36],components=components,fp_platform=platform,
                 summary=dict(native_exit=exit_status,native_events=len(events)))
 
 
@@ -605,7 +664,7 @@ def signal_record(reader,row,shape,frame,returned):
     return offset+16
 
 
-def inner_frame(reader,raw,image,outer,pid,uid,lo,cap,base):
+def inner_frame(reader,raw,image,outer,pid,uid,lo,cap,base,platform,components):
     """Actual nested tgkill context: preservation only, never application semantics."""
     h = q(reader.field(raw,reader.ft,'h'))
     uc,fp,source,memory,page = (reader.field(raw,reader.ft,n)
@@ -613,9 +672,9 @@ def inner_frame(reader,raw,image,outer,pid,uid,lo,cap,base):
     need(h[:2] == (1,reader.ucn) and h[2] == outer['h'][2] and
          h[4:12] == (5,5,(1 << 32)-6,0,pid|(uid << 32),0,0,0) and not any(h[12:]),
          'actual nested SI_TKILL, pid/uid union and safe zero-word prefix')
-    need(not any(uc[reader.ucn:]) and fp == outer['fp'] and
+    need(not any(uc[reader.ucn:]) and fp == initialized_handler_fp(outer,platform,components) and
          source == bytes.fromhex(image['source_hex']) and memory == outer['data'] and page == outer['page'],
-         'complete nested FP/x87/source/application memory and rseq page equal suspended outer state')
+         'complete initialized handler FP plus unchanged nested source/application memory and rseq page')
     f = dict(h=h,uc=uc,fp=fp,data=memory,page=page,
              greg=q(uc[reader.go:reader.go+23*8]),raw=raw,kernel_ids=page_ids(page,True))
     g = f['greg'];o = reader.layout['offsets'];raw_pc = base+image['bridge']['symbols']['li2_raw6']['return_pc']
@@ -651,16 +710,18 @@ def gated(data,layout,image,pid,exit_status):
     want[9:17] = [int(not unsafe),0 if unsafe else exit_status,code,detail&U64,
                   len(events),1,h[15],512*1024]
     want[17:22] = [h[17],h[18],int(unsafe),spec['stages'],image['control']]
-    want[32:36] = h[32:36]
+    want[32:47] = h[32:47]
+    if image['case'] == 11:want[47:50] = h[47:50]
     need(tuple(want) == h and h[6]&0xe7 == 0xe7 and h[15] > 0 and h[15]%4096 == 0 and
          h[32] >= 13 and all(v < 1 << 32 for v in h[32:36]),
          'entire gated terminal/safe-prefix header and every unused word')
     r.shape('li2_selected_hardware',dict(abi_version=(4,4),reserved=(4,4),
         leaf0=(16,4),leaf1=(16,4),leaf7=(16,4)),4)
     hw = struct.unpack('<14I',r.field(data,r.rt,'hardware'))
-    need(hw[:2] == (1,0) and hw[2:6] == h[32:36] and hw[8]&0x18000000 == 0x18000000 and
+    need(hw[:2] == (1,0) and hw[2:6] == h[32:36] and hw[10:14] == h[43:47] and hw[8]&0x18000000 == 0x18000000 and
          hw[11]&0x40010000 == 0x40010000, 'actual complete hardware capability and leaf0 observations')
     components = r.components(r.field(data,r.rt,'xstate'))
+    platform = fp_platform(h,h[6],components,False,image['case'])
     rows = r.field(data,r.rt,'rows');shape = r.types['npf_row'];size = shape['bytes']
     need(len(events) <= ROWS and not any(rows[len(events)*size:]),
          'exact gated event population and whole unused row tail')
@@ -688,7 +749,7 @@ def gated(data,layout,image,pid,exit_status):
             need(image['case'] == 11 and i == 2 and len(frames) == 2 and
                  event['event'] == 'delivered-SIGTRAP' and control[16:18] == (1,1) and control[18] < 1 << 32,
                  'one actual nested signal with independently captured getuid result')
-            f = inner_frame(r,before,image,frames[1],pid,control[18],h[15],h[16],base)
+            f = inner_frame(r,before,image,frames[1],pid,control[18],h[15],h[16],base,platform,components)
         need(v[:4] == (1,i,f['greg'][16],f['h'][8]) and not any(v[15:24]) and not any(v[28:]),
              'whole gated event identity and all unused row header words')
         signals.append(signal_record(r,row,shape,f,returned))
@@ -730,7 +791,7 @@ def gated(data,layout,image,pid,exit_status):
         app = frames[1] if image['case'] == 11 else frames[-1]
         need(memory == app['data'] and page == app['page'],
              'complete terminal or safe-prefix data/stack/page equals actual last application observation')
-    return dict(reader=r,frames=frames,header=h,leaf0=h[32:36],components=components,
+    return dict(reader=r,frames=frames,header=h,leaf0=h[32:36],components=components,fp_platform=platform,
         terminal_data=memory,terminal_page=page,kernel_ids=ids,
         summary=dict(gated_exit=exit_status,gated_events=len(events),**owner_summary))
 
@@ -798,7 +859,8 @@ def pair(native_record,gated_record,native_output,gated_output,layout,image,
     n = native(native_record,layout['native'],image,native_pid,native_exit)
     g = gated(gated_record,layout['gated'],image,gated_pid,gated_exit)
     need(n['leaf0'] == g['leaf0'] and n['components'] == g['components'] and
-         n['header'][10] == g['header'][6], 'same actual independent CPU and enabled XSTATE layout')
+         n['header'][10] == g['header'][6] and n['header'][36:47] == g['header'][36:47],
+         'same actual independent CPU, enabled XSTATE and complete pre-arm PKRU/CPUID7 observations')
     no = output(native_output,image,True,native_pid,n['leaf0'])
     go = output(gated_output,image,False,gated_pid,g['leaf0'])
     nr,gr = n['reader'],g['reader']

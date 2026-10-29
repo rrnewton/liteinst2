@@ -69,6 +69,23 @@ static void npf_initialize(void) {
  uint32_t lo,hi;__asm__ volatile("xgetbv":"=a"(lo),"=d"(hi):"c"(0):"memory");
  npf_record.h[6]=(uint64_t)lo|((uint64_t)hi<<32);
  checked((npf_record.h[6]&0xe7)==0xe7,1980,3);
+ /* Independent standard PKRU layout/value before seeding or admission. */
+ { uint32_t a=7,b,cx=0,d;
+   __asm__ volatile("cpuid":"+a"(a),"=b"(b),"+c"(cx),"=d"(d)::"memory");
+   npf_record.h[43]=a;npf_record.h[44]=b;npf_record.h[45]=cx;npf_record.h[46]=d;
+   checked(a==selected_hardware.leaf7[0] && b==selected_hardware.leaf7[1] &&
+    cx==selected_hardware.leaf7[2] && d==selected_hardware.leaf7[3],1980,18);
+   if(npf_record.h[6]&(UINT64_C(1)<<9)) {
+    checked((cx&UINT32_C(0x18))==UINT32_C(0x18),1980,19);
+    a=13;cx=9;
+    __asm__ volatile("cpuid":"+a"(a),"=b"(b),"+c"(cx),"=d"(d)::"memory");
+    npf_record.h[36]=a;npf_record.h[37]=b;npf_record.h[38]=cx;npf_record.h[39]=d;
+    checked(a==8 && b>=576 && b<=RN_FP-8 && !(cx&1) && !d,1980,20);
+    __asm__ volatile("rdpkru":"=a"(a),"=d"(d):"c"(0):"memory");
+    npf_record.h[40]=a;npf_record.h[41]=d;npf_record.h[42]=1;
+    checked(!d,1980,21);
+   }
+ }
  const unsigned bits[4]={2,5,6,7};
  for(unsigned i=0;i<4;i++) {
   uint32_t a=13,b,cx=bits[i],d;__asm__ volatile("cpuid":"+a"(a),"=b"(b),"+c"(cx),"=d"(d)::"memory");
@@ -193,6 +210,13 @@ void npf_control_hook(unsigned stage,uintptr_t pc) {
   npf_record.control[17]=1;npf_record.control[18]=(uint64_t)uid;checked(uid>=0,1980,17);
   npf_record.control[6]=(uint64_t)selected_session.pid;
   npf_record.control[7]=(uint64_t)selected_session.tid;npf_record.control[8]=SIGTRAP;
+  /* The nested kernel save must bind the live outer-handler value, not
+     assume that the configurable kernel reset value equals startup PKRU. */
+  if(npf_record.h[42]) {
+   uint32_t a,d;__asm__ volatile("rdpkru":"=a"(a),"=d"(d):"c"(0):"memory");
+   npf_record.h[47]=a;npf_record.h[48]=d;npf_record.h[49]=1;
+   checked(!d,1980,22);
+  }
   long r=raw(SYS_tgkill,selected_session.pid,selected_session.tid,SIGTRAP,0,0,0);
   npf_record.control[4]=1;npf_record.control[5]=(uint64_t)r;
   checked(0,1980,8); /* genuine nested terminal delivery must not return */

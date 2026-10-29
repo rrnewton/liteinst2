@@ -18,7 +18,7 @@ PROFILES=tuple((i,c)for i in range(21)for c in((0,1)if i==16 else(0,)))
 NATIVE=tuple(125 if i==10 else 0 for i,c in PROFILES)
 GATED=tuple(125 if i in (*range(10,19),20)else 0 for i,c in PROFILES)
 UNSAFE={(14,0),(16,1)}
-READER_CONTROLS=(30,30,30,30,30,30,30,30,30,30,30,37,31,31,28,33,31,28,31,31,30,31)
+READER_CONTROLS=(30,30,30,30,30,30,30,30,30,30,30,39,31,31,28,33,31,28,31,31,30,31)
 CONTROL_CLASSES={'10':'actual read fault','11':'actual tgkill','12':'actual mprotect denial',
     '13':'supplied sync return','14':'supplied actual registered-word mutation',
     '15':'actual writable private alias','16.0':'supplied page generation',
@@ -67,7 +67,7 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
     policy=load('native_pair_policy',selected/'tests/oneshot_integrated/check.py')
     need(len(PROFILES)==22 and len(set(PROFILES))==22 and NATIVE.count(125)==1 and GATED.count(125)==11,
          'fixed22 profiles with11 completed gated operations and11 required refusals')
-    need(len(READER_CONTROLS)==len(PROFILES)and sum(READER_CONTROLS)==672,
+    need(len(READER_CONTROLS)==len(PROFILES)and sum(READER_CONTROLS)==674,
          'fixed extra supplied-reader population; no additional native subjects')
     for name in ('expected.json','owners.py','terminal.py','fixture.S','native_reference.c','record.h','runtime_record.h','hooks.h',
                  'linker.ld','build.sh','layout.py','observe.inc'):pin(fixture/name)
@@ -271,8 +271,8 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
          sum(c['comparison']['completed_pair']for c in state['programs'])==11 and
          sum(c['comparison']['required_refusal']for c in state['programs'])==11,
          'all22 genuine same-ELF cases:11 completed gated operations and11 exact required refusal prefixes')
-    need(sum(reader_control_count(p['reader_controls'],p['ordinal'])for p in state['programs'])==672,
-         'all672 supplied-reader refusals after every genuine pair and terminal qualification')
+    need(sum(reader_control_count(p['reader_controls'],p['ordinal'])for p in state['programs'])==674,
+         'all674 supplied-reader refusals after every genuine pair and terminal qualification')
     finalize(receipt);state['status']='passed'
 
 
@@ -305,7 +305,7 @@ def summary(receipt):
                  p['comparison']['required_refusal']==int(GATED[p['ordinal']]!=0)and
                  p['comparison']['native_exit']==NATIVE[p['ordinal']]and p['comparison']['gated_exit']==GATED[p['ordinal']]
                  for p in programs),'public outcomes are actual qualified cases, never failed operations renamed completed')
-        need(sum(reader_control_count(p['reader_controls'],p['ordinal'])for p in programs)==672,
+        need(sum(reader_control_count(p['reader_controls'],p['ordinal'])for p in programs)==674,
              'complete supplied-reader cohort before public qualification; no native credit')
     rows=[]
     for i,c,lane in expected:
@@ -322,7 +322,7 @@ def summary(receipt):
         actual_native_fault_references=sum(p['comparison']['native_exit']==125 for p in qualified),
         columns=['case','control','gated','qualification','operation_status','expected_exit','actual_exit','events','stdout_bytes','stderr_bytes','record_bytes','captures_sha256'],
         rows=rows,control_classes=CONTROL_CLASSES,
-        required_supplied_reader_controls=672,
+        required_supplied_reader_controls=674,
         supplied_reader_refusals=sum(reader_control_count(p['reader_controls'],p['ordinal'])for p in qualified),
         reader_control_columns=['case','control','required','qualified_supplied_refusals'],
         reader_control_rows=[[i,c,READER_CONTROLS[o],next((reader_control_count(p['reader_controls'],o)

@@ -205,9 +205,20 @@ def validate(check, nrecord, grecord, nout, gout, layout, image,
         reject('nested_actual_raw_pc', image=different)
         at, size = field('gated', 'npf_record', 'nested_outer_frame')
         reject('whole_suspended_outer_frame', grecord=flip(grecord, [at+size-1]))
+        # Coherent corruption preserves inner-to-terminal equality. Only the
+        # independent complete kernel-initial FP model can reject this FCW bit.
+        base, row = row_base('gated', 2)
+        fp = field('gated', 'rn_frame', 'fp')[0]
+        inner = base+field('gated', row, 'before')[0]+fp
+        terminal = record_field('terminal_frame')+fp
+        reject('nested_kernel_initial_fcw', grecord=flip(grecord, [inner, terminal]))
+        # CPUID(D,9) offset is independently observed before arm in both lanes.
+        # Mutating only gated metadata must fail that join, including absent PKRU.
+        reject('native_gated_cpuid_d9_offset',
+               grecord=flip(grecord, [record_field('h')+37*8]))
     expected = {
         (0,0):30, (1,0):30, (2,0):30, (3,0):30, (4,0):30, (5,0):30,
-        (6,0):30, (7,0):30, (8,0):30, (9,0):30, (10,0):30, (11,0):37,
+        (6,0):30, (7,0):30, (8,0):30, (9,0):30, (10,0):30, (11,0):39,
         (12,0):31, (13,0):31, (14,0):28, (15,0):33, (16,0):31,
         (16,1):28, (17,0):31, (18,0):31, (19,0):30, (20,0):31,
     }

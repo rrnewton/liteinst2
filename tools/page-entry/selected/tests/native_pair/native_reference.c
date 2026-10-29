@@ -142,6 +142,23 @@ RSEC long npf_native_setup(unsigned c) {
    npf_native_record.h[32]=a;npf_native_record.h[33]=b;
    npf_native_record.h[34]=cx;npf_native_record.h[35]=d; }
  if((npf_native_record.h[10]&0xe7)!=0xe7)return -1;
+ /* Independent standard PKRU layout/value before seeding or admission. */
+ { uint32_t a=7,b,cx=0,d;
+   __asm__ volatile("cpuid":"+a"(a),"=b"(b),"+c"(cx),"=d"(d)::"memory");
+   npf_native_record.h[43]=a;npf_native_record.h[44]=b;
+   npf_native_record.h[45]=cx;npf_native_record.h[46]=d;
+   if(npf_native_record.h[10]&(UINT64_C(1)<<9)) {
+    if(npf_native_record.h[32]<13 || (cx&UINT32_C(0x18))!=UINT32_C(0x18))return -1;
+    a=13;cx=9;
+    __asm__ volatile("cpuid":"+a"(a),"=b"(b),"+c"(cx),"=d"(d)::"memory");
+    npf_native_record.h[36]=a;npf_native_record.h[37]=b;
+    npf_native_record.h[38]=cx;npf_native_record.h[39]=d;
+    if(a!=8 || b<576 || b>RN_FP-8 || (cx&1) || d)return -1;
+    __asm__ volatile("rdpkru":"=a"(a),"=d"(d):"c"(0):"memory");
+    npf_native_record.h[40]=a;npf_native_record.h[41]=d;npf_native_record.h[42]=1;
+    if(d)return -1;
+   }
+ }
  const unsigned bits[4]={2,5,6,7};
  for(unsigned i=0;i<4;i++) {
   uint32_t a=13,b,d,ecx=bits[i];__asm__ volatile("cpuid":"+a"(a),"=b"(b),"+c"(ecx),"=d"(d)::"memory");
