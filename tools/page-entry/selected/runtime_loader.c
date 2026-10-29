@@ -19,6 +19,34 @@
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_EFFECT_PROVIDER
+#include "selected_effect.h"
+#include "readonly_query.h"
+#if LI2_EFFECT_PROVIDER != 1 || LI2_ONESHOT_REUSABLE != 1 || LI2_ONESHOT_PUBLICATION != 1 || \
+    LI2_CPUID_NX_ONLY != 1 || LI2_RSEQ_NATIVE != 1 || LI2_RSEQ_NATIVE_BOUNDARY != 1 || \
+    LI2_RSEQ_TCGETS_BTRFS != 1 || LI2_RSEQ_TIOCGWINSZ_BTRFS != 1
+#error "linked effects require the complete reusable/default-rseq composition"
+#endif
+#if defined(LI2_SELECTED_PROVIDER) || defined(LI2_SELECTED_PROVIDER_BUILTINS)
+#error "linked effects retain their own immutable binding, separate from finite fixed policies"
+#endif
+static void selected_effect_begin(ucontext_t *,uintptr_t,uint64_t);
+static void selected_effect_guarded(void);
+static int selected_effect_is_native(void);
+static void selected_effect_native_enter(void);
+static void selected_effect_native_return(const struct li2_effect_result *);
+static void selected_effect_native_outcome(void);
+static void selected_effect_scripted_outcome(void);
+static void selected_effect_apply_and_commit(ucontext_t *);
+static void selected_effect_finish(void);
+static int selected_effect_complete(siginfo_t *,ucontext_t *,uint64_t);
+static void selected_effect_report(unsigned,unsigned,long);
+struct selected_effect_raw_prefix {
+    volatile sig_atomic_t entered,returned;
+    long number,result;
+};
+static struct selected_effect_raw_prefix selected_effect_raw;
+#endif
 #ifdef LI2_ONESHOT_CPUID_NX
 #if LI2_ONESHOT_CPUID_NX != 1 || LI2_CPUID_NX_ONLY != 1 || \
     LI2_ONESHOT_PUBLICATION != 1 || LI2_ONESHOT_INITIAL_INTERPRETER != 1
@@ -33,7 +61,7 @@
     !defined(LI2_REGISTER_RUN) || !defined(LI2_MAPS_PHASE_REUSE) || !defined(LI2_RSEQ_INACTIVE)
 #error "CPUID NX-only requires the complete native-page/TF/register/maps/rseq composition"
 #endif
-#if defined(LI2_ONESHOT_PUBLICATION) && !defined(LI2_ONESHOT_CPUID_NX)
+#if defined(LI2_ONESHOT_PUBLICATION) && !defined(LI2_ONESHOT_CPUID_NX) && !defined(LI2_EFFECT_PROVIDER)
 #error "CPUID NX-only is a distinct native-page profile, not a one-shot profile"
 #endif
 static void selected_cpuid_nx_report(unsigned,unsigned);
@@ -42,7 +70,7 @@ static void selected_cpuid_nx_report(unsigned,unsigned);
 #if LI2_TF_SAME_PAGE_LEASE != 1 || LI2_RSEQ_TIOCGWINSZ_BTRFS != 1 || LI2_RSEQ_NATIVE_BOUNDARY != 1
 #error "same-page lease is a fixed boundary/winsz profile"
 #endif
-#if defined(LI2_ONESHOT_PUBLICATION) || defined(LI2_SELECTED_PROVIDER)
+#if (defined(LI2_ONESHOT_PUBLICATION) && !defined(LI2_EFFECT_PROVIDER)) || defined(LI2_SELECTED_PROVIDER)
 #error "same-page lease does not compose with one-shot/configured callbacks"
 #endif
 #endif
@@ -146,13 +174,19 @@ static void report(unsigned status,unsigned code,long detail) {
     if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
 #if defined(LI2_ONESHOT_PUBLICATION)
-#ifdef LI2_ONESHOT_CPUID_NX
+#ifdef LI2_ONESHOT_REUSABLE
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_reusable_effects\"");
+#elif defined(LI2_ONESHOT_CPUID_NX)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_oneshot_cpuid_nx\"");
 #else
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_oneshot\"");
 #endif
+#ifdef LI2_ONESHOT_REUSABLE
+    uint64_t patches=selected_oneshot_counts.published;
+#else
     uint64_t patches=0;
     for(unsigned i=0;i<selected_oneshot_used;i++)patches+=selected_oneshot_owners[i].state.published==1;
+#endif
     field(&w,",\"source_patches\":",patches);
 #elif defined(LI2_TF_SEALED_CUSTODY)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_sealed_page_custody\",\"source_patches\":0");
@@ -214,6 +248,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_SELECTED_PROVIDER
     selected_provider_report(status,code);
+#endif
+#ifdef LI2_EFFECT_PROVIDER
+    selected_effect_report(status,code,detail);
 #endif
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
     selected_provider_builtins_report(status,code);
@@ -368,10 +405,28 @@ static void dispatch_operation(long n,ucontext_t *context) {
     if(selected_provider_builtins_enabled)selected_provider_syscall_decide(n,a,context);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
+#ifdef LI2_EFFECT_PROVIDER
+        selected_effect_guarded();
+        checked(selected_effect_is_native(),1700,n);
+        selected_effect_raw=(struct selected_effect_raw_prefix){.number=n};
+        selected_effect_native_enter();
+#endif
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
         if(selected_provider_builtins_enabled)selected_provider_syscall_exit();
 #endif
-        ++forwarded; report((unsigned)a[0],0,0); (void)raw(n,a[0],a[1],a[2],a[3],a[4],a[5]); fail(203,n);
+        ++forwarded; report((unsigned)a[0],0,0);
+#ifdef LI2_EFFECT_PROVIDER
+        __asm__ volatile("":::"memory");selected_effect_raw.entered=1;
+        __asm__ volatile("":::"memory");
+        result=raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
+        selected_effect_raw.result=result;__asm__ volatile("":::"memory");
+        selected_effect_raw.returned=1;__asm__ volatile("":::"memory");
+        const struct li2_effect_result returned_exit={.kind=LI2_SYSCALL,.value=(uint64_t)result};
+        selected_effect_native_return(&returned_exit);
+#else
+        (void)raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
+#endif
+        fail(203,n);
     }
     checked(n!=SYS_close || ((unsigned int)a[0]!=(unsigned int)report_fd && !fork_reserved_fd(a[0])),204,n);
     checked(n!=SYS_fcntl || a[1]==F_GETFD || a[1]==F_GETFL || !fork_sink_alias(a[0]),274,n);
@@ -380,6 +435,19 @@ static void dispatch_operation(long n,ucontext_t *context) {
     selected_run_before_syscall(n,a);
 #endif
     li2_lifecycle_before_other(n,a);
+#ifdef LI2_EFFECT_PROVIDER
+    selected_effect_guarded();
+    selected_effect_raw=(struct selected_effect_raw_prefix){.number=n};
+    unsigned effect_native=selected_effect_is_native();
+    if(!effect_native) {
+        /* The leaf independently requires the same scalar-only seam. Every
+           shared syscall/rseq guard above still ran; no kernel effect is made. */
+        checked(n==SYS_getpid || n==SYS_gettid,1701,n);
+        selected_effect_scripted_outcome();
+        result=0; /* Frame application below uses the retained typed result. */
+    } else {
+        selected_effect_native_enter();
+#endif
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
     if(selected_provider_builtins_enabled)selected_provider_syscall_guarded();
 #endif
@@ -390,6 +458,10 @@ static void dispatch_operation(long n,ucontext_t *context) {
     } else
 #endif
     if(!fork_dispatch(n,a,context,&result) && !li2_lifecycle_dispatch(n,a,&result)) {
+#ifdef LI2_EFFECT_PROVIDER
+        if(li2_readonly_query(n,a,0)) { /* Exact query form; all shared guards ran. */ }
+        else
+#endif
         if(n==SYS_arch_prctl) checked(a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS || a[0]==ARCH_GET_FS || a[0]==ARCH_GET_GS || a[0]==0x3001 || a[0]==ARCH_SHSTK_STATUS,205,a[0]);
         /* Queries execute in our handler context. Do not expose its blocked
            mask, SS_ONSTACK state or reserved private signal dispositions. */
@@ -406,28 +478,54 @@ static void dispatch_operation(long n,ucontext_t *context) {
         else checked(ordinary(n),210,n);
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
         if(!selected_provider_builtins_enabled || !selected_provider_syscall_replace(&result)) {
-            if(selected_provider_builtins_enabled)selected_provider_syscall_raw_enter();
-            result=raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
-            if(selected_provider_builtins_enabled)selected_provider_syscall_raw_return(result);
-        }
-#else
+#endif
 #ifdef LI2_RSEQ_TCGETS_BTRFS
         rseq_error=li2_rseq_tcgets_issuing(n,a);
         checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
 #endif
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+        if(selected_provider_builtins_enabled)selected_provider_syscall_raw_enter();
+#endif
+#ifdef LI2_EFFECT_PROVIDER
+        __asm__ volatile("":::"memory");selected_effect_raw.entered=1;
+        __asm__ volatile("":::"memory");
+#endif
         result=raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+        if(selected_provider_builtins_enabled)selected_provider_syscall_raw_return(result);
+#endif
+#ifdef LI2_EFFECT_PROVIDER
+        selected_effect_raw.result=result;__asm__ volatile("":::"memory");
+        selected_effect_raw.returned=1;__asm__ volatile("":::"memory");
+        /* Record the actual result before the ioctl postguard can fail. */
+        const struct li2_effect_result raw_result={.kind=LI2_SYSCALL,.value=(uint64_t)result};
+        selected_effect_native_return(&raw_result);
+#endif
 #ifdef LI2_RSEQ_TCGETS_BTRFS
         rseq_error=li2_rseq_tcgets_result(n,a,result);
         checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
 #endif
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+        }
 #endif
     }
+#ifdef LI2_EFFECT_PROVIDER
+        if(!selected_effect_raw.returned) {
+            /* Mapping/rseq owner dispatch may perform its own raw operation.
+               This prefix describes that backend, never a common raw issue. */
+            const struct li2_effect_result owned_result={.kind=LI2_SYSCALL,.value=(uint64_t)result};
+            selected_effect_native_return(&owned_result);
+        }
+    }
+#endif
 #ifdef LI2_RSEQ_INACTIVE
     rseq_error=li2_rseq_after_syscall(n,a);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
 #endif
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
     if(!selected_provider_builtins_enabled || !selected_provider_syscall_replaced())++forwarded;
+#elif defined(LI2_EFFECT_PROVIDER)
+    if(effect_native)++forwarded;
 #else
     ++forwarded;
 #endif
@@ -435,7 +533,13 @@ static void dispatch_operation(long n,ucontext_t *context) {
     if(n==SYS_set_tid_address && result>=0) ++tid_sets;
     if(n==SYS_set_robust_list && !result) ++robust_sets;
     if(n==SYS_rseq) ++rseq_calls;
+#ifdef LI2_EFFECT_PROVIDER
+    (void)pc;
+    if(effect_native)selected_effect_native_outcome();
+    selected_effect_apply_and_commit(context);
+#else
     g[REG_RAX]=result; g[REG_RCX]=pc; g[REG_R11]=g[REG_EFL];
+#endif
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
     if(selected_provider_builtins_enabled)selected_provider_syscall_commit(context,result);
 #endif
@@ -455,6 +559,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "native_controller.inc"
 #endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_ONESHOT_REUSABLE
+    li2_rseq_publication_preentry();
+#endif
 #ifdef LI2_RSEQ_NATIVE
     /* Must precede every old checked/fail and returning cleanup path. */
     li2_rseq_native_preentry();

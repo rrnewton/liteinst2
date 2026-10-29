@@ -369,6 +369,7 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
 /* Internal-only controls while target is stopped and no step page is open.
    These controls cannot change source/lifecycle generations. Actual restoration
    must complete before any frame commit, fetch release or application return. */
+#ifndef LI2_EFFECT_PROVIDER
 static void selected_builtin(ucontext_t *context) {
     greg_t *g=context->uc_mcontext.gregs;
     checked(!selected_step_pending && li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY,646,0);
@@ -446,6 +447,11 @@ static void selected_builtin(ucontext_t *context) {
 #endif
 }
 
+#endif
+#ifdef LI2_EFFECT_PROVIDER
+#include "selected_effect_controller.inc"
+#endif
+
 /* Shared owned-source effect ingress. Caller holds a fresh exact source borrow;
    no synthetic signal frame is constructed for restored publication handoff. */
 static void selected_owned_syscall(ucontext_t *context,uint64_t flags) {
@@ -453,15 +459,27 @@ static void selected_owned_syscall(ucontext_t *context,uint64_t flags) {
     checked(!selected_step_pending && li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY &&
             selected_decoded.kind==LI2_SYSCALL,1560,0);
     long number=g[REG_RAX];
+#ifdef LI2_EFFECT_PROVIDER
+    /* Actual UC may be a restored UD landing. Retain it, while the provider
+       describes the independently authenticated original logical PC. */
+    selected_effect_begin(context,selected_decoded.pc,flags);
+#endif
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
     if(selected_provider_builtins_enabled)selected_provider_syscall_prepare(context,flags);
 #endif
     g[REG_RIP]=(greg_t)selected_decoded.next_pc;g[REG_RCX]=g[REG_RIP];
     g[REG_EFL]=(greg_t)flags;g[REG_R11]=(greg_t)flags;
     selected_release();++selected_source_syscalls;dispatch_operation(number,context);
+#ifdef LI2_EFFECT_PROVIDER
+    selected_effect_finish();
+#endif
 }
 #ifdef LI2_ONESHOT_PUBLICATION
+#ifdef LI2_ONESHOT_REUSABLE
+#include "selected_oneshot_reusable.inc"
+#else
 #include "selected_oneshot.inc"
+#endif
 #endif
 static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     greg_t *g=context->uc_mcontext.gregs;uintptr_t pc=(uintptr_t)g[REG_RIP];
@@ -483,6 +501,13 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_ONESHOT_PUBLICATION
     if(!selected_selftesting && selected_oneshot_try(sig,si,context))return;
 #endif
+#ifdef LI2_EFFECT_PROVIDER
+    if(selected_decoded.kind>=LI2_CPUID && selected_decoded.kind<=LI2_RDTSCP) {
+        checked(!selected_selftesting,1702,0);
+        checked(selected_effect_complete(si,context,flags),1703,selected_decoded.kind);
+        selected_release();selected_effect_finish();return;
+    }
+#else
     if(selected_decoded.kind>=LI2_RDRAND && selected_decoded.kind<=LI2_RDPID) {
         checked(!selected_selftesting,628,0);
         struct li2_selected_request request={&selected_decoded,selected_view.bytes,selected_view.length,
@@ -500,6 +525,7 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     if(selected_decoded.kind==LI2_CPUID || selected_decoded.kind==LI2_RDTSC || selected_decoded.kind==LI2_RDTSCP) {
         checked(!selected_selftesting,630,0);selected_builtin(context);selected_release();return;
     }
+#endif
     if(selected_decoded.kind==LI2_SYSCALL) {
         checked(!selected_selftesting,631,0);
         selected_owned_syscall(context,flags);return;

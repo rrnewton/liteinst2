@@ -1,4 +1,4 @@
-/* Canonical F3 48 AB only. The unchanged owner executes original bytes and
+/* Canonical F3 48 AB / F3 AB only. The owner executes original bytes and
    validates every actual TRACE; no ordinary classifier permission is added. */
 static int selected_repeat_continue(void *context,uintptr_t pc) {
     (void)context;
