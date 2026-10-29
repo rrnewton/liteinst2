@@ -1,0 +1,8 @@
+phase,name,status,seconds,wall_limit_seconds,exit_code,rescue_reaps,terminal_observations,passed_observations,failed_observations,ignored_observations,command,log_sha256
+seven,fmt,PASS,8.674507491057739,180,0,0,0,0,0,0,cargo fmt --check,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+seven,clippy,PASS,5.924074589041993,180,0,0,0,0,0,0,cargo clippy --workspace --all-targets --all-features -- -D warnings,f09b2e0e75745ab8c5b71d7459ebc9d1d2a0a4e24e0fc0b4d77dc9f256fa3fff
+seven,check,PASS,25.138502666028216,180,0,0,0,0,0,0,cargo check --workspace --all-features --all-targets,55a7024bc36f9335b983223c17ad5c86d540a8a18a6d8bf1cb9d52f43292c31a
+seven,workspace-default,TIMEOUT,360.1450550169684,360,-9,8,74,1982,0,1,cargo test --workspace,ccc0c6cc8663df3eeb003cfbbda798fec9e0f53a824e4b4448c8d60934320acd
+tail,serial-launch,PASS,132.00555883091874,180,0,0,28,1039,0,0,cargo test -p liteinst-launch -- --test-threads=1 --nocapture,fd7715c909a642c3b15ba26e5171b1f5c51db0ebf124959fa52e7d9c8caa62a9
+tail,staged-allocation,PASS,0.036038866033777595,180,0,0,1,3,0,0,cargo test -p liteinst2 --lib staged,5e07291823c056e6eb69c5255d8d3fc5ef707a87792d8e53ad13de6c3687cd44
+tail,prefixed-pun,PASS,1.3361214108299464,180,0,0,1,36,0,0,cargo test -p liteinst2 --test prefixed_pun_oracle,ec1a68827f6279a2fc02121e3eee8f29b20af9a0cce76c208a446981167bc399

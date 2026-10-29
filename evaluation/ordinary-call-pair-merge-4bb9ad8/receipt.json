@@ -1,0 +1,297 @@
+{
+  "attempts_per_command": 1,
+  "checks": [
+    {
+      "command": "cargo fmt --check",
+      "exit_code": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "fmt",
+      "passed_observations": 0,
+      "phase": "seven",
+      "rescue_reaps": 0,
+      "seconds": 8.674507491057739,
+      "status": "PASS",
+      "terminal_observations": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+      "exit_code": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "f09b2e0e75745ab8c5b71d7459ebc9d1d2a0a4e24e0fc0b4d77dc9f256fa3fff",
+      "name": "clippy",
+      "passed_observations": 0,
+      "phase": "seven",
+      "rescue_reaps": 0,
+      "seconds": 5.924074589041993,
+      "status": "PASS",
+      "terminal_observations": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "command": "cargo check --workspace --all-features --all-targets",
+      "exit_code": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "55a7024bc36f9335b983223c17ad5c86d540a8a18a6d8bf1cb9d52f43292c31a",
+      "name": "check",
+      "passed_observations": 0,
+      "phase": "seven",
+      "rescue_reaps": 0,
+      "seconds": 25.138502666028216,
+      "status": "PASS",
+      "terminal_observations": 0,
+      "wall_limit_seconds": 180
+    },
+    {
+      "command": "cargo test --workspace",
+      "exit_code": -9,
+      "failed_observations": 0,
+      "ignored_observations": 1,
+      "log_sha256": "ccc0c6cc8663df3eeb003cfbbda798fec9e0f53a824e4b4448c8d60934320acd",
+      "name": "workspace-default",
+      "passed_observations": 1982,
+      "phase": "seven",
+      "rescue_reaps": 8,
+      "seconds": 360.1450550169684,
+      "status": "TIMEOUT",
+      "terminal_observations": 74,
+      "wall_limit_seconds": 360
+    },
+    {
+      "command": "cargo test -p liteinst-launch -- --test-threads=1 --nocapture",
+      "exit_code": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "fd7715c909a642c3b15ba26e5171b1f5c51db0ebf124959fa52e7d9c8caa62a9",
+      "name": "serial-launch",
+      "passed_observations": 1039,
+      "phase": "tail",
+      "rescue_reaps": 0,
+      "seconds": 132.00555883091874,
+      "status": "PASS",
+      "terminal_observations": 28,
+      "wall_limit_seconds": 180
+    },
+    {
+      "command": "cargo test -p liteinst2 --lib staged",
+      "exit_code": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "5e07291823c056e6eb69c5255d8d3fc5ef707a87792d8e53ad13de6c3687cd44",
+      "name": "staged-allocation",
+      "passed_observations": 3,
+      "phase": "tail",
+      "rescue_reaps": 0,
+      "seconds": 0.036038866033777595,
+      "status": "PASS",
+      "terminal_observations": 1,
+      "wall_limit_seconds": 180
+    },
+    {
+      "command": "cargo test -p liteinst2 --test prefixed_pun_oracle",
+      "exit_code": 0,
+      "failed_observations": 0,
+      "ignored_observations": 0,
+      "log_sha256": "ec1a68827f6279a2fc02121e3eee8f29b20af9a0cce76c208a446981167bc399",
+      "name": "prefixed-pun",
+      "passed_observations": 36,
+      "phase": "tail",
+      "rescue_reaps": 0,
+      "seconds": 1.3361214108299464,
+      "status": "PASS",
+      "terminal_observations": 1,
+      "wall_limit_seconds": 180
+    }
+  ],
+  "claim": 4,
+  "commands_repeated": 0,
+  "compiler_jobs": 4,
+  "feature_parent": "4e17be4232dca67c532a08ab3e90f2f1373fa93d",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "incremental": false,
+  "limitation": "Workspace timed out at its original 360-second bound. Only the three previously UNRUN tail commands were then executed once. Prefix observations can include nested summaries. Neither a whole-workspace nor 316-thread pass is claimed. The first phase did not record load; null is intentional. Prior native/session results are not rerun or relabelled as qualification at this merged revision.",
+  "main_parent": "b66ce1fea7c48af00fca719574d19ed7e666cf4d",
+  "performance_claim": false,
+  "phases": [
+    {
+      "command": [
+        "/usr/bin/env",
+        "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+        "/usr/local/bin/python3",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "8",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-4bb9ad8-checks",
+        "--",
+        "/usr/local/bin/python3",
+        "-B",
+        "evaluation/admission/check_exec_identity.py",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--cargo-home",
+        "$CARGO_HOME",
+        "--output",
+        "$REPO/ignored/a5/merged-4bb9ad8-seven-checks-v1",
+        "--checks-only"
+      ],
+      "hard_reserved_cpus": [
+        52,
+        121,
+        129,
+        130,
+        181,
+        189,
+        286,
+        302
+      ],
+      "ledger_readback": false,
+      "load_after": null,
+      "load_before": null,
+      "name": "seven",
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "13f86c342bd014a1f86b0532292bcc01f2c7260ec31bd8634877a3520f8ba53d",
+        "reaped_descendants": 0,
+        "seconds": 401.83330747880973,
+        "start_utc": "2026-10-29T19:39:14.541018+00:00",
+        "termination": null
+      },
+      "outer_receipt": {
+        "bytes": 1251,
+        "sha256": "ed686e10a2eb3d37de22a92c23198a02f59bcf1009c549a53c9f0840aa2d7620"
+      },
+      "receipt": {
+        "bytes": 12282,
+        "sha256": "5ee3753f11882bee4477b94e7acefb69853742e68ce32217951567a41a39339e"
+      },
+      "reservation_join": "normal_allocator_return",
+      "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+      "status": "FAILED"
+    },
+    {
+      "command": [
+        "/usr/bin/env",
+        "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+        "/usr/local/bin/python3",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "8",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-4bb9ad8-tail",
+        "--",
+        "/usr/local/bin/python3",
+        "-B",
+        "ignored/a5/cfc8d76-tail-checks-source-v1/successor-v2/tail_checks.py",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--cargo-home",
+        "$CARGO_HOME",
+        "--output",
+        "$REPO/ignored/a5/merged-4bb9ad8-tail-checks-v1",
+        "--checks-only"
+      ],
+      "hard_reserved_cpus": [
+        8,
+        37,
+        44,
+        73,
+        146,
+        169,
+        189,
+        198
+      ],
+      "ledger_readback": false,
+      "load_after": [
+        39.32,
+        61.88,
+        69.44
+      ],
+      "load_before": [
+        45.78,
+        75.72,
+        74.46
+      ],
+      "name": "tail",
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "85c9f9a0f049d8ad9df0f92a919c0447b79cdb343cc91f001ba5218eb8f194b3",
+        "reaped_descendants": 0,
+        "seconds": 135.1207630559802,
+        "start_utc": "2026-10-29T19:46:07.614734+00:00",
+        "termination": null
+      },
+      "outer_receipt": {
+        "bytes": 1272,
+        "sha256": "6b70b4bf8b7ffb8d9c04863716ff53a528de222c66eaa570f6dbc7a0387ebbe4"
+      },
+      "receipt": {
+        "bytes": 6925,
+        "sha256": "3882bcf7ff5fdd238720666cf262f2426e939c4bdfcc235aa36211e54962f8dd"
+      },
+      "reservation_join": "normal_allocator_return",
+      "runner_sha256": "ebab52f268da2fa53cdcb47b38799b73e0f754b9cff0e8aadc43ef1eacde6b5e",
+      "status": "PASS"
+    }
+  ],
+  "profile": "development/test, optimization 0, debug info 0, assertions and overflow checks enabled",
+  "review": {
+    "binding": {
+      "bytes": 2060,
+      "sha256": "fe04afdfd2105215120e6ff3445353713e8a57f52189c3e363574a23c1b63423"
+    },
+    "limitations": "Integration-only source verdict. Same-stop proposal was authored earlier by this agent, so this is not independent reapproval of its original design. Exact Git/text/hash/AST inspection only; no project execution/import/compiler/test/formatter/native/model/disassembly, no runtime/evidence content or environment/process/network reads. No native, timing or performance qualification.",
+    "report": {
+      "bytes": 3329,
+      "sha256": "e9fe98f4f0a681be3edac91343f7ddc2e90d2812668c5a7d54a3248e7ec01664"
+    },
+    "scope": [
+      "tests/support/quiescent_oracle.rs",
+      "evaluation/ordinary-call-pair-session/reproduce.py",
+      "evaluation/ordinary-call-pair-session/runner_controls.py",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py",
+      "evaluation/ordinary-call-pair-session/launch.py",
+      "evaluation/ordinary-call-pair-session/freeze.py",
+      "evaluation/ordinary-call-pair-session/owner_controls.py",
+      "evaluation/ordinary-call-pair-session/README.md",
+      "evaluation/ordinary-call-pair-session/ROOT_PROTOCOL.md"
+    ],
+    "verdict": "SOURCE_APPROVED"
+  },
+  "revision": "4bb9ad8161015b3775d3ef376b0788227f9801c4",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "source_continuity": [
+    {
+      "protocol": "native",
+      "protocol_sha256": "e68a6e120639105df6ce46da923cb5b5ae04c013a193469951f9d51d08de6abf",
+      "source_revision": "a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "unchanged_source_pins": 1171
+    },
+    {
+      "protocol": "session",
+      "protocol_sha256": "68bc9ebefcf29de450e2cf786a9d98151f295d260ccf665e3ef93aa511134be4",
+      "source_revision": "a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "unchanged_source_pins": 1220
+    }
+  ],
+  "status": "FAILED"
+}
