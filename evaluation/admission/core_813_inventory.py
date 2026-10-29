@@ -61,6 +61,31 @@ def digest(value):
     return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())
 
 
+def precheck_current_sources(error):
+    """Reject changed current blobs early; never replace historical validation."""
+    layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
+              MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754)
+    expected = {}
+    for layer in layers:
+        # Non-plain metadata stays on the original path, without new callbacks
+        # or file reads. This is eligibility for an extra rejection check only.
+        if type(layer) is not dict or any(type(key) is not str for key in layer):
+            return
+        sources = layer.get('sources')
+        if (type(sources) is not dict or
+                any(type(path) is not str or type(value) is not str
+                    for path, value in sources.items())):
+            return
+        expected.update(sources)
+    for path, value in expected.items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == value, error)
+
+
 def source_before_2754(path, data, error):
     """Only the fixed 2754 whole blob may reach its exact historical source."""
     if path not in MAIN2754['projections']:

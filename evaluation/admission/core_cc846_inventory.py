@@ -167,6 +167,7 @@ def peel_python(identities):
 def require_current(declared):
     """Live preflight has no historical-catalog acceptance path."""
     require(type(declared) is dict and digest(declared) == main813.LATEST, 'ac0963_inventory_differs')
+    main813.precheck_current_sources('ac0963_source_inventory_differs')
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):

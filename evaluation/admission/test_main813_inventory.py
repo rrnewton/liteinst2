@@ -377,6 +377,64 @@ class Main813InventoryTests(unittest.TestCase):
 
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
+        # The early current-blob rejection never grants historical acceptance.
+        with patch.object(inventory, 'before_cc846',
+                          side_effect=RuntimeError('original history reached')) as history:
+            with self.assertRaisesRegex(RuntimeError, '^original history reached$'):
+                inventory.require_current(declared)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(declared)])
+        with patch.object(main813, 'precheck_current_sources') as precheck:
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current({})
+            self.assertEqual(precheck.call_count, 0)
+        precheck_path = 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs'
+        precheck_target = main813.ROOT / precheck_path
+        precheck_read = Path.read_bytes
+        with patch.dict(main813.MAIN2754['sources'], {precheck_path: '0' * 64}):
+            with patch.object(inventory, 'before_cc846') as history:
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                    inventory.require_current(declared)
+                self.assertEqual(history.call_count, 0)
+        # A changed/missing first read refuses early; the same change after a
+        # valid precheck is still rejected by the untouched original traversal.
+        for late in (False, True):
+            for missing in (False, True):
+                precheck_reads = []
+                def precheck_changed(candidate):
+                    if candidate == precheck_target:
+                        precheck_reads.append(candidate)
+                        if not late or len(precheck_reads) > 1:
+                            if missing:
+                                raise OSError('PRIVATE_PRECHECK_SENTINEL')
+                            return precheck_read(candidate) + b'\n'
+                    return precheck_read(candidate)
+                with patch.object(Path, 'read_bytes', precheck_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_current(declared)
+                self.assertEqual(len(precheck_reads), 2 if late else 1)
+        # Unsupported metadata cannot run custom callbacks during the precheck.
+        class PrecheckMap(dict):
+            def items(self):
+                raise RuntimeError('custom map reached')
+        class PrecheckText(str):
+            def __hash__(self):
+                raise RuntimeError('custom key reached')
+        class PrecheckKey(str):
+            __hash__ = str.__hash__
+            def __eq__(self, other):
+                raise RuntimeError('custom key equality reached')
+        for sources in (PrecheckMap(), {precheck_path: PrecheckText('hash')},
+                        {PrecheckKey(precheck_path): '0' * 64}, None):
+            with patch.dict(main813.MAIN2754, {'sources': sources}):
+                with patch.object(Path, 'read_bytes', side_effect=AssertionError('early read')):
+                    self.assertIsNone(main813.precheck_current_sources('precheck_control'))
+        with patch.object(main813, 'MAIN2754', PrecheckMap()):
+            with patch.object(Path, 'read_bytes', side_effect=AssertionError('early read')):
+                self.assertIsNone(main813.precheck_current_sources('precheck_control'))
+            with patch.object(inventory, 'before_cc846',
+                              side_effect=RuntimeError('fallback history reached')):
+                with self.assertRaisesRegex(RuntimeError, '^fallback history reached$'):
+                    inventory.require_current(declared)
         actual = plain.deepcopy(declared)
         declared = main813.before_e797(declared)
         live = plain.deepcopy(declared)
