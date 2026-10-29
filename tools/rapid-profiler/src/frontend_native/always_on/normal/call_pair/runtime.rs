@@ -103,10 +103,11 @@ impl State {
             bits,
         ])
     }
-    // Regenerate every word from live receipt summaries / completed immutable
-    // rows, not just a used prefix. This preflight never consumes a receipt.
-    fn expected_page(&self, v: View<'_>) -> Result<[u64; 512], BridgeError> {
-        let mut page = [0u64; 512];
+    // Derive all four headers and four possible events from live receipt
+    // summaries / completed immutable rows. Every later page word must be zero;
+    // journal_matches_prefix still reads and checks all 512 words. No receipt is consumed.
+    fn expected_prefix(&self, v: View<'_>) -> Result<[u64; 32], BridgeError> {
+        let mut page = [0u64; 32];
         page[2] = v.tid;
         page[3] = self.depth() as u64;
         let mut events = [None; 4];
@@ -320,7 +321,7 @@ impl State {
                 return Err(error(Cause::Return));
             }
         }
-        if self.expected_page(v)? != journal_copy(v.journal) {
+        if !journal_matches_prefix(v.journal, &self.expected_prefix(v)?) {
             return Err(error(Cause::Invariant));
         }
         Ok(())
@@ -724,6 +725,22 @@ pub(super) fn record_outcome_ok(row: &NormalCallPairRecord, registration: u64) -
                 }
         }
     }
+}
+// The two-frame grammar has four header words and at most four seven-word events.
+// Unused events remain zero in the prefix; all remaining 480 words must also be zero.
+// Never short-circuit: preserve all 512 volatile reads in increasing index order,
+// even when an earlier word differs. The transfer copy remains separate and complete.
+fn journal_matches_prefix(journal: &IntervalJournal, prefix: &[u64; 32]) -> bool {
+    let mut difference = 0u64;
+    for (i, &expected) in prefix.iter().enumerate() {
+        // SAFETY: only this attached thread owns/writes the complete retained page.
+        difference |= unsafe { journal.page.0.as_ptr().add(i).read_volatile() } ^ expected;
+    }
+    for i in prefix.len()..512 {
+        // SAFETY: the same retained page; read its entire zero tail after the prefix.
+        difference |= unsafe { journal.page.0.as_ptr().add(i).read_volatile() };
+    }
+    difference == 0
 }
 fn journal_copy(journal: &IntervalJournal) -> [u64; 512] {
     // SAFETY: only this attached thread owns/writes the complete retained page.

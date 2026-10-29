@@ -951,3 +951,46 @@ fn old_profile_exclusions_remain() {
             .is_ok()
     );
 }
+
+#[test]
+fn compact_journal_validation_keeps_all_words_at_every_phase() {
+    fn check(f: &mut Fixture) {
+        let before = snapshot(&f.state);
+        assert!(
+            f.state
+                .call_pair
+                .as_ref()
+                .unwrap()
+                .validate(View::of(&f.state))
+                .is_ok()
+        );
+        assert_eq!(snapshot(&f.state), before);
+        let original = f.state.journal.page.0;
+        for (i, word) in original.into_iter().enumerate() {
+            f.state.journal.word(i, word ^ u64::MAX);
+            refused(f, |s| s.call_pair.as_ref().unwrap().validate(View::of(s)));
+            f.state.journal.word(i, word);
+        }
+        assert_eq!(snapshot(&f.state), before);
+    }
+    let mut f = Fixture::new(10);
+    check(&mut f);
+    f.enter(0);
+    check(&mut f);
+    f.enter(1);
+    check(&mut f);
+    f.observe(1);
+    check(&mut f);
+    f.ack();
+    check(&mut f);
+    f.observe(0);
+    check(&mut f);
+    let mut expected = f.state.journal.page.0;
+    expected[3] = 0;
+    let batch = f.transfer();
+    assert_eq!(batch.journal(), &expected);
+    assert_eq!(batch.after().pairs.completed, 2);
+    assert_eq!(batch.after().roots, 1);
+    assert_eq!(batch.after().child_acks, 1);
+    check(&mut f);
+}

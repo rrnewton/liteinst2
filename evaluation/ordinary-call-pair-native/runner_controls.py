@@ -63,7 +63,7 @@ class Controls(unittest.TestCase):
         with self.assertRaises(AssertionError):R.calibration_inventory(L,prior,inventory,R.ORACLE_CONTROLS[0])
 
     def test_selected_native_sdk_core_censuses_are_exact(self):
-        self.assertEqual((len(R.ORDINARY_CONTROLS),len(R.SDK_CONTROLS),len(R.CORE_CONTROLS)),(14,29,8))
+        self.assertEqual((len(R.ORDINARY_CONTROLS),len(R.SDK_CONTROLS),len(R.CORE_CONTROLS)),(14,30,8))
         for names in (R.ORDINARY_CONTROLS,R.SDK_CONTROLS,R.CORE_CONTROLS):
             inventory=list(names)+['unrelated::test'];self.assertEqual(R.selected_inventory(inventory,names),names)
             for name in names:
