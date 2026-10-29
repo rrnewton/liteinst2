@@ -8511,7 +8511,7 @@
         "unit/ordinary_interval/main": "normal::module::session::input::tests::"
       },
       "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
-        "unit/ordinary_interval/main": "normal::session::io::tests::"
+        "unit/ordinary_interval/main": "normal::session::io::csv_tests::"
       }
     },
     "listed_additions": {
@@ -8533,8 +8533,8 @@
         "normal::module::session::input::tests::typed_completion_keeps_all_refusals_incomplete_and_exact_stderr",
         "normal::module::session::tests::accepted_module_pending_owner_survives_full_queue_and_disconnect_before_stop",
         "normal::module::session::tests::canonical_numeric_cli_never_normalizes_signs_spaces_or_overflow",
-        "normal::session::io::tests::csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct",
-        "normal::session::io::tests::csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard"
+        "normal::session::io::csv_tests::csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct",
+        "normal::session::io::csv_tests::csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard"
       ]
     },
     "macros": {},
@@ -8638,7 +8638,8 @@
         "pub(in crate::normal) mod io;"
       ],
       "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": [
-        "#[cfg(test)]\nmod tests {"
+        "#[cfg(test)]\nmod tests {",
+        "#[cfg(test)]\nmod csv_tests {"
       ]
     },
     "origin": "9c70b1af4c10cbf66d1cab26c66561d03bb463fb",
