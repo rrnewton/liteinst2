@@ -129,7 +129,8 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
         // These exact Codes have register destinations. Do not put their
         // mnemonics in the no-write family: a future memory-store Code with
         // the same mnemonic must remain unsupported until explicitly reviewed.
-        Code::EVEX_Vpbroadcastb_zmm_k1z_r32
+        Code::Mov_rm16_Sreg
+        | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vmovdqa64_zmm_k1z_zmmm512
         | Code::EVEX_Vpminub_zmm_k1z_zmm_zmmm512

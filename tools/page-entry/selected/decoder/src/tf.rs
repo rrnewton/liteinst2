@@ -60,6 +60,17 @@ fn canonical_bmi1_register(instruction: &Instruction, bytes: &[u8]) -> bool {
     }
 }
 
+// Canonical 16-bit selector reads into GPRs (except SP). Reading a segment
+// selector has no interrupt-shadow effect; loading one is never admitted here.
+// No memory destination, ignored REX bits, other widths or added prefixes.
+fn canonical_segment_read(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Mov_rm16_Sreg && match bytes {
+        [0x66, 0x8c, m] => (*m & 0xc0) == 0xc0 && (*m & 0x38) < 0x30 && (*m & 7) != 4,
+        [0x66, 0x41, 0x8c, m] => (*m & 0xc0) == 0xc0 && (*m & 0x38) < 0x30,
+        _ => false,
+    }
+}
+
 fn prefixes(instruction: &Instruction, bytes: &[u8]) -> bool {
     let mut operand = false;
     let mut address = false;
@@ -346,6 +357,8 @@ fn classify(
         // Register equality family; existing closed RDI memory guard stays exact.
         if !canonical_vpcmpeqb_register(&instruction, &source[..instruction.len()])
             && !canonical_vpcmpeqb_rdi(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::Mov_rm16_Sreg {
+        if !canonical_segment_read(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if matches!(instruction.code(), Code::VEX_Blsmsk_r64_rm64 | Code::VEX_Andn_r64_r64_rm64) {
         if !canonical_bmi1_register(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::VEX_Bzhi_r64_rm64_r64 {
@@ -372,6 +385,7 @@ fn classify(
     let (flow, family) = match instruction.code() {
         Code::VEX_Bzhi_r64_rm64_r64 | Code::VEX_Blsmsk_r64_rm64 | Code::VEX_Andn_r64_r64_rm64 | Code::Rdsspq_r64 | Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
         | Code::Nop_rm16 | Code::Nop_rm32 | Code::Nop_rm64
+        | Code::Mov_rm16_Sreg
         | Code::Mov_rm8_r8 | Code::Mov_rm16_r16 | Code::Mov_rm32_r32
         | Code::Mov_rm64_r64 | Code::Mov_r8_rm8 | Code::Mov_r16_rm16
         | Code::Mov_r32_rm32 | Code::Mov_r64_rm64 | Code::Mov_AL_moffs8

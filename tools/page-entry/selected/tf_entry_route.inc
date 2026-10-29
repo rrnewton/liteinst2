@@ -54,6 +54,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 2134: /* Movsx_r32_rm16 */
     case 2135: /* Movsx_r64_rm16 */
     case 140: /* Movsxd_r64_rm32 */
+    case 287: /* Canonical register MOV r16,Sreg; decoder rejects selector loads. */
     case 290: /* Lea_r16_m */
     case 291: /* Lea_r32_m */
     case 292: /* Lea_r64_m */
