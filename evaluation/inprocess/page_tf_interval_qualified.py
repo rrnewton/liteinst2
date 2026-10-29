@@ -353,7 +353,7 @@ def authenticate(path, sha, current_source, pin, binary, record):
                 p, target = ns / alias, '/proc/self/fd/' + str(got['fd'])
                 need(p.is_symlink() and os.readlink(p) == target, 'actual sealed dependency alias')
                 namespace_links[str(p)] = target
-        env.update(LD_LIBRARY_PATH=str(ns), LI2_DEPENDENCY_FDS=','.join(str(x['fd']) for x in sealed['objects']))
+        env.update(LD_LIBRARY_PATH=str(ns), LD_BIND_NOW='1', LI2_DEPENDENCY_FDS=','.join(str(x['fd']) for x in sealed['objects']))
         need(started['argv'] == prep['argv'] and started['environment'] == env and
              {k: started[v] for k, v in (('bytes', 'carrier_size'), ('sha256', 'carrier_sha256'))} ==
              fact(carrier) == case['backing'] and

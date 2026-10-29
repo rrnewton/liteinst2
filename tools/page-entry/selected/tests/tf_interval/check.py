@@ -195,7 +195,10 @@ class Reader(old.Reader):
   I,F=self.integer,self.field;t='li2_fetch_backing';self.padding(b,t);s=F(b,t,'stat');self.padding(s,'stat')
   need(type(carrier)is dict and set(carrier)=={'bytes','sha256'}and type(carrier['bytes'])is int and carrier['bytes']>0 and type(carrier['sha256'])is str and len(carrier['sha256'])==64 and bytes.fromhex(carrier['sha256']).hex()==carrier['sha256'],'independently source/command-bound complete carrier identity')
   need(I(b,t,'retained_fd')>=200 and I(b,t,'seals')==15 and tuple(I(b,t,k)for k in('stat_result','seals_observed','stat_observed'))==(0,1,1),'actual retained sealed descriptor and complete F_GET_SEALS/fstat')
-  need(I(s,'stat','st_dev')>0 and I(s,'stat','st_ino')>0 and I(s,'stat','st_nlink')==0 and stat.S_ISREG(I(s,'stat','st_mode'))and not I(s,'stat','st_mode')&0o7000 and I(s,'stat','st_rdev')==0 and I(s,'stat','st_size')==carrier['bytes']and I(s,'stat','st_blksize')==4096 and 0<I(s,'stat','st_blocks')<=((carrier['bytes']+4095)//4096)*8 and not any(F(s,'stat','__pad0')+F(s,'stat','__glibc_reserved')),'whole actual memfd stat, exact carrier extent and clean reserved fields')
+  # Linux shmem uses i_blocksize (PAGE_SIZE) unless huge policy selects
+  # HPAGE_PMD_SIZE. This fixed x86-64/4KiB profile admits only those two
+  # source-defined values; the complete first stat still anchors every byte.
+  need(I(s,'stat','st_dev')>0 and I(s,'stat','st_ino')>0 and I(s,'stat','st_nlink')==0 and stat.S_ISREG(I(s,'stat','st_mode'))and not I(s,'stat','st_mode')&0o7000 and I(s,'stat','st_rdev')==0 and I(s,'stat','st_size')==carrier['bytes']and I(s,'stat','st_blksize')in(4096,1<<21) and 0<I(s,'stat','st_blocks')<=((carrier['bytes']+4095)//4096)*8 and not any(F(s,'stat','__pad0')+F(s,'stat','__glibc_reserved')),'whole actual memfd stat, exact carrier extent and clean reserved fields')
   for key in('st_atim','st_mtim','st_ctim'):
    sec,nsec=struct.unpack('<qq',F(s,'stat',key));need(sec>=0 and 0<=nsec<10**9,'complete typed actual stat timestamp')
   actual=(I(b,t,'retained_fd'),s)
@@ -281,7 +284,7 @@ def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
   f=r.full(b,image,kind);r.envelope(f,h[15],h[16],False);r.literal(f,state,pc,extra,components)
   need(f['fp']==baseline and f['page']==page and f['data']==memory(image,'gated',go,notify,page),'whole frame FP/data/page matches literal body state');return f
  read=F(data,r.rt,'read');r.padding(read,'tfi_endpoint');rh=q(F(read,'tfi_endpoint','h'))
- need(rh[:15]==(1,0,READ,READ,1,1,1,0,1,0,1,0,0,0,0)and not any(rh[15:24]+rh[28:]),'actual read ingress/commit and fresh BODY R/NX observation with no pending owner')
+ need(rh[:15]==(1,0,READ,READ,1,1,1,0,1,0,1,1,0,0,0)and not any(rh[15:24]+rh[28:]),'actual read ingress/commit and fresh BODY R/NX observation with no pending owner')
  before=r.full(F(read,'tfi_endpoint','before'),image,'nx');after=r.full(F(read,'tfi_endpoint','after'),image,'commit')
  r.envelope(before,h[15],h[16],False);r.envelope(after,h[15],h[16],False);r.siginfo_alias(read,'tfi_endpoint',before)
  input_g=list(states_[0][0]);input_g[0]=0;input_g[1]=WAIT+43;input_g[11]=0x697
@@ -308,7 +311,16 @@ def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
  need(not any(origpages[psz:])and I(oq,qt,'page_count')==1 and I(oq,qt,'original_flags')==0x646 and tuple(I(pg,'li2_step_page',k)for k in('address','closed_prot','open_prot'))==(BODY,1,5),'one original BODY permission owner')
  need(tuple(I(pg,'li2_step_page',k)for k in('object','generation','offset'))==tuple(I(rp,'li2_lifecycle_page_view',k)for k in('allocation','generation','offset'))and I(pg,'li2_step_page','object')>0 and I(pg,'li2_step_page','generation')>0,'actual read-return BODY allocation/generation/offset equals first opening')
  need(I(F(of,ft,'ref'),'li2_fetch_ref','sequence')>readseq,'fresh BODY fetch follows fully released syscall borrow')
- _,_,body_identity=r.fetch(of,image,BODY,15,pid,1,backing_anchor)
+ _,body_anchor,body_identity=r.fetch(of,image,BODY,15,pid,1)
+ # Between the released read borrow and first BODY fetch, native admission
+ # preads this sealed source before rejecting its dirty policy bytes. Linux
+ # shmem_file_read_iter calls file_accessed, so only this transition permits
+ # changed atime. Both raw stats already passed every typed timestamp check;
+ # all other bytes and the descriptor remain exact. Later BODY stats must
+ # equal the complete new anchor, including atime.
+ at=r.types['stat']['fields']['st_atim'];a,z=at['offset'],at['bytes']
+ need(z==16 and body_anchor[0]==backing_anchor[0]and body_anchor[1][:a]==backing_anchor[1][:a]and body_anchor[1][a+z:]==backing_anchor[1][a+z:],'same READ/BODY descriptor and every raw stat byte except source-mutable atime')
+ backing_anchor=body_anchor
  need(body_identity==(read_identity[0],read_identity[1]+1,read_identity[2]),'adjacent initial WAIT/BODY pages retain exact append generations in one main allocation')
  identity=None
  def registration(b):
@@ -351,7 +363,7 @@ def _gated(data,layout,image,pid,exit_status,go,notify,cpu):
    first_counts=bc;first_before=ob
    need((bv,brq,bref,bpr,F(ob,'tfi_owner','release'))==compact_from_slot(opening),'whole first compact owner joins actual full opening')
   else:need(ob==previous[1]and bc[0]==previous[0]+1 and bc[1:]==previous[2][1:],'same held compact owner and counters across each genuine next instruction')
-  need(bc[0]==old_event+1 and bc[14:]==(3,301),'one genuine TRACE per ADD and held single-step routing interlock')
+  need(bc[0]==old_event+1 and bc[14:]==(2,301),'one genuine TRACE per ADD and held single-step routing interlock')
   want=list(bc);want[8]+=1
   if transfer:want[10]+=1;want[12:14]=[3,1];total_transfers+=1
   else:

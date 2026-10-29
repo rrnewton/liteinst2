@@ -142,7 +142,7 @@ def main():
                 namespace_links[str(path)] = target
                 expected_names.add(name)
         need({p.name for p in directory.iterdir()} == expected_names, 'complete private namespace entry set')
-        env.update(LD_LIBRARY_PATH=str(directory), LI2_DEPENDENCY_FDS=','.join(map(str, fds)))
+        env.update(LD_LIBRARY_PATH=str(directory), LD_BIND_NOW='1', LI2_DEPENDENCY_FDS=','.join(map(str, fds)))
         need(started['schema_version'] == 1 and started['status'] == 'prepared_not_executed' and
              started['scope'] == 'first_entry_loader_candidate' and started['argv'] == preparation['argv'] and
              started['environment'] == env and started['dependency_fds'] == fds and

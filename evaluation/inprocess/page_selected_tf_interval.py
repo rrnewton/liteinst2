@@ -229,7 +229,7 @@ def main():
     need(got['names']==item['names']and got['sha256']==H(item['bytes'])and got['size']==len(item['bytes'])and got['seals']==namespace.SEALS and got['device']>0 and got['inode']>0,'actual immutable namespace object')
     for alias in got['names']:
      path=ns/alias;value='/proc/self/fd/'+str(got['fd']);need(path.is_symlink()and os.readlink(path)==value,'actual retained sealed alias');namespace_links[str(path)]=value
-   env.update(LD_LIBRARY_PATH=str(ns),LI2_DEPENDENCY_FDS=','.join(str(x['fd'])for x in sealed['objects']))
+   env.update(LD_LIBRARY_PATH=str(ns),LD_BIND_NOW='1',LI2_DEPENDENCY_FDS=','.join(str(x['fd'])for x in sealed['objects']))
    need(started['argv']==prep['argv']and started['environment']==env and
         {k:started[v]for k,v in(('bytes','carrier_size'),('sha256','carrier_sha256'))}==fact(carrier)==case['backing'],
         'actual namespace launch and exact profile-specific sealed carrier extent/hash without policy override')
