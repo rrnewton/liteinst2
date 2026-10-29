@@ -1043,6 +1043,75 @@ fn history_stream_and_batch_identity_are_exact() {
             old.generation()
         );
     }
+    // The native scenarios use only Published/Removed, without group disable.
+    // Exercise those real controller transitions and prove that retained policy
+    // bits do not admit either function after removal, even after history drain.
+    for scenario in 0..3 {
+        let mut f = Fixture::new(10);
+        f.enter(0);
+        let old = (scenario == 1).then(|| f.rearm());
+        let removed = f.epoch.as_ref().unwrap().generation();
+        if scenario == 2 {
+            f.controller.disarm(f.epoch.as_ref().unwrap()).unwrap();
+        }
+        f.enter(1);
+        f.observe(1);
+        f.ack();
+        if scenario == 1 {
+            f.controller.disarm(f.epoch.as_ref().unwrap()).unwrap();
+        }
+        f.observe(0);
+        let completed = f.transfer();
+        if scenario == 0 {
+            f.controller.disarm(f.epoch.as_ref().unwrap()).unwrap();
+        }
+        let history = f.controller.drain_history().unwrap().unwrap();
+        use crate::frontend::ActionKind::{Published, Removed};
+        let kinds: Vec<_> = history.actions().iter().map(|a| a.kind).collect();
+        assert_eq!(
+            kinds,
+            if scenario == 1 {
+                vec![Published, Published, Removed]
+            } else {
+                vec![Published, Removed]
+            }
+        );
+        assert!(
+            history
+                .actions()
+                .iter()
+                .all(|a| a.function.is_none() && a.group.is_none())
+        );
+        let window = f.controller.history_window().unwrap();
+        assert_eq!(window.status(), crate::frontend::ControllerStatus::Ready);
+        assert_eq!(window.current(), None);
+        assert_eq!(window.retained_failed_generation(), None);
+        assert_eq!(window.enabled(), [true]);
+        assert!(window.actions().is_empty());
+        assert_eq!(window.range(), history.range().end..history.range().end);
+        let after = f.run();
+        for record in after.records() {
+            assert_eq!(
+                record.raw().owner,
+                RawIntervalOwner::Removed {
+                    generation: removed.get()
+                }
+            );
+            assert_eq!(record.completion(), None);
+            assert_eq!(record.sampled_children(), None);
+        }
+        assert_eq!(
+            after.after().pairs.completed,
+            completed.after().pairs.completed
+        );
+        assert_eq!(
+            after.after().pairs.unsampled,
+            completed.after().pairs.unsampled + 2
+        );
+        assert_eq!(f.controller.history_window().unwrap().enabled(), [true]);
+        assert!(f.controller.drain_history().unwrap().is_none());
+        drop(old);
+    }
 }
 #[test]
 fn lost_handle_retains_owner_and_sticky_failure() {

@@ -362,7 +362,10 @@ pub(super) fn final_history(
     assert!(w.actions().is_empty());
     assert_eq!(w.status(), ControllerStatus::Ready);
     assert_eq!((w.current(), w.retained_failed_generation()), (None, None));
-    assert_eq!(w.enabled(), [false]);
+    // Published enables the group policy; Removed clears the current epoch and
+    // effective entry controls, while retaining that policy. The exact action
+    // history above contains no Disabled action.
+    assert_eq!(w.enabled(), [true]);
 }
 #[cfg(test)]
 mod tests;

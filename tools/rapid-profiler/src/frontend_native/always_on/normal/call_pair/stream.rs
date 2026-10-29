@@ -146,6 +146,9 @@ impl NormalCallPairHistoryWindow {
     pub fn current(&self) -> Option<GenerationId> {
         self.view.current
     }
+    /// Retained group-policy flags. Removing the current epoch preserves these
+    /// flags while disabling effective entry controls; they do not prove that
+    /// an epoch is current or that a function can admit a sample.
     pub fn enabled(&self) -> &[bool] {
         &self.view.enabled
     }
