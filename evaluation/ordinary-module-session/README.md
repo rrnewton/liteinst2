@@ -139,3 +139,35 @@ pure mount-parser controls, then runs each of the eight malformed frames and
 32 accepted populations exactly once. It retains failures and unrun cases
 under the same per-child bounds and original value checks. It runs no installed
 application or Schedule and grants no timing or retrospective campaign credit.
+
+For an isolated owner qualification, use a fresh three-CPU reservation and an
+external **1,200-second/8 MiB process owner**, then run:
+
+```sh
+python3 -B evaluation/ordinary-module-session/owners.py \
+  --revision "$REVISION" --raw "$FRESH_IGNORED_DIRECTORY" \
+  --toolchain "$TOOLCHAIN_DIRECTORY" --user-home "$USER_HOME" \
+  --cargo-home "$CARGO_HOME" --reservation-tag "$RESERVATION_TAG"
+```
+
+This builds a fresh fixed C module, retains separate candidate/trusted inodes
+with equal pinned bytes, checks both complete selected functions, builds the release application and
+test artifact, and checks the actual emitted Rust CALL/store/FUNC geometry.
+It requires all 47 ordinary Rust controls and all 26 Python controls, then runs
+K10 CSV→length, K10 length→CSV, K1000 CSV→length and K1000 length→CSV exactly once.
+Each retains the existing 15-second application deadline, 20 CPU seconds,
+30 wall seconds, 1 MiB streams and 55-second enclosing owner. The controller
+and worker use the first two reserved CPUs; the third remains available to the
+owner. Affinity and load records do not establish a hard reservation.
+
+The distinct `OWNER_QUALIFICATION_PASS` status requires all four complete owner
+transcripts, normal closure and immutable source/tool/artifact retention.
+Failures and later UNRUN cases remain in the initial plan and final receipt;
+there are no retries. Raw CALL/RAW/PHASE/HISTORY/REPORT/SAMPLE data stay private.
+This route runs no native state oracle, Schedule workload or scalar campaign.
+It grants no Schedule-deadline, performance, full-campaign or retrospective
+credit and leaves the full recipe's separate prerequisites unchanged.
+The existing cases stage A, then B while A remains held, reclaim A at phase 4,
+and reclaim B at the end. They do not restage a recycled bank or qualify native
+execution after shell restaging. Pure Session controls cover that separate
+storage transition without supplying native execution credit.
