@@ -55,8 +55,6 @@ CONSUMER = (
     'normal::module::session::check::tests::complete_population_identity_ack_stack_and_all_journal_words_refuse',
     'normal::module::session::check::tests::absolute_history_owner_prefix_and_independent_closed_budget_refuse',
     'normal::module::session::check::tests::report_payloads_keep_function_rank_sequence_and_raw_unavailability',
-    'normal::session::io::csv_tests::csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct',
-    'normal::session::io::csv_tests::csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard',
     'normal::module::session::tests::canonical_numeric_cli_never_normalizes_signs_spaces_or_overflow',
     'normal::module::session::tests::accepted_module_pending_owner_survives_full_queue_and_disconnect_before_stop',
     'normal::module::session::input::tests::accepted_snapshot_refuses_same_shape_in_range_payload_change',
@@ -193,12 +191,13 @@ def public_projection(result):
 def ordinary_inventory(inventory, single, module, owner_controls):
     assert owner_controls is not None and len(owner_controls) == 4
     old = tuple(single.SESSION) + tuple(single.TRACE)
-    assert len(old) == 16 and len(CONSUMER) == 13
+    assert len(old) == 21 and len(CONSUMER) == 11
     wanted = old + CONSUMER + tuple(module.MODULE_TESTS) + tuple(module.CSV_TESTS) + tuple(owner_controls)
-    assert len(wanted) == len(set(wanted)) == 44
+    assert len(wanted) == len(set(wanted)) == 47
     prefixes = ('normal::session::tests::', 'normal::session::check::tests::',
                 'normal::session::epoch_storage::tests::', 'normal::session::io::tests::',
-                'normal::session::io::csv_tests::', 'normal::session::loop_trace::tests::',
+                'normal::session::io::csv_tests::', 'normal::session::io::history_tests::',
+                'normal::session::loop_trace::tests::',
                 'normal::session::protocol::tests::', 'normal::module::', 'normal::csv::')
     assert set(n for n in inventory if n.startswith(prefixes)) == set(wanted)
     return wanted

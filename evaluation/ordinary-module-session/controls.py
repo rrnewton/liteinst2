@@ -388,7 +388,7 @@ class Controls(unittest.TestCase):
         single=runner.load('control_single_inventory',repo/runner.MODULES['single'])
         module=runner.load('control_module_inventory',repo/runner.MODULES['module'])
         wanted=tuple(single.SESSION)+tuple(single.TRACE)+runner.CONSUMER+tuple(module.MODULE_TESTS)+tuple(module.CSV_TESTS)+runner.OWNER_CONTROLS
-        self.assertEqual(len(wanted),44)
+        self.assertEqual(len(wanted),47)
         unrelated=(
             'normal::session::two::tests::partial_broadcast_full_acknowledgements_and_stop_keep_exact_custody',
             'normal::session::two::check::tests::global_slots_and_retained_ranks_accept_out_of_order_but_refuse_corruption',
@@ -401,7 +401,8 @@ class Controls(unittest.TestCase):
                 runner.ordinary_inventory(tuple(n for n in inventory if n!=absent),single,module,runner.OWNER_CONTROLS)
         prefixes=('normal::session::tests::','normal::session::check::tests::',
             'normal::session::epoch_storage::tests::','normal::session::io::tests::',
-            'normal::session::io::csv_tests::','normal::session::loop_trace::tests::',
+            'normal::session::io::csv_tests::','normal::session::io::history_tests::',
+            'normal::session::loop_trace::tests::',
             'normal::session::protocol::tests::','normal::module::','normal::csv::')
         for prefix in prefixes:
             with self.assertRaises(AssertionError):

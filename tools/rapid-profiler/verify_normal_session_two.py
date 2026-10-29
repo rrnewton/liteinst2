@@ -156,7 +156,7 @@ def main():
         exact_fixture = load('two_exact_fixture', repo/'tools/rapid-profiler/normal-work/exact_fixture.py')
         exact_native = load('two_exact_native', repo/'tools/rapid-profiler/normal-work/exact_native.py')
         shared = load('two_exact_flags', repo/'tools/rapid-profiler/verify_ordinary_interval.py')
-    assert prior.TRIALS == TRIALS and len(prior.SESSION) == 14 and len(prior.SCHEDULE) == 7
+    assert prior.TRIALS == TRIALS and len(prior.SESSION) == 19 and len(prior.SCHEDULE) == 7
     read, decode, integer, profile = prior.read, prior.decode, prior.integer, prior.PROFILE
     a.raw.mkdir(mode=0o700)
     save(a.raw/'sources-before.json', before)

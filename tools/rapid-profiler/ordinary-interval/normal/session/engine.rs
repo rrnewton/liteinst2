@@ -221,12 +221,12 @@ impl<C: Controller> Engine<C> {
                     }
                     _ => panic!("unexpected mandatory session action"),
                 };
-                io.emit(format!(
-                    "HISTORY,{},{},{kind},{}\n",
+                io.emit_history(
                     h.number(),
                     h.range().start + i as u64 + 1,
-                    action.generation.get()
-                ))?;
+                    kind,
+                    action.generation.get(),
+                )?;
             }
         }
         Ok(())

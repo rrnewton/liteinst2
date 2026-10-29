@@ -36,7 +36,7 @@ The fixed order is:
    four caller controls and eighteen Python controls. Neither native receipt
    substitutes for the owner or functional gates.
 2. A fresh release application build, exact emitted CALL/store/FUNC geometry,
-   all 44 ordinary regression/control methods, and four owner controls in
+   all 47 ordinary regression/control methods, and four owner controls in
    K10 CSV→length, K10 length→CSV, K1000 CSV→length, K1000 length→CSV order.
    Every owner RAW/PHASE/REPORT/SAMPLE row is checked, with actual empty stderr
    and normal exit 0. This route does not run Schedule.
