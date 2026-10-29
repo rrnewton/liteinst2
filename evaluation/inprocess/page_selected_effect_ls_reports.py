@@ -14,9 +14,50 @@ _spec=importlib.util.spec_from_file_location('effect_ls_original_boundary',ROOT/
 boundary=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(boundary)
 registered=boundary.old;nx=registered.old
 _unsigned=nx._unsigned;NATIVE_KEYS=nx.NATIVE_KEYS;RSEQ_SCHEMA=nx.RSEQ_SCHEMA;ZERO=nx.ZERO
-ORDER=['LOADER','NATIVE','SELECTED_EFFECT','CPUID_NX','ONESHOT','RSEQ','RSEQ_NATIVE','RSEQ_BOUNDARY','RSEQ_BTRFS_TTY_QUERY','CHAIN','RUN']
+ORDER=['LOADER','NATIVE','SELECTED_EFFECT','CPUID_NX','ONESHOT','RSEQ','RSEQ_NATIVE','RSEQ_BOUNDARY','RSEQ_BTRFS_TTY_QUERY','CHAIN','RUN','TRACE_RUN']
 EFFECT=set('version status failure_code detail_abs first_error stage busy finished sequence attempts commits completed native_completed scripted_completed kind action phase error pc next_pc callback_entered callback_returned native_entered native_returned random_backend_returned random_backend_status exit_entered post_guards_complete post_callback_entered post_callback_returned committed fp_bytes fp_before_initialized fp_after_initialized raw_entered raw_returned'.split())
 ONESHOT=set('version status failure_code detail_abs detail_negative attempted published restored completed retired refused cpuid_patches syscall_patches rdtsc_patches effect_started effect_returned active_phase resetting last_completed_sequence last_refused_sequence backend_prepared backend_completed rseq_phase rseq_error rseq_attempts rseq_retired retained_records generations'.split())
+
+TRACE_RUN=set('version status failure_code detail_abs detail_negative candidates preflight_misses attempts entries plan_misses full_misses completed busy active proof_available pending route'.split())
+
+def trace_prefix(t,run,c,loader):
+    _unsigned(t,TRACE_RUN,scope='genuine_trace_to_register_run')
+    need(all(type(run.get(k))is int and 0<=run[k]<1<<64
+             for k in('cache_present','completed_runs','plan_misses','pending','route'))and
+         run['cache_present']in(0,1)and type(c.get('fallbacks'))is int and 0<=c['fallbacks']<1<<64 and
+         type(loader.get('step_route'))is int and 0<=loader['step_route']<1<<64,
+         'typed actual enclosing TRACE counter operands')
+    need(all(t[k]in(0,1)for k in('busy','active','proof_available','pending'))and
+         t['completed']<=t['entries']<=t['attempts']and
+         t['entries']+t['plan_misses']+t['full_misses']<=t['attempts']and
+         t['attempts']+t['preflight_misses']<=t['candidates']<=c['fallbacks']and
+         t['completed']<=run['completed_runs']and
+         t['plan_misses']<=run['plan_misses']and t['pending']==run['pending']and
+         t['route']==run['route']==loader['step_route'],
+         'actual TRACE decisions, completed runs and unchanged enclosing owner counters')
+    if run['cache_present']:
+        need(type(run.get('cache'))is list and len(run['cache'])==register.ARRAYS['cache']and
+             all(type(x)is int and 0<=x<1<<64 for x in run['cache']),
+             'complete typed actual cache counters')
+        need(t['full_misses']<=run['cache'][8]and
+             t['entries']+t['full_misses']<=run['cache'][6],
+             'TRACE publications and capacity refusals are subsets of actual cache attempts')
+    else:
+        need(t['attempts']==0,'no TRACE attempt without an initialized actual cache')
+
+def trace_closed_counts(t):
+    need(t['candidates']==t['attempts']+t['preflight_misses']and
+         t['attempts']==t['entries']+t['plan_misses']+t['full_misses']and
+         t['entries']==t['completed']and
+         all(t[k]==0 for k in('busy','active','proof_available','pending','route')),
+         'every actual TRACE handoff completed or released as a planner/capacity miss')
+    return {k:t[k]for k in('candidates','preflight_misses','attempts','entries','plan_misses','full_misses','completed')}
+
+def trace_completed(p):
+    t=p['trace_run']
+    need(all(t[k]==0 for k in('status','failure_code','detail_abs','detail_negative')),
+         'successful TRACE report retains actual successful process outcome')
+    return trace_closed_counts(t)
 
 def reports(stderr):
     need(type(stderr)is bytes and stderr.endswith(b'\n'),'complete actual stderr')
@@ -29,6 +70,7 @@ def reports(stderr):
     loader,native=values[b'LI2_LOADER'],values[b'LI2_NATIVE']
     run,c,registration=(values[k]for k in(b'LI2_RUN',b'LI2_CHAIN',b'LI2_RSEQ'))
     repeat=values.get(b'LI2_REPEAT')
+    trace=values[b'LI2_TRACE_RUN']
     extension=dict(effect=values[b'LI2_SELECTED_EFFECT'],oneshot=values[b'LI2_ONESHOT'],
         cpuid_nx=values[b'LI2_CPUID_NX'],rseq_native=values[b'LI2_RSEQ_NATIVE'],
         rseq_boundary=values[b'LI2_RSEQ_BOUNDARY'],tcgets=values[b'LI2_RSEQ_BTRFS_TTY_QUERY'])
@@ -95,10 +137,11 @@ def reports(stderr):
         _unsigned(repeat, repetition.SCALARS, repetition.ARRAYS)
         need(repeat['attempts'] > 0 and repeat['completed'] <= repeat['attempts'] and
              repeat['route'] == loader['step_route'], 'actual optional REP prefix')
-    for row in (run, c, registration)+(() if repeat is None else (repeat,)):
+    trace_prefix(trace,run,c,loader)
+    for row in (run, c, registration, trace)+(() if repeat is None else (repeat,)):
         need(all(row[k] == loader[k] for k in ZERO), 'same actual outcome in every old report')
     parsed=dict(loader=loader,native=native,repeat=repeat,run=run,chain=c,rseq=registration,
-        lease={k:c[k]for k in lease.EXTRA},**extension)
+        lease={k:c[k]for k in lease.EXTRA},trace_run=trace,**extension)
     return parsed
 
 
@@ -224,8 +267,9 @@ def check(stderr,pid,exit_code,parent):
     _,same,gate_summary=gate(p,pid,exit_code,parent)
     need(same is p,'original actual report values retained')
     lease_summary=lease.counters(p);effect_exit(p)
+    trace_summary=trace_completed(p)
     n=p['native'];e=p['effect'];o=p['oneshot']
-    return p,dict(application_completed=True,default_rseq_registered=True,gate=gate_summary,lease=lease_summary,
+    return p,dict(application_completed=True,default_rseq_registered=True,gate=gate_summary,lease=lease_summary,trace_run=trace_summary,
         selected=dict(attempts=e['attempts'],completed=e['completed'],classes=e['classes'],unreturned_exit=1),
         publication={k:o[k]for k in('attempted','published','restored','completed','retired','refused','cpuid_patches','syscall_patches','rdtsc_patches','rseq_attempts','rseq_retired','retained_records','generations')},
         native={k:n[k]for k in('attempts','admissions','closed','blocked','epoch_exits','refaults','main_admissions','main_refaults')},

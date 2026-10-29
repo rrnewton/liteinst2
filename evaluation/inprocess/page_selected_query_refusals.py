@@ -16,6 +16,7 @@ from page_selected_register_time_build import headers,bridge_check,recipe,expand
 from page_selected_register_time_compare import decode
 from page_selected_fast_memset import body_check
 from page_selected_rseq_time import hidden_memset
+from page_selected_effect_ls_reports import trace_prefix,trace_closed_counts
 SELECTED=ROOT/'tools/page-entry/selected';FIXTURE=SELECTED/'tests/effect_provider'
 BOUNDS={'query_build':[30,512<<20,16<<20,60],'query':[30,512<<20,16<<20,60]}
 QUERY_ENV=dict(ENV,LD_BIND_NOW='1')
@@ -29,7 +30,7 @@ MACROS=('EFFECT_PROVIDER','ONESHOT_REUSABLE','ONESHOT_PUBLICATION','TF_SEALED_CU
     'TF_HANDOFF','REGISTER_RUN','MAPS_PHASE_REUSE','RSEQ_INACTIVE','NATIVE_PAGES','CPUID_NX_ONLY',
     'RSEQ_NATIVE','RSEQ_NATIVE_BOUNDARY','RSEQ_TCGETS_BTRFS','RSEQ_TIOCGWINSZ_BTRFS','FAST_MEMSET','FAST_EQUAL')
 REPORTS=('LOADER','NATIVE','SELECTED_EFFECT','CPUID_NX','ONESHOT','RSEQ','RSEQ_NATIVE','RSEQ_BOUNDARY',
-         'RSEQ_BTRFS_TTY_QUERY','CHAIN','RUN')
+         'RSEQ_BTRFS_TTY_QUERY','CHAIN','RUN','TRACE_RUN')
 H=lambda b:hashlib.sha256(b).hexdigest()
 def digest(value):return H(json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False).encode())
 
@@ -61,6 +62,9 @@ def refusal(case,row,out,err):
         repeat=reports['LI2_REPEAT'];exact(repeat,'version',1)
         need(type(repeat.get('attempts'))is int and repeat['attempts']>0,'repeat report only after an actual attempt')
     loader,rseq,effect=(reports['LI2_'+x]for x in('LOADER','RSEQ','SELECTED_EFFECT'))
+    trace=reports['LI2_TRACE_RUN']
+    trace_prefix(trace,reports['LI2_RUN'],reports['LI2_CHAIN'],loader)
+    trace_summary=trace_closed_counts(trace)
     exact(loader,'version',1);exact(loader,'detail_abs',0);exact(loader,'detail_negative',0)
     exact(loader,'last_syscall',number);exact(loader,'rseq',1)
     exact(rseq,'version',1);exact(rseq,'scope','registered_inactive_prototype');exact(rseq,'maps_profile',1)
@@ -82,7 +86,7 @@ def refusal(case,row,out,err):
             random_backend_status=0,fp_after_initialized=0).items():exact(effect,key,value)
     return dict(case=index,syscall=number,kind=7,write_bytes=width,exit=125,error=1205,detail=0,
         stdout_bytes=0,registered_word_joined=True,native_entered=0,raw_entered=0,raw_returned=0,
-        accepted=True,reports_sha256=digest(reports))
+        accepted=True,trace_run=trace_summary,reports_sha256=digest(reports))
 
 def finalize(r):
     for path,value in r.get('namespace_aliases',{}).items():

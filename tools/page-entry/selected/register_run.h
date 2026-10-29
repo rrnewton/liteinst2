@@ -133,6 +133,14 @@ int li2_run_arm(struct li2_run_owner *,struct li2_step_session *,
    copied run complete. Guard dispatch needs the ordinary fresh fetch afterward.
    Any actual-event failure is nonreturning; no silent old-route retry. */
 void li2_run_begin(struct li2_run_owner *,int,siginfo_t *,ucontext_t *);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+struct li2_tf_run_entry;
+/* Separate real TRACE ingress. The chain's private once-only proof binds its
+   completed/released predecessor to this fresh borrow and the actual full
+   frame. No synthetic NX fields, no added TF/RF, and no change to NX entry. */
+void li2_run_begin_trace(struct li2_run_owner *,const struct li2_tf_run_entry *,
+                         int,siginfo_t *,ucontext_t *);
+#endif
 void li2_run_exit(struct li2_run_owner *,int,siginfo_t *,ucontext_t *);
 _Noreturn void li2_run_unexpected(struct li2_run_owner *,int,siginfo_t *,ucontext_t *);
 _Noreturn void li2_run_abort(struct li2_run_owner *,unsigned,long);

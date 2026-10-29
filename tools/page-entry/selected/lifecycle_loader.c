@@ -850,3 +850,7 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_ONESHOT_PUBLICATION
 #include "oneshot_lifecycle.inc"
 #endif
+
+#ifdef LI2_RUN_CACHE_REUSE
+#include "run_reuse_lifecycle.inc"
+#endif

@@ -1,0 +1,20 @@
+ADDS opt-in recycling of completed generated register blocks in a fixed 64-page cache. A fresh value handle binds each slot generation and lookup attempt; only an actual completed/reset/quiesced owner makes a slot eligible for retirement. Full RX-page inspection, revoke/sync, RW fill, RX/sync and source revalidation precede reuse. Default immutable-cache behavior remains separate.
+
+At `181ce1b10cb43a60a1b4c0e590161f8cb1f8da32`, the [26-process native oracle](20261029T142426.887372Z-page-selected-run-cache-reuse-181ce1b10cb4.json) passed. Its positive program completed 130 runs, 129 publications, 65 retirements and one hit, including original A returning at the same address/slot/plan under generation 129. Every run used full native state comparison; six focal cases retain complete external replay records, while 124 intermediate cases retain hashes of the in-fixture comparisons. The 25 required terminal operations preserve stale/copy/overflow, supplied-error, actual-signal and kernel-denial distinctions. Denied cleanup is recorded as incomplete. Across all children, 839 checked prefixes and 2,571 native reference intervals were observed; 52 supplied-record mutations were rejected.
+
+The [release `/bin/ls -d .` pair](20261029T142542.135727Z-page-selected-run-reuse-ls-181ce1b10cb4.json) exited zero with identical dot/newline output and default rseq registration. The in-process gate used 64 cache pages, 321 generations, 257 retirements, 1,960 completed register runs and 1,639 hits. It completed 1,939 entries from predecessor TRACE. Actual selected patches comprised 38 CPUID, 10 RDTSC and 100 SYSCALL sites; 148 publications were restored, 147 effects returned and the final exit remained unreturned.
+
+The single fresh native/gated process durations were 4,029,882 ns and 14,350,896,852 ns. First admission work took 83,005 ns; all 16 revisit-work samples are retained in the receipt. These admission intervals exclude execution and full fault closure. Whole-process intervals include parent capture/provenance, launch, namespace sealing for page mode, reap and descriptor closure. This is functionality evidence, with no steady-state throughput or speedup claim.
+
+Existing register4/controls14 passed at `49cac55687150ed4af9c9299d951255dfac44b85`; chain23/TRACE7 passed at `c3788117b240b8a07ce0bf6aac4b1cd6af4f90b7`. Their exact receipts accompany this report. The earlier chain49 attempt failed before subjects because exact optional-source pins were stale; seven byte-count/hash facts were updated after proving the optional source blocks strip back to the original inputs. No catalog, comparator or limit changed. The first new oracle attempt at `94140fa9a9420afd891df8bef9b274ea0314b342` failed header scanning before subjects; one relative include was corrected. Both failed receipts remain failed.
+
+All runs used reserved CPUs on AMD EPYC 9D85, Linux 7.1.3; receipts bind exact hardware, revisions, toolchains and source/artifact hashes. Native children retain 5 CPU/15 wall seconds; real programs 30 CPU/60 wall seconds, 512 MiB address space and 16 MiB file limits. On one externally reserved CPU:
+
+```sh
+python3 -B evaluation/inprocess/page_selected_run_cache_reuse.py --expect-revision 181ce1b10cb43a60a1b4c0e590161f8cb1f8da32
+python3 -B evaluation/inprocess/page_selected_run_reuse_ls.py --expect-revision 181ce1b10cb43a60a1b4c0e590161f8cb1f8da32
+```
+
+[All six checks](20261029T142624.546855Z-checks-181ce1b10cb4.json) passed at the same revision in 561.1 seconds: recorder 350; formatting; strict Clippy; workspace 3,260 passed, zero failed, 36 ignored across 103 harnesses; all-target check; serial 1,039 passed across 27 harnesses. Source/configuration and all six saved log hashes were authenticated. The unchanged [two SLOW fallback cases](20261029T143554.312869Z-page-selected-trace-run-slow-181ce1b10cb4.json) also passed at this revision.
+
+This supports claims 1, 2 and 4 incrementally. Full B2, broader instruction coverage and the 9,216-effect application stress remain outside this result.
