@@ -255,7 +255,7 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
     let mut batch = None;
     let mut report = None;
     let mut fail_stop = FailStop(true);
-    for i in 0..CALLS {
+    for (i, case) in CASES.iter().enumerate() {
         data.check(i, 0).unwrap();
         custody.check();
         original.as_mut().unwrap().verify_original().unwrap();
@@ -264,7 +264,7 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
         unsafe {
             invoke(
                 target,
-                &data.input[i][16..16 + CASES[i].0.len()],
+                &data.input[i][16..16 + case.0.len()],
                 &mut data.results[0].values[i],
             )
         };
@@ -323,7 +323,7 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
         state.as_ref().unwrap().3.totals().unwrap(),
         NormalTotals::default()
     );
-    for i in 0..CALLS {
+    for (i, case) in CASES.iter().enumerate() {
         data.check(CALLS, i).unwrap();
         custody.check();
         // SAFETY: same real application CALL; attachment and all immutable
@@ -331,7 +331,7 @@ pub(crate) fn run(args: &[std::ffi::OsString]) {
         unsafe {
             invoke(
                 target,
-                &data.input[i][16..16 + CASES[i].0.len()],
+                &data.input[i][16..16 + case.0.len()],
                 &mut data.results[1].values[i],
             )
         };
