@@ -1,0 +1,478 @@
+{
+  "builds": {
+    "module-build": [
+      "/usr/bin/gcc",
+      "-O2",
+      "-fPIC",
+      "-shared",
+      "-nostdlib",
+      "-fno-builtin",
+      "-fno-stack-protector",
+      "-fomit-frame-pointer",
+      "-fno-tree-vectorize",
+      "-fno-tree-slp-vectorize",
+      "-fno-if-conversion",
+      "-fno-if-conversion2",
+      "-fno-asynchronous-unwind-tables",
+      "-fno-unwind-tables",
+      "-fcf-protection=none",
+      "-Wl,--build-id=none,-z,now,-z,noexecstack",
+      "-Wl,--version-script=tools/rapid-profiler/strnlen-work/localize.map",
+      "$REPO/tools/rapid-profiler/normal-work/csv_fields.c",
+      "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c",
+      "-o",
+      "$RAW/original-module.so"
+    ],
+    "mount-controls-build": [
+      "/usr/bin/gcc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "$REPO/evaluation/ordinary-module-session/original_mount_controls.c",
+      "-ldl",
+      "-o",
+      "$RAW/mount-identity-controls"
+    ],
+    "original-build": [
+      "/usr/bin/gcc",
+      "-O2",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-fno-stack-protector",
+      "-fomit-frame-pointer",
+      "-fcf-protection=none",
+      "-fno-builtin",
+      "-Wl,--build-id=none,-z,now,-z,noexecstack",
+      "$REPO/evaluation/ordinary-module-session/original.c",
+      "-ldl",
+      "-o",
+      "$RAW/original"
+    ]
+  },
+  "checks": {
+    "commands": [
+      {
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "reaped_descendants": 0,
+          "seconds": 7.327451302902773,
+          "start_utc": "2026-10-29T09:46:18.442749+00:00",
+          "termination": null
+        },
+        "name": "fmt",
+        "totals": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+        },
+        "wall_limit_seconds": 180
+      },
+      {
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191",
+          "reaped_descendants": 0,
+          "seconds": 0.15038604196161032,
+          "start_utc": "2026-10-29T09:46:25.793511+00:00",
+          "termination": null
+        },
+        "name": "clippy",
+        "totals": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+        },
+        "wall_limit_seconds": 180
+      },
+      {
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+          "reaped_descendants": 0,
+          "seconds": 0.11494700191542506,
+          "start_utc": "2026-10-29T09:46:25.961532+00:00",
+          "termination": null
+        },
+        "name": "check",
+        "totals": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+        },
+        "wall_limit_seconds": 180
+      },
+      {
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": -9,
+          "private_log_sha256": "99c9f52ef2392eefb758bfeb24bcd4864917f8900c5eaf63b278f26c105c9935",
+          "reaped_descendants": 6,
+          "seconds": 360.15747339092195,
+          "start_utc": "2026-10-29T09:46:26.095569+00:00",
+          "termination": "timeout"
+        },
+        "name": "workspace-default",
+        "totals": {
+          "failed": 0,
+          "ignored": 1,
+          "passed": 1973
+        },
+        "wall_limit_seconds": 360
+      }
+    ],
+    "cpus": [
+      35,
+      110,
+      201,
+      205,
+      235,
+      264,
+      288,
+      294
+    ],
+    "initially_unrun": [
+      "serial-launch",
+      "staged-allocation",
+      "prefixed-pun"
+    ],
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 1,
+      "private_log_sha256": "8f511303baf55617e1f261a515a76555c3ed810c03a2f09b0238e24e9830a16c",
+      "reaped_descendants": 0,
+      "seconds": 369.5307180590462,
+      "start_utc": "2026-10-29T09:46:16.821884+00:00",
+      "termination": null
+    },
+    "remaining_only": {
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "6cbbb0e5cb07b5517e005183f770d2a424df3437b0805bec1267f10f355970b1",
+            "reaped_descendants": 0,
+            "seconds": 129.3934849780053,
+            "start_utc": "2026-10-29T09:55:39.750941+00:00",
+            "termination": null
+          },
+          "name": "serial-launch",
+          "totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 1039
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--lib",
+            "staged"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "f8a9305635186f5b815a269121f042a9db67dcd4051b7ac21257f1cd413eafc2",
+            "reaped_descendants": 0,
+            "seconds": 0.03836183506064117,
+            "start_utc": "2026-10-29T09:57:49.169418+00:00",
+            "termination": null
+          },
+          "name": "staged-allocation",
+          "totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 3
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--test",
+            "prefixed_pun_oracle"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "54626a2f481571ce6706711927ef4b12a8a9f6b623f87907df5595485d45c8b1",
+            "reaped_descendants": 0,
+            "seconds": 1.487652688054368,
+            "start_utc": "2026-10-29T09:57:49.228796+00:00",
+            "termination": null
+          },
+          "name": "prefixed-pun",
+          "totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 36
+          },
+          "wall_limit_seconds": 180
+        }
+      ],
+      "cpus": [
+        80,
+        100,
+        167,
+        168,
+        211,
+        216,
+        239,
+        256
+      ],
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "6bdb45b814f6c67d41adfb2ff60b7c2e72187d57e4923d4552d906b67ee262af",
+        "reaped_descendants": 0,
+        "seconds": 132.72907826909795,
+        "start_utc": "2026-10-29T09:55:38.145521+00:00",
+        "termination": null
+      },
+      "scope": "Only the three initially UNRUN checks, once at original limits. The workspace timeout remains FAILED.",
+      "status": "PASS"
+    },
+    "remaining_setup_refusal": {
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "5f79284ac527195d199a60dc4aca029b698922ac8102cb7d8ec70c6c7d79a27a",
+        "reaped_descendants": 0,
+        "seconds": 1.6802998969797045,
+        "start_utc": "2026-10-29T09:53:23.998841+00:00",
+        "termination": null
+      },
+      "reason": "Owner refused a log destination outside target/evaluation before process creation; corrected destination preserves its rule.",
+      "test_children_started": 0
+    },
+    "scope": "One predeclared eight-CPU reservation, unchanged limits; not a 316-thread result or performance number.",
+    "status": "FAILED"
+  },
+  "earlier_campaign": {
+    "record": "../ordinary-module-session-d2d81c9/receipt.json",
+    "retrospective_credit": false,
+    "revision": "d2d81c97e14973ea41fe413439e6db6159e9712a",
+    "status": "FAILED"
+  },
+  "geometry": {
+    "caller": {
+      "call_bytes": "41ffd0",
+      "continuation_offset": 16,
+      "elf_va": 4203952,
+      "length": 21,
+      "store_bytes": "488903"
+    },
+    "dso": {
+      "bytes": 13520,
+      "sha256": "768f52491d0211ac9bc5f564f69dd27504a7ec6dfe949d4e2ceb7b3ee2df7c5e"
+    },
+    "selections": [
+      [
+        4096,
+        126
+      ],
+      [
+        4224,
+        41
+      ]
+    ]
+  },
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "kernel_version": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+  "launcher_review": "9bc4c2a3196718d806d467cfb6c73673d2856a07e943bc491c07b4b671e64b82",
+  "outer_owner": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "230160096250206a2f225d50407a2d2075ec59423bfcb3e671e426da30f3364a",
+    "reaped_descendants": 0,
+    "seconds": 29.697462973883376,
+    "start_utc": "2026-10-29T09:45:23.164173+00:00",
+    "termination": null
+  },
+  "protocol": {
+    "attempts": 1,
+    "child_cpu_seconds": 20,
+    "child_stream_bytes": 4194304,
+    "child_wall_seconds": 30,
+    "installed_children": 0,
+    "malformed_children": 8,
+    "original_children": 32,
+    "original_seconds": 15,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 1200,
+    "parser_controls": 6,
+    "retries": 0
+  },
+  "raw_result_sha256": "1b732578b792be6163cc236caffb46774f408cee2a0da56b3c4c6d21c750a945",
+  "recipe": "cpuset-alloc run --cores 3 --sample-s 1 --tag li2core-reference-eb4c90b -- python3 -B evaluation/ordinary-module-session/reference.py --revision eb4c90b63cd95d887ef44297d42851991ca6b265 --raw \"$FRESH_IGNORED_DIRECTORY\" --reservation-tag li2core-reference-eb4c90b",
+  "reservation": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "cpus": [
+      34,
+      108,
+      113
+    ],
+    "load_after": [
+      65.16,
+      75.4,
+      70.94
+    ],
+    "load_before": [
+      78.47,
+      78.59,
+      71.78
+    ],
+    "mechanism": "cpuset-alloc hard AllowedCPUs and shared ledger",
+    "original_worker_cpu": 108,
+    "source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "tag": "li2core-reference-eb4c90b"
+  },
+  "retained_hashes_verified": 512,
+  "revision": "eb4c90b63cd95d887ef44297d42851991ca6b265",
+  "schema": 1,
+  "scope": "Targeted original references only; no installed application, Schedule, performance or retrospective campaign credit.",
+  "script_sha256": "d8a8791eeebaba59ad6d7a38518356c87f6f1c24a9770e78c4387baf40492876",
+  "source_review": "76c10b811c3a439bbe0235862fff910872d7a63798b551d72d6fe25933004f85",
+  "status": "REFERENCE_PASS",
+  "tools": [
+    {
+      "bytes": 727360,
+      "name": "as",
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    {
+      "bytes": 1389072,
+      "name": "bash",
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    },
+    {
+      "bytes": 1093144,
+      "name": "gcc",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    {
+      "bytes": 4397400,
+      "name": "git",
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    {
+      "bytes": 1791600,
+      "name": "ld.bfd",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    {
+      "bytes": 423000,
+      "name": "objdump",
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    {
+      "bytes": 683296,
+      "name": "readelf",
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    {
+      "bytes": 4746600,
+      "name": "rg",
+      "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+    },
+    {
+      "bytes": 28991152,
+      "name": "cc1",
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    {
+      "bytes": 349536,
+      "name": "collect2",
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    {
+      "bytes": 13542408,
+      "name": "python3.12",
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    }
+  ],
+  "totals": {
+    "malformed_normal_reaps": 8,
+    "original_normal_reaps": 32,
+    "original_populations": 32,
+    "parser_controls": 6,
+    "records": 10537,
+    "target_calls": 21074,
+    "typed_refusals": 8
+  }
+}
