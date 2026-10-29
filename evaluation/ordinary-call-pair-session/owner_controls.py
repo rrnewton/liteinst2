@@ -14,7 +14,7 @@ import stat
 import types
 import unittest
 
-SHA = '1bdfcbc55340843fd7c11293234a9e1f72d9148f2ee5d1d5f1fecc4fa0359f46'
+SHA = '18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12'
 PATH = Path(__file__).resolve().with_name('launch.py')
 with os.fdopen(os.open(PATH, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), 'rb') as stream:
     before = os.fstat(stream.fileno()); assert stat.S_ISREG(before.st_mode) and before.st_size <= 1048576

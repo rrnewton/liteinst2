@@ -10,7 +10,7 @@ Provide canonical absolute paths in `REPOSITORY`, `PYTHON`, `TOOLCHAIN`, `CARGO_
 
 The allocator source repository is <https://github.com/rrnewton/agent-utils>, pinned to commit `d0c2867be75b495eb64239e664c6306af9747783`. The immutable native freezer supplies the exact map of all31 `py/dagrun/*.py` sources, whose canonical JSON SHA256 is `5f47ef0ee344f8e28bdb200e2ae21bab2c4a276d2746d73c204410a2a798d212`. The freezer checks the allocator revision, clean tracked source, exact Python file set and Git bytes; it does not connect to a ledger or reserve CPUs.
 
-First follow `evaluation/ordinary-call-pair-native/ROOT_PROTOCOL.md` at the same committed revision. That process creates its own source-frozen protocol and performs the separate fixed192-pair native attempt. It also materializes the unchanged launcher bytes at `ignored/a5/normal-call-pair-launch-source-v1/launch.py`, as required by existing receipt controls. This session freezer requires that identical compatibility source; it does not modify it.
+First follow `evaluation/ordinary-call-pair-native/ROOT_PROTOCOL.md` at the same committed revision. That process creates its own source-frozen protocol and performs the separate fixed192-pair native attempt. The session campaign, freezer and receipt controls authenticate the unchanged tracked launcher at `evaluation/ordinary-call-pair-native/launch.py`; they do not require an ignored compatibility copy.
 
 Only after independently auditing a successful, fully closed native prerequisite may root create the canonical seven-field manifest described in the native document. The manifest fields are exactly `schema`, `version`, `revision`, `profile`, `protocol`, `launcher_result`, and `recipe_result`. It contains no acceptance flag. Root must bind the native protocol's independently retained path/size/hash and the actual unchanged root and recipe results, after closure and their complete source, artifact, native-state, retention and census checks. A hash-consistent JSON file by itself is not a successful prerequisite.
 
@@ -47,7 +47,7 @@ Fresh paths are deterministic:
 | Outer owner log directory | `target/evaluation/call-pair-session-owner-<REVISION>/` |
 | Campaign inner log directory | `target/evaluation/call-pair-session-<REVISION>/` |
 
-The exclusive initial `freeze-attempt.json` remains failed unless a final `SOURCE_FROZEN_UNRUN` marker is created. All native metadata, source, tool, allocator, compatibility source and path checks repeat before that marker. Freezing performs no allocator, compiler, test, campaign or native execution, and reads neither native result file named by the manifest. The marker is source authority only; its `qualification_attempts` remains zero.
+The exclusive initial `freeze-attempt.json` remains failed unless a final `SOURCE_FROZEN_UNRUN` marker is created. All native metadata, source, tool, allocator, public native launcher and path checks repeat before that marker. Freezing performs no allocator, compiler, test, campaign or native execution, and reads neither native result file named by the manifest. The marker is source authority only; its `qualification_attempts` remains zero.
 
 ## One invocation and its authority
 

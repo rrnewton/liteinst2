@@ -1,0 +1,357 @@
+{
+  "all_762_outcomes": {
+    "bytes": 59975,
+    "sha256": "780f55fbe4321295ceeaf2c1f069cda62fcd34b01e78bff7ab97518fbdfcc7d5"
+  },
+  "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+  "closed": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "de85c17ef2020c73e99445f9b9baf61f8052867dbda80f4848e8fec4484a37fa",
+    "reaped_descendants": 0,
+    "seconds": 2312.174923855113,
+    "start_utc": "2026-10-29T18:53:15.787202+00:00",
+    "termination": null
+  },
+  "counts": {
+    "failed": 5,
+    "installed": 320,
+    "malformed": 8,
+    "normal_installed_reaps": 320,
+    "originals": 32,
+    "passed": 315,
+    "rescue_reaps": 0,
+    "stages": 395,
+    "unrun": 0
+  },
+  "custody_closed": true,
+  "elapsed_seconds": 2321.7476876010187,
+  "end_utc": "2026-10-29T19:31:51.946758+00:00",
+  "evidence_budget": {
+    "charged_rounded_bytes": 268148736,
+    "exceeded": false,
+    "final_allowance": 67108864,
+    "held_bytes": 0,
+    "limit": 2147483648,
+    "reservation_active": false,
+    "scope": "Retained evidence only; shared target build cache/artifacts are separate; no filesystem quota."
+  },
+  "failures": [
+    {
+      "actual_wait_ns": 8450299,
+      "attempt": 2,
+      "case": 29,
+      "committed": 440,
+      "elapsed_ns": 4402461093,
+      "involuntary_switches": 1,
+      "k": 10,
+      "kind": "clock_poll_deadline",
+      "poll_gap_ns": 8451731,
+      "requested_wait_ns": 1000000,
+      "stderr_sha256": "3e6e059afc55907b1ebf618c31b66fa4da59362627090ccb5b07b1fe7e1227ab",
+      "system_us": 35,
+      "user_us": 1557
+    },
+    {
+      "actual_wait_ns": "",
+      "attempt": 2,
+      "case": 27,
+      "committed": 325,
+      "elapsed_ns": 3262760590,
+      "involuntary_switches": 1,
+      "k": 1000,
+      "kind": "clock_poll_deadline",
+      "poll_gap_ns": 13263708,
+      "requested_wait_ns": "",
+      "stderr_sha256": "e9b1ec30198d8239fd79d560886924e68ec73d9e3c9f71a1e10cf00279414f23",
+      "system_us": 3,
+      "user_us": 670
+    },
+    {
+      "actual_wait_ns": 10220147,
+      "attempt": 3,
+      "case": 29,
+      "committed": 107,
+      "elapsed_ns": 1072241155,
+      "involuntary_switches": 1,
+      "k": 1000,
+      "kind": "clock_poll_deadline",
+      "poll_gap_ns": 10221569,
+      "requested_wait_ns": 1000000,
+      "stderr_sha256": "dcca479dee4cef1cb4f5172f5811ca568b81793c7f0a69d51c12fb6541c4f289",
+      "system_us": 37,
+      "user_us": 1470
+    },
+    {
+      "actual_wait_ns": 13231558,
+      "attempt": 4,
+      "case": 29,
+      "committed": 214,
+      "elapsed_ns": 2145246273,
+      "involuntary_switches": 1,
+      "k": 10,
+      "kind": "clock_poll_deadline",
+      "poll_gap_ns": 13232940,
+      "requested_wait_ns": 1000000,
+      "stderr_sha256": "8b383ee0bfaa9bb081460ecd385250d3d861a62b5aaabadaab53da0321cc0e97",
+      "system_us": 0,
+      "user_us": 1155
+    },
+    {
+      "actual_wait_ns": 11581805,
+      "attempt": 5,
+      "case": 27,
+      "committed": 240,
+      "elapsed_ns": 2404605547,
+      "involuntary_switches": 1,
+      "k": 1000,
+      "kind": "clock_poll_deadline",
+      "poll_gap_ns": 11583297,
+      "requested_wait_ns": 1000000,
+      "stderr_sha256": "b99dabfc3ab61e284dab3c726b40932637b665f8da97122859e085a5a9cf87ab",
+      "system_us": 5,
+      "user_us": 1062
+    }
+  ],
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "limits": {
+    "build_reserve_bytes": 1073741824,
+    "evidence_bytes": 2147483648,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 7200,
+    "slot_limit_bytes": 20000000000,
+    "wrapper_bytes": 25165824
+  },
+  "load_after": [
+    45.22,
+    51.63,
+    52.51
+  ],
+  "load_before": [
+    30.22,
+    39.6,
+    47.99
+  ],
+  "native_manifest": {
+    "bytes": 1002,
+    "sha256": "4438dcd8121048b7f9138ca84cc6b4f7c6049e77fb6e904d0ff6a0150a73f7ca"
+  },
+  "native_prerequisite": "CALL_PAIR_NATIVE_PREREQUISITE_ACCEPTED",
+  "native_protocol": {
+    "bytes": 191325,
+    "path": "$REPO/ignored/a5/call-pair-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/protocol.json",
+    "sha256": "e68a6e120639105df6ce46da923cb5b5ae04c013a193469951f9d51d08de6abf"
+  },
+  "owner_result": {
+    "bytes": 4201,
+    "sha256": "fbf1c85ff404c5417a50f3d5dd043c82b057d52502801b5c7e5ba3a801e01f9e"
+  },
+  "passed_case_totals": {
+    "arms": 26782,
+    "roots": 101265,
+    "sampled": 196097,
+    "target_rows": 202530,
+    "unsampled": 6433
+  },
+  "protocol": {
+    "bytes": 199081,
+    "sha256": "68bc9ebefcf29de450e2cf786a9d98151f295d260ccf665e3ef93aa511134be4"
+  },
+  "qualification": {
+    "arm_ns": 2000000,
+    "banks": 3,
+    "case_count": 32,
+    "cpus": 3,
+    "epochs": 520,
+    "installed": 320,
+    "k_order": [
+      10,
+      1000
+    ],
+    "malformed": 8,
+    "native_pairs": 192,
+    "period_ns": 10000000,
+    "qualifications": 5,
+    "recipe": "evaluation/ordinary-call-pair-session/reproduce.py",
+    "references": 32,
+    "shutdown_ns": 2000000000,
+    "stages": 395,
+    "terminal": "CALL_PAIR_SESSION_FUNCTIONAL_PASS"
+  },
+  "qualifications": [
+    {
+      "attempt": 1,
+      "failed": 0,
+      "pass": 64,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "PASS",
+      "unrun": 0
+    },
+    {
+      "attempt": 2,
+      "failed": 2,
+      "pass": 62,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "FAILED",
+      "unrun": 0
+    },
+    {
+      "attempt": 3,
+      "failed": 1,
+      "pass": 63,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "FAILED",
+      "unrun": 0
+    },
+    {
+      "attempt": 4,
+      "failed": 1,
+      "pass": 63,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "FAILED",
+      "unrun": 0
+    },
+    {
+      "attempt": 5,
+      "failed": 1,
+      "pass": 63,
+      "required_roots": 21074,
+      "required_target_rows": 42148,
+      "status": "FAILED",
+      "unrun": 0
+    }
+  ],
+  "raw_result": {
+    "bytes": 3640361,
+    "sha256": "0fa49c6e22a22a56ab720e3f1b6c685d5ba2cbdfa21f194d51d5d2fe6d2a528f"
+  },
+  "recipe_load_after": [
+    43.41,
+    51.39,
+    52.44
+  ],
+  "recipe_load_before": [
+    30.23,
+    39.3,
+    47.8
+  ],
+  "request": {
+    "attempts": 1,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "call-pair-session-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "--",
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/ordinary-call-pair-session/reproduce.py",
+      "--revision",
+      "a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "--reservation-tag",
+      "call-pair-session-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "--raw",
+      "$REPO/ignored/a5/call-pair-session-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/call-pair-session-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--native-receipt",
+      "$REPO/ignored/a5/call-pair-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/native-receipt.json",
+      "--native-receipt-sha256",
+      "4438dcd8121048b7f9138ca84cc6b4f7c6049e77fb6e904d0ff6a0150a73f7ca",
+      "--native-protocol",
+      "$REPO/ignored/a5/call-pair-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/protocol.json",
+      "--native-protocol-sha256",
+      "e68a6e120639105df6ce46da923cb5b5ae04c013a193469951f9d51d08de6abf"
+    ],
+    "cwd": "$REPO",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=$RUNTIME_DIR/bus",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "XDG_RUNTIME_DIR": "$RUNTIME_DIR"
+    },
+    "limits": {
+      "build_reserve_bytes": 1073741824,
+      "evidence_bytes": 2147483648,
+      "outer_log_bytes": 8388608,
+      "outer_seconds": 7200,
+      "slot_limit_bytes": 20000000000,
+      "wrapper_bytes": 25165824
+    },
+    "native": {
+      "protocol": {
+        "bytes": 191325,
+        "path": "$REPO/ignored/a5/call-pair-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/protocol.json",
+        "sha256": "e68a6e120639105df6ce46da923cb5b5ae04c013a193469951f9d51d08de6abf"
+      },
+      "receipt": {
+        "bytes": 1002,
+        "path": "$REPO/ignored/a5/call-pair-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/native-receipt.json",
+        "sha256": "4438dcd8121048b7f9138ca84cc6b4f7c6049e77fb6e904d0ff6a0150a73f7ca"
+      }
+    },
+    "profile": "call-pair-session-qualification-v1",
+    "protocol_sha256": "68bc9ebefcf29de450e2cf786a9d98151f295d260ccf665e3ef93aa511134be4",
+    "retries": 0,
+    "tag": "call-pair-session-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3"
+  },
+  "reservation": {
+    "cores": [
+      62,
+      70,
+      73
+    ],
+    "count": 3,
+    "cpu_roles": {
+      "controller": 62,
+      "producer": 73,
+      "worker": 70
+    },
+    "ledger_readback": false,
+    "recipe_exit": 1,
+    "recipe_summary": {
+      "outcomes_sha256": "780f55fbe4321295ceeaf2c1f069cda62fcd34b01e78bff7ab97518fbdfcc7d5",
+      "profile": "call-pair-session-qualification-v1",
+      "status": "FAILED",
+      "summary_sha256": "b771b9390a28ce2bf07657e2268cbab9c61b21c81e0a530774d6efe014748bf3"
+    },
+    "status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN"
+  },
+  "retained_pins_rechecked": 6899,
+  "retention_verified": true,
+  "revision": "a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+  "root_audit": {
+    "bytes": 2193640,
+    "sha256": "8ae96a7ae64ff1405415c8cdafff7cf6a9e7f062456ac160eeb426df3af1b0a7"
+  },
+  "schema": 1,
+  "scope": "All five qualifications completed; only qualification 1 passed. Five real clock-poll deadline refusals remain FAILED. Aggregates of 315 passing cases are not whole-campaign acceptance. No throughput, general deadline guarantee, full-worker native-state or full-A5 claim.",
+  "source_pins_rechecked": 1220,
+  "start_utc": "2026-10-29T18:53:10.249485+00:00",
+  "status": "FAILED",
+  "summary": {
+    "bytes": 1723,
+    "sha256": "b771b9390a28ce2bf07657e2268cbab9c61b21c81e0a530774d6efe014748bf3"
+  }
+}
