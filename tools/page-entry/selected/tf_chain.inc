@@ -5,8 +5,20 @@
 #include "rseq_guard.h"
 #endif
 static struct li2_tf_chain *chain_registered;
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+struct li2_tf_run_entry {
+    struct li2_tf_chain *chain;
+    struct li2_tf_run_origin progress;
+    struct li2_fetch_ref run_ref;
+    volatile sig_atomic_t valid;
+};
+static struct li2_tf_run_entry chain_run_entry;
+#endif
 static void chain_invalidate(struct li2_tf_chain *c) {
     __atomic_store_n(&c->entry.valid,0,__ATOMIC_RELEASE);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    __atomic_store_n(&chain_run_entry.valid,0,__ATOMIC_RELEASE);
+#endif
 }
 static int chain_registered_ok(const struct li2_tf_chain *c) {
     return c && c==chain_registered && c->initialized && c->active>=0 && c->active<2;
@@ -108,6 +120,121 @@ static int chain_closed(const struct li2_tf_chain_slot *s) {
     return s->phase==LI2_CHAIN_CLOSED && chain_trace_closed(s) &&
         s->release.started && s->release.complete && !s->release.result && !s->fetch.progress.held;
 }
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+/* Genuine event and completed predecessor, not a caller-supplied flag tuple.
+   The old chain retains both complete releases and its ordinary slot phases. */
+static int chain_run_frame(const struct li2_tf_chain *c,
+                            const struct li2_tf_run_origin *e,int sig,
+                            const siginfo_t *si,const ucontext_t *uc) {
+    if(!chain_registered_ok(c) || !e || !si || !uc || c->first_error ||
+       c->pending || c->in_handler || __atomic_load_n(&c->entry.valid,__ATOMIC_ACQUIRE) ||
+       !identity(c->session) ||
+       !c->session->self_test_complete || e->previous>=2 || e->next>=2 ||
+       e->previous==e->next || e->next!=(unsigned)c->active ||
+       !e->event_id || e->event_id!=c->event_id)return 0;
+    const struct li2_tf_chain_slot *p=&c->slots[e->previous],*s=&c->slots[e->next];
+    const greg_t *g=uc->uc_mcontext.gregs;
+    return chain_closed(p) && p->generation==e->previous_generation &&
+       p->fetch.ref.sequence==e->previous_borrow &&
+       p->owner.actual_post_pc==e->pc &&
+       (p->owner.actual_post_flags&~LI2_STEP_TF)==e->flags &&
+       s->phase==LI2_CHAIN_FALLBACK && s->fallback==LI2_CHAIN_OLD_STEP &&
+       s->owner.step.phase==LI2_STEP_EMPTY && !s->unexpected_frame_observed &&
+       s->generation==e->next_generation && s->event_id==e->event_id &&
+       s->prepare_attempted==1 && s->prepare_complete==1 && !s->prepare_result &&
+       s->decode_attempted==1 && s->decode_complete==1 && !s->decode_result &&
+       s->decoded.decode_status==LI2_VALID && s->decoded.kind==LI2_NONE &&
+       s->decoded.step_disposition==LI2_STEP_CANDIDATE && s->decoded.pc==e->pc &&
+       s->release.started==1 && s->release.complete==1 && !s->release.result &&
+       s->fetch.ref.sequence==e->next_borrow && e->next_borrow>e->previous_borrow &&
+       !s->fetch.progress.held && s->fetch.progress.complete && !s->fetch.progress.first_error &&
+       s->fetch.progress.sequence==e->next_borrow &&
+       sig==SIGTRAP && si->si_signo==SIGTRAP && si->si_code==TRAP_TRACE && !si->si_errno &&
+       g[REG_TRAPNO]==1 && !g[REG_ERR] && (uintptr_t)si->si_addr==e->pc &&
+       (uintptr_t)g[REG_RIP]==e->pc && ((uint64_t)g[REG_CSGSFS]&0xffff)==0x33 &&
+       (uint64_t)g[REG_RSP]<(UINT64_C(1)<<47) &&
+       !(e->flags&(LI2_STEP_TF|LI2_STEP_RF)) && (uint64_t)g[REG_EFL]==e->flags &&
+       chain_frame_equal(&p->owner.step.after,uc,1);
+}
+static void chain_run_offer(struct li2_tf_chain *c,unsigned previous,
+                             int sig,const siginfo_t *si,const ucontext_t *uc) {
+    chain_need(c,chain_run_entry.chain!=c || chain_run_entry.progress.event_id!=c->event_id,
+               LI2_CHAIN_ORIGIN,20);
+    const struct li2_tf_chain_slot *p=&c->slots[previous],*s=chain_slot(c);
+    struct li2_tf_run_origin e={.issued=1,.previous=previous,.next=(unsigned)c->active,
+        .event_id=c->event_id,.previous_generation=p->generation,.next_generation=s->generation,
+        .previous_borrow=p->fetch.ref.sequence,.next_borrow=s->fetch.ref.sequence,
+        .pc=p->owner.actual_post_pc,.flags=p->owner.actual_post_flags&~LI2_STEP_TF};
+    chain_need(c,!li2_lifecycle_fetch_interlock() && chain_run_frame(c,&e,sig,si,uc),
+               LI2_CHAIN_ORIGIN,21);
+    chain_run_entry=(struct li2_tf_run_entry){.chain=c,.progress=e};
+    __atomic_store_n(&chain_run_entry.valid,1,__ATOMIC_RELEASE);
+}
+const struct li2_tf_run_entry *li2_tf_chain_run_entry(struct li2_tf_chain *c) {
+    if(!chain_registered_ok(c) || chain_run_entry.chain!=c ||
+       chain_run_entry.progress.event_id!=c->event_id ||
+       __atomic_load_n(&chain_run_entry.valid,__ATOMIC_ACQUIRE)!=1)return 0;
+    return &chain_run_entry;
+}
+const struct li2_tf_run_origin *li2_tf_chain_run_snapshot(const struct li2_tf_chain *c) {
+    return chain_registered_ok(c) && chain_run_entry.chain==c?&chain_run_entry.progress:0;
+}
+static int chain_run_refuse(unsigned code) {
+    if(!chain_run_entry.progress.result)chain_run_entry.progress.result=(int)code;
+    return (int)code;
+}
+int li2_tf_chain_run_skip(const struct li2_tf_run_entry *entry,
+                         int sig,const siginfo_t *si,const ucontext_t *uc) {
+    unsigned valid=__atomic_exchange_n(&chain_run_entry.valid,0,__ATOMIC_ACQ_REL);
+    struct li2_tf_run_origin *e=&chain_run_entry.progress;
+    if(entry!=&chain_run_entry || valid!=1 || e->consume_attempted || e->consumed || e->result)
+        return chain_run_refuse(LI2_CHAIN_ORIGIN);
+    e->consume_attempted=1;
+    if(li2_lifecycle_fetch_interlock() || !chain_run_frame(chain_run_entry.chain,e,sig,si,uc))
+        return chain_run_refuse(LI2_CHAIN_FRAME);
+    e->preflight_skipped=1;e->consumed=1;return 0;
+}
+int li2_tf_chain_run_consume(const struct li2_tf_run_entry *entry,struct li2_step_session *session,
+                            const struct li2_fetch_ref *ref,uintptr_t pc,uint64_t flags,
+                            int sig,const siginfo_t *si,const ucontext_t *uc) {
+    unsigned valid=__atomic_exchange_n(&chain_run_entry.valid,0,__ATOMIC_ACQ_REL);
+    struct li2_tf_run_origin *e=&chain_run_entry.progress;
+    if(entry!=&chain_run_entry || valid!=1 || e->consume_attempted || e->consumed || e->result)
+        return chain_run_refuse(LI2_CHAIN_ORIGIN);
+    e->consume_attempted=1;if(ref)e->run_borrow=ref->sequence;
+    struct li2_tf_chain *c=chain_run_entry.chain;
+    if(!chain_run_frame(c,e,sig,si,uc) || session!=c->session || pc!=e->pc || flags!=e->flags ||
+       !ref || !ref->owner || ref->sequence<=e->next_borrow)
+        return chain_run_refuse(LI2_CHAIN_ORIGIN);
+    const struct li2_fetch_progress *p=li2_lifecycle_fetch_progress();
+    struct li2_fetch_view v={0};
+    int result=li2_lifecycle_fetch_view(ref,&v);
+    const struct li2_chain_fetch *old=&c->slots[e->next].fetch;
+    if(result || !p || !p->held || !p->complete || p->first_error || p->sequence!=ref->sequence ||
+       li2_lifecycle_fetch_interlock()!=LI2_FETCH_BUSY || !v.identity_observed ||
+       v.pid!=session->pid || v.tid!=session->tid || v.pc!=e->pc ||
+       v.length!=old->length || !v.length || v.length>15 || !v.bytes ||
+       v.page_count!=old->page_count || !v.page_count || v.page_count>2 || !v.pages ||
+       !equal(v.bytes,old->bytes,v.length) ||
+       !equal(v.pages,old->pages,v.page_count*sizeof(v.pages[0])))
+        return chain_run_refuse(LI2_CHAIN_PREPARE);
+    if(!chain_run_frame(c,e,sig,si,uc))return chain_run_refuse(LI2_CHAIN_FRAME);
+    chain_run_entry.run_ref=*ref;e->consumed=1;return 0;
+}
+int li2_tf_chain_run_released(const struct li2_tf_run_entry *entry,const struct li2_fetch_ref *ref,
+                             int sig,const siginfo_t *si,const ucontext_t *uc) {
+    struct li2_tf_run_origin *e=&chain_run_entry.progress;
+    const struct li2_fetch_progress *p=li2_lifecycle_fetch_progress();
+    if(entry!=&chain_run_entry || __atomic_load_n(&chain_run_entry.valid,__ATOMIC_ACQUIRE) ||
+       !e->consume_attempted || !e->consumed || e->miss_released || e->result ||
+       !ref || ref->owner!=chain_run_entry.run_ref.owner || ref->sequence!=e->run_borrow ||
+       !p || p->held || !p->complete || p->first_error ||
+       p->sequence!=e->run_borrow || li2_lifecycle_fetch_interlock() ||
+       !chain_run_frame(chain_run_entry.chain,e,sig,si,uc))
+        return chain_run_refuse(LI2_CHAIN_FRAME);
+    e->miss_released=1;return 0;
+}
+#endif
 static struct li2_tf_chain_slot *chain_next(struct li2_tf_chain *c,unsigned index) {
 #ifdef LI2_TF_SEALED_CUSTODY
     li2_page_custody_discard(LI2_CUSTODY_SLOT);
@@ -340,6 +467,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
         chain_invalidate(c);chain_release(c,s,&s->release);
         chain_need(c,chain_frame_equal(&p->owner.step.after,uc,1),LI2_CHAIN_FRAME,6);
         s->phase=LI2_CHAIN_FALLBACK;chain_count(c,&c->fallbacks);c->pending=0;c->in_handler=0;
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+        if(s->fallback==LI2_CHAIN_OLD_STEP)chain_run_offer(c,previous,sig,si,uc);
+#endif
         return LI2_CHAIN_NX_FALLBACK;
     }
     uint64_t flags=(uint64_t)uc->uc_mcontext.gregs[REG_EFL];

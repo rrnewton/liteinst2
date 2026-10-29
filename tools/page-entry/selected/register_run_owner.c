@@ -1,4 +1,7 @@
 #include "register_run.h"
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+#include "tf_chain.h"
+#endif
 #include <sys/mman.h>
 #include <sys/syscall.h>
 
@@ -206,6 +209,26 @@ void li2_run_begin(struct li2_run_owner *o,int sig,siginfo_t *si,ucontext_t *uc)
     uc->uc_mcontext.gregs[REG_RIP]=(greg_t)o->entry_slot.entry;
     o->redirected=1;o->phase=LI2_RUN_RUNNING;o->in_handler=0;
 }
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+void li2_run_begin_trace(struct li2_run_owner *o,const struct li2_tf_run_entry *origin,
+                         int sig,siginfo_t *si,ucontext_t *uc) {
+    if(!o)li2_run_abort(0,LI2_RUN_ARGUMENT,0);
+    enter(o,LI2_RUN_ARMED,sig,si,uc,&o->entry_event,&o->before);
+    o->phase=LI2_RUN_ENTERING;
+    int result=li2_tf_chain_run_consume(origin,o->session,&o->borrow,o->plan.pc,
+                                       o->logical_flags,sig,si,uc);
+    require(o,!result,(unsigned)result,0);
+    result=source(o,0);require(o,!result,(unsigned)result,o->fetch_result);
+    closed_query(o,&o->pre_entry);
+    result=slot(o,&o->entry_slot,0);require(o,!result,(unsigned)result,
+        o->entry_slot.callback_result?o->entry_slot.callback_result:o->entry_slot.result);
+    require(o,unchanged(&o->before,uc),LI2_RUN_FRAME,8);
+    /* Genuine predecessor TRACE has already had only its own TF removed.
+       Preserve every remaining frame byte, including its actual CR2. */
+    uc->uc_mcontext.gregs[REG_RIP]=(greg_t)o->entry_slot.entry;
+    o->redirected=1;o->phase=LI2_RUN_RUNNING;o->in_handler=0;
+}
+#endif
 void li2_run_exit(struct li2_run_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
     if(!o)li2_run_abort(0,LI2_RUN_ARGUMENT,0);
     enter(o,LI2_RUN_RUNNING,sig,si,uc,&o->exit_event,&o->after);

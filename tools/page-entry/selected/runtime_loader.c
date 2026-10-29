@@ -130,6 +130,10 @@ static void selected_run_report(unsigned,unsigned,long);
 static void selected_run_time_report(unsigned,unsigned,long);
 #endif
 static int selected_run_try(int,siginfo_t *,ucontext_t *,uint64_t);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+static void selected_run_trace_try(int,siginfo_t *,ucontext_t *,uint64_t);
+static void selected_run_trace_report(unsigned,unsigned,long);
+#endif
 static void selected_run_exit(int,siginfo_t *,ucontext_t *);
 static void selected_run_before_syscall(long,const long[6]);
 static _Noreturn void selected_run_abort(unsigned,long);
@@ -279,6 +283,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_REGISTER_RUN
     selected_run_report(status,code,detail);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    selected_run_trace_report(status,code,detail);
+#endif
 #ifdef LI2_RUN_TIMING
     selected_run_time_report(status,code,detail);
 #endif
@@ -579,6 +586,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_TF_HANDOFF
     li2_tf_chain_event_boundary(&selected_chain);
+#endif
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    /* A nested event during fresh preparation has no armed run owner yet.
+       Retain its actual event through the same terminal cache/run cleanup. */
+    if(selected_run_trace_busy)selected_run_unexpected(sig,si,ptr);
 #endif
 #ifdef LI2_REGISTER_RUN
     if(selected_pending_route==SELECTED_REGISTER_RUN &&

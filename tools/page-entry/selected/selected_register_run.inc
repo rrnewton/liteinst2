@@ -90,7 +90,14 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
                                 &selected_run_plan);
     if(error==LI2_RUN_SLOW) {
         checked(selected_run_plan_misses!=UINT64_MAX,763,0);
-        ++selected_run_plan_misses;return 0;
+        ++selected_run_plan_misses;
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+        if(selected_run_trace_origin) {
+            checked(selected_run_trace_plan_misses!=UINT64_MAX,LI2_CHAIN_OVERFLOW,21);
+            ++selected_run_trace_plan_misses;
+        }
+#endif
+        return 0;
     }
     checked(!error,764,error);
 #ifdef LI2_RSEQ_INACTIVE
@@ -124,6 +131,12 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
                 d->last_attempt.miss_before_publication && !selected_run_publication &&
                 selected_run_owner.phase==LI2_RUN_EMPTY &&
                 li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY,765,0);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+        if(selected_run_trace_origin) {
+            checked(selected_run_trace_full_misses!=UINT64_MAX,LI2_CHAIN_OVERFLOW,22);
+            ++selected_run_trace_full_misses;
+        }
+#endif
         selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;return 0;
     }
     if(error)selected_run_abort((unsigned)error,0);
@@ -133,8 +146,64 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
                      &publisher,selected_run_publication);
     if(error)selected_run_abort((unsigned)error,0);
     selected_initialized();
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    if(selected_run_trace_origin)
+        li2_run_begin_trace(&selected_run_owner,selected_run_trace_origin,sig,si,uc);
+    else
+#endif
     li2_run_begin(&selected_run_owner,sig,si,uc);return 1;
 }
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+static void selected_run_trace_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags) {
+    checked(!selected_run_trace_busy && !selected_run_trace_active && !selected_run_trace_origin &&
+        !selected_selftesting && !selected_step_pending &&
+        selected_pending_route==SELECTED_NO_STEP && selected_run_owner.phase==LI2_RUN_EMPTY &&
+        !li2_lifecycle_fetch_interlock(),LI2_CHAIN_STATE,20);
+    selected_run_trace_busy=1;
+    selected_run_trace_origin=li2_tf_chain_run_entry(&selected_chain);
+    checked(selected_run_trace_origin && selected_run_trace_candidates!=UINT64_MAX,
+            LI2_CHAIN_ORIGIN,22);
+    ++selected_run_trace_candidates;
+    const struct li2_chain_fetch *closed=&selected_chain.slots[selected_chain.active].fetch;
+    struct li2_run_plan descriptive={0};
+    int plan_result=li2_run_plan_bytes(closed->pc,closed->bytes,closed->length,&descriptive);
+    if(plan_result==LI2_RUN_SLOW) {
+        /* A copied, closed window is sufficient only to decline this attempt.
+           No borrow, source opening or cached publication follows this branch. */
+        int error=li2_tf_chain_run_skip(selected_run_trace_origin,sig,si,uc);
+        if(error)selected_run_abort((unsigned)error,0);
+        checked(selected_run_trace_preflight_misses!=UINT64_MAX,LI2_CHAIN_OVERFLOW,23);
+        ++selected_run_trace_preflight_misses;
+        selected_run_trace_origin=0;selected_run_trace_busy=0;return;
+    }
+    if(plan_result)selected_run_abort((unsigned)plan_result,0);
+    checked(selected_run_trace_attempts!=UINT64_MAX,LI2_CHAIN_OVERFLOW,24);
+    ++selected_run_trace_attempts;
+    /* The chain's two real releases stay retained. This is the same fresh
+       prepare that the next NX ingress used to perform, with no source opening. */
+    selected_prepare((uintptr_t)uc->uc_mcontext.gregs[REG_RIP]);
+#ifdef LI2_RSEQ_INACTIVE
+    int rseq_error=li2_rseq_check_instruction(&selected_decoded,uc);
+    checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
+    if(selected_run_try(sig,si,uc,flags)) {
+        checked(selected_run_trace_entries!=UINT64_MAX,LI2_CHAIN_OVERFLOW,20);
+        ++selected_run_trace_entries;selected_run_trace_active=1;
+    } else {
+        /* Only exact planner/capacity SLOW can reach here. Authenticate and
+           consume the proof even on this miss, then release the fresh borrow.
+           Returning the unedited real frame naturally produces the old NX. */
+        int error=li2_tf_chain_run_consume(selected_run_trace_origin,&selected_session,
+            &selected_borrow,selected_decoded.pc,flags,sig,si,uc);
+        if(error)selected_run_abort((unsigned)error,0);
+        selected_release();
+        error=li2_tf_chain_run_released(selected_run_trace_origin,&selected_borrow,sig,si,uc);
+        if(error)selected_run_abort((unsigned)error,0);
+    }
+    selected_run_trace_origin=0;selected_run_trace_busy=0;
+}
+#endif
+
 static void selected_run_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     li2_run_exit(&selected_run_owner,sig,si,uc);
     int error=li2_run_complete_reset(&selected_run_owner,&selected_run_history,
@@ -142,6 +211,14 @@ static void selected_run_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     if(error)selected_run_abort((unsigned)error,0);
     checked(selected_run_history.reset_complete && !selected_run_history.first_error &&
             selected_run_owner.phase==LI2_RUN_EMPTY && !li2_lifecycle_fetch_interlock(),766,0);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    if(selected_run_trace_active) {
+        checked(selected_run_history.last_complete.entry_event.number==SIGTRAP &&
+                selected_run_history.last_complete.entry_event.code==TRAP_TRACE &&
+                selected_run_trace_completed!=UINT64_MAX,LI2_CHAIN_STATE,21);
+        ++selected_run_trace_completed;selected_run_trace_active=0;
+    }
+#endif
 #ifdef LI2_RUN_TIMING
     error=li2_run_timing_complete(&selected_run_timing,&selected_run_history);
     if(error)selected_run_abort((unsigned)error,selected_run_timing.first_detail);
@@ -240,3 +317,22 @@ static void selected_run_report(unsigned status,unsigned code,long detail) {
     selected_repeat_array(&w,",\"private_brk\":",brk,sizeof brk/sizeof brk[0]);
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }
+
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+/* Additional effect-profile row; old RUN/CHAIN counters keep their meanings. */
+static void selected_run_trace_report(unsigned status,unsigned code,long detail) {
+    struct writer w={.used=0};
+    text(&w,"LI2_TRACE_RUN {\"version\":1,\"scope\":\"genuine_trace_to_register_run\"");
+    field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+    field(&w,",\"detail_abs\":",selected_repeat_abs(detail));field(&w,",\"detail_negative\":",detail<0);
+    field(&w,",\"candidates\":",selected_run_trace_candidates);
+    field(&w,",\"preflight_misses\":",selected_run_trace_preflight_misses);
+    field(&w,",\"attempts\":",selected_run_trace_attempts);field(&w,",\"entries\":",selected_run_trace_entries);
+    field(&w,",\"plan_misses\":",selected_run_trace_plan_misses);field(&w,",\"full_misses\":",selected_run_trace_full_misses);
+    field(&w,",\"completed\":",selected_run_trace_completed);field(&w,",\"busy\":",selected_run_trace_busy);
+    field(&w,",\"active\":",selected_run_trace_active);
+    field(&w,",\"proof_available\":",li2_tf_chain_run_entry(&selected_chain)!=0);
+    field(&w,",\"pending\":",selected_step_pending);field(&w,",\"route\":",selected_pending_route);
+    text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+}
+#endif
