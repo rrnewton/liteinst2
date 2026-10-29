@@ -1,0 +1,257 @@
+[
+  {
+    "block": 1,
+    "body": {
+      "denominator": 354428,
+      "numerator": 6420972,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "always-on",
+    "native_trial": 1,
+    "observed_trial": 2,
+    "service": {
+      "denominator": 464372228,
+      "numerator": 263604773,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 1,
+    "body": {
+      "denominator": 354428,
+      "numerator": 5201763,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k10",
+    "native_trial": 1,
+    "observed_trial": 3,
+    "service": {
+      "denominator": 464372228,
+      "numerator": 209764072,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 1,
+    "body": {
+      "denominator": 354428,
+      "numerator": 5994297,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k1000",
+    "native_trial": 1,
+    "observed_trial": 4,
+    "service": {
+      "denominator": 464372228,
+      "numerator": 205949986,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 2,
+    "body": {
+      "denominator": 262865,
+      "numerator": 5059711,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "always-on",
+    "native_trial": 8,
+    "observed_trial": 5,
+    "service": {
+      "denominator": 333821021,
+      "numerator": 178115407,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 2,
+    "body": {
+      "denominator": 262865,
+      "numerator": 4732468,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k10",
+    "native_trial": 8,
+    "observed_trial": 6,
+    "service": {
+      "denominator": 333821021,
+      "numerator": 192700805,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 2,
+    "body": {
+      "denominator": 262865,
+      "numerator": 5789885,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k1000",
+    "native_trial": 8,
+    "observed_trial": 7,
+    "service": {
+      "denominator": 333821021,
+      "numerator": 208856619,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 3,
+    "body": {
+      "denominator": 320761,
+      "numerator": 5345884,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "always-on",
+    "native_trial": 11,
+    "observed_trial": 12,
+    "service": {
+      "denominator": 334712048,
+      "numerator": 192600143,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 3,
+    "body": {
+      "denominator": 320761,
+      "numerator": 4752757,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k10",
+    "native_trial": 11,
+    "observed_trial": 9,
+    "service": {
+      "denominator": 334712048,
+      "numerator": 180300027,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 3,
+    "body": {
+      "denominator": 320761,
+      "numerator": 6417529,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k1000",
+    "native_trial": 11,
+    "observed_trial": 10,
+    "service": {
+      "denominator": 334712048,
+      "numerator": 204149183,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 4,
+    "body": {
+      "denominator": 267553,
+      "numerator": 5243366,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "always-on",
+    "native_trial": 14,
+    "observed_trial": 15,
+    "service": {
+      "denominator": 326524115,
+      "numerator": 183722866,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 4,
+    "body": {
+      "denominator": 267553,
+      "numerator": 4945598,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k10",
+    "native_trial": 14,
+    "observed_trial": 16,
+    "service": {
+      "denominator": 326524115,
+      "numerator": 203705105,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 4,
+    "body": {
+      "denominator": 267553,
+      "numerator": 5594598,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k1000",
+    "native_trial": 14,
+    "observed_trial": 13,
+    "service": {
+      "denominator": 326524115,
+      "numerator": 198855565,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 5,
+    "body": {
+      "denominator": 309452,
+      "numerator": 5375693,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "always-on",
+    "native_trial": 17,
+    "observed_trial": 18,
+    "service": {
+      "denominator": 361711462,
+      "numerator": 190930918,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 5,
+    "body": {
+      "denominator": 309452,
+      "numerator": 4831863,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k10",
+    "native_trial": 17,
+    "observed_trial": 19,
+    "service": {
+      "denominator": 361711462,
+      "numerator": 188059497,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "block": 5,
+    "body": {
+      "denominator": 309452,
+      "numerator": 6127172,
+      "status": "EXACT_RATIO"
+    },
+    "mode": "backoff-k1000",
+    "native_trial": 17,
+    "observed_trial": 20,
+    "service": {
+      "denominator": 361711462,
+      "numerator": 214596957,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  }
+]

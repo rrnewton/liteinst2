@@ -1,0 +1,46 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 3748,
+      "sha256": "3bb9ccd5aaa57c96ddf7fc536dc1aede9d3cf2287adf03bbfb1f8b8a4cfce088"
+    },
+    "checks.json": {
+      "bytes": 5957,
+      "sha256": "31a6de4ae570dc5b7e07c87c2bf879f96e2a61f21e39b67ec19737cfb414f2cb"
+    },
+    "development.json": {
+      "bytes": 1413,
+      "sha256": "4fce210bd7ca7d0513f087dbfb1c3d128436869d42f68e7b207ea031d610b9a9"
+    },
+    "pairs.json": {
+      "bytes": 5480,
+      "sha256": "cc4aabd90b66c3cf63d476915ddcdc0767ee6b733e3ddf1b8ff6eda0ca5c5505"
+    },
+    "protocol.json": {
+      "bytes": 5623,
+      "sha256": "63821363182bdc8abc28eb77e2c633525dbde8e91891c74c85f110220c7b4bc6"
+    },
+    "qualification.json": {
+      "bytes": 16215,
+      "sha256": "67def89f2a87fbd6c655de8beff2162c16ea2bd83b7dffd41f5d45d4a7ff41c9"
+    },
+    "receipt.json": {
+      "bytes": 9429,
+      "sha256": "a3dc5ed0128864a240134ecfc9ae17822a387c20347eebe5368d2cbdfbc53758"
+    },
+    "reproduce.py": {
+      "bytes": 7731,
+      "sha256": "d4c05877c202a7a151deff49431445115a41cd724c86a7ad675320eaa2e9f7a4"
+    },
+    "timing.csv": {
+      "bytes": 116303,
+      "sha256": "b5241ccaebd65c3acf3559fb6a914dd0a2affc37bab2b5e13813c2ffc2ccd865"
+    },
+    "trials.csv": {
+      "bytes": 7324,
+      "sha256": "df98ed16099b6b594753cad2b3e6867b130c2739ccc47783f083815cb7bdc8ec"
+    }
+  },
+  "revision": "a29012f08baf7a5a334103ea9e8c95b3ffe45888",
+  "scope": "Raw numeric elapsed observations plus compact summaries; raw logs and functional transcripts remain ignored."
+}

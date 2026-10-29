@@ -1,0 +1,176 @@
+{
+  "adaptive_repetition": false,
+  "attempts": 1,
+  "authority": "Prospective source protocol only. No runtime, capture, native completion, performance or accuracy claim. Root alone authenticates gate receipts, allocator sources, actual reservation and every fixed result before publication.",
+  "bounds": {
+    "child_cpu_seconds": 20,
+    "child_output_bytes": 1048576,
+    "child_wall_seconds": 30,
+    "helper_log_bytes": 1048576,
+    "helper_wall_seconds": 55,
+    "outer_log_bytes": 8388608,
+    "outer_wall_seconds": 1200
+  },
+  "catalog": [
+    {
+      "block": 1,
+      "mode": "native",
+      "trial": 1
+    },
+    {
+      "block": 1,
+      "mode": "always-on",
+      "trial": 2
+    },
+    {
+      "block": 1,
+      "mode": "backoff-k10",
+      "trial": 3
+    },
+    {
+      "block": 1,
+      "mode": "backoff-k1000",
+      "trial": 4
+    },
+    {
+      "block": 2,
+      "mode": "always-on",
+      "trial": 5
+    },
+    {
+      "block": 2,
+      "mode": "backoff-k10",
+      "trial": 6
+    },
+    {
+      "block": 2,
+      "mode": "backoff-k1000",
+      "trial": 7
+    },
+    {
+      "block": 2,
+      "mode": "native",
+      "trial": 8
+    },
+    {
+      "block": 3,
+      "mode": "backoff-k10",
+      "trial": 9
+    },
+    {
+      "block": 3,
+      "mode": "backoff-k1000",
+      "trial": 10
+    },
+    {
+      "block": 3,
+      "mode": "native",
+      "trial": 11
+    },
+    {
+      "block": 3,
+      "mode": "always-on",
+      "trial": 12
+    },
+    {
+      "block": 4,
+      "mode": "backoff-k1000",
+      "trial": 13
+    },
+    {
+      "block": 4,
+      "mode": "native",
+      "trial": 14
+    },
+    {
+      "block": 4,
+      "mode": "always-on",
+      "trial": 15
+    },
+    {
+      "block": 4,
+      "mode": "backoff-k10",
+      "trial": 16
+    },
+    {
+      "block": 5,
+      "mode": "native",
+      "trial": 17
+    },
+    {
+      "block": 5,
+      "mode": "always-on",
+      "trial": 18
+    },
+    {
+      "block": 5,
+      "mode": "backoff-k10",
+      "trial": 19
+    },
+    {
+      "block": 5,
+      "mode": "backoff-k1000",
+      "trial": 20
+    }
+  ],
+  "exclusions": [
+    "pure observer overhead",
+    "body-only ground truth",
+    "application speedup",
+    "continuous application throughput",
+    "accuracy or full-A5 qualification"
+  ],
+  "experiment": "ordinary-four-mode-segmented-elapsed-validation-order-v1",
+  "failure_policy": "Preserve20 PASS/FAILED/UNRUN rows. Only independently normally closed functional failures may advance; broken source/artifact/timer/PID/custody or prerequisites withhold the rest. Failed members have no ratios. No retries, changed bound, omitted outlier or manufactured endpoint.",
+  "gate_receipt_pattern": "ignored/a5/normal-backoff-elapsed-<REV7>-gates-v1/receipt.json",
+  "log_pattern": "target/evaluation/normal-backoff-elapsed-order-root-<REV7>.log",
+  "original_protocol": {
+    "path": "ignored/a5/normal-backoff-elapsed-root-v1/protocol-v1.json",
+    "sha256": "13cec7f96bd6aae664ba5ffd5f74130a17d2b02c929703004b5e5d3d776890b3",
+    "unchanged_copy": "protocol-v1.json"
+  },
+  "output_root": "ignored/a5/normal-backoff-elapsed-order-root-v1",
+  "policy": "Every old strict2ms/520-epoch/Requested-shutdown and post-output completion predicate remains unchanged. Emitted success/timing is tentative until successful native/timer status and normal owned closure. No original failure replaced.",
+  "prerequisite": "Fresh unchanged 34-stage ordinary qualification, all original functional/checker/driver/timer controls and new frozen exact control census, both command-driven pending-owner controls before any measured member; no extra untimed backoff catalog.",
+  "prior_campaigns": "Every prior campaign and outcome is retained with its original status. This is one prospectively fixed qualification at the new clean source; no prior outcome is replaced, repaired, dropped or relabelled.",
+  "raw_pattern": "ignored/a5/normal-backoff-elapsed-<REV7>-order-attempt1",
+  "release": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "jobs": 4,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "required_native_owner_controls": [
+    10,
+    1000
+  ],
+  "reservation": {
+    "app": "sorted CPU1",
+    "authority": "Actual allocator reservation/hard AllowedCPUs/source/argv/log joins required; no quiet or exclusive hardware assumption",
+    "controller": "sorted CPU3; backoff only",
+    "cores": 4,
+    "producer": "sorted CPU0",
+    "timer": "sorted CPU2"
+  },
+  "retries": 0,
+  "schema": 1,
+  "source_change": "Validation-order optimization in the elapsed checker; unchanged checker test source and unchanged elapsed runner. Expected hashes are fixed before launch and cannot be inferred from observations.",
+  "source_revision": "a29012f08baf7a5a334103ea9e8c95b3ffe45888",
+  "source_revision_gate": "The sole exact 40-hex launcher argument must equal this revision and clean HEAD; every pinned source equals its Git blob at this revision.",
+  "source_sha256": {
+    "tools/rapid-profiler/normal-work/backoff_elapsed_probe.py": "5678b33ad513ad6f19d0cacec9fdce5d2f63bf95f168b2df336b4a429ee6d039",
+    "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "3c74562f4e57872752af53ef5ec5d5f36964d6a19d64c1723b0c5ff1d755f024",
+    "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37"
+  },
+  "status": "FROZEN_BEFORE_FUTURE_QUALIFICATION",
+  "tag_pattern": "li2core-normal-backoff-elapsed-order-<REV7>",
+  "warmup_calls": 0,
+  "work": {
+    "blocks": 128,
+    "calls": 3072,
+    "helper_calls": 1536,
+    "instructions": 614400
+  }
+}

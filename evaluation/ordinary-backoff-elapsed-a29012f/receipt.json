@@ -1,0 +1,519 @@
+{
+  "attempts": 1,
+  "bounds": {
+    "child_cpu_seconds": 20,
+    "child_output_bytes": 1048576,
+    "child_wall_seconds": 30,
+    "helper_log_bytes": 1048576,
+    "helper_wall_seconds": 55,
+    "outer_log_bytes": 8388608,
+    "outer_wall_seconds": 1200
+  },
+  "command": [
+    "/usr/bin/env",
+    "XDG_RUNTIME_DIR=$SESSION_RUNTIME",
+    "DBUS_SESSION_BUS_ADDRESS=unix:path=$SESSION_RUNTIME/bus",
+    "/usr/local/bin/python3",
+    "-B",
+    "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+    "run",
+    "--cores",
+    "4",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-normal-backoff-elapsed-order-a29012f",
+    "--",
+    "/usr/local/bin/python3",
+    "-B",
+    "$REPO/tools/rapid-profiler/normal-work/backoff_elapsed_probe.py",
+    "--revision",
+    "a29012f08baf7a5a334103ea9e8c95b3ffe45888",
+    "--raw",
+    "$REPO/ignored/a5/normal-backoff-elapsed-a29012f-order-attempt1",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--reservation-tag",
+    "li2core-normal-backoff-elapsed-order-a29012f"
+  ],
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "$REPO/target",
+    "CARGO_TERM_COLOR": "never",
+    "HOME": "$USER_HOME",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "LITEINST_EVALUATION": "1",
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc"
+  },
+  "gate_receipt_sha256": "c5c98360e85d0321bdb187ff8c09d605d7fc3b0b0d35db1ed75156f7250859b5",
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "kernel": "7.1.3",
+    "observed": {
+      "cpu family": "26",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "interpretation": "Segmented guarded call path and validated service describe complete configurations with different validation/controller work. No application speedup, pure observer overhead, continuous throughput, accuracy, uncertainty or full-A5 claim. Raw CLOCK_MONOTONIC_RAW and process CLOCK_MONOTONIC have separate origins. Reproducer source-reviewed UNRUN; actual run uses the private launcher and same tracked driver.",
+  "load_average_observations": [
+    [
+      40.45,
+      47.57,
+      60.55
+    ],
+    [
+      115.03,
+      65.5,
+      63.91
+    ],
+    [
+      43.74,
+      46.39,
+      58.59
+    ],
+    [
+      43.52,
+      46.3,
+      58.5
+    ],
+    [
+      43.48,
+      46.25,
+      58.41
+    ],
+    [
+      42.62,
+      45.97,
+      58.19
+    ],
+    [
+      42.62,
+      45.97,
+      58.19
+    ],
+    [
+      41.5,
+      45.58,
+      57.87
+    ],
+    [
+      41.5,
+      45.58,
+      57.87
+    ],
+    [
+      46.83,
+      46.54,
+      57.98
+    ],
+    [
+      46.83,
+      46.54,
+      57.98
+    ],
+    [
+      46.83,
+      46.54,
+      57.98
+    ],
+    [
+      46.83,
+      46.54,
+      57.98
+    ],
+    [
+      46.83,
+      46.54,
+      57.98
+    ],
+    [
+      46.83,
+      46.54,
+      57.98
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      47.89,
+      46.76,
+      57.99
+    ],
+    [
+      78.32,
+      53.09,
+      59.98
+    ],
+    [
+      78.32,
+      53.09,
+      59.98
+    ],
+    [
+      78.32,
+      53.09,
+      59.98
+    ],
+    [
+      97.52,
+      57.49,
+      61.37
+    ],
+    [
+      97.52,
+      57.49,
+      61.37
+    ],
+    [
+      97.52,
+      57.49,
+      61.37
+    ],
+    [
+      97.52,
+      57.49,
+      61.37
+    ],
+    [
+      97.52,
+      57.49,
+      61.37
+    ],
+    [
+      97.52,
+      57.49,
+      61.37
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      102.36,
+      59.16,
+      61.89
+    ],
+    [
+      104.65,
+      60.35,
+      62.26
+    ],
+    [
+      104.65,
+      60.35,
+      62.26
+    ],
+    [
+      104.65,
+      60.35,
+      62.26
+    ],
+    [
+      104.65,
+      60.35,
+      62.26
+    ],
+    [
+      104.65,
+      60.35,
+      62.26
+    ],
+    [
+      104.65,
+      60.35,
+      62.26
+    ],
+    [
+      104.65,
+      60.35,
+      62.26
+    ],
+    [
+      105.24,
+      61.21,
+      62.53
+    ],
+    [
+      105.24,
+      61.21,
+      62.53
+    ],
+    [
+      105.24,
+      61.21,
+      62.53
+    ],
+    [
+      105.24,
+      61.21,
+      62.53
+    ],
+    [
+      105.24,
+      61.21,
+      62.53
+    ],
+    [
+      105.24,
+      61.21,
+      62.53
+    ],
+    [
+      105.24,
+      61.21,
+      62.53
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      108.27,
+      62.56,
+      62.96
+    ],
+    [
+      110.33,
+      63.75,
+      63.34
+    ],
+    [
+      110.33,
+      63.75,
+      63.34
+    ],
+    [
+      110.33,
+      63.75,
+      63.34
+    ],
+    [
+      110.33,
+      63.75,
+      63.34
+    ],
+    [
+      110.33,
+      63.75,
+      63.34
+    ],
+    [
+      110.33,
+      63.75,
+      63.34
+    ]
+  ],
+  "load_one_minute_range": [
+    40.45,
+    115.03
+  ],
+  "merged_main": "85037678ef05a68b5eb57cc8c10418b4c676c35d",
+  "original_outcomes": "Strict2ms campaign FAILED,PASS,PASS,FAILED,PASS; fixed-work9/10; elapsed4e651e2 prerequisiteFAILED/all20UNRUN. All unchanged.",
+  "original_protocol": "../ordinary-backoff-elapsed-4e651e2/protocol.json",
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "f7ebfa8e33a2d6cd528283d46cf77836d20f221b90b244f45cc0cc772f91fe87",
+    "reaped_descendants": 0,
+    "seconds": 208.4162427680567,
+    "start_utc": "2026-10-29T04:23:15.080829+00:00",
+    "termination": null
+  },
+  "parameters": {
+    "AGENT_UTILS": "Pinned cpuset allocator checkout",
+    "CARGO_HOME": "Dependency cache",
+    "REPO": "Exact source checkout",
+    "SESSION_RUNTIME": "Caller runtime session",
+    "TOOLCHAIN": "Rust1.97.1 toolchain",
+    "USER_HOME": "Caller home"
+  },
+  "private_launch": {
+    "bytes": 4125,
+    "sha256": "f56175919e84f3cfcca5713dac6a6bf139b86cccf381ffd4f7464b02e3a4fa98"
+  },
+  "private_projection": {
+    "bytes": 22746,
+    "sha256": "d3f3215e5a97373f766b02925fcdbc4439ad8f2a3807b240c316721f73741c42"
+  },
+  "private_result": {
+    "bytes": 706080,
+    "sha256": "ff8f821629ae8ab5e8bf2cc547825115ef4bfef8b63a4b496af410bec05fb993"
+  },
+  "protocol_sha256": {
+    "order-protocol-v1.json": "63821363182bdc8abc28eb77e2c633525dbde8e91891c74c85f110220c7b4bc6",
+    "protocol-v1.json": "13cec7f96bd6aae664ba5ffd5f74130a17d2b02c929703004b5e5d3d776890b3"
+  },
+  "release": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "incremental": false,
+    "jobs": 4,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "reservation": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_sources": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "app_cpu": 161,
+    "authority": "Actual allocator argv/log/hard AllowedCPUs joined to pinned allocator source; cooperative disjoint reservation, no quiet-host claim",
+    "controller_cpu": 310,
+    "cpus": [
+      139,
+      161,
+      273,
+      310
+    ],
+    "producer_cpu": 139,
+    "tag": "li2core-normal-backoff-elapsed-order-a29012f",
+    "timer_cpu": 273
+  },
+  "retries": 0,
+  "revision": "a29012f08baf7a5a334103ea9e8c95b3ffe45888",
+  "root_readback": {
+    "bytes": 5270,
+    "sha256": "88b3ff85abf97d0725229b9fa8f2fafe84322ca3cb99fff28915754d77c7b573"
+  },
+  "schema": 1,
+  "source_sha256": {
+    "tools/rapid-profiler/normal-work/backoff_elapsed_probe.py": "5678b33ad513ad6f19d0cacec9fdce5d2f63bf95f168b2df336b4a429ee6d039",
+    "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "3c74562f4e57872752af53ef5ec5d5f36964d6a19d64c1723b0c5ff1d755f024",
+    "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37"
+  },
+  "status": "ALL20_COMPLETE_OBSERVATIONS",
+  "warmups": 0
+}

@@ -1,0 +1,461 @@
+{
+  "artifacts": {
+    "binary": {
+      "bytes": 6698000,
+      "sha256": "f580049b94a483516e334246ebe53a894551a72bdb066a5c5f23166327f52c0b"
+    },
+    "caller": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "caller_candidate": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "libtest": {
+      "bytes": 4346368,
+      "sha256": "8a9f764e732c1cdd58ca8e64b85af77e4824282429442550cc523c7d0072a363"
+    },
+    "selection": {
+      "bytes": 586,
+      "sha256": "1fe6f771a2559c5867adc7dc40a861b549201803a21c82d60b1c1a4817b3cff4"
+    },
+    "subject": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    },
+    "timer": {
+      "bytes": 18488,
+      "sha256": "7d48341f781ce4cbf841dbe07b852dac3485673a04fdfa4ad4a14998a302f901"
+    },
+    "trusted": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    }
+  },
+  "measured": {
+    "failed_count": 0,
+    "functional_rows": 61440,
+    "owner_wire_rows": 6144,
+    "pass_count": 20,
+    "timing_rows": 2600,
+    "unrun_count": 0
+  },
+  "original_failed_qualification": "../ordinary-backoff-elapsed-4e651e2/README.md",
+  "owner_controls": [
+    {
+      "control": 1,
+      "exit": 0,
+      "hold_ordinal": 22,
+      "k": 10,
+      "name": "pending-owner-k10",
+      "reason": null,
+      "result": {
+        "bytes": 4744,
+        "sha256": "e511eb3bb3d3c203eab6091cfcf47f024d50642a18155fb4ea894f7a76482342"
+      },
+      "status": "PASS",
+      "wire_rows": 3072
+    },
+    {
+      "control": 2,
+      "exit": 0,
+      "hold_ordinal": 1006,
+      "k": 1000,
+      "name": "pending-owner-k1000",
+      "reason": null,
+      "result": {
+        "bytes": 4794,
+        "sha256": "79cb1a22ba47e6c57be80d2ed6fd80e1079c48fb9b39e4e76d24ddf254d72daa"
+      },
+      "status": "PASS",
+      "wire_rows": 3072
+    }
+  ],
+  "prerequisite": {
+    "closure": {
+      "nested_normal_helpers": 46,
+      "nested_outer_owners": 48,
+      "owned_stages": 34,
+      "rescues": 0
+    },
+    "result": {
+      "bytes": 143865,
+      "sha256": "0397666d095b5d6e153533d2953084c2227941db0084fbc53975713220b0ebb0"
+    },
+    "tools": {
+      "as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "gcc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "ld": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "strip": {
+        "bytes": 189816,
+        "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+      }
+    }
+  },
+  "revision": "a29012f08baf7a5a334103ea9e8c95b3ffe45888",
+  "scope": "One prospectively fixed qualification at the changed validation-order revision; all old bounds and controls unchanged. Original prerequisite refusal retained separately.",
+  "source_after_manifest": true,
+  "source_files": 508,
+  "stages": [
+    {
+      "exit": 0,
+      "name": "prerequisite",
+      "result": {
+        "bytes": 651,
+        "sha256": "0f0135eb25ca127291a956f9dcc70402f7d66569535cbdc31810cfb78b9746e4"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 8.075675965985283,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "99f7d45fbdc85471a26907fb277a6a5b8d5066dacf753f9dfe5b6fe717b7cc25",
+        "stderr_sha256": "8232c4436cb276a6510899e4c8885f764c8b51fa072415eddce8decef4fd90df",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "throughput-checker",
+      "result": {
+        "bytes": 1519,
+        "sha256": "a08eb52ff176215ab16d1f497dd9f885485f0ee1e608471d570459dc07ea54bd"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 11.46642683306709,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e9f44ff5fbc74ca16f42009f3241a62303d19e26dbf7995ccc10c23fc58caf51",
+        "stderr_sha256": "c80e70c516b9250a9cc024dcd2f58b71e10a6c2d9bace4f2e8fdf79c0bf4194e",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "backoff-checker",
+      "result": {
+        "bytes": 1518,
+        "sha256": "9b26cebde5836710ccb9e7352cd36562dd492753a0965f2951ae3a772f361ddc"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 16.051094140857458,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "1d60692f04c9d0ed706ce234ca28279b7ec79e045875c8d5463e055f12aebc14",
+        "stderr_sha256": "03178554e4a5589ab8c7856068c32df923a48d4b8d0051e5b0730d1142b7c3ff",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "pending-checker",
+      "result": {
+        "bytes": 1517,
+        "sha256": "042835d238a269bc85ab5de4cfc4f861aba4caa0eed178e69d94d9fe239f93d8"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 12.340252791997045,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "de3033873b7d1b710354af524475971ee4fec9d2f5cc519d46177aa9b592eb6f",
+        "stderr_sha256": "713466ae7641c70f8b17337ba97f7740eb89ef84f376328c17612b46a51fe9b7",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "elapsed-checker",
+      "result": {
+        "bytes": 1517,
+        "sha256": "eb8d6443187227aaa3c57fa6c1d53d10b7142edca34edaa4f31cf74858afc3b1"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.2632107571698725,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "2c1bd873453f04dc779d8120fdff5aad06cc3295830b558bb67908355feaed7c",
+        "stderr_sha256": "0e6726d50e803379d5dba8bffa695156ec8dd968c17d4b7aceb115bede57015c",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "throughput-driver",
+      "result": {
+        "bytes": 1520,
+        "sha256": "d0e1c164d0bb2be7e2e3e19b2646973848ecbc25f318db0a01b9618ffc6fd596"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 1.3486171611584723,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "46fe147fad81d853e5e4da64f99056ce6ceb4a165764c1c106b05f7f59b0ddef",
+        "stderr_sha256": "50e14c7d77d8a0c000ef7cdaa3208e04fafc5294945aed79d6a1b56188152732",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "backoff-driver",
+      "result": {
+        "bytes": 1517,
+        "sha256": "c63d0bf217db4b2d4bdb2ed5a16a77a746797a83667f3107c12b7704b7f106c4"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.9580201420467347,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "6fe4b6538ca1491c596af9306a4e60352704f333a0adf19eaf4ee43c85d5c3f7",
+        "stderr_sha256": "02664c3430cc749b77f5a4f480b2bb6cedfd32e32134546f96033235da70d051",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "elapsed-driver",
+      "result": {
+        "bytes": 1517,
+        "sha256": "36987831503fae90afebcf4450d98f0119405702907564c25eb47adfa0fcccbf"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.24425874510779977,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "b1fa4246cd7781ad43b0674a5fbb157dac9eebead284e227eea1aa522ed8d2a4",
+        "stderr_sha256": "f9ac9d11ca408a88041b7ef3abfad4d4836dfed259a75dd305e3314381f0199e",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "timer-controls",
+      "result": {
+        "bytes": 1517,
+        "sha256": "7e5833b2b2aa8faf896c4fa6a8a1335d4ce5ae1e9cd727d864b4be051547b873"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.13979001995176077,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "5d7c21fefbe2ffa7bb173de0c936cc0cc441c78ffb28f7d5760610981714c7a7",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e46790b04b082cea740304a59aeed234c3bc1d38f7789b043134b4fab295940a",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "throughput-rust",
+      "result": {
+        "bytes": 1518,
+        "sha256": "b71e4238b30b78630ef45c9181d50d5835e1e4012ad883ae828e265db1da133b"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.14698145096190274,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "1537c83ec2f99e601971dbdbcef1ab25be58b68a7f44761ca071e1a8f744a6cc",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "024e94b009f9d9c4056e9aa480ef98131108d2c0abc099b804b2a074b7974bbd",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "backoff-rust",
+      "result": {
+        "bytes": 1516,
+        "sha256": "629288977901f6c27bf72d488604428aed81938c6059ed33aff9cfacf95a2a80"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.22581420396454632,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "4ca4f92cfab93d1bd36cfc754f3d8e236a4de4baa2be3c095a3da7d4e5a340cc",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "c26da404c0eab98828f3d3a2a0cf62eb0f69cdbcaffe4daa44a03b73b773273b",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "pending-rust",
+      "result": {
+        "bytes": 1515,
+        "sha256": "4d8a06f6f88740a407ef11b24e9f0a5b63e2bd2a8ffdea28b1fd3cce6eb83efd"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.3577080259565264,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "11ec7d8115500ad1790428498bd1b7340e168450630a970beea5afd7aed71fab",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "ad1cd297d7805094586532e9fb931988defccdad421ad24435ec45b3601076aa",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "elapsed-rust",
+      "result": {
+        "bytes": 1515,
+        "sha256": "10104c32e834bf5e56b6366d40db9d9e7f97d7bd56699aa9782e7e929c8f0399"
+      },
+      "status": "PASS"
+    },
+    {
+      "bounded": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.4133055650163442,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "266578424fdbb8bf2e6efb5d8d83cd9220c001c7edbde0ace5d3be5d976dfab3",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "exit": 0,
+      "name": "timer-build",
+      "result": {
+        "bytes": 1512,
+        "sha256": "bed8cb71a4fbf930a1ba03f5ef667243c78ff455bff50b850d5f6d126316284e"
+      },
+      "status": "PASS"
+    }
+  ],
+  "status": "COMPLETE"
+}

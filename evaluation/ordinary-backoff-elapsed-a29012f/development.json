@@ -1,0 +1,35 @@
+{
+  "invocation": {
+    "base": "4958ca217f0b01ebc6df1637a7b1dd0d04cf1ef6",
+    "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "fb0a95cdba386e522a71845512c8cc7cd23c3b3ee5ad79b281c55f02e99ef714",
+      "reaped_descendants": 0,
+      "seconds": 11.762422626838088,
+      "start_utc": "2026-10-29T04:14:51.014116+00:00",
+      "termination": null
+    },
+    "command": [
+      "/usr/bin/env",
+      "TMPDIR=$REPO/ignored/a5/normal-perf-decode-root-v1/tmp",
+      "/usr/local/bin/python3",
+      "-B",
+      "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py"
+    ],
+    "wall_limit_seconds": 1200,
+    "working_source_sha256": {
+      "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "3c74562f4e57872752af53ef5ec5d5f36964d6a19d64c1723b0c5ff1d755f024"
+    }
+  },
+  "publication_helper_refusal": {
+    "correction": "Read the inputs member of the authenticated review input object.",
+    "error": "TypeError reading review inputs wrapper as a list",
+    "line": 28,
+    "native_execution": false,
+    "script_sha256": "0535997be3e0daad6ad48435f8affd02f56e04e6ef32276769f1f39ee9099f18",
+    "tracked_output_created": false
+  },
+  "scope": "One pre-commit development invocation of the unchanged eleven controls. Separate from the CPU20/wall30 qualified control invocation."
+}
