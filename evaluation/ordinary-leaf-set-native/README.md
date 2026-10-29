@@ -1,0 +1,22 @@
+This opt-in release recipe runs the unchanged 48-pair copied-Rust prerequisite once, then one fixed explicit-whole LeafSet cohort. The new cohort covers all fifteen nonempty subsets of CSV, bounded length, ASCII digits and ASCII spaces, K10/K1000, both fixed seeds, and all sixteen CSV/eight other-operation cases: 1,280 pairs, 128 coverage groups, 2,560 children, target CALL/RETs, copied outer RETs and normal reaps if completed.
+
+The new profile is `leaf-set-whole-rust-v1`. CSV explicitly uses CertifiedBlocks with extent 5..256; length, digits and spaces explicitly use WholeFunction with extent 5..80. Complete ELF symbols, bytes and independently parsed CFG geometry must satisfy these limits. There is no fallback, compiler-body substitution, population change, retry or guarantee that an emitted body is supported. CSV observed CFG union stays distinct from declared maximum coverage. All declared RETs and the existing complete reachable length/scanner gates remain required.
+
+Run from one clean exact source revision inside a fresh hard three-CPU reservation and an external process owner with 1,200-second wall and 8 MiB log limits:
+
+```sh
+python3 -B evaluation/ordinary-leaf-set-native/reproduce.py \
+  --revision "$REV" --reservation-tag "$TAG" \
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" \
+  --raw "$REPO/ignored/NEW_LEAF_WHOLE_NATIVE_RUN"
+```
+
+These are named path placeholders. Keep the exact allocator invocation, hard reservation transcript and final outer-owner receipt separately. Affinity and a tag alone do not prove reservation. Supervisor/build/control commands retain the inherited three-CPU mask; each native parent and its tracees use the middle reserved CPU. Actual masks and load before/after are recorded privately. Build products are authenticated as release artifacts with assertions and overflow checks. Candidate/trusted DSO and application files have distinct inodes and identical initial bytes. The application caller is the complete independently authenticated emitted Rust FUNC copied unchanged into the existing guarded RX owner.
+
+Before either native cohort, the recipe requires exactly 193 calibration names plus the unchanged one hardware-stop ignore, the existing SDK short-role dispatch control by exact name, all prior 18 native/26 Session/10 copied-checker/four copied-runner Python controls, and ten new-wire/seven new-runner controls. The first 179 calibration names and all old 48-pair CLI, wire, checker and architectural comparisons remain unchanged. Both requests and finite catalogs are frozen before native execution. Every cohort has one attempt; any failed prerequisite leaves later stages and the new cohort UNRUN.
+
+Each native cohort retains 480 CPU seconds, 510 wall seconds and 1 MiB file limits. Every pair retains its absolute 15-second deadline and 20,000-step child limit. The total 1,200-second outer limit is not renewed: build or cohort fit may fail. Retained evidence uses the existing prospective 2 GiB budget; the shared target build cache and declared compiler scratch trees are separate. No output is deleted to satisfy a bound.
+
+Completed numeric prefixes and raw bytes are retained after authenticated descendant closure, including failed executions. Prefix rows remain `OBSERVED_UNQUALIFIED`; missing catalog keys remain `UNRUN`. Only both complete native/checker outcomes, normal reaps, unchanged original source/tool/artifact pins and final retention can produce local `LEAF_SET_WHOLE_NATIVE_LOCAL_COMPLETE`. `public-result.json` remains explicitly `UNQUALIFIED_PENDING_FINAL_RECEIPT` until root joins the actual external owner, command, reservation and exact source. Private logs and binaries stay under `ignored/`; publish compact numbers and an authenticated receipt separately, without host paths or identities.
+
+This qualifies only the copied admitted Rust body under its machine entry contract. It does not qualify execution at the original Rust address, application call-site ABI, a threaded worker, K exhaustion, pending-owner/recycled-bank behavior, Schedule, timing, performance or full A5. Numeric rows do not independently prove the native state comparisons or closure.
