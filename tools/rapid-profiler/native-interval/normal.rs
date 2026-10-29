@@ -24,6 +24,7 @@ mod caller;
 use caller::CallerOwner;
 use caller_bytes::Request;
 mod check;
+pub(super) mod csv;
 pub(super) mod exact;
 pub(super) mod reference;
 use check::{Facts, rows_match};
@@ -272,8 +273,14 @@ fn child_with(
     current_single_main();
     context.deadline().check();
     let crossed = mode == Mode::CrossedOwner;
+    let csv_case = context.csv_case();
     let exact_case = context.exact_case();
-    let (bound, expected) = if let Some(case) = exact_case {
+    let (bound, expected) = if let Some(case) = csv_case {
+        assert_eq!(mode, Mode::Stable);
+        assert_eq!(context.input(), case.input());
+        assert_eq!(selection.label(), native::csv::LABEL);
+        (case.length(), case.expected())
+    } else if let Some(case) = exact_case {
         assert_eq!(mode, Mode::Stable);
         assert_eq!(context.input(), case.input());
         assert_eq!(selection.label(), profile.exact_label());
@@ -338,14 +345,25 @@ fn child_with(
     let caller_rsp = context.caller_rsp();
     let deadline = context.deadline();
     if candidate {
-        let prep = NormalSitePreparation::new_whole_function(
-            owner,
-            CodeIdentity {
-                source: SourceIdentity([0x6f; 32]),
-                mapping: entry,
-                generation: 1,
-            },
-        )
+        let prep = if csv_case.is_some() {
+            NormalSitePreparation::new_certified_blocks(
+                owner,
+                CodeIdentity {
+                    source: SourceIdentity([0x6f; 32]),
+                    mapping: entry,
+                    generation: 1,
+                },
+            )
+        } else {
+            NormalSitePreparation::new_whole_function(
+                owner,
+                CodeIdentity {
+                    source: SourceIdentity([0x6f; 32]),
+                    mapping: entry,
+                    generation: 1,
+                },
+            )
+        }
         .unwrap();
         assert_eq!(
             prep.role_pcs().collect::<Vec<_>>(),
@@ -536,6 +554,10 @@ fn child_with(
             crossed,
             tid: u64::from(std::process::id()),
         };
+        if csv_case.is_some() {
+            assert!(completed.history_stream().is_none());
+            assert!(completed.history_high_water().is_none());
+        }
         caller.batch(&completed, &facts);
         assert_eq!(attached.totals().unwrap(), totals(2));
         assert!(

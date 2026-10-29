@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "revision": "4395e90684975bb41ca548fe5063b01103c9c7a5",
+  "status": "FAILED_WORKSPACE_TIMEOUT",
+  "commands": [
+    {
+      "name": "fmt",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 9.762193924048916,
+        "start_utc": "2026-10-29T05:09:21.593099+00:00",
+        "termination": null
+      },
+      "reported_terminal_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "clippy",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "1b06c206522a9ad6653edd56b1bb9e19254f4cd592480fbc8b10cbddc2b994e9",
+        "reaped_descendants": 0,
+        "seconds": 0.30956462887115777,
+        "start_utc": "2026-10-29T05:09:31.400865+00:00",
+        "termination": null
+      },
+      "reported_terminal_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "check",
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "40108eb5c2e432741fc7f36afdf5c793ec02b19e7b1ce5e51bdd2ba377bd26cb",
+        "reaped_descendants": 0,
+        "seconds": 0.25327089289203286,
+        "start_utc": "2026-10-29T05:09:31.788351+00:00",
+        "termination": null
+      },
+      "reported_terminal_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "workspace-default",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "wall_limit_seconds": 360,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": -9,
+        "private_log_sha256": "9226c8cbdc0c25ca8fb4874f9174ff43c6b6b9b5a7c62f3e3483d4e4bd03cf33",
+        "reaped_descendants": 1,
+        "seconds": 360.05635557416826,
+        "start_utc": "2026-10-29T05:09:32.092126+00:00",
+        "termination": "timeout"
+      },
+      "reported_terminal_counts": {
+        "passed": 2232,
+        "failed": 0,
+        "ignored": 1
+      }
+    }
+  ],
+  "unrun": [
+    "serial-launch",
+    "staged-allocation",
+    "prefixed-pun",
+    "corrected-release-CSV-qualification"
+  ],
+  "qualification_launches": 0,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "kernel_version": "7.1.3",
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+  "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+  "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "compiler_jobs": 4,
+  "outer": {
+    "start_utc": "2026-10-29T05:09:21.329117+00:00",
+    "exit_code": 1,
+    "termination": null,
+    "seconds": 370.8747549119871,
+    "private_log_sha256": "c20ca4f83994c82100e2e67e5dbd9020683100eaf60ce145e0cacc8913984d81",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "raw_receipt_sha256": "a0d60b778401c6758164eb819eacb44b559586b98471d17fb664322aecc83d69",
+  "scope": "Source validation only. Original360s workspace bound retained, incomplete population is not a pass; corrected release qualification never launched. Command wall durations are not performance results."
+}

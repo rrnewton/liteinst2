@@ -4,6 +4,8 @@ use super::*;
 use iced_x86::{Decoder, DecoderOptions, FlowControl};
 #[path = "../../tools/rapid-profiler/normal-work/caller_bytes.rs"]
 pub mod caller_bytes;
+#[path = "native_normal_csv.rs"]
+pub mod csv;
 #[path = "native_normal_reference.rs"]
 pub mod reference;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -174,30 +176,35 @@ impl ExactCase {
 enum Body {
     Strnlen(Case),
     Exact(ExactCase),
+    Csv(csv::Case),
 }
 impl Body {
     fn input(self) -> [u8; 64] {
         match self {
             Self::Strnlen(case) => strnlen::cases::input(case),
             Self::Exact(case) => case.input(),
+            Self::Csv(case) => case.input(),
         }
     }
     fn bound(self) -> usize {
         match self {
             Self::Strnlen(case) => case.bound,
             Self::Exact(case) => case.length(),
+            Self::Csv(case) => case.length(),
         }
     }
     fn scalar(self) -> u64 {
         match self {
             Self::Strnlen(case) => strnlen::cases::scalar(case),
             Self::Exact(case) => case.scalar(),
+            Self::Csv(case) => case.expected(),
         }
     }
     fn strnlen(self) -> Case {
         match self {
             Self::Strnlen(case) => case,
             Self::Exact(_) => panic!("not a strnlen case"),
+            Self::Csv(_) => panic!("not a strnlen case"),
         }
     }
 }
@@ -272,6 +279,15 @@ impl NormalReady {
             reference::bytes::validate_body(profile.bytes()).unwrap();
         }
         assert!((5..=80).contains(&extent));
+        self.validate_body(candidate, extent, mode, profile)
+    }
+    fn validate_body(
+        &self,
+        candidate: bool,
+        extent: usize,
+        mode: Mode,
+        profile: CallerProfile,
+    ) -> BTreeMap<u64, u64> {
         assert_eq!(self.caller_immutable.len(), 1);
         let (caller_page, caller_bytes) = &self.caller_immutable[0];
         assert_eq!(caller_page % PAGE as u64, 0);
@@ -719,6 +735,13 @@ impl NormalContext<'_> {
         match self.oracle.body {
             Body::Exact(case) => Some(case),
             Body::Strnlen(_) => None,
+            Body::Csv(_) => None,
+        }
+    }
+    pub fn csv_case(&self) -> Option<csv::Case> {
+        match self.oracle.body {
+            Body::Csv(case) => Some(case),
+            _ => None,
         }
     }
     pub fn deadline(&self) -> Deadline {
@@ -778,6 +801,11 @@ impl NormalOracle {
         deadline.check();
         mode_case(seed, case, extent, mode);
         Self::new_body(seed, Body::Strnlen(case), extent, deadline, mode)
+    }
+    pub fn new_csv(seed: u64, case: csv::Case, extent: usize, deadline: Deadline) -> Self {
+        deadline.check();
+        csv::profile(seed, case, extent);
+        Self::new_body(seed, Body::Csv(case), extent, deadline, Mode::Stable)
     }
     pub fn new_exact(seed: u64, length: usize, deadline: Deadline) -> Self {
         deadline.check();
@@ -1134,6 +1162,23 @@ impl NormalOracle {
         self.deadline.check();
         (result, trace)
     }
+    pub fn pair_csv<F>(&self, setup: F) -> (NormalPairResult, csv::Trace)
+    where
+        F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
+    {
+        let Body::Csv(case) = self.body else {
+            panic!("not a CSV pair")
+        };
+        let (result, trace) = self.pair_observed(setup, |ready, points| {
+            let bodies =
+                self.inspect_bodies(ready, points, |_, body| csv::inspect(case, ready, body));
+            let visits = bodies.each_ref().map(|b| b.visits);
+            (csv::Trace { bodies }, visits)
+        });
+        csv::validate_pair(case, &result, &trace);
+        self.deadline.check();
+        (result, trace)
+    }
     pub fn pair_exact<F, O>(
         &self,
         setup: F,
@@ -1335,7 +1380,15 @@ impl NormalOracle {
             assert!(libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP);
             child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         }
-        let maps = if profile == CallerProfile::Legacy {
+        let maps = if let Body::Csv(case) = self.body {
+            assert_eq!(profile, CallerProfile::Legacy);
+            assert_eq!(self.mode, Mode::Stable);
+            csv::profile(self.seed, case, self.extent);
+            [
+                csv::validate_ready(&ready[0], false, self.extent),
+                csv::validate_ready(&ready[1], true, self.extent),
+            ]
+        } else if profile == CallerProfile::Legacy {
             [
                 ready[0].validate(false, self.extent, self.mode),
                 ready[1].validate(true, self.extent, self.mode),

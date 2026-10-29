@@ -14,4 +14,4 @@ The output is one 17-field numeric CSV header, sixteen ordered case rows, then a
 
 The collector requires all sixteen literal expected results in each leg, complete guarded storage, all sixteen records, the complete 512-word journal including its zero tail, all Report payloads/ranks and the exact Published/Removed history. It performs one populated checkpoint, one empty checkpoint and explicit detach. A failure aborts before live calling state and input owners unwind. Executable owners remain process-lived. Continuous no-writer/no-unmap, no reentry, signal entry, cancellation, unwind, fork or active CET obligations are unchanged; metadata and source scans do not prove them.
 
-The CSV native full-state adapter remains a separate qualification step. Existing native and timed qualifications retain their own populations and conclusions.
+The [CSV native full-state adapter](NATIVE_CSV.md) is a separate qualification step using the existing C caller. Existing native and timed qualifications retain their own populations and conclusions.
