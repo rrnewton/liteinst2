@@ -51,6 +51,144 @@ static uint64_t now(void) {
     return (uint64_t)ts.tv_sec * UINT64_C(1000000000) + (uint64_t)ts.tv_nsec;
 }
 static void timely(void) { require(now() < deadline); }
+/* st_dev is the held file's VFS identity, not the mapping device domain.
+ * Derive the latter only through that FD's mount ID, never a pathname or maps. */
+#define FDINFO_CAP 4096U
+#define MOUNTINFO_CAP MAP_CAP
+/* A valid row has ten nonempty fields and nine separators plus LF: >=20 bytes. */
+#define MOUNT_ROWS (MOUNTINFO_CAP / 20U)
+struct mount_identity { uint64_t id; uint32_t major, minor; };
+struct part { const unsigned char *data; size_t length; };
+static uint64_t mount_ids[MOUNT_ROWS]; /* Single-main parser scratch, not authority. */
+static bool part_is(struct part p, const char *s) {
+    size_t n = strlen(s); return p.length == n && memcmp(p.data, s, n) == 0;
+}
+static bool unsigned_part(struct part p, uint64_t maximum, uint64_t *out) {
+    if (p.length == 0 || (p.length > 1 && p.data[0] == '0')) return false;
+    uint64_t value = 0;
+    for (size_t i = 0; i < p.length; ++i) {
+        unsigned c = p.data[i]; if (c < '0' || c > '9') return false;
+        unsigned digit = c - '0';
+        if (digit > maximum || value > (maximum - digit) / 10) return false;
+        value = value * 10 + digit;
+    }
+    *out = value; return true;
+}
+static bool fd_mount_id(const unsigned char *data, size_t length, uint64_t *out) {
+    if (length == 0 || length > FDINFO_CAP || data[length - 1] != '\n') return false;
+    size_t at = 0; unsigned found = 0; uint64_t id = 0;
+    while (at < length) {
+        const unsigned char *end = memchr(data + at, '\n', length - at);
+        if (end == NULL) return false;
+        size_t n = (size_t)(end - (data + at)), colon = 0;
+        while (colon < n && data[at + colon] != ':') {
+            unsigned c = data[at + colon];
+            if (!((c >= 'a' && c <= 'z') || c == '_')) return false;
+            ++colon;
+        }
+        if (colon == 0 || colon + 2 >= n || data[at + colon + 1] != '\t') return false;
+        for (size_t i = colon + 2; i < n; ++i)
+            if (data[at + i] < 0x20 || data[at + i] > 0x7e) return false;
+        if (part_is((struct part){data + at, colon}, "mnt_id")) {
+            if (++found != 1 || !unsigned_part((struct part){data + at + colon + 2, n - colon - 2}, UINT64_MAX, &id) || id == 0) return false;
+        }
+        at += n + 1;
+    }
+    if (found != 1) return false;
+    *out = id; return true;
+}
+static bool next_part(struct part line, size_t *at, struct part *out) {
+    if (*at >= line.length) return false;
+    size_t start = *at;
+    while (*at < line.length && line.data[*at] != ' ') ++*at;
+    if (*at == start) return false;
+    *out = (struct part){line.data + start, *at - start};
+    if (*at < line.length) ++*at;
+    return true;
+}
+static int compare_mount_id(const void *a, const void *b) {
+    uint64_t x = *(const uint64_t *)a, y = *(const uint64_t *)b;
+    return (x > y) - (x < y);
+}
+static bool mount_device_text(const unsigned char *data, size_t length, uint64_t wanted, struct mount_identity *out) {
+    if (wanted == 0 || length == 0 || length > MOUNTINFO_CAP || data[length - 1] != '\n') return false;
+    size_t at = 0, rows = 0; unsigned found = 0; struct mount_identity result = {0};
+    while (at < length) {
+        const unsigned char *end = memchr(data + at, '\n', length - at);
+        if (end == NULL) return false;
+        struct part line = {data + at, (size_t)(end - (data + at))};
+        if (line.length < 19 || line.data[0] == ' ' || line.data[line.length - 1] == ' ') return false;
+        for (size_t i = 0; i < line.length; ++i) {
+            unsigned c = line.data[i];
+            if ((c < 0x21 || c == 0x7f) && c != ' ') return false;
+            if (c == ' ' && i && line.data[i - 1] == ' ') return false;
+        }
+        struct part fields[6], token; size_t cursor = 0;
+        for (size_t i = 0; i < 6; ++i) if (!next_part(line, &cursor, &fields[i])) return false;
+        uint64_t id, parent, maj, min;
+        if (!unsigned_part(fields[0], UINT64_MAX, &id) || id == 0 ||
+            !unsigned_part(fields[1], UINT64_MAX, &parent) || parent == 0) return false;
+        const unsigned char *colon = memchr(fields[2].data, ':', fields[2].length);
+        if (colon == NULL) return false;
+        size_t left = (size_t)(colon - fields[2].data);
+        if (!unsigned_part((struct part){fields[2].data, left}, UINT32_MAX, &maj) ||
+            !unsigned_part((struct part){colon + 1, fields[2].length - left - 1}, UINT32_MAX, &min)) return false;
+        if (fields[3].data[0] != '/' || fields[4].data[0] != '/') return false;
+        /* Paths/options/optional tags are structurally bounded opaque tokens.
+         * Their text, including mount source, supplies no expected identity. */
+        bool separator = false;
+        while (next_part(line, &cursor, &token)) {
+            if (part_is(token, "-")) { separator = true; break; }
+        }
+        if (!separator) return false;
+        for (size_t i = 0; i < 3; ++i)
+            if (!next_part(line, &cursor, &token)) return false;
+        if (cursor != line.length || rows == MOUNT_ROWS) return false;
+        mount_ids[rows++] = id;
+        if (id == wanted) {
+            if (++found != 1) return false;
+            result = (struct mount_identity){id, (uint32_t)maj, (uint32_t)min};
+        }
+        at += line.length + 1;
+    }
+    qsort(mount_ids, rows, sizeof mount_ids[0], compare_mount_id);
+    for (size_t i = 1; i < rows; ++i) if (mount_ids[i] == mount_ids[i - 1]) return false;
+    if (found != 1) return false;
+    *out = result; return true;
+}
+static size_t proc_text(const char *path, unsigned char *data, size_t cap) {
+    timely(); int fd = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW); require(fd >= 0);
+    size_t at = 0; bool ended = false;
+    while (at < cap) {
+        timely(); ssize_t n = read(fd, data + at, cap - at);
+        if (n < 0 && errno == EINTR) continue;
+        require(n >= 0); if (n == 0) { ended = true; break; } at += (size_t)n;
+    }
+    if (!ended) {
+        unsigned char extra; ssize_t n;
+        do { timely(); n = read(fd, &extra, 1); } while (n < 0 && errno == EINTR);
+        require(n == 0);
+    }
+    require(close(fd) == 0); timely(); return at;
+}
+static uint64_t fd_mount_id_read(int fd) {
+    require(fd >= 0); char path[64];
+    int n = snprintf(path, sizeof path, "/proc/self/fdinfo/%d", fd);
+    require(n > 0 && (size_t)n < sizeof path);
+    unsigned char info[FDINFO_CAP]; uint64_t id;
+    size_t length = proc_text(path, info, sizeof info);
+    require(fd_mount_id(info, length, &id)); timely(); return id;
+}
+static struct mount_identity mount_device(int fd) {
+    uint64_t id = fd_mount_id_read(fd);
+    size_t length = proc_text("/proc/self/mountinfo", maps_image, sizeof maps_image);
+    struct mount_identity result;
+    require(mount_device_text(maps_image, length, id, &result)); timely();
+    require(fd_mount_id_read(fd) == id); return result;
+}
+static bool mount_identity_equal(struct mount_identity a, struct mount_identity b) {
+    return a.id == b.id && a.major == b.major && a.minor == b.minor;
+}
 static uint64_t number(const char *s) {
     require(*s && (*s != '0' || s[1] == '\0'));
     uint64_t n = 0;
@@ -68,6 +206,10 @@ static void file_unchanged(int fd, const struct stat *original, size_t length) {
     struct stat st; require(fstat(fd, &st) == 0 && st.st_dev == original->st_dev && st.st_ino == original->st_ino && st.st_size == original->st_size);
     unsigned char scratch[4096]; size_t at = 0;
     while (at < length) { timely(); size_t count = length - at; if (count > sizeof scratch) count = sizeof scratch; ssize_t n = pread(fd, scratch, count, (off_t)at); if (n < 0 && errno == EINTR) continue; require(n == (ssize_t)count && memcmp(scratch, file_image + at, count) == 0); at += count; }
+}
+static void source_unchanged(int fd, const struct stat *original, size_t length, struct mount_identity mount) {
+    file_unchanged(fd, original, length);
+    require(mount_identity_equal(mount, mount_device(fd)));
 }
 static void singleton(void) {
     require((pid_t)syscall(SYS_gettid) == getpid());
@@ -212,6 +354,7 @@ int main(int argc, char **argv) {
     input_require(at == frame_length, "trailing_input_byte"); /* All input is validated before dlopen or any target call. */
     int source_fd = open(argv[1], O_RDONLY | O_CLOEXEC | O_NOFOLLOW); require(source_fd >= 0);
     struct stat source_stat; size_t file_length = read_regular(source_fd, file_image, sizeof file_image, &source_stat);
+    struct mount_identity source_device = mount_device(source_fd);
     require(file_length >= sizeof(Elf64_Ehdr)); Elf64_Ehdr eh; memcpy(&eh, file_image, sizeof eh);
     require(memcmp(eh.e_ident, ELFMAG, SELFMAG) == 0 && eh.e_ident[EI_CLASS] == ELFCLASS64 && eh.e_ident[EI_DATA] == ELFDATA2LSB && eh.e_machine == EM_X86_64 && eh.e_type == ET_DYN);
     require(eh.e_phentsize == sizeof(Elf64_Phdr) && eh.e_phnum > 0 && eh.e_phoff <= file_length && eh.e_phnum <= (file_length - eh.e_phoff) / sizeof(Elf64_Phdr));
@@ -235,7 +378,7 @@ int main(int argc, char **argv) {
     uintptr_t entry[2] = {base + va[0], base + va[1]}, page = base + page_va;
     require(page % 4096 == 0);
     struct mapping source_map = mapping(page, 4096);
-    require(source_map.inode == (uint64_t)source_stat.st_ino && source_map.major == major(source_stat.st_dev) && source_map.minor == minor(source_stat.st_dev));
+    require(source_map.inode == (uint64_t)source_stat.st_ino && source_map.major == source_device.major && source_map.minor == source_device.minor);
     require(source_map.offset <= UINT64_MAX - (page - source_map.begin) && source_map.offset + (page - source_map.begin) == page_offset);
     require(memcmp((const void *)page, file_image + page_offset, 4096) == 0);
     uintptr_t caller = (uintptr_t)&liteinst_csv_call_and_store;
@@ -243,7 +386,7 @@ int main(int argc, char **argv) {
     size_t caller_length = caller_map.end - caller_map.begin; require(caller_length <= MAP_CAP);
     unsigned char *caller_image = malloc(caller_length); require(caller_image != NULL);
     memcpy(caller_image, (const void *)caller_map.begin, caller_length);
-    file_unchanged(source_fd, &source_stat, file_length); singleton(); pinned(cpu); timely();
+    source_unchanged(source_fd, &source_stat, file_length, source_device); singleton(); pinned(cpu); timely();
     for (uint32_t i = 0; i < count; ++i) {
         liteinst_csv_call_and_store((target_fn)entry[0], inputs[i].data, inputs[i].length, &results[i].csv);
         timely(); require(memcmp(&inputs[i], &saved_inputs[i], sizeof inputs[i]) == 0 && results[i].left == guard && results[i].right == guard);
@@ -253,7 +396,7 @@ int main(int argc, char **argv) {
     for (uint32_t i = 0; i < count; ++i) require(memcmp(&inputs[i], &saved_inputs[i], sizeof inputs[i]) == 0 && results[i].left == guard && results[i].right == guard);
     same_map(source_map, mapping(page, 4096)); same_map(caller_map, mapping(caller, 1));
     require(memcmp((const void *)page, file_image + page_offset, 4096) == 0 && memcmp((const void *)caller_map.begin, caller_image, caller_length) == 0);
-    file_unchanged(source_fd, &source_stat, file_length); singleton(); pinned(cpu); timely();
+    source_unchanged(source_fd, &source_stat, file_length, source_device); singleton(); pinned(cpu); timely();
     text("ORIGINAL_READY,module-original-v1"); cell((uint64_t)getpid()); cell((uint64_t)syscall(SYS_gettid)); cell(cpu);
     cell(entry[0]); cell(entry[0] + size[0]); cell(entry[1]); cell(entry[1] + size[1]); cell(caller); cell(count); text("\n");
     for (uint32_t i = 0; i < count; ++i) {

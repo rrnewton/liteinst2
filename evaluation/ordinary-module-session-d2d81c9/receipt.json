@@ -1,0 +1,770 @@
+{
+  "campaign": {
+    "all_qualified": false,
+    "attempts": [
+      {
+        "attempt": 1,
+        "failed": 64,
+        "passed": 0,
+        "unrun": 0
+      },
+      {
+        "attempt": 2,
+        "failed": 64,
+        "passed": 0,
+        "unrun": 0
+      },
+      {
+        "attempt": 3,
+        "failed": 64,
+        "passed": 0,
+        "unrun": 0
+      },
+      {
+        "attempt": 4,
+        "failed": 63,
+        "passed": 0,
+        "unrun": 1
+      },
+      {
+        "attempt": 5,
+        "failed": 0,
+        "passed": 0,
+        "unrun": 64
+      }
+    ],
+    "campaign_complete": false,
+    "installed_failed": 255,
+    "installed_unrun": 65,
+    "original_failed": 32
+  },
+  "checks": [
+    {
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reaped_descendants": 0,
+            "seconds": 7.746438862988725,
+            "start_utc": "2026-10-29T08:51:20.534617+00:00",
+            "termination": null
+          },
+          "name": "fmt",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 0
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "eded82674eef49455e687b44c7250bb224fcb151d72c5353d48f2c6749b383c5",
+            "reaped_descendants": 0,
+            "seconds": 31.7607481230516,
+            "start_utc": "2026-10-29T08:51:28.300094+00:00",
+            "termination": null
+          },
+          "name": "clippy",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 0
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "fedb639adc4ac9fba4f2444734c3aaa7c23fe76e9a1fd574d39fbdad86afc795",
+            "reaped_descendants": 0,
+            "seconds": 4.988607889041305,
+            "start_utc": "2026-10-29T08:52:00.109537+00:00",
+            "termination": null
+          },
+          "name": "check",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 0
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": -9,
+            "private_log_sha256": "965855cc25c56e84e5c2df1978332a854ca2735f35667a6bf98a6dc6ab2c31fa",
+            "reaped_descendants": 3,
+            "seconds": 360.13692863099277,
+            "start_utc": "2026-10-29T08:52:05.120788+00:00",
+            "termination": "timeout"
+          },
+          "name": "workspace-default",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 1,
+            "passed": 1973
+          },
+          "wall_limit_seconds": 360
+        }
+      ],
+      "reservation_cpus": null,
+      "status": "FAILED",
+      "unrun": [
+        "serial-launch",
+        "staged-allocation",
+        "prefixed-pun"
+      ]
+    },
+    {
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reaped_descendants": 0,
+            "seconds": 6.933161491993815,
+            "start_utc": "2026-10-29T08:59:07.319453+00:00",
+            "termination": null
+          },
+          "name": "fmt",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 0
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+            "reaped_descendants": 0,
+            "seconds": 0.13751666899770498,
+            "start_utc": "2026-10-29T08:59:14.269903+00:00",
+            "termination": null
+          },
+          "name": "clippy",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 0
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985",
+            "reaped_descendants": 0,
+            "seconds": 0.10318134096451104,
+            "start_utc": "2026-10-29T08:59:14.422822+00:00",
+            "termination": null
+          },
+          "name": "check",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 0
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "591320ac3bfb4da6a4f3866ba2ef954f5a4b6d0199ec566459877d8a91e5edec",
+            "reaped_descendants": 0,
+            "seconds": 349.2619721291121,
+            "start_utc": "2026-10-29T08:59:14.541729+00:00",
+            "termination": null
+          },
+          "name": "workspace-default",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 36,
+            "passed": 3205
+          },
+          "wall_limit_seconds": 360
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "8c9cb64443def0d6306b63c1ffa8f989bb46235b9ea893a2439692b78b8e4347",
+            "reaped_descendants": 0,
+            "seconds": 129.5576460310258,
+            "start_utc": "2026-10-29T09:05:03.839674+00:00",
+            "termination": null
+          },
+          "name": "serial-launch",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 1039
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--lib",
+            "staged"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "f8a9305635186f5b815a269121f042a9db67dcd4051b7ac21257f1cd413eafc2",
+            "reaped_descendants": 0,
+            "seconds": 0.040093632182106376,
+            "start_utc": "2026-10-29T09:07:13.425105+00:00",
+            "termination": null
+          },
+          "name": "staged-allocation",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 3
+          },
+          "wall_limit_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--test",
+            "prefixed_pun_oracle"
+          ],
+          "closed": {
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+            "cleanup_complete": true,
+            "exit_code": 0,
+            "private_log_sha256": "1aa90a5cf084cc7a42bd6e3fe86fb546f62f521308f53055a863ce88b83d83e8",
+            "reaped_descendants": 0,
+            "seconds": 1.468788115074858,
+            "start_utc": "2026-10-29T09:07:13.484556+00:00",
+            "termination": null
+          },
+          "name": "prefixed-pun",
+          "terminal_totals": {
+            "failed": 0,
+            "ignored": 0,
+            "passed": 36
+          },
+          "wall_limit_seconds": 180
+        }
+      ],
+      "reservation_cpus": [
+        16,
+        67,
+        72,
+        156,
+        173,
+        183,
+        227,
+        233
+      ],
+      "status": "PASS",
+      "unrun": []
+    }
+  ],
+  "coverage": [
+    {
+      "cohort": "finite",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 16,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "seed": 1311768467139281696
+    },
+    {
+      "cohort": "finite",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 16,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "seed": 18364758542526924135
+    },
+    {
+      "cohort": "finite",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 1,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "seed": 1311768467139281696
+    },
+    {
+      "cohort": "finite",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 1,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "seed": 18364758542526924135
+    },
+    {
+      "cohort": "session",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 10,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "profile": "session-absolute-v1",
+      "seed": 1311768467139281696
+    },
+    {
+      "cohort": "session",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 10,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "profile": "session-absolute-v1",
+      "seed": 18364758542526924135
+    },
+    {
+      "cohort": "session",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 1000,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "profile": "session-absolute-v1",
+      "seed": 1311768467139281696
+    },
+    {
+      "cohort": "session",
+      "csv_cases": 16,
+      "csv_declared_edges": 49,
+      "csv_declared_heads": 42,
+      "csv_observed_edges": 45,
+      "csv_observed_heads": 38,
+      "csv_returns": 2,
+      "k": 1000,
+      "length_cases": 8,
+      "length_edges": 14,
+      "length_heads": 13,
+      "length_returns": 2,
+      "profile": "session-absolute-v1",
+      "seed": 18364758542526924135
+    }
+  ],
+  "diagnosis": {
+    "counts": {
+      "UNRUN": 65,
+      "arm_completed_deadline": 1,
+      "complete_installed_wire_missing_original_reference": 254,
+      "original_reference_exit_1": 32
+    },
+    "deadline": {
+      "attempt": 4,
+      "case": 30,
+      "diagnostic_scope": "Includes error-path work; not the exact arm duration or proof of a scheduler cause.",
+      "diagnostic_unfinished_through_error_ns": 2273594,
+      "k": 1000,
+      "meaning": "Independent strict 2 ms gate failure. No replacement campaign or favorable retry.",
+      "message": "clock arm-completed: Deadline committed=52 completed=52 pending=None",
+      "name": "history"
+    },
+    "reference": "The original helper compares fstat(st_dev) to the mapping device. Held-FD mount identity and fstat device are distinct domains on this filesystem. Original inode, offset, permissions and bytes remain required.",
+    "scope": "Post-closure diagnosis only. Original campaign statuses and failed/unrun qualification are unchanged; no execution or new attempt.",
+    "sha256": "d49a11899af9ebab1b9f1b6c6a2bda7e6f982b1865728094bd875aacd67c929a"
+  },
+  "driver_custody_closed": false,
+  "driver_retention_verified": false,
+  "evidence_budget": {
+    "charged_rounded_bytes": 179642368,
+    "exceeded": false,
+    "final_allowance": 67108864,
+    "held_bytes": 0,
+    "limit": 2147483648,
+    "reservation_active": false,
+    "scope": "Retained evidence only; shared target build cache/artifacts are separate; no filesystem quota."
+  },
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "kernel_version": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+  "malformed_controls": [
+    {
+      "attempts": 1,
+      "name": "bad_magic",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    },
+    {
+      "attempts": 1,
+      "name": "count_over_2048",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    },
+    {
+      "attempts": 1,
+      "name": "truncated_length",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    },
+    {
+      "attempts": 1,
+      "name": "truncated_payload",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    },
+    {
+      "attempts": 1,
+      "name": "length_over_64",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    },
+    {
+      "attempts": 1,
+      "name": "non_ascii_payload",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    },
+    {
+      "attempts": 1,
+      "name": "malformed_csv",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    },
+    {
+      "attempts": 1,
+      "name": "trailing_input_byte",
+      "status": "EXPECTED_INPUT_REFUSAL"
+    }
+  ],
+  "native": [
+    {
+      "attempts": 1,
+      "comparisons": 12284,
+      "k": 16,
+      "mismatches": 0,
+      "normal_reaps": 64,
+      "outer_returns": 64,
+      "pairs": 32,
+      "profile": "finite",
+      "status": "NATIVE_STATE_PASS",
+      "target_calls": 256,
+      "target_returns": 256
+    },
+    {
+      "attempts": 1,
+      "comparisons": 12284,
+      "k": 1,
+      "mismatches": 0,
+      "normal_reaps": 64,
+      "outer_returns": 64,
+      "pairs": 32,
+      "profile": "finite",
+      "status": "NATIVE_STATE_PASS",
+      "target_calls": 256,
+      "target_returns": 256
+    },
+    {
+      "attempts": 1,
+      "comparisons": 12284,
+      "k": 10,
+      "mismatches": 0,
+      "normal_reaps": 64,
+      "outer_returns": 64,
+      "pairs": 32,
+      "profile": "session",
+      "status": "NATIVE_SESSION_STATE_PASS",
+      "target_calls": 256,
+      "target_returns": 256
+    },
+    {
+      "attempts": 1,
+      "comparisons": 12284,
+      "k": 1000,
+      "mismatches": 0,
+      "normal_reaps": 64,
+      "outer_returns": 64,
+      "pairs": 32,
+      "profile": "session",
+      "status": "NATIVE_SESSION_STATE_PASS",
+      "target_calls": 256,
+      "target_returns": 256
+    }
+  ],
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "3f59c2bd3ec99c5e7cc89df77bc337c670ff4c80a2a9d0c7bf88f3cc8c373360",
+    "reaped_descendants": 0,
+    "seconds": 1399.9792354961392,
+    "start_utc": "2026-10-29T09:07:49.128859+00:00",
+    "termination": null
+  },
+  "owner_cases": [
+    {
+      "attempts": 1,
+      "direction": "csv-length",
+      "k": 10,
+      "status": "OWNER_FUNCTIONAL_PASS",
+      "totals": {
+        "actions": 3,
+        "batches": 5,
+        "calls": 13,
+        "reports": 2,
+        "sampled": 12,
+        "unsampled": 1
+      }
+    },
+    {
+      "attempts": 1,
+      "direction": "length-csv",
+      "k": 10,
+      "status": "OWNER_FUNCTIONAL_PASS",
+      "totals": {
+        "actions": 3,
+        "batches": 5,
+        "calls": 13,
+        "reports": 2,
+        "sampled": 12,
+        "unsampled": 1
+      }
+    },
+    {
+      "attempts": 1,
+      "direction": "csv-length",
+      "k": 1000,
+      "status": "OWNER_FUNCTIONAL_PASS",
+      "totals": {
+        "actions": 3,
+        "batches": 252,
+        "calls": 1003,
+        "reports": 2,
+        "sampled": 1002,
+        "unsampled": 1
+      }
+    },
+    {
+      "attempts": 1,
+      "direction": "length-csv",
+      "k": 1000,
+      "status": "OWNER_FUNCTIONAL_PASS",
+      "totals": {
+        "actions": 3,
+        "batches": 252,
+        "calls": 1003,
+        "reports": 2,
+        "sampled": 1002,
+        "unsampled": 1
+      }
+    }
+  ],
+  "protocol": {
+    "arm_deadline_ns": 2000000,
+    "installed_children": 320,
+    "malformed_controls": 8,
+    "native_profiles": [
+      [
+        "finite",
+        [
+          16,
+          1
+        ]
+      ],
+      [
+        "session-absolute-v1",
+        [
+          10,
+          1000
+        ]
+      ]
+    ],
+    "original_children": 32,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 7200,
+    "owner_cases": 4,
+    "period_ns": 10000000,
+    "retries": 0,
+    "sha256": "b4a9a91c7719bd471328115a1b0c03e269f3af6c3bae900b65af6712615e9573",
+    "shutdown_ns": 2000000000,
+    "whole_attempts": 5
+  },
+  "raw_result_sha256": "213921cbc2eceb9f648d9ec6679fcd2265e755169654539d248664dca15bceed",
+  "recipe": [
+    "Run evaluation/admission/check_exec_identity.py --checks-only at the exact revision; preserve the unrestricted timeout and the one predeclared eight-CPU revalidation separately.",
+    "cpuset-alloc run --cores 3 --sample-s 1 --tag li2core-module-session-d2d81c9 -- python3 -B evaluation/ordinary-module-session/reproduce.py --revision d2d81c97e14973ea41fe413439e6db6159e9712a --raw \"$FRESH_IGNORED_DIRECTORY\" --toolchain \"$TOOLCHAIN_DIRECTORY\" --user-home \"$USER_HOME\" --cargo-home \"$CARGO_HOME\" --reservation-tag li2core-module-session-d2d81c9"
+  ],
+  "release_profile": {
+    "debug": 0,
+    "debug_assertions": true,
+    "incremental": false,
+    "jobs": 4,
+    "opt_level": 3,
+    "overflow_checks": true
+  },
+  "reservation": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "cpus": [
+      10,
+      163,
+      166
+    ],
+    "driver_load_after": [
+      117.08,
+      91.98,
+      68.6
+    ],
+    "driver_load_before": [
+      54.55,
+      52.23,
+      56.42
+    ],
+    "mechanism": "cpuset-alloc hard AllowedCPUs and shared reservation ledger",
+    "roles": {
+      "controller": 10,
+      "producer": 166,
+      "worker": 163
+    },
+    "source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "tag": "li2core-module-session-d2d81c9"
+  },
+  "retained_hashes_verified_after_outer_closure": 4450,
+  "revision": "d2d81c97e14973ea41fe413439e6db6159e9712a",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Claim 4 native and ownership evidence; functional campaign and A5 remain unqualified.",
+  "status": "FAILED"
+}

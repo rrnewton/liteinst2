@@ -117,3 +117,25 @@ positional arguments, tool failures and stderr remain failures, and the original
 1 MiB stream, CPU and wall bounds are unchanged. The full unrelated Rust symbol
 table is not copied into evidence. The existing symbol-count, FUNC, binding,
 visibility, address and complete-size checks still apply to every retained row.
+
+The original helper keeps the held file's `fstat` device, inode, size and bytes
+as one identity. It derives the expected mapping device separately through
+that held descriptor's `mnt_id` and its unique `/proc/self/mountinfo` row.
+Both identities are rechecked at the existing source-custody checkpoints;
+mapping permissions, inode, offset and complete page bytes remain required.
+Malformed, ambiguous or excessive procfs input is a hard failure.
+
+For a targeted original-reference check, use a fresh three-CPU reservation and
+an external **1,200-second/8 MiB process owner**, then run:
+
+```sh
+python3 -B evaluation/ordinary-module-session/reference.py \
+  --revision "$REVISION" --raw "$FRESH_IGNORED_DIRECTORY" \
+  --reservation-tag "$RESERVATION_TAG"
+```
+
+This builds the C module and original helper, checks emitted geometry, runs six
+pure mount-parser controls, then runs each of the eight malformed frames and
+32 accepted populations exactly once. It retains failures and unrun cases
+under the same per-child bounds and original value checks. It runs no installed
+application or Schedule and grants no timing or retrospective campaign credit.
