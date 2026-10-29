@@ -212,13 +212,22 @@ def validate(check, nrecord, grecord, nout, gout, layout, image,
         inner = base+field('gated', row, 'before')[0]+fp
         terminal = record_field('terminal_frame')+fp
         reject('nested_kernel_initial_fcw', grecord=flip(grecord, [inner, terminal]))
+        # This kernel saves configured altstack flags, while address bounds
+        # independently establish nested on-stack execution. Preserve the
+        # entire inner/terminal equality while corrupting both saved flags.
+        uc = field('gated', 'rn_frame', 'uc')[0]
+        flags = layout['gated']['offsets']['stack_flags']
+        inner_flags = base+field('gated', row, 'before')[0]+uc+flags
+        terminal_flags = record_field('terminal_frame')+uc+flags
+        reject('nested_configured_stack_flags',
+               grecord=flip(grecord, [inner_flags, terminal_flags]))
         # CPUID(D,9) offset is independently observed before arm in both lanes.
         # Mutating only gated metadata must fail that join, including absent PKRU.
         reject('native_gated_cpuid_d9_offset',
                grecord=flip(grecord, [record_field('h')+37*8]))
     expected = {
         (0,0):30, (1,0):30, (2,0):30, (3,0):30, (4,0):30, (5,0):30,
-        (6,0):30, (7,0):30, (8,0):30, (9,0):30, (10,0):30, (11,0):39,
+        (6,0):30, (7,0):30, (8,0):30, (9,0):30, (10,0):30, (11,0):40,
         (12,0):31, (13,0):31, (14,0):28, (15,0):33, (16,0):31,
         (16,1):28, (17,0):31, (18,0):31, (19,0):30, (20,0):31,
     }

@@ -678,10 +678,12 @@ def inner_frame(reader,raw,image,outer,pid,uid,lo,cap,base,platform,components):
     f = dict(h=h,uc=uc,fp=fp,data=memory,page=page,
              greg=q(uc[reader.go:reader.go+23*8]),raw=raw,kernel_ids=page_ids(page,True))
     g = f['greg'];o = reader.layout['offsets'];raw_pc = base+image['bridge']['symbols']['li2_raw6']['return_pc']
+    # unsafe_save_altstack saves configured flags; nested execution is proved
+    # independently by the complete saved UC/FP extents and runtime RSP below.
     need(cap == 512*1024 and lo <= h[3] < outer['h'][3] and
          h[3]+reader.ucn <= lo+cap and lo <= word(uc,reader.fo) <= lo+cap-h[2] and
          word(uc,reader.fo)%16 == 0 and word(uc,o['stack_sp']) == lo and
-         word(uc,o['stack_size']) == cap and struct.unpack_from('<I',uc,o['stack_flags'])[0] == 1 and
+         word(uc,o['stack_size']) == cap and struct.unpack_from('<I',uc,o['stack_flags'])[0] == 0 and
          word(uc,o['mask']) == PAIR_MASK and g[21] == PAIR_MASK,
          'actual deeper on-altstack nested context with exact installed reserved-signal mask')
     need(g[16] == g[14] == raw_pc and g[13] == 0 and
