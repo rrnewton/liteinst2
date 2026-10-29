@@ -26,13 +26,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -53,13 +55,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -80,13 +84,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group2",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -107,13 +113,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group3",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -134,13 +142,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group4",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -161,13 +171,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group5",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -188,13 +200,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group6",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -215,13 +229,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group7",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     },
     {
       "argv": [
@@ -242,13 +258,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 119,
+        "refusals": 109,
         "version": 1
       },
       "name": "group8",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=69 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     }
   ],
   "literal_effects": "Signed per-byte SRC1 OP SRC2 mask with independent literal expected64-bit result. Pre-state writemask applies even if destination aliases it; masked-off bits zero. All other architecture unchanged through complete old native/TF comparator.",
@@ -263,10 +281,10 @@
     21,
     21
   ],
-  "negative_endpoint": "All47 original generic plus32 retained original VPT plus40 new supplied refusals; no operand-memory fault credit for register-only forms. Exact retained row17 is now a mandatory typed SIMD/NONE acceptance, counted separately; every other refusal is unchanged.",
+  "negative_endpoint": "109 actual refusals per process (69 retained prior and 40 current-neighbor rows). Original row17 remains a mandatory Code2785/NONE positive. The 10 exact Code2791 rows are now independently retained typed/NONE positive queries, with separate native family coverage required. No data-memory/fault credit is introduced.",
   "new_mask_pairs_total": 180,
   "new_refusal_count": 40,
-  "old_refusal_count": 79,
+  "old_refusal_count": 69,
   "promoted_encodings": [
     {
       "code": 2785,
@@ -282,7 +300,7 @@
     }
   ],
   "prospective_only": true,
-  "record_extent": "136 +22*sample_bytes+40 +5176 CPUID/BV bytes +9024 actual-before footprint query bytes;21 positive slots and original negative slot zero.",
+  "record_extent": "(136 +22*sample_bytes+40 +5176 CPUID/BV bytes +9024 actual-before footprint query bytes) +3232 typed Code2791/NONE promotion bytes; 21 positive slots and original negative slot zero.",
   "record_header_fields": [
     "magic",
     "version",
@@ -305,5 +323,19 @@
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
   "schema_version": 1,
-  "scope": "Canonical EVEX512.W0 register-only Code3891; all vector/K indices, predicates0..7 and opmask-zeroing semantics; no memory forms or other EVEX authority."
+  "scope": "Canonical EVEX512.W0 register-only Code3891; all vector/K indices, predicates0..7 and opmask-zeroing semantics; no memory forms or other EVEX authority. Exact former refusal rows 0,1,2,3,4,5,6,7,11,12 now require Code2791/FALLTHROUGH/SIMD and supplied NONE; original bytes remain and separate vptestnmb_family native coverage is required.",
+  "vtn_promoted_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    11,
+    12
+  ],
+  "vtn_supplied_none_queries_per_process": 10,
+  "vtn_typed_promotions_per_process": 10
 }

@@ -11,6 +11,8 @@ from page_selected import ENV,fact,need,save,elf
 from page_selected_generic import digest
 from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
+from page_selected_vpcmpeqb_register_promotions import promotions as vpe_promotions
+from page_selected_bmi1_register_promotions import promotions as bmi_promotions
 from page_selected_components import plain_executable
 from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
@@ -21,7 +23,7 @@ HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/strrchr_short'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='14f67939cce61c219f3cfbcafe76c3b123ef7bd560b68056100f3aa27e828748'
+OUTCOMES_SHA='71b6c3a15fa102779b4c0419df74a9adb9cd9b139599d55acdafd42c3a3dc02e'
 
 
 def publish(path,r,private):
@@ -57,11 +59,11 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile='page-selected-strrchr-short-v1',status='failed',
-        scope='Only three exact register encodings and two literal29-byte return programs.61 original-PC native/TF pairs and two three-lane programs, including five startup pairs total. Existing full-state C predicates remain; each leaf retains128 refusals and7 exact typed1933/NONE promotions, with every old supplied byte row retained. No general EVEX/VEX/BMI, memory-form, rseq, longer path, real-program completion or performance claim.',
+        scope='Only three exact register encodings and two literal29-byte return programs.61 original-PC native/TF pairs and two three-lane programs, including five startup pairs total. Existing full-state C predicates remain; each leaf retains122 refusals plus2 exact BLSMSK typed/NONE promotions and4 separately retained register promotions and7 exact typed1933/NONE promotions, with every old supplied byte row retained. No general EVEX/VEX/BMI, memory-form, rseq, longer path, real-program completion or performance claim.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_strrchr_short.py','--expect-revision',args.expect_revision],
         commands=[],cases=[],error=None,final_errors=[],
-        totals=dict(individual_pairs=0,new_instruction_pairs=0,connected_programs=0,connected_lanes=0,
+        totals=dict(bmi_typed_promotions=0,bmi_supplied_none_queries=0,vpe_typed_promotions=0,vpe_supplied_none_queries=0,individual_pairs=0,new_instruction_pairs=0,connected_programs=0,connected_lanes=0,
                     startup_pairs=0,refusal_checks=0,route_checks=0,genuine_trace_handoffs=0,
                     promoted_encoding_checks=0,promoted_footprint_queries=0))
     pins,binaries,aliases={},{},{}
@@ -125,7 +127,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'li2_chain_record','samples','ctl'}if chain else {'samples','negative_sample','result','refused_last','vpb_observations'}
+            need(not err,'actual symbol inspection stderr');roots={'li2_chain_record','samples','ctl'}if chain else {'bmi_promotions','vpe_promotions','samples','negative_sample','result','refused_last','vpb_observations'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -141,7 +143,7 @@ def main():
             state['symbols']=symbols
             if not chain:
                 sample=symbols['negative_sample']['bytes'];need(symbols['samples']['bytes']==21*sample and
-                    symbols['result']['bytes']==136 and symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5176,
+                    symbols['bmi_promotions']['bytes']==640 and symbols['vpe_promotions']['bytes']==1216 and symbols['result']['bytes']==136 and symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5176,
                     'actual whole header/sample/negative/observer extents');samples[name]=sample
             else:
                 builder.tools['gdb']=pin(shutil.which('gdb',path=ENV['PATH']))
@@ -161,9 +163,18 @@ def main():
             item['actual_exit']=row['exit'];need(out==expected['stdout'].encode() and err==expected['stderr'].encode(),'exact finite output')
             captured=row['captures']['record'];path=binary(private/captured['file'])
             need(fact(path)=={k:captured[k]for k in ('bytes','sha256')},'complete actual capture binding');item['record']=fact(path)
-            value=leaf(path.read_bytes(),expected,samples[expected['argv'][0]])if expected['kind']=='leaf'else connected(path.read_bytes(),layouts['short-connected'],expected)
+            data=path.read_bytes()
+            if expected['kind']=='leaf':
+                need(640+1216<len(data)<16<<20,'whole register-promotion trailers inside original cap')
+                bmi=bmi_promotions(data[-640:],'strrchr_short');data=data[:-640]
+                promoted=vpe_promotions(data[-1216:],'strrchr_short');data=data[:-1216]
+                value=leaf(data,expected,samples[expected['argv'][0]])
+                value.update(bmi_promotions=bmi,bmi_typed_promotions=2,bmi_supplied_none_queries=2,vpe_promotions=promoted,vpe_typed_promotions=4,vpe_supplied_none_queries=4)
+            else:value=connected(data,layouts['short-connected'],expected)
             need(value['operation']=='completed','no failed operation relabelled completed')
             if expected['kind']=='leaf':
+                r['totals']['bmi_typed_promotions']+=2;r['totals']['bmi_supplied_none_queries']+=2
+                r['totals']['vpe_typed_promotions']+=4;r['totals']['vpe_supplied_none_queries']+=4
                 r['totals']['individual_pairs']+=value['pairs'];r['totals']['new_instruction_pairs']+=value['new_pairs']
                 need(expected['promoted_encoding_checks']==expected['promoted_footprint_queries']==7,'exact supplied promotion protocol')
                 r['totals']['promoted_encoding_checks']+=7;r['totals']['promoted_footprint_queries']+=7
@@ -172,8 +183,8 @@ def main():
                 r['totals']['genuine_trace_handoffs']+=value['genuine_trace_handoffs']
             r['totals']['startup_pairs']+=1;r['totals']['refusal_checks']+=value['refusals']
             item.update(status='accepted_observation',outcome=value)
-        need(r['totals']==dict(individual_pairs=61,new_instruction_pairs=58,connected_programs=2,connected_lanes=6,
-            startup_pairs=5,refusal_checks=478,route_checks=30,genuine_trace_handoffs=12,
+        need(r['totals']==dict(bmi_typed_promotions=6,bmi_supplied_none_queries=6,vpe_typed_promotions=12,vpe_supplied_none_queries=12,individual_pairs=61,new_instruction_pairs=58,connected_programs=2,connected_lanes=6,
+            startup_pairs=5,refusal_checks=460,route_checks=30,genuine_trace_handoffs=12,
             promoted_encoding_checks=21,promoted_footprint_queries=21) and
             len(r['cases'])==5 and all(c['status']=='accepted_observation'for c in r['cases']),'whole exact five-command cohort')
         r['status']='passed'

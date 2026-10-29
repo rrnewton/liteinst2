@@ -2,12 +2,17 @@
    I/O uses the same real syscall bridge and authentication contract. */
 #include "repeat_owner.h"
 
+unsigned li2_repeat_width(const struct li2_decoded *d) {
+    if(!d || d->abi_version!=1 || d->reserved || d->decode_status!=LI2_VALID ||
+       d->kind!=LI2_NONE || d->available<d->length || d->available>15 ||
+       d->pc>UINTPTR_MAX-d->length || d->next_pc!=d->pc+d->length)return 0;
+    if(d->code==346 && d->length==3 && d->bytes[0]==0xf3 &&
+       d->bytes[1]==0x48 && d->bytes[2]==0xab)return 8;
+    if(d->code==345 && d->length==2 && d->bytes[0]==0xf3 && d->bytes[1]==0xab)return 4;
+    return 0;
+}
 int li2_repeat_candidate(const struct li2_decoded *d) {
-    return d && d->abi_version==1 && !d->reserved && d->decode_status==LI2_VALID &&
-           d->kind==LI2_NONE && d->code==346 && d->length==3 &&
-           d->available>=3 && d->available<=15 && d->pc<=UINTPTR_MAX-3 &&
-           d->next_pc==d->pc+3 && d->bytes[0]==0xf3 &&
-           d->bytes[1]==0x48 && d->bytes[2]==0xab;
+    return li2_repeat_width(d)!=0;
 }
 int li2_repeat_arm(struct li2_repeat_owner *o,struct li2_step_session *s,
                    const struct li2_tf_hooks *hooks,const struct li2_step_request *request) {
@@ -112,7 +117,10 @@ void li2_repeat_trace(struct li2_repeat_owner *o,int sig,siginfo_t *si,ucontext_
     o->actual_post_pc=(uintptr_t)g[REG_RIP];o->actual_post_flags=(uint64_t)g[REG_EFL];
     revoke_pages(p);
     if(p->first_error)li2_step_abort(p,p->first_error,p->first_detail);
-    require(p,equal((const void *)p->request.decoded.pc,p->request.decoded.bytes,3),LI2_STEP_PAGE_BINDING,3);
+    const unsigned width=li2_repeat_width(&p->request.decoded);
+    require(p,width!=0,LI2_REPEAT_ENCODING,0);
+    require(p,equal((const void *)p->request.decoded.pc,p->request.decoded.bytes,
+                    p->request.decoded.length),LI2_STEP_PAGE_BINDING,3);
     uint64_t remaining=(uint64_t)g[REG_RCX];
     require(p,(!o->initial_count && !o->traces && !remaining) ||
             (o->initial_count && remaining<o->remaining),LI2_REPEAT_PROGRESS,0);
@@ -127,7 +135,7 @@ void li2_repeat_trace(struct li2_repeat_owner *o,int sig,siginfo_t *si,ucontext_
         uint64_t expected=(uint64_t)p->before.greg[regs[i]];
         if(i==1)expected=remaining;
         else if(i==7) {
-            uint64_t bytes=(o->initial_count-remaining)*UINT64_C(8);
+            uint64_t bytes=(o->initial_count-remaining)*width;
             expected=p->request.original_flags&UINT64_C(0x400)?expected-bytes:expected+bytes;
         }
         require(p,(uint64_t)g[regs[i]]==expected,LI2_REPEAT_STATE,10+i);

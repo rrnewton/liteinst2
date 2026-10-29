@@ -1,1 +1,310 @@
-{"bounds":{"address_space_bytes":536870912,"cpu_affinity_count":1,"cpu_seconds":5,"file_size_bytes":16777216,"wall_seconds":15},"commands":[{"argv":["vpcmpeqb-memory-family-0"],"environment_delta":{},"exit":0,"group":0,"header_equals":{"completed":19,"control":0,"decoder_result":0,"expected_failure_verified":0,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":0,"owner_detail_negative":0,"owner_failure":0,"pairs":19,"refusals":117,"version":1},"name":"group0","process_outcome":"completed finite native/TF pair cohort","stderr":"","stdout":"LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 memory_refusals=28 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"},{"argv":["vpcmpeqb-memory-family-1"],"environment_delta":{},"exit":0,"group":1,"header_equals":{"completed":19,"control":0,"decoder_result":0,"expected_failure_verified":0,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":0,"owner_detail_negative":0,"owner_failure":0,"pairs":19,"refusals":117,"version":1},"name":"group1","process_outcome":"completed finite native/TF pair cohort","stderr":"","stdout":"LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 memory_refusals=28 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"},{"argv":["vpcmpeqb-memory-family-2"],"environment_delta":{},"exit":0,"group":2,"header_equals":{"completed":19,"control":0,"decoder_result":0,"expected_failure_verified":0,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":0,"owner_detail_negative":0,"owner_failure":0,"pairs":19,"refusals":117,"version":1},"name":"group2","process_outcome":"completed finite native/TF pair cohort","stderr":"","stdout":"LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 memory_refusals=28 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"},{"argv":["vpcmpeqb-memory-family-3"],"environment_delta":{},"exit":0,"group":3,"header_equals":{"completed":19,"control":0,"decoder_result":0,"expected_failure_verified":0,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":0,"owner_detail_negative":0,"owner_failure":0,"pairs":19,"refusals":117,"version":1},"name":"group3","process_outcome":"completed finite native/TF pair cohort","stderr":"","stdout":"LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 memory_refusals=28 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"},{"argv":["vpcmpeqb-memory-family-4"],"environment_delta":{},"exit":0,"group":4,"header_equals":{"completed":19,"control":0,"decoder_result":0,"expected_failure_verified":0,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":0,"owner_detail_negative":0,"owner_failure":0,"pairs":19,"refusals":117,"version":1},"name":"group4","process_outcome":"completed finite native/TF pair cohort","stderr":"","stdout":"LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 memory_refusals=28 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"},{"argv":["vpcmpeqb-memory-family-5"],"environment_delta":{},"exit":0,"group":5,"header_equals":{"completed":19,"control":0,"decoder_result":0,"expected_failure_verified":0,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":0,"owner_detail_negative":0,"owner_failure":0,"pairs":19,"refusals":117,"version":1},"name":"group5","process_outcome":"completed finite native/TF pair cohort","stderr":"","stdout":"LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=80 memory_refusals=28 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"},{"argv":["vpcmpeqb-memory-family-0"],"environment_delta":{"LI2_VPCM_CONTROL":"full-read-fault"},"exit":125,"group":0,"header_equals":{"completed":1,"control":1,"decoder_result":0,"expected_failure_verified":1,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":11,"owner_detail_negative":0,"owner_failure":7,"pairs":19,"refusals":117,"version":1},"name":"full-read-fault","process_outcome":"expected genuine failed m512 read; operation not completed","stderr":"","stdout":"LI2_TF_EXPECTED_FAILURE 7\n"},{"argv":["vpcmpeqb-memory-family-0"],"environment_delta":{"LI2_VPCM_CONTROL":"cross-read-fault"},"exit":125,"group":0,"header_equals":{"completed":1,"control":1,"decoder_result":0,"expected_failure_verified":1,"failed_refusal":18446744073709551615,"fixture_failure":0,"header_bytes":136,"magic":3550605999948051020,"owner_detail_abs":11,"owner_detail_negative":0,"owner_failure":7,"pairs":19,"refusals":117,"version":1},"name":"cross-read-fault","process_outcome":"expected genuine failed m512 read; operation not completed","stderr":"","stdout":"LI2_TF_EXPECTED_FAILURE 7\n"}],"crossing_pairs":87,"ending_pairs":21,"literal_effects":"The selected K0..7 receives the independent 64-byte equality literal (0,UINT64_MAX,0x9249249249249249). Selected source ZMM0..31 is seeded independently; every vector byte and other initialized kernelFP/liveXSAVE byte, mask, GPR, full flags, source/stack/data remains unchanged.","native_pairs_per_group":[19,19,19,19,19,19],"negative_endpoint":"Two real m512 read faults at original PC: fully inaccessible operand and last32 bytes beyond readable page. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.","new_load_pairs_total":108,"new_refusal_count":9,"old_refusal_count":108,"prospective_only":true,"record_extent":"header_bytes + 22 * sample_bytes + 40 + 5000 + 96 + 9024 + 1504; unchanged sample storage, full existing trailers and five supplied promotion records","record_header_fields":["magic","version","header_bytes","sample_bytes","pairs","completed","control","xcr0","xsave_bytes","refusals","failed_refusal","decoder_result","expected_failure_verified","fixture_failure","owner_failure","owner_detail_abs","owner_detail_negative"],"record_header_format":"<17Q","record_limit_bytes":16777216,"schema_version":1,"scope":"Canonical W0 unmasked EVEX512 Code1720 VPCMPEQB K0..7,ZMM0..31,[RDI], 256 encodings;108 structural native cases, not exhaustive256 native execution. Exact original register support retained. Other addresses/masks/widths/prefixes closed; no application completion/performance claim.","supplied_none_queries_per_process":5,"typed_promotions_per_process":5}
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=73 memory_refusals=27 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 1,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=73 memory_refusals=27 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 2,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=73 memory_refusals=27 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 3,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=73 memory_refusals=27 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-4"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 4,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "group4",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=73 memory_refusals=27 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-5"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 5,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "group5",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPEQB_MEMORY_FAMILY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=73 memory_refusals=27 new_refusals=9 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "full-read-fault"
+      },
+      "exit": 125,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "full-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpeqb-memory-family-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "cross-read-fault"
+      },
+      "exit": 125,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 109,
+        "version": 1
+      },
+      "name": "cross-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    }
+  ],
+  "crossing_pairs": 87,
+  "ending_pairs": 21,
+  "literal_effects": "The selected K0..7 receives the independent 64-byte equality literal (0,UINT64_MAX,0x9249249249249249). Selected source ZMM0..31 is seeded independently; every vector byte and other initialized kernelFP/liveXSAVE byte, mask, GPR, full flags, source/stack/data remains unchanged.",
+  "native_pairs_per_group": [
+    19,
+    19,
+    19,
+    19,
+    19,
+    19
+  ],
+  "negative_endpoint": "Two real m512 read faults at original PC: fully inaccessible operand and last32 bytes beyond readable page. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.",
+  "new_load_pairs_total": 108,
+  "new_refusal_count": 9,
+  "old_refusal_count": 100,
+  "promoted_refusal_count": 13,
+  "promotion_groups": {
+    "vm64": 7,
+    "vpcm": 5,
+    "vpe_register": 1
+  },
+  "prospective_only": true,
+  "record_extent": "(136 +22*sample_bytes +40 +5000 +96 +9024 +1504 +2080; all existing full storage/trailers plus the mandatory2080-byte seven-row Code1605/NONE promotion trailer) +1216 exact register-promotion bytes",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "refusals_per_process": 109,
+  "schema_version": 1,
+  "scope": "Canonical W0 unmasked EVEX512 Code1720 VPCMPEQB K0..7,ZMM0..31,[RDI], 256 encodings;108 structural native cases, not exhaustive256 native execution. Exact original register support retained. Other addresses/masks/widths/prefixes closed; no application completion/performance claim. Seven exact retained VMOVDQU64 neighbor rows additionally require Code1605/FALLTHROUGH/SIMD and supplied NONE; their actual native family cases are independently mandatory in vmovdqu64_family. All remaining negative rows retain rejection. Exact Code1720 register neighbors additionally require typed/NONE records; new register-family native coverage is mandatory. No failed-operation or process outcome changes.",
+  "supplied_none_queries_per_process": 13,
+  "typed_promotions_per_process": 13,
+  "vm64_supplied_none_queries_per_process": 7,
+  "vpe_register_rows": [
+    42
+  ],
+  "vpe_supplied_none_queries_per_leaf_process": 1,
+  "vpe_typed_promotions_per_leaf_process": 1
+}

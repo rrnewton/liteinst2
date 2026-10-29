@@ -1,0 +1,249 @@
+{
+  "actual_before_queries_per_group": [
+    32,
+    32,
+    32,
+    32,
+    32
+  ],
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "actual_before_queries": 32,
+      "argv": [
+        "kortestq-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 0,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 206,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 1,
+      "promoted_footprint_queries": 1,
+      "stderr": "",
+      "stdout": "LI2_KORTESTQ_TF_PASS group=0 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
+    },
+    {
+      "actual_before_queries": 32,
+      "argv": [
+        "kortestq-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 1,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 206,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 1,
+      "promoted_footprint_queries": 1,
+      "stderr": "",
+      "stdout": "LI2_KORTESTQ_TF_PASS group=1 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
+    },
+    {
+      "actual_before_queries": 32,
+      "argv": [
+        "kortestq-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 2,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 206,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 1,
+      "promoted_footprint_queries": 1,
+      "stderr": "",
+      "stdout": "LI2_KORTESTQ_TF_PASS group=2 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
+    },
+    {
+      "actual_before_queries": 32,
+      "argv": [
+        "kortestq-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 3,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 206,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 1,
+      "promoted_footprint_queries": 1,
+      "stderr": "",
+      "stdout": "LI2_KORTESTQ_TF_PASS group=3 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
+    },
+    {
+      "actual_before_queries": 32,
+      "argv": [
+        "kortestq-4"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 4,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 206,
+        "version": 1
+      },
+      "name": "group4",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 1,
+      "promoted_footprint_queries": 1,
+      "stderr": "",
+      "stdout": "LI2_KORTESTQ_TF_PASS group=4 pairs=17 kortestq=16 selftest=1 old_refusal_bytes=177 new_refusal_bytes=29 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
+    }
+  ],
+  "literal_effects": "Exact64-bit OR of two K operands; ZF iff zero, CF iff allones, OF/SF/AF/PF cleared. Complete flags preserve every other bit. All16 GPR, all8 K, all32 ZMM, initialized kernelFP/liveXSAVE, memory and source unchanged.",
+  "native_pairs_per_group": [
+    17,
+    17,
+    17,
+    17,
+    17
+  ],
+  "negative_endpoint": "206 actual refusals per process: all177 donor refusals retained,29 new KORTESTQ neighbors. Original Code2785 and10 Code2791/NONE supplied promotions remain mandatory. No data-memory/fault execution credit.",
+  "new_refusal_count": 29,
+  "new_register_pairs_total": 80,
+  "old_refusal_count": 177,
+  "promoted_encodings": [
+    {
+      "code": 2785,
+      "family": 6,
+      "flow": 1,
+      "footprint_policy": 1,
+      "hex": "62b2754026c1",
+      "native_qualification": "Existing separate page_selected_vptestmb.py cohort; retained donor promotion, not new VPXORQ execution credit.",
+      "old_row": 17,
+      "per_command_checks": 1,
+      "policy": 1
+    }
+  ],
+  "record_extent": "136+22*sample_bytes+40+4824 CPUID/BV+7232 actual-before queries+3232 donor promotions;17 occupied positive slots, all unused positive/negative slots zero.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "refusals_per_group": 206,
+  "schema_version": 1,
+  "scope": "Canonical VEX KORTESTQ c4e1f898/m Code1935 register sources; all8 roles via8 self+8 cyclic pairs at five fetch tails. Existing suites remain separate requirements.",
+  "startup_pairs_total": 5,
+  "unsupported_footprint_queries_per_group": 159,
+  "vtn_promoted_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    11,
+    12
+  ],
+  "vtn_supplied_none_queries_per_process": 10,
+  "vtn_typed_promotions_per_process": 10
+}

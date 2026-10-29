@@ -5,6 +5,9 @@
 #error "one-shot first profile requires native-page close and actual rseq owner"
 #endif
 #include <stdatomic.h>
+#ifdef LI2_ONESHOT_REUSABLE
+#include "oneshot_reusable.h"
+#endif
 
 struct os_landing {
     volatile unsigned attempted,complete;
@@ -14,6 +17,10 @@ struct os_landing {
     long pid,tid;
     struct li2_fetch_map_progress maps;
     struct check_error error;
+#ifdef LI2_ONESHOT_REUSABLE
+    uint64_t source_allocation;
+    uintptr_t source_first,source_end;
+#endif
 };
 struct li2_oneshot_lifecycle {
     struct li2_oneshot_lifecycle_progress progress;
@@ -26,7 +33,11 @@ struct li2_oneshot_lifecycle {
     unsigned current_protection[2];
     unsigned char original_bytes[2][PAGE];
 };
+#ifdef LI2_ONESHOT_REUSABLE
+static struct os_landing os_landings[OBJECTS];
+#else
 static struct os_landing os_landings[2];
+#endif
 static struct li2_oneshot_lifecycle os_slots[LI2_ONESHOT_LIFECYCLE_SLOTS];
 static size_t os_used;
 
@@ -69,9 +80,16 @@ static struct li2_oneshot_lifecycle *os_context(void *context) {
 const struct li2_oneshot_lifecycle_progress *li2_lifecycle_oneshot_progress(const void *context) {
     struct li2_oneshot_lifecycle *s=os_context((void *)context);return s?&s->progress:0;
 }
+static int os_registration(struct li2_oneshot_lifecycle *s) {
+#ifdef LI2_ONESHOT_REUSABLE
+    return !li2_rseq_publication_check(s->checked.sequence,s->checked.pc);
+#else
+    (void)s;return os_unregistered();
+#endif
+}
 static int os_identity(struct li2_oneshot_lifecycle *s,int held) {
     if(s->progress.first_error)return (int)s->progress.first_error;
-    if(!active || !hooks.raw || tx.guard || !os_unregistered() ||
+    if(!active || !hooks.raw || tx.guard || !os_registration(s) ||
        oneshot_held!=(held?(unsigned)(s-os_slots)+1:0) ||
        s->progress.held!=(unsigned)held || s->progress.released ||
        allocation_id!=s->progress.allocation_epoch || generation!=s->progress.generation_epoch ||
@@ -196,6 +214,21 @@ static int os_source_bytes(struct li2_oneshot_lifecycle *s,unsigned patched) {
     }
     return 0;
 }
+#ifdef LI2_ONESHOT_REUSABLE
+static int os_backing_extent(const struct object *o,const struct owned_page *p) {
+    if(o->initial_kind)
+        return o->initial_source && p->offset<=o->initial_source_size &&
+            PAGE<=o->initial_source_size-p->offset &&
+            !(o->initial_kind==IMAGE_MAIN && !p->offset);
+    if(o->initial_source || o->initial_source_size)return 0;
+    for(size_t i=0;i<o->segment_count;i++) {
+        const struct load_segment *s=&o->segments[i];
+        if(s->prot==(PROT_READ|PROT_EXEC) && p->offset>=s->offset &&
+           p->offset-s->offset<=s->file_extent && PAGE<=s->file_extent-(p->offset-s->offset))return 1;
+    }
+    return 0;
+}
+#endif
 static int os_original_backing(struct li2_oneshot_lifecycle *s,unsigned i) {
     const struct owned_page *p=&s->original[i];const struct object *o=&objects[p->object];
     struct li2_fetch_backing *b=&s->progress.backing[i];
@@ -206,21 +239,39 @@ static int os_original_backing(struct li2_oneshot_lifecycle *s,unsigned i) {
     if(b->stat_result || b->stat.st_size<=0 || b->stat.st_dev!=o->stat.st_dev || b->stat.st_ino!=o->stat.st_ino ||
        b->stat.st_size!=o->stat.st_size || b->stat.st_mode!=o->stat.st_mode ||
        p->offset>(uint64_t)b->stat.st_size || PAGE>(uint64_t)b->stat.st_size-p->offset ||
+#ifdef LI2_ONESHOT_REUSABLE
+       !os_backing_extent(o,p))
+#else
        p->offset>o->initial_source_size || PAGE>o->initial_source_size-p->offset)
+#endif
         return os_error(s,LI2_ONESHOT_BIND,30+i);
-    uintptr_t source=(uintptr_t)o->initial_source+p->offset;
+    uintptr_t source=0;
+#ifdef LI2_ONESHOT_REUSABLE
+    if(o->initial_source) {
+#endif
+    source=(uintptr_t)o->initial_source+p->offset;
     const struct map_row *r=mapping(source);
     if(source<(uintptr_t)o->initial_source || source>UINTPTR_MAX-PAGE ||
        !r || r->end-source<PAGE || r->prot!=PROT_READ || !r->private ||
        !os_private(source,PAGE))return os_error(s,LI2_ONESHOT_BIND,32+i);
+#ifdef LI2_ONESHOT_REUSABLE
+    }
+#endif
     s->progress.backing_started[i]=1;atomic_signal_fence(memory_order_seq_cst);
     long got=RAW(SYS_pread64,o->retained_fd,s->original_bytes[i],PAGE,p->offset,0,0);
     s->progress.backing_result[i]=got;atomic_signal_fence(memory_order_seq_cst);
     s->progress.backing_returned[i]=1;
+#ifdef LI2_ONESHOT_REUSABLE
+    if(got!=(long)PAGE || (source && !equal(s->original_bytes[i],(const void *)source,PAGE)))
+#else
     if(got!=(long)PAGE || !equal(s->original_bytes[i],(const void *)source,PAGE))
+#endif
         return os_error(s,LI2_ONESHOT_SOURCE,got);
     atomic_signal_fence(memory_order_seq_cst);s->progress.backing_verified[i]=1;return 0;
 }
+#ifdef LI2_ONESHOT_REUSABLE
+#include "oneshot_reusable_lifecycle.inc"
+#else
 int li2_lifecycle_oneshot_prepare(const struct li2_fetch_ref *ref,unsigned kind,
                                  struct li2_oneshot_plan *out,struct li2_oneshot_lifecycle **context) {
     if(!ref || !out || !context || (kind!=LI2_ONESHOT_SYSCALL && kind!=LI2_ONESHOT_RDTSC))
@@ -277,11 +328,15 @@ int li2_lifecycle_oneshot_prepare(const struct li2_fetch_ref *ref,unsigned kind,
     *out=request;*context=s;atomic_signal_fence(memory_order_seq_cst);
     s->progress.prepared=1;++os_used;return 0;
 }
+#endif
 static int os_plan(struct li2_oneshot_lifecycle *s,const struct li2_oneshot_plan *p,int held) {
     if(!s || !p)return LI2_ONESHOT_ARGUMENT;
     if(!equal(p,&s->checked,sizeof(*p)))return os_error(s,LI2_ONESHOT_BIND,40);
     return os_identity(s,held);
 }
+#ifdef LI2_ONESHOT_REUSABLE
+#include "oneshot_reusable_generation.inc"
+#endif
 int li2_lifecycle_oneshot_transfer(void *context,const struct li2_oneshot_plan *p,
                                   struct li2_oneshot_transfer *v) {
     struct li2_oneshot_lifecycle *s=os_context(context);int error=os_plan(s,p,0);
@@ -297,7 +352,11 @@ int li2_lifecycle_oneshot_transfer(void *context,const struct li2_oneshot_plan *
     if(os_fresh(s) || os_pages(s,PROT_READ))return (int)s->progress.first_error;
     for(unsigned i=0;i<s->page_count;i++)if(os_original_backing(s,i))return (int)s->progress.first_error;
     if(os_source_bytes(s,0))return (int)s->progress.first_error;
-    if(used>RECORDS-2*s->page_count || generation>UINT64_MAX-2*s->page_count)
+    if(
+#ifndef LI2_ONESHOT_REUSABLE
+       used>RECORDS-2*s->page_count ||
+#endif
+       generation>UINT64_MAX-2*s->page_count)
         return LI2_ONESHOT_TRANSFER_UNTOUCHED;
     os_start(&v->old_release);error=li2_lifecycle_fetch_release(&s->borrow);os_return(&v->old_release,error);
     s->released_fetch=*li2_lifecycle_fetch_progress();
@@ -323,7 +382,10 @@ int li2_lifecycle_oneshot_advance(void *context,const struct li2_oneshot_plan *p
     struct li2_oneshot_lifecycle *s=os_context(context);int error=os_plan(s,p,1);
     if(error || !out)return error?error:LI2_ONESHOT_ARGUMENT;
     if(restoring>1 || out->restoring!=restoring || s->progress.generation_steps!=restoring ||
-       s->progress.observations!=(restoring?5U:1U) || used>RECORDS-s->page_count ||
+       s->progress.observations!=(restoring?5U:1U) ||
+#ifndef LI2_ONESHOT_REUSABLE
+       used>RECORDS-s->page_count ||
+#endif
        generation>UINT64_MAX-s->page_count || fetch.progress.held)
         return os_error(s,LI2_ONESHOT_GENERATION,1);
     if(os_fresh(s) || os_pages(s,PROT_READ) || os_source_bytes(s,restoring))
@@ -335,6 +397,10 @@ int li2_lifecycle_oneshot_advance(void *context,const struct li2_oneshot_plan *p
         struct owned_page *old=current(p->pages[i].address);
         if(!old || out->before[i]!=old->generation || old->actual!=PROT_READ)
             return os_error(s,LI2_ONESHOT_GENERATION,2+i);
+#ifdef LI2_ONESHOT_REUSABLE
+        int renewal=os_reusable_renew(s,i,out);
+        if(renewal)return renewal;
+#else
         struct owned_page saved=*old;uint32_t bit=UINT32_C(1)<<i;
         out->attempted_mask|=bit;atomic_signal_fence(memory_order_seq_cst);
         retire(old);append(saved.address,saved.allocation,saved.offset,saved.backing,saved.object,
@@ -343,8 +409,11 @@ int li2_lifecycle_oneshot_advance(void *context,const struct li2_oneshot_plan *p
         s->current_generation[i]=now->generation;s->current_protection[i]=now->actual;
         out->after[i]=now->generation;atomic_signal_fence(memory_order_seq_cst);
         out->completed_mask|=bit;atomic_signal_fence(memory_order_seq_cst);
+#endif
     }
-    /* Exact retire+append makes old fetch epochs/source-page tuples stale.
+    /* The new profile renews the live page generation and clears its indexed
+       negative fact; it does not consume a page-record slot.
+       Exact retire+append makes old fetch epochs/source-page tuples stale.
        Run cache hits compare these generations; native_blocked is indexed by
        append-only record and the fresh record has no old negative-cache entry. */
     s->progress.generation_epoch=generation;s->progress.records_epoch=used;

@@ -1,0 +1,122 @@
+{
+  "Cargo.lock": {
+    "bytes": 5214,
+    "sha256": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088"
+  },
+  "Cargo.toml": {
+    "bytes": 4137,
+    "sha256": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8"
+  },
+  "crates/liteinst-admission/src/scan.rs": {
+    "bytes": 10863,
+    "sha256": "effb0343fc535810318e95b87d66c3e1fd4ab104dd345dcbeab83fcc5615e948"
+  },
+  "crates/liteinst-launch/Cargo.toml": {
+    "bytes": 1030,
+    "sha256": "e716ad4afe5265c269346e978063ec3025cfc8974d437c8d11a16b65b3ed7e54"
+  },
+  "crates/liteinst-launch/src/gate.rs": {
+    "bytes": 28559,
+    "sha256": "26e09c6e717ff66c8c5f571e9adfdb41b3bf0ca9d453d672f87d7890dbdd8570"
+  },
+  "crates/liteinst-launch/src/gate/coverage.rs": {
+    "bytes": 10470,
+    "sha256": "c643a43055bb78777577282d2f8fafb9190a7c2b3b9d5fb77d2cdfc043101b8d"
+  },
+  "crates/liteinst-launch/src/gate/selected.rs": {
+    "bytes": 22666,
+    "sha256": "60fa12fce76b97b4504fc648f9b20724ba22530814d392b77b04da8c3275fd26"
+  },
+  "crates/liteinst-launch/src/lib.rs": {
+    "bytes": 2696,
+    "sha256": "c8d827203fa69169bfee7aa25d90e7bbd673224a8e0bc8852670f6fe42794e63"
+  },
+  "crates/liteinst-launch/src/linux.rs": {
+    "bytes": 30512,
+    "sha256": "a3a9bbf74a0fe7dfabb7aa0ee3af73aa80de6acd9ffa72993da842e3a9d9c1a0"
+  },
+  "crates/liteinst-launch/src/selected.rs": {
+    "bytes": 34181,
+    "sha256": "e976a0b6ef61dcf9c36f290c1b5ef0321689cf210ed30f39f513690278715f97"
+  },
+  "crates/liteinst-launch/tests/b2_mode_reference.rs": {
+    "bytes": 13843,
+    "sha256": "5a20674018eee11849c2d5c688ec4531c994cd58b0a88511e832589a6d445339"
+  },
+  "crates/liteinst-launch/tests/selected_semantics.rs": {
+    "bytes": 29108,
+    "sha256": "eb65fce79a19a345a3f63b8e177544ab094544c8258f57bad6d81497bc5fd719"
+  },
+  "crates/liteinst-launch/tests/support/b2_reference/cases.rs": {
+    "bytes": 7494,
+    "sha256": "7a271b9b4d166c2dd25d734ddbd34e602ef35ba6b7acc9d0d7e7a44750270d34"
+  },
+  "crates/liteinst-launch/tests/support/b2_reference/checks.rs": {
+    "bytes": 2311,
+    "sha256": "7747cb4fb2902eaed96a67a1a0ccb8792395ec84a8b6b4651725f86f9b20002a"
+  },
+  "crates/liteinst-launch/tests/support/b2_reference/image.rs": {
+    "bytes": 6957,
+    "sha256": "237d6feb2327fd69b59dc87dbf7f3766672c5dc8ea01a713b57f881a54ec251c"
+  },
+  "crates/liteinst-launch/tests/support/b2_reference/model.rs": {
+    "bytes": 15416,
+    "sha256": "2d7e7c5e19b87eecf5d253b308dfc373be8cc2b44efa9190cabedb36521ee3b2"
+  },
+  "crates/liteinst-launch/tests/support/b2_reference/raw.rs": {
+    "bytes": 24660,
+    "sha256": "aa8cd7a776f6e958b74e1aec003ee756cf49fc77b990cca51cc1c92d1d72eff4"
+  },
+  "tools/page-entry/carrier.py": {
+    "bytes": 10671,
+    "sha256": "1e11c5eb71784a61eac391bf456fac45a5941bde902e20164b92da8ccc06a918"
+  },
+  "tools/page-entry/namespace.py": {
+    "bytes": 11288,
+    "sha256": "076c8d751dd5228f163fe3dca361ada4e32198107df7cd75963fe995d769f863"
+  },
+  "tools/page-entry/selected/decoder.h": {
+    "bytes": 2627,
+    "sha256": "ff93bcd3d69988b655423515e8a5889bdcc7279625ad8ef43bfefb9f5e55bb53"
+  },
+  "tools/page-entry/selected/fetch_loader.inc": {
+    "bytes": 10366,
+    "sha256": "0077b7f0a8657b32861c59ef4a6fa77a8a05e1bc20e18030f3d9f431ae7e7249"
+  },
+  "tools/page-entry/selected/native_epoch.c": {
+    "bytes": 7323,
+    "sha256": "aa43c811c1bbcd83d3100b01a675eae700e096482e7240cdf5c7029aa2b95b8c"
+  },
+  "tools/page-entry/selected/native_policy.c": {
+    "bytes": 2520,
+    "sha256": "196d63d3a00258634ce4cf765759ee37418618d440e5a4f9cc11c9bc8b1d8ecc"
+  },
+  "tools/page-entry/selected/provider.h": {
+    "bytes": 4114,
+    "sha256": "a5b4d88bd5318790a88dd03305b53168499e2d6d7ea992aaaba95a1048f9e1ee"
+  },
+  "tools/page-entry/selected/provider_callback.h": {
+    "bytes": 1483,
+    "sha256": "06e41fdedcb6a33c46e21ada3242c3e8b7333fa06bbcf99dafa7cd76fb8b59c7"
+  },
+  "tools/page-entry/selected/provider_policy.h": {
+    "bytes": 1887,
+    "sha256": "b17ae37da60405d5d67c342deedb639c5d08ce318e93457a76cb9fb72e67db02"
+  },
+  "tools/page-entry/selected/runtime_loader.c": {
+    "bytes": 35634,
+    "sha256": "2461ad8798ae625a68fca2d031f409bf1bc4ba33d270280f76ad0c72e69bf3ea"
+  },
+  "tools/page-entry/selected/selected_controller.inc": {
+    "bytes": 33352,
+    "sha256": "ca87058365f1a480b74f6cb59f99fab369c025ba0777a4b841c87690f674561a"
+  },
+  "tools/page-entry/selected/selected_cpuid_nx.inc": {
+    "bytes": 4763,
+    "sha256": "97955af70280778d172eee4543eefd6c1141665e4f2244a14528f28605c17742"
+  },
+  "tools/page-entry/selected/selected_globals.inc": {
+    "bytes": 5385,
+    "sha256": "5280bb18f344d7d57e48f337fb960781a1abe072d4d434e0b645e2fd3d46caca"
+  }
+}

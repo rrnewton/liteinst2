@@ -188,7 +188,8 @@ int li2_rseq_check_instruction(const struct li2_decoded *d,const ucontext_t *uc)
     if(!state.registered)return 0;
     if(word_zero() || count(&state.instruction_checks))return (int)state.first_error;
     if(!d || !uc)return bad(LI2_RSEQ_ARGUMENT,4);
-    if(li2_repeat_candidate(d)) {
+    const unsigned repeat_width=li2_repeat_width(d);
+    if(repeat_width) {
         if(count(&state.repeat_checks))return (int)state.first_error;
         uint64_t n=(uint64_t)uc->uc_mcontext.gregs[REG_RCX];
         uintptr_t at=(uintptr_t)uc->uc_mcontext.gregs[REG_RDI];
@@ -197,11 +198,12 @@ int li2_rseq_check_instruction(const struct li2_decoded *d,const ucontext_t *uc)
         state.last_policy=n?LI2_WRITE_RANGE:LI2_WRITE_NONE;
         state.last_footprint=(struct li2_write_footprint){0};
         if(!n)return 0;
-        if(n>UINT64_MAX/8)return bad(LI2_RSEQ_OVERFLOW,2);
-        uint64_t bytes=n*8;
+        if(n>UINT64_MAX/repeat_width)return bad(LI2_RSEQ_OVERFLOW,2);
+        uint64_t bytes=n*repeat_width;
         if((uint64_t)uc->uc_mcontext.gregs[REG_EFL]&UINT64_C(0x400)) {
-            if(at<bytes-8 || at>UINTPTR_MAX-8)return bad(LI2_RSEQ_OVERFLOW,3);
-            return span(at-(bytes-8),(size_t)bytes);
+            if(at<bytes-repeat_width || at>UINTPTR_MAX-repeat_width)
+                return bad(LI2_RSEQ_OVERFLOW,3);
+            return span(at-(bytes-repeat_width),(size_t)bytes);
         }
         return span(at,(size_t)bytes);
     }
@@ -232,6 +234,9 @@ int li2_rseq_check_run(const struct li2_run_plan *p,const ucontext_t *uc) {
     if(offset!=p->run_length || p->stop!=p->pc+offset)return bad(LI2_RSEQ_PLAN,3);
     return 0;
 }
+#ifdef LI2_EFFECT_PROVIDER
+#include "readonly_query.h"
+#endif
 int li2_rseq_before_syscall(long n,const long a[6]) {
     if(ready())return (int)state.first_error;
 #ifdef LI2_RSEQ_TCGETS_BTRFS
@@ -241,6 +246,16 @@ int li2_rseq_before_syscall(long n,const long a[6]) {
     if(!a)return bad(LI2_RSEQ_ARGUMENT,5);
     if(word_zero() || count(&state.syscall_checks))return (int)state.first_error;
     state.last_first=state.last_end=0;
+#ifdef LI2_EFFECT_PROVIDER
+    struct li2_readonly_query query;
+    if(li2_readonly_query(n,a,&query)) {
+        for(unsigned i=0;i<query.count;i++) {
+            int error=span(query.write[i].address,query.write[i].bytes);
+            if(error)return error;
+        }
+        return 0;
+    }
+#endif
     switch(n) {
     case SYS_rseq:case SYS_exit:case SYS_exit_group:return 0;
 #ifdef LI2_RSEQ_TCGETS_BTRFS
@@ -474,4 +489,10 @@ int li2_rseq_native_closed(void) {
 #endif
     __asm__ volatile("":::"memory");native_rseq.phase=LI2_RN_IDLE;return 0;
 }
+#endif
+#ifdef LI2_EFFECT_PROVIDER
+#include "rseq_selected.inc"
+#endif
+#ifdef LI2_ONESHOT_REUSABLE
+#include "rseq_publication.inc"
 #endif

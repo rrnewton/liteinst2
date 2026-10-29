@@ -35,7 +35,7 @@ fn checked(mut p:Plan)->Result<Plan,i32> {
        p.reserved_bytes!=[0;6] || p.redirect!=[0;5] ||
        p.pc<MIN_EXEC || p.landing<MIN_EXEC ||
        p.landing_allocation==0 || p.landing_generation==0 {return Err(ARG)}
-    let opcode=match p.kind {1=>[0x0f,0x05],2=>[0x0f,0x31],_=>return Err(ENCODING)};
+    let opcode=match p.kind {1=>[0x0f,0x05],2=>[0x0f,0x31],3=>[0x0f,0xa2],_=>return Err(ENCODING)};
     if p.original[..2]!=opcode {return Err(ENCODING)}
     let end=p.pc.checked_add(5).ok_or(GEOMETRY)?;
     if p.next_pc!=p.pc.checked_add(2).ok_or(GEOMETRY)? {return Err(GEOMETRY)}

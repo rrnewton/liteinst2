@@ -1,0 +1,480 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vmovdqu64-family-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 0,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 1,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 2,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 3,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-4"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 4,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group4",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-5"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 5,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group5",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-6"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 6,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group6",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-7"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 7,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group7",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-8"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 8,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group8",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-9"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 9,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "group9",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-0"
+      ],
+      "case_index": 64,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "full-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 1,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "full-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-0"
+      ],
+      "case_index": 64,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "cross-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 2,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "cross-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-0"
+      ],
+      "case_index": 80,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "indexed-full-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 3,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "indexed-full-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "vmovdqu64-family-0"
+      ],
+      "case_index": 80,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "indexed-cross-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 4,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 73,
+        "version": 1
+      },
+      "name": "indexed-cross-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    }
+  ],
+  "literal_effects": "The selected ZMM0..31 receives exactly64 literal memory or seeded-register bytes. All512 destination bits are checked; no upper-zero operation. Every other initialized FP/XSAVE byte and complete GPR/flags/source/stack/data state remains unchanged.",
+  "native_pairs_per_group": [
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17,
+    17
+  ],
+  "negative_endpoint": "Four genuine original-PC failed64-byte reads: fully inaccessible and32-readable+32-inaccessible operands through ordinary base and indexed forms. Each retains failed operation/exit125, zero TRACE/completion and exact unchanged native/owner architectural state and memory.",
+  "new_load_pairs_total": 95,
+  "new_move_pairs_total": 160,
+  "new_refusal_count": 26,
+  "old_refusal_count": 47,
+  "promoted_refusal_count": 7,
+  "promotion_groups": {
+    "vm64": 7
+  },
+  "prospective_only": true,
+  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +10304 +2080; complete samples, refusal tail, CPUID/BV, fault, actual-before-EA and seven typed Code1605/NONE promotion records",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "refusals_per_process": 73,
+  "register_copy_pairs": 65,
+  "schema_version": 1,
+  "scope": "Canonical unmasked EVEX.512.W1.0F.F3 Code1605 VMOVDQU64 load/register-copy family.160 structural pairs in10 cohorts; all32 ZMM sources/destinations, all16 GPR bases/all15 usable indices and scales, original64-bit ModRM/SIB/RIP/disp8*64 addressing and all42 instruction-length/fetch-tail combinations. No added prefix, mask, store, other width or numerical-address exhaustiveness; no application completion/performance claim.",
+  "supplied_none_queries_per_process": 7,
+  "typed_promotions_per_process": 7
+}

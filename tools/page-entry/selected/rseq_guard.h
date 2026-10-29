@@ -83,8 +83,8 @@ int li2_rseq_check_run(const struct li2_run_plan *,const ucontext_t *);
     !defined(LI2_REGISTER_RUN) || !defined(LI2_CPUID_NX_ONLY)
 #error "Registered native epochs require the complete CPUID-NX native-page profile"
 #endif
-#ifdef LI2_ONESHOT_PUBLICATION
-#error "Registered native epochs are a separate native-page profile"
+#if defined(LI2_ONESHOT_PUBLICATION) && (!defined(LI2_ONESHOT_REUSABLE) ||     LI2_ONESHOT_REUSABLE != 1 || !defined(LI2_EFFECT_PROVIDER) || LI2_EFFECT_PROVIDER != 1)
+#error "Registered native epochs require the distinct reusable publication owner"
 #endif
 enum li2_rseq_native_phase { LI2_RN_IDLE,LI2_RN_PREPARED,LI2_RN_EXECUTING,
     LI2_RN_CLOSING,LI2_RN_FAILED };
@@ -116,5 +116,11 @@ int li2_rseq_native_closed(void);
 #ifdef LI2_RSEQ_NATIVE_BOUNDARY
 #include "rseq_native_boundary.h"
 #endif
+#endif
+#ifdef LI2_EFFECT_PROVIDER
+#include "rseq_selected.h"
+#endif
+#ifdef LI2_ONESHOT_REUSABLE
+#include "rseq_publication.h"
 #endif
 #endif

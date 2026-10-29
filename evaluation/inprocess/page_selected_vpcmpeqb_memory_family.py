@@ -11,6 +11,8 @@ from page_selected import ENV,fact,need,save,elf
 from page_selected_generic import digest
 from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
+from page_selected_vpcmpeqb_register_promotions import promotions as vpe_promotions
+from page_selected_vmovdqu64_promotions import promotions as vm64_promotions
 from page_selected_components import plain_executable
 from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
@@ -21,7 +23,7 @@ HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/vpcmpeqb_memory_family'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='b8aab3b8b870494d47a8b3e26eb584c586223f2a930957b4dd59fb65601076ef'
+OUTCOMES_SHA='1f2596cb5bec826c1a9befe3e45444372e12532c85ac78b05f0674e1f7dffc82'
 CASES_SHA='c52803ae9714a0c9c637fd59f8247ed57d9a15a89b3d619e60af46b06a178a5e'
 CASES_JSON_SHA='302cb353b2090168f83297040f273433a41ac666069222d95ccec8111f9bac3e'
 MASK=(1<<64)-1
@@ -159,6 +161,10 @@ def queries(data,header,rows,kind,group):
 
 
 def record(data,expected,sample_bytes,rows):
+    need(1216<len(data)<16<<20,'complete register-promotion trailer under old cap')
+    vpe_promoted=vpe_promotions(data[-1216:],'vpcmpeqb_memory_family');data=data[:-1216]
+    need(2080<len(data)<16<<20,'complete seven Code1605 promotions within old cap')
+    vm64_promoted=vm64_promotions(data[-2080:]);data=data[:-2080]
     need(1504+136<=len(data)<16<<20,'complete bounded record with mandatory promotions')
     promoted=promotions(data[-1504:]);data=data[:-1504]
     need(len(data)>=136,'complete retained header')
@@ -177,7 +183,7 @@ def record(data,expected,sample_bytes,rows):
     obs=observations(data[-14120:-9120],group,h,kind)
     failed=fault_observations(data[-9120:-9024],kind,h)
     footprint=queries(data[-9024:],h,rows,kind,group)
-    return dict(operation='completed'if positive else 'failed_memory_read',
+    return dict(vpe_promotions=vpe_promoted,vpe_typed_promotions=1,vpe_supplied_none_queries=1,vm64_promotions=vm64_promoted,operation='completed'if positive else 'failed_memory_read',
         pairs=19 if positive else 0,new_pairs=18 if positive else 0,startup_pairs=1,
         verified_memory_failures=int(not positive),refusals=h['refusals'],actual_before_queries=footprint['actual_before_queries'],
         ending_pairs=sum(r['tail']==6 for r in rows[18*group:18*group+18])if positive else 0,
@@ -219,11 +225,11 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile='page-selected-vpcmpeqb-memory-family-v1',status='failed',
-        scope='Canonical W0 unmasked EVEX512 VPCMPEQB K0..7,ZMM0..31,[RDI]/Code1720, preserving exact original register form.108 structural comparisons in six18-case cohorts, all source/destination roles, three literal equality patterns and six fetch geometries; two genuine full/cross-page failed reads. Full GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/source/stack/data comparisons,220 actual-before NONE queries;117 refusals and five mandatory typed/NONE promotions per process. Structural coverage is not exhaustive256 native execution. No application completion or performance claim.',
+        scope='Canonical W0 unmasked EVEX512 VPCMPEQB K0..7,ZMM0..31,[RDI]/Code1720, preserving exact original register form.108 structural comparisons in six18-case cohorts, all source/destination roles, three literal equality patterns and six fetch geometries; two genuine full/cross-page failed reads. Full GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/source/stack/data comparisons,220 actual-before NONE queries;109 refusals plus one separately recorded Code1720 register promotion plus seven mandatory Code1605/NONE promotions and five mandatory typed/NONE promotions per process. Structural coverage is not exhaustive256 native execution. No application completion or performance claim.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vpcmpeqb_memory_family.py','--expect-revision',args.expect_revision],
         commands=[],cases=[],error=None,final_errors=[],
-        totals=dict(pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
+        totals=dict(vpe_typed_promotions=0,vpe_supplied_none_queries=0,pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
                     refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0,typed_promotions=0,supplied_none_queries=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
@@ -285,7 +291,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'samples','negative_sample','result','refused_last','vpb_observations','v64_fault','vpc_queries','vpcm_promotions'}
+            need(not err,'actual symbol inspection stderr');roots={'vpe_promotions','samples','negative_sample','result','refused_last','vm64_promotions','vpb_observations','v64_fault','vpc_queries','vpcm_promotions'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -300,12 +306,12 @@ def main():
             need(all(a[1]<=b[0]for a,b in zip(intervals,intervals[1:])),'all record objects disjoint')
             state['symbols']=symbols;sample=symbols['negative_sample']['bytes']
             need(symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
-                symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5000 and symbols['v64_fault']['bytes']==96 and
+                symbols['vpe_promotions']['bytes']==1216 and symbols['vm64_promotions']['bytes']==2080 and symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5000 and symbols['v64_fault']['bytes']==96 and
                 symbols['vpc_queries']['bytes']==9024 and symbols['vpcm_promotions']['bytes']==1504 and
-                136+22*sample+40+5000+96+9024+1504<16<<20,
+                1216+2080+136+22*sample+40+5000+96+9024+1504<16<<20,
                 'actual ELF-sized complete sample array/trailers below unchanged cap');samples[name]=sample
             r['fixture_build'][name]=dict(artifact=state['artifact'],elf=state['elf'],symbols_sha256=digest(symbols),
-                record_bytes=136+22*sample+40+5000+96+9024+1504,headers_sha256=digest(state['headers']))
+                record_bytes=1216+2080+136+22*sample+40+5000+96+9024+1504,headers_sha256=digest(state['headers']))
         for expected in commands:
             item=dict(name=expected['name'],status='failed',environment_delta=expected['environment_delta'],actual_exit=None);r['cases'].append(item)
             row,out,err=run(expected['name'],[output/expected['argv'][0]],expected['exit'],env=dict(ENV,**expected['environment_delta']))
@@ -317,8 +323,8 @@ def main():
                  'no failed operation relabelled completed')
             for key in r['totals']:r['totals'][key]+=value[key]
             item.update(status='accepted_observation',outcome=value)
-        need(r['totals']==dict(pairs=114,new_pairs=108,startup_pairs=8,verified_memory_failures=2,
-            refusals=936,actual_before_queries=220,ending_pairs=21,crossing_pairs=87,typed_promotions=40,supplied_none_queries=40) and
+        need(r['totals']==dict(vpe_typed_promotions=8,vpe_supplied_none_queries=8,pairs=114,new_pairs=108,startup_pairs=8,verified_memory_failures=2,
+            refusals=872,actual_before_queries=220,ending_pairs=21,crossing_pairs=87,typed_promotions=40,supplied_none_queries=40) and
             len(r['cases'])==8 and all(c['status']=='accepted_observation'for c in r['cases']),
             'six complete19-pair cohorts and two genuine failed-read controls')
         r['status']='passed'
