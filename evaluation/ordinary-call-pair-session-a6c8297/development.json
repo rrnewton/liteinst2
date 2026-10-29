@@ -1,0 +1,183 @@
+{
+  "commands": {
+    "call-pair-deadline-projection-a6c8297-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session-a6c8297/analyze_deadlines.py",
+      "--capture",
+      "$REPO/ignored/a5/call-pair-session-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/owner",
+      "--raw",
+      "$REPO/ignored/a5/call-pair-session-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/call-pair-session-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3"
+    ],
+    "call-pair-native-public-freeze-a6c8297-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-native/freeze.py",
+      "--revision",
+      "a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--user-home",
+      "$USER_HOME",
+      "--allocator-root",
+      "$AGENT_UTILS",
+      "--xdg-runtime-dir",
+      "$RUNTIME_DIR",
+      "--dbus-session-bus-address",
+      "unix:path=$RUNTIME_DIR/bus"
+    ],
+    "call-pair-native-root-audit-a6c8297-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "ignored/a5/call-pair-a6c-root-audit-v1/audit.py"
+    ],
+    "call-pair-session-public-freeze-a6c8297-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session/freeze.py",
+      "--revision",
+      "a6c8297fa4466ac1ac4016fc07f2349ae00c1db3",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--user-home",
+      "$USER_HOME",
+      "--allocator-root",
+      "$AGENT_UTILS",
+      "--hardware-label",
+      "AMD EPYC Zen 5 dev host",
+      "--native-protocol",
+      "$REPO/ignored/a5/call-pair-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/protocol.json",
+      "--native-protocol-sha256",
+      "e68a6e120639105df6ce46da923cb5b5ae04c013a193469951f9d51d08de6abf",
+      "--native-receipt",
+      "$REPO/ignored/a5/call-pair-public-a6c8297fa4466ac1ac4016fc07f2349ae00c1db3/native-receipt.json",
+      "--native-receipt-sha256",
+      "4438dcd8121048b7f9138ca84cc6b4f7c6049e77fb6e904d0ff6a0150a73f7ca",
+      "--xdg-runtime-dir",
+      "$RUNTIME_DIR",
+      "--dbus-session-bus-address",
+      "unix:path=$RUNTIME_DIR/bus"
+    ],
+    "call-pair-session-root-audit-a6c8297-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "ignored/a5/call-pair-a6c-session-audit-v1/audit.py"
+    ],
+    "call-pair-session-root-audit-a6c8297-v2": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "ignored/a5/call-pair-a6c-session-audit-v1/audit.py"
+    ],
+    "call-pair-session-root-audit-a6c8297-v3": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "ignored/a5/call-pair-a6c-session-audit-v1/audit.py"
+    ],
+    "call-pair-source-domain-controls-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session/runner_controls.py"
+    ],
+    "call-pair-source-domain-owner-controls-v1": [
+      "$PYTHON",
+      "-I",
+      "-B",
+      "evaluation/ordinary-call-pair-session/owner_controls.py"
+    ],
+    "quiescent-registers-clippy-v1": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "quiescent-registers-fmt-v1": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "quiescent-registers-native-v1": [
+      "/usr/bin/env",
+      "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+      "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+      "/usr/local/bin/python3",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "4",
+      "--sample-s",
+      "1",
+      "--tag",
+      "li2core-quiescent-registers",
+      "--",
+      "cargo",
+      "test",
+      "-p",
+      "liteinst2",
+      "--test",
+      "quiescent_oracle"
+    ]
+  },
+  "control_limit": "The native and session audits used actual closed data. Two auditor implementation errors were corrected without rerunning any subject.",
+  "counts": {
+    "cleanup_complete": 12,
+    "failed": 2,
+    "invocations": 12,
+    "passed": 10,
+    "rescue_reaps": 0
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "schema": 1,
+  "scope": "Development controls, builds, source freeze and separately described root audit. No session/performance acceptance. Each base plus source-map hash records actual dirty-source provenance.",
+  "source_freeze": {
+    "marker_sha256": "b2f1ec49ecf3aeedf19f9ae0c551077420ee1d280192a631d0e040c348cd954e",
+    "protocol_sha256": "e68a6e120639105df6ce46da923cb5b5ae04c013a193469951f9d51d08de6abf",
+    "revision": "a6c8297fa4466ac1ac4016fc07f2349ae00c1db3"
+  },
+  "working_source_maps": {
+    "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a": {},
+    "91fa8de4320204590875b952cbea2f00c5bd30bcd651c3def02213a97ef3669d": {
+      "evaluation/ordinary-call-pair-session/README.md": "b936d7c9af46006d9d29df60cb29ede966596332d178c06fee98619e601fa834",
+      "evaluation/ordinary-call-pair-session/ROOT_PROTOCOL.md": "b112cd6359f41a8f0d00aa0a320f8d67c984df50f0e27658d07597c146180bac",
+      "evaluation/ordinary-call-pair-session/freeze.py": "c9305ce8361d1e2976f79326b618aa6d7ab4c2caca5f5fbca99f93d717286755",
+      "evaluation/ordinary-call-pair-session/launch.py": "18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12",
+      "evaluation/ordinary-call-pair-session/owner_controls.py": "3d028c7695825bf361900b027db23732a7bed507ba654aabb0d671a84af2f37c",
+      "evaluation/ordinary-call-pair-session/receipt_controls.py": "0b3d171e6599b37c687626e1a83f123c3efd7eed334f9eec4e9032a29fb48670",
+      "evaluation/ordinary-call-pair-session/reproduce.py": "7a9024c00c13f8de72f8180b85e9f41e27b9a01ace674fa08fcb3c990b4dcad2",
+      "evaluation/ordinary-call-pair-session/runner_controls.py": "e0abe982edb29b1b0df89bebe853f08a16297a5130737b0a06fb79579fbdf8cb"
+    },
+    "e9eb2616781bf95369baaa9b73cf8bce159bb5566bbba88b64851a5655ba50d8": {
+      "evaluation/ordinary-call-pair-session-a6c8297/analyze_deadlines.py": "83a925e63efa3e24600959e811f4e068ebe1daaaa624b84432f91aa539ed5b07",
+      "evaluation/ordinary-call-pair-session-a6c8297/checks.csv": "6d5df38a3f04cd682347bd821b5538193963aede6039a410d843b9c203168e5a",
+      "evaluation/ordinary-call-pair-session-a6c8297/deadline-failures.csv": "36cfde37c7f7b12814ac5adf753e5cc7df4e1e60c7de6145fd973ace4f0810f3",
+      "evaluation/ordinary-call-pair-session-a6c8297/development.csv": "027416b9d4794332cbc95d37ba16497d4b46d5c3348c43935bbb4db7cecda335",
+      "evaluation/ordinary-call-pair-session-a6c8297/development.json": "fb08d49447d84e276b9c7ac9893b2c1792ac4da532cb0d4ae04806a3b4839629",
+      "evaluation/ordinary-call-pair-session-a6c8297/installed.csv": "ba7cbdc54c0119ff2ad459e4c6edc56392821719db6e9251b7f75f8ce081a211",
+      "evaluation/ordinary-call-pair-session-a6c8297/pairs.csv": "10721b302bb071d991613e52ac921a470c9f67f49e87d04fcbb2d9ed0452ee71",
+      "evaluation/ordinary-call-pair-session-a6c8297/qualifications.csv": "eb5d76a57b2333ea106fdc8ea0580002b702808317a6d63d67709aa351ef7ae6",
+      "evaluation/ordinary-call-pair-session-a6c8297/receipt.json": "6a00fb7bdae735a04087199c39440761938529d3bee41a88e26c01c997c2d61a",
+      "evaluation/ordinary-call-pair-session-a6c8297/session-stages.csv": "6bdda4d244fec4a1d492562abf09495b9b07d5e546627b6806515f7993e6c5fc",
+      "evaluation/ordinary-call-pair-session-a6c8297/session.json": "52379ebe21feeb49e58364278b8d7df252a2508f89d94b9f1b95a0f45e1e42fe",
+      "evaluation/ordinary-call-pair-session-a6c8297/stages.csv": "4a63ab12ef5130fe01d88e288a194cbd184b7a7551192df442f260f84fbb1998"
+    },
+    "fe47d54d688bce6dbbc9f70915dfb1202a9255cdb61b217f1c35e1320c489aec": {
+      "tests/support/quiescent_oracle.rs": "a517579fb3176b1fc631004b54f39ba294212738aebce4ec727902dde1ea00cd"
+    }
+  }
+}
