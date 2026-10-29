@@ -41,11 +41,13 @@ impl Fixture {
         .unwrap();
         let binding = Arc::new(Binding {
             session,
-            site,
+            profile: BindingProfile::Single {
+                site,
+                function: FunctionId(11),
+            },
             key: Arc::new(()),
             pid: std::process::id(),
             install: 71,
-            function: FunctionId(11),
             limits,
             entry_mode: match mode {
                 HistoryMode::Legacy => EntryMode::NonBlocking,

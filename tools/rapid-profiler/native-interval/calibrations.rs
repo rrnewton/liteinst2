@@ -11,3 +11,7 @@ mod oracle;
 mod exact_body;
 #[path = "../exact-work/truth.rs"]
 mod exact_truth;
+
+// Distinct four-call module accounting; old normal-check census is unchanged.
+#[path = "normal/module/check.rs"]
+mod normal_module_check;

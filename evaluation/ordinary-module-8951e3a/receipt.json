@@ -1,0 +1,814 @@
+{
+  "schema": 1,
+  "revision": "8951e3aa3bc75dd8abd38916582c816dc4046acf",
+  "status": "MODULE_FUNCTIONAL_PASS",
+  "claim": 4,
+  "attempts_per_cohort": 1,
+  "retries": 0,
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "available_cpus": 316,
+    "processor": "185",
+    "vendor_id": "AuthenticAMD",
+    "cpu family": "26",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "microcode": "0xb101066"
+  },
+  "reservation": {
+    "cpu": 185,
+    "hard_allowed_cpus": [
+      185
+    ],
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_sources": {
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88",
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76"
+    }
+  },
+  "load_before": [
+    53.58,
+    50.24,
+    57.08
+  ],
+  "load_after": [
+    64.79,
+    55.77,
+    58.46
+  ],
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "kernel_version": "7.1.3",
+  "recipe": "cpuset-alloc run --cores 1 --sample-s 1 --tag module-functional -- python3 -B evaluation/ordinary-module/reproduce.py --revision 8951e3aa3bc75dd8abd38916582c816dc4046acf --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$OUTPUT\"",
+  "variables": "ROOT is checkout; OUTPUT is fresh under ROOT/ignored; TOOLCHAIN, CARGO_HOME and USER_HOME are local directories; PYTHON is the recorded interpreter.",
+  "protocol": {
+    "schema": 1,
+    "experiment": "ordinary-two-function-module-functional-v1",
+    "status": "FROZEN_BEFORE_MODULE_EXECUTION",
+    "source_revision": "Exact clean committed source assigned after review and prerequisite gates",
+    "qualification_attempts": 1,
+    "cohorts": [
+      16,
+      1
+    ],
+    "attempts_per_cohort": 1,
+    "retries": 0,
+    "warmups": 0,
+    "functions": [
+      "csv_fields",
+      "strnlen"
+    ],
+    "original_calls_per_cohort": 32,
+    "installed_calls_per_cohort": 32,
+    "order": "Alternate sixteen distinct CSV cases with eight strnlen cases repeated twice",
+    "retained_per_function": [
+      16,
+      1
+    ],
+    "epochs": 1,
+    "threads": 1,
+    "depth": 1,
+    "max_inflight": 1,
+    "records_per_epoch": 32,
+    "actions": 2,
+    "shared_source_pages": 1,
+    "source_policy": [
+      "CertifiedBlocks",
+      "WholeFunction"
+    ],
+    "mandatory_roles": "Entry and every original RET for both complete selected functions; every RET observed in each cohort",
+    "bounds": {
+      "cooperative_deadline_seconds": 15,
+      "child_cpu_seconds": 20,
+      "child_wall_seconds": 30,
+      "child_output_bytes": 1048576,
+      "helper_wall_seconds": 55,
+      "helper_log_bytes": 1048576,
+      "outer_wall_seconds": 1200,
+      "outer_output_bytes": 8388608
+    },
+    "release": {
+      "opt_level": 3,
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "jobs": 4,
+      "incremental": false
+    },
+    "required": "Seven exact-source gates; independent implementation and recipe review; all focused new and old controls; one release Rust artifact; complete DSO and ordinary caller ELF geometry; all32 rows and512 journal words per cohort, full Report/history and custody, normal process closure",
+    "retention": "Every outcome remains recorded. Failed attempted cohort remains FAILED; later cohorts UNRUN. No retry, bound change, case omission or favorable-only reporting. Source/compiler controls are separate from actual module qualification.",
+    "claims": [
+      "Functional two-function composition in one DSO/source page, one publication, attachment and epoch with function-aware complete normal accounting"
+    ],
+    "excluded": [
+      "Native architectural-state until separate four-call oracle passes",
+      "Performance or accuracy result",
+      "Arbitrary DSO or general nested/multithread module compatibility",
+      "Full A5 completion"
+    ],
+    "prior_campaigns": "Earlier fixed five strict2ms qualifications remain FAILED,PASS,PASS,FAILED,PASS; no sixth attempt."
+  },
+  "protocol_sha256": "eaaf7d2cae133411ddb43aeebcaaf530bd615ce9ebd85ccf1dd992e2ae54b6e4",
+  "script_sha256": "60a73415980261fa1f1176f58423da8c77bf6775c2033def4f7469c74677c84c",
+  "runtime_environment": {
+    "HOME": "$USER_HOME",
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_TARGET_DIR": "$ROOT/target",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TERM_COLOR": "never",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "0",
+    "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LITEINST_EVALUATION": "1"
+  },
+  "native_commands": [
+    [
+      "$ROOT/target/release/ordinary-interval",
+      "normal-module-work",
+      "$OUTPUT/module.so",
+      "$OUTPUT/trusted_module.so",
+      "4096",
+      "126",
+      "4224",
+      "41",
+      "16"
+    ],
+    [
+      "$ROOT/target/release/ordinary-interval",
+      "normal-module-work",
+      "$OUTPUT/module.so",
+      "$OUTPUT/trusted_module.so",
+      "4096",
+      "126",
+      "4224",
+      "41",
+      "1"
+    ]
+  ],
+  "commands": [
+    {
+      "name": "python-controls",
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "$ROOT/evaluation/ordinary-module/controls.py"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:42:39.209052+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.11106965108774602,
+        "private_log_sha256": "40ca486838d221c325895202ea121c5971fc2f6911a6dac3a4c81e3511c0952a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "release-copy-controls",
+      "argv": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "--release",
+        "normal::",
+        "--",
+        "--list"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:42:39.479237+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 46.4915491938591,
+        "private_log_sha256": "49ee390bf3b32cac1c4cb1a41968c00d0eb833693552ca019f24306119e29c84",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "release-module-controls",
+      "argv": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "--release",
+        "normal::module::tests::"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:43:26.137122+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.03523300914093852,
+        "private_log_sha256": "92173ee697d1109fa28ca6f0c9d89aab6b2567769267866074a4e79e803fc6ee",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "release-csv-controls",
+      "argv": [
+        "$TOOLCHAIN/bin/cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "--release",
+        "normal::csv::tests::"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:43:26.340115+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.03250555298291147,
+        "private_log_sha256": "adb0c6193640ad72b6a7cfd97645e296bf2a30ee3078c04ce228650877ecf566",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "release-build",
+      "argv": [
+        "$TOOLCHAIN/bin/cargo",
+        "build",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "--release",
+        "--message-format=json"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:43:26.529624+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 39.89905072492547,
+        "private_log_sha256": "cbe0848390a92821477833cb09dbccad03fa1de409fb47dacb24a72369a59d30",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "module-build",
+      "argv": [
+        "/usr/bin/gcc",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-if-conversion",
+        "-fno-if-conversion2",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,--build-id=none,-z,now,-z,noexecstack",
+        "-Wl,--version-script=tools/rapid-profiler/strnlen-work/localize.map",
+        "tools/rapid-profiler/normal-work/csv_fields.c",
+        "tools/rapid-profiler/strnlen-work/strnlen.c",
+        "-o",
+        "$OUTPUT/module.so"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:06.607005+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.04381563188508153,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "module-symbols",
+      "argv": [
+        "/usr/bin/readelf",
+        "--wide",
+        "--syms",
+        "$OUTPUT/trusted_module.so"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:06.824514+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.007113465806469321,
+        "private_log_sha256": "77436f7e711e24f517c5d04825cb472ed9083f101018797543f0638a9d8c11b0",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "module-csv_fields",
+      "argv": [
+        "/usr/bin/objdump",
+        "-d",
+        "-M",
+        "intel",
+        "--disassemble=csv_fields",
+        "$OUTPUT/trusted_module.so"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:07.009105+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.008871287107467651,
+        "private_log_sha256": "a154e41c56d17004ff71897c438edeae00de3acf81c0d4508cad2f23caa4d8f9",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "module-strnlen",
+      "argv": [
+        "/usr/bin/objdump",
+        "-d",
+        "-M",
+        "intel",
+        "--disassemble=strnlen",
+        "$OUTPUT/trusted_module.so"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:07.207412+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.005843688966706395,
+        "private_log_sha256": "7776b3facedeb1c45c59d2ee229edc2a8e0d60fef37f0bbc929f4f7ac587be6d",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "caller-disassembly",
+      "argv": [
+        "/usr/bin/objdump",
+        "-d",
+        "-M",
+        "intel",
+        "--disassemble=liteinst_csv_call_and_store",
+        "$ROOT/target/release/ordinary-interval"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:07.406674+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.01690937182866037,
+        "private_log_sha256": "3898746d7d95442aca6ad0d78328da396f1291a66f856c366f42bd21cb84bbe6",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "caller-symbols",
+      "argv": [
+        "/usr/bin/bash",
+        "-o",
+        "pipefail",
+        "-c",
+        "/usr/bin/readelf --wide --syms \"$1\" | /usr/bin/rg ' liteinst_csv_call_and_store$'",
+        "module-caller-symbols",
+        "$ROOT/target/release/ordinary-interval"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:07.597444+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.027603417867794633,
+        "private_log_sha256": "45c8719a88a43f55c7ff711c4821263205d4a46887cb91b5192e4ffcc08387b0",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "k16-native-owner",
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "$ROOT/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "$OUTPUT/k16/request.json",
+        "--receipt",
+        "$OUTPUT/k16/native.json"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:07.894363+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.3854653669986874,
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "name": "k1-native-owner",
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "$ROOT/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "$OUTPUT/k1/request.json",
+        "--receipt",
+        "$OUTPUT/k1/native.json"
+      ],
+      "closed": {
+        "start_utc": "2026-10-29T06:44:08.639169+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.3761812490411103,
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "fmt",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 7.355597977060825,
+        "start_utc": "2026-10-29T06:34:03.421371+00:00",
+        "termination": null
+      },
+      "terminal_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "clippy",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "4b00b6908908f4b30d873c632c546f03530f7d549d3ba84a88980f57796267d9",
+        "reaped_descendants": 0,
+        "seconds": 9.226313611026853,
+        "start_utc": "2026-10-29T06:34:10.798552+00:00",
+        "termination": null
+      },
+      "terminal_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "check",
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e6f39a7e4ab058e59ca6f40bd8c3e5233b27c086336cd5e9b9d5613a7c5a5b40",
+        "reaped_descendants": 0,
+        "seconds": 5.889176793163642,
+        "start_utc": "2026-10-29T06:34:20.041915+00:00",
+        "termination": null
+      },
+      "terminal_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "workspace-default",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "wall_limit_seconds": 360,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f9aba0c7fe05df0e23338f189fc6c8403339bb51c25001f6c10c17c4ec83eb03",
+        "reaped_descendants": 0,
+        "seconds": 347.09345036395825,
+        "start_utc": "2026-10-29T06:34:25.945932+00:00",
+        "termination": null
+      },
+      "terminal_counts": {
+        "passed": 3160,
+        "failed": 0,
+        "ignored": 36
+      }
+    },
+    {
+      "name": "serial-launch",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "256e9fedbf590da69ffe1408ff24105aefabc4ebb3064379ddcc858229b597d9",
+        "reaped_descendants": 0,
+        "seconds": 127.21504932991229,
+        "start_utc": "2026-10-29T06:40:13.056386+00:00",
+        "termination": null
+      },
+      "terminal_counts": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "staged-allocation",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f8a9305635186f5b815a269121f042a9db67dcd4051b7ac21257f1cd413eafc2",
+        "reaped_descendants": 0,
+        "seconds": 0.038778546964749694,
+        "start_utc": "2026-10-29T06:42:20.291648+00:00",
+        "termination": null
+      },
+      "terminal_counts": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    {
+      "name": "prefixed-pun",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "wall_limit_seconds": 180,
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "875f4b5c28b0c2dcd22966dfb2a0394210a282ed22d0075206f6357e2f78e4a8",
+        "reaped_descendants": 0,
+        "seconds": 1.3633166530635208,
+        "start_utc": "2026-10-29T06:42:20.348266+00:00",
+        "termination": null
+      },
+      "terminal_counts": {
+        "passed": 36,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  ],
+  "cohorts": [
+    {
+      "k": 16,
+      "status": "PASS",
+      "attempts": 1,
+      "terminal": {
+        "k": 16,
+        "originals": 32,
+        "installed": 32,
+        "functions": 2,
+        "shared_source_pages": 1,
+        "records": 32,
+        "actions": 2,
+        "journal_words": 512,
+        "completed": 32,
+        "unsampled": 0,
+        "next_entry": 31,
+        "checkpoints": 1,
+        "pid": 3960781,
+        "tid": 3960781,
+        "cpu": 185,
+        "generation": 1,
+        "entry0": 139684363935744,
+        "entry1": 139684363935872,
+        "length0": 126,
+        "length1": 41,
+        "caller_entry": 93833977419312,
+        "returns0": 2,
+        "returns1": 2,
+        "install": 1836016641,
+        "function0": 101,
+        "function1": 202,
+        "registration": 1
+      },
+      "native": {
+        "request_sha256": "e2189a2d37db7deb64e35fc734b12da471764c39882714f8303b9afb744ea9e3",
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "exit": 0,
+        "wall_timeout": false,
+        "unexpected_descendants": [],
+        "absence_proof": "ECHILD",
+        "stdout_sha256": "3da659e8ce4f8a1e17194096d34bdf216ea643ab92467527e25746e748c9d87e",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 0.33716945513151586,
+        "cleanup_events": [],
+        "cleanup_error": null,
+        "aborted": null,
+        "inputs_unchanged": true
+      },
+      "results_sha256": "5610d204cd047af3fc7e63496ba4ac5e544e5c4a0adba3bddbe74f3d3c57bee8"
+    },
+    {
+      "k": 1,
+      "status": "PASS",
+      "attempts": 1,
+      "terminal": {
+        "k": 1,
+        "originals": 32,
+        "installed": 32,
+        "functions": 2,
+        "shared_source_pages": 1,
+        "records": 32,
+        "actions": 2,
+        "journal_words": 512,
+        "completed": 2,
+        "unsampled": 30,
+        "next_entry": 31,
+        "checkpoints": 1,
+        "pid": 3962657,
+        "tid": 3962657,
+        "cpu": 185,
+        "generation": 1,
+        "entry0": 139964475641856,
+        "entry1": 139964475641984,
+        "length0": 126,
+        "length1": 41,
+        "caller_entry": 93888783533616,
+        "returns0": 2,
+        "returns1": 2,
+        "install": 1836016641,
+        "function0": 101,
+        "function1": 202,
+        "registration": 1
+      },
+      "native": {
+        "request_sha256": "fb24edf9241a3e9aff05e59dcb1e9905de53de2db4aa34168400bd47d27c69b4",
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "exit": 0,
+        "wall_timeout": false,
+        "unexpected_descendants": [],
+        "absence_proof": "ECHILD",
+        "stdout_sha256": "5fbe8434ee3ccda983978fc65af998904e85aeed49b9e1a6763cca99a0886fc0",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "elapsed_seconds": 0.3271971938665956,
+        "cleanup_events": [],
+        "cleanup_error": null,
+        "aborted": null,
+        "inputs_unchanged": true
+      },
+      "results_sha256": "027b48560048a4d13624ddddda2835983c14ef243f2258815a036e33c07699dc"
+    }
+  ],
+  "outer": {
+    "start_utc": "2026-10-29T06:42:37.281097+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 92.23814306501299,
+    "private_log_sha256": "30b2e07cfd586be85eb66ed5e414db71f82931b8ff2125f4248ad0cae791b2db",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "geometry": [
+    [
+      4096,
+      126
+    ],
+    [
+      4224,
+      41
+    ]
+  ],
+  "return_offsets": [
+    [
+      89,
+      125
+    ],
+    [
+      34,
+      40
+    ]
+  ],
+  "caller": {
+    "elf_va": 2291248,
+    "length": 20,
+    "continuation_offset": 15,
+    "call_bytes": "ffd0",
+    "store_bytes": "488903",
+    "bytes": "534889cb4889f84889f74889d6ffd04889035bc3"
+  },
+  "artifacts": {
+    "module_elf": "768f52491d0211ac9bc5f564f69dd27504a7ec6dfe949d4e2ceb7b3ee2df7c5e",
+    "function_bodies": [
+      "bfc0f6fdb98e58a436180fb373c489e2e9bc74edc9757889e37845a19b3731bf",
+      "0b254dc402a298e20daa7f5b09c4ec19b97f12cea2835595895e43523ac4839e"
+    ],
+    "binary": "2b96d77f2b654985565b5dccdc310f7dd80e80de0641844f396f4cfe25b33df9",
+    "raw_receipt": "3bcf5660b3f2afaa78b3ccf631e9d09e4c25d6195fa211223536f67b0a332757",
+    "audit": "968538bfee0943b32705c32e993119c2067d76e57035d94a639059d679d00dcb",
+    "gate_receipt": "3e1b369724fe26f028ffc233d05884da2f511501ab395421c63eb2d821b6275b"
+  },
+  "tools": {
+    "gcc": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+    "readelf": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff",
+    "objdump": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1",
+    "bash": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf",
+    "rg": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a",
+    "python3.12": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b",
+    "rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+    "cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+  },
+  "review": {
+    "loader": "0143b75e198ce87321459cac7becd15a9130e346219a96f20f1c5d83c8dc3828",
+    "runtime": "bfd9969420f5202899d22ecafbe78fe4a7fe15a0aa5b9672f5f79f0c32d69100",
+    "consumer": "781d70d1b6e641c044dba45d8e01168be3a8571ab14bb14d2376a386f1962b85",
+    "runner": "40392b725d67f062e161765a1c52670704ef58d854684ab841bf897410cdc273",
+    "integration": "0da726fc3b5fb79608b475b990e02443c211b26247fcbac343835451bf5e00ad"
+  },
+  "retained_files_verified": 84,
+  "scope": "Functional sequential two-function module only. Source enforces full512 journal/Report/history and source/image/input/stack custody. Summary tables do not replay it. Uncalibrated raw ticks and operational wall durations are not performance or accuracy results. Separate native-state oracle, nested/general modules and full A5 remain pending."
+}

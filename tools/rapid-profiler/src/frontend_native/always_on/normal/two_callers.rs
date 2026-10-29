@@ -5,7 +5,9 @@ fn profile_matches(site: &site::Site, limits: Limits) -> bool {
     site.is_normal_two_callers() && limits.threads == 2 && limits.depth == 1
 }
 pub(super) fn binding_matches(binding: &Binding) -> bool {
-    profile_matches(&binding.site, binding.limits)
+    binding
+        .single_site()
+        .is_ok_and(|site| profile_matches(site, binding.limits))
         && matches!(binding.entry_mode, EntryMode::Concurrent)
 }
 
@@ -170,11 +172,13 @@ mod tests {
                 limits,
             )
             .unwrap(),
-            site: site::synthetic_normal_site(two).site,
+            profile: BindingProfile::Single {
+                site: site::synthetic_normal_site(two).site,
+                function: FunctionId(11),
+            },
             key: Arc::new(()),
             pid: std::process::id(),
             install: 71,
-            function: FunctionId(11),
             limits,
             entry_mode: mode,
             native_entry_pause: std::sync::OnceLock::new(),

@@ -1224,8 +1224,8 @@ pub(crate) use history_stream::{HistoryChunk, HistoryMode, HistoryView, MAX_HIST
 
 mod interval_entry;
 pub(crate) use interval_entry::{
-    BindingChange, IntervalEntry, IntervalEntryError, IntervalEntrySummary, IntervalExitError,
-    UnsampledSummary,
+    BindingChange, IntervalEntry, IntervalEntryError, IntervalEntrySummary, IntervalExit,
+    IntervalExitError, UnsampledSummary,
 };
 
 #[cfg(test)]

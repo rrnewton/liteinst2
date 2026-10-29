@@ -245,7 +245,7 @@ impl IntervalThread {
                 }
                 let gate = state
                     .binding
-                    .site
+                    .single_site()?
                     .gate
                     .as_ref()
                     .ok_or(error(Cause::ClockProfile))?;
@@ -343,7 +343,7 @@ impl IntervalThread {
                     tid: self.tid,
                     registration: self.registration,
                     install: state.binding.install,
-                    function: state.binding.function,
+                    function: state.binding.single_function()?,
                     before,
                     after,
                     next: state.next,

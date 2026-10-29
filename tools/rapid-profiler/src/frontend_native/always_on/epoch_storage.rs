@@ -38,7 +38,7 @@ pub(super) fn prepare(
     config: Config,
 ) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
     let _scope = ControllerScope::enter()?;
-    if !normal_profile(&prepared.site, prepared.limits) {
+    if !normal_profile(prepared.profile.single()?.0, prepared.limits) {
         return Err(error(Cause::Identity));
     }
     // Reserve the facade result before the core can commit banked mode. The core
@@ -82,7 +82,10 @@ impl IntervalController {
         if !Arc::ptr_eq(&bank.key, &self.binding.key) {
             return Err((error(Cause::Epoch), bank));
         }
-        if !normal_profile(&self.binding.site, self.binding.limits)
+        if !self
+            .binding
+            .single_site()
+            .is_ok_and(|site| normal_profile(site, self.binding.limits))
             || !matches!(self.binding.entry_mode, EntryMode::Concurrent)
             || self.binding.session.history_mode() != HistoryMode::Absolute
         {

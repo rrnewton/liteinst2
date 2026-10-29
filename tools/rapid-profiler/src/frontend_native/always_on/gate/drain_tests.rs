@@ -45,7 +45,7 @@ pub(in crate::frontend_native::always_on) fn snapshot() -> [u64; 14] {
     ]
 }
 pub(in crate::frontend_native::always_on) fn begin(state: &mut State, start: RawTimestamp) {
-    let gate = state.binding.site.gate.as_ref().unwrap();
+    let gate = state.binding.single_site().unwrap().gate.as_ref().unwrap();
     let id = gate.identity().unwrap();
     let token = FRAME.with(|cell| {
         let mut frame = arm(
@@ -68,7 +68,7 @@ pub(in crate::frontend_native::always_on) fn begin(state: &mut State, start: Raw
         .unwrap();
 }
 pub(in crate::frontend_native::always_on) fn complete(state: &mut State, end: RawTimestamp) {
-    let gate = state.binding.site.gate.as_ref().unwrap();
+    let gate = state.binding.single_site().unwrap().gate.as_ref().unwrap();
     let id = gate.identity().unwrap();
     let pc = gate.declared_returns()[0];
     let proof = FRAME.with(|cell| {
@@ -88,7 +88,7 @@ pub(in crate::frontend_native::always_on) fn complete(state: &mut State, end: Ra
         .unwrap();
 }
 pub(in crate::frontend_native::always_on) fn resume(state: &State) {
-    let gate = state.binding.site.gate.as_ref().unwrap();
+    let gate = state.binding.single_site().unwrap().gate.as_ref().unwrap();
     FRAME.with(|cell| {
         let mut frame = unsafe { cell.get().read() };
         frame.resumed_rsp = frame.pre_call_rsp;

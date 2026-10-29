@@ -3,7 +3,12 @@
 //! caller checkpoint acknowledges return. Neither acknowledgement observes C3
 //! execution or grants executable reclamation. All code owners are process-lived.
 use super::*;
+mod module;
 mod two_callers;
+pub use module::{
+    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleRecord,
+    NormalModuleThread, PreparedNormalModuleController,
+};
 pub use two_callers::PreparedTwoCallerNormalController;
 
 const CALLS: usize = EVENTS / 2;
@@ -109,6 +114,82 @@ impl NormalBatch {
     }
     pub fn journal(&self) -> &[u64] {
         &self.journal
+    }
+}
+
+struct TransferHeader {
+    pid: u32,
+    tid: u64,
+    registration: u64,
+    install: u64,
+    before: Cursor,
+    after: Cursor,
+    next: u64,
+}
+trait TransferOutput {
+    type Batch;
+    type Identity;
+    const MODULE: bool;
+    fn allocate() -> Result<(Self, Vec<u64>), BridgeError>
+    where
+        Self: Sized;
+    fn capacity(&self) -> bool;
+    fn identity(&self, state: &NormalState) -> Result<Self::Identity, BridgeError>;
+    fn push(&mut self, record: NormalRecord, selected: SelectedFunction);
+    fn finish(
+        self,
+        identity: Self::Identity,
+        header: TransferHeader,
+        journal: Vec<u64>,
+    ) -> Self::Batch;
+}
+struct SingleOutput {
+    records: Vec<NormalRecord>,
+}
+struct SingleIdentity {
+    function: FunctionId,
+    stream: Option<HistoryStream>,
+    history_end: Option<u64>,
+}
+impl TransferOutput for SingleOutput {
+    type Batch = NormalBatch;
+    type Identity = SingleIdentity;
+    const MODULE: bool = false;
+    fn allocate() -> Result<(Self, Vec<u64>), BridgeError> {
+        let (records, journal) = outputs()?;
+        Ok((Self { records }, journal))
+    }
+    fn capacity(&self) -> bool {
+        self.records.is_empty() && self.records.capacity() >= CALLS
+    }
+    fn identity(&self, state: &NormalState) -> Result<Self::Identity, BridgeError> {
+        let function = state.binding.single_function()?;
+        let stream = history::stream_for(&state.binding);
+        let history_end = stream.as_ref().map(|_| state.history_bound());
+        Ok(SingleIdentity {
+            function,
+            stream,
+            history_end,
+        })
+    }
+    fn push(&mut self, record: NormalRecord, _selected: SelectedFunction) {
+        self.records.push(record);
+    }
+    fn finish(self, id: Self::Identity, h: TransferHeader, journal: Vec<u64>) -> Self::Batch {
+        NormalBatch {
+            stream: id.stream,
+            history_end: id.history_end,
+            function: id.function,
+            pid: h.pid,
+            tid: h.tid,
+            registration: h.registration,
+            install: h.install,
+            before: h.before,
+            after: h.after,
+            next: h.next,
+            records: self.records,
+            journal,
+        }
     }
 }
 
@@ -254,7 +335,13 @@ pub struct NormalThread {
     _local: PhantomData<Rc<()>>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct SelectedFunction {
+    index: usize,
+    function: FunctionId,
+}
 struct Pending {
+    selected: SelectedFunction,
     ordinal: u64,
     rsp: u64,
     word: u64,
@@ -274,6 +361,7 @@ struct NormalState {
     model: ThreadModel,
     pending: Option<Pending>,
     records: [Option<NormalRecord>; CALLS],
+    functions: [Option<SelectedFunction>; CALLS],
     len: usize,
     next: u64,
     totals: NormalTotals,
@@ -318,7 +406,7 @@ impl NormalClient {
     ) -> Result<NormalThread, BridgeError> {
         let _scope = ControllerScope::enter()?;
         self.binding.process()?;
-        if !self.binding.site.is_normal()
+        if !self.binding.single_site()?.is_normal()
             || self.binding.limits.threads != 1
             || self.binding.limits.depth != 1
             || registration == 0
@@ -339,50 +427,59 @@ impl NormalClient {
         stack: ReadableStack,
         journal: IntervalJournal,
     ) -> Result<NormalThread, BridgeError> {
-        NORMAL
-            .try_with(|cell| {
-                if NORMAL_POISON.get() {
-                    return Err(error(Cause::Attachment));
-                }
-                let mut storage = cell
-                    .try_borrow_mut()
-                    .map_err(|_| error(Cause::Attachment))?;
-                if storage.0.is_some() {
-                    return Err(error(Cause::Attachment));
-                }
-                // No registration is consumed before all local attachment checks.
-                let model = self
-                    .binding
-                    .session
-                    .register_thread(registration)
-                    .map_err(|e| error(Cause::Setup(e)))?;
-                let thread = thread::current().id();
-                let tid = tid();
-                let mut state = Box::new(NormalState::new(
-                    Arc::clone(&self.binding),
-                    registration,
-                    stack,
-                    journal,
-                    model,
-                ));
-                state.journal.header(tid, 0);
-                storage.0 = Some(state);
-                Ok(NormalThread {
-                    key: Arc::clone(&self.binding.key),
-                    pid: self.binding.pid,
-                    thread,
-                    tid,
-                    registration,
-                    active: true,
-                    _local: PhantomData,
-                })
-            })
-            .unwrap_or(Err(error(Cause::Attachment)))
+        attach_ready(&self.binding, registration, stack, journal)
     }
+}
+fn attach_ready(
+    binding: &Arc<Binding>,
+    registration: u64,
+    stack: ReadableStack,
+    journal: IntervalJournal,
+) -> Result<NormalThread, BridgeError> {
+    NORMAL
+        .try_with(|cell| {
+            if NORMAL_POISON.get() {
+                return Err(error(Cause::Attachment));
+            }
+            let mut storage = cell
+                .try_borrow_mut()
+                .map_err(|_| error(Cause::Attachment))?;
+            if storage.0.is_some() {
+                return Err(error(Cause::Attachment));
+            }
+            // No registration is consumed before all local attachment checks.
+            let model = binding
+                .session
+                .register_thread(registration)
+                .map_err(|e| error(Cause::Setup(e)))?;
+            let thread = thread::current().id();
+            let tid = tid();
+            let mut state = Box::new(NormalState::new(
+                Arc::clone(binding),
+                registration,
+                stack,
+                journal,
+                model,
+            ));
+            state.journal.header(tid, 0);
+            storage.0 = Some(state);
+            Ok(NormalThread {
+                key: Arc::clone(&binding.key),
+                pid: binding.pid,
+                thread,
+                tid,
+                registration,
+                active: true,
+                _local: PhantomData,
+            })
+        })
+        .unwrap_or(Err(error(Cause::Attachment)))
 }
 
 fn normal_binding_matches(binding: &Binding) -> bool {
-    (binding.site.is_normal() && binding.limits.threads == 1 && binding.limits.depth == 1)
+    (binding.single_site().is_ok_and(|site| site.is_normal())
+        && binding.limits.threads == 1
+        && binding.limits.depth == 1)
         || two_callers::binding_matches(binding)
 }
 
@@ -464,7 +561,58 @@ fn record_words(
     Ok((entry, exit))
 }
 
+fn finished_function_matches(result: IntervalExit, function: FunctionId) -> bool {
+    match result {
+        IntervalExit::Completed {
+            completion,
+            payload,
+            ..
+        } => {
+            completion.admission.function == function
+                && payload.admission.function == function
+                && completion.admission == payload.admission
+        }
+        IntervalExit::Unsampled {
+            reason:
+                UnsampledSummary::FunctionClosed {
+                    function: actual, ..
+                },
+            ..
+        } => actual == function,
+        IntervalExit::Unsampled { .. } => true,
+    }
+}
+
 impl NormalState {
+    fn selection(&self, index: usize) -> Result<SelectedFunction, BridgeError> {
+        let function = match &self.binding.profile {
+            BindingProfile::Single { function, .. } if index == 0 => *function,
+            BindingProfile::Module { functions, .. } => {
+                *functions.get(index).ok_or(error(Cause::Identity))?
+            }
+            _ => return Err(error(Cause::Identity)),
+        };
+        Ok(SelectedFunction { index, function })
+    }
+    fn selected_geometry(
+        &self,
+        selected: SelectedFunction,
+        entry_pc: u64,
+        return_pc: Option<u64>,
+    ) -> Result<(), BridgeError> {
+        if self.selection(selected.index)? != selected {
+            return Err(error(Cause::Identity));
+        }
+        if let BindingProfile::Module { site, .. } = &self.binding.profile {
+            let function = &site.functions()[selected.index];
+            if entry_pc != function.entry()
+                || return_pc.is_some_and(|pc| !function.returns().contains(&pc))
+            {
+                return Err(error(Cause::Identity));
+            }
+        }
+        Ok(())
+    }
     fn history_bound(&self) -> u64 {
         match self.binding.session.history_mode() {
             HistoryMode::Legacy => self.binding.limits.actions as u64,
@@ -502,6 +650,7 @@ impl NormalState {
             model,
             pending: None,
             records: [None; CALLS],
+            functions: [None; CALLS],
             len: 0,
             next: 1,
             totals: NormalTotals::default(),
@@ -551,6 +700,8 @@ impl NormalState {
             || self.journal.used() != self.len * 2 + outstanding as usize + returned as usize
             || self.records[..self.len].iter().any(Option::is_none)
             || self.records[self.len..].iter().any(Option::is_some)
+            || self.functions[..self.len].iter().any(Option::is_none)
+            || self.functions[self.len..].iter().any(Option::is_some)
         {
             return Err(error(Cause::Invariant));
         }
@@ -561,9 +712,9 @@ impl NormalState {
         context: &HookContext,
         control: ControlIdentity<'_>,
         entry: bool,
-    ) -> Result<u64, BridgeError> {
+    ) -> Result<(u64, SelectedFunction), BridgeError> {
         self.binding.process()?;
-        if !normal_binding_matches(&self.binding)
+        if !(normal_binding_matches(&self.binding) || module::binding_matches(&self.binding))
             || self.actual_thread != thread::current().id()
             || self.tid != tid()
             || context.stack_pointer < self.stack.start
@@ -572,20 +723,29 @@ impl NormalState {
                 .stack_pointer
                 .checked_add(8)
                 .is_none_or(|end| end > self.stack.end)
-            || !self
-                .binding
-                .site
-                .matches(context.instruction_pointer, control, entry)
         {
             return Err(error(Cause::Identity));
         }
+        let index = match &self.binding.profile {
+            BindingProfile::Single { site, .. } => {
+                if !site.matches(context.instruction_pointer, control, entry) {
+                    return Err(error(Cause::Identity));
+                }
+                0
+            }
+            BindingProfile::Module { site, .. } => site
+                .resolve(context.instruction_pointer, control, entry)
+                .ok_or(error(Cause::Identity))?,
+        };
+        let selected = self.selection(index)?;
         // SAFETY: unsafe attachment certifies the current exact eight-byte slot.
         let word = unsafe { (context.stack_pointer as usize as *const u64).read_unaligned() };
         if !stack_word_ok(&self.stack, context.stack_pointer, word) {
             return Err(error(Cause::Return));
         }
-        Ok(word)
+        Ok((word, selected))
     }
+    #[cfg(test)]
     fn enter(
         &mut self,
         pc: u64,
@@ -593,6 +753,17 @@ impl NormalState {
         word: u64,
         start: RawTimestamp,
     ) -> Result<(), BridgeError> {
+        self.enter_function(self.selection(0)?, pc, rsp, word, start)
+    }
+    fn enter_function(
+        &mut self,
+        selected: SelectedFunction,
+        pc: u64,
+        rsp: u64,
+        word: u64,
+        start: RawTimestamp,
+    ) -> Result<(), BridgeError> {
+        self.selected_geometry(selected, pc, None)?;
         self.shape()?;
         if self.pending.is_some() {
             // identity() already authenticated a new real entry. Never reread the
@@ -617,13 +788,14 @@ impl NormalState {
         let receipt = enter(
             &mut self.model,
             self.binding.install,
-            self.binding.function,
+            selected.function,
             start.ticks,
             &mut slot,
         )
         .map_err(|e| error(Cause::Entry(e)))?;
         // Custody precedes every fallible postcondition, including history packing.
         self.pending = Some(Pending {
+            selected,
             ordinal: self.next,
             rsp,
             word,
@@ -637,7 +809,8 @@ impl NormalState {
         let p = self.pending.as_mut().ok_or(error(Cause::Invariant))?;
         let summary = p.receipt.summary().ok_or(error(Cause::Invariant))?;
         p.summary = Some(summary);
-        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;
+        let (kind, generation, bits) =
+            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
         self.journal
             .row([kind, p.ordinal, pc, rsp, word, generation, bits]);
         self.journal.header(self.tid, 1);
@@ -645,6 +818,7 @@ impl NormalState {
         self.totals.entered = entered;
         Ok(())
     }
+    #[cfg(test)]
     fn observe(
         &mut self,
         pc: u64,
@@ -652,13 +826,31 @@ impl NormalState {
         word: u64,
         end: RawTimestamp,
     ) -> Result<(), BridgeError> {
+        self.observe_function(self.selection(0)?, pc, rsp, word, end)
+    }
+    fn observe_function(
+        &mut self,
+        selected: SelectedFunction,
+        pc: u64,
+        rsp: u64,
+        word: u64,
+        end: RawTimestamp,
+    ) -> Result<(), BridgeError> {
         self.shape()?;
+        let pending = self.pending.as_ref().ok_or(error(Cause::Return))?;
+        self.selected_geometry(selected, pending.entry_pc, Some(pc))?;
         let p = self.pending.as_mut().ok_or(error(Cause::Return))?;
-        if p.returned.is_some() || p.rsp != rsp || p.word != word || p.slot.identity != p.ordinal {
+        if p.selected != selected
+            || p.returned.is_some()
+            || p.rsp != rsp
+            || p.word != word
+            || p.slot.identity != p.ordinal
+        {
             return Err(error(Cause::Return));
         }
         let summary = p.summary.ok_or(error(Cause::Invariant))?;
-        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;
+        let (kind, generation, bits) =
+            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
         let observed = self
             .totals
             .ret_observed
@@ -689,10 +881,13 @@ impl NormalState {
         let p = self.pending.as_ref().ok_or(error(Cause::Return))?;
         let summary = p.summary.ok_or(error(Cause::Invariant))?;
         let raw = p.returned.ok_or(error(Cause::Return))?;
-        let (_, _, bits) = history::packed_for(&self.binding, summary)?;
+        self.selected_geometry(p.selected, p.entry_pc, Some(raw.return_pc))?;
+        let (_, _, bits) =
+            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
         let history_prefix = self.history_prefix(bits)?;
         if self.len >= CALLS
             || self.records[self.len].is_some()
+            || self.functions[self.len].is_some()
             || p.slot.identity != p.ordinal
             || p.ordinal.checked_add(1) != Some(self.next)
             || self
@@ -750,7 +945,8 @@ impl NormalState {
             .finish_interval(&mut p.receipt, &mut p.slot, record.raw.observation())
             .map_err(|e| error(Cause::Exit(e)))?;
         // A consumed receipt is never retried after a postcondition failure.
-        if Some(result.summary()) != p.summary
+        if !finished_function_matches(result, p.selected.function)
+            || Some(result.summary()) != p.summary
             || p.slot
                 != (ModelReturnSlot {
                     identity: p.ordinal,
@@ -761,6 +957,7 @@ impl NormalState {
             return Err(error(Cause::Invariant));
         }
         self.records[self.len] = Some(record);
+        self.functions[self.len] = Some(p.selected);
         self.len += 1;
         self.totals = totals;
         self.pending = None;
@@ -801,6 +998,11 @@ impl NormalState {
         );
         for (i, record) in self.records[..self.len].iter().enumerate() {
             let record = record.ok_or(error(Cause::Invariant))?;
+            self.selected_geometry(
+                self.functions[i].ok_or(error(Cause::Invariant))?,
+                record.raw.entry_pc,
+                Some(record.raw.return_pc),
+            )?;
             let expected = self
                 .cursor
                 .totals
@@ -839,30 +1041,40 @@ impl NormalState {
         };
         Ok((totals, count, number))
     }
+    #[cfg(test)]
     fn transfer(
         &mut self,
-        mut records: Vec<NormalRecord>,
-        mut journal: Vec<u64>,
+        records: Vec<NormalRecord>,
+        journal: Vec<u64>,
     ) -> Result<Option<NormalBatch>, BridgeError> {
-        if !records.is_empty()
-            || !journal.is_empty()
-            || records.capacity() < CALLS
-            || journal.capacity() < 512
-        {
+        self.transfer_into(SingleOutput { records }, journal)
+    }
+    fn transfer_into<O: TransferOutput>(
+        &mut self,
+        mut output: O,
+        mut journal: Vec<u64>,
+    ) -> Result<Option<O::Batch>, BridgeError> {
+        if !output.capacity() || !journal.is_empty() || journal.capacity() < 512 {
             return Err(error(Cause::Capacity));
         }
         let (totals, count, number) = self.transfer_check()?;
-        let stream = history::stream_for(&self.binding);
-        let history_end = stream.as_ref().map(|_| self.history_bound());
+        let identity = output.identity(self)?;
         if count == 0 {
             return Ok(None);
         }
         if self.pending.is_some() {
             self.confirm(NormalAcknowledgement::CallerCheckpoint)?;
         }
-        // All validation/allocation preceded consumption. The remaining copies,
-        // fixed-buffer reset and cursor update are infallible and do not drop owners.
-        records.extend(self.records[..self.len].iter().flatten().copied());
+        // All profile/geometry/tag checks and allocation precede consumption.
+        // Both occupied prefixes were checked, including the pending final row.
+        // These fixed-buffer copies and typed construction cannot look up/fail.
+        for (record, selected) in self.records[..self.len]
+            .iter()
+            .flatten()
+            .zip(self.functions[..self.len].iter().flatten())
+        {
+            output.push(*record, *selected);
+        }
         // SAFETY: this exclusive TLS transaction owns the entire live page.
         journal.extend(
             self.journal
@@ -877,33 +1089,39 @@ impl NormalState {
             totals,
             sequence: totals.completed,
         };
-        let batch = NormalBatch {
-            stream,
-            history_end,
+        let header = TransferHeader {
             pid: self.binding.pid,
             tid: self.tid,
             registration: self.registration,
             install: self.binding.install,
-            function: self.binding.function,
             before,
             after,
             next: self.next,
-            records,
-            journal,
         };
         self.records = [None; CALLS];
+        self.functions = [None; CALLS];
         self.len = 0;
         for i in 0..512 {
             self.journal.word(i, 0);
         }
         self.journal.header(self.tid, 0);
         self.cursor = after;
-        Ok(Some(batch))
+        Ok(Some(output.finish(identity, header, journal)))
     }
 }
 
 impl NormalThread {
     fn matches(&self, s: &NormalState) -> bool {
+        self.matches_identity(s) && normal_binding_matches(&s.binding)
+    }
+    fn matches_for(&self, s: &NormalState, module: bool) -> bool {
+        if module {
+            self.matches_identity(s) && module::binding_matches(&s.binding)
+        } else {
+            self.matches(s)
+        }
+    }
+    fn matches_identity(&self, s: &NormalState) -> bool {
         self.active
             && self.pid == std::process::id()
             && self.thread == thread::current().id()
@@ -912,15 +1130,17 @@ impl NormalThread {
             && s.tid == self.tid
             && s.actual_thread == self.thread
             && Arc::ptr_eq(&self.key, &s.binding.key)
-            && normal_binding_matches(&s.binding)
     }
     /// Snapshot only; a pending pre-RET remains pending and holds its owner.
     pub fn totals(&self) -> Result<NormalTotals, BridgeError> {
+        self.totals_for(false)
+    }
+    fn totals_for(&self, module: bool) -> Result<NormalTotals, BridgeError> {
         NORMAL
             .try_with(|cell| {
                 let storage = cell.try_borrow().map_err(|_| error(Cause::Attachment))?;
                 let state = storage.0.as_ref().ok_or(error(Cause::Attachment))?;
-                if !self.matches(state) {
+                if !self.matches_for(state, module) {
                     return Err(error(Cause::Attachment));
                 }
                 state.health()?;
@@ -944,22 +1164,25 @@ impl NormalThread {
     /// No file, mapping or input scan is performed here. The caller must not
     /// infer return from a ready Report or pre-RET counter.
     pub unsafe fn checkpoint_after_returns(&mut self) -> Result<Option<NormalBatch>, BridgeError> {
+        self.checkpoint_with::<SingleOutput>()
+    }
+    fn checkpoint_with<O: TransferOutput>(&mut self) -> Result<Option<O::Batch>, BridgeError> {
         let _scope = ControllerScope::enter()?;
         // Preserve a prior sticky failure before any new allocation refusal.
-        self.totals()?;
-        let (records, journal) = outputs()?;
+        self.totals_for(O::MODULE)?;
+        let (output, journal) = O::allocate()?;
         NORMAL
             .try_with(|cell| {
                 let mut storage = cell
                     .try_borrow_mut()
                     .map_err(|_| error(Cause::Attachment))?;
                 let state = storage.0.as_mut().ok_or(error(Cause::Attachment))?;
-                if !self.matches(state) {
+                if !self.matches_for(state, O::MODULE) {
                     return Err(error(Cause::Attachment));
                 }
                 state.health()?;
                 state.busy = true;
-                match state.transfer(records, journal) {
+                match state.transfer_into(output, journal) {
                     Ok(batch) => {
                         state.busy = false;
                         Ok(batch)
@@ -972,6 +1195,9 @@ impl NormalThread {
     /// No pending receipt or unexported row/event may be discarded. Failure keeps
     /// the handle and TLS intact. Detach does not assert native/code quiescence.
     pub fn detach(&mut self) -> Result<NormalTotals, BridgeError> {
+        self.detach_for(false)
+    }
+    fn detach_for(&mut self, module: bool) -> Result<NormalTotals, BridgeError> {
         let _scope = ControllerScope::enter()?;
         NORMAL
             .try_with(|cell| {
@@ -979,7 +1205,7 @@ impl NormalThread {
                     .try_borrow_mut()
                     .map_err(|_| error(Cause::Attachment))?;
                 let state = storage.0.as_ref().ok_or(error(Cause::Attachment))?;
-                if !self.matches(state) {
+                if !self.matches_for(state, module) {
                     return Err(error(Cause::Attachment));
                 }
                 state.health()?;
@@ -1013,6 +1239,9 @@ impl Drop for NormalThread {
 #[cfg(test)]
 thread_local! { static FAIL_RESERVE: Cell<Option<usize>> = const { Cell::new(None) }; }
 fn outputs() -> Result<(Vec<NormalRecord>, Vec<u64>), BridgeError> {
+    output_buffers()
+}
+fn output_buffers<R>() -> Result<(Vec<R>, Vec<u64>), BridgeError> {
     fn reserve<T>(v: &mut Vec<T>, n: usize, _slot: usize) -> Result<(), BridgeError> {
         #[cfg(test)]
         if FAIL_RESERVE.get() == Some(_slot) {
@@ -1048,16 +1277,18 @@ fn callback(
             state.health()?;
             state.busy = true;
             let result = (|| {
-                let word = state.identity(context, control, entry)?;
+                let (word, selected) = state.identity(context, control, entry)?;
                 if entry {
-                    state.enter(
+                    state.enter_function(
+                        selected,
                         context.instruction_pointer,
                         context.stack_pointer,
                         word,
                         stamp,
                     )
                 } else {
-                    state.observe(
+                    state.observe_function(
+                        selected,
                         context.instruction_pointer,
                         context.stack_pointer,
                         word,
