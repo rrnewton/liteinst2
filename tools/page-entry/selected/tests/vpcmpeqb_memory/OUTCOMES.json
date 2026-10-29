@@ -26,13 +26,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 100,
+        "refusals": 99,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPEQB_MEMORY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=73 memory_refusals=27 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "stdout": "LI2_VPCMPEQB_MEMORY_TF_PASS pairs=19 comparisons=18 selftest=1 old_refusal_bytes=72 memory_refusals=27 typed_promotions=5 supplied_none_queries=5 footprint_queries=36 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vpe_typed_promotions=1 vpe_supplied_none_queries=1 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
       "vpe_supplied_none_queries": 1,
       "vpe_typed_promotions": 1
     },
@@ -57,13 +59,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 100,
+        "refusals": 99,
         "version": 1
       },
       "name": "full-read-fault",
       "process_outcome": "expected genuine failed m512 read; operation not completed",
       "stderr": "",
       "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
       "vpe_supplied_none_queries": 1,
       "vpe_typed_promotions": 1
     },
@@ -88,13 +92,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 100,
+        "refusals": 99,
         "version": 1
       },
       "name": "cross-read-fault",
       "process_outcome": "expected genuine failed m512 read; operation not completed",
       "stderr": "",
       "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
       "vpe_supplied_none_queries": 1,
       "vpe_typed_promotions": 1
     }
@@ -106,15 +112,16 @@
   "negative_endpoint": "Two real m512 read faults at original PC: fully inaccessible operand and last32 bytes beyond readable page. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.",
   "new_load_pairs_total": 18,
   "new_refusal_count": 27,
-  "old_refusal_count": 73,
-  "promoted_refusal_count": 13,
+  "old_refusal_count": 72,
+  "promoted_refusal_count": 14,
   "promotion_groups": {
+    "vm256": 1,
     "vm64": 7,
     "vpcm": 5,
     "vpe_register": 1
   },
   "prospective_only": true,
-  "record_extent": "(136 +22*sample_bytes +40 +5000 +96 +9024 +1504 +2080; all existing full storage/trailers plus the mandatory2080-byte seven-row Code1605/NONE promotion trailer) +1216 exact register-promotion bytes",
+  "record_extent": "(136 +22*sample_bytes +40 +5000 +96 +9024 +1504 +2080; all existing full storage/trailers plus the mandatory2080-byte seven-row Code1605/NONE promotion trailer) +1216 exact register-promotion bytes +352 exact Code1604 typed/NONE promotion bytes",
   "record_header_fields": [
     "magic",
     "version",
@@ -136,11 +143,19 @@
   ],
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
-  "refusals_per_process": 100,
+  "refusals_per_process": 99,
   "schema_version": 1,
-  "scope": "Original exact K0/ZMM17/[RDI] native cohort, plus five retained old neighbor rows promoted to mandatory Code1720/NONE controls. Their separate native coverage is required in the family evaluator. Seven exact retained VMOVDQU64 neighbor rows additionally require Code1605/FALLTHROUGH/SIMD and supplied NONE; their actual native family cases are independently mandatory in vmovdqu64_family. All remaining negative rows retain rejection. Exact Code1720 register neighbors additionally require typed/NONE records; new register-family native coverage is mandatory. No failed-operation or process outcome changes.",
+  "scope": "Original exact K0/ZMM17/[RDI] native cohort, plus five retained old neighbor rows promoted to mandatory Code1720/NONE controls. Their separate native coverage is required in the family evaluator. Seven exact retained VMOVDQU64 neighbor rows additionally require Code1605/FALLTHROUGH/SIMD and supplied NONE; their actual native family cases are independently mandatory in vmovdqu64_family. All remaining negative rows retain rejection. Exact Code1720 register neighbors additionally require typed/NONE records; new register-family native coverage is mandatory. No failed-operation or process outcome changes. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
   "supplied_none_queries_per_process": 13,
-  "typed_promotions_per_process": 13,
+  "typed_promotions_per_process": 14,
+  "vm256_promotion_row": {
+    "bytes": "62e1fe286f0f",
+    "code": 1604,
+    "index": 12,
+    "record_bytes": 352
+  },
+  "vm256_supplied_none_queries_per_process": 1,
+  "vm256_typed_promotions_per_process": 1,
   "vm64_supplied_none_queries_per_process": 7,
   "vpe_register_rows": [
     42

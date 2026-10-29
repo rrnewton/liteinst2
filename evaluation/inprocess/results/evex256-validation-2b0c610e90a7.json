@@ -1,0 +1,897 @@
+{
+  "hardware": {
+    "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe": {
+      "affinity_cpu_count": 1,
+      "architecture": "x86_64",
+      "cpu family": "26",
+      "isa_flags_count": 170,
+      "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+      "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+      "kernel_version": "7.1.3",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "probe_cpu": 1,
+      "runner_cap_eff": "0000000000000000",
+      "runner_euid": 212630,
+      "runner_is_root": false,
+      "runner_seccomp_mode": 0,
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "54b7fcad441eec3ba644d16e6b9f0cb2477b08c557518b44513eda138ca15970": {
+      "affinity_cpu_count": 1,
+      "architecture": "x86_64",
+      "cpu family": "26",
+      "isa_flags_count": 170,
+      "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+      "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+      "kernel_version": "7.1.3",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "probe_cpu": 33,
+      "runner_cap_eff": "0000000000000000",
+      "runner_euid": 212630,
+      "runner_is_root": false,
+      "runner_seccomp_mode": 0,
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    }
+  },
+  "profile": "evex256-load-validation",
+  "schema": 1,
+  "scope": "Six focused evaluators passed. Store native cases passed but mandatory registered controls did not start because the exact rseq source manifest was stale; the store suite remains failed. The normal main/DSO application failed at unsupported Code3884 and its later three lanes remain unexecuted. No full B2, application stress or performance credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c",
+    "source_manifest_sha256": "d5f02f72a61ac49d6137f93bf4d552872a82558e997ff73f6bf1c332fd9ff825",
+    "tracked_clean": true,
+    "tree": "df396d6b10e87b93048e885d5a69e9f4fa0c261d"
+  },
+  "tool_facts": {
+    "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947": {
+      "as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "cp": {
+        "bytes": 144400,
+        "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "ld": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "mkdir": {
+        "bytes": 69752,
+        "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+      },
+      "nm": {
+        "bytes": 45792,
+        "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "rustup": {
+        "bytes": 21113232,
+        "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+      },
+      "sh": {
+        "bytes": 1389072,
+        "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+      }
+    },
+    "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f": {
+      "cargo": [
+        1,
+        97,
+        1
+      ],
+      "cc": [
+        11,
+        5,
+        0
+      ],
+      "python": [
+        3,
+        12,
+        15
+      ],
+      "rustc": [
+        1,
+        97,
+        1
+      ]
+    }
+  },
+  "validation": [
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 71,
+      "error": null,
+      "failure_type": null,
+      "hardware_id": "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe",
+      "original_summary": {
+        "bytes": 87703,
+        "file": "20261029T114233.287936Z-page-selected-vmovdqu64-256-family-2b0c610e90a7.json",
+        "sha256": "7545d2a55c69506d3f21318ff326963c16bc5e16bf8a15a00e5c0af621f6aceb"
+      },
+      "private_receipt": {
+        "bytes": 1421821,
+        "sha256": "cd8ccd4bde6b11807cbe840c16bc3cb0394e069b60d75ec35b4b5129284518a8"
+      },
+      "profile": "page-selected-vmovdqu64-256-family-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu64_family.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c",
+        "--vector-bits",
+        "256"
+      ],
+      "scope": "Canonical EVEX256.W1 Code1604 load/register family.160 structural pairs in10 cohorts, all32 YMM source/destination roles/self-copies, all16 bases/all15 indices/scales, original64-bit ModRM/SIB/RIP/disp8*32 and all42 length/tail combinations. Complete unchanged native/TF state/source/stack/data/flags comparisons; exact low256 result and mandatory zero upper256 destination bits. Four genuine full/cross16-byte ordinary/indexed failed reads retain full original state. All47 common and25 remaining original neighbors plus25 VL256 neighbors refuse; seven prior Code1605 and one Code1604 positive promotions remain mandatory. No other width/mask/store/prefix, numerical-address exhaustiveness, application completion or performance claim.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 328,
+        "crossing_pairs": 37,
+        "ending_pairs": 123,
+        "new_pairs": 160,
+        "pairs": 170,
+        "refusals": 1358,
+        "startup_pairs": 14,
+        "supplied_none_queries": 98,
+        "typed_promotions": 98,
+        "verified_memory_failures": 4,
+        "vm256_supplied_none_queries": 14,
+        "vm256_typed_promotions": 14
+      },
+      "vector_bits": 256
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 71,
+      "error": null,
+      "failure_type": null,
+      "hardware_id": "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe",
+      "original_summary": {
+        "bytes": 87599,
+        "file": "20261029T114316.876546Z-page-selected-vmovdqu64-family-2b0c610e90a7.json",
+        "sha256": "c417ccb049d828a684c071b0b8e71acdc6df797d85ca578c80b81c5a3b248d85"
+      },
+      "private_receipt": {
+        "bytes": 1417734,
+        "sha256": "1a3891152b48dce4f634f86b8e381b89d46a4b33a560735f457debf01c95f3ec"
+      },
+      "profile": "page-selected-vmovdqu64-family-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu64_family.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c"
+      ],
+      "scope": "Canonical EVEX512.W1 Code1605 load/register family.160 structural pairs in10 cohorts, all32 ZMM source/destination roles, all16 bases/all15 indices/scales, original64-bit ModRM/SIB/RIP/disp8*64 and all42 length/tail combinations. Complete unchanged native/TF state/source/stack/data/flags comparisons; four genuine full/cross32-byte ordinary/indexed read failures. All25 remaining original negative neighbors and47 common refusals remain, seven exact old rows remain mandatory Code1605/NONE promotions and native pairs; the exact former vl256 negative is a separate mandatory Code1604/NONE promotion with native coverage in the separately required256 cohort. No other width/mask/store/prefix, exhaustive numerical address, application completion or performance claim.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 328,
+        "crossing_pairs": 37,
+        "ending_pairs": 123,
+        "new_pairs": 160,
+        "pairs": 170,
+        "refusals": 1008,
+        "startup_pairs": 14,
+        "supplied_none_queries": 98,
+        "typed_promotions": 98,
+        "verified_memory_failures": 4,
+        "vm256_supplied_none_queries": 14,
+        "vm256_typed_promotions": 14
+      },
+      "vector_bits": 512
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "command_count": 23,
+      "error": null,
+      "failure_type": null,
+      "hardware_id": "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe",
+      "original_summary": {
+        "bytes": 30398,
+        "file": "20261029T114400.238703Z-page-selected-vmovdqu64-2b0c610e90a7.json",
+        "sha256": "32b5fcc99a453e8f7289237e10c637e1e4c60f910241d9256af55ecbf9e49c5b"
+      },
+      "private_receipt": {
+        "bytes": 566679,
+        "sha256": "5226ecdeb86d73efc9525ea36eca6dea66811b4e0369ef8e897c120a8b2a2410"
+      },
+      "profile": "page-selected-vmovdqu64-oracle-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu64.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c"
+      ],
+      "scope": "Exact unmasked 62e1fe486f0f/Code1605, ZMM17 from64 bytes at RDI. Two19-pair cohorts:36 new plus2 startup, aligned/unaligned and every fetch split; all32ZMM/all8opmask independently seeded, actual standard-layout CPUID records, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. Two real read-fault commands (full/cross-page operand) retain failed operation125, no TRACE/completion and unchanged state/memory. All47 old+25 remaining new supplied refusals and seven mandatory typed Code1605/NONE promotions remain. One retained row12 additionally requires exact Code1604/NONE with separate native coverage. No general EVEX, enabled-CET, hardware masking, loader completion, performance or full-B2 claim",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "executed_refusal_checks": 288,
+        "generic_pairs": 36,
+        "load_pairs": 36,
+        "negative_selftest_pairs": 2,
+        "new_crossing_pairs": 30,
+        "new_page_ending_pairs": 6,
+        "new_refusal_encodings": 25,
+        "old_refusal_encodings": 47,
+        "positive_pairs": 38,
+        "positive_selftest_pairs": 2,
+        "supplied_refusal_encodings": 72,
+        "verified_memory_failures": 2,
+        "vm256_supplied_none_queries": 4,
+        "vm256_typed_promotions": 4
+      }
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 71,
+      "error": null,
+      "failure_type": null,
+      "hardware_id": "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe",
+      "original_summary": {
+        "bytes": 86945,
+        "file": "20261029T114412.529122Z-page-selected-vmovdqa64-family-2b0c610e90a7.json",
+        "sha256": "9af81689a8292a84e3f98097e351cbaed50a06d3d60d19d327f541dc3a2880b5"
+      },
+      "private_receipt": {
+        "bytes": 1417184,
+        "sha256": "581ca95a994e4d65242546ed0cd9c97300f381239a7e54868e86445a9b97ca99"
+      },
+      "profile": "page-selected-vmovdqa64-family-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqa64_family.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c"
+      ],
+      "scope": "Canonical unmasked EVEX512.W1 VMOVDQA64 Code1596 aligned load/register family;160 pairs and four genuine failed operations. Two aligned unavailable-page #PF14/error4 controls, two misaligned crossing ordinary/indexed #GP13/error0 controls. Every old supplied neighbor retained, with existing VMOVDQU64 typed promotions unchanged. All32 ZMM sources/destinations,16 bases,15 usable indices,4 scales and all42 instruction length/fetch-tail combinations. Full native/TF/GPR/flags/kernelFP/liveXSAVE/memory/source comparison. No other width/mask/store/prefix, application completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 328,
+        "crossing_pairs": 37,
+        "ending_pairs": 123,
+        "new_pairs": 160,
+        "pairs": 170,
+        "refusals": 1386,
+        "startup_pairs": 14,
+        "supplied_none_queries": 98,
+        "typed_promotions": 98,
+        "verified_memory_failures": 4,
+        "vm256_supplied_none_queries": 14,
+        "vm256_typed_promotions": 14
+      }
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 24,
+      "error": null,
+      "failure_type": null,
+      "hardware_id": "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe",
+      "original_summary": {
+        "bytes": 29807,
+        "file": "20261029T114455.639631Z-page-selected-vmovdqu128-2b0c610e90a7.json",
+        "sha256": "a6c2da95c72520a70c4b1ceca3b76ba0457b0322e29d5a21a9260b9e20d7909a"
+      },
+      "private_receipt": {
+        "bytes": 929316,
+        "sha256": "2ec47dcd40b2bb8fa3126c388624d5c8c7090886700f4d6920153b85c0ab6cfc"
+      },
+      "profile": "page-selected-vmovdqu128-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu128.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c"
+      ],
+      "scope": "Exact VEX.128 VMOVDQU XMM0,[RSI]c5fa6f06/Code1598 only.12 loads plus startup across all four fetch geometries; three literal inputs at guarded data-page edges/unaligned offset; ZMM0 upper384 bits zero. Two genuine full/cross-page failed16-byte reads. Complete GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/stack/data comparisons,28 actual-before NONE queries;119 supplied refusals plus one separately recorded Code1720 register promotion plus seven mandatory Code1605/NONE promotions plus13 original typed promotions and5 additional supplied Code1720/NONE promotions per process:12 supplied NONE load queries and one supplied RANGE16 store query; store native coverage is separate. No general VEX, real-program completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 28,
+        "crossing_pairs": 9,
+        "ending_pairs": 3,
+        "new_pairs": 12,
+        "pairs": 13,
+        "refusals": 357,
+        "startup_pairs": 3,
+        "supplied_none_queries": 36,
+        "supplied_range_queries": 3,
+        "typed_promotions": 39,
+        "verified_memory_failures": 2,
+        "vm256_supplied_none_queries": 3,
+        "vm256_typed_promotions": 3,
+        "vpcm_supplied_none_queries": 15,
+        "vpcm_typed_promotions": 15,
+        "vpe_supplied_none_queries": 3,
+        "vpe_typed_promotions": 3
+      }
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 61,
+      "error": null,
+      "failure_type": null,
+      "hardware_id": "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe",
+      "original_summary": {
+        "bytes": 90464,
+        "file": "20261029T114507.504314Z-page-selected-vmovdqu128-family-2b0c610e90a7.json",
+        "sha256": "a7898c179ac11b823a3d59a9c8a758885cf686fbd206d9bbacf6738e094b3a7f"
+      },
+      "private_receipt": {
+        "bytes": 1335987,
+        "sha256": "a8d192ab4553a2f17152ce6e30713b1da78b799e9ef01a86a85ea81315fd86f4"
+      },
+      "profile": "page-selected-vmovdqu128-family-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu128_family.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c"
+      ],
+      "scope": "Canonical VEX128 Code1598 load/register-copy structural family.128 new pairs in8 cohorts, all XMM/base/index registers, literal ModRM/SIB/RIP geometry and every fetch tail for lengths4..10; full initialized state and memory comparisons, selected upper384 zeroing. Four genuine failed reads,119 refusals plus one separately recorded Code1720 register promotion plus seven mandatory Code1605/NONE promotions plus13 original typed promotions and5 additional supplied Code1720/NONE promotions per process:12 supplied NONE load queries and one supplied RANGE16 store query; store native coverage is separate. No exhaustive numerical EA, real completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 264,
+        "crossing_pairs": 42,
+        "ending_pairs": 86,
+        "new_pairs": 128,
+        "pairs": 136,
+        "refusals": 1428,
+        "startup_pairs": 12,
+        "supplied_none_queries": 144,
+        "supplied_range_queries": 12,
+        "typed_promotions": 156,
+        "verified_memory_failures": 4,
+        "vm256_supplied_none_queries": 12,
+        "vm256_typed_promotions": 12,
+        "vpcm_supplied_none_queries": 60,
+        "vpcm_typed_promotions": 60,
+        "vpe_supplied_none_queries": 12,
+        "vpe_typed_promotions": 12
+      }
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 81,
+      "error": "ValueError: exact committed rseq input tools/page-entry/selected/decoder/src/tf.rs",
+      "failure_type": "ValueError",
+      "hardware_id": "15154056fc6d7a51f53f8f28eb22b9153e805c159d2db7e004662361b73e6afe",
+      "original_summary": {
+        "bytes": 76813,
+        "file": "20261029T114544.169918Z-page-selected-vmovdqu128-store-2b0c610e90a7.json",
+        "sha256": "41cb480828eb57e2da6ee03b1f6c993f4a9f66ccaba86bae30704154096a586a"
+      },
+      "private_receipt": {
+        "bytes": 1493930,
+        "sha256": "b3bbbc3c8a70d3892aef2671f3c2f677610a7fe0553f920e3b13966475c54b46"
+      },
+      "profile": "page-selected-vmovdqu128-store-v1",
+      "registered_controls": {
+        "build_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "cases": [],
+        "command_count": 0,
+        "completed_operations": 0,
+        "final_error_count": 0,
+        "required_cases": 3,
+        "required_refusals": 0,
+        "scope": "Three additive registered VMOVDQU-store controls; original17 remains a separate mandatory cohort. No active critical sections or complete B3 claim.",
+        "status": "failed"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu128_store.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c"
+      ],
+      "scope": "Canonical VEX128 Code1840 store/reverse-copy structural family:128 pairs, eight failed writes with complete actual post-memory, exact13 original typed promotions plus5 additional supplied Code1720/NONE promotions, before-frame RANGE16/NONE and supplied overflow controls. Full C architectural oracle with independent structural/memory replay; no real completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+      "source_unchanged": true,
+      "status": "failed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 272,
+        "crossing_pairs": 43,
+        "ending_pairs": 85,
+        "new_pairs": 128,
+        "pairs": 136,
+        "refusals": 2176,
+        "startup_pairs": 16,
+        "supplied_none_queries": 192,
+        "supplied_range_end_controls": 48,
+        "supplied_range_queries": 16,
+        "typed_promotions": 208,
+        "verified_memory_failures": 8,
+        "vm256_supplied_none_queries": 16,
+        "vm256_typed_promotions": 16,
+        "vpcm_supplied_none_queries": 80,
+        "vpcm_typed_promotions": 80,
+        "vpe_supplied_none_queries": 16,
+        "vpe_typed_promotions": 16
+      }
+    },
+    {
+      "actual_failed_lane": {
+        "completed": 297,
+        "exit": 125,
+        "failure_code": 1207,
+        "native_admissions_closed": 1475,
+        "restored": 297,
+        "retired": 297,
+        "source_patches": 297,
+        "stderr": {
+          "bytes": 10476,
+          "sha256": "e1b97da924d620ac3538c8481e91cd660cc77110089d5e781ff1bfd75033c87d"
+        },
+        "unsupported_code": 3884
+      },
+      "bounds": {
+        "app_app": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "app_build": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "app_metadata": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "app_reference": [
+          25,
+          536870912,
+          16777216,
+          25
+        ],
+        "app_seed": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ]
+      },
+      "cases": [
+        {
+          "accepted_processes": 0,
+          "actual_processes": 1,
+          "application": null,
+          "attempted_cases": 1,
+          "closed_processes": 1,
+          "comparison": {
+            "accepted": null,
+            "capacity_stress_qualified": null,
+            "global_counts": null,
+            "max_retained_at_fixture_retire": null,
+            "operations": null,
+            "publication_qualified": null,
+            "record_bytes": null,
+            "record_sha256": null,
+            "sampled": null
+          },
+          "failure_type": "ValueError",
+          "full_state_qualified": false,
+          "mode": "state",
+          "native_xstate_joined": false,
+          "planned_processes": 1,
+          "policy": "native",
+          "status": "failed"
+        },
+        {
+          "accepted_processes": 0,
+          "actual_processes": 0,
+          "application": null,
+          "attempted_cases": 0,
+          "closed_processes": 0,
+          "comparison": {
+            "accepted": null,
+            "capacity_stress_qualified": null,
+            "global_counts": null,
+            "max_retained_at_fixture_retire": null,
+            "operations": null,
+            "publication_qualified": null,
+            "record_bytes": null,
+            "record_sha256": null,
+            "sampled": null
+          },
+          "failure_type": null,
+          "full_state_qualified": false,
+          "mode": "state",
+          "native_xstate_joined": false,
+          "planned_processes": 1,
+          "policy": "scripted",
+          "status": "unexecuted"
+        },
+        {
+          "accepted_processes": 0,
+          "actual_processes": 0,
+          "application": null,
+          "attempted_cases": 0,
+          "closed_processes": 0,
+          "comparison": {
+            "accepted": null,
+            "capacity_stress_qualified": null,
+            "global_counts": null,
+            "max_retained_at_fixture_retire": null,
+            "operations": null,
+            "publication_qualified": null,
+            "record_bytes": null,
+            "record_sha256": null,
+            "sampled": null
+          },
+          "failure_type": null,
+          "full_state_qualified": false,
+          "mode": "stress",
+          "native_xstate_joined": false,
+          "planned_processes": 1,
+          "policy": "native",
+          "status": "unexecuted"
+        },
+        {
+          "accepted_processes": 0,
+          "actual_processes": 0,
+          "application": null,
+          "attempted_cases": 0,
+          "closed_processes": 0,
+          "comparison": {
+            "accepted": null,
+            "capacity_stress_qualified": null,
+            "global_counts": null,
+            "max_retained_at_fixture_retire": null,
+            "operations": null,
+            "publication_qualified": null,
+            "record_bytes": null,
+            "record_sha256": null,
+            "sampled": null
+          },
+          "failure_type": null,
+          "full_state_qualified": false,
+          "mode": "stress",
+          "native_xstate_joined": false,
+          "planned_processes": 1,
+          "policy": "scripted",
+          "status": "unexecuted"
+        }
+      ],
+      "cleanup_complete": true,
+      "command_count": 41,
+      "error": "ValueError: normal app actual zero exit",
+      "failure_type": "ValueError",
+      "full_b2_qualification": false,
+      "hardware_id": "54b7fcad441eec3ba644d16e6b9f0cb2477b08c557518b44513eda138ca15970",
+      "native_reference": {
+        "accepted_processes": 1,
+        "actual_processes": 1,
+        "attempted_cases": 1,
+        "closed_processes": 1,
+        "complete_nt_states": 36,
+        "complete_operations": 18,
+        "native_complete": true,
+        "planned_processes": 1,
+        "raw_sha256": "77a5acb9bbff7233f32b698984c4cea68ef46702468eebd393c3537573c05775"
+      },
+      "original_summary": {
+        "bytes": 7918,
+        "file": "20261029T114927.121292Z-page-selected-provider-app-2b0c610e90a7.json",
+        "sha256": "315e85b10f4134dd7187022c34a26ed8f29c537f6eb62d2a1778a6eddbfe53d7"
+      },
+      "performance_credit": false,
+      "private_receipt": {
+        "bytes": 1482480,
+        "sha256": "c7353e02058d596f8ff0bd4f613415710891ca205f5831056e57d8172f16f19a"
+      },
+      "profile": "page-selected-provider-app-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_provider_app.py",
+        "--expect-revision",
+        "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c"
+      ],
+      "scope": "Normal libc/ld.so main plus DT_NEEDED DSO with default inactive rseq; fresh independent seed and18-operation full-NT reference, two complete Native/Scripted state18 pairs before two9216-effect reuse stress lanes. Genuine NX/E9/UD2/restoration/full state and capacity proof; separate all-seven/masked-CPUID prerequisites remain mandatory. No real-ls, full-B2 or performance credit.",
+      "source_unchanged": true,
+      "status": "failed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f"
+    }
+  ]
+}

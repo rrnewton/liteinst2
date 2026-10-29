@@ -1,0 +1,654 @@
+{
+  "hardware": {
+    "d1583316a9244902677840be97480178ea612ac37d5797cb0d94247eaafd62b9": {
+      "affinity_cpu_count": 1,
+      "architecture": "x86_64",
+      "cpu family": "26",
+      "isa_flags_count": 170,
+      "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+      "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+      "kernel_version": "7.1.3",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "probe_cpu": 45,
+      "runner_cap_eff": "0000000000000000",
+      "runner_euid": 212630,
+      "runner_is_root": false,
+      "runner_seccomp_mode": 0,
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    }
+  },
+  "profile": "evex256-companion-and-rseq-qualification",
+  "schema": 1,
+  "scope": "Store suite including three actual registered controls, two remaining EVEX256 companions and the full17-case inactive-rseq application cohort passed. Only the exact source manifest changed since2b0; all runtime and comparator bytes are unchanged. The prior failed receipts remain failed. No active-rseq, full B2/B3 or performance credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "736e035bb8a997fdd20e086dab0cfcc097bd6ca5",
+    "source_manifest_sha256": "7883a41a449ecce76fa3800ab5d6166ec603c765101abb919e7c9515ad428c4c",
+    "tracked_clean": true,
+    "tree": "d0b22be109e4961b19905e502273dadc54946001"
+  },
+  "tool_facts": {
+    "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947": {
+      "as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "cp": {
+        "bytes": 144400,
+        "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "ld": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "mkdir": {
+        "bytes": 69752,
+        "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+      },
+      "nm": {
+        "bytes": 45792,
+        "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "rustup": {
+        "bytes": 21113232,
+        "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+      },
+      "sh": {
+        "bytes": 1389072,
+        "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+      }
+    },
+    "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f": {
+      "cargo": [
+        1,
+        97,
+        1
+      ],
+      "cc": [
+        11,
+        5,
+        0
+      ],
+      "python": [
+        3,
+        12,
+        15
+      ],
+      "rustc": [
+        1,
+        97,
+        1
+      ]
+    }
+  },
+  "validation": [
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 95,
+      "failure_type": null,
+      "hardware_id": "d1583316a9244902677840be97480178ea612ac37d5797cb0d94247eaafd62b9",
+      "original_summary": {
+        "bytes": 79298,
+        "file": "20261029T115507.877928Z-page-selected-vmovdqu128-store-736e035bb8a9.json",
+        "sha256": "e0a105641b8c06e25c77ac497da8328dbd467805e6240e8f926a183852aa9401"
+      },
+      "private_receipt": {
+        "bytes": 1776203,
+        "sha256": "fede9c748d8c05d02b1e4efe306538c85a2c11360c5b23b937289f646210ddf1"
+      },
+      "profile": "page-selected-vmovdqu128-store-v1",
+      "registered_controls": {
+        "cases": [
+          {
+            "accepted": true,
+            "actual_trap": 0,
+            "error": 0,
+            "name": "disjoint",
+            "operation_exit": 0,
+            "outcome": "completed",
+            "store_guard": {
+              "actual_trap": 14,
+              "code": 1840,
+              "end": 6291632,
+              "first": 6291616,
+              "full_trailer_sha256": "4f1f1ad71024c7df23052f2ff61d7eb4d7c6ccfc117c9ed4b93feffffe4b5214",
+              "guard_calls": 1,
+              "guard_result": 0,
+              "length": 4,
+              "mode": 0,
+              "policy": 2,
+              "raw_calls_during_guard": 0,
+              "rx_calls_during_guard": 0
+            }
+          },
+          {
+            "accepted": true,
+            "actual_trap": 14,
+            "error": 1205,
+            "name": "sse_overlap",
+            "operation_exit": 125,
+            "outcome": "required_refusal",
+            "store_guard": {
+              "actual_trap": 14,
+              "code": 1840,
+              "end": 6291536,
+              "first": 6291520,
+              "full_trailer_sha256": "e0f616e20459ad038f22e15e9fd1c3c12c6c3acbb2b307760635fb83ec02a5cf",
+              "guard_calls": 1,
+              "guard_result": 1205,
+              "length": 4,
+              "mode": 1,
+              "policy": 2,
+              "raw_calls_during_guard": 0,
+              "rx_calls_during_guard": 0
+            }
+          },
+          {
+            "accepted": true,
+            "actual_trap": 1,
+            "error": 1205,
+            "name": "trace_mov_overlap",
+            "operation_exit": 125,
+            "outcome": "required_refusal",
+            "store_guard": {
+              "actual_trap": 1,
+              "code": 1840,
+              "end": 6291536,
+              "first": 6291520,
+              "full_trailer_sha256": "8bef3e324ef966c0d4bd50079a282063397f64d627a09b3f8e66c724b2d89e8f",
+              "guard_calls": 1,
+              "guard_result": 1205,
+              "length": 4,
+              "mode": 2,
+              "policy": 2,
+              "raw_calls_during_guard": 0,
+              "rx_calls_during_guard": 0
+            }
+          }
+        ],
+        "command_count": 14,
+        "completed_operations": 1,
+        "final_error_count": 0,
+        "required_cases": 3,
+        "required_refusals": 2,
+        "scope": "Three additive registered VMOVDQU-store controls; original17 remains a separate mandatory cohort. No active critical sections or complete B3 claim.",
+        "status": "passed_three_store_controls"
+      },
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vmovdqu128_store.py",
+        "--expect-revision",
+        "736e035bb8a997fdd20e086dab0cfcc097bd6ca5"
+      ],
+      "scope": "Canonical VEX128 Code1840 store/reverse-copy structural family:128 pairs, eight failed writes with complete actual post-memory, exact13 original typed promotions plus5 additional supplied Code1720/NONE promotions, before-frame RANGE16/NONE and supplied overflow controls. Full C architectural oracle with independent structural/memory replay; no real completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 272,
+        "crossing_pairs": 43,
+        "ending_pairs": 85,
+        "new_pairs": 128,
+        "pairs": 136,
+        "refusals": 2176,
+        "startup_pairs": 16,
+        "supplied_none_queries": 192,
+        "supplied_range_end_controls": 48,
+        "supplied_range_queries": 16,
+        "typed_promotions": 208,
+        "verified_memory_failures": 8,
+        "vm256_supplied_none_queries": 16,
+        "vm256_typed_promotions": 16,
+        "vpcm_supplied_none_queries": 80,
+        "vpcm_typed_promotions": 80,
+        "vpe_supplied_none_queries": 16,
+        "vpe_typed_promotions": 16
+      }
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 24,
+      "failure_type": null,
+      "hardware_id": "d1583316a9244902677840be97480178ea612ac37d5797cb0d94247eaafd62b9",
+      "original_summary": {
+        "bytes": 28215,
+        "file": "20261029T115604.942757Z-page-selected-vpcmpeqb-memory-736e035bb8a9.json",
+        "sha256": "122223db5a089a2f250a5b03255829f6cb6add948758379dd4e61009d70dddb0"
+      },
+      "private_receipt": {
+        "bytes": 928333,
+        "sha256": "f251c03d1533a2c9c663f0a021f62dd8378d4a2e2d866387ed35400ac79629f9"
+      },
+      "profile": "page-selected-vpcmpeqb-memory-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vpcmpeqb_memory.py",
+        "--expect-revision",
+        "736e035bb8a997fdd20e086dab0cfcc097bd6ca5"
+      ],
+      "scope": "Original exact unmasked VPCMPEQB K0,ZMM17,[RDI]62f175407407/Code1720 native cohort, with five explicit family promotions preserving the original rows.18 memory comparisons plus startup at all six fetch geometries, three literal mask results and guarded data-page edges/unaligned input; two genuine full/cross-page failed reads. Full GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/stack/data comparisons,40 actual-before NONE queries;99 supplied refusals plus one separately recorded Code1720 register promotion plus seven mandatory Code1605/NONE promotions and five mandatory typed/NONE old-row promotions per process. No general EVEX, real-program completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 40,
+        "crossing_pairs": 15,
+        "ending_pairs": 3,
+        "new_pairs": 18,
+        "pairs": 19,
+        "refusals": 297,
+        "startup_pairs": 3,
+        "supplied_none_queries": 15,
+        "typed_promotions": 15,
+        "verified_memory_failures": 2,
+        "vm256_supplied_none_queries": 3,
+        "vm256_typed_promotions": 3,
+        "vpe_supplied_none_queries": 3,
+        "vpe_typed_promotions": 3
+      }
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_count": 49,
+      "failure_type": null,
+      "hardware_id": "d1583316a9244902677840be97480178ea612ac37d5797cb0d94247eaafd62b9",
+      "original_summary": {
+        "bytes": 35736,
+        "file": "20261029T115616.907534Z-page-selected-vpcmpeqb-memory-family-736e035bb8a9.json",
+        "sha256": "accf13f9efa8f2162115c743a1597eee44ac811d923763d5468126fcd5eef0ea"
+      },
+      "private_receipt": {
+        "bytes": 1201192,
+        "sha256": "72d5bb8b41e2255eeb2cf497284c74e06081dc78c7779639a3a157515581fe2e"
+      },
+      "profile": "page-selected-vpcmpeqb-memory-family-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_vpcmpeqb_memory_family.py",
+        "--expect-revision",
+        "736e035bb8a997fdd20e086dab0cfcc097bd6ca5"
+      ],
+      "scope": "Canonical W0 unmasked EVEX512 VPCMPEQB K0..7,ZMM0..31,[RDI]/Code1720, preserving exact original register form.108 structural comparisons in six18-case cohorts, all source/destination roles, three literal equality patterns and six fetch geometries; two genuine full/cross-page failed reads. Full GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/source/stack/data comparisons,220 actual-before NONE queries;108 refusals plus one separately recorded Code1720 register promotion plus seven mandatory Code1605/NONE promotions and five mandatory typed/NONE promotions per process. Structural coverage is not exhaustive256 native execution. No application completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+      "source_unchanged": true,
+      "status": "passed",
+      "tool_hashes_id": "14962f812be74431666f41eb8f5216d61dc8a0dac3c76c56a3659bd44ca9a947",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f",
+      "totals": {
+        "actual_before_queries": 220,
+        "crossing_pairs": 87,
+        "ending_pairs": 21,
+        "new_pairs": 108,
+        "pairs": 114,
+        "refusals": 864,
+        "startup_pairs": 8,
+        "supplied_none_queries": 40,
+        "typed_promotions": 40,
+        "verified_memory_failures": 2,
+        "vm256_supplied_none_queries": 8,
+        "vm256_typed_promotions": 8,
+        "vpe_supplied_none_queries": 8,
+        "vpe_typed_promotions": 8
+      }
+    },
+    {
+      "accepted_cases": 17,
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cases": [
+        {
+          "accepted": true,
+          "actual_trap": 0,
+          "error": 0,
+          "name": "registration",
+          "native_kind": "complete_operation",
+          "operation_exit": 0,
+          "outcome": "completed",
+          "status": 0
+        },
+        {
+          "accepted": true,
+          "actual_trap": 0,
+          "error": 0,
+          "name": "disjoint",
+          "native_kind": "complete_operation",
+          "operation_exit": 0,
+          "outcome": "completed",
+          "status": 0
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1209,
+          "name": "nonzero_preissue",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "mov_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "zero_store_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 1,
+          "error": 1205,
+          "name": "trace_mov_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "sse_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "call_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "push_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "rep_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "read_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1205,
+          "name": "getrandom_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 158,
+          "name": "munmap_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 155,
+          "name": "mprotect_overlap",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1207,
+          "name": "pop_memory_unsupported",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1207,
+          "name": "readv_unsupported",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        },
+        {
+          "accepted": true,
+          "actual_trap": 14,
+          "error": 1207,
+          "name": "ioctl_unsupported",
+          "native_kind": "stopped_before_forbidden_operation",
+          "operation_exit": 125,
+          "outcome": "required_refusal",
+          "status": 125
+        }
+      ],
+      "command_count": 73,
+      "completed_cases": 2,
+      "failure_type": null,
+      "hardware_id": "d1583316a9244902677840be97480178ea612ac37d5797cb0d94247eaafd62b9",
+      "original_summary": {
+        "bytes": 20796,
+        "file": "20261029T115645.664143Z-page-selected-rseq-application-736e035bb8a9.json",
+        "sha256": "a4384758821324e8c956b67150d46efa6afd939cd0f39696dd7052dc05b4c300"
+      },
+      "private_receipt": {
+        "bytes": 867649,
+        "sha256": "efba579935bc6aea0634fe812c12d770c587b86fd7f121775667f48ae7cc8bd3"
+      },
+      "profile": "page-selected-rseq-application-v1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_rseq_application.py",
+        "--expect-revision",
+        "736e035bb8a997fdd20e086dab0cfcc097bd6ca5"
+      ],
+      "required_cases": 17,
+      "required_refusals": 15,
+      "scope": "Two fresh-exec whole applications and15 named pre-effect refusals. No active critical sections, threads or complete B3 claim.",
+      "source_unchanged": true,
+      "status": "passed_finite_inactive_profile",
+      "tool_versions_id": "266756c42cf1ad67a50b7159f0cbaf09aaca2596a8ed2470370ebb7cc064953f"
+    }
+  ]
+}

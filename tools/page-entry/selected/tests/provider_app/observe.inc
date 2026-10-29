@@ -100,8 +100,16 @@ static void pao_hardware(void) {
     pao_need(pao_record.initialized && !pao_record.hardware_initialized &&
         selected_hardware.abi_version==1 && !selected_hardware.reserved,16);
     pao_copy(&pao_record.hardware,&selected_hardware,sizeof selected_hardware);
-    pao_copy(&pao_record.session,&selected_session,sizeof selected_session);
     __asm__ volatile("":::"memory");pao_record.hardware_initialized=1;
+}
+/* Observe only after the genuine selftest TRACE, revoke/release and cleanup. */
+static void pao_session_ready(void) {
+    pao_need(pao_record.initialized==1 && pao_record.hardware_initialized==1 &&
+        !pao_record.session.initialized && !pao_record.begun &&
+        selected_selftests==1 && !selected_selftesting &&
+        selected_session.initialized==1 && selected_session.self_test_complete==1 &&
+        !selected_step_pending && !li2_lifecycle_fetch_interlock(),17);
+    pao_copy(&pao_record.session,&selected_session,sizeof selected_session);
 }
 static void pao_bind(void) {
     pao_need(pao_record.initialized && pab_state.complete && pa_policy_context.count==6,3);

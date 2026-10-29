@@ -204,9 +204,11 @@ def publication(row, root, module, image, pid, oi):
          row.blob('source_published') == bytes(expected) and
          before.blob('original_pages') == o.blob('original_pages') == image['source']+bytes(PAGE),
          'every original, redirected and restored page byte')
+    # observe() authenticates the landing mapping and UD2 bytes before publication.
+    # The actual exception is proved separately by landing_frame and the full UD frame.
     for value, phase, restored in ((before, 3, 0), (o, 8, 1)):
         exact(value, initialized=1, in_handler=0, transferred=1, source_copied=1, source_write_started=1,
-              write_attempted_mask=31, write_completed_mask=31, landing_observed=restored,
+              write_attempted_mask=31, write_completed_mask=31, landing_observed=1,
               restore_started=restored, restore_attempted_mask=31*restored, restore_completed_mask=31*restored)
         exact(value.sub('state', 'li2_oneshot_admission_state'), phase=phase, first_error=0, first_detail=0,
               sequence=p.number('sequence'), mutation_started=1, published=1, restored=restored, reserved=0)
@@ -220,7 +222,8 @@ def publication(row, root, module, image, pid, oi):
     for j, v in enumerate(o.array('generation', 'li2_oneshot_generation')):
         oi.call(v.sub('call', 'li2_oneshot_call'))
         exact(v, restoring=j, attempted_mask=1, completed_mask=1, reserved=0)
-        after = (backend.number('generation_epoch')+j+1, 0)
+        # The retired backend epoch is the global epoch AFTER both one-page renewals.
+        after = (backend.number('generation_epoch')+j-1, 0)
         need(q(v.blob('before')) == generations[-1] and q(v.blob('after')) == after and
              after[0] > generations[-1][0], 'actual exact in-place generation renewal without append')
         generations.append(after)
@@ -357,9 +360,10 @@ def rseq(row, application, plan, pid, oi):
 
 def decoded(v, row, image):
     k = row.number('site') % 3
+    # Decoder step() classifies SYSCALL as kernel transfer before other selected kinds.
     exact(v, pc=row.number('pc'), next_pc=row.number('pc')+2, abi_version=1, decode_status=0,
           code=(1948,870,1162)[k], kind=KINDS[k], destination=16, width_bits=0,
-          step_disposition=8, available=15, length=2, reserved=0)
+          step_disposition=5 if k == 1 else 8, available=15, length=2, reserved=0)
     at = row.number('pc') & 4095
     need(v.blob('bytes') == image['source'][at:at+15]+b'\0', 'all original decoded source bytes and initialized tail')
 

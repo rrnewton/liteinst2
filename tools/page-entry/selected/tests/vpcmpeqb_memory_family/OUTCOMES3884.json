@@ -1,0 +1,383 @@
+{
+  "actual_before_queries": 188,
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vpcmpnequb256-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPNEQUB256_TF_PASS pairs=19 comparisons=18 selftest=1 refusal_bytes=141 footprint_queries=36 full_state=19 full_memory=19 upper_k32_zero=18 prior_typed_promotions=14 prior_supplied_none_queries=14 live_endpoints=19\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 1,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPNEQUB256_TF_PASS pairs=19 comparisons=18 selftest=1 refusal_bytes=141 footprint_queries=36 full_state=19 full_memory=19 upper_k32_zero=18 prior_typed_promotions=14 prior_supplied_none_queries=14 live_endpoints=19\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 2,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPNEQUB256_TF_PASS pairs=19 comparisons=18 selftest=1 refusal_bytes=141 footprint_queries=36 full_state=19 full_memory=19 upper_k32_zero=18 prior_typed_promotions=14 prior_supplied_none_queries=14 live_endpoints=19\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 3,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPNEQUB256_TF_PASS pairs=19 comparisons=18 selftest=1 refusal_bytes=141 footprint_queries=36 full_state=19 full_memory=19 upper_k32_zero=18 prior_typed_promotions=14 prior_supplied_none_queries=14 live_endpoints=19\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-4"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "fault_kind": 0,
+      "group": 4,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "group4",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPNEQUB256_TF_PASS pairs=19 comparisons=18 selftest=1 refusal_bytes=141 footprint_queries=36 full_state=19 full_memory=19 upper_k32_zero=18 prior_typed_promotions=14 prior_supplied_none_queries=14 live_endpoints=19\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "full-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 1,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "full-read-fault",
+      "process_outcome": "expected genuine failed m256 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "cross-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 2,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "cross-read-fault",
+      "process_outcome": "expected genuine failed m256 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "indexed-full-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 3,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "indexed-full-read-fault",
+      "process_outcome": "expected genuine failed m256 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    },
+    {
+      "argv": [
+        "vpcmpnequb256-0"
+      ],
+      "environment_delta": {
+        "LI2_VPCM_CONTROL": "indexed-cross-read-fault"
+      },
+      "exit": 125,
+      "fault_kind": 4,
+      "group": 0,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 141,
+        "version": 1
+      },
+      "name": "indexed-cross-read-fault",
+      "process_outcome": "expected genuine failed m256 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1,
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
+    }
+  ],
+  "comparison_profile": "neq256",
+  "crossing_pairs": 74,
+  "ending_pairs": 16,
+  "literal_effects": "Immediate4 only: each unsigned source YMM byte differs from the actual32-byte memory operand iff its low32 destination-K bit is1. The complete64-bit K destination receives that zero-extended32-bit answer; its initially nonzero upper32 bits must zero. Every other K and every ZMM byte, including all upper halves, GPRs, flags, kernelFP/liveXSAVE/source/stack/data remain exact. No state normalization.",
+  "native_pairs_per_group": [
+    19,
+    19,
+    19,
+    19,
+    19
+  ],
+  "negative_endpoint": "Four real m256 read faults at original PC: ordinary/indexed each wholly unavailable and16+16 cross-page. Exact native/TF full state and complete nonzero K survive; #PF14/ERR4/CR2, no TRACE/completion, real revoke/cleanup unchanged.",
+  "new_comparison_pairs_total": 90,
+  "new_refusal_count": 33,
+  "old_refusal_count": 108,
+  "predicate": 4,
+  "promoted_refusal_count": 14,
+  "promotion_groups": {
+    "vm256": 1,
+    "vm64": 7,
+    "vpcm": 5,
+    "vpe_register": 1
+  },
+  "prospective_only": true,
+  "record_extent": "136+22*actual_sample_bytes+40+5000+96+10304+1504+2080+1216+352; complete original storage and all inherited promotions, extended actual-before EA query rows",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "refusals_per_process": 141,
+  "schema_version": 1,
+  "scope": "Explicit canonical unmasked Code3884 EVEX256 unsigned byte NEQ memory profile, immediate4 only.90 comparisons in five18-case cohorts plus four genuine failed reads. Eight source-authenticated libc encodings; no claim of observed application execution or completion. All32 YMM source/all8 K roles, all16 bases/15 indices/scales, all47 length/tails, RIP/absolute/disp8*32 and page-edge data. All108 old refusals,14 old typed/NONE promotions and33 new forbidden neighbors remain mandatory. Supplied observations confer no native credit.",
+  "supplied_none_queries_per_process": 14,
+  "typed_promotions_per_process": 14,
+  "vm256_promotion_row": {
+    "bytes": "62e1fe286f0f",
+    "code": 1604,
+    "index": 12,
+    "record_bytes": 352
+  },
+  "vm256_supplied_none_queries_per_process": 1,
+  "vm256_typed_promotions_per_process": 1,
+  "vm64_supplied_none_queries_per_process": 7,
+  "vpe_register_rows": [
+    42
+  ],
+  "vpe_supplied_none_queries_per_leaf_process": 1,
+  "vpe_typed_promotions_per_leaf_process": 1,
+  "width": 32
+}

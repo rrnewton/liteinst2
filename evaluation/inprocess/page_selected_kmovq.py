@@ -19,6 +19,7 @@ from page_selected import ENV, fact, need, save
 from page_selected_components import plain_executable
 from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
+from page_selected_kmovd_promotions import promotions as kd32_promotions
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE = REPO/'tools/page-entry/selected/tests/kmovq'
@@ -122,7 +123,7 @@ def publish(path, record, receipt):
                 'actual_exit': c.get('actual_exit'), 'operation_completed': c.get('operation_completed'),
                 'verified_memory_fault': c.get('verified_memory_fault'),
                 'header': c.get('header'), 'record': c.get('record'),
-                'observations': c.get('observations')} for c in record['cases']],
+                'observations': c.get('observations'), 'kd32_promotion': c.get('kd32_promotion')} for c in record['cases']],
         command_recipe={
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
             'fixture_build': ['sh', 'tools/page-entry/selected/tests/kmovq/build.sh',
@@ -153,7 +154,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-kmovq-oracle-v1', 'status': 'failed',
-        'scope': 'Exactc4e1fb93f0/Code1933 KMOVQ RSI,K0. One21-pair cohort:20 new plus startup, four full-width K0 patterns across all five fetch geometries. Complete64-bit RSI result, all32ZMM/all8K and every other register/flags/memory unchanged, actual kernel/live XSAVE and endpoints compared. All47 old+28 retained supplied refusals and5 explicit typed1933/NONE promotions. No memory operand or invented operand-fault claim; original fault suites remain required separately. No general VEX, enabled-CET, hardware masking, real-program completion, speedup or full-B2 claim.',
+        'scope': 'Exactc4e1fb93f0/Code1933 KMOVQ RSI,K0. One21-pair cohort:20 new plus startup, four full-width K0 patterns across all five fetch geometries. Complete64-bit RSI result, all32ZMM/all8K and every other register/flags/memory unchanged, actual kernel/live XSAVE and endpoints compared. All47 old+27 retained supplied refusals and5 explicit typed1933/NONE promotions, plus the unchanged index20 bytes in one mandatory supplied Code1932/NONE trailer (native KMOVD coverage is separate). No memory operand or invented operand-fault claim; original fault suites remain required separately. No general VEX, enabled-CET, hardware masking, real-program completion, speedup or full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -161,7 +162,8 @@ def main():
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
                    'new_refusal_encodings': 0, 'register_move_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
-                   'executed_refusal_checks': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0},
+                   'executed_refusal_checks': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0,
+                   'kd32_typed_promotions': 0, 'kd32_supplied_none_queries': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_kmovq.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
@@ -234,7 +236,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact register-move names, environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             'f7787136f8710f7c16f557fb2edc05f67d80e4dd8ed00adf67f5cf926a5fba32',
+             'c95a5491c3602df459fb6b1f2d2390aaf58da510f068dbf03662259f5dcc45be',
              'exact reviewed one-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -247,6 +249,10 @@ def main():
             result['actual_exit'] = row['exit']
             need(out == case['stdout'].encode() and err == case['stderr'].encode(), 'exact fixture output: '+name)
             data = (private/(name+'.record')).read_bytes()
+            need(352+136 <= len(data) < 16 << 20, 'whole original record plus exact KMOVD trailer within unchanged cap')
+            need(case['kd32_typed_promotions'] == case['kd32_supplied_none_queries'] == 1, 'one mandatory old-row KMOVD promotion')
+            result['kd32_promotion'] = kd32_promotions(data[-352:])
+            data = data[:-352]
             need(len(data) >= 136, 'retained complete header')
             header = dict(zip(names, struct.unpack_from('<17Q', data)))
             result.update(header=header, record=fact(private/(name+'.record')))
@@ -269,14 +275,17 @@ def main():
             record['totals']['new_page_ending_pairs'] += 4
             record['totals']['new_crossing_pairs'] += 16
             record['totals']['executed_refusal_checks'] += header['refusals']
-            record['totals'].update(supplied_refusal_encodings=75,
-                old_refusal_encodings=47, new_refusal_encodings=28,
-                promoted_encoding_checks=5, promoted_footprint_queries=5)
+            record['totals'].update(supplied_refusal_encodings=74,
+                old_refusal_encodings=47, new_refusal_encodings=27,
+                promoted_encoding_checks=5, promoted_footprint_queries=5,
+                kd32_typed_promotions=result['kd32_promotion']['typed_promotions'],
+                kd32_supplied_none_queries=result['kd32_promotion']['supplied_none_queries'])
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=21, generic_pairs=20, register_move_pairs=20,
-                 positive_selftest_pairs=1, supplied_refusal_encodings=75, old_refusal_encodings=47,
-                 new_refusal_encodings=28, new_page_ending_pairs=4, new_crossing_pairs=16,
-                 executed_refusal_checks=75, promoted_encoding_checks=5, promoted_footprint_queries=5) and len(record['cases']) == 1 and
+                 positive_selftest_pairs=1, supplied_refusal_encodings=74, old_refusal_encodings=47,
+                 new_refusal_encodings=27, new_page_ending_pairs=4, new_crossing_pairs=16,
+                 executed_refusal_checks=74, promoted_encoding_checks=5, promoted_footprint_queries=5,
+                 kd32_typed_promotions=1, kd32_supplied_none_queries=1) and len(record['cases']) == 1 and
              all(c['accepted'] for c in record['cases']),
              'complete one21-pair register-move cohort; original fault suites remain separate')
         record['status'] = 'passed'

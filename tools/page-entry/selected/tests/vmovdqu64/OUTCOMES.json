@@ -26,13 +26,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 73,
+        "refusals": 72,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VM64_TF_PASS group=0 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=26 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19\n"
+      "stdout": "LI2_VM64_TF_PASS group=0 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=25 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1
     },
     {
       "argv": [
@@ -53,13 +55,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 73,
+        "refusals": 72,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VM64_TF_PASS group=1 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=26 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19\n"
+      "stdout": "LI2_VM64_TF_PASS group=1 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=25 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19 vm256_typed_promotions=1 vm256_supplied_none_queries=1\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1
     },
     {
       "argv": [
@@ -82,13 +86,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 73,
+        "refusals": 72,
         "version": 1
       },
       "name": "full-read-fault",
       "process_outcome": "expected genuine failed m512 read; operation not completed",
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1
     },
     {
       "argv": [
@@ -111,13 +117,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 73,
+        "refusals": 72,
         "version": 1
       },
       "name": "cross-read-fault",
       "process_outcome": "expected genuine failed m512 read; operation not completed",
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vm256_supplied_none_queries": 1,
+      "vm256_typed_promotions": 1
     }
   ],
   "literal_effects": "ZMM17 becomes exactly64 literal input memory bytes; all other initialized kernelFP/liveXSAVE bytes, GPRs, flags and full stack/data remain unchanged. No XSTATE_BV normalization.",
@@ -127,14 +135,15 @@
   ],
   "negative_endpoint": "Two real m512 read faults at original PC: fully inaccessible operand and last32 bytes beyond readable page. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.",
   "new_load_pairs_total": 36,
-  "new_refusal_count": 26,
+  "new_refusal_count": 25,
   "old_refusal_count": 47,
-  "promoted_refusal_count": 7,
+  "promoted_refusal_count": 8,
   "promotion_groups": {
+    "vm256": 1,
     "vm64": 7
   },
   "prospective_only": true,
-  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +2080; all existing full storage/trailers plus the mandatory2080-byte seven-row Code1605/NONE promotion trailer",
+  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +2080; all existing full storage/trailers plus the mandatory2080-byte seven-row Code1605/NONE promotion trailer +352 exact Code1604 typed/NONE promotion bytes",
   "record_header_fields": [
     "magic",
     "version",
@@ -156,9 +165,17 @@
   ],
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
-  "refusals_per_process": 73,
+  "refusals_per_process": 72,
   "schema_version": 1,
-  "scope": "Exact unmasked EVEX512 load62e1fe486f0f/Code1605 only; no general EVEX/masking, enabled-CET, hardware masking, loader completion or performance claim. Seven exact retained VMOVDQU64 neighbor rows additionally require Code1605/FALLTHROUGH/SIMD and supplied NONE; their actual native family cases are independently mandatory in vmovdqu64_family. All remaining negative rows retain rejection.",
-  "typed_promotions_per_process": 7,
+  "scope": "Exact unmasked EVEX512 load62e1fe486f0f/Code1605 only; no general EVEX/masking, enabled-CET, hardware masking, loader completion or performance claim. Seven exact retained VMOVDQU64 neighbor rows additionally require Code1605/FALLTHROUGH/SIMD and supplied NONE; their actual native family cases are independently mandatory in vmovdqu64_family. All remaining negative rows retain rejection. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.",
+  "typed_promotions_per_process": 8,
+  "vm256_promotion_row": {
+    "bytes": "62e1fe286f0f",
+    "code": 1604,
+    "index": 12,
+    "record_bytes": 352
+  },
+  "vm256_supplied_none_queries_per_process": 1,
+  "vm256_typed_promotions_per_process": 1,
   "vm64_supplied_none_queries_per_process": 7
 }
