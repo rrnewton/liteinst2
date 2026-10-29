@@ -3,7 +3,13 @@
 //! caller checkpoint acknowledges return. Neither acknowledgement observes C3
 //! execution or grants executable reclamation. All code owners are process-lived.
 use super::*;
+pub(super) mod leaf_set;
 mod module;
+pub use leaf_set::{
+    NormalLeafSetBatch, NormalLeafSetClient, NormalLeafSetHistoryBatch, NormalLeafSetHistoryStream,
+    NormalLeafSetHistoryWindow, NormalLeafSetSessionController, NormalLeafSetThread,
+    PreparedNormalLeafSetSessionController,
+};
 mod two_callers;
 pub use module::{
     NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleHistoryBatch,
@@ -140,10 +146,22 @@ struct TransferHeader {
     after: Cursor,
     next: u64,
 }
+#[derive(Clone, Copy)]
+enum TransferProfile {
+    Single,
+    Pair,
+    LeafSet,
+}
+impl TransferProfile {
+    fn from_pair(module: bool) -> Self {
+        if module { Self::Pair } else { Self::Single }
+    }
+}
+
 trait TransferOutput {
     type Batch;
     type Identity;
-    const MODULE: bool;
+    const PROFILE: TransferProfile;
     fn allocate() -> Result<(Self, Vec<u64>), BridgeError>
     where
         Self: Sized;
@@ -168,7 +186,7 @@ struct SingleIdentity {
 impl TransferOutput for SingleOutput {
     type Batch = NormalBatch;
     type Identity = SingleIdentity;
-    const MODULE: bool = false;
+    const PROFILE: TransferProfile = TransferProfile::Single;
     fn allocate() -> Result<(Self, Vec<u64>), BridgeError> {
         let (records, journal) = outputs()?;
         Ok((Self { records }, journal))
@@ -604,6 +622,10 @@ impl NormalState {
             BindingProfile::Module { functions, .. } => {
                 *functions.get(index).ok_or(error(Cause::Identity))?
             }
+            BindingProfile::LeafSet { functions, .. } => *functions
+                .as_slice()
+                .get(index)
+                .ok_or(error(Cause::Identity))?,
             _ => return Err(error(Cause::Identity)),
         };
         Ok(SelectedFunction { index, function })
@@ -619,6 +641,17 @@ impl NormalState {
         }
         if let BindingProfile::Module { site, .. } = &self.binding.profile {
             let function = &site.functions()[selected.index];
+            if entry_pc != function.entry()
+                || return_pc.is_some_and(|pc| !function.returns().contains(&pc))
+            {
+                return Err(error(Cause::Identity));
+            }
+        }
+        if let BindingProfile::LeafSet { site, .. } = &self.binding.profile {
+            let function = site
+                .functions()
+                .get(selected.index)
+                .ok_or(error(Cause::Identity))?;
             if entry_pc != function.entry()
                 || return_pc.is_some_and(|pc| !function.returns().contains(&pc))
             {
@@ -728,7 +761,9 @@ impl NormalState {
         entry: bool,
     ) -> Result<(u64, SelectedFunction), BridgeError> {
         self.binding.process()?;
-        if !(normal_binding_matches(&self.binding) || module::module_runtime_matches(&self.binding))
+        if !(normal_binding_matches(&self.binding)
+            || module::module_runtime_matches(&self.binding)
+            || leaf_set::binding_matches(&self.binding))
             || self.actual_thread != thread::current().id()
             || self.tid != tid()
             || context.stack_pointer < self.stack.start
@@ -748,6 +783,9 @@ impl NormalState {
                 0
             }
             BindingProfile::Module { site, .. } => site
+                .resolve(context.instruction_pointer, control, entry)
+                .ok_or(error(Cause::Identity))?,
+            BindingProfile::LeafSet { site, .. } => site
                 .resolve(context.instruction_pointer, control, entry)
                 .ok_or(error(Cause::Identity))?,
         };
@@ -1135,6 +1173,15 @@ impl NormalThread {
             self.matches(s)
         }
     }
+    fn matches_profile(&self, s: &NormalState, profile: TransferProfile) -> bool {
+        match profile {
+            TransferProfile::Single => self.matches_for(s, false),
+            TransferProfile::Pair => self.matches_for(s, true),
+            TransferProfile::LeafSet => {
+                self.matches_identity(s) && leaf_set::binding_matches(&s.binding)
+            }
+        }
+    }
     fn matches_identity(&self, s: &NormalState) -> bool {
         self.active
             && self.pid == std::process::id()
@@ -1150,11 +1197,14 @@ impl NormalThread {
         self.totals_for(false)
     }
     fn totals_for(&self, module: bool) -> Result<NormalTotals, BridgeError> {
+        self.totals_profile(TransferProfile::from_pair(module))
+    }
+    fn totals_profile(&self, profile: TransferProfile) -> Result<NormalTotals, BridgeError> {
         NORMAL
             .try_with(|cell| {
                 let storage = cell.try_borrow().map_err(|_| error(Cause::Attachment))?;
                 let state = storage.0.as_ref().ok_or(error(Cause::Attachment))?;
-                if !self.matches_for(state, module) {
+                if !self.matches_profile(state, profile) {
                     return Err(error(Cause::Attachment));
                 }
                 state.health()?;
@@ -1183,7 +1233,7 @@ impl NormalThread {
     fn checkpoint_with<O: TransferOutput>(&mut self) -> Result<Option<O::Batch>, BridgeError> {
         let _scope = ControllerScope::enter()?;
         // Preserve a prior sticky failure before any new allocation refusal.
-        self.totals_for(O::MODULE)?;
+        self.totals_profile(O::PROFILE)?;
         let (output, journal) = O::allocate()?;
         NORMAL
             .try_with(|cell| {
@@ -1191,7 +1241,7 @@ impl NormalThread {
                     .try_borrow_mut()
                     .map_err(|_| error(Cause::Attachment))?;
                 let state = storage.0.as_mut().ok_or(error(Cause::Attachment))?;
-                if !self.matches_for(state, O::MODULE) {
+                if !self.matches_profile(state, O::PROFILE) {
                     return Err(error(Cause::Attachment));
                 }
                 state.health()?;
@@ -1212,6 +1262,9 @@ impl NormalThread {
         self.detach_for(false)
     }
     fn detach_for(&mut self, module: bool) -> Result<NormalTotals, BridgeError> {
+        self.detach_profile(TransferProfile::from_pair(module))
+    }
+    fn detach_profile(&mut self, profile: TransferProfile) -> Result<NormalTotals, BridgeError> {
         let _scope = ControllerScope::enter()?;
         NORMAL
             .try_with(|cell| {
@@ -1219,7 +1272,7 @@ impl NormalThread {
                     .try_borrow_mut()
                     .map_err(|_| error(Cause::Attachment))?;
                 let state = storage.0.as_ref().ok_or(error(Cause::Attachment))?;
-                if !self.matches_for(state, module) {
+                if !self.matches_profile(state, profile) {
                     return Err(error(Cause::Attachment));
                 }
                 state.health()?;

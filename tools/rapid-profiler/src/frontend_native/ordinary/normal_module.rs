@@ -15,7 +15,7 @@ pub struct NormalModuleContract {
     pub no_active_cet: bool,
 }
 impl NormalModuleContract {
-    fn check(self) -> Result<(), SetupRefusal> {
+    pub(super) fn check(self) -> Result<(), SetupRefusal> {
         if !self.single_external_entry_per_function {
             return Err(SetupRefusal::EntryExit);
         }
@@ -98,54 +98,16 @@ impl LoadedNormalModule {
         contract: NormalModuleContract,
     ) -> Result<&'static mut Self, SetupRefusal> {
         contract.check()?;
-        check_selections(selections)?;
-        let parsed = [
-            selection::parse(selections[0])?,
-            selection::parse(selections[1])?,
-        ];
-        // Refuse excess page demand or disagreement before invoking the loader.
-        canonical_pages([
-            (parsed[0].page, parsed[0].source.as_slice()),
-            (parsed[1].page, parsed[1].source.as_slice()),
-        ])?;
-        // SAFETY: both complete ELF/CFG checks and continuous union custody above.
-        let owner = unsafe { retain_loader(path, selections[0].trusted_final_elf())? };
-        let (entry0, bias0) = selection::resolve(owner, &parsed[0])?;
-        let (entry1, bias1) = selection::resolve(owner, &parsed[1])?;
-        if bias0 != bias1 {
-            return Err(SetupRefusal::SymbolOwner);
-        }
-        let [first, second] = parsed;
-        let make = |parsed: Parsed, entry, label: &str| -> Result<_, SetupRefusal> {
-            let source_start = bias0.checked_add(parsed.page).ok_or(SetupRefusal::Format)?;
-            source_start
-                .checked_add(parsed.source.len() as u64)
-                .ok_or(SetupRefusal::Format)?;
-            Ok(NormalModuleFunction {
-                label: label.into(),
-                certificate: cfg::admit(&parsed.code, entry)?,
-                parsed,
-                source_start,
-            })
-        };
-        let functions = [
-            make(first, entry0, selections[0].label())?,
-            make(second, entry1, selections[1].label())?,
-        ];
-        let pages = canonical_pages([
-            (
-                functions[0].source_start,
-                functions[0].parsed.source.as_slice(),
-            ),
-            (
-                functions[1].source_start,
-                functions[1].parsed.source.as_slice(),
-            ),
-        ])?;
+        // SAFETY: the unchanged complete pair/union custody contract above.
+        let parts = unsafe { load_parts(path, &selections)? };
+        let functions = parts
+            .functions
+            .try_into()
+            .map_err(|_| SetupRefusal::Format)?;
         let loaded = Box::leak(Box::new(Self {
-            owner,
+            owner: parts.owner,
             functions,
-            pages,
+            pages: parts.pages,
         }));
         loaded.verify_original()?;
         Ok(loaded)
@@ -165,45 +127,140 @@ impl LoadedNormalModule {
         &mut self,
         expected: &[ExpectedBytes],
     ) -> Result<(), SetupRefusal> {
-        check_overlay(
-            &self.pages,
-            expected,
-            self.functions.each_ref().map(|f| f.certificate.range()),
-        )?;
-        for function in &self.functions {
-            verify_source_provenance(
-                self.owner,
-                &function.parsed,
-                function.entry(),
-                function.source_start,
-                function.code().len(),
-            )?;
-        }
-        for page in expected {
-            // SAFETY: both retained provenance checks and continuous union lease.
-            unsafe {
-                verify_live_source(page.address, &page.bytes)?;
-            }
-        }
-        Ok(())
+        verify_parts(self.owner, &self.functions, &self.pages, expected)
     }
 }
 
+#[cfg(test)]
 fn check_selections(selections: [&TrustedFunctionSelection<'_>; 2]) -> Result<(), SetupRefusal> {
-    if selections[0].trusted_final_elf() != selections[1].trusted_final_elf() {
+    check_selection_slice(&selections)
+}
+pub(super) fn check_selection_slice(
+    selections: &[&TrustedFunctionSelection<'_>],
+) -> Result<(), SetupRefusal> {
+    if !(1..=4).contains(&selections.len()) {
+        return Err(SetupRefusal::EntryExit);
+    }
+    if selections
+        .iter()
+        .any(|s| s.trusted_final_elf() != selections[0].trusted_final_elf())
+    {
         return Err(SetupRefusal::SourceBytes);
     }
-    let [a, b] = selections.map(TrustedFunctionSelection::elf_range);
-    if a.0 >= a.1 || a.1 > b.0 || b.0 >= b.1 {
+    let ranges: Vec<_> = selections.iter().map(|s| s.elf_range()).collect();
+    if ranges.iter().any(|r| r.0 >= r.1) || ranges.windows(2).any(|w| w[0].1 > w[1].0) {
         return Err(SetupRefusal::EntryExit);
     }
     Ok(())
 }
 
+pub(super) struct LoadedParts {
+    pub(super) owner: &'static mut Retained,
+    pub(super) functions: Vec<NormalModuleFunction>,
+    pub(super) pages: Vec<ExpectedBytes>,
+}
+pub(super) fn preflight(
+    selections: &[&TrustedFunctionSelection<'_>],
+) -> Result<Vec<Parsed>, SetupRefusal> {
+    check_selection_slice(selections)?;
+    let parsed = selections
+        .iter()
+        .map(|s| selection::parse(s))
+        .collect::<Result<Vec<_>, _>>()?;
+    canonical_page_slice(
+        &parsed
+            .iter()
+            .map(|p| (p.page, p.source.as_slice()))
+            .collect::<Vec<_>>(),
+    )?;
+    Ok(parsed)
+}
+pub(super) unsafe fn load_parts(
+    path: &Path,
+    selections: &[&TrustedFunctionSelection<'_>],
+) -> Result<LoadedParts, SetupRefusal> {
+    let parsed = preflight(selections)?;
+    // SAFETY: every selected ELF/CFG and the complete union were checked before loading.
+    let owner = unsafe { retain_loader(path, selections[0].trusted_final_elf())? };
+    let resolved = parsed
+        .iter()
+        .map(|p| selection::resolve(owner, p))
+        .collect::<Result<Vec<_>, _>>()?;
+    let bias = resolved[0].1;
+    if resolved.iter().any(|r| r.1 != bias) {
+        return Err(SetupRefusal::SymbolOwner);
+    }
+    let functions = parsed
+        .into_iter()
+        .zip(resolved)
+        .zip(selections)
+        .map(|((parsed, (entry, _)), selection)| {
+            let source_start = bias.checked_add(parsed.page).ok_or(SetupRefusal::Format)?;
+            source_start
+                .checked_add(parsed.source.len() as u64)
+                .ok_or(SetupRefusal::Format)?;
+            Ok(NormalModuleFunction {
+                label: selection.label().into(),
+                certificate: cfg::admit(&parsed.code, entry)?,
+                parsed,
+                source_start,
+            })
+        })
+        .collect::<Result<Vec<_>, SetupRefusal>>()?;
+    let pages = canonical_page_slice(
+        &functions
+            .iter()
+            .map(|f| (f.source_start, f.parsed.source.as_slice()))
+            .collect::<Vec<_>>(),
+    )?;
+    Ok(LoadedParts {
+        owner,
+        functions,
+        pages,
+    })
+}
+pub(super) fn verify_parts(
+    owner: &mut Retained,
+    functions: &[NormalModuleFunction],
+    pages: &[ExpectedBytes],
+    expected: &[ExpectedBytes],
+) -> Result<(), SetupRefusal> {
+    check_overlay_slice(
+        pages,
+        expected,
+        &functions
+            .iter()
+            .map(|f| f.certificate.range())
+            .collect::<Vec<_>>(),
+    )?;
+    for function in functions {
+        verify_source_provenance(
+            owner,
+            &function.parsed,
+            function.entry(),
+            function.source_start,
+            function.code().len(),
+        )?;
+    }
+    for page in expected {
+        // SAFETY: retained provenance and continuous complete-union lease.
+        unsafe {
+            verify_live_source(page.address, &page.bytes)?;
+        }
+    }
+    Ok(())
+}
+
 // Exact pages, never a synthesized span between distant selected functions.
+#[cfg(test)]
 fn canonical_pages(sources: [(u64, &[u8]); 2]) -> Result<Vec<ExpectedBytes>, SetupRefusal> {
+    canonical_page_slice(&sources)
+}
+pub(super) fn canonical_page_slice(
+    sources: &[(u64, &[u8])],
+) -> Result<Vec<ExpectedBytes>, SetupRefusal> {
     let mut pages: Vec<ExpectedBytes> = Vec::new();
-    for (start, source) in sources {
+    for &(start, source) in sources {
         if start % 4096 != 0 || !matches!(source.len(), 4096 | 8192) {
             return Err(SetupRefusal::Format);
         }
@@ -233,10 +290,18 @@ fn canonical_pages(sources: [(u64, &[u8]); 2]) -> Result<Vec<ExpectedBytes>, Set
 
 // Every byte outside the two complete bodies stays original. Publication must
 // additionally supply the exact plan/receipt and readable live image checks.
+#[cfg(test)]
 fn check_overlay(
     originals: &[ExpectedBytes],
     expected: &[ExpectedBytes],
     bodies: [(u64, u64); 2],
+) -> Result<(), SetupRefusal> {
+    check_overlay_slice(originals, expected, &bodies)
+}
+pub(super) fn check_overlay_slice(
+    originals: &[ExpectedBytes],
+    expected: &[ExpectedBytes],
+    bodies: &[(u64, u64)],
 ) -> Result<(), SetupRefusal> {
     if originals.len() != expected.len() {
         return Err(SetupRefusal::SourceBytes);

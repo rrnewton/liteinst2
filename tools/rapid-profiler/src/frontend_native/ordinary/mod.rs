@@ -15,7 +15,9 @@ use std::path::Path;
 mod cfg;
 mod normal;
 pub use normal::{LoadedNormalLeaf, NormalLeafContract};
+mod normal_leaf_set;
 mod normal_module;
+pub use normal_leaf_set::LoadedNormalLeafSet;
 #[cfg(test)]
 pub(in crate::frontend_native) use normal_module::admit_for_planner_test;
 pub use normal_module::{LoadedNormalModule, NormalModuleContract, NormalModuleFunction};

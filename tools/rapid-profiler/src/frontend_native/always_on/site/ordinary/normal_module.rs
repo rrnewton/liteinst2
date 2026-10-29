@@ -5,9 +5,9 @@ use liteinst2::controls::ControlIdentity;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NormalModuleFunctionSite {
-    entry: u64,
-    end: u64,
-    returns: Vec<u64>,
+    pub(super) entry: u64,
+    pub(super) end: u64,
+    pub(super) returns: Vec<u64>,
 }
 impl NormalModuleFunctionSite {
     pub fn entry(&self) -> u64 {
@@ -27,7 +27,7 @@ pub enum NormalModulePreparationPolicy {
     WholeFunction,
 }
 impl NormalModulePreparationPolicy {
-    fn internal(self) -> PreparationPolicy {
+    pub(super) fn internal(self) -> PreparationPolicy {
         match self {
             Self::CertifiedBlocks => PreparationPolicy::CertifiedBlocks,
             Self::WholeFunction => PreparationPolicy::WholeFunction,
@@ -47,9 +47,9 @@ pub struct NormalModuleRole {
     pub kind: NormalModuleRoleKind,
     pub pc: u64,
 }
-struct ModuleRole {
-    metadata: NormalModuleRole,
-    control: ProbeControl,
+pub(super) struct ModuleRole {
+    pub(super) metadata: NormalModuleRole,
+    pub(super) control: ProbeControl,
 }
 pub(in crate::frontend_native::always_on) struct ModuleSite {
     identity: CodeIdentity,
@@ -272,22 +272,9 @@ impl NormalModuleSitePreparation {
         receipt: BundleReceipt,
     ) -> Result<InstalledNormalModuleSite, SiteError> {
         let (prep, installed, receipt) = Box::leak(Box::new((self, installed, receipt)));
-        if !timing::supported() {
-            return Err(SiteError::ClockUnsupported);
-        }
-        if installed.is_retired()
-            || !same_bundle(installed.plan(), prep.planned.plan())
-            || !same_bundle(receipt.plan(), prep.planned.plan())
-            || installed.trampolines().len() != prep.planned.images().len()
-            || prep.site.identity != prep.planned.plan().identity()
-        {
-            return Err(SiteError::Correspondence);
-        }
-        for (image, executable) in prep.planned.images().iter().zip(installed.trampolines()) {
-            // SAFETY: complete real retained publication/readability above.
-            unsafe {
-                check_image(image, executable)?;
-            }
+        // SAFETY: all real transaction owners were retained before this check.
+        unsafe {
+            check_publication(&prep.planned, installed, receipt, prep.site.identity)?;
         }
         prep.owner
             .verify_expected_pages(prep.planned.plan().final_bytes())
@@ -298,12 +285,38 @@ impl NormalModuleSitePreparation {
     }
 }
 
+pub(super) unsafe fn check_publication(
+    planned: &PlannedBundle,
+    installed: &InstalledBundle,
+    receipt: &BundleReceipt,
+    identity: CodeIdentity,
+) -> Result<(), SiteError> {
+    if !timing::supported() {
+        return Err(SiteError::ClockUnsupported);
+    }
+    if installed.is_retired()
+        || !same_bundle(installed.plan(), planned.plan())
+        || !same_bundle(receipt.plan(), planned.plan())
+        || installed.trampolines().len() != planned.images().len()
+        || identity != planned.plan().identity()
+    {
+        return Err(SiteError::Correspondence);
+    }
+    for (image, executable) in planned.images().iter().zip(installed.trampolines()) {
+        // SAFETY: complete real retained publication/readability above.
+        unsafe {
+            check_image(image, executable)?;
+        }
+    }
+    Ok(())
+}
+
 // Pure planning inputs, not a loader/caller authority. Production obtains each
 // certificate only from the retained owner; tests use the real scalar decoder.
-struct ModuleFunctionSource<'a> {
-    code: &'a [u8],
-    certificate: &'a IntegerLeafCertificate,
-    source_range: (u64, u64),
+pub(super) struct ModuleFunctionSource<'a> {
+    pub(super) code: &'a [u8],
+    pub(super) certificate: &'a IntegerLeafCertificate,
+    pub(super) source_range: (u64, u64),
 }
 fn module_budget() -> BundleBudget {
     BundleBudget {
@@ -320,9 +333,41 @@ fn prepare_module(
     identity: CodeIdentity,
     policies: [PreparationPolicy; 2],
 ) -> Result<(PlannedBundle, Arc<ModuleSite>), SiteError> {
+    let (planned, functions, roles) =
+        prepare_functions(&functions, originals, identity, &policies)?;
+    let functions = functions
+        .try_into()
+        .map_err(|_| SiteError::Correspondence)?;
+    Ok((
+        planned,
+        Arc::new(ModuleSite {
+            identity,
+            functions,
+            roles,
+        }),
+    ))
+}
+pub(super) fn prepare_functions(
+    functions: &[ModuleFunctionSource<'_>],
+    originals: &[ExpectedBytes],
+    identity: CodeIdentity,
+    policies: &[PreparationPolicy],
+) -> Result<
+    (
+        PlannedBundle,
+        Vec<NormalModuleFunctionSite>,
+        Vec<ModuleRole>,
+    ),
+    SiteError,
+> {
+    if !(1..=4).contains(&functions.len()) || policies.len() != functions.len() {
+        return Err(SiteError::Correspondence);
+    }
     if identity.mapping != functions[0].certificate.entry()
         || identity.generation == 0
-        || functions[0].certificate.range().1 > functions[1].certificate.entry()
+        || functions
+            .windows(2)
+            .any(|w| w[0].certificate.range().1 > w[1].certificate.entry())
         || !(1..=2).contains(&originals.len())
         || originals
             .iter()
@@ -339,11 +384,14 @@ fn prepare_module(
         .collect::<Result<Vec<_>, _>>()?;
     let mut members = Vec::new();
     let mut all_roles = Vec::new();
-    let sites = functions.each_ref().map(|f| NormalModuleFunctionSite {
-        entry: f.certificate.entry(),
-        end: f.certificate.range().1,
-        returns: f.certificate.returns().to_vec(),
-    });
+    let sites = functions
+        .iter()
+        .map(|f| NormalModuleFunctionSite {
+            entry: f.certificate.entry(),
+            end: f.certificate.range().1,
+            returns: f.certificate.returns().to_vec(),
+        })
+        .collect();
     let mut group_count = 0;
     for (function_index, function) in functions.iter().enumerate() {
         let entry = function.certificate.entry();
@@ -454,14 +502,7 @@ fn prepare_module(
     {
         return Err(SiteError::Correspondence);
     }
-    Ok((
-        planned,
-        Arc::new(ModuleSite {
-            identity,
-            functions: sites,
-            roles: all_roles,
-        }),
-    ))
+    Ok((planned, sites, all_roles))
 }
 
 fn projection(pages: &[ExpectedBytes], start: u64, len: usize) -> Result<Vec<u8>, SiteError> {

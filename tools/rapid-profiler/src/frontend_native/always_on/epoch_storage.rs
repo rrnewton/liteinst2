@@ -47,6 +47,21 @@ fn normal_profile(site: &site::Site, limits: Limits) -> bool {
 enum Profile {
     Normal,
     ModuleSession,
+    LeafSetSession,
+}
+
+pub(super) fn prepare_leaf_set(
+    prepared: &mut PreparedIntervalController,
+    config: Config,
+) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
+    prepare_for(prepared, config, Profile::LeafSetSession)
+}
+#[allow(clippy::result_large_err)] // Preserve the same bank without a recurring error allocation.
+pub(super) fn stage_leaf_set(
+    controller: &mut IntervalController,
+    bank: IntervalEpochStorage,
+) -> Result<IntervalEpoch, (BridgeError, IntervalEpochStorage)> {
+    controller.stage_prepared_for(bank, Profile::LeafSetSession)
 }
 
 pub(super) fn prepare_module(
@@ -85,6 +100,13 @@ fn prepare_for(
         }
         Profile::ModuleSession => {
             if !normal::module_session_profile_matches(&prepared.profile, prepared.limits, config)
+                || prepared.session.history_mode() != HistoryMode::Absolute
+            {
+                return Err(error(Cause::Identity));
+            }
+        }
+        Profile::LeafSetSession => {
+            if !normal::leaf_set::profile_matches(&prepared.profile, prepared.limits, config)
                 || prepared.session.history_mode() != HistoryMode::Absolute
             {
                 return Err(error(Cause::Identity));
@@ -156,6 +178,11 @@ impl IntervalController {
             }
             Profile::ModuleSession => {
                 if !normal::module_session_binding_matches(&self.binding) {
+                    return Err((error(Cause::Identity), bank));
+                }
+            }
+            Profile::LeafSetSession => {
+                if !normal::leaf_set::binding_matches(&self.binding) {
                     return Err((error(Cause::Identity), bank));
                 }
             }

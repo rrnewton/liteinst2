@@ -259,6 +259,7 @@ mod application_sealed {
     pub trait Sealed {}
     impl Sealed for super::SingleApplication {}
     impl Sealed for crate::normal::module::session::Application {}
+    impl<const N: usize> Sealed for crate::normal::leaf_set::Application<N> {}
 }
 pub(in crate::normal) trait Application: application_sealed::Sealed {
     type Controller: engine::Controller;

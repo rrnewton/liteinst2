@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "revision": "cc0fc2947464f880fba6bc384a58527bd64fe9dd",
+  "status": "SOURCE_AND_CONTROLS_PASS",
+  "scope": "Bounded one-to-four selected scalar leaf sessions. Source/API and controls; native functional/full-state/deadline/accuracy/performance qualification remains separate and UNRUN for this profile.",
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "cpu": {
+      "vendor_id": "AuthenticAMD",
+      "cpu family": "26",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "microcode": "0xb101066"
+    },
+    "kernel": "7.1.3",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "reservation": {
+    "cpus": [
+      63,
+      112,
+      130,
+      176,
+      192,
+      209,
+      217,
+      245
+    ],
+    "tag": "li2core-leaf-checks-cc0fc29",
+    "mechanism": "cpuset-alloc shared ledger and hard AllowedCPUs",
+    "test_threads": "libtest default within eight reserved CPUs; explicit serial-launch only",
+    "compiler_jobs": 4,
+    "load_average_recorded": false
+  },
+  "outer": {
+    "start_utc": "2026-10-29T11:43:28.930680+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 501.6000760102179,
+    "private_log_sha256": "52c9c56f2f9d7c4323d3925bc1731aecd4dc0f68a5e38fe9d6f4307d87864874",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "checks_only_runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+  "process_owner_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "source_packet_sha256": "e46aea6de40f9eebeef7d233c242dc2342a07b76d0ceb866eb6b6725ddab7b18",
+  "independent_source_review": {
+    "head": "cc0fc2947464f880fba6bc384a58527bd64fe9dd",
+    "sha256": "718d628987bf8a92bb8d4d1f4149be68391fd4fbd40107972719ca2f4cb3202a",
+    "verdict": "SOURCE_APPROVED_INTEGRATION",
+    "runtime_evidence_read": false
+  },
+  "new_controls": {
+    "sdk": 18,
+    "application": 12,
+    "python": 14
+  },
+  "bounds": {
+    "lateness_ms": 2,
+    "period_ms": 10,
+    "shutdown_seconds": 2,
+    "selected_functions": [
+      1,
+      4
+    ],
+    "source_pages": 2,
+    "epochs": 520,
+    "resident_banks": 3,
+    "actual_calls": 4096,
+    "accepted_records": "min(2048,4096//N)"
+  },
+  "development_failure": "Initial strict Clippy refused a test range loop. Enumerate the unchanged four IDS, assert len==4, and retain every comparison; no lint allow. Failed command retained in checks.csv.",
+  "commands": {
+    "checks": "cpuset-alloc run --cores 8 --sample-s 1 --tag li2core-leaf-checks-cc0fc29 -- python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/FRESH_CHECKS\" --checks-only",
+    "python": "python3 -B evaluation/ordinary-leaf-set-session/controls.py"
+  },
+  "build_environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+  },
+  "counts": {
+    "workspace_passed": 3265,
+    "workspace_failed": 0,
+    "workspace_ignored": 36,
+    "serial_launch_passed": 1039,
+    "staged_allocation_passed": 3,
+    "prefixed_pun_passed": 36,
+    "python_passed": 14
+  },
+  "raw": "Ignored private logs only; tracked CSV contains every development command and all seven exact-revision checks. Seconds are operational wall durations, not performance measurements.",
+  "merged_validation": {
+    "revision": "6c260b32725c46065eab96cf05b20c0002258be7",
+    "main": "eca64fde189e2b123489ded1ca24d542c821e89c",
+    "status": "PASS",
+    "all_33_source_images_unchanged": true,
+    "source_review_sha256": "1ce37bf7d57718c9b972abc5ff72ed7240e0c017d391c9337645893cd60bc7e6",
+    "source_review_scope": "Exact merge continuity for33payloads/71dependencies; incoming already-landed main outside that source review.",
+    "cpus": [
+      44,
+      53,
+      128,
+      187,
+      244,
+      268,
+      300,
+      302
+    ],
+    "reservation_tag": "li2core-leaf-checks-6c260b3",
+    "outer": {
+      "start_utc": "2026-10-29T11:54:47.894253+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 501.24209058703855,
+      "private_log_sha256": "17121d164244daff1bb7effc0281f372519eba8f5ae6312a0f352c0fd10f82f9",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "counts": {
+      "fmt": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "clippy": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "check": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "workspace-default": {
+        "passed": 3265,
+        "failed": 0,
+        "ignored": 36
+      },
+      "serial-launch": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0
+      },
+      "staged-allocation": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0
+      },
+      "prefixed-pun": {
+        "passed": 36,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "command": "cpuset-alloc run --cores 8 --sample-s 1 --tag li2core-leaf-checks-6c260b3 -- python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/FRESH_CHECKS\" --checks-only"
+  }
+}

@@ -77,12 +77,17 @@ enum BindingProfile {
         site: Arc<site::ordinary::ModuleSite>,
         functions: [FunctionId; 2],
     },
+    LeafSet {
+        site: Arc<site::ordinary::LeafSetSite>,
+        functions: normal::leaf_set::LeafFunctions,
+    },
 }
 impl BindingProfile {
     fn single(&self) -> Result<(&Arc<site::Site>, FunctionId), BridgeError> {
         match self {
             Self::Single { site, function } => Ok((site, *function)),
             Self::Module { .. } => Err(error(Cause::Identity)),
+            Self::LeafSet { .. } => Err(error(Cause::Identity)),
         }
     }
 }
