@@ -1,9 +1,24 @@
-/* Canonical KMOVQ r64,K with non-RSP destination. The complete inherited
+/* Canonical KMOVQ r64,K (default) or KMOVD r32,K. The complete inherited
    native/TF comparison is unchanged; literal register tables add exact effects. */
 #define fixture_main li2_unchanged_generic_fixture_main
 #include "tests/generic/fixture.c"
 #undef fixture_main
+#ifndef KMV_REGISTER_BITS
+#define KMV_REGISTER_BITS 64
+#endif
+#if KMV_REGISTER_BITS == 64
 #include "cases.inc"
+#define KMR_CODE 1933U
+#define KMR_LENGTH 5U
+#define KMR_REFUSALS 90U
+#elif KMV_REGISTER_BITS == 32
+#include "cases32.inc"
+#define KMR_CODE 1932U
+#define KMR_LENGTH 4U
+#define KMR_REFUSALS 128U
+#else
+#error KMV_REGISTER_BITS must select exactly 64 or 32
+#endif
 #ifndef KMV_GROUP
 #error KMV_GROUP must select a bounded cohort
 #endif
@@ -74,6 +89,7 @@ static const struct vpb_case *vpb_case(const struct sample *s) {
 static void vpb_inputs(struct sample *s) {
     inputs(s);vpb_seed();const struct vpb_case *v=vpb_case(s);
     need(v->destination<16&&v->destination!=4&&v->source<8&&v->initial!=v->value,1132);
+    if(KMV_REGISTER_BITS==32)need((v->initial>>32)&&v->initial!=(uint32_t)v->value,1238);
     vpb_masks[v->source]=v->value;fixture_seed[v->destination]=v->initial;
 }
 static void vpb_prepare(struct sample *s,unsigned index) {
@@ -89,7 +105,7 @@ static void vpb_prepare(struct sample *s,unsigned index) {
     memcpy(s->source+offset,v->bytes,s->length);memcpy((void *)s->mapping,s->source,sizeof(s->source));
     need(!dispatch(SYS_mprotect,s->mapping,CODE_BYTES,PROT_READ|PROT_EXEC,0,0,0),1111);
     need(!li2_decoder_decode(s->pc,(const void *)s->pc,s->length,&s->decoded)&&
-         s->decoded.decode_status==LI2_VALID&&s->decoded.kind==LI2_NONE&&s->decoded.code==1933&&
+         s->decoded.decode_status==LI2_VALID&&s->decoded.kind==LI2_NONE&&s->decoded.code==KMR_CODE&&
          s->decoded.length==s->length&&!memcmp(s->decoded.bytes,v->bytes,s->length),1112);
 }
 static size_t vpb_offset(unsigned reg,unsigned byte) {
@@ -134,9 +150,10 @@ static void vpb_fp_effect(const struct sample *s,const unsigned char *before,
 }
 static void vpb_effects(struct sample *s,unsigned index) {
     need(index<VPB_PAIRS&&vpb_observations.checked==index,1122);
-    if(!s->selftest)need(s->owner.classification.policy==1&&s->owner.classification.code==1933&&
+    if(!s->selftest)need(s->owner.classification.policy==1&&s->owner.classification.code==KMR_CODE&&
         s->owner.classification.flow==LI2_TF_FALLTHROUGH&&s->owner.classification.family==LI2_TF_SIMD&&
-        s->length==5&&s->expected_post==s->pc+5&&!memcmp(s->decoded.bytes,vpb_case(s)->bytes,5),1123);
+        s->length==KMR_LENGTH&&s->expected_post==s->pc+KMR_LENGTH&&
+        !memcmp(s->decoded.bytes,vpb_case(s)->bytes,KMR_LENGTH),1123);
     const struct li2_step_frame *frames[]={&s->native_before.frame,&s->native_after.frame,
         &s->step_before.frame,&s->owner.step.before,&s->owner.step.after,&s->step_endpoint.frame};
     for(unsigned i=0;i<6;i++)vpb_observations.bv[index][i]=vpb_header(frames[i]->fp,frames[i]->fp_bytes,1);
@@ -145,7 +162,8 @@ static void vpb_effects(struct sample *s,unsigned index) {
         const struct state *before=l?&s->step_before:&s->native_before;
         const struct state *after=l?&s->step_endpoint:&s->native_after;
         for(unsigned r=0;r<16;r++) {
-            uint64_t expected=(!s->selftest&&r==vpb_case(s)->destination)?vpb_case(s)->value:fixture_seed[r];
+            uint64_t expected=(!s->selftest&&r==vpb_case(s)->destination)?
+                (KMV_REGISTER_BITS==32?(uint32_t)vpb_case(s)->value:vpb_case(s)->value):fixture_seed[r];
             need((uint64_t)before->frame.greg[regs[r]]==fixture_seed[r]&&
                  s->live[2*l].gpr[r]==fixture_seed[r]&&
                  (uint64_t)after->frame.greg[regs[r]]==expected&&s->live[2*l+1].gpr[r]==expected,1124);
@@ -156,7 +174,7 @@ static void vpb_effects(struct sample *s,unsigned index) {
             actual.fs_base=before->fs;actual.gs_base=before->gs;
             struct li2_write_footprint *q=&kmr_queries.values[index][l];
             need(!li2_decoder_write_footprint(s->pc,s->decoded.bytes,s->length,&actual,q)&&
-                 q->abi_version==1&&q->policy==LI2_WRITE_NONE&&q->code==1933&&q->length==5&&
+                 q->abi_version==1&&q->policy==LI2_WRITE_NONE&&q->code==KMR_CODE&&q->length==KMR_LENGTH&&
                  q->pc==s->pc&&q->next_pc==s->expected_post&&!q->first&&!q->end,1196);
             ++kmr_queries.complete;
         }
@@ -197,11 +215,14 @@ static void vpb_pair(struct sample *s,unsigned index) {
     ++result.completed;
 }
 #include "tests/kmovq/register_promotions.inc"
+#include "promotions32.inc"
 static void vpb_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
         if(i<5){kmr_promote(v,(unsigned)i);continue;}
+        if(kd32_is_promoted((unsigned)i)){kd32_promote((unsigned)i,v->b,v->n,
+            result.decoder_result,&refused_last);continue;}
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
         ++result.refusals;
@@ -217,11 +238,26 @@ static void vpb_refusals(void) {
              footprint.pc==0x1000&&!footprint.first&&!footprint.end,1220+i);
         ++result.refusals;
     }
+    kd32_promotions_complete();
+#if KMV_REGISTER_BITS == 32
+    _Static_assert(sizeof(kd32_refused)/sizeof(kd32_refused[0])==38,"all width32 neighbors");
+    for(unsigned i=0;i<sizeof(kd32_refused)/sizeof(kd32_refused[0]);i++) {
+        const struct kd32_refusal *v=&kd32_refused[i];result.failed_refusal=96+i;
+        result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
+             !refused_last.policy&&!refused_last.flow&&!refused_last.family,1600+i);
+        struct li2_write_registers registers={0};struct li2_write_footprint footprint={0};
+        need(!li2_decoder_write_footprint(0x1000,v->b,v->n,&registers,&footprint)&&
+             footprint.abi_version==1&&footprint.policy==LI2_WRITE_UNSUPPORTED&&
+             footprint.pc==0x1000&&!footprint.first&&!footprint.end,1640+i);
+        ++result.refusals;
+    }
+#endif
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
-                   sizeof(vpb_observations)+sizeof(kmr_queries)<16*1024*1024,"unchanged complete record cap");
+                   sizeof(vpb_observations)+sizeof(kmr_queries)+sizeof(kd32_promotions)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5176,"literal trailer extent");
     _Static_assert(sizeof(kmr_queries)==2048,"actual query trailer extent");
     _Static_assert(sizeof(kmr_refused)/sizeof(kmr_refused[0])==16,"all RSP and high-register neighbors");
@@ -233,13 +269,18 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==91&&kmr_promoted==5,1183);
+    vpb_refusals();need(result.refusals==KMR_REFUSALS&&kmr_promoted==5,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     for(unsigned i=0;i<VPB_COUNT;i++){vpb_prepare(&samples[i+1],i);vpb_pair(&samples[i+1],i+1);}
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          write_all(3,&vpb_observations,sizeof(vpb_observations))&&kmr_queries.complete==40&&
-         write_all(3,&kmr_queries,sizeof(kmr_queries)),1184);
-    output("LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n");
+         write_all(3,&kmr_queries,sizeof(kmr_queries))&&
+         write_all(3,&kd32_promotions,sizeof(kd32_promotions)),1184);
+#if KMV_REGISTER_BITS == 32
+    output("LI2_KMDR_TF_PASS pairs=21 register_moves=20 zero_extended=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=27 new_refusal_bytes=16 width32_refusal_bytes=38 promoted_encoding_checks=5 promoted_footprint_queries=5 kd32_typed_promotions=1 kd32_supplied_none_queries=1 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n");
+#else
+    output("LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=27 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 kd32_typed_promotions=1 kd32_supplied_none_queries=1 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n");
+#endif
     return 0;
 }

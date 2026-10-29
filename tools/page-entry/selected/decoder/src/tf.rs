@@ -115,6 +115,15 @@ fn canonical_padding_nop(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Nop_rm16, [0x66, 0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
 }
 
+// Canonical shortest VEX.L0.F2.0F.W0 KMOVD r32,k only. ESP stays closed;
+// no C4 alternative, memory, reverse, other width or added prefix is admitted.
+// The CPU zero-extends the low32 source mask bits into the full destination GPR.
+fn canonical_kmovd_register(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::VEX_Kmovd_r32_kr
+        && matches!(bytes, [0xc5, 0xfb | 0x7b, 0x93, modrm]
+            if *modrm & 0xc0 == 0xc0 && !(bytes[1] == 0xfb && *modrm & 0x38 == 0x20))
+}
+
 // Canonical VEX.L0.F2.0F.W1 KMOVQ r64,k only. RSP destination stays
 // outside this family; no reverse, memory, narrow, ignored-extension or prefix forms.
 fn canonical_kmovq_register(instruction: &Instruction, bytes: &[u8]) -> bool {
@@ -385,6 +394,8 @@ fn classify(
         // Exact observed register form RBX <- BZHI(RDX, R11[7:0]). The original
         // CPU instruction owns every flag bit, including undefined AF/PF.
         if source[..instruction.len()] != [0xc4, 0xe2, 0xa0, 0xf5, 0xda] { return Ok(out); }
+    } else if instruction.code() == Code::VEX_Kmovd_r32_kr {
+        if !canonical_kmovd_register(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::VEX_Kmovq_r64_kr {
         if !canonical_kmovq_register(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
@@ -687,6 +698,7 @@ fn classify(
         | Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
         | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
+        | Code::VEX_Kmovd_r32_kr
         | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
