@@ -302,13 +302,15 @@ def subject_elf(path,assembly):
     need(len(indirect)==1 and all(i in indirect or '<_exit@plt>'in body[i][3]for i in calls),
          'one actual indirect dispatch; only terminal assertion failure may call another function')
     names=('rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi','r8','r9','r10','r11','r12','r13','r14','r15')
+    # Objdump's label is commentary; actual ELF symbols, relocation and the
+    # encoded RIP displacement above establish the pointer's exact identity.
     loads=[]
     for i,(pc,code,op,operands)in enumerate(body):
         if len(code)!=7 or code[0]not in(0x48,0x4c)or code[1]!=0x8b or code[2]&0xc7!=5:continue
         address=pc+7+int.from_bytes(code[3:],'little',signed=True)
         if address!=pointer[4]:continue
         reg=((code[2]>>3)&7)+(8 if code[0]&4 else 0)
-        need(op in('mov','movq')and re.search(r',%'+names[reg]+r'\s+#\s*'+format(pointer[4],'x')+r' <workload_scan>$',operands),
+        need(op in('mov','movq')and re.search(r',%'+names[reg]+r'\s+#\s*'+format(pointer[4],'x')+r' <[^<>]+>$',operands),
              'actual RIP-relative eight-byte volatile pointer load')
         loads.append((i,reg))
     need(len(loads)==1,'one exact actual volatile pointer load')
@@ -323,10 +325,13 @@ def subject_elf(path,assembly):
     need(not any(re.search(r'%(?:'+'|'.join(register_names)+r')\b',x[3])or
          x[2].startswith(('call','j','loop'))for x in body[li+1:ci]),
          'pointer register and straight-line load-to-call provenance remain intact')
+    # A compiler may share a return tail using another backward jump outside
+    # the loop. Require exactly one backedge enclosing this real load and call.
     back=[]
     for i,x in enumerate(body):
         m=re.match(r'([0-9a-f]+) <',x[3])
-        if x[2].startswith('j')and m and batch[4]<=int(m[1],16)<x[0]:back.append((i,int(m[1],16)))
+        if x[2].startswith('j')and m and batch[4]<=int(m[1],16)<=body[li][0]<call[0]<x[0]:
+            back.append((i,int(m[1],16)))
     need(len(back)==1 and back[0][1]<=body[li][0]<call[0]<body[back[0][0]][0]and
          not any(x[2].startswith(('call','j','loop','ret'))for x in body if back[0][1]<=x[0]<call[0]),
          'actual loop backedge encloses the mandatory pointer reload and indirect call')
