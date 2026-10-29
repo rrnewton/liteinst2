@@ -18,7 +18,9 @@ sys.path.insert(0, str(ADMISSION))
 spec = importlib.util.spec_from_file_location('admission_validation', ADMISSION / 'run.py')
 admission = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(admission)
-COMMANDS = [(name, argv, 900 if name == 'workspace_tests' else seconds)
+COMMANDS = [(name, ['python3', 'evaluation/admission/recorder_parallel.py']
+             if name == 'recorder_tests' else argv,
+             900 if name == 'workspace_tests' else seconds)
             for name, argv, seconds in admission.COMMANDS]
 DETAILS = ('native_cases', 'dynamic_admission_fixtures', 'dynamic_matrix_cases',
            'native_validation_fixtures', 'backing_cleanup_harnesses', 'precontext_native_harnesses')
@@ -74,7 +76,7 @@ def main():
               'runner_sha256': file_digest(Path(__file__)),
               'environment': admission.ENV | {'CARGO_TARGET_DIR': 'target', 'TMPDIR': 'private_run/tmp',
                                                'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'RLIMIT_CORE': 0},
-              'scope': 'New 900-second workspace profile; no historical result is relabelled.',
+              'scope': '900-second workspace; complete recorder discovery across at most 4 exec workers within the original 180 seconds. Serial timeouts remain failed.',
               'log_limit_bytes_per_command': 8 * 1024 * 1024,
               'reproduce': ['python3', 'evaluation/inprocess/checks.py', '--expect-revision', args.expect_revision],
               'commands': [{'id': key, 'argv': argv, 'timeout_seconds': seconds, 'status': 'not_run',

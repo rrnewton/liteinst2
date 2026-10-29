@@ -1,0 +1,79 @@
+{
+  "bounds": {
+    "address_space_bytes": 134217728,
+    "core_bytes": 0,
+    "cpu_seconds": 3,
+    "file_bytes": 1048576,
+    "wall_seconds": 10
+  },
+  "captures": {
+    "stderr": {
+      "bytes": 100,
+      "sha256": "620d24d66057e458ce1594cdef9cd666253ce1c9ee632cfa6d81f272cdab56b5"
+    },
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "exit": 0,
+  "hardware": {
+    "cpu_family": 26,
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "model": 17,
+    "probe_cpu": 1,
+    "reserved_cpu_count": 1,
+    "stepping": 0
+  },
+  "native_qualification_credit": false,
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 7565,
+    "sha256": "674b793888c6860ab9a2e9ebdbb159eeb7c883be9e85da6aa33ecac1deb188a4"
+  },
+  "profile": "tf-interval-projection-tests-v1",
+  "python": {
+    "bytes": 13542408,
+    "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b",
+    "version": [
+      3,
+      12,
+      15
+    ]
+  },
+  "reaped": true,
+  "recorder_tests": 350,
+  "reproduce": [
+    "python3",
+    "-B",
+    "evaluation/inprocess/test_tf_interval_samples.py"
+  ],
+  "revision": "5dc4ed8987fbbc8f3906c50fd4913d177e8e21af",
+  "schema": 1,
+  "source_unchanged": true,
+  "sources": {
+    "evaluation/inprocess/page_tf_interval_samples.py": {
+      "bytes": 7821,
+      "git_blob": "fa9465dec6bd1ce2b53fe9062aa85c95f657a645",
+      "mode": 420,
+      "sha256": "99f18ad409d0e77ccb293cebc6f4798d81fd9e24a40f09c5bf564bf2cfdf269e"
+    },
+    "evaluation/inprocess/test_tf_interval_samples.py": {
+      "bytes": 7510,
+      "git_blob": "e4fe643c8b500d23671d8beaf0368d90bede9b03",
+      "mode": 420,
+      "sha256": "310fda4e97f062373aef5e6198bd77771556c6eed38903e4f09316d9250bd789"
+    }
+  },
+  "status": "passed",
+  "tests": {
+    "discovered": 2,
+    "errors": 0,
+    "failed": 0,
+    "passed": 2,
+    "skipped": 0
+  },
+  "timed_out": false,
+  "tree": "500a993bd94d427f17a4905a00c490ae8bd1877b"
+}

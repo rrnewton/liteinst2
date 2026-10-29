@@ -9,10 +9,11 @@ import re
 from parsing import require
 import inventory_syntax
 import inventory_digest
+import inventory_copy
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == 'b493e5ef510147bc73ea07249370df3f9eb53c31202a8e9e443ccdc061718a6b', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == '6bcab469ca976fd5a787cbdd09d5cca78f019aa190f8e19dc7a6751796cc8a49', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -40,7 +41,9 @@ CURRENT727 = MAIN727['current_corpus_sha256']
 MAINABAB = DATA['mainabab']
 CURRENTABAB = MAINABAB['current_corpus_sha256']
 MAIN83B = DATA['main83b']
-LATEST = MAIN83B['current_corpus_sha256']
+CURRENT83B = MAIN83B['current_corpus_sha256']
+MAIN850 = DATA['main850']
+LATEST = MAIN850['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -51,8 +54,60 @@ def digest(value):
     return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())
 
 
+def source_before_850(path, data, error):
+    """Only the fixed 850 whole blob may reach its exact historical source."""
+    if path not in MAIN850['projections']:
+        return data
+    row = MAIN850['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = data[:start] + old.encode() + data[end:]
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_850_sources(error='main850_source_inventory_differs'):
+    for path, expected in MAIN850['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN850['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN850['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN850['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN850['module_chains'][path]), error)
+        if path in MAIN850['python_methods']:
+            found = list(inventory_syntax.identities(raw.decode()))
+            require(found == MAIN850['python_methods'][path], error)
+
+
+def before_850(declared, error='main850_inventory_differs', source_error='main850_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_850_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN850['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN850['previous_corpus_sha256'] == CURRENT83B, error)
+    return old
+
+
+def peel_850(declared, error, source_error):
+    return before_850(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_83b(path, data, error):
     """Only the fixed 83b whole blob may reach its exact historical source."""
+    data = source_before_850(path, data, error)
     if path not in MAIN83B['projections']:
         return data
     row = MAIN83B['projections'][path]
@@ -67,11 +122,13 @@ def source_before_83b(path, data, error):
 
 
 def require_83b_sources(error='main83b_source_inventory_differs'):
+    require_850_sources(error)
     for path, expected in MAIN83B['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_850(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN83B['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -81,13 +138,14 @@ def require_83b_sources(error='main83b_source_inventory_differs'):
                     raw.count(b'#[test]') == len(found) + MAIN83B['macros'].get(path, {}).get('test_attributes', 0), error)
 
     for path, row in MAIN83B['macros'].items():
-        require((ROOT / path).read_text().count(row['literal']) == 1, error)
+        raw = source_before_850(path, (ROOT / path).read_bytes(), error)
+        require(raw.decode().count(row['literal']) == 1, error)
     for path, rows in MAIN83B['doctests'].items():
-        lines = (ROOT / path).read_text().splitlines()
+        lines = source_before_850(path, (ROOT / path).read_bytes(), error).decode().splitlines()
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN83B['python_metadata']
-    raw = (ROOT / metadata['path']).read_bytes()
+    raw = source_before_850(metadata['path'], (ROOT / metadata['path']).read_bytes(), error)
     require(inventory_digest.hexdigest(raw) == MAIN83B['sources'][metadata['path']], error)
     require(len(metadata['assignment_sources']) == len(metadata['assignments']) == 5, error)
     snippets = []
@@ -102,27 +160,29 @@ def require_83b_sources(error='main83b_source_inventory_differs'):
             expected = tuple(expected)
         require(values == [expected], error)
     for path, facts in metadata['qualification_facts'].items():
-        raw = (ROOT / path).read_text()
+        raw = source_before_850(path, (ROOT / path).read_bytes(), error).decode()
         require(all(raw.count(literal) == 1 for literal in facts), error)
 
 
 def before_83b(declared, error='main83b_inventory_differs', source_error='main83b_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_850(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT83B, error)
     require_83b_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAIN83B['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN83B['previous_corpus_sha256'] == CURRENTABAB, error)
     return old
 
 
 def peel_83b(declared, error, source_error):
-    return before_83b(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_850(declared, error, source_error)
+    return before_83b(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT83B else declared
 
 
 def source_before_abab(path, data, error):
@@ -188,14 +248,14 @@ def before_abab(declared, error='mainabab_inventory_differs', source_error='main
     declared = peel_83b(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTABAB, error)
     require_abab_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAINABAB['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAINABAB['previous_corpus_sha256'] == CURRENT727, error)
     return old
 
@@ -268,14 +328,14 @@ def before_727(declared, error='main727_inventory_differs', source_error='main72
     declared = peel_abab(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT727, error)
     require_727_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAIN727['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN727['previous_corpus_sha256'] == CURRENT09FE, error)
     return old
 
@@ -340,14 +400,14 @@ def before_09fe(declared, error='main09fe_inventory_differs', source_error='main
     declared = peel_727(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT09FE, error)
     require_09fe_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAIN09FE['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN09FE['previous_corpus_sha256'] == CURRENT0A8, error)
     return old
 
@@ -412,14 +472,14 @@ def before_0a8(declared, error='main0a8_inventory_differs', source_error='main0a
     declared = peel_09fe(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT0A8, error)
     require_0a8_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAIN0A8['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN0A8['previous_corpus_sha256'] == CURRENT0DF8, error)
     return old
 
@@ -484,14 +544,14 @@ def before_0df8(declared, error='main0df8_inventory_differs', source_error='main
     declared = peel_0a8(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT0DF8, error)
     require_0df8_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAIN0DF8['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN0DF8['previous_corpus_sha256'] == CURRENT43D7, error)
     return old
 
@@ -554,14 +614,14 @@ def before_43d7(declared, error='main43d7_inventory_differs', source_error='main
     declared = peel_0df8(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT43D7, error)
     require_43d7_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAIN43D7['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN43D7['previous_corpus_sha256'] == CURRENT7CDC, error)
     return old
 
@@ -608,14 +668,14 @@ def before_7cdc(declared, error='main7cdc_inventory_differs', source_error='main
     declared = peel_43d7(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT7CDC, error)
     require_7cdc_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAIN7CDC['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN7CDC['previous_corpus_sha256'] == CURRENTF0EF, error)
     return old
 
@@ -662,14 +722,14 @@ def before_f0ef(declared, error='mainf0ef_inventory_differs', source_error='main
     declared = peel_7cdc(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTF0EF, error)
     require_f0ef_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAINF0EF['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAINF0EF['previous_corpus_sha256'] == CURRENTE797, error)
     return old
 
@@ -720,14 +780,14 @@ def before_e797(declared, error='maine797_inventory_differs', source_error='main
     declared = peel_f0ef(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTE797, error)
     require_e797_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAINE797['workspace_changes'].items():
         require(rows[name] == change['current'], error)
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAINE797['previous_corpus_sha256'] == CURRENTC1, error)
     return old
 
@@ -774,11 +834,11 @@ def before_c1(declared, error='mainc1_inventory_differs', source_error='mainc1_s
     declared = peel_e797(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTC1, error)
     require_c1_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAINC1['workspace_changes'].items():
         require(rows[name] == change['current'], error)
-        rows[name] = copy.deepcopy(change['previous'])
+        rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAINC1['previous_corpus_sha256'] == CURRENTC0, error)
     return old
 
@@ -825,11 +885,11 @@ def before_c0(declared, error='mainc0_inventory_differs', source_error='mainc0_s
     declared = peel_c1(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTC0, error)
     require_c0_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in MAINC0['workspace_changes'].items():
         require(rows[name] == change['current'], error)
-        rows[name] = copy.deepcopy(change['previous'])
+        rows[name] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAINC0['previous_corpus_sha256'] == CURRENT690, error)
     return old
 
@@ -876,11 +936,11 @@ def before_690(declared, error='main690_inventory_differs', source_error='main69
     declared = peel_c0(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT690, error)
     require_690_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     change = MAIN690['workspace_change']
     rows = old['harness_test_counts']['workspace_tests']
     require(rows[change['identity']] == change['current'], error)
-    rows[change['identity']] = copy.deepcopy(change['previous'])
+    rows[change['identity']] = inventory_copy.deepcopy(change['previous'])
     require(digest(old) == MAIN690['previous_corpus_sha256'] == CURRENT, error)
     return old
 
@@ -931,7 +991,7 @@ def before_current(declared, error='main813_inventory_differs', source_error='ma
     declared = peel_690(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     require_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = inventory_copy.deepcopy(declared)
     require(old['recorder_tests'] == RECORDER_TESTS, error)
     old['recorder_tests'] = 345
     require(old.pop('precontext_native_harnesses') == DATA['precontext_inventory'], error)
@@ -941,7 +1001,7 @@ def before_current(declared, error='main813_inventory_differs', source_error='ma
         if change['previous'] is None:
             del rows[name]
         else:
-            rows[name] = copy.deepcopy(change['previous'])
+            rows[name] = inventory_copy.deepcopy(change['previous'])
     # This recovers the exact historical declaration, including its erroneous
     # 15-doc denominator. The old failed receipt remains failed.
     require(digest(old) == PREVIOUS, error)
