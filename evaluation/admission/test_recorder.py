@@ -143,6 +143,104 @@ class RecorderTests(unittest.TestCase):
             self.assertEqual(command["status"], "invalid_evidence")
             self.assertNotIn("tests_passed", command)
 
+        # Parallel execution must preserve every actual unittest outcome and ID.
+        import recorder_parallel as parallel
+        identities = ['test_a.A.test_one', 'test_a.B.test_two',
+                      'test_b.A.test_one', 'test_c.A.test_one', 'test_d.A.test_one']
+        groups = parallel.partition(identities, 4)
+        self.assertEqual(groups, [identities[:2], identities[2:3], identities[3:4], identities[4:]])
+        self.assertEqual(parallel.partition(identities, 1), [identities])
+        for invalid in (0, 5, True, 1.0):
+            with self.assertRaises(ValueError):
+                parallel.partition(identities, invalid)
+        for invalid in ([], identities + identities[:1], [1], tuple(identities)):
+            with self.assertRaises(ValueError):
+                parallel.partition(invalid, 1)
+        events = []
+        class ParallelSuccess(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                events.append('class-start')
+            @classmethod
+            def tearDownClass(cls):
+                events.append('class-stop')
+            def test_a(self):
+                events.append('a')
+            def test_b(self):
+                for item in (1, 2):
+                    with self.subTest(item=item):
+                        self.assertGreater(item, 0)
+                events.append('b')
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(ParallelSuccess)
+        expected = [case.id() for case in parallel.flatten(suite)]
+        result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=parallel.Ledger).run(suite)
+        row = parallel.worker_row(result, expected, expected, 0, 1, 2)
+        parallel.validate(row, expected, expected, 0, 1, 2)
+        self.assertEqual(events, ['class-start', 'a', 'b', 'class-stop'])
+        self.assertEqual((row['started'], row['completed'], row['success']), (expected, expected, expected))
+        for field in ('assigned', 'started', 'completed', 'success'):
+            for replacement in ([], expected[:1], list(reversed(expected)), expected + expected[:1]):
+                malformed = dict(row, **{field: replacement})
+                with self.assertRaises(ValueError):
+                    parallel.validate(malformed, expected, expected, 0, 1, 2)
+        for field in ('failures', 'errors', 'skipped', 'expected_failures', 'unexpected_successes'):
+            with self.assertRaises(ValueError):
+                parallel.validate(dict(row, **{field: [expected[0]]}), expected, expected, 0, 1, 2)
+        for field in ('schema', 'worker', 'workers', 'cpu', 'tests_run'):
+            for replacement in (True, None, -1, 999):
+                with self.assertRaises(ValueError):
+                    parallel.validate(dict(row, **{field: replacement}), expected, expected, 0, 1, 2)
+        for change in ({'discovery_sha256': '0' * 64}, {'should_stop': True}, {'should_stop': 0},
+                       {'extra': 1}, {'success': tuple(expected)}):
+            with self.assertRaises(ValueError):
+                parallel.validate(row | change, expected, expected, 0, 1, 2)
+        wire = parallel.MARKER + json.dumps(row).encode() + b'\n'
+        self.assertEqual(parallel.parse_worker(wire), row)
+        for malformed in (b'', wire + wire, parallel.MARKER + b'{"a":1,"a":2}',
+                          parallel.MARKER + b'{"a":NaN}'):
+            with self.assertRaises(ValueError):
+                parallel.parse_worker(malformed)
+        def subtest_failure(case):
+            with case.subTest(part='required'):
+                case.fail('supplied subtest failure')
+        def regular_failure(case):
+            case.fail('supplied failure')
+        def regular_error(case):
+            raise RuntimeError('supplied error')
+        def skipped(case):
+            case.skipTest('supplied skip')
+        def clean(case):
+            pass
+        def cleanup_error(case):
+            case.addCleanup(lambda: (_ for _ in ()).throw(RuntimeError('cleanup error')))
+        for method, field in ((subtest_failure, 'failures'), (regular_failure, 'failures'),
+                (regular_error, 'errors'), (skipped, 'skipped'), (cleanup_error, 'errors'),
+                (unittest.expectedFailure(lambda case: case.fail('supplied expected failure')), 'expected_failures'),
+                (unittest.expectedFailure(clean), 'unexpected_successes')):
+            Control = type('ParallelSuppliedControl', (unittest.TestCase,), {'runTest': method})
+            case = Control(); wanted = [case.id()]
+            result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=parallel.Ledger).run(case)
+            failed = parallel.worker_row(result, wanted, wanted, 0, 1, 2)
+            self.assertTrue(failed[field])
+            self.assertEqual(failed['started'], wanted)
+            self.assertEqual(failed['completed'], wanted)
+            with self.assertRaises(ValueError):
+                parallel.validate(failed, wanted, wanted, 0, 1, 2)
+        class ParallelFixtureError(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                raise RuntimeError('supplied class setup error')
+            def test_body(self):
+                self.fail('must not run after fixture error')
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(ParallelFixtureError)
+        wanted = [case.id() for case in parallel.flatten(suite)]
+        result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=parallel.Ledger).run(suite)
+        failed = parallel.worker_row(result, wanted, wanted, 0, 1, 2)
+        self.assertTrue(failed['errors'])
+        self.assertEqual(failed['started'], [])
+        with self.assertRaises(ValueError):
+            parallel.validate(failed, wanted, wanted, 0, 1, 2)
+
     def test_failed_recorder_retains_assertion_observations_without_qualifying_command(self):
         command = {"id": "recorder_tests", "status": "failed", "exit_code": 0,
                    "termination": "descendants_after_exit"}

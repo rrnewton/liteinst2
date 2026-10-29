@@ -5377,6 +5377,602 @@
       }
     }
   },
+  "main850": {
+    "added_methods": {
+      "tools/rapid-profiler/ordinary-interval/joined_task.rs": [
+        "captured_kernel_tid_survives_success_and_panic",
+        "complete_census_refuses_malformed_duplicate_or_missing_main",
+        "retirement_preserves_result_until_exact_tid_absence",
+        "exclusive_retirement_refuses_unknown_tasks_and_waits_for_both",
+        "retirement_uses_one_absolute_deadline_and_checks_after_observation"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/pending_owner/tests.rs": [
+        "phase_requires_exact_held_and_released_totals",
+        "copied_snapshot_requires_same_slot_payload_history_and_bank_count",
+        "reclaim_requires_old_slot_absence_and_unchanged_copy",
+        "boundary_rows_require_actual_next_entry_before_checkpoint",
+        "command_phase_refuses_skip_repeat_and_identity_substitution",
+        "control_wire_requires_complete_counts_and_three_phase_rows"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/tests.rs": [
+        "arguments_cpu_roles_and_complete_task_identity_are_exact",
+        "fixed_work_and_guarded_pairs_never_accept_aggregate_only_results",
+        "mixed_batches_keep_absolute_ordinals_sample_sequences_and_stack_clock",
+        "every_journal_word_and_absolute_prefix_high_bits_are_authenticated",
+        "complete_owner_population_refuses_reopen_reorder_missing_or_wrong_history",
+        "all_report_payloads_ranges_empty_generations_and_terminal_dispositions_join",
+        "owned_schedule_handoff_keeps_original_requested_deadline_and_pending_transfer",
+        "bounded_wire_retains_all_rows_empty_reports_zero_and_full_width_ticks"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput/tests.rs": [
+        "raw_clock_timespec_domains_and_u64_overflow",
+        "timing_requires_all128_ordered_blocks_and_final_service_tail",
+        "timing_preserves_zero_and_maximum_endpoints",
+        "returns_require_each_ordered_value_and_helper_sum",
+        "guard_and_request_mutations_refuse_before_checkpoint",
+        "reused_batch_join_requires_full_identity_and_journal",
+        "reused_report_join_requires_complete_population_and_history",
+        "timing_appendix_has_exact_population_and_raw_sums"
+      ]
+    },
+    "base": "5dc4ed8987fbbc8f3906c50fd4913d177e8e21af",
+    "current_corpus_sha256": "b9e80d867e27ec99fb7e1c51017cfab6e5f2ca580dc057b6a7da6a9b65df0010",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 27,
+      "rust_tests": 27
+    },
+    "doctests": {},
+    "instances": {
+      "tools/rapid-profiler/ordinary-interval/joined_task.rs": {
+        "unit/ordinary_interval/main": "joined_task::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/pending_owner/tests.rs": {
+        "unit/ordinary_interval/main": "normal::observer::backoff::pending_owner::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/tests.rs": {
+        "unit/ordinary_interval/main": "normal::observer::backoff::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput/tests.rs": {
+        "unit/ordinary_interval/main": "normal::observer::throughput::tests::"
+      }
+    },
+    "listed_additions": {
+      "unit/ordinary_interval/main": [
+        "joined_task::tests::captured_kernel_tid_survives_success_and_panic",
+        "joined_task::tests::complete_census_refuses_malformed_duplicate_or_missing_main",
+        "joined_task::tests::exclusive_retirement_refuses_unknown_tasks_and_waits_for_both",
+        "joined_task::tests::retirement_preserves_result_until_exact_tid_absence",
+        "joined_task::tests::retirement_uses_one_absolute_deadline_and_checks_after_observation",
+        "normal::observer::backoff::pending_owner::tests::boundary_rows_require_actual_next_entry_before_checkpoint",
+        "normal::observer::backoff::pending_owner::tests::command_phase_refuses_skip_repeat_and_identity_substitution",
+        "normal::observer::backoff::pending_owner::tests::control_wire_requires_complete_counts_and_three_phase_rows",
+        "normal::observer::backoff::pending_owner::tests::copied_snapshot_requires_same_slot_payload_history_and_bank_count",
+        "normal::observer::backoff::pending_owner::tests::phase_requires_exact_held_and_released_totals",
+        "normal::observer::backoff::pending_owner::tests::reclaim_requires_old_slot_absence_and_unchanged_copy",
+        "normal::observer::backoff::tests::all_report_payloads_ranges_empty_generations_and_terminal_dispositions_join",
+        "normal::observer::backoff::tests::arguments_cpu_roles_and_complete_task_identity_are_exact",
+        "normal::observer::backoff::tests::bounded_wire_retains_all_rows_empty_reports_zero_and_full_width_ticks",
+        "normal::observer::backoff::tests::complete_owner_population_refuses_reopen_reorder_missing_or_wrong_history",
+        "normal::observer::backoff::tests::every_journal_word_and_absolute_prefix_high_bits_are_authenticated",
+        "normal::observer::backoff::tests::fixed_work_and_guarded_pairs_never_accept_aggregate_only_results",
+        "normal::observer::backoff::tests::mixed_batches_keep_absolute_ordinals_sample_sequences_and_stack_clock",
+        "normal::observer::backoff::tests::owned_schedule_handoff_keeps_original_requested_deadline_and_pending_transfer",
+        "normal::observer::throughput::tests::guard_and_request_mutations_refuse_before_checkpoint",
+        "normal::observer::throughput::tests::raw_clock_timespec_domains_and_u64_overflow",
+        "normal::observer::throughput::tests::returns_require_each_ordered_value_and_helper_sum",
+        "normal::observer::throughput::tests::reused_batch_join_requires_full_identity_and_journal",
+        "normal::observer::throughput::tests::reused_report_join_requires_complete_population_and_history",
+        "normal::observer::throughput::tests::timing_appendix_has_exact_population_and_raw_sums",
+        "normal::observer::throughput::tests::timing_preserves_zero_and_maximum_endpoints",
+        "normal::observer::throughput::tests::timing_requires_all128_ordered_blocks_and_final_service_tail"
+      ]
+    },
+    "macros": {},
+    "merge_base": "35b4603275fd70e6c7205fac426f4a1b23261a67",
+    "methods": {
+      "tools/rapid-profiler/ordinary-interval/joined_task.rs": {
+        "all": [
+          "captured_kernel_tid_survives_success_and_panic",
+          "complete_census_refuses_malformed_duplicate_or_missing_main",
+          "retirement_preserves_result_until_exact_tid_absence",
+          "exclusive_retirement_refuses_unknown_tasks_and_waits_for_both",
+          "retirement_uses_one_absolute_deadline_and_checks_after_observation"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/pending_owner/tests.rs": {
+        "all": [
+          "phase_requires_exact_held_and_released_totals",
+          "copied_snapshot_requires_same_slot_payload_history_and_bank_count",
+          "reclaim_requires_old_slot_absence_and_unchanged_copy",
+          "boundary_rows_require_actual_next_entry_before_checkpoint",
+          "command_phase_refuses_skip_repeat_and_identity_substitution",
+          "control_wire_requires_complete_counts_and_three_phase_rows"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/tests.rs": {
+        "all": [
+          "arguments_cpu_roles_and_complete_task_identity_are_exact",
+          "fixed_work_and_guarded_pairs_never_accept_aggregate_only_results",
+          "mixed_batches_keep_absolute_ordinals_sample_sequences_and_stack_clock",
+          "every_journal_word_and_absolute_prefix_high_bits_are_authenticated",
+          "complete_owner_population_refuses_reopen_reorder_missing_or_wrong_history",
+          "all_report_payloads_ranges_empty_generations_and_terminal_dispositions_join",
+          "owned_schedule_handoff_keeps_original_requested_deadline_and_pending_transfer",
+          "bounded_wire_retains_all_rows_empty_reports_zero_and_full_width_ticks"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput/tests.rs": {
+        "all": [
+          "raw_clock_timespec_domains_and_u64_overflow",
+          "timing_requires_all128_ordered_blocks_and_final_service_tail",
+          "timing_preserves_zero_and_maximum_endpoints",
+          "returns_require_each_ordered_value_and_helper_sum",
+          "guard_and_request_mutations_refuse_before_checkpoint",
+          "reused_batch_join_requires_full_identity_and_journal",
+          "reused_report_join_requires_complete_population_and_history",
+          "timing_appendix_has_exact_population_and_raw_sums"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tools/rapid-profiler/ordinary-interval/joined_task.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/rapid-profiler/ordinary-interval/main.rs": [
+        "mod joined_task;",
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal.rs": [
+        "pub(super) mod observer;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer.rs": [
+        "pub(crate) mod backoff;",
+        "pub(crate) mod throughput;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": [
+        "pub(crate) mod pending_owner;",
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/pending_owner.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ]
+    },
+    "origin": "85037678ef05a68b5eb57cc8c10418b4c676c35d",
+    "predecessor": "4d322c973c5a05c74f5cd3cc2db5aa89532c3528",
+    "previous_corpus_sha256": "ac156a88901694766a351c75388ba9f4d4abd5529deacaa10fc8ff6108b54028",
+    "projections": {
+      "tools/rapid-profiler/ordinary-interval/backoff.rs": {
+        "current_sha256": "93d447eb24d5b6fe2372a6a0de6c587bb847eb948c4ad66fd64553f3dbbfc430",
+        "edits": [
+          [
+            8719,
+            8769,
+            "        handle: Some(thread::spawn(move || {\n"
+          ],
+          [
+            9262,
+            9312,
+            "        handle: Some(thread::spawn(move || {\n"
+          ],
+          [
+            11772,
+            11822,
+            "        handle: Some(thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "7b524cc768acaa42e0a0a50cc57d7ba0fc165abdbdb9ec2683e5157feddda24a"
+      },
+      "tools/rapid-profiler/ordinary-interval/backoff/optional.rs": {
+        "current_sha256": "bb9d57ef61510462e1e61e7b44ff5cee615434094177851373f17818dce84b13",
+        "edits": [
+          [
+            9340,
+            9390,
+            "        handle: Some(thread::spawn(move || {\n"
+          ],
+          [
+            9719,
+            9769,
+            "        handle: Some(thread::spawn(move || {\n"
+          ],
+          [
+            12112,
+            12162,
+            "        handle: Some(thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "9f58ce28d58e0e2654ba3716225d54e56ce78cd36b0897f75f4da122c587067c"
+      },
+      "tools/rapid-profiler/ordinary-interval/exact.rs": {
+        "current_sha256": "11c4cba3dd86ddbf48175be60de6ccc64295cc895ebd7dd42e8ee40bcb990170",
+        "edits": [
+          [
+            4173,
+            4219,
+            "    let handle = thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "cdf5acd93e0a1ab35c4eee6dce1e40cf902aca5978f94ed7cdc4f228fb9d59cd"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "8587dce8fb0a5fbe7ddc6c340d6f68acb858a3030ed465f1c2003b03da3a1009",
+        "edits": [
+          [
+            131,
+            170,
+            ""
+          ],
+          [
+            820,
+            837,
+            "use std::thread::{self, JoinHandle};\n"
+          ],
+          [
+            962,
+            979,
+            ""
+          ],
+          [
+            9841,
+            9878,
+            "    fn wait(&self) {\n        let until = Instant::now() + WAIT;\n"
+          ],
+          [
+            10232,
+            10817,
+            ""
+          ],
+          [
+            10847,
+            10894,
+            "        self.wait();\n        self.handle.take().unwrap().join().expect(\"worker failure\")\n"
+          ],
+          [
+            11073,
+            11108,
+            "            self.wait();\n            let _ = self.handle.take().unwrap().join();\n"
+          ],
+          [
+            12751,
+            13251,
+            ""
+          ],
+          [
+            28227,
+            28273,
+            "    let handle = thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "c075f6b98d0b8e50022364eae54b71079698c2b77144740e8c979d5c0e013318"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal.rs": {
+        "current_sha256": "113aca20cecbfa5b6374b74da3b7a92aacc053b445a1447b8f61025dbd817119",
+        "edits": [
+          [
+            9316,
+            9362,
+            "    let handle = thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "f41a67639d456511c008d95267e3099d91a279bfa1d7022431260fcd8c1c2373"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/lifecycle.rs": {
+        "current_sha256": "e3e6cd42497210483939dedad99ee59dea0ad810f670e47369ec6cf110644a9d",
+        "edits": [
+          [
+            3304,
+            3350,
+            "    let handle = thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "4138c9e5c4b85f8b73e7f23c118907546527a2329605230cd5d9084a0ea664c0"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer.rs": {
+        "current_sha256": "e0d24510f4798c414801e444a8d16e240b7885c93ee12ab9b8a7c44513d7aba0",
+        "edits": [
+          [
+            467,
+            518,
+            ""
+          ]
+        ],
+        "previous_sha256": "837bc5590de153503e7418210c5be6b849d1bc7b0bd9a18a1d98363dd48de1e7"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+        "current_sha256": "a81aff508bc17661fa9577714f38ef1f129e28eba911b76f859345bfeed34cba",
+        "edits": [
+          [
+            11475,
+            11530,
+            "    let mut handle = Some(thread::spawn(move || {\n"
+          ],
+          [
+            11609,
+            11686,
+            ""
+          ],
+          [
+            19710,
+            22995,
+            "            if !final_output\n                && let Some(totals) = finished\n                && handle.as_ref().is_some_and(|h| h.is_finished())\n            {\n                assert!(schedule.is_stopping() && stop_sent && pending.is_none());\n                handle.take().unwrap().join().map_err(|_| \"worker panic\")?;\n                engine.retire(&mut io)?;\n                engine.history(&mut io)?;\n                assert!(engine.epochs.iter().all(Option::is_none));\n                assert_eq!(engine.banks.len(), 3);\n                assert_eq!(engine.reports.len(), schedule.armed() as usize);\n                assert_eq!(engine.committed_arms, schedule.armed());\n                assert_eq!(\n                    engine.history.last().unwrap().range().end,\n                    u64::from(schedule.armed()) + 1\n                );\n                ledger.finish(totals, &engine.reports, &mut io)?;\n                assert_eq!(ids.len(), ledger.accepted.len());\n                single_main();\n                unsafe { immutable(&spans) };\n                io.emit(format!(\"IO,{}\\n\", io.write_blocked()))?;\n                io.emit(format!(\n                    \"DONE,{:?},{},{},{},{},{},{},{},{},1,1\\n\",\n                    schedule.stop_reason().unwrap(),\n                    schedule.armed(),\n                    engine.history.last().unwrap().range().end,\n                    ledger.accepted.len(),\n                    totals.confirmed,\n                    totals.completed,\n                    totals.unsampled,\n                    ledger.batches,\n                    ledger.flushes\n                ))?;\n                final_output = true;\n"
+          ],
+          [
+            25788,
+            25998,
+            "        eprintln!(\"normal-session FAILED: {error}{details}\");\n"
+          ]
+        ],
+        "previous_sha256": "5970b1c80602e1b13cb46ea24e8a5ff200d94f93770efdc8ef18f21848389bbf"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/session/two.rs": {
+        "current_sha256": "56e4f2bf18a2802cc1259f69fc9ca4b804520853900a41884549995ba0d83d2b",
+        "edits": [
+          [
+            17802,
+            17852,
+            "        let handle = thread::spawn(move || {\n"
+          ],
+          [
+            18247,
+            18322,
+            ""
+          ],
+          [
+            27439,
+            28440,
+            "            if !final_output\n                && finished.iter().all(Option::is_some)\n                && handles\n                    .iter()\n                    .all(|h| h.as_ref().is_some_and(|h| h.is_finished()))\n            {\n                assert!(schedule.is_stopping() && dispatch.complete());\n                for handle in &mut handles {\n                    handle.take().unwrap().join().map_err(|_| \"worker panic\")?;\n"
+          ],
+          [
+            28458,
+            31365,
+            "                engine.retire(&mut io)?;\n                engine.history(&mut io)?;\n                assert!(engine.epochs.iter().all(Option::is_none));\n                assert_eq!(engine.banks.len(), 4);\n                assert_eq!(engine.reports.len(), schedule.armed() as usize);\n                assert_eq!(engine.committed_arms, schedule.armed());\n                assert_eq!(\n                    engine.history.last().unwrap().range().end,\n                    u64::from(schedule.armed()) + 1\n                );\n                let counts = ledger.finish(&engine.reports, &mut io)?;\n                assert!(\n                    subject.output_bound(ledger.calls, ledger.flushes, schedule.armed())\n                        < 4 * 1024 * 1024\n                );\n                assert_eq!(ids.len(), ledger.accepted.len());\n                single_main();\n                unsafe { immutable(&spans) };\n                for (i, totals) in finished.iter().enumerate() {\n                    let t = totals.unwrap();\n                    ledger.totals(i, t);\n"
+          ],
+          [
+            31402,
+            32055,
+            "                        \"WORKER_DONE,{},{},{},{},{},{},{},1,1\\n\",\n                        i + 1,\n                        ledger.local[i].batches,\n                        t.entered,\n                        t.ret_observed,\n                        t.confirmed,\n                        t.completed,\n                        t.unsampled\n"
+          ],
+          [
+            32080,
+            32121,
+            ""
+          ],
+          [
+            32139,
+            32139,
+            "                io.emit(format!(\"IO,{}\\n\", io.write_blocked()))?;\n                io.emit(format!(\n                    \"DONE,{:?},{},{},{},{},{},{},{},{},{},{},0,0,2,2\\n\",\n                    schedule.stop_reason().unwrap(),\n                    schedule.armed(),\n                    engine.history.last().unwrap().range().end,\n                    ledger.accepted.len(),\n                    ledger.calls,\n                    counts.admitted,\n                    counts.retained,\n                    counts.dropped,\n                    ledger.local.iter().map(|c| c.totals.unsampled).sum::<u64>(),\n                    ledger.local.iter().map(|c| c.batches).sum::<u64>(),\n                    ledger.flushes\n                ))?;\n                final_output = true;\n"
+          ],
+          [
+            34436,
+            34677,
+            ""
+          ],
+          [
+            34701,
+            34975,
+            "            Subject::Strnlen41 => eprintln!(\"normal-session-two FAILED: {error}{details}\"),\n            Subject::Exact37 => eprintln!(\"normal-session-two-exact FAILED: {error}{details}\"),\n"
+          ]
+        ],
+        "previous_sha256": "17f249f981be45e1260c09b662724cb444d1433ca4610160aa5fd642632fbfa0"
+      },
+      "tools/rapid-profiler/ordinary-interval/selected.rs": {
+        "current_sha256": "a81a9874a3ae073e22a6510af6fd53d74049f14daa878507a9f6e15d54cf1ccb",
+        "edits": [
+          [
+            5736,
+            5782,
+            "    let handle = thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "62fd3316f6e4fb5ab22fcd160b4d4ecd8bb4354e452cb211a9e61aac0721a685"
+      },
+      "tools/rapid-profiler/ordinary-interval/streamed.rs": {
+        "current_sha256": "64099f8760abe9c3b9b4f672c418a7842b02027a94655a95746c167b7c2b996f",
+        "edits": [
+          [
+            23561,
+            23624,
+            "    let handle = thread::spawn(move || work(work_input));\n"
+          ]
+        ],
+        "previous_sha256": "996e6b5838226332d41c92f4434e734558ed0941478aecc60da5e226c7e68e06"
+      },
+      "tools/rapid-profiler/ordinary-interval/strnlen.rs": {
+        "current_sha256": "0e6ea2ea1b4f5843e615f4d7dbcd27e4264c9215def55372bb50ee06b5eb2214",
+        "edits": [
+          [
+            5873,
+            5919,
+            "    let handle = thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "b4988928449b8be018c4f5044f97ecf45d5592ada249b89fac00f156709630ca"
+      },
+      "tools/rapid-profiler/ordinary-interval/timed.rs": {
+        "current_sha256": "96dc50a654e7de1afda7f73886fbbe97d47b2e7c08a40e97e8d447f0c2e5e6b7",
+        "edits": [
+          [
+            5021,
+            5067,
+            "    let handle = thread::spawn(move || {\n"
+          ]
+        ],
+        "previous_sha256": "7b3923eb69bb3f80743172ed689299c40a3cf02b5502361eda459a371aedf4ef"
+      },
+      "tools/rapid-profiler/verify_normal_interval.py": {
+        "current_sha256": "7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7",
+        "edits": [
+          [
+            13018,
+            13083,
+            ""
+          ]
+        ],
+        "previous_sha256": "e14ea7b161329816e7e5d3dff56132706a853fb6619b3810512afdf88a85852c"
+      }
+    },
+    "python_methods": {
+      "tools/rapid-profiler/normal-work/test_backoff_pending_owner.py": [
+        "Controls.test_complete_k10_and_k1000_and_lossless_phases",
+        "Controls.test_phase_order_identity_totals_and_refusal_counts",
+        "Controls.test_reclaim_must_precede_same_block_checkpoint",
+        "Controls.test_exact_owner_boundary_and_full_sampled_closed_population",
+        "Controls.test_work_history_reports_and_full_framing_refuse",
+        "Controls.test_strict_timed_checker_stays_separate",
+        "Controls.test_raw_clocks_zero_max_and_expected_roles",
+        "Controls.test_local_import_and_optimized_entrypoints_refuse"
+      ],
+      "tools/rapid-profiler/normal-work/test_backoff_probe.py": [
+        "Controls.test_fixed_catalog_role_argv_and_request_bounds",
+        "Controls.test_closed_exit_and_signal_failures_continue_without_pass",
+        "Controls.test_custody_failures_and_changed_catalog_withhold_remainder",
+        "Controls.test_projection_preserves_all_outcomes_and_raw_counts_without_timing",
+        "Controls.test_qualified_inputs_return_exact_authenticated_context",
+        "Controls.test_qualified_inputs_refuse_mutated_context_and_artifact_authority",
+        "Controls.test_shared_closure_inventory_and_pins_remain_strict",
+        "Controls.test_local_import_and_optimized_refusal"
+      ],
+      "tools/rapid-profiler/normal-work/test_backoff_work.py": [
+        "Controls.test_complete_mixed_populations_and_lossless_tables",
+        "Controls.test_unexercised_epochs_empty_reports_and_k_domains",
+        "Controls.test_all_fixed_work_population_and_column_mutations",
+        "Controls.test_sampled_closed_invocations_sequences_and_prefixes",
+        "Controls.test_history_and_report_identity_counts_and_order",
+        "Controls.test_stack_continuations_ack_and_batch_boundaries",
+        "Controls.test_raw_clock_aux_zero_max_and_no_cross_call_inference",
+        "Controls.test_terminal_census_identity_coverage_and_expected_request",
+        "Controls.test_framing_canonical_domains_and_all_caps",
+        "Controls.test_local_import_and_optimized_entrypoints_refuse"
+      ],
+      "tools/rapid-profiler/normal-work/test_throughput_probe.py": [
+        "Controls.test_catalog_and_complete_requests_are_frozen_before_trial_one",
+        "Controls.test_closure_joins_all_statuses_hashes_and_streams",
+        "Controls.test_timer_identity_and_functional_join_are_required",
+        "Controls.test_qualification_and_release_artifact_joins_are_exact",
+        "Controls.test_completed_file_pins_never_refresh_drift",
+        "Controls.test_closed_failure_continues_but_custody_failure_leaves_unrun",
+        "Controls.test_pair_projection_keeps_zero_and_failed_members",
+        "Controls.test_python_controls_require_exact_methods_and_counts",
+        "Controls.test_projection_retains_all_outcomes_after_prerequisite_failure",
+        "Controls.test_projection_retains_partial_evidence_without_custody_ratios"
+      ],
+      "tools/rapid-profiler/normal-work/test_throughput_work.py": [
+        "Controls.test_complete_modes_delegate_exact_prefix_and_retain_every_endpoint",
+        "Controls.test_zero_and_maximal_endpoints_keep_unresolved_division",
+        "Controls.test_exact_framing_order_literals_modes_and_cpu",
+        "Controls.test_canonical_numbers_checked_arithmetic_and_enclosure_joins",
+        "Controls.test_whole_old_prefix_corruption_remains_a_refusal",
+        "Controls.test_source_local_import_and_optimization_guard"
+      ],
+      "tools/rapid-profiler/tree-work/test_decode_perf.py": [
+        "DecodePerfTests.test_actual_cli_preserves_all_three_statuses_and_adverse_summary",
+        "DecodePerfTests.test_hashes_precede_import_and_file_reads_are_bounded_regular",
+        "DecodePerfTests.test_command_json_preserves_raw_argv_and_refuses_mismatch_or_bad_shape",
+        "DecodePerfTests.test_closed_options_and_hash_domains_never_echo_paths",
+        "DecodePerfTests.test_optimization_sibling_locality_and_no_bytecode",
+        "DecodePerfTests.test_full_type_inventory_capacity_and_fixed_exception_privacy"
+      ],
+      "tools/rapid-profiler/tree-work/test_perf_context.py": [
+        "PerfContextTests.test_strict_profile_and_output_remain_separate",
+        "PerfContextTests.test_mixed_host_contexts_keep_raw_bytes_and_exact_period_partition",
+        "PerfContextTests.test_kernel_ips_and_exact_bit_never_create_user_attribution",
+        "PerfContextTests.test_unknown_modes_misc_and_kernel_payload_fail_at_exact_offsets",
+        "PerfContextTests.test_later_refusal_keeps_inventory_and_partial_mass_unresolved",
+        "PerfContextTests.test_zero_max_loss_read_caps_and_import_guards_remain_visible"
+      ],
+      "tools/rapid-profiler/tree-work/test_perf_data.py": [
+        "PerfDataTests.test_complete_file_conservation_and_read_after_exit",
+        "PerfDataTests.test_sample_read_field_order_and_optional_ids",
+        "PerfDataTests.test_lifecycle_payload_and_trailer_identities_remain_distinct",
+        "PerfDataTests.test_mappings_use_byte_offsets_and_exact_strings",
+        "PerfDataTests.test_loss_throttle_zero_and_maximum_values_are_not_filtered",
+        "PerfDataTests.test_unknown_records_and_extensions_retain_inventory_and_prefix",
+        "PerfDataTests.test_file_envelope_sections_and_record_caps",
+        "PerfDataTests.test_attribute_profile_preserves_flags_and_pmu_identity",
+        "PerfDataTests.test_raw_dynamic_encodings_retain_all_config_words_without_meaning",
+        "PerfDataTests.test_raw_dynamic_encodings_preserve_all_other_profile_refusals",
+        "PerfDataTests.test_feature_identity_joins_missing_authority_and_padding",
+        "PerfDataTests.test_build_id_bounded_prefix_never_claims_external_identity",
+        "PerfDataTests.test_synthetic_maps_updates_and_time_conversion_exact_layouts",
+        "PerfDataTests.test_throttle_and_unthrottle_join_optional_stream_identity",
+        "PerfDataTests.test_empty_feature_directory_tail_is_bounded_and_unresolved",
+        "PerfDataTests.test_regular_build_id_writer_forms_and_exact_filename_allocation",
+        "PerfDataTests.test_regular_build_id_wrong_forms_padding_and_trailing_bytes_refuse",
+        "PerfDataTests.test_api_types_and_local_import_optimization_refusal"
+      ]
+    },
+    "scope": "27 exact new declarations through four direct module chains. Historical source/catalog and all recorder identities, ignored counts, serial harnesses, protocols and limits remain exact. External Python names are pinned source inventory, not recorder or Cargo execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/ordinary-backoff-bcca173/reproduce.py": "2ce41b6a49f2c8cb68f7347aa0205d4ebad28d056855eed49764816784b88b35",
+      "evaluation/ordinary-perf-context-1c3e7ed/reproduce.py": "5f04ca6b9918564370f11f1d3bf39be308b15712c19e8ffd7ad6508c09fd34a9",
+      "evaluation/ordinary-perf-decode-f7469e2/reproduce.py": "cf97e7b9c14aa902bc27fb04920400b60486259c4a1b18565a50ade6dd75a1cc",
+      "evaluation/ordinary-task-retirement-5fb97c5/reproduce_stops.py": "4c70b162c82a5b4776557a49e4994103ea6053f0439a5c53460de2254917a094",
+      "evaluation/ordinary-throughput-6332c8f/reproduce.py": "ad52f25e6a780aebf7379b8c7450ecb03a078b701a2fd2451ec76d59cd766284",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/normal-work/backoff_pending_owner.py": "82a871d9ce4eed2690e7976b5b2d5470e0e44932869bd7fb4c1078d6ca2b9234",
+      "tools/rapid-profiler/normal-work/backoff_probe.py": "cfa412399c4cff0ecf453a598bb67af2280fd326a06a367a36e67a5e10c58d9e",
+      "tools/rapid-profiler/normal-work/backoff_work.py": "d0168c6b91719a22a86039365b8179616f7d3c510aaa0cb86de7416d222166a3",
+      "tools/rapid-profiler/normal-work/test_backoff_pending_owner.py": "a732fbc31135eb4f3c253140d0dd25e87c4875cb6e7d84328cbc42820b09d345",
+      "tools/rapid-profiler/normal-work/test_backoff_probe.py": "b79a11972f7ef2a788344b11d7f6acd447b98a727bc4ccb6f1c997e6e61e2362",
+      "tools/rapid-profiler/normal-work/test_backoff_work.py": "111e5141335651a60edac287fa63f764081e8054826a3e76af9439e22d3a223a",
+      "tools/rapid-profiler/normal-work/test_throughput_probe.py": "f51e14b5fb544ac7ebff0b554f06a4257e99701492a677d9aecec59a66949930",
+      "tools/rapid-profiler/normal-work/test_throughput_work.py": "4757cc2dbab22fc035b5c79628153e6b4999c3729a7c3536c508ccf0d71ff9e7",
+      "tools/rapid-profiler/normal-work/throughput_probe.py": "783605e556cdc2460c7e9628c2585a09104b5eda65a3e905b45ac66db5b23142",
+      "tools/rapid-profiler/normal-work/throughput_work.py": "1ea83525c0690eb276e683a940b7669b0b2348ca0f56faeb3c269ddf9e381d7d",
+      "tools/rapid-profiler/ordinary-interval/backoff.rs": "93d447eb24d5b6fe2372a6a0de6c587bb847eb948c4ad66fd64553f3dbbfc430",
+      "tools/rapid-profiler/ordinary-interval/backoff/optional.rs": "bb9d57ef61510462e1e61e7b44ff5cee615434094177851373f17818dce84b13",
+      "tools/rapid-profiler/ordinary-interval/exact.rs": "11c4cba3dd86ddbf48175be60de6ccc64295cc895ebd7dd42e8ee40bcb990170",
+      "tools/rapid-profiler/ordinary-interval/joined_task.rs": "c6fccf57a295ff04b4ccedee384eb257a4da7bcfc377c3a6d3f3b24515bbda04",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "8587dce8fb0a5fbe7ddc6c340d6f68acb858a3030ed465f1c2003b03da3a1009",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "113aca20cecbfa5b6374b74da3b7a92aacc053b445a1447b8f61025dbd817119",
+      "tools/rapid-profiler/ordinary-interval/normal/lifecycle.rs": "e3e6cd42497210483939dedad99ee59dea0ad810f670e47369ec6cf110644a9d",
+      "tools/rapid-profiler/ordinary-interval/normal/observer.rs": "e0d24510f4798c414801e444a8d16e240b7885c93ee12ab9b8a7c44513d7aba0",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": "ffb0430c1954f771b6d14e0881f91a1fa4cbaa302c236401be124fd07019e648",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/check.rs": "426877e635bf093dd351f65b9af1bb168c337c669ad52b7de3cb92d99e32fbb1",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/pending_owner.rs": "a823f2e1e6b3eaec3f3f8519f744c74ec56854b8d6ce8d7352d55acff2189773",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/pending_owner/tests.rs": "8e2d505503416d359694f170b6adacb02381bc4984ec249cc04ae721b9509bb9",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/tests.rs": "87b715af87c0aee78ec375d027d2fdd821f571a03fa71aa78237b5b79fe3ebc7",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": "6468525caf617fc22d20bc6bb0fe6b96ecf03f98cb9f061510c21093f8d7cea9",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput/tests.rs": "1568c437de178a7b8b54f89ad0c2a0680d753ae8bfa9c1817913d5b7e1641cdf",
+      "tools/rapid-profiler/ordinary-interval/normal/session.rs": "a81aff508bc17661fa9577714f38ef1f129e28eba911b76f859345bfeed34cba",
+      "tools/rapid-profiler/ordinary-interval/normal/session/two.rs": "56e4f2bf18a2802cc1259f69fc9ca4b804520853900a41884549995ba0d83d2b",
+      "tools/rapid-profiler/ordinary-interval/selected.rs": "a81a9874a3ae073e22a6510af6fd53d74049f14daa878507a9f6e15d54cf1ccb",
+      "tools/rapid-profiler/ordinary-interval/streamed.rs": "64099f8760abe9c3b9b4f672c418a7842b02027a94655a95746c167b7c2b996f",
+      "tools/rapid-profiler/ordinary-interval/strnlen.rs": "0e6ea2ea1b4f5843e615f4d7dbcd27e4264c9215def55372bb50ee06b5eb2214",
+      "tools/rapid-profiler/ordinary-interval/timed.rs": "96dc50a654e7de1afda7f73886fbbe97d47b2e7c08a40e97e8d447f0c2e5e6b7",
+      "tools/rapid-profiler/tree-work/decode_perf.py": "dcbade5e4af319918da5ea12b008b3671507e1fe55666bdde7b85936931d5482",
+      "tools/rapid-profiler/tree-work/perf_data.py": "348988e5ab76300cdba3c953b2d447aebf3d73d4b59421d6a9195d50d654b6c3",
+      "tools/rapid-profiler/tree-work/perf_records.py": "86847d833115242dfcf502df973f1c916a45b5dcdc07c9aed416de869de1a4b7",
+      "tools/rapid-profiler/tree-work/test_decode_perf.py": "800c89127fbdfc0ca0917deb89506a73a441edf80c9956fef203b8d47316dbe3",
+      "tools/rapid-profiler/tree-work/test_perf_context.py": "10bb3d7c798e4a91e167be9feb7288fb6e83bb5135ff52f0215f0165aa1d378f",
+      "tools/rapid-profiler/tree-work/test_perf_data.py": "4e1dec025b4d57e9d22c3db955f49ecfaff8f039f8cb15d160f93041bfb92562",
+      "tools/rapid-profiler/verify_normal_interval.py": "7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7"
+    },
+    "workspace_changes": {
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 176
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 149
+        }
+      }
+    }
+  },
   "mainabab": {
     "added_methods": {
       "tests/support/native_normal_caller.rs": [

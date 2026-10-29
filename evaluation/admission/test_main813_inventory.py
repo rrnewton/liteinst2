@@ -141,6 +141,147 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(cache.cache_info().currsize, 512)
         cache.cache_clear()
 
+        # Fresh exact trees are copied; unsupported copy semantics stay live.
+        plain = main813.inventory_copy
+        original_copy = copy.deepcopy
+        copy_value = {'a': [1, True, None, {'b': 'text'}], 'b': {'c': [2.5]}}
+        copy_first = plain.deepcopy(copy_value)
+        copy_second = plain.deepcopy(copy_value)
+        self.assertEqual(copy_first, original_copy(copy_value))
+        self.assertEqual(copy_second, copy_value)
+        for copy_path in ((), ('a',), ('a', 3), ('b',), ('b', 'c')):
+            copy_input, copy_one, copy_two = copy_value, copy_first, copy_second
+            for copy_key in copy_path:
+                copy_input, copy_one, copy_two = (copy_input[copy_key],
+                                                copy_one[copy_key], copy_two[copy_key])
+            self.assertIsNot(copy_one, copy_input)
+            self.assertIsNot(copy_two, copy_input)
+            self.assertIsNot(copy_one, copy_two)
+        copy_first['a'][3]['b'] = 'changed'
+        self.assertEqual(copy_value['a'][3]['b'], 'text')
+        self.assertEqual(copy_second['a'][3]['b'], 'text')
+        copy_value['b']['c'].append(9)
+        self.assertEqual(copy_second['b']['c'], [2.5])
+        for copy_scalar in (None, True, False, 10**100, 'text', -0.0,
+                            float('inf'), float('-inf'), float('nan')):
+            self.assertIs(plain.deepcopy(copy_scalar), copy_scalar)
+        for copy_shared in ([], {}):
+            copy_alias = plain.deepcopy([copy_shared, copy_shared])
+            self.assertIs(copy_alias[0], copy_alias[1])
+            self.assertIsNot(copy_alias[0], copy_shared)
+        copy_cycle = []; copy_cycle.append(copy_cycle)
+        copy_result = plain.deepcopy(copy_cycle)
+        self.assertIs(copy_result[0], copy_result)
+        self.assertIsNot(copy_result, copy_cycle)
+        copy_cycle = {}; copy_cycle['self'] = copy_cycle
+        copy_result = plain.deepcopy(copy_cycle)
+        self.assertIs(copy_result['self'], copy_result)
+        copy_cycle = []; copy_cycle.append({'self': copy_cycle})
+        copy_result = plain.deepcopy(copy_cycle)
+        self.assertIs(copy_result[0]['self'], copy_result)
+        copy_deep = []
+        for _ in range(40):
+            copy_deep = [copy_deep]
+        self.assertEqual(plain.deepcopy(copy_deep), original_copy(copy_deep))
+        for copy_base in (list, dict, str, int, float):
+            CopySubclass = type('CopySubclass', (copy_base,), {})
+            copy_special = CopySubclass()
+            self.assertIs(type(plain.deepcopy(copy_special)), CopySubclass)
+        for copy_special in (([1],), b'bytes', {1, 2}, {1: [2]}, {(1, 2): [3]}):
+            self.assertEqual(plain.deepcopy(copy_special), original_copy(copy_special))
+            self.assertIs(type(plain.deepcopy(copy_special)), type(copy_special))
+        copy_events = []
+        class CopyMeta(type):
+            __hash__ = type.__hash__
+            def __eq__(cls, other):
+                raise AssertionError('speculative type equality')
+        class CopyCustom(metaclass=CopyMeta):
+            def __init__(self, label, fail=False):
+                self.label, self.fail = label, fail
+            def __deepcopy__(self, memo):
+                copy_events.append(self.label)
+                self_outer.assertIs(type(memo), dict)
+                if self.fail:
+                    raise ValueError('live custom copy failure')
+                return ('copied', self.label)
+        self_outer = self
+        copy_input = {CopyCustom('key'): CopyCustom('value')}
+        copy_expected = original_copy(copy_input)
+        self.assertEqual(copy_events, ['value', 'key'])
+        copy_events.clear()
+        self.assertEqual(plain.deepcopy(copy_input), copy_expected)
+        self.assertEqual(copy_events, ['value', 'key'])
+        copy_events.clear()
+        with self.assertRaisesRegex(ValueError, '^live custom copy failure$'):
+            plain.deepcopy({'first': [1], 'last': CopyCustom('failure', True)})
+        self.assertEqual(copy_events, ['failure'])
+        copy_a, copy_b = object(), object()
+        for copy_import_first in (False, True):
+            copy_spec = importlib.util.spec_from_file_location('_inventory_copy_control',
+                plain.__file__)
+            copy_fresh = importlib.util.module_from_spec(copy_spec)
+            if copy_import_first:
+                copy_spec.loader.exec_module(copy_fresh)
+            with patch.object(copy, 'deepcopy', side_effect=[copy_a, copy_b,
+                    ValueError('live constructor failure')]) as copy_changed:
+                if not copy_import_first:
+                    copy_spec.loader.exec_module(copy_fresh)
+                self.assertIs(copy_fresh.deepcopy(copy_value), copy_a)
+                self.assertIs(copy_fresh.deepcopy(copy_value), copy_b)
+                with self.assertRaisesRegex(ValueError, '^live constructor failure$'):
+                    copy_fresh.deepcopy(copy_value)
+                self.assertEqual(copy_changed.call_count, 3)
+            self.assertEqual(copy_fresh.deepcopy(copy_value), original_copy(copy_value))
+        for copy_import_first in (False, True):
+            copy_spec = importlib.util.spec_from_file_location('_inventory_copy_dispatch',
+                plain.__file__)
+            copy_fresh = importlib.util.module_from_spec(copy_spec)
+            if copy_import_first:
+                copy_spec.loader.exec_module(copy_fresh)
+            copy_events.clear()
+            def copy_dispatch(value, memo):
+                copy_events.append(value)
+                if len(copy_events) == 3:
+                    raise ValueError('live dispatch failure')
+                return len(copy_events)
+            with patch.dict(copy._deepcopy_dispatch, {list: copy_dispatch}):
+                if not copy_import_first:
+                    copy_spec.loader.exec_module(copy_fresh)
+                self.assertEqual(copy_fresh.deepcopy([]), 1)
+                self.assertEqual(copy_fresh.deepcopy([]), 2)
+                with self.assertRaisesRegex(ValueError, '^live dispatch failure$'):
+                    copy_fresh.deepcopy([])
+            self.assertEqual(len(copy_events), 3)
+        copy_original_defaults = original_copy.__defaults__
+        for copy_import_first in (False, True):
+            copy_spec = importlib.util.spec_from_file_location('_inventory_copy_defaults',
+                plain.__file__)
+            copy_fresh = importlib.util.module_from_spec(copy_spec)
+            if copy_import_first:
+                copy_spec.loader.exec_module(copy_fresh)
+            try:
+                original_copy.__defaults__ = ({}, [])
+                if not copy_import_first:
+                    copy_spec.loader.exec_module(copy_fresh)
+                copy_memo_input = {'a': [1]}
+                copy_one = copy_fresh.deepcopy(copy_memo_input)
+                copy_memo_input['a'].append(2)
+                self.assertIs(copy_fresh.deepcopy(copy_memo_input), copy_one)
+                self.assertEqual(copy_one, {'a': [1]})
+            finally:
+                original_copy.__defaults__ = copy_original_defaults
+        copy_spec = importlib.util.spec_from_file_location('_inventory_copy_unknown', plain.__file__)
+        copy_fresh = importlib.util.module_from_spec(copy_spec)
+        with patch.object(copy, '_deepcopy_list', None):
+            copy_spec.loader.exec_module(copy_fresh)
+            self.assertEqual(copy_fresh._AUTHORITY, ())
+            self.assertEqual(copy_fresh.deepcopy(copy_value), original_copy(copy_value))
+        with patch.object(plain, '_AUTHORITY', ()):
+            self.assertEqual(plain.deepcopy(copy_value), original_copy(copy_value))
+        with patch.object(copy, 'id', lambda value: 1, create=True):
+            self.assertFalse(plain._eligible())
+        self.assertEqual(plain.deepcopy(copy_value), original_copy(copy_value))
+
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
         actual = copy.deepcopy(declared)
@@ -774,7 +915,7 @@ class Main813InventoryTests(unittest.TestCase):
                          {'test/frontend_native_calibrations': 29, 'unit/ordinary_interval/main': 40})
 
         self.assertEqual(main813.digest(main813.before_83b(actual)), main813.CURRENTABAB)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_850(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 3124, 36))
         self.assertEqual(sum(len(x) for x in main813.MAIN83B['added_methods'].values()), 32)
@@ -826,6 +967,60 @@ class Main813InventoryTests(unittest.TestCase):
 
         self.assertEqual({k: len(v) for k, v in main813.MAIN83B['listed_additions'].items()},
                          {'unit/rapid_profiler/lib': 21, 'unit/ordinary_interval/main': 11})
+
+        self.assertEqual(main813.digest(main813.before_850(actual)), main813.CURRENT83B)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 3151, 36))
+        self.assertEqual(sum(len(x) for x in main813.MAIN850['added_methods'].values()), 27)
+        self.assertEqual(sum(len(main813.MAIN850['added_methods'][p]) * len(v)
+                             for p, v in main813.MAIN850['instances'].items()), 27)
+        self.assertEqual(main813.MAIN850['declared_delta'],
+                         {'rust_tests': 27, 'rust_declarations': 27, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_850(actual))
+        for name, change in main813.MAIN850['workspace_changes'].items():
+            self.assertEqual(current_rows[name], change['current'])
+            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
+                          True, float(change['current']['tests'])):
+                changed = copy.deepcopy(actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(main850_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+            changed = copy.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.subTest(main850_missing=name), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        for key in actual:
+            changed = copy.deepcopy(actual); changed[key] = None
+            with self.subTest(main850_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main813.before_850(changed)
+        for path in main813.MAIN850['sources']:
+            for missing in (False, True):
+                mutation_target = main813.ROOT / path
+                def changed(candidate):
+                    if candidate == mutation_target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main850_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        for path, row in main813.MAIN850['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_850(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main850_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_850(path, bad, 'changed')
+
+        self.assertEqual(sum(len(x) for x in main813.MAIN850['doctests'].values()), 0)
+
+        self.assertEqual(sum(len(x['ignored']) for x in main813.MAIN850['methods'].values()), 0)
+
+        self.assertEqual({k: len(v) for k, v in main813.MAIN850['listed_additions'].items()},
+                         {'unit/ordinary_interval/main': 27})
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
