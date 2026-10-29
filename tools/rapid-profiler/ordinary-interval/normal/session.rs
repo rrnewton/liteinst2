@@ -7,7 +7,7 @@ use rapid_profiler::frontend_native::{
 use std::sync::mpsc::{TryRecvError, TrySendError};
 pub(in crate::normal) mod check;
 pub(in crate::normal) mod engine;
-mod epoch_storage;
+pub(in crate::normal) mod epoch_storage;
 pub(in crate::normal) mod io;
 pub(in crate::normal) mod loop_trace;
 mod protocol;

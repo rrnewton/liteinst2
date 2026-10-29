@@ -25,10 +25,10 @@ struct Generation {
 }
 #[derive(Clone, Copy)]
 pub(super) struct Seen {
-    id: u64,
-    row: NormalModuleRecord,
-    sequence: u64,
-    rank: Option<usize>,
+    pub(super) id: u64,
+    pub(super) row: NormalModuleRecord,
+    pub(super) sequence: u64,
+    pub(super) rank: Option<usize>,
 }
 pub(super) struct Population {
     pub accepted: Vec<Arc<input::Record>>,
@@ -550,7 +550,7 @@ pub(in crate::normal) fn report_shape(
         ranks[f] += 1;
     }
 }
-fn sample(row: &RecordObservation, seen: Seen) -> Observation {
+pub(super) fn sample(row: &RecordObservation, seen: Seen) -> Observation {
     let a = row.record.admission;
     let raw = seen.row.record.raw;
     assert_eq!(a.function, seen.row.function);

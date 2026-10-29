@@ -168,6 +168,39 @@ pub(super) struct Worker {
     identity: Identity,
 }
 impl Worker {
+    pub(super) fn attach(
+        entries: [u64; 2],
+        client: NormalModuleClient,
+        custody: Arc<Custody>,
+        cpu: usize,
+    ) -> Self {
+        let mut fail_stop = csv::FailStop(true);
+        pin(Some(cpu));
+        let readable = stack();
+        let identity = Identity {
+            pid: std::process::id(),
+            tid: unsafe { libc::syscall(libc::SYS_gettid) } as u64,
+            cpu,
+            stack: csv::stack_bounds(),
+            caller: csv::mapping(csv::invoke as *const () as usize as u64, "r-xp"),
+        };
+        custody.worker(identity);
+        // SAFETY: sole actual calling worker, original stack/no signal/reentry or
+        // nonlocal exits, immutable two-function module and independent controller.
+        let attached = unsafe { client.attach(1, readable, IntervalJournal::allocate()) }.unwrap();
+        assert_eq!(attached.totals().unwrap(), NormalTotals::default());
+        let worker = Self {
+            fail_stop: csv::FailStop(true),
+            attached: Some(attached),
+            calls: Vec::with_capacity(4),
+            targets: entries
+                .map(|entry| unsafe { std::mem::transmute::<usize, csv::Csv>(entry as usize) }),
+            custody,
+            identity,
+        };
+        fail_stop.0 = false;
+        worker
+    }
     pub(super) fn call_one(&mut self, record: Arc<input::Record>, function: usize) {
         assert!(self.calls.len() < 4 && function < 2);
         self.postflight();
@@ -201,9 +234,9 @@ impl Worker {
             call.check();
         }
     }
-    // Shared by production transport and a future separately bounded command
-    // control. The caller must never manufacture returned authority from metadata.
-    pub(super) fn flush(&mut self, tx: &mpsc::SyncSender<Event<Call, NormalModuleBatch>>) {
+    // Complete postflight and actual checkpoint are shared; no adapter can
+    // manufacture a returned call from a phase counter or output row.
+    pub(super) fn take_batch(&mut self) -> Option<Event<Call, NormalModuleBatch>> {
         self.postflight();
         // SAFETY: all retained calls physically returned through invoke/store;
         // full input/output/source/thread/caller/stack postflight completed first.
@@ -211,14 +244,26 @@ impl Worker {
         if let Some(native) = batch {
             assert_eq!(native.records().len(), self.calls.len());
             let calls = std::mem::replace(&mut self.calls, Vec::with_capacity(4));
-            tx.send(Event::Batch {
+            Some(Event::Batch {
                 calls,
                 native: Box::new(native),
             })
-            .unwrap();
         } else {
             assert!(self.calls.is_empty());
+            None
         }
+    }
+    pub(super) fn flush(&mut self, tx: &mpsc::SyncSender<Event<Call, NormalModuleBatch>>) {
+        if let Some(event) = self.take_batch() {
+            if let Err(error) = tx.send(event) {
+                // Keep the returned event live; do not unwind its Call/Batch owners.
+                let _retained = error.0;
+                std::process::abort();
+            }
+        }
+    }
+    pub(super) fn identity(&self) -> Identity {
+        self.identity
     }
 }
 impl Runtime for Worker {
@@ -265,33 +310,9 @@ pub(super) fn run(
     tx: mpsc::SyncSender<Event<Call, NormalModuleBatch>>,
     cpu: usize,
 ) {
-    let mut fail_stop = csv::FailStop(true);
-    pin(Some(cpu));
-    let readable = stack();
-    let identity = Identity {
-        pid: std::process::id(),
-        tid: unsafe { libc::syscall(libc::SYS_gettid) } as u64,
-        cpu,
-        stack: csv::stack_bounds(),
-        caller: csv::mapping(csv::invoke as *const () as usize as u64, "r-xp"),
-    };
-    custody.worker(identity);
-    // SAFETY: sole actual calling worker, original stack/no signal/reentry or
-    // nonlocal exits, immutable two-function module and independent controller.
-    let attached = unsafe { client.attach(1, readable, IntervalJournal::allocate()) }.unwrap();
-    assert_eq!(attached.totals().unwrap(), NormalTotals::default());
-    let worker = Worker {
-        fail_stop: csv::FailStop(true),
-        attached: Some(attached),
-        calls: Vec::with_capacity(4),
-        targets: entries
-            .map(|entry| unsafe { std::mem::transmute::<usize, csv::Csv>(entry as usize) }),
-        custody,
-        identity,
-    };
+    let worker = Worker::attach(entries, client, custody, cpu);
+    let identity = worker.identity();
     ready.set(identity).unwrap();
     tx.send(Event::Ready { tid: identity.tid }).unwrap();
-    // The Worker now owns the fail-stop guard and all attached state.
-    fail_stop.0 = false;
     shared::worker::drive(worker, rx, tx);
 }

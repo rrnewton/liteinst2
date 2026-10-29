@@ -231,37 +231,56 @@ impl<C: Controller> Engine<C> {
         }
         Ok(())
     }
+    // The caller retains this Engine through every failure. No Report is made
+    // by reclaim_at; copied rows and the one output obligation precede drop.
+    pub(in crate::normal) fn copy_report_at(
+        &mut self,
+        i: usize,
+        io: &mut Io,
+    ) -> Result<bool, String> {
+        assert!(i < 3 && self.current != Some(i));
+        let Some(slot) = self.epochs[i].as_mut() else {
+            return Ok(false);
+        };
+        if slot.report_index().is_none() {
+            let Some(report) = self.controller.report(slot.epoch()).map_err(failure)? else {
+                return Ok(false);
+            };
+            let generation = report.generation().get();
+            let records: Vec<_> = report.records().collect();
+            assert!(records.len() <= self.k);
+            self.controller.check_report(generation, &records, self.k);
+            let n = records.len();
+            let index = self.reports.len();
+            self.reports.push((generation, records));
+            slot.copied(generation, index, format!("REPORT,{generation},{n}\n"));
+            drop(report);
+        }
+        let index = slot.report_index().unwrap();
+        assert_eq!(self.reports[index].0, slot.epoch().generation().get());
+        slot.emit(|line| io.emit(line))?;
+        Ok(true)
+    }
+    pub(in crate::normal) fn reclaim_at(&mut self, i: usize) -> Result<bool, String> {
+        assert!(i < 3 && self.current != Some(i));
+        let slot = self.epochs[i].as_mut().expect("retained copied epoch");
+        if let Some(bank) = slot
+            .reclaim(|epoch| self.controller.reclaim_storage(epoch))
+            .map_err(failure)?
+        {
+            self.banks.push(bank); // At most the original E prepared banks.
+            self.epochs[i] = None;
+            return Ok(true);
+        }
+        Ok(false)
+    }
     pub(in crate::normal) fn retire(&mut self, io: &mut Io) -> Result<(), String> {
         for i in 0..3 {
             if self.current == Some(i) {
                 continue;
             }
-            let Some(slot) = self.epochs[i].as_mut() else {
-                continue;
-            };
-            if slot.report_index().is_none() {
-                let Some(report) = self.controller.report(slot.epoch()).map_err(failure)? else {
-                    continue;
-                };
-                let generation = report.generation().get();
-                let records: Vec<_> = report.records().collect();
-                assert!(records.len() <= self.k);
-                self.controller.check_report(generation, &records, self.k);
-                let n = records.len();
-                let index = self.reports.len();
-                self.reports.push((generation, records));
-                slot.copied(generation, index, format!("REPORT,{generation},{n}\n"));
-                drop(report);
-            }
-            let index = slot.report_index().unwrap();
-            assert_eq!(self.reports[index].0, slot.epoch().generation().get());
-            slot.emit(|line| io.emit(line))?;
-            if let Some(bank) = slot
-                .reclaim(|epoch| self.controller.reclaim_storage(epoch))
-                .map_err(failure)?
-            {
-                self.banks.push(bank); // At most the original E prepared banks.
-                self.epochs[i] = None;
+            if self.copy_report_at(i, io)? {
+                self.reclaim_at(i)?;
             }
         }
         Ok(())

@@ -11,6 +11,7 @@ use shared::{Application as ApplicationTrait, failure};
 use std::sync::OnceLock;
 pub(in crate::normal) mod check;
 pub(in crate::normal) mod input;
+pub(crate) mod owner;
 pub(super) mod worker;
 
 pub(in crate::normal) struct Application {

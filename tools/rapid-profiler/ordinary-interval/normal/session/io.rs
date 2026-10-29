@@ -173,6 +173,9 @@ impl Io {
         }
         Ok(())
     }
+    pub(in crate::normal) fn output_len(&self) -> usize {
+        self.output.len()
+    }
     pub(in crate::normal) fn drained(&self) -> bool {
         self.written == self.output.len()
     }
