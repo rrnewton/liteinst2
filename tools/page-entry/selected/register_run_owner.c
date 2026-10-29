@@ -1,4 +1,7 @@
 #include "register_run.h"
+#ifdef LI2_RUN_CACHE_REUSE
+#include "register_run_reuse.h"
+#endif
 #if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
 #include "tf_chain.h"
 #endif
@@ -89,7 +92,12 @@ static int slot(struct li2_run_owner *o,struct li2_run_slot_observation *out,int
     if(!o->publication || !o->publisher.observe || out->attempted)return LI2_RUN_PUBLICATION_MISSING;
     /* The actual callback must retain attempted and its partial observations.
        A return code without that prefix cannot masquerade as a valid owner. */
+#ifdef LI2_RUN_CACHE_REUSE
+    int status=li2_run_reuse_enabled()?li2_run_reuse_observe_owner(o,out):
+        o->publisher.observe(o->publisher.context,o->publication,&o->plan,out);
+#else
     int status=o->publisher.observe(o->publisher.context,o->publication,&o->plan,out);
+#endif
     out->callback_result=status;
     if(status || out->result || out->attempted!=1 || out->owner_observed!=1 ||
        out->mapping_observed!=1 || out->bytes_observed!=1 || out->complete!=1 ||
@@ -115,6 +123,10 @@ int li2_run_arm(struct li2_run_owner *o,struct li2_step_session *s,
                 const struct li2_fetch_ref *borrow,uint64_t flags,
                 const struct li2_run_publisher *publisher,const struct li2_run_publication *publication) {
     if(!o || !s || !borrow)return LI2_RUN_ARGUMENT;
+#ifdef LI2_RUN_CACHE_REUSE
+    int reuse_error=li2_run_reuse_arm_check(o,s,borrow,flags,publisher,publication);
+    if(reuse_error)return reuse_error;
+#endif
     if(o->phase!=LI2_RUN_EMPTY || o->session || o->first_error)return LI2_RUN_REUSE;
     o->phase=LI2_RUN_PLANNING;o->session=s;o->borrow=*borrow;o->logical_flags=flags;
     if(publisher)o->publisher=*publisher;
@@ -171,6 +183,10 @@ static void enter(struct li2_run_owner *o,enum li2_run_phase phase,int sig,
     if(!o)li2_run_abort(0,LI2_RUN_ARGUMENT,0);
     if(o->in_handler){nested(o,sig,si,uc);li2_run_abort(o,LI2_RUN_REENTRY,sig);}
     if(observed->observed){nested(o,sig,si,uc);li2_run_abort(o,LI2_RUN_REUSE,sig);}
+#ifdef LI2_RUN_CACHE_REUSE
+    int reuse_error=li2_run_reuse_enter_check(o,phase);
+    if(reuse_error)li2_run_abort(o,(unsigned)reuse_error,phase);
+#endif
     o->in_handler=1;event(observed,sig,si);
     require(o,uc && si,LI2_RUN_FRAME,0);
     frame(o,saved,uc); /* Preserve the actual first event even when foreign. */

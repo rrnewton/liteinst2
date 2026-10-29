@@ -50,6 +50,12 @@ int li2_tf_chain_run_consume(const struct li2_tf_run_entry *,struct li2_step_ses
 int li2_tf_chain_run_released(const struct li2_tf_run_entry *,const struct li2_fetch_ref *,
                             int,const siginfo_t *,const ucontext_t *);
 const struct li2_tf_run_origin *li2_tf_chain_run_snapshot(const struct li2_tf_chain *);
+#ifdef LI2_RUN_CACHE_REUSE
+/* Read-only: all real chain owners must be closed. The sole optional exception
+   is this exact unconsumed current-event run proof, left for run_consume. */
+int li2_tf_chain_run_reuse_quiet(const struct li2_tf_chain *,
+                                const struct li2_tf_run_entry *expected_origin);
+#endif
 #endif
 /* These copies contain no pointers into fetch's reusable singleton payload.
    ref.owner is the opaque identity used by the API, never dereferenced here. */

@@ -14,6 +14,11 @@ static struct li2_run_owner selected_run_owner;
 static struct li2_run_completion_history selected_run_history;
 static struct li2_run_plan selected_run_plan;
 static const struct li2_run_publication *selected_run_publication;
+#ifdef LI2_RUN_CACHE_REUSE
+#include "register_run_reuse.h"
+static struct li2_run_handle selected_run_handle;
+static ucontext_t *selected_run_reuse_frame;
+#endif
 static struct li2_run_nested selected_run_interrupted;
 static volatile sig_atomic_t selected_run_failing;
 static uint64_t selected_run_plan_misses;

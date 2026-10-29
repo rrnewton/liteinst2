@@ -234,6 +234,58 @@ int li2_tf_chain_run_released(const struct li2_tf_run_entry *entry,const struct 
         return chain_run_refuse(LI2_CHAIN_FRAME);
     e->miss_released=1;return 0;
 }
+#ifdef LI2_RUN_CACHE_REUSE
+int li2_tf_chain_run_reuse_quiet(const struct li2_tf_chain *c,
+                                const struct li2_tf_run_entry *expected_origin) {
+    if(!chain_registered_ok(c) || !c->session || !c->session->initialized ||
+       !c->session->self_test_complete)return LI2_CHAIN_ARGUMENT;
+    if(c->first_error)return (int)c->first_error;
+    if(c->pending || c->in_handler || c->unexpected_events ||
+       __atomic_load_n(&c->entry.valid,__ATOMIC_ACQUIRE))return LI2_CHAIN_STATE;
+    for(unsigned i=0;i<2;i++) {
+        const struct li2_tf_chain_slot *s=&c->slots[i];
+        if(s->chain!=c || s->index!=i || s->owner.step.first_error ||
+           s->owner.step.in_handler || s->owner.unexpected_frame_observed ||
+           s->unexpected_frame_observed || s->fetch.progress.first_error)
+            return LI2_CHAIN_STATE;
+        if(s->phase==LI2_CHAIN_EMPTY) {
+            if(s->owner.step.phase!=LI2_STEP_EMPTY || s->owner.step.session ||
+               s->fetch.progress.held)return LI2_CHAIN_STATE;
+        } else if(s->phase==LI2_CHAIN_CLOSED) {
+            if(!chain_closed(s))return LI2_CHAIN_STATE;
+        } else if(s->phase==LI2_CHAIN_FALLBACK) {
+            if(s->owner.step.phase!=LI2_STEP_EMPTY || !s->release.started ||
+               !s->release.complete || s->release.result || s->fetch.progress.held ||
+               !s->fetch.progress.complete)return LI2_CHAIN_STATE;
+        } else return LI2_CHAIN_STATE;
+    }
+#ifdef LI2_TF_SAME_PAGE_LEASE
+    const struct li2_tf_same_page *l=&c->lease;
+    if(l->origin_active || (l->phase!=LI2_LEASE_EMPTY && l->phase!=LI2_LEASE_MISS &&
+                           l->phase!=LI2_LEASE_CLOSED))return LI2_CHAIN_STATE;
+#endif
+    unsigned valid=__atomic_load_n(&chain_run_entry.valid,__ATOMIC_ACQUIRE);
+    const struct li2_tf_run_origin *e=&chain_run_entry.progress;
+    if(chain_run_entry.chain && chain_run_entry.chain!=c)return LI2_CHAIN_ORIGIN;
+    if(e->result)return e->result;
+    if(!expected_origin)return valid?LI2_CHAIN_ORIGIN:0;
+    if(expected_origin!=&chain_run_entry || chain_run_entry.chain!=c || valid!=1 ||
+       e->issued!=1 || e->consume_attempted || e->consumed || e->preflight_skipped ||
+       e->miss_released || e->run_borrow || !e->event_id || e->event_id!=c->event_id ||
+       e->previous>=2 || e->next>=2 || e->previous==e->next ||
+       e->next!=(unsigned)c->active)return LI2_CHAIN_ORIGIN;
+    const struct li2_tf_chain_slot *p=&c->slots[e->previous],*s=&c->slots[e->next];
+    if(!chain_closed(p) || s->phase!=LI2_CHAIN_FALLBACK || s->fallback!=LI2_CHAIN_OLD_STEP ||
+       p->generation!=e->previous_generation || s->generation!=e->next_generation ||
+       s->event_id!=e->event_id || p->fetch.ref.sequence!=e->previous_borrow ||
+       s->fetch.ref.sequence!=e->next_borrow || e->next_borrow<=e->previous_borrow ||
+       p->owner.actual_post_pc!=e->pc || s->decoded.pc!=e->pc ||
+       (p->owner.actual_post_flags&~LI2_STEP_TF)!=e->flags)return LI2_CHAIN_ORIGIN;
+    /* No frame/proof consumption here. The unchanged real entry consumer
+       still authenticates full actual TRACE, fresh source and flags later. */
+    return 0;
+}
+#endif
 #endif
 static struct li2_tf_chain_slot *chain_next(struct li2_tf_chain *c,unsigned index) {
 #ifdef LI2_TF_SEALED_CUSTODY

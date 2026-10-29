@@ -115,6 +115,12 @@ int li2_lifecycle_fetch_release(const struct li2_fetch_ref *);
    admission and lifecycle mutation entry. A busy result goes to the existing
    step owner's error/cleanup path, never hooks.fail from a pending callback. */
 int li2_lifecycle_fetch_interlock(void);
+#ifdef LI2_RUN_CACHE_REUSE
+/* Read-only local owner interlock. NULL requires no held fetch; otherwise
+   require exactly this currently held private ref. No source validation,
+   permission, release, completion or retirement authority is supplied. */
+int li2_lifecycle_run_reuse_quiet(const struct li2_fetch_ref *expected);
+#endif
 /* Borrowed prefix diagnostics; no allocation, payload copy or authority. */
 const struct li2_fetch_progress *li2_lifecycle_fetch_progress(void);
 void li2_lifecycle_fetch_partial_view(struct li2_fetch_view *out);

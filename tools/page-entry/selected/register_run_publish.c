@@ -1,4 +1,7 @@
 #include "register_run_publish.h"
+#ifdef LI2_RUN_CACHE_REUSE
+#include "register_run_reuse.h"
+#endif
 #include <linux/membarrier.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
@@ -22,6 +25,11 @@ struct li2_run_publication {
     uint64_t inspections;
     size_t last_verified_bytes;
 };
+#ifdef LI2_RUN_CACHE_REUSE
+#define LI2_RUN_REUSE_TYPES
+#include "register_run_reuse.inc"
+#undef LI2_RUN_REUSE_TYPES
+#endif
 struct li2_run_cache {
     struct li2_run_cache_diagnostic diagnostic;
     struct li2_step_session *session;
@@ -33,6 +41,9 @@ struct li2_run_cache {
     struct li2_fetch_backing backing[2];
     size_t page_count;
     struct li2_run_publication slots[LI2_RUN_CACHE_PAGES];
+#ifdef LI2_RUN_CACHE_REUSE
+    struct reuse_private reuse;
+#endif
 };
 static struct li2_run_cache cache;
 static int same(const void *a,const void *b,size_t n) {
@@ -164,7 +175,11 @@ static int receipt(const struct li2_run_cache *c,const struct li2_run_publicatio
     size_t index=(size_t)(p-c->slots);
     const struct li2_run_publication_progress *r=&p->progress;
     return r->phase==LI2_PUBLICATION_COMPLETE && !r->first_error && !r->first_detail &&
+#ifdef LI2_RUN_CACHE_REUSE
+        r->allocation==1 && r->generation==(c->reuse.enabled?c->reuse.live[index]:index+1) &&
+#else
         r->allocation==1 && r->generation==index+1 &&
+#endif
         r->entry==c->diagnostic.initialization.arena+index*LI2_STEP_PAGE &&
         r->fill_bytes==LI2_STEP_PAGE && r->code_bytes==p->plan.generated_length &&
         r->verified_bytes==LI2_STEP_PAGE && r->rw_checked==1 &&
@@ -219,6 +234,9 @@ int li2_run_cache_interrupt(struct li2_run_cache *c,unsigned code,long detail) {
         c->diagnostic.interrupted_detail=detail;
     } else c->diagnostic.interrupted_again=1;
     (void)error(c,code,detail);
+#ifdef LI2_RUN_CACHE_REUSE
+    if(c->reuse.enabled && c->reuse.retiring)return reuse_failure(c,code,detail);
+#endif
     const struct li2_run_publish_attempt *a=&c->diagnostic.last_attempt;
     if(a->installed && a->slot<c->diagnostic.slots_used) {
         struct li2_run_publication *p=&c->slots[a->slot];
@@ -232,6 +250,9 @@ int li2_run_cache_publish(struct li2_run_cache *c,const struct li2_fetch_ref *bo
                           const struct li2_run_plan *plan,const struct li2_run_publication **out) {
     if(!out)return LI2_CACHE_ARGUMENT;
     *out=0;
+#ifdef LI2_RUN_CACHE_REUSE
+    if(c==&cache && c->reuse.enabled)return error(c,LI2_CACHE_REUSE,30);
+#endif
     int r=usable(c);if(r)return r;
     if(c->busy)return error(c,LI2_CACHE_REENTRY,0);
     if(!borrow || !plan || !borrow->sequence || borrow->sequence<=c->last_borrow.sequence ||
@@ -297,6 +318,9 @@ int li2_run_publication_observe(void *context,const struct li2_run_publication *
     if(!out || out->attempted)return LI2_CACHE_ARGUMENT;
     out->attempted=1;
     struct li2_run_cache *c=context;
+#ifdef LI2_RUN_CACHE_REUSE
+    if(c==&cache && c->reuse.enabled){out->result=error(c,LI2_CACHE_REUSE,31);return out->result;}
+#endif
     int r=usable(c);if(r){out->result=r;return r;}
     if(c->busy){out->result=error(c,LI2_CACHE_REENTRY,0);return out->result;}
     c->busy=1;
@@ -323,6 +347,10 @@ int li2_run_cache_before_syscall(struct li2_run_cache *c,long n,const long args[
     int r=usable(c);if(r)return r;
     if(c->busy)return error(c,LI2_CACHE_REENTRY,n);
     if(!args)return error(c,LI2_CACHE_ARGUMENT,n);
+#ifdef LI2_RUN_CACHE_REUSE
+    if(c->reuse.enabled && (c->reuse.lookup || c->reuse.lease || c->reuse.reset_pending))
+        return error(c,LI2_CACHE_REUSE,32);
+#endif
     if(n!=SYS_brk || !args[0])return 0;
     c->busy=1;
     struct li2_run_brk_observation *b=&c->diagnostic.last_brk;
@@ -347,12 +375,21 @@ const struct li2_run_cache_diagnostic *li2_run_cache_diagnostic(const struct li2
 const struct li2_run_publication_progress *li2_run_publication_progress(
     const struct li2_run_cache *c,const struct li2_run_publication *publication) {
     if(c!=&cache)return 0;
+#ifdef LI2_RUN_CACHE_REUSE
+    if(c->reuse.enabled)return 0;
+#endif
     struct li2_run_publication *p=registered(c,publication);
     return p?&p->progress:0;
 }
 const struct li2_private_code_query *li2_run_publication_last_query(
     const struct li2_run_cache *c,const struct li2_run_publication *publication) {
     if(c!=&cache)return 0;
+#ifdef LI2_RUN_CACHE_REUSE
+    if(c->reuse.enabled)return 0;
+#endif
     struct li2_run_publication *p=registered(c,publication);
     return p?&p->last_inspection:0;
 }
+#ifdef LI2_RUN_CACHE_REUSE
+#include "register_run_reuse.inc"
+#endif
