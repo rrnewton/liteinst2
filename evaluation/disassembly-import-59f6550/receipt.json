@@ -1,0 +1,677 @@
+{
+  "admission_controls": [
+    {
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "9b0e8ccf1ca824602421d083c97da6b18a0e7e58a28ad7079ae178f6aa8bd2fe",
+        "reaped_descendants": 0,
+        "seconds": 197.93406300595962,
+        "start_utc": "2026-10-29T21:16:37.057607+00:00",
+        "termination": null
+      },
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_*.py"
+      ],
+      "failed": 1,
+      "passed": 349,
+      "receipt_sha256": "411b470dc3af154d45c9dda0293d1ca1cf2e84a67c5c3e1177355c4b9bd26cd5",
+      "reservation": {
+        "affinity": [
+          73,
+          131,
+          170,
+          183
+        ],
+        "hardware": "AMD EPYC Zen 5 dev host",
+        "load_after": [
+          49.76,
+          50.7,
+          50.53
+        ],
+        "load_before": [
+          48.81,
+          50.83,
+          50.51
+        ],
+        "role": "full pure admission Python controls"
+      },
+      "revision": "96bcbd6cf9560f6c28698a2ac1c32ce4cb7cc9d0",
+      "status": "FAILED",
+      "tests": 350,
+      "wall_limit_seconds": 1200
+    },
+    {
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "dcb9318255602a18504f7d5d271714815dd7bf32e221cbbb3939433d8444f333",
+        "reaped_descendants": 0,
+        "seconds": 184.22720179404132,
+        "start_utc": "2026-10-29T21:22:40.136872+00:00",
+        "termination": null
+      },
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_*.py"
+      ],
+      "failed": 0,
+      "passed": 350,
+      "receipt_sha256": "06782d0412e90afe1e92307a4de00a34e4cecfca304f618a1e316be5ccd9e2a3",
+      "reservation": {
+        "affinity": [
+          23,
+          55,
+          75,
+          82
+        ],
+        "hardware": "AMD EPYC Zen 5 dev host",
+        "load_after": [
+          56.37,
+          46.75,
+          48.13
+        ],
+        "load_before": [
+          33.14,
+          43.47,
+          47.83
+        ],
+        "role": "full pure admission Python controls"
+      },
+      "revision": "5fdea886f9a110f4de3154e3e8509d660dcf55ea",
+      "status": "PASS",
+      "tests": 350,
+      "wall_limit_seconds": 1200
+    }
+  ],
+  "checks_csv_sha256": "ab967dd313d62ae535caf6db5cdb90020d6fa84f6a46fb82313f27532d0e5ef8",
+  "development": [
+    {
+      "base_revision": "c6f5707cabca1c1bf795f034308f6cd5c6844951",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 8.058488143840805,
+        "start_utc": "2026-10-29T20:58:27.699776+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "load_average": null,
+      "load_scope": "Not recorded for these development commands; no historical value inferred.",
+      "name": "a3-disassembly-fmt-v1",
+      "receipt_sha256": "4e66a8bb21cfbe0c2a6abfae1ed9c47358afd9019013e342bfebe9f115f9ac05",
+      "reserved_cpus": null,
+      "scope": "Development formatting; no test outcome."
+    },
+    {
+      "base_revision": "c6f5707cabca1c1bf795f034308f6cd5c6844951",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "10411273a0a0e7adf1ca718ec0e707ead822547c67be1dd8019dca10d48a5a26",
+        "reaped_descendants": 0,
+        "seconds": 7.026249876944348,
+        "start_utc": "2026-10-29T20:58:50.682126+00:00",
+        "termination": null
+      },
+      "command": [
+        "/usr/bin/env",
+        "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR",
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus",
+        "/usr/local/bin/python3",
+        "-B",
+        "$CPUSET_ALLOCATOR",
+        "run",
+        "--cores",
+        "8",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-a3-disassembly-controls-v1",
+        "--",
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite"
+      ],
+      "load_average": null,
+      "load_scope": "Not recorded for these development commands; no historical value inferred.",
+      "name": "a3-disassembly-controls-v1",
+      "receipt_sha256": "c3ad06aab96fdb45608466a067df43ff6364c3aa791678fa7e76e9d0e130c1f9",
+      "reserved_cpus": [
+        45,
+        52,
+        54,
+        73,
+        82,
+        120,
+        126,
+        128
+      ],
+      "scope": "Development 160-test run before redundant import removal. This legacy receipt did not pin dirty elf-rewrite files, so it is not final-source coverage."
+    },
+    {
+      "base_revision": "c6f5707cabca1c1bf795f034308f6cd5c6844951",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c74d0b6228dfc0f7aedf52def7ad715474c32caa6c88eea5235f59b471cdec6f",
+        "reaped_descendants": 0,
+        "seconds": 12.060497209895402,
+        "start_utc": "2026-10-29T21:00:59.732529+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "load_average": null,
+      "load_scope": "Not recorded for these development commands; no historical value inferred.",
+      "name": "strict-clippy-v1",
+      "receipt_sha256": "15621735daade48e00dbde3c9e170f7569ad3240bfb8880cd20f1ea36b7ea8e7",
+      "reserved_cpus": [
+        30,
+        72,
+        98,
+        100,
+        101,
+        176,
+        178,
+        209
+      ],
+      "scope": "Final seven importer images; all-target/all-feature strict package Clippy."
+    },
+    {
+      "base_revision": "c6f5707cabca1c1bf795f034308f6cd5c6844951",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "8e64ffda88dbf8583b6b4b739f4fac2e241475b815c176036b84517d58d49dd9",
+        "reaped_descendants": 0,
+        "seconds": 3.1491312289144844,
+        "start_utc": "2026-10-29T21:01:54.146180+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite"
+      ],
+      "load_average": null,
+      "load_scope": "Not recorded for these development commands; no historical value inferred.",
+      "name": "package-tests-v2",
+      "receipt_sha256": "e48ad0304b408d1314881601c374c32819094f7001d1c33d1c9908574adb107d",
+      "reserved_cpus": [
+        17,
+        19,
+        74,
+        93,
+        130,
+        183,
+        187,
+        259
+      ],
+      "scope": "Final seven importer images; all 160 package tests pass (94+19+24+23), including all eight new methods."
+    }
+  ],
+  "full_a3": false,
+  "full_a5": false,
+  "functional_checks": [
+    {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "completed_fail_observations": 0,
+      "completed_ignored_observations": 0,
+      "completed_pass_observations": 0,
+      "completed_terminals": 0,
+      "exit_code": 0,
+      "name": "fmt",
+      "observation_scope": "Completed terminal observations only; nested observations can overlap and an incomplete suite is not a pass.",
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reaped_descendants": 0,
+      "reservation": {
+        "affinity": [
+          129,
+          168,
+          174,
+          182,
+          212,
+          242,
+          248,
+          257
+        ],
+        "hardware": "AMD EPYC Zen 5 dev host",
+        "load_after": [
+          72.14,
+          56.81,
+          51.79
+        ],
+        "load_before": [
+          37.97,
+          41.5,
+          48.25
+        ],
+        "role": "all seven functional checks and compiler workers"
+      },
+      "revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+      "seconds": 8.404086885973811,
+      "start_utc": "2026-10-29T21:05:02.244453+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "completed_fail_observations": 0,
+      "completed_ignored_observations": 0,
+      "completed_pass_observations": 0,
+      "completed_terminals": 0,
+      "exit_code": 0,
+      "name": "clippy",
+      "observation_scope": "Completed terminal observations only; nested observations can overlap and an incomplete suite is not a pass.",
+      "private_log_sha256": "27058bac3006b6449fd4dbb5db7b9fa6903b3f85ae51d92cbe78e8f35ac1c9ef",
+      "reaped_descendants": 0,
+      "reservation": {
+        "affinity": [
+          129,
+          168,
+          174,
+          182,
+          212,
+          242,
+          248,
+          257
+        ],
+        "hardware": "AMD EPYC Zen 5 dev host",
+        "load_after": [
+          72.14,
+          56.81,
+          51.79
+        ],
+        "load_before": [
+          37.97,
+          41.5,
+          48.25
+        ],
+        "role": "all seven functional checks and compiler workers"
+      },
+      "revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+      "seconds": 41.65418127598241,
+      "start_utc": "2026-10-29T21:05:10.668655+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "completed_fail_observations": 0,
+      "completed_ignored_observations": 0,
+      "completed_pass_observations": 0,
+      "completed_terminals": 0,
+      "exit_code": 0,
+      "name": "check",
+      "observation_scope": "Completed terminal observations only; nested observations can overlap and an incomplete suite is not a pass.",
+      "private_log_sha256": "47906a02b752f74193fee89a0152fc31d2995750c77ad8c48002227a45d0ff99",
+      "reaped_descendants": 0,
+      "reservation": {
+        "affinity": [
+          129,
+          168,
+          174,
+          182,
+          212,
+          242,
+          248,
+          257
+        ],
+        "hardware": "AMD EPYC Zen 5 dev host",
+        "load_after": [
+          72.14,
+          56.81,
+          51.79
+        ],
+        "load_before": [
+          37.97,
+          41.5,
+          48.25
+        ],
+        "role": "all seven functional checks and compiler workers"
+      },
+      "revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+      "seconds": 24.718103013001382,
+      "start_utc": "2026-10-29T21:05:52.345584+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "completed_fail_observations": 0,
+      "completed_ignored_observations": 1,
+      "completed_pass_observations": 1990,
+      "completed_terminals": 74,
+      "exit_code": -9,
+      "name": "workspace-default",
+      "observation_scope": "Completed terminal observations only; nested observations can overlap and an incomplete suite is not a pass.",
+      "private_log_sha256": "cabc0da58c499be4e99d03992b3c43de5aa0401cbe932068cda243de74e57253",
+      "reaped_descendants": 8,
+      "reservation": {
+        "affinity": [
+          129,
+          168,
+          174,
+          182,
+          212,
+          242,
+          248,
+          257
+        ],
+        "hardware": "AMD EPYC Zen 5 dev host",
+        "load_after": [
+          72.14,
+          56.81,
+          51.79
+        ],
+        "load_before": [
+          37.97,
+          41.5,
+          48.25
+        ],
+        "role": "all seven functional checks and compiler workers"
+      },
+      "revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+      "seconds": 360.16705237096176,
+      "start_utc": "2026-10-29T21:06:17.081728+00:00",
+      "status": "FAILED",
+      "termination": "timeout",
+      "wall_limit_seconds": 360
+    },
+    {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "completed_fail_observations": 0,
+      "completed_ignored_observations": 0,
+      "completed_pass_observations": 1039,
+      "completed_terminals": 28,
+      "exit_code": 0,
+      "name": "serial-launch",
+      "observation_scope": "Completed terminal observations only; nested observations can overlap and an incomplete suite is not a pass.",
+      "private_log_sha256": "06e5ac34de9d9938d05da3ccd926811330afbba00701af803003da578a3ddba1",
+      "reaped_descendants": 0,
+      "reservation": {
+        "affinity": [
+          3,
+          154,
+          157,
+          191,
+          262,
+          263,
+          267,
+          278
+        ],
+        "load_after": [
+          47.03,
+          52.05,
+          50.89
+        ],
+        "load_before": [
+          57.25,
+          55.63,
+          51.7
+        ],
+        "role": "remaining serial launch and allocation functional checks"
+      },
+      "revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+      "seconds": 130.7925111579243,
+      "start_utc": "2026-10-29T21:13:14.538288+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "completed_fail_observations": 0,
+      "completed_ignored_observations": 0,
+      "completed_pass_observations": 3,
+      "completed_terminals": 1,
+      "exit_code": 0,
+      "name": "staged-allocation",
+      "observation_scope": "Completed terminal observations only; nested observations can overlap and an incomplete suite is not a pass.",
+      "private_log_sha256": "5e07291823c056e6eb69c5255d8d3fc5ef707a87792d8e53ad13de6c3687cd44",
+      "reaped_descendants": 0,
+      "reservation": {
+        "affinity": [
+          3,
+          154,
+          157,
+          191,
+          262,
+          263,
+          267,
+          278
+        ],
+        "load_after": [
+          47.03,
+          52.05,
+          50.89
+        ],
+        "load_before": [
+          57.25,
+          55.63,
+          51.7
+        ],
+        "role": "remaining serial launch and allocation functional checks"
+      },
+      "revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+      "seconds": 0.04152638022787869,
+      "start_utc": "2026-10-29T21:15:25.356932+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "completed_fail_observations": 0,
+      "completed_ignored_observations": 0,
+      "completed_pass_observations": 36,
+      "completed_terminals": 1,
+      "exit_code": 0,
+      "name": "prefixed-pun",
+      "observation_scope": "Completed terminal observations only; nested observations can overlap and an incomplete suite is not a pass.",
+      "private_log_sha256": "6c70ca99f6ba572d59483617842ebedf4c182c8f1b2d647fa6cd094db52e951a",
+      "reaped_descendants": 0,
+      "reservation": {
+        "affinity": [
+          3,
+          154,
+          157,
+          191,
+          262,
+          263,
+          267,
+          278
+        ],
+        "load_after": [
+          47.03,
+          52.05,
+          50.89
+        ],
+        "load_before": [
+          57.25,
+          55.63,
+          51.7
+        ],
+        "role": "remaining serial launch and allocation functional checks"
+      },
+      "revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+      "seconds": 1.3639990219380707,
+      "start_utc": "2026-10-29T21:15:25.422807+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    }
+  ],
+  "hardware": {
+    "available_affinity_cpus": 8,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "historical_control_correction_revision": "5fdea886f9a110f4de3154e3e8509d660dcf55ea",
+  "inventory_revision": "96bcbd6cf9560f6c28698a2ac1c32ce4cb7cc9d0",
+  "limits": [
+    "Complete-code, nonoverlap and no-code-as-data remain trusted input premises; decoding cannot prove absence of omitted code.",
+    "Workspace timed out in native neighbor-eviction oracle after 1990 completed pass observations, zero reported assertion failures and one ignore; eight rescue reaps, cleanup complete.",
+    "Earlier admission outcome remains FAILED; its historical assertion setup was corrected without changing expected hashes or current-source authentication.",
+    "No changed deadline campaign; prior fixed-five 1 PASS/4 FAILED remains unchanged.",
+    "No full corpus, loader, ABI, state, unwind, grouping or throughput claim."
+  ],
+  "main_revision": "c2e86f5eb147d9f1119d4f2611bf6a5570a6da00",
+  "merge_scope": "Ancestry only; complete tree byte-identical to 5fdea886. No tests relabelled to merge and no same-source failed check repeated.",
+  "merged_revision": "9d83067232e5bd3b1d1327bbfdf22675bed0a63e",
+  "performance_claim": false,
+  "profile": "elf-disassembly-null-jumps-v1",
+  "reviews": {
+    "historical_control_review": "4fd30e7d9b40bb165eaab4d358c338a1570d7bcdba88a4627c3b9367cffa5154",
+    "historical_control_source": "5c0f23371ae47a79878b7caa5ceb895b6afc4886d05597e6b6aa32d834b685e2",
+    "importer_review": "039463ad23b8eb0e9ebf4264ab8d3576ef6f9b9d40ecad91bb23ddb3328d5789",
+    "importer_source": "0332e00684cc516674f9dff63d0c927c58045f659660093359478e3cb19240b5",
+    "inventory_review": "3c0278b2bfe72d562154528bb695470513a26a11ef81ba523029a42a12b1431a",
+    "inventory_source": "f882cca98ca2b9841767d8c25a5d1e5dcf00771ff3acac39d34d6a5b6f4078f8",
+    "scope": "Independent source-only reviews; root owns execution."
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Functional importer and admission validation only. Durations are operational wall time, not performance. No native/corpus qualification.",
+  "source_revision": "59f655011a8fdb9334cce74de380708d6a03925b",
+  "source_sha256": {
+    "evaluation/admission/core_813_inventory.json": "580eda1a9d0bbab0e99201b93d8b57c8997ce137f60d6d6f79524578a77d232b",
+    "evaluation/admission/core_813_inventory.py": "4dbaa1c61124bb3978a259aee3540a11b9d4b30c92a8b3e004910bba47bde053",
+    "evaluation/admission/core_cc846_inventory.py": "0695801fc7db632cdb7c20f2764de1ec5e50c5e5e544a5a0788323731180189e",
+    "evaluation/admission/corpus.json": "ca24326d148d4c3a6b5a3e1d691021eac221723cd0e56b26c4dd234ecf0d4b1b",
+    "evaluation/admission/test_core_merge_inventory.py": "9440dc1d91dcac995b1a4b34b1677f0f4642133593a11aee83d72e29ed93e9ef",
+    "evaluation/admission/test_main813_inventory.py": "547a7c5c09ccbd8ddf4842762665cb854f76f2166e6a25d70417aac63956a47a",
+    "src/emission.rs": "346886835e47e6a4b8aa83678f91c84e512df5e7e53aab189d8d8fc519f2013b",
+    "tools/elf-rewrite/Cargo.toml": "fd41c1fbcf572779e4b7b36b5dda5df1e90ead0a3398671b8ba67a1a44a4e160",
+    "tools/elf-rewrite/DISASSEMBLY.md": "5a0306bff539d480eb781aeb0ded17238b37ac85f9bf6222dbdee8228edf6515",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "120541423ad48547203a086f8eeca85ea8802253613caacce26c0e08acb0c6a7",
+    "tools/elf-rewrite/src/disassembly.rs": "c001c29dd8c036e048d8925e34dab102eaa16b6f5065c27bb5811ee4f83a3555",
+    "tools/elf-rewrite/src/disassembly/tests.rs": "b0d4d9775640e7c3da2f54274106485e0dbfc04c4950467dd51d67ecfae855d4",
+    "tools/elf-rewrite/src/lib.rs": "4867c48de7de26eea9d66c9f572f63132d94ae73f5aaad6b5be40070a0386cba"
+  },
+  "status": "TARGETED_PASS_WORKSPACE_TIMEOUT_RETAINED",
+  "supports_claims": [
+    4
+  ],
+  "unchanged_bounds": {
+    "check_seconds": 180,
+    "clippy_seconds": 180,
+    "development_owner_seconds": 1200,
+    "fmt_seconds": 180,
+    "log_bytes_each": 8388608,
+    "tail_each_seconds": 180,
+    "workspace_seconds": 360
+  }
+}
