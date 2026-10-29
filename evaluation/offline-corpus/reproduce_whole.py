@@ -30,7 +30,7 @@ def load(name, digest):
 
 assert not sys.flags.optimize, 'assertions required'
 B = load('build_whole.py', '2731a71ee7848098be194111baf240b498dbbaf18c82252877d1a95345d1d3d2')
-H = load('head_capture.py', '7c4b56dc3399bfaafba44fed0a9873f26d553f85c063e523406561c7adfec2c7')
+H = load('head_capture.py', '4b2d8e2e0ced1212f7c53d922bbe14e339ded9a30a21d2258fb749007f87c042')
 D = H.D
 
 
@@ -117,15 +117,17 @@ def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', type=Path, required=True); parser.add_argument('--capture-sha256', required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE), default=D.PROFILE,
+    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE), default=D.PROFILE,
                         help='fixed placement policy for both programs; default preserves fixed-page placement')
     return parser.parse_args(argv)
 
 
 def material_attempt(program, inputs, expected, profile):
-    assert profile in (D.PROFILE, D.WINDOW_PROFILE), 'explicit placement profile'
+    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE), 'explicit placement profile'
     if profile == D.PROFILE:
         return D.attempt(program, inputs, expected)
+    if profile == D.BROAD_PROFILE:
+        return D.attempt(program, inputs, expected, profile=D.BROAD_PROFILE)
     return D.attempt(program, inputs, expected, profile=D.WINDOW_PROFILE)
 
 

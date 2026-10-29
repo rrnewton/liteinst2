@@ -14,7 +14,7 @@ import unittest
 
 if sys.flags.optimize:
     raise SystemExit('assertions required')
-ADAPTER_SHA = '9f5c8782669e34f2953a50af76ba22cf8a78240195b3e13636168abf4fca3810'
+ADAPTER_SHA = 'fb276ba92651b02a526a6f9a037147e31131f88dfffb1f6f6a760f39387b675e'
 path = Path(__file__).resolve().with_name('disassembly.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
@@ -413,6 +413,123 @@ class AuthoredDisassemblyControls(unittest.TestCase):
         self.assertEqual(result['failure']['stage'], 'relocations-and-code')
         self.assertEqual(result['source_expected_jumps'], 16)
         self.assertEqual(result['files'], {})
+
+
+    def test_broad_profile_keeps_seeds_limits_and_complete_denominator(self):
+        self.assertEqual(D.LIMITS, '1048576 32 32 131072 128 2097152 1048576 128 16777216')
+        self.assertEqual(D.BROAD_LIMITS, '1048576 32 32 131072 128 2097152 1048576 128 2147483648')
+        for short in (False, True):
+            totals = [0, 0]
+            for program, counts in D.COUNTS.items():
+                inputs = fixture(program, short_jumps=short)
+                expected = {k: D.sha(v) for k, v in inputs.items()}
+                old = D.attempt(program, inputs, expected)
+                self.assertEqual(old, D.attempt(program, inputs, expected, profile=D.PROFILE))
+                window = D.attempt(program, inputs, expected, profile=D.WINDOW_PROFILE)
+                broad = D.attempt(program, inputs, expected, profile=D.BROAD_PROFILE)
+                self.assertEqual(broad, D.attempt(program, inputs, expected, profile=D.BROAD_PROFILE))
+                self.assertEqual(broad['status'], 'MATERIALS_READY')
+                self.assertEqual(broad['profile'], 'offline-whole-authored-broad-span-2g-v1')
+                self.assertEqual(set(broad), set(window))
+                for key in window.keys() - {'profile', 'files'}:
+                    self.assertEqual(broad[key], window[key])
+                self.assertEqual(set(broad['files']), set(window['files']))
+                for key in ('ledger.txt', 'source-inventory.tsv'):
+                    self.assertEqual(broad['files'][key], window['files'][key])
+                    self.assertEqual(broad['files'][key], old['files'][key])
+                before = window['files']['policy.txt'].decode().splitlines()
+                after = broad['files']['policy.txt'].decode().splitlines()
+                self.assertEqual(len(before), len(after))
+                self.assertEqual(after[:6] + after[7:8], before[:6] + before[7:8])
+                self.assertEqual(before[6], 'limits ' + D.LIMITS)
+                self.assertEqual(after[6], 'limits ' + D.BROAD_LIMITS)
+                for a, b in zip(before[8:], after[8:]):
+                    if a.startswith('search '):
+                        self.assertEqual(a, b)
+                    else:
+                        a, b = a.split(), b.split()
+                        self.assertEqual(a[:-1], b[:-1])
+                        old_start, old_size = map(int, a[-1].split(':'))
+                        start, size = map(int, b[-1].split(':'))
+                        self.assertEqual((start, size - old_size), (old_start, 2130706432))
+                inventory = broad['files']['source-inventory.tsv'].decode().splitlines()[1:]
+                jumps = [(int(r[2]), int(r[4]), int(r[3])) for r in
+                         (line.split('\t') for line in inventory) if r[5] == '1']
+                image = D.Elf(inputs['original'], 2)
+                self.assertEqual(before[8:], D.window_policy(image, jumps))
+                self.assertEqual(after[8:], D.broad_policy(image, jumps))
+                self.assertEqual((len(inventory), len(jumps)), counts)
+                self.assertFalse(broad['qualification_complete'])
+                self.assertFalse(broad['importer_verified'])
+                totals = [a + b for a, b in zip(totals, counts)]
+            self.assertEqual(totals, [187, 42])
+        for key in D.INPUTS:
+            inputs = fixture(); expected = {k: D.sha(v) for k, v in inputs.items()}
+            inputs[key] += b'x'
+            result = D.attempt('checksum', inputs, expected, profile=D.BROAD_PROFILE)
+            self.assertEqual((result['status'], result['source_expected_jumps'], result['files']),
+                             ('MATERIALS_REFUSED', 16, {}))
+        for mutation in ('source', 'head', 'relocation'):
+            inputs = fixture()
+            if mutation == 'source':
+                inputs['source'] += b'\n'
+            elif mutation == 'head':
+                rows = inputs['heads'].splitlines(); del rows[4]
+                inputs['heads'] = b'\n'.join(rows) + b'\n'
+            else:
+                image = D.Elf(inputs['object'], 1)
+                inputs = mutate_section(inputs, 'object', '.rela.text.start', 5,
+                                        image.section('.rela.text.start')[5] - 24)
+            result = D.attempt('checksum', inputs, {k: D.sha(v) for k, v in inputs.items()},
+                               profile=D.BROAD_PROFILE)
+            self.assertEqual((result['status'], result['source_expected_jumps'], result['files']),
+                             ('MATERIALS_REFUSED', 16, {}))
+            self.assertFalse(result['qualification_complete'])
+        inputs = fixture(); inputs['target'] = b'target fxsave64\n'
+        expected = {k: D.sha(v) for k, v in inputs.items()}
+        result = D.attempt('checksum', inputs, expected, profile=D.BROAD_PROFILE)
+        self.assertEqual(result['status'], 'MATERIALS_REFUSED')
+        self.assertEqual((result['roster_checked_heads'], result['roster_checked_jumps']), (80, 16))
+        self.assertEqual(set(result['files']), {'ledger.txt', 'source-inventory.tsv'})
+        with self.assertRaises(AssertionError):
+            D.attempt('checksum', inputs, expected, profile='unknown')
+
+    def test_broad_permits_preserve_page_carrier_and_address_refusals(self):
+        image = D.Elf(fixture()['original'], 2)
+        jumps = [(0x401000, 2, 4096)]
+        rows = D.broad_policy(image, jumps)
+        self.assertEqual(len(rows), 3)
+        lo = min(ph[3] & -4096 for ph in image.ph if ph[0] == 1)
+        pages = set()
+        for row in rows[1:]:
+            fields = row.split()
+            self.assertEqual(fields[4:6], ['1', '4096'])
+            self.assertEqual(fields[6:], ['4546560:172032', '4726784:2146951168'])
+            ranges = [(a, a + n) for a, n in (map(int, v.split(':')) for v in fields[6:])]
+            self.assertEqual((ranges[0][1], ranges[1][0]), (0x480000, 0x482000))
+            self.assertEqual(ranges[-1][1] - lo, 1 << 31)
+            page = int(fields[3]) & -4096
+            self.assertTrue(any(a <= page and page + 4096 <= b for a, b in ranges))
+            self.assertNotIn(page, pages); pages.add(page)
+        for bad in ([], [(0x401000 + i * 2, 2, 4096 + i * 2) for i in range(33)],
+                    [(0x401000, 1, 4096)], jumps * 2, [(True, 2, 4096)],
+                    [(0x401000, 2, D.CAP)], [(0x401600, 2, 0x1600)]):
+            with self.assertRaises(AssertionError):
+                D.broad_policy(image, bad)
+        for start, size in ((1 << 47, 1), ((1 << 64) - 4096, 8192),
+                            (0x404000, 0x80000), (0, 0), (True, 4096)):
+            changed = list(image.ph); row = list(changed[3]); row[3], row[6] = start, size
+            changed[3] = tuple(row)
+            with self.assertRaises(AssertionError):
+                D.broad_policy(types.SimpleNamespace(ph=changed), jumps)
+        high = (1, 4, 0, (1 << 47) - 4096, 0, 4096, 4096, 4096)
+        with self.assertRaises(AssertionError):
+            D.broad_policy(types.SimpleNamespace(ph=[high]), [((1 << 47) - 4096, 2, 0)])
+        for profile in (D.PROFILE, 'unknown', None, True, 16777216, 2147483648):
+            with self.assertRaises(AssertionError):
+                D._window_policy(image, jumps, profile)
+        with self.assertRaises(TypeError):
+            D.broad_policy(image, jumps, span=1 << 32)
 
 
 if __name__ == '__main__':

@@ -19,6 +19,8 @@ CAP = 1048576
 PROFILE = 'offline-whole-authored-null-jumps-v1'
 WINDOW_PROFILE = 'offline-whole-authored-window-permits-v1'
 LIMITS = '1048576 32 32 131072 128 2097152 1048576 128 16777216'
+BROAD_PROFILE = 'offline-whole-authored-broad-span-2g-v1'
+BROAD_LIMITS = '1048576 32 32 131072 128 2097152 1048576 128 2147483648'
 CORPUS_SHA = '007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07'
 TARGET_SHA = 'de1028fa9b590a6f1ba37627ac5ff78470c9f3b225eed794f7c32959c1a1c00c'
 BASES = {'.text.start': 0x401000, '.text.kernel': 0x402000,
@@ -309,8 +311,20 @@ def window_policy(image, jumps):
     Production calls this only after complete ownership/head/source joins and
     denominator checks. A standalone return supplies none of that authority.
     """
+    return _window_policy(image, jumps, WINDOW_PROFILE)
+
+
+def broad_policy(image, jumps):
+    """Fixed wider virtual hull only; unchanged seeds and nonexhaustive budget."""
+    return _window_policy(image, jumps, BROAD_PROFILE)
+
+
+def _window_policy(image, jumps, profile):
+    """Only the two named contracts; no caller-supplied span or limits."""
+    assert profile in (WINDOW_PROFILE, BROAD_PROFILE), 'fixed window profile'
+    selected_limits = LIMITS if profile == WINDOW_PROFILE else BROAD_LIMITS
     page, lane, user_limit = 4096, 65536, 1 << 47
-    limits = tuple(int(v) for v in LIMITS.split())
+    limits = tuple(int(v) for v in selected_limits.split())
     assert len(limits) == 9 and 0 < len(jumps) <= limits[1]
     assert len(image.ph) <= limits[7]
     loads = []
@@ -379,10 +393,11 @@ def attempt(program, inputs, expected, *, profile=PROFILE):
     from this return value. No candidate, importer, or runtime success is minted.
     The default retains the old fixed-page profile. WINDOW_PROFILE is an explicit
     prospective choice; neither profile retries or consults planning outcomes.
+    BROAD_PROFILE separately raises only the virtual hull to a fixed 2 GiB.
     """
     assert program in COUNTS and type(inputs) is dict and type(expected) is dict
     assert set(inputs) == set(expected) == set(INPUTS)
-    assert profile in (PROFILE, WINDOW_PROFILE), 'explicit placement profile'
+    assert profile in (PROFILE, WINDOW_PROFILE, BROAD_PROFILE), 'explicit placement profile'
     files = {}
     result = dict(profile=profile, program=program, status='MATERIALS_REFUSED',
                   source_expected_heads=COUNTS[program][0], source_expected_jumps=COUNTS[program][1],
@@ -434,6 +449,9 @@ def attempt(program, inputs, expected, *, profile=PROFILE):
                 policy += [f'search {sid} preferred 64 256 64 none 256 4096',
                            f'allocation {sid} selected {a} 1 4096 {a}:4096',
                            f'allocation {sid} victim {b} 1 4096 {b}:4096']
+        elif profile == BROAD_PROFILE:
+            policy[6] = 'limits ' + BROAD_LIMITS
+            policy += broad_policy(image, jumps)
         else:
             policy += window_policy(image, jumps)
         files['policy.txt'] = ('\n'.join(policy) + '\n').encode()
