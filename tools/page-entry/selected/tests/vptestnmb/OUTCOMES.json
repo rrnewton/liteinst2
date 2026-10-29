@@ -26,22 +26,24 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 79,
+        "refusals": 69,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VTN_TF_PASS group=0 pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=32 promoted_encoding_checks=1 promoted_footprint_queries=1 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VTN_TF_PASS group=0 pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=22 promoted_encoding_checks=1 promoted_footprint_queries=1 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n",
+      "vtn_supplied_none_queries": 10,
+      "vtn_typed_promotions": 10
     }
   ],
   "literal_effects": "K0 bit i equals1 iff actual independently seeded ZMM17 byte i iszero. Three literal patterns yield all0/all1/mixed64-bit masks, each initialK0 is nonzero/distinct. All32ZMM/other7K, GPR/flags/kernelFP/liveXSAVE/stack/data exact; no XSTATE_BV/header normalization.",
   "native_pairs_per_group": [
     19
   ],
-  "negative_endpoint": "No data memory operand. All47 generic plus32 retained supplied encoding refusals; original actual-fault suites remain separate. Exact retained row17 is now a mandatory typed SIMD/NONE acceptance, counted separately; every other refusal is unchanged.",
+  "negative_endpoint": "69 actual refusals per process (47 retained prior and 22 current-neighbor rows). Original row17 remains a mandatory Code2785/NONE positive. The 10 exact Code2791 rows are now independently retained typed/NONE positive queries, with separate native family coverage required. No data-memory/fault credit is introduced.",
   "new_mask_pairs_total": 18,
-  "new_refusal_count": 32,
+  "new_refusal_count": 22,
   "old_refusal_count": 47,
   "promoted_encodings": [
     {
@@ -58,7 +60,7 @@
     }
   ],
   "prospective_only": true,
-  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000; original21 sample slots retained, final2 unused and negative sample zero; exact appended actual CPUID/BV trailer.",
+  "record_extent": "(header_bytes + 22 * sample_bytes + 40 + 5000) +3232 typed Code2791/NONE promotion bytes;  original21 sample slots retained, final2 unused and negative sample zero; exact appended actual CPUID/BV trailer.",
   "record_header_fields": [
     "magic",
     "version",
@@ -81,5 +83,19 @@
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
   "schema_version": 1,
-  "scope": "Only62b2764026c1/Code2791 K0,ZMM17,ZMM17. Register-only no operand fault or real-program/performance claim."
+  "scope": "Only62b2764026c1/Code2791 K0,ZMM17,ZMM17. Register-only no operand fault or real-program/performance claim. Exact former refusal rows 0,1,2,3,4,5,6,7,11,12 now require Code2791/FALLTHROUGH/SIMD and supplied NONE; original bytes remain and separate vptestnmb_family native coverage is required.",
+  "vtn_promoted_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    11,
+    12
+  ],
+  "vtn_supplied_none_queries_per_process": 10,
+  "vtn_typed_promotions_per_process": 10
 }

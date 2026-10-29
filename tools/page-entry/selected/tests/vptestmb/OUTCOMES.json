@@ -26,13 +26,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 156,
+        "refusals": 145,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=109 new_refusal_bytes=36 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11\n",
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
     },
     {
       "argv": [
@@ -53,13 +55,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 156,
+        "refusals": 145,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=109 new_refusal_bytes=36 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11\n",
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
     },
     {
       "argv": [
@@ -80,13 +84,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 156,
+        "refusals": 145,
         "version": 1
       },
       "name": "group2",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=109 new_refusal_bytes=36 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11\n",
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
     },
     {
       "argv": [
@@ -107,13 +113,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 156,
+        "refusals": 145,
         "version": 1
       },
       "name": "group3",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=109 new_refusal_bytes=36 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11\n",
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
     }
   ],
   "literal_effects": "Destination K bit i equals1 iff the independently seeded source bytes have nonzero bitwise AND and the old input writemask allows that bit (aaa0 means unmasked). Masked-off bits zero, including destination/writemask aliases. All32 ZMM, other7 K, GPR, flags, complete kernelFP/liveXSAVE, stack/data exact; no XSTATE_BV/header normalization.",
@@ -123,10 +131,10 @@
     19,
     19
   ],
-  "negative_endpoint": "No data-memory operand. All47 generic plus72 retained supplied neighbors and37 new encoding refusals per command. Exact retained old row17 is a mandatory positive typed SIMD/NONE query. Existing actual-fault suites remain separate.",
+  "negative_endpoint": "145 actual refusals per process (109 retained prior and 36 current-neighbor rows). Original row17 remains a mandatory Code2785/NONE positive. The 11 exact Code2791 rows are now independently retained typed/NONE positive queries, with separate native family coverage required. No data-memory/fault credit is introduced.",
   "new_mask_pairs_total": 72,
-  "new_refusal_count": 37,
-  "old_refusal_count": 119,
+  "new_refusal_count": 36,
+  "old_refusal_count": 109,
   "promoted_encodings": [
     {
       "code": 2785,
@@ -141,7 +149,7 @@
     }
   ],
   "prospective_only": true,
-  "record_extent": "header_bytes +22*sample_bytes +40 +5000 +9024; original21 positive slots retained with final2 unused and negative sample zero. Exact CPUID/BV and actual-before footprint trailers; four unused footprint rows zero.",
+  "record_extent": "(header_bytes +22*sample_bytes +40 +5000 +9024) +3232 typed Code2791/NONE promotion bytes;  original21 positive slots retained with final2 unused and negative sample zero. Exact CPUID/BV and actual-before footprint trailers; four unused footprint rows zero.",
   "record_header_fields": [
     "magic",
     "version",
@@ -164,5 +172,20 @@
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
   "schema_version": 1,
-  "scope": "Canonical EVEX512.W0 register-only VPTESTMB Code2785. All vector/opmask indices, zero-masking and aliases; exact observed masked and promoted unmasked forms cover all six fetch geometries. No memory/fault, other widths, real-program completion, performance or B2 completion credit."
+  "scope": "Canonical EVEX512.W0 register-only VPTESTMB Code2785. All vector/opmask indices, zero-masking and aliases; exact observed masked and promoted unmasked forms cover all six fetch geometries. No memory/fault, other widths, real-program completion, performance or B2 completion credit. Exact former refusal rows 0,1,2,3,4,5,6,7,11,12,101 now require Code2791/FALLTHROUGH/SIMD and supplied NONE; original bytes remain and separate vptestnmb_family native coverage is required.",
+  "vtn_promoted_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    11,
+    12,
+    101
+  ],
+  "vtn_supplied_none_queries_per_process": 11,
+  "vtn_typed_promotions_per_process": 11
 }

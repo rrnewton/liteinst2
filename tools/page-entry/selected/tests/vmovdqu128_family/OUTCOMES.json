@@ -28,13 +28,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -57,13 +59,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -86,13 +90,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group2",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -115,13 +121,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group3",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -144,13 +152,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group4",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -173,13 +183,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group5",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -202,13 +214,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group6",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -231,13 +245,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "group7",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=128 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_VMOVDQU128_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=120 promoted_bytes=13 supplied_none_queries=12 supplied_range_queries=1 vpcm_promoted_bytes=5 vpcm_supplied_none_queries=5 footprint_queries=32 full_state=17 full_memory=17 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=17 vpe_typed_promotions=1 vpe_supplied_none_queries=1\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -263,13 +279,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "full-read-fault",
       "process_outcome": "expected genuine failed m128 read; operation not completed",
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -295,13 +313,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "cross-read-fault",
       "process_outcome": "expected genuine failed m128 read; operation not completed",
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -327,13 +347,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "indexed-full-read-fault",
       "process_outcome": "expected genuine failed m128 read; operation not completed",
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     },
     {
       "argv": [
@@ -359,13 +381,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 128,
+        "refusals": 120,
         "version": 1
       },
       "name": "indexed-cross-read-fault",
       "process_outcome": "expected genuine failed m128 read; operation not completed",
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "vpe_supplied_none_queries": 1,
+      "vpe_typed_promotions": 1
     }
   ],
   "literal_effects": "Exact16-byte memory or seeded-register source to selected XMM0..15; all destination bits511:128 zero. Every other initialized byte and full GPR/flags/stack/data/source state unchanged.",
@@ -383,14 +407,16 @@
   "new_load_pairs_total": 94,
   "new_move_pairs_total": 128,
   "new_refusal_count": 20,
-  "old_refusal_count": 108,
-  "promoted_refusal_count": 18,
+  "old_refusal_count": 100,
+  "promoted_refusal_count": 26,
   "promotion_groups": {
     "v128": 13,
-    "vpcm": 5
+    "vm64": 7,
+    "vpcm": 5,
+    "vpe_register": 1
   },
   "prospective_only": true,
-  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +10304 +3808 +1504; complete old samples and CPUID/fault/actual-before-EA/supplied-promotion trailers; separate complete supplied Code1720/NONE promotion trailer",
+  "record_extent": "(136 +22*sample_bytes +40 +5000 +96 +10304 +3808 +1504 +2080; all existing full storage/trailers plus the mandatory2080-byte seven-row Code1605/NONE promotion trailer) +1216 exact register-promotion bytes",
   "record_header_fields": [
     "magic",
     "version",
@@ -412,8 +438,16 @@
   ],
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
+  "refusals_per_process": 120,
   "register_copy_pairs": 34,
   "schema_version": 1,
-  "scope": "Canonical VEX.128.F3.0F.WIG Code1598 load/register-copy forms; structural family coverage, not every numeric effective address. No other VEX/EVEX or real completion/performance claim. The retained c5fa7f06 row additionally requires Code1840/FALLTHROUGH/SIMD and a supplied RANGE16, with native coverage required separately in store corpus row72. Each process requires all12 old supplied NONE queries plus this one RANGE query; no store executes in this load companion. Five additional exact retained neighbors at local indices 33/34/39/40/41 require Code1720/FALLTHROUGH/SIMD and supplied NONE, with native coverage separately in VPCMPEQB memory-family rows 96..105. The original 13 promotion records remain exact; the five new observations occupy a separate 1504-byte trailer in every success/fault record.",
-  "vpcm_supplied_none_queries_per_process": 5
+  "scope": "Canonical VEX.128.F3.0F.WIG Code1598 load/register-copy forms; structural family coverage, not every numeric effective address. No other VEX/EVEX or real completion/performance claim. The retained c5fa7f06 row additionally requires Code1840/FALLTHROUGH/SIMD and a supplied RANGE16, with native coverage required separately in store corpus row72. Each process requires all12 old supplied NONE queries plus this one RANGE query; no store executes in this load companion. Five additional exact retained neighbors at local indices 33/34/39/40/41 require Code1720/FALLTHROUGH/SIMD and supplied NONE, with native coverage separately in VPCMPEQB memory-family rows 96..105. The original 13 promotion records remain exact; the five new observations occupy a separate 1504-byte trailer in every success/fault record. Seven exact retained VMOVDQU64 neighbor rows additionally require Code1605/FALLTHROUGH/SIMD and supplied NONE; their actual native family cases are independently mandatory in vmovdqu64_family. All remaining negative rows retain rejection. Exact Code1720 register neighbors additionally require typed/NONE records; new register-family native coverage is mandatory. No failed-operation or process outcome changes.",
+  "typed_promotions_per_process": 26,
+  "vm64_supplied_none_queries_per_process": 7,
+  "vpcm_supplied_none_queries_per_process": 5,
+  "vpe_register_rows": [
+    42
+  ],
+  "vpe_supplied_none_queries_per_leaf_process": 1,
+  "vpe_typed_promotions_per_leaf_process": 1
 }

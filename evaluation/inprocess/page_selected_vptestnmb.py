@@ -19,6 +19,7 @@ from page_selected import ENV, fact, need, save
 from page_selected_components import plain_executable
 from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
+from page_selected_vptestnmb_promotions import promotions as vtn_promotions
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE = REPO/'tools/page-entry/selected/tests/vptestnmb'
@@ -123,7 +124,7 @@ def publish(path, record, receipt):
                 'actual_exit': c.get('actual_exit'), 'operation_completed': c.get('operation_completed'),
                 'verified_memory_fault': c.get('verified_memory_fault'),
                 'header': c.get('header'), 'record': c.get('record'),
-                'observations': c.get('observations')} for c in record['cases']],
+                'vtn_promotions': c.get('vtn_promotions'), 'observations': c.get('observations')} for c in record['cases']],
         command_recipe={
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
             'fixture_build': ['sh', 'tools/page-entry/selected/tests/vptestnmb/build.sh',
@@ -154,7 +155,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-vptestnmb-oracle-v1', 'status': 'failed',
-        'scope': 'Exact62b2764026c1/Code2791 K0,ZMM17,ZMM17. One19-pair cohort:18 new plus startup, three independently seeded byte patterns yielding all0/all1/mixed64-bit masks. All32ZMM/all8K inputs observed, other state preserved, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. All47 old+32 retained supplied refusals and1 mandatory typed SIMD/NONE promotion. No memory operand or invented operand-fault claim; original fault suites remain required separately. No general EVEX, enabled-CET, hardware masking, real-program completion, speedup or full-B2 claim.',
+        'scope': 'Exact62b2764026c1/Code2791 K0,ZMM17,ZMM17. One19-pair cohort:18 new plus startup, three independently seeded byte patterns yielding all0/all1/mixed64-bit masks. All32ZMM/all8K inputs observed, other state preserved, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. All47 old+22 retained supplied refusals, the original Code2785/NONE promotion and10 separately recorded Code2791/NONE promotions. No memory operand or invented operand-fault claim; original fault suites remain required separately. No general EVEX, enabled-CET, hardware masking, real-program completion, speedup or full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -162,7 +163,7 @@ def main():
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
                    'new_refusal_encodings': 0, 'mask_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
-                   'executed_refusal_checks': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0},
+                   'executed_refusal_checks': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0, 'vtn_typed_promotions': 0, 'vtn_supplied_none_queries': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_vptestnmb.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
@@ -235,7 +236,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact broadcast names, environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             'd077dabcb5cd64e60e73c2f822d32617a4586fcf6db2527c1779e40cadf8c30e',
+             '9ef3f4d9adb65db1ce190179f65cd9559ca4dbd3c77d661179785ee44d5a8517',
              'exact reviewed one-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -248,6 +249,8 @@ def main():
             result['actual_exit'] = row['exit']
             need(out == case['stdout'].encode() and err == case['stderr'].encode(), 'exact fixture output: '+name)
             data = (private/(name+'.record')).read_bytes()
+            need(3232<len(data)<16<<20,'complete typed Code2791 promotions within unchanged cap')
+            result['vtn_promotions']=vtn_promotions(data[-3232:], 'vptestnmb');data=data[:-3232]
             need(len(data) >= 136, 'retained complete header')
             header = dict(zip(names, struct.unpack_from('<17Q', data)))
             result.update(header=header, record=fact(private/(name+'.record')))
@@ -270,15 +273,17 @@ def main():
             record['totals']['new_page_ending_pairs'] += 3
             record['totals']['new_crossing_pairs'] += 15
             record['totals']['executed_refusal_checks'] += header['refusals']
-            record['totals'].update(supplied_refusal_encodings=79,
-                old_refusal_encodings=47, new_refusal_encodings=32)
+            record['totals'].update(supplied_refusal_encodings=69,
+                old_refusal_encodings=47, new_refusal_encodings=22)
             record['totals']['promoted_encoding_checks'] += 1
             record['totals']['promoted_footprint_queries'] += 1
+            record['totals']['vtn_typed_promotions'] += 10
+            record['totals']['vtn_supplied_none_queries'] += 10
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=19, generic_pairs=18, mask_pairs=18,
-                 positive_selftest_pairs=1, supplied_refusal_encodings=79, old_refusal_encodings=47,
-                 new_refusal_encodings=32, new_page_ending_pairs=3, new_crossing_pairs=15,
-                 executed_refusal_checks=79, promoted_encoding_checks=1, promoted_footprint_queries=1) and len(record['cases']) == 1 and
+                 positive_selftest_pairs=1, supplied_refusal_encodings=69, old_refusal_encodings=47,
+                 new_refusal_encodings=22, new_page_ending_pairs=3, new_crossing_pairs=15,
+                 executed_refusal_checks=69, promoted_encoding_checks=1, promoted_footprint_queries=1, vtn_typed_promotions=10, vtn_supplied_none_queries=10) and len(record['cases']) == 1 and
              all(c['accepted'] for c in record['cases']),
              'complete one19-pair mask-test cohort; original fault suites remain separate')
         record['status'] = 'passed'

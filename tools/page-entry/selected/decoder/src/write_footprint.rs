@@ -131,6 +131,9 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
         // the same mnemonic must remain unsupported until explicitly reviewed.
         Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
+        | Code::EVEX_Vmovdqa64_zmm_k1z_zmmm512
+        | Code::EVEX_Vpminub_zmm_k1z_zmm_zmmm512
+        | Code::VEX_Kortestq_kr_kr
         | Code::VEX_Vmovdqu_xmm_xmmm128
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
@@ -139,7 +142,8 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
         | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
         | Code::VEX_Bzhi_r64_rm64_r64
-        | Code::VEX_Blsmsk_r64_rm64 => return Ok(no_write(out)),
+        | Code::VEX_Blsmsk_r64_rm64
+        | Code::VEX_Andn_r64_r64_rm64 => return Ok(no_write(out)),
         _ => {}
     }
     use Mnemonic::*;

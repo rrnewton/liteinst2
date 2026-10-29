@@ -5,6 +5,8 @@
 #undef fixture_main
 #include "cases.inc"
 #include "write_footprint.h"
+#define VTN_PROMOTED_INDICES 0,1,2,3,4,5,6,7,11,12
+#include "tests/vptestnmb_family/promotions.inc"
 #ifndef VTN_GROUP
 #error VTN_GROUP must select a bounded cohort
 #endif
@@ -209,7 +211,9 @@ static void vpb_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
-        if(i==17) {
+        if(vtn_is_promoted(i)) {
+            vtn_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+        } else if(i==17) {
             promoted_encoding(v);
         } else {
             need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
@@ -220,7 +224,7 @@ static void vpb_refusals(void) {
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
-    _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
+    _Static_assert(sizeof(vtn_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
                    sizeof(vpb_observations)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5000,"literal trailer extent");
     _Static_assert(sizeof(vpb_refused)/sizeof(vpb_refused[0])==33,"closed supplied neighbors");
@@ -230,12 +234,14 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==79&&promoted_count==1,1183);
+    vpb_refusals();need(result.refusals==69&&promoted_count==1,1183);
+    vtn_promotions_complete();
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     for(unsigned i=0;i<VPB_COUNT;i++){vpb_prepare(&samples[i+1],i);vpb_pair(&samples[i+1],i+1);}
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
-         write_all(3,&vpb_observations,sizeof(vpb_observations)),1184);
-    output("LI2_VTN_TF_PASS group=0 pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=32 promoted_encoding_checks=1 promoted_footprint_queries=1 full_state=19 full_memory=19 live_endpoints=19\n");
+         write_all(3,&vpb_observations,sizeof(vpb_observations))&&
+         write_all(3,&vtn_promotions,sizeof(vtn_promotions)),1184);
+    output("LI2_VTN_TF_PASS group=0 pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=22 promoted_encoding_checks=1 promoted_footprint_queries=1 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=10 vtn_supplied_none_queries=10\n");
     return 0;
 }
