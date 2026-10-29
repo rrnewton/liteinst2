@@ -1,5 +1,5 @@
 """Separate diagnostic owner; no baseline timing or qualification credit."""
-import ctypes, hashlib, json, os, resource, select, signal, subprocess, sys, time
+import ctypes, errno, hashlib, json, os, resource, select, signal, subprocess, sys, time
 from pathlib import Path
 
 TARGET = (30, 512 << 20, 16 << 20, 60)
@@ -50,9 +50,14 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
     need(row['argv'] and all(type(x) is str for x in row['argv']) and
          Path(row['argv'][0]).is_absolute() and type(row['environment']) is dict,
          'exact already-bound argv and environment; fresh namespace supplied by caller')
-    children = Path('/proc/self/task')/str(os.getpid())/'children'
-    need(len(list(Path('/proc/self/task').iterdir())) == 1 and not children.read_text().strip(),
-         'standalone single-thread owner with no other children')
+    def child_state():
+        try: return os.waitid(os.P_ALL, 0, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+        except ChildProcessError as exc:
+            need(exc.errno == errno.ECHILD, 'exact no-child result')
+            return False
+    need(os.readlink('/proc/self') == str(os.getpid()), 'same numeric proc/process PID namespace')
+    need(len(list(Path('/proc/self/task').iterdir())) == 1 and child_state() is False,
+         'standalone single-thread owner with exact ECHILD/no children')
     libc = ctypes.CDLL(None, use_errno=True); old = ctypes.c_int()
     need(libc.prctl(37, ctypes.byref(old), 0, 0, 0) == 0 and old.value == 0, 'standalone prior subreaper state')
     procs = {}; pidfds = {}; fds = set(); streams = {}; error = None
@@ -62,7 +67,7 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
          'independently supplied actual bridge fact')
     result = dict(format='page-cost-profile-v1', benchmark_credit=False, qualification=False,
         target=row, perf=dict(bounds=list(PERF)), inputs_before=before, cleanup_errors=[],
-        adopted=[], target_bounds=list(TARGET), cpu=cpu, owner_pid=os.getpid())
+        adopted=[], children_before='ECHILD', children_after=None, target_bounds=list(TARGET), cpu=cpu, owner_pid=os.getpid())
     row.update(pid=None, exit=None, reaped=False, timed_out=False, error=None, cleanup_errors=[])
 
     def pipe():
@@ -156,14 +161,34 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
                 row.update(exit=status, reaped=True); row.setdefault('process_reaped_ns', time.monotonic_ns())
             else: result['perf'].update(exit=status, reaped=True, reaped_ns=time.monotonic_ns())
         end = time.monotonic()+3
-        while children.read_text().strip() and time.monotonic() < end:
-            for pid in map(int, children.read_text().split()):
-                try: os.kill(pid, signal.SIGKILL)
-                except ProcessLookupError: pass
-                got, status = os.waitpid(pid, os.WNOHANG)
-                if got: result['adopted'].append([got, status])
-            time.sleep(.01)
-        if children.read_text().strip(): result['cleanup_errors'].append('unreaped adopted descendants')
+        try:
+            while True:
+                state = child_state()
+                if state is False:
+                    result['children_after'] = 'ECHILD'; break
+                need(time.monotonic() < end, 'adopted-child cleanup deadline')
+                if state is not None:
+                    got, status = os.waitpid(state.si_pid, os.WNOHANG)
+                    need(got == state.si_pid, 'reap the actual observed zombie without signaling')
+                    result['adopted'].append([got, status]); continue
+                if error is None and not result['cleanup_errors']:
+                    result['cleanup_errors'].append('unexpected running adopted descendant')
+                # Failure cleanup only: one proc level, then each candidate's direct status.
+                with os.scandir('/proc') as entries:
+                    for entry in entries:
+                        if time.monotonic() >= end: break
+                        if not entry.name.isdecimal(): continue
+                        try:
+                            fields = dict(x.split(':', 1) for x in (Path(entry.path)/'status').read_text().splitlines() if ':' in x)
+                            if int(fields['PPid']) != os.getpid(): continue
+                            fd = os.pidfd_open(int(entry.name))
+                            try:
+                                observed = os.waitid(os.P_PIDFD, fd, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                                if observed is None: signal.pidfd_send_signal(fd, signal.SIGKILL)
+                            finally: os.close(fd)
+                        except (FileNotFoundError, ProcessLookupError, ChildProcessError, PermissionError): continue
+                time.sleep(.01)
+        except BaseException as exc: result['cleanup_errors'].append('adopted cleanup: '+repr(exc))
         for fd in list(fds)+list(pidfds.values()):
             try: os.close(fd)
             except OSError as exc: result['cleanup_errors'].append('fd close: '+repr(exc))
