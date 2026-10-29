@@ -354,7 +354,7 @@ def attempt(program, inputs, expected):
                   'limits ' + LIMITS, 'null-hook 4206592']
         for sid in range(1, len(jumps) + 1):
             a, b = 0x500000 + (sid - 1) * 4096, 0x600000 + (sid - 1) * 4096
-            policy += [f'search {sid} auto 64 256 64 none 256 4096',
+            policy += [f'search {sid} preferred 64 256 64 none 256 4096',
                        f'allocation {sid} selected {a} 1 4096 {a}:4096',
                        f'allocation {sid} victim {b} 1 4096 {b}:4096']
         files['policy.txt'] = ('\n'.join(policy) + '\n').encode()

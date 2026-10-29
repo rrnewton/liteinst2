@@ -82,7 +82,7 @@ without overwriting, freeze both produced text hashes before its single importer
 attempt, and require the importer's independently decoded inventory to match every
 source-selected jump. The immutable policy uses the old offline limits, domain1,
 carrier0x480000 and original C3 hook0x403000. It prospectively selects existing
-`auto 64 256 64 none 256 4096` search, one selected page at
+`preferred 64 256 64 none 256 4096` search, one selected page at
 `0x500000+(id-1)*4096`, and one victim page at `0x600000+(id-1)*4096`.
 IDs are every ascending source jump; there is no outcome-dependent retry or B1
 fallback. Any importer/global resource limit is a whole-program refusal.
