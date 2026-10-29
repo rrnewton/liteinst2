@@ -1,0 +1,1606 @@
+{
+ "checks": [
+  {
+   "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+   "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "de18c936fb987d97b5998fbad1d680ecd1dc66b680f13cb9f78cb102ccc13845",
+    "reaped_descendants": 0,
+    "seconds": 497.7396729658358,
+    "start_utc": "2026-10-29T11:15:26.203518+00:00",
+    "termination": null
+   },
+   "reservation": {
+    "cores": [
+     3,
+     17,
+     20,
+     53,
+     131,
+     185,
+     222,
+     235
+    ],
+    "count": 8
+   },
+   "revision": "1fe67eee794bc49b118440c808637aa29437943a",
+   "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+   "status": "PASS"
+  },
+  {
+   "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+   "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "3af1b680885c915a845c2160786d4f63e24a99fcdbe165ffd86f06581578c78c",
+    "reaped_descendants": 0,
+    "seconds": 491.5803174979519,
+    "start_utc": "2026-10-29T11:25:21.415924+00:00",
+    "termination": null
+   },
+   "reservation": {
+    "cores": [
+     20,
+     40,
+     53,
+     54,
+     63,
+     64,
+     74,
+     80
+    ],
+    "count": 8
+   },
+   "revision": "617672dbc0a977fe940b9d9fc2459adf21f91df1",
+   "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+   "status": "PASS"
+  }
+ ],
+ "claim": 4,
+ "common_tools": {
+  "$TOOLCHAIN/bin/cargo": {
+   "bytes": 42839824,
+   "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+  },
+  "$TOOLCHAIN/bin/rustc": {
+   "bytes": 645000,
+   "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+  },
+  "$TOOLCHAIN/bin/rustdoc": {
+   "bytes": 13680928,
+   "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+  },
+  "/usr/bin/as": {
+   "bytes": 727360,
+   "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+  },
+  "/usr/bin/bash": {
+   "bytes": 1389072,
+   "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+  },
+  "/usr/bin/gcc": {
+   "bytes": 1093144,
+   "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+  },
+  "/usr/bin/git": {
+   "bytes": 4397400,
+   "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+  },
+  "/usr/bin/ld.bfd": {
+   "bytes": 1791600,
+   "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+  },
+  "/usr/bin/objdump": {
+   "bytes": 423000,
+   "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+  },
+  "/usr/bin/readelf": {
+   "bytes": 683296,
+   "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+  },
+  "/usr/bin/rg": {
+   "bytes": 4746600,
+   "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+  },
+  "/usr/libexec/gcc/x86_64-redhat-linux/11/cc1": {
+   "bytes": 28991152,
+   "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+  },
+  "/usr/libexec/gcc/x86_64-redhat-linux/11/collect2": {
+   "bytes": 349536,
+   "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+  },
+  "/usr/local/fbcode/platform010/bin/python3.12": {
+   "bytes": 13542408,
+   "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+  }
+ },
+ "development": [
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-format-v1",
+   "working_source_manifest_sha256": "e49e5d3cc436c6a8b5a89d3cec8dc38e0af1ff90325b59dea36a1e0c7df8f8f6"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-calibrations-v1",
+   "working_source_manifest_sha256": "3e1af9896e4e4951387755ba9b7a2552a6ef9f112a1b2ab7bc2ae27077724f7a"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-calibrations-v2",
+   "working_source_manifest_sha256": "8b374ec5116d39a679d874ed6a2124db1f63a08d85fcad7de12901706986a88d"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-calibrations-v3",
+   "working_source_manifest_sha256": "0a63127ac4b5c164407d5a2e85c355b15dca3a7ecb10811633349e0ca56580a2"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-calibrations-v4",
+   "working_source_manifest_sha256": "bb1e79ab7077964680b9dd5816b6649d499e235b8db619a4fa2b339276f32e44"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-clippy-v1",
+   "working_source_manifest_sha256": "bb1e79ab7077964680b9dd5816b6649d499e235b8db619a4fa2b339276f32e44"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-format-v2",
+   "working_source_manifest_sha256": "8bedba56dc6fceed44298d7cc2351ab0f33e0483f21a0b82bbe492e17936f9fa"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-clippy-v2",
+   "working_source_manifest_sha256": "26c5103581b830e7afe9d3e552d6238c75d5fa964906b8ff8e30c1744dd4a089"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-python-old-v1",
+   "working_source_manifest_sha256": "3e1af9896e4e4951387755ba9b7a2552a6ef9f112a1b2ab7bc2ae27077724f7a"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-python-new-v1",
+   "working_source_manifest_sha256": "3e1af9896e4e4951387755ba9b7a2552a6ef9f112a1b2ab7bc2ae27077724f7a"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-python-runner-v1",
+   "working_source_manifest_sha256": "3e1af9896e4e4951387755ba9b7a2552a6ef9f112a1b2ab7bc2ae27077724f7a"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-python-session-v1",
+   "working_source_manifest_sha256": "bb1e79ab7077964680b9dd5816b6649d499e235b8db619a4fa2b339276f32e44"
+  },
+  {
+   "base": "5a561116e9ed92d239b2f7ebdd7d5e7c730b5acc",
+   "stage": "copied-profiler-targets-v1",
+   "working_source_manifest_sha256": "26c5103581b830e7afe9d3e552d6238c75d5fa964906b8ff8e30c1744dd4a089"
+  }
+ ],
+ "development_failures": "Two compile failures (type export/mutable verifier, then unused selection), two positive ELF-fixture failures in one calibration run, and one Clippy failure; four failed commands total. Fixes preserve all assertions and lint settings. Exact working-source manifests and raw logs remain private.",
+ "hardware": {
+  "available_affinity_cpus": 8,
+  "description": "AMD EPYC Zen 5 dev host",
+  "microcode": "0xb101066",
+  "model_name": "AMD EPYC 9D85 158-Core Processor",
+  "observed_cpu": {
+   "cpu family": "26",
+   "model": "17",
+   "stepping": "0",
+   "vendor_id": "AuthenticAMD"
+  },
+  "owner_label": "AMD EPYC Zen 5 dev host"
+ },
+ "kernel_version": "7.1.3",
+ "limits": [
+  "Copied complete Rust caller body only; no original-address/application-callsite ABI or whole worker state claim.",
+  "CSV covers 38/42 heads and 45/49 edges, with both declared RETs per seed. Length covers all 13 heads/14 edges/both RETs; all nine caller heads are required.",
+  "Operational durations are not performance measurements.",
+  "No Schedule/deadline campaign ran; prior failed fixed-five outcomes remain unchanged.",
+  "Two initial target/release build products were authenticated at original closure and then rebuilt by the corrected revision. Their original/current hashes are both recorded; all retained raw evidence was rechecked for publication.",
+  "A5 remains open."
+ ],
+ "qualification_failure": "The sole initial qualification at 1fe67eee failed while resuming saved harness state after application RET comparison; no pair result was accepted. 617672d restores saved harness FLAGS after the unchanged actual-RET full-state comparison. The source correction was independently reviewed before its one qualification.",
+ "qualifications": [
+  {
+   "accepted_pairs": 0,
+   "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+   "allocator_source_sha256": {
+    "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+    "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+    "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+   },
+   "attempts": 1,
+   "build_environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_RELEASE_DEBUG": "0",
+    "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+    "CARGO_TARGET_DIR": "$REPO/target",
+    "CARGO_TERM_COLOR": "never",
+    "CC": "/usr/bin/gcc",
+    "HOME": "$USER_HOME",
+    "LC_ALL": "C",
+    "LITEINST_EVALUATION": "1",
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+    "TMPDIR": "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/tmp"
+   },
+   "controls_manifest_sha256": "a91ad384db3916c51a9882dd91388ad3d8f101efec1fe2827302821a43c637df",
+   "geometry": {
+    "application": {
+     "bytes": 7386816,
+     "sha256": "965570e037da66640756de0df30799208a340c1bd2a99006a324cf4b5c140f5d"
+    },
+    "bodies": [
+     {
+      "edges": 49,
+      "heads": [
+       0,
+       3,
+       5,
+       7,
+       10,
+       12,
+       14,
+       16,
+       19,
+       21,
+       25,
+       27,
+       31,
+       34,
+       37,
+       40,
+       42,
+       46,
+       50,
+       53,
+       55,
+       58,
+       60,
+       64,
+       66,
+       71,
+       73,
+       76,
+       80,
+       83,
+       85,
+       89,
+       90,
+       96,
+       99,
+       101,
+       104,
+       108,
+       114,
+       116,
+       120,
+       125
+      ],
+      "length": 126,
+      "returns": [
+       89,
+       125
+      ]
+     },
+     {
+      "edges": 14,
+      "heads": [
+       0,
+       3,
+       6,
+       8,
+       10,
+       16,
+       20,
+       23,
+       25,
+       29,
+       31,
+       34,
+       40
+      ],
+      "length": 41,
+      "returns": [
+       34,
+       40
+      ]
+     }
+    ],
+    "caller": {
+     "body_hex": "534889cb4889f84889f74889d6ffd04889035bc3",
+     "call_offset": 13,
+     "continuation_offset": 15,
+     "elf_va": 3261392,
+     "heads": [
+      0,
+      1,
+      4,
+      7,
+      10,
+      13,
+      15,
+      18,
+      19
+     ],
+     "length": 20,
+     "outer_ret_offset": 19,
+     "subject_rsp_delta": 16
+    },
+    "module": {
+     "bytes": 13520,
+     "sha256": "768f52491d0211ac9bc5f564f69dd27504a7ec6dfe949d4e2ceb7b3ee2df7c5e"
+    },
+    "selections": [
+     [
+      4096,
+      126
+     ],
+     [
+      4224,
+      41
+     ]
+    ]
+   },
+   "launch": [
+    "/usr/bin/env",
+    "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+    "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+    "/usr/local/bin/python3",
+    "-B",
+    "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+    "run",
+    "--cores",
+    "3",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-copied-1fe67ee",
+    "--",
+    "/usr/local/bin/python3",
+    "-B",
+    "$REPO/evaluation/ordinary-rust-invoke-native/reproduce.py",
+    "--revision",
+    "1fe67eee794bc49b118440c808637aa29437943a",
+    "--raw",
+    "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1",
+    "--reservation-tag",
+    "li2core-copied-1fe67ee",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+   ],
+   "launch_wrapper_sha256": "b61159f2c478516e0df3409a2547ceda9b7f101b41fe9d9eaed5d130db5b920a",
+   "load_after": [
+    30.06,
+    36.9,
+    42.03
+   ],
+   "load_before": [
+    31.93,
+    38.12,
+    42.63
+   ],
+   "native": {
+    "attempts": 1,
+    "required_children": 96,
+    "required_normal_reaps": 96,
+    "required_outer_returns": 96,
+    "required_pairs": 48,
+    "required_target_calls": 96,
+    "required_target_returns": 96,
+    "status": "FAILED"
+   },
+   "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "6537105a1dc7bbc7a62b40281f7b05893d3aa5b11d9fa8ca196d3d139f777835",
+    "reaped_descendants": 0,
+    "seconds": 47.470414286945015,
+    "start_utc": "2026-10-29T11:14:29.666932+00:00",
+    "termination": null
+   },
+   "rebuilt_after_closure": [
+    {
+     "authenticated_at_original_closure": {
+      "bytes": 4609016,
+      "sha256": "ab753c9f0a8ca9cb3021ed5d1e68c4eae43af8ae2b61858b45b736db373497b4"
+     },
+     "current_corrected_build": {
+      "bytes": 4609008,
+      "sha256": "dcd4b8adee0ccf381d50ddb89624987d29fb8ca411d32e8f1fc2c31a833b0cf3"
+     },
+     "path": "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534"
+    },
+    {
+     "authenticated_at_original_closure": {
+      "bytes": 7231016,
+      "sha256": "11b60b1b8ea9fe6d22b350868dc5294176fae79e0230623e2a8965221f320301"
+     },
+     "current_corrected_build": {
+      "bytes": 7230496,
+      "sha256": "22b4477e12c66b3f5aca48fc81dbe57aba3e3bde3257e0cdad3a1effb057116a"
+     },
+     "path": "$REPO/target/release/frontend-native-oracle"
+    }
+   ],
+   "reservation": {
+    "cores": [
+     6,
+     54,
+     67
+    ],
+    "count": 3
+   },
+   "result_sha256": "6f5dded85c5016982ae79899b7b5da7e75e276b16ed8efb436076085eae0d9e3",
+   "retained_files_authenticated_at_closure": 175,
+   "retries": 0,
+   "revision": "1fe67eee794bc49b118440c808637aa29437943a",
+   "scope": "Complete extracted Rust caller body under explicit machine entry conditions only; no application-callsite Rust ABI, original-address, whole worker, Schedule, performance or full-A5 qualification.",
+   "source_manifest_sha256": "47a91399ff0c1d6d13241fe198589eda67a4ab7013dc99862f968a11c6a0284c",
+   "stages": [
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.16539361490868032,
+      "start_utc": "2026-10-29T11:14:33.942925+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=cc1"
+     ],
+     "name": "tool-cc1"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.16506142797879875,
+      "start_utc": "2026-10-29T11:14:34.508294+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=collect2"
+     ],
+     "name": "tool-collect2"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.1655625798739493,
+      "start_utc": "2026-10-29T11:14:35.085680+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=as"
+     ],
+     "name": "tool-as"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.1640274350065738,
+      "start_utc": "2026-10-29T11:14:35.671877+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=ld"
+     ],
+     "name": "tool-ld"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.2492908351123333,
+      "start_utc": "2026-10-29T11:14:36.259008+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-O2",
+      "-fPIC",
+      "-shared",
+      "-nostdlib",
+      "-fno-builtin",
+      "-fno-stack-protector",
+      "-fomit-frame-pointer",
+      "-fno-tree-vectorize",
+      "-fno-tree-slp-vectorize",
+      "-fno-if-conversion",
+      "-fno-if-conversion2",
+      "-fno-asynchronous-unwind-tables",
+      "-fno-unwind-tables",
+      "-fcf-protection=none",
+      "-Wl,--build-id=none,-z,now,-z,noexecstack",
+      "-Wl,--version-script=tools/rapid-profiler/strnlen-work/localize.map",
+      "$REPO/tools/rapid-profiler/normal-work/csv_fields.c",
+      "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c",
+      "-o",
+      "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/module-trusted.so"
+     ],
+     "name": "module-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.1693328069522977,
+      "start_utc": "2026-10-29T11:14:36.934592+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/readelf",
+      "--wide",
+      "--syms",
+      "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/module-trusted.so"
+     ],
+     "name": "module-symbols"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.17333156801760197,
+      "start_utc": "2026-10-29T11:14:37.532295+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/objdump",
+      "-d",
+      "-M",
+      "intel",
+      "--insn-width=16",
+      "--disassemble=csv_fields",
+      "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/module-trusted.so"
+     ],
+     "name": "csv_fields-disassembly"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.17090928298421204,
+      "start_utc": "2026-10-29T11:14:38.132017+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/objdump",
+      "-d",
+      "-M",
+      "intel",
+      "--insn-width=16",
+      "--disassemble=strnlen",
+      "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/module-trusted.so"
+     ],
+     "name": "strnlen-disassembly"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.19550968916155398,
+      "start_utc": "2026-10-29T11:14:38.734196+00:00",
+      "termination": null
+     },
+     "command": [
+      "$TOOLCHAIN/bin/cargo",
+      "build",
+      "--bin",
+      "ordinary-interval",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--message-format=json-render-diagnostics"
+     ],
+     "name": "application-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.18301359610632062,
+      "start_utc": "2026-10-29T11:14:39.408408+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/objdump",
+      "-d",
+      "-M",
+      "intel",
+      "--insn-width=16",
+      "--disassemble=liteinst_csv_call_and_store",
+      "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/application-trusted"
+     ],
+     "name": "application-caller-disassembly"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.20244877110235393,
+      "start_utc": "2026-10-29T11:14:40.077818+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/bash",
+      "-o",
+      "pipefail",
+      "-c",
+      "\"$1\" --wide --syms \"$2\" | \"$3\" -- \" liteinst_csv_call_and_store$\"",
+      "module-session-caller-symbols",
+      "/usr/bin/readelf",
+      "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/application-trusted",
+      "/usr/bin/rg"
+     ],
+     "name": "application-caller-symbols"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 15.435520127881318,
+      "start_utc": "2026-10-29T11:14:40.768544+00:00",
+      "termination": null
+     },
+     "command": [
+      "$TOOLCHAIN/bin/cargo",
+      "build",
+      "--bin",
+      "frontend-native-oracle",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--message-format=json-render-diagnostics"
+     ],
+     "name": "native-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 10.334751335904002,
+      "start_utc": "2026-10-29T11:14:56.715362+00:00",
+      "termination": null
+     },
+     "command": [
+      "$TOOLCHAIN/bin/cargo",
+      "test",
+      "--test",
+      "frontend-native-calibrations",
+      "--no-run",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--message-format=json-render-diagnostics"
+     ],
+     "name": "state-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.1706863921135664,
+      "start_utc": "2026-10-29T11:15:07.588595+00:00",
+      "termination": null
+     },
+     "command": [
+      "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+      "--list"
+     ],
+     "name": "state-list"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 1.3890518941916525,
+      "start_utc": "2026-10-29T11:15:08.278148+00:00",
+      "termination": null
+     },
+     "command": [
+      "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+      "--test-threads=1"
+     ],
+     "name": "state-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 1.0372190847992897,
+      "start_utc": "2026-10-29T11:15:10.197897+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-module-native/controls.py",
+      "-v"
+     ],
+     "name": "legacy-python-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 1.1429398090112954,
+      "start_utc": "2026-10-29T11:15:11.764086+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-module-session/controls.py",
+      "-v"
+     ],
+     "name": "session-python-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.9869882590137422,
+      "start_utc": "2026-10-29T11:15:13.428148+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-rust-invoke-native/controls.py",
+      "-v"
+     ],
+     "name": "python-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.29077942203730345,
+      "start_utc": "2026-10-29T11:15:14.958165+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-rust-invoke-native/runner_controls.py",
+      "-v"
+     ],
+     "name": "runner-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 101,
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reaped_descendants": 0,
+      "seconds": 0.8894377760589123,
+      "start_utc": "2026-10-29T11:15:15.785874+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-rust-invoke-native/reproduce.py",
+      "--native-request",
+      "$REPO/ignored/a5/copied-rust-invoke-1fe67ee-attempt1/native/request.json",
+      "d31c2bd453549a92c435d988c2c0db850e61b9f9660bbeb3d7825b7ffe0f9b4e"
+     ],
+     "name": "native-outer"
+    }
+   ],
+   "status": "FAILED",
+   "tools_ref": "receipt.common_tools"
+  },
+  {
+   "accepted_pairs": 48,
+   "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+   "allocator_source_sha256": {
+    "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+    "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+    "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+   },
+   "attempts": 1,
+   "build_environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_RELEASE_DEBUG": "0",
+    "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+    "CARGO_TARGET_DIR": "$REPO/target",
+    "CARGO_TERM_COLOR": "never",
+    "CC": "/usr/bin/gcc",
+    "HOME": "$USER_HOME",
+    "LC_ALL": "C",
+    "LITEINST_EVALUATION": "1",
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+    "TMPDIR": "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/tmp"
+   },
+   "controls_manifest_sha256": "a91ad384db3916c51a9882dd91388ad3d8f101efec1fe2827302821a43c637df",
+   "geometry": {
+    "application": {
+     "bytes": 7386816,
+     "sha256": "965570e037da66640756de0df30799208a340c1bd2a99006a324cf4b5c140f5d"
+    },
+    "bodies": [
+     {
+      "edges": 49,
+      "heads": [
+       0,
+       3,
+       5,
+       7,
+       10,
+       12,
+       14,
+       16,
+       19,
+       21,
+       25,
+       27,
+       31,
+       34,
+       37,
+       40,
+       42,
+       46,
+       50,
+       53,
+       55,
+       58,
+       60,
+       64,
+       66,
+       71,
+       73,
+       76,
+       80,
+       83,
+       85,
+       89,
+       90,
+       96,
+       99,
+       101,
+       104,
+       108,
+       114,
+       116,
+       120,
+       125
+      ],
+      "length": 126,
+      "returns": [
+       89,
+       125
+      ]
+     },
+     {
+      "edges": 14,
+      "heads": [
+       0,
+       3,
+       6,
+       8,
+       10,
+       16,
+       20,
+       23,
+       25,
+       29,
+       31,
+       34,
+       40
+      ],
+      "length": 41,
+      "returns": [
+       34,
+       40
+      ]
+     }
+    ],
+    "caller": {
+     "body_hex": "534889cb4889f84889f74889d6ffd04889035bc3",
+     "call_offset": 13,
+     "continuation_offset": 15,
+     "elf_va": 3261392,
+     "heads": [
+      0,
+      1,
+      4,
+      7,
+      10,
+      13,
+      15,
+      18,
+      19
+     ],
+     "length": 20,
+     "outer_ret_offset": 19,
+     "subject_rsp_delta": 16
+    },
+    "module": {
+     "bytes": 13520,
+     "sha256": "768f52491d0211ac9bc5f564f69dd27504a7ec6dfe949d4e2ceb7b3ee2df7c5e"
+    },
+    "selections": [
+     [
+      4096,
+      126
+     ],
+     [
+      4224,
+      41
+     ]
+    ]
+   },
+   "launch": [
+    "/usr/bin/env",
+    "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+    "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+    "/usr/local/bin/python3",
+    "-B",
+    "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+    "run",
+    "--cores",
+    "3",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-copied-617672d",
+    "--",
+    "/usr/local/bin/python3",
+    "-B",
+    "$REPO/evaluation/ordinary-rust-invoke-native/reproduce.py",
+    "--revision",
+    "617672dbc0a977fe940b9d9fc2459adf21f91df1",
+    "--raw",
+    "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1",
+    "--reservation-tag",
+    "li2core-copied-617672d",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+   ],
+   "launch_wrapper_sha256": "b61159f2c478516e0df3409a2547ceda9b7f101b41fe9d9eaed5d130db5b920a",
+   "load_after": [
+    25.52,
+    33.27,
+    39.11
+   ],
+   "load_before": [
+    20.82,
+    34.63,
+    39.95
+   ],
+   "native": {
+    "attempts": 1,
+    "children": 96,
+    "closed": {
+     "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+     "cleanup_complete": true,
+     "exit_code": 0,
+     "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "reaped_descendants": 0,
+     "seconds": 22.795435125939548,
+     "start_utc": "2026-10-29T11:24:51.459357+00:00",
+     "termination": null
+    },
+    "comparisons": 4490,
+    "normal_reaps": 96,
+    "outer_returns": 96,
+    "pairs": 48,
+    "required_children": 96,
+    "required_normal_reaps": 96,
+    "required_outer_returns": 96,
+    "required_pairs": 48,
+    "required_target_calls": 96,
+    "required_target_returns": 96,
+    "status": "COPIED_RUST_INVOKE_STATE_PASS",
+    "target_calls": 96,
+    "target_returns": 96
+   },
+   "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "e8252ad3985aad822857fcd94bb053c4ace09357ffacedb2597d45f66abc1bcc",
+    "reaped_descendants": 0,
+    "seconds": 67.88399183494039,
+    "start_utc": "2026-10-29T11:24:07.261509+00:00",
+    "termination": null
+   },
+   "rebuilt_after_closure": [],
+   "reservation": {
+    "cores": [
+     16,
+     19,
+     23
+    ],
+    "count": 3
+   },
+   "result_sha256": "f5d46b0d8b5d8672be3cfc02c50dc8c71c29f793e73e1dc0a8b5c0bf0b6a0997",
+   "retained_files_authenticated_at_closure": 178,
+   "retries": 0,
+   "revision": "617672dbc0a977fe940b9d9fc2459adf21f91df1",
+   "scope": "Complete extracted Rust caller body under explicit machine entry conditions only; no application-callsite Rust ABI, original-address, whole worker, Schedule, performance or full-A5 qualification.",
+   "source_manifest_sha256": "0466603ca3946c2c9fcd5f94a4157e1dd2204d24ccd8586755aba8040f96ea97",
+   "stages": [
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.16543863900005817,
+      "start_utc": "2026-10-29T11:24:11.336385+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=cc1"
+     ],
+     "name": "tool-cc1"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.16543343104422092,
+      "start_utc": "2026-10-29T11:24:11.893041+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=collect2"
+     ],
+     "name": "tool-collect2"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.1650860400404781,
+      "start_utc": "2026-10-29T11:24:12.473214+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=as"
+     ],
+     "name": "tool-as"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.16551882890053093,
+      "start_utc": "2026-10-29T11:24:13.051417+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-print-prog-name=ld"
+     ],
+     "name": "tool-ld"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.22608849010430276,
+      "start_utc": "2026-10-29T11:24:13.633756+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/gcc",
+      "-O2",
+      "-fPIC",
+      "-shared",
+      "-nostdlib",
+      "-fno-builtin",
+      "-fno-stack-protector",
+      "-fomit-frame-pointer",
+      "-fno-tree-vectorize",
+      "-fno-tree-slp-vectorize",
+      "-fno-if-conversion",
+      "-fno-if-conversion2",
+      "-fno-asynchronous-unwind-tables",
+      "-fno-unwind-tables",
+      "-fcf-protection=none",
+      "-Wl,--build-id=none,-z,now,-z,noexecstack",
+      "-Wl,--version-script=tools/rapid-profiler/strnlen-work/localize.map",
+      "$REPO/tools/rapid-profiler/normal-work/csv_fields.c",
+      "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c",
+      "-o",
+      "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/module-trusted.so"
+     ],
+     "name": "module-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.170594384893775,
+      "start_utc": "2026-10-29T11:24:14.277132+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/readelf",
+      "--wide",
+      "--syms",
+      "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/module-trusted.so"
+     ],
+     "name": "module-symbols"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.17158811609260738,
+      "start_utc": "2026-10-29T11:24:14.863252+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/objdump",
+      "-d",
+      "-M",
+      "intel",
+      "--insn-width=16",
+      "--disassemble=csv_fields",
+      "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/module-trusted.so"
+     ],
+     "name": "csv_fields-disassembly"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.17305236286483705,
+      "start_utc": "2026-10-29T11:24:15.453881+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/objdump",
+      "-d",
+      "-M",
+      "intel",
+      "--insn-width=16",
+      "--disassemble=strnlen",
+      "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/module-trusted.so"
+     ],
+     "name": "strnlen-disassembly"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.19988292013294995,
+      "start_utc": "2026-10-29T11:24:16.051008+00:00",
+      "termination": null
+     },
+     "command": [
+      "$TOOLCHAIN/bin/cargo",
+      "build",
+      "--bin",
+      "ordinary-interval",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--message-format=json-render-diagnostics"
+     ],
+     "name": "application-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.17967892508022487,
+      "start_utc": "2026-10-29T11:24:16.719683+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/objdump",
+      "-d",
+      "-M",
+      "intel",
+      "--insn-width=16",
+      "--disassemble=liteinst_csv_call_and_store",
+      "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/application-trusted"
+     ],
+     "name": "application-caller-disassembly"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.19446686399169266,
+      "start_utc": "2026-10-29T11:24:17.377671+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/bin/bash",
+      "-o",
+      "pipefail",
+      "-c",
+      "\"$1\" --wide --syms \"$2\" | \"$3\" -- \" liteinst_csv_call_and_store$\"",
+      "module-session-caller-symbols",
+      "/usr/bin/readelf",
+      "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/application-trusted",
+      "/usr/bin/rg"
+     ],
+     "name": "application-caller-symbols"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 14.879597417078912,
+      "start_utc": "2026-10-29T11:24:18.051135+00:00",
+      "termination": null
+     },
+     "command": [
+      "$TOOLCHAIN/bin/cargo",
+      "build",
+      "--bin",
+      "frontend-native-oracle",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--message-format=json-render-diagnostics"
+     ],
+     "name": "native-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 9.82100756908767,
+      "start_utc": "2026-10-29T11:24:33.431730+00:00",
+      "termination": null
+     },
+     "command": [
+      "$TOOLCHAIN/bin/cargo",
+      "test",
+      "--test",
+      "frontend-native-calibrations",
+      "--no-run",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "4",
+      "-p",
+      "rapid-profiler",
+      "--message-format=json-render-diagnostics"
+     ],
+     "name": "state-build"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.16535848891362548,
+      "start_utc": "2026-10-29T11:24:43.776140+00:00",
+      "termination": null
+     },
+     "command": [
+      "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+      "--list"
+     ],
+     "name": "state-list"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 1.2807173770852387,
+      "start_utc": "2026-10-29T11:24:44.454639+00:00",
+      "termination": null
+     },
+     "command": [
+      "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+      "--test-threads=1"
+     ],
+     "name": "state-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.9784419459756464,
+      "start_utc": "2026-10-29T11:24:46.247775+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-module-native/controls.py",
+      "-v"
+     ],
+     "name": "legacy-python-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.9266535951755941,
+      "start_utc": "2026-10-29T11:24:47.736751+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-module-session/controls.py",
+      "-v"
+     ],
+     "name": "session-python-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.9751302988734096,
+      "start_utc": "2026-10-29T11:24:49.180617+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-rust-invoke-native/controls.py",
+      "-v"
+     ],
+     "name": "python-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.2747452000621706,
+      "start_utc": "2026-10-29T11:24:50.670649+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-rust-invoke-native/runner_controls.py",
+      "-v"
+     ],
+     "name": "runner-controls"
+    },
+    {
+     "closed": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reaped_descendants": 0,
+      "seconds": 22.795435125939548,
+      "start_utc": "2026-10-29T11:24:51.459357+00:00",
+      "termination": null
+     },
+     "command": [
+      "/usr/local/fbcode/platform010/bin/python3.12",
+      "-B",
+      "$REPO/evaluation/ordinary-rust-invoke-native/reproduce.py",
+      "--native-request",
+      "$REPO/ignored/a5/copied-rust-invoke-617672d-attempt1/native/request.json",
+      "d1592f8ffeaa8d726a30f4d66414bd61602785c68d716d370dd09f0e4215776b"
+     ],
+     "name": "native-outer"
+    }
+   ],
+   "status": "COPIED_RUST_INVOKE_QUALIFICATION_PASS",
+   "tools_ref": "receipt.common_tools"
+  }
+ ],
+ "qualified_source_sha256": {
+  "evaluation/ordinary-module-native/README.md": "aa2d4ae26b3bafb90be88ccab3a8c80b1d7613328e729ee3c823076b877a2cd8",
+  "evaluation/ordinary-module-native/controls.py": "adeab55d76f9b4ccc696ba5cb72302c00b139fd561b50cea2c5d0170397a668a",
+  "evaluation/ordinary-module-native/reproduce.py": "5cce60e76d7ec2011c8facb0a5c1101e0100e13aac8ed9b6317846de35fd3146",
+  "evaluation/ordinary-module-session/README.md": "c70545f8f0046b45d3f4d790a8a25d3e5003cc8bff5f4a25ea36892c0a5a07ae",
+  "evaluation/ordinary-module-session/reproduce.py": "4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659",
+  "evaluation/ordinary-rust-invoke-native/README.md": "156eb86d582bf76696f4d3c44f3849d7ecc17e91219f9238575a7e81562189af",
+  "evaluation/ordinary-rust-invoke-native/caller.py": "aa2d28441c9b477e5e85fea0a61b160cb5026c55bbc129c2b40502c3a5d12d4c",
+  "evaluation/ordinary-rust-invoke-native/controls.py": "d2844364e81689b82c42341d96e2a44f14451efea7774b2de9052b2162a1f9ae",
+  "evaluation/ordinary-rust-invoke-native/reproduce.py": "434ffdc1be5107a408767d81e85a77ee1a21878b482b8bcb0951e0ee4c4f38de",
+  "evaluation/ordinary-rust-invoke-native/runner_controls.py": "a83932d4ac3a975c39e69fea05131626932d1b2d3f01c2de371fb1421ff6637a",
+  "evaluation/ordinary-rust-invoke-native/rust_invoke.py": "29daaf69e9b0a8826b16e387c408ff47c0467696773778bf451b0a1c90e91438",
+  "tests/support/native_copied_rust.rs": "e4b935d3ff7b3625730b798ff657f30386552d0d9d3e3755ef1c92290d4bd22a",
+  "tests/support/native_copied_rust/effects.rs": "ce6298b08fe5b45a453ec551b3eab2fb3d44574ddcc7baa83109d51a8f255e6e",
+  "tests/support/native_copied_rust/tests.rs": "993d7fece94d2f5ee7d8377a65aa577c7d6278d62465bc0ab0d73f8000e527a3",
+  "tests/support/native_copied_rust/trace.rs": "deadfbc9f83c0cf520b73ec6b16b9f6da17270ad107110b70d17cc9315d3ceab",
+  "tests/support/native_normal_caller.rs": "bc5b5b8c345974e19f11a076c83594dd05d03a73c9ce46c9ccb2f0b2392d1fc8",
+  "tests/support/native_normal_module.rs": "f7337696eaa7ffdf66e8d5318105b07599c7e3f3bd365b1c8f39c5a7a3437f91",
+  "tests/support/native_rust_invoke.rs": "de28c5efa6036d0746fdc0f5a44e6b2f07d0502fa97ba810acc693f3bde11724",
+  "tests/support/native_rust_invoke/copy.rs": "5413a1fd1b7cbef744ed134954e665206d2e680c6bfb0cd6f91710e561727589",
+  "tests/support/native_rust_invoke/tests.rs": "f6b9b5670578fa2f8d16b74dc726102081cbe446248bcbe6a11847e1afc635b1",
+  "tools/rapid-profiler/native-interval/calibrations.rs": "fd01ce7b128642ae1822c93d451e2ff5ccb96165b329686825e9c1cc0cad56da",
+  "tools/rapid-profiler/native-interval/main.rs": "689c4970a0d37340063bc9189b08af89d095aeabc065a9253a327ccd77349a90",
+  "tools/rapid-profiler/native-interval/normal.rs": "e9423bd3a10e498df7e2ed235740e5d7e590dc0da98ce78fd5f1cd7a2b5232d3",
+  "tools/rapid-profiler/native-interval/normal/copied_rust.rs": "d0b4024f6fd98501f07c009f6a3757a224261cff06a655b0767b1305e49bbdfb",
+  "tools/rapid-profiler/native-interval/normal/copied_rust/check.rs": "19cae00a65b8086e0ef8c73544a8e8bb7e0add4cac40a13336d4b89f3c7fc5ce",
+  "tools/rapid-profiler/native-interval/normal/copied_rust/check/tests.rs": "6abb94453da898353dd6abf31bba55f537a36a9d893c7cf15a25830c66fc05f1",
+  "tools/rapid-profiler/native-interval/normal/module.rs": "ec6afe224c3a45b9f89b826bfff834640eaaa03dee55b050de48a66e69644eeb",
+  "tools/rapid-profiler/native-interval/normal/rust_invoke_artifact.rs": "f35c705aab928db601e996697bd817d24b65eac4efae1c47c48efb9dfb255822",
+  "tools/rapid-profiler/native-interval/normal/rust_invoke_artifact/tests.rs": "56ae590e39304a2328206c698482fab65ab4408579e2204efd6d0995e74ec1eb"
+ },
+ "review_bindings": {
+  "harness_restoration": "13714ec1f206fd0b26989d4b6881219143df273745c5ef5e7cf901c7af6a2a27",
+  "integration": "18631e52242bc7c5b88ac6b75dae01bc941ea9088288e086992da78ea9dfcd0d"
+ },
+ "revision": "617672dbc0a977fe940b9d9fc2459adf21f91df1",
+ "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+ "schema": 1
+}
