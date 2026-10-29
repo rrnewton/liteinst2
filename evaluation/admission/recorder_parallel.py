@@ -60,8 +60,17 @@ def partition(identities, workers):
             and len(set(identities)) == len(identities), 'invalid_identity_population')
     modules = list(dict.fromkeys(name.split('.', 1)[0] for name in identities))
     groups = [[] for _ in range(workers)]
-    for name in identities:
-        groups[modules.index(name.split('.', 1)[0]) % workers].append(name)
+    heavy = 'test_main813_inventory'
+    if workers > 1 and heavy in modules and len(modules) >= workers:
+        # Keep the complete inventory module isolated; no test is split or omitted.
+        others = [module for module in modules if module != heavy]
+        for name in identities:
+            module = name.split('.', 1)[0]
+            index = 0 if module == heavy else 1 + others.index(module) % (workers - 1)
+            groups[index].append(name)
+    else:
+        for name in identities:
+            groups[modules.index(name.split('.', 1)[0]) % workers].append(name)
     require(all(groups) and sum(map(len, groups)) == len(identities), 'empty_worker_partition')
     return groups
 
