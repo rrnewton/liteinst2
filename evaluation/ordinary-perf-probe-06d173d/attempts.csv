@@ -1,0 +1,4 @@
+attempt,revision,status,reason,failing_stage,passed,failed,unrun,prerequisite_passed,prerequisite_failed,limiter_children,perf_captures,decodes,reserved_cpus,load_before,load_after,seconds
+1,31629f6250b6bce49dc4b0718ece081ba33a52f1,FAILED_BEFORE_CAPTURE,missing_required_source_inventory_entry,prerequisite,0,1,29,34,0,0,0,0,25;110;165;167,49.62;46.68;49.67,41.97;44.61;48.57,108.37411738093942
+2,36f63891aa75e3d671b7ead928dcde8d03b0fa32,FAILED_BEFORE_CAPTURE,overflow_core_bit_was_one,limit-overflow,13,1,16,34,0,8,0,0,60;64;83;90,37.25;40.12;44.28,44.55;40.73;43.92,117.97107938700356
+3,06d173d0ef8bb9140d901552ab09168facde6fa2,FAILED_BEFORE_CAPTURE,extra_task_observed_after_worker_join,prerequisite,0,1,29,7,1,0,0,0,173;241;247;259,92.33;58.1;47.81,94.09;66.14;51.42,77.66022239997983
