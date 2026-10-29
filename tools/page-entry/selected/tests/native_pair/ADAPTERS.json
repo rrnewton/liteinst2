@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "views": [
+    {
+      "name": "runtime_loader.c",
+      "before": {
+        "bytes": 38806,
+        "sha256": "fc3994d27b98c85227eb685993f62c0248819e235d2ebd03beaf4978b27d8c11"
+      },
+      "after": {
+        "bytes": 39015,
+        "sha256": "d5ac24127713ba31ca62d06d7fcd5d05d55a314365d3e70b51679e93ffe086a3"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "static void fail(unsigned,long) __attribute__((noreturn));",
+          "new": "static void fail(unsigned,long) __attribute__((noreturn));\nstatic void npf_terminal(unsigned,unsigned,long);"
+        },
+        {
+          "kind": "replace",
+          "old": "    reported=1;\n",
+          "new": "    reported=1;\n    npf_terminal(status,code,detail);\n"
+        },
+        {
+          "kind": "replace",
+          "old": "#include \"selected_controller.inc\"",
+          "new": "#include \"native_pair_observe.inc\"\n#include \"selected_controller.inc\""
+        },
+        {
+          "kind": "replace",
+          "old": "    li2_native_pair_preentry();",
+          "new": "    npf_preentry_mutate(sig,si,ptr);\n    li2_native_pair_preentry();\n    npf_entry(sig,si,ptr);"
+        },
+        {
+          "kind": "replace",
+          "old": "    checked(!native_error,(unsigned)native_error,1);",
+          "new": "    checked(!native_error,(unsigned)native_error,1);\n    npf_initialize();"
+        }
+      ]
+    },
+    {
+      "name": "native_controller.inc",
+      "before": {
+        "bytes": 3360,
+        "sha256": "5c05dd91b580c39f2dff103405a19c7cfea881393b01f1ba33a10e3d20fef9bf"
+      },
+      "after": {
+        "bytes": 3360,
+        "sha256": "5c05dd91b580c39f2dff103405a19c7cfea881393b01f1ba33a10e3d20fef9bf"
+      },
+      "operations": []
+    },
+    {
+      "name": "native_pair_controller.inc",
+      "before": {
+        "bytes": 2034,
+        "sha256": "98a1c9cd7693a6588bebd4a0ac3bce90e4b61de447502ec593fd37e3ebb94e9b"
+      },
+      "after": {
+        "bytes": 2302,
+        "sha256": "e62be4155c86d9eaa78f5662e23824a26ee9de5153b5d7d6c57b80ad54386ff4"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "static int selected_native_fetch(",
+          "new": "static int npf_real_native_fetch("
+        },
+        {
+          "kind": "replace",
+          "old": "    int result=li2_native_pair_nx(sig,si,uc,selected_flags_known,&selected_logical_flags);",
+          "new": "    int result=li2_native_pair_nx(sig,si,uc,selected_flags_known,&selected_logical_flags);\n    npf_pair_return(result,sig,si,uc);"
+        },
+        {
+          "kind": "append",
+          "old": "",
+          "new": "\nstatic int selected_native_fetch(int sig,siginfo_t *si,ucontext_t *uc) {\n    int result=npf_real_native_fetch(sig,si,uc);\n    npf_fetch_return(result,sig,si,uc);\n    if(result==1)npf_safe_prefix(sig,si,uc);\n    return result;\n}\n"
+        }
+      ]
+    },
+    {
+      "name": "native_epoch.c",
+      "before": {
+        "bytes": 7389,
+        "sha256": "23841a835bddf061895a9f3c6e1b22d5bc32fb2b95d05ae0883ca63dc724f2a8"
+      },
+      "after": {
+        "bytes": 7420,
+        "sha256": "ae139a19bca3889c27b055eab9fb73737160fae20044d5209949397e93b29239"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "#include \"native_epoch.h\"\n",
+          "new": "#include \"native_epoch.h\"\n#include \"native_pair_hooks.h\"\n"
+        }
+      ]
+    },
+    {
+      "name": "native_pair_control.inc",
+      "before": {
+        "bytes": 12932,
+        "sha256": "2b5fa1be6cada6be344be197de614ed2480f4d0ddd7a472a556d47768abd1f84"
+      },
+      "after": {
+        "bytes": 14041,
+        "sha256": "2d2bab11328e5cc46dd1e35c919ff3f31491a9a1dbc9a65832a881c0e3aeff5d"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "li2_lifecycle_pair_prepare(&np_owner,NP.pc,&eligible)",
+          "new": "li2_lifecycle_pair_prepare(npf_owner_argument(&np_owner,NP.pc),NP.pc,&eligible)"
+        },
+        {
+          "kind": "append",
+          "old": "",
+          "new": "\nstatic struct li2_native_pair_owner npf_owner_copy;\nconst struct li2_native_pair_owner *npf_owner_argument(const struct li2_native_pair_owner *o,uintptr_t pc) {\n    if(npf_control_match(17,0,NPF_PREPARED,pc)) {\n        npf_stage_observe(NPF_CONTROL_BEFORE,pc,0);\n        copy(&npf_owner_copy,&np_owner,sizeof npf_owner_copy);\n        npf_control_values(NPF_CONTROL_BEFORE,\n            (uint64_t)li2_native_pair_owner_check(&np_owner,np_owner.p.phase),\n            (uint64_t)li2_native_pair_owner_check(&npf_owner_copy,np_owner.p.phase),\n            (uintptr_t)&np_owner,(uintptr_t)&npf_owner_copy);\n        npf_stage_observe(NPF_CONTROL_AFTER,pc,0);\n        return &npf_owner_copy;\n    }\n    return o;\n}\nvoid npf_owner_overflow(uintptr_t pc) {\n    if(npf_control_match(18,0,NPF_PREPARED,pc)) {\n        uint64_t old=np_owner.p.extensions;\n        npf_stage_observe(NPF_CONTROL_BEFORE,pc,0);\n        np_owner.p.extensions=UINT64_MAX;\n        npf_control_values(NPF_PREPARED,old,np_owner.p.extensions,(uintptr_t)&np_owner,0);\n        npf_stage_observe(NPF_CONTROL_AFTER,pc,0);\n    }\n}\n"
+        }
+      ]
+    },
+    {
+      "name": "lifecycle_loader.c",
+      "before": {
+        "bytes": 44237,
+        "sha256": "c8cf9246878ceb1c51c8ebeded3716706b4b47dc7396b9e255122a2ea574a8be"
+      },
+      "after": {
+        "bytes": 44268,
+        "sha256": "f2a7021c0b95a44b0652c6c72379417013d7e559730d34021893b5191b01cda2"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "#define _GNU_SOURCE\n",
+          "new": "#define _GNU_SOURCE\n#include \"native_pair_hooks.h\"\n"
+        }
+      ]
+    },
+    {
+      "name": "native_pair_lifecycle.inc",
+      "before": {
+        "bytes": 14527,
+        "sha256": "9c59593ee0d783d516a947d05a704c063c3633e8e3dc15acec9fcc6b2501541c"
+      },
+      "after": {
+        "bytes": 15844,
+        "sha256": "9d5b8f94c69343e81ad5b0ef8767b7601c009bdfc092478c84988c20e9164458"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "int li2_lifecycle_pair_prepare(",
+          "new": "int npf_real_pair_prepare("
+        },
+        {
+          "kind": "replace",
+          "old": "int li2_lifecycle_pair_publish(",
+          "new": "int npf_real_pair_publish("
+        },
+        {
+          "kind": "replace",
+          "old": "int li2_lifecycle_pair_close(",
+          "new": "int npf_real_pair_close("
+        },
+        {
+          "kind": "append",
+          "old": "",
+          "new": "\nint li2_lifecycle_pair_prepare(const struct li2_native_pair_owner *o,uintptr_t pc,int *eligible) {\n    int result=npf_real_pair_prepare(o,pc,eligible);\n    npf_stage_observe(NPF_PREPARED,pc,result);\n    if(!result && eligible && *eligible) {\n        if(npf_control_match(16,0,NPF_PREPARED,pc)) {\n            unsigned index=np_life.live;uint64_t old=np_original[index].generation;\n            npf_stage_observe(NPF_CONTROL_BEFORE,pc,0);\n            np_original[index].generation=old^UINT64_C(1);\n            npf_control_values(NPF_PREPARED,old,np_original[index].generation,\n                               (uintptr_t)&np_original[index],0);\n            npf_stage_observe(NPF_CONTROL_AFTER,pc,0);\n        }\n        npf_owner_overflow(pc);\n        npf_control_hook(NPF_PREPARED,pc);\n    }\n    return result;\n}\nint li2_lifecycle_pair_publish(const struct li2_native_pair_owner *o,uintptr_t pc) {\n    int result=npf_real_pair_publish(o,pc);\n    npf_stage_observe(NPF_PUBLISHED,pc,result);\n    if(!result)npf_control_hook(NPF_PUBLISHED,pc);\n    return result;\n}\nint li2_lifecycle_pair_close(const struct li2_native_pair_owner *o) {\n    uintptr_t pc=li2_native_pair_progress()->pc;\n    npf_stage_observe(NPF_CLOSE_BEFORE,pc,0);\n    int result=npf_real_pair_close(o);\n    npf_stage_observe(NPF_CLOSE_AFTER,pc,result);\n    return result;\n}\n"
+        }
+      ]
+    },
+    {
+      "name": "native_lifecycle.inc",
+      "before": {
+        "bytes": 13529,
+        "sha256": "80fde56f6a6d34ff1487c662e9422cc6dc249f0b7ff41c8741f0ee69cfed75ef"
+      },
+      "after": {
+        "bytes": 13550,
+        "sha256": "61489abfd638ff0975357bd07bed2349b9ac544f46d0dc9c43e3116c80188624"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "        native_close.sync_result=RAW(SYS_membarrier,MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE,0,0,0,0,0);",
+          "new": "        native_close.sync_result=npf_inject_sync()?-5:RAW(SYS_membarrier,MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE,0,0,0,0,0);"
+        }
+      ]
+    },
+    {
+      "name": "rseq_guard.c",
+      "before": {
+        "bytes": 26262,
+        "sha256": "88cce91ca4e007af4b82b1419509b0299c6c680d5ed56dd09592a9789168c5e3"
+      },
+      "after": {
+        "bytes": 26287,
+        "sha256": "bf38fdcc89114999f22f2632cf753c607054d6afcaf78e78f98f6611b0051647"
+      },
+      "operations": [
+        {
+          "kind": "replace",
+          "old": "#define _GNU_SOURCE\n",
+          "new": "#define _GNU_SOURCE\n#include \"native_pair_hooks.h\"\n"
+        },
+        {
+          "kind": "replace",
+          "old": "int li2_rseq_check_instruction(const struct li2_decoded *d,const ucontext_t *uc) {",
+          "new": "int npf_real_instruction(const struct li2_decoded *d,const ucontext_t *uc) {"
+        }
+      ]
+    },
+    {
+      "name": "rseq_native_pair.inc",
+      "before": {
+        "bytes": 11704,
+        "sha256": "0a0a82e3e9f353837bee50e697375962bb1f49ada7843721aab1f5065ca676a9"
+      },
+      "after": {
+        "bytes": 12062,
+        "sha256": "218d8995757660d16ebf72825825738d6e9d09ee1b76337c8d571c1dc107c58c"
+      },
+      "operations": [
+        {
+          "kind": "append",
+          "old": "",
+          "new": "\nvoid npf_rseq_mutate_pin(void) {\n    /* Supplied retained-pin mutation after the safe prefix, at genuine NX.\n       No RAW, logging, fabricated event or production setter exists here. */\n    if(np_rseq.active==1 && np_rseq.registered==1 && np_rseq.registration_epoch!=UINT64_MAX)\n        ++np_rseq.registration_epoch;\n    __asm__ volatile(\"\":::\"memory\");\n}\n"
+        }
+      ]
+    }
+  ]
+}

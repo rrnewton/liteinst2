@@ -37,6 +37,9 @@ def publish(path,r,private):
         tools={k:{x:v[x]for x in ('bytes','sha256')}for k,v in r.get('tools',{}).items()},
         final_error_count=len(r['final_errors']),failure_type=r['error'].split(':',1)[0]if r.get('error')else None,
         full_b2_qualification=False,performance_credit=False)
+    if r['profile']=='page-native-pair-finite-v1':
+        import page_native_pair_finite as pair
+        value['native_pair']=pair.summary(r)
     if r['profile']in('page-selected-rseq-tcgets-btrfs-v1','page-selected-rseq-tiocgwinsz-btrfs-v1'):value['tcgets_btrfs']=tcgets.summary(r)
     if r['profile']=='page-selected-rseq-tiocgwinsz-btrfs-v1':value['tiocgwinsz_btrfs']=tcgets.summary_winsz(r)
     text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
@@ -52,12 +55,19 @@ def main():
     for name in ('positive','negative','rseq'):ap.add_argument('--'+name+'-receipt',type=Path,required=True)
     ap.add_argument('--tcgets-btrfs',action='store_true')
     ap.add_argument('--tiocgwinsz-btrfs',action='store_true')
+    ap.add_argument('--native-pair',action='store_true')
     a=ap.parse_args()
+    need(not(a.native_pair and(a.tcgets_btrfs or a.tiocgwinsz_btrfs)),'native pair is a separate explicit profile')
+    pair=None
+    if a.native_pair:
+        import page_native_pair_finite as pair
+        BOUNDS.update(pair.BOUNDS)
     if a.tiocgwinsz_btrfs:a.tcgets_btrfs=True;BOUNDS.update(tcgets.WINSZ_BOUNDS)
     if a.tcgets_btrfs:BOUNDS.update(tcgets.BOUNDS)
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1 and re.fullmatch('[0-9a-f]{40}',a.expect_revision),'exact HEAD/assertions/one reserved CPU')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
     stem=stamp+('-page-selected-rseq-tiocgwinsz-btrfs-'if a.tiocgwinsz_btrfs else'-page-selected-rseq-tcgets-btrfs-'if a.tcgets_btrfs else'-page-selected-rseq-native-boundary-')+a.expect_revision[:12]
+    if a.native_pair:stem=stamp+'-page-native-pair-finite-'+a.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,mode=0o700)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
     pins={};aliases={};artifacts={};presence={};commands=[]
@@ -73,6 +83,9 @@ def main():
     if a.tiocgwinsz_btrfs:
         r.update(profile='page-selected-rseq-tiocgwinsz-btrfs-v1',scope='Additional17 native/gated btrfs query pairs and one supplied-result refusal, after complete unchanged macro-off20 TCGETS pairs/16 controls and6/49/17+16+4 cohorts. Actual full frames and separate TCGETS/TIOCGWINSZ result counters; no general ioctl, application completion or performance claim.')
         r['reproduce'][-1]='--tiocgwinsz-btrfs'
+    if a.native_pair:
+        r.update(profile='page-native-pair-finite-v1',scope='All22 fixed two-page native owner profiles as44 actual same-ELF native/gated subjects, after unchanged registered16, boundary4 and same-revision6/49/17 cohorts. Full actual state and failure prefixes; supplied controls remain separate. No application completion, performance or full B2/B3 credit.')
+        r['reproduce'].append('--native-pair')
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
         need(want is None or f=={k:want[k]for k in ('bytes','sha256')},'exact requested prerequisite bytes')
@@ -90,6 +103,7 @@ def main():
         registered.finalize(r)
         boundary.finalize(r)
         if a.tcgets_btrfs:tcgets.finalize(r)
+        if pair is not None:pair.finalize(r)
         if companions is not None:companions.finalize(r)
     def run(name,argv,profile='metadata',expected=0,env=None,record=False):
         stable();row=dict(name=name,argv=list(map(str,argv)),profile=profile,bounds=BOUNDS[profile],
@@ -153,6 +167,9 @@ def main():
         if a.tiocgwinsz_btrfs:
             tcgets.qualify(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r,winsz=True)
             need(r['rseq_tiocgwinsz_btrfs_fixture']['status']=='passed','all17 added pairs and one actual/supplied-result refusal')
+        if pair is not None:
+            pair.qualify(builder,products,ROOT,private,library_root,pin,binary,aliases,run,r)
+            need(r['native_pair_fixture']['status']=='passed','all22 actual native-pair profiles and their complete failed prefixes')
         r['status']='passed'
     except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
     finally:
@@ -166,6 +183,9 @@ def main():
         for label,fn in (('closure',stable),('namespace',lambda:registered.finalize(r)),('boundary_namespace',lambda:boundary.finalize(r)),('tcgets_namespace',lambda:tcgets.finalize(r)if a.tcgets_btrfs else None)):
             try:fn()
             except BaseException as exc:r['final_errors'].append(label+': '+type(exc).__name__+': '+str(exc))
+        if pair is not None:
+            try:pair.finalize(r)
+            except BaseException as exc:r['final_errors'].append('native_pair_namespace: '+type(exc).__name__+': '+str(exc))
         try:r['source_after']=source();need(r['source_after']==r['source'],'exact committed source unchanged')
         except BaseException as exc:r['final_errors'].append('source: '+type(exc).__name__+': '+str(exc))
         r['inputs_after']={};r['artifacts_after']={};r['aliases_after']={}
