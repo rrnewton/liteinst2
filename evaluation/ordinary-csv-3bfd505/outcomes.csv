@@ -1,0 +1,2 @@
+revision,attempt,passed,failed,unrun_original_calls,unrun_installed_calls,actual_original_calls,actual_installed_calls,functional_rows,native_exit,normal_closure,rescues
+3bfd505852069856f56490271a07af9169a9fc24,1,0,1,16,16,0,0,0,101,1,0

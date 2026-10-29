@@ -108,7 +108,7 @@ def main():
         assert sha(c) == 'f8f98cc0550cf3ba72d2f2558f45057d2889870e804b51f599d4050ffb37cddd'
         step('csv-build', ['/usr/bin/gcc','-O2','-fno-tree-vectorize','-fno-if-conversion','-fno-if-conversion2',
             '-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-stack-protector',
-            '-fcf-protection=none','-fPIC','-nostdlib','-shared','-Wl,--build-id=none','-o',candidate,c])
+            '-fcf-protection=none','-fPIC','-nostdlib','-shared','-Wl,--build-id=none,-z,now','-o',candidate,c])
         shutil.copyfile(candidate, trusted)
         assert candidate.stat().st_ino != trusted.stat().st_ino and candidate.read_bytes() == trusted.read_bytes()
         symbols = step('csv-symbols', ['/usr/bin/readelf','--wide','--syms',trusted], 30)
