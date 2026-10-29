@@ -3025,6 +3025,637 @@
       }
     }
   },
+  "main5a0": {
+    "added_methods": {
+      "tests/support/native_normal_csv/tests.rs": [
+        "csv_cases_arguments_and_profile_keep_all_sixteen_and_legacy_limits",
+        "csv_ready_keeps_complete_heads_returns_maps_and_distinct_extent_authority",
+        "csv_body_inspection_refuses_wrong_input_path_value_and_return",
+        "csv_pair_requires_both_calls_returns_reaps_and_complete_comparison_counts",
+        "csv_population_requires_every_ordered_pair_and_each_seeds_return_union",
+        "csv_trace_summary_keeps_source_and_observed_coverage_separate"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/csv/tests.rs": [
+        "csv_corpus_and_guarded_results_keep_every_literal_case",
+        "csv_batch_refuses_identity_owner_acknowledgement_and_stack_corruption",
+        "csv_all_return_roles_and_every_journal_word_are_mandatory",
+        "csv_report_history_requires_all_slots_payloads_and_two_actions",
+        "csv_failed_real_storage_postflight_withholds_transfer",
+        "csv_output_keeps_all_cases_and_full_width_endpoint_words",
+        "csv_mapping_classes_keep_private_source_and_shared_images_distinct"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": [
+        "no_timing_hooks_never_read_clock_or_keep_storage",
+        "capture_hooks_require_full_order_and_twelve_pair_ranges",
+        "capture_requires_all_blocks_and_original_service_tail",
+        "shared_clock_arithmetic_keeps_domain_zero_and_maximum",
+        "elapsed_output_preserves_functional_rows_and_fixed_timing_suffix",
+        "elapsed_output_rejects_unfinished_capture_and_wrong_roles",
+        "printed_timing_does_not_override_original_completion_deadline"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal/tests.rs": [
+        "certified_blocks_compose_all_roles_beyond_whole_extent"
+      ]
+    },
+    "base": "a9fd9bc125baf0bb181854a43da6ff61e546c687",
+    "current_corpus_sha256": "be422fc824a36d9417012794c620ee17d2ba25c3051669faea1bf616c6eadcbb",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 21,
+      "rust_tests": 21
+    },
+    "doctests": {},
+    "instances": {
+      "tests/support/native_normal_csv/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::csv::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/csv/tests.rs": {
+        "unit/ordinary_interval/main": "normal::csv::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": {
+        "unit/ordinary_interval/main": "normal::observer::backoff::elapsed::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::site::ordinary::normal::tests::"
+      }
+    },
+    "listed_additions": {
+      "test/frontend_native_calibrations": [
+        "oracle::native_ordinary::normal_caller::csv::tests::csv_body_inspection_refuses_wrong_input_path_value_and_return",
+        "oracle::native_ordinary::normal_caller::csv::tests::csv_cases_arguments_and_profile_keep_all_sixteen_and_legacy_limits",
+        "oracle::native_ordinary::normal_caller::csv::tests::csv_pair_requires_both_calls_returns_reaps_and_complete_comparison_counts",
+        "oracle::native_ordinary::normal_caller::csv::tests::csv_population_requires_every_ordered_pair_and_each_seeds_return_union",
+        "oracle::native_ordinary::normal_caller::csv::tests::csv_ready_keeps_complete_heads_returns_maps_and_distinct_extent_authority",
+        "oracle::native_ordinary::normal_caller::csv::tests::csv_trace_summary_keeps_source_and_observed_coverage_separate"
+      ],
+      "unit/ordinary_interval/main": [
+        "normal::csv::tests::csv_all_return_roles_and_every_journal_word_are_mandatory",
+        "normal::csv::tests::csv_batch_refuses_identity_owner_acknowledgement_and_stack_corruption",
+        "normal::csv::tests::csv_corpus_and_guarded_results_keep_every_literal_case",
+        "normal::csv::tests::csv_failed_real_storage_postflight_withholds_transfer",
+        "normal::csv::tests::csv_mapping_classes_keep_private_source_and_shared_images_distinct",
+        "normal::csv::tests::csv_output_keeps_all_cases_and_full_width_endpoint_words",
+        "normal::csv::tests::csv_report_history_requires_all_slots_payloads_and_two_actions",
+        "normal::observer::backoff::elapsed::tests::capture_hooks_require_full_order_and_twelve_pair_ranges",
+        "normal::observer::backoff::elapsed::tests::capture_requires_all_blocks_and_original_service_tail",
+        "normal::observer::backoff::elapsed::tests::elapsed_output_preserves_functional_rows_and_fixed_timing_suffix",
+        "normal::observer::backoff::elapsed::tests::elapsed_output_rejects_unfinished_capture_and_wrong_roles",
+        "normal::observer::backoff::elapsed::tests::no_timing_hooks_never_read_clock_or_keep_storage",
+        "normal::observer::backoff::elapsed::tests::printed_timing_does_not_override_original_completion_deadline",
+        "normal::observer::backoff::elapsed::tests::shared_clock_arithmetic_keeps_domain_zero_and_maximum"
+      ],
+      "unit/rapid_profiler/lib": [
+        "frontend_native::always_on::site::ordinary::normal::tests::certified_blocks_compose_all_roles_beyond_whole_extent"
+      ]
+    },
+    "macros": {},
+    "merge_base": "8e9fc87c467379b11a1253ded6174bc7db21f037",
+    "methods": {
+      "tests/support/native_normal_csv/tests.rs": {
+        "all": [
+          "csv_cases_arguments_and_profile_keep_all_sixteen_and_legacy_limits",
+          "csv_ready_keeps_complete_heads_returns_maps_and_distinct_extent_authority",
+          "csv_body_inspection_refuses_wrong_input_path_value_and_return",
+          "csv_pair_requires_both_calls_returns_reaps_and_complete_comparison_counts",
+          "csv_population_requires_every_ordered_pair_and_each_seeds_return_union",
+          "csv_trace_summary_keeps_source_and_observed_coverage_separate"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/csv/tests.rs": {
+        "all": [
+          "csv_corpus_and_guarded_results_keep_every_literal_case",
+          "csv_batch_refuses_identity_owner_acknowledgement_and_stack_corruption",
+          "csv_all_return_roles_and_every_journal_word_are_mandatory",
+          "csv_report_history_requires_all_slots_payloads_and_two_actions",
+          "csv_failed_real_storage_postflight_withholds_transfer",
+          "csv_output_keeps_all_cases_and_full_width_endpoint_words",
+          "csv_mapping_classes_keep_private_source_and_shared_images_distinct"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": {
+        "all": [
+          "no_timing_hooks_never_read_clock_or_keep_storage",
+          "capture_hooks_require_full_order_and_twelve_pair_ranges",
+          "capture_requires_all_blocks_and_original_service_tail",
+          "shared_clock_arithmetic_keeps_domain_zero_and_maximum",
+          "elapsed_output_preserves_functional_rows_and_fixed_timing_suffix",
+          "elapsed_output_rejects_unfinished_capture_and_wrong_roles",
+          "printed_timing_does_not_override_original_completion_deadline"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal/tests.rs": {
+        "all": [
+          "certified_blocks_compose_all_roles_beyond_whole_extent"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "Cargo.toml": [
+        "name = \"precontext_native\"\npath = \"tests/precontext_native.rs\"\nharness = false"
+      ],
+      "tests/precontext_native.rs": [
+        "#[path = \"support/native_interval_oracle.rs\"]\nmod oracle;"
+      ],
+      "tests/support/native_interval_oracle.rs": [
+        "#[path = \"native_ordinary.rs\"]\npub mod native_ordinary;"
+      ],
+      "tests/support/native_normal_caller.rs": [
+        "#[path = \"native_normal_csv.rs\"]\npub mod csv;"
+      ],
+      "tests/support/native_normal_csv.rs": [
+        "#[cfg(test)]\n#[path = \"native_normal_csv/tests.rs\"]\nmod tests;"
+      ],
+      "tests/support/native_ordinary.rs": [
+        "#[path = \"native_normal_caller.rs\"]\npub mod normal_caller;"
+      ],
+      "tools/rapid-profiler/Cargo.toml": [
+        "name = \"frontend-native-calibrations\"\npath = \"native-interval/calibrations.rs\"",
+        "name = \"frontend-native-oracle\"\npath = \"native-interval/main.rs\"\ntest = false",
+        "name = \"frontend-native-point\"\npath = \"native-point/main.rs\"\ntest = false",
+        "name = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true"
+      ],
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/main.rs": [
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal.rs": [
+        "pub(super) mod csv;",
+        "pub(super) mod observer;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/csv.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer.rs": [
+        "pub(crate) mod backoff;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": [
+        "pub(crate) mod elapsed;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": [
+        "pub(super) mod site;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site.rs": [
+        "pub mod ordinary;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": [
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/mod.rs": [
+        "mod always_on;"
+      ],
+      "tools/rapid-profiler/src/lib.rs": [
+        "pub mod frontend_native;"
+      ]
+    },
+    "origin": "5a0bcf651e6b41d318a6202fb061c9fcd8351af0",
+    "predecessor": "5f284ae28400c25931ba5cdb2120182636fd1938",
+    "previous_corpus_sha256": "b9e80d867e27ec99fb7e1c51017cfab6e5f2ca580dc057b6a7da6a9b65df0010",
+    "projections": {
+      "tests/support/native_normal_caller.rs": {
+        "current_sha256": "02e6995756f9fad0d15b4c5616c15c9e4ba6d4effade2b81e71e183927705163",
+        "edits": [
+          [
+            305,
+            351,
+            ""
+          ],
+          [
+            5047,
+            5067,
+            ""
+          ],
+          [
+            5246,
+            5291,
+            ""
+          ],
+          [
+            5453,
+            5499,
+            ""
+          ],
+          [
+            5678,
+            5726,
+            ""
+          ],
+          [
+            5895,
+            5953,
+            ""
+          ],
+          [
+            8373,
+            8607,
+            ""
+          ],
+          [
+            23924,
+            24123,
+            ""
+          ],
+          [
+            26468,
+            26712,
+            ""
+          ],
+          [
+            37939,
+            38603,
+            ""
+          ],
+          [
+            46195,
+            46628,
+            "        let maps = if profile == CallerProfile::Legacy {\n"
+          ]
+        ],
+        "previous_sha256": "bf3c11ddd177ef642cf482f5b2a206320d88407637578b5ec4c2cb70fbb259b3"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "dbfca6e6b736d4f6fb609ae399e5863a9920c5c2cfb62e224f9a8db3cfeb30ab",
+        "edits": [
+          [
+            39640,
+            40885,
+            ""
+          ]
+        ],
+        "previous_sha256": "0b0dc8b3094728b799ebb945ae09c4b9ca858144aea6d74c0acf446049775a48"
+      },
+      "tools/rapid-profiler/native-interval/normal.rs": {
+        "current_sha256": "fa2bbcc23912b419926bd4bc6387d6d0f6373ca4ea5fe76426bd045518bf6575",
+        "edits": [
+          [
+            890,
+            910,
+            ""
+          ],
+          [
+            9504,
+            9543,
+            ""
+          ],
+          [
+            9586,
+            9880,
+            "    let (bound, expected) = if let Some(case) = exact_case {\n"
+          ],
+          [
+            12833,
+            13443,
+            "        let prep = NormalSitePreparation::new_whole_function(\n            owner,\n            CodeIdentity {\n                source: SourceIdentity([0x6f; 32]),\n                mapping: entry,\n                generation: 1,\n            },\n        )\n"
+          ],
+          [
+            21339,
+            21503,
+            ""
+          ]
+        ],
+        "previous_sha256": "ba8d8e8a7298457cb312fbb6a1572db0d5a63f6f650ab37dc3540f7587dac433"
+      },
+      "tools/rapid-profiler/normal-work/backoff_probe.py": {
+        "current_sha256": "f63d909650a0f07733c61977e3fe03837355560b2fcb3268f1a6069cbe9402b0",
+        "edits": [
+          [
+            1934,
+            2701,
+            ""
+          ],
+          [
+            4391,
+            4481,
+            "    'driver-controls', 'rust-controls', 'pending-rust-controls')\n"
+          ],
+          [
+            11589,
+            11830,
+            "        'ordinary-interval/normal/observer/backoff/check.rs','ordinary-interval/normal/observer/backoff/tests.rs'))\n"
+          ],
+          [
+            22578,
+            22728,
+            "        q=P.qualified_inputs(repo,qualified,a.revision,env,cpus,before,tools,pins,prior,census,fixture,INVENTORY_PREFIX,RUST+OWNER_RUST)\n"
+          ],
+          [
+            23920,
+            24050,
+            "        for name,methods in (('rust-controls',RUST),('pending-rust-controls',OWNER_RUST)):\n"
+          ]
+        ],
+        "previous_sha256": "cfa412399c4cff0ecf453a598bb67af2280fd326a06a367a36e67a5e10c58d9e"
+      },
+      "tools/rapid-profiler/normal-work/test_backoff_probe.py": {
+        "current_sha256": "b1350808681ad95645543967a7433f9272e70a53d955eea07c5bad4cad84c24e",
+        "edits": [
+          [
+            3558,
+            3711,
+            "        inventory=[*D.RUST,*D.OWNER_RUST,'other::literal_test']\n"
+          ],
+          [
+            8428,
+            8531,
+            "            self.pins,self.prior,C,self.fixture,D.INVENTORY_PREFIX,D.RUST+D.OWNER_RUST)\n"
+          ],
+          [
+            15220,
+            15339,
+            "                'stage-cwd','rescue','parent-log','helper-alias','selection-revision','population'):\n"
+          ],
+          [
+            16638,
+            16811,
+            ""
+          ]
+        ],
+        "previous_sha256": "b79a11972f7ef2a788344b11d7f6acd447b98a727bc4ccb6f1c997e6e61e2362"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "bf41820b971f1e0763ec7e872d3d8c0518b3073f49e72c8077bf1055877f8ef5",
+        "edits": [
+          [
+            12751,
+            13056,
+            ""
+          ]
+        ],
+        "previous_sha256": "8587dce8fb0a5fbe7ddc6c340d6f68acb858a3030ed465f1c2003b03da3a1009"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal.rs": {
+        "current_sha256": "adb85c37787484fca070c7065ba46f09295ddc4c9cc057d8b795d64a6393c61d",
+        "edits": [
+          [
+            865,
+            885,
+            ""
+          ]
+        ],
+        "previous_sha256": "113aca20cecbfa5b6374b74da3b7a92aacc053b445a1447b8f61025dbd817119"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": {
+        "current_sha256": "41041971cdebdbb12db72990019dda09b728042ee868c015e254bf27fe523cf6",
+        "edits": [
+          [
+            517,
+            541,
+            ""
+          ],
+          [
+            14812,
+            14983,
+            ""
+          ],
+          [
+            15273,
+            15323,
+            "    writeln!(text, \"{SCOPE}\\n{HEADER}\").unwrap();\n"
+          ],
+          [
+            16426,
+            17280,
+            "    writeln!(text,\"normal-observer-backoff FUNCTIONAL_PASS k={} policy=10ms-2ms epoch_limit=520 stop_reason=Requested arms={arms} committed_arms={arms} completed_arms={arms} pending_arm=none repetitions=128 calls=3072 helper_calls=1536 instructions=614400 conditional=99840 taken=96768 input_bytes=99840 ret_bytes=24576 pid={} tid={} controller_tid={controller} app_cpu={app_cpu} controller_cpu={controller_cpu} entry={} caller={} install={INSTALL} function=1 batches=128 events=6144 rows=3072 sampled={} unsampled={} reports={arms} records={} actions={} journal_words=65536 next_entry_acknowledgements=2944 checkpoint_acknowledgements=128 banks=3 observed_generations={} rearmed={} sampled_after_closed={} input_unchanged=true detached=true joined=1 deadline_scope=issued-arms-and-requested-shutdown all_elapsed_due_arms=unqualified cheap_off=false timing=none\",\n"
+          ],
+          [
+            18038,
+            18219,
+            ""
+          ],
+          [
+            18780,
+            18854,
+            ""
+          ],
+          [
+            22466,
+            22929,
+            ""
+          ],
+          [
+            23083,
+            23195,
+            ""
+          ],
+          [
+            23525,
+            23635,
+            ""
+          ],
+          [
+            26160,
+            26297,
+            ""
+          ],
+          [
+            26632,
+            26682,
+            "    } = prepare(args);\n"
+          ],
+          [
+            28219,
+            28291,
+            ""
+          ],
+          [
+            28389,
+            28418,
+            "        call_range(\n"
+          ],
+          [
+            28552,
+            28597,
+            "            first..last,\n"
+          ],
+          [
+            32008,
+            32125,
+            "    let text = output(Export {\n"
+          ]
+        ],
+        "previous_sha256": "ffb0430c1954f771b6d14e0881f91a1fa4cbaa302c236401be124fd07019e648"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": {
+        "current_sha256": "a49e4a9e9ce0f3797c56bf0adaf6d039dd9bfe1f727010dca0daee702c955293",
+        "edits": [
+          [
+            702,
+            779,
+            "struct Span {\n    start: u64,\n    end: u64,\n"
+          ],
+          [
+            826,
+            856,
+            "enum TimingError {\n"
+          ],
+          [
+            969,
+            1078,
+            "struct Timing {\n    setup: u64,\n    body: u64,\n    service: u64,\n"
+          ],
+          [
+            1080,
+            1162,
+            "fn nanoseconds(seconds: i64, nanos: i64) -> Result<u64, TimingError> {\n"
+          ],
+          [
+            1529,
+            1558,
+            "fn now() -> u64 {\n"
+          ],
+          [
+            2034,
+            2157,
+            "fn validate_timing(setup: Span, bodies: &[Span], service: Span) -> Result<Timing, TimingError> {\n"
+          ]
+        ],
+        "previous_sha256": "6468525caf617fc22d20bc6bb0fe6b96ecf03f98cb9f061510c21093f8d7cea9"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal.rs": {
+        "current_sha256": "5377f586c572a67fc955efe5e800dfbceb5953bcc17b313baefe92bcdd114719",
+        "edits": [
+          [
+            1686,
+            2841,
+            ""
+          ],
+          [
+            4894,
+            4919,
+            ""
+          ]
+        ],
+        "previous_sha256": "5e4ddd4151a540af1bda25c368adaa6cbdc8ecdeb9b84c0085d61f39e7f3f5b7"
+      }
+    },
+    "python_methods": {
+      "tools/rapid-profiler/normal-work/test_backoff_elapsed_probe.py": [
+        "Controls.test_fixed_twenty_catalog_and_exact_timer_role_argv",
+        "Controls.test_all_four_observation_identities_and_raw_clock_separation",
+        "Controls.test_printed_success_nonzero_is_failure_and_missing_identity_stops",
+        "Controls.test_owner_prerequisites_and_custody_gate_the_frozen_remainder",
+        "Controls.test_projection_keeps_all_rows_and_only_joined_nonzero_ratios",
+        "Controls.test_exact_old_and_new_censuses_and_authenticated_prerequisite",
+        "Controls.test_request_closure_and_completed_pins_are_not_refreshable",
+        "Controls.test_local_import_optimized_refusal_and_exact_control_census"
+      ],
+      "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": [
+        "Controls.test_complete_k10_k1000_population_and_lossless_timing",
+        "Controls.test_empty_epochs_all_sampled_and_maximum_history",
+        "Controls.test_zero_full_width_and_separate_clock_origins",
+        "Controls.test_actual_grammar_framing_caps_and_request_domains",
+        "Controls.test_functional_terminal_policy_identity_counts_and_order",
+        "Controls.test_complete_work_owner_stack_ack_and_history_report_joins",
+        "Controls.test_timing_population_order_and_columns",
+        "Controls.test_timing_numbers_arithmetic_and_enclosure_boundaries",
+        "Controls.test_timing_terminal_and_request_identity",
+        "Controls.test_old_grammars_remain_distinct",
+        "Controls.test_source_local_import_and_optimized_entrypoints"
+      ],
+      "tools/rapid-profiler/normal-work/test_backoff_probe.py": [
+        "Controls.test_fixed_catalog_role_argv_and_request_bounds",
+        "Controls.test_closed_exit_and_signal_failures_continue_without_pass",
+        "Controls.test_custody_failures_and_changed_catalog_withhold_remainder",
+        "Controls.test_projection_preserves_all_outcomes_and_raw_counts_without_timing",
+        "Controls.test_qualified_inputs_return_exact_authenticated_context",
+        "Controls.test_qualified_inputs_refuse_mutated_context_and_artifact_authority",
+        "Controls.test_shared_closure_inventory_and_pins_remain_strict",
+        "Controls.test_local_import_and_optimized_refusal"
+      ]
+    },
+    "scope": "21 exact new declarations in three existing automatic test harnesses. Native-oracle/point bins remain test=false and precontext_native remains harness=false; no new automatic count is assigned there. Historical layers,350 recorder identities,serial1039,all failures and limits remain exact. External Python names are pinned source only.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/ordinary-backoff-elapsed-4e651e2/reproduce.py": "76802e286e9e094f56cabf6a6138c225f9826cb308cfa90dbfd3ec51bc627fe8",
+      "evaluation/ordinary-backoff-elapsed-a29012f/reproduce.py": "d4c05877c202a7a151deff49431445115a41cd724c86a7ad675320eaa2e9f7a4",
+      "evaluation/ordinary-csv-native/controls.py": "8a1c6c629ca22d6ae61cd85860735ba62c2c5fb2d074b13825d3a05fe1c6bef1",
+      "evaluation/ordinary-csv-native/csv_native.py": "5f709c730847e97463b73260c6246f0b6ea20fe3e1cb0a253323b103c5915b6e",
+      "evaluation/ordinary-csv-native/reproduce.py": "25e61e1506eeb2754ac2379346812659f8b54ca3e530c518d256d25c341dfb51",
+      "evaluation/ordinary-csv/caller_controls.py": "6debaf97c78f0129c20801a79e44d7b866a4f6084cf50b69f99bef907dc30b7c",
+      "evaluation/ordinary-csv/reproduce.py": "ae70dac850876452d1f09a8480d4381a5814846e1a7e394a33f620bb00699cf3",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_normal_caller.rs": "02e6995756f9fad0d15b4c5616c15c9e4ba6d4effade2b81e71e183927705163",
+      "tests/support/native_normal_csv.rs": "783d8ac3ec136295f6e97114ea5481d46cafd7421eecf1cac992fdc1184b85db",
+      "tests/support/native_normal_csv/tests.rs": "d7035987e585c2d50949b54a400ca6ca7f40f8d8f8340c21d9ededb786937503",
+      "tests/support/native_ordinary.rs": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "60c2e699e3d4224aab090c9163075380384a564863c6c5fdbb9193fae150c0f2",
+      "tools/rapid-profiler/native-interval/main.rs": "dbfca6e6b736d4f6fb609ae399e5863a9920c5c2cfb62e224f9a8db3cfeb30ab",
+      "tools/rapid-profiler/native-interval/normal.rs": "fa2bbcc23912b419926bd4bc6387d6d0f6373ca4ea5fe76426bd045518bf6575",
+      "tools/rapid-profiler/native-interval/normal/csv.rs": "a1a8f6a51144718a7804a8b88145ea98f2f214f6d9b86bc95236ddc6557dae4e",
+      "tools/rapid-profiler/normal-work/backoff_elapsed_probe.py": "5678b33ad513ad6f19d0cacec9fdce5d2f63bf95f168b2df336b4a429ee6d039",
+      "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "3c74562f4e57872752af53ef5ec5d5f36964d6a19d64c1723b0c5ff1d755f024",
+      "tools/rapid-profiler/normal-work/backoff_probe.py": "f63d909650a0f07733c61977e3fe03837355560b2fcb3268f1a6069cbe9402b0",
+      "tools/rapid-profiler/normal-work/csv_fields.c": "f8f98cc0550cf3ba72d2f2558f45057d2889870e804b51f599d4050ffb37cddd",
+      "tools/rapid-profiler/normal-work/test_backoff_elapsed_probe.py": "97cdd96e0632b8802ef1302a24a5fef5db5cfd97d2d69cafded7f351e33f4c4f",
+      "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37",
+      "tools/rapid-profiler/normal-work/test_backoff_probe.py": "b1350808681ad95645543967a7433f9272e70a53d955eea07c5bad4cad84c24e",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "bf41820b971f1e0763ec7e872d3d8c0518b3073f49e72c8077bf1055877f8ef5",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "adb85c37787484fca070c7065ba46f09295ddc4c9cc057d8b795d64a6393c61d",
+      "tools/rapid-profiler/ordinary-interval/normal/csv.rs": "dd8469990ae9a507e932d4e85a38247ada68f819eac11f9d544154e9e12a4f5c",
+      "tools/rapid-profiler/ordinary-interval/normal/csv/check.rs": "087d11824a3f66e8e2726402516c4e4abe4b5daf76d86369fd66c64db45f84ae",
+      "tools/rapid-profiler/ordinary-interval/normal/csv/tests.rs": "d9d5550f938d4b39d0dcb3a138c16fbbec208f76af2aa7a4f0ce2e3c16025158",
+      "tools/rapid-profiler/ordinary-interval/normal/observer.rs": "e0d24510f4798c414801e444a8d16e240b7885c93ee12ab9b8a7c44513d7aba0",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": "41041971cdebdbb12db72990019dda09b728042ee868c015e254bf27fe523cf6",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed.rs": "46e08ca762ead4b1e3ad75f5f28ae98e534d2d029a5b55d6ccbcd63223b1e779",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": "00a69e01739cee5cb24b8d18dc50d7ef6f8dd1f283605b1570fbca568225ead6",
+      "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": "a49e4a9e9ce0f3797c56bf0adaf6d039dd9bfe1f727010dca0daee702c955293",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "33b4c806de3b1b535e8e6f75768a0f9c08e58beaba7af89bb848c85b39217414",
+      "tools/rapid-profiler/src/frontend_native/always_on/site.rs": "5f0679a8a29ae8c3c047fc905c705075005eeee9989f0a88419263cc67d9906c",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "434c1b75d1d75c6abe32b938ad5f84220cca67e11a62112e4711cb6f457ffd59",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal.rs": "5377f586c572a67fc955efe5e800dfbceb5953bcc17b313baefe92bcdd114719",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal/tests.rs": "43bfa070b81ac7d6b338b0f44e4126e6104ab000071d394a170a3b974d688795",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "9a3fef07d183f79111575d6d83ee2c5246dd5ff8df4051cde8a525273006cbb4",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 150
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 144
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 190
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 176
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 31,
+          "tests": 446
+        },
+        "previous": {
+          "ignored": 31,
+          "tests": 445
+        }
+      }
+    }
+  },
   "main690": {
     "base": "e0d94eb766db5e070ef853ad28c5b9d52ad0dcf3",
     "current_corpus_sha256": "61e6fe15da8d2484b9abf1cbe9d1e9fbaf91896ec5aeea31f4fc1d3365617548",
