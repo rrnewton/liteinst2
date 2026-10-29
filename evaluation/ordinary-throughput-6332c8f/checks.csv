@@ -1,0 +1,9 @@
+attempt,check,command,status,passed,failed,ignored,wall_limit_seconds,seconds,exit_code,reaped_descendants,log_sha256
+initial,fmt,cargo fmt --check,PASS,0,0,0,180,6.856582136824727,0,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+initial,clippy,cargo clippy --workspace --all-targets --all-features -- -D warnings,PASS,0,0,0,180,6.893823793157935,0,0,b138dba3742e8d44dcd3cf13f462ab8fe29639c3c7be8de3f64cbce9af0d5e42
+initial,check,cargo check --workspace --all-features --all-targets,PASS,0,0,0,180,20.196412310004234,0,0,d15516196be72e4a5e7f67bfa4827c1e76fe238a8afaa5a8e5e604205e2a71b4
+initial,workspace-default,cargo test --workspace,TIMEOUT,,,,360,360.05642899894156,-9,2,41a5eebcabc44a7af4558d312eeb3cc75976c8701ea89e58387cebb1a704e2d2
+completion,workspace-default,cargo test --workspace,PASS,3101,0,36,600,348.1144621989224,0,0,13ff16c09626681fa39bd92908261cca286dea2fbc34d06507a83545ee38c97d
+completion,serial-launch,cargo test -p liteinst-launch -- --test-threads=1 --nocapture,PASS,1039,0,0,180,151.89907492883503,0,0,0e678e713f8fe13296425418873a7972dd8f865fbdd5b30f75d91529f4663852
+completion,staged-allocation,cargo test -p liteinst2 --lib staged,PASS,3,0,0,180,0.07203191588632762,0,0,109ee0d12493ae40258151b66f7ccc35e2fe4ca362e67b007bd8c648276fbf85
+completion,prefixed-pun,cargo test -p liteinst2 --test prefixed_pun_oracle,PASS,36,0,0,180,1.556102337082848,0,0,6d9d84d8cf7a2d7bb11e327a7924cf672e8b4e7f93b26a69a95b20f7ff05d85c

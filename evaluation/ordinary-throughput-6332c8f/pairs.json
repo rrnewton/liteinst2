@@ -1,0 +1,72 @@
+[
+  {
+    "body": {
+      "denominator": 192764,
+      "numerator": 4159306,
+      "status": "EXACT_RATIO"
+    },
+    "pair": 1,
+    "service": {
+      "denominator": 203089521,
+      "numerator": 114809175,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "body": {
+      "denominator": 196460,
+      "numerator": 4226301,
+      "status": "EXACT_RATIO"
+    },
+    "pair": 2,
+    "service": {
+      "denominator": 218199326,
+      "numerator": 115001323,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "body": {
+      "denominator": 210412,
+      "numerator": 4163449,
+      "status": "EXACT_RATIO"
+    },
+    "pair": 3,
+    "service": {
+      "denominator": 217092935,
+      "numerator": 119221198,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "body": {
+      "denominator": 198173,
+      "numerator": 4157584,
+      "status": "EXACT_RATIO"
+    },
+    "pair": 4,
+    "service": {
+      "denominator": 221126921,
+      "numerator": 108978281,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  },
+  {
+    "body": {
+      "denominator": 194311,
+      "numerator": 4182741,
+      "status": "EXACT_RATIO"
+    },
+    "pair": 5,
+    "service": {
+      "denominator": 206436777,
+      "numerator": 116580004,
+      "status": "EXACT_RATIO"
+    },
+    "status": "FUNCTIONALLY_VALID_PAIR"
+  }
+]

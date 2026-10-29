@@ -1,0 +1,504 @@
+{
+  "artifacts": {
+    "binary": {
+      "bytes": 6297304,
+      "sha256": "09f09a50d5c17567c49db01fc2ee216568b5c376bdcf1f7240f639f890a1105b"
+    },
+    "caller": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "caller_candidate": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "libtest": {
+      "bytes": 4078464,
+      "sha256": "4818e803a64086404b08245cd0218eabd118777243645b48c7bb2f0a03020132"
+    },
+    "selection": {
+      "bytes": 586,
+      "sha256": "4353a0bf223598ea87f218d8afea43d968ea2109a279d7ebb01721f555d05c06"
+    },
+    "subject": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    },
+    "timer": {
+      "bytes": 18488,
+      "sha256": "7d48341f781ce4cbf841dbe07b852dac3485673a04fdfa4ad4a14998a302f901"
+    },
+    "trusted": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    }
+  },
+  "catalog": {
+    "bytes": 39029,
+    "sha256": "c70963841f31b90e1884428a39f6e0a24f7864886689318327ae0d11921e52a3"
+  },
+  "completion_authority": "Require final private result plus root-authenticated final source and normal outer closure; this projection alone proves neither driver completion nor reservation.",
+  "error_type": null,
+  "exports": {
+    "pairs": {
+      "bytes": 1443,
+      "sha256": "de33558c26e089ccc2b2c00bd10f49d3a702410829df9f690141bfcdb9b0cf3c"
+    },
+    "timing": {
+      "bytes": 57583,
+      "sha256": "22db2108c465891efc6c98d41cfc4fc0e14141232bb6c1c2d40b1eea5b44d2c0"
+    },
+    "trials": {
+      "bytes": 3053,
+      "sha256": "79ff8e71cef66d63746dc5d229ee33a739882b3b8bf0d101908c52b1c84b2ef9"
+    }
+  },
+  "failure": null,
+  "observations": [
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          119.01,
+          114.95,
+          89.96
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:10.302793+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          119.01,
+          114.95,
+          89.96
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:09.828325+00:00"
+      },
+      "trial": 1
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          119.01,
+          114.95,
+          89.96
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:11.309485+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          119.01,
+          114.95,
+          89.96
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:10.932332+00:00"
+      },
+      "trial": 2
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:12.327721+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          119.01,
+          114.95,
+          89.96
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:11.957198+00:00"
+      },
+      "trial": 3
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:13.567536+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:12.958585+00:00"
+      },
+      "trial": 4
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:14.705313+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:14.227876+00:00"
+      },
+      "trial": 5
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:15.719142+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:15.345226+00:00"
+      },
+      "trial": 6
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:16.762431+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          113.16,
+          113.8,
+          89.72
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:16.375494+00:00"
+      },
+      "trial": 7
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          107.38,
+          112.59,
+          89.46
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:17.913632+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          107.38,
+          112.59,
+          89.46
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:17.432835+00:00"
+      },
+      "trial": 8
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          107.38,
+          112.59,
+          89.46
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:19.044880+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          107.38,
+          112.59,
+          89.46
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:18.569821+00:00"
+      },
+      "trial": 9
+    },
+    {
+      "after": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          107.38,
+          112.59,
+          89.46
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:20.075346+00:00"
+      },
+      "before": {
+        "affinity": [
+          215
+        ],
+        "load_average": [
+          107.38,
+          112.59,
+          89.46
+        ],
+        "reservation_tag": "li2core-normal-throughput-6332c8f",
+        "utc": "2026-10-29T02:47:19.699397+00:00"
+      },
+      "trial": 10
+    }
+  ],
+  "outer_owner_required": {
+    "log_bytes": 8388608,
+    "wall_seconds": 1200
+  },
+  "pairs": 5,
+  "prerequisite": {
+    "closure": {
+      "nested_normal_helpers": 46,
+      "nested_outer_owners": 48,
+      "owned_stages": 34,
+      "rescues": 0
+    },
+    "result": {
+      "bytes": 143857,
+      "sha256": "3f928bbfc28ce77af27e5ebad1e05d46231a1b762d0732f91eee1e75c01fd7c2"
+    },
+    "tools": {
+      "as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "gcc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "ld": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "strip": {
+        "bytes": 189816,
+        "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+      }
+    }
+  },
+  "protocol_sha256": "dc2925c6a562dcb444d824623fb2b5099621c23dc3280db757f3e81792b47671",
+  "reservation": {
+    "application_cpu": 224,
+    "authority": "Outer root wrapper must join exact command/tag, allocator transcript and hard AllowedCPUs. Tag/affinity do not establish reservation or quiet hardware.",
+    "inherited_cpus": [
+      215,
+      224,
+      251,
+      297
+    ],
+    "producer_cpu": 215,
+    "tag": "li2core-normal-throughput-6332c8f",
+    "timer_cpu": 251,
+    "verified": false
+  },
+  "revision": "6332c8f229833e7f6b9a7c99c9101c410e6cb0cb",
+  "schema_sha256": "4715804d6e8965f91024cbcf64f16a936061722199f3a22a179b988f9eb75c3c",
+  "scope": "Fixed-work elapsed-wall observations; no warmup, retry, subtraction, outlier removal, performance threshold, confidence, accuracy or full-A5 claim. Segmented call-path spans include wrapper/loop work and 23 next-entry confirmations per block; 128 final confirmations/transfers remain in service. RAW collector clocks and MONOTONIC process clocks have different origins. The whole-process child includes taskset setup, initialization, output and exit. Prior strict 2 ms failures remain failures.",
+  "sources": {
+    "after": {
+      "bytes": 78714,
+      "sha256": "bc731bc06f1e535c21a8cc63dfe503d275da4b76c228a2b9be23ad281677af7c"
+    },
+    "count": 489,
+    "manifest": {
+      "bytes": 78714,
+      "sha256": "bc731bc06f1e535c21a8cc63dfe503d275da4b76c228a2b9be23ad281677af7c"
+    }
+  },
+  "stage": "complete",
+  "stage_results": {
+    "checker-controls": {
+      "bytes": 1563,
+      "sha256": "6d92a226a9bc7549464975c203524c63b33ea13c85cd6a37c22972bc95292d09"
+    },
+    "driver-controls": {
+      "bytes": 1562,
+      "sha256": "98219d896d38bf63696a1c25d4e449cbf29142bf821c4a60f2daf69136317b19"
+    },
+    "prerequisite": {
+      "bytes": 632,
+      "sha256": "ce448087f2f6abdaf1a599b5b1650cadd8f22d435480b5e5b9b278bc7d9dbc5b"
+    },
+    "rust-controls": {
+      "bytes": 1560,
+      "sha256": "fcec7e81a3c00e6bc58b346d56a0cd6fe3173c828bc075806fc0f8a4c12aa173"
+    },
+    "timer-build": {
+      "bytes": 1556,
+      "sha256": "0a549c414b375ce64b1831e53728e7799dac54c1e7e5f76eda280725d609007c"
+    },
+    "timer-controls": {
+      "bytes": 1561,
+      "sha256": "efe02500418b281ae5b8117698d774d4089e1016b359197ab4ad02f93e6ac4bc"
+    }
+  },
+  "stage_statuses": [
+    {
+      "name": "prerequisite",
+      "status": "PASS"
+    },
+    {
+      "name": "checker-controls",
+      "status": "PASS"
+    },
+    {
+      "name": "driver-controls",
+      "status": "PASS"
+    },
+    {
+      "name": "timer-controls",
+      "status": "PASS"
+    },
+    {
+      "name": "rust-controls",
+      "status": "PASS"
+    },
+    {
+      "name": "timer-build",
+      "status": "PASS"
+    }
+  ],
+  "status": "DESCRIPTIVE_PROJECTION",
+  "timing_rows": 1300,
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "taskset": {
+      "bytes": 23784,
+      "sha256": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741"
+    }
+  },
+  "trial_outcome": "COMPLETE",
+  "trials": 10
+}
