@@ -1,0 +1,3 @@
+name,status,attempts,required_pairs,retained_pairs,unaccepted_slots,observed_status,comparisons,target_calls,target_returns,outer_returns,normal_reaps,seconds,exit,termination,rescue_reaps,cleanup_complete
+legacy,LOCAL_NATIVE_CHECKS_COMPLETE,1,48,48,0,PREREQUISITE_COMPLETE,4490,96,96,96,96,23.91286891908385,0,,0,True
+leaf,FAILED,1,1280,791,489,OBSERVED_UNQUALIFIED,96231,1582,1582,1582,1582,510.07146024820395,-9,timeout,2,True

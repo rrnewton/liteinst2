@@ -1,0 +1,281 @@
+{
+  "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+  "allocator_sources_sha256": "5a7f949da747e401075cc24741815646e16107b025da6ca5c2322567769797c4",
+  "archived_evidence_rechecked": true,
+  "attempts": 1,
+  "checks": {
+    "command": [
+      "/usr/bin/env",
+      "XDG_RUNTIME_DIR=$RUNTIME_DIR",
+      "DBUS_SESSION_BUS_ADDRESS=unix:path=$RUNTIME_DIR/bus",
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "8",
+      "--sample-s",
+      "1",
+      "--tag",
+      "li2core-leaf-whole-checks-cadf5e7",
+      "--",
+      "$PYTHON",
+      "-B",
+      "evaluation/admission/check_exec_identity.py",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--output",
+      "$REPO/ignored/a5/normal-leaf-whole-cadf5e7-checks",
+      "--checks-only"
+    ],
+    "compiler_jobs": 4,
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "b6d4af77f03eedef93a06ee68e4625fe360f8c11df397fd4ed2024713f01fbf6",
+      "reaped_descendants": 0,
+      "seconds": 499.29799458011985,
+      "start_utc": "2026-10-29T14:31:22.680329+00:00",
+      "termination": null
+    },
+    "outer_receipt": {
+      "bytes": 1264,
+      "sha256": "a931a2815485dda6c01067ea9ca82a9ff12abd7f960a17d22be087bc269bc962"
+    },
+    "parallelism": "Default libtest within the hard eight-CPU mask; serial-launch explicitly uses one thread. No 316-thread claim.",
+    "receipt": {
+      "bytes": 21877,
+      "sha256": "68d28a0d92e13da9b676c0cd862afedd80e2770dd977f3a78d3655bea681ca36"
+    },
+    "reserved_cpus": [
+      15,
+      154,
+      157,
+      188,
+      202,
+      210,
+      238,
+      313
+    ],
+    "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+    "status": "PASS"
+  },
+  "claim": 4,
+  "closure_audit": {
+    "bytes": 493,
+    "sha256": "0b52d7d8c8ee3d53f64764b941a9655fcf4d8815c5c5d7da753671b60fcc0f6e"
+  },
+  "closure_audit_summary": {
+    "CLOSED": true,
+    "all_current_build_products_verified": true,
+    "bytes": 48959717,
+    "custody_closed": true,
+    "files": 285,
+    "reason": "leaf-native-outer timeout510; one fixed attempt; retained prefix not qualified",
+    "recipe_receipt_sha256": "65dd3dee8c268c959539a973bbfa10d18ef6329362866b50ba228c24651514df",
+    "result": "FAILED",
+    "revision": "cadf5e768eaf3cd898b7070c39b903fcdb22fab0",
+    "root_receipt_sha256": "92b87e92a08e1ad59150aeefa9da7901ea8536cdcd488e5017a125ee5d1423cc"
+  },
+  "cpu_roles": {
+    "native_parent_and_tracees": 131,
+    "supervisor_build_controls": [
+      98,
+      131,
+      177
+    ]
+  },
+  "hardware": {
+    "available_affinity_cpus": 8,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "kernel": "7.1.3",
+  "limits": {
+    "child_steps": 20000,
+    "cohort_cpu_seconds": 480,
+    "cohort_wall_seconds": 510,
+    "outer_log_bytes": 8388608,
+    "outer_seconds": 1200,
+    "pair_wall_seconds": 15
+  },
+  "load_after": [
+    40.43,
+    36.42,
+    36.16
+  ],
+  "load_before": [
+    35.14,
+    38.92,
+    37.12
+  ],
+  "mutable_build_products_authenticated_at_original_closure": true,
+  "mutable_build_products_rechecked_by_summary": false,
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "ed2eca73fdc3cabe7f4b472a9f98878df6a6292821669cf077a187c28ff52491",
+    "reaped_descendants": 0,
+    "seconds": 612.2484531970695,
+    "start_utc": "2026-10-29T14:20:26.147303+00:00",
+    "termination": null
+  },
+  "performance_claim": false,
+  "prerequisites": {
+    "python_passed": 76,
+    "rust_hardware_ignored": 1,
+    "rust_passed": 199,
+    "sdk_passed": 1
+  },
+  "protocol": {
+    "bytes": 185348,
+    "sha256": "8ceffe178b762da009913f071a5de333c4b33041fd9049d755219183e9a71a4f"
+  },
+  "recipe_receipt": {
+    "bytes": 666649,
+    "sha256": "65dd3dee8c268c959539a973bbfa10d18ef6329362866b50ba228c24651514df"
+  },
+  "request": {
+    "attempts": 1,
+    "command": [
+      "$PYTHON",
+      "-B",
+      "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+      "run",
+      "--cores",
+      "3",
+      "--sample-s",
+      "1",
+      "--tag",
+      "li2core-leaf-whole-native-cadf5e7",
+      "--",
+      "$PYTHON",
+      "-B",
+      "$REPO/evaluation/ordinary-leaf-set-native/reproduce.py",
+      "--revision",
+      "cadf5e768eaf3cd898b7070c39b903fcdb22fab0",
+      "--reservation-tag",
+      "li2core-leaf-whole-native-cadf5e7",
+      "--raw",
+      "$REPO/ignored/a5/normal-leaf-whole-native-cadf5e7-run1",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME"
+    ],
+    "cwd": "$REPO",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "DBUS_SESSION_BUS_ADDRESS": "unix:path=$RUNTIME_DIR/bus",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "XDG_RUNTIME_DIR": "$RUNTIME_DIR"
+    },
+    "limits": {
+      "build_reserve_bytes": 1073741824,
+      "evidence_bytes": 2147483648,
+      "outer_log_bytes": 8388608,
+      "outer_seconds": 1200,
+      "slot_limit_bytes": 20000000000,
+      "wrapper_bytes": 25165824
+    },
+    "profile": "leaf-whole-native",
+    "protocol_sha256": "8ceffe178b762da009913f071a5de333c4b33041fd9049d755219183e9a71a4f",
+    "retries": 0,
+    "tag": "li2core-leaf-whole-native-cadf5e7"
+  },
+  "reservation": {
+    "cores": [
+      98,
+      131,
+      177
+    ],
+    "count": 3,
+    "ledger_readback": false,
+    "recipe_exit": 1,
+    "status": "SOURCE_JOINED_NORMAL_ALLOCATOR_RETURN"
+  },
+  "retention_verified": true,
+  "retries": 0,
+  "revision": "cadf5e768eaf3cd898b7070c39b903fcdb22fab0",
+  "root_receipt": {
+    "bytes": 3468,
+    "sha256": "92b87e92a08e1ad59150aeefa9da7901ea8536cdcd488e5017a125ee5d1423cc"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Copied complete admitted Rust body only; no original-address Rust call-site ABI, threaded worker, K exhaustion, bank reuse, Schedule, timing or full-A5 credit. External hard reservation and exact-command outer closure remain required.",
+  "source_verified_after": true,
+  "status": "FAILED",
+  "tools": {
+    "bash": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "du": {
+      "bytes": 152832,
+      "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rg": {
+      "bytes": 4746600,
+      "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustdoc": {
+      "bytes": 13680928,
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "systemd-run": {
+      "bytes": 111360,
+      "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+    },
+    "true": {
+      "bytes": 27936,
+      "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+    }
+  }
+}
