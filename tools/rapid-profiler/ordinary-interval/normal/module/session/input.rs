@@ -1,8 +1,8 @@
 //! Strict one-record CSV grammar. Exact bytes, not a digest, own acceptance.
 use super::*;
 use shared::io::{Frame, Io};
-pub(super) const RECORDS: usize = 2048;
-pub(super) const PAYLOAD: usize = 64;
+pub(in crate::normal) const RECORDS: usize = 2048;
+pub(in crate::normal) const PAYLOAD: usize = 64;
 const GUARD: u8 = 0xa7;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::normal) enum Refusal {
@@ -12,7 +12,7 @@ pub(in crate::normal) enum Refusal {
     RecordLimit,
 }
 impl Refusal {
-    pub(super) fn label(self) -> &'static str {
+    pub(in crate::normal) fn label(self) -> &'static str {
         match self {
             Self::Syntax => "syntax",
             Self::Overlong => "overlong",
@@ -53,7 +53,7 @@ pub(in crate::normal) struct Record {
     accepted_length: usize,
 }
 impl Record {
-    pub(super) fn new(id: u64, bytes: &[u8]) -> Result<Self, Refusal> {
+    pub(in crate::normal) fn new(id: u64, bytes: &[u8]) -> Result<Self, Refusal> {
         let fields = fields(bytes)?;
         assert!((1..=RECORDS as u64).contains(&id));
         let mut storage = [GUARD; 96];
@@ -69,10 +69,10 @@ impl Record {
             accepted_length: bytes.len(),
         })
     }
-    pub(super) fn bytes(&self) -> &[u8] {
+    pub(in crate::normal) fn bytes(&self) -> &[u8] {
         &self.storage[16..16 + self.length]
     }
-    pub(super) fn check(&self) {
+    pub(in crate::normal) fn check(&self) {
         assert!((1..=RECORDS as u64).contains(&self.id) && self.length <= PAYLOAD);
         assert_eq!(self.length, self.accepted_length);
         assert_eq!(&self.storage[..16], &[GUARD; 16]);
@@ -80,7 +80,7 @@ impl Record {
         assert_eq!(self.bytes(), &self.accepted[..self.accepted_length]);
         assert_eq!(fields(self.bytes()), Ok(self.fields));
     }
-    pub(super) fn checksum(&self) -> u64 {
+    pub(in crate::normal) fn checksum(&self) -> u64 {
         self.bytes().iter().fold(0xcbf29ce484222325, |h, &b| {
             (h ^ u64::from(b)).wrapping_mul(0x100000001b3)
         })
@@ -147,14 +147,33 @@ impl shared::worker::Work for Command {
     }
 }
 #[derive(Default)]
-pub(super) struct Input {
+pub(in crate::normal) struct Input {
     pub eof: bool,
     pub error: Option<Refusal>,
 }
 impl Input {
     pub(super) fn poll(&mut self, io: &mut Io, accepted: usize) -> Result<Option<Command>, String> {
-        assert!(accepted <= RECORDS && self.error.is_none() && !self.eof);
-        self.frame(io.csv_frame(accepted == RECORDS)?, accepted)
+        self.poll_with_limit(io, accepted, RECORDS)
+    }
+    pub(in crate::normal) fn poll_with_limit(
+        &mut self,
+        io: &mut Io,
+        accepted: usize,
+        limit: usize,
+    ) -> Result<Option<Command>, String> {
+        assert!((1..=RECORDS).contains(&limit));
+        assert!(accepted <= limit && self.error.is_none() && !self.eof);
+        self.frame_with_limit(io.csv_frame(accepted == limit)?, accepted, limit)
+    }
+    fn frame_with_limit(
+        &mut self,
+        frame: Frame,
+        accepted: usize,
+        limit: usize,
+    ) -> Result<Option<Command>, String> {
+        assert!((1..=RECORDS).contains(&limit) && accepted <= limit);
+        assert!(!matches!(&frame, Frame::Line { .. }) || accepted < limit);
+        self.frame(frame, accepted)
     }
     fn frame(&mut self, frame: Frame, accepted: usize) -> Result<Option<Command>, String> {
         let result = match frame {
@@ -179,7 +198,7 @@ impl Input {
             }
         }))
     }
-    pub(super) fn status(&self) -> &'static str {
+    pub(in crate::normal) fn status(&self) -> &'static str {
         if self.error.is_some() {
             "INPUT_REFUSED"
         } else if self.eof {
@@ -188,7 +207,7 @@ impl Input {
             "INPUT_INCOMPLETE"
         }
     }
-    pub(super) fn completion(&self) -> Result<(), InputCompletion> {
+    pub(in crate::normal) fn completion(&self) -> Result<(), InputCompletion> {
         match self.error {
             Some(error) => Err(InputCompletion::Refused(error)),
             None if self.eof => Ok(()),
@@ -334,5 +353,79 @@ mod tests {
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod leaf_set_tests {
+    use super::*;
+    #[test]
+    fn bounded_frame_limit_preserves_extra_byte_eof_and_accepted_snapshot() {
+        for limit in [1024, 1365, 2048] {
+            let mut input = Input::default();
+            let mut bytes = [0; 64];
+            bytes[..3].copy_from_slice(b"a,b");
+            let Some(Command::Record(record)) = input
+                .frame_with_limit(Frame::Line { bytes, length: 3 }, limit - 1, limit)
+                .unwrap()
+            else {
+                panic!()
+            };
+            assert_eq!(record.id, limit as u64);
+            record.check();
+            assert!(matches!(
+                input
+                    .frame_with_limit(Frame::ExtraByte, limit, limit)
+                    .unwrap(),
+                Some(Command::Stop)
+            ));
+            assert_eq!(input.error, Some(Refusal::RecordLimit));
+            assert!(!input.eof);
+            assert_eq!(record.bytes(), b"a,b");
+            let mut changed = record.as_ref().clone();
+            changed.storage[16] = b'z';
+            assert_eq!(fields(changed.bytes()), Ok(record.fields));
+            assert!(std::panic::catch_unwind(|| changed.check()).is_err());
+            let mut eof = Input::default();
+            assert!(matches!(
+                eof.frame_with_limit(Frame::Eof, limit, limit).unwrap(),
+                Some(Command::Stop)
+            ));
+            assert!(eof.eof && eof.error.is_none());
+            let mut partial = Input::default();
+            assert!(matches!(
+                partial
+                    .frame_with_limit(Frame::Unterminated, 0, limit)
+                    .unwrap(),
+                Some(Command::Stop)
+            ));
+            assert!(partial.eof);
+            assert_eq!(partial.error, Some(Refusal::Unterminated));
+        }
+        for limit in [0, 2049] {
+            assert!(
+                std::panic::catch_unwind(|| {
+                    Input::default()
+                        .frame_with_limit(Frame::Pending, 0, limit)
+                        .unwrap();
+                })
+                .is_err()
+            );
+        }
+        assert!(
+            std::panic::catch_unwind(|| {
+                Input::default()
+                    .frame_with_limit(
+                        Frame::Line {
+                            bytes: [0; 64],
+                            length: 0,
+                        },
+                        1024,
+                        1024,
+                    )
+                    .unwrap();
+            })
+            .is_err()
+        );
     }
 }

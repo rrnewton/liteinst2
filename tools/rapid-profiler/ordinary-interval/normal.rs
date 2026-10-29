@@ -22,6 +22,7 @@ use super::strnlen::cases;
 use caller::{CallerOwner, Request};
 use cases::{CASES, LABEL};
 pub(super) mod csv;
+pub(super) mod leaf_set;
 mod lifecycle;
 pub(super) mod module;
 pub(super) mod observer;

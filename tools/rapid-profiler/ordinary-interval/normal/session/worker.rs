@@ -114,6 +114,9 @@ pub(in crate::normal) trait Runtime {
     type Call;
     type Batch;
     fn pending(&self) -> usize;
+    fn flush_after_command(&self) -> bool {
+        self.pending() == 4
+    }
     fn call(&mut self, command: Self::Command);
     fn flush(&mut self, tx: &mpsc::SyncSender<Event<Self::Call, Self::Batch>>);
     fn totals(&self) -> NormalTotals;
@@ -139,7 +142,7 @@ pub(in crate::normal) fn drive<R: Runtime>(
         match command.kind() {
             1 => {
                 runtime.call(command);
-                if runtime.pending() == 4 {
+                if runtime.flush_after_command() {
                     runtime.flush(&tx);
                 }
             }
@@ -220,5 +223,81 @@ impl Runtime for Single {
         let totals = self.attached.as_ref().unwrap().totals().unwrap();
         assert_eq!(self.attached.take().unwrap().detach().unwrap(), totals);
         totals
+    }
+}
+
+#[cfg(test)]
+mod leaf_set_tests {
+    use super::*;
+    use crate::normal::module::session::input;
+    use std::sync::Mutex;
+    struct Model {
+        pending: usize,
+        trace: Arc<Mutex<Vec<(&'static str, usize)>>>,
+    }
+    impl Runtime for Model {
+        type Command = input::Command;
+        type Call = ();
+        type Batch = ();
+        fn pending(&self) -> usize {
+            self.pending
+        }
+        fn flush_after_command(&self) -> bool {
+            assert_eq!(self.pending, 3);
+            true
+        }
+        fn call(&mut self, c: input::Command) {
+            assert!(matches!(c, input::Command::Record(_)));
+            assert_eq!(self.pending, 0);
+            self.pending += 3;
+            self.trace.lock().unwrap().push(("call", self.pending));
+        }
+        fn flush(&mut self, _: &mpsc::SyncSender<Event<(), ()>>) {
+            assert!(self.pending == 0 || self.pending == 3);
+            self.trace.lock().unwrap().push(("flush", self.pending));
+            self.pending = 0;
+        }
+        fn totals(&self) -> NormalTotals {
+            NormalTotals::default()
+        }
+        fn finish(self) -> NormalTotals {
+            assert_eq!(self.pending, 0);
+            self.trace.lock().unwrap().push(("finish", 0));
+            NormalTotals::default()
+        }
+    }
+    #[test]
+    fn actual_drive_flushes_each_three_call_command_before_next() {
+        // Fabricated work counts through actual shared dispatch, never a native receipt.
+        let (tx, rx) = mpsc::sync_channel(3);
+        let (events, replies) = mpsc::sync_channel(1);
+        for id in 1..=2 {
+            tx.send(input::Command::Record(Arc::new(
+                input::Record::new(id, b"a").unwrap(),
+            )))
+            .unwrap();
+        }
+        tx.send(input::Command::Stop).unwrap();
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        drive(
+            Model {
+                pending: 0,
+                trace: Arc::clone(&trace),
+            },
+            rx,
+            events,
+        );
+        assert!(matches!(replies.try_recv().unwrap(), Event::Finished(_)));
+        assert_eq!(
+            *trace.lock().unwrap(),
+            [
+                ("call", 3),
+                ("flush", 3),
+                ("call", 3),
+                ("flush", 3),
+                ("flush", 0),
+                ("finish", 0)
+            ]
+        );
     }
 }

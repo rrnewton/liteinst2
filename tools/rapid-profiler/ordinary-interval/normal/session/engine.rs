@@ -1,4 +1,4 @@
-//! Shared fixed E3 epoch transaction; exactly Single and Module controller adapters.
+//! Shared fixed E3 epoch transaction; sealed Single, Module and LeafSet controller adapters.
 use super::*;
 use rapid_profiler::frontend::Action;
 use rapid_profiler::frontend_native::{
@@ -10,9 +10,11 @@ mod sealed {
     pub trait Controller {}
     impl Controller for rapid_profiler::frontend_native::IntervalController {}
     impl Controller for rapid_profiler::frontend_native::NormalModuleSessionController {}
+    impl<const N: usize> Controller for crate::normal::leaf_set::Controller<N> {}
     pub trait History {}
     impl History for rapid_profiler::frontend_native::HistoryBatch {}
     impl History for rapid_profiler::frontend_native::NormalModuleHistoryBatch {}
+    impl History for rapid_profiler::frontend_native::NormalLeafSetHistoryBatch {}
 }
 pub(in crate::normal) trait History: sealed::History {
     fn number(&self) -> u64;
@@ -53,6 +55,23 @@ impl History for NormalModuleHistoryBatch {
     }
     fn follows(&self, previous: &Self) -> bool {
         NormalModuleHistoryBatch::follows(self, previous)
+    }
+}
+impl History for rapid_profiler::frontend_native::NormalLeafSetHistoryBatch {
+    fn number(&self) -> u64 {
+        rapid_profiler::frontend_native::NormalLeafSetHistoryBatch::number(self)
+    }
+    fn range(&self) -> Range<u64> {
+        rapid_profiler::frontend_native::NormalLeafSetHistoryBatch::range(self)
+    }
+    fn before(&self) -> HistoryBinding {
+        rapid_profiler::frontend_native::NormalLeafSetHistoryBatch::before(self)
+    }
+    fn actions(&self) -> &[Action] {
+        rapid_profiler::frontend_native::NormalLeafSetHistoryBatch::actions(self)
+    }
+    fn follows(&self, previous: &Self) -> bool {
+        rapid_profiler::frontend_native::NormalLeafSetHistoryBatch::follows(self, previous)
     }
 }
 pub(in crate::normal) trait Controller: sealed::Controller {

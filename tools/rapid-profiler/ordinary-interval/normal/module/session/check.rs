@@ -4,44 +4,44 @@ use rapid_profiler::frontend_native::{
     HistoryBinding, NormalModuleHistoryBatch, NormalModuleHistoryStream, NormalModuleRecord,
 };
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct Metadata {
-    identity: CodeIdentity,
-    functions: [FunctionId; 2],
-    entries: [u64; 2],
-    pid: u32,
-    tid: u64,
-    registration: u64,
-    install: u64,
-    number: u64,
-    totals: (NormalTotals, NormalTotals),
-    sequences: (u64, u64),
-    next: u64,
+pub(in crate::normal) struct Metadata<const N: usize = 2> {
+    pub(in crate::normal) identity: CodeIdentity,
+    pub(in crate::normal) functions: [FunctionId; N],
+    pub(in crate::normal) entries: [u64; N],
+    pub(in crate::normal) pid: u32,
+    pub(in crate::normal) tid: u64,
+    pub(in crate::normal) registration: u64,
+    pub(in crate::normal) install: u64,
+    pub(in crate::normal) number: u64,
+    pub(in crate::normal) totals: (NormalTotals, NormalTotals),
+    pub(in crate::normal) sequences: (u64, u64),
+    pub(in crate::normal) next: u64,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct Generation {
-    id: u64,
-    slots: usize,
-    counts: [usize; 2],
+pub(in crate::normal) struct Generation<const N: usize = 2> {
+    pub(in crate::normal) id: u64,
+    pub(in crate::normal) slots: usize,
+    pub(in crate::normal) counts: [usize; N],
 }
 #[derive(Clone, Copy)]
-pub(super) struct Seen {
-    pub(super) id: u64,
-    pub(super) row: NormalModuleRecord,
-    pub(super) sequence: u64,
-    pub(super) rank: Option<usize>,
+pub(in crate::normal) struct Seen {
+    pub(in crate::normal) id: u64,
+    pub(in crate::normal) row: NormalModuleRecord,
+    pub(in crate::normal) sequence: u64,
+    pub(in crate::normal) rank: Option<usize>,
 }
-pub(super) struct Population {
+pub(in crate::normal) struct Population<const N: usize = 2> {
     pub accepted: Vec<Arc<input::Record>>,
     pub rows: Vec<Seen>,
     pub totals: NormalTotals,
     pub batches: u64,
-    generations: Vec<Generation>,
-    entries: [u64; 2],
-    ends: [u64; 2],
-    returns: [Vec<u64>; 2],
-    identity: Option<worker::Identity>,
-    k: usize,
-    epoch_limit: usize,
+    pub(in crate::normal) generations: Vec<Generation<N>>,
+    pub(in crate::normal) entries: [u64; N],
+    pub(in crate::normal) ends: [u64; N],
+    pub(in crate::normal) returns: [Vec<u64>; N],
+    pub(in crate::normal) identity: Option<worker::Identity>,
+    pub(in crate::normal) k: usize,
+    pub(in crate::normal) epoch_limit: usize,
 }
 pub(super) struct Ledger {
     pub population: Population,
@@ -327,13 +327,13 @@ impl Ledger {
         }
     }
 }
-impl Population {
-    pub(super) fn ready(&mut self, id: worker::Identity) {
+impl<const N: usize> Population<N> {
+    pub(in crate::normal) fn ready(&mut self, id: worker::Identity) {
         assert!(self.identity.replace(id).is_none());
         assert_ne!(id.pid, 0);
         assert_ne!(id.tid, u64::from(id.pid));
         assert!(id.stack.0 < id.stack.1 && id.caller.0 < id.caller.1);
-        for f in 0..2 {
+        for f in 0..N {
             assert!(self.entries[f] < self.ends[f]);
             assert!((1..=4).contains(&self.returns[f].len()));
             assert!(self.returns[f].windows(2).all(|w| w[0] < w[1]));
@@ -344,23 +344,32 @@ impl Population {
             );
         }
     }
-    pub(super) fn accept(&mut self, record: &Arc<input::Record>) {
+    pub(in crate::normal) fn accept(&mut self, record: &Arc<input::Record>) {
         assert!(self.accepted.len() < input::RECORDS);
         record.check();
         assert_eq!(record.id, self.accepted.len() as u64 + 1);
         self.accepted.push(Arc::clone(record));
     } // Accessor projection used by production above and fabricated corruption controls.
-    fn join(
+    pub(in crate::normal) fn accept_with_limit(
         &mut self,
-        m: Metadata,
+        record: &Arc<input::Record>,
+        limit: usize,
+    ) {
+        assert!((1..=input::RECORDS).contains(&limit) && self.accepted.len() < limit);
+        self.accept(record);
+    }
+    pub(in crate::normal) fn join_for(
+        &mut self,
+        m: Metadata<N>,
         rows: &[NormalModuleRecord],
         journal: &[u64],
         bindings: &[HistoryBinding],
+        functions: [FunctionId; N],
     ) {
         let id = self.identity.unwrap();
         assert_eq!(
             (m.identity, m.functions, m.entries),
-            (identity(self.entries[0]), FUNCTIONS, self.entries)
+            (identity(self.entries[0]), functions, self.entries)
         );
         assert_eq!(
             (m.pid, m.tid, m.registration, m.install),
@@ -368,7 +377,7 @@ impl Population {
         );
         assert_eq!(m.number, self.batches + 1);
         assert_eq!(m.totals.0, self.totals);
-        assert!(!rows.is_empty() && rows.len() <= 4 && rows.len() % 2 == 0);
+        assert!(!rows.is_empty() && rows.len() <= 4 && rows.len() % N == 0);
         assert_eq!(bindings.len(), rows.len());
         let copied: [rapid_profiler::frontend_native::NormalRecord; 4] =
             std::array::from_fn(|i| rows[i.min(rows.len() - 1)].record);
@@ -376,14 +385,14 @@ impl Population {
         let before = self.totals.completed;
         for (i, row) in rows.iter().enumerate() {
             let ordinal = self.totals.confirmed + 1;
-            let f = ((ordinal - 1) % 2) as usize;
+            let f = ((ordinal - 1) % N as u64) as usize;
             let r = row.record;
             let raw = r.raw;
             let accepted = self
                 .accepted
-                .get((ordinal as usize - 1) / 2)
+                .get((ordinal as usize - 1) / N)
                 .expect("no unaccepted physical call");
-            assert_eq!(row.function, FUNCTIONS[f]);
+            assert_eq!(row.function, functions[f]);
             assert_eq!(raw.ordinal, ordinal);
             assert!(
                 self.rows
@@ -410,7 +419,7 @@ impl Population {
                     }
                 }
             );
-            let rank = owner(
+            let rank = owner_for(
                 raw.owner,
                 f,
                 r.history_prefix,
@@ -437,13 +446,25 @@ impl Population {
         self.batches += 1;
     }
 }
+impl Population {
+    fn join(
+        &mut self,
+        m: Metadata,
+        rows: &[NormalModuleRecord],
+        journal: &[u64],
+        bindings: &[HistoryBinding],
+    ) {
+        self.join_for(m, rows, journal, bindings, FUNCTIONS);
+    }
+}
+
 fn index(function: FunctionId) -> usize {
     FUNCTIONS
         .iter()
         .position(|&f| f == function)
         .expect("authenticated function tag")
 }
-fn owner_wire(owner: RawIntervalOwner) -> (&'static str, u64, u64) {
+pub(in crate::normal) fn owner_wire(owner: RawIntervalOwner) -> (&'static str, u64, u64) {
     match owner {
         RawIntervalOwner::Sampled {
             generation,
@@ -454,12 +475,24 @@ fn owner_wire(owner: RawIntervalOwner) -> (&'static str, u64, u64) {
         RawIntervalOwner::InitialDisarmed => ("initial", 0, 0),
     }
 }
+#[cfg(test)]
 fn owner(
     owner: RawIntervalOwner,
     f: usize,
     prefix: u64,
     binding: HistoryBinding,
     generations: &mut Vec<Generation>,
+    k: usize,
+    limit: usize,
+) -> Option<usize> {
+    owner_for(owner, f, prefix, binding, generations, k, limit)
+}
+fn owner_for<const N: usize>(
+    owner: RawIntervalOwner,
+    f: usize,
+    prefix: u64,
+    binding: HistoryBinding,
+    generations: &mut Vec<Generation<N>>,
     k: usize,
     limit: usize,
 ) -> Option<usize> {
@@ -478,14 +511,14 @@ fn owner(
                     generations.push(Generation {
                         id: generation,
                         slots: 0,
-                        counts: [0; 2],
+                        counts: [0; N],
                     });
                     generations.len() - 1
                 }
             };
             let g = &mut generations[at];
             assert_eq!(invocation, g.slots);
-            assert!(g.slots < 2 * k && g.counts[f] < k);
+            assert!(g.slots < N * k && g.counts[f] < k);
             let rank = g.counts[f];
             g.slots += 1;
             g.counts[f] += 1;
@@ -523,13 +556,30 @@ pub(in crate::normal) fn report_shape(
     capacity: usize,
 ) {
     assert!(generation != 0 && matches!(capacity, 20 | 2000) && records.len() <= capacity);
-    let mut ranks = [0; 2];
+    report_shape_for(generation, records, capacity, &FUNCTIONS);
+}
+pub(in crate::normal) fn report_shape_for<const N: usize>(
+    generation: u64,
+    records: &[RecordObservation],
+    capacity: usize,
+    functions: &[FunctionId; N],
+) {
+    assert!((1..=4).contains(&N));
+    assert!(
+        generation != 0
+            && (capacity == N * 10 || capacity == N * 1000)
+            && records.len() <= capacity
+    );
+    let mut ranks = [0; N];
     for (i, row) in records.iter().enumerate() {
         let a = row.record.admission;
-        let f = index(a.function);
+        let f = functions
+            .iter()
+            .position(|&f| f == a.function)
+            .expect("authenticated function tag");
         assert_eq!(a.generation.get(), generation);
         assert_eq!(a.invocation, i);
-        assert!(ranks[f] < capacity / 2);
+        assert!(ranks[f] < capacity / N);
         assert_eq!(
             row.record.terminal,
             Some(Terminal::Completed {
@@ -550,7 +600,7 @@ pub(in crate::normal) fn report_shape(
         ranks[f] += 1;
     }
 }
-pub(super) fn sample(row: &RecordObservation, seen: Seen) -> Observation {
+pub(in crate::normal) fn sample(row: &RecordObservation, seen: Seen) -> Observation {
     let a = row.record.admission;
     let raw = seen.row.record.raw;
     assert_eq!(a.function, seen.row.function);

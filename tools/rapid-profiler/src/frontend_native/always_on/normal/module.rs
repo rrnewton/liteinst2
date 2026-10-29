@@ -276,7 +276,7 @@ pub(super) struct ModuleIdentity {
 impl TransferOutput for ModuleOutput {
     type Batch = NormalModuleBatch;
     type Identity = ModuleIdentity;
-    const MODULE: bool = true;
+    const PROFILE: TransferProfile = TransferProfile::Pair;
     fn allocate() -> Result<(Self, Vec<u64>), BridgeError> {
         let (records, journal) = output_buffers()?;
         Ok((Self { records }, journal))

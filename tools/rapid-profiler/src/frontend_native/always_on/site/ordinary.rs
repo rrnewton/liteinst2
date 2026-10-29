@@ -23,7 +23,10 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 mod normal;
+mod normal_leaf_set;
 mod normal_module;
+pub(in crate::frontend_native::always_on) use normal_leaf_set::LeafSetSite;
+pub use normal_leaf_set::{InstalledNormalLeafSetSite, NormalLeafSetSitePreparation};
 mod two_callers;
 mod whole;
 pub use normal::{InstalledNormalSite, NormalSitePreparation};

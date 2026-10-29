@@ -5,7 +5,7 @@ use shared::worker::{Event, Runtime};
 use std::path::PathBuf;
 use std::sync::OnceLock;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct Identity {
+pub(in crate::normal) struct Identity {
     pub pid: u32,
     pub tid: u64,
     pub cpu: usize,
@@ -39,7 +39,7 @@ impl Stamp {
         }
     }
 }
-pub(super) struct Custody {
+pub(in crate::normal) struct Custody {
     paths: [PathBuf; 2],
     stamps: [Stamp; 2],
     bytes: Vec<u8>,
@@ -48,7 +48,7 @@ pub(super) struct Custody {
     pub pid: u32,
 }
 impl Custody {
-    pub(super) fn new(candidate: &Path, trusted: &Path, bytes: Vec<u8>) -> Self {
+    pub(in crate::normal) fn new(candidate: &Path, trusted: &Path, bytes: Vec<u8>) -> Self {
         let paths = [candidate.to_path_buf(), trusted.to_path_buf()];
         let stamps = paths.each_ref().map(|p| Stamp::read(p));
         assert_ne!(
@@ -64,7 +64,7 @@ impl Custody {
             pid: std::process::id(),
         }
     }
-    pub(super) fn files_and_code(&self) {
+    pub(in crate::normal) fn files_and_code(&self) {
         assert_eq!(std::process::id(), self.pid);
         for i in 0..2 {
             assert_eq!(Stamp::read(&self.paths[i]), self.stamps[i]);
@@ -92,7 +92,7 @@ impl Custody {
             unsafe { immutable(spans) };
         }
     }
-    pub(super) fn worker(&self, expected: Identity) {
+    pub(in crate::normal) fn worker(&self, expected: Identity) {
         assert_eq!(std::process::id(), expected.pid);
         assert_eq!(
             unsafe { libc::syscall(libc::SYS_gettid) } as u64,
@@ -116,7 +116,7 @@ impl Custody {
         self.files_and_code();
     }
 }
-pub(super) fn cpu_is(cpu: usize) {
+pub(in crate::normal) fn cpu_is(cpu: usize) {
     let mut mask: libc::cpu_set_t = unsafe { std::mem::zeroed() };
     assert!(cpu < libc::CPU_SETSIZE as usize);
     assert_eq!(
@@ -139,7 +139,30 @@ pub(in crate::normal) struct Call {
     stored: Box<Stored>,
 }
 impl Call {
-    pub(super) fn value(&self) -> u64 {
+    // The caller must authenticate the actual target and retain code/input owners.
+    // This private extraction does not fabricate return or SDK acknowledgement.
+    pub(in crate::normal) unsafe fn invoke(
+        record: Arc<input::Record>,
+        function: usize,
+        target: csv::Csv,
+    ) -> Self {
+        let mut call = Call {
+            record,
+            function,
+            stored: Box::new(Stored {
+                before: [0xa7a7; 2],
+                value: u64::MAX,
+                after: [0x5a5a; 2],
+            }),
+        };
+        assert_eq!(call.stored.value, u64::MAX);
+        // SAFETY: exact independently selected scalar ABI, immutable guarded
+        // bytes and live sealed owner; real ordinary CALL then volatile store.
+        unsafe { csv::invoke(target, call.record.bytes(), &mut call.stored.value) };
+        call
+    }
+
+    pub(in crate::normal) fn value(&self) -> u64 {
         self.stored.value
     }
     pub(super) fn check(&self) {
@@ -155,6 +178,37 @@ impl Call {
                 self.record.length as u64
             }
         );
+    }
+    pub(in crate::normal) fn check_expected(&self, n: usize, expected: u64) {
+        self.record.check();
+        assert!((1..=4).contains(&n) && self.function < n);
+        assert_eq!(self.stored.before, [0xa7a7; 2]);
+        assert_eq!(self.stored.after, [0x5a5a; 2]);
+        assert_eq!(self.value(), expected);
+    }
+    #[cfg(test)]
+    pub(in crate::normal) fn corrupt_guard_for_test(&mut self, before: bool) {
+        if before {
+            self.stored.before[1] ^= 1;
+        } else {
+            self.stored.after[0] ^= 1;
+        }
+    }
+    #[cfg(test)]
+    pub(in crate::normal) fn fabricated(
+        record: Arc<input::Record>,
+        function: usize,
+        value: u64,
+    ) -> Self {
+        Self {
+            record,
+            function,
+            stored: Box::new(Stored {
+                before: [0xa7a7; 2],
+                value,
+                after: [0x5a5a; 2],
+            }),
+        }
     }
 }
 // Declared first so a panic cannot unwind attached owners before process abort.
@@ -205,25 +259,8 @@ impl Worker {
         assert!(self.calls.len() < 4 && function < 2);
         self.postflight();
         record.check();
-        let mut call = Call {
-            record,
-            function,
-            stored: Box::new(Stored {
-                before: [0xa7a7; 2],
-                value: u64::MAX,
-                after: [0x5a5a; 2],
-            }),
-        };
-        assert_eq!(call.stored.value, u64::MAX);
-        // SAFETY: exact independently selected scalar ABI, immutable guarded
-        // bytes and live sealed owner; real ordinary CALL then volatile store.
-        unsafe {
-            csv::invoke(
-                self.targets[function],
-                call.record.bytes(),
-                &mut call.stored.value,
-            )
-        };
+        // SAFETY: unchanged authenticated worker target and retained owners.
+        let call = unsafe { Call::invoke(record, function, self.targets[function]) };
         call.check();
         self.calls.push(call); // Returned owner survives every subsequent refusal.
         self.postflight();

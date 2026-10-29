@@ -104,6 +104,7 @@ pub use always_on::{
     ReadableStack,
 };
 
+pub use module::ordinary::LoadedNormalLeafSet;
 /// Explicit final-ELF-bound selection; loading still requires its unsafe contract.
 pub use module::ordinary::TrustedFunctionSelection;
 /// Separate bounded scalar-symbol admission; no publication or interval execution.
@@ -119,16 +120,19 @@ pub use module::ordinary::{
 };
 
 pub use always_on::normal::{
-    NormalAcknowledgement, NormalBatch, NormalClient, NormalModuleBatch, NormalModuleClient,
+    NormalAcknowledgement, NormalBatch, NormalClient, NormalLeafSetBatch, NormalLeafSetClient,
+    NormalLeafSetHistoryBatch, NormalLeafSetHistoryStream, NormalLeafSetHistoryWindow,
+    NormalLeafSetSessionController, NormalLeafSetThread, NormalModuleBatch, NormalModuleClient,
     NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,
     NormalModuleHistoryWindow, NormalModuleRecord, NormalModuleSessionController,
     NormalModuleThread, NormalRecord, NormalThread, NormalTotals, PreparedNormalController,
-    PreparedNormalModuleController, PreparedNormalModuleSessionController,
-    PreparedTwoCallerNormalController,
+    PreparedNormalLeafSetSessionController, PreparedNormalModuleController,
+    PreparedNormalModuleSessionController, PreparedTwoCallerNormalController,
 };
 pub use always_on::site::ordinary::{
-    InstalledNormalModuleSite, NormalModuleFunctionSite, NormalModulePreparationPolicy,
-    NormalModuleRole, NormalModuleRoleKind, NormalModuleSitePreparation,
+    InstalledNormalLeafSetSite, InstalledNormalModuleSite, NormalLeafSetSitePreparation,
+    NormalModuleFunctionSite, NormalModulePreparationPolicy, NormalModuleRole,
+    NormalModuleRoleKind, NormalModuleSitePreparation,
 };
 pub use always_on::site::ordinary::{InstalledNormalSite, NormalSitePreparation};
 pub use always_on::site::ordinary::{InstalledTwoCallerNormalSite, TwoCallerNormalSitePreparation};
