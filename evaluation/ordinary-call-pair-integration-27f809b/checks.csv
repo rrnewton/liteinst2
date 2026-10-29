@@ -1,0 +1,8 @@
+name,command,status,passed,failed,ignored,seconds,wall_limit_seconds,exit,termination,rescue_reaps,log_sha256
+fmt,cargo fmt --check,PASS,0,0,0,7.485596382059157,180,0,,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+clippy,cargo clippy --workspace --all-targets --all-features -- -D warnings,PASS,0,0,0,0.1311655950266868,180,0,,0,a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985
+check,cargo check --workspace --all-features --all-targets,PASS,0,0,0,25.933489553863183,180,0,,0,55d598b5cd2370956493e837229032d0eeb33ed076cb4f7f1b51cca69b423157
+workspace-default,cargo test --workspace,FAILED,1978,0,1,360.1985757239163,360,-9,timeout,8,604da66f73672993aecda71d30f03ce175ba7044bcee9ee92338d7fb95821953
+serial-launch,,UNRUN,,,,,,,,,
+staged-allocation,,UNRUN,,,,,,,,,
+prefixed-pun,,UNRUN,,,,,,,,,
