@@ -317,6 +317,85 @@ def release_product(messages, repo, authority, actual):
     return binary
 
 
+def qualified_inputs(repo, qualified, revision, env, cpus, before, tools, pins,
+                     prior, census, fixture, control_prefix, control_names):
+    """Authenticate an already owned, closed prerequisite; never launch a process."""
+    def retained_json(path):
+        pins.retain(path); return json.loads(path.read_bytes())
+    old = retained_json(qualified/'result.json')
+    stages = prior.STAGES+prior.REFERENCE_STAGES+prior.REFERENCE_WORK_STAGES+prior.REFERENCE_LEG_STAGES+prior.OBSERVER_WORK_STAGES
+    qualification(old, revision, stages)
+    source_before = retained_json(qualified/'sources-before.json')
+    assert source_before == retained_json(qualified/'sources-after.json')
+    assert all(before[n] == h for n, h in source_before.items())
+    assert old['sources'] == dict(count=len(source_before), manifest=pins.values[qualified/'sources-before.json'])
+    nested = qualified/'strnlen-prerequisite'
+    pins.retain(nested/'result.json', old['prerequisite']['result'])
+    pins.retain(qualified/'prerequisite-command.json', old['prerequisite']['command'])
+    pins.retain(qualified/'prerequisite-closed.json', old['prerequisite']['closed'])
+    inherited_closed = retained_json(qualified/'prerequisite-closed.json'); outer_closed(inherited_closed, 0)
+    assert pins.retain(qualified/'prerequisite.log')['sha256'] == inherited_closed['private_log_sha256']
+    nested_result = retained_json(nested/'result.json')
+    assert nested_result['revision'] == revision and nested_result['status'] == 'PASS'
+    private = retained_json(nested/'private-environment.json')
+    assert private['env'] == env and private['affinity'] == cpus
+    for name, value in private['tools'].items():
+        path = Path(value); assert path.resolve(strict=True) == path
+        pins.retain(path, old['tools'][name])
+        if name in tools: assert path == tools[name]
+    # Authenticate every completed outer stage and the borrowed Cargo build/list.
+    def old_stage(directory, record):
+        fs = {n: pins.retain(directory/n) for n in ('request.json', 'receipt.json', 'parent-closed.json', 'parent.log', 'stdout.txt', 'stderr.txt')}
+        for key, file in (('request','request.json'), ('receipt','receipt.json'), ('stdout','stdout.txt'), ('stderr','stderr.txt')):
+            assert record[key] == fs[file]
+        assert record.get('closed', record.get('parent_closed')) == fs['parent-closed.json']
+        r = retained_json(directory/'request.json')
+        assert r['cwd'] == str(repo) and r['env'] == dict(env, TMPDIR=str(directory/'tmp'))
+        assert r['stdout'] == str(directory/'stdout.txt') and r['stderr'] == str(directory/'stderr.txt')
+        assert (r['cpu_seconds'], r['wall_seconds'], r['file_bytes']) == (record['cpu_seconds'], record['wall_seconds'], record['file_bytes'])
+        assert closed_request(retained_json(directory/'parent-closed.json'), retained_json(directory/'receipt.json'),
+            json.loads((directory/'parent.log').read_bytes()), fs, fs['request.json']['sha256'],
+            before['tools/unwind-oracle/bounded_command.py']['sha256'], r['file_bytes']) == 0
+    for s in old['stages']: old_stage(qualified/s['name'], s)
+    for suffix in ('build', 'list'):
+        found = [s for s in nested_result['stages'] if s['name'] == 'work-validator-'+suffix]
+        assert len(found) == 1 and found[0]['status'] == 'PASS'
+        old_stage(nested/('work-validator-'+suffix), found[0])
+    messages = [json.loads(line) for line in (nested/'work-validator-build/stdout.txt').read_bytes().splitlines()]
+    products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'ordinary-interval' and m['profile']['test']]
+    assert len(products) == 1
+    test_binary = Path(products[0]['executable']); assert test_binary.resolve(strict=True) == test_binary
+    assert release_product(messages, repo, nested_result['artifacts']['work-validator'], pins.retain(test_binary)) == test_binary
+    inventory = census.census((nested/'work-validator-list/stdout.txt').read_bytes(), (nested/'work-validator-list/stderr.txt').read_bytes())
+    assert {n for n in inventory if n.startswith(control_prefix)} == set(control_names)
+    binary = repo/'target/release/ordinary-interval'; pins.retain(binary, old['artifacts']['ordinary-interval'])
+    subject, trusted = qualified/'reference-exact-candidate.so', qualified/'reference-exact-final.so'
+    selection = qualified/'reference-exact-selection.json'; caller_candidate, caller = qualified/'caller-candidate.so', qualified/'caller.so'
+    cohorts = old['observer_work']['modes']; assert [(c['mode'], c['status']) for c in cohorts] == [('native','PASS'), ('always-on','PASS')]
+    authority = cohorts[0]
+    for p, field in ((binary,'binary'), (trusted,'subject'), (selection,'selection'), (caller_candidate,'helper_candidate'), (caller,'helper')):
+        pins.retain(p, authority[field])
+    pins.retain(subject, old['reference_exact']['subject']['candidate'])
+    for c in cohorts:
+        assert c['calls'] == c['observation']['calls'] == 3072
+        assert c['observation']['helper_calls'] == 1536 and c['observation']['instructions'] == 614400
+        assert all(c[k] == authority[k] for k in ('binary','subject','selection','helper','helper_candidate'))
+        assert (c['process_cpu_seconds'], c['process_wall_seconds'], c['file_bytes']) == (20,30,MIB)
+    assert caller_candidate.read_bytes() == caller.read_bytes()
+    assert stamp(caller_candidate)[:2] != stamp(caller)[:2] and pins.values[caller] == old['artifacts']['caller']
+    details = retained_json(selection); assert details['revision'] == revision
+    selected = fixture.authenticate(subject, trusted, details['elf_va'], 37, selection, pins.values[selection]['sha256'])
+    assert selected == {k:v for k,v in details.items() if k != 'revision'}
+    artifacts = {label:pins.values[p] for label,p in (
+        ('binary',binary), ('subject',subject), ('trusted',trusted), ('selection',selection),
+        ('caller_candidate',caller_candidate), ('caller',caller), ('libtest',test_binary))}
+    prerequisite = dict(result=pins.values[qualified/'result.json'], closure=old['closure'], tools=old['tools'])
+    return dict(binary=binary, test_binary=test_binary, inventory=inventory,
+        subject=subject, trusted=trusted, selection=selection,
+        caller_candidate=caller_candidate, caller=caller, details=details,
+        selected=selected, artifacts=artifacts, prerequisite=prerequisite, old=old)
+
+
 def csv_bytes(fields, rows):
     text = io.StringIO(newline=''); writer = csv.DictWriter(text, fieldnames=fields, lineterminator='\n')
     writer.writeheader(); writer.writerows(rows)
@@ -490,74 +569,13 @@ def main():
         row['files'] = {n:pins.values[a.raw/n] for n in ('prerequisite-command.json','prerequisite-closed.json','prerequisite.log')}
         if (qualified/'result.json').exists(): row['result'] = pins.retain(qualified/'result.json')
         save(); outer_closed(closed, 0)
-        old = retained_json(qualified/'result.json')
-        stages = prior.STAGES+prior.REFERENCE_STAGES+prior.REFERENCE_WORK_STAGES+prior.REFERENCE_LEG_STAGES+prior.OBSERVER_WORK_STAGES
-        qualification(old, a.revision, stages)
-        source_before = retained_json(qualified/'sources-before.json')
-        assert source_before == retained_json(qualified/'sources-after.json')
-        assert all(before[n] == h for n, h in source_before.items())
-        assert old['sources'] == dict(count=len(source_before), manifest=pins.values[qualified/'sources-before.json'])
-        nested = qualified/'strnlen-prerequisite'
-        pins.retain(nested/'result.json', old['prerequisite']['result'])
-        pins.retain(qualified/'prerequisite-command.json', old['prerequisite']['command'])
-        pins.retain(qualified/'prerequisite-closed.json', old['prerequisite']['closed'])
-        inherited_closed = retained_json(qualified/'prerequisite-closed.json'); outer_closed(inherited_closed, 0)
-        assert pins.retain(qualified/'prerequisite.log')['sha256'] == inherited_closed['private_log_sha256']
-        nested_result = retained_json(nested/'result.json')
-        assert nested_result['revision'] == a.revision and nested_result['status'] == 'PASS'
-        private = retained_json(nested/'private-environment.json')
-        assert private['env'] == env and private['affinity'] == cpus
-        for name, value in private['tools'].items():
-            path = Path(value); assert path.resolve(strict=True) == path
-            pins.retain(path, old['tools'][name])
-            if name in tools: assert path == tools[name]
-        # Authenticate every completed outer stage and the borrowed Cargo build/list.
-        def old_stage(directory, record):
-            fs = {n: pins.retain(directory/n) for n in ('request.json', 'receipt.json', 'parent-closed.json', 'parent.log', 'stdout.txt', 'stderr.txt')}
-            for key, file in (('request','request.json'), ('receipt','receipt.json'), ('stdout','stdout.txt'), ('stderr','stderr.txt')):
-                assert record[key] == fs[file]
-            assert record.get('closed', record.get('parent_closed')) == fs['parent-closed.json']
-            r = retained_json(directory/'request.json')
-            assert r['cwd'] == str(repo) and r['env'] == dict(env, TMPDIR=str(directory/'tmp'))
-            assert r['stdout'] == str(directory/'stdout.txt') and r['stderr'] == str(directory/'stderr.txt')
-            assert (r['cpu_seconds'], r['wall_seconds'], r['file_bytes']) == (record['cpu_seconds'], record['wall_seconds'], record['file_bytes'])
-            assert closed_request(retained_json(directory/'parent-closed.json'), retained_json(directory/'receipt.json'),
-                json.loads((directory/'parent.log').read_bytes()), fs, fs['request.json']['sha256'],
-                before['tools/unwind-oracle/bounded_command.py']['sha256'], r['file_bytes']) == 0
-        for s in old['stages']: old_stage(qualified/s['name'], s)
-        for suffix in ('build', 'list'):
-            found = [s for s in nested_result['stages'] if s['name'] == 'work-validator-'+suffix]
-            assert len(found) == 1 and found[0]['status'] == 'PASS'
-            old_stage(nested/('work-validator-'+suffix), found[0])
-        messages = [json.loads(line) for line in (nested/'work-validator-build/stdout.txt').read_bytes().splitlines()]
-        products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'ordinary-interval' and m['profile']['test']]
-        assert len(products) == 1
-        test_binary = Path(products[0]['executable']); assert test_binary.resolve(strict=True) == test_binary
-        assert release_product(messages, repo, nested_result['artifacts']['work-validator'], pins.retain(test_binary)) == test_binary
-        inventory = census.census((nested/'work-validator-list/stdout.txt').read_bytes(), (nested/'work-validator-list/stderr.txt').read_bytes())
-        assert {n for n in inventory if n.startswith(PREFIX)} == set(RUST)
-        binary = repo/'target/release/ordinary-interval'; pins.retain(binary, old['artifacts']['ordinary-interval'])
-        subject, trusted = qualified/'reference-exact-candidate.so', qualified/'reference-exact-final.so'
-        selection = qualified/'reference-exact-selection.json'; caller_candidate, caller = qualified/'caller-candidate.so', qualified/'caller.so'
-        cohorts = old['observer_work']['modes']; assert [(c['mode'], c['status']) for c in cohorts] == [('native','PASS'), ('always-on','PASS')]
-        authority = cohorts[0]
-        for p, field in ((binary,'binary'), (trusted,'subject'), (selection,'selection'), (caller_candidate,'helper_candidate'), (caller,'helper')):
-            pins.retain(p, authority[field])
-        pins.retain(subject, old['reference_exact']['subject']['candidate'])
-        for c in cohorts:
-            assert c['calls'] == c['observation']['calls'] == 3072
-            assert c['observation']['helper_calls'] == 1536 and c['observation']['instructions'] == 614400
-            assert all(c[k] == authority[k] for k in ('binary','subject','selection','helper','helper_candidate'))
-            assert (c['process_cpu_seconds'], c['process_wall_seconds'], c['file_bytes']) == (20,30,MIB)
-        assert caller_candidate.read_bytes() == caller.read_bytes()
-        assert stamp(caller_candidate)[:2] != stamp(caller)[:2] and pins.values[caller] == old['artifacts']['caller']
-        details = retained_json(selection); assert details['revision'] == a.revision
-        selected = fixture.authenticate(subject, trusted, details['elf_va'], 37, selection, pins.values[selection]['sha256'])
-        assert selected == {k:v for k,v in details.items() if k != 'revision'}
-        result['artifacts'] = {label:pins.values[p] for label,p in (
-            ('binary',binary), ('subject',subject), ('trusted',trusted), ('selection',selection),
-            ('caller_candidate',caller_candidate), ('caller',caller), ('libtest',test_binary))}
-        result['prerequisite'] = dict(result=pins.values[qualified/'result.json'], closure=old['closure'], tools=old['tools'])
+        inputs = qualified_inputs(repo, qualified, a.revision, env, cpus, before, tools,
+            pins, prior, census, fixture, PREFIX, RUST)
+        binary, test_binary, inventory = (inputs[n] for n in ('binary', 'test_binary', 'inventory'))
+        subject, trusted, selection = (inputs[n] for n in ('subject', 'trusted', 'selection'))
+        caller_candidate, caller = (inputs[n] for n in ('caller_candidate', 'caller'))
+        details, selected = inputs['details'], inputs['selected']
+        result['artifacts'], result['prerequisite'] = inputs['artifacts'], inputs['prerequisite']
         unchanged(); row['status'] = 'PASS'; freeze(a.raw/'prerequisite-result.json', encoded(row), pins); save()
         tree = repo/'tools/rapid-profiler/tree-work'; work = repo/'tools/rapid-profiler/normal-work'
         for name, source, klass, methods in (
