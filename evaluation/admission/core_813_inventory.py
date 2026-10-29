@@ -13,7 +13,7 @@ import inventory_copy
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == '508a27d82353b89e19f0c065cd6594dae3bd1dc693306828f64965d68496bab8', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == '4fcd1ba75841f048f4816b108216f8af5ef5349aa25da563acdf09b4eb750339', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -47,7 +47,9 @@ CURRENT850 = MAIN850['current_corpus_sha256']
 MAIN5A0 = DATA['main5a0']
 CURRENT5A0 = MAIN5A0['current_corpus_sha256']
 MAIN9950 = DATA['main9950']
-LATEST = MAIN9950['current_corpus_sha256']
+CURRENT9950 = MAIN9950['current_corpus_sha256']
+MAIN2754 = DATA['main2754']
+LATEST = MAIN2754['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -58,8 +60,60 @@ def digest(value):
     return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())
 
 
+def source_before_2754(path, data, error):
+    """Only the fixed 2754 whole blob may reach its exact historical source."""
+    if path not in MAIN2754['projections']:
+        return data
+    row = MAIN2754['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = data[:start] + old.encode() + data[end:]
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_2754_sources(error='main2754_source_inventory_differs'):
+    for path, expected in MAIN2754['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN2754['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN2754['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN2754['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN2754['module_chains'][path]), error)
+        if path in MAIN2754['python_methods']:
+            found = list(inventory_syntax.identities(raw.decode()))
+            require(found == MAIN2754['python_methods'][path], error)
+
+
+def before_2754(declared, error='main2754_inventory_differs', source_error='main2754_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_2754_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN2754['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN2754['previous_corpus_sha256'] == CURRENT9950, error)
+    return old
+
+
+def peel_2754(declared, error, source_error):
+    return before_2754(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_9950(path, data, error):
     """Only the fixed 9950 whole blob may reach its exact historical source."""
+    data = source_before_2754(path, data, error)
     if path not in MAIN9950['projections']:
         return data
     row = MAIN9950['projections'][path]
@@ -74,11 +128,13 @@ def source_before_9950(path, data, error):
 
 
 def require_9950_sources(error='main9950_source_inventory_differs'):
+    require_2754_sources(error)
     for path, expected in MAIN9950['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_2754(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN9950['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -94,7 +150,8 @@ def require_9950_sources(error='main9950_source_inventory_differs'):
 
 
 def before_9950(declared, error='main9950_inventory_differs', source_error='main9950_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_2754(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT9950, error)
     require_9950_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -106,7 +163,8 @@ def before_9950(declared, error='main9950_inventory_differs', source_error='main
 
 
 def peel_9950(declared, error, source_error):
-    return before_9950(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_2754(declared, error, source_error)
+    return before_9950(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT9950 else declared
 
 
 def source_before_5a0(path, data, error):

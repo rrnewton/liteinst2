@@ -6499,7 +6499,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 31,
-        "tests": 461
+        "tests": 475
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

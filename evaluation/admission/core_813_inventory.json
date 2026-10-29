@@ -2129,6 +2129,302 @@
       }
     }
   },
+  "main2754": {
+    "added_methods": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": [
+        "session_profile_is_exact_and_finite_single_t2_paths_stay_separate",
+        "session_banks_prepare_once_and_activation_requires_preparation",
+        "session_bank_allocation_refusal_preserves_pristine_preparation",
+        "session_stage_refusals_return_same_bank",
+        "session_reclaim_refusals_return_same_epoch",
+        "session_function_closed_owner_survives_rearm_until_other_function_entry",
+        "session_bank_reuse_preserves_global_coordinates_and_empty_reports",
+        "session_transfer_preserves_function_tags_all_512_words_and_receipt_on_refusal",
+        "session_output_allocation_refusal_preserves_pending_and_history",
+        "module_batch_history_is_some_only_for_exact_session_profile"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history/tests.rs": [
+        "module_history_stream_joins_key_pid_install_code_functions_and_entries",
+        "module_history_chain_refuses_foreign_missing_duplicate_reordered_chunks",
+        "module_history_replays_saved_owner_after_512_actions",
+        "module_history_drain_allocation_failure_is_atomic_and_window_is_qualified"
+      ]
+    },
+    "base": "ba5f787d44b12baedee445627b15076120c616e6",
+    "current_corpus_sha256": "1aba8961fd7178f24e229150c09d7eb2251eed5c665fc4b9f091f5075b53e45f",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 14,
+      "rust_tests": 14
+    },
+    "doctests": {},
+    "instances": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::normal::module::session::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::normal::module::session_history::tests::"
+      }
+    },
+    "listed_additions": {
+      "unit/rapid_profiler/lib": [
+        "frontend_native::always_on::normal::module::session::tests::module_batch_history_is_some_only_for_exact_session_profile",
+        "frontend_native::always_on::normal::module::session::tests::session_bank_allocation_refusal_preserves_pristine_preparation",
+        "frontend_native::always_on::normal::module::session::tests::session_bank_reuse_preserves_global_coordinates_and_empty_reports",
+        "frontend_native::always_on::normal::module::session::tests::session_banks_prepare_once_and_activation_requires_preparation",
+        "frontend_native::always_on::normal::module::session::tests::session_function_closed_owner_survives_rearm_until_other_function_entry",
+        "frontend_native::always_on::normal::module::session::tests::session_output_allocation_refusal_preserves_pending_and_history",
+        "frontend_native::always_on::normal::module::session::tests::session_profile_is_exact_and_finite_single_t2_paths_stay_separate",
+        "frontend_native::always_on::normal::module::session::tests::session_reclaim_refusals_return_same_epoch",
+        "frontend_native::always_on::normal::module::session::tests::session_stage_refusals_return_same_bank",
+        "frontend_native::always_on::normal::module::session::tests::session_transfer_preserves_function_tags_all_512_words_and_receipt_on_refusal",
+        "frontend_native::always_on::normal::module::session_history::tests::module_history_chain_refuses_foreign_missing_duplicate_reordered_chunks",
+        "frontend_native::always_on::normal::module::session_history::tests::module_history_drain_allocation_failure_is_atomic_and_window_is_qualified",
+        "frontend_native::always_on::normal::module::session_history::tests::module_history_replays_saved_owner_after_512_actions",
+        "frontend_native::always_on::normal::module::session_history::tests::module_history_stream_joins_key_pid_install_code_functions_and_entries"
+      ]
+    },
+    "macros": {},
+    "merge_base": "9950c633cba1afcaebb96da01eca6e203752256f",
+    "methods": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": {
+        "all": [
+          "session_profile_is_exact_and_finite_single_t2_paths_stay_separate",
+          "session_banks_prepare_once_and_activation_requires_preparation",
+          "session_bank_allocation_refusal_preserves_pristine_preparation",
+          "session_stage_refusals_return_same_bank",
+          "session_reclaim_refusals_return_same_epoch",
+          "session_function_closed_owner_survives_rearm_until_other_function_entry",
+          "session_bank_reuse_preserves_global_coordinates_and_empty_reports",
+          "session_transfer_preserves_function_tags_all_512_words_and_receipt_on_refusal",
+          "session_output_allocation_refusal_preserves_pending_and_history",
+          "module_batch_history_is_some_only_for_exact_session_profile"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history/tests.rs": {
+        "all": [
+          "module_history_stream_joins_key_pid_install_code_functions_and_entries",
+          "module_history_chain_refuses_foreign_missing_duplicate_reordered_chunks",
+          "module_history_replays_saved_owner_after_512_actions",
+          "module_history_drain_allocation_failure_is_atomic_and_window_is_qualified"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": [
+        "pub(super) mod normal;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": [
+        "mod module;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": [
+        "mod session;\nmod session_history;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": [
+        "#[cfg(test)]\npub(super) mod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/mod.rs": [
+        "mod always_on;"
+      ],
+      "tools/rapid-profiler/src/lib.rs": [
+        "pub mod frontend_native;"
+      ]
+    },
+    "origin": "2754cbfff93960913a08a71fe62d2d8b4c37df93",
+    "previous_corpus_sha256": "54781938d9ed1e3233a6ca846b1ebfc9edb3b27e45f8adc1e156ba930958659c",
+    "projections": {
+      "tools/rapid-profiler/src/frontend/epoch_storage.rs": {
+        "current_sha256": "08470e1aff2b33c2f6eb4ef7cda7ebb492823e39c8dfaf1f32f1be67bcb78840",
+        "edits": [
+          [
+            457,
+            1380,
+            ""
+          ]
+        ],
+        "previous_sha256": "b0ed604f9f3fc7978f650e14740fdd23770bb0bb167b496e3facd98eac32cb46"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": {
+        "current_sha256": "3189a03b81101822cb3c6e2e1419dca8c2f4cf2e539f13f50bbf20e0fc521e35",
+        "edits": [
+          [
+            561,
+            801,
+            ""
+          ],
+          [
+            1609,
+            2219,
+            ""
+          ],
+          [
+            2363,
+            2576,
+            ""
+          ],
+          [
+            2620,
+            3126,
+            "    if !normal_profile(prepared.profile.single()?.0, prepared.limits) {\n        return Err(error(Cause::Identity));\n"
+          ],
+          [
+            4477,
+            4813,
+            ""
+          ],
+          [
+            5168,
+            5886,
+            "        if !self\n            .binding\n            .single_site()\n            .is_ok_and(|site| normal_profile(site, self.binding.limits))\n            || !matches!(self.binding.entry_mode, EntryMode::Concurrent)\n            || self.binding.session.history_mode() != HistoryMode::Absolute\n        {\n            return Err((error(Cause::Identity), bank));\n"
+          ]
+        ],
+        "previous_sha256": "46b6ef814e6b6ffa79692878881c97b577477473f96fe140f9fb8c8fde9dd0cb"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/history.rs": {
+        "current_sha256": "e4de2c440bcb1f0442f5471a3332e04bbe681b3a751303976df2fd1cb67515c5",
+        "edits": [
+          [
+            3551,
+            3635,
+            "fn replay(chunk: &HistoryChunk, prefix: u64) -> Option<HistoryBinding> {\n"
+          ]
+        ],
+        "previous_sha256": "ed3b71ad207a20ea0b89feb8e5b722ad78db0a22997319257e4f21e0155d13f1"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+        "current_sha256": "a528268102ccd706784d25659a46afd514d63288dd513fc73a650980b741bbcf",
+        "edits": [
+          [
+            382,
+            683,
+            "    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleRecord,\n    NormalModuleThread, PreparedNormalModuleController,\n"
+          ],
+          [
+            742,
+            1128,
+            ""
+          ],
+          [
+            25323,
+            25424,
+            "        if !(normal_binding_matches(&self.binding) || module::binding_matches(&self.binding))\n"
+          ],
+          [
+            40447,
+            40530,
+            "            self.matches_identity(s) && module::binding_matches(&s.binding)\n"
+          ]
+        ],
+        "previous_sha256": "c075a0b0041ff888c11bfd9e365768647b2a247e482b5890a373a6dc448b79a1"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": {
+        "current_sha256": "08bfdd9c221aecd0ba007b0bc2ee6fa36f5a97a3cffa005e556bba087aee855b",
+        "edits": [
+          [
+            207,
+            863,
+            ""
+          ],
+          [
+            5953,
+            6003,
+            "        if !binding_matches(&self.binding)\n"
+          ],
+          [
+            7538,
+            7650,
+            "/// Complete finite legacy-history transfer. Slots/sequences/ordinals are global;\n"
+          ],
+          [
+            7790,
+            7867,
+            ""
+          ],
+          [
+            8161,
+            8520,
+            ""
+          ],
+          [
+            9597,
+            9674,
+            ""
+          ],
+          [
+            10252,
+            10305,
+            "        if !binding_matches(&state.binding) {\n"
+          ],
+          [
+            10509,
+            10795,
+            ""
+          ],
+          [
+            10823,
+            10868,
+            ""
+          ],
+          [
+            11364,
+            11436,
+            ""
+          ]
+        ],
+        "previous_sha256": "0671234df9a9a97269f28eba1305ec727d835009ac061ee4e3866a2b3f707d07"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "4c520612a59f3ad644156ac56a05d89dc661820be3a57a757572a932e1deddd8",
+        "edits": [
+          [
+            5319,
+            5649,
+            "    NormalModuleController, NormalModuleRecord, NormalModuleThread, NormalRecord, NormalThread,\n    NormalTotals, PreparedNormalController, PreparedNormalModuleController,\n"
+          ]
+        ],
+        "previous_sha256": "ca99273cd11329f91f2b0d4a0a451aa8e8d2a48345f96af00e95e3843eabd722"
+      }
+    },
+    "prospective_tree": "00ac6f064beed180590e9036af75fcfed9024075",
+    "python_methods": {},
+    "scope": "14 exact new declarations in two new cfg(test) modules in the existing rapid-profiler library harness. All old declarations, ignored/doc/automatic harness and serial counts, historical layers,350 recorder identities, failures and limits remain exact. Source derivation is not compiled-list or test execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/src/frontend/epoch_storage.rs": "08470e1aff2b33c2f6eb4ef7cda7ebb492823e39c8dfaf1f32f1be67bcb78840",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "f3fe46c160fbf29ccb009112306c89797ed25dafbeb2abe982831477fcd6a819",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "3189a03b81101822cb3c6e2e1419dca8c2f4cf2e539f13f50bbf20e0fc521e35",
+      "tools/rapid-profiler/src/frontend_native/always_on/history.rs": "e4de2c440bcb1f0442f5471a3332e04bbe681b3a751303976df2fd1cb67515c5",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "a528268102ccd706784d25659a46afd514d63288dd513fc73a650980b741bbcf",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "08bfdd9c221aecd0ba007b0bc2ee6fa36f5a97a3cffa005e556bba087aee855b",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": "285611e5e5ebc3ab491a85a02f90753068944462ff3751913f5ef3708cb98a98",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": "3704e39ba63ac6bfe71fcf354efca729d4e4b2d9b623c917a19b54a08e078733",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": "c5f677a3e91b58be013f4581e69207d59f38df4e40e39f67460107b4705110c0",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history/tests.rs": "02a903999e8656a031c40e3aa7f9d957d8e086fa76629b08249bf57acb5aa309",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "4c520612a59f3ad644156ac56a05d89dc661820be3a57a757572a932e1deddd8",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01"
+    },
+    "workspace_changes": {
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 31,
+          "tests": 475
+        },
+        "previous": {
+          "ignored": 31,
+          "tests": 461
+        }
+      }
+    }
+  },
   "main43d7": {
     "added_methods": {
       "tests/support/native_tree_batch.rs": [
