@@ -7,6 +7,7 @@ use rapid_profiler::frontend::{ActionKind, ControllerSnapshot, ControllerStatus}
 use rapid_profiler::frontend_native::NormalRecord;
 use std::fmt::Write as _;
 use std::io::Write as _;
+pub(crate) mod backoff;
 pub(crate) mod throughput;
 
 const LABEL: &str = "normal-exact-37-v1";
