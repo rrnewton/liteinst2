@@ -13,6 +13,7 @@ use shared::io::Io;
 use shared::{Application as ApplicationTrait, failure};
 use std::sync::OnceLock;
 mod check;
+mod preparation_diagnostic;
 mod worker;
 const INSTALL: u64 = 0x6d6f_6401;
 
@@ -541,9 +542,15 @@ fn run_selected<const N: usize>(
     let mut custody = pair_worker::Custody::new(candidate, trusted, bytes.clone());
     let mut fail_stop = csv::FailStop(true);
     let policies: Vec<_> = leaves.iter().map(|leaf| leaf.policy.sdk()).collect();
-    let prep =
-        NormalLeafSetSitePreparation::new_with_policies(owner, identity(entries[0]), &policies)
-            .map_err(failure)?;
+    let prep = match NormalLeafSetSitePreparation::new_with_policies(
+        owner,
+        identity(entries[0]),
+        &policies,
+    ) {
+        Ok(prep) => prep,
+        // Keep FailStop armed and all current owners in scope; this never returns.
+        Err(error) => preparation_diagnostic::abort(&error),
+    };
     assert_eq!(prep.functions().len(), N);
     for i in 0..N {
         assert_eq!(prep.functions()[i].range(), (entries[i], ends[i]));
