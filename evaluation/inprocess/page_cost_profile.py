@@ -132,7 +132,18 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
         env = dict(row['environment'], PERF_CONFIG='/dev/null')
         result['perf'].update(argv=perf_argv, environment=env, start_ns=time.monotonic_ns())
         profiler = spawn('perf', perf_argv, env, (cr, aw), PERF); close(cr); close(aw)
-        need(os.write(cw, b'enable\n') == 7, 'complete enable command'); need(line(ar, start+8) == b'ack\n', 'exact perf enable acknowledgement')
+        need(os.write(cw, b'enable\n') == 7, 'complete enable command')
+        acknowledgement = b''; expected_ack = b'ack\n\0'
+        while acknowledgement != expected_ack:
+            left = start+8-time.monotonic(); need(left > 0, 'perf enable acknowledgement deadline')
+            ready = select.select([ar, *pidfds.values()], [], [], left)[0]
+            need(ready, 'perf enable acknowledgement timeout')
+            need(ar in ready, 'child exited before perf enable acknowledgement')
+            part = os.read(ar, 4096)
+            need(part and len(acknowledgement)+len(part) <= len(expected_ack), 'exact bounded perf acknowledgement size')
+            acknowledgement += part
+            need(expected_ack.startswith(acknowledgement), 'exact observed perf acknowledgement bytes')
+        result['enable_acknowledgement_hex'] = acknowledgement.hex()
         result['enabled_ns'] = time.monotonic_ns()
         result['release_ns'] = time.monotonic_ns(); need(os.write(gw, b'G') == 1, 'one release'); close(gw)
         remaining = start+TARGET[3]-time.monotonic()
