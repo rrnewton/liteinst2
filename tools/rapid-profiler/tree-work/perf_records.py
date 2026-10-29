@@ -140,6 +140,31 @@ def cpu_map(c):
     return result
 
 
+def _sample_payload(c, offset, sample_type, read_format, ids, result, adverse, unresolved):
+    # precise_ip=0 does not promise exact attribution even if this bit appears.
+    result.update(identifier=c.u(), ip=c.u(), pid=c.u(4), tid=c.u(4), time=c.u())
+    if sample_type & (1 << 6):
+        result["id"] = c.u()
+    if sample_type & (1 << 9):
+        result["stream_id"] = c.u()
+    result["cpu"] = c.u(4)
+    c.zero(4)
+    result["period"] = c.u()
+    result["read"] = read_values(c, read_format, ids)
+    require(result["identifier"] in ids, "unknown_sample_id", offset + 8)
+    require(result.get("id", result["identifier"]) == result["identifier"] == result["read"]["id"],
+            "sample_read_id_mismatch", offset)
+    require(result["pid"] > 0 and result["tid"] > 0, "sample_task_domain", offset)
+    if result["read"]["enabled"] != result["read"]["running"]:
+        adverse.append("sample_read_enabled_running_unequal")
+    if result["read"].get("lost", 0):
+        adverse.append("sample_read_lost_nonzero")
+    if result["period"] == 0:
+        adverse.append("zero_sample_period")
+    c.done()
+    return result, adverse, unresolved
+
+
 def decode_record(raw, offset, attr, ids):
     c = Cursor(raw, offset)
     kind, misc, size = c.u(4), c.u(2), c.u(2)
@@ -150,28 +175,7 @@ def decode_record(raw, offset, attr, ids):
     if kind == 9:
         require(misc & ~0x4007 == 0, "sample_misc_extension", offset + 4, unsupported=True)
         require(misc & 7 == 2, "sample_not_host_user", offset + 4)
-        # precise_ip=0 does not promise exact attribution even if this bit appears.
-        result.update(identifier=c.u(), ip=c.u(), pid=c.u(4), tid=c.u(4), time=c.u())
-        if sample_type & (1 << 6):
-            result["id"] = c.u()
-        if sample_type & (1 << 9):
-            result["stream_id"] = c.u()
-        result["cpu"] = c.u(4)
-        c.zero(4)
-        result["period"] = c.u()
-        result["read"] = read_values(c, read_format, ids)
-        require(result["identifier"] in ids, "unknown_sample_id", offset + 8)
-        require(result.get("id", result["identifier"]) == result["identifier"] == result["read"]["id"],
-                "sample_read_id_mismatch", offset)
-        require(result["pid"] > 0 and result["tid"] > 0, "sample_task_domain", offset)
-        if result["read"]["enabled"] != result["read"]["running"]:
-            adverse.append("sample_read_enabled_running_unequal")
-        if result["read"].get("lost", 0):
-            adverse.append("sample_read_lost_nonzero")
-        if result["period"] == 0:
-            adverse.append("zero_sample_period")
-        c.done()
-        return result, adverse, unresolved
+        return _sample_payload(c, offset, sample_type, read_format, ids, result, adverse, unresolved)
 
     kernel = {1, 2, 3, 4, 5, 6, 7, 8, 10, 13}
     if kind in kernel:
@@ -286,4 +290,25 @@ def decode_record(raw, offset, attr, ids):
         require(result["cap_zero"] == 1 and result["cap_short"] in (0, 1), "time_conv_capability", offset + 48)
         require(result["shift"] < 64 and result["mult"] > 0, "time_conv_parameters", offset + 8)
     c.done()
+    return result, adverse, unresolved
+
+
+def decode_record_context_diagnostic(raw, offset, attr, ids):
+    """Host SAMPLE context only. Every period remains UNATTRIBUTED."""
+    c = Cursor(raw, offset)
+    kind, misc, size = c.u(4), c.u(2), c.u(2)
+    require(size == len(raw), "record_size_mismatch", offset + 6)
+    if kind != 9:
+        return decode_record(raw, offset, attr, ids)
+    sample_type, read_format = attr["sample_type"], attr["read_format"]
+    result = {"offset": offset, "type": kind, "misc": misc, "size": size}
+    adverse, unresolved = [], []
+    require(misc & ~0x4007 == 0, "sample_misc_extension", offset + 4, unsupported=True)
+    require((misc & 7) in (1, 2), "unsupported_sample_context", offset + 4, unsupported=True)
+    result, adverse, unresolved = _sample_payload(
+        c, offset, sample_type, read_format, ids, result, adverse, unresolved)
+    result["sample_context"] = "host_kernel" if misc & 7 == 1 else "host_user"
+    result["attribution"] = "UNATTRIBUTED"
+    if misc & 7 == 1:
+        unresolved.append("kernel_sample_context_not_user_attribution")
     return result, adverse, unresolved

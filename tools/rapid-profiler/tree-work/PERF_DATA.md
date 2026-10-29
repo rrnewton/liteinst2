@@ -44,3 +44,23 @@ TMPDIR="$PWD/target/evaluation/perf-decode-tmp" \
 ```
 
 Use normal Python assertion mode; `-O` is refused. These tests exercise fabricated syntax and CLI behavior, not capture or native qualification. No test or capture outcome is reported here.
+
+## Separate sample-context diagnostic API
+
+`perf_data.decode_context_diagnostic(data, expected_cmdline=None)` is a separate Python API for the same bounded, externally authenticated bytes and raw command authority. The strict `decode()` API and `decode_perf.py` CLI remain unchanged; neither retries through this diagnostic.
+
+The diagnostic admits known host SAMPLE contexts KERNEL=1 and USER=2. Unknown modes, unsupported misc bits and malformed fields still stop decoding. Context does not identify counted execution privilege or function cost. Every decoded SAMPLE period remains explicitly `UNATTRIBUTED`, including user-context periods; zero values and adverse observations remain visible.
+
+Complete interpretation has status `CONTEXT_DIAGNOSTIC_UNQUALIFIED`. Context counts and period sums partition the decoded SAMPLE total. On any partial/refused interpretation, `file_sample_period_sum` is null; numeric prefix totals do not assign zero mass to undecoded records. No READ addition, scaling, loss estimate or inferred final tail is introduced.
+
+Private output preserves bounded original bytes, raw SAMPLE fields, available framing offsets/sizes/hashes and the successfully decoded prefix. Unknown records are not skipped or resynchronized. These fields and context bins establish no capture, PMU, mapping, terminal-accounting, accuracy or performance qualification.
+
+Run the six separate fabricated control groups from the repository root:
+
+```sh
+mkdir -p target/evaluation/perf-decode-tmp
+TMPDIR="$PWD/target/evaluation/perf-decode-tmp" \
+  python3 -B tools/rapid-profiler/tree-work/test_perf_context.py
+```
+
+The existing decoder and CLI control commands above remain required. Assertion mode is required; `-O` is refused. No test or capture outcome is reported here.

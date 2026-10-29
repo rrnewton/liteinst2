@@ -259,7 +259,7 @@ def features(data, out, raw, attr, expected_cmdline):
     return known_ids
 
 
-def decode(data, expected_cmdline=None):
+def _decode_file(data, expected_cmdline, record_decoder):
     """No IO, no APP attribution and no final accounting or success verdict.
 
     Invalid API arguments refuse normally. Unsupported semantics retain the
@@ -283,7 +283,7 @@ def decode(data, expected_cmdline=None):
         ids = features(data, out, raw, attr, expected_cmdline)
         for entry in out["inventory"]:
             at, n = entry["offset"], entry["size"]
-            record, adverse, unresolved = R.decode_record(data[at:at + n], at, attr, ids)
+            record, adverse, unresolved = record_decoder(data[at:at + n], at, attr, ids)
             out["records"].append(record)
             out["adverse"].extend(adverse)
             out["unresolved"].extend(unresolved)
@@ -313,4 +313,46 @@ def decode(data, expected_cmdline=None):
         "adverse": out["adverse"], "unresolved": out["unresolved"],
         "authority": "syntax only; no APP, loss completeness, terminal, mapping, or accuracy qualification",
     }
+    return out
+
+
+def decode(data, expected_cmdline=None):
+    """Strict host-user profile; status, predicates and output are unchanged."""
+    return _decode_file(data, expected_cmdline, R.decode_record)
+
+
+def decode_context_diagnostic(data, expected_cmdline=None):
+    """Separate host-context syntax diagnostic, never function attribution.
+
+    Private records retain raw context and IP, including zero/nonzero kernel
+    IPs. Context does not certify counted execution privilege or function cost.
+    On refusal only the fully decoded prefix has numeric period totals; missing
+    records are not zero mass. No capture or terminal-counter verdict is made.
+    """
+    out = _decode_file(data, expected_cmdline, R.decode_record_context_diagnostic)
+    summary = out["summary"]
+    contexts = {name: {"records": 0, "period_sum": 0} for name in ("host_user", "host_kernel")}
+    decoded = 0
+    for record in out["records"]:
+        if record["type"] == 9:
+            assert record["attribution"] == "UNATTRIBUTED"
+            bucket = contexts[record["sample_context"]]
+            bucket["records"] += 1
+            bucket["period_sum"] += record["period"]
+            decoded += 1
+    total = summary["decoded_sample_period_sum"]
+    assert sum(bucket["records"] for bucket in contexts.values()) == decoded
+    assert sum(bucket["period_sum"] for bucket in contexts.values()) == total
+    complete = summary["semantic_decode_complete"] and out["walk_complete"] and out["file_conserved"]
+    if complete:
+        summary["status"] = "CONTEXT_DIAGNOSTIC_UNQUALIFIED"
+    summary.update(
+        profile="host-user-kernel-context-v1", sample_contexts=contexts,
+        framed_sample_count=sum(row["type"] == 9 for row in out["inventory"]),
+        decoded_sample_count=decoded, file_sample_period_sum=total if complete else None,
+        attribution="NOT_ATTEMPTED", period_assignment="UNATTRIBUTED",
+        unattributed_period_sum=total,
+        period_sum_scope=("all decoded SAMPLE records in this file; no attribution" if complete else
+                          "partial decoded SAMPLE prefix only; undecoded mass unresolved"),
+        context_authority="sample context only; not counted privilege or function cost")
     return out
