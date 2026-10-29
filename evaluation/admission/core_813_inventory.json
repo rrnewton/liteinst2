@@ -4662,6 +4662,836 @@
       }
     }
   },
+  "main469": {
+    "added_methods": {
+      "tests/support/native_copied_capture/tests.rs": [
+        "copied_dispatch_matches_direct_heads_calls_and_outer",
+        "copied_capture_bounds_aliases_overflow_and_exact_ranges",
+        "copied_capture_requires_one_exact_transfer_and_fresh_storage",
+        "copied_capture_corruptions_and_dual_fault_remain_refusals"
+      ],
+      "tests/support/native_leaf_set_copied/scanner/tests.rs": [
+        "leaf_set_scanner_truth_preserves_all_literal_inputs_and_results",
+        "leaf_set_scanner_effects_check_widths_flags_and_branches",
+        "leaf_set_scanner_refuses_unsupported_and_out_of_bounds_effects",
+        "leaf_set_scanner_cache_matches_direct_decode_at_each_runtime_base",
+        "leaf_set_scanner_cached_visits_recheck_all_dynamic_state"
+      ],
+      "tests/support/native_leaf_set_copied/tests.rs": [
+        "leaf_set_profile_refuses_invalid_tables_and_preserves_old_discriminators",
+        "leaf_set_geometry_retains_noncontiguous_pages_and_complete_union",
+        "leaf_set_ready_joins_parent_plan_caller_table_and_selection",
+        "leaf_set_pair_requires_target_and_real_copied_outer_returns",
+        "leaf_set_population_retains_all_subsets_k_seeds_cases_and_counts",
+        "leaf_set_coverage_preserves_csv_subset_and_full_other_cfg_rules",
+        "leaf_set_output_caps_and_partial_rows_never_qualify",
+        "leaf_set_whole_policy_extent_and_complete_table_are_fixed",
+        "leaf_set_whole_ready_version_and_coherent_oversize_refuse"
+      ],
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied/check/tests.rs": [
+        "leaf_set_batch_joins_all_identity_rank_sequence_and_journal_words",
+        "leaf_set_history_report_and_reclaim_require_complete_state"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set/preparation_diagnostic.rs": [
+        "fixed_site_classes_keep_failure_framing",
+        "fixed_reasons_never_format_dynamic_error_strings",
+        "planning_metadata_uses_only_retained_lengths_and_flags",
+        "maximum_counters_and_overflow_keep_one_bounded_failure_line"
+      ]
+    },
+    "base": "75a2a16ce27a7f916fe32cdd5d48fa9228262195",
+    "current_corpus_sha256": "c24baba2e815a127f2d97b47392131baf8953e4c1de942f91aeb0887a52972bc",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 24,
+      "rust_tests": 24
+    },
+    "doctests": {},
+    "instances": {
+      "tests/support/native_copied_capture/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::copied_capture::tests::"
+      },
+      "tests/support/native_leaf_set_copied/scanner/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::"
+      },
+      "tests/support/native_leaf_set_copied/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::"
+      },
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied/check/tests.rs": {
+        "test/frontend_native_calibrations": "normal_leaf_set_copied_check::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set/preparation_diagnostic.rs": {
+        "unit/ordinary_interval/main": "normal::leaf_set::preparation_diagnostic::tests::"
+      }
+    },
+    "listed_additions": {
+      "test/frontend_native_calibrations": [
+        "normal_leaf_set_copied_check::tests::leaf_set_batch_joins_all_identity_rank_sequence_and_journal_words",
+        "normal_leaf_set_copied_check::tests::leaf_set_history_report_and_reclaim_require_complete_state",
+        "oracle::native_ordinary::normal_caller::copied_capture::tests::copied_capture_bounds_aliases_overflow_and_exact_ranges",
+        "oracle::native_ordinary::normal_caller::copied_capture::tests::copied_capture_corruptions_and_dual_fault_remain_refusals",
+        "oracle::native_ordinary::normal_caller::copied_capture::tests::copied_capture_requires_one_exact_transfer_and_fresh_storage",
+        "oracle::native_ordinary::normal_caller::copied_capture::tests::copied_dispatch_matches_direct_heads_calls_and_outer",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::leaf_set_scanner_cache_matches_direct_decode_at_each_runtime_base",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::leaf_set_scanner_cached_visits_recheck_all_dynamic_state",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::leaf_set_scanner_effects_check_widths_flags_and_branches",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::leaf_set_scanner_refuses_unsupported_and_out_of_bounds_effects",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::scanner::tests::leaf_set_scanner_truth_preserves_all_literal_inputs_and_results",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_coverage_preserves_csv_subset_and_full_other_cfg_rules",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_geometry_retains_noncontiguous_pages_and_complete_union",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_output_caps_and_partial_rows_never_qualify",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_pair_requires_target_and_real_copied_outer_returns",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_population_retains_all_subsets_k_seeds_cases_and_counts",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_profile_refuses_invalid_tables_and_preserves_old_discriminators",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_ready_joins_parent_plan_caller_table_and_selection",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_whole_policy_extent_and_complete_table_are_fixed",
+        "oracle::native_ordinary::normal_caller::leaf_set_copied::tests::leaf_set_whole_ready_version_and_coherent_oversize_refuse"
+      ],
+      "unit/ordinary_interval/main": [
+        "normal::leaf_set::preparation_diagnostic::tests::fixed_reasons_never_format_dynamic_error_strings",
+        "normal::leaf_set::preparation_diagnostic::tests::fixed_site_classes_keep_failure_framing",
+        "normal::leaf_set::preparation_diagnostic::tests::maximum_counters_and_overflow_keep_one_bounded_failure_line",
+        "normal::leaf_set::preparation_diagnostic::tests::planning_metadata_uses_only_retained_lengths_and_flags"
+      ]
+    },
+    "macros": {},
+    "merge_base": "0ce6983b69b688269b5b7b715a8712a2571b7d4b",
+    "methods": {
+      "tests/support/native_copied_capture/tests.rs": {
+        "all": [
+          "copied_dispatch_matches_direct_heads_calls_and_outer",
+          "copied_capture_bounds_aliases_overflow_and_exact_ranges",
+          "copied_capture_requires_one_exact_transfer_and_fresh_storage",
+          "copied_capture_corruptions_and_dual_fault_remain_refusals"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_leaf_set_copied/scanner/tests.rs": {
+        "all": [
+          "leaf_set_scanner_truth_preserves_all_literal_inputs_and_results",
+          "leaf_set_scanner_effects_check_widths_flags_and_branches",
+          "leaf_set_scanner_refuses_unsupported_and_out_of_bounds_effects",
+          "leaf_set_scanner_cache_matches_direct_decode_at_each_runtime_base",
+          "leaf_set_scanner_cached_visits_recheck_all_dynamic_state"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_leaf_set_copied/tests.rs": {
+        "all": [
+          "leaf_set_profile_refuses_invalid_tables_and_preserves_old_discriminators",
+          "leaf_set_geometry_retains_noncontiguous_pages_and_complete_union",
+          "leaf_set_ready_joins_parent_plan_caller_table_and_selection",
+          "leaf_set_pair_requires_target_and_real_copied_outer_returns",
+          "leaf_set_population_retains_all_subsets_k_seeds_cases_and_counts",
+          "leaf_set_coverage_preserves_csv_subset_and_full_other_cfg_rules",
+          "leaf_set_output_caps_and_partial_rows_never_qualify",
+          "leaf_set_whole_policy_extent_and_complete_table_are_fixed",
+          "leaf_set_whole_ready_version_and_coherent_oversize_refuse"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied/check/tests.rs": {
+        "all": [
+          "leaf_set_batch_joins_all_identity_rank_sequence_and_journal_words",
+          "leaf_set_history_report_and_reclaim_require_complete_state"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set/preparation_diagnostic.rs": {
+        "all": [
+          "fixed_site_classes_keep_failure_framing",
+          "fixed_reasons_never_format_dynamic_error_strings",
+          "planning_metadata_uses_only_retained_lengths_and_flags",
+          "maximum_counters_and_overflow_keep_one_bounded_failure_line"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tests/support/native_copied_capture.rs": [
+        "#[cfg(test)]\n#[path = \"native_copied_capture/tests.rs\"]\nmod tests;"
+      ],
+      "tests/support/native_interval_oracle.rs": [
+        "#[path = \"native_ordinary.rs\"]\npub mod native_ordinary;"
+      ],
+      "tests/support/native_leaf_set_copied.rs": [
+        "#[path = \"native_leaf_set_copied/scanner.rs\"]\npub mod scanner;",
+        "#[cfg(test)]\n#[path = \"native_leaf_set_copied/tests.rs\"]\nmod tests;"
+      ],
+      "tests/support/native_leaf_set_copied/scanner.rs": [
+        "#[cfg(test)]\n#[path = \"scanner/tests.rs\"]\nmod tests;"
+      ],
+      "tests/support/native_normal_caller.rs": [
+        "#[path = \"native_copied_capture.rs\"]\nmod copied_capture;",
+        "#[path = \"native_leaf_set_copied.rs\"]\npub mod leaf_set_copied;"
+      ],
+      "tests/support/native_ordinary.rs": [
+        "#[path = \"native_normal_caller.rs\"]\npub mod normal_caller;"
+      ],
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;",
+        "#[path = \"normal/leaf_set_copied/check.rs\"]\nmod normal_leaf_set_copied_check;"
+      ],
+      "tools/rapid-profiler/native-interval/main.rs": [
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/native-interval/normal.rs": [
+        "pub(super) mod leaf_set_copied;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied.rs": [
+        "mod check;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied/check.rs": [
+        "#[cfg(test)]\n#[path = \"check/tests.rs\"]\nmod tests;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/main.rs": [
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal.rs": [
+        "pub(super) mod leaf_set;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": [
+        "mod preparation_diagnostic;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set/preparation_diagnostic.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ]
+    },
+    "origin": "469fa27fa400e7d0617d3c04706f88af72cf8834",
+    "previous_corpus_sha256": "d46ac7f94a3b3c8b280cc409722f4dae38e56cd063bbcd1ddc4c22e248cad930",
+    "projections": {
+      "evaluation/ordinary-leaf-set-session/produce.py": {
+        "current_sha256": "b370191ca67ffccc7692373e347cca17f59972f7b6659248073317e5ea964713",
+        "edits": [
+          [
+            3005,
+            3033,
+            "def main():\n"
+          ],
+          [
+            3945,
+            4056,
+            ""
+          ],
+          [
+            4131,
+            4258,
+            "    catalog = load('_leaf_set_session_catalog', own.with_name('catalog.py'))\n"
+          ],
+          [
+            4895,
+            4963,
+            ""
+          ],
+          [
+            9839,
+            9872,
+            ""
+          ]
+        ],
+        "previous_sha256": "9c045aa5b80daccee7ba3a9ca7372770818720d49e7b77173465cadbe786d317"
+      },
+      "evaluation/ordinary-leaf-set-session/reproduce.py": {
+        "current_sha256": "dadf0cbe90c162d133a86f6452c393593bdc7469cf868fcd1b0979b81a0a3932",
+        "edits": [
+          [
+            2373,
+            2821,
+            ""
+          ],
+          [
+            8350,
+            8406,
+            "    assert len(prior) == 52 and len(APP_CONTROLS) == 12\n"
+          ],
+          [
+            8447,
+            8496,
+            "    assert len(wanted) == len(set(wanted)) == 64\n"
+          ],
+          [
+            13365,
+            13771,
+            ""
+          ],
+          [
+            16630,
+            16947,
+            "def freeze_campaign(run, recipe, catalog, producer, checker, binary, original, leaves, shape, original_shape, candidate, trusted, original_dso):\n"
+          ],
+          [
+            18817,
+            18926,
+            ""
+          ],
+          [
+            19123,
+            19224,
+            "        request = run.request(directory, [run.tools['python'], '-B', HERE/'produce.py', '--plan', path,\n"
+          ],
+          [
+            19913,
+            19996,
+            "                  for row in catalog.references()]), cap=16*MIB)\n"
+          ],
+          [
+            20036,
+            20156,
+            "def campaign(run, recipe, catalog, checker, producer, original_output, tables, shape, original_shape):\n"
+          ],
+          [
+            22407,
+            22729,
+            "            confirm_producer_custody(run, result, code, out, err, app_out, app_err, checked, case, row['index'], recipe.pin)\n"
+          ],
+          [
+            25130,
+            25294,
+            "def main():\n    started = time.monotonic()\n"
+          ],
+          [
+            28291,
+            28372,
+            ""
+          ],
+          [
+            29309,
+            29389,
+            ""
+          ],
+          [
+            30156,
+            30229,
+            ""
+          ],
+          [
+            30703,
+            30837,
+            ""
+          ],
+          [
+            31217,
+            31287,
+            ""
+          ],
+          [
+            31315,
+            31475,
+            ""
+          ],
+          [
+            32070,
+            32189,
+            "            scope=SCOPE,evidence_limit=recipe.EVIDENCE_LIMIT,final_allowance=recipe.FINAL_ALLOWANCE))\n"
+          ],
+          [
+            36950,
+            37358,
+            ""
+          ],
+          [
+            37693,
+            38013,
+            "        tables=freeze_campaign(run,recipe,new['catalog'],new['producer'],new['output'],binary,original,leaves,shape,original_shape,candidate,trusted,original_dso)\n        campaign(run,recipe,new['catalog'],new['output'],new['producer'],new['original_output'],tables,shape,original_shape)\n"
+          ],
+          [
+            38178,
+            38280,
+            "        if all(row['status']=='PASS' for row in originals+installed):run.result['status']=PASS\n"
+          ],
+          [
+            39254,
+            39328,
+            ""
+          ],
+          [
+            39582,
+            39744,
+            "    return 0 if run.result['status']==PASS and time.monotonic()<run.deadline else 1\n"
+          ]
+        ],
+        "previous_sha256": "eac0d71caa2962b446c29f011f8445e6b900eea01daaa8e5ae8f3cda5c521752"
+      },
+      "tests/support/native_copied_rust.rs": {
+        "current_sha256": "09c8b640942a079a2979e7a0c8903ead9ca6fc40366414eb0e11e3ef0ba2f383",
+        "edits": [
+          [
+            323,
+            400,
+            "pub(super) use effects::{caller_effects, outer_effect};\n"
+          ],
+          [
+            3235,
+            4068,
+            ""
+          ],
+          [
+            10873,
+            10922,
+            ""
+          ],
+          [
+            11472,
+            11528,
+            ""
+          ],
+          [
+            12505,
+            12654,
+            ""
+          ],
+          [
+            12785,
+            12817,
+            "            ready.case.bound() as u64,\n"
+          ],
+          [
+            13242,
+            13467,
+            ""
+          ],
+          [
+            13493,
+            13529,
+            "    assert_eq!(bound, ready.case.bound());\n"
+          ],
+          [
+            14161,
+            14359,
+            ""
+          ],
+          [
+            14765,
+            14986,
+            ""
+          ],
+          [
+            15012,
+            15048,
+            "    assert_eq!(value, ready.case.value());\n"
+          ],
+          [
+            15590,
+            15809,
+            ""
+          ],
+          [
+            15835,
+            15871,
+            "    assert_eq!(value, ready.case.value());\n"
+          ],
+          [
+            16733,
+            16947,
+            ""
+          ],
+          [
+            17040,
+            17076,
+            "    let j = ready.journal.as_ref().unwrap();\n"
+          ]
+        ],
+        "previous_sha256": "e4b935d3ff7b3625730b798ff657f30386552d0d9d3e3755ef1c92290d4bd22a"
+      },
+      "tests/support/native_copied_rust/effects.rs": {
+        "current_sha256": "c276a2de1dbd2bb5a5699f7b8505ffc9bf8212d64ea1c1604fc288219d7e264c",
+        "edits": [
+          [
+            2934,
+            3128,
+            ""
+          ],
+          [
+            3668,
+            3731,
+            "            step(&pair[0], &pair[1], ready, data, stack);\n"
+          ],
+          [
+            3845,
+            4002,
+            ""
+          ]
+        ],
+        "previous_sha256": "ce6298b08fe5b45a453ec551b3eab2fb3d44574ddcc7baa83109d51a8f255e6e"
+      },
+      "tests/support/native_normal_caller.rs": {
+        "current_sha256": "06eacce52be4bbed8bb0ac8c3ac77c275caa6212ea7b16f03236b518b029f42b",
+        "edits": [
+          [
+            426,
+            483,
+            ""
+          ],
+          [
+            538,
+            601,
+            ""
+          ],
+          [
+            3131,
+            3433,
+            "                copied_rust::call_before(r, ready.copied_rust(), index, rsp, data, bound)\n"
+          ],
+          [
+            3937,
+            4223,
+            "                copied_rust::call_after(r, ready.copied_rust(), index, rsp, word)\n"
+          ],
+          [
+            4768,
+            5068,
+            "                copied_rust::ret_before(r, ready.copied_rust(), index, rsp, value, word)\n"
+          ],
+          [
+            5609,
+            5907,
+            "                copied_rust::ret_after(r, ready.copied_rust(), index, rsp, value, word)\n"
+          ],
+          [
+            6435,
+            6735,
+            "                copied_rust::journal_words(ready.copied_rust(), pid, rsp, returns, true)\n"
+          ],
+          [
+            8248,
+            8353,
+            ""
+          ],
+          [
+            8577,
+            8629,
+            ""
+          ],
+          [
+            8837,
+            8889,
+            ""
+          ],
+          [
+            9116,
+            9188,
+            ""
+          ],
+          [
+            9415,
+            9478,
+            ""
+          ],
+          [
+            26421,
+            26476,
+            ""
+          ],
+          [
+            27619,
+            27658,
+            ""
+          ],
+          [
+            28951,
+            29007,
+            ""
+          ],
+          [
+            31144,
+            31532,
+            "        if let Some(profile) = &self.copied_rust {\n"
+          ],
+          [
+            32013,
+            32130,
+            ""
+          ],
+          [
+            33570,
+            33605,
+            ""
+          ],
+          [
+            34069,
+            34191,
+            ""
+          ],
+          [
+            36034,
+            36222,
+            "        if self.copied_rust.is_some() {\n"
+          ],
+          [
+            46492,
+            46541,
+            ""
+          ],
+          [
+            51712,
+            52025,
+            "            if let Some(expected) = &self.copied_rust {\n"
+          ],
+          [
+            53038,
+            53331,
+            "        let maps = if let Some(expected) = &self.copied_rust {\n"
+          ],
+          [
+            54732,
+            55023,
+            ""
+          ],
+          [
+            55543,
+            55581,
+            "        if self.copied_rust.is_some() {\n"
+          ],
+          [
+            55972,
+            56023,
+            "        let seeded = if self.copied_rust.is_some() {\n"
+          ],
+          [
+            57864,
+            58190,
+            "                let caller_pc = profile\n                    .heads()\n                    .iter()\n                    .any(|&offset| r.caller() + offset == pc);\n"
+          ],
+          [
+            59767,
+            60036,
+            "                    if pc == r.caller() + profile.outer_ret() {\n"
+          ],
+          [
+            60107,
+            60430,
+            "                let call = profile\n                    .calls()\n                    .iter()\n                    .position(|&offset| r.caller() + offset == pc);\n"
+          ],
+          [
+            60704,
+            60793,
+            "                        let step = plan\n                            .steps()\n                            .iter()\n                            .find(|s| s.offset == plan.calls()[0])\n                            .unwrap();\n"
+          ],
+          [
+            65264,
+            65307,
+            "            if self.copied_rust.is_none() {\n"
+          ],
+          [
+            66103,
+            66161,
+            "            let mut after = if self.copied_rust.is_some() {\n"
+          ],
+          [
+            70290,
+            70580,
+            "        if self.copied_rust.is_some() {\n"
+          ],
+          [
+            70843,
+            71109,
+            "        let (values, outer_value) = if let Some(profile) = &self.copied_rust {\n"
+          ]
+        ],
+        "previous_sha256": "bc5b5b8c345974e19f11a076c83594dd05d03a73c9ce46c9ccb2f0b2392d1fc8"
+      },
+      "tests/support/native_normal_module.rs": {
+        "current_sha256": "88e69811d5516644bd58b9f113353bd419f0c2059d01965143573ca63a1364c8",
+        "edits": [
+          [
+            6842,
+            6885,
+            ""
+          ],
+          [
+            7444,
+            7916,
+            ""
+          ],
+          [
+            8105,
+            8153,
+            ""
+          ],
+          [
+            8418,
+            8477,
+            ""
+          ],
+          [
+            8714,
+            8766,
+            ""
+          ],
+          [
+            9020,
+            9078,
+            ""
+          ],
+          [
+            9378,
+            9450,
+            ""
+          ],
+          [
+            9697,
+            9781,
+            ""
+          ],
+          [
+            10261,
+            10343,
+            ""
+          ],
+          [
+            22894,
+            23038,
+            "        if let Some(p) = &self.copied_rust {\n"
+          ],
+          [
+            23293,
+            23433,
+            "        if let Some(p) = &self.copied_rust {\n"
+          ],
+          [
+            24301,
+            24362,
+            ""
+          ],
+          [
+            24469,
+            24672,
+            "        if let WalkReady::CopiedRust(r) = ready {\n"
+          ],
+          [
+            26320,
+            26376,
+            ""
+          ],
+          [
+            26575,
+            26631,
+            ""
+          ]
+        ],
+        "previous_sha256": "f7337696eaa7ffdf66e8d5318105b07599c7e3f3bd365b1c8f39c5a7a3437f91"
+      },
+      "tools/rapid-profiler/native-interval/calibrations.rs": {
+        "current_sha256": "e10fb6e4c338b871583fcc0449484a477eeec2b1d44a251d8bb24233e4138675",
+        "edits": [
+          [
+            794,
+            954,
+            ""
+          ]
+        ],
+        "previous_sha256": "fd01ce7b128642ae1822c93d451e2ff5ccb96165b329686825e9c1cc0cad56da"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "774452ee10aabe890d8f5f9947c7b3d6855e444b3d186db454fa5259ba3c13e4",
+        "edits": [
+          [
+            39640,
+            41124,
+            ""
+          ]
+        ],
+        "previous_sha256": "689c4970a0d37340063bc9189b08af89d095aeabc065a9253a327ccd77349a90"
+      },
+      "tools/rapid-profiler/native-interval/normal.rs": {
+        "current_sha256": "e50ea36b1cace4079ceeed3f92d50fd861fe8fc72c039e8b8306db592d472d53",
+        "edits": [
+          [
+            960,
+            992,
+            ""
+          ]
+        ],
+        "previous_sha256": "e9423bd3a10e498df7e2ed235740e5d7e590dc0da98ce78fd5f1cd7a2b5232d3"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": {
+        "current_sha256": "f29387c74da6d33c85e63a0828769a060d491110f000404cf4aaede2158ab635",
+        "edits": [
+          [
+            780,
+            808,
+            ""
+          ],
+          [
+            19340,
+            19660,
+            "    let prep =\n        NormalLeafSetSitePreparation::new_with_policies(owner, identity(entries[0]), &policies)\n            .map_err(failure)?;\n"
+          ]
+        ],
+        "previous_sha256": "73975980547fa8e8ca394a9563646995d5f7fcefccf69f205d94786377216627"
+      }
+    },
+    "prospective_tree": "d432e8fb84079e9365afa22c7337ac2633855f86",
+    "python_methods": {},
+    "scope": "24 added declarations, each compiled once: calibrations20, ordinary4. All old identities, ignored/doc/harness/serial counts, historical layers,350 recorder identities, predicates and caps remain exact. Source derivation is not execution credit.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/ordinary-leaf-set-native/controls.py": "39517e20969d149fbcfcc22669a7c23a891bb8a60e8b3bf8def50b70f0fef133",
+      "evaluation/ordinary-leaf-set-native/leaf_set_native.py": "a3523252e9e234fa10dd3303bdfb58aa103b4f9d3b18d7d14680fbafa57a81ee",
+      "evaluation/ordinary-leaf-set-native/reproduce.py": "b0aee80e836f0e78fba601d12cdbdbc86cff21a95bf8c1add71b490a5a7f6349",
+      "evaluation/ordinary-leaf-set-native/runner_controls.py": "42dd42fb3578a1183a09d717d79a26d5ed4a2c137a89f52802d4896353aa5aa5",
+      "evaluation/ordinary-leaf-set-session/preparation_refusal.S": "c77a6864802e570af93ece0740619c1f87edee2e740f01a0fd26b2f221f3444e",
+      "evaluation/ordinary-leaf-set-session/preparation_refusal.py": "c28387aee2f371d2b99705cff4d5c1a05a0c2bd64568e5a94aca10aba64892b2",
+      "evaluation/ordinary-leaf-set-session/preparation_refusal_controls.py": "0bda1ca2d4bff641fc7c88f5b0c595d4bd5b1581fd703c7de8aca3e42dbd7b56",
+      "evaluation/ordinary-leaf-set-session/produce.py": "b370191ca67ffccc7692373e347cca17f59972f7b6659248073317e5ea964713",
+      "evaluation/ordinary-leaf-set-session/reproduce.py": "dadf0cbe90c162d133a86f6452c393593bdc7469cf868fcd1b0979b81a0a3932",
+      "evaluation/ordinary-leaf-set-whole-session/catalog.py": "68836b6094e77ff46412d18c7f4db6fe24ed12a487e487648edddcdbe6877470",
+      "evaluation/ordinary-leaf-set-whole-session/produce.py": "16c8939a3f4298cb38367d02af5ec06a6f53a2797064d371fee5efe2d6b7e28c",
+      "evaluation/ordinary-leaf-set-whole-session/profile.py": "832ed4a7ac89a71c347a2289475f49cca8c245f197ee50fe533c7eda70d266fa",
+      "evaluation/ordinary-leaf-set-whole-session/profile_controls.py": "fec8a798bc9d05d7fb609344a4aa085ea991069652ac82c7fc1881b3af239dee",
+      "evaluation/ordinary-leaf-set-whole-session/reproduce.py": "4599610048cda354c041892ed58ac107376fc7deaa42e85f080f09c94b5d0240",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_copied_capture.rs": "1dafd887fb355ff8ee94767fca9d9a4b797f3ee6b43e57ec3ef2749ef61efda2",
+      "tests/support/native_copied_capture/tests.rs": "da20a9fd39025e500f6a520518736ea95c947b7c89c07698300660b278594fc3",
+      "tests/support/native_copied_rust.rs": "09c8b640942a079a2979e7a0c8903ead9ca6fc40366414eb0e11e3ef0ba2f383",
+      "tests/support/native_copied_rust/effects.rs": "c276a2de1dbd2bb5a5699f7b8505ffc9bf8212d64ea1c1604fc288219d7e264c",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_leaf_set_copied.rs": "921b7905e9a224aab1a14f7423d506322307e4778d2058678c8c849e0cffd685",
+      "tests/support/native_leaf_set_copied/scanner.rs": "1a88222009429c40a1fbfc6dc4b1b26eaea978111e1a75e96aff3abd29211b9b",
+      "tests/support/native_leaf_set_copied/scanner/tests.rs": "9600b380ca1b6ba2f8e5ea8bc2de8a6ed45fed871da3350f7b47e7c217f9d6ca",
+      "tests/support/native_leaf_set_copied/tests.rs": "c78032e6aabfa36e7f44e1a3c4eb1a057c439fb36e10fae610f1efeeee7eb572",
+      "tests/support/native_leaf_set_copied/trace.rs": "a6e29dbf9a51be9bf1a5ef3301ae9f1101e40d27e7c8c20bcbd5d62f32b6601b",
+      "tests/support/native_normal_caller.rs": "06eacce52be4bbed8bb0ac8c3ac77c275caa6212ea7b16f03236b518b029f42b",
+      "tests/support/native_normal_module.rs": "88e69811d5516644bd58b9f113353bd419f0c2059d01965143573ca63a1364c8",
+      "tests/support/native_ordinary.rs": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "e10fb6e4c338b871583fcc0449484a477eeec2b1d44a251d8bb24233e4138675",
+      "tools/rapid-profiler/native-interval/main.rs": "774452ee10aabe890d8f5f9947c7b3d6855e444b3d186db454fa5259ba3c13e4",
+      "tools/rapid-profiler/native-interval/normal.rs": "e50ea36b1cace4079ceeed3f92d50fd861fe8fc72c039e8b8306db592d472d53",
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied.rs": "9fd0508a6cd0e10d0ac750f13f602d4c308f0d61be0b7ba6503a3215144dbf54",
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied/check.rs": "0b59470233f5dc78395d7274889f37b2ca578899f98d20f05c5b7ab572ffe627",
+      "tools/rapid-profiler/native-interval/normal/leaf_set_copied/check/tests.rs": "e8278a7d36c274ee860316ae67f6dec5fbbfbf192e29cca87054d79ab802a609",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "6188f9a060e09309fef755da89fe5c65aa44fa0302cbc6b5fd190d4833665f4b",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "4e7dcff27bba42a6cf89b4fa848322c8a92cf9e56d5d3cea5208a80c810bf996",
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": "f29387c74da6d33c85e63a0828769a060d491110f000404cf4aaede2158ab635",
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set/preparation_diagnostic.rs": "4f6a1b0e396b75b4a9d695423468671c4468aecff727e8f13822025330c76927"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 200
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 180
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 235
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 231
+        }
+      }
+    }
+  },
   "main5a0": {
     "added_methods": {
       "tests/support/native_normal_csv/tests.rs": [
