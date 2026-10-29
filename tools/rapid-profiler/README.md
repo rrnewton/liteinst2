@@ -12,6 +12,10 @@ the linked `.text` into memfd-backed RW and RX aliases, discovers every marked
 function symbol, and converts each NOP into a liteinst2 `RapidProbe`. The hot
 toggle is therefore one opcode-byte store; the text mapping is never W+X.
 
+The separate [ordinary-module elapsed-time comparison](NORMAL_THROUGHPUT.md)
+runs fixed native and always-on pairs with complete per-call checks. It reports
+setup, segmented call-path, validated service and whole-process observations.
+
 ## Entry-to-exit sampling
 
 An armed entry callback reads the original return address from the application
