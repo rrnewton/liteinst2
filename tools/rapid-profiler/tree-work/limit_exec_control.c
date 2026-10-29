@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -41,6 +42,11 @@ int main(int argc, char **argv) {
         return fflush(stdout) ? 3 : 0;
     }
     if (!strcmp(argv[1], "overflow") && argc == 2) {
+        /* A piped core handler can run despite RLIMIT_CORE=0. Keep this
+         * intentional crash nondumpable instead of relaxing the core=0
+         * wait-status requirement or invoking an external dump helper. */
+        if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) ||
+            prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) != 0) return 2;
         struct stat st;
         struct sigaction action;
         sigset_t blocked;
