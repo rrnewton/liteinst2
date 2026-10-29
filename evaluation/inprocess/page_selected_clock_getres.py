@@ -163,7 +163,7 @@ def publish(path,r,private):
     hw=dict(r['hardware']);flags=hw.pop('isa_flags');hw.update(isa_flags_count=len(flags),isa_flags_sha256=digest(flags))
     cases=[]
     for c in r['cases']:
-        controls=c.get('controls',0);controls=controls if type(controls)is int else len(controls)
+        controls=c.get('controls',0);controls=controls if type(controls)is int else len(controls['refusals'])
         actual=[x for x in r['commands']if x['name']==c['command']]
         need(len(actual)<=1,'one actual command per case')
         outcome=actual[0]if actual else{}
