@@ -30,11 +30,14 @@ Run the existing build and process-custody recipe, then select the new profile:
 
 ```text
 python3 -B evaluation/offline-corpus/reproduce_whole.py \
-  --capture CLOSED_BUILD_DIRECTORY \
+  --capture ABSOLUTE_CLOSED_BUILD_DIRECTORY \
   --capture-sha256 EXACT_CLOSED_JSON_SHA256 \
-  --output ignored/NEW_WHOLE_RUN \
+  --output ABSOLUTE_NEW_IGNORED_DIRECTORY \
   --placement-profile offline-whole-authored-broad-span-2g-v1
 ```
+
+Both directories must use canonical absolute paths under the checkout’s `ignored/`
+directory; the output must not exist yet.
 
 The capture must contain the actual current-source release build, complete
 configuration and source identities, target capture, both original programs
