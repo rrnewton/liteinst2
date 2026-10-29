@@ -42,7 +42,7 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
     """One fresh exact launch. Caller still validates source/namespace/terminal reports."""
     import page_default_ls_release_provenance as provenance
     observe, same = provenance.observe, provenance.same
-    from page_cost_profile_read import summarize
+    from page_cost_profile_read import summarize, bridge_file, same_bridge
     directory = Path(directory).resolve(); directory.mkdir(exist_ok=False)
     python = str(Path(sys.executable).resolve()); perf = str(Path(perf).resolve()); bridge = Path(bridge).resolve()
     need(tuple(row['bounds']) == TARGET and row['capture_limit'] == 16 << 20,
@@ -65,7 +65,11 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
               (perf, python, __file__, Path(__file__).with_name('page_cost_profile_read.py'), provenance.__file__, bridge)}
     need(all(before[str(Path(bridge).resolve())][k] == bridge_fact[k] for k in ('bytes', 'sha256')),
          'independently supplied actual bridge fact')
+    bridge_identity_before = bridge_file(bridge)[2]
+    need(all(bridge_identity_before[k] == bridge_fact[k] for k in ('bytes','sha256')),
+         'held bridge bytes equal the independently supplied actual bridge fact')
     result = dict(format='page-cost-profile-v1', benchmark_credit=False, qualification=False,
+        bridge_identity_before=bridge_identity_before,
         target=row, perf=dict(bounds=list(PERF)), inputs_before=before, cleanup_errors=[],
         adopted=[], children_before='ECHILD', children_after=None, target_bounds=list(TARGET), cpu=cpu, owner_pid=os.getpid())
     row.update(pid=None, exit=None, reaped=False, timed_out=False, error=None, cleanup_errors=[])
@@ -217,6 +221,10 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
             try: result['inputs_after'][p] = identity(p)
             except BaseException as exc: result['cleanup_errors'].append('input '+p+': '+repr(exc))
         if before != result['inputs_after']: result['cleanup_errors'].append('source/tool/bridge changed')
+        try:
+            result['bridge_identity_after'] = bridge_file(bridge)[2]
+            same_bridge(bridge_identity_before, result['bridge_identity_after'])
+        except BaseException as exc: result['cleanup_errors'].append('bridge mount/file identity: '+repr(exc))
         result['captures'] = captures()
         if any(result['captures'].get(n+'.'+k, {}).get('bytes', 0) > TARGET[2] for n in ('target', 'perf') for k in ('stdout', 'stderr')):
             result['cleanup_errors'].append('ordinary capture bound')
@@ -228,7 +236,8 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
     need(result['closed'] and error is None, 'profile ownership/protocol failed; retained owner.json')
     try:
         result['sampling'] = summarize(directory/'perf.data', Path(bridge), row['pid'], cpu, directory,
-                                       result['release_ns'], result['target_exit_ready_ns'])
+                                       result['release_ns'], result['target_exit_ready_ns'],
+                                       bridge_identity=result['bridge_identity_after'])
         need(all(result['sampling']['bridge'][k] == bridge_fact[k] for k in ('bytes', 'sha256')),
              'sample symbol ELF equals independently bound actual bridge')
     except BaseException as exc:

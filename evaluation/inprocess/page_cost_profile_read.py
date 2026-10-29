@@ -1,12 +1,73 @@
 """Strict CPU_CLOCK perf.data reader with its exact optional DUMMY sideband."""
-import collections, csv, hashlib, json, os, struct
+import collections, csv, ctypes, hashlib, json, os, platform, re, stat, struct
 from pathlib import Path
 
 def need(v, why):
     if not v: raise ValueError(why)
 
+def bridge_file(path):
+    """One exact held file; Btrfs MMAP2 uses its mount's superblock device."""
+    need(path.is_absolute() and platform.machine()=='x86_64' and ctypes.sizeof(ctypes.c_long)==8,
+         'absolute trusted bridge path and native x86-64 statx ABI')
+    libc=ctypes.CDLL(None,use_errno=True);libc.syscall.restype=ctypes.c_long
+    fd=os.open(path,os.O_RDONLY|os.O_CLOEXEC|os.O_NOFOLLOW)
+    def observe():
+        st=os.fstat(fd);raw=ctypes.create_string_buffer(256)
+        need(stat.S_ISREG(st.st_mode) and 0<st.st_size<=128<<20, 'bounded actual regular bridge FD')
+        need(os.readlink('/proc/self/fd/'+str(fd))==str(path), 'held bridge FD retains the exact recorded absolute pathname')
+        result=libc.syscall(ctypes.c_long(332),ctypes.c_int(fd),ctypes.c_char_p(b''),
+            ctypes.c_int(0x1000),ctypes.c_uint(0x17ff),ctypes.byref(raw))
+        need(result==0, 'actual held bridge AT_EMPTY_PATH statx')
+        b=raw.raw;mask=struct.unpack_from('<I',b)[0];mode=struct.unpack_from('<H',b,28)[0]
+        ino,size=struct.unpack_from('<QQ',b,32);major,minor,mount=struct.unpack_from('<IIQ',b,136)
+        need(mask&0x17ff==0x17ff and not mask&0x4000 and mount>0 and
+             (mode,ino,size,major,minor)==(st.st_mode,st.st_ino,st.st_size,os.major(st.st_dev),os.minor(st.st_dev)),
+             'ordinary mount ID and complete held fstat/statx bridge identity')
+        for at,value in ((96,st.st_ctime_ns),(112,st.st_mtime_ns)):
+            seconds,nanos=struct.unpack_from('<qI',b,at)
+            need(nanos<1000000000 and seconds*1000000000+nanos==value, 'same bridge fstat/statx change timestamps')
+        text=Path('/proc/self/mountinfo').read_bytes();need(0<len(text)<=16<<20,'bounded mountinfo snapshot')
+        lines=[x for x in text.decode('utf-8','surrogateescape').splitlines()if x.split()[0]==str(mount)]
+        need(len(lines)==1, 'one exact held-FD mount ID in actual mountinfo')
+        fields=lines[0].split();need('-'in fields,'mountinfo separator');split=fields.index('-')
+        need(split>=6 and len(fields)==split+4 and re.fullmatch(r'[0-9]+:[0-9]+',fields[2]),
+             'complete exact mountinfo identity row')
+        def path_field(x):
+            return re.sub(r'\\(040|011|012|134)',lambda m:chr(int(m[1],8)),x)
+        root,mountpoint=map(path_field,fields[3:5])
+        need(root.startswith('/') and mountpoint.startswith('/') and
+             (str(path)==mountpoint or str(path).startswith(mountpoint.rstrip('/')+'/')),
+             'exact held pathname belongs to its actual mount root and mountpoint')
+        device=[major,minor];super_device=[int(x)for x in fields[2].split(':')];fstype=fields[split+1]
+        need(fstype=='btrfs' or super_device==device, 'non-Btrfs mount device must equal actual stat device')
+        return st,dict(statx_hex=b.hex(),mount_id=mount,stat_device=device,superblock_device=super_device,
+            fstype=fstype,mount_root=root,mountpoint=mountpoint,mountinfo_row=lines[0],
+            mountinfo_sha256=hashlib.sha256(text).hexdigest(),pathname=str(path))
+    try:
+        before,a=observe();parts=[];left=before.st_size
+        while left:
+            block=os.read(fd,min(left,1<<20));need(block,'complete held bridge bytes');parts.append(block);left-=len(block)
+        need(os.read(fd,1)==b'', 'held bridge has exact recorded extent')
+        b=b''.join(parts);after,z=observe()
+        keys=('st_dev','st_ino','st_mode','st_nlink','st_uid','st_gid','st_size','st_mtime_ns','st_ctime_ns')
+        need(all(getattr(before,k)==getattr(after,k)for k in keys) and
+             all(a[k]==z[k]for k in ('mount_id','stat_device','superblock_device','fstype','mount_root','mountpoint','mountinfo_row','pathname')),
+             'stable same bridge FD, bytes extent, timestamps and exact mount identity across full read')
+        provenance=dict(before=a,after=z,bytes=len(b),sha256=hashlib.sha256(b).hexdigest(),
+            inode=after.st_ino,device=a['stat_device'],stat_identity=[getattr(after,k)for k in keys],
+            mmap_device=a['superblock_device']if a['fstype']=='btrfs'else a['stat_device'],
+            scope='Exact held-file pathname, inode and stable complete bytes; Btrfs mount-ID row supplies only its canonical MMAP2 superblock device. No generic alternate-device acceptance.')
+        return b,after,provenance
+    finally:os.close(fd)
+
+def same_bridge(before,after):
+    need(all(before[k]==after[k]for k in ('bytes','sha256','inode','device','mmap_device','stat_identity')) and
+         all(before['after'][k]==after['before'][k]for k in
+             ('mount_id','stat_device','superblock_device','fstype','mount_root','mountpoint','mountinfo_row','pathname')),
+         'same complete bridge bytes/file identity and exact mount projection before and after profiling')
+
 def elf(path):
-    b=path.read_bytes(); h=struct.unpack_from('<16sHHIQQQIHHHHHH',b)
+    b,st,provenance=bridge_file(path); h=struct.unpack_from('<16sHHIQQQIHHHHHH',b)
     need(h[0][:6]==b'\x7fELF\x02\x01' and h[2]==62 and h[9]==56 and h[11]==64,
          'actual ELF64 x86-64 tables')
     def region(at,n):
@@ -30,12 +91,12 @@ def elf(path):
                 name=region(at,n);at+=(n+3)&~3;desc=region(at,z);at+=(z+3)&~3
                 need(at<=end,'ELF note extent')
                 if name==b'GNU\0' and t==3:ids.append(desc.hex())
-    st=path.stat()
+    # st is retained from the same held FD used for every ELF byte.
     return dict(bytes=len(b),sha256=hashlib.sha256(b).hexdigest(),path=str(path),
-        device=[os.major(st.st_dev),os.minor(st.st_dev)],inode=st.st_ino,
+        device=[os.major(st.st_dev),os.minor(st.st_dev)],mmap_device=provenance['mmap_device'],inode=st.st_ino,provenance=provenance,
         build_ids=ids,loads=ph,symbols=sorted(set(symbols)))
 
-def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_ns):
+def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_ns, *, bridge_identity=None):
     """Whole exec-to-exit envelope; event loss or truncation never hidden."""
     data=path.read_bytes(); need(104<=len(data)<=128<<20,'bounded retained perf file')
     need(data[:8]==b'PERFILE2','native little-endian perf.data header')
@@ -153,7 +214,10 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             need(initial and len(b)==8 and (not paired or len(indexed)==len(ids)), 'one complete initial metadata boundary')
             initial=False
         else:need(kind==68 and len(b)==8, 'complete FINISHED_ROUND marker')
-    obj=elf(bridge);maps={};rows=[];counts=collections.Counter();lost=0;throttles=0
+    obj=elf(bridge)
+    if bridge_identity is not None:same_bridge(bridge_identity,obj['provenance'])
+    (directory/'bridge-identity.json').write_text(json.dumps(obj['provenance'],sort_keys=True)+'\n')
+    maps={};rows=[];counts=collections.Counter();lost=0;throttles=0
     at=start;last_time=0;execs=[];exits=[];mappings=[]
     while at<start+size:
         need(at+8<=start+size,'complete event header');kind,misc,length=struct.unpack_from('<IHH',data,at)
@@ -223,7 +287,7 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
                 if m['name']==obj['path'] and m['prot']is not None and m['prot']&4:
                     candidate=True;candidate_fileoff=m['offset']+ip-m['address'];reason='bridge_identity_unresolved'
                     identity=(m['build_id']is not None and m['build_id']in obj['build_ids'])or(
-                        m['build_id']is None and m['device']==obj['device'] and m['inode']==obj['inode'])
+                        m['build_id']is None and m['device']==obj['mmap_device'] and m['inode']==obj['inode'])
                     if identity:
                         fileoff=candidate_fileoff
                         loads=[p for p in obj['loads']if p[0]==1 and p[1]&1 and p[2]<=fileoff<p[2]+p[5]]
@@ -254,5 +318,5 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
         metadata_counts=dict(metadata),exec_timestamps_ns=execs,exit_timestamp_ns=exits[0],sampled_period_total=sum(r['period']for r in rows),
         first_sample_ns=rows[0]['time']if rows else None,last_sample_ns=rows[-1]['time']if rows else None,
         full_exec_exit_envelope=True,loss_free=lost==0 and throttles==0,
-        bridge={k:obj[k]for k in('sha256','bytes','build_ids')},qualification=False,
+        bridge={k:obj[k]for k in('sha256','bytes','build_ids','device','mmap_device','inode')},qualification=False,
         scope='99Hz statistical user/kernel CPU samples across the actual exec-to-exit envelope. Pre-exec wrapper samples retained separately; unknown mapping identities remain unknown. No baseline timing, whole-time attribution, callgraph or performance credit.')
