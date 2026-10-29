@@ -61,6 +61,18 @@ impl PreparedTwoCallerNormalController {
     pub fn stage(&mut self, config: Config) -> Result<IntervalEpoch, BridgeError> {
         self.0.stage(config)
     }
+    /// Prepare exactly Limits.epochs fixed-Config banks once, before activation,
+    /// staging or registration, in pristine streaming-history mode. Ordinary
+    /// allocating stage then refuses; dropping banks or legacy retirement loses
+    /// capacity. Initialization touches logical slot state only, not all byte
+    /// storage capacity, and guarantees neither residency nor a 2 ms deadline.
+    /// Both-Ready-before-work and every original T2 lifetime obligation remain.
+    pub fn prepare_epoch_storage(
+        &mut self,
+        config: Config,
+    ) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
+        super::super::epoch_storage::prepare(&mut self.0, config)
+    }
     /// Only the existing concurrent-entry mode is available in T2.
     ///
     /// # Safety

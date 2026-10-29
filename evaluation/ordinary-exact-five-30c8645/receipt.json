@@ -1,0 +1,770 @@
+{
+  "all_qualifications_pass": false,
+  "allocation": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "cpus": [
+      19,
+      44,
+      74,
+      183
+    ],
+    "exclusive_host": false,
+    "method": "cpuset-alloc cooperative ledger and hard AllowedCPUs assignment",
+    "reservation_line_joined": true,
+    "roles": {
+      "controller": 19,
+      "producer": 183,
+      "single_worker": 44,
+      "two_workers": [
+        44,
+        74
+      ]
+    },
+    "root_wrapper": {
+      "bytes": 4105,
+      "sha256": "1c8750c4378b6070e83bf1e23eb5a9e5e2c9f43e810946c3b40ff377edfa168a"
+    }
+  },
+  "attempts": [
+    {
+      "after": [
+        57.07,
+        38.81,
+        34.43
+      ],
+      "attempt": 1,
+      "before": [
+        26.95,
+        29.57,
+        31.45
+      ],
+      "chain": [
+        {
+          "level": "top",
+          "result": {
+            "bytes": 82244,
+            "sha256": "4462a57b7d1cc1b8efbb8f6715edb17d4b4caf037cb0dd0b6288df639221e554"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "single-prerequisite",
+          "result": {
+            "bytes": 32056,
+            "sha256": "4c2ed68a63488c89959836f73656325696fa9cd2e998d4306946557d319bb08f"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "normal-prerequisite",
+          "result": {
+            "bytes": 19720,
+            "sha256": "d60121c89a784d347cb30eac9be80dd7d6b415bbc6bbbda54c1f32b0088da79b"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "strnlen-prerequisite",
+          "result": {
+            "bytes": 63557,
+            "sha256": "90a8bcec1eb1e11980eafbb9456f26ad7c9ccf7d9d775e015d74cb1894524f84"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "selected-prerequisite",
+          "result": {
+            "bytes": 54382,
+            "sha256": "fbb5cb554f0ce19c81141e05ef326fe95625f7ee46147eee99a63b538d167213"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "ordinary-prerequisite",
+          "result": {
+            "bytes": 26993,
+            "sha256": "c0e911068941c73c302b6b920c37bc404c5a501133a0c957bfda42c853b962d8"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        }
+      ],
+      "diagnostics": [],
+      "result": {
+        "bytes": 82244,
+        "sha256": "4462a57b7d1cc1b8efbb8f6715edb17d4b4caf037cb0dd0b6288df639221e554"
+      },
+      "seconds": 170.9835718930699,
+      "stage": "complete",
+      "status": "PASS"
+    },
+    {
+      "after": [
+        122.96,
+        63.05,
+        43.51
+      ],
+      "attempt": 2,
+      "before": [
+        57.07,
+        38.81,
+        34.43
+      ],
+      "chain": [
+        {
+          "level": "top",
+          "result": {
+            "bytes": 59008,
+            "sha256": "233318005089c258e941472753ec13ece44a4b9e6684e5f84bceffebe83e9ac2"
+          },
+          "stage": "exact-short-k10",
+          "status": "FAILED"
+        },
+        {
+          "level": "single-prerequisite",
+          "result": {
+            "bytes": 32034,
+            "sha256": "e3ec77f80e39151bdeef30dbd4a7ae78b3bfb9d62b550d1a06f928f92773115c"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "normal-prerequisite",
+          "result": {
+            "bytes": 19720,
+            "sha256": "8c0c042a203e55f8f64c599f5ac30b7d4494984d9d5de0d849e25b6b04bb959e"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "strnlen-prerequisite",
+          "result": {
+            "bytes": 63557,
+            "sha256": "bfeef78edb4e67857b7adb5cdb32f6267bd19cb9b7c3972e9484ed445e72c90a"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "selected-prerequisite",
+          "result": {
+            "bytes": 54382,
+            "sha256": "7fa13583eb0fc0bac495cf875cb6aeee2bb5e5f6467c056b6f9d906154192ee0"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "ordinary-prerequisite",
+          "result": {
+            "bytes": 26993,
+            "sha256": "87507b40ff553a5547b0287e3517a0963e3c0231d1af5cf01045b725d737b58e"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        }
+      ],
+      "diagnostics": [
+        {
+          "committed": 3,
+          "completed": 3,
+          "custody": "Root-hashed closed partial producer stream; failed producer did not publish final stream digest.",
+          "error": "Deadline",
+          "level": "top",
+          "pending": "None",
+          "phase": "arm-completed",
+          "rusage_deltas": {
+            "current": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 152,
+                "system_us": 1705,
+                "user_us": 576,
+                "voluntary": 0
+              }
+            ],
+            "inter_iteration": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 0,
+                "user_us": 0,
+                "voluntary": 0
+              }
+            ],
+            "last": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 0,
+                "user_us": 0,
+                "voluntary": 0
+              }
+            ]
+          },
+          "stage": "exact-short-k10",
+          "stage_closed": {
+            "bytes": 344,
+            "sha256": "02fcbcf7bd60a520f5497d34670308712ff9fe42f00e1b23d7bcdf74dc4405c7"
+          },
+          "stage_receipt": {
+            "bytes": 588,
+            "sha256": "e785e01df950f3d698ac358b4f262842e6d44534323cb9393ada72327d8ce4d5"
+          },
+          "status": "OBSERVED_FAILURE",
+          "stream": {
+            "bytes": 2539,
+            "sha256": "93d3a1011c4e81ec7a2aa6e8b884a5a743af2df6a944d0d36d9ab07d17d91558"
+          },
+          "unfinished_through_error_ns": [
+            2193324
+          ]
+        }
+      ],
+      "result": {
+        "bytes": 59008,
+        "sha256": "233318005089c258e941472753ec13ece44a4b9e6684e5f84bceffebe83e9ac2"
+      },
+      "seconds": 131.0559618549887,
+      "stage": "exact-short-k10",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        145.73,
+        98.83,
+        59.79
+      ],
+      "attempt": 3,
+      "before": [
+        122.96,
+        63.05,
+        43.51
+      ],
+      "chain": [
+        {
+          "level": "top",
+          "result": {
+            "bytes": 26928,
+            "sha256": "daa8a88a23825cdb578cc71614fa24072b7d4d4788a390460638a886816b2377"
+          },
+          "stage": "full-k1000",
+          "status": "FAILED"
+        },
+        {
+          "level": "single-prerequisite",
+          "result": {
+            "bytes": 32032,
+            "sha256": "76ddc9c8138e4d5285c1ca4ec72e27c0c44cecf97b3b33769220694c7c7df61d"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "normal-prerequisite",
+          "result": {
+            "bytes": 19720,
+            "sha256": "79b7ec32364e06de1264788f8905dbc90bd492eb50d6b67c2d1d1b29bc3e8202"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "strnlen-prerequisite",
+          "result": {
+            "bytes": 63557,
+            "sha256": "030076e071101249b1cef1c64b5ad1f9ae14cb3a8725f4b15e7c873c57c9f226"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "selected-prerequisite",
+          "result": {
+            "bytes": 54382,
+            "sha256": "a5aaaf44b5f567634d716e584588ab653188ec4ae1b6455ebb4bd11290142be3"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "ordinary-prerequisite",
+          "result": {
+            "bytes": 26994,
+            "sha256": "01120b9f9e0084e1673b2cf7efc0583600f470efd8d5af910036fb1cc1e92383"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        }
+      ],
+      "diagnostics": [
+        {
+          "committed": 1,
+          "completed": 1,
+          "custody": "Root-hashed closed partial producer stream; failed producer did not publish final stream digest.",
+          "error": "Deadline",
+          "level": "top",
+          "pending": "None",
+          "phase": "arm-completed",
+          "rusage_deltas": {
+            "current": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 154,
+                "system_us": 2209,
+                "user_us": 20,
+                "voluntary": 0
+              }
+            ],
+            "inter_iteration": [],
+            "last": []
+          },
+          "stage": "full-k1000",
+          "stage_closed": {
+            "bytes": 345,
+            "sha256": "e58e621ef9567b865418466131fa03c1dd7ff80caeb9908315a1eb3f6dc3f19e"
+          },
+          "stage_receipt": {
+            "bytes": 588,
+            "sha256": "f6cac048bfe3cef3bd9408a639982ea9165de896c0bdfb9975c139dab6624ca3"
+          },
+          "status": "OBSERVED_FAILURE",
+          "stream": {
+            "bytes": 1193,
+            "sha256": "22a1ae881860c6cfa2f922d72502e5a32c2e97000bd6b4a0edadbfa1c9242efe"
+          },
+          "unfinished_through_error_ns": [
+            2302128
+          ]
+        }
+      ],
+      "result": {
+        "bytes": 26928,
+        "sha256": "daa8a88a23825cdb578cc71614fa24072b7d4d4788a390460638a886816b2377"
+      },
+      "seconds": 135.42443260014988,
+      "stage": "full-k1000",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        88.98,
+        100.0,
+        68.82
+      ],
+      "attempt": 4,
+      "before": [
+        145.73,
+        98.83,
+        59.79
+      ],
+      "chain": [
+        {
+          "level": "top",
+          "result": {
+            "bytes": 82266,
+            "sha256": "766f2f7f8fe6cb61fbccdfce5c4b59fb870c5d69cb2f69b918ba1082ba9787b8"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "single-prerequisite",
+          "result": {
+            "bytes": 32032,
+            "sha256": "36dc653fecb4f527a3dc125e3f6b1254e009fa0227ca2b6814f1a18f47f3b234"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "normal-prerequisite",
+          "result": {
+            "bytes": 19720,
+            "sha256": "08372ab5080793479eeb4086e46613ea502973029492949cd3dddd817d7e616b"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "strnlen-prerequisite",
+          "result": {
+            "bytes": 63557,
+            "sha256": "8407381a544f63270be393b5c9f311b1ca6dcd1f03ece13ab4c4cf6627cd7b4f"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "selected-prerequisite",
+          "result": {
+            "bytes": 54382,
+            "sha256": "0ea18a1aaf35f7ab211dee557192ce0156ff8edc79be654e327b1b232c6dfacf"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "ordinary-prerequisite",
+          "result": {
+            "bytes": 26993,
+            "sha256": "9714179e6347603197f531bb37684906934f5ad0178b5ff31a4248150eefab15"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        }
+      ],
+      "diagnostics": [],
+      "result": {
+        "bytes": 82266,
+        "sha256": "766f2f7f8fe6cb61fbccdfce5c4b59fb870c5d69cb2f69b918ba1082ba9787b8"
+      },
+      "seconds": 213.93455814290792,
+      "stage": "complete",
+      "status": "PASS"
+    },
+    {
+      "after": [
+        39.91,
+        72.84,
+        63.58
+      ],
+      "attempt": 5,
+      "before": [
+        88.98,
+        100.0,
+        68.82
+      ],
+      "chain": [
+        {
+          "level": "top",
+          "result": {
+            "bytes": 82242,
+            "sha256": "86254444af052b6e8f1e540cc70679e9c45d22335a59ded991867df696471f05"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "single-prerequisite",
+          "result": {
+            "bytes": 32034,
+            "sha256": "074371be8ec7526057c9376f288ace9e0d017d2d75639806878e555b0be43c33"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "normal-prerequisite",
+          "result": {
+            "bytes": 19720,
+            "sha256": "ad5e6622d06e3c7d01825ea27f20e5e272199878265f669f2f9554415c73353b"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "strnlen-prerequisite",
+          "result": {
+            "bytes": 63557,
+            "sha256": "a3ac942063a9f0917b262397f0c375b059850cd389dbcae485971d75fb3d1073"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "selected-prerequisite",
+          "result": {
+            "bytes": 54382,
+            "sha256": "0924b2d594c69e20c8e29f4cb507400891b795d2585f622e174bf5e549c9b02b"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        },
+        {
+          "level": "ordinary-prerequisite",
+          "result": {
+            "bytes": 26993,
+            "sha256": "4e2865750e2cadf70e7edc745445d21fe3194fba1ceaae80d98c992e2516f696"
+          },
+          "stage": "complete",
+          "status": "PASS"
+        }
+      ],
+      "diagnostics": [],
+      "result": {
+        "bytes": 82242,
+        "sha256": "86254444af052b6e8f1e540cc70679e9c45d22335a59ded991867df696471f05"
+      },
+      "seconds": 171.29565349407494,
+      "stage": "complete",
+      "status": "PASS"
+    }
+  ],
+  "audit": {
+    "result": {
+      "bytes": 203540,
+      "sha256": "ae60a27e5e96efca661f5ab2cbbdfdb40e4d7dc41147acd114300527fd3b38a1"
+    },
+    "scope": "Additional root joins over five stages arrays, nested result hashes and source manifests; original authenticated recipes retain argv/env semantics and deepest ordinary stage authority.",
+    "source": {
+      "bytes": 11022,
+      "sha256": "f08d822563c0df51a5aa57b4a898de2a2512529e18b720ebf7c5770ab7a42ed8"
+    },
+    "source_review": {
+      "bytes": 5441,
+      "sha256": "8ad71c7b0f12511b2bcb1e64ed2d340e0aff7cd8a65b56f65a01d189b62aee1b"
+    },
+    "source_review_verdict": "APPROVED_SOURCE_ONLY_WITH_SCOPE"
+  },
+  "bounds": {
+    "arm_lateness_ns": 2000000,
+    "attempt_output_bytes": 8388608,
+    "attempt_wall_seconds": 1200,
+    "epochs": 520,
+    "outer_wall_seconds": 7200,
+    "period_ns": 10000000
+  },
+  "campaign": {
+    "bytes": 10255,
+    "sha256": "2649b9781c534c28ecceec3eafbbc8bf179948c3d9dcff77d31f4beb5a5ff7aa"
+  },
+  "checks": {
+    "bytes": 21764,
+    "sha256": "6b42d85cfce9adb96b659937476ccacbfdd673375f049a00325851b308025f56"
+  },
+  "claim": 4,
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+    "run",
+    "--cores",
+    "4",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-normal-exact-five-30c8645",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/evaluation/ordinary-exact-campaign/run.py",
+    "--revision",
+    "30c86454037e385f669b4b88d59cd5c2e37d81d8",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "count_audit": {
+    "bytes": 2986,
+    "sha256": "9e96fa8a1bb36b48bf5ab6c4b5f8828162eafa02284c3bfa1e037a9fc291afbc"
+  },
+  "ended_utc": "2026-10-28T21:14:30.110090+00:00",
+  "failed_exact_cohorts": 1,
+  "files": {
+    "README.md": {
+      "bytes": 6372,
+      "sha256": "21f012f0446a7b7a513b78ea1125d66caac4833c44ba0cc7cbadf8033fc525eb"
+    },
+    "attempts.csv": {
+      "bytes": 459,
+      "sha256": "0f086763e61ce7a57d0a0d5fcee575ebdd153e5c0a8288a60f9462d90c1d7495"
+    },
+    "checks.csv": {
+      "bytes": 721,
+      "sha256": "5a78b95d4060c53eb5e560dd17c4d5515c6dbafc7929bec1bf781d6cb088a7bc"
+    },
+    "cohorts.csv": {
+      "bytes": 5554,
+      "sha256": "7023850d736084835ae373e10e55e1c1598b893fa411c51d905ad0f76572ec46"
+    },
+    "exact-work.csv": {
+      "bytes": 11138,
+      "sha256": "1fd23b53be6f4768621817b80f587dd1881316175c96a80f278ce7dd93815344"
+    },
+    "merge-checks.csv": {
+      "bytes": 720,
+      "sha256": "1c55ddc3a942ad0e8d16c5e5bb79eada98d7559a6207538fa56d50a336d020f6"
+    },
+    "merge-checks.json": {
+      "bytes": 5675,
+      "sha256": "db18edc7f26b2fbcd2b8f11ec8f85cdeb857e985395194179b445d72fe5a3029"
+    },
+    "stages.csv": {
+      "bytes": 17486,
+      "sha256": "d909b45ca555b62cf050643306ce66d7de40175096214b46f7cdb0c06469358b"
+    }
+  },
+  "fixed_attempts": 5,
+  "frozen_manifest": {
+    "bytes": 4719,
+    "sha256": "c0c046f9f2f620ee0d0e86857942779e3c86ad113b3df91db24cb5c008cf7717"
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "family": 26,
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "qualification_affinity_cpus": 4,
+    "session_controller_cpus": 1,
+    "session_worker_cpus": 2,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "limitations": "Strict gate failed in two of five attempts. Successful sessions record no numeric maximum lateness. Diagnostic brackets are not lateness or exact off-CPU time. No low-load causation, whole-session native-state, throughput, accuracy, perf-comparison or full-A5 claim.",
+  "merged_tree_validation": {
+    "campaign_rerun": false,
+    "receipt": {
+      "bytes": 5675,
+      "sha256": "db18edc7f26b2fbcd2b8f11ec8f85cdeb857e985395194179b445d72fe5a3029"
+    },
+    "revision": "55f15f6183a29c78b1d7a8872e69721c834420f5",
+    "status": "PASS"
+  },
+  "outer_cleanup_complete": true,
+  "outer_exit": 1,
+  "outer_log": {
+    "bytes": 4059,
+    "sha256": "353a1a88938fba38abf084af7cd22a5dca462ea0e7205ca61173e6a3efee6826"
+  },
+  "outer_request": {
+    "bytes": 2806,
+    "sha256": "8d81f8be5d871cca33ada0a0ee25913065ab90ef8d505c902d9871812a7a23d3"
+  },
+  "outer_rescues": 0,
+  "outer_seconds": 825.1085269048344,
+  "planned_stage_statuses": {
+    "FAILED": 2,
+    "PASS": 417,
+    "UNRUN": 26
+  },
+  "prior_evidence": "../ordinary-exact-progress-20261028/README.md",
+  "prior_failed_campaigns": [
+    "45b466d",
+    "58418ee",
+    "abe8b94",
+    "6d031ea"
+  ],
+  "prospective_protocol": {
+    "bytes": 1913,
+    "sha256": "a73aada275c14f1ab91ddddb35423617af75a918ebff729b5bde234b1507adc0"
+  },
+  "qualified_exact_calls": 1152,
+  "qualified_exact_cohorts": 24,
+  "release_binary": {
+    "content": {
+      "bytes": 5916360,
+      "sha256": "746048d8a0107bac710227b571e8eec36af74d4e8dffad150bcdf30512520398"
+    },
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": false
+    }
+  },
+  "revision": "30c86454037e385f669b4b88d59cd5c2e37d81d8",
+  "schema": 1,
+  "source_manifest": {
+    "count": 507,
+    "manifest": {
+      "bytes": 80475,
+      "sha256": "22a621cb4ba38943495092af4fc9680b8fe419caf1fd810d92890dbc49883ffb"
+    }
+  },
+  "started_utc": "2026-10-28T21:00:47.061011+00:00",
+  "status": "COMPLETE_WITH_FAILURES",
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "unrun_exact_cohorts": 15,
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  },
+  "workspace_count_method": "Final libtest summary per Cargo Running target; all rustdoc batches; nested child summaries excluded; two custom harnesses separate.",
+  "workspace_top_level": {
+    "failed": 0,
+    "ignored": 36,
+    "passed": 3056
+  }
+}

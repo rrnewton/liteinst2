@@ -1,0 +1,615 @@
+{
+  "all_qualifications_pass": false,
+  "allocation": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_sources": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "cpus": [
+      19,
+      55,
+      64,
+      80
+    ],
+    "exclusive_host": false,
+    "method": "cpuset-alloc cooperative ledger and hard AllowedCPUs",
+    "roles": {
+      "controller": 19,
+      "producer": 80,
+      "single_worker": 55,
+      "two_workers": [
+        55,
+        64
+      ]
+    }
+  },
+  "attempts": [
+    {
+      "after": [
+        25.14,
+        27.7,
+        31.73
+      ],
+      "attempt": 1,
+      "before": [
+        23.16,
+        31.21,
+        33.51
+      ],
+      "diagnostics": [
+        {
+          "committed": 491,
+          "completed": 491,
+          "custody": "Root-hashed closed partial producer stream; failed producer did not publish final stream digest.",
+          "elapsed_ns": [
+            4914643736
+          ],
+          "error": "Deadline",
+          "level": "top",
+          "pending": "None",
+          "phase": "poll",
+          "poll_gap_ns": [
+            9606585
+          ],
+          "rusage_deltas": {
+            "current": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 0,
+                "user_us": 0,
+                "voluntary": 0
+              }
+            ],
+            "inter_iteration": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 0,
+                "user_us": 0,
+                "voluntary": 0
+              }
+            ],
+            "last": [
+              {
+                "involuntary": 1,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 5,
+                "user_us": 1334,
+                "voluntary": 0
+              }
+            ]
+          },
+          "stage": "exact-late-long-k10",
+          "stage_closed": {
+            "bytes": 343,
+            "sha256": "cc0c317472691efde36773e6f5117bf76efb8fa31eb9b25c90a1a871062ac203"
+          },
+          "stage_receipt": {
+            "bytes": 588,
+            "sha256": "92214bdb165a3a5343862b937884344bbeb58b7328eeeec1ff586e5933ae108f"
+          },
+          "status": "OBSERVED_FAILURE",
+          "stream": {
+            "bytes": 2653,
+            "sha256": "e52760a5c35e785c3e60663967b9e97e7669f201f6dca1d680363184c6f9cca0"
+          },
+          "unfinished_through_error_ns": [
+            30225
+          ]
+        }
+      ],
+      "failed_delegations": [],
+      "result": {
+        "bytes": 76095,
+        "sha256": "522514b48a38c576489a9195f227c7832abd7aa7137d0f261fd4b4d23762bdb0"
+      },
+      "seconds": 162.60643467097543,
+      "stage": "exact-late-long-k10",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        32.72,
+        30.01,
+        31.94
+      ],
+      "attempt": 2,
+      "before": [
+        25.14,
+        27.7,
+        31.73
+      ],
+      "diagnostics": [],
+      "failed_delegations": [],
+      "result": {
+        "bytes": 82244,
+        "sha256": "2a56244ea1f2d99525f8dd77868e7a784c5f261a3943d9af9a4e69d6219d17e7"
+      },
+      "seconds": 170.31960247503594,
+      "stage": "complete",
+      "status": "PASS"
+    },
+    {
+      "after": [
+        35.62,
+        31.97,
+        32.36
+      ],
+      "attempt": 3,
+      "before": [
+        32.72,
+        30.01,
+        31.94
+      ],
+      "diagnostics": [],
+      "failed_delegations": [],
+      "result": {
+        "bytes": 82245,
+        "sha256": "e46bcc593e2bd4442056d93e7401c41d9744656ea526da271c2d191e80c44652"
+      },
+      "seconds": 170.2191992898006,
+      "stage": "complete",
+      "status": "PASS"
+    },
+    {
+      "after": [
+        38.5,
+        33.33,
+        32.79
+      ],
+      "attempt": 4,
+      "before": [
+        35.62,
+        31.97,
+        32.36
+      ],
+      "diagnostics": [
+        {
+          "committed": 440,
+          "completed": 440,
+          "custody": "Root-hashed closed partial producer stream; failed producer did not publish final stream digest.",
+          "elapsed_ns": [
+            4406498795
+          ],
+          "error": "Deadline",
+          "level": "single-prerequisite",
+          "pending": "None",
+          "phase": "poll",
+          "poll_gap_ns": [
+            11461101
+          ],
+          "rusage_deltas": {
+            "current": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 0,
+                "user_us": 21,
+                "voluntary": 0
+              }
+            ],
+            "inter_iteration": [
+              {
+                "involuntary": 0,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 0,
+                "user_us": 0,
+                "voluntary": 0
+              }
+            ],
+            "last": [
+              {
+                "involuntary": 1,
+                "major_faults": 0,
+                "minor_faults": 0,
+                "system_us": 35,
+                "user_us": 636,
+                "voluntary": 0
+              }
+            ]
+          },
+          "stage": "full-k10",
+          "stage_closed": {
+            "bytes": 343,
+            "sha256": "58a258ab9a62e90197002cb53065ac79bad2c8b7fdde86697e2745148d138dcb"
+          },
+          "stage_receipt": {
+            "bytes": 587,
+            "sha256": "5568882a539d17764e1dc1f0febb549dd457b53e19836d12af157e22db318b1f"
+          },
+          "status": "OBSERVED_FAILURE",
+          "stream": {
+            "bytes": 2642,
+            "sha256": "da4c47e863d8447bea104326ae860d1226855c75fe1fb40fa408fda8931763a7"
+          },
+          "unfinished_through_error_ns": [
+            39620
+          ]
+        }
+      ],
+      "failed_delegations": [
+        {
+          "closed": {
+            "bytes": 343,
+            "sha256": "4482d069c6691b2107d6b89b224bc1a6ac1aabd83da6402d7b553f779a272c7f"
+          },
+          "custody": "Root-hashed child result after outer cleanup; parent published no successful child-result hash.",
+          "exit_code": 1,
+          "level": "single-prerequisite",
+          "log": {
+            "bytes": 51,
+            "sha256": "004c4c619ef3b4961f5dc336fa71d8a0ffb140573b684555a672fc826659fcf6"
+          },
+          "log_unavailable": false,
+          "request": {
+            "bytes": 1494,
+            "sha256": "341eb7a0a462042a5624b332807a1bf8abb1392542c7b0d13149084a66f7e629"
+          },
+          "result": {
+            "bytes": 17605,
+            "sha256": "61f05a63068563e40e5934e63aff7845f6585809d5cb0d8d9f09dc2691ca37b1"
+          }
+        }
+      ],
+      "result": {
+        "bytes": 6339,
+        "sha256": "620bc20a3e454a2f67f3398ae86830fa8c0ae7669b06d73f37bcbf67685478c3"
+      },
+      "seconds": 74.5161686129868,
+      "stage": "single-prerequisite",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        34.44,
+        34.03,
+        33.19
+      ],
+      "attempt": 5,
+      "before": [
+        38.5,
+        33.33,
+        32.79
+      ],
+      "diagnostics": [],
+      "failed_delegations": [],
+      "result": {
+        "bytes": 82244,
+        "sha256": "ece2ddbb9b03138c8855b67c2555ddfaae02b38240dcb108b8e8b48a10de649e"
+      },
+      "seconds": 171.69913938292302,
+      "stage": "complete",
+      "status": "PASS"
+    }
+  ],
+  "bounds": {
+    "arm_lateness_ns": 2000000,
+    "attempt_output_bytes": 8388608,
+    "attempt_wall_seconds": 1200,
+    "campaign_wall_seconds": 7200,
+    "epochs": 520,
+    "period_ns": 10000000
+  },
+  "campaign": {
+    "bytes": 10240,
+    "sha256": "4b55117607371ee8adcdde36a4711309b356531a9a7722800c0a0ac9d62752cd"
+  },
+  "checks": [
+    {
+      "check": "fmt",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "passed": 0,
+      "seconds": 6.672225915826857,
+      "status": "PASS"
+    },
+    {
+      "check": "clippy",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985",
+      "passed": 0,
+      "seconds": 0.12306597293354571,
+      "status": "PASS"
+    },
+    {
+      "check": "check",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985",
+      "passed": 0,
+      "seconds": 0.09872601507231593,
+      "status": "PASS"
+    },
+    {
+      "check": "workspace-default",
+      "failed": 0,
+      "ignored": 36,
+      "log_sha256": "11e8be092dac433b4e69404038153d5894c3401090cfe6453202a34fce141e77",
+      "passed": 3081,
+      "seconds": 328.85933644510806,
+      "status": "PASS"
+    },
+    {
+      "check": "serial-launch",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "7970ff2757637ed34d545812fecb7098ce6fa0c7f741639025e132749f3cc9d5",
+      "passed": 1039,
+      "seconds": 124.41662639891729,
+      "status": "PASS"
+    },
+    {
+      "check": "staged-allocation",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5",
+      "passed": 3,
+      "seconds": 0.03512668493203819,
+      "status": "PASS"
+    },
+    {
+      "check": "prefixed-pun",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "1b76bc096bbb5e2cba7b9d9238ac7c66410ec0c0cd4ba0ea39b00ef94ee1445c",
+      "passed": 36,
+      "seconds": 1.2689279259648174,
+      "status": "PASS"
+    }
+  ],
+  "claim": 4,
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+    "run",
+    "--cores",
+    "4",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-normal-exact-five-4ff42f1",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/evaluation/ordinary-exact-campaign/run.py",
+    "--revision",
+    "4ff42f19a839352bc159101b977cbf4280741504",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "custom_workspace_harnesses": [
+    "tests/exec_backing_cleanup.rs",
+    "tests/precontext_native.rs"
+  ],
+  "ended_utc": "2026-10-28T22:33:47.267421+00:00",
+  "exact_cohort_statuses": {
+    "FAILED": 1,
+    "PASS": 30,
+    "UNRUN": 9
+  },
+  "fixed_attempts": 5,
+  "hardware": {
+    "architecture": "x86_64",
+    "family": 26,
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "qualification_affinity_cpus": 4,
+    "session_controller_cpus": 1,
+    "session_worker_cpus": 2,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "limitations": "Separate fixed post-change campaign; not a controlled causal comparison. Earlier failures remain failed. Successful sessions have no numeric maximum lateness. Failed nested observations without a successful ancestor hash are root-hashed partial evidence, not independent qualification. UNAVAILABLE planned slots are not inferred UNRUN results. No whole-session native-state, throughput, PMU/perf accuracy, or full-A5 claim.",
+  "manifest": {
+    "bytes": 4717,
+    "sha256": "e8a10dd419e0c34996170773fba0b2912075cfd2e3219894d215f53b9ad890ff"
+  },
+  "metadata_origin": "Attempt 1 only; no selection of a later successful attempt. Missing setup metadata is null/unavailable.",
+  "metadata_unavailable": [],
+  "outer": {
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "rescues": 0,
+    "seconds": 751.6636124372017
+  },
+  "outer_log": {
+    "bytes": 4060,
+    "sha256": "4645ee68febb8e328d38a057344b33fbe00402b48d4f3b00d2a17aedab17df04"
+  },
+  "outer_request": {
+    "bytes": 2806,
+    "sha256": "997d93fe0414b4d6cdb26e86c0c4274959a0cb2e288b87af70f18d9f170e5ad7"
+  },
+  "planned_stage_statuses": {
+    "FAILED": 2,
+    "PASS": 410,
+    "UNRUN": 33
+  },
+  "poll_failure_observations": {
+    "custody": "Root-hashed closed partial streams, without final producer stream hashes. Last-loop rusage bracket is wider than its wait; these observations do not identify exact off-CPU time or establish exclusive cause.",
+    "rows": [
+      {
+        "attempt": 1,
+        "cohort": "exact-late-long-k10",
+        "committed": 491,
+        "completed": 491,
+        "last_iteration_involuntary_switches": 1,
+        "last_iteration_major_faults": 0,
+        "last_iteration_minor_faults": 0,
+        "last_iteration_system_us": 5,
+        "last_iteration_user_us": 1334,
+        "last_wait_observed_ns": 9605403,
+        "last_wait_requested_ns": 1000000,
+        "partial_stream_sha256": "e52760a5c35e785c3e60663967b9e97e7669f201f6dca1d680363184c6f9cca0",
+        "phase": "poll",
+        "poll_gap_ns": 9606585
+      },
+      {
+        "attempt": 4,
+        "cohort": "full-k10",
+        "committed": 440,
+        "completed": 440,
+        "last_iteration_involuntary_switches": 1,
+        "last_iteration_major_faults": 0,
+        "last_iteration_minor_faults": 0,
+        "last_iteration_system_us": 35,
+        "last_iteration_user_us": 636,
+        "last_wait_observed_ns": 11459548,
+        "last_wait_requested_ns": 1000000,
+        "partial_stream_sha256": "da4c47e863d8447bea104326ae860d1226855c75fe1fb40fa408fda8931763a7",
+        "phase": "poll",
+        "poll_gap_ns": 11461101
+      }
+    ]
+  },
+  "prior_campaign": "../ordinary-epoch-storage-50e5bd2/README.md",
+  "protocol": {
+    "bytes": 2096,
+    "sha256": "315ea058817e3cd937ae2a327fed3cf32144157f0a4ffec807e1502978f8685a"
+  },
+  "qualified_exact_calls": 1440,
+  "release_binary": {
+    "content": {
+      "bytes": 5975752,
+      "sha256": "f154b2090d0315b4920a511c3cc9160adb97cc6773f27caafc2d5b463fca6bbf"
+    },
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": false
+    }
+  },
+  "required_session_controls": 14,
+  "revision": "4ff42f19a839352bc159101b977cbf4280741504",
+  "schema": 1,
+  "source_manifest": {
+    "count": 514,
+    "manifest": {
+      "bytes": 81682,
+      "sha256": "54cd2a5036724f4980384f82ebb168df2858353772f492e1525f1b6337dc412b"
+    }
+  },
+  "source_manifest_files_authenticated": 514,
+  "source_reviews": {
+    "census_at_revision": "99c9ac730c6bb0e3673cb928ee9d27aeba1c43ef408c1456b331400180a67eec",
+    "scope": "Source-only approvals. Root confirms runtime bytes identical from50e5bd2; only two qualification recipe changes after that revision.",
+    "storage_consumer": "19ecc959de53e94ac8a1243be04030d06ef8c355d53f03090373bebffd4d60f3",
+    "storage_core_facade": "9cfc98deae11251ebe904657f6dd219d69568243f26d9c4d74b1d769359ebcb9"
+  },
+  "started_utc": "2026-10-28T22:21:17.604743+00:00",
+  "status": "COMPLETE_WITH_FAILURES",
+  "targeted_census_control": {
+    "failed": 0,
+    "filtered": 128,
+    "ignored": 0,
+    "passed": 14,
+    "receipt": {
+      "bytes": 3985,
+      "sha256": "4b3a1437ebded30aaf69f21f4fc12ff87c56aa4bd3b0b0e90eef533dc3bca758"
+    },
+    "scope": "Development run of existing release executable, merged output. Full qualifications separately own strict stdout/stderr and artifact joins."
+  },
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "validation_environment": {
+    "command": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+    "hardware": {
+      "available_affinity_cpus": 316,
+      "observed_cpu": {
+        "cpu family": "26",
+        "model": "17",
+        "stepping": "0",
+        "vendor_id": "AuthenticAMD"
+      },
+      "owner_label": "AMD EPYC Zen 5 dev host"
+    },
+    "kernel_version": "7.1.3",
+    "receipt": {
+      "bytes": 21881,
+      "sha256": "a35fb811d36a89211b0dc577c322e95a7ac97cba8fc240d8185e29715634c705"
+    },
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  },
+  "workspace_count_method": "Final summary per Cargo Running target; all rustdoc batches; nested child summaries excluded. Functional command durations, not performance."
+}

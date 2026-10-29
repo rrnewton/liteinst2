@@ -134,6 +134,19 @@ REFERENCE_LEG_CONTROLS = (
 )
 
 
+OBSERVER_WORK_STAGES = ('observer-work-parser-controls', 'observer-work-controls',
+    'observer-work-native', 'observer-work-always-on')
+OBSERVER_WORK_PREFIX = 'normal::observer::tests::'
+OBSERVER_WORK_CONTROLS = tuple(OBSERVER_WORK_PREFIX+n for n in (
+    'fixed_population_modes_and_scalar_work_are_exact',
+    'batch_metadata_keeps_lifetime_identity_across_all128_drains',
+    'records_refuse_wrong_owner_continuation_stack_and_acknowledgement',
+    'journal_checks_all512_words_including_tail_and_absolute_slots',
+    'reports_and_history_require_all3072_payloads_and_two_actions',
+    'population_refuses_missing_duplicate_and_changed_returns',
+    'wire_native_absence_and_raw_full_width_endpoints_are_exact'))
+
+
 def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
@@ -156,11 +169,13 @@ def main():
     ap.add_argument('--reference-exact', action='store_true', help='Append four old Exact37 and four reference Exact37 pairs after all ordinary prerequisites.')
     ap.add_argument('--reference-work', action='store_true', help='Require --reference-exact and append the finite uncalibrated24+24 ordinary-call collector.')
     ap.add_argument('--reference-leg', action='store_true', help='Require --reference-work and --reference-exact; append fresh qualification/trial1 original and installed processes,24 calls each.')
+    ap.add_argument('--observer-work', action='store_true', help='Require all reference prerequisites; append fresh native and always-on processes with3072 calls each.')
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'):
         ap.add_argument('--'+name, type=Path, required=True)
     a = ap.parse_args()
     assert not a.reference_work or a.reference_exact, '--reference-work requires --reference-exact'
     assert not a.reference_leg or (a.reference_work and a.reference_exact), '--reference-leg requires --reference-work and --reference-exact'
+    assert not a.observer_work or (a.reference_leg and a.reference_work and a.reference_exact), '--observer-work requires --reference-leg, --reference-work and --reference-exact'
     repo = Path(__file__).resolve().parents[2]
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     for p in (repo, a.toolchain, a.user_home, a.cargo_home):
@@ -204,6 +219,10 @@ def main():
             'normal-work/reference_leg.py', 'normal-work/test_reference_leg.py',
             'ordinary-interval/normal/reference/leg.rs',
             'ordinary-interval/normal/reference/check/leg_tests.rs'))
+    if a.observer_work:
+        required.update('tools/rapid-profiler/'+name for name in (
+            'normal-work/observer_work.py', 'normal-work/test_observer_work.py',
+            'ordinary-interval/normal/observer.rs'))
     names = git('ls-files', '-z', '--', 'src', 'tests/support', 'tools/rapid-profiler',
         'Cargo.toml', 'Cargo.lock', 'README.md', 'build.rs', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
     assert all(names) and len(names) == len(set(names)) and required.issubset(names)
@@ -224,6 +243,8 @@ def main():
         reference_work = load('normal_reference_work_output', repo/'tools/rapid-profiler/normal-work/reference_work.py')
     if a.reference_leg:
         reference_leg = load('normal_reference_leg_output', repo/'tools/rapid-profiler/normal-work/reference_leg.py')
+    if a.observer_work:
+        observer_work = load('normal_observer_work_output', repo/'tools/rapid-profiler/normal-work/observer_work.py')
     a.raw.mkdir(mode=0o700)
     save(a.raw/'sources-before.json', before)
     result = dict(schema=1, status='FAILED', stage='setup', revision=a.revision,
@@ -252,6 +273,12 @@ def main():
             legs=[dict(status='UNRUN', phase='qualification', trial=1, leg=leg, calls=24)
                 for leg in ('original', 'installed')],
             scope='Two fresh finite single-leg processes with all24 raw rows each. No calibration campaign, estimate, cross-process clock/address identity, accuracy, performance or full-A5 claim.')
+    if a.observer_work:
+        result['command'].append('--observer-work')
+        result['observer_work'] = dict(status='UNRUN', required_stages=list(OBSERVER_WORK_STAGES),
+            stages=[dict(name=name, status='UNRUN') for name in OBSERVER_WORK_STAGES],
+            modes=[dict(status='UNRUN', mode=mode, calls=3072) for mode in ('native', 'always-on')],
+            scope='Two fresh processes with the same3072 actual calls;128 always-on journal drains retain lifetime identity. Functional qualification only; no performance or full-A5 claim.')
     artifacts = {}
     tool_paths = {}
     def unchanged():
@@ -659,8 +686,53 @@ def main():
             assert tuple(r['name'] for r in group['stages']) == REFERENCE_LEG_STAGES
             assert all(r['status'] == 'PASS' for r in group['stages']) and all(c['status'] == 'PASS' for c in group['legs'])
             group.update(status='PASS', closure=dict(owned_stages=4, normal_helpers=4, outer_owners=4, rescues=0))
+        if a.observer_work:
+            assert all(result[name]['status'] == 'PASS' for name in ('reference_exact', 'reference_work', 'reference_leg'))
+            group = result['observer_work']; group['status'] = 'FAILED'
+            d, pending, row = reference_stage('observer-work-parser-controls',
+                [python, '-B', repo/'tools/rapid-profiler/normal-work/test_observer_work.py'])
+            assert (d/'stdout.txt').read_bytes() == b''
+            assert re.fullmatch(rb'\.{11}\n-+\nRan 11 tests in [0-9]+\.[0-9]+s\n\nOK\n', (d/'stderr.txt').read_bytes())
+            reference_done(pending, row, passed=11)
+            binary, inventory, authority = ordinary_test
+            assert {n for n in inventory if n.startswith(OBSERVER_WORK_PREFIX)} == set(OBSERVER_WORK_CONTROLS)
+            d, pending, row = reference_stage('observer-work-controls',
+                [binary, *OBSERVER_WORK_CONTROLS, '--exact', '--test-threads=1'])
+            controls = census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(),
+                OBSERVER_WORK_CONTROLS, inventory)
+            reference_done(pending, row, controls=controls, artifact=authority)
+            assert [c['mode'] for c in group['modes']] == ['native', 'always-on']
+            for cohort in group['modes']:
+                assert cohort['status'] == 'UNRUN'
+                cohort['status'] = 'FAILED'
+                mode = cohort['mode']
+                assert exact_fixture.authenticate(exact_candidate, exact_final, details['elf_va'], 37,
+                    selection_file, artifacts[selection_file]['sha256']) == details
+                name = 'observer-work-'+mode
+                d, pending, row = reference_stage(name, [binaries['ordinary-interval'],
+                    'normal-observer-work', mode, exact_candidate, exact_final, str(details['elf_va']), '37',
+                    candidate, caller])
+                observed = observer_work.check((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(), mode)
+                assert observed['status'] == 'FUNCTIONAL_PASS' and observed['mode'] == mode
+                assert len(observed['rows']) == observed['calls'] == 3072
+                assert (observed['helper_calls'], observed['instructions'], observed['records'], observed['batches']) == (
+                    1536, 614400, 0 if mode == 'native' else 3072, 0 if mode == 'native' else 128)
+                exported = a.raw/('normal-observer-work-'+mode+'.csv')
+                with exported.open('xb') as stream: stream.write(observed['table'])
+                artifacts[exported] = digest(exported)
+                cohort.update(observation={k:v for k,v in observed.items() if k not in ('rows', 'table')},
+                    table=artifacts[exported], binary=artifacts[binaries['ordinary-interval']],
+                    subject=artifacts[exact_final], selection=artifacts[selection_file],
+                    helper=artifacts[caller], helper_candidate=artifacts[candidate],
+                    source_stage=name, process_cpu_seconds=20, process_wall_seconds=30, file_bytes=MIB)
+                unchanged()
+                cohort['status'] = 'PASS'
+                reference_done(pending, row, mode=mode, calls=3072, rows=3072, table=artifacts[exported])
+            assert tuple(r['name'] for r in group['stages']) == OBSERVER_WORK_STAGES
+            assert all(r['status'] == 'PASS' for r in group['stages']) and all(c['status'] == 'PASS' for c in group['modes'])
+            group.update(status='PASS', closure=dict(owned_stages=4, normal_helpers=4, outer_owners=4, rescues=0))
         unchanged(); save(a.raw/'sources-after.json', {n: digest(repo/n) for n in names})
-        assert tuple(r['name'] for r in result['stages']) == STAGES + (REFERENCE_STAGES if a.reference_exact else ()) + (REFERENCE_WORK_STAGES if a.reference_work else ()) + (REFERENCE_LEG_STAGES if a.reference_leg else ()) and all(r['status'] == 'PASS' for r in result['stages'])
+        assert tuple(r['name'] for r in result['stages']) == STAGES + (REFERENCE_STAGES if a.reference_exact else ()) + (REFERENCE_WORK_STAGES if a.reference_work else ()) + (REFERENCE_LEG_STAGES if a.reference_leg else ()) + (OBSERVER_WORK_STAGES if a.observer_work else ()) and all(r['status'] == 'PASS' for r in result['stages'])
         result.update(status='PASS', stage='complete',
             artifacts=dict(subject=artifacts[trusted], caller=artifacts[caller], **{n: artifacts[p] for n, p in binaries.items()}),
             outputs={n: digest(a.raw/n) for n in ('normal-pairs.csv', 'normal-rows.csv')},
@@ -671,7 +743,7 @@ def main():
                 generations=2, events=16, journal_words=512, reports=2, worker_joins=1),
             abandonment=dict(cases=2, original_calls=16, installed_calls=4, checkpoints=0,
                 pending_after_tls_exit=2, reattach_refusals=2, worker_joins=2),
-            closure=dict(owned_stages=10 + (len(REFERENCE_STAGES) if a.reference_exact else 0) + (len(REFERENCE_WORK_STAGES) if a.reference_work else 0) + (len(REFERENCE_LEG_STAGES) if a.reference_leg else 0), nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
+            closure=dict(owned_stages=10 + (len(REFERENCE_STAGES) if a.reference_exact else 0) + (len(REFERENCE_WORK_STAGES) if a.reference_work else 0) + (len(REFERENCE_LEG_STAGES) if a.reference_leg else 0) + (len(OBSERVER_WORK_STAGES) if a.observer_work else 0), nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
             prior_failures='Fresh attempt with no retries; prior failures remain failures.')
     except BaseException as error:
         result['error_type'] = type(error).__name__

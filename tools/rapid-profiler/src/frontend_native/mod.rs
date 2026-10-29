@@ -98,9 +98,10 @@ pub use pair::{
 mod always_on;
 pub use always_on::site::{InstalledIntervalSite, IntervalSitePreparation, SiteError};
 pub use always_on::{
-    BridgeError, HistoryBatch, HistoryBinding, HistoryFormat, HistoryStream, HistoryWindow,
-    IntervalBatch, IntervalClient, IntervalController, IntervalEpoch, IntervalJournal,
-    IntervalThread, PairTotals, PreparedIntervalController, ReadableStack,
+    BridgeError, EpochStorageReclaimError, HistoryBatch, HistoryBinding, HistoryFormat,
+    HistoryStream, HistoryWindow, IntervalBatch, IntervalClient, IntervalController, IntervalEpoch,
+    IntervalEpochStorage, IntervalJournal, IntervalThread, PairTotals, PreparedIntervalController,
+    ReadableStack,
 };
 
 /// Explicit final-ELF-bound selection; loading still requires its unsafe contract.

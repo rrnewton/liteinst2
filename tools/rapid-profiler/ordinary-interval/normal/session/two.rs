@@ -13,7 +13,8 @@ use exact::Subject;
 
 struct Engine {
     controller: IntervalController,
-    epochs: [Option<IntervalEpoch>; 4],
+    epochs: [Option<Slot<IntervalEpoch>>; 4],
+    banks: Vec<IntervalEpochStorage>,
     current: Option<usize>,
     history: Vec<HistoryBatch>,
     reports: Vec<(u64, Vec<RecordObservation>)>,
@@ -66,23 +67,38 @@ impl Engine {
             if self.current == Some(i) {
                 continue;
             }
-            let Some(epoch) = &self.epochs[i] else {
+            let Some(slot) = self.epochs[i].as_mut() else {
                 continue;
             };
-            if self.controller.report(epoch).map_err(failure)?.is_none() {
-                continue;
+            if slot.report_index().is_none() {
+                let Some(report) = self.controller.report(slot.epoch()).map_err(failure)? else {
+                    continue;
+                };
+                let generation = report.generation().get();
+                let records: Vec<_> = report.records().collect();
+                let counts = check::report(generation, &records, self.k);
+                let index = self.reports.len();
+                self.reports.push((generation, records));
+                slot.copied(
+                    generation,
+                    index,
+                    format!(
+                        "REPORT,{generation},{},{},{},0,0\n",
+                        counts.admitted, counts.retained, counts.dropped
+                    ),
+                );
+                drop(report);
             }
-            let report = self.controller.retire(epoch).map_err(failure)?;
-            let generation = report.generation().get();
-            let records: Vec<_> = report.records().collect();
-            let counts = check::report(generation, &records, self.k);
-            self.reports.push((generation, records));
-            drop(report);
-            self.epochs[i] = None;
-            io.emit(format!(
-                "REPORT,{generation},{},{},{},0,0\n",
-                counts.admitted, counts.retained, counts.dropped
-            ))?;
+            let index = slot.report_index().unwrap();
+            assert_eq!(self.reports[index].0, slot.epoch().generation().get());
+            slot.emit(|line| io.emit(line))?;
+            if let Some(bank) = slot
+                .reclaim(|epoch| self.controller.reclaim_storage(epoch))
+                .map_err(failure)?
+            {
+                self.banks.push(bank); // At most the original E prepared banks.
+                self.epochs[i] = None;
+            }
         }
         Ok(())
     }
@@ -93,24 +109,31 @@ impl Engine {
             .iter()
             .position(Option::is_none)
             .ok_or("retained epoch capacity")?;
-        let epoch = self
-            .controller
-            .stage(Config {
-                retained_per_function: self.k,
-                max_inflight: 2,
-                max_invocations: protocol::COMMANDS,
-            })
+        let mut bank = Some(self.banks.pop().ok_or("retained epoch capacity")?);
+        #[allow(clippy::result_large_err)]
+        // Keep the returned bank inline until custody is restored.
+        let epoch =
+            match epoch_storage::transfer(&mut bank, |bank| self.controller.stage_prepared(bank)) {
+                Ok(epoch) => epoch,
+                Err(error) => {
+                    self.banks.push(bank.take().unwrap());
+                    return Err(failure(error));
+                }
+            };
+        // Retain the staged token before the fallible publication, including
+        // its failure path. Only a successful arm changes current/counts.
+        self.epochs[i] = Some(Slot::new(epoch));
+        self.controller
+            .arm(self.epochs[i].as_ref().unwrap().epoch())
             .map_err(failure)?;
-        self.controller.arm(&epoch).map_err(failure)?;
         self.committed_arms += 1; // Publication remains real if history later fails.
-        self.epochs[i] = Some(epoch);
         self.current = Some(i);
         self.history(io)
     }
     fn stop(&mut self, io: &mut Io) -> Result<(), String> {
         if let Some(i) = self.current {
             self.controller
-                .disarm(self.epochs[i].as_ref().unwrap())
+                .disarm(self.epochs[i].as_ref().unwrap().epoch())
                 .map_err(failure)?;
             self.current = None;
         }
@@ -442,7 +465,7 @@ fn run_subject(
     let spans = Arc::new(spans);
     let site = publish(prep);
     unsafe { immutable(&spans) };
-    let prepared = PreparedTwoCallerNormalController::new_streaming_history(
+    let mut prepared = PreparedTwoCallerNormalController::new_streaming_history(
         site,
         INSTALL,
         FUNCTION,
@@ -455,6 +478,15 @@ fn run_subject(
         },
     )
     .map_err(failure)?;
+    // Allocate/touch exactly E fixed banks before activation, Ready or start.
+    let banks = prepared
+        .prepare_epoch_storage(Config {
+            retained_per_function: k,
+            max_inflight: 2,
+            max_invocations: protocol::COMMANDS,
+        })
+        .map_err(failure)?;
+    assert_eq!(banks.len(), 4);
     // SAFETY: pristine activation, process-private real publication, no callback-
     // dependent controller locks; exactly two D1 callers use the explicit barrier.
     let (controller, client) = unsafe { prepared.activate_concurrent() }.map_err(failure)?;
@@ -466,6 +498,7 @@ fn run_subject(
     let mut engine = Engine {
         controller,
         epochs: [None, None, None, None],
+        banks,
         current: None,
         history: Vec::with_capacity(epochs as usize + 1),
         reports: Vec::with_capacity(epochs as usize),
@@ -701,6 +734,7 @@ fn run_subject(
                 engine.retire(&mut io)?;
                 engine.history(&mut io)?;
                 assert!(engine.epochs.iter().all(Option::is_none));
+                assert_eq!(engine.banks.len(), 4);
                 assert_eq!(engine.reports.len(), schedule.armed() as usize);
                 assert_eq!(engine.committed_arms, schedule.armed());
                 assert_eq!(

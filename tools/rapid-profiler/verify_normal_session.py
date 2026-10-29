@@ -32,7 +32,11 @@ SESSION = tuple(SESSION_PREFIX + name for name in (
     'protocol::tests::malformed_requests_never_enter_the_population',
     'protocol::tests::duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers',
     'tests::accepted_full_queue_retains_pending_before_stop_and_disconnect',
-    'tests::guarded_wait_preserves_original_due_end_and_shutdown_boundaries'))
+    'tests::guarded_wait_preserves_original_due_end_and_shutdown_boundaries',
+    'epoch_storage::tests::shared_owner_repeats_keep_one_report_output_and_exact_token_until_success',
+    'epoch_storage::tests::fresh_generation_requires_new_report_and_rejects_stale_or_duplicate_marks',
+    'epoch_storage::tests::output_refusal_keeps_obligation_and_token_without_retry_or_reclaim',
+    'epoch_storage::tests::consuming_error_restores_original_owner_before_propagation'))
 TRACE_PREFIX = SESSION_PREFIX+'loop_trace::'
 TRACE = tuple(TRACE_PREFIX+'tests::'+name for name in (
     'failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage',
@@ -137,6 +141,7 @@ def main():
         'tools/rapid-profiler/selected-work/check_output.py', 'tools/rapid-profiler/normal-work/check_output.py',
         'tools/rapid-profiler/ordinary-interval/normal/session.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/check.rs',
+        'tools/rapid-profiler/ordinary-interval/normal/session/epoch_storage.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/io.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
         'tools/rapid-profiler/ordinary-interval/normal/session/protocol.rs',
@@ -386,7 +391,7 @@ def main():
             pin(listing/'stderr.txt', record['stderr'])
             inventory = census.census((listing/'stdout.txt').read_bytes(), (listing/'stderr.txt').read_bytes())
             if name == 'session':
-                # Old ten are exact; two:: and diagnostics each have separate exact qualification.
+                # All fourteen are exact; two:: and diagnostics each have separate exact qualification.
                 assert {n for n in inventory if n.startswith(prefix)
                     and not n.startswith((prefix+'two::', TRACE_PREFIX))} == set(methods)
                 assert {n for n in inventory if n.startswith(TRACE_PREFIX)} == set(TRACE)

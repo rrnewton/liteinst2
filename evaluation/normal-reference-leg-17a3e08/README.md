@@ -62,13 +62,19 @@ is not excluded. Each new process retains 20 CPU seconds, 30 wall seconds and
 1 MiB output. Qualification calls are separate from any future study population.
 
 All seven hand-back checks pass at the same source revision: default-parallel
-workspace 3,061 passed, zero failed, 36 ignored in 337.516 seconds;
+workspace 3,056 top-level passes, zero failed, 36 ignored in 337.516 seconds,
+plus two separate custom harnesses;
 serial launch 1,039 passed in 124.565 seconds; staged allocation three
 and prefixed pun 36. Formatting, strict workspace Clippy and all-target/all-feature
 check pass. All seven historical admission/allocation regression names appear
 exactly once as passes under the full 316-CPU harness default. `checks.csv`
 records counts and log hashes. Independent source reviews and exact-commit
 continuity cover producer, validators and recipe.
+
+Count correction: the previous 3,061 total counted five nested child-test
+summaries again. The corrected total uses the final libtest summary per Cargo
+target and retains every rustdoc batch, including both positive and compile-fail
+tests. Raw receipts and logs are unchanged; this is a reporting correction.
 
 Two development records remain explicit. Initial strict Clippy rejected a
 needless final `Option<&mut _>::as_deref_mut`; changing that final borrow to

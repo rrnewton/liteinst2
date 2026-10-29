@@ -1,0 +1,232 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "name": "fmt",
+      "rescues": 0,
+      "seconds": 6.807538071880117,
+      "termination": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 183,
+        "sha256": "4042b6cbd8dddb9d30521b0fd617d3a227d2f647974d862a3e570a15f87a2a72"
+      },
+      "name": "clippy",
+      "rescues": 0,
+      "seconds": 0.3271860289387405,
+      "termination": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 183,
+        "sha256": "8a9d17f3d06ad727195351f20085e5952ad52f24030cbaec07e0e39a25849930"
+      },
+      "name": "check",
+      "rescues": 0,
+      "seconds": 0.24832900520414114,
+      "termination": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 364682,
+        "sha256": "4a0019af8e004d7a4e4b18434eba5f4b1a85f42999c65e523aba8993e5cbd54c"
+      },
+      "name": "workspace-default",
+      "rescues": 0,
+      "seconds": 337.4011266559828,
+      "termination": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 1404722,
+        "sha256": "9ae11af4d822cdcd02b4c7b41dcf88bde2fb9cf3d823d020d17be235ffa324e5"
+      },
+      "name": "serial-launch",
+      "rescues": 0,
+      "seconds": 125.6940534398891,
+      "termination": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 534,
+        "sha256": "f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5"
+      },
+      "name": "staged-allocation",
+      "rescues": 0,
+      "seconds": 0.035239472053945065,
+      "termination": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 4365,
+        "sha256": "b110b319c4175bfac134e403d2ad2c46b9b19c8c3a4c74983341bf61b7c05b8f"
+      },
+      "name": "prefixed-pun",
+      "rescues": 0,
+      "seconds": 1.292538815876469,
+      "termination": null
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "historical_regressions_passed": [
+    "admitted_exec_native_first_user_and_retired_history_are_exact",
+    "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+    "admitted_exec_native_source_profile_bound_refuses_after_exec",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+    "original_exec_replacement_matches_raw_replay_and_native_full_state",
+    "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+    "native_state_covers_every_prefixed_pun_and_original_successor"
+  ],
+  "merged_main": "abab69594a19140fe5e6f78492da883803dfbe4c",
+  "outer_receipt": {
+    "bytes": 897,
+    "sha256": "0127d2af7bb305cbbd126c58d91870df5c251fa22e86d3db5ba827f3dc193b12"
+  },
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "raw_receipt": {
+    "bytes": 21878,
+    "sha256": "f5703994444b1c1de7dcf38a4b830d4919bd3adf1e6ff57e45d12df7315b28d8"
+  },
+  "revision": "55f15f6183a29c78b1d7a8872e69721c834420f5",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Merged-tree functional checks only. The fixed five campaign retains its original revision and two failures; no campaign rerun or changed deadline.",
+  "source_continuity": {
+    "all_current_bytes_equal": true,
+    "campaign_revision": "30c86454037e385f669b4b88d59cd5c2e37d81d8",
+    "manifest": {
+      "bytes": 80475,
+      "sha256": "22a621cb4ba38943495092af4fc9680b8fe419caf1fd810d92890dbc49883ffb"
+    },
+    "source_count": 507
+  },
+  "status": "PASS",
+  "workspace_count": {
+    "custom_harnesses": [
+      "tests/exec_backing_cleanup.rs",
+      "tests/precontext_native.rs"
+    ],
+    "libtest_or_rustdoc_batches": 104,
+    "log": {
+      "bytes": 364682,
+      "sha256": "4a0019af8e004d7a4e4b18434eba5f4b1a85f42999c65e523aba8993e5cbd54c"
+    },
+    "nested_summaries": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "raw_summary_sum": {
+      "failed": 0,
+      "ignored": 36,
+      "passed": 3061
+    },
+    "top_level": {
+      "failed": 0,
+      "ignored": 36,
+      "passed": 3056
+    }
+  }
+}

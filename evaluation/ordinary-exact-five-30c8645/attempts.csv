@@ -1,0 +1,6 @@
+attempt,status,stage,seconds,before_load_1,before_load_5,before_load_15,after_load_1,after_load_5,after_load_15
+1,PASS,complete,170.983571893,26.95,29.57,31.45,57.07,38.81,34.43
+2,FAILED,exact-short-k10,131.055961855,57.07,38.81,34.43,122.96,63.05,43.51
+3,FAILED,full-k1000,135.424432600,122.96,63.05,43.51,145.73,98.83,59.79
+4,PASS,complete,213.934558143,145.73,98.83,59.79,88.98,100.0,68.82
+5,PASS,complete,171.295653494,88.98,100.0,68.82,39.91,72.84,63.58

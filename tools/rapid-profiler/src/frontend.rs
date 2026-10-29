@@ -9,7 +9,7 @@ use crate::generation::{
     DeactivationRequest, Epoch, FunctionId, GenerationId, OwnedTicket, PopulationObservation,
     Record,
 };
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, TryLockError};
 
 /// Maximum simultaneously retained frontend epochs in this first model.
@@ -78,6 +78,10 @@ pub enum SetupError {
     Poisoned,
     /// The existing generation constructor refused its own exact contract.
     Generation(CreateError),
+    /// This operation does not belong to the once-issued storage mode.
+    StorageMode,
+    /// Storage identity or pristine preparation state differs.
+    InvalidStorage,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -205,6 +209,7 @@ struct FrontendEpoch {
     epoch: Arc<Epoch>,
     spec: Arc<Spec>,
     payloads: Vec<OnceLock<Payload>>,
+    storage_bank: Option<usize>,
     _permit: Permit,
 }
 impl FrontendEpoch {
@@ -398,6 +403,8 @@ struct SessionInner {
     writer: Mutex<Controller>,
     history_mode: HistoryMode,
     committed_end: AtomicU64,
+    storage_mode: Option<Config>,
+    ever_staged: AtomicBool,
     #[cfg(test)]
     entry_waits: [AtomicUsize; 2],
 }
@@ -490,6 +497,8 @@ impl Session {
                 }),
                 history_mode: HistoryMode::Legacy,
                 committed_end: AtomicU64::new(0),
+                storage_mode: None,
+                ever_staged: AtomicBool::new(false),
                 #[cfg(test)]
                 entry_waits: [const { AtomicUsize::new(0) }; 2],
             }),
@@ -503,6 +512,9 @@ impl Session {
 
     /// Allocate an epoch before admission. Error drops any acquired permit.
     pub fn stage(&self, config: Config) -> Result<EpochHandle, SetupError> {
+        if self.inner.storage_mode.is_some() {
+            return Err(SetupError::StorageMode);
+        }
         if config.max_invocations > self.inner.spec.limits.records_per_epoch {
             return Err(SetupError::InvalidLimits);
         }
@@ -511,14 +523,17 @@ impl Session {
             Arc::new(Epoch::new(&self.inner.spec.ids, config).map_err(SetupError::Generation)?);
         let mut payloads = reserved(config.max_invocations)?;
         payloads.resize_with(config.max_invocations, OnceLock::new);
-        Ok(EpochHandle {
+        let handle = EpochHandle {
             owner: Arc::new(FrontendEpoch {
                 epoch,
                 spec: Arc::clone(&self.inner.spec),
                 payloads,
+                storage_bank: None,
                 _permit: permit,
             }),
-        })
+        };
+        self.inner.ever_staged.store(true, Ordering::Release);
+        Ok(handle)
     }
 
     /// Preallocate D frames before registering a never-reused thread identity.
@@ -1215,3 +1230,6 @@ pub(crate) use interval_entry::{
 
 #[cfg(test)]
 mod tests;
+
+mod epoch_storage;
+pub(crate) use epoch_storage::{EpochStorage, StorageReclaimError};

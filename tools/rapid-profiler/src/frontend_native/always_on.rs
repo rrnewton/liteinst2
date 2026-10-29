@@ -1,6 +1,8 @@
 //! Always-on fixed-grammar callbacks. The old point and native adapters are separate.
 //! This facade owns metadata only; site::seal retains the actual publication.
 mod drain;
+mod epoch_storage;
+pub use epoch_storage::{EpochStorageReclaimError, IntervalEpochStorage};
 mod history;
 pub(super) mod normal;
 pub(super) mod optional;

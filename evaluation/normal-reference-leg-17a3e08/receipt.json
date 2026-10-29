@@ -87,6 +87,19 @@
     "--reference-work",
     "--reference-leg"
   ],
+  "count_correction": {
+    "custom_harnesses": [
+      "tests/exec_backing_cleanup.rs",
+      "tests/precontext_native.rs"
+    ],
+    "failed": 0,
+    "ignored": 36,
+    "method": "Final libtest summary per Cargo Running target; retain every rustdoc batch. Raw receipt and log unchanged.",
+    "nested_child_summaries_previously_added": 5,
+    "previous_reported_workspace_passes": 3061,
+    "top_level_workspace_passes": 3056,
+    "workspace_log_sha256": "656499a86c7e84cba280e52b7b9e9f270debd05b65d051db2b9c4e6d5685ee45"
+  },
   "development_lint": {
     "corrected_log_sha256": "69297047e68e74e6ccc2cfe833ddce096edb82a546f54dfca1388adb49475a0d",
     "corrected_status": "PASS",
@@ -98,12 +111,12 @@
   },
   "files": {
     "README.md": {
-      "bytes": 5232,
-      "sha256": "b9a5dddeb6c9a5bf95d72d953b58d4b3b4066cc51b191667259def6b1b8d8f7d"
+      "bytes": 5588,
+      "sha256": "2d099a0be463890e41f55bbc9d16acc581dbf61e55323eb9e17a0cb1e7b4a00e"
     },
     "checks.csv": {
       "bytes": 720,
-      "sha256": "dd03f7f338161f485220e92d72297c0e714f2a0f4f908f7ba3a576535064068e"
+      "sha256": "00ba3f474e3e62d4c4a8787c3a5750bd5bdd0add74307139901238474946ecbc"
     },
     "normal-reference-leg-installed.csv": {
       "bytes": 8907,

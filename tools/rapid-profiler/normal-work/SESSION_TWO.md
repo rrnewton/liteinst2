@@ -1,8 +1,8 @@
 # Two ordinary calling workers
 
 `ordinary-interval normal-session-two CANDIDATE FINAL ELF_VA LENGTH K EPOCHS`
-adds a finite two-caller application route. The original `normal-session` route,
-worker, ledger, protocol, I/O and tests are unchanged. This new route requires the
+adds a finite two-caller application route. It uses the existing request grammar
+and I/O with two worker queues and two ledger cursors. This route requires the
 independently qualified unchanged FreeBSD strnlen final ELF, 41-byte selected
 extent and its RET offsets34/40. File/source/selection authentication and native
 prerequisites belong to the qualification recipe; this CLI is not discovery or
@@ -49,9 +49,11 @@ contiguous sets; a rank is not a slot or arrival order. Completed counts all
 admitted confirmations, including DroppedAfterBudget. Each Report requires
 retained=min(K,admitted), dropped=admitted-retained and no cancelled/unfinished
 records. FunctionClosed is checked against K retained outcomes in its final
-Report. No timestamp or request ordering selects an owner. Prompt retirement
-copies data and drops each Report; data-only batches/history retain no epoch
-permit. Two old pending owners plus current and fresh fit E4 under that rule.
+Report. No timestamp or request ordering selects an owner. Both routes use the
+[bounded epoch storage contract](SESSION.md#epoch-storage): each final Report
+is copied once, and any remaining owner delays reclamation of its storage.
+Data-only batches/history retain no epoch permit. Two old pending owners plus
+current and fresh fit E4; lack of a free bank is still an explicit failure.
 
 The prospective stdout grammar is LF-only CSV with these fields after each tag:
 
