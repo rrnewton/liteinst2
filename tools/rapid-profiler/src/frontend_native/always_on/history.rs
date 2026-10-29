@@ -57,11 +57,12 @@ impl HistoryStream {
     }
 }
 pub(super) fn stream_for(binding: &Binding) -> Option<HistoryStream> {
+    let function = binding.single_function().ok()?;
     (binding.session.history_mode() == HistoryMode::Absolute).then(|| HistoryStream {
         key: Arc::clone(&binding.key),
         pid: binding.pid,
         install: binding.install,
-        function: binding.function,
+        function,
     })
 }
 
@@ -246,14 +247,18 @@ pub(super) fn packed_for(
     binding: &Binding,
     summary: IntervalEntrySummary,
 ) -> Result<(u64, u64, u64), BridgeError> {
-    if binding.session.history_mode() == HistoryMode::Legacy {
-        packed(summary, binding.function)
+    packed_for_function(&binding.session, binding.single_function()?, summary)
+}
+
+pub(super) fn packed_for_function(
+    session: &Session,
+    function: FunctionId,
+    summary: IntervalEntrySummary,
+) -> Result<(u64, u64, u64), BridgeError> {
+    if session.history_mode() == HistoryMode::Legacy {
+        packed(summary, function)
     } else {
-        packed_absolute(
-            summary,
-            binding.function,
-            binding.session.history_committed_end(),
-        )
+        packed_absolute(summary, function, session.history_committed_end())
     }
 }
 

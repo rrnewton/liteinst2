@@ -41,7 +41,7 @@ fn snapshot(attached: &IntervalThread, gate: &CallGate) -> Snapshot {
         assert_eq!(state.next, state.totals.entries + 1);
         assert_eq!(attached.finished.get(), Some(state.totals));
         assert!(std::ptr::eq(
-            Arc::as_ptr(state.binding.site.gate.as_ref().unwrap()),
+            Arc::as_ptr(state.binding.single_site().unwrap().gate.as_ref().unwrap()),
             gate
         ));
         Snapshot {
@@ -50,7 +50,7 @@ fn snapshot(attached: &IntervalThread, gate: &CallGate) -> Snapshot {
                 state.tid,
                 state.registration,
                 state.binding.install,
-                state.binding.function,
+                state.binding.single_function().unwrap(),
             ),
             journal_address: state.journal.address(),
             totals: state.totals,

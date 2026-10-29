@@ -119,8 +119,10 @@ pub use module::ordinary::{
 };
 
 pub use always_on::normal::{
-    NormalAcknowledgement, NormalBatch, NormalClient, NormalRecord, NormalThread, NormalTotals,
-    PreparedNormalController, PreparedTwoCallerNormalController,
+    NormalAcknowledgement, NormalBatch, NormalClient, NormalModuleBatch, NormalModuleClient,
+    NormalModuleController, NormalModuleRecord, NormalModuleThread, NormalRecord, NormalThread,
+    NormalTotals, PreparedNormalController, PreparedNormalModuleController,
+    PreparedTwoCallerNormalController,
 };
 pub use always_on::site::ordinary::{
     InstalledNormalModuleSite, NormalModuleFunctionSite, NormalModulePreparationPolicy,

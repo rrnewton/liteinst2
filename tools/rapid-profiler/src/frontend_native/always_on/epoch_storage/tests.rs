@@ -200,7 +200,10 @@ fn preparation_requires_pristine_absolute_normal_profile_and_commits_once() {
         ));
     }
     let mut wrong = prepared(false, true, 1);
-    wrong.site = site::synthetic_site().site;
+    wrong.profile = BindingProfile::Single {
+        site: site::synthetic_site().site,
+        function: wrong.profile.single().unwrap().1,
+    };
     assert!(matches!(
         prepare(&mut wrong, config()),
         Err(BridgeError {

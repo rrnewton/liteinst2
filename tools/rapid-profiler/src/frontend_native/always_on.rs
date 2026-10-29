@@ -21,8 +21,8 @@ pub use timing::{RawInterval, RawIntervalOwner, RawTimestamp};
 use crate::frontend::{
     BindingChange, ControlError, ControllerSnapshot, ControllerStatus, EpochHandle, FailurePoint,
     FunctionSpec, GroupSpec, HistoryMode, IntervalEntry, IntervalEntryError, IntervalEntrySummary,
-    IntervalExitError, Limits, ModelReturnSlot, Observation, Report, Session, SetupError,
-    ThreadModel, UnsampledSummary,
+    IntervalExit, IntervalExitError, Limits, ModelReturnSlot, Observation, Report, Session,
+    SetupError, ThreadModel, UnsampledSummary,
 };
 use crate::generation::{Config, FunctionId, GenerationId};
 use liteinst2::controls::ControlIdentity;
@@ -67,13 +67,32 @@ fn error(cause: Cause) -> BridgeError {
     BridgeError { cause }
 }
 
+// Closed installation profiles. A module cannot stand in for a leaf or gate.
+enum BindingProfile {
+    Single {
+        site: Arc<site::Site>,
+        function: FunctionId,
+    },
+    Module {
+        site: Arc<site::ordinary::ModuleSite>,
+        functions: [FunctionId; 2],
+    },
+}
+impl BindingProfile {
+    fn single(&self) -> Result<(&Arc<site::Site>, FunctionId), BridgeError> {
+        match self {
+            Self::Single { site, function } => Ok((site, *function)),
+            Self::Module { .. } => Err(error(Cause::Identity)),
+        }
+    }
+}
+
 struct Binding {
     session: Session,
-    site: Arc<site::Site>,
+    profile: BindingProfile,
     key: Arc<()>,
     pid: u32,
     install: u64,
-    function: FunctionId,
     limits: Limits,
     entry_mode: EntryMode,
     #[cfg(test)]
@@ -85,6 +104,12 @@ enum EntryMode {
     Concurrent,
 }
 impl Binding {
+    fn single_site(&self) -> Result<&Arc<site::Site>, BridgeError> {
+        Ok(self.profile.single()?.0)
+    }
+    fn single_function(&self) -> Result<FunctionId, BridgeError> {
+        Ok(self.profile.single()?.1)
+    }
     fn process(&self) -> Result<(), BridgeError> {
         if self.pid == std::process::id() {
             Ok(())
@@ -109,10 +134,9 @@ impl IntervalEpoch {
 /// receipt exists before activation. Only completed allocations may cross fork.
 pub struct PreparedIntervalController {
     session: Session,
-    site: Arc<site::Site>,
+    profile: BindingProfile,
     key: Arc<()>,
     install: u64,
-    function: FunctionId,
     limits: Limits,
     epochs: Vec<Option<EpochHandle>>,
     _exclusive: PhantomData<Cell<()>>,
@@ -167,10 +191,12 @@ impl PreparedIntervalController {
             .map_err(|_| error(Cause::Capacity))?;
         Ok(Self {
             session,
-            site: site.site,
+            profile: BindingProfile::Single {
+                site: site.site,
+                function,
+            },
             key: Arc::new(()),
             install,
-            function,
             limits,
             epochs,
             _exclusive: PhantomData,
@@ -198,10 +224,12 @@ impl PreparedIntervalController {
             .map_err(|_| error(Cause::Capacity))?;
         Ok(Self {
             session,
-            site: site.site,
+            profile: BindingProfile::Single {
+                site: site.site,
+                function,
+            },
             key: Arc::new(()),
             install,
-            function,
             limits,
             epochs,
             _exclusive: PhantomData,
@@ -251,6 +279,15 @@ impl PreparedIntervalController {
         self,
         entry_mode: EntryMode,
     ) -> Result<(IntervalController, IntervalClient), BridgeError> {
+        self.profile.single()?;
+        let (controller, binding) = self.activate_binding(entry_mode)?;
+        Ok((controller, IntervalClient { binding }))
+    }
+
+    fn activate_binding(
+        self,
+        entry_mode: EntryMode,
+    ) -> Result<(IntervalController, Arc<Binding>), BridgeError> {
         if self.session.history_mode() == HistoryMode::Absolute
             && !matches!(entry_mode, EntryMode::Concurrent)
         {
@@ -285,26 +322,22 @@ impl PreparedIntervalController {
         }
         let binding = Arc::new(Binding {
             session: self.session,
-            site: self.site,
+            profile: self.profile,
             key: self.key,
             pid: std::process::id(),
             install: self.install,
-            function: self.function,
             limits: self.limits,
             entry_mode,
             #[cfg(test)]
             native_entry_pause: std::sync::OnceLock::new(),
         });
-        let client = IntervalClient {
-            binding: Arc::clone(&binding),
-        };
         Ok((
             IntervalController {
-                binding,
+                binding: Arc::clone(&binding),
                 epochs: self.epochs,
                 _exclusive: PhantomData,
             },
-            client,
+            binding,
         ))
     }
 }
@@ -586,6 +619,7 @@ impl IntervalClient {
         journal: IntervalJournal,
     ) -> Result<IntervalThread, BridgeError> {
         self.binding.process()?;
+        let site = self.binding.single_site()?;
         if registration == 0 || journal.used() != 0 || journal.page.0.iter().any(|&x| x != 0) {
             return Err(error(Cause::Attachment));
         }
@@ -621,7 +655,7 @@ impl IntervalClient {
                     totals: PairTotals::default(),
                     journal,
                     failure: None,
-                    timing: self.binding.site.gate.as_ref().map(|_| timing::Rows::new()),
+                    timing: site.gate.as_ref().map(|_| timing::Rows::new()),
                 };
                 state.journal.header(tid, 0);
                 *storage = Some(state);
@@ -650,6 +684,7 @@ impl IntervalThread {
             && Arc::ptr_eq(&self.key, &state.binding.key)
             && state.tid == self.tid
             && state.actual_thread == self.thread
+            && state.binding.profile.single().is_ok()
     }
     /// Return exact totals only for an empty unpoisoned pair/model state.
     pub fn totals(&self) -> Result<PairTotals, BridgeError> {
@@ -710,7 +745,7 @@ impl IntervalThread {
                 let gate = Arc::clone(
                     state
                         .binding
-                        .site
+                        .single_site()?
                         .gate
                         .as_ref()
                         .ok_or(error(Cause::ClockProfile))?,
@@ -773,7 +808,7 @@ impl IntervalThread {
                 let gate = Arc::clone(
                     state
                         .binding
-                        .site
+                        .single_site()?
                         .gate
                         .as_ref()
                         .ok_or(error(Cause::ClockProfile))?,
@@ -921,14 +956,14 @@ impl State {
                 .is_none_or(|n| n > self.stack.end)
             || !self
                 .binding
-                .site
+                .single_site()?
                 .matches(context.instruction_pointer, control, entry)
         {
             return Err(error(Cause::Identity));
         }
         // SAFETY: exact readable extent supplied by unsafe attach; no return repair.
         let word = unsafe { (context.stack_pointer as usize as *const u64).read_unaligned() };
-        if word != self.binding.site.terminal {
+        if word != self.binding.single_site()?.terminal {
             return Err(error(Cause::Return));
         }
         Ok(word)
@@ -947,7 +982,7 @@ impl State {
         if CONTROLLER_ACTIVE.try_with(Cell::get).unwrap_or(true) {
             return Err(error(Cause::ControllerReentry));
         }
-        let timed = self.binding.site.gate.is_some();
+        let timed = self.binding.single_site()?.gate.is_some();
         if timed != start.is_some() || timed != gate.is_some() || timed != self.timing.is_some() {
             return Err(error(Cause::ClockProfile));
         }
@@ -983,10 +1018,11 @@ impl State {
             EntryMode::NonBlocking => ThreadModel::enter_interval,
             EntryMode::Concurrent => ThreadModel::enter_interval_waiting,
         };
+        let function = self.binding.single_function()?;
         let receipt = enter(
             &mut self.model,
             self.binding.install,
-            self.binding.function,
+            function,
             start.map_or(self.next, |value| value.ticks),
             &mut slot,
         )
@@ -995,7 +1031,7 @@ impl State {
         self.pairs[depth] = Some(Pair {
             key: Arc::clone(&self.binding.key),
             install: self.binding.install,
-            function: self.binding.function,
+            function,
             registration: self.registration,
             ordinal: self.next,
             rsp,
@@ -1036,7 +1072,9 @@ impl State {
         end: Option<RawTimestamp>,
         returned: Option<gate::GateReturn>,
     ) -> Result<(), BridgeError> {
-        let timed = self.binding.site.gate.is_some();
+        let site = self.binding.single_site()?;
+        let function = self.binding.single_function()?;
+        let timed = site.gate.is_some();
         if timed != end.is_some() || timed != returned.is_some() || timed != self.timing.is_some() {
             return Err(error(Cause::ClockProfile));
         }
@@ -1049,7 +1087,7 @@ impl State {
             || pair.return_word != return_word
             || !Arc::ptr_eq(&pair.key, &self.binding.key)
             || pair.install != self.binding.install
-            || pair.function != self.binding.function
+            || pair.function != function
             || pair.registration != self.registration
             || pair.slot.identity != pair.ordinal
         {
@@ -1111,9 +1149,7 @@ impl State {
             return Err(error(Cause::Invariant));
         }
         if let Some(returned) = returned {
-            self.binding
-                .site
-                .gate
+            site.gate
                 .as_ref()
                 .ok_or(error(Cause::ClockProfile))?
                 .complete_ret(returned)
@@ -1191,7 +1227,7 @@ fn timed_callback(
                 let gate = Arc::clone(
                     state
                         .binding
-                        .site
+                        .single_site()?
                         .gate
                         .as_ref()
                         .ok_or(error(Cause::ClockProfile))?,

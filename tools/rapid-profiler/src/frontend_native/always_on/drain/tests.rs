@@ -317,7 +317,7 @@ fn three_full_batches_keep_one_registration_lifetime_history_and_held_reports() 
             assert_eq!(row.owner, owner);
             let at = 4 + (n % 32) as usize * 14;
             let bits = invocation | (prefix << 13) | (reason << 22);
-            let continuation = state(|s| s.binding.site.terminal);
+            let continuation = state(|s| s.binding.single_site().unwrap().terminal);
             assert_eq!(
                 &batch.journal()[at..at + 7],
                 [kind, n + 1, 0x1000, 0x7ff8, continuation, generation, bits]
