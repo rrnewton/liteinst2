@@ -540,14 +540,22 @@ def owner_gate(run, binary, geometry, candidate, trusted):
 
 
 
+def caller_symbol_command(tools, binary):
+    # Read the complete table, retaining every exact matching row. pipefail
+    # preserves readelf failures even when the filter has already found a row.
+    # Positional arguments keep paths out of shell source; both tools are pinned.
+    return [tools['bash'], '-o', 'pipefail', '-c',
+            '"$1" --wide --syms "$2" | "$3" -- " liteinst_csv_call_and_store$"',
+            'module-session-caller-symbols', tools['readelf'], binary, tools['rg']]
+
+
 def caller(run, label, binary):
     data, err = run.stage(label+'-disassembly', [run.tools['objdump'], '-d', '-M', 'intel', '--insn-width=16',
                                                '--disassemble=liteinst_csv_call_and_store', binary])
     assert err == b''
     shape = run.m['csv'].caller_geometry(data.decode('ascii'))
-    symbols, err = run.stage(label+'-symbols', [run.tools['readelf'], '--wide', '--syms', binary]); assert err == b''
-    matching = '\n'.join(line for line in symbols.decode('ascii').splitlines() if line.split() and line.split()[-1] == 'liteinst_csv_call_and_store')
-    run.m['module'].caller_symbols(matching, shape)
+    symbols, err = run.stage(label+'-symbols', caller_symbol_command(run.tools, binary)); assert err == b''
+    run.m['module'].caller_symbols(symbols.decode('ascii'), shape)
     return shape
 
 
@@ -653,7 +661,7 @@ def main():
     assert a.raw.is_relative_to(ROOT/'ignored') and not a.raw.exists()
     os.chdir(ROOT)
     tools = {n: (a.toolchain/'bin'/n).resolve(strict=True) for n in ('cargo', 'rustc', 'rustdoc')}
-    tools.update({n: Path('/usr/bin', n).resolve(strict=True) for n in ('git', 'gcc', 'readelf', 'objdump', 'taskset')})
+    tools.update({n: Path('/usr/bin', n).resolve(strict=True) for n in ('git', 'gcc', 'readelf', 'objdump', 'taskset', 'bash', 'rg')})
     tools['python'] = Path(sys.executable).resolve(strict=True)
     env = dict(HOME=str(a.user_home), CARGO_HOME=str(a.cargo_home), PATH=str(a.toolchain/'bin')+':/usr/bin:/bin',
         RUSTC=str(tools['rustc']), RUSTDOC=str(tools['rustdoc']), CC=str(tools['gcc']), CARGO_TARGET_DIR=str(ROOT/'target'),
@@ -810,7 +818,7 @@ def main():
     return 0 if run.result['status'] == 'FUNCTIONAL_CAMPAIGN_PASS' else 1
 
 
-PYTHON_CONTROLS = ('test_actual_stderr_requires_exact_finalized_outcome_and_no_hard_diagnostic', 'test_campaign_actual_producer_identity_and_all_failure_rows', 'test_campaign_closed_functional_failure_continues_but_unknown_custody_stops', 'test_campaign_commands_freeze_exact_argv_before_owner_and_never_refresh', 'test_campaign_exact_ordinary_namespaces_keep_unrelated_two_caller_inventory', 'test_campaign_exact_python_names_and_local_import_refusal', 'test_campaign_fixed_catalog_frames_and_owner_status_join', 'test_campaign_missing_app_identity_stops_and_budget_stop_keeps_unrun', 'test_campaign_native_profiles_census_and_complete_retained_counts', 'test_campaign_storage_reserves_complete_stage_and_never_refreshes_charge', 'test_complete_empty_closed_and_absolute_history_populations', 'test_eof_typed_refusal_and_incomplete_are_distinct', 'test_every_family_missing_duplicate_reorder_and_extra_refuses', 'test_fixed_catalog_has_exact_special_inputs_and_error_classes', 'test_global_slots_function_ranks_closed_budget_and_report_order', 'test_history_starts_at_one_and_preserves_multi_action_chunks', 'test_numeric_framing_actual_stderr_and_caps', 'test_optimization_refuses_before_production_checks', 'test_original_input_refusal_never_accepts_hard_failure', 'test_original_reference_uses_all_values_and_exact_population', 'test_owner_four_cases_keep_full_raw_zero_max_and_unavailable', 'test_owner_identity_phases_reports_raw_and_complete_order_refuse', 'test_scalar_input_fingerprint_and_complete_results_are_independent', 'test_stack_continuation_ack_and_batch_boundaries', 'test_zero_maximum_and_raw_unavailable_are_retained')
+PYTHON_CONTROLS = ('test_caller_symbol_filter_keeps_all_matches_failures_and_literal_paths', 'test_actual_stderr_requires_exact_finalized_outcome_and_no_hard_diagnostic', 'test_campaign_actual_producer_identity_and_all_failure_rows', 'test_campaign_closed_functional_failure_continues_but_unknown_custody_stops', 'test_campaign_commands_freeze_exact_argv_before_owner_and_never_refresh', 'test_campaign_exact_ordinary_namespaces_keep_unrelated_two_caller_inventory', 'test_campaign_exact_python_names_and_local_import_refusal', 'test_campaign_fixed_catalog_frames_and_owner_status_join', 'test_campaign_missing_app_identity_stops_and_budget_stop_keeps_unrun', 'test_campaign_native_profiles_census_and_complete_retained_counts', 'test_campaign_storage_reserves_complete_stage_and_never_refreshes_charge', 'test_complete_empty_closed_and_absolute_history_populations', 'test_eof_typed_refusal_and_incomplete_are_distinct', 'test_every_family_missing_duplicate_reorder_and_extra_refuses', 'test_fixed_catalog_has_exact_special_inputs_and_error_classes', 'test_global_slots_function_ranks_closed_budget_and_report_order', 'test_history_starts_at_one_and_preserves_multi_action_chunks', 'test_numeric_framing_actual_stderr_and_caps', 'test_optimization_refuses_before_production_checks', 'test_original_input_refusal_never_accepts_hard_failure', 'test_original_reference_uses_all_values_and_exact_population', 'test_owner_four_cases_keep_full_raw_zero_max_and_unavailable', 'test_owner_identity_phases_reports_raw_and_complete_order_refuse', 'test_scalar_input_fingerprint_and_complete_results_are_independent', 'test_stack_continuation_ack_and_batch_boundaries', 'test_zero_maximum_and_raw_unavailable_are_retained')
 
 
 def python_controls(stdout, stderr):

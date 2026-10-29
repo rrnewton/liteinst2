@@ -134,6 +134,33 @@ def owner_bytes(rows):
 
 
 class Controls(unittest.TestCase):
+    def test_caller_symbol_filter_keeps_all_matches_failures_and_literal_paths(self):
+        runner=load('reproduce');repo=Path(__file__).resolve().parents[2]
+        module=runner.load('symbol_control_module',repo/runner.MODULES['module'])
+        parent=repo/'target/evaluation';parent.mkdir(parents=True,exist_ok=True)
+        row='  7: 0000000000001000 20 FUNC GLOBAL DEFAULT 15 liteinst_csv_call_and_store\n'
+        binary='literal path ; false $(false) `false`'
+        with tempfile.TemporaryDirectory(prefix='module-symbol-controls-',dir=parent) as scratch:
+            emitter=Path(scratch)/'readelf with spaces'
+            tools=dict(bash=Path('/usr/bin/bash'),rg=Path('/usr/bin/rg'),readelf=emitter)
+            for copies,code,error in ((1,0,''),(2,0,''),(3,0,''),(0,0,''),(1,42,''),(1,0,'readelf diagnostic\n')):
+                emitter.write_text('#!'+sys.executable+'\nimport sys\n'
+                    +'assert sys.argv[1:] == '+repr(['--wide','--syms',binary])+'\n'
+                    +"sys.stdout.write(('unrelated '+ 'x'*200+'\\n')*8192)\n"
+                    +'sys.stdout.write('+repr(row*copies)+')\n'
+                    +'sys.stderr.write('+repr(error)+')\nraise SystemExit('+str(code)+')\n')
+                emitter.chmod(0o700)
+                command=list(map(str,runner.caller_symbol_command(tools,binary)))
+                actual=subprocess.run(command,capture_output=True,timeout=5)
+                self.assertEqual(actual.stdout,(row*copies).encode())
+                self.assertEqual(actual.stderr,error.encode())
+                self.assertEqual(actual.returncode,code if code else (0 if copies else 1))
+                if copies in (1,2):
+                    module.caller_symbols(actual.stdout.decode(),dict(elf_va=4096,length=20))
+                else:
+                    with self.assertRaises(AssertionError):
+                        module.caller_symbols(actual.stdout.decode(),dict(elf_va=4096,length=20))
+
     def test_campaign_commands_freeze_exact_argv_before_owner_and_never_refresh(self):
         runner=load('reproduce')
         parent=Path(__file__).resolve().parents[2]/'target/evaluation'

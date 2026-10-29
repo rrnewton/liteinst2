@@ -40,7 +40,7 @@ The fixed order is:
    K10 CSV→length, K10 length→CSV, K1000 CSV→length, K1000 length→CSV order.
    Every owner RAW/PHASE/REPORT/SAMPLE row is checked, with actual empty stderr
    and normal exit 0. This route does not run Schedule.
-3. All 25 Python controls, then an original helper build and emitted caller
+3. All 26 Python controls, then an original helper build and emitted caller
    check. Eight malformed frames require the precise typed diagnostic, actual
    child exit 2 and helper/owner exit 1. A hard exit 1 cannot pass those controls.
 4. Exactly 32 fresh original-code children, one for each accepted population:
@@ -110,3 +110,10 @@ not a general exemption for names containing `tmp`. No budget failure
 truncates, discards or relabels retained evidence. The caller must still authenticate
 the final outer closure before publishing any result. Source approval and
 passing fabricated parser controls grant no native or campaign execution credit.
+
+Caller symbol inspection retains every exact matching row from the complete
+`readelf` stream through a pinned `rg` filter and `bash -o pipefail`. Paths are
+positional arguments, tool failures and stderr remain failures, and the original
+1 MiB stream, CPU and wall bounds are unchanged. The full unrelated Rust symbol
+table is not copied into evidence. The existing symbol-count, FUNC, binding,
+visibility, address and complete-size checks still apply to every retained row.
