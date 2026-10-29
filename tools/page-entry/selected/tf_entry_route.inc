@@ -588,6 +588,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 2791: /* EVEX_Vptestnmb_kr_k1_zmm_zmmm512; classifier still exact 62b2764026c1 */
     case 1933: /* VEX_Kmovq_r64_kr; classifier permits only c4e1fb93f0/c1 */
     case 1720: /* EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512; exact register / canonical RDI memory gate */
+    case 3884: /* EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8; unmasked memory/immediate4 only */
     case 3891: /* EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8; canonical register-only gate */
     case 2785: /* EVEX_Vptestmb_kr_k1_zmm_zmmm512; canonical register-only gate */
     case 3680: /* VEX_Bzhi_r64_rm64_r64; exact c4e2a0f5da */

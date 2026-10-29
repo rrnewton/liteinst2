@@ -211,14 +211,14 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 40517,
+      "bytes": 41405,
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "593d310171951e86f5fb8810159b27283c1fa0bc597bfd9cd64b80a898f8c356"
+      "sha256": "2667345ea1ad867a100c9c10c0e807ad28d48115b13805acb11e356f0605e8ce"
     },
     {
-      "bytes": 8920,
+      "bytes": 8972,
       "path": "tools/page-entry/selected/decoder/src/write_footprint.rs",
-      "sha256": "926aae6016d94eb9a33715555772c8a4d7846b19349e1ecf1988d8b878a57448"
+      "sha256": "7cebe77a6c1a1d27f17b9b15c165c6462b242a5cd10263206a7e3736f8ae1a26"
     },
     {
       "bytes": 2900,
@@ -466,9 +466,9 @@
       "sha256": "f1291a73b3ca925d43b4f673af7ca8c415e577dc816358521e2616fd03ba5f73"
     },
     {
-      "bytes": 21204,
+      "bytes": 21294,
       "path": "tools/page-entry/selected/tf_entry_route.inc",
-      "sha256": "9d4411968d446bbbd43f62daa6137ac483e6216b86ae44e970522081dc33b77d"
+      "sha256": "161ac2ca2d1efe8732c78444d3cad5706b2ba683db3120079bf334ed02a2c60b"
     },
     {
       "bytes": 5024,
@@ -558,14 +558,14 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 40517,
+      "bytes": 41405,
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "593d310171951e86f5fb8810159b27283c1fa0bc597bfd9cd64b80a898f8c356"
+      "sha256": "2667345ea1ad867a100c9c10c0e807ad28d48115b13805acb11e356f0605e8ce"
     },
     {
-      "bytes": 8920,
+      "bytes": 8972,
       "path": "tools/page-entry/selected/decoder/src/write_footprint.rs",
-      "sha256": "926aae6016d94eb9a33715555772c8a4d7846b19349e1ecf1988d8b878a57448"
+      "sha256": "7cebe77a6c1a1d27f17b9b15c165c6462b242a5cd10263206a7e3736f8ae1a26"
     },
     {
       "bytes": 2900,
@@ -778,9 +778,9 @@
       "sha256": "f1291a73b3ca925d43b4f673af7ca8c415e577dc816358521e2616fd03ba5f73"
     },
     {
-      "bytes": 21204,
+      "bytes": 21294,
       "path": "tools/page-entry/selected/tf_entry_route.inc",
-      "sha256": "9d4411968d446bbbd43f62daa6137ac483e6216b86ae44e970522081dc33b77d"
+      "sha256": "161ac2ca2d1efe8732c78444d3cad5706b2ba683db3120079bf334ed02a2c60b"
     },
     {
       "bytes": 5024,

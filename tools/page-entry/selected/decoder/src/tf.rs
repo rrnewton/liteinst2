@@ -217,6 +217,17 @@ fn canonical_vpxorq128(instruction: &Instruction, bytes: &[u8]) -> bool {
                 && (*p2 & 0xf7) == 0 && (*m & 0xc0) == 0xc0)
 }
 
+// Canonical unmasked EVEX.256.W0 VPCMPNEQUB k,YMM,m256 only. The CPU
+// reads the original ModRM/SIB/RIP address (disp8*32), compares unsigned bytes,
+// and clears destination K bits63:32. No K extension, register source2,
+// other predicate, width, mask, zeroing/broadcast or added prefix is admitted.
+fn canonical_vpcmpnequb256_memory(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8
+        && matches!(bytes, [0x62, p0, p1, p2, 0x3e, m, .., 0x04]
+            if (*p0 & 0x9f) == 0x93 && (*p1 & 0x87) == 0x05
+                && (*p2 & 0xf7) == 0x20 && (*m & 0xc0) != 0xc0)
+}
+
 // Canonical EVEX.512.W0 VPCMPB register forms. The opmask destination has
 // no extension bits; z/b, non-512 widths, memory and reserved imm8 bits stay closed.
 fn canonical_vpcmpb(instruction: &Instruction, bytes: &[u8]) -> bool {
@@ -356,6 +367,8 @@ fn classify(
         if !canonical_vptestnmb(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512 {
         if !canonical_vptestmb(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8 {
+        if !canonical_vpcmpnequb256_memory(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8 {
         if !canonical_vpcmpb(&instruction, &source[..instruction.len()]) {
             return Ok(out);
@@ -671,6 +684,7 @@ fn classify(
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
+        | Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
         | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
         | Code::VEX_Kmovq_r64_kr
