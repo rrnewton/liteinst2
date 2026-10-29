@@ -1,0 +1,11 @@
+sample,order,lane,pid,exit,timed_out,reaped,accepted,process_path_ns,admissions,closed,first_admission_work_ns,revisit_count
+0,0,native,615164,0,False,True,True,3386229,,,,
+0,1,gated,615800,0,False,True,True,13486532675,5721,5721,87912,16
+1,2,gated,626043,0,False,True,True,13071072190,5721,5721,82724,16
+1,3,native,639882,0,False,True,True,3150076,,,,
+2,4,native,639964,0,False,True,True,3479490,,,,
+2,5,gated,640484,0,False,True,True,13685921004,5721,5721,85549,16
+3,6,gated,662550,0,False,True,True,13850919000,5721,5721,85097,16
+3,7,native,682454,0,False,True,True,3421884,,,,
+4,8,native,682597,0,False,True,True,3472178,,,,
+4,9,gated,682722,0,False,True,True,13643163010,5721,5721,87532,16
