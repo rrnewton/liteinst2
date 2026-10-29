@@ -7,13 +7,13 @@ ASLR bias, allocation, object-ID or full-state observation authority.
 import copy,hashlib,json,struct
 from page_selected import need
 import page_selected_run_reuse_ls_reports as original
-from page_selected_repeat_lease_app_reports import reports,lease_request,lease_completed
+from page_selected_repeat_lease_app_reports import reports,lease_request,lease_completed,carrier_extent
 from page_selected_run_reuse_ls_reports import (extensions,gate,lease,effect_exit,
     trace_completed,reuse_completed)
 MASK=(1<<64)-1
 H=lambda b:hashlib.sha256(b).hexdigest()
 
-def external_source(p,images,image_bytes):
+def external_source(p,images,image_bytes,carrier,carrier_bytes):
     r=p['repeat_lease'];pc,nxt,flags,mask,width=lease_request(r)
     need(type(images)is list and type(image_bytes)is list and len(images)==len(image_bytes)>0,
          'complete independent external original/interpreter/dependency inputs')
@@ -26,6 +26,11 @@ def external_source(p,images,image_bytes):
              all(type(role)is str for role in image['roles']) and type(data)is bytes and
              len(data)==image['bytes'] and H(data)==image['sha256'] and len(data)>=64,
              'each exact retained external ELF identity and bytes')
+        need(('original'in image['roles'])==(index==0),'one explicit original-main role at the first retained input')
+        if index==0:
+            need(type(carrier_bytes)is bytes and
+                 len(carrier_bytes)==carrier_extent(carrier,image['bytes']) and H(carrier_bytes)==carrier['sha256'],
+                 'whole exact carrier bytes independently built and joined to actual sealed launch')
         need(image['sha256']not in identities,'one retained input per complete external content identity')
         identities.add(image['sha256'])
         h=struct.unpack_from('<16sHHIQQQIHHHHHH',data)
@@ -38,7 +43,11 @@ def external_source(p,images,image_bytes):
             _,prot,offset,va,_,size,memory,align=load
             need(offset<=len(data)and size<=len(data)-offset and size<=memory and va<=MASK-memory,
                  'complete actual external load extent')
-            if prot!=5 or image['bytes']!=r['backing'][8]:continue
+            if prot==5 and index==0:
+                need(carrier_bytes[offset:offset+size]==data[offset:offset+size],
+                     'actual carrier preserves the complete original main RX file-load bytes')
+            backing_bytes=carrier['bytes']if index==0 else image['bytes']
+            if prot!=5 or backing_bytes!=r['backing'][8]:continue
             need(align in(0,1)or align&(align-1)==0,'power-of-two actual ELF load alignment')
             need((offset&4095)==(va&4095),'file and virtual RX page offsets agree')
             if site<offset or captured>size or site-offset>size-captured:continue
@@ -55,15 +64,15 @@ def external_source(p,images,image_bytes):
         allocation_mapping_provenance=False,aslr_bias_inferred=False,object_identity_inferred=False)
     return result
 
-def check(stderr,pid,exit_code,parent,images,image_bytes):
+def check(stderr,pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes):
     need(type(exit_code)is int and exit_code==0,'actual successful process required')
     p=reports(stderr);extensions(p)
     _,same,gate_summary=gate(p,pid,exit_code,parent)
     need(same is p,'original actual report values retained')
     lease_summary=lease.counters(p);effect_exit(p)
     trace_summary=trace_completed(p)
-    binding=external_source(p,images,image_bytes)
-    retained=lease_completed(p,pid,binding,images)
+    binding=external_source(p,images,image_bytes,carrier,carrier_bytes)
+    retained=lease_completed(p,pid,binding,images,carrier)
     n=p['native'];e=p['effect'];o=p['oneshot']
     return p,dict(application_completed=True,default_rseq_registered=True,cache_reuse=reuse_completed(p['run'],p['reuse']),gate=gate_summary,lease=lease_summary,trace_run=trace_summary,repeat_lease=retained,repeat_lease_source=binding,
         selected=dict(attempts=e['attempts'],completed=e['completed'],classes=e['classes'],unreturned_exit=1),
@@ -72,9 +81,9 @@ def check(stderr,pid,exit_code,parent,images,image_bytes):
         admission_timing=dict(first_admission_ns=n['first_admission_ns'],first_source_offset=n['first_source_offset'],revisit_count=n['revisit_count'],revisit_ns=n['revisit_ns']))
 
 
-def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes):
+def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes):
     """Run only after this exact genuine report passed; no additional subject."""
-    accepted, _ = check(stderr, pid, exit_code, parent, images, image_bytes)
+    accepted, _ = check(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes)
     actual_hash = hashlib.sha256(stderr).hexdigest()
     cases = (
         ('generation', 'reuse', 'state', 0, accepted['reuse']['state'][0]+1),
@@ -130,13 +139,13 @@ def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes):
         need(len(places)==1, 'one exact original mutation target')
         lines[places[0]]=prefix+json.dumps(changed,sort_keys=key!='repeat_lease',separators=(',',':'),allow_nan=False).encode()
         refused=False
-        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,images,image_bytes)
+        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes)
         except ValueError:refused=True
         need(refused, 'same complete reader refuses supplied '+name)
         names.append(name)
     # Supplied external-input changes exercise the limited byte join, not
     # actual native events or changes to the retained production evidence.
-    binding=external_source(accepted,images,image_bytes)
+    binding=external_source(accepted,images,image_bytes,carrier,carrier_bytes)
     for name in ('external_instruction_byte','external_duplicate_candidate'):
         altered_images=copy.deepcopy(images);altered_bytes=list(image_bytes)
         if name=='external_instruction_byte':
@@ -146,9 +155,13 @@ def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes):
             altered_images.append(copy.deepcopy(images[binding['module']]))
             altered_bytes.append(image_bytes[binding['module']])
         refused=False
-        try:check(stderr,pid,exit_code,parent,altered_images,altered_bytes)
+        try:check(stderr,pid,exit_code,parent,altered_images,altered_bytes,carrier,carrier_bytes)
         except ValueError:refused=True
         need(refused,'same complete reader refuses supplied '+name);names.append(name)
+    changed_carrier=dict(carrier,bytes=carrier['bytes']+1);refused=False
+    try:check(stderr,pid,exit_code,parent,images,image_bytes,changed_carrier,carrier_bytes)
+    except ValueError:refused=True
+    need(refused,'same complete reader refuses supplied mismatched carrier extent');names.append('carrier_extent')
     need(hashlib.sha256(stderr).hexdigest()==actual_hash, 'actual report bytes unchanged')
     return dict(scope='supplied-reader mutations after actual completion',actual_subjects=0,
         original_stderr_sha256=actual_hash,refusals=names,native_qualification_credit=False)

@@ -99,6 +99,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     need(all(identities[k+'_sha256']==fact(p)['sha256']for k,p in
         (('original',original),('interpreter',interp),('bridge',bridge),('carrier',carrier)))and interpreter(carrier)==bridge,
         'actual original/interpreter/release bridge/carrier identities')
+    carrier_bytes=carrier.read_bytes()
     native=dict(lane='native',status='failed');r['cases'].append(native)
     row,out,err=run('ls-native',[original,'-d','.'],profile='program',env=PROGRAM_ENV)
     native.update(pid=row['pid'],exit=row['exit'],whole_process_ns=row['duration_ns'],stdout=fact(private/'ls-native.stdout'))
@@ -131,9 +132,9 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
         carrier_sha256=fact(carrier)['sha256'],carrier_size=fact(carrier)['bytes'],argv=[str(original),'-d','.'],
         environment=expected_env,dependency_fds=fds),'actual exact default-rseq launch/argv/environment/carrier/FD join')
     need(actual==out==b'.\n','complete exact native/gated output equality')
-    parsed,summary=reports.check(stderr,row['pid'],row['exit'],row['stdout_provenance_before'],images,image_bytes)
+    parsed,summary=reports.check(stderr,row['pid'],row['exit'],row['stdout_provenance_before'],images,image_bytes,fact(carrier),carrier_bytes)
     r['terminal_reports']=parsed;gated['comparison']=summary
-    r['reader_controls']=reports.supplied_controls(stderr,row['pid'],row['exit'],row['stdout_provenance_before'],images,image_bytes)
+    r['reader_controls']=reports.supplied_controls(stderr,row['pid'],row['exit'],row['stdout_provenance_before'],images,image_bytes,fact(carrier),carrier_bytes)
     gated['status']='passed'
 
 def publish(path,r,private):

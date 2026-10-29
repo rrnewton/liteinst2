@@ -298,14 +298,14 @@ def execute(builder,products,root,private,pin,binary,aliases,owned_run,receipt):
             case['application']=app.summary(result['application'])
             if mode=='state':case['native_pair']=reader.native_pair(reference,result,native,app,fmt,boundary,seed)
             parsed,joined=terminal.check(err,row['pid'],row['exit'],row['stdout_provenance_before'],
-                rawfile.read_bytes(),layout,result,old,images,image_bytes)
+                rawfile.read_bytes(),layout,result,old,images,image_bytes,fact(carrier))
             case['terminal_reports']=parsed;case['terminal_join']=joined
             case['cache_reuse']={k:joined['cache_reuse'][k]for k in
                 ('generations','completed_runs','copied_instructions','retirements','hits','capacity_misses')}
             case['trace_run']={k:joined['trace_run'][k]for k in('entries','completed','preflight_misses','full_misses')}
             case['repeat_lease']=joined['repeat_lease']
             case['reader_controls']=terminal.supplied_controls(err,row['pid'],row['exit'],row['stdout_provenance_before'],
-                rawfile.read_bytes(),layout,result,old,images,image_bytes)
+                rawfile.read_bytes(),layout,result,old,images,image_bytes,fact(carrier))
             case['stderr']=fact(private/(name+'.stderr'));case['reports_replayed']=True
             case['status']='passed'
         except BaseException as e:case['error']=type(e).__name__+': '+str(e);raise

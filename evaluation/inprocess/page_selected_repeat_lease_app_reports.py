@@ -136,7 +136,15 @@ def lease_request(r):
     need(r['borrow'][0]>0,'retained genuine lease borrow identity')
     return pc,nxt,flags,1,width
 
-def lease_completed(p,pid,binding,images):
+def carrier_extent(carrier,original_bytes):
+    need(type(carrier)is dict and set(carrier)=={'bytes','sha256'} and
+         type(carrier['bytes'])is int and type(original_bytes)is int and
+         0<original_bytes<carrier['bytes']<=MASK and type(carrier['sha256'])is str and
+         len(carrier['sha256'])==64 and all(c in '0123456789abcdef'for c in carrier['sha256']),
+         'independently built complete carrier identity includes original main plus loader metadata')
+    return carrier['bytes']
+
+def lease_completed(p,pid,binding,images,carrier):
     r=p['repeat_lease'];pc,nxt,flags,mask,width=lease_request(r)
     n,remaining,traces,retained,final,post_pc,post_flags,started,complete,err,neg,checks=r['progress']
     need(all(r[k]==0 for k in('status','failure_code','detail_abs','detail_negative','route','pending')),
@@ -178,9 +186,10 @@ def lease_completed(p,pid,binding,images):
          c[18]==r['borrow'][0] and c[19:]==[0,0],
          'actual once-only ticket/event chain is empty after all final releases; epochs count real invalidations')
     b=r['backing'];image=images[binding['module']]
+    backing_bytes=carrier_extent(carrier,images[0]['bytes'])if binding['module']==0 else image['bytes']
     need(b[0]<=0x7fffffff and b[1]==0 and b[2]&15==15 and b[3:8]==[0,0,0,1,1] and
-         b[8]==image['bytes']>0 and b[9]==0 and b[10]&0o170000==0o100000,
-         'actual retained sealed regular-file stat/FD proof matches the independently built original ELF')
+         b[8]==backing_bytes>0 and b[9]==0 and b[10]&0o170000==0o100000,
+         'actual retained sealed regular-file stat/FD proof matches exact main carrier or original dependency extent')
     owner=p['rseq']['owner'];tls=p['rseq']['tls'];registration=r['registration']
     need(registration==owner[:4]+owner[7:14]+tls[6:8]+[tls[1]] and
          registration[:4]==[1,1,1,3] and registration[4]==registration[5]==pid and
@@ -191,7 +200,7 @@ def lease_completed(p,pid,binding,images):
         last_initial_count=n,last_traces=traces,last_guard_checks=checks,source_module=binding['module'],
         source_file_offset=binding['file_offset'],custody_epoch=c[8],custody_invalidations=c[16])
 
-def lease_source(p,raw,layout,result,record,images,image_bytes):
+def lease_source(p,raw,layout,result,record,images,image_bytes,carrier):
     rr=p['repeat_lease']
     pc,nxt,flags,mask,width=lease_request(rr)
     need(type(images)is list and type(image_bytes)is list and len(images)==len(image_bytes)==2,
@@ -201,7 +210,11 @@ def lease_source(p,raw,layout,result,record,images,image_bytes):
     need(biases==list(result['application']['header'][12:14])and len(biases)==2 and
          all(type(b)is int and 0<b<=MASK and b%4096==0 for b in biases),
          'actual full-reader module biases, never inferred from the REP report')
-    modules=root.sub('bootstrap','pab_state').array('modules','pab_module')
+    bootstrap=root.sub('bootstrap','pab_state')
+    need(bootstrap.number('main_original_bytes')==images[0]['bytes'] and
+         bootstrap.number('main_carrier_bytes')==carrier_extent(carrier,images[0]['bytes']),
+         'actual accepted bootstrap joins independent original main and complete sealed carrier extents')
+    modules=bootstrap.array('modules','pab_module')
     need(len(modules)==2,'same two trusted bootstrap bindings')
     captured=min(rr['request'][4],3);matches=[]
     for module,(data,image,bias)in enumerate(zip(image_bytes,images,biases,strict=True)):
@@ -234,6 +247,9 @@ def lease_source(p,raw,layout,result,record,images,image_bytes):
     binding=modules[module].sub('binding','li2_effect_object_binding')
     need(binding.number('complete')==1 and binding.number('object_id')>0,
          'retained trusted sealed-object binding')
+    need(binding.sub('actual','li2_fetch_backing').sub('stat','stat').number('st_size',True)==
+         (carrier['bytes']if module==0 else image['bytes']),
+         'actual trusted object backing has the independently bound carrier or original DSO extent')
     sampled=[row for row in root.array('rows','pao_row')if row.number('module')==module]
     need(sampled,'independent actual source observations exist for this module')
     allocations=set()
@@ -259,25 +275,25 @@ def lease_source(p,raw,layout,result,record,images,image_bytes):
         source_binding='original ELF plus accepted bias and independently sampled same-RX-load allocation')
 
 
-def check(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes):
+def check(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes,carrier):
     need(type(pid)is int and pid>0 and type(exit_code)is int and exit_code==0 and
         result['pid']==pid,'actual successful app process and original binary reader identity')
     parsed=reports(stderr);shared.extensions(parsed)
     joined=binary_join(parsed,raw,layout,result,record)
     joined['repeat_source']=repeat_source(parsed,raw,layout,result,record,images,image_bytes)
-    joined['repeat_lease_source']=lease_source(parsed,raw,layout,result,record,images,image_bytes)
+    joined['repeat_lease_source']=lease_source(parsed,raw,layout,result,record,images,image_bytes,carrier)
     _,same,tty=gate(parsed,pid,exit_code,parent,joined['scripted_syscalls'])
     need(same is parsed,'actual reports are never normalized or rewritten')
     lease=shared.lease.counters(parsed);trace=shared.trace_completed(parsed)
     cache=shared.reuse_completed(parsed['run'],parsed['reuse'])
-    retained=lease_completed(parsed,pid,joined['repeat_lease_source'],images)
+    retained=lease_completed(parsed,pid,joined['repeat_lease_source'],images,carrier)
     return parsed,dict(binary_join=joined,cache_reuse=cache,trace_run=trace,lease=lease,tty=tty,repeat_lease=retained,
         full_state_reader_unchanged=True,performance_credit=False)
 
 
-def supplied_controls(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes):
-    """Supplied report-only mutations after genuine acceptance; zero subjects."""
-    accepted,_=check(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes)
+def supplied_controls(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes,carrier):
+    """Supplied report/input mutations after genuine acceptance; zero subjects."""
+    accepted,_=check(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes,carrier)
     actual_hash=H(stderr);raw_hash=H(raw)
     cases=(
         ('generation','reuse','state',0,accepted['reuse']['state'][0]+1),
@@ -355,9 +371,13 @@ def supplied_controls(stderr,pid,exit_code,parent,raw,layout,result,record,image
         need(len(places)==1,'one actual report mutation target')
         lines[places[0]]=prefix+json.dumps(changed,sort_keys=key!='repeat_lease',separators=(',',':'),allow_nan=False).encode()
         refused=False
-        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,raw,layout,result,record,images,image_bytes)
+        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,raw,layout,result,record,images,image_bytes,carrier)
         except ValueError:refused=True
         need(refused,'same complete reader refuses supplied '+name);names.append(name)
+    changed_carrier=dict(carrier,bytes=carrier['bytes']+1);refused=False
+    try:check(stderr,pid,exit_code,parent,raw,layout,result,record,images,image_bytes,changed_carrier)
+    except ValueError:refused=True
+    need(refused,'same complete reader refuses supplied mismatched carrier extent');names.append('carrier_extent')
     need(H(stderr)==actual_hash and H(raw)==raw_hash,'actual stderr and whole binary record unchanged')
-    return dict(scope='supplied report mutations after actual complete app lane',actual_subjects=0,
+    return dict(scope='supplied report/input mutations after actual complete app lane',actual_subjects=0,
         stderr_sha256=actual_hash,record_sha256=raw_hash,refusals=names,native_qualification_credit=False)
