@@ -38,6 +38,14 @@
 #endif
 static void selected_cpuid_nx_report(unsigned,unsigned);
 #endif
+#ifdef LI2_TF_SAME_PAGE_LEASE
+#if LI2_TF_SAME_PAGE_LEASE != 1 || LI2_RSEQ_TIOCGWINSZ_BTRFS != 1 || LI2_RSEQ_NATIVE_BOUNDARY != 1
+#error "same-page lease is a fixed boundary/winsz profile"
+#endif
+#if defined(LI2_ONESHOT_PUBLICATION) || defined(LI2_SELECTED_PROVIDER)
+#error "same-page lease does not compose with one-shot/configured callbacks"
+#endif
+#endif
 #include <linux/audit.h>
 #include <fcntl.h>
 
@@ -121,6 +129,9 @@ static void field(struct writer *w,const char *name,uint64_t n) { text(w,name); 
 #include "rseq_native_report.inc"
 #ifdef LI2_RSEQ_NATIVE_BOUNDARY
 #include "rseq_native_boundary_report.inc"
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+#include "rseq_tcgets_btrfs_report.inc"
+#endif
 #endif
 #endif
 #ifdef LI2_TF_HANDOFF
@@ -143,6 +154,8 @@ static void report(unsigned status,unsigned code,long detail) {
     uint64_t patches=0;
     for(unsigned i=0;i<selected_oneshot_used;i++)patches+=selected_oneshot_owners[i].state.published==1;
     field(&w,",\"source_patches\":",patches);
+#elif defined(LI2_TF_SAME_PAGE_LEASE)
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_same_page_tf_lease\",\"source_patches\":0");
 #elif defined(LI2_CPUID_NX_ONLY)
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_native_pages_cpuid_nx\",\"source_patches\":0");
 #elif defined(LI2_NATIVE_PAGES)
@@ -217,6 +230,9 @@ static void report(unsigned status,unsigned code,long detail) {
     selected_rseq_native_report(status,code,detail);
 #ifdef LI2_RSEQ_NATIVE_BOUNDARY
     selected_rseq_boundary_report(status,code,detail);
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+    selected_tcgets_report(status,code,detail);
+#endif
 #endif
 #endif
 #ifdef LI2_TF_HANDOFF
@@ -390,7 +406,15 @@ static void dispatch_operation(long n,ucontext_t *context) {
             if(selected_provider_builtins_enabled)selected_provider_syscall_raw_return(result);
         }
 #else
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+        rseq_error=li2_rseq_tcgets_issuing(n,a);
+        checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
         result=raw(n,a[0],a[1],a[2],a[3],a[4],a[5]);
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+        rseq_error=li2_rseq_tcgets_result(n,a,result);
+        checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
 #endif
     }
 #ifdef LI2_RSEQ_INACTIVE
@@ -565,6 +589,10 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #ifdef LI2_RSEQ_INACTIVE
     int rseq_error=li2_rseq_initialize(private_intersects);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#ifdef LI2_RSEQ_TCGETS_BTRFS
+    rseq_error=li2_rseq_tcgets_initialize();
+    checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
 #endif
     li2_lifecycle_register_initial(main);li2_lifecycle_register_initial(interp);register_vdso();
     /* Closed in this partial profile. No vDSO execution/ownership claim. */

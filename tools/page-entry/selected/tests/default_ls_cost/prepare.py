@@ -2,9 +2,9 @@
 import hashlib
 from pathlib import Path
 
-BEFORE_SHA = '29af2ad5816e62628c2735fa919b8ecae65dbe018f31613346025cfee9020788'
+BEFORE_SHA = '6debbb2b242437fb37781c94d0303009a400dd75822c89a1d03355924ce4bee8'
 WRITER_SHA = 'dda21495e350a364e5bac0c732b95ebe5ebdf1ea216cec2d9ae77e613448715b'
-AFTER_SHA = '42af64596c55326da43b254b6c827d00cae397d58aa84bb7091a269b47e1053c'
+AFTER_SHA = '230bd89f936df7ae73eef89efb44a465ac6df544776c09b5df230e538c32c8b2'
 INSERTIONS = (
     ('static void handler(int sig,siginfo_t *si,void *ptr) {',
      '#include "progress.inc"\nstatic void handler(int sig,siginfo_t *si,void *ptr) {'),
