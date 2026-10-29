@@ -187,6 +187,9 @@ impl RunningCaller {
     pub(super) fn entry(&self) -> u64 {
         self.entry
     }
+    pub(super) fn diagnostic_origin(&self) -> (u64, u64) {
+        (self.original.selection().virtual_address, self.bias)
+    }
     pub(super) fn plan(&self) -> &Plan {
         self.original.plan()
     }

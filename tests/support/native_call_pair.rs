@@ -129,6 +129,7 @@ pub(super) struct Profile {
     caller: u64,
     caller_pages: Vec<(u64, Vec<u8>)>,
     code: [Vec<u8>; 2],
+    diagnostic_origin: Option<(u64, u64)>,
 }
 impl Profile {
     fn new(
@@ -151,7 +152,13 @@ impl Profile {
             caller,
             caller_pages,
             code,
+            diagnostic_origin: None,
         }
+    }
+    fn set_diagnostic_origin(&mut self, (elf_va, load_bias): (u64, u64)) {
+        assert!(self.diagnostic_origin.is_none());
+        assert_eq!(self.caller.checked_sub(elf_va), Some(load_bias));
+        self.diagnostic_origin = Some((elf_va, load_bias));
     }
     pub(super) fn stack_below(&self) -> u64 {
         let b = self.plan.protected_stack_below().max(
@@ -558,6 +565,15 @@ impl NormalOracle {
         );
         oracle.call_pair = Some(p);
         oracle
+    }
+    /// Diagnostic metadata only; callers supply the already authenticated ELF origin.
+    /// This does not replace any Ready, file, mapping, or instruction identity check.
+    pub fn with_call_pair_diagnostic_origin(mut self, origin: (u64, u64)) -> Self {
+        self.call_pair
+            .as_mut()
+            .expect("call-pair diagnostic profile")
+            .set_diagnostic_origin(origin);
+        self
     }
     pub fn pair_call_pair<F>(&self, setup: F) -> (NormalPairResult<2>, Trace)
     where

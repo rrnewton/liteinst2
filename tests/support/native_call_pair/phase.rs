@@ -49,6 +49,57 @@ pub(super) fn landing(
         _ => panic!("nested landing role"),
     }
 }
+// Parent-side completed single-step requests, not retired instruction counts.
+// Buckets: reach-caller, existing nested stages 0..5, actual outer RET.
+pub(in super::super) struct StepAttribution {
+    candidate: bool,
+    pub(super) counts: [usize; 8],
+}
+pub(in super::super) struct StepPoint {
+    pub(in super::super) bucket: usize,
+    pub(in super::super) steps: usize,
+    pub(in super::super) rip: u64,
+    pub(in super::super) pid: libc::pid_t,
+}
+impl StepAttribution {
+    pub(in super::super) fn new(candidate: bool) -> Self {
+        Self {
+            candidate,
+            counts: [0; 8],
+        }
+    }
+    pub(in super::super) fn completed(&mut self, bucket: usize) {
+        self.counts[bucket] = self.counts[bucket].checked_add(1).unwrap();
+    }
+    pub(in super::super) fn write_exhaustion(
+        &self,
+        out: &mut impl std::io::Write,
+        profile: &Profile,
+        seed: u64,
+        point: StepPoint,
+    ) -> std::io::Result<()> {
+        if point.steps < MAX_STEPS {
+            return Ok(());
+        }
+        let (elf_va, load_bias) = profile.diagnostic_origin.unwrap_or((0, 0));
+        writeln!(
+            out,
+            "call-pair step attribution: candidate={} k={} seed={seed} index={} scenario={} pid={} steps={} bucket={} rip={:#x} caller={:#x} origin_joined={} caller_elf_va={elf_va:#x} executable_load_bias={load_bias:#x} completed={:?}",
+            u8::from(self.candidate),
+            profile.case.k,
+            profile.case.index + 1,
+            profile.case.scenario.id(),
+            point.pid,
+            point.steps,
+            point.bucket,
+            point.rip,
+            profile.caller,
+            u8::from(profile.diagnostic_origin.is_some()),
+            self.counts,
+        )
+    }
+}
+
 pub(in super::super) struct Phase {
     parent: parent::Parent,
     stage: u8,
@@ -65,6 +116,9 @@ impl Phase {
             parent_ret: None,
             landed: None,
         }
+    }
+    pub(in super::super) fn step_bucket(&self) -> usize {
+        usize::from(self.stage) + 1
     }
     pub(in super::super) fn logical(
         &mut self,

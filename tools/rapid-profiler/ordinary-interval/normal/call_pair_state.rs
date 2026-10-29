@@ -376,7 +376,8 @@ pub(crate) fn run(
             caller.pages(),
             code.clone(),
             deadline,
-        );
+        )
+        .with_call_pair_diagnostic_origin(caller.diagnostic_origin());
         let (pair, trace) = oracle.pair_call_pair(|candidate, context| {
             child(
                 candidate,

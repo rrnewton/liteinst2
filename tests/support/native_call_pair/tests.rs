@@ -383,4 +383,64 @@ fn call_pair_all_journal_words_and_phase_counts_refuse() {
             journal(&r, 7, 0x9008, Some(0x3205), Some(0x311e), 3, 0);
         });
     }
+    // Additional inert diagnostics controls; every original journal assertion above remains.
+    {
+        use phase::{StepAttribution, StepPoint};
+        let (mut profile, _) = fixture(Scenario::RearmB);
+        profile.set_diagnostic_origin((0x80, 0x1000));
+        assert_eq!(profile.diagnostic_origin, Some((0x80, 0x1000)));
+        let (mut wrong, _) = fixture(Scenario::StableA);
+        refuses(|| wrong.set_diagnostic_origin((0x80, 0x1001)));
+        assert_eq!(wrong.diagnostic_origin, None);
+        refuses(|| wrong.set_diagnostic_origin((0x1081, 0)));
+        assert_eq!(wrong.diagnostic_origin, None);
+
+        let mut counts = StepAttribution::new(true);
+        let original = StepAttribution::new(false);
+        for bucket in 0..8 {
+            counts.completed(bucket);
+        }
+        for _ in 8..MAX_STEPS {
+            counts.completed(4); // Existing stage 3: physical child RET to acknowledged continuation.
+        }
+        assert_eq!(counts.counts, [1, 1, 1, 1, MAX_STEPS - 7, 1, 1, 1]);
+        assert_eq!(counts.counts.iter().sum::<usize>(), MAX_STEPS);
+        assert_eq!(original.counts, [0; 8]);
+        let point = |steps| StepPoint {
+            bucket: 4,
+            steps,
+            rip: 0x1234,
+            pid: 7,
+        };
+        let mut output = b"preserved\n".to_vec();
+        counts
+            .write_exhaustion(&mut output, &profile, SEEDS[0], point(MAX_STEPS - 1))
+            .unwrap();
+        assert_eq!(output, b"preserved\n");
+        counts
+            .write_exhaustion(&mut output, &profile, SEEDS[0], point(MAX_STEPS))
+            .unwrap();
+        let text = std::str::from_utf8(&output).unwrap();
+        assert!(text.starts_with("preserved\ncall-pair step attribution: candidate=1 k=10 "));
+        assert!(text.contains("steps=20000 bucket=4 rip=0x1234 caller=0x1080 origin_joined=1 caller_elf_va=0x80 executable_load_bias=0x1000"));
+        assert!(text.ends_with("completed=[1, 1, 1, 1, 19993, 1, 1, 1]\n"));
+        assert_eq!(text.bytes().filter(|&b| b == b'\n').count(), 2);
+        assert!(output.len() < 1024);
+        assert_eq!(counts.counts.iter().sum::<usize>(), MAX_STEPS);
+        struct FailedWrite;
+        impl std::io::Write for FailedWrite {
+            fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+                Err(std::io::Error::other("fabricated closed diagnostic sink"))
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        assert!(
+            counts
+                .write_exhaustion(&mut FailedWrite, &profile, SEEDS[0], point(MAX_STEPS))
+                .is_err()
+        );
+        assert_eq!(counts.counts.iter().sum::<usize>(), MAX_STEPS);
+    }
 }

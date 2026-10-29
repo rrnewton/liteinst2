@@ -1010,6 +1010,34 @@ impl NormalOracle {
         walk.step(phase);
         self.deadline.check();
     }
+    fn step_call_pair(
+        &self,
+        walk: &mut Walk<'_>,
+        phase: &str,
+        attribution: &mut call_pair::phase::StepAttribution,
+        bucket: usize,
+        rip: u64,
+    ) {
+        self.deadline.check();
+        if walk.steps >= MAX_STEPS {
+            // Failure-only output. Reuse the already observed stopped RIP;
+            // diagnostic write failure must not bypass the original Walk guard.
+            let _ = attribution.write_exhaustion(
+                &mut std::io::stderr().lock(),
+                self.call_pair.as_ref().expect("call-pair step profile"),
+                self.seed,
+                call_pair::phase::StepPoint {
+                    bucket,
+                    steps: walk.steps,
+                    rip,
+                    pid: walk.child.pid,
+                },
+            );
+        }
+        walk.step(phase);
+        attribution.completed(bucket);
+        self.deadline.check();
+    }
     fn snapshot(&self, child: &Tracee, ready: &WalkReady, logical: u64) -> Snapshot {
         self.deadline.check();
         if self.call_pair.is_some() {
@@ -1036,7 +1064,12 @@ impl NormalOracle {
         self.deadline.check();
         point
     }
-    fn reach_caller(&self, walk: &mut Walk<'_>, ready: &WalkReady) -> libc::user_regs_struct {
+    fn reach_caller(
+        &self,
+        walk: &mut Walk<'_>,
+        ready: &WalkReady,
+        mut attribution: Option<&mut call_pair::phase::StepAttribution>,
+    ) -> libc::user_regs_struct {
         // Enforce the post-ready deadline without tracing supervisory clock code.
         self.deadline.check();
         let mut last = None;
@@ -1045,7 +1078,17 @@ impl NormalOracle {
             let code = walk.child.memory(before.rip, 15);
             let instruction =
                 Decoder::with_ip(64, &code, before.rip, DecoderOptions::NONE).decode();
-            self.step(walk, "normal reach actual caller CALL");
+            if let Some(attribution) = attribution.as_deref_mut() {
+                self.step_call_pair(
+                    walk,
+                    "normal reach actual caller CALL",
+                    attribution,
+                    0,
+                    before.rip,
+                );
+            } else {
+                self.step(walk, "normal reach actual caller CALL");
+            }
             last = Some((before, instruction));
         }
         let after = walk.child.registers();
@@ -1647,6 +1690,12 @@ impl NormalOracle {
         } else {
             None
         };
+        let mut attribution = self.call_pair.as_ref().map(|_| {
+            [
+                call_pair::phase::StepAttribution::new(false),
+                call_pair::phase::StepAttribution::new(true),
+            ]
+        });
         let mut walks = [
             Walk {
                 child: &children[0],
@@ -1658,8 +1707,16 @@ impl NormalOracle {
             },
         ];
         let saved = [
-            self.reach_caller(&mut walks[0], &ready[0]),
-            self.reach_caller(&mut walks[1], &ready[1]),
+            self.reach_caller(
+                &mut walks[0],
+                &ready[0],
+                attribution.as_mut().map(|a| &mut a[0]),
+            ),
+            self.reach_caller(
+                &mut walks[1],
+                &ready[1],
+                attribution.as_mut().map(|a| &mut a[1]),
+            ),
         ];
         assert_eq!(
             (saved[0].rdi, saved[0].rsi, saved[0].rdx),
@@ -1779,13 +1836,16 @@ impl NormalOracle {
                 }
                 if let Some(nested) = nested.as_mut() {
                     let event = nested.before(self, walk, r.call_pair(), logical, &mut control);
-                    self.step(
+                    self.step_call_pair(
                         walk,
                         if index == 0 {
                             "nested original"
                         } else {
                             "nested candidate"
                         },
+                        &mut attribution.as_mut().unwrap()[index],
+                        nested.step_bucket(),
+                        pc,
                     );
                     nested.after(event, self, walk, r.call_pair());
                     match event {
@@ -1920,7 +1980,17 @@ impl NormalOracle {
             let mut after = if self.has_rust_caller() {
                 assert_eq!(walk.child.memory(self.caller_rsp(), 8), words[index]);
                 let before = self.snapshot(walk.child, &ready[index], actual.rip);
-                self.step(walk, "copied Rust actual outer RET before restoration");
+                if let Some(attribution) = attribution.as_mut() {
+                    self.step_call_pair(
+                        walk,
+                        "copied Rust actual outer RET before restoration",
+                        &mut attribution[index],
+                        7,
+                        actual.rip,
+                    );
+                } else {
+                    self.step(walk, "copied Rust actual outer RET before restoration");
+                }
                 let point = self.snapshot(walk.child, &ready[index], continuation);
                 copied_rust::outer_effect(&before, &point, self.stack_start());
                 if index == 0 {
