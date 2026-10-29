@@ -294,6 +294,9 @@ static void selected_trace(int sig,siginfo_t *si,ucontext_t *context) {
            redirected: the selftest CALL's own stack word is consumed by RET. */
         context->uc_mcontext.gregs[REG_RIP]=(greg_t)(uintptr_t)selected_selftest_return;
     } else ++selected_steps;
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_step();
+#endif
     /* The same fixed owner may be initialized after genuine TRACE, every
        revoke/sync, and release of the sole source borrow. No pending references
        survive. Counts retain completed operations, not an unbounded journal. */

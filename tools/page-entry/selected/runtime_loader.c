@@ -19,6 +19,9 @@
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_ENTRY_TIMING
+#include "entry_timing.h"
+#endif
 #ifdef LI2_EFFECT_PROVIDER
 #include "selected_effect.h"
 #include "readonly_query.h"
@@ -288,6 +291,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_RUN_TIMING
     selected_run_time_report(status,code,detail);
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_report(status,code,detail);
+#endif
 #endif
 #endif
 }
@@ -565,6 +571,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_NATIVE_PAGES
 #include "native_controller.inc"
 #endif
+#ifdef LI2_ENTRY_TIMING
+#include "entry_timing.inc"
+#endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_ONESHOT_REUSABLE
     li2_rseq_publication_preentry();
@@ -634,6 +643,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
        )checked(!li2_maps_phase_begin(),770,0);
 #endif
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     if(selected_pending_route==SELECTED_ONESHOT) {
         selected_oneshot_landed(sig,si,ptr);
@@ -662,6 +674,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     }
     else if(sig==SIGSYS) dispatch(si,ptr);
     else fail(219,sig);
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_arm();
+#endif
 #ifdef LI2_TF_HANDOFF
     li2_tf_chain_handler_end(&selected_chain);
 #endif

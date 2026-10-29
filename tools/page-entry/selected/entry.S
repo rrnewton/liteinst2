@@ -55,6 +55,11 @@ _start:
     mov li2_saved+56(%rip),%rdi
     call li2_boot
     mov %rax,li2_target(%rip)
+#ifdef LI2_ENTRY_TIMING
+    .hidden li2_entry_time_start
+    mov %rax,%rdi
+    call li2_entry_time_start
+#endif
     cmpq $0,li2_xmode(%rip)
     je 3f
     mov li2_xmask(%rip),%eax

@@ -223,6 +223,9 @@ static void selected_run_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_RUN_TIMING
     error=li2_run_timing_complete(&selected_run_timing,&selected_run_history);
     if(error)selected_run_abort((unsigned)error,selected_run_timing.first_detail);
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_run();
+#endif
 #endif
     selected_logical_flags=selected_run_history.last_complete.logical_flags;
     selected_flags_known=1;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
