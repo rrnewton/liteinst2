@@ -43,6 +43,33 @@ impl NormalSitePreparation {
         })
     }
 
+    /// Plan mandatory normal-caller entry and every RET within their certified
+    /// basic blocks. This opt-in path keeps the loaded owner's complete scalar
+    /// CFG and 256-byte function bound; it does not use the 80-byte whole-function
+    /// window or fall back to that policy. Each role block must supply its own
+    /// patch window of at least five bytes within the existing search bounds.
+    ///
+    /// The same single-caller ABI, source custody, mandatory callbacks and
+    /// pending-return obligations as `Self::new_whole_function` apply. An
+    /// unpatchable role, internal entry backedge or incomplete coverage refuses
+    /// the complete preparation. Planning grants no publication or entry rights.
+    pub fn new_certified_blocks(
+        owner: &'static mut LoadedNormalLeaf,
+        identity: CodeIdentity,
+    ) -> Result<Self, SiteError> {
+        let (planned, site) = prepare_source(
+            owner.inner,
+            CallbackProfile::Normal,
+            identity,
+            PreparationPolicy::CertifiedBlocks,
+        )?;
+        Ok(Self {
+            owner,
+            planned,
+            site,
+        })
+    }
+
     pub fn plan(&self) -> &PlannedBundle {
         &self.planned
     }
@@ -84,3 +111,6 @@ impl NormalSitePreparation {
         })
     }
 }
+
+#[cfg(test)]
+mod tests;
