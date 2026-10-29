@@ -24,6 +24,8 @@ def compose(runtime, controller, publication):
          b'    pao_initialize();pab_initialize(main,fds,dependency_count);pao_bind();\n', True),
         ('runtime_loader.c', b'    selected_initialize();\n',
          b'    pao_hardware();\n', True),
+        ('runtime_loader.c', b'    selected_selftest();\n',
+         b'    pao_session_ready();\n', True),
         ('selected_controller.inc', b'#include "selected_effect_controller.inc"\n',
          b'#include "tests/provider_app/observe.inc"\n', True),
         ('selected_oneshot_reusable.inc', b'    const struct li2_decoded original=selected_decoded;\n',

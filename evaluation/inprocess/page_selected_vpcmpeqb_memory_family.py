@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Canonical unmasked W0 VPCMPEQB K0..7,ZMM0..31,[RDI] family oracle."""
+"""Full-state memory comparison oracle: unchanged EQ512 default or explicit NEQ256."""
 import argparse
 from datetime import datetime,timezone
 import hashlib,json,os,platform,re,shutil,struct,sys
@@ -13,17 +13,19 @@ from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
 from page_selected_vpcmpeqb_register_promotions import promotions as vpe_promotions
 from page_selected_vmovdqu64_promotions import promotions as vm64_promotions
+from page_selected_vmovdqu64_256_promotions import promotions as vm256_promotions
 from page_selected_components import plain_executable
 from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
 from page_selected_vpcmpeqb_memory_promotions import PROMOTED,promotions
+import page_selected_vpcmpnequb256 as neq256
 
 ROOT=Path(__file__).resolve().parents[2]
 HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/vpcmpeqb_memory_family'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='1f2596cb5bec826c1a9befe3e45444372e12532c85ac78b05f0674e1f7dffc82'
+OUTCOMES_SHA='a874a37086fb4b12fd0246f7c98561ed8a75042d36d16bc5127e49a89b455e9d'
 CASES_SHA='c52803ae9714a0c9c637fd59f8247ed57d9a15a89b3d619e60af46b06a178a5e'
 CASES_JSON_SHA='302cb353b2090168f83297040f273433a41ac666069222d95ccec8111f9bac3e'
 MASK=(1<<64)-1
@@ -32,7 +34,25 @@ NAMES=('magic','version','header_bytes','sample_bytes','pairs','completed','cont
        'owner_failure','owner_detail_abs','owner_detail_negative')
 
 
-def catalogue():
+def configuration(comparison):
+    need(type(comparison)is str and comparison in('eq512','neq256'),'closed explicit comparison profile')
+    if comparison=='eq512':
+        return dict(code=1720,width=64,groups=6,processes=8,refusals=108,query_bytes=9024,
+            cpu_mask=0x40010000,obs_magic=0x31584d435056324c,faults=('full-read-fault','cross-read-fault'),
+            outcomes='OUTCOMES.json',outcomes_sha=OUTCOMES_SHA,build='build.sh',cases_inc='cases.inc',
+            name='vpcmpeqb-memory-family',profile='page-selected-vpcmpeqb-memory-family-v1',ending=21,crossing=87,
+            scope='Canonical W0 unmasked EVEX512 VPCMPEQB K0..7,ZMM0..31,[RDI]/Code1720, preserving exact original register form.108 structural comparisons in six18-case cohorts, all source/destination roles, three literal equality patterns and six fetch geometries; two genuine full/cross-page failed reads. Full GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/source/stack/data comparisons,220 actual-before NONE queries;108 refusals plus one separately recorded Code1720 register promotion plus seven mandatory Code1605/NONE promotions and five mandatory typed/NONE promotions per process. Structural coverage is not exhaustive256 native execution. No application completion or performance claim. Exact retained vl256 row12 (62e1fe286f0f) additionally requires Code1604/FALLTHROUGH/SIMD and supplied NONE in a separate352-byte trailer in every success/fault record. All seven Code1605 records and other remaining refusals stay exact; native Code1604 coverage is separately mandatory in vmovdqu64_family width256. No native coverage or completed operation is inferred from supplied tuples.')
+    return dict(code=3884,width=32,groups=5,processes=9,refusals=141,query_bytes=10304,
+        cpu_mask=0xc0010000,obs_magic=0x31584e435056324c,faults=('full-read-fault','cross-read-fault','indexed-full-read-fault','indexed-cross-read-fault'),
+        outcomes='OUTCOMES3884.json',outcomes_sha='93862be4f2a80315682fb2971f6cfd491c28780cdb1506fd3a5329583c87883d',build='build3884.sh',cases_inc='cases3884.inc',
+        name='vpcmpnequb256',profile='page-selected-vpcmpnequb256-v1',ending=16,crossing=74,
+        scope='Explicit canonical unmasked Code3884 EVEX256 unsigned byte NEQ memory profile, immediate4 only.90 comparisons in five18-case cohorts plus four genuine failed reads. Eight source-authenticated libc encodings; no claim of observed application execution or completion. All32 YMM source/all8 K roles, all16 bases/15 indices/scales, all47 length/tails, RIP/absolute/disp8*32 and page-edge data. All108 old refusals,14 old typed/NONE promotions and33 new forbidden neighbors remain mandatory. Supplied observations confer no native credit.')
+
+
+def catalogue(comparison='eq512'):
+    configuration(comparison)
+    if comparison=='neq256':
+        return neq256.catalogue(FIXTURE,'0946fa669ef734131c1744f5b42fd54ddef2ca22ddbbce844d6d1936e3f344e6','ac9b430217d630988b3f7f24a9f7e2fc2a8a4605fa416a26ddfcd6cbffcd9795')
     need(fact(FIXTURE/'cases.inc')['sha256']==CASES_SHA and
          fact(FIXTURE/'cases.json')['sha256']==CASES_JSON_SHA,'exact reviewed C/JSON family catalogue')
     table=decode((FIXTURE/'cases.json').read_bytes())
@@ -66,19 +86,20 @@ def catalogue():
     return rows
 
 
-def observations(data, group, header, fault_kind=0):
+def observations(data, group, header, fault_kind=0, comparison='eq512'):
+    cfg=configuration(comparison)
     need(len(data) == 5000, 'complete actual CPUID/XSAVE trailer')
     head = struct.unpack_from('<8Q', data)
     magic, version, extent, actual_group, count, checked, xcr0, size = head
     need((magic, version, extent, actual_group, checked, xcr0, size) ==
-         (0x31584d435056324c, 1, 5000, group, 1 if fault_kind else 19, header['xcr0'], header['xsave_bytes']),
+         (cfg['obs_magic'], 1, 5000, group, 1 if fault_kind else 19, header['xcr0'], header['xsave_bytes']),
          'exact trailer identity and observed input joins')
     tuples = [struct.unpack_from('<6Q', data, 64+48*i) for i in range(68)]
     basic, components = tuples[:4], tuples[4:]
     need([x[:2] for x in basic] == [(0, 0), (1, 0), (7, 0), (13, 0)] and
          all(all(v < 1 << 32 for v in q) for q in tuples), 'actual CPUID tuple identities and register width')
     need(basic[0][2] >= 13 and basic[1][4] & 0x1c000000 == 0x1c000000 and
-         basic[2][3] & 0x40010000 == 0x40010000, 'actual XSAVE/OSXSAVE/AVX/AVX512F/BW prerequisites')
+         basic[2][3] & cfg['cpu_mask'] == cfg['cpu_mask'], 'actual XSAVE/OSXSAVE/AVX/AVX512F/BW prerequisites')
     supported = basic[3][2] | basic[3][5] << 32
     need(xcr0 & 0xe7 == 0xe7 and not xcr0 & ~supported and not xcr0 >> 63 and
          basic[3][3] == size <= basic[3][4], 'actual enabled standard XSAVE capacity')
@@ -112,7 +133,8 @@ def observations(data, group, header, fault_kind=0):
                 xcr0=xcr0, xsave_bytes=size, all_bvs_sha256=digest(bvs), pair_ids_sha256=digest(ids))
 
 
-def fault_observations(data, kind, header):
+def fault_observations(data, kind, header, comparison='eq512'):
+    cfg=configuration(comparison)
     need(len(data) == 96, 'complete actual fault trailer')
     fields = ('kind', 'checked', 'operand', 'address', 'prefix_bytes', 'owner_trace',
               'native_before_bv', 'native_after_bv', 'owner_before_bv', 'owner_after_bv',
@@ -124,7 +146,7 @@ def fault_observations(data, kind, header):
     row = dict(zip(fields, raw))
     need(row['kind'] == kind and row['checked'] == 1 and row['owner_trace'] == 0 and
          row['address'] > 4096 and row['address'] % 4096 == 0 and
-         row['prefix_bytes'] == (32 if kind == 2 else 0) and
+         row['prefix_bytes'] == (cfg['width']//2 if kind%2==0 else 0) and
          row['operand'] == row['address']-row['prefix_bytes'], 'actual fault operand/guard geometry')
     need(all(v & 0xe7 == 0xe7 and not v & ~header['xcr0'] for v in raw[6:]) and
          len(set(raw[6:10])) == len(set(raw[10:])) == 1,
@@ -132,7 +154,9 @@ def fault_observations(data, kind, header):
     return dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), **row)
 
 
-def queries(data,header,rows,kind,group):
+def queries(data,header,rows,kind,group,comparison='eq512'):
+    configuration(comparison)
+    if comparison=='neq256':return neq256.queries(data,header,rows,kind,group)
     need(len(data)==9024,'complete actual-before query trailer')
     count=2 if kind else 36
     need(struct.unpack_from('<8Q',data)==(0x31514d435056324c,1,9024,group,count,0,0,0),
@@ -160,7 +184,10 @@ def queries(data,header,rows,kind,group):
                 values_sha256=digest(values),memory_write_ranges=0)
 
 
-def record(data,expected,sample_bytes,rows):
+def record(data,expected,sample_bytes,rows,comparison='eq512'):
+    cfg=configuration(comparison)
+    need(352<len(data)<16<<20,'complete Code1604 promotion trailer within unchanged cap')
+    vm256_promoted=vm256_promotions(data[-352:]);data=data[:-352]
     need(1216<len(data)<16<<20,'complete register-promotion trailer under old cap')
     vpe_promoted=vpe_promotions(data[-1216:],'vpcmpeqb_memory_family');data=data[:-1216]
     need(2080<len(data)<16<<20,'complete seven Code1605 promotions within old cap')
@@ -171,32 +198,34 @@ def record(data,expected,sample_bytes,rows):
     h=dict(zip(NAMES,struct.unpack_from('<17Q',data)))
     need(all(h[k]==v for k,v in expected['header_equals'].items()),'exact finite outcome; failed operations stay failed')
     need(h['sample_bytes']==sample_bytes>0 and
-         len(data)==136+22*sample_bytes+40+5000+96+9024<16<<20,'actual ELF-bound complete record extent')
+         len(data)==136+22*sample_bytes+40+5000+96+cfg['query_bytes']<16<<20,'actual ELF-bound complete record extent')
     need(576<=h['xsave_bytes']<=65536 and h['xcr0']&3==3,'qualified XSAVE extent')
-    positive=expected['exit']==0;group=expected['group'];kind=0 if positive else 1 if expected['name']=='full-read-fault'else 2
-    need(type(group)is int and 0<=group<6 and (positive or group==0),'exact bounded cohort identity')
+    positive=expected['exit']==0;group=expected['group'];kind=0 if positive else cfg['faults'].index(expected['name'])+1
+    need(type(group)is int and 0<=group<cfg['groups'] and (positive or group==0),'exact bounded cohort identity')
     need(h['pairs']==19 and h['completed']==(19 if positive else 1),'complete expected prefix; fault is never completion')
     if positive:
         need(not any(data[136+19*sample_bytes:136+22*sample_bytes]),'two unused slots and negative sample remain zero')
     else:
         need(not any(data[136+sample_bytes:136+21*sample_bytes]),'unstarted positive slots remain zero')
-    obs=observations(data[-14120:-9120],group,h,kind)
-    failed=fault_observations(data[-9120:-9024],kind,h)
-    footprint=queries(data[-9024:],h,rows,kind,group)
-    return dict(vpe_promotions=vpe_promoted,vpe_typed_promotions=1,vpe_supplied_none_queries=1,vm64_promotions=vm64_promoted,operation='completed'if positive else 'failed_memory_read',
+    qbytes=cfg['query_bytes']
+    obs=observations(data[-(qbytes+5096):-(qbytes+96)],group,h,kind,comparison)
+    failed=fault_observations(data[-(qbytes+96):-qbytes],kind,h,comparison)
+    footprint=queries(data[-qbytes:],h,rows,kind,group,comparison)
+    return dict(vm256_promotions=vm256_promoted,vm256_typed_promotions=1,vm256_supplied_none_queries=1,vpe_promotions=vpe_promoted,vpe_typed_promotions=1,vpe_supplied_none_queries=1,vm64_promotions=vm64_promoted,operation='completed'if positive else 'failed_memory_read',
         pairs=19 if positive else 0,new_pairs=18 if positive else 0,startup_pairs=1,
         verified_memory_failures=int(not positive),refusals=h['refusals'],actual_before_queries=footprint['actual_before_queries'],
-        ending_pairs=sum(r['tail']==6 for r in rows[18*group:18*group+18])if positive else 0,
-        crossing_pairs=sum(r['tail']<6 for r in rows[18*group:18*group+18])if positive else 0,
+        ending_pairs=sum(r['tail']==len(bytes.fromhex(r['encoding']))for r in rows[18*group:18*group+18])if positive else 0,
+        crossing_pairs=sum(r['tail']<len(bytes.fromhex(r['encoding']))for r in rows[18*group:18*group+18])if positive else 0,
         header=h,observations=obs,fault_observations=failed,footprint=footprint,promotions=promoted,
         typed_promotions=promoted['typed_promotions'],supplied_none_queries=promoted['supplied_none_queries'],
-        architecture='Authenticated C oracle compares complete native/TF state,64-byte literal operands and selected K0..7 results, including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.')
+        architecture='Authenticated C oracle compares complete native/TF state,64-byte literal operands and selected K0..7 results, including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.'if comparison=='eq512'else 'Authenticated C oracle compares complete native/TF state and actual32-byte unsigned NEQ operands, entire64-bit zero-extended K result, all unchanged ZMM/opmask/flags/source/stack/data and genuine faults. This reader checks the exact catalogue, full record extents and actual-before EA/NONE; no second full architecture replay is claimed.')
 
 
 def publish(path,r,private):
+    cfg=configuration(r['comparison'])
     b=r.get('build',{})
     public={k:r.get(k)for k in ('schema','profile','status','scope','expected_revision','started_utc',
-        'cpu','source','source_unchanged','hardware','totals','reproduce','bounds','cleanup_complete','catalogue')}
+        'cpu','source','source_unchanged','hardware','totals','reproduce','bounds','cleanup_complete','catalogue','comparison')}
     public.update(environment=ENV,private_receipt=fact(private/'receipt.json'),
         command_count=len(r['commands']),commands_sha256=digest(r['commands']),
         inputs_sha256=digest(r['inputs_before']),binaries_sha256=digest(r['binaries_before']),
@@ -206,9 +235,10 @@ def publish(path,r,private):
         cases=r['cases'],failure_type=r['error'].split(':',1)[0]if r['error']else None,
         final_error_count=len(r['final_errors']),
         command_recipe=dict(product=['sh','tools/page-entry/selected/build.sh'],
-          fixture=['sh','tools/page-entry/selected/tests/vpcmpeqb_memory_family/build.sh','<retained decoder.a>',
-                   '<unique private output>','tools/page-entry/selected','<group 0..5>'],
-          native=[[f'vpcmpeqb-memory-family-{g}']for g in range(6)]+[['vpcmpeqb-memory-family-0']]*2,selectors=[{}]*6+[{'LI2_VPCM_CONTROL':'full-read-fault'}, {'LI2_VPCM_CONTROL':'cross-read-fault'}]))
+          fixture=['sh','tools/page-entry/selected/tests/vpcmpeqb_memory_family/'+cfg['build'],'<retained decoder.a>',
+                   '<unique private output>','tools/page-entry/selected','<group 0..'+str(cfg['groups']-1)+'>'],
+          native=[[cfg['name']+'-'+str(g)]for g in range(cfg['groups'])]+[[cfg['name']+'-0']]*len(cfg['faults']),
+          selectors=[{}]*cfg['groups']+[{'LI2_VPCM_CONTROL':n}for n in cfg['faults']]))
     text=json.dumps(public,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(not any(x and len(x)>1 and x in text for x in (str(ROOT),str(Path.home()),platform.node(),'/home/')),'public private-location guard')
     path.parent.mkdir(parents=True,exist_ok=True)
@@ -216,20 +246,22 @@ def publish(path,r,private):
 
 
 def main():
-    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--expect-revision',required=True);args=ap.parse_args()
+    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--expect-revision',required=True)
+    ap.add_argument('--comparison',choices=('eq512','neq256'),default='eq512');args=ap.parse_args()
+    cfg=configuration(args.comparison)
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision) and
          len(os.sched_getaffinity(0))==1,'assertions, exact revision and one reserved CPU')
     cpu=next(iter(os.sched_getaffinity(0)));os.chdir(ROOT)
     stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-page-selected-vpcmpeqb-memory-family-'+args.expect_revision[:12]
+    stem=stamp+'-page-selected-'+cfg['name']+'-'+args.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
-    r=dict(schema=1,profile='page-selected-vpcmpeqb-memory-family-v1',status='failed',
-        scope='Canonical W0 unmasked EVEX512 VPCMPEQB K0..7,ZMM0..31,[RDI]/Code1720, preserving exact original register form.108 structural comparisons in six18-case cohorts, all source/destination roles, three literal equality patterns and six fetch geometries; two genuine full/cross-page failed reads. Full GPR/flags/kernelFP/liveXSAVE/all32ZMM/all8K/source/stack/data comparisons,220 actual-before NONE queries;109 refusals plus one separately recorded Code1720 register promotion plus seven mandatory Code1605/NONE promotions and five mandatory typed/NONE promotions per process. Structural coverage is not exhaustive256 native execution. No application completion or performance claim.',
+    r=dict(schema=1,profile=cfg['profile'],comparison=args.comparison,status='failed',
+        scope=cfg['scope'],
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
-        bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vpcmpeqb_memory_family.py','--expect-revision',args.expect_revision],
+        bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_vpcmpeqb_memory_family.py','--expect-revision',args.expect_revision]+([]if args.comparison=='eq512'else ['--comparison','neq256']),
         commands=[],cases=[],error=None,final_errors=[],
-        totals=dict(vpe_typed_promotions=0,vpe_supplied_none_queries=0,pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
+        totals=dict(vm256_typed_promotions=0,vm256_supplied_none_queries=0,vpe_typed_promotions=0,vpe_supplied_none_queries=0,pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,
                     refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0,typed_promotions=0,supplied_none_queries=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
@@ -251,7 +283,7 @@ def main():
         need(type(row['exit'])is int and row['exit']==expected,'exact process exit '+label);return row,out,err
     builder=Build(r,private,pin,binary,run)
     states={};r['private_fixture_build']=states
-    fixture_outputs=[private/'vpcmpeqb-memory-family'/f'vpcmpeqb-memory-family-{group}'for group in range(6)]
+    fixture_outputs=[private/cfg['name']/(cfg['name']+'-'+str(group))for group in range(cfg['groups'])]
     try:
         r['source']=source();need(r['source']['revision']==args.expect_revision,'exact clean committed source')
         r['hardware']=hardware(cpu)
@@ -263,22 +295,22 @@ def main():
         for module in tuple(sys.modules.values()):
             path=getattr(module,'__file__',None)
             if path and Path(path).resolve().is_relative_to(ROOT):pin(path)
-        need(fact(pin(FIXTURE/'OUTCOMES.json'))['sha256']==OUTCOMES_SHA,'exact eight-command family/fault protocol')
-        protocol=decode((FIXTURE/'OUTCOMES.json').read_bytes());commands=protocol['commands']
+        need(fact(pin(FIXTURE/cfg['outcomes']))['sha256']==cfg['outcomes_sha'],'exact selected-profile family/fault protocol')
+        protocol=decode((FIXTURE/cfg['outcomes']).read_bytes());commands=protocol['commands']
         need(protocol['bounds']==dict(cpu_seconds=5,address_space_bytes=512<<20,file_size_bytes=16<<20,wall_seconds=15,cpu_affinity_count=1)
           and protocol['record_header_fields']==list(NAMES) and protocol['record_header_format']=='<17Q' and
-          len(commands)==8 and [c['exit']for c in commands]==[0]*6+[125,125] and
-          [c['name']for c in commands]==[f'group{g}'for g in range(6)]+['full-read-fault','cross-read-fault'] and
-          [c['group']for c in commands]==list(range(6))+[0,0] and
-          [c['argv']for c in commands]==[[f'vpcmpeqb-memory-family-{g}']for g in range(6)]+[['vpcmpeqb-memory-family-0']]*2 and
-          [c['environment_delta']for c in commands]==[{}]*6+[{'LI2_VPCM_CONTROL':'full-read-fault'}, {'LI2_VPCM_CONTROL':'cross-read-fault'}],
+          len(commands)==cfg['processes'] and [c['exit']for c in commands]==[0]*cfg['groups']+[125]*len(cfg['faults']) and
+          [c['name']for c in commands]==['group'+str(g)for g in range(cfg['groups'])]+list(cfg['faults']) and
+          [c['group']for c in commands]==list(range(cfg['groups']))+[0]*len(cfg['faults']) and
+          [c['argv']for c in commands]==[[cfg['name']+'-'+str(g)]for g in range(cfg['groups'])]+[[cfg['name']+'-0']]*len(cfg['faults']) and
+          [c['environment_delta']for c in commands]==[{}]*cfg['groups']+[{'LI2_VPCM_CONTROL':n}for n in cfg['faults']],
           'closed actual processes, selectors, failed exits and unchanged bounds')
-        cases=catalogue();r['catalogue']=dict(source=fact(FIXTURE/'cases.inc'),rows_sha256=digest(cases),new_pairs=108)
-        products=builder.prepare();output=private/'vpcmpeqb-memory-family';output.mkdir()
-        recipe_path=pin(FIXTURE/'build.sh');lines=recipe(recipe_path,'"$cc_bin"');need(len(lines)==1,'one exact bounded link template')
+        cases=catalogue(args.comparison);r['catalogue']=dict(source=fact(FIXTURE/cfg['cases_inc']),rows_sha256=digest(cases),new_pairs=18*cfg['groups'])
+        products=builder.prepare();output=private/cfg['name'];output.mkdir()
+        recipe_path=pin(FIXTURE/cfg['build']);lines=recipe(recipe_path,'"$cc_bin"');need(len(lines)==1,'one exact bounded link template')
         r['fixture_build']={};samples={}
-        for group in range(6):
-            name=f'vpcmpeqb-memory-family-{group}';values={'$cc_bin':builder.tools['cc'],'$source_dir':FIXTURE,'$selected_dir':SELECTED,
+        for group in range(cfg['groups']):
+            name=cfg['name']+'-'+str(group);values={'$cc_bin':builder.tools['cc'],'$source_dir':FIXTURE,'$selected_dir':SELECTED,
                 '$parent_dir':SELECTED.parent,'$decoder_archive':products['archive'],'$output_dir':output,'$group':group}
             argv=expand(lines[0],values);path=output/name
             need(argv[-2:]==['-o',str(path)] and all(x in argv for x in ('-O2','-g','-nostdlib','-static','-no-pie','-Werror')),
@@ -291,7 +323,7 @@ def main():
             _,out,err=run(name+'-undefined',[builder.tools['nm'],'-u',path],profile='inspect',env=builder.environment)
             need(out==err==b'','no unresolved fixture imports')
             _,out,err=run(name+'-symbols',[builder.tools['nm'],'-S','--defined-only',path],profile='inspect',env=builder.environment)
-            need(not err,'actual symbol inspection stderr');roots={'vpe_promotions','samples','negative_sample','result','refused_last','vm64_promotions','vpb_observations','v64_fault','vpc_queries','vpcm_promotions'}
+            need(not err,'actual symbol inspection stderr');roots={'vm256_promotions','vpe_promotions','samples','negative_sample','result','refused_last','vm64_promotions','vpb_observations','v64_fault','vpc_queries','vpcm_promotions'}
             symbols={};counts={k:0 for k in roots};_,_,segments=elf(path)
             for line in out.decode().splitlines():
                 w=line.split()
@@ -306,27 +338,30 @@ def main():
             need(all(a[1]<=b[0]for a,b in zip(intervals,intervals[1:])),'all record objects disjoint')
             state['symbols']=symbols;sample=symbols['negative_sample']['bytes']
             need(symbols['samples']['bytes']==21*sample and symbols['result']['bytes']==136 and
-                symbols['vpe_promotions']['bytes']==1216 and symbols['vm64_promotions']['bytes']==2080 and symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5000 and symbols['v64_fault']['bytes']==96 and
-                symbols['vpc_queries']['bytes']==9024 and symbols['vpcm_promotions']['bytes']==1504 and
-                1216+2080+136+22*sample+40+5000+96+9024+1504<16<<20,
+                symbols['vpe_promotions']['bytes']==1216 and symbols['vm256_promotions']['bytes']==352 and symbols['vm64_promotions']['bytes']==2080 and symbols['refused_last']['bytes']==40 and symbols['vpb_observations']['bytes']==5000 and symbols['v64_fault']['bytes']==96 and
+                symbols['vpc_queries']['bytes']==cfg['query_bytes'] and symbols['vpcm_promotions']['bytes']==1504 and
+                352+1216+2080+136+22*sample+40+5000+96+cfg['query_bytes']+1504<16<<20,
                 'actual ELF-sized complete sample array/trailers below unchanged cap');samples[name]=sample
             r['fixture_build'][name]=dict(artifact=state['artifact'],elf=state['elf'],symbols_sha256=digest(symbols),
-                record_bytes=1216+2080+136+22*sample+40+5000+96+9024+1504,headers_sha256=digest(state['headers']))
+                record_bytes=352+1216+2080+136+22*sample+40+5000+96+cfg['query_bytes']+1504,headers_sha256=digest(state['headers']))
         for expected in commands:
             item=dict(name=expected['name'],status='failed',environment_delta=expected['environment_delta'],actual_exit=None);r['cases'].append(item)
             row,out,err=run(expected['name'],[output/expected['argv'][0]],expected['exit'],env=dict(ENV,**expected['environment_delta']))
             item['actual_exit']=row['exit'];need(out==expected['stdout'].encode() and err==expected['stderr'].encode(),'exact finite output')
             captured=row['captures']['record'];path=binary(private/captured['file'])
             need(fact(path)=={k:captured[k]for k in ('bytes','sha256')},'complete actual capture binding');item['record']=fact(path)
-            value=record(path.read_bytes(),expected,samples[expected['argv'][0]],cases)
+            value=record(path.read_bytes(),expected,samples[expected['argv'][0]],cases,args.comparison)
             need(value['operation']==('completed'if expected['exit']==0 else 'failed_memory_read'),
                  'no failed operation relabelled completed')
             for key in r['totals']:r['totals'][key]+=value[key]
             item.update(status='accepted_observation',outcome=value)
-        need(r['totals']==dict(vpe_typed_promotions=8,vpe_supplied_none_queries=8,pairs=114,new_pairs=108,startup_pairs=8,verified_memory_failures=2,
-            refusals=872,actual_before_queries=220,ending_pairs=21,crossing_pairs=87,typed_promotions=40,supplied_none_queries=40) and
-            len(r['cases'])==8 and all(c['status']=='accepted_observation'for c in r['cases']),
-            'six complete19-pair cohorts and two genuine failed-read controls')
+        need(r['totals']==dict(vm256_typed_promotions=cfg['processes'],vm256_supplied_none_queries=cfg['processes'],
+            vpe_typed_promotions=cfg['processes'],vpe_supplied_none_queries=cfg['processes'],pairs=19*cfg['groups'],
+            new_pairs=18*cfg['groups'],startup_pairs=cfg['processes'],verified_memory_failures=len(cfg['faults']),
+            refusals=cfg['refusals']*cfg['processes'],actual_before_queries=36*cfg['groups']+2*len(cfg['faults']),
+            ending_pairs=cfg['ending'],crossing_pairs=cfg['crossing'],typed_promotions=5*cfg['processes'],supplied_none_queries=5*cfg['processes']) and
+            len(r['cases'])==cfg['processes'] and all(c['status']=='accepted_observation'for c in r['cases']),
+            'complete selected-profile19-pair cohorts and genuine failed-read controls')
         r['status']='passed'
     except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
     finally:

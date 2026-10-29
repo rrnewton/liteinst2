@@ -115,6 +115,15 @@ fn canonical_padding_nop(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Nop_rm16, [0x66, 0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
 }
 
+// Canonical shortest VEX.L0.F2.0F.W0 KMOVD r32,k only. ESP stays closed;
+// no C4 alternative, memory, reverse, other width or added prefix is admitted.
+// The CPU zero-extends the low32 source mask bits into the full destination GPR.
+fn canonical_kmovd_register(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::VEX_Kmovd_r32_kr
+        && matches!(bytes, [0xc5, 0xfb | 0x7b, 0x93, modrm]
+            if *modrm & 0xc0 == 0xc0 && !(bytes[1] == 0xfb && *modrm & 0x38 == 0x20))
+}
+
 // Canonical VEX.L0.F2.0F.W1 KMOVQ r64,k only. RSP destination stays
 // outside this family; no reverse, memory, narrow, ignored-extension or prefix forms.
 fn canonical_kmovq_register(instruction: &Instruction, bytes: &[u8]) -> bool {
@@ -215,6 +224,17 @@ fn canonical_vpxorq128(instruction: &Instruction, bytes: &[u8]) -> bool {
         && matches!(bytes, [0x62, p0, p1, p2, 0xef, m]
             if (*p0 & 0x0f) == 0x01 && (*p1 & 0x87) == 0x85
                 && (*p2 & 0xf7) == 0 && (*m & 0xc0) == 0xc0)
+}
+
+// Canonical unmasked EVEX.256.W0 VPCMPNEQUB k,YMM,m256 only. The CPU
+// reads the original ModRM/SIB/RIP address (disp8*32), compares unsigned bytes,
+// and clears destination K bits63:32. No K extension, register source2,
+// other predicate, width, mask, zeroing/broadcast or added prefix is admitted.
+fn canonical_vpcmpnequb256_memory(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8
+        && matches!(bytes, [0x62, p0, p1, p2, 0x3e, m, .., 0x04]
+            if (*p0 & 0x9f) == 0x93 && (*p1 & 0x87) == 0x05
+                && (*p2 & 0xf7) == 0x20 && (*m & 0xc0) != 0xc0)
 }
 
 // Canonical EVEX.512.W0 VPCMPB register forms. The opmask destination has
@@ -338,6 +358,13 @@ fn classify(
         // Full64-bit OR test of two original K registers; only flags change.
         if !matches!(&source[..instruction.len()], [0xc4, 0xe1, 0xf8, 0x98, m]
             if (*m & 0xc0) == 0xc0) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vmovdqu64_ymm_k1z_ymmm256 {
+        // Canonical EVEX.256.W1 load/register-copy. Original ModRM/SIB/RIP
+        // addresses and CPU-scaled disp8*32; the CPU zeros ZMM bits511:256.
+        // Exact P1/P2 retain F3/reserved vvvv/V', no mask/zeroing/broadcast,
+        // and only VL256. No leading prefix or store Code is authorized.
+        if !matches!(&source[..instruction.len()], [0x62, p0, 0xfe, 0x28, 0x6f, _, ..]
+            if (*p0 & 0x0f) == 0x01) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512 {
         // Canonical EVEX.512.W1 load/register-copy. All32 ZMM registers and
         // original64-bit ModRM/SIB/RIP addresses; disp8 is CPU-scaled by64.
@@ -349,6 +376,8 @@ fn classify(
         if !canonical_vptestnmb(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512 {
         if !canonical_vptestmb(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8 {
+        if !canonical_vpcmpnequb256_memory(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8 {
         if !canonical_vpcmpb(&instruction, &source[..instruction.len()]) {
             return Ok(out);
@@ -365,6 +394,8 @@ fn classify(
         // Exact observed register form RBX <- BZHI(RDX, R11[7:0]). The original
         // CPU instruction owns every flag bit, including undefined AF/PF.
         if source[..instruction.len()] != [0xc4, 0xe2, 0xa0, 0xf5, 0xda] { return Ok(out); }
+    } else if instruction.code() == Code::VEX_Kmovd_r32_kr {
+        if !canonical_kmovd_register(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::VEX_Kmovq_r64_kr {
         if !canonical_kmovq_register(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
@@ -655,6 +686,7 @@ fn classify(
         | Code::Pmaxud_xmm_xmmm128
         // Exact unmasked EVEX512 broadcast, checked before this Code arm.
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
+        | Code::EVEX_Vmovdqu64_ymm_k1z_ymmm256
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vmovdqa64_zmm_k1z_zmmm512
         | Code::EVEX_Vpminub_zmm_k1z_zmm_zmmm512
@@ -663,8 +695,10 @@ fn classify(
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
+        | Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
         | Code::EVEX_Vpxorq_xmm_k1z_xmm_xmmm128b64
+        | Code::VEX_Kmovd_r32_kr
         | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.

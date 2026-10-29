@@ -212,11 +212,16 @@ static void vpb_pair(struct sample *s,unsigned index) {
     ++result.completed;
 }
 #include "tests/kmovq/register_promotions.inc"
+#include "tests/kmovq_register/promotions32.inc"
 static void old_kmov_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
         if(i<5){kmr_promote(v,(unsigned)i);continue;}
+        if(kd32_is_promoted(i)) {
+            kd32_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+            continue;
+        }
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
         ++result.refusals;
@@ -243,7 +248,7 @@ static void vpb_refusals(void) {
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
-    _Static_assert(sizeof(bmi_promotions)+sizeof(vpe_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
+    _Static_assert(sizeof(kd32_promotions)+sizeof(bmi_promotions)+sizeof(vpe_promotions)+sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
                    sizeof(vpb_observations)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5176,"literal trailer extent");
     _Static_assert(sizeof(vpb_refused)/sizeof(vpb_refused[0])==33,"closed supplied neighbors");
@@ -253,13 +258,14 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();vpe_promotions_complete();bmi_promotions_complete();need(result.refusals==67+SHORT_EXTRA_REFUSALS&&kmr_promoted==7,1183);
+    vpb_refusals();vpe_promotions_complete();bmi_promotions_complete();kd32_promotions_complete();need(result.refusals==66+SHORT_EXTRA_REFUSALS&&kmr_promoted==7,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     for(unsigned i=0;i<VPB_COUNT;i++){vpb_prepare(&samples[i+1],i);vpb_pair(&samples[i+1],i+1);}
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          write_all(3,&vpb_observations,sizeof(vpb_observations))&&
-             write_all(3,&vpe_promotions,sizeof(vpe_promotions))&&write_all(3,&bmi_promotions,sizeof(bmi_promotions)),1184);
-    output(SHORT_GROUP==0?"LI2_SHORT_LEAF_PASS group=0 pairs=19 promoted_encoding_checks=7 promoted_footprint_queries=7 vpe_typed_promotions=4 vpe_supplied_none_queries=4 bmi_typed_promotions=2 bmi_supplied_none_queries=2\n":SHORT_GROUP==1?"LI2_SHORT_LEAF_PASS group=1 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7 vpe_typed_promotions=4 vpe_supplied_none_queries=4 bmi_typed_promotions=2 bmi_supplied_none_queries=2\n":"LI2_SHORT_LEAF_PASS group=2 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7 vpe_typed_promotions=4 vpe_supplied_none_queries=4 bmi_typed_promotions=2 bmi_supplied_none_queries=2\n");
+             write_all(3,&vpe_promotions,sizeof(vpe_promotions))&&write_all(3,&bmi_promotions,sizeof(bmi_promotions))&&
+             write_all(3,&kd32_promotions,sizeof(kd32_promotions)),1184);
+    output(SHORT_GROUP==0?"LI2_SHORT_LEAF_PASS group=0 pairs=19 promoted_encoding_checks=7 promoted_footprint_queries=7 vpe_typed_promotions=4 vpe_supplied_none_queries=4 bmi_typed_promotions=2 bmi_supplied_none_queries=2 kd32_typed_promotions=1 kd32_supplied_none_queries=1\n":SHORT_GROUP==1?"LI2_SHORT_LEAF_PASS group=1 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7 vpe_typed_promotions=4 vpe_supplied_none_queries=4 bmi_typed_promotions=2 bmi_supplied_none_queries=2 kd32_typed_promotions=1 kd32_supplied_none_queries=1\n":"LI2_SHORT_LEAF_PASS group=2 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7 vpe_typed_promotions=4 vpe_supplied_none_queries=4 bmi_typed_promotions=2 bmi_supplied_none_queries=2 kd32_typed_promotions=1 kd32_supplied_none_queries=1\n");
     return 0;
 }

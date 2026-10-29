@@ -1383,7 +1383,7 @@ class Main813InventoryTests(unittest.TestCase):
                          {'unit/rapid_profiler/lib': 14})
 
         self.assertEqual(main813.digest(main813.before_9c70(actual)), main813.CURRENT2754)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_0a088(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 3232, 36))
         self.assertEqual(sum(len(x) for x in main813.MAIN9C70['added_methods'].values()), 17)
@@ -1450,6 +1450,75 @@ class Main813InventoryTests(unittest.TestCase):
 
         self.assertEqual({k: len(v) for k, v in main813.MAIN9C70['listed_additions'].items()},
                          {'test/frontend_native_calibrations': 4, 'unit/ordinary_interval/main': 13})
+
+        self.assertEqual(main813.digest(main813.before_0a088(actual)), main813.CURRENT9C70)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 3266, 36))
+        self.assertEqual(sum(len(x) for x in main813.MAIN0A088['added_methods'].values()), 34)
+        self.assertEqual(sum(len(main813.MAIN0A088['added_methods'][p]) * len(v)
+                             for p, v in main813.MAIN0A088['instances'].items()), 34)
+        self.assertEqual(main813.MAIN0A088['declared_delta'],
+                         {'rust_tests': 34, 'rust_declarations': 34, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_0a088(actual))
+        for name, change in main813.MAIN0A088['workspace_changes'].items():
+            self.assertEqual(current_rows[name], change['current'])
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(main0a088_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+            changed = plain.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.subTest(main0a088_missing=name), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        for key in actual:
+            changed = plain.deepcopy(actual); changed[key] = None
+            with self.subTest(main0a088_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main813.before_0a088(changed)
+        for path in main813.MAIN0A088['sources']:
+            for missing in (False, True):
+                mutation_target = main813.ROOT / path
+                def changed(candidate):
+                    if candidate == mutation_target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main0a088_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_0a088_sources()
+        integration_path = 'tests/support/native_copied_rust/tests.rs'
+        self.assertIn(integration_path, main813.MAIN0A088['added_methods'])
+        mutation_target = main813.ROOT / integration_path
+        for missing in (False, True):
+            def changed(candidate):
+                if candidate == mutation_target:
+                    if missing:
+                        raise FileNotFoundError(integration_path)
+                    return read_bytes(candidate) + b'\n'
+                return read_bytes(candidate)
+            with self.subTest(main0a088_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                with self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(actual)
+        for path, row in main813.MAIN0A088['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_0a088(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main0a088_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_0a088(path, bad, 'changed')
+
+        self.assertEqual(sum(len(x) for x in main813.MAIN0A088['doctests'].values()), 0)
+
+        self.assertEqual(sum(len(x['ignored']) for x in main813.MAIN0A088['methods'].values()), 0)
+
+        self.assertEqual({k: len(v) for k, v in main813.MAIN0A088['listed_additions'].items()},
+                         {'test/frontend_native_calibrations': 16, 'unit/ordinary_interval/main': 12, 'unit/rapid_profiler/lib': 6})
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
