@@ -997,6 +997,40 @@ fn main() {
         }
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-leaf-set-rust-state") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            15,
+            "normal-leaf-set-rust-state DSO_CANDIDATE DSO_TRUSTED APPLICATION_CANDIDATE APPLICATION_TRUSTED OUTPUT_DIRECTORY CSV_VA CSV_EXTENT LENGTH_VA LENGTH_EXTENT DIGITS_VA DIGITS_EXTENT SPACES_VA SPACES_EXTENT"
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let app = PathBuf::from(&args[4]).canonicalize().unwrap();
+        let app_expected = PathBuf::from(&args[5]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[6]);
+        let selections = std::array::from_fn(|i| {
+            oracle::native_ordinary::normal_caller::leaf_set_copied::Selection::parse(
+                args[7 + 2 * i].to_str().unwrap(),
+                args[8 + 2 * i].to_str().unwrap(),
+                i,
+            )
+        });
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::leaf_set_copied::run(
+            &subject,
+            &expected,
+            &app,
+            &app_expected,
+            &output,
+            selections,
+            deadline,
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-rust-invoke-state") {
         let deadline = oracle::native_ordinary::strnlen::Deadline::start();
         assert_eq!(

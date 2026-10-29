@@ -8,7 +8,7 @@ mod trace;
 pub use trace::Trace;
 pub type Coverage = trace::Coverage;
 pub type Population = trace::Population;
-pub(super) use effects::{caller_effects, outer_effect};
+pub(super) use effects::{caller_effects, caller_effects_view, outer_effect};
 const VERSION: &[u8] = b"COPIED-RUST-INVOKE-V1\0";
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Case {
@@ -114,6 +114,34 @@ pub struct Ready {
     pub journal: Option<JournalReady>,
     pub case: Case,
     pub plan: Plan,
+}
+/// The same admitted four-origin machine obligations, borrowed from either
+/// authenticated Ready profile. This is not a loaded-owner constructor.
+#[derive(Clone, Copy)]
+pub(super) struct CallerView<'a> {
+    pub(super) caller: u64,
+    pub(super) plan: &'a Plan,
+    pub(super) target: &'a module::Function,
+    pub(super) bound: usize,
+    pub(super) value: u64,
+    pub(super) journal: Option<&'a JournalReady>,
+}
+impl CallerView<'_> {
+    fn target(&self) -> &module::Function {
+        self.target
+    }
+}
+impl Ready {
+    pub(super) fn view(&self) -> CallerView<'_> {
+        CallerView {
+            caller: self.caller,
+            plan: &self.plan,
+            target: self.target(),
+            bound: self.case.bound(),
+            value: self.case.value(),
+            journal: self.journal.as_ref(),
+        }
+    }
 }
 impl Ready {
     pub fn target(&self) -> &module::Function {
@@ -302,6 +330,7 @@ impl NormalOracle {
     {
         let p = self.copied_rust.as_ref().expect("copied Rust oracle");
         p.case.assert_valid();
+        assert!(self.leaf_set_copied.is_none());
         assert!(self.module.is_none() && self.reference.is_none());
         assert_eq!(self.mode, Mode::Stable);
         let (pair, trace, stats) = self.pair_engine::<F, _, _, 1>(setup, |r, points| {
@@ -316,6 +345,7 @@ impl NormalOracle {
 }
 impl NormalContext<'_> {
     pub fn copied_rust_case(&self) -> Case {
+        assert!(self.oracle.leaf_set_copied.is_none());
         assert!(self.oracle.module.is_none() && self.oracle.reference.is_none());
         assert_eq!(self.oracle.mode, Mode::Stable);
         let c = self
@@ -341,12 +371,15 @@ impl NormalContext<'_> {
     }
 }
 pub(super) fn entry_arguments(r: &libc::user_regs_struct, ready: &Ready, data: u64) {
+    entry_arguments_view(r, ready.view(), data)
+}
+pub(super) fn entry_arguments_view(r: &libc::user_regs_struct, ready: CallerView<'_>, data: u64) {
     assert_eq!(
         (r.rdi, r.rsi, r.rdx, r.rcx),
         (
             ready.target().entry,
             data + INPUT as u64,
-            ready.case.bound() as u64,
+            ready.bound as u64,
             data + RESULTS as u64
         )
     );
@@ -365,8 +398,18 @@ pub(super) fn call_before(
     data: u64,
     bound: usize,
 ) {
+    call_before_view(r, ready.view(), index, rsp, data, bound)
+}
+pub(super) fn call_before_view(
+    r: &libc::user_regs_struct,
+    ready: CallerView<'_>,
+    index: usize,
+    rsp: u64,
+    data: u64,
+    bound: usize,
+) {
     assert_eq!(index, 0);
-    assert_eq!(bound, ready.case.bound());
+    assert_eq!(bound, ready.bound);
     let step = ready
         .plan
         .steps()
@@ -393,6 +436,15 @@ pub(super) fn call_after(
     rsp: u64,
     word: u64,
 ) {
+    call_after_view(r, ready.view(), index, rsp, word)
+}
+pub(super) fn call_after_view(
+    r: &libc::user_regs_struct,
+    ready: CallerView<'_>,
+    index: usize,
+    rsp: u64,
+    word: u64,
+) {
     assert_eq!(index, 0);
     assert_eq!(
         (r.rip, r.rsp, word),
@@ -411,8 +463,18 @@ pub(super) fn ret_before(
     value: u64,
     word: u64,
 ) {
+    ret_before_view(r, ready.view(), index, rsp, value, word)
+}
+pub(super) fn ret_before_view(
+    r: &libc::user_regs_struct,
+    ready: CallerView<'_>,
+    index: usize,
+    rsp: u64,
+    value: u64,
+    word: u64,
+) {
     assert_eq!(index, 0);
-    assert_eq!(value, ready.case.value());
+    assert_eq!(value, ready.value);
     assert!(
         ready
             .target()
@@ -437,8 +499,18 @@ pub(super) fn ret_after(
     value: u64,
     word: u64,
 ) {
+    ret_after_view(r, ready.view(), index, rsp, value, word)
+}
+pub(super) fn ret_after_view(
+    r: &libc::user_regs_struct,
+    ready: CallerView<'_>,
+    index: usize,
+    rsp: u64,
+    value: u64,
+    word: u64,
+) {
     assert_eq!(index, 0);
-    assert_eq!(value, ready.case.value());
+    assert_eq!(value, ready.value);
     assert_eq!(
         (r.rip, r.rsp, r.rax, word),
         (
@@ -467,9 +539,18 @@ pub fn journal_words(
     returns: &[u64],
     pending: bool,
 ) -> [u64; 512] {
+    journal_words_view(ready.view(), pid, rsp, returns, pending)
+}
+pub(super) fn journal_words_view(
+    ready: CallerView<'_>,
+    pid: u64,
+    rsp: u64,
+    returns: &[u64],
+    pending: bool,
+) -> [u64; 512] {
     assert_eq!(returns.len(), 1);
     assert!(ready.target().returns.contains(&returns[0]));
-    let j = ready.journal.as_ref().unwrap();
+    let j = ready.journal.unwrap();
     assert_ne!(j.a_generation, 0);
     let mut out = [0; 512];
     out[..4].copy_from_slice(&[2, 0, pid, u64::from(pending)]);

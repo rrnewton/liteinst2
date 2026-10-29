@@ -11,6 +11,8 @@ pub mod module;
 use module::WalkReady;
 #[path = "native_copied_rust.rs"]
 pub mod copied_rust;
+#[path = "native_leaf_set_copied.rs"]
+pub mod leaf_set_copied;
 #[path = "native_normal_reference.rs"]
 pub mod reference;
 #[path = "native_rust_invoke.rs"]
@@ -86,7 +88,11 @@ impl CallerProfile<'_> {
             Self::Reference => reference::call_before(r, ready.single(), index, rsp, data, bound),
             Self::Module => module::call_before(r, ready.module(), index, rsp, data, bound),
             Self::CopiedRust(_) => {
-                copied_rust::call_before(r, ready.copied_rust(), index, rsp, data, bound)
+                if matches!(ready, WalkReady::LeafSetCopied(_)) {
+                    copied_rust::call_before_view(r, ready.copied_view(), index, rsp, data, bound)
+                } else {
+                    copied_rust::call_before(r, ready.copied_rust(), index, rsp, data, bound)
+                }
             }
         }
     }
@@ -103,7 +109,11 @@ impl CallerProfile<'_> {
             Self::Reference => reference::call_after(r, ready.single(), index, rsp, word),
             Self::Module => module::call_after(r, ready.module(), index, rsp, word),
             Self::CopiedRust(_) => {
-                copied_rust::call_after(r, ready.copied_rust(), index, rsp, word)
+                if matches!(ready, WalkReady::LeafSetCopied(_)) {
+                    copied_rust::call_after_view(r, ready.copied_view(), index, rsp, word)
+                } else {
+                    copied_rust::call_after(r, ready.copied_rust(), index, rsp, word)
+                }
             }
         }
     }
@@ -121,7 +131,11 @@ impl CallerProfile<'_> {
             Self::Reference => reference::ret_before(r, ready.single(), index, rsp, value, word),
             Self::Module => module::ret_before(r, ready.module(), index, rsp, value, word),
             Self::CopiedRust(_) => {
-                copied_rust::ret_before(r, ready.copied_rust(), index, rsp, value, word)
+                if matches!(ready, WalkReady::LeafSetCopied(_)) {
+                    copied_rust::ret_before_view(r, ready.copied_view(), index, rsp, value, word)
+                } else {
+                    copied_rust::ret_before(r, ready.copied_rust(), index, rsp, value, word)
+                }
             }
         }
     }
@@ -139,7 +153,11 @@ impl CallerProfile<'_> {
             Self::Reference => reference::ret_after(r, ready.single(), index, rsp, value, word),
             Self::Module => module::ret_after(r, ready.module(), index, rsp, value, word),
             Self::CopiedRust(_) => {
-                copied_rust::ret_after(r, ready.copied_rust(), index, rsp, value, word)
+                if matches!(ready, WalkReady::LeafSetCopied(_)) {
+                    copied_rust::ret_after_view(r, ready.copied_view(), index, rsp, value, word)
+                } else {
+                    copied_rust::ret_after(r, ready.copied_rust(), index, rsp, value, word)
+                }
             }
         }
     }
@@ -156,7 +174,11 @@ impl CallerProfile<'_> {
             Self::Reference => reference::journal_words(ready.single(), mode, pid, rsp, returns),
             Self::Module => module::journal_words(ready.module(), pid, rsp, returns, true),
             Self::CopiedRust(_) => {
-                copied_rust::journal_words(ready.copied_rust(), pid, rsp, returns, true)
+                if matches!(ready, WalkReady::LeafSetCopied(_)) {
+                    copied_rust::journal_words_view(ready.copied_view(), pid, rsp, returns, true)
+                } else {
+                    copied_rust::journal_words(ready.copied_rust(), pid, rsp, returns, true)
+                }
             }
         }
     }
@@ -216,6 +238,10 @@ enum Body {
     Strnlen(Case),
     Exact(ExactCase),
     Csv(csv::Case),
+    Scanner(
+        leaf_set_copied::scanner::Operation,
+        leaf_set_copied::scanner::Case,
+    ),
 }
 impl Body {
     fn input(self) -> [u8; 64] {
@@ -223,6 +249,7 @@ impl Body {
             Self::Strnlen(case) => strnlen::cases::input(case),
             Self::Exact(case) => case.input(),
             Self::Csv(case) => case.input(),
+            Self::Scanner(_, case) => case.input(),
         }
     }
     fn bound(self) -> usize {
@@ -230,6 +257,7 @@ impl Body {
             Self::Strnlen(case) => case.bound,
             Self::Exact(case) => case.length(),
             Self::Csv(case) => case.length(),
+            Self::Scanner(_, case) => case.bound(),
         }
     }
     fn scalar(self) -> u64 {
@@ -237,6 +265,7 @@ impl Body {
             Self::Strnlen(case) => strnlen::cases::scalar(case),
             Self::Exact(case) => case.scalar(),
             Self::Csv(case) => case.expected(),
+            Self::Scanner(operation, case) => case.expected(operation),
         }
     }
     fn strnlen(self) -> Case {
@@ -244,6 +273,7 @@ impl Body {
             Self::Strnlen(case) => case,
             Self::Exact(_) => panic!("not a strnlen case"),
             Self::Csv(_) => panic!("not a strnlen case"),
+            Self::Scanner(..) => panic!("not a strnlen case"),
         }
     }
 }
@@ -737,6 +767,7 @@ pub struct NormalOracle {
     reference: Option<reference::Cells>,
     module: Option<module::Case>,
     copied_rust: Option<copied_rust::Profile>,
+    leaf_set_copied: Option<leaf_set_copied::Profile>,
 }
 pub struct NormalContext<'a> {
     oracle: &'a NormalOracle,
@@ -777,6 +808,7 @@ impl NormalContext<'_> {
             Body::Exact(case) => Some(case),
             Body::Strnlen(_) => None,
             Body::Csv(_) => None,
+            Body::Scanner(..) => None,
         }
     }
     pub fn csv_case(&self) -> Option<csv::Case> {
@@ -813,6 +845,7 @@ impl NormalContext<'_> {
         }
     }
     pub fn ready(self, ready: &NormalReady) {
+        assert!(self.oracle.leaf_set_copied.is_none());
         assert!(self.oracle.copied_rust.is_none());
         assert!(self.oracle.module.is_none());
         assert!(self.oracle.reference.is_none() && self.output.is_none());
@@ -863,7 +896,14 @@ impl NormalOracle {
         oracle
     }
     fn profile(&self) -> CallerProfile<'_> {
-        if let Some(profile) = &self.copied_rust {
+        if let Some(profile) = &self.leaf_set_copied {
+            assert!(
+                self.copied_rust.is_none() && self.module.is_none() && self.reference.is_none()
+            );
+            assert_eq!(self.mode, Mode::Stable);
+            profile.case.assert_valid();
+            CallerProfile::CopiedRust(&profile.plan)
+        } else if let Some(profile) = &self.copied_rust {
             assert!(self.module.is_none() && self.reference.is_none());
             assert_eq!(self.mode, Mode::Stable);
             profile.case.assert_valid();
@@ -876,6 +916,9 @@ impl NormalOracle {
         } else {
             CallerProfile::Legacy
         }
+    }
+    fn has_copied_caller(&self) -> bool {
+        self.copied_rust.is_some() || self.leaf_set_copied.is_some()
     }
     fn new_body(seed: u64, body: Body, extent: usize, deadline: Deadline, mode: Mode) -> Self {
         let data = Mapping::new(PAGE);
@@ -918,6 +961,7 @@ impl NormalOracle {
             reference: None,
             module: None,
             copied_rust: None,
+            leaf_set_copied: None,
         }
     }
     fn caller_rsp(&self) -> u64 {
@@ -975,7 +1019,9 @@ impl NormalOracle {
             instruction.next_ip()
         );
         assert_eq!(after.rsp % 16, 8);
-        if self.copied_rust.is_some() {
+        if self.leaf_set_copied.is_some() {
+            copied_rust::entry_arguments_view(&after, ready.copied_view(), self.data.address());
+        } else if self.copied_rust.is_some() {
             copied_rust::entry_arguments(&after, ready.copied_rust(), self.data.address());
         } else {
             assert_eq!(
@@ -1303,6 +1349,7 @@ impl NormalOracle {
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
         O: FnOnce(&NormalReady, &[Snapshot]) -> (T, [usize; 2]),
     {
+        assert!(self.leaf_set_copied.is_none());
         assert!(self.copied_rust.is_none());
         assert!(self.module.is_none());
         self.pair_engine::<F, _, T, 2>(setup, |ready, points| inspect(ready.single(), points))
@@ -1446,7 +1493,13 @@ impl NormalOracle {
         self.deadline.check();
         let ready = reads.map(|p| {
             let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);
-            if let Some(expected) = &self.copied_rust {
+            if let Some(expected) = &self.leaf_set_copied {
+                WalkReady::LeafSetCopied(leaf_set_copied::Ready::decode(
+                    &wire,
+                    expected.case,
+                    &expected.plan,
+                ))
+            } else if let Some(expected) = &self.copied_rust {
                 WalkReady::CopiedRust(copied_rust::Ready::decode(
                     &wire,
                     expected.case,
@@ -1471,7 +1524,12 @@ impl NormalOracle {
             assert!(libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP);
             child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         }
-        let maps = if let Some(expected) = &self.copied_rust {
+        let maps = if let Some(expected) = &self.leaf_set_copied {
+            [
+                ready[0].leaf_set_copied().validate(false, expected),
+                ready[1].leaf_set_copied().validate(true, expected),
+            ]
+        } else if let Some(expected) = &self.copied_rust {
             [
                 ready[0].copied_rust().validate(false, expected),
                 ready[1].copied_rust().validate(true, expected),
@@ -1526,7 +1584,7 @@ impl NormalOracle {
             (saved[0].rdi, saved[0].rsi, saved[0].rdx),
             (saved[1].rdi, saved[1].rsi, saved[1].rdx)
         );
-        if self.copied_rust.is_some() {
+        if self.has_copied_caller() {
             assert_eq!(saved[0].rcx, saved[1].rcx);
         }
         let xstate = children.each_ref().map(|child| child.xstate());
@@ -1538,7 +1596,7 @@ impl NormalOracle {
             self.seed(&children[0], saved[0]),
             self.seed(&children[1], saved[1]),
         ];
-        let seeded = if self.copied_rust.is_some() {
+        let seeded = if self.has_copied_caller() {
             assert_eq!(words[0], words[1], "one actual bridge continuation");
             let continuation = u64::from_le_bytes(words[0].as_slice().try_into().unwrap());
             std::array::from_fn(|index| {
@@ -1720,7 +1778,7 @@ impl NormalOracle {
             assert_eq!(returns[index].len(), N);
             let actual = walk.child.registers();
             callee_saves(&seeded[index], &actual);
-            if self.copied_rust.is_none() {
+            if !self.has_copied_caller() {
                 assert_eq!(actual.rax, self.sum());
             }
             self.check_data(r, &walk.child.memory(self.data.address(), PAGE), true);
@@ -1737,7 +1795,7 @@ impl NormalOracle {
             assert_eq!(actual.rip, ready[index].caller() + profile.outer_ret());
             assert_eq!(walk.child.memory(saved[index].rsp, 8), words[index]);
             let continuation = u64::from_le_bytes(words[index].as_slice().try_into().unwrap());
-            let mut after = if self.copied_rust.is_some() {
+            let mut after = if self.has_copied_caller() {
                 assert_eq!(walk.child.memory(self.caller_rsp(), 8), words[index]);
                 let before = self.snapshot(walk.child, &ready[index], actual.rip);
                 self.step(walk, "copied Rust actual outer RET before restoration");
@@ -1836,7 +1894,14 @@ impl NormalOracle {
                 self.stack_start(),
             );
         }
-        if self.copied_rust.is_some() {
+        if self.leaf_set_copied.is_some() {
+            copied_rust::caller_effects_view(
+                &points,
+                ready[0].copied_view(),
+                self.data.address(),
+                self.stack_start(),
+            );
+        } else if self.copied_rust.is_some() {
             copied_rust::caller_effects(
                 &points,
                 ready[0].copied_rust(),
@@ -1845,7 +1910,12 @@ impl NormalOracle {
             );
         }
         let (trace, visits) = inspect(&ready[0], &points);
-        let (values, outer_value) = if let Some(profile) = &self.copied_rust {
+        let (values, outer_value) = if let Some(profile) = &self.leaf_set_copied {
+            (
+                [profile.case.value(); N],
+                points.last().unwrap().registers.rax,
+            )
+        } else if let Some(profile) = &self.copied_rust {
             (
                 [profile.case.value(); N],
                 points.last().unwrap().registers.rax,

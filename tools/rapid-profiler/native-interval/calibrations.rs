@@ -21,3 +21,7 @@ mod normal_rust_invoke_check;
 #[allow(dead_code)] // Production owner methods are not executed by pure calibrations.
 #[path = "normal/rust_invoke_artifact.rs"]
 mod normal_rust_invoke_artifact;
+
+// Distinct all-subset LeafSet accounting; existing calibrations remain literal.
+#[path = "normal/leaf_set_copied/check.rs"]
+mod normal_leaf_set_copied_check;
