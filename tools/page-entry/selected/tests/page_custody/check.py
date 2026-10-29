@@ -698,6 +698,24 @@ def _body_anchor_boundary(r,image,index,rows,events,base,extra,context,overlap):
   r.step_frame(saved,r.frame(raw,image))
  return kind
 
+def _stack_ingress_history(r,image,view,boundary):
+ # The fixed stack fixture has two distinct seed-selector edges before BODY.
+ # Their cancelled RX receipts are diagnostic history, never current custody.
+ I,F=r.integer,r.field;t='li2_fetch_rx_view';ct='li2_page_custody_receipt';c=F(view,t,'custody')
+ symbols=image['symbols'];seed=MAIN+4096;again=seed+16;common=seed+30;pointer=DATA+112
+ def lea(at,target):return b'\x48\x8d\x05'+struct.pack('<i',target-at-7)
+ def store(at):return b'\x48\x89\x05'+struct.pack('<i',pointer-at-7)
+ selector=lea(seed,BODY+32)+store(seed+7)+b'\xeb\x0e'+lea(again,BODY+96)+store(again+7)+b'\xdb\xe3'
+ need(image['case']==0 and boundary in(1,3)and
+      tuple(symbols[k]for k in('rn_seed','pcs_seed_again','pcs_seed_common','rn_next_program','rn_program','pcs_again'))==
+      (seed,again,common,pointer,BODY+32,BODY+96)and
+      bytes.fromhex(image['source_hex'])[4096:4128]==selector,
+      'complete fixed stack seed LEA/store/short-branch/fallthrough/FNINIT source and symbol geometry')
+ need(I(view,t,'pc')==(seed+14 if boundary==1 else common)and
+      r.values(view,t,'phase result after_sequence')==(5,0,0)and
+      r.values(c,ct,'kind checks')==(2,1)and I(view,t,'before_sequence')==I(c,ct,'origin_sequence')+1,
+      'exact first or second stack seed cancelled successor and prior completed transfer')
+
 def _terminal_anchor_boundary(r,image,rows,events,base,extra,context,exit_status,meta,view):
  I,F=r.integer,r.field;stack=context is not None;guard=GUARD+128 if stack else GUARD
  need(0<len(events)<=len(rows),'nonempty exact modeled event prefix within retained row capacity')
@@ -744,8 +762,10 @@ def _audit(r,image,pid,exit_status,cpu,control,context,overlap):
   prior=r.history(historical,image,pid,entry,None if boundary in(1,3)else anchor)
   if boundary in(1,3)and any(historical)and not known:
    pc=I(historical,'li2_fetch_rx_view','pc')
-   need(MAIN<=pc<MAIN+4096 if boundary==1 else image['symbols']['rn_finish']<=pc<GUARD+4096,
-        'unseen ingress history belongs only to the fixed setup or between-episode finish path')
+   if stack:_stack_ingress_history(r,image,historical,boundary)
+   else:
+    need(MAIN<=pc<MAIN+4096 if boundary==1 else image['symbols']['rn_finish']<=pc<GUARD+4096,
+         'unseen ingress history belongs only to the fixed setup or between-episode finish path')
    if anchor is not None:r.after_native_copy(anchor,prior)
   previous=anchor
   anchor,page_identity=r.raw_fetch(bf,image,pid,None if boundary else anchor,page_identity,partial=False)
