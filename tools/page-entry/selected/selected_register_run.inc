@@ -147,9 +147,10 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
     if(error)selected_run_abort((unsigned)error,0);
     selected_initialized();
 #if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
-    if(selected_run_trace_origin)
+    if(selected_run_trace_origin) {
         li2_run_begin_trace(&selected_run_owner,selected_run_trace_origin,sig,si,uc);
-    else
+        return 1;
+    }
 #endif
     li2_run_begin(&selected_run_owner,sig,si,uc);return 1;
 }
