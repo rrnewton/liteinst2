@@ -21,6 +21,10 @@ work under periodically rearmed admission, with a separate native control for
 pending-owner reclamation. Its fixed catalog preserves every failed or unrun
 trial and makes no throughput claim.
 
+The [four-mode elapsed comparison](NORMAL_BACKOFF_ELAPSED.md) adds setup,
+call-loop and service measurements for native, always-on, K10 and K1000
+configurations, with a fixed twenty-trial order and every outcome retained.
+
 ## Entry-to-exit sampling
 
 An armed entry callback reads the original return address from the application

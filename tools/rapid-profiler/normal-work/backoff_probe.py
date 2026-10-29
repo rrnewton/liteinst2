@@ -39,6 +39,15 @@ OWNER_RUST = tuple('normal::observer::backoff::pending_owner::tests::'+n for n i
     'boundary_rows_require_actual_next_entry_before_checkpoint',
     'command_phase_refuses_skip_repeat_and_identity_substitution',
     'control_wire_requires_complete_counts_and_three_phase_rows'))
+ELAPSED_RUST = (
+    'normal::observer::backoff::elapsed::tests::no_timing_hooks_never_read_clock_or_keep_storage',
+    'normal::observer::backoff::elapsed::tests::capture_hooks_require_full_order_and_twelve_pair_ranges',
+    'normal::observer::backoff::elapsed::tests::capture_requires_all_blocks_and_original_service_tail',
+    'normal::observer::backoff::elapsed::tests::shared_clock_arithmetic_keeps_domain_zero_and_maximum',
+    'normal::observer::backoff::elapsed::tests::elapsed_output_preserves_functional_rows_and_fixed_timing_suffix',
+    'normal::observer::backoff::elapsed::tests::elapsed_output_rejects_unfinished_capture_and_wrong_roles',
+    'normal::observer::backoff::elapsed::tests::printed_timing_does_not_override_original_completion_deadline',
+)
 OWNER_CHECKER = (
     'test_complete_k10_and_k1000_and_lossless_phases',
     'test_phase_order_identity_totals_and_refusal_counts',
@@ -69,7 +78,7 @@ CONTROLS = (
     'test_shared_closure_inventory_and_pins_remain_strict',
     'test_local_import_and_optimized_refusal')
 STAGES = ('prerequisite', 'checker-controls', 'pending-checker-controls', 'shared-controls',
-    'driver-controls', 'rust-controls', 'pending-rust-controls')
+    'driver-controls', 'rust-controls', 'pending-rust-controls', 'elapsed-rust-controls')
 FIELDS = ('trial','qualification','k','status','reason','exit','wire_rows','arms','sampled',
     'unsampled','observed_generations','rearmed','sampled_after_closed','app_cpu','controller_cpu','pid','tid','controller_tid',
     'zero_raw_spans','unobserved_generations','function_closed','later_generation_calls','later_generation_samples',
@@ -186,7 +195,8 @@ def main():
         'normal-work/backoff_probe.py','normal-work/test_backoff_probe.py','normal-work/backoff_work.py',
         'normal-work/test_backoff_work.py','normal-work/backoff_pending_owner.py','normal-work/test_backoff_pending_owner.py',
         'normal-work/exact_fixture.py','ordinary-interval/normal/observer/backoff.rs',
-        'ordinary-interval/normal/observer/backoff/check.rs','ordinary-interval/normal/observer/backoff/tests.rs'))
+        'ordinary-interval/normal/observer/backoff/check.rs','ordinary-interval/normal/observer/backoff/tests.rs',
+        'ordinary-interval/normal/observer/backoff/elapsed.rs','ordinary-interval/normal/observer/backoff/elapsed/tests.rs'))
     names=git('ls-files','-z','--','src','tests/support','tools/rapid-profiler','Cargo.toml','Cargo.lock','README.md','build.rs',
         ':(glob)**/Cargo.toml',*sorted(required)).decode().rstrip('\0').split('\0')
     assert all(names) and len(names)==len(set(names)) and required.issubset(names)
@@ -304,7 +314,7 @@ def main():
         assert pins.values[a.raw/'prerequisite.log']['sha256']==closed['private_log_sha256']
         if (qualified/'result.json').exists():row['private_result']=pins.retain(qualified/'result.json')
         P.outer_closed(closed,0)
-        q=P.qualified_inputs(repo,qualified,a.revision,env,cpus,before,tools,pins,prior,census,fixture,INVENTORY_PREFIX,RUST+OWNER_RUST)
+        q=P.qualified_inputs(repo,qualified,a.revision,env,cpus,before,tools,pins,prior,census,fixture,INVENTORY_PREFIX,RUST+OWNER_RUST+ELAPSED_RUST)
         result['artifacts'],result['prerequisite']=q['artifacts'],q['prerequisite']
         result['hardware']={k:v for k,v in q['old']['hardware'].items() if k in ('description','vendor','family','model','stepping')}
         unchanged();row['status']='PASS';row['result']=P.freeze(a.raw/'prerequisite-result.json',P.encoded(row),pins);save()
@@ -316,7 +326,7 @@ def main():
             P.python_census(source.read_bytes(),'Controls',methods);d=a.raw/name;r=prepare(d,[tools['python'],'-B',source])
             assert bounded(d,r,row)==0;P.python_controls((d/'stdout.txt').read_bytes(),(d/'stderr.txt').read_bytes(),methods)
             unchanged();row['status']='PASS';row['result']=P.freeze(d/'result.json',P.encoded(row),pins);save()
-        for name,methods in (('rust-controls',RUST),('pending-rust-controls',OWNER_RUST)):
+        for name,methods in (('rust-controls',RUST),('pending-rust-controls',OWNER_RUST),('elapsed-rust-controls',ELAPSED_RUST)):
             row=result['stages'][STAGES.index(name)];row['status']='FAILED';result['stage']=name;save();d=a.raw/name
             r=prepare(d,[q['test_binary'],*methods,'--exact','--test-threads=1']);assert bounded(d,r,row)==0
             census.controls((d/'stdout.txt').read_bytes(),(d/'stderr.txt').read_bytes(),methods,q['inventory'])

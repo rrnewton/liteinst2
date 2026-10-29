@@ -363,6 +363,10 @@ fn check_report(report: &Report, rows: &[RawInterval], generation: u64, sequence
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-observer-backoff-elapsed") {
+        normal::observer::backoff::elapsed::run(&args[2..]);
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-observer-backoff-pending-owner") {
         normal::observer::backoff::pending_owner::run(&args[2..]);
         return;
