@@ -314,3 +314,18 @@ def original_check(stdout, stderr, *, records, lengths, cpu):
     assert list(map(uint, rows[-1][1:])) == [len(records), 2 * len(records), 2 * len(records)]
     return dict(status='ORIGINAL_SCALAR_PASS', ready=values, results=results, raw=stdout,
                 scope='Actual original scalar rows joined to independent expected inputs; external source, caller and process custody remain required.')
+
+
+ORIGINAL_REFUSALS = (
+    'bad_magic', 'count_over_2048', 'truncated_length', 'truncated_payload',
+    'length_over_64', 'non_ascii_payload', 'malformed_csv', 'trailing_input_byte')
+
+
+def original_refusal(stdout, stderr, exit_code, reason):
+    """Typed input refusal only; source, owner closure and deadline are external."""
+    assert type(reason) is str and reason in ORIGINAL_REFUSALS
+    assert type(exit_code) is int and exit_code == 2
+    assert type(stdout) is bytes and stdout == b''
+    assert type(stderr) is bytes
+    assert stderr == b'module-session-original INPUT_REFUSED: ' + reason.encode('ascii') + b'\n'
+    return dict(status='EXPECTED_INPUT_REFUSAL', reason=reason, exit_code=exit_code)

@@ -93,6 +93,24 @@ def check(rows, args):
 
 
 class Controls(unittest.TestCase):
+    def test_original_input_refusal_never_accepts_hard_failure(self):
+        reasons = ('bad_magic', 'count_over_2048', 'truncated_length', 'truncated_payload',
+                   'length_over_64', 'non_ascii_payload', 'malformed_csv', 'trailing_input_byte')
+        self.assertEqual(output.ORIGINAL_REFUSALS, reasons)
+        for reason in reasons:
+            actual = b'module-session-original INPUT_REFUSED: ' + reason.encode('ascii') + b'\n'
+            self.assertEqual(output.original_refusal(b'', actual, 2, reason)['reason'], reason)
+            for code in (0, 1, -9, True, 3):
+                with self.assertRaises(AssertionError): output.original_refusal(b'', actual, code, reason)
+            for other in reasons:
+                if other != reason:
+                    with self.assertRaises(AssertionError): output.original_refusal(b'', actual, 2, other)
+            for data in (b'', actual + b'FAILED\n', actual + b'\n', actual.replace(b'\n', b'\r\n'),
+                         b'FAILED\n', actual[:-1], bytearray(actual)):
+                with self.assertRaises(AssertionError): output.original_refusal(b'', data, 2, reason)
+            with self.assertRaises(AssertionError): output.original_refusal(b'ORIGINAL_DONE,0,0,0\n', actual, 2, reason)
+            with self.assertRaises(AssertionError): output.original_refusal(b'', actual, 2, 'unknown')
+
     def refuses(self, rows, args):
         with self.assertRaises((AssertionError, ValueError, UnicodeError, KeyError, IndexError)):
             check(rows, args)

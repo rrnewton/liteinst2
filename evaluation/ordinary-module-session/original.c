@@ -41,6 +41,8 @@ typedef uint64_t (*target_fn)(const unsigned char *, size_t);
 
 static _Noreturn void fail(void) { _exit(1); }
 static void require(bool condition) { if (!condition) fail(); }
+static _Noreturn void input_fail(const char *reason);
+static void input_require(bool condition, const char *reason) { if (!condition) input_fail(reason); }
 static uint64_t now(void) {
     struct timespec ts;
     require(clock_gettime(CLOCK_MONOTONIC, &ts) == 0 && ts.tv_sec >= 0);
@@ -121,11 +123,11 @@ static uint64_t fields(const unsigned char *data, size_t length) {
                 if (at < length && data[at] == '"') { ++at; continue; }
                 closed = true; break;
             }
-            require(closed && (at == length || data[at] == ','));
+            input_require(closed && (at == length || data[at] == ','), "malformed_csv");
         } else {
-            while (at < length && data[at] != ',') { require(data[at] != '"'); ++at; }
+            while (at < length && data[at] != ',') { input_require(data[at] != '"', "malformed_csv"); ++at; }
         }
-        if (at < length) { require(data[at++] == ','); ++count; }
+        if (at < length) { input_require(data[at++] == ',', "malformed_csv"); ++count; }
     }
     return count;
 }
@@ -163,6 +165,26 @@ static void write_output(void) {
     }
     timely();
 }
+static _Noreturn void input_fail(const char *reason) {
+    /* Only complete framed-input validation calls this path. Hard failures keep exit 1. */
+    static const char prefix[] = "module-session-original INPUT_REFUSED: ";
+    char message[96]; size_t a = sizeof prefix - 1, b = strlen(reason);
+    require(a + b + 1 <= sizeof message);
+    memcpy(message, prefix, a); memcpy(message + a, reason, b); message[a + b] = '\n';
+    size_t length = a + b + 1, at = 0;
+    int flags = fcntl(STDERR_FILENO, F_GETFL);
+    require(flags >= 0 && fcntl(STDERR_FILENO, F_SETFL, flags | O_NONBLOCK) == 0);
+    while (at < length) {
+        timely(); ssize_t n = write(STDERR_FILENO, message + at, length - at);
+        if (n > 0) { at += (size_t)n; continue; }
+        if (n < 0 && errno == EINTR) continue;
+        require(n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+        struct pollfd p = {STDERR_FILENO, POLLOUT, 0}; int rc = poll(&p, 1, 1);
+        require(rc >= 0 || errno == EINTR);
+        if (rc > 0) require((p.revents & (POLLERR | POLLHUP | POLLNVAL)) == 0);
+    }
+    timely(); _exit(2);
+}
 int main(int argc, char **argv) {
     uint64_t start = now(); require(start <= UINT64_MAX - UINT64_C(15000000000)); deadline = start + UINT64_C(15000000000);
     require(argc == 8 && argv[1][0] == '/' && argv[6][0] == '/');
@@ -175,18 +197,19 @@ int main(int argc, char **argv) {
     singleton(); pin(cpu); require(sysconf(_SC_PAGESIZE) == 4096);
     int input_fd = open(argv[6], O_RDONLY | O_CLOEXEC | O_NOFOLLOW); require(input_fd >= 0);
     struct stat input_stat; size_t frame_length = read_regular(input_fd, frame, sizeof frame, &input_stat);
-    require(frame_length >= 12 && memcmp(frame, "MODCSV1\0", 8) == 0);
+    input_require(frame_length >= 12 && memcmp(frame, "MODCSV1\0", 8) == 0, "bad_magic");
     uint32_t count = (uint32_t)frame[8] | (uint32_t)frame[9] << 8 | (uint32_t)frame[10] << 16 | (uint32_t)frame[11] << 24;
-    require(count <= RECORDS); size_t at = 12;
+    input_require(count <= RECORDS, "count_over_2048"); size_t at = 12;
     for (uint32_t i = 0; i < count; ++i) {
-        require(at < frame_length); size_t n = frame[at++]; require(n <= 64 && n <= frame_length - at);
+        input_require(at < frame_length, "truncated_length"); size_t n = frame[at++];
+        input_require(n <= 64, "length_over_64"); input_require(n <= frame_length - at, "truncated_payload");
         memset(&inputs[i], 0xa5, sizeof inputs[i]); inputs[i].length = n;
         memcpy(inputs[i].data, frame + at, n); at += n;
-        for (size_t j = 0; j < n; ++j) require(inputs[i].data[j] >= 0x20 && inputs[i].data[j] <= 0x7e);
+        for (size_t j = 0; j < n; ++j) input_require(inputs[i].data[j] >= 0x20 && inputs[i].data[j] <= 0x7e, "non_ascii_payload");
         inputs[i].fields = fields(inputs[i].data, n);
         saved_inputs[i] = inputs[i]; results[i] = (struct result){guard, UINT64_MAX, UINT64_MAX, guard};
     }
-    require(at == frame_length); /* All input is validated before dlopen or any target call. */
+    input_require(at == frame_length, "trailing_input_byte"); /* All input is validated before dlopen or any target call. */
     int source_fd = open(argv[1], O_RDONLY | O_CLOEXEC | O_NOFOLLOW); require(source_fd >= 0);
     struct stat source_stat; size_t file_length = read_regular(source_fd, file_image, sizeof file_image, &source_stat);
     require(file_length >= sizeof(Elf64_Ehdr)); Elf64_Ehdr eh; memcpy(&eh, file_image, sizeof eh);
