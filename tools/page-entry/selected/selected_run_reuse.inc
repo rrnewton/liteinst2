@@ -61,6 +61,9 @@ static int selected_run_reuse_effects_closed(void) {
 }
 
 static int selected_run_reuse_native_closed(void) {
+#ifdef LI2_NATIVE_PAIR
+    if(!li2_native_pair_quiet())return 0;
+#endif
     const struct li2_native_epoch *n=li2_native_epoch_progress();
     const struct li2_native_counts *count=li2_lifecycle_native_counts();
     const struct li2_native_close *c=li2_lifecycle_native_close_progress();

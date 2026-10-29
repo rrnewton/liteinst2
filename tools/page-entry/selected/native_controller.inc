@@ -1,3 +1,6 @@
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair_controller.inc"
+#else
 /* A separate ingress for real execution epochs. Old instruction owners retain
    their exact known-flags and genuine-fault predicates. */
 static void selected_native_count(uintptr_t pc) {
@@ -61,3 +64,4 @@ static int selected_native_fetch(int sig,siginfo_t *si,ucontext_t *uc) {
     selected_native_count(pc);
     return 1;
 }
+#endif

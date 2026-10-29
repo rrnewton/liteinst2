@@ -1,5 +1,8 @@
 #define _GNU_SOURCE
 #include "rseq_guard.h"
+#ifdef LI2_NATIVE_PAIR
+#include "native_pair.h"
+#endif
 #include "register_run.h"
 #include "repeat_owner.h"
 #include <asm/prctl.h>
@@ -121,6 +124,9 @@ static int same_data(const struct li2_rseq_data *a,const struct li2_rseq_data *b
 
 #endif
 int li2_rseq_dispatch(const long a[6],long *result) {
+#ifdef LI2_NATIVE_PAIR
+    if(li2_native_pair_effect_guard())return bad(LI2_NP_STATE,63);
+#endif
     if(ready())return (int)state.first_error;
     if(!a || !result || li2_lifecycle_fetch_interlock())return bad(LI2_RSEQ_ARGUMENT,3);
     if(state.phase!=LI2_RSEQ_IDLE && state.phase!=LI2_RSEQ_ACTIVE)return bad(LI2_RSEQ_STATE,2);
@@ -238,6 +244,9 @@ int li2_rseq_check_run(const struct li2_run_plan *p,const ucontext_t *uc) {
 #include "readonly_query.h"
 #endif
 int li2_rseq_before_syscall(long n,const long a[6]) {
+#ifdef LI2_NATIVE_PAIR
+    if(li2_native_pair_effect_guard())return bad(LI2_NP_STATE,62);
+#endif
     if(ready())return (int)state.first_error;
 #ifdef LI2_RSEQ_TCGETS_BTRFS
     int tcgets_error=tcgets_before(n,a);if(tcgets_error)return tcgets_error;
@@ -496,4 +505,8 @@ int li2_rseq_native_closed(void) {
 #endif
 #ifdef LI2_ONESHOT_REUSABLE
 #include "rseq_publication.inc"
+#endif
+
+#ifdef LI2_NATIVE_PAIR
+#include "rseq_native_pair.inc"
 #endif
