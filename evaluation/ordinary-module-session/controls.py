@@ -9,6 +9,7 @@ import importlib.util
 import json
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
 
 
@@ -92,7 +93,293 @@ def check(rows, args):
     return output.check(encode(rows), stderr, **args)
 
 
+
+def owner_fixture(k=10, direction='csv-length'):
+    geometry = dict(csv_va=4096, csv_length=37, length_va=4160, length_length=41,
+                    returns=[[36], [34, 40]], continuation=17)
+    args = dict(k=k, direction=direction, geometry=geometry, cpus=(2, 4))
+    hot = 0 if direction == 'csv-length' else 1
+    cold = 1-hot; a, b = 91, 92; h = (k+3)//4
+    rows = [['META', 'run', 'module-session-owner-v1', 'session-absolute-v1', 'not-run', k, direction, 0x6d6f6401, 100, 100, 101, 2, 4, 1],
+            ['META', 'code', '6f'*32, 4096, 1, 101, 202, 4096, 4133, 4160, 4201, 8192],
+            ['META', 'memory', 12288, 16384, 8192, 12288], ['META', 'input', '612c622c63', 5, 3, 5],
+            ['META', 'ret', 0, 36], ['META', 'ret', 1, 34], ['META', 'ret', 1, 40], ['HISTORY', 1, 1, 'published', a]]
+    calls = []
+    def pair(i, function, gen, owner, slot, prefix, batch, ack):
+        expected = 3 if function == 0 else 5
+        rows.append(['CALL', i, function, expected, expected, gen, owner, slot, prefix, batch])
+        clock = ['RAW', i, 13064, 8209, 36 if function == 0 else 34, i, i+1, 0, 0, ack, i+1 if ack == 'next' else 0]
+        rows.append(clock); calls.append((i, function, gen, owner, slot, clock))
+    for i in range(1, k+1): pair(i, hot, a, 'sampled', i, 1, (i+3)//4, 'checkpoint' if i%4 == 0 or i == k else 'next')
+    rows.append(['PHASE', 'hot-exhaust', k, k, k, k, 0, h, 2, a, 1, 0, 0, 0, 1, 0, 0, 0, h, 0, 'not-checked', 0, 0])
+    pair(k+1, cold, a, 'sampled', k+1, 1, h+1, 'checkpoint')
+    rows.extend([['PHASE', 'cold-available', k+1, k+1, k+1, k+1, 0, h+1, 2, a, 1, 0, 0, 0, 1, 0, 0, 0, h+1, 0, 'not-checked', 0, 0],
+        ['PHASE', 'held', k+2, k+2, k+1, k+1, 0, h+1, 2, a, 1, 0, 0, 0, 1, 0, 0, 0, h+1, 0, 'not-checked', 0, 0],
+        ['HISTORY', 2, 2, 'published', b], ['META', 'epochs', a, b], ['REPORT', a, k+1],
+        ['PHASE', 'refused-twice', k+2, k+2, k+1, k+1, 0, h+1, 1, b, 2, 1, 1, 2, 1, 1, 1, 1, h+1, 0, 'not-checked', 0, 0],
+        ['HISTORY', 3, 3, 'removed', b],
+        ['PHASE', 'released-before-checkpoint', k+3, k+3, k+2, k+1, 1, h+1, 2, 0, 3, 1, 1, 2, 0, 1, 0, 0, h+1, 1, 'pending', 0, 0]])
+    pair(k+2, hot, a, 'closed', 0, 1, h+2, 'next'); pair(k+3, cold, b, 'sampled', 1, 2, h+2, 'checkpoint')
+    rows.append(['REPORT', b, 1])
+    for i, function, gen, owner, slot, clock in calls:
+        if owner != 'sampled': continue
+        rows.append(['SAMPLE', gen, function, slot-1, i-1 if i <= k else 0, min(i-1,k+1), clock[5], 'value', clock[6]])
+    rows.append(['PHASE', 'finish', k+3, k+3, k+3, k+2, 1, h+2, 3, 0, 3, 2, 1, 2, 0, 0, 0, 0, h+3, 1, 'copied', 1, 1])
+    rows.append([f'module-session-owner:profile=session-absolute-v1:schedule=not-run:k={k}:direction={direction}:calls={k+3}:confirmed={k+3}:sampled={k+2}:unsampled=1:batches={h+2}:reports=2:actions=3:banks=3:shared-owner-refusals=2:held-report-copies=1:reclaimed-before-checkpoint=1:worker-joins=1:complete'])
+    return rows, args
+
+
+def owner_bytes(rows):
+    return encode(rows)
+
+
 class Controls(unittest.TestCase):
+    def test_campaign_commands_freeze_exact_argv_before_owner_and_never_refresh(self):
+        runner=load('reproduce')
+        parent=Path(__file__).resolve().parents[2]/'target/evaluation'
+        parent.mkdir(parents=True,exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='module-session-source-controls-',dir=parent) as scratch:
+            class Frozen:
+                raw=Path(scratch);env={'LC_ALL':'C'}
+                retained={}
+                def freeze(self,path,value):
+                    runner.save(path,value);self.retained[str(path)]=runner.pin(path.read_bytes())
+            frozen=Frozen()
+            path,command=runner.Run.command(frozen,'once',['/absolute/program','argument'],55)
+            saved=dict(frozen.retained)
+            self.assertEqual(runner.Run.command(frozen,'once',['/absolute/program','argument'],55),(path,command))
+            self.assertEqual(frozen.retained,saved)
+            for argv,wall in ((['/absolute/other','argument'],55),(['/absolute/program','argument'],56)):
+                with self.assertRaises(AssertionError):runner.Run.command(frozen,'once',argv,wall)
+            value=json.loads((path/'command.json').read_bytes());value['env']['LC_ALL']='changed'
+            (path/'command.json').write_bytes(runner.canonical(value))
+            with self.assertRaises(AssertionError):runner.Run.command(frozen,'once',['/absolute/program','argument'],55)
+            self.assertEqual(frozen.retained,saved)
+
+    def test_owner_four_cases_keep_full_raw_zero_max_and_unavailable(self):
+        for k in (10, 1000):
+            for direction in ('csv-length', 'length-csv'):
+                rows, args = owner_fixture(k, direction)
+                result = output.owner_check(owner_bytes(rows), b'', **args)
+                self.assertEqual(result['totals']['calls'], k+3)
+                self.assertEqual(len(result['raw']), k+3)
+                self.assertEqual(len(result['samples']), k+2)
+                self.assertEqual(result['stdout'], owner_bytes(rows))
+        rows, args = owner_fixture()
+        for start, end, aux0, aux1, kind, value in ((0,0,0,0,'value',0), ((1<<64)-1,(1<<64)-1,(1<<32)-1,(1<<32)-1,'value',(1<<64)-1),
+                (9,3,7,7,'unavailable',2), (9,3,7,8,'unavailable',1)):
+            changed = copy.deepcopy(rows)
+            raw = next(r for r in changed if r[0] == 'RAW'); raw[5:9] = [start,end,aux0,aux1]
+            sample = next(r for r in changed if r[0] == 'SAMPLE'); sample[6:] = [start,kind,value]
+            output.owner_check(owner_bytes(changed), b'', **args)
+
+    def test_owner_identity_phases_reports_raw_and_complete_order_refuse(self):
+        rows, args = owner_fixture()
+        def refuses(value, arguments=args, stderr=b''):
+            with self.assertRaises((AssertionError, ValueError, UnicodeError, KeyError, IndexError)):
+                output.owner_check(value, stderr, **arguments)
+        for tag in ('CALL', 'RAW', 'HISTORY', 'REPORT', 'SAMPLE', 'PHASE'):
+            index = next(i for i,r in enumerate(rows) if r[0] == tag)
+            refuses(owner_bytes(rows[:index]+rows[index+1:]))
+            refuses(owner_bytes(rows[:index]+[rows[index]]+rows[index:]))
+            for position in range(1,len(rows[index])):
+                changed = copy.deepcopy(rows)
+                if type(changed[index][position]) is int: changed[index][position] += 1
+                else: changed[index][position] = 'wrong'
+                refuses(owner_bytes(changed))
+        for index,row in enumerate(rows):
+            if row[0] != 'PHASE': continue
+            for position in range(1,len(row)):
+                changed = copy.deepcopy(rows)
+                changed[index][position] = row[position]+1 if type(row[position]) is int else 'wrong'
+                refuses(owner_bytes(changed))
+        for index in range(7):
+            for position in range(2,len(rows[index])):
+                changed = copy.deepcopy(rows)
+                changed[index][position] = rows[index][position]+1 if type(rows[index][position]) is int else 'wrong'
+                # A coherent nonzero namespace/base is not inferred: these one-field changes break joins.
+                if index == 0 and position == 10: changed[index][position] = 100
+                if index == 2 and position in (2,3,4,5):
+                    changed[index][position] = (0,12288,8193,8209)[position-2]
+                refuses(owner_bytes(changed))
+        for rsp in (8,120,(1<<64)-1,13056,12296,16392):
+            changed=copy.deepcopy(rows);next(r for r in changed if r[0]=='RAW')[2]=rsp
+            refuses(owner_bytes(changed))
+        changed=copy.deepcopy(rows);next(r for r in changed if r[0]=='RAW')[7]=1<<32
+        refuses(owner_bytes(changed))
+        changed=copy.deepcopy(rows);next(r for r in changed if r[0]=='CALL')[1]='01'
+        refuses(owner_bytes(changed))
+        for data in (owner_bytes(rows)[:-1],owner_bytes(rows)+b'\n',owner_bytes(rows).replace(b'\n',b'\r\n'),b'x'*629853): refuses(data)
+        refuses(owner_bytes(rows),stderr=b'FAILED\n')
+        for key,value in (('k',1000),('direction','length-csv'),('cpus',(4,2))):
+            altered=copy.deepcopy(args);altered[key]=value;refuses(owner_bytes(rows),altered)
+        altered=copy.deepcopy(args);altered['geometry']['continuation']+=1;refuses(owner_bytes(rows),altered)
+
+    def test_campaign_fixed_catalog_frames_and_owner_status_join(self):
+        runner=load('reproduce')
+        originals,installed=runner.catalog()
+        self.assertEqual([(r['attempt'],r['k'],r['case']) for r in installed],[(a,k,i) for a in range(1,6) for k in (10,1000) for i in range(32)])
+        self.assertEqual([r['case'] for r in originals],list(range(32)))
+        self.assertTrue(all(r['status']=='UNRUN' and r['attempts']==0 for r in originals+installed))
+        self.assertEqual(runner.frame(((b'',1),(b'a,b',2))),b'MODCSV1\0\x02\0\0\0\0\x03a,b')
+        self.assertEqual(tuple(n for n,_ in runner.malformed_frames()),output.ORIGINAL_REFUSALS)
+        request=dict(sha256='a');helper=dict(sha256='b');out=dict(sha256='c');err=dict(sha256='d')
+        closed=dict(cleanup_complete=True,reaped_descendants=0,termination=None,exit_code=1)
+        receipt=dict(exit=2,absence_proof='ECHILD',inputs_unchanged=True,wall_timeout=False,unexpected_descendants=[],cleanup_events=[],
+                     aborted=None,cleanup_error=None,request_sha256='a',helper_sha256='b',stdout_sha256='c',stderr_sha256='d')
+        self.assertEqual(runner.bounded_join(receipt,closed,request,helper,out,err),2)
+        for field,value in (('exit',1),('exit',0)):
+            changed=copy.deepcopy(receipt);changed[field]=value
+            if value==1: self.assertEqual(runner.bounded_join(changed,closed,request,helper,out,err),1)
+            else:
+                with self.assertRaises(AssertionError):runner.bounded_join(changed,closed,request,helper,out,err)
+        for field,value in (('absence_proof','none'),('inputs_unchanged',False),('wall_timeout',True),('unexpected_descendants',[5]),
+                ('cleanup_events',[1]),('aborted','interrupted'),('cleanup_error','lost'),('request_sha256','z'),('helper_sha256','z'),('stdout_sha256','z'),('stderr_sha256','z')):
+            changed=copy.deepcopy(receipt);changed[field]=value
+            with self.assertRaises(AssertionError):runner.bounded_join(changed,closed,request,helper,out,err)
+        for field,value in (('cleanup_complete',False),('reaped_descendants',1),('termination','wall_timeout'),('exit_code',0)):
+            changed=copy.deepcopy(closed);changed[field]=value
+            with self.assertRaises(AssertionError):runner.bounded_join(receipt,changed,request,helper,out,err)
+
+    def test_campaign_actual_producer_identity_and_all_failure_rows(self):
+        runner=load('reproduce');rows,args=fixture();checked=check(rows,args);stdout=encode(rows)
+        result=dict(status='PASS',normal_reaps=1,rescue=False,cleanup_error=None,sent_bytes=12,stdout_sha256=runner.pin(stdout)['sha256'],
+                    stderr_sha256=runner.pin(b'')['sha256'],child_pid=123,child_exit=0,totals=checked['totals'],done=checked['rows']['DONE'][0],
+                    original_values=[[r['id'],r['length'],r['checksum'],r['csv_value'],r['length_value']] for r in checked['rows']['RESULT']])
+        runner.producer_join(result,0,stdout,b'',checked,12)
+        for field,value in (('status','FAILED'),('normal_reaps',0),('rescue',True),('cleanup_error','lost'),('sent_bytes',11),
+            ('child_pid',124),('child_exit',1),('stdout_sha256','wrong'),('stderr_sha256','wrong'),('totals',{}),('done',{}),('original_values',[])):
+            changed=copy.deepcopy(result);changed[field]=value
+            with self.assertRaises(AssertionError):runner.producer_join(changed,0,stdout,b'',checked,12)
+        originals,installed=runner.catalog()
+        result=dict(status='FAILED',revision='a'*40,originals=originals,installed=installed)
+        projected=runner.public_projection(result)
+        self.assertEqual(len(projected['rows']),352);self.assertFalse(projected['campaign_complete']);self.assertFalse(projected['all_qualified'])
+        originals[0].update(status='FAILED',attempts=1,error='/private/secret')
+        installed[0].update(status='PASS',attempts=1,calls=0)
+        projected=runner.public_projection(result)
+        self.assertEqual(projected['rows'][0]['status'],'FAILED');self.assertEqual(projected['rows'][32]['calls'],0)
+        self.assertNotIn('/private/secret',json.dumps(projected))
+        self.assertEqual(projected['attempts'][0],dict(attempt=1,passed=1,failed=0,unrun=63))
+
+    def test_campaign_closed_functional_failure_continues_but_unknown_custody_stops(self):
+        runner=load('reproduce')
+        class FakeRun:
+            def __init__(self,lose=False):
+                self.safe=True;self.cpus=[2,4,6];self.raw=Path('/unused');self.lose=lose;self.seen=[];self.budget=runner.EvidenceBudget();self.deadline=1e30
+                self.m={'output':output};self.result={'originals':[dict(leg='original',case=i,status='UNRUN',attempts=0,directory='/unused/o'+str(i),request={'file_bytes':runner.CAP,'wall_seconds':30}) for i in range(2)],'installed':[]}
+            def unchanged(self):pass
+            def freeze(self,path,value):self.seen.append(value['case'])
+            def bounded(self,*args,**kwargs):
+                if self.lose:self.safe=False;raise RuntimeError('unknown custody')
+                if not self.seen:return 1,b'',b''
+                return 0,b'ORIGINAL_READY,module-original-v1,123,123,4,4096,4133,4160,4201,8192,0\nORIGINAL_DONE,0,0,0\n',b''
+        run=FakeRun();runner.campaign(run,[(),()],dict(csv_length=37,length_length=41))
+        self.assertEqual([r['status'] for r in run.result['originals']],['FAILED','PASS'])
+        self.assertEqual(run.seen,[0,1])
+        run=FakeRun(True)
+        with self.assertRaises(RuntimeError):runner.campaign(run,[(),()],dict(csv_length=37,length_length=41))
+        self.assertEqual([r['status'] for r in run.result['originals']],['FAILED','UNRUN'])
+
+    def test_campaign_native_profiles_census_and_complete_retained_counts(self):
+        runner=load('reproduce')
+        closed=dict(cleanup_complete=True,reaped_descendants=0,termination=None,exit_code=0)
+        result=dict(status='NATIVE_SESSION_STATE_PASS',profile='session-absolute-v1',revision='a'*40,pending_owner_controls='UNRUN_SEPARATE_REQUIRED_GATE',
+                    custody_closed=True,retention_verified=True,stages=[dict(name=n,status='CLOSED_EXIT_ZERO') for n in runner.NATIVE_STAGES],
+                    native=[dict(k=k,status='NATIVE_SESSION_STATE_PASS',attempts=1,required_pairs=32,required_normal_reaps=64,required_target_calls=256,
+                                 pairs=32,normal_reaps=64,target_calls=256,target_returns=256,outer_returns=64,rows=[{}]*32,coverage=[{}]*2,closed=closed) for k in (10,1000)])
+        runner.native_summary(result,'a'*40,True)
+        for field,value in (('status','NATIVE_STATE_PASS'),('profile','finite'),('revision','b'*40),('custody_closed',False),('retention_verified',False),('pending_owner_controls','PASS'),('stages',[])):
+            changed=copy.deepcopy(result);changed[field]=value
+            with self.assertRaises(AssertionError):runner.native_summary(changed,'a'*40,True)
+        for field,value in (('k',16),('attempts',0),('status','FAILED'),('required_pairs',31),('normal_reaps',63),('target_calls',255),('target_returns',255),('outer_returns',63),('rows',[{}]*31),('coverage',[{}])):
+            changed=copy.deepcopy(result);changed['native'][0][field]=value
+            with self.assertRaises(AssertionError):runner.native_summary(changed,'a'*40,True)
+        changed=copy.deepcopy(result);changed['native'].reverse()
+        with self.assertRaises(AssertionError):runner.native_summary(changed,'a'*40,True)
+
+    def test_campaign_exact_python_names_and_local_import_refusal(self):
+        runner=load('reproduce')
+        names=runner.PYTHON_CONTROLS
+        self.assertEqual(set(names),{n for n in dir(Controls) if n.startswith('test_')})
+        data=('\n'.join(n+' (__main__.Controls.'+n+') ... ok' for n in sorted(names))+'\n\n'+'-'*70+'\n'+f'Ran {len(names)} tests in 0.001s\n\nOK\n').encode('ascii')
+        runner.python_controls(b'',data)
+        for changed in (data.replace(names[0].encode(),b'wrong'),data.replace(b' ... ok',b' ... skipped',1),data.replace(b'OK\n',b'FAILED\n'),data+b'x'):
+            with self.assertRaises(AssertionError):runner.python_controls(b'',changed)
+        with self.assertRaises(AssertionError):runner.python_controls(b'x',data)
+        completed=subprocess.run([sys.executable,'-B','-O',str(Path(__file__).with_name('reproduce.py')),'--help'],capture_output=True,timeout=5)
+        self.assertNotEqual(completed.returncode,0);self.assertEqual(completed.stdout,b'')
+        self.assertEqual(completed.stderr,b'assertions required\n')
+
+    def test_campaign_storage_reserves_complete_stage_and_never_refreshes_charge(self):
+        runner=load('reproduce');budget=runner.EvidenceBudget()
+        budget.room(runner.NATIVE_GROWTH);budget.reserve(runner.NATIVE_GROWTH)
+        budget.charge('/closed/first',17)
+        self.assertEqual((budget.used,budget.held),(4096,runner.NATIVE_GROWTH-4096))
+        budget.charge('/closed/first',17)
+        self.assertEqual(budget.used,4096)
+        with self.assertRaises(AssertionError):budget.charge('/closed/first',4097)
+        budget.complete()
+        budget.charge('/closed/large',runner.EVIDENCE_LIMIT-runner.FINAL_ALLOWANCE-4096)
+        prior=dict(budget.files)
+        with self.assertRaises(AssertionError):budget.reserve(1)
+        self.assertEqual(budget.files,prior);self.assertEqual(budget.held,0)
+        stopped=runner.EvidenceBudget();stopped.reserve(8192);stopped.charge('/closed/partial',1);stopped.stopped()
+        self.assertEqual(stopped.used,8192);self.assertEqual(stopped.held,0)
+        bad=runner.EvidenceBudget();bad.reserve(4096)
+        with self.assertRaises(AssertionError):bad.charge('/closed/oversize',4097)
+        self.assertTrue(bad.exceeded);self.assertIn('/closed/oversize',bad.files)
+        exact=runner.EvidenceBudget();exact.reserve(4096);exact.charge('/closed/exact',1)
+        with self.assertRaises(AssertionError):exact.charge('/closed/extra',1)
+        self.assertTrue(exact.exceeded)
+        self.assertEqual(runner.bounded_growth({'file_bytes':runner.CAP},app_files=True),30*runner.MIB)
+
+    def test_campaign_missing_app_identity_stops_and_budget_stop_keeps_unrun(self):
+        runner=load('reproduce')
+        class FakeRun:
+            def __init__(self):
+                self.safe=True;self.cpus=[2,4,6];self.raw=Path('/unused');self.budget=runner.EvidenceBudget();self.deadline=1e30;self.m={}
+                self.result=dict(originals=[],installed=[dict(leg='installed',case=i,status='UNRUN',attempts=0,
+                    directory='/unused/i'+str(i),child_raw='/unused/c'+str(i),request={'file_bytes':runner.CAP,'wall_seconds':30}) for i in range(2)])
+            def unchanged(self):pass
+            def bounded(self,*args,**kwargs):return 1,b'',b''
+            def remember(self,*args,**kwargs):raise FileNotFoundError('no invented APP witness')
+        run=FakeRun()
+        with self.assertRaises(FileNotFoundError):runner.campaign(run,[(),()],{})
+        self.assertFalse(run.safe)
+        self.assertEqual([r['status'] for r in run.result['installed']],['FAILED','UNRUN'])
+        run=FakeRun();run.budget.charge('/already/retained',runner.EVIDENCE_LIMIT-runner.FINAL_ALLOWANCE)
+        with self.assertRaises(AssertionError):runner.campaign(run,[(),()],{})
+        self.assertEqual([r['status'] for r in run.result['installed']],['UNRUN','UNRUN'])
+        self.assertEqual([r['attempts'] for r in run.result['installed']],[0,0])
+        run=FakeRun();run.deadline=0
+        with self.assertRaises(AssertionError):runner.campaign(run,[(),()],{})
+        self.assertEqual([r['status'] for r in run.result['installed']],['UNRUN','UNRUN'])
+
+    def test_campaign_exact_ordinary_namespaces_keep_unrelated_two_caller_inventory(self):
+        runner=load('reproduce');repo=Path(__file__).resolve().parents[2]
+        single=runner.load('control_single_inventory',repo/runner.MODULES['single'])
+        module=runner.load('control_module_inventory',repo/runner.MODULES['module'])
+        wanted=tuple(single.SESSION)+tuple(single.TRACE)+runner.CONSUMER+tuple(module.MODULE_TESTS)+tuple(module.CSV_TESTS)+runner.OWNER_CONTROLS
+        self.assertEqual(len(wanted),44)
+        unrelated=(
+            'normal::session::two::tests::partial_broadcast_full_acknowledgements_and_stop_keep_exact_custody',
+            'normal::session::two::check::tests::global_slots_and_retained_ranks_accept_out_of_order_but_refuse_corruption',
+            'normal::session::two::exact::tests::exact_subject_authenticates_every_byte_head_extent_and_return')
+        inventory=wanted+unrelated
+        self.assertEqual(runner.ordinary_inventory(inventory,single,module,runner.OWNER_CONTROLS),wanted)
+        self.assertEqual(inventory[-3:],unrelated)
+        for absent in wanted:
+            with self.assertRaises(AssertionError):
+                runner.ordinary_inventory(tuple(n for n in inventory if n!=absent),single,module,runner.OWNER_CONTROLS)
+        prefixes=('normal::session::tests::','normal::session::check::tests::',
+            'normal::session::epoch_storage::tests::','normal::session::io::tests::',
+            'normal::session::io::csv_tests::','normal::session::loop_trace::tests::',
+            'normal::session::protocol::tests::','normal::module::','normal::csv::')
+        for prefix in prefixes:
+            with self.assertRaises(AssertionError):
+                runner.ordinary_inventory(inventory+(prefix+'unexpected_extra',),single,module,runner.OWNER_CONTROLS)
+
     def test_original_input_refusal_never_accepts_hard_failure(self):
         reasons = ('bad_magic', 'count_over_2048', 'truncated_length', 'truncated_payload',
                    'length_over_64', 'non_ascii_payload', 'malformed_csv', 'trailing_input_byte')

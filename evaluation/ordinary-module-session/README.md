@@ -1,0 +1,112 @@
+# Streaming module functional campaign
+
+This recipe checks bounded CSV/length module sessions against independently
+fixed accepted records and actual original-code scalar calls. It makes no
+throughput, timing-accuracy, nested-call, arbitrary-module or full-A5 claim.
+The native state and deterministic pending-owner gates remain separate from
+functional transcript checks.
+
+Run the full workspace checks separately at the exact clean release revision.
+An external process owner must reserve three disjoint CPUs with `cpuset-alloc`,
+verify their hard allowed CPU set, retain the reservation receipt, and invoke
+this script once with a **7,200-second wall and 8 MiB owner-log cap**. Do not use
+affinity or the descriptive reservation tag as proof of a hard reservation.
+Within that owned invocation, use absolute caller-selected paths:
+
+```sh
+python3 -B evaluation/ordinary-module-session/reproduce.py \
+  --revision "$REVISION" --raw "$FRESH_IGNORED_DIRECTORY" \
+  --toolchain "$TOOLCHAIN_DIRECTORY" --user-home "$USER_HOME" \
+  --cargo-home "$CARGO_HOME" --reservation-tag "$RESERVATION_TAG"
+```
+
+The inherited affinity must contain exactly three sorted CPUs. The application
+uses the first for its controller and the second for its worker. Its producer
+inherits all three until spawning, then pins itself to the third. Each native
+runner inherits only the second CPU. The original helper pins that same worker
+CPU. Before/after load and actual role IDs are retained privately. These
+observations do not promise scheduler silence.
+
+The fixed order is:
+
+1. One fresh finite native recipe (K16 then K1), then one fresh Session native
+   recipe (K10 then K1000). Each keeps its original 1,200-second owner bound,
+   510-second/480-CPU-second cohorts, 15-second pairs and 20,000-step walks.
+   Both require all 163 calibration methods, the one unchanged explicit ignore,
+   four caller controls and eighteen Python controls. Neither native receipt
+   substitutes for the owner or functional gates.
+2. A fresh release application build, exact emitted CALL/store/FUNC geometry,
+   all 44 ordinary regression/control methods, and four owner controls in
+   K10 CSV→length, K10 length→CSV, K1000 CSV→length, K1000 length→CSV order.
+   Every owner RAW/PHASE/REPORT/SAMPLE row is checked, with actual empty stderr
+   and normal exit 0. This route does not run Schedule.
+3. All 25 Python controls, then an original helper build and emitted caller
+   check. Eight malformed frames require the precise typed diagnostic, actual
+   child exit 2 and helper/owner exit 1. A hard exit 1 cannot pass those controls.
+4. Exactly 32 fresh original-code children, one for each accepted population:
+   the 30 corpus cases, history, pressure. Then five fixed whole attempts, each
+   K10 followed by K1000, each with those same 32 cases: **320 installed children**.
+   No original call, priming or warmup is inserted into the installed app.
+
+The original reference uses a separate immutable inode copied from the Session
+native recipe's exact authenticated trusted DSO. Both functional legs use its
+complete selected extents and RET geometry. Original results must match the
+independent field counts and lengths; installed results must additionally match
+that case's retained actual originals.
+
+All 352 input/request/owner-command plans are frozen before the first campaign
+child. The history case sends 16 records, waits for actual prefix 513, sends 32
+more, and closes after prefix 520. It requires all 520 arms/521 actions and a
+sample at prefix ≥513. The pressure case sends 2,048 records and withholds stdout
+reads for 250 ms after READY; an actual blocked write and all 4,096 calls are required.
+The existing 10 ms period, 2 ms arm deadline and 2 s shutdown are unchanged.
+
+Each original or installed case retains the original 15-second application or
+producer deadline, 20 CPU seconds/30 wall seconds/4 MiB streams, and 55-second
+owner. The outer 7,200-second deadline is never renewed. A stage that cannot fit
+its original bound is not granted a smaller or extended limit. Setup and
+prerequisite children are distinct from the 352-child campaign.
+
+Expected refused/incomplete inputs require their exact actual stderr, normal
+application exit 1 and every accepted-prefix/result/history/Report join. Valid
+EOF requires normal exit 0. Closed functional failures remain FAILED and later
+independent cases continue. Missing closure, rescue, uncertain child identity,
+source drift or failed prerequisites stop progress; remaining rows stay UNRUN.
+There are no retries or favorable-only projections.
+
+Private `result.json`, `summary.json` and `results.csv` preserve all 32+320 rows,
+all five attempt summaries, eight malformed-control results and every gate.
+`campaign_complete` means all planned slots reached an outcome with closure and
+retention verified; it does not mean all qualifications passed. `attempts`
+records launch authorization, not proof of completed calls. Confirmed call and
+reap fields remain absent on unresolved rows. An outer termination can prevent
+final files: retain the immutable initial/campaign plans, completed per-case
+outcomes and the outer failure receipt, with all later entries UNRUN.
+
+Requests, actual stdout/stderr, compiler/ELF data and all first hashes stay under
+`ignored/`; owner logs stay under `target/evaluation/` and are copied only after
+closure. Completed pins are rechecked, never refreshed. Public projections omit
+paths, command arguments and raw diagnostics.
+
+A separate **2 GiB retained-evidence budget** reserves the next complete stage
+before authorizing it. One whole native prerequisite reserves 1,152 MiB: 870 MiB
+of stream/log/DSO maxima, 175 MiB of metadata bounds, and 107 MiB of overhead.
+Other stages reserve both stream caps, both owner-log copies, metadata, and any
+unique generated file; an installed case additionally reserves its three APP
+files. Completed original pins charge actual file lengths rounded up to 4 KiB;
+copied files count separately. A 64 MiB allowance is withheld for final reports,
+the outer log and bookkeeping. Missing custody or an unfinished inventory keeps
+the outstanding reservation charged. A next stage that cannot fit remains UNRUN
+and the overall recipe fails. Unexpected growth is retained and refuses further
+work; this is a prospective guard, not a kernel filesystem quota.
+
+Shared target binaries/intermediates/cache are not copied and are outside this
+evidence budget; the external owner must preflight that build-space domain and
+the total 20 GiB slot capacity. Only the three declared compiler scratch trees (`tmp/`, `<raw-name>-native-finite/tmp/`
+and `<raw-name>-native-session/tmp/` under this fresh raw directory) join that separate
+build-space domain. They may contain no evidence. Every other raw copy, stream,
+log, request, receipt and metadata file is charged; these are exact exclusions,
+not a general exemption for names containing `tmp`. No budget failure
+truncates, discards or relabels retained evidence. The caller must still authenticate
+the final outer closure before publishing any result. Source approval and
+passing fabricated parser controls grant no native or campaign execution credit.
