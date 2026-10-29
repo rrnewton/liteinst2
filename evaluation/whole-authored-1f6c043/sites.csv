@@ -1,0 +1,43 @@
+program,site,pc,length,core_tactic,candidate_emitted,refusal_code,stage,detail
+checksum,1,4198405,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+checksum,2,4198433,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+checksum,3,4198474,2,none,False,9,core,NoPatchWindow
+checksum,4,4198479,2,none,False,9,core,NoPatchWindow
+checksum,5,4198481,2,none,False,9,core,NoPatchWindow
+checksum,6,4198493,2,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+checksum,7,4198495,2,none,False,9,core,NoPatchWindow
+checksum,8,4198509,2,none,False,9,core,NoPatchWindow
+checksum,9,4198543,2,none,False,9,core,NoPatchWindow
+checksum,10,4198558,2,none,False,9,core,NoPatchWindow
+checksum,11,4198582,2,none,False,9,core,NoPatchWindow
+checksum,12,4198587,2,none,False,9,core,NoPatchWindow
+checksum,13,4198595,2,none,False,9,core,NoPatchWindow
+checksum,14,4198599,2,none,False,9,core,NoPatchWindow
+checksum,15,4202523,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+checksum,16,4202550,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,1,4198405,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,2,4198433,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,3,4198474,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,4,4198479,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,5,4198481,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,6,4198493,2,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,7,4198495,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,8,4198509,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,9,4198543,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,10,4198558,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,11,4198582,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,12,4198587,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,13,4198595,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,14,4198599,2,none,False,9,core,NoPatchWindow
+rle-roundtrip,15,4202505,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,16,4202528,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,17,4202541,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,18,4202551,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,19,4202563,5,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,20,4202585,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,21,4202607,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,22,4202628,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,23,4202638,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,24,4202654,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,25,4202664,5,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
+rle-roundtrip,26,4202672,6,B1,False,10003,atomic-selection,"""another requested site or carrier failed; no partial candidate"""
