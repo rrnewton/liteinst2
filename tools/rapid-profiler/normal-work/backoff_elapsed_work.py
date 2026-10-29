@@ -115,9 +115,6 @@ def check(stdout, stderr, k, app_cpu, controller_cpu):
     history_lines = functional_lines[2+common.ROWS:3+common.ROWS+arms]
     report_lines = functional_lines[3+common.ROWS+arms:-1]
     assert (len(row_lines), len(history_lines), len(report_lines)) == (3072, arms+1, arms)
-    # Validate the actual elapsed framing before sharing only population semantics.
-    functional = common._population(row_lines, history_lines, report_lines, terminal, k)
-    functional.update(scope=FUNCTIONAL_SCOPE, source_attested=SOURCE_ATTESTED)
     assert len(timing_lines) == TIMING_LINES and timing_lines[:2] == [TIMING_COMMENT, TIMING_HEADER]
     assert sum(len(line)+1 for line in timing_lines) <= TIMING_CAP
     timing = _timing_terminal(timing_lines[-1], k, app_cpu, controller_cpu)
@@ -147,6 +144,9 @@ def check(stdout, stderr, k, app_cpu, controller_cpu):
     assert total <= service['elapsed_ns']
     assert (timing['setup_ns'], timing['body_ns'], timing['service_ns']) == (
         setup['elapsed_ns'], total, service['elapsed_ns'])
+    # Validate both actual framing and timing before the full population join.
+    functional = common._population(row_lines, history_lines, report_lines, terminal, k)
+    functional.update(scope=FUNCTIONAL_SCOPE, source_attested=SOURCE_ATTESTED)
     return dict(status='TIMING_COMPLETE', **timing, functional=functional,
         functional_prefix=prefix, setup=setup, body=body, service=service,
         timing_table=('\n'.join(timing_lines[1:-1])+'\n').encode('ascii'),
