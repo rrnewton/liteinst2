@@ -102,6 +102,8 @@ def summary(r):
         support('page_default_ls_release_lease_reports').project(value,r)
     if r['profile']=='page-default-ls-sealed-custody-release-performance-v1':
         support('page_default_ls_release_custody_reports').project(value,r)
+    if r['profile']=='page-default-ls-effect-provider-release-performance-v1':
+        support('page_default_ls_release_effect').project(value,r)
     return value
 
 def qualified(path,sha,current,pin,binary,record,lease_mode=False):
@@ -283,8 +285,10 @@ def main():
     ap.add_argument('--library-root',type=Path,default=Path('/usr/lib64'))
     ap.add_argument('--tf-same-page-lease',action='store_true',help='require the full same-revision seventeen-subject lease qualifier')
     ap.add_argument('--sealed-custody',action='store_true',help='require the complete same-revision custody interval45/17 qualifier')
+    ap.add_argument('--effect-provider',action='store_true',help='require same-revision real-ls completion with the unobserved reusable effect bridge; no exhaustive finite-profile credit')
     args=ap.parse_args();os.chdir(ROOT)
     need(not(args.tf_same_page_lease and args.sealed_custody),'one explicit release profile')
+    need(not(args.effect_provider and (args.tf_same_page_lease or args.sealed_custody)),'effect mode is a separate explicit release profile')
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision) and
          re.fullmatch('[0-9a-f]{64}',args.qualification_sha256) and
          len(os.sched_getaffinity(0))==1, 'exact revision/hash, checks enabled and one reserved CPU')
@@ -305,6 +309,9 @@ def main():
     if args.sealed_custody:
         lease_reader=support('page_default_ls_release_custody_reports')
         r['profile']=lease_reader.PROFILE;r['reproduce'].append('--sealed-custody')
+    if args.effect_provider:
+        lease_reader=support('page_default_ls_release_effect')
+        r['profile']=lease_reader.PROFILE;r['reproduce'].append('--effect-provider')
     env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1')
     def pin(path):
         alias=str(Path(path).absolute());p=Path(alias).resolve(strict=True);value=fact(p)
@@ -319,7 +326,7 @@ def main():
             config=r['prerequisite_configuration']
             need(admission.cargo_configuration(config['environment'])==config['cargo_configuration'],'prerequisite configuration unchanged')
         need(all(Path(p).is_symlink() and os.readlink(p)==v for p,v in r.get('qualified_namespace_aliases',{}).items()),'all qualified namespace aliases unchanged')
-        for name in('interval_namespace_aliases','custody_namespace_aliases','baseline_interval_namespace_aliases'):
+        for name in('interval_namespace_aliases','custody_namespace_aliases','baseline_interval_namespace_aliases','effect_namespace_aliases'):
             need(all(Path(p).is_symlink()and os.readlink(p)==v for p,v in r.get(name,{}).items()),'all additional authenticated namespace aliases unchanged')
         need(all(os.path.lexists(p)==v for p,v in presence.items()),'loader configuration presence unchanged')
         need(all(str(Path(p).resolve(strict=True))==v for p,v in roots.items()),'library root aliases unchanged')
@@ -416,7 +423,9 @@ def main():
         r['candidate_source']={str(p.relative_to(ROOT)):fact(pin(p))for p in
             sorted(SUPPORT.iterdir())if p.is_file()}
         r['required_source_inputs']={str((ROOT/os.fsdecode(n)).resolve()):fact(ROOT/os.fsdecode(n))for n in names if n and not n.startswith(b'evaluation/inprocess/results/')}
-        if args.sealed_custody:
+        if args.effect_provider:
+            tools,bridge=lease_reader.authenticate(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r)
+        elif args.sealed_custody:
             assets=support('page_tf_interval_qualified').authenticate(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r,sealed_custody=True)
             tools,bridge=assets['tools'],assets['release_bridge']
         elif args.tf_same_page_lease:
@@ -435,6 +444,8 @@ def main():
         roots[str(args.library_root.absolute())]=str(args.library_root.resolve(strict=True))
         namespace,planned=namespace_plan(ROOT,args.library_root,pin)
         r['namespace_plan']=planned
+        if args.effect_provider:
+            need(planned==r['effect_namespace_plan'],'measurement retains the exact qualified original/interpreter/dependency namespace')
         original_reports=reader.old_reader(ROOT)
         carrier=private/'ls-carrier';pending.append(carrier)
         _,out,err=run('carrier',[tools['app_python'],'-B',ROOT/'tools/page-entry/carrier.py','make','/bin/ls',bridge,carrier])
@@ -443,6 +454,8 @@ def main():
              r['carrier']['interpreter_sha256']==planned['interpreter_sha256'],'actual carrier identities')
         if args.sealed_custody:
             need(r['carrier']['bridge_sha256']==fact(bridge)['sha256']and r['carrier']['carrier_sha256']==fact(carrier)['sha256'],'actual ls carrier embeds the independently authenticated unobserved custody bridge')
+        if args.effect_provider:
+            need(r['carrier']['bridge_sha256']==fact(bridge)['sha256']and r['carrier']['carrier_sha256']==fact(carrier)['sha256'],'actual carrier embeds the authenticated unobserved effect bridge')
         _,listing,lerr=run('native-libraries',[pin(planned['interpreter']),'--list','/bin/ls'])
         need(not lerr,'actual native loader listing stderr')
         r['native_libraries']=native_libraries(namespace,planned,listing,pin)
@@ -469,6 +482,7 @@ def main():
                 if lease_reader is not None:
                     gate,reports,observed=lease_reader.check(err,command['pid'],command['exit'],command['stdout_provenance_before'],original_reports,reader)
                     row['same_page_lease']=lease_reader.counters(reports)
+                    if args.effect_provider:row['effect_provider']=lease_reader.effect_counters(reports)
                 else:
                     gate,reports,observed=reader.check(err,command['pid'],command['exit'],command['stdout_provenance_before'],original_reports)
                 need(observed['application_completed']is True,'unchanged full old completion and actual two-request ENOTTY proof')

@@ -21,9 +21,14 @@ static const struct li2_run_protection selected_run_protection={
 #include "selected_run_timing.inc"
 #endif
 static void selected_run_initialize(void) {
+#ifdef LI2_RUN_CACHE_REUSE
+    int error=li2_run_reuse_initialize(&selected_session,&selected_run_protection,
+        &selected_run_owner,&selected_run_history,&selected_run_cache);
+#else
     checked(!selected_run_protect_add(0,(uintptr_t)&selected_run_owner,sizeof selected_run_owner),760,0);
     checked(!selected_run_protect_add(0,(uintptr_t)&selected_run_history,sizeof selected_run_history),760,1);
     int error=li2_run_cache_initialize(&selected_session,&selected_run_protection,&selected_run_cache);
+#endif
     checked(!error,761,error);
 #ifdef LI2_RUN_TIMING
     selected_run_time_initialize();
@@ -32,6 +37,9 @@ static void selected_run_initialize(void) {
 static void selected_run_failure(void *unused,const struct li2_run_owner *owner) {
     (void)unused;report(125,owner->first_error,owner->first_detail);
 }
+#ifdef LI2_RUN_CACHE_REUSE
+#include "selected_run_reuse.inc"
+#endif
 static _Noreturn void selected_run_abort(unsigned code,long detail) {
 #ifdef LI2_RUN_TIMING
     li2_run_timing_fail(&selected_run_timing,code,detail);
@@ -90,7 +98,14 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
                                 &selected_run_plan);
     if(error==LI2_RUN_SLOW) {
         checked(selected_run_plan_misses!=UINT64_MAX,763,0);
-        ++selected_run_plan_misses;return 0;
+        ++selected_run_plan_misses;
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+        if(selected_run_trace_origin) {
+            checked(selected_run_trace_plan_misses!=UINT64_MAX,LI2_CHAIN_OVERFLOW,21);
+            ++selected_run_trace_plan_misses;
+        }
+#endif
+        return 0;
     }
     checked(!error,764,error);
 #ifdef LI2_RSEQ_INACTIVE
@@ -105,8 +120,16 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
                                       &selected_borrow,&selected_view);
     if(time_error)selected_run_abort((unsigned)time_error,selected_run_timing.first_detail);
 #endif
+#ifdef LI2_RUN_CACHE_REUSE
+    checked(!selected_run_reuse_frame,LI2_CACHE_REUSE,1);
+    selected_run_handle=(struct li2_run_handle){0};
+    selected_run_reuse_frame=uc;
+    error=li2_run_reuse_publish(selected_run_cache,&selected_borrow,&selected_run_plan,
+                               &selected_run_handle);
+#else
     error=li2_run_cache_publish(selected_run_cache,&selected_borrow,&selected_run_plan,
                                &selected_run_publication);
+#endif
 #ifdef LI2_RUN_TIMING
     if(!error || error==LI2_RUN_SLOW) {
         time_error=li2_run_timing_published(&selected_run_timing,error,
@@ -124,17 +147,91 @@ static int selected_run_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags)
                 d->last_attempt.miss_before_publication && !selected_run_publication &&
                 selected_run_owner.phase==LI2_RUN_EMPTY &&
                 li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY,765,0);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+        if(selected_run_trace_origin) {
+            checked(selected_run_trace_full_misses!=UINT64_MAX,LI2_CHAIN_OVERFLOW,22);
+            ++selected_run_trace_full_misses;
+        }
+#endif
+#ifdef LI2_RUN_CACHE_REUSE
+        selected_run_reuse_frame=0;
+#endif
         selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;return 0;
     }
     if(error)selected_run_abort((unsigned)error,0);
+#ifdef LI2_RUN_CACHE_REUSE
+    error=li2_run_reuse_arm(selected_run_cache,selected_run_handle,&selected_run_owner,
+                           &selected_borrow,flags);
+#else
     const struct li2_run_publisher publisher={selected_run_cache,
         li2_run_publication_observe,selected_run_failure};
     error=li2_run_arm(&selected_run_owner,&selected_session,&selected_borrow,flags,
                      &publisher,selected_run_publication);
+#endif
     if(error)selected_run_abort((unsigned)error,0);
+#ifdef LI2_RUN_CACHE_REUSE
+    selected_run_reuse_frame=0;
+#endif
     selected_initialized();
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    if(selected_run_trace_origin) {
+        li2_run_begin_trace(&selected_run_owner,selected_run_trace_origin,sig,si,uc);
+        return 1;
+    }
+#endif
     li2_run_begin(&selected_run_owner,sig,si,uc);return 1;
 }
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+static void selected_run_trace_try(int sig,siginfo_t *si,ucontext_t *uc,uint64_t flags) {
+    checked(!selected_run_trace_busy && !selected_run_trace_active && !selected_run_trace_origin &&
+        !selected_selftesting && !selected_step_pending &&
+        selected_pending_route==SELECTED_NO_STEP && selected_run_owner.phase==LI2_RUN_EMPTY &&
+        !li2_lifecycle_fetch_interlock(),LI2_CHAIN_STATE,20);
+    selected_run_trace_busy=1;
+    selected_run_trace_origin=li2_tf_chain_run_entry(&selected_chain);
+    checked(selected_run_trace_origin && selected_run_trace_candidates!=UINT64_MAX,
+            LI2_CHAIN_ORIGIN,22);
+    ++selected_run_trace_candidates;
+    const struct li2_chain_fetch *closed=&selected_chain.slots[selected_chain.active].fetch;
+    struct li2_run_plan descriptive={0};
+    int plan_result=li2_run_plan_bytes(closed->pc,closed->bytes,closed->length,&descriptive);
+    if(plan_result==LI2_RUN_SLOW) {
+        /* A copied, closed window is sufficient only to decline this attempt.
+           No borrow, source opening or cached publication follows this branch. */
+        int error=li2_tf_chain_run_skip(selected_run_trace_origin,sig,si,uc);
+        if(error)selected_run_abort((unsigned)error,0);
+        checked(selected_run_trace_preflight_misses!=UINT64_MAX,LI2_CHAIN_OVERFLOW,23);
+        ++selected_run_trace_preflight_misses;
+        selected_run_trace_origin=0;selected_run_trace_busy=0;return;
+    }
+    if(plan_result)selected_run_abort((unsigned)plan_result,0);
+    checked(selected_run_trace_attempts!=UINT64_MAX,LI2_CHAIN_OVERFLOW,24);
+    ++selected_run_trace_attempts;
+    /* The chain's two real releases stay retained. This is the same fresh
+       prepare that the next NX ingress used to perform, with no source opening. */
+    selected_prepare((uintptr_t)uc->uc_mcontext.gregs[REG_RIP]);
+#ifdef LI2_RSEQ_INACTIVE
+    int rseq_error=li2_rseq_check_instruction(&selected_decoded,uc);
+    checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
+#endif
+    if(selected_run_try(sig,si,uc,flags)) {
+        checked(selected_run_trace_entries!=UINT64_MAX,LI2_CHAIN_OVERFLOW,20);
+        ++selected_run_trace_entries;selected_run_trace_active=1;
+    } else {
+        /* Only exact planner/capacity SLOW can reach here. Authenticate and
+           consume the proof even on this miss, then release the fresh borrow.
+           Returning the unedited real frame naturally produces the old NX. */
+        int error=li2_tf_chain_run_consume(selected_run_trace_origin,&selected_session,
+            &selected_borrow,selected_decoded.pc,flags,sig,si,uc);
+        if(error)selected_run_abort((unsigned)error,0);
+        selected_release();
+        error=li2_tf_chain_run_released(selected_run_trace_origin,&selected_borrow,sig,si,uc);
+        if(error)selected_run_abort((unsigned)error,0);
+    }
+    selected_run_trace_origin=0;selected_run_trace_busy=0;
+}
+#endif
+
 static void selected_run_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     li2_run_exit(&selected_run_owner,sig,si,uc);
     int error=li2_run_complete_reset(&selected_run_owner,&selected_run_history,
@@ -142,12 +239,30 @@ static void selected_run_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     if(error)selected_run_abort((unsigned)error,0);
     checked(selected_run_history.reset_complete && !selected_run_history.first_error &&
             selected_run_owner.phase==LI2_RUN_EMPTY && !li2_lifecycle_fetch_interlock(),766,0);
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    if(selected_run_trace_active) {
+        checked(selected_run_history.last_complete.entry_event.number==SIGTRAP &&
+                selected_run_history.last_complete.entry_event.code==TRAP_TRACE &&
+                selected_run_trace_completed!=UINT64_MAX,LI2_CHAIN_STATE,21);
+        ++selected_run_trace_completed;selected_run_trace_active=0;
+    }
+#endif
 #ifdef LI2_RUN_TIMING
     error=li2_run_timing_complete(&selected_run_timing,&selected_run_history);
     if(error)selected_run_abort((unsigned)error,selected_run_timing.first_detail);
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_run();
+#endif
 #endif
     selected_logical_flags=selected_run_history.last_complete.logical_flags;
     selected_flags_known=1;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
+#ifdef LI2_RUN_CACHE_REUSE
+    checked(!selected_run_reuse_frame,LI2_CACHE_REUSE,2);
+    selected_run_reuse_frame=uc;
+    error=li2_run_reuse_quiesce(selected_run_cache,&selected_run_history,uc);
+    if(error)selected_run_abort((unsigned)error,0);
+    selected_run_reuse_frame=0;
+#endif
     /* The actual guard has not executed; route this same real NX event with
        a new genuine borrow. No synthetic TRACE, direct guard resume or chaining. */
     selected_fetch(sig,si,uc);
@@ -177,9 +292,20 @@ _Static_assert(3286<=sizeof(((struct writer *)0)->bytes),"bounded register-run r
 static void selected_run_report(unsigned status,unsigned code,long detail) {
     struct writer w={.used=0};
     const struct li2_run_cache_diagnostic *d=li2_run_cache_diagnostic(selected_run_cache);
+#ifdef LI2_RUN_CACHE_REUSE
+    struct li2_run_reuse_observation reuse_state={0};
+    int snapshot_result=li2_run_reuse_snapshot(selected_run_cache,&reuse_state);
+    const struct li2_run_publication_progress *p=
+        !snapshot_result && reuse_state.publication_present?&reuse_state.publication:0;
+#else
     const struct li2_run_publication_progress *p=li2_run_publication_progress(selected_run_cache,selected_run_publication);
+#endif
     const struct li2_run_owner *o=&selected_run_history.last_complete;
+#ifdef LI2_RUN_CACHE_REUSE
+    text(&w,"LI2_RUN {\"version\":2");
+#else
     text(&w,"LI2_RUN {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",selected_repeat_abs(detail));field(&w,",\"detail_negative\":",detail<0);
     field(&w,",\"cache_present\":",d!=0);field(&w,",\"publication_present\":",p!=0);
@@ -239,4 +365,26 @@ static void selected_run_report(unsigned status,unsigned code,long detail) {
         selected_repeat_abs(b->query_result),b->query_result<0,selected_repeat_abs(b->result),b->result<0};
     selected_repeat_array(&w,",\"private_brk\":",brk,sizeof brk/sizeof brk[0]);
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+#ifdef LI2_RUN_CACHE_REUSE
+    selected_run_reuse_report(status,code,detail);
+#endif
 }
+
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+/* Additional effect-profile row; old RUN/CHAIN counters keep their meanings. */
+static void selected_run_trace_report(unsigned status,unsigned code,long detail) {
+    struct writer w={.used=0};
+    text(&w,"LI2_TRACE_RUN {\"version\":1,\"scope\":\"genuine_trace_to_register_run\"");
+    field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+    field(&w,",\"detail_abs\":",selected_repeat_abs(detail));field(&w,",\"detail_negative\":",detail<0);
+    field(&w,",\"candidates\":",selected_run_trace_candidates);
+    field(&w,",\"preflight_misses\":",selected_run_trace_preflight_misses);
+    field(&w,",\"attempts\":",selected_run_trace_attempts);field(&w,",\"entries\":",selected_run_trace_entries);
+    field(&w,",\"plan_misses\":",selected_run_trace_plan_misses);field(&w,",\"full_misses\":",selected_run_trace_full_misses);
+    field(&w,",\"completed\":",selected_run_trace_completed);field(&w,",\"busy\":",selected_run_trace_busy);
+    field(&w,",\"active\":",selected_run_trace_active);
+    field(&w,",\"proof_available\":",li2_tf_chain_run_entry(&selected_chain)!=0);
+    field(&w,",\"pending\":",selected_step_pending);field(&w,",\"route\":",selected_pending_route);
+    text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+}
+#endif

@@ -1,0 +1,45 @@
+{
+  "bounds": {
+    "core_bytes": 0,
+    "cores": 1,
+    "file_bytes": 16777216,
+    "native_address_bytes": 536870912,
+    "native_cpu_seconds": 5,
+    "wall_seconds": 15
+  },
+  "cardinality": {
+    "capacity_slow": 1,
+    "completed_runs": 0,
+    "executed_publications": 0,
+    "native_predecessors": 2,
+    "old_encoding_refusals_per_process": 47,
+    "old_startup_pairs_per_process": 1,
+    "preflight_slow": 1,
+    "processes": 2,
+    "publications": 64
+  },
+  "commands": [
+    {
+      "env": {
+        "LI2_TRACE_RUN_SLOW": "0"
+      },
+      "exit": 0,
+      "mode": 0,
+      "name": "preflight-slow",
+      "operation": "declined",
+      "stdout": "LI2_TRACE_RUN_SLOW_PASS mode=0 publications=0 fresh=0\n"
+    },
+    {
+      "env": {
+        "LI2_TRACE_RUN_SLOW": "1"
+      },
+      "exit": 0,
+      "mode": 1,
+      "name": "capacity-slow",
+      "operation": "declined",
+      "stdout": "LI2_TRACE_RUN_SLOW_PASS mode=1 publications=64 fresh=1\n"
+    }
+  ],
+  "schema": 1,
+  "scope": "Additive standalone actual proof APIs only; all prior suites remain unchanged. No production-controller, rseq, geometry, application, generated-run completion or performance claim."
+}

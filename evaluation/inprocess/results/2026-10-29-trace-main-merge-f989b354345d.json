@@ -1,0 +1,466 @@
+{
+  "adds": "Genuine predecessor TRACE can enter an eligible MOV register block using a consumed one-use proof; current main is merged and validated.",
+  "checks_revision": {
+    "head_sources_match": true,
+    "revision": "f989b354345d219f2dcc2f2edb9292cf4d5a3f96",
+    "source_manifest_sha256": "105ef2f5d96ca5e06ad5a77465909321b97e4d2ed0e2acc3b693d25bfff1b81d",
+    "tracked_clean": true,
+    "tree": "447917463b821b7adaf5ff92cb89bb7fce2fb808"
+  },
+  "claims": [
+    1,
+    2,
+    4
+  ],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 15,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_performance": {
+    "gated_median_ns": 13692068446,
+    "native_median_ns": 3334373,
+    "pairs": 5,
+    "revision": "f80d17ecc30838e8dfd77e9d0a28b36e7a87351a",
+    "scope": "Historical release measurements on unchanged page-entry source. Not remeasured on this merge; no established speedup or whole-application steady-state credit.",
+    "tracked_receipt": "evaluation/inprocess/results/20261029T130006-effect-release-five-pair-f80d17ecc308.json"
+  },
+  "inventory_join": {
+    "actual_compiled_names": 730,
+    "added_ordinary_interval": 12,
+    "added_rapid_profiler_lib": 18,
+    "ignored": 31,
+    "removed": 0,
+    "scope": "Compiled --list inventory matched against the prior full workspace output; no execution credit for listing."
+  },
+  "limitations": [
+    "Application stress-native still failed at f80d17ecc308: exit -9 after 30.144785124 seconds; no wall timeout, no completed-progress claim. Stress-scripted unrun.",
+    "Dedicated SLOW/capacity native oracle and first-entry/recurring-block timing qualification are separate work, not credited here.",
+    "Full B2 qualification remains false."
+  ],
+  "merged_main": "e11d91bc95b96a9dd603af6a805e3e1d8b9270f2",
+  "native_counting": "Seven suites contain 72 listed case rows, not 72 total processes: the 17 rseq gated cases additionally run 17 native reference/prefix children. Required failure cases remain failures of the requested operation.",
+  "native_cpu": 15,
+  "native_revision": {
+    "head_sources_match": true,
+    "revision": "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8",
+    "source_manifest_sha256": "6497d7218cf15dea4f5ea21fa9d178ddd41c9b8ad2a42262e6919a8846a94d94",
+    "tracked_clean": true,
+    "tree": "84dc98edb2c261a3f408cc5281ac91986fe09bab"
+  },
+  "native_suites": [
+    {
+      "cohort": "trace-run",
+      "private_receipt": {
+        "bytes": 2334385,
+        "sha256": "d2d79c046aae5d4dd6e31c5cffb41fb074188447a07edd520059f3ef47f52958"
+      },
+      "receipt": "20261029T131440.238637Z-page-selected-trace-run-cbd2f0ef30a3.json",
+      "receipt_bytes": 8868,
+      "receipt_scope": "Local compact receipt; aggregate numbers retained here, raw captures remain private.",
+      "receipt_sha256": "bb428ae76ee048098231e34106f2a622a1a25f59297eb75d3c25fc0d9476a6ca",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_trace_run.py",
+        "--expect-revision",
+        "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8"
+      ],
+      "status": "passed",
+      "subjects": 7,
+      "totals": {
+        "completed_programs": 1,
+        "completed_runs": 2,
+        "generated_traces": 0,
+        "genuine_predecessor_traces": 7,
+        "native_completed": 18,
+        "native_failed": 1,
+        "old_refusal_checks": 329,
+        "old_startup_pairs": 7,
+        "reader_refusals": 8,
+        "real_signals": 1,
+        "supplied_mutations": 2,
+        "verified_failed_operations": 6
+      }
+    },
+    {
+      "cohort": "register",
+      "private_receipt": {
+        "bytes": 586211,
+        "sha256": "dbb37588e9b9f0de6f3c52c97de97251226a3a3bce91f937d66f698b8483ba05"
+      },
+      "receipt": "20261029T131455.297897Z-page-selected-register-cbd2f0ef30a3.json",
+      "receipt_bytes": 8715,
+      "receipt_scope": "Local compact receipt; aggregate numbers retained here, raw captures remain private.",
+      "receipt_sha256": "74352a45408fd5da221a7f7365e61f0d28addcc2d479a00c52e79a9f78a0c7c0",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_register.py",
+        "--expect-revision",
+        "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8"
+      ],
+      "status": "passed",
+      "subjects": 4,
+      "totals": {
+        "capacity_fallbacks": 1,
+        "capacity_hit_after_full": 1,
+        "capacity_publications": 64,
+        "capacity_record_hashes_checked": 3,
+        "capacity_rows": 64,
+        "executed_refusal_checks": 188,
+        "fallback_trace_events": 2,
+        "full_capacity_records": 5,
+        "full_semantic_records": 18,
+        "generated_trace_events": 0,
+        "native_references": 83,
+        "refusal_encodings": 47,
+        "semantic_hits": 9,
+        "semantic_misses": 9,
+        "semantic_pairs": 18,
+        "startup_pairs": 4
+      }
+    },
+    {
+      "cohort": "register-controls",
+      "private_receipt": {
+        "bytes": 610340,
+        "sha256": "b00625f423c5d6f527da8d3f3dc5109c2f374ca9225808cb296fbbcd2cd42cc0"
+      },
+      "receipt": "20261029T131515.220127Z-page-selected-register-controls-cbd2f0ef30a3.json",
+      "receipt_bytes": 8623,
+      "receipt_scope": "Local compact receipt; aggregate numbers retained here, raw captures remain private.",
+      "receipt_sha256": "6291bfc55757fd50bdcc3791df69b02a696d241885bb4c24441adcf67b52af07",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_register_controls.py",
+        "--expect-revision",
+        "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8"
+      ],
+      "status": "passed",
+      "subjects": 14,
+      "totals": {
+        "actual_injected_signals": 1,
+        "completed_operations": 0,
+        "executed_refusal_checks": 658,
+        "explicit_raw_failure_injections": 3,
+        "failed_operations": 14,
+        "generated_executions": 0,
+        "native_reference_captures": 12,
+        "refusal_encodings": 47,
+        "startup_pairs": 14,
+        "verified_failure_controls": 14
+      }
+    },
+    {
+      "cohort": "chain-oracle",
+      "private_receipt": {
+        "bytes": 1666222,
+        "sha256": "88b810a0753f24b884cda77f7a988857ca7cdbb3aff0c5e3d4485ef1be285a92"
+      },
+      "receipt": "20261029T131529.160363Z-page-selected-chain-oracle-cbd2f0ef30a3.json",
+      "receipt_bytes": 25794,
+      "receipt_scope": "Local compact receipt; aggregate numbers retained here, raw captures remain private.",
+      "receipt_sha256": "12df55b1181dd16c835c9654a20655d77376a2c2b1cacd643ef17e07efd49684",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_chain_oracle.py",
+        "--expect-revision",
+        "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8"
+      ],
+      "status": "passed",
+      "subjects": 23,
+      "totals": {
+        "completed_lanes": 36,
+        "completed_programs": 12,
+        "native_failed_observations": 2,
+        "old_refusal_checks": 1081,
+        "old_startup_pairs": 23,
+        "route_checks": 345,
+        "verified_failed_operations": 11
+      }
+    },
+    {
+      "cohort": "rseq-application",
+      "private_receipt": {
+        "bytes": 878931,
+        "sha256": "3d11ad84eb4fea0cb5fb9ee06fde6c3df913e7d64bbbb848483e46e4d42082aa"
+      },
+      "receipt": "20261029T131550.422650Z-page-selected-rseq-application-cbd2f0ef30a3.json",
+      "receipt_bytes": 20796,
+      "receipt_scope": "Local compact receipt; aggregate numbers retained here, raw captures remain private.",
+      "receipt_sha256": "093613e45bfaa94a2d0d2ea712df6ae9a7d327b497c591a423e2d5fb92b14a62",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_rseq_application.py",
+        "--expect-revision",
+        "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8"
+      ],
+      "status": "passed_finite_inactive_profile",
+      "subjects": 17,
+      "totals": {
+        "completed_gated": 2,
+        "native_reference_or_prefix_children": 17,
+        "required_failed_gated": 15,
+        "scope": "Finite inactive profile only."
+      }
+    },
+    {
+      "cohort": "query-refusals",
+      "private_receipt": {
+        "bytes": 1377661,
+        "sha256": "618ee24c2eb33a8d332c323486090fbefce37c7d360d763aa2f82d801e798e31"
+      },
+      "receipt": "20261029T131617.198358Z-page-selected-query-refusals-cbd2f0ef30a3.json",
+      "receipt_bytes": 4868,
+      "receipt_scope": "Local compact receipt; aggregate numbers retained here, raw captures remain private.",
+      "receipt_sha256": "3ce798296ab5c213b4730bd4a6069ceacc124ad71ae612bfe9f597073f90d497",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_query_refusals.py",
+        "--expect-revision",
+        "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8"
+      ],
+      "status": "passed",
+      "subjects": 5,
+      "totals": {
+        "detail": 0,
+        "error": 1205,
+        "exit": 125,
+        "preissue": true,
+        "protected_overlap_refusals": 5
+      }
+    },
+    {
+      "cohort": "effect-ls",
+      "private_receipt": {
+        "bytes": 1372415,
+        "sha256": "1891503d4e2e6852def5e0a9df23a9ff3606004647e3f7a71a7aa3740af85c9a"
+      },
+      "receipt": "20261029T131657.329773Z-page-selected-effect-ls-cbd2f0ef30a3.json",
+      "receipt_bytes": 6491,
+      "receipt_scope": "Local compact receipt; aggregate numbers retained here, raw captures remain private.",
+      "receipt_sha256": "5c3a7e35d8c8d709160be5a90b24e1b22830fef2f271ed66d61d9fbe197399f1",
+      "reproduce": [
+        "python3",
+        "evaluation/inprocess/page_selected_effect_ls.py",
+        "--expect-revision",
+        "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8"
+      ],
+      "status": "passed",
+      "subjects": 2,
+      "totals": {
+        "native": {
+          "admissions": 5718,
+          "attempts": 40522,
+          "blocked": 34804,
+          "closed": 5718,
+          "epoch_exits": 5718,
+          "main_admissions": 38,
+          "main_refaults": 0,
+          "refaults": 46
+        },
+        "publication": {
+          "attempted": 148,
+          "completed": 147,
+          "cpuid_patches": 38,
+          "generations": 1790,
+          "published": 148,
+          "rdtsc_patches": 10,
+          "refused": 0,
+          "restored": 148,
+          "retained_records": 1494,
+          "retired": 147,
+          "rseq_attempts": 148,
+          "rseq_retired": 147,
+          "syscall_patches": 100
+        },
+        "selected": {
+          "attempts": 148,
+          "classes": [
+            38,
+            0,
+            0,
+            0,
+            10,
+            0,
+            99
+          ],
+          "completed": 147,
+          "unreturned_exit": 1
+        },
+        "trace_run": {
+          "attempts": 1938,
+          "candidates": 18492,
+          "completed": 1115,
+          "entries": 1115,
+          "full_misses": 823,
+          "plan_misses": 0,
+          "preflight_misses": 16554
+        }
+      }
+    }
+  ],
+  "prior_failed_preflight": {
+    "all_six_checks": "not_run",
+    "error": "ac0963_source_inventory_differs",
+    "receipt_bytes": 7405,
+    "receipt_sha256": "0ed6c3ebb63a52f78169bc6c0c6dc0e12341eeea09fbc14f8f32a073a6e7ddc2",
+    "revision": "cbd2f0ef30a3906fe899e65cdf9b01f347de20f8",
+    "status": "failed"
+  },
+  "review": {
+    "private_receipt_sha256": "ef2100ba0f916d14e6fbc25b1963c5e3e1eaef994e3b8a5246557cf986092309",
+    "scope": "Source ancestry and seven native receipt pairs, 280 closed command outcomes and 724 capture hashes; no comparator replay. Separate current checks receipt supplies all-six results.",
+    "verdict": "clear"
+  },
+  "revision_join": "No tools/page-entry, evaluation/admission, root src/, crates/ or Cargo source changes from f80d17ecc308 to cbd2f0ef30a3. The merge changes rapid-profiler code. f989b354345d changes only five validation inventory files; native results are attributed to cbd2f0ef30a3, checks to f989b354345d.",
+  "schema": 1,
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "validation": {
+    "commands": [
+      {
+        "argv": [
+          "python3",
+          "evaluation/admission/recorder_parallel.py"
+        ],
+        "exit_code": 0,
+        "id": "recorder_tests",
+        "seconds": 46.19070507702418,
+        "status": "passed",
+        "tests_passed": 350
+      },
+      {
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit_code": 0,
+        "id": "fmt",
+        "seconds": 7.209826705977321,
+        "status": "passed"
+      },
+      {
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "id": "clippy",
+        "seconds": 11.00636972207576,
+        "status": "passed"
+      },
+      {
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace"
+        ],
+        "exit_code": 0,
+        "harness_totals": {
+          "complete_harnesses": 103,
+          "expected_harnesses": 103,
+          "expected_ignored": 36,
+          "expected_tests": 3296,
+          "observed": {
+            "failed": 0,
+            "filtered": 0,
+            "ignored": 36,
+            "measured": 0,
+            "passed": 3260
+          }
+        },
+        "id": "workspace_tests",
+        "seconds": 342.8294945699163,
+        "status": "passed"
+      },
+      {
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "exit_code": 0,
+        "id": "workspace_check",
+        "seconds": 22.69272353989072,
+        "status": "passed"
+      },
+      {
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "exit_code": 0,
+        "harness_totals": {
+          "complete_harnesses": 27,
+          "expected_harnesses": 27,
+          "expected_ignored": 0,
+          "expected_tests": 1039,
+          "observed": {
+            "failed": 0,
+            "filtered": 0,
+            "ignored": 0,
+            "measured": 0,
+            "passed": 1039
+          }
+        },
+        "id": "serial_launch",
+        "seconds": 129.79453234607354,
+        "status": "passed"
+      }
+    ],
+    "receipt": {
+      "bytes": 11145,
+      "path": "evaluation/inprocess/results/20261029T132015.642449Z-checks-f989b354345d.json",
+      "sha256": "04886ce0d10400e8587d83105435530e21f3974f12d28ccf08e52d2e626e0e0f"
+    }
+  }
+}

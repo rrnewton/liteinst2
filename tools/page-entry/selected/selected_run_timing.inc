@@ -18,6 +18,9 @@ static void selected_run_time_initialize(void) {
     int r=li2_run_timing_init(&selected_run_timing,&li2_time_configuration,
         first,end,original_interpreter.bias,original_interpreter.source_hash,&selected_run_protection);
     checked(!r,(unsigned)(r?r:LI2_TIME_ARGUMENT),selected_run_timing.first_detail);
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_initialize();
+#endif
 }
 static void selected_time_line(struct writer *w) {
     long r=raw(SYS_write,report_fd<0?2:report_fd,(long)w->bytes,w->used,0,0,0);
@@ -48,6 +51,9 @@ static void selected_run_time_report(unsigned status,unsigned code,long detail) 
             s->ns[0],s->ns[1],s->ns[2]};
         selected_time_row("LI2_RUN_TIME_SAMPLE ",row,sizeof row/sizeof row[0]);
     }
+#ifdef LI2_ENTRY_TIMING
+    li2_entry_time_origins_report();
+#endif
     struct writer w={.used=0};text(&w,"LI2_RUN_TIME {\"version\":1");
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",selected_repeat_abs(detail));field(&w,",\"detail_negative\":",detail<0);

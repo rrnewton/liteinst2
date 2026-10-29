@@ -1,4 +1,7 @@
 #include "register_run_reset.h"
+#ifdef LI2_RUN_CACHE_REUSE
+#include "register_run_reuse.h"
+#endif
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #define RAW(n,a,b,c,d,e,f) li2_step_raw(n,(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
@@ -56,6 +59,10 @@ int li2_run_complete_reset(struct li2_run_owner *o,struct li2_run_completion_his
     if(h->completed_runs==UINT64_MAX || o->plan.instruction_count<2 ||
        o->plan.instruction_count>LI2_RUN_MAX_INSTRUCTIONS ||
        h->copied_instructions>UINT64_MAX-o->plan.instruction_count)return fail(h,8);
+#ifdef LI2_RUN_CACHE_REUSE
+    int reuse_error=li2_run_reuse_reset_ready(o,h);
+    if(reuse_error)return fail(h,reuse_error);
+#endif
     /* No fallible operation is permitted between installing the retained
        COMPLETE record and releasing this one reusable attempt slot. */
     h->reset_started=1;h->reset_complete=0;
@@ -63,5 +70,9 @@ int li2_run_complete_reset(struct li2_run_owner *o,struct li2_run_completion_his
     ++h->completed_runs;h->copied_instructions+=o->plan.instruction_count;
     unsigned char *bytes=(void *)o;
     for(size_t i=0;i<sizeof(*o);i++)bytes[i]=0;
+#ifdef LI2_RUN_CACHE_REUSE
+    h->reset_complete=1;li2_run_reuse_reset_committed();return 0;
+#else
     h->reset_complete=1;return 0;
+#endif
 }

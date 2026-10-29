@@ -39,6 +39,11 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
         ;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
     selected_initialized();
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+    if(result==LI2_CHAIN_NX_FALLBACK &&
+       selected_chain.slots[selected_chain.active].fallback==LI2_CHAIN_OLD_STEP)
+        selected_run_trace_try(sig,si,context,selected_logical_flags);
+#endif
 }
 static void selected_chain_field(struct writer *w,unsigned index,const char *key,uint64_t value) {
     text(w,",\"s");number(w,index);text(w,"_");text(w,key);text(w,"\":");number(w,value);

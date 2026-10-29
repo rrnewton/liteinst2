@@ -24,6 +24,39 @@ enum li2_chain_error { LI2_CHAIN_ARGUMENT=900, LI2_CHAIN_STATE,
     LI2_CHAIN_RELEASE, LI2_CHAIN_ORIGIN, LI2_CHAIN_FRAME,
     LI2_CHAIN_ROUTE, LI2_CHAIN_STATS };
 struct li2_tf_chain;
+#if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
+struct li2_tf_run_entry;
+/* Read-only actual handoff prefix. Copying it never creates an entry permit. */
+struct li2_tf_run_origin {
+    unsigned issued,consume_attempted,consumed,preflight_skipped,miss_released,previous,next;
+    int result;
+    uint64_t event_id,previous_generation,next_generation;
+    uint64_t previous_borrow,next_borrow,run_borrow;
+    uintptr_t pc;
+    uint64_t flags;
+};
+/* Offered only by a completed OLD_STEP fallback in this real handler. */
+const struct li2_tf_run_entry *li2_tf_chain_run_entry(struct li2_tf_chain *);
+/* Descriptive planner SLOW grants no entry: consume the real proof and retain
+   the unchanged closed TRACE frame, without any new borrow or permission. */
+int li2_tf_chain_run_skip(const struct li2_tf_run_entry *,int,const siginfo_t *,const ucontext_t *);
+/* Consumes exactly once, checks the real closed predecessor/full frame and
+   the newly held source ref. Success does not publish code or change a frame. */
+int li2_tf_chain_run_consume(const struct li2_tf_run_entry *,struct li2_step_session *,
+                           const struct li2_fetch_ref *,uintptr_t,uint64_t,
+                           int,const siginfo_t *,const ucontext_t *);
+/* Planner/capacity miss only: observe the actual post-consume release and
+   unchanged frame. This never issues a new permit or performs a release. */
+int li2_tf_chain_run_released(const struct li2_tf_run_entry *,const struct li2_fetch_ref *,
+                            int,const siginfo_t *,const ucontext_t *);
+const struct li2_tf_run_origin *li2_tf_chain_run_snapshot(const struct li2_tf_chain *);
+#ifdef LI2_RUN_CACHE_REUSE
+/* Read-only: all real chain owners must be closed. The sole optional exception
+   is this exact unconsumed current-event run proof, left for run_consume. */
+int li2_tf_chain_run_reuse_quiet(const struct li2_tf_chain *,
+                                const struct li2_tf_run_entry *expected_origin);
+#endif
+#endif
 /* These copies contain no pointers into fetch's reusable singleton payload.
    ref.owner is the opaque identity used by the API, never dereferenced here. */
 struct li2_chain_fetch {
