@@ -7,9 +7,26 @@
 static struct li2_repeat_lease_owner *repeat_lease_actual;
 static int repeat_lease_zero(const void *p,size_t n) {
     const unsigned char *b=p;
+#ifdef LI2_FAST_EQUAL
+    /* Exact whole-range zero test, including padding and unused FP tails.
+       Each alignment-one load stays within [p,p+n); no suffix is read. */
+    typedef uint64_t word __attribute__((__may_alias__,__aligned__(1)));
+    _Static_assert(sizeof(word)==8 && __alignof__(word)==1,"bounded unaligned zero word");
+    while(n>=sizeof(word)) {
+        if(*(const word *)(const void *)b)return 0;
+        b+=sizeof(word);n-=sizeof(word);
+    }
+#endif
     for(size_t i=0;i<n;i++)if(b[i])return 0;
     return 1;
 }
+#ifdef LI2_REPEAT_ZERO_ORACLE
+#if LI2_REPEAT_ZERO_ORACLE != 1
+#error "explicit actual-helper zero oracle only"
+#endif
+__attribute__((noinline,used,visibility("default")))
+int li2_repeat_owner_zero_oracle(const void *p,size_t n) { return repeat_lease_zero(p,n); }
+#endif
 int li2_repeat_lease_owns_step(const struct li2_step_owner *p) {
     return repeat_lease_actual && p==&repeat_lease_actual->repeat.step;
 }

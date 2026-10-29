@@ -32,9 +32,26 @@ static int rep_equal(const void *a,const void *b,size_t n) {
 }
 static int rep_zero(const void *a,size_t n) {
     const unsigned char *p=a;
+#ifdef LI2_FAST_EQUAL
+    /* Exact whole-range zero test, including padding and unused FP tails.
+       Each alignment-one load stays within [p,p+n); no suffix is read. */
+    typedef uint64_t word __attribute__((__may_alias__,__aligned__(1)));
+    _Static_assert(sizeof(word)==8 && __alignof__(word)==1,"bounded unaligned zero word");
+    while(n>=sizeof(word)) {
+        if(*(const word *)(const void *)p)return 0;
+        p+=sizeof(word);n-=sizeof(word);
+    }
+#endif
     for(size_t i=0;i<n;i++)if(p[i])return 0;
     return 1;
 }
+#ifdef LI2_REPEAT_ZERO_ORACLE
+#if LI2_REPEAT_ZERO_ORACLE != 1
+#error "explicit actual-helper zero oracle only"
+#endif
+__attribute__((noinline,used,visibility("default")))
+int li2_repeat_custody_zero_oracle(const void *p,size_t n) { return rep_zero(p,n); }
+#endif
 static int rep_bad(unsigned code,long detail) {
     REP_STORE(&rep_custody_stats.ticket,0);
     REP_STORE(&rep_custody_stats.phase,LI2_REP_CUSTODY_FAILED);
