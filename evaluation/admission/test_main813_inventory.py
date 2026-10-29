@@ -284,13 +284,13 @@ class Main813InventoryTests(unittest.TestCase):
 
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
-        actual = copy.deepcopy(declared)
+        actual = plain.deepcopy(declared)
         declared = main813.before_e797(declared)
-        live = copy.deepcopy(declared)
+        live = plain.deepcopy(declared)
         declared = main813.before_c1(declared)
-        newest = copy.deepcopy(declared)
+        newest = plain.deepcopy(declared)
         declared = main813.before_c0(declared)
-        latest = copy.deepcopy(declared)
+        latest = plain.deepcopy(declared)
         declared = main813.before_690(declared)
         self.assertEqual(declared['recorder_tests'], 350)
         for cohort, wanted in [('workspace_tests', (101, 2678, 11)), ('serial_launch', (27, 1039, 0))]:
@@ -312,7 +312,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(len(main813.peel_python(identities)), 345)
         self.assertEqual(len(inventory.peel_python(identities)), 330)
         for key in declared:
-            changed = copy.deepcopy(declared); changed[key] = None
+            changed = plain.deepcopy(declared); changed[key] = None
             with self.subTest(field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_current(changed)
         for old in (previous, main5c.before_current(previous)):
@@ -347,11 +347,13 @@ class Main813InventoryTests(unittest.TestCase):
         with self.assertRaises(parsing.InvalidEvidence):
             inventory.require_current(declared)
         for key in latest:
-            changed = copy.deepcopy(latest); changed[key] = None
+            changed = plain.deepcopy(latest); changed[key] = None
             with self.subTest(main690_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_690(changed)
+        current_count = latest['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']['tests']
         for value in (288, 303, 305, True, 304.0):
-            changed = copy.deepcopy(latest)
+            self.assertTrue(type(value) is not int or value != current_count)
+            changed = plain.deepcopy(latest)
             changed['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']['tests'] = value
             with self.subTest(main690_count=value), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
@@ -386,14 +388,16 @@ class Main813InventoryTests(unittest.TestCase):
         live = actual
         for name, change in main813.MAINC0['workspace_changes'].items():
             self.assertEqual(rows[name], change['current'])
-            for value in (change['previous']['tests'], change['current']['tests'] - 1,
-                          change['current']['tests'] + 1, True, float(change['current']['tests'])):
-                changed = copy.deepcopy(live)
+            current_count = live['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (change['previous']['tests'], current_count - 1,
+                          current_count + 1, True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(live)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainc0_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
         for key in newest:
-            changed = copy.deepcopy(newest); changed[key] = None
+            changed = plain.deepcopy(newest); changed[key] = None
             with self.subTest(mainc0_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_c0(changed)
         with self.assertRaises(parsing.InvalidEvidence):
@@ -419,7 +423,7 @@ class Main813InventoryTests(unittest.TestCase):
                 with self.subTest(mainc0_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
                     main813.source_before_c0(path, bad, 'changed')
 
-        live = copy.deepcopy(main813.before_e797(actual))
+        live = plain.deepcopy(main813.before_e797(actual))
         self.assertEqual(main813.digest(main813.before_c1(live)), main813.CURRENTC0)
         rows = live['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
@@ -433,14 +437,16 @@ class Main813InventoryTests(unittest.TestCase):
         live = actual
         for name, change in main813.MAINC1['workspace_changes'].items():
             self.assertEqual(rows[name], change['current'])
-            for value in (change['previous']['tests'], change['current']['tests'] - 1,
-                          change['current']['tests'] + 1, True, float(change['current']['tests'])):
-                changed = copy.deepcopy(live)
+            current_count = live['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (change['previous']['tests'], current_count - 1,
+                          current_count + 1, True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(live)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainc1_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
         for key in live:
-            changed = copy.deepcopy(live); changed[key] = None
+            changed = plain.deepcopy(live); changed[key] = None
             with self.subTest(mainc1_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_c1(changed)
         for path in main813.MAINC1['sources']:
@@ -476,18 +482,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_e797(actual))
         for name, change in main813.MAINE797['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(maine797_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(maine797_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(maine797_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_e797(changed)
         for path in main813.MAINE797['sources']:
@@ -523,18 +531,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_f0ef(actual))
         for name, change in main813.MAINF0EF['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainf0ef_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(mainf0ef_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(mainf0ef_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_f0ef(changed)
         for path in main813.MAINF0EF['sources']:
@@ -570,18 +580,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_7cdc(actual))
         for name, change in main813.MAIN7CDC['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main7cdc_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main7cdc_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main7cdc_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_7cdc(changed)
         for path in main813.MAIN7CDC['sources']:
@@ -617,18 +629,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_43d7(actual))
         for name, change in main813.MAIN43D7['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main43d7_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main43d7_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main43d7_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_43d7(changed)
         for path in main813.MAIN43D7['sources']:
@@ -672,18 +686,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_0df8(actual))
         for name, change in main813.MAIN0DF8['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main0df8_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main0df8_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main0df8_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_0df8(changed)
         for path in main813.MAIN0DF8['sources']:
@@ -724,18 +740,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_0a8(actual))
         for name, change in main813.MAIN0A8['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main0a8_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main0a8_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main0a8_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_0a8(changed)
         for path in main813.MAIN0A8['sources']:
@@ -773,18 +791,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_09fe(actual))
         for name, change in main813.MAIN09FE['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main09fe_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main09fe_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main09fe_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_09fe(changed)
         for path in main813.MAIN09FE['sources']:
@@ -822,18 +842,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_727(actual))
         for name, change in main813.MAIN727['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main727_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main727_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main727_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_727(changed)
         for path in main813.MAIN727['sources']:
@@ -873,18 +895,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_abab(actual))
         for name, change in main813.MAINABAB['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainabab_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(mainabab_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(mainabab_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_abab(changed)
         for path in main813.MAINABAB['sources']:
@@ -927,18 +951,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_83b(actual))
         for name, change in main813.MAIN83B['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main83b_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main83b_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main83b_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_83b(changed)
         for path in main813.MAIN83B['sources']:
@@ -981,18 +1007,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_850(actual))
         for name, change in main813.MAIN850['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main850_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main850_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main850_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_850(changed)
         for path in main813.MAIN850['sources']:
@@ -1035,18 +1063,20 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(main813.before_5a0(actual))
         for name, change in main813.MAIN5A0['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
-            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
-                          True, float(change['current']['tests'])):
-                changed = copy.deepcopy(actual)
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main5a0_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
                     inventory.require_current(changed)
-            changed = copy.deepcopy(actual)
+            changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main5a0_missing=name), self.assertRaises(parsing.InvalidEvidence):
                 inventory.require_current(changed)
         for key in actual:
-            changed = copy.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main5a0_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_5a0(changed)
         for path in main813.MAIN5A0['sources']:
