@@ -1,0 +1,98 @@
+{
+  "bounds": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "captures": {
+    "stderr": {
+      "bytes": 2478,
+      "file": "namespace-controls.stderr",
+      "sha256": "39daac24854d47a7cd0f31b884db86e55feb00a02f25b4765e5bef1364518208"
+    },
+    "stdout": {
+      "bytes": 0,
+      "file": "namespace-controls.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "cleanup_errors": 0,
+  "command": [
+    "python3",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/page-entry",
+    "-p",
+    "namespace*_tests.py",
+    "-v"
+  ],
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${FRESH_OUTPUT}/tmp",
+    "TZ": "UTC"
+  },
+  "existing_methods": 5,
+  "exit": 1,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 13,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs": {
+    "tools/page-entry/carrier.py": {
+      "bytes": 10949,
+      "sha256": "144d6cbd3188dae1058bdb26e1a2748afa045e0f6d56c5b655cf30027b9bb568"
+    },
+    "tools/page-entry/namespace.py": {
+      "bytes": 12816,
+      "sha256": "cfd4bb628584b1ad718705015bbd6b85f8ef41cd12005e0bb93402f2d0352cfa"
+    },
+    "tools/page-entry/namespace_late_tests.py": {
+      "bytes": 8497,
+      "sha256": "aa424eb96a177a86de9b4ba3893bb2a985e01326b034a8a07ed7146ef0f4b715"
+    },
+    "tools/page-entry/namespace_tests.py": {
+      "bytes": 2664,
+      "sha256": "b0207788df2b5cde9072c29a73ac1df6d4ee518fb844a40d5a3353191ebb9c81"
+    }
+  },
+  "new_methods": 7,
+  "private_command_record": {
+    "bytes": 1231,
+    "sha256": "ab7faa4900f1e100851323791e59b5511675be89c5ebc7c5ee174d89b6b91e42"
+  },
+  "python_binary": {
+    "bytes": 13542408,
+    "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+  },
+  "python_version": "3.12.15+meta",
+  "reaped": true,
+  "schema": 1,
+  "scope": "supplied ELF and sealed namespace preparation controls; no loader execution or admission qualification",
+  "source_revision": "7e4f2106c06e89e3b08420717fb779d76158ce11",
+  "started_utc": "20261029T164516.556979Z",
+  "status": "failed",
+  "tests": null,
+  "timed_out": false
+}

@@ -12,6 +12,7 @@ import struct
 import subprocess
 import sys
 
+# Original row16 now requires a mandatory supplied Code1847/RANGE64 record; native populations and every other check remain.
 sys.dont_write_bytecode = True
 from checks import source
 from run import hardware
@@ -21,6 +22,7 @@ from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
 from page_selected_vmovdqu64_promotions import promotions as vm64_promotions
 from page_selected_vmovdqu64_256_promotions import promotions as vm256_promotions
+from page_selected_vmovdqu64_store_promotions import promotions as vdq_store_promotions
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE = REPO/'tools/page-entry/selected/tests/vmovdqu64'
@@ -147,7 +149,7 @@ def publish(path, record, receipt):
                 'verified_memory_fault': c.get('verified_memory_fault'),
                 'header': c.get('header'), 'record': c.get('record'),
                 'observations': c.get('observations'), 'fault_observations': c.get('fault_observations'),
-                'vm64_promotions': c.get('vm64_promotions'), 'vm256_promotions': c.get('vm256_promotions')} for c in record['cases']],
+                'vdq_store_promotions': c.get('vdq_store_promotions'), 'vm64_promotions': c.get('vm64_promotions'), 'vm256_promotions': c.get('vm256_promotions')} for c in record['cases']],
         command_recipe={
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
             'fixture_build': ['sh', 'tools/page-entry/selected/tests/vmovdqu64/build.sh',
@@ -178,11 +180,11 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-vmovdqu64-oracle-v1', 'status': 'failed',
-        'scope': 'Exact unmasked 62e1fe486f0f/Code1605, ZMM17 from64 bytes at RDI. Two19-pair cohorts:36 new plus2 startup, aligned/unaligned and every fetch split; all32ZMM/all8opmask independently seeded, actual standard-layout CPUID records, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. Two real read-fault commands (full/cross-page operand) retain failed operation125, no TRACE/completion and unchanged state/memory. All47 old+25 remaining new supplied refusals and seven mandatory typed Code1605/NONE promotions remain. One retained row12 additionally requires exact Code1604/NONE with separate native coverage. No general EVEX, enabled-CET, hardware masking, loader completion, performance or full-B2 claim',
+        'scope': 'Exact unmasked 62e1fe486f0f/Code1605, ZMM17 from64 bytes at RDI. Two19-pair cohorts:36 new plus2 startup, aligned/unaligned and every fetch split; all32ZMM/all8opmask independently seeded, actual standard-layout CPUID records, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. Two real read-fault commands (full/cross-page operand) retain failed operation125, no TRACE/completion and unchanged state/memory. All47 old+24 remaining new supplied refusals and seven mandatory typed Code1605/NONE promotions remain. One retained row12 additionally requires exact Code1604/NONE with separate native coverage. No general EVEX, enabled-CET, hardware masking, loader completion, performance or full-B2 claim Original row16 additionally requires exact Code1847/FALLTHROUGH/SIMD and full RANGE64 in a separate352-byte trailer in every success/fault record; native Code1847 coverage is a separately mandatory cohort.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
-        'totals': {'vm256_typed_promotions': 0, 'vm256_supplied_none_queries': 0, 'positive_pairs': 0, 'generic_pairs': 0, 'positive_selftest_pairs': 0,
+        'totals': {'vdq_store_typed_promotions': 0, 'vdq_store_supplied_range_queries': 0, 'vm256_typed_promotions': 0, 'vm256_supplied_none_queries': 0, 'positive_pairs': 0, 'generic_pairs': 0, 'positive_selftest_pairs': 0,
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
                    'new_refusal_encodings': 0, 'load_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
@@ -260,7 +262,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact load/fault names, environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             'aafc4132cccffd7c6b234e1edfa3958046f0278c7a51dc540394cf37d2bfd46b',
+             '542903d34e699e085756331cca2740d3c1c3e2aa9d70a33087e5a7aea69a919d',
              'exact reviewed four-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -273,6 +275,10 @@ def main():
             result['actual_exit'] = row['exit']
             need(out == case['stdout'].encode() and err == case['stderr'].encode(), 'exact fixture output: '+name)
             data = (private/(name+'.record')).read_bytes()
+            need(352<len(data)<16<<20,'complete Code1847 trailer within unchanged full cap')
+            result['vdq_store_promotions']=vdq_store_promotions(data[-352:]);data=data[:-352]
+            record['totals']['vdq_store_typed_promotions']+=1
+            record['totals']['vdq_store_supplied_range_queries']+=1
             need(352<len(data)<16<<20,'complete Code1604 promotion trailer within unchanged cap')
             result['vm256_promotions']=vm256_promotions(data[-352:]);data=data[:-352]
             record['totals']['vm256_typed_promotions']+=result['vm256_promotions']['typed_promotions']
@@ -312,13 +318,13 @@ def main():
             result['observations'] = observations(data[-5096:-96], group, header, kind)
             result['fault_observations'] = fault_observations(data[-96:], kind, header)
             record['totals']['executed_refusal_checks'] += header['refusals']
-            record['totals'].update(supplied_refusal_encodings=72,
-                old_refusal_encodings=47, new_refusal_encodings=25)
+            record['totals'].update(supplied_refusal_encodings=71,
+                old_refusal_encodings=47, new_refusal_encodings=24)
             result['accepted'] = True
-        need(record['totals'] == dict(vm256_typed_promotions=4, vm256_supplied_none_queries=4, positive_pairs=38, generic_pairs=36, load_pairs=36,
-                 positive_selftest_pairs=2, supplied_refusal_encodings=72, old_refusal_encodings=47,
-                 new_refusal_encodings=25, new_page_ending_pairs=6, new_crossing_pairs=30,
-                 executed_refusal_checks=288, verified_memory_failures=2, negative_selftest_pairs=2) and len(record['cases']) == 4 and
+        need(record['totals'] == dict(vdq_store_typed_promotions=4, vdq_store_supplied_range_queries=4, vm256_typed_promotions=4, vm256_supplied_none_queries=4, positive_pairs=38, generic_pairs=36, load_pairs=36,
+                 positive_selftest_pairs=2, supplied_refusal_encodings=71, old_refusal_encodings=47,
+                 new_refusal_encodings=24, new_page_ending_pairs=6, new_crossing_pairs=30,
+                 executed_refusal_checks=284, verified_memory_failures=2, negative_selftest_pairs=2) and len(record['cases']) == 4 and
              all(c['accepted'] for c in record['cases']),
              'complete two19-pair load cohorts and two genuine failed-read controls')
         record['status'] = 'passed'

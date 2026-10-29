@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == '94cfc882416594e8030ca0899b05e06a52cd31138e99127cd7df3677ef87dd2f', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == 'f924588fb5c9c4c42d91d1e2134b85f10c1c8dee3b1dac2f95d6bc0cb136865b', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -56,7 +56,9 @@ CURRENT9C70 = MAIN9C70['current_corpus_sha256']
 MAIN0A088 = DATA['main0a088']
 CURRENT0A088 = MAIN0A088['current_corpus_sha256']
 MAINE11 = DATA['maine11']
-LATEST = MAINE11['current_corpus_sha256']
+CURRENTE11 = MAINE11['current_corpus_sha256']
+MAIN469 = DATA['main469']
+LATEST = MAIN469['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -71,7 +73,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -92,8 +94,60 @@ def precheck_current_sources(error):
         require(inventory_digest.hexdigest(raw) == value, error)
 
 
+def source_before_469(path, data, error):
+    """Only the fixed 469 whole blob may reach its exact historical source."""
+    if path not in MAIN469['projections']:
+        return data
+    row = MAIN469['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_469_sources(error='main469_source_inventory_differs'):
+    for path, expected in MAIN469['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN469['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN469['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN469['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN469['module_chains'][path]), error)
+        if path in MAIN469['python_methods']:
+            found = list(inventory_syntax.identities(raw.decode()))
+            require(found == MAIN469['python_methods'][path], error)
+
+
+def before_469(declared, error='main469_inventory_differs', source_error='main469_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_469_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN469['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN469['previous_corpus_sha256'] == CURRENTE11, error)
+    return old
+
+
+def peel_469(declared, error, source_error):
+    return before_469(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_e11(path, data, error):
     """Only the fixed e11 whole blob may reach its exact historical source."""
+    data = source_before_469(path, data, error)
     if path not in MAINE11['projections']:
         return data
     row = MAINE11['projections'][path]
@@ -108,11 +162,13 @@ def source_before_e11(path, data, error):
 
 
 def require_e11_sources(error='maine11_source_inventory_differs'):
+    require_469_sources(error)
     for path, expected in MAINE11['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_469(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINE11['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -128,7 +184,8 @@ def require_e11_sources(error='maine11_source_inventory_differs'):
 
 
 def before_e11(declared, error='maine11_inventory_differs', source_error='maine11_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_469(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTE11, error)
     require_e11_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -140,7 +197,8 @@ def before_e11(declared, error='maine11_inventory_differs', source_error='maine1
 
 
 def peel_e11(declared, error, source_error):
-    return before_e11(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_469(declared, error, source_error)
+    return before_e11(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTE11 else declared
 
 
 def source_before_0a088(path, data, error):

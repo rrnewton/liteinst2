@@ -368,6 +368,9 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
 }
 #endif
 #include "selected_repeat.inc"
+#ifdef LI2_REPEAT_RX_LEASE
+#include "selected_repeat_lease.inc"
+#endif
 
 /* Internal-only controls while target is stopped and no step page is open.
    These controls cannot change source/lifecycle generations. Actual restoration
@@ -540,6 +543,9 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     }
 #endif
     if(!selected_selftesting && li2_repeat_candidate(&selected_decoded)) {
+#ifdef LI2_REPEAT_RX_LEASE
+        if(selected_repeat_lease_try(sig,si,context,flags))return;
+#endif
         selected_repeat_begin(sig,si,context,flags);return;
     }
 #ifdef LI2_REGISTER_RUN

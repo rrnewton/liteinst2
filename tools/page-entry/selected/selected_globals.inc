@@ -47,8 +47,18 @@ enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENE
 #ifdef LI2_REGISTER_RUN
     , SELECTED_REGISTER_RUN
 #endif
+#ifdef LI2_REPEAT_RX_LEASE
+    , SELECTED_REPEAT_LEASE
+#endif
 };
 static volatile sig_atomic_t selected_pending_route;
+#ifdef LI2_REPEAT_RX_LEASE
+#include "repeat_lease.h"
+static struct li2_repeat_lease_owner selected_repeat_lease;
+static struct li2_tf_continuation selected_repeat_lease_query;
+static uint64_t selected_repeat_lease_queries;
+static unsigned selected_repeat_lease_initialized;
+#endif
 static struct li2_repeat_owner selected_repeat;
 static struct li2_step_request selected_repeat_request;
 static struct li2_fetch_ref selected_repeat_borrow;

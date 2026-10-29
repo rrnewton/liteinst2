@@ -1,0 +1,48 @@
+{
+  "actual_total_gated_supplied_refusals": 195,
+  "affected_field": "cases[kind=gated].controls",
+  "corrections": [
+    {
+      "case": 0,
+      "corrected": 39,
+      "kind": "gated",
+      "original": 5
+    },
+    {
+      "case": 1,
+      "corrected": 39,
+      "kind": "gated",
+      "original": 5
+    },
+    {
+      "case": 2,
+      "corrected": 39,
+      "kind": "gated",
+      "original": 5
+    },
+    {
+      "case": 3,
+      "corrected": 39,
+      "kind": "gated",
+      "original": 5
+    },
+    {
+      "case": 4,
+      "corrected": 39,
+      "kind": "gated",
+      "original": 5
+    }
+  ],
+  "original_public_file": "20261029T180845.593725Z-page-selected-clock-getres-05585ca34873.json",
+  "original_public_sha256": "f548560397aa343dfd0d9e213409f37f9fe7f08c225e1ccfa5c9cd8b38c45b32",
+  "private_receipt": {
+    "bytes": 1740785,
+    "sha256": "742a0f72234ecdee9d5f0fe437cd7cea3c43461805b840332b06a56020ebb900"
+  },
+  "projection_replay_changes_only_five_counts": true,
+  "qualification_status": "passed",
+  "reason": "The original public projection counted the five dictionary keys instead of its 39 refused mutations. Qualification predicates and actual results are unchanged. The original summary is retained without modification.",
+  "revision": "05585ca348739c2541d3aca4939d816fe7d4887f",
+  "schema": 1,
+  "status": "projection_count_correction"
+}
