@@ -356,7 +356,7 @@ static void rl_fetch(void) {
     }
     need(decoded.decode_status==LI2_VALID&&decoded.kind==LI2_NONE&&
         decoded.code==(r->width==4?345:346)&&decoded.length==(r->width==4?2:3)&&decoded.next_pc==r->next_pc,634);
-    if(!rl_lane)r->decoded=decoded;else need(!memcmp(&r->decoded,&decoded,sizeof(decoded)),635);
+    if(!rl_lane||rl_mode>=14)r->decoded=decoded;else need(!memcmp(&r->decoded,&decoded,sizeof(decoded)),635);
     r->view_length=v->length;s->pc=r->pc;s->mapping=r->mapping;s->length=decoded.length;s->decoded=decoded;
     s->count=((r->next_pc-1)&~(PAGE-1))==(r->pc&~(PAGE-1))?1:2;
     need(v->bytes&&v->pages&&v->backing&&v->length>=1&&v->length<=15&&
