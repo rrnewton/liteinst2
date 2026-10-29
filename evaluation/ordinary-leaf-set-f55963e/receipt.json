@@ -389,6 +389,98 @@
   },
   "inner_custody_closed": false,
   "inner_retention_verified": false,
+  "merged_tree_checks": {
+    "campaign_rerun": false,
+    "command": "cpuset-alloc run --cores 8 --sample-s 1 --tag li2core-leaf-checks-76f1da7 -- python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/FRESH_MERGED_CHECKS\" --checks-only",
+    "compiler_jobs": 4,
+    "counts": {
+      "check": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "clippy": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "fmt": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "prefixed-pun": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 36
+      },
+      "serial-launch": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1039
+      },
+      "staged-allocation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 3
+      },
+      "workspace-default": {
+        "failed": 0,
+        "ignored": 36,
+        "passed": 3265
+      }
+    },
+    "cpus": [
+      25,
+      60,
+      91,
+      92,
+      110,
+      157,
+      178,
+      184
+    ],
+    "hardware": {
+      "available_affinity_cpus": 8,
+      "observed_cpu": {
+        "cpu family": "26",
+        "model": "17",
+        "stepping": "0",
+        "vendor_id": "AuthenticAMD"
+      },
+      "owner_label": "AMD EPYC Zen 5 dev host"
+    },
+    "kernel_version": "7.1.3",
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "3dda773d344c28132ea2e3eea9fe935b33bfbc1ddec09f48861a0e83a01ff526",
+      "reaped_descendants": 0,
+      "seconds": 479.4344067031052,
+      "start_utc": "2026-10-29T12:24:02.971061+00:00",
+      "termination": null
+    },
+    "parents": [
+      "1dbd0330744d9ac26398d52dfba52c804ff1e5cd",
+      "0a088d04a8a5e24ad7ad741c5469814336db95da"
+    ],
+    "revision": "76f1da7aab1628abe1140e0c4d8c903d536b38e1",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "scope": "Functional validation. Seconds are command wall durations, not throughput or profiler accuracy. Seven merge checks only; no repeated issue-specific campaign.",
+    "source_equivalence": {
+      "compared_revision": "f55963ea38e64b50d9300cc78d1a24e65a44df72",
+      "unchanged_paths": [
+        "tools/rapid-profiler",
+        "tests/support",
+        "src",
+        "evaluation/ordinary-leaf-set-session",
+        "evaluation/ordinary-module-session",
+        "evaluation/admission"
+      ]
+    },
+    "status": "PASS"
+  },
   "outer": {
     "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
     "cleanup_complete": true,

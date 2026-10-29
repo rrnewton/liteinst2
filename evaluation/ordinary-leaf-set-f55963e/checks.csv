@@ -7,3 +7,10 @@ workspace-default,PASS,0,343.96198506094515,3265,0,36,True,0,a69c544847e44eafa33
 serial-launch,PASS,0,125.79214540799148,1039,0,0,True,0,4ec272521219142a10c5001fe9d11eb89365775b69fb04f3eb4b1c90bc21372a,cargo test -p liteinst-launch -- --test-threads=1 --nocapture
 staged-allocation,PASS,0,0.036746287951245904,3,0,0,True,0,f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5,cargo test -p liteinst2 --lib staged
 prefixed-pun,PASS,0,1.3518500020727515,36,0,0,True,0,8d0b0ede40be21545f51e1e684e73dbb3a5289323eedf08f0dd5250d10c1fc36,cargo test -p liteinst2 --test prefixed_pun_oracle
+merged-fmt,PASS,0,7.138286934932694,0,0,0,True,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,cargo fmt --check
+merged-clippy,PASS,0,0.1339085299987346,0,0,0,True,0,9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c,cargo clippy --workspace --all-targets --all-features -- -D warnings
+merged-check,PASS,0,0.10829329793341458,0,0,0,True,0,a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985,cargo check --workspace --all-features --all-targets
+merged-workspace-default,PASS,0,340.04978379397653,3265,0,36,True,0,79105417d4678068069205c63d03251ab5f2dccc8cffb7f49f63086cb812948b,cargo test --workspace
+merged-serial-launch,PASS,0,128.7222447320819,1039,0,0,True,0,0f33e535e90259d139076fe249659cd1058471db1cfd4dbb15befd4675415562,cargo test -p liteinst-launch -- --test-threads=1 --nocapture
+merged-staged-allocation,PASS,0,0.03611386497505009,3,0,0,True,0,f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5,cargo test -p liteinst2 --lib staged
+merged-prefixed-pun,PASS,0,1.291931482963264,36,0,0,True,0,199c79cc425f4c97fdb7c7b7345922625e08d6b9da26a7b4fbb449646fac7163,cargo test -p liteinst2 --test prefixed_pun_oracle

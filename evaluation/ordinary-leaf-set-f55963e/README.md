@@ -28,6 +28,13 @@ summaries report 3,265 passes, zero failures and 36 ignores; serial launch
 eight-CPU reservation. Counts may include nested child summaries. There is no
 316-thread, performance or full architectural-state claim for this run.
 
+Merged-tree validation at `76f1da7aab1628abe1140e0c4d8c903d536b38e1`
+(including main `0a088d04a8a5e24ad7ad741c5469814336db95da`) also passed
+all seven checks with the same counts. Its eight reserved CPUs were
+25/60/91/92/110/157/178/184; the owner closed in 479.434 s with zero
+rescue reaps. The relevant core, profiler, support and recipe sources are
+byte-identical to the campaign revision. No campaign rerun occurred.
+
 [receipt.json](receipt.json) records exact revision, hardware, commands,
 release settings, reservation/load, source reviews and closure.
 [cases.csv](cases.csv) retains all 144 original/installed slots;
