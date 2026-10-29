@@ -89,11 +89,25 @@ struct selected_builtin_prefix {
 static struct selected_builtin_prefix selected_builtin_prefix;
 
 #ifdef LI2_ONESHOT_PUBLICATION
+#ifdef LI2_ONESHOT_REUSABLE
+static struct li2_oneshot_owner selected_oneshot_current,selected_oneshot_last,selected_oneshot_last_refused;
+struct selected_oneshot_counts {
+    uint64_t attempted,published,restored,completed,retired;
+    uint64_t cpuid,syscall,rdtsc,effect_started,effect_returned,refused;
+};
+static struct selected_oneshot_counts selected_oneshot_counts;
+static volatile sig_atomic_t selected_oneshot_resetting;
+static unsigned selected_oneshot_current_effect_started,selected_oneshot_current_effect_returned;
+#else
 static struct li2_oneshot_owner selected_oneshot_owners[LI2_ONESHOT_LIFECYCLE_SLOTS];
+#endif
 static struct li2_oneshot_owner *selected_oneshot_active;
 static struct li2_oneshot_plan selected_oneshot_request;
 static struct li2_oneshot_handoff selected_oneshot_handoff;
-static volatile unsigned selected_oneshot_used,selected_oneshot_failing;
+static volatile unsigned selected_oneshot_failing;
+#ifndef LI2_ONESHOT_REUSABLE
+static volatile unsigned selected_oneshot_used;
 static volatile unsigned selected_oneshot_effect_started[LI2_ONESHOT_LIFECYCLE_SLOTS];
 static volatile unsigned selected_oneshot_effect_returned[LI2_ONESHOT_LIFECYCLE_SLOTS];
+#endif
 #endif

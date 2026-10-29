@@ -3,8 +3,10 @@
 #if LI2_RSEQ_TCGETS_BTRFS != 1 || !defined(LI2_RSEQ_NATIVE_BOUNDARY)
 #error "TCGETS requires the explicit registered native-boundary capture profile"
 #endif
-#if defined(LI2_ONESHOT_PUBLICATION) || defined(LI2_SELECTED_PROVIDER)
-#error "The capture TCGETS profile has no one-shot or provider composition"
+#if defined(LI2_SELECTED_PROVIDER) || (defined(LI2_ONESHOT_PUBLICATION) && \
+    (!defined(LI2_EFFECT_PROVIDER) || LI2_EFFECT_PROVIDER != 1 || \
+     !defined(LI2_ONESHOT_REUSABLE) || LI2_ONESHOT_REUSABLE != 1))
+#error "TCGETS publication requires the shared effect dispatcher and reusable owner"
 #endif
 #include <linux/stat.h>
 #include <sys/stat.h>

@@ -26,13 +26,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 80,
+        "refusals": 73,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VM64_TF_PASS group=0 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=33 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VM64_TF_PASS group=0 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=26 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19\n"
     },
     {
       "argv": [
@@ -53,16 +53,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 80,
+        "refusals": 73,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VM64_TF_PASS group=1 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=33 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VM64_TF_PASS group=1 pairs=19 loads=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=26 full_state=19 full_memory=19 vm64_typed_promotions=7 vm64_supplied_none_queries=7 live_endpoints=19\n"
     },
     {
-      "name": "full-read-fault",
       "argv": [
         "vmovdqu64-0"
       ],
@@ -70,9 +69,6 @@
         "LI2_VM64_CONTROL": "full-read-fault"
       },
       "exit": 125,
-      "process_outcome": "expected genuine failed m512 read; operation not completed",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
-      "stderr": "",
       "header_equals": {
         "completed": 1,
         "control": 1,
@@ -86,12 +82,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 80,
+        "refusals": 73,
         "version": 1
-      }
+      },
+      "name": "full-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
     },
     {
-      "name": "cross-read-fault",
       "argv": [
         "vmovdqu64-0"
       ],
@@ -99,9 +98,6 @@
         "LI2_VM64_CONTROL": "cross-read-fault"
       },
       "exit": 125,
-      "process_outcome": "expected genuine failed m512 read; operation not completed",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
-      "stderr": "",
       "header_equals": {
         "completed": 1,
         "control": 1,
@@ -115,9 +111,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 19,
-        "refusals": 80,
+        "refusals": 73,
         "version": 1
-      }
+      },
+      "name": "cross-read-fault",
+      "process_outcome": "expected genuine failed m512 read; operation not completed",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
     }
   ],
   "literal_effects": "ZMM17 becomes exactly64 literal input memory bytes; all other initialized kernelFP/liveXSAVE bytes, GPRs, flags and full stack/data remain unchanged. No XSTATE_BV normalization.",
@@ -126,10 +126,15 @@
     19
   ],
   "negative_endpoint": "Two real m512 read faults at original PC: fully inaccessible operand and last32 bytes beyond readable page. Both retain full native/owner frame equality and unchanged guarded memory, no TRACE/completion.",
-  "new_refusal_count": 33,
+  "new_load_pairs_total": 36,
+  "new_refusal_count": 26,
   "old_refusal_count": 47,
+  "promoted_refusal_count": 7,
+  "promotion_groups": {
+    "vm64": 7
+  },
   "prospective_only": true,
-  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000 + 96; full old storage plus actual CPUID/BV and fault trailers",
+  "record_extent": "136 +22*sample_bytes +40 +5000 +96 +2080; all existing full storage/trailers plus the mandatory2080-byte seven-row Code1605/NONE promotion trailer",
   "record_header_fields": [
     "magic",
     "version",
@@ -151,7 +156,9 @@
   ],
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
+  "refusals_per_process": 73,
   "schema_version": 1,
-  "scope": "Exact unmasked EVEX512 load62e1fe486f0f/Code1605 only; no general EVEX/masking, enabled-CET, hardware masking, loader completion or performance claim.",
-  "new_load_pairs_total": 36
+  "scope": "Exact unmasked EVEX512 load62e1fe486f0f/Code1605 only; no general EVEX/masking, enabled-CET, hardware masking, loader completion or performance claim. Seven exact retained VMOVDQU64 neighbor rows additionally require Code1605/FALLTHROUGH/SIMD and supplied NONE; their actual native family cases are independently mandatory in vmovdqu64_family. All remaining negative rows retain rejection.",
+  "typed_promotions_per_process": 7,
+  "vm64_supplied_none_queries_per_process": 7
 }

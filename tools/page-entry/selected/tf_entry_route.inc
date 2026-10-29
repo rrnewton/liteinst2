@@ -54,6 +54,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 2134: /* Movsx_r32_rm16 */
     case 2135: /* Movsx_r64_rm16 */
     case 140: /* Movsxd_r64_rm32 */
+    case 287: /* Canonical register MOV r16,Sreg; decoder rejects selector loads. */
     case 290: /* Lea_r16_m */
     case 291: /* Lea_r32_m */
     case 292: /* Lea_r64_m */
@@ -579,6 +580,9 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 1582: /* Movq_xmm_rm64 */
     case 1821: /* Movq_rm64_xmm */
     case 3210: /* EVEX_Vpbroadcastb_zmm_k1z_r32; classifier still exact 62e27d487ac6 */
+    case 1596: /* EVEX_Vmovdqa64_zmm_k1z_zmmm512; separately guarded canonical family */
+    case 2285: /* EVEX_Vpminub_zmm_k1z_zmm_zmmm512; register-only canonical family */
+    case 1935: /* VEX_Kortestq_kr_kr; exact W1/register encoding */
     case 1605: /* EVEX_Vmovdqu64_zmm_k1z_zmmm512; classifier still exact 62e1fe486f0f */
     case 2791: /* EVEX_Vptestnmb_kr_k1_zmm_zmmm512; classifier still exact 62b2764026c1 */
     case 1933: /* VEX_Kmovq_r64_kr; classifier permits only c4e1fb93f0/c1 */
@@ -587,6 +591,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 2785: /* EVEX_Vptestmb_kr_k1_zmm_zmmm512; canonical register-only gate */
     case 3680: /* VEX_Bzhi_r64_rm64_r64; exact c4e2a0f5da */
     case 3676: /* VEX_Blsmsk_r64_rm64; exact c4e2c8f3d6 */
+    case 3672: /* VEX_Andn_r64_r64_rm64; canonical W1 register classifier required */
         return LI2_TF_ENTRY_PLAIN;
     default:return LI2_TF_ENTRY_UNKNOWN;
     }

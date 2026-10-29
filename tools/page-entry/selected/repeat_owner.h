@@ -3,8 +3,8 @@
 #include "tf_owner.h"
 
 /* Separate original-PC repeated-instruction protocol. The ordinary TF
-   classifier and its REP refusals are unchanged. Initially canonical
-   F3 48 AB only, with 64-bit RCX/RDI and either actual DF direction.
+   classifier and its REP refusals are unchanged. Canonical F3 48 AB
+   (STOSQ) or F3 AB (STOSD), with 64-bit RCX/RDI and either actual DF direction.
    Same singleton/signal/CET/source exclusions as li2_step_owner apply.
    Operand faults are terminal, not application signal delivery/restart. */
 enum li2_repeat_error { LI2_REPEAT_ENCODING=200, LI2_REPEAT_PROGRESS,
@@ -27,6 +27,9 @@ struct li2_repeat_owner {
        This is bounded progress/first-error evidence, not a full trace log. */
     struct li2_repeat_permissions last_closed;
 };
+/* Exact admitted element width, or zero. Descriptive only: arm still
+   redecodes and authenticates the complete source/page request. */
+unsigned li2_repeat_width(const struct li2_decoded *);
 int li2_repeat_candidate(const struct li2_decoded *);
 int li2_repeat_arm(struct li2_repeat_owner *,struct li2_step_session *,
                    const struct li2_tf_hooks *,const struct li2_step_request *);
