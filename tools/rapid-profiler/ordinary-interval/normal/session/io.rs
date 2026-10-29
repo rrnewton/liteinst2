@@ -1,8 +1,16 @@
 //! Single controller-thread nonblocking transport. No blocked reader to abandon.
 use super::protocol::{self, Command};
 
+pub(in crate::normal) enum Frame {
+    Pending,
+    Eof,
+    Line { bytes: [u8; 64], length: usize },
+    Overlong,
+    Unterminated,
+    ExtraByte,
+}
 const OUTPUT: usize = 4 * 1024 * 1024;
-pub(super) struct Io {
+pub(in crate::normal) struct Io {
     fds: [i32; 2],
     flags: [i32; 2],
     input: Vec<u8>,
@@ -12,7 +20,7 @@ pub(super) struct Io {
     write_blocked: u64,
 }
 impl Io {
-    pub(super) fn new() -> Result<Self, String> {
+    pub(in crate::normal) fn new() -> Result<Self, String> {
         Self::open([0, 1])
     }
     // Descriptor owners outlive this flag-restoring transport. Tests use
@@ -71,10 +79,53 @@ impl Io {
         }
         Ok(None)
     }
-    pub(super) fn eof(&self) -> bool {
+    /// Separate bounded CSV framing. Existing command() remains unchanged.
+    /// At the record cap even one extra byte refuses; EOF requires read(0).
+    pub(in crate::normal) fn csv_frame(&mut self, exhausted: bool) -> Result<Frame, String> {
+        if !self.eof
+            && !self.input.contains(&b'\n')
+            && self.input.len() <= 64
+            && !(exhausted && !self.input.is_empty())
+        {
+            let mut bytes = [0_u8; 65];
+            let room = if exhausted { 1 } else { 65 - self.input.len() };
+            let n = unsafe { libc::read(self.fds[0], bytes.as_mut_ptr().cast(), room) };
+            if n > 0 {
+                self.input.extend_from_slice(&bytes[..n as usize]);
+            } else if n == 0 {
+                self.eof = true;
+            } else {
+                transient()?;
+            }
+        }
+        if exhausted && !self.input.is_empty() {
+            return Ok(Frame::ExtraByte);
+        }
+        if let Some(end) = self.input.iter().position(|&b| b == b'\n') {
+            if end > 64 {
+                return Ok(Frame::Overlong);
+            }
+            let mut bytes = [0; 64];
+            bytes[..end].copy_from_slice(&self.input[..end]);
+            self.input.drain(..=end);
+            return Ok(Frame::Line { bytes, length: end });
+        }
+        if self.input.len() > 64 {
+            return Ok(Frame::Overlong);
+        }
+        if self.eof {
+            return Ok(if self.input.is_empty() {
+                Frame::Eof
+            } else {
+                Frame::Unterminated
+            });
+        }
+        Ok(Frame::Pending)
+    }
+    pub(in crate::normal) fn eof(&self) -> bool {
         self.eof && self.input.is_empty()
     }
-    pub(super) fn emit(&mut self, line: String) -> Result<(), String> {
+    pub(in crate::normal) fn emit(&mut self, line: String) -> Result<(), String> {
         // Every fixed-format row is <=350 bytes even at maximum u64 values.
         // At most4096 RESULT-or-FLUSHED,4096 SAMPLE,4097 HISTORY,4096 REPORT,
         // plus READY/IO/DONE. The tighter per-kind layouts keep the sum below4MiB;
@@ -97,7 +148,7 @@ impl Io {
         Ok(())
     }
     /// At most one 8 KiB write. All unsent bytes remain owned on backpressure.
-    pub(super) fn write(&mut self) -> Result<(), String> {
+    pub(in crate::normal) fn write(&mut self) -> Result<(), String> {
         let count = (self.output.len() - self.written).min(8192);
         if count == 0 {
             return Ok(());
@@ -122,10 +173,10 @@ impl Io {
         }
         Ok(())
     }
-    pub(super) fn drained(&self) -> bool {
+    pub(in crate::normal) fn drained(&self) -> bool {
         self.written == self.output.len()
     }
-    pub(super) fn write_blocked(&self) -> u64 {
+    pub(in crate::normal) fn write_blocked(&self) -> u64 {
         self.write_blocked
     }
 }
@@ -226,5 +277,63 @@ mod tests {
         assert_eq!(io.output.len(), OUTPUT);
         assert!(io.emit("x\n".into()).is_err());
         assert_eq!(io.output.len(), OUTPUT);
+    }
+}
+
+#[cfg(test)]
+mod csv_tests {
+    use super::*;
+    use std::io::Write;
+    use std::net::Shutdown;
+    use std::os::{fd::AsRawFd, unix::net::UnixStream};
+    #[test]
+    fn csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct() {
+        let (local, mut peer) = UnixStream::pair().unwrap();
+        let mut io = Io::open([local.as_raw_fd(); 2]).unwrap();
+        assert!(matches!(io.csv_frame(false).unwrap(), Frame::Pending));
+        peer.write_all(b"a,").unwrap();
+        assert!(matches!(io.csv_frame(false).unwrap(), Frame::Pending));
+        peer.write_all(b"b\n\n").unwrap();
+        let Frame::Line { bytes, length } = io.csv_frame(false).unwrap() else {
+            panic!()
+        };
+        assert_eq!(&bytes[..length], b"a,b");
+        assert!(matches!(
+            io.csv_frame(false).unwrap(),
+            Frame::Line { length: 0, .. }
+        ));
+        assert!(matches!(io.csv_frame(false).unwrap(), Frame::Pending));
+        peer.shutdown(Shutdown::Write).unwrap();
+        assert!(matches!(io.csv_frame(false).unwrap(), Frame::Eof));
+    }
+    #[test]
+    fn csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard() {
+        for (data, exhausted, why) in [
+            (&b"x"[..], true, 0),
+            (&[b'x'; 65][..], false, 1),
+            (&b"x"[..], false, 2),
+        ] {
+            let (local, mut peer) = UnixStream::pair().unwrap();
+            let mut io = Io::open([local.as_raw_fd(); 2]).unwrap();
+            peer.write_all(data).unwrap();
+            if why == 2 {
+                peer.shutdown(Shutdown::Write).unwrap();
+                assert!(matches!(io.csv_frame(false).unwrap(), Frame::Pending));
+            }
+            let frame = io.csv_frame(exhausted).unwrap();
+            assert!(matches!(
+                (why, frame),
+                (0, Frame::ExtraByte) | (1, Frame::Overlong) | (2, Frame::Unterminated)
+            ));
+            assert_eq!(io.input, data);
+        }
+        let (local, mut peer) = UnixStream::pair().unwrap();
+        let mut io = Io::open([local.as_raw_fd(); 2]).unwrap();
+        peer.write_all(&[b','; 64]).unwrap();
+        peer.write_all(b"\n").unwrap();
+        assert!(matches!(
+            io.csv_frame(false).unwrap(),
+            Frame::Line { length: 64, .. }
+        ));
     }
 }
