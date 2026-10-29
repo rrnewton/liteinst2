@@ -1907,11 +1907,13 @@ class Main813InventoryTests(unittest.TestCase):
                          {'tests': 86, 'ignored': 0})
         with self.assertRaises(parsing.InvalidEvidence):
             inventory.require_current(main813.before_c6f(actual))
+        importer_current = main813.before_short(actual)
+        main813.before_c6f(importer_current)
         for count in (93, 95, True, 94.0):
-            changed = plain.deepcopy(actual)
+            changed = plain.deepcopy(importer_current)
             changed['harness_test_counts']['workspace_tests'][harness]['tests'] = count
             with self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                main813.before_c6f(changed)
         changed = plain.deepcopy(actual)
         del changed['harness_test_counts']['workspace_tests'][harness]
         with self.assertRaises(parsing.InvalidEvidence):
@@ -1977,14 +1979,19 @@ class Main813InventoryTests(unittest.TestCase):
         with self.assertRaises(parsing.InvalidEvidence):
             inventory.require_current(changed)
         mutation_target = main813.ROOT / 'tools/elf-rewrite/Cargo.toml'
+        historical_cargo = main813.source_before_short('tools/elf-rewrite/Cargo.toml',
+            read_bytes(mutation_target), 'changed')
+        main813._require_c6f_blob('tools/elf-rewrite/Cargo.toml', historical_cargo,
+            main813.MAINC6F['sources']['tools/elf-rewrite/Cargo.toml'], 'changed')
         def enabled_example(candidate):
             raw = read_bytes(candidate)
             if candidate == mutation_target:
-                return raw.replace(b'path = "examples/disassembly_sites.rs"\n',
+                return historical_cargo.replace(b'path = "examples/disassembly_sites.rs"\n',
                                    b'path = "examples/disassembly_sites.rs"\ntest = true\n')
             return raw
         with patch.object(Path, 'read_bytes', enabled_example), self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(actual)
+            main813._require_c6f_blob('tools/elf-rewrite/Cargo.toml',
+                mutation_target.read_bytes(), main813.MAINC6F['sources']['tools/elf-rewrite/Cargo.toml'], 'changed')
 
         # Explicit short-only neighbor layer: every prior assertion remains above.
         self.assertEqual(main813.digest(actual), main813.LATEST)
@@ -2005,11 +2012,13 @@ class Main813InventoryTests(unittest.TestCase):
             inventory.require_current(previous_short)
         main813.require_short_sources()
         inventory.require_current(actual)
+        short_current = main813.before_short_native(actual)
+        main813.before_short(short_current)
         for value in (277, 279, True, 278.0):
-            changed = plain.deepcopy(actual)
+            changed = plain.deepcopy(short_current)
             changed['harness_test_counts']['workspace_tests']['unit/liteinst2/lib']['tests'] = value
             with self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                main813.before_short(changed)
         changed = plain.deepcopy(actual)
         del changed['harness_test_counts']['workspace_tests']['unit/liteinst2/lib']
         with self.assertRaises(parsing.InvalidEvidence):
@@ -2095,7 +2104,9 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.before_short(native_previous), main813.before_short(actual))
         self.assertEqual(native_previous['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle'],
                          {'tests': 80, 'ignored': 0})
-        native_rows = actual['harness_test_counts']['workspace_tests']
+        native_current = main813.before_short_engine(actual)
+        main813.before_short_native(native_current)
+        native_rows = native_current['harness_test_counts']['workspace_tests']
         self.assertEqual(native_rows['test/neighbor_eviction_oracle'], {'tests': 99, 'ignored': 0})
         self.assertEqual(native_rows['unit/liteinst2/lib'], {'tests': 278, 'ignored': 1})
         self.assertEqual((len(native_rows), sum(x['tests'] for x in native_rows.values()),
@@ -2108,11 +2119,12 @@ class Main813InventoryTests(unittest.TestCase):
         inventory.require_current(actual)
         with self.assertRaises(parsing.InvalidEvidence):
             inventory.require_current(native_previous)
+        # Historical 100 remains invalid for the authenticated native99 catalog.
         for count in (80, 98, 100, True, 99.0):
-            changed = plain.deepcopy(actual)
+            changed = plain.deepcopy(native_current)
             changed['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle']['tests'] = count
             with self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                main813.before_short_native(changed)
         changed = plain.deepcopy(actual)
         del changed['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle']
         with self.assertRaises(parsing.InvalidEvidence):
@@ -2200,7 +2212,9 @@ class Main813InventoryTests(unittest.TestCase):
                 with self.assertRaises(parsing.InvalidEvidence):
                     main813.require_short_native_sources()
         # Coherently changed source hashes still cannot change the declarations or route.
-        raw = native_read_bytes(main813.ROOT / native_source)
+        raw = main813.source_before_short_engine(native_source,
+            native_read_bytes(main813.ROOT / native_source), 'changed')
+        main813._require_short_native_blob(native_source, raw, native_layer['sources'][native_source], 'changed')
         for modified in (raw.replace(b'fn short_endpoint_census(', b'fn renamed_endpoint_census(', 1),
                          raw.replace(b'#[test]', b'#[test] #[ignore]', 1),
                          raw + b'\n#[test] fn extra_native_control() {}\n'):
@@ -2209,9 +2223,12 @@ class Main813InventoryTests(unittest.TestCase):
             with patch.object(Path, 'read_bytes', changed), patch.dict(native_layer['sources'],
                     {native_source: hashlib.sha256(modified).hexdigest()}):
                 with self.assertRaises(parsing.InvalidEvidence):
-                    main813.require_short_native_sources()
+                    main813._require_short_native_blob(native_source,
+                        (main813.ROOT / native_source).read_bytes(), native_layer['sources'][native_source], 'changed')
         for path, literals in native_layer['module_chains'].items():
-            raw = native_read_bytes(main813.ROOT / path)
+            raw = main813.source_before_short_engine(path,
+                native_read_bytes(main813.ROOT / path), 'changed')
+            main813._require_short_native_blob(path, raw, native_layer['sources'][path], 'changed')
             for literal in literals:
                 for modified in (raw.replace(literal.encode(), b'// missing module route', 1),
                                  raw + b'\n' + literal.encode() + b'\n'):
@@ -2220,7 +2237,8 @@ class Main813InventoryTests(unittest.TestCase):
                     with patch.object(Path, 'read_bytes', changed), patch.dict(native_layer['sources'],
                             {path: hashlib.sha256(modified).hexdigest()}):
                         with self.assertRaises(parsing.InvalidEvidence):
-                            main813.require_short_native_sources()
+                            main813._require_short_native_blob(path,
+                                (main813.ROOT / path).read_bytes(), native_layer['sources'][path], 'changed')
 
         # The independent 8f622 branch receives the original current bytes,
         # never a second attempt to authenticate an already projected blob.
@@ -2236,6 +2254,218 @@ class Main813InventoryTests(unittest.TestCase):
         with patch.object(main813, 'source_before_8f622', return_value=shared_old + b'\n'):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
                 main813.source_before_12e(shared_path, shared_raw, 'changed')
+
+
+        # Final explicit engine layer: the current catalog and every historical
+        # source guard are both required; declarations never stand in for runs.
+        engine_layer = main813.MAINSHORTENGINE
+        engine_previous = main813.before_short_engine(actual)
+        self.assertEqual(engine_previous, native_current)
+        self.assertEqual(main813.digest(engine_previous), main813.CURRENTSHORTNATIVE)
+        self.assertEqual(main813.CURRENTSHORTNATIVE, native_layer['current_corpus_sha256'])
+        self.assertEqual(main813.peel_short_engine(actual, 'changed', 'changed'), engine_previous)
+        self.assertIs(main813.peel_short_engine(engine_previous, 'changed', 'changed'), engine_previous)
+        self.assertEqual(main813.before_short_native(engine_previous), native_previous)
+        self.assertEqual(inventory.peel_ac0963(engine_previous), inventory.before_ac0963(actual))
+        self.assertEqual(main813.before_short(engine_previous), previous_short)
+        self.assertEqual(actual['recorder_tests'], 350)
+        self.assertEqual(main813.PYTHON_CURRENT,
+                         'af962c7203b5c1a5d250ca5767c1c67bca84c1638d1ca88f30be3ecd55b35aaa')
+        engine_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(engine_rows), sum(x['tests'] for x in engine_rows.values()),
+                          sum(x['ignored'] for x in engine_rows.values())), (104, 3619, 37))
+        self.assertEqual({name: engine_rows[name] for name in engine_layer['workspace_changes']},
+                         {'unit/liteinst2/lib': counts(283, 1),
+                          'unit/liteinst_rewrite/lib': counts(98),
+                          'test/neighbor_eviction_oracle': counts(100),
+                          'unit/disassembly_sites/disassembly_sites': counts(1)})
+        self.assertEqual(engine_layer['declared_delta'],
+                         dict(rust_declarations=11, rust_tests=11, harnesses=1, ignored=0, doctests=0))
+        self.assertEqual(engine_layer['example'],
+                         dict(name='disassembly_sites', path='examples/disassembly_sites.rs',
+                              test_field=True, workspace_test_harness=True))
+        for prior in (engine_previous, native_previous, previous_short, importer_current):
+            with self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(prior)
+            with self.assertRaises(parsing.InvalidEvidence):
+                main813.before_short_engine(prior)
+        main813.require_short_engine_sources()
+        main813.require_short_native_sources()
+        main813.require_short_sources()
+        main813.require_c6f_sources()
+        main813.require_12e_sources()
+        inventory.require_current(actual)
+        with patch.object(main813, '_require_short_native_blob',
+                          wraps=main813._require_short_native_blob) as blob_guard:
+            main813.require_short_native_sources()
+            self.assertEqual([call.args[0] for call in blob_guard.call_args_list],
+                             list(native_layer['sources']))
+            self.assertEqual([hashlib.sha256(call.args[1]).hexdigest() for call in blob_guard.call_args_list],
+                             list(native_layer['sources'].values()))
+        with patch.object(main813, '_require_c6f_blob',
+                          wraps=main813._require_c6f_blob) as blob_guard:
+            main813.require_c6f_sources()
+            self.assertEqual([call.args[0] for call in blob_guard.call_args_list],
+                             list(main813.MAINC6F['sources']))
+            self.assertEqual([hashlib.sha256(call.args[1]).hexdigest() for call in blob_guard.call_args_list],
+                             list(main813.MAINC6F['sources'].values()))
+        for name, change in engine_layer['workspace_changes'].items():
+            current = change['current']
+            self.assertEqual(engine_rows[name], current)
+            self.assertEqual(engine_previous['harness_test_counts']['workspace_tests'].get(name),
+                             change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (current[field] - 1, current[field] + 1, True, float(current[field]), None):
+                    changed = plain.deepcopy(actual)
+                    changed['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.subTest(engine_count=(name, field, value)), self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(changed)
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.before_short_engine(changed)
+            changed = plain.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaises(parsing.InvalidEvidence):
+                main813.before_short_engine(changed)
+            for key in ('current', 'previous'):
+                changed_row = dict(change, **{key: dict(tests=999, ignored=0)})
+                with patch.dict(engine_layer['workspace_changes'], {name: changed_row}):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.before_short_engine(actual)
+        for key in actual:
+            changed = plain.deepcopy(actual); changed[key] = None
+            with self.assertRaises(parsing.InvalidEvidence):
+                main813.before_short_engine(changed)
+        changed = plain.deepcopy(actual)
+        changed['harness_test_counts']['workspace_tests']['test/extra_engine'] = counts(1)
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(changed)
+        self.assertEqual(set(engine_layer['sources']), {
+            'Cargo.toml', 'src/lib.rs', 'src/engine.rs', 'src/neighbor.rs',
+            'src/neighbor_short.rs', 'src/neighbor_short/tests.rs', 'src/trampoline.rs',
+            'tests/neighbor_eviction_oracle.rs', 'tests/support/neighbor_short_eviction_oracle.rs',
+            'tools/elf-rewrite/Cargo.toml', 'tools/elf-rewrite/DISASSEMBLY.md',
+            'tools/elf-rewrite/examples/disassembly_sites.rs',
+            'tools/elf-rewrite/src/disassembly.rs', 'tools/elf-rewrite/src/disassembly/tests.rs',
+            'tools/elf-rewrite/src/lib.rs', 'tools/elf-rewrite/src/selection.rs',
+            'evaluation/admission/parsing.py'})
+        self.assertEqual(set(engine_layer['projections']), set(engine_layer['sources']) - {
+            'Cargo.toml', 'src/lib.rs', 'src/neighbor_short.rs', 'src/trampoline.rs',
+            'tests/neighbor_eviction_oracle.rs'})
+        engine_read_bytes = Path.read_bytes
+        for path, expected_hash in engine_layer['sources'].items():
+            self.assertEqual(hashlib.sha256(engine_read_bytes(main813.ROOT / path)).hexdigest(), expected_hash)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == main813.ROOT / path:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return engine_read_bytes(candidate) + b'\n'
+                    return engine_read_bytes(candidate)
+                with self.subTest(engine_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_engine_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_native_sources()
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        for path, row in engine_layer['projections'].items():
+            raw = engine_read_bytes(main813.ROOT / path)
+            restored = main813.source_before_short_engine(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            self.assertEqual(main813.source_before_short_native(path, raw, 'changed'), restored)
+            self.assertEqual(main813.source_at_8f622(path, raw, 'changed'), restored)
+            for bad in (raw + b'\n', raw[:-1], restored, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_short_engine(path, bad, 'changed')
+            for helper in (main813.source_before_short_native, main813.source_at_8f622):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    helper(path, restored, 'changed')
+            mutations = [dict(row, current_sha256='0' * 64),
+                         dict(row, previous_sha256='0' * 64),
+                         dict(row, edits=[[len(raw) + 1, len(raw) + 1, '']]),
+                         dict(row, edits=[[1, 0, '']]),
+                         dict(row, edits=[[-1, 0, '']]),
+                         dict(row, edits=[[0, len(raw) + 1, '']])]
+            for i, edit in enumerate(row['edits']):
+                edits = plain.deepcopy(row['edits']); edits[i][2] += 'changed inverse'
+                mutations.append(dict(row, edits=edits))
+                edits = plain.deepcopy(row['edits']); del edits[i]
+                mutations.append(dict(row, edits=edits))
+            if len(row['edits']) > 1:
+                mutations.append(dict(row, edits=list(reversed(row['edits']))))
+            for changed_row in mutations:
+                with patch.dict(engine_layer['projections'], {path: changed_row}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                        main813.source_before_short_engine(path, raw, 'changed')
+            def historical(candidate):
+                return restored if candidate == main813.ROOT / path else engine_read_bytes(candidate)
+            with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(actual)
+        self.assertEqual({p: len(names) for p, names in engine_layer['added_methods'].items()},
+                         {'src/neighbor_short/tests.rs': 5,
+                          'tools/elf-rewrite/src/disassembly/tests.rs': 4,
+                          'tests/support/neighbor_short_eviction_oracle.rs': 1,
+                          'tools/elf-rewrite/examples/disassembly_sites.rs': 1})
+        prior_methods = {
+            'src/neighbor_short/tests.rs': main813.MAINSHORT['methods']['src/neighbor_short/tests.rs']['all'],
+            'tools/elf-rewrite/src/disassembly/tests.rs': main813.MAINC6F['methods']['tools/elf-rewrite/src/disassembly/tests.rs']['all'],
+            'tests/support/neighbor_short_eviction_oracle.rs': native_methods['all'],
+            'tools/elf-rewrite/examples/disassembly_sites.rs': []}
+        expected_instances = {
+            'src/neighbor_short/tests.rs': {'unit/liteinst2/lib': 'neighbor::short::tests::'},
+            'tools/elf-rewrite/src/disassembly/tests.rs': {'unit/liteinst_rewrite/lib': 'disassembly::tests::'},
+            'tests/support/neighbor_short_eviction_oracle.rs': {'test/neighbor_eviction_oracle': 'short_neighbor::'},
+            'tools/elf-rewrite/examples/disassembly_sites.rs': {'unit/disassembly_sites/disassembly_sites': 'tests::'}}
+        self.assertEqual(engine_layer['instances'], expected_instances)
+        for path, row in engine_layer['methods'].items():
+            self.assertEqual([name for name in row['all'] if name not in engine_layer['added_methods'][path]],
+                             prior_methods[path])
+            self.assertEqual(row['ignored'], [])
+            for name, prefix in expected_instances[path].items():
+                self.assertEqual(engine_layer['listed_additions'][name],
+                                 [prefix + n for n in engine_layer['added_methods'][path]])
+            mutations = [dict(row, all=row['all'][:i] + row['all'][i + 1:]) for i in range(len(row['all']))]
+            mutations += [dict(row, all=row['all'] + ['not_registered']),
+                          dict(row, ignored=[row['all'][0]])]
+            if len(row['all']) > 1:
+                mutations.append(dict(row, all=list(reversed(row['all']))))
+            for changed_row in mutations:
+                with patch.dict(engine_layer['methods'], {path: changed_row}):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_engine_sources()
+            raw = engine_read_bytes(main813.ROOT / path)
+            for modified in (raw.replace(('fn ' + row['all'][0] + '(').encode(), b'fn renamed_engine_control(', 1),
+                             raw.replace(b'#[test]', b'#[test] #[ignore]', 1),
+                             raw + b'\n#[test] fn extra_engine_control() {}\n',
+                             raw + b'\n#[test] not_a_test_declaration\n'):
+                def changed(candidate):
+                    return modified if candidate == main813.ROOT / path else engine_read_bytes(candidate)
+                with patch.object(Path, 'read_bytes', changed), patch.dict(engine_layer['sources'],
+                        {path: hashlib.sha256(modified).hexdigest()}):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_engine_sources()
+        for path, literals in engine_layer['module_chains'].items():
+            raw = engine_read_bytes(main813.ROOT / path)
+            for i, literal in enumerate(literals):
+                changed_literals = list(literals); changed_literals[i] += ' invalid_module_route'
+                with patch.dict(engine_layer['module_chains'], {path: changed_literals}):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_short_engine_sources()
+                for modified in (raw.replace(literal.encode(), b'// missing module route', 1),
+                                 raw + b'\n' + literal.encode() + b'\n'):
+                    def changed(candidate):
+                        return modified if candidate == main813.ROOT / path else engine_read_bytes(candidate)
+                    with patch.object(Path, 'read_bytes', changed), patch.dict(engine_layer['sources'],
+                            {path: hashlib.sha256(modified).hexdigest()}):
+                        with self.assertRaises(parsing.InvalidEvidence):
+                            main813.require_short_engine_sources()
+        self.assertEqual(engine_layer['core_child'],
+                         dict(source='src/trampoline.rs',
+                              sha256='51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463',
+                              harness='unit/liteinst2/lib', outer_tests=283, ignored=1,
+                              unmatched_start_tests=1, authenticated_exit=41))
+        self.assertEqual(engine_layer['sources']['src/trampoline.rs'],
+                         main813.MAINB66['sources']['src/trampoline.rs'])
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -2255,6 +2485,25 @@ class Main813InventoryTests(unittest.TestCase):
                 _, rows, error = self.parse(raw)
                 self.assertIsNotNone(error)
                 self.assertFalse(protocol.is_complete(rows[0]))
+
+
+        example_header = ('     Running unittests examples/disassembly_sites.rs '
+                          '(target/debug/examples/disassembly_sites-0123456789abcdef)')
+        self.assertEqual(parsing.harness_id(example_header), 'unit/disassembly_sites/disassembly_sites')
+        for bad in (example_header.replace('examples/disassembly_sites.rs', 'src/disassembly_sites.rs'),
+                    example_header.replace('target/debug/examples/', 'target/debug/deps/'),
+                    example_header.replace('examples/disassembly_sites.rs', 'examples/other.rs'),
+                    example_header.replace('disassembly_sites-0123', 'other-0123'),
+                    example_header.replace('target/debug/examples/', 'target/release/examples/'),
+                    example_header.replace('0123456789abcdef', 'invalid')):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.harness_id(bad)
+        example_raw = example_header + '\nrunning 1 test\n' + summary(1) + '\n'
+        remaining, rows, error = self.parse(text() + example_raw)
+        self.assertIsNone(error)
+        self.assertEqual(remaining, example_raw)
+        self.assertTrue(protocol.is_complete(rows[0]))
+        self.assertFalse(rows[0]['qualified_run'])
 
     def test_core_parser_rejects_field_type_scope_population_and_partial_changes(self):
         good = terminal()
@@ -2285,6 +2534,19 @@ class Main813InventoryTests(unittest.TestCase):
             self.assertIsNotNone(error)
             self.assertFalse(protocol.is_complete(rows[0]))
             self.assertNotIn('PRIVATE_SENTINEL', json.dumps(rows))
+
+
+        # Exact final catalog fields reject bool/float substitutions and unknown
+        # rows before they can reach any historical catalog validator.
+        declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        inventory.require_current(declared)
+        for name in main813.MAINSHORTENGINE['workspace_changes']:
+            for bad in (None, [], {}, dict(tests=True, ignored=0),
+                        dict(declared['harness_test_counts']['workspace_tests'][name], extra=1)):
+                changed = copy.deepcopy(declared)
+                changed['harness_test_counts']['workspace_tests'][name] = bad
+                with self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
 
     def test_whole_run_qualification_needs_exact_native_protocol_and_success(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -2317,6 +2579,41 @@ class Main813InventoryTests(unittest.TestCase):
             run.qualify(bad)
             self.assertEqual(bad['status'], 'failed')
             self.assertFalse(item['precontext_native_harnesses'][0]['qualified_run'])
+
+
+        # Supplied example bytes are one exact harness, never qualification for
+        # omitted current rows or failed native/protocol/source/configuration.
+        example_header = ('     Running unittests examples/disassembly_sites.rs '
+                          '(target/debug/examples/disassembly_sites-0123456789abcdef)')
+        example_id = 'unit/disassembly_sites/disassembly_sites'
+        fixture = {'harness_test_counts': {'workspace_tests': {example_id: counts(1)}},
+                   'precontext_native_harnesses': {'workspace_tests': [protocol.specification()]}}
+        output = example_header + '\nrunning 1 test\n' + summary(1) + '\n'
+        item = {'id': 'workspace_tests', 'status': 'passed', 'exit_code': 0}
+        run.command_evidence(item, text() + output, fixture)
+        example_record = dict(source_unchanged=True, configuration_unchanged=True,
+                              precontext_native_required=True, commands=[item])
+        run.qualify(example_record)
+        self.assertEqual(example_record['status'], 'passed')
+        for raw, exit_code in ((text() + output.replace(summary(1), summary(0, failed=1)), 1),
+                               (text() + output.replace(summary(1), summary(0, failed=1)), 0),
+                               (text(), 0), (text() + output + output, 0), (output, 0)):
+            item = {'id': 'workspace_tests', 'status': 'passed' if exit_code == 0 else 'failed',
+                    'exit_code': exit_code}
+            run.command_evidence(item, raw, fixture)
+            bad = dict(source_unchanged=True, configuration_unchanged=True,
+                       precontext_native_required=True, commands=[item])
+            run.qualify(bad)
+            self.assertEqual(bad['status'], 'failed')
+            self.assertFalse(item['precontext_native_harnesses'][0]['qualified_run'])
+        declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        item = {'id': 'workspace_tests', 'status': 'passed', 'exit_code': 0}
+        run.command_evidence(item, text() + output, declared)
+        incomplete = dict(source_unchanged=True, configuration_unchanged=True,
+                          precontext_native_required=True, commands=[item])
+        run.qualify(incomplete)
+        self.assertEqual(incomplete['status'], 'failed')
+        self.assertFalse(item['precontext_native_harnesses'][0]['qualified_run'])
 
     def test_new_core_child_tuple_is_exact_and_old_shapes_survive(self):
         for total in (176, 184, 208, 213, 219, 227, 242, 248):
@@ -2582,3 +2879,74 @@ class Main813InventoryTests(unittest.TestCase):
             row = parsing.parse_harnesses(failed, expected, 1)[0]
             self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
                              ('FAILED', total - 1, 1))
+
+        # The final core cohort keeps the same two summarized children and one
+        # exact ptrace child start; all historical tuples and mutations remain.
+        raw = '\n'.join((header('liteinst2'), 'running 283 tests',
+                         'running 1 test', summary(1, filtered=282),
+                         'running 1 test', summary(1, filtered=282),
+                         'running 1 test',
+                         'test trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack ... ok',
+                         summary(282, ignored=1)))
+        expected = {'unit/liteinst2/lib': counts(283, 1)}
+        row = parsing.parse_harnesses(raw, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=282, failed=0, ignored=1, measured=0, filtered=0, result='ok'))
+        self.assertEqual([x['passed'] for x in row['nested']], [1, 1])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((282, 1, 1), (284, 1, 1), (283, 0, 1),
+                                       (283, 2, 1), (283, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                             f'running {nested} tests', summary(total - ignored, ignored=ignored)))
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        changes = [raw.replace('liteinst2', 'other'),
+                   raw.replace('running 283 tests', 'running 284 tests'),
+                   raw.replace(summary(1, filtered=282), summary(1, filtered=281), 1),
+                   raw.replace(summary(282, ignored=1), summary(282, ignored=1, filtered=1)),
+                   raw.replace(summary(282, ignored=1), summary(281, ignored=1, measured=1)),
+                   raw.replace(summary(282, ignored=1), summary(281, ignored=1, failed=1)),
+                   raw.replace(summary(282, ignored=1), summary(282, ignored=1, result='FAILED')),
+                   raw.replace('test trampoline::tests::live::ptrace',
+                               'running 1 test\ntest trampoline::tests::live::ptrace'),
+                   raw.replace(summary(282, ignored=1), ''),
+                   raw + '\n' + summary(282, ignored=1)]
+        for bad in changes:
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        failed = raw.replace(summary(282, ignored=1), summary(281, ignored=1, failed=1))
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                         ('FAILED', 281, 1))
+        # Generic current native/importer/example cohorts have no child exemption.
+        fixtures = [
+            ('test/neighbor_eviction_oracle', native_header, 100),
+            ('unit/liteinst_rewrite/lib', header('liteinst_rewrite'), 98),
+            ('unit/disassembly_sites/disassembly_sites',
+             '     Running unittests examples/disassembly_sites.rs '
+             '(target/debug/examples/disassembly_sites-0123456789abcdef)', 1)]
+        for identity, source_header, total in fixtures:
+            raw = '\n'.join((source_header, f'running {total} tests', summary(total)))
+            expected = {identity: counts(total)}
+            row = parsing.parse_harnesses(raw, expected, 0)[0]
+            self.assertEqual(row['outer'], dict(passed=total, failed=0, ignored=0,
+                                               measured=0, filtered=0, result='ok'))
+            self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+            for other in (total - 1, total + 1):
+                with self.assertRaises(parsing.InvalidEvidence):
+                    parsing.parse_harnesses(raw, {identity: counts(other)}, 0)
+            changes = [raw.replace(summary(total), summary(total - 1, ignored=1)),
+                       raw.replace(summary(total), summary(total, filtered=1)),
+                       raw.replace(summary(total), summary(total - 1, measured=1)),
+                       raw.replace(summary(total), summary(total - 1, failed=1)),
+                       raw.replace(summary(total), summary(total, result='FAILED')),
+                       raw.replace(summary(total), ''), raw + '\n' + summary(total),
+                       raw.replace(summary(total), 'running 1 test\n' + summary(total)),
+                       raw + '\n' + raw]
+            for bad in changes:
+                with self.assertRaises(parsing.InvalidEvidence):
+                    parsing.parse_harnesses(bad, expected, 0)
+            failed = raw.replace(summary(total), summary(total - 1, failed=1))
+            row = parsing.parse_harnesses(failed, expected, 1)[0]
+            self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                             ('FAILED', total - 1, 1))
+

@@ -55,6 +55,12 @@ def harness_id(line):
         r"\(target/debug/examples/verify_common_core-[a-f0-9]+\)", line)
     if example:
         return "unit/verify_common_core/verify_common_core"
+    # This exact example is an additional test=true Cargo target.
+    example = re.fullmatch(
+        r"\s*Running unittests examples/disassembly_sites\.rs "
+        r"\(target/debug/examples/disassembly_sites-[a-f0-9]+\)", line)
+    if example:
+        return "unit/disassembly_sites/disassembly_sites"
     match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
@@ -66,6 +72,8 @@ def harness_id(line):
     require(label != "unittests examples/common_sites.rs" and binary[1] != "common_sites",
             "invalid_harness_source_label")
     require(label != "unittests examples/verify_common_core.rs" and binary[1] != "verify_common_core",
+            "invalid_harness_source_label")
+    require(label != "unittests examples/disassembly_sites.rs" and binary[1] != "disassembly_sites",
             "invalid_harness_source_label")
     if label == "unittests ordinary-interval/main.rs" or binary[1] == "ordinary_interval":
         require(label == "unittests ordinary-interval/main.rs" and binary[1] == "ordinary_interval",
@@ -243,7 +251,10 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 271, 1),
                                   # Seven explicit short-neighbor unit controls;
                                   # the existing ptrace child and stack stay exact.
-                                  ("unit/liteinst2/lib", 278, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 278, 1),
+                                  # Five explicit engine controls; the pinned
+                                  # ptrace child still exits41 without a summary.
+                                  ("unit/liteinst2/lib", 283, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

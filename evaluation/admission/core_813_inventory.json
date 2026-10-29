@@ -21453,6 +21453,566 @@
       }
     }
   },
+  "neighbor_short_engine": {
+    "added_methods": {
+      "src/neighbor_short/tests.rs": [
+        "short_engine_forced_matches_direct_at_all_endpoints",
+        "short_engine_preferred_keeps_five_stage_order",
+        "short_engine_never_spends_a_second_neighbor_budget",
+        "short_engine_after_binds_original_and_current_suffix",
+        "short_engine_defaults_and_long_schedule_are_unchanged"
+      ],
+      "tests/support/neighbor_short_eviction_oracle.rs": [
+        "short_engine_overlap_bundle_matches_direct_and_native"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "short_profile_cli_labels_mode_before_policy_binding"
+      ],
+      "tools/elf-rewrite/src/disassembly/tests.rs": [
+        "short_only_policy_is_explicit_digest_bound_and_not_legacy",
+        "short_only_disassembly_forced_t3_preserves_all_heads_and_bytes",
+        "short_only_disassembly_refusal_retains_the_complete_denominator",
+        "short_only_projection_and_search_caps_are_not_widened"
+      ]
+    },
+    "base": "9adb4512cb2151c1976b4a34ef15f1f222eb33a8",
+    "core_child": {
+      "authenticated_exit": 41,
+      "harness": "unit/liteinst2/lib",
+      "ignored": 1,
+      "outer_tests": 283,
+      "sha256": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+      "source": "src/trampoline.rs",
+      "unmatched_start_tests": 1
+    },
+    "current_corpus_sha256": "c78d43da9117521b5e9f6a23ab12a0b9eaca56d0e21a4da42000b4afbb453bc5",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 1,
+      "ignored": 0,
+      "rust_declarations": 11,
+      "rust_tests": 11
+    },
+    "example": {
+      "name": "disassembly_sites",
+      "path": "examples/disassembly_sites.rs",
+      "test_field": true,
+      "workspace_test_harness": true
+    },
+    "instances": {
+      "src/neighbor_short/tests.rs": {
+        "unit/liteinst2/lib": "neighbor::short::tests::"
+      },
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "test/neighbor_eviction_oracle": "short_neighbor::"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "unit/disassembly_sites/disassembly_sites": "tests::"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "unit/liteinst_rewrite/lib": "disassembly::tests::"
+      }
+    },
+    "listed_additions": {
+      "test/neighbor_eviction_oracle": [
+        "short_neighbor::short_engine_overlap_bundle_matches_direct_and_native"
+      ],
+      "unit/disassembly_sites/disassembly_sites": [
+        "tests::short_profile_cli_labels_mode_before_policy_binding"
+      ],
+      "unit/liteinst2/lib": [
+        "neighbor::short::tests::short_engine_forced_matches_direct_at_all_endpoints",
+        "neighbor::short::tests::short_engine_preferred_keeps_five_stage_order",
+        "neighbor::short::tests::short_engine_never_spends_a_second_neighbor_budget",
+        "neighbor::short::tests::short_engine_after_binds_original_and_current_suffix",
+        "neighbor::short::tests::short_engine_defaults_and_long_schedule_are_unchanged"
+      ],
+      "unit/liteinst_rewrite/lib": [
+        "disassembly::tests::short_only_policy_is_explicit_digest_bound_and_not_legacy",
+        "disassembly::tests::short_only_disassembly_forced_t3_preserves_all_heads_and_bytes",
+        "disassembly::tests::short_only_disassembly_refusal_retains_the_complete_denominator",
+        "disassembly::tests::short_only_projection_and_search_caps_are_not_widened"
+      ]
+    },
+    "methods": {
+      "src/neighbor_short/tests.rs": {
+        "all": [
+          "short_endpoints_preserve_whole_victims_and_all_successor_bytes",
+          "short_window_sign_endpoints_and_reencoding_are_exact",
+          "selected_inside_suffix_uses_exact_prospective_overlay",
+          "full_fetch_scope_original_identity_and_boundaries_fail_closed",
+          "suffix_locks_and_leases_keep_all_ten_bytes_protected",
+          "short_search_charges_real_pairs_and_keeps_full_mapping_limits",
+          "short_entrypoints_do_not_admit_long_victims_or_change_long_search",
+          "short_engine_forced_matches_direct_at_all_endpoints",
+          "short_engine_preferred_keeps_five_stage_order",
+          "short_engine_never_spends_a_second_neighbor_budget",
+          "short_engine_after_binds_original_and_current_suffix",
+          "short_engine_defaults_and_long_schedule_are_unchanged"
+        ],
+        "ignored": []
+      },
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "all": [
+          "short_endpoint_census",
+          "short_endpoint_back_l6",
+          "short_endpoint_forward_l6",
+          "short_endpoint_back_l7",
+          "short_endpoint_forward_l7",
+          "short_endpoint_back_l8",
+          "short_endpoint_forward_l8",
+          "short_endpoint_back_l9",
+          "short_endpoint_forward_l9",
+          "short_selected_suffix_overlap",
+          "short_rip_read_effect",
+          "short_conditional_fallthrough_and_taken",
+          "short_independent_native_calibration",
+          "short_reject_foreign_or_wrong_grammar",
+          "short_reject_suffix_overlay_corruption",
+          "short_reject_head_gateway_image_mismatch",
+          "short_reject_displacement_or_visit_corruption",
+          "short_reject_full_state_or_hook_corruption",
+          "short_reject_fetch_or_bound_violation",
+          "short_engine_overlap_bundle_matches_direct_and_native"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "all": [
+          "short_profile_cli_labels_mode_before_policy_binding"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "all": [
+          "complete_jump_denominator_ignores_names_reachability_and_call_cycles",
+          "whole_hash_and_each_head_byte_length_and_location_are_independent_gates",
+          "complete_ledger_checks_rx_inverse_owner_and_known_entry_contradictions",
+          "policy_cannot_omit_add_select_replace_or_increase_existing_caps",
+          "null_hook_must_be_original_single_c3_and_endbr_heads_stay_marked",
+          "shared_prepare_retains_every_refusal_and_never_emits_partial_candidate",
+          "one_original_jump_uses_shared_carrier_and_hook_guard_without_live_authority",
+          "bounded_text_and_whole_program_projection_refuse_without_splitting",
+          "short_only_policy_is_explicit_digest_bound_and_not_legacy",
+          "short_only_disassembly_forced_t3_preserves_all_heads_and_bytes",
+          "short_only_disassembly_refusal_retains_the_complete_denominator",
+          "short_only_projection_and_search_caps_are_not_widened"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "Cargo.toml": [
+        "name = \"liteinst2\"",
+        "\"tools/elf-rewrite\""
+      ],
+      "src/lib.rs": [
+        "pub mod engine;",
+        "pub mod neighbor;",
+        "pub mod trampoline;"
+      ],
+      "src/neighbor.rs": [
+        "#[path = \"neighbor_short.rs\"]\nmod short;"
+      ],
+      "src/neighbor_short.rs": [
+        "#[cfg(test)]\n#[path = \"neighbor_short/tests.rs\"]\nmod tests;"
+      ],
+      "src/trampoline.rs": [
+        "fn ptrace_stopped_child(control_fd: libc::c_int) -> ! {",
+        "unsafe { libc::_exit(if result == 41 { 41 } else { 121 }) }",
+        "fn ptrace_stopped_hook_executes_on_owned_stack() {",
+        "assert_eq!(libc::WEXITSTATUS(exit_status), 41);",
+        "assert_eq!(child.wait_for_exit().code(), Some(41));"
+      ],
+      "tests/neighbor_eviction_oracle.rs": [
+        "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;",
+        "#[path = \"support/neighbor_short_eviction_oracle.rs\"]\nmod short_neighbor;"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\"",
+        "[[example]]\nname = \"disassembly_sites\"\npath = \"examples/disassembly_sites.rs\"\ntest = true"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod disassembly;"
+      ]
+    },
+    "previous_corpus_sha256": "696357f3804090e7db9e5db428937c29c51099840df0da7862be5bca52829e81",
+    "projections": {
+      "evaluation/admission/parsing.py": {
+        "current_sha256": "4b3f8739a04d17f105719b22652d15011912ac2d91a0a0a0695ed2df71a8efec",
+        "edits": [
+          [
+            2289,
+            2593,
+            ""
+          ],
+          [
+            3314,
+            3459,
+            ""
+          ],
+          [
+            13991,
+            14306,
+            "                                  (\"unit/liteinst2/lib\", 278, 1), (\"test/stress\", 7, 3))\n"
+          ]
+        ],
+        "previous_sha256": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956"
+      },
+      "src/engine.rs": {
+        "current_sha256": "0828c1ef125eb11d1ecde005e6dd33ab03bbefe244a9cdd4603c7de0f311acd7",
+        "edits": [
+          [
+            8187,
+            10507,
+            ""
+          ],
+          [
+            11067,
+            11321,
+            ""
+          ],
+          [
+            14627,
+            15140,
+            "            Tactic::NeighborEviction => match neighbor::plan_neighbor_core(\n                request,\n                victim_allocation,\n                policy.neighbor,\n                policy.bundle,\n            ) {\n"
+          ]
+        ],
+        "previous_sha256": "1c43f22fae312f76968c9f64e9cfc9e7de96ba08fa625fc54eefb2f4d39e628b"
+      },
+      "src/neighbor.rs": {
+        "current_sha256": "d93181322163c05b193cfc5886e23263a3c8cd99f7f5b3714ede59e067d2b8c7",
+        "edits": [
+          [
+            8372,
+            8667,
+            ""
+          ]
+        ],
+        "previous_sha256": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc"
+      },
+      "src/neighbor_short/tests.rs": {
+        "current_sha256": "e3e3d8a4d624b7106dddc9008139bfb2ab4e70a4ccc934414e7eb37d0e05ee4d",
+        "edits": [
+          [
+            33325,
+            51159,
+            ""
+          ]
+        ],
+        "previous_sha256": "ec5037aaefb06192230728a4abf0e86930333174e5ac9839d22cd9eef50009f5"
+      },
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "current_sha256": "903f900ab0854539289aeb280537fa0938e19eecfa2cc1e899965fc52c48a825",
+        "edits": [
+          [
+            39500,
+            53036,
+            ""
+          ]
+        ],
+        "previous_sha256": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f"
+      },
+      "tools/elf-rewrite/Cargo.toml": {
+        "current_sha256": "acd1736d8bdd0846ed0a7a2f17d1a33eba83fdc6940b643d9434730fde5637c4",
+        "edits": [
+          [
+            981,
+            993,
+            ""
+          ]
+        ],
+        "previous_sha256": "fd41c1fbcf572779e4b7b36b5dda5df1e90ead0a3398671b8ba67a1a44a4e160"
+      },
+      "tools/elf-rewrite/DISASSEMBLY.md": {
+        "current_sha256": "ac376ee9151d7df01385f2bba4f1e70a6700ab7523f4776135df5ef3fd4f5521",
+        "edits": [
+          [
+            7466,
+            10714,
+            ""
+          ]
+        ],
+        "previous_sha256": "5a0306bff539d480eb781aeb0ded17238b37ac85f9bf6222dbdee8228edf6515"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "current_sha256": "a6f4c7925fb39ac74f4938a97f3d0dea704c2344b3b2ad7bdbcfbc6460814509",
+        "edits": [
+          [
+            1203,
+            2056,
+            ""
+          ],
+          [
+            2091,
+            2632,
+            "    let args: Vec<_> = std::env::args().collect();\n    if args.len() != 7 {\n        return Err(\n            \"disassembly_sites ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY\"\n                .into(),\n        );\n    }\n    let expected_ledger = selection::id(&args[3]).map_err(|e| e.to_string())?;\n    let expected_policy = selection::id(&args[5]).map_err(|e| e.to_string())?;\n    let original = read(Path::new(&args[1]), disassembly::INPUT_LIMIT)?;\n    let ledger = read(Path::new(&args[2]), disassembly::TEXT_LIMIT)?;\n    let policy = read(Path::new(&args[4]), disassembly::TEXT_LIMIT)?;\n"
+          ],
+          [
+            2984,
+            3457,
+            "        files.insert(\"disassembly-inventory.tsv\".into(), imported.inventory());\n        let selected = imported.bind(&policy, expected_policy)?;\n"
+          ],
+          [
+            3749,
+            3967,
+            "    if read(Path::new(&args[1]), disassembly::INPUT_LIMIT)? != original\n        || read(Path::new(&args[2]), disassembly::TEXT_LIMIT)? != ledger\n        || read(Path::new(&args[4]), disassembly::TEXT_LIMIT)? != policy\n"
+          ],
+          [
+            4619,
+            4901,
+            "                \"LI2DISASSEMBLY-FAILURE\\t1\\nprofile\\t{}\\nobserved_original_sha256\\t{}\\nexpected_ledger_sha256\\t{}\\nexpected_policy_sha256\\t{}\\nqualification_complete\\tfalse\\ndetail_hex\\t{detail}\\n\",\n                disassembly::PROFILE, digest(&original), args[3], args[5]).into_bytes());\n"
+          ],
+          [
+            4936,
+            4974,
+            "    let output = Path::new(&args[6]);\n"
+          ],
+          [
+            5117,
+            5279,
+            "        \"LI2DISASSEMBLY-DIRECTORY\\t1\\nprofile\\t{}\\nobserved_original_sha256\\t{}\\ncandidate_complete\\t{complete}\\nqualification_complete\\tfalse\\n\",\n        disassembly::PROFILE,\n"
+          ],
+          [
+            5705,
+            5807,
+            "        \"profile={} candidate_complete={complete} qualification_complete=false\",\n        disassembly::PROFILE\n"
+          ],
+          [
+            6041,
+            8005,
+            ""
+          ]
+        ],
+        "previous_sha256": "120541423ad48547203a086f8eeca85ea8802253613caacce26c0e08acb0c6a7"
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "current_sha256": "5eb3d607873e32923041c5d04584ff5cad22200caaadc7f719ffd2ad8b02dc0d",
+        "edits": [
+          [
+            706,
+            925,
+            ""
+          ],
+          [
+            1925,
+            2383,
+            ""
+          ],
+          [
+            2414,
+            2662,
+            "            \"LI2DISASSEMBLY-INVENTORY\\t1\\nprofile\\t{PROFILE}\\noriginal_sha256\\t{}\\nledger_sha256\\t{}\\ncomplete_jump_count\\t{}\\nqualification_complete\\tfalse\\nid\\tpc\\tlength\\tfile_offset\\tregion_pc\\tregion_length\\tblock_pc\\tblock_length\\n\",\n"
+          ],
+          [
+            3616,
+            4299,
+            ""
+          ],
+          [
+            4520,
+            4696,
+            ""
+          ],
+          [
+            4711,
+            4769,
+            "            rows.len() >= 8 && rows[0] == \"LI2DISASM-POLICY 1\",\n"
+          ],
+          [
+            4810,
+            4925,
+            ""
+          ],
+          [
+            5189,
+            5242,
+            "        for (row, tag) in rows[3..7]\n"
+          ],
+          [
+            5415,
+            5476,
+            "        let hook = fields(rows[7], \"null-hook\", 2)?;\n"
+          ],
+          [
+            5781,
+            5916,
+            ""
+          ],
+          [
+            5952,
+            6038,
+            "            \"LI2TOOL 1\\n{}\\n{}\\n{}\\n{}\\n{}\\nhook 1 {hook} 1 {}\\n\",\n"
+          ],
+          [
+            6059,
+            6175,
+            "            rows[3],\n            rows[4],\n            rows[5],\n            rows[6],\n"
+          ],
+          [
+            7379,
+            7419,
+            "        for row in &rows[8..] {\n"
+          ],
+          [
+            7818,
+            8018,
+            "        let mut selection = selection::parse(manifest.as_bytes())?;\n"
+          ],
+          [
+            8416,
+            8603,
+            ""
+          ],
+          [
+            8634,
+            8921,
+            "            \"LI2PLANNING\\t1\\nprofile\\t{PROFILE}\\nscope\\tartifact-code-regions-not-functions\\nentries\\tall-verified-instruction-heads\\noriginal_sha256\\t{}\\nledger_sha256\\t{}\\npolicy_sha256\\t{}\\nselection_sha256\\t{}\\ncomplete_jump_count\\t{}\\nqualification_complete\\tfalse\\n\",\n"
+          ],
+          [
+            9186,
+            9210,
+            ""
+          ],
+          [
+            9473,
+            9619,
+            "                (\"disassembly-inventory.tsv\".into(), self.inventory()),\n"
+          ],
+          [
+            9869,
+            9902,
+            ""
+          ],
+          [
+            10018,
+            10405,
+            "    /// Canonical LI2TOOL projection for the existing site comparator. Its legacy\n"
+          ]
+        ],
+        "previous_sha256": "c001c29dd8c036e048d8925e34dab102eaa16b6f5065c27bb5811ee4f83a3555"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "current_sha256": "a97fa24ac253023bc50f47bac820cf13640be620f71e7c48f85e7c94bd536fba",
+        "edits": [
+          [
+            13182,
+            24500,
+            ""
+          ]
+        ],
+        "previous_sha256": "b0d4d9775640e7c3da2f54274106485e0dbfc04c4950467dd51d67ecfae855d4"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "cb5d3ae0b8e647dbdf94a975e289b21984979f2d11cb9bcbaf7b2e5b78db165a",
+        "edits": [
+          [
+            2769,
+            2921,
+            "    let mut product = prepare_selection_mode(original, selected.selection.clone(), false)?;\n"
+          ],
+          [
+            3322,
+            3394,
+            "    prepare_selection_mode(original, selection, owned_neighbors)\n"
+          ],
+          [
+            3498,
+            3520,
+            ""
+          ],
+          [
+            3550,
+            3720,
+            ""
+          ],
+          [
+            9961,
+            10221,
+            ""
+          ]
+        ],
+        "previous_sha256": "4867c48de7de26eea9d66c9f572f63132d94ae73f5aaad6b5be40070a0386cba"
+      },
+      "tools/elf-rewrite/src/selection.rs": {
+        "current_sha256": "7651f362a9f4c6fb45980cb0e613468bb56fa156b734a3c741fe928922b88da7",
+        "edits": [
+          [
+            10576,
+            11974,
+            ""
+          ]
+        ],
+        "previous_sha256": "e486cad20b3f5b9e68d4290bd50296fc412aa34bc55e291fd57f77888226b395"
+      }
+    },
+    "scope": "Exact explicit short-only engine/importer source successor; source declarations only, no execution or native qualification.",
+    "source_binding_sha256": "5dc5f37add7f3ed6ef6815fff70f2facf750f17cfff500313aa2636097f6c8e4",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/admission/parsing.py": "4b3f8739a04d17f105719b22652d15011912ac2d91a0a0a0695ed2df71a8efec",
+      "src/engine.rs": "0828c1ef125eb11d1ecde005e6dd33ab03bbefe244a9cdd4603c7de0f311acd7",
+      "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+      "src/neighbor.rs": "d93181322163c05b193cfc5886e23263a3c8cd99f7f5b3714ede59e067d2b8c7",
+      "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+      "src/neighbor_short/tests.rs": "e3e3d8a4d624b7106dddc9008139bfb2ab4e70a4ccc934414e7eb37d0e05ee4d",
+      "src/trampoline.rs": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+      "tests/neighbor_eviction_oracle.rs": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc",
+      "tests/support/neighbor_short_eviction_oracle.rs": "903f900ab0854539289aeb280537fa0938e19eecfa2cc1e899965fc52c48a825",
+      "tools/elf-rewrite/Cargo.toml": "acd1736d8bdd0846ed0a7a2f17d1a33eba83fdc6940b643d9434730fde5637c4",
+      "tools/elf-rewrite/DISASSEMBLY.md": "ac376ee9151d7df01385f2bba4f1e70a6700ab7523f4776135df5ef3fd4f5521",
+      "tools/elf-rewrite/examples/disassembly_sites.rs": "a6f4c7925fb39ac74f4938a97f3d0dea704c2344b3b2ad7bdbcfbc6460814509",
+      "tools/elf-rewrite/src/disassembly.rs": "5eb3d607873e32923041c5d04584ff5cad22200caaadc7f719ffd2ad8b02dc0d",
+      "tools/elf-rewrite/src/disassembly/tests.rs": "a97fa24ac253023bc50f47bac820cf13640be620f71e7c48f85e7c94bd536fba",
+      "tools/elf-rewrite/src/lib.rs": "cb5d3ae0b8e647dbdf94a975e289b21984979f2d11cb9bcbaf7b2e5b78db165a",
+      "tools/elf-rewrite/src/selection.rs": "7651f362a9f4c6fb45980cb0e613468bb56fa156b734a3c741fe928922b88da7"
+    },
+    "workspace_changes": {
+      "test/neighbor_eviction_oracle": {
+        "current": {
+          "ignored": 0,
+          "tests": 100
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 99
+        }
+      },
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 1
+        },
+        "previous": null
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 283
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 278
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 98
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 94
+        }
+      }
+    }
+  },
   "neighbor_short_native": {
     "added_methods": {
       "tests/support/neighbor_short_eviction_oracle.rs": [

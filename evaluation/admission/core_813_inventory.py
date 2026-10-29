@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == '4e4a0a3e625711df2b99d4208e29845d83f583d16517925c86306d8a944e1b4f', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == '0343e6fd1f7a24996e0a13d8e3d428d675ea542674799b39cce33e9e5fdc4ed9', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -70,7 +70,9 @@ CURRENTC6F = MAINC6F['current_corpus_sha256']
 MAINSHORT = DATA['neighbor_short']
 CURRENTSHORT = MAINSHORT['current_corpus_sha256']
 MAINSHORTNATIVE = DATA['neighbor_short_native']
-LATEST = MAINSHORTNATIVE['current_corpus_sha256']
+CURRENTSHORTNATIVE = MAINSHORTNATIVE['current_corpus_sha256']
+MAINSHORTENGINE = DATA['neighbor_short_engine']
+LATEST = MAINSHORTENGINE['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -85,7 +87,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -106,8 +108,60 @@ def precheck_current_sources(error):
         require(inventory_digest.hexdigest(raw) == value, error)
 
 
+def source_before_short_engine(path, data, error):
+    """Authenticate the whole explicit-engine blob before its exact inverse."""
+    if path not in MAINSHORTENGINE['projections']:
+        return data
+    row = MAINSHORTENGINE['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_short_engine_sources(error='neighbor_short_engine_source_inventory_differs'):
+    for path, expected in MAINSHORTENGINE['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAINSHORTENGINE['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAINSHORTENGINE['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAINSHORTENGINE['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAINSHORTENGINE['module_chains'][path]), error)
+
+
+def before_short_engine(declared, error='neighbor_short_engine_inventory_differs', source_error='neighbor_short_engine_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_short_engine_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAINSHORTENGINE['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAINSHORTENGINE['previous_corpus_sha256'] == CURRENTSHORTNATIVE, error)
+    return old
+
+
+def peel_short_engine(declared, error, source_error):
+    return before_short_engine(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_short_native(path, data, error):
     """Only the fixed short-native whole blob may reach its exact historical source."""
+    data = source_before_short_engine(path, data, error)
     if path not in MAINSHORTNATIVE['projections']:
         return data
     row = MAINSHORTNATIVE['projections'][path]
@@ -121,25 +175,32 @@ def source_before_short_native(path, data, error):
     return data
 
 
+def _require_short_native_blob(path, raw, expected, error):
+    require(inventory_digest.hexdigest(raw) == expected, error)
+    if path in MAINSHORTNATIVE['methods']:
+        found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+        row = MAINSHORTNATIVE['methods'][path]
+        require([name for _, name in found] == row['all'] and
+                [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                raw.count(b'#[test]') == len(found), error)
+    if path in MAINSHORTNATIVE['module_chains']:
+        require(all(raw.decode().count(literal) == 1 for literal in MAINSHORTNATIVE['module_chains'][path]), error)
+
+
 def require_short_native_sources(error='neighbor_short_native_source_inventory_differs'):
+    require_short_engine_sources(error)
     for path, expected in MAINSHORTNATIVE['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
-        require(inventory_digest.hexdigest(raw) == expected, error)
-        if path in MAINSHORTNATIVE['methods']:
-            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
-            row = MAINSHORTNATIVE['methods'][path]
-            require([name for _, name in found] == row['all'] and
-                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
-                    raw.count(b'#[test]') == len(found), error)
-        if path in MAINSHORTNATIVE['module_chains']:
-            require(all(raw.decode().count(literal) == 1 for literal in MAINSHORTNATIVE['module_chains'][path]), error)
+        raw = source_before_short_engine(path, raw, error)
+        _require_short_native_blob(path, raw, expected, error)
 
 
 def before_short_native(declared, error='neighbor_short_native_inventory_differs', source_error='neighbor_short_native_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_short_engine(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTSHORTNATIVE, error)
     require_short_native_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -151,7 +212,8 @@ def before_short_native(declared, error='neighbor_short_native_inventory_differs
 
 
 def peel_short_native(declared, error, source_error):
-    return before_short_native(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_short_engine(declared, error, source_error)
+    return before_short_native(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTSHORTNATIVE else declared
 
 
 def source_before_short(path, data, error):
@@ -267,6 +329,18 @@ def source_before_c6f(path, data, error):
     return data
 
 
+def _require_c6f_blob(path, raw, expected, error):
+    require(inventory_digest.hexdigest(raw) == expected, error)
+    if path in MAINC6F['methods']:
+        found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+        row = MAINC6F['methods'][path]
+        require([name for _, name in found] == row['all'] and
+                [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                raw.count(b'#[test]') == len(found), error)
+    if path in MAINC6F['module_chains']:
+        require(all(raw.decode().count(literal) == 1 for literal in MAINC6F['module_chains'][path]), error)
+
+
 def require_c6f_sources(error='mainc6f_source_inventory_differs'):
     require_short_sources(error)
     for path, expected in MAINC6F['sources'].items():
@@ -275,15 +349,7 @@ def require_c6f_sources(error='mainc6f_source_inventory_differs'):
         except OSError:
             require(False, error)
         raw = source_before_short(path, raw, error)
-        require(inventory_digest.hexdigest(raw) == expected, error)
-        if path in MAINC6F['methods']:
-            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
-            row = MAINC6F['methods'][path]
-            require([name for _, name in found] == row['all'] and
-                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
-                    raw.count(b'#[test]') == len(found), error)
-        if path in MAINC6F['module_chains']:
-            require(all(raw.decode().count(literal) == 1 for literal in MAINC6F['module_chains'][path]), error)
+        _require_c6f_blob(path, raw, expected, error)
 
 
 def before_c6f(declared, error='mainc6f_inventory_differs', source_error='mainc6f_source_inventory_differs'):
