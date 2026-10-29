@@ -583,6 +583,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 1596: /* EVEX_Vmovdqa64_zmm_k1z_zmmm512; separately guarded canonical family */
     case 2285: /* EVEX_Vpminub_zmm_k1z_zmm_zmmm512; register-only canonical family */
     case 1935: /* VEX_Kortestq_kr_kr; exact W1/register encoding */
+    case 1604: /* EVEX_Vmovdqu64_ymm_k1z_ymmm256; separately guarded VL256 load/copy */
     case 1605: /* EVEX_Vmovdqu64_zmm_k1z_zmmm512; classifier still exact 62e1fe486f0f */
     case 2791: /* EVEX_Vptestnmb_kr_k1_zmm_zmmm512; classifier still exact 62b2764026c1 */
     case 1933: /* VEX_Kmovq_r64_kr; classifier permits only c4e1fb93f0/c1 */

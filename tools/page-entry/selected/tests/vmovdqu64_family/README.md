@@ -27,10 +27,13 @@ fully inaccessible operands and32+32-byte page crossings; required exit125,
 trap14/ERR4/CR2, zero TRACE/completion and full unchanged state are mandatory.
 
 The original33 VMOVDQU64 neighbor bytes are retained unchanged. Seven exact
-rows0–6 now have mandatory positive Code1605/FALLTHROUGH/SIMD and supplied
-NONE-footprint checks, plus a native pair each. The other26 remain negative;
-all47 common refusals remain. A2080-byte typed trailer records each promotion.
-The six older fixtures containing these seven rows receive the same explicit
+rows0–6 retain mandatory positive Code1605/FALLTHROUGH/SIMD and supplied
+NONE-footprint checks, plus a native pair each. The25 remaining rows stay
+negative; original index12 (`62e1fe286f0f`) now has a separate mandatory
+Code1604/NONE promotion and native coverage in the256 cohort. All47 common
+refusals remain. The original2080-byte seven-row trailer is unchanged; a
+separate352-byte trailer retains the exact Code1604 observation.
+The seven older fixtures containing these seven rows receive the same explicit
 promotion checks and trailer. Their native cases, failures, old catalog bytes,
 all other assertions and process limits remain intact. Counts distinguish
 negative rows from qualified positives; no failed subject becomes a pass.
@@ -41,3 +44,21 @@ the original build/header/ELF/capture/source closure. Each fixture build and
 native process keeps5 CPU seconds,15 wall seconds,512MiB and16MiB, including
 the complete new trailer. The source packet alone grants no native,
 application-completion, performance or full-B2 qualification.
+
+
+The explicit `--vector-bits 256` mode uses `build256.sh` and literal
+`cases256.json`/`cases256.inc`; default512 keeps the original catalogue/build
+invocation. Shared C code selects only operand bytes, Code, exact profile
+identity, displacement/fault geometry and the additional AVX512VL prerequisite.
+For256 every destination bit is checked: the low32 bytes equal the original
+source and the upper32 bytes are zero, including all32 self-copy cases.
+All other state remains exact, and failed reads preserve even the upper bits.
+Ten16-case groups retain170 positive pairs including startup; four required
+faults retain their separate startup pairs and failed outcomes. All42 fetch
+tails, all32 register roles, all bases/indices/scales, RIP/absolute operands,
+the actual libc RSI load and its +32/+64/+96 forms are literal rows. Four
+read faults use fully inaccessible and16+16-byte crossing operands. All25
+additional VL256 negative neighbors must refuse, alongside the72 old negative
+controls after the explicit one-row promotion. A passed512 result does not
+stand in for256; both complete profiles and affected old companions are
+required before promoting the production width addition. Limits remain exact.

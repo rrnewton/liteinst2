@@ -3,9 +3,33 @@
 #define fixture_main li2_unchanged_generic_fixture_main
 #include "tests/generic/fixture.c"
 #undef fixture_main
+#ifndef VM64F_BITS
+#define VM64F_BITS 512
+#endif
+#if VM64F_BITS == 512
+#define VM64F_BYTES 64U
+#define VM64F_CODE 1605U
+#define VM64F_CPU_REQUIRED UINT64_C(0x40010000)
+#define VM64F_OBS_MAGIC UINT64_C(0x314636343156324c)
+#define VM64F_QUERY_MAGIC UINT64_C(0x314736343156324c)
+#define VM64F_REFUSALS 72U
+#define VM64F_PASS "LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=72 promoted_bytes=7 supplied_none_queries=7 vm256_promoted_bytes=1 vm256_supplied_none_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
 #include "cases.inc"
+#elif VM64F_BITS == 256
+#define VM64F_BYTES 32U
+#define VM64F_CODE 1604U
+#define VM64F_CPU_REQUIRED UINT64_C(0xc0010000)
+#define VM64F_OBS_MAGIC UINT64_C(0x314632333156324c)
+#define VM64F_QUERY_MAGIC UINT64_C(0x314732333156324c)
+#define VM64F_REFUSALS 97U
+#define VM64F_PASS "LI2_VMOVDQU64_256_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=97 promoted_bytes=7 supplied_none_queries=7 vm256_promoted_bytes=1 vm256_supplied_none_queries=1 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n"
+#include "cases256.inc"
+#else
+#error "only the two explicitly qualified VMOVDQU64 widths are supported"
+#endif
 #include "write_footprint.h"
 #include "promotions.inc"
+#include "promotions256.inc"
 #ifndef VM64F_GROUP
 #error VM64F_GROUP must select a bounded cohort
 #endif
@@ -39,7 +63,7 @@ static void vpb_cpuid(struct vpb_cpuid *out,unsigned leaf,unsigned subleaf) {
     *out=(struct vpb_cpuid){leaf,subleaf,a,b,c,d};++vpb_observations.query_count;
 }
 static void vpb_layout(void) {
-    vpb_observations.magic=UINT64_C(0x314636343156324c);
+    vpb_observations.magic=VM64F_OBS_MAGIC;
     vpb_observations.version=1;vpb_observations.bytes=sizeof(vpb_observations);
     vpb_observations.group=VM64F_GROUP;vpb_observations.xcr0=fixture_xcr0;
     vpb_observations.xsave_bytes=xsave_bytes;
@@ -49,7 +73,7 @@ static void vpb_layout(void) {
     vpb_cpuid(&vpb_observations.basic[2],7,0);
     vpb_cpuid(&vpb_observations.basic[3],13,0);
     need((vpb_observations.basic[1].c&UINT64_C(0x1c000000))==UINT64_C(0x1c000000)&&
-         (vpb_observations.basic[2].b&UINT64_C(0x40010000))==UINT64_C(0x40010000),1101);
+         (vpb_observations.basic[2].b&VM64F_CPU_REQUIRED)==VM64F_CPU_REQUIRED,1101);
     uint64_t supported=vpb_observations.basic[3].a|(vpb_observations.basic[3].d<<32);
     need((fixture_xcr0&VPB_ACTIVE)==VPB_ACTIVE&&!(fixture_xcr0&~supported)&&
          !(fixture_xcr0>>63)&&vpb_observations.basic[3].b==xsave_bytes&&
@@ -99,7 +123,7 @@ static void vpb_inputs(struct sample *s) {
     fixture_input_flags=UINT64_C(0x247)|((s->id&1)?UINT64_C(0x400):0);
     uintptr_t other=data_page==vm64_high?vm64_low:vm64_high;
     for(size_t i=0;i<PAGE;i++)((unsigned char *)other)[i]=(unsigned char)(i*11+0x59);
-    need(v->dest<32&&v->pattern<3&&v->offset+64<=DATA_BYTES,1193);
+    need(v->dest<32&&v->pattern<3&&v->offset+VM64F_BYTES<=DATA_BYTES,1193);
     uint64_t target=0;
     if(v->src<0) {
         if(v->kind==3)target=s->pc+s->length+(uint64_t)v->displacement;
@@ -124,20 +148,20 @@ static void vpb_inputs(struct sample *s) {
         need(!RAW(SYS_mprotect,data_fault,PAGE,PROT_READ|PROT_WRITE,0,0,0),1195);
         for(size_t i=0;i<PAGE;i++)((unsigned char *)data_fault)[i]=(unsigned char)(i*13+0x5b);
         need(!RAW(SYS_mprotect,data_fault,PAGE,PROT_NONE,0,0,0),1196);
-        target=data_fault-(!(v64_fault_kind&1)?32:0);
+        target=data_fault-(!(v64_fault_kind&1)?VM64F_BYTES/2:0);
         fixture_seed[v->base]=target-(uint64_t)v->displacement-
             (v->index>=0?fixture_seed[v->index]*v->scale:0);
     }
     need(vm64_ea(v,s->pc,fixture_seed)==target,1264);
     if(v->src<0&&s!=&negative_sample) {
         if(v->kind==3) {
-            need(target>=s->mapping&&target+64<=s->mapping+CODE_BYTES&&
-                 !memcmp((const void *)target,v64_patterns[v->pattern],64),1265);
+            need(target>=s->mapping&&target+VM64F_BYTES<=s->mapping+CODE_BYTES&&
+                 !memcmp((const void *)target,v64_patterns[v->pattern],VM64F_BYTES),1265);
         } else {
             uintptr_t object=v->kind==2?subject:data_page;
             size_t extent=v->kind==2?SUBJECT_BYTES:DATA_BYTES;
-            need(target>=object&&target+64<=object+extent,1266);
-            memcpy((void *)target,v64_patterns[v->pattern],64);
+            need(target>=object&&target+VM64F_BYTES<=object+extent,1266);
+            memcpy((void *)target,v64_patterns[v->pattern],VM64F_BYTES);
         }
     }
 }
@@ -154,14 +178,14 @@ static void vpb_prepare(struct sample *s,unsigned index) {
     memcpy(s->source+offset,v->encoding,s->length);
     if(v->kind==3) {
         uint64_t target=s->expected_post+(uint64_t)v->displacement;
-        need(target>=s->mapping&&target+64<=s->mapping+CODE_BYTES&&
-             (target+64<=s->pc||target>s->expected_post),1267);
-        memcpy(s->source+(target-s->mapping),v64_patterns[v->pattern],64);
+        need(target>=s->mapping&&target+VM64F_BYTES<=s->mapping+CODE_BYTES&&
+             (target+VM64F_BYTES<=s->pc||target>s->expected_post),1267);
+        memcpy(s->source+(target-s->mapping),v64_patterns[v->pattern],VM64F_BYTES);
     }
     memcpy((void *)s->mapping,s->source,sizeof(s->source));
     need(!dispatch(SYS_mprotect,s->mapping,CODE_BYTES,PROT_READ|PROT_EXEC,0,0,0),1111);
     need(!li2_decoder_decode(s->pc,(const void *)s->pc,s->length,&s->decoded)&&
-         s->decoded.decode_status==LI2_VALID&&s->decoded.kind==LI2_NONE&&s->decoded.code==1605&&
+         s->decoded.decode_status==LI2_VALID&&s->decoded.kind==LI2_NONE&&s->decoded.code==VM64F_CODE&&
          s->decoded.length==s->length&&!memcmp(s->decoded.bytes,v->encoding,s->length),1112);
 }
 static size_t vpb_offset(unsigned reg,unsigned byte) {
@@ -210,7 +234,7 @@ static void vpb_fp_effect(const struct sample *s,const unsigned char *before,
         if(!s->selftest) {
             if(i>=xmm&&i<xmm+16)expected=literal[i-xmm];
             else if(i>=ymm&&i<ymm+16)expected=literal[16+i-ymm];
-            else if(i>=zmm&&i<zmm+32)expected=literal[32+i-zmm];
+            else if(i>=zmm&&i<zmm+32)expected=VM64F_BITS==256?0:literal[32+i-zmm];
         }
         need(after[i]==expected,1121);
     }
@@ -228,13 +252,13 @@ static void vpc_query(struct sample *s,unsigned index,unsigned lane_index) {
     q->before.fs_base=before->fs;q->before.gs_base=before->gs;
     q->result=li2_decoder_write_footprint(s->pc,s->decoded.bytes,s->length,&q->before,&q->value);
     need(!q->result&&q->value.abi_version==1&&q->value.policy==LI2_WRITE_NONE&&
-         q->value.code==1605&&q->value.length==s->length&&q->value.pc==s->pc&&
+         q->value.code==VM64F_CODE&&q->value.length==s->length&&q->value.pc==s->pc&&
          q->value.next_pc==s->pc+s->length&&!q->value.first&&!q->value.end,1192);
     q->kind=v->kind;q->ea=vm64_ea(v,s->pc,q->before.gpr);
     if(v->src<0) {
         q->object=v->kind==3?s->mapping:v->kind==2?subject:data_page;
         q->offset=q->ea-q->object;
-        if(s==&negative_sample)need(q->ea==data_fault-(!(v64_fault_kind&1)?32:0),1268);
+        if(s==&negative_sample)need(q->ea==data_fault-(!(v64_fault_kind&1)?VM64F_BYTES/2:0),1268);
         else if(v->kind==3)need(q->ea==s->expected_post+(uint64_t)v->displacement,1269);
         else if(v->kind==2)need(q->ea==q->before.gpr[4]&&q->offset==SUBJECT_BYTES/2,1270);
         else need(q->ea==(v->kind==4?v->absolute_target:data_page+v->offset),1271);
@@ -243,7 +267,7 @@ static void vpc_query(struct sample *s,unsigned index,unsigned lane_index) {
 }
 static void vpb_effects(struct sample *s,unsigned index) {
     need(index<VPB_PAIRS&&vpb_observations.checked==index,1122);
-    if(!s->selftest)need(s->owner.classification.policy==1&&s->owner.classification.code==1605&&
+    if(!s->selftest)need(s->owner.classification.policy==1&&s->owner.classification.code==VM64F_CODE&&
         s->owner.classification.flow==LI2_TF_FALLTHROUGH&&s->owner.classification.family==LI2_TF_SIMD&&
         s->length==vpb_case(s)->length&&s->expected_post==s->pc+s->length&&!memcmp(s->decoded.bytes,vpb_case(s)->encoding,s->length),1123);
     const struct li2_step_frame *frames[]={&s->native_before.frame,&s->native_after.frame,
@@ -263,11 +287,11 @@ static void vpb_effects(struct sample *s,unsigned index) {
                 uintptr_t ea=vm64_actual_ea(s,before);
                 uintptr_t object=v->kind==3?s->mapping:v->kind==2?subject:data_page;
                 size_t extent=v->kind==3?CODE_BYTES:v->kind==2?SUBJECT_BYTES:DATA_BYTES;
-                need(ea>=object&&ea+64<=object+extent,1197);
+                need(ea>=object&&ea+VM64F_BYTES<=object+extent,1197);
                 const unsigned char *a=v->kind==3?s->source:v->kind==2?before->stack:before->data;
                 const unsigned char *b=v->kind==3?s->source:v->kind==2?after->stack:after->data;
-                need(!memcmp(a+(ea-object),v64_patterns[v->pattern],64)&&
-                     !memcmp(b+(ea-object),v64_patterns[v->pattern],64),1273);
+                need(!memcmp(a+(ea-object),v64_patterns[v->pattern],VM64F_BYTES)&&
+                     !memcmp(b+(ea-object),v64_patterns[v->pattern],VM64F_BYTES),1273);
             }
             vm64_other_memory();
         }
@@ -288,10 +312,10 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
     struct sample *s=context;
     if(control==1&&s==&negative_sample) {
         need(s->native_fault&&!s->native_complete&&!s->step_endpoint_seen&&
-             s->owner.classification.code==1605&&s->owner.classification.policy==1,1198);
+             s->owner.classification.code==VM64F_CODE&&s->owner.classification.policy==1,1198);
         need((uintptr_t)s->native_after.frame.greg[REG_RIP]==s->pc&&
              s->native_after.frame.greg[REG_TRAPNO]==14&&s->native_after.frame.greg[REG_ERR]==4&&
-             vm64_actual_ea(s,&s->native_after)==data_fault-(!(v64_fault_kind&1)?32:0)&&
+             vm64_actual_ea(s,&s->native_after)==data_fault-(!(v64_fault_kind&1)?VM64F_BYTES/2:0)&&
              (uintptr_t)s->native_after.frame.greg[REG_CR2]==data_fault&&
              (uintptr_t)o->after.greg[REG_CR2]==data_fault,1199);
         for(unsigned i=0;i<16;i++)need(s->native_before.frame.greg[regs[i]]==
@@ -322,7 +346,7 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
         }
         vpb_inputs_observed(s->actual_fp[0],xsave_bytes,0);vpb_inputs_observed(s->actual_fp[1],xsave_bytes,0);
         v64_fault=(typeof(v64_fault)){.kind=v64_fault_kind,.checked=1,.operand=vm64_ea(vpb_case(s),s->pc,fixture_seed),
-            .address=data_fault,.prefix_bytes=!(v64_fault_kind&1)?32:0,.owner_trace=o->trace_seen,
+            .address=data_fault,.prefix_bytes=!(v64_fault_kind&1)?VM64F_BYTES/2:0,.owner_trace=o->trace_seen,
             .native_bv={vpb_header(f[0]->fp,f[0]->fp_bytes,1),vpb_header(f[1]->fp,f[1]->fp_bytes,1)},
             .owner_bv={vpb_header(f[2]->fp,f[2]->fp_bytes,1),vpb_header(f[3]->fp,f[3]->fp_bytes,1)},
             .live_bv={vpb_header(s->actual_fp[0],xsave_bytes,0),vpb_header(s->actual_fp[1],xsave_bytes,0)}};
@@ -333,7 +357,8 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
         need(write_all(3,&vpb_observations,sizeof(vpb_observations))&&
              write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vpc_queries,sizeof(vpc_queries))&&
-             write_all(3,&vm64_promotions,sizeof(vm64_promotions)),1206);
+             write_all(3,&vm64_promotions,sizeof(vm64_promotions))&&
+             write_all(3,&vm256_promotions,sizeof(vm256_promotions)),1206);
 }
 static void vpb_pair(struct sample *s,unsigned index) {
     current=s;fixture_target=s->pc;vpb_inputs(s);borrow(s);lane=0;native_phase=0;fixture_enter();
@@ -368,18 +393,30 @@ static void vpb_refusals(void) {
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
         if(vm64_is_promoted(i)) {
             vm64_promote(i,v->b,v->n,result.decoder_result,&refused_last);
+        } else if(vm256_is_promoted(i)) {
+            vm256_promote(i,v->b,v->n,result.decoder_result,&refused_last);
         } else {
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
         ++result.refusals;
         }
     }
-    vm64_promotions_complete();
+    vm64_promotions_complete();vm256_promotions_complete();
+#if VM64F_BITS == 256
+    _Static_assert(sizeof(vm256_refused)/sizeof(vm256_refused[0])==25,"closed VL256 neighbors");
+    for(size_t i=0;i<25;i++) {
+        const struct vpb_refusal *v=&vm256_refused[i];result.failed_refusal=80+i;
+        result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
+        need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
+             !refused_last.policy&&!refused_last.flow&&!refused_last.family,1290+(unsigned)i);
+        ++result.refusals;
+    }
+#endif
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+
-                   sizeof(vpb_observations)+sizeof(v64_fault)+sizeof(vpc_queries)+sizeof(vm64_promotions)<16*1024*1024,"unchanged complete record cap");
+                   sizeof(vpb_observations)+sizeof(v64_fault)+sizeof(vpc_queries)+sizeof(vm64_promotions)+sizeof(vm256_promotions)<16*1024*1024,"unchanged complete record cap");
     _Static_assert(sizeof(vpb_observations)==5000,"literal trailer extent");
     _Static_assert(sizeof(v64_fault)==96,"actual failed-read trailer extent");
     _Static_assert(sizeof(vpb_refused)/sizeof(vpb_refused[0])==33,"closed supplied neighbors");
@@ -402,13 +439,13 @@ int fixture_main(unsigned long *stack) {
         need(v64_fault_kind>=1&&v64_fault_kind<=4,1210);control=1;
     }
     result.control=control;
-    vpc_queries.magic=UINT64_C(0x314736343156324c);vpc_queries.version=1;
+    vpc_queries.magic=VM64F_QUERY_MAGIC;vpc_queries.version=1;
     vpc_queries.bytes=sizeof(vpc_queries);vpc_queries.group=VM64F_GROUP;
     size_t complete=0,failed=0;uint32_t decoder_result=0;
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
-    vpb_refusals();need(result.refusals==73&&vm64_promotions.completed==7,1183);
+    vpb_refusals();need(result.refusals==VM64F_REFUSALS&&vm64_promotions.completed==7&&vm256_promotions.completed==1,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     if(control){vpb_prepare(&negative_sample,v64_fault_kind<=2?64:80);vpb_pair(&negative_sample,1);die(1211);}
@@ -417,7 +454,8 @@ int fixture_main(unsigned long *stack) {
          write_all(3,&vpb_observations,sizeof(vpb_observations))&&
          write_all(3,&v64_fault,sizeof(v64_fault))&&
              write_all(3,&vpc_queries,sizeof(vpc_queries))&&
-             write_all(3,&vm64_promotions,sizeof(vm64_promotions)),1184);
-    output("LI2_VMOVDQU64_FAMILY_TF_PASS pairs=17 moves=16 selftest=1 refusal_bytes=73 promoted_bytes=7 supplied_none_queries=7 footprint_queries=32 full_state=17 full_memory=17 live_endpoints=17\n");
+             write_all(3,&vm64_promotions,sizeof(vm64_promotions))&&
+             write_all(3,&vm256_promotions,sizeof(vm256_promotions)),1184);
+    output(VM64F_PASS);
     return 0;
 }

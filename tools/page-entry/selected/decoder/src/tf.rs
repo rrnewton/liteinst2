@@ -338,6 +338,13 @@ fn classify(
         // Full64-bit OR test of two original K registers; only flags change.
         if !matches!(&source[..instruction.len()], [0xc4, 0xe1, 0xf8, 0x98, m]
             if (*m & 0xc0) == 0xc0) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vmovdqu64_ymm_k1z_ymmm256 {
+        // Canonical EVEX.256.W1 load/register-copy. Original ModRM/SIB/RIP
+        // addresses and CPU-scaled disp8*32; the CPU zeros ZMM bits511:256.
+        // Exact P1/P2 retain F3/reserved vvvv/V', no mask/zeroing/broadcast,
+        // and only VL256. No leading prefix or store Code is authorized.
+        if !matches!(&source[..instruction.len()], [0x62, p0, 0xfe, 0x28, 0x6f, _, ..]
+            if (*p0 & 0x0f) == 0x01) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512 {
         // Canonical EVEX.512.W1 load/register-copy. All32 ZMM registers and
         // original64-bit ModRM/SIB/RIP addresses; disp8 is CPU-scaled by64.
@@ -655,6 +662,7 @@ fn classify(
         | Code::Pmaxud_xmm_xmmm128
         // Exact unmasked EVEX512 broadcast, checked before this Code arm.
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
+        | Code::EVEX_Vmovdqu64_ymm_k1z_ymmm256
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vmovdqa64_zmm_k1z_zmmm512
         | Code::EVEX_Vpminub_zmm_k1z_zmm_zmmm512
