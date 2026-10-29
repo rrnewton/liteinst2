@@ -110,7 +110,7 @@ impl HistoryBatch {
         replay(&self.chunk, prefix)
     }
 }
-fn replay(chunk: &HistoryChunk, prefix: u64) -> Option<HistoryBinding> {
+pub(super) fn replay(chunk: &HistoryChunk, prefix: u64) -> Option<HistoryBinding> {
     if prefix < chunk.range.start
         || prefix > chunk.range.end
         || chunk.range.end.checked_sub(chunk.range.start)? != chunk.actions.len() as u64

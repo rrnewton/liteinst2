@@ -2,6 +2,26 @@
 //! This finite facade grants neither a gate nor nested/concurrent execution.
 use super::*;
 use liteinst2::contracts::CodeIdentity;
+mod session;
+mod session_history;
+pub use session::{NormalModuleSessionController, PreparedNormalModuleSessionController};
+pub use session_history::{
+    NormalModuleHistoryBatch, NormalModuleHistoryStream, NormalModuleHistoryWindow,
+};
+
+pub(super) fn session_profile_matches(
+    profile: &BindingProfile,
+    limits: Limits,
+    config: Config,
+) -> bool {
+    session::profile_matches(profile, limits, config)
+}
+pub(super) fn session_binding_matches(binding: &Binding) -> bool {
+    session::binding_matches(binding)
+}
+pub(super) fn module_runtime_matches(binding: &Binding) -> bool {
+    binding_matches(binding) || session::binding_matches(binding)
+}
 
 const LIMITS: Limits = Limits {
     epochs: 1,
@@ -132,7 +152,7 @@ impl NormalModuleClient {
     ) -> Result<NormalModuleThread, BridgeError> {
         let _scope = ControllerScope::enter()?;
         self.binding.process()?;
-        if !binding_matches(&self.binding)
+        if !module_runtime_matches(&self.binding)
             || registration == 0
             || journal.page.0.iter().any(|&word| word != 0)
         {
@@ -173,10 +193,13 @@ pub struct NormalModuleRecord {
     pub function: FunctionId,
     pub record: NormalRecord,
 }
-/// Complete finite legacy-history transfer. Slots/sequences/ordinals are global;
+/// Complete module transfer, with optional absolute-history identity.
+/// Slots/sequences/ordinals are global;
 /// the function tag does not change the existing seven-word journal events.
 #[derive(Debug, Eq, PartialEq)]
 pub struct NormalModuleBatch {
+    stream: Option<NormalModuleHistoryStream>,
+    history_end: Option<u64>,
     identity: CodeIdentity,
     functions: [FunctionId; 2],
     entries: [u64; 2],
@@ -191,6 +214,14 @@ pub struct NormalModuleBatch {
     journal: Vec<u64>,
 }
 impl NormalModuleBatch {
+    /// None for the unchanged finite profile; this identity owns no epoch or code.
+    pub fn history_stream(&self) -> Option<&NormalModuleHistoryStream> {
+        self.stream.as_ref()
+    }
+    /// Captured before final receipt consumption; not proof of retained history.
+    pub fn history_high_water(&self) -> Option<u64> {
+        self.history_end
+    }
     pub fn identity(&self) -> CodeIdentity {
         self.identity
     }
@@ -236,6 +267,8 @@ pub(super) struct ModuleOutput {
     records: Vec<NormalModuleRecord>,
 }
 pub(super) struct ModuleIdentity {
+    stream: Option<NormalModuleHistoryStream>,
+    history_end: Option<u64>,
     identity: CodeIdentity,
     functions: [FunctionId; 2],
     entries: [u64; 2],
@@ -252,13 +285,20 @@ impl TransferOutput for ModuleOutput {
         self.records.is_empty() && self.records.capacity() >= CALLS
     }
     fn identity(&self, state: &NormalState) -> Result<Self::Identity, BridgeError> {
-        if !binding_matches(&state.binding) {
+        if !module_runtime_matches(&state.binding) {
             return Err(error(Cause::Identity));
         }
         let BindingProfile::Module { site, functions } = &state.binding.profile else {
             return Err(error(Cause::Identity));
         };
+        let stream = session_history::stream_for(&state.binding);
+        let history_end = stream.as_ref().map(|_| state.history_bound());
+        if history_end.is_some_and(|end| end > crate::frontend::MAX_HISTORY_POSITION) {
+            return Err(error(Cause::Capacity));
+        }
         Ok(ModuleIdentity {
+            stream,
+            history_end,
             identity: site.identity(),
             functions: *functions,
             entries: [site.functions()[0].entry(), site.functions()[1].entry()],
@@ -272,6 +312,8 @@ impl TransferOutput for ModuleOutput {
     }
     fn finish(self, id: Self::Identity, h: TransferHeader, journal: Vec<u64>) -> Self::Batch {
         NormalModuleBatch {
+            stream: id.stream,
+            history_end: id.history_end,
             identity: id.identity,
             functions: id.functions,
             entries: id.entries,

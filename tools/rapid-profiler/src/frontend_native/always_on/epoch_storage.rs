@@ -10,6 +10,15 @@ pub struct IntervalEpochStorage {
     key: Arc<()>,
     storage: EpochStorage,
 }
+#[cfg(test)]
+impl IntervalEpochStorage {
+    pub(super) fn test_fingerprint(&self) -> impl std::fmt::Debug + Eq + use<> {
+        (
+            Arc::as_ptr(&self.key) as usize,
+            self.storage.test_fingerprint(),
+        )
+    }
+}
 impl std::fmt::Debug for IntervalEpochStorage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IntervalEpochStorage")
@@ -33,13 +42,53 @@ fn normal_profile(site: &site::Site, limits: Limits) -> bool {
             || (site.is_normal_two_callers() && limits.threads == 2))
 }
 
+#[derive(Clone, Copy)]
+enum Profile {
+    Normal,
+    ModuleSession,
+}
+
+pub(super) fn prepare_module(
+    prepared: &mut PreparedIntervalController,
+    config: Config,
+) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
+    prepare_for(prepared, config, Profile::ModuleSession)
+}
+
+#[allow(clippy::result_large_err)] // Return the same bank without allocating an error box.
+pub(super) fn stage_module(
+    controller: &mut IntervalController,
+    bank: IntervalEpochStorage,
+) -> Result<IntervalEpoch, (BridgeError, IntervalEpochStorage)> {
+    controller.stage_prepared_for(bank, Profile::ModuleSession)
+}
+
 pub(super) fn prepare(
     prepared: &mut PreparedIntervalController,
     config: Config,
 ) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
+    prepare_for(prepared, config, Profile::Normal)
+}
+
+fn prepare_for(
+    prepared: &mut PreparedIntervalController,
+    config: Config,
+    profile: Profile,
+) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
     let _scope = ControllerScope::enter()?;
-    if !normal_profile(prepared.profile.single()?.0, prepared.limits) {
-        return Err(error(Cause::Identity));
+    match profile {
+        Profile::Normal => {
+            if !normal_profile(prepared.profile.single()?.0, prepared.limits) {
+                return Err(error(Cause::Identity));
+            }
+        }
+        Profile::ModuleSession => {
+            if !normal::module_session_profile_matches(&prepared.profile, prepared.limits, config)
+                || prepared.session.history_mode() != HistoryMode::Absolute
+            {
+                return Err(error(Cause::Identity));
+            }
+        }
     }
     // Reserve the facade result before the core can commit banked mode. The core
     // authenticates Absolute/pristine/once-only state and completes all other
@@ -72,6 +121,15 @@ impl IntervalController {
         &mut self,
         bank: IntervalEpochStorage,
     ) -> Result<IntervalEpoch, (BridgeError, IntervalEpochStorage)> {
+        self.stage_prepared_for(bank, Profile::Normal)
+    }
+
+    #[allow(clippy::result_large_err)] // Preserve the returned bank until custody is restored.
+    fn stage_prepared_for(
+        &mut self,
+        bank: IntervalEpochStorage,
+        profile: Profile,
+    ) -> Result<IntervalEpoch, (BridgeError, IntervalEpochStorage)> {
         let _scope = match ControllerScope::enter() {
             Ok(scope) => scope,
             Err(e) => return Err((e, bank)),
@@ -82,14 +140,23 @@ impl IntervalController {
         if !Arc::ptr_eq(&bank.key, &self.binding.key) {
             return Err((error(Cause::Epoch), bank));
         }
-        if !self
-            .binding
-            .single_site()
-            .is_ok_and(|site| normal_profile(site, self.binding.limits))
-            || !matches!(self.binding.entry_mode, EntryMode::Concurrent)
-            || self.binding.session.history_mode() != HistoryMode::Absolute
-        {
-            return Err((error(Cause::Identity), bank));
+        match profile {
+            Profile::Normal => {
+                if !self
+                    .binding
+                    .single_site()
+                    .is_ok_and(|site| normal_profile(site, self.binding.limits))
+                    || !matches!(self.binding.entry_mode, EntryMode::Concurrent)
+                    || self.binding.session.history_mode() != HistoryMode::Absolute
+                {
+                    return Err((error(Cause::Identity), bank));
+                }
+            }
+            Profile::ModuleSession => {
+                if !normal::module_session_binding_matches(&self.binding) {
+                    return Err((error(Cause::Identity), bank));
+                }
+            }
         }
         let index = self
             .epochs

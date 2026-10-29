@@ -12,6 +12,34 @@ pub(crate) struct EpochStorage {
     payloads: Vec<OnceLock<Payload>>,
 }
 
+#[cfg(test)]
+impl EpochStorage {
+    /// Borrowed storage identity and state; the copy retains no storage owner.
+    pub(crate) fn test_fingerprint(&self) -> impl std::fmt::Debug + Eq + use<> {
+        #[derive(Debug, Eq, PartialEq)]
+        struct Fingerprint {
+            spec: usize,
+            index: usize,
+            config: Config,
+            model: [(usize, usize, usize); 2],
+            payload: (usize, usize, usize),
+            clean: bool,
+        }
+        Fingerprint {
+            spec: Arc::as_ptr(&self.spec) as usize,
+            index: self.index,
+            config: self.config,
+            model: self.model.geometry(),
+            payload: (
+                self.payloads.as_ptr() as usize,
+                self.payloads.len(),
+                self.payloads.capacity(),
+            ),
+            clean: self.model.clean() && self.payloads.iter().all(|p| p.get().is_none()),
+        }
+    }
+}
+
 // Diagnostic identity only; no owner, mutable buffer or payload escape.
 impl std::fmt::Debug for EpochStorage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
