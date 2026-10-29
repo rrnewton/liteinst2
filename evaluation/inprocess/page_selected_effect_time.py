@@ -191,18 +191,23 @@ def publish(path,r,private):
     value={k:r.get(k)for k in('schema','profile','scope','status','expected_revision','started_utc','source','source_unchanged',
         'cpu','bounds','reproduce','cleanup_complete','system_inputs','interpreter_entry')}
     measured=r.get('terminal_reports',{}).get('measurement',{})
+    entry=r.get('entry_qualification',{})
     value.update(hardware=hw,private_receipt=fact(private/'receipt.json'),commands=len(commands),captures=len(captures),
         command_rows_sha256=digest(commands),capture_manifest_sha256=digest(captures),
         inputs_sha256=digest(r['inputs_before']),artifacts_sha256=digest(r['artifacts_before']),
         archive=r.get('archive'),build_status=r.get('build',{}).get('status'),
         tool_versions=r.get('build',{}).get('numeric_versions'),tool_bindings_sha256=digest(r.get('build',{}).get('tools',{})),
         configuration_unchanged=r.get('build',{}).get('configuration_unchanged',False),
-        timing_builds=[{k:b[k]for k in('name','status','recipe','archive','configuration','bridge')if k in b}
+        timing_builds=[{k:b[k]for k in('name','status','bridge')if k in b}
             for b in r.get('timing_builds',[])],
         original_clock_qualification=[{k:x[k]for k in('name','status','exit','record')if k in x}
             for x in r['qualification']],
-        entry_qualification=dict(status=r.get('entry_qualification',{}).get('status','unexecuted'),
-            evidence_sha256=digest(r.get('entry_qualification'))),
+        entry_qualification=dict(status=entry.get('status','unexecuted'),identity=entry.get('identity'),
+            evidence_sha256=digest(r.get('entry_qualification')),
+            case_fields=['mode','status','exit','full_state','completed_entry','supplied_refusals','failure_code'],
+            cases=[[c['mode'],c['status'],c.get('exit'),c.get('observation',{}).get('full_state'),
+                c.get('observation',{}).get('completed_entry'),c.get('supplied_mutations',{}).get('refused'),
+                c.get('failure_terminal',{}).get('failure_code')]for c in entry.get('cases',[])]),
         planned_programs=4,actual_programs=sum(type(c.get('pid'))is int for c in commands if c['name']in
             ('discovery-native','discovery-gated','measurement-native','measurement-gated')),
         completed_programs=sum(c['status']=='passed'for c in r['cases']),
@@ -212,16 +217,17 @@ def publish(path,r,private):
             application_completed=c.get('comparison',{}).get('application_completed'),
             default_rseq_registered=c.get('comparison',{}).get('default_rseq_registered'))for c in r['cases']],
         selection=r.get('selection'),selected_configuration=r.get('selected_configuration'),
-        timing=r.get('timing')if r['status']=='passed'else None,
+        timing={k:v for k,v in r.get('timing',{}).items()if k not in
+            ('scope','sample_origins','site','interpreter_sha256','entry_to_first_closed_unit')}if r['status']=='passed'else None,
+        first_closed_unit={k:v for k,v in r.get('timing',{}).get('entry_to_first_closed_unit',{}).items()if k not in
+            ('scope','clock','clock_id','clocks','interpreter_sha256','interpreter_elf_offset','source_file_offset')}if r['status']=='passed'else None,
         raw_samples=measured.get('samples',[]),raw_origins=measured.get('origins',[]),
         raw_entry_ns=measured.get('entry',{}).get('ns',[]),
+        raw_entry_identity=measured.get('entry',{}).get('identity',[]),
+        raw_entry_closure=measured.get('entry',{}).get('closure',[]),
         error_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
-        command_recipe=dict(timing='tools/page-entry/selected/build-effect-timing.sh',
-            native=['/bin/ls','-d','.'],gated=['python3','-B','tools/page-entry/carrier.py','exec-loader',
-                '--library-root','/usr/lib64','--namespace','${PRIVATE_NAMESPACE}','${CURRENT_TIMING_CARRIER}',
-                '/bin/ls','--','/bin/ls','-d','.'],environment='PATH=/usr/bin:/bin LANG=C LC_ALL=C TZ=UTC LD_BIND_NOW=1; default rseq'),
         full_b2_qualification=False,application_stress_qualification=False,steady_state_throughput_credit=False,
-        timing_scope='Two fresh native/gated real-LS pairs: discovery then a measurement at its frozen lowest eligible interpreter site. Eleven raw samples retain all33 recurring clocks; two separate entry clocks bracket after-boot pre-restore through exact MOV STEP/release. Whole-process durations include launch, namespace, capture and cleanup. No full first-touch, first-instruction or speedup claim.')
+        timing_scope='First closed unit: after li2_boot, before original state restoration, through exact MOV STEP/revoke/release before CALL. Recurring round trip: after source fetch/plan, immediately before publication through genuine block exit/reset before guard dispatch; publication subinterval ends before arm. Eleven raw samples retain all33 recurring clocks; two entry stamps are separate. Whole-process durations include launch/namespace/capture/cleanup. No first-touch, first-instruction, steady-throughput or speedup claim.')
     text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(len(text.encode())<10<<10 and not any(x and len(x)>1 and x in text for x in
         (str(ROOT),str(Path.home()),platform.node(),'/home/')),'compact public receipt without raw/private paths')
