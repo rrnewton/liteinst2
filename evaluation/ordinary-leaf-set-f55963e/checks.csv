@@ -1,0 +1,9 @@
+name,status,exit_code,seconds,passed,failed,ignored,cleanup_complete,rescues,private_log_sha256,command
+reference-runner-development,PASS,0,1.5336114231031388,25,0,0,True,0,e9959daae6f42e1b05632cc2e7ce48d5405e137dfbd6a0142c8ecf1190ac4b53,python3 -B evaluation/ordinary-leaf-set-session/original_controls.py -v; python3 -B evaluation/ordinary-leaf-set-session/runner_controls.py -v; gcc -O2 -std=c11 -Wall -Wextra -Werror evaluation/ordinary-leaf-set-session/original_controls.c -ldl -o ORIGINAL_CONTROLS; ORIGINAL_CONTROLS; gcc -O2 -std=c11 -Wall -Wextra -Werror evaluation/ordinary-module-session/original_mount_controls.c -ldl -o MOUNT_CONTROLS; MOUNT_CONTROLS; gcc -O2 -std=c11 -Wall -Wextra -Werror -fsyntax-only evaluation/ordinary-leaf-set-session/original.c
+fmt,PASS,0,7.17154602590017,0,0,0,True,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,cargo fmt --check
+clippy,PASS,0,0.13407646911218762,0,0,0,True,0,9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c,cargo clippy --workspace --all-targets --all-features -- -D warnings
+check,PASS,0,0.11188436602242291,0,0,0,True,0,9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c,cargo check --workspace --all-features --all-targets
+workspace-default,PASS,0,343.96198506094515,3265,0,36,True,0,a69c544847e44eafa33eda0971a9f79c537535d5a73fb05b59126ff4546da864,cargo test --workspace
+serial-launch,PASS,0,125.79214540799148,1039,0,0,True,0,4ec272521219142a10c5001fe9d11eb89365775b69fb04f3eb4b1c90bc21372a,cargo test -p liteinst-launch -- --test-threads=1 --nocapture
+staged-allocation,PASS,0,0.036746287951245904,3,0,0,True,0,f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5,cargo test -p liteinst2 --lib staged
+prefixed-pun,PASS,0,1.3518500020727515,36,0,0,True,0,8d0b0ede40be21545f51e1e684e73dbb3a5289323eedf08f0dd5250d10c1fc36,cargo test -p liteinst2 --test prefixed_pun_oracle

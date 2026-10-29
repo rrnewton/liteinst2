@@ -1,0 +1,500 @@
+{
+  "accepted_totals": {
+    "installed": {
+      "batches": 2032,
+      "calls": 3048,
+      "epochs": 210,
+      "records": 2032,
+      "sampled": 3009,
+      "unsampled": 39
+    },
+    "originals": {
+      "batches": 0,
+      "calls": 10160,
+      "epochs": 0,
+      "records": 4064,
+      "sampled": 0,
+      "unsampled": 0
+    }
+  },
+  "artifacts": {
+    "candidate": {
+      "bytes": 13568,
+      "sha256": "ad96e10da83a09bd3706f591db755b8a7f86a64852b4ee4fa74bb2c0ebddf28c"
+    },
+    "original_dso": {
+      "bytes": 13568,
+      "sha256": "ad96e10da83a09bd3706f591db755b8a7f86a64852b4ee4fa74bb2c0ebddf28c"
+    },
+    "trusted": {
+      "bytes": 13568,
+      "sha256": "ad96e10da83a09bd3706f591db755b8a7f86a64852b4ee4fa74bb2c0ebddf28c"
+    }
+  },
+  "bounds": {
+    "arm_ns": 2000000,
+    "cpu_seconds": 20,
+    "inner_wall_seconds": 30,
+    "installed_children": 120,
+    "original_children": 24,
+    "outer_log_bytes": 8388608,
+    "outer_wall_seconds": 7200,
+    "owner_wall_seconds": 55,
+    "period_ns": 10000000,
+    "producer_seconds": 15,
+    "resident_banks": 3,
+    "retries": 0,
+    "shutdown_ns": 2000000000,
+    "stream_bytes": 4194304,
+    "total_epochs": 520,
+    "whole_attempts": 5
+  },
+  "build_environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_RELEASE_DEBUG": "0",
+    "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+    "CARGO_TERM_COLOR": "never"
+  },
+  "checks": {
+    "command": "cpuset-alloc run --cores 8 --sample-s 1 --tag li2core-leaf-checks-f55963e -- python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/FRESH_CHECKS\" --checks-only",
+    "counts": {
+      "check": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "clippy": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "fmt": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "prefixed-pun": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 36
+      },
+      "reference-runner-development": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 25
+      },
+      "serial-launch": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1039
+      },
+      "staged-allocation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 3
+      },
+      "workspace-default": {
+        "failed": 0,
+        "ignored": 36,
+        "passed": 3265
+      }
+    },
+    "cpus": [
+      1,
+      82,
+      91,
+      130,
+      163,
+      165,
+      176,
+      183
+    ],
+    "outer": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "c2b9e512f695dcbca4e0d0a8b9dc698385aaf612cc431152649baf04f1476527",
+      "reaped_descendants": 0,
+      "seconds": 480.37713712081313,
+      "start_utc": "2026-10-29T12:07:34.442157+00:00",
+      "termination": null
+    },
+    "revision": "f55963ea38e64b50d9300cc78d1a24e65a44df72",
+    "status": "PASS"
+  },
+  "command": "cpuset-alloc run --cores 3 --sample-s 1 --tag li2core-leaf-set-f55963e -- python3 -B evaluation/ordinary-leaf-set-session/reproduce.py --revision f55963ea38e64b50d9300cc78d1a24e65a44df72 --raw \"$REPO/ignored/FRESH_CAMPAIGN\" --reservation-tag li2core-leaf-set-f55963e --toolchain \"$TOOLCHAIN\" --user-home \"$USER_HOME\" --cargo-home \"$CARGO_HOME\"",
+  "controls": {
+    "mount_c": 6,
+    "new_checker": 14,
+    "old_python": 26,
+    "ordinary": 64,
+    "original_c": 4,
+    "original_python": 6,
+    "runner": 9,
+    "sdk": 18
+  },
+  "counts": {
+    "installed": {
+      "FAILED": 1,
+      "PASS": 12,
+      "UNRUN": 107
+    },
+    "originals": {
+      "FAILED": 0,
+      "PASS": 24,
+      "UNRUN": 0
+    }
+  },
+  "disk_preflight": {
+    "build_reserve_bytes": 1500000000,
+    "retained_evidence_bytes": 2147483648,
+    "slot_bytes": 16312720893,
+    "slot_limit_bytes": 20000000000,
+    "wrapper_evidence_allowance_bytes": 25165824
+  },
+  "evidence_budget": {
+    "charged_rounded_bytes": 57278464,
+    "exceeded": false,
+    "final_allowance": 67108864,
+    "held_bytes": 0,
+    "limit": 2147483648,
+    "reservation_active": false,
+    "scope": "Retained evidence only; shared target build cache/artifacts are separate; no filesystem quota."
+  },
+  "failure": {
+    "attempt": 1,
+    "child_exit": -6,
+    "diagnosis": "Source inspection found a deterministic incompatibility: the chosen certified digit-counting function has a four-byte MOV/RET role block; groups() requires at least five bytes and returns NoPatchWindow. The prepublication FailStop guard aborts while propagating preparation errors. The actual returned error and abort stack were not captured, so this is a source diagnosis, not exclusive runtime attribution. No debugger or diagnostic rerun was used; this campaign provides no deadline-miss diagnosis.",
+    "index": 12,
+    "k": 10,
+    "kind": "empty",
+    "n": 3,
+    "normal_reaps": 1,
+    "rescue": false,
+    "sent_bytes": 0,
+    "stderr_bytes": 0,
+    "stdout_bytes": 0
+  },
+  "geometry": {
+    "bodies": [
+      {
+        "edges": 49,
+        "heads": [
+          0,
+          3,
+          5,
+          7,
+          10,
+          12,
+          14,
+          16,
+          19,
+          21,
+          25,
+          27,
+          31,
+          34,
+          37,
+          40,
+          42,
+          46,
+          50,
+          53,
+          55,
+          58,
+          60,
+          64,
+          66,
+          71,
+          73,
+          76,
+          80,
+          83,
+          85,
+          89,
+          90,
+          96,
+          99,
+          101,
+          104,
+          108,
+          114,
+          116,
+          120,
+          125
+        ],
+        "length": 126,
+        "returns": [
+          89,
+          125
+        ]
+      },
+      {
+        "edges": 16,
+        "heads": [
+          0,
+          3,
+          6,
+          8,
+          10,
+          12,
+          16,
+          20,
+          23,
+          25,
+          29,
+          31,
+          34,
+          35,
+          40,
+          41
+        ],
+        "length": 42,
+        "returns": [
+          34,
+          40,
+          41
+        ]
+      },
+      {
+        "edges": 20,
+        "heads": [
+          0,
+          3,
+          5,
+          8,
+          11,
+          16,
+          19,
+          22,
+          25,
+          27,
+          31,
+          35,
+          38,
+          40,
+          43,
+          44,
+          48,
+          51,
+          54
+        ],
+        "length": 55,
+        "returns": [
+          43,
+          54
+        ]
+      },
+      {
+        "edges": 16,
+        "heads": [
+          0,
+          3,
+          5,
+          8,
+          10,
+          16,
+          19,
+          21,
+          25,
+          29,
+          32,
+          34,
+          35,
+          40,
+          42
+        ],
+        "length": 43,
+        "returns": [
+          34,
+          42
+        ]
+      }
+    ],
+    "caller": {
+      "call_bytes": "ffd0",
+      "continuation_offset": 15,
+      "elf_va": 2508000,
+      "length": 20,
+      "store_bytes": "488903"
+    },
+    "leaves": [
+      {
+        "elf_va": 4096,
+        "extent": 126,
+        "function_id": 11,
+        "operation": "csv_fields",
+        "policy": "certified",
+        "returns": [
+          89,
+          125
+        ]
+      },
+      {
+        "elf_va": 4224,
+        "extent": 42,
+        "function_id": 22,
+        "operation": "length",
+        "policy": "whole",
+        "returns": [
+          34,
+          40,
+          41
+        ]
+      },
+      {
+        "elf_va": 4272,
+        "extent": 55,
+        "function_id": 33,
+        "operation": "ascii_digits",
+        "policy": "certified",
+        "returns": [
+          43,
+          54
+        ]
+      },
+      {
+        "elf_va": 4336,
+        "extent": 43,
+        "function_id": 44,
+        "operation": "ascii_spaces",
+        "policy": "certified",
+        "returns": [
+          34,
+          42
+        ]
+      }
+    ],
+    "original_caller": {
+      "continuation": 16,
+      "extent": 21
+    }
+  },
+  "hardware": {
+    "cpu": {
+      "cpu family": "26",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "kernel": "7.1.3",
+    "label": "AMD EPYC Zen 5 dev host",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "inner_custody_closed": false,
+  "inner_retention_verified": false,
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "9b30bc1530f74f2bba6625584ecb6455ee57e3e296feb79e096adf4bf53f56e3",
+    "reaped_descendants": 0,
+    "seconds": 147.420782368863,
+    "start_utc": "2026-10-29T12:16:22.087104+00:00",
+    "termination": null
+  },
+  "postclosure_root_authenticated_files": 987,
+  "provenance": {
+    "launcher_review_sha256": "284ebb92b5d6cf4c2aea7569dfe07d5b1d5ba2e136a25bc59965e4e19c36901d",
+    "launcher_source_sha256": "9e2c21bb7f7fe0ab97c4a8cbb3ce1202caafb47eb5a1acbf0b9af5483348d042",
+    "original_review_sha256": "dcc84cc277c0a1da777195a252494c46a288142e28fc947031e2b89381fa39ef",
+    "private_result_sha256": "0d5f9e04bb45315b3b44ebdc76f9c58c10c2461f9f4c554fbcefd7e07e7e0a9f",
+    "private_summary_sha256": "dff06a27b826f6bf1767d38d7adb96dcabddc23257dc100178f3d8cecbdf3c22",
+    "protocol_sha256": "b941c1061dbf03a6f1e36d4df52720269d36f70226254d2d6012129298dcec3d",
+    "runner_review_sha256": "ed8411c0966ff0d6613cdb798f266366a135cd972ddb0424f32865883fbc8dd7",
+    "source_integration_sha256": "41fdac48c3ee7aac4f1932cce78b20bcfb948cf6317a81cc3f1794f70ceaf6a0"
+  },
+  "qualifications": [
+    {
+      "attempt": 1,
+      "failed": 1,
+      "pass": 12,
+      "unrun": 11
+    },
+    {
+      "attempt": 2,
+      "failed": 0,
+      "pass": 0,
+      "unrun": 24
+    },
+    {
+      "attempt": 3,
+      "failed": 0,
+      "pass": 0,
+      "unrun": 24
+    },
+    {
+      "attempt": 4,
+      "failed": 0,
+      "pass": 0,
+      "unrun": 24
+    },
+    {
+      "attempt": 5,
+      "failed": 0,
+      "pass": 0,
+      "unrun": 24
+    }
+  ],
+  "raw": "Raw logs, streams and binaries remain ignored. Cases and stages retain every fixed planned outcome; durations are operational data, not performance results.",
+  "reservation": {
+    "cpus": [
+      3,
+      50,
+      53
+    ],
+    "driver_load_after": [
+      26.79,
+      26.25,
+      30.67
+    ],
+    "driver_load_before": [
+      24.46,
+      25.81,
+      31.29
+    ],
+    "mechanism": "cpuset-alloc shared ledger and hard AllowedCPUs",
+    "outer_load_after": [
+      26.79,
+      26.25,
+      30.67
+    ],
+    "outer_load_before": [
+      24.59,
+      25.86,
+      31.34
+    ],
+    "roles": {
+      "controller": 3,
+      "producer": 53,
+      "worker": 50
+    },
+    "tag": "li2core-leaf-set-f55963e"
+  },
+  "revision": "f55963ea38e64b50d9300cc78d1a24e65a44df72",
+  "schema": 1,
+  "scope": "Scalar functional qualification only. Native full-state, timing-accuracy, performance and full-A5 gates remain separate. No favorable retry or replacement case.",
+  "status": "FAILED_FIXED_FIVE_CAMPAIGN",
+  "tool_sha256": {
+    "as": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56",
+    "bash": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf",
+    "cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "cc1": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5",
+    "collect2": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e",
+    "gcc": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+    "git": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+    "ld.bfd": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42",
+    "objdump": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1",
+    "python3.12": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b",
+    "readelf": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff",
+    "rg": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a",
+    "rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+  }
+}
