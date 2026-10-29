@@ -1,0 +1,420 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "e1041a3eb250db19360a87a3223116e50a6668e2db1b92071ec57cefd00ac8ea",
+        "reaped_descendants": 0,
+        "seconds": 108.37411738093942,
+        "start_utc": "2026-10-28T23:48:29.019344+00:00",
+        "termination": null
+      },
+      "decodes": 0,
+      "end_utc": "2026-10-28T23:50:17.394018+00:00",
+      "failed": 1,
+      "failing_stage": "prerequisite",
+      "limiter_children": 0,
+      "load_after": [
+        41.97,
+        44.61,
+        48.57
+      ],
+      "load_before": [
+        49.62,
+        46.68,
+        49.67
+      ],
+      "passed": 0,
+      "perf_captures": 0,
+      "prerequisite_failed": 0,
+      "prerequisite_passed": 34,
+      "private_evidence": {
+        "failure": {
+          "bytes": 616,
+          "sha256": "f9c20aa6dfbe23307a8213ec195144a61cf8d30a80295cfb0697b3b77aac70da"
+        },
+        "launch_request": {
+          "bytes": 2798,
+          "sha256": "14d9b961089922eb1e8efe38c95835071f602ddc9597e100f25c7a966a61a8eb"
+        },
+        "prerequisite_result": {
+          "bytes": 143865,
+          "sha256": "e94314a7a9ffbf151582ea89c16387be21a80d49367e8410918c653a6bedf2d7"
+        },
+        "result": {
+          "bytes": 5787,
+          "sha256": "39b79bbc580a7f6fc45e86b17cf90ba0d5d43eb2d1e04bb4ed3e4bf3cbe0e98d"
+        },
+        "source_manifest": {
+          "bytes": 76095,
+          "sha256": "6685d47b7e2f58056edec1092d72d258eb19dbf13a0206b1b7e4ba63cbab18c1"
+        }
+      },
+      "reason": "missing_required_source_inventory_entry",
+      "reserved_cpus": [
+        25,
+        110,
+        165,
+        167
+      ],
+      "revision": "31629f6250b6bce49dc4b0718ece081ba33a52f1",
+      "status": "FAILED_BEFORE_CAPTURE",
+      "unrun": 29
+    },
+    {
+      "attempt": 2,
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "09a573bdf4364a157c9b10e2ef02b04de802af97b98f228b935f0b04b1080e8b",
+        "reaped_descendants": 0,
+        "seconds": 117.97107938700356,
+        "start_utc": "2026-10-29T00:01:38.842091+00:00",
+        "termination": null
+      },
+      "decodes": 0,
+      "end_utc": "2026-10-29T00:03:36.813620+00:00",
+      "failed": 1,
+      "failing_stage": "limit-overflow",
+      "limiter_children": 8,
+      "load_after": [
+        44.55,
+        40.73,
+        43.92
+      ],
+      "load_before": [
+        37.25,
+        40.12,
+        44.28
+      ],
+      "passed": 13,
+      "perf_captures": 0,
+      "prerequisite_failed": 0,
+      "prerequisite_passed": 34,
+      "private_evidence": {
+        "failure": {
+          "bytes": 305,
+          "sha256": "b6e8c50e5909a7cbe5e6a00daf9e8b8d55214985069de208dbda98902743ae71"
+        },
+        "launch_request": {
+          "bytes": 2798,
+          "sha256": "1250c2062bfc1d9271458080027f635aa5da6e99d855fd9bffd0e6ee893717f4"
+        },
+        "prerequisite_result": {
+          "bytes": 143865,
+          "sha256": "3b93a673e92f77eb220f597050adfa2904e96319707ea4fe7d7445fc9a5d4c96"
+        },
+        "result": {
+          "bytes": 62279,
+          "sha256": "a1887020278dc5674f27f01e372cdeec295b0456048325a9b8c8ff0faad81f1d"
+        },
+        "source_manifest": {
+          "bytes": 76231,
+          "sha256": "97834dde2fadd533b410b19b03ea9399b41ed7109ad6505ec0a3e1967d2169a4"
+        }
+      },
+      "reason": "overflow_core_bit_was_one",
+      "reserved_cpus": [
+        60,
+        64,
+        83,
+        90
+      ],
+      "revision": "36f63891aa75e3d671b7ead928dcde8d03b0fa32",
+      "status": "FAILED_BEFORE_CAPTURE",
+      "unrun": 16
+    },
+    {
+      "attempt": 3,
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "f3b2fbbca2fdfb317787aa266b1bbaefe9a8384140e47f3e0e7ae38e1aa9217d",
+        "reaped_descendants": 0,
+        "seconds": 77.66022239997983,
+        "start_utc": "2026-10-29T00:15:56.409145+00:00",
+        "termination": null
+      },
+      "decodes": 0,
+      "end_utc": "2026-10-29T00:17:14.070618+00:00",
+      "failed": 1,
+      "failing_stage": "prerequisite",
+      "limiter_children": 0,
+      "load_after": [
+        94.09,
+        66.14,
+        51.42
+      ],
+      "load_before": [
+        92.33,
+        58.1,
+        47.81
+      ],
+      "passed": 0,
+      "perf_captures": 0,
+      "prerequisite_failed": 1,
+      "prerequisite_passed": 7,
+      "private_evidence": {
+        "failure": {
+          "bytes": 548,
+          "sha256": "cd90e5b41fbe2b4c5f01bc80c24c51323cdb59ef87eb003c314a2695044b54a1"
+        },
+        "launch_request": {
+          "bytes": 2797,
+          "sha256": "284ff19fcd1bacfa185fcbd2385f1f9510d78100ce71f4bf961c83240f5093f7"
+        },
+        "prerequisite_result": {
+          "bytes": 20030,
+          "sha256": "24e99278803762f365ca3de27e34f3f65701ef7a9be0e5c330743112c0d5f13a"
+        },
+        "result": {
+          "bytes": 5795,
+          "sha256": "17e8c6be02d8d0cd0246b8f4110305d4cc1ec765a032432597fd0744d79645cd"
+        },
+        "source_manifest": {
+          "bytes": 76231,
+          "sha256": "f3399f95a41e6fa7b247965bc47d46ba38c2dfc3bd425497d2e3cc31575bd2f6"
+        }
+      },
+      "reason": "extra_task_observed_after_worker_join",
+      "reserved_cpus": [
+        173,
+        241,
+        247,
+        259
+      ],
+      "revision": "06d173d0ef8bb9140d901552ab09168facde6fa2",
+      "status": "FAILED_BEFORE_CAPTURE",
+      "unrun": 29
+    }
+  ],
+  "claim": 4,
+  "development_control": {
+    "children": 1,
+    "core": 0,
+    "perf_captures": 0,
+    "private_result": {
+      "bytes": 3080,
+      "sha256": "3e0dc60a69e75faf45a44f94e7197618bfa1f7ed82e84645040186c122f8b101"
+    },
+    "raw_wait_status": 25,
+    "signal": 25,
+    "source_sha256": "db52851bd2e4a98523bf467be648aeedf8064d2dbd4249d9e494c474d2728981",
+    "status": "EXPECTED_SIGXFSZ_WITHOUT_CORE",
+    "stderr_bytes": 0,
+    "stdout_bytes": 1048576
+  },
+  "full_checks": {
+    "historical_cases": 8,
+    "private_receipt": {
+      "bytes": 21882,
+      "sha256": "0b177e643c8ef9c250f53df084b4597f635d80f2d1d2c3cdc94798a0c6a81315"
+    },
+    "revision": "06d173d0ef8bb9140d901552ab09168facde6fa2",
+    "seconds": 482.8168299989775,
+    "status": "PASS",
+    "workspace": {
+      "additional_custom_harnesses": 2,
+      "failed": 0,
+      "ignored": 36,
+      "passed": 3088
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "build_cpus": 4,
+    "caller_and_helper_shared_cpus": 1,
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "state_allowed_cpus": 4,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "limits": [
+    "All three failed launches are retained; none reached perf. The third failure remains unresolved in this revision.",
+    "Seven full repository checks passed but do not substitute for the refused workload prerequisite.",
+    "Second task appeared after join; exact task identity and kernel exit phase were not captured. Retirement ordering is a source investigation, not a proved cause.",
+    "The strict 2 ms campaigns are unchanged and were not repeated. No sixth attempt or relaxed deadline.",
+    "Validation durations are not performance measurements. Raw logs, paths and captures remain ignored."
+  ],
+  "protocol": {
+    "accounting": "Inner wait4 PID equals limiter setup PID and actual APP PID/TID; retain exec/mapping identity. Inner child CPU includes limit setup. Outer minus inner CPU, when nonnegative, is combined perf plus timer-wrapper CPU. Overlapping wall intervals are never subtracted. Offline decode is separate.",
+    "application_streams": "The no-fork limiter opens exclusive 0600 regular APP_STDOUT and APP_STDERR under the unchanged 1 MiB soft/hard file limit, redirects descriptors 1 and 2, closes original descriptors, then execs APP in the same PID. The exact actual APP stdout and stderr reach observer_work.check. Outer perf/timer/early-limiter diagnostics remain separate and retained. No fabricated empty stream, quiet flag or diagnostic filtering.",
+    "attempts": 1,
+    "base": "11aa5e2ee08450c3634d5b4b9a36d185c4a72875",
+    "capability_requirements": "Actual evlist attributes, inheritance and APP sample/task/exec identity; all record offsets/types/sizes decoded; final nonzero enabled equals running; sample-period sums conserved; no scaling or IP filtering; source mapping identity from independent ELF hashes. Retain lost/throttle/unattributed observations and unresolved coverage.",
+    "composition": "OUTER_TIMER OUTER_RECORD OUTER_TOKEN -- PERF record OPTIONS -o DATA -- INNER_TIMER APP_RECORD APP_TOKEN -- LIMIT_EXEC LIMIT_RECORD LIMIT_TOKEN APP_STDOUT APP_STDERR -- APP ARGS",
+    "decode_commands": [
+      [
+        "PERF",
+        "evlist",
+        "-v",
+        "-i",
+        "DATA"
+      ],
+      [
+        "PERF",
+        "script",
+        "--ns",
+        "--no-itrace",
+        "-F",
+        "pid,tid,time,cpu,event,ip,period,misc",
+        "--show-task-events",
+        "--show-mmap-events",
+        "--show-lost-events",
+        "-i",
+        "DATA"
+      ],
+      [
+        "PERF",
+        "script",
+        "-D",
+        "--no-itrace",
+        "-i",
+        "DATA"
+      ]
+    ],
+    "event": {
+      "callchain": false,
+      "frequency": 0,
+      "inherit": 1,
+      "name": "instructions:uDS",
+      "period": 4096,
+      "pinned": 1,
+      "precise_ip": 0,
+      "scaling": false,
+      "user_only": true
+    },
+    "limits": {
+      "application_file_bytes": 1048576,
+      "capture_cpu_seconds": 20,
+      "capture_file_bytes": 16777216,
+      "capture_wall_seconds": 30,
+      "decode_cpu_seconds": 20,
+      "decode_file_bytes": 67108864,
+      "decode_wall_seconds": 30,
+      "max_decoded_records": 100000,
+      "record_size_max": 65535,
+      "record_size_min": 8,
+      "ring_pages": 256
+    },
+    "outcomes": "Preserve the single result, including perf refusal, zero samples, loss, throttle, cap breach, unknown records or missing accounting. Capture completion alone is CAPTURED_UNQUALIFIED. Attribute/decode capability requires a separately reviewed finite parser after inspecting this one pinned probe. No fallback event, adaptive period, added work, warmup, or retry. No accuracy, overhead comparison, confidence interval or full-A5 claim.",
+    "prerequisite": "Fresh unchanged verify_normal_interval.py with --reference-exact --reference-work --reference-leg --observer-work at the probe source revision; all 34 stages pass, plus limiter/timer controls before capture.",
+    "prior_failures": "All historical strict 2 ms failures remain failures. This capability probe does not repeat that campaign.",
+    "protocol_correction": {
+      "previous_sha256": "7c4f8cc34b79baafec256296a1187a8df179d29e0d05483180ca80f400998b92",
+      "previous_status": "UNEXECUTED_NO_CAPTURE",
+      "reason": "Merged perf and APP stderr could not establish the unchanged empty APP stderr predicate. Separate actual APP streams before the one fixed capture; no change to counts, events, budgets or assertions."
+    },
+    "record_options": [
+      "record",
+      "-e",
+      "instructions:uDS",
+      "-c",
+      "4096",
+      "-P",
+      "-T",
+      "--sample-cpu",
+      "--sample-identifier",
+      "--running-time",
+      "-s",
+      "--inherit",
+      "-m",
+      "256",
+      "--no-buildid-cache",
+      "--no-buildid-mmap",
+      "--buildid-all"
+    ],
+    "reservation": "Fresh cpuset-alloc reservation of four CPUs; complete owned tree confined; native APP chooses the minimum CPU. Record reservation and load averages. No simultaneous root build/test/benchmark during capture.",
+    "schema": 1,
+    "status": "FROZEN_SINGLE_CAPABILITY_PROBE_NOT_PERFORMANCE_COMPARISON",
+    "work": {
+      "calls": 3072,
+      "helper_returns": 1536,
+      "mode": "native",
+      "original_body_instructions": 614400
+    }
+  },
+  "protocol_sha256": "c0661a1993a2a7e4820f01b0cbfa64ec529aeec7e4c60924a3f1e01c15199226",
+  "recipe": [
+    "python3",
+    "-B",
+    "$REPO/tools/rapid-profiler/normal-work/perf_probe.py",
+    "--revision",
+    "06d173d0ef8bb9140d901552ab09168facde6fa2",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "revision": "06d173d0ef8bb9140d901552ab09168facde6fa2",
+  "schema": 1,
+  "scope": "Adds a bounded fixed perf capture recipe and same-PID APP output limiter; no sampling, accuracy, throughput, or full-A5 result.",
+  "status": "PREREQUISITE_REFUSED_NO_CAPTURE",
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "perf": {
+      "bytes": 12270728,
+      "sha256": "1be5e150695f3bc2b2f6df3cd937fe12527d5b1c7140716e9beb23b9cdd35f46"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  },
+  "whole_run": {
+    "log_bytes": 8388608,
+    "reservation_cores": 4,
+    "reservation_enforcement": "AllowedCPUs for complete owned tree",
+    "reservation_source_sha256": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "reservation_tool_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "wall_seconds": 1200
+  }
+}
