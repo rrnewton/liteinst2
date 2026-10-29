@@ -10,6 +10,7 @@ pub(crate) struct Storage {
 }
 
 /// Extracted but not yet reset. This type cannot be staged.
+#[cfg(test)]
 pub(crate) struct RetiredStorage(Storage);
 
 // One actual bounded Vec-allocation seam for every new bank vector. Tests can
@@ -128,6 +129,14 @@ impl Storage {
     }
 
     #[cfg(test)]
+    pub(crate) fn test_into_epoch_with(
+        self,
+        next: &AtomicU64,
+    ) -> Result<Epoch, (CreateError, Self)> {
+        self.into_epoch_with(next)
+    }
+
+    #[cfg(test)]
     pub(crate) fn geometry(&self) -> [(usize, usize, usize); 2] {
         [
             (
@@ -163,6 +172,70 @@ pub(crate) fn matches_epoch(epoch: &Epoch, ids: &[FunctionId], config: Config) -
         && epoch.slots.len() == config.max_invocations
 }
 
+/// Geometry and reset counters only; clean slots follow from exclusive reset.
+/// This never scans A slots or accepts an open, still-assigned generation.
+pub(crate) fn matches_recycled(epoch: &Epoch, ids: &[FunctionId], config: Config) -> bool {
+    matches_epoch(epoch, ids, config)
+        && epoch.state.load(Ordering::Acquire) == CLOSED
+        && epoch.assigned.load(Ordering::Acquire) == 0
+}
+
+/// Caller holds unique outer and inner Arcs after closed+zero reclamation.
+/// Keep the old ID inaccessible and CLOSED until a successful fresh-ID restart.
+pub(crate) fn reset_recycled(epoch: &mut Epoch) {
+    for f in &mut epoch.functions {
+        *f.retained.get_mut() = 0;
+        *f.closed.get_mut() = false;
+    }
+    for s in &mut epoch.slots {
+        let _ = s.admission.take();
+        let _ = s.terminal.take();
+    }
+    *epoch.assigned.get_mut() = 0;
+    *epoch.state.get_mut() = CLOSED;
+}
+
+/// All identity, geometry, ownership and permit preflights precede this call.
+/// ID exhaustion leaves the epoch unchanged; success has no fallible tail.
+pub(crate) fn restart(epoch: &mut Epoch) -> Result<(), CreateError> {
+    restart_with(epoch, &NEXT_GENERATION)
+}
+
+fn restart_with(epoch: &mut Epoch, next: &AtomicU64) -> Result<(), CreateError> {
+    let id = allocate_id(next)?;
+    epoch.id = id;
+    *epoch.state.get_mut() = 0;
+    *epoch.assigned.get_mut() = 0;
+    Ok(())
+}
+
+#[cfg(test)]
+pub(crate) fn test_restart_with(epoch: &mut Epoch, next: &AtomicU64) -> Result<(), CreateError> {
+    restart_with(epoch, next)
+}
+
+#[cfg(test)]
+pub(crate) fn recycled_clean(epoch: &Epoch) -> bool {
+    epoch.state.load(Ordering::Acquire) == CLOSED
+        && epoch.assigned.load(Ordering::Acquire) == 0
+        && epoch
+            .functions
+            .iter()
+            .all(|f| f.retained.load(Ordering::Relaxed) == 0 && !f.closed.load(Ordering::Relaxed))
+        && epoch
+            .slots
+            .iter()
+            .all(|s| s.admission.get().is_none() && s.terminal.get().is_none())
+}
+
+#[cfg(test)]
+pub(crate) fn epoch_state(epoch: &Epoch) -> (usize, usize) {
+    (
+        epoch.state.load(Ordering::Acquire),
+        epoch.assigned.load(Ordering::Acquire),
+    )
+}
+
 #[cfg(test)]
 pub(crate) fn epoch_geometry(epoch: &Epoch) -> [(usize, usize, usize); 2] {
     [
@@ -181,6 +254,8 @@ pub(crate) fn epoch_geometry(epoch: &Epoch) -> [(usize, usize, usize); 2] {
 
 /// Caller has already authenticated closed+zero and both unique Arc layers.
 /// Infallible extraction; the old shell is dropped before reset, not republished.
+/// Kept for the original extraction controls; production now retains the shell.
+#[cfg(test)]
 pub(crate) fn extract(epoch: &mut Epoch) -> RetiredStorage {
     RetiredStorage(Storage {
         config: epoch.config,
@@ -189,6 +264,7 @@ pub(crate) fn extract(epoch: &mut Epoch) -> RetiredStorage {
     })
 }
 
+#[cfg(test)]
 impl RetiredStorage {
     pub(crate) fn reset(mut self) -> Storage {
         for f in &mut self.0.functions {
