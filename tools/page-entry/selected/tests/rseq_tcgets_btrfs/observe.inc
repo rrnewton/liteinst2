@@ -75,9 +75,10 @@ static void rtc_initialize(void) {
  rtc_record.h[3]=c;rtc_record.h[4]=sizeof(ucontext_t);rtc_record.h[5]=sizeof(struct rtc_row);
  rtc_record.h[14]=*(const volatile uint64_t *)(uintptr_t)(RN_DATA+120);
  checked(RTC_INJECT<=16 && (!RTC_INJECT || !c),1790,8);rtc_record.h[15]=(uintptr_t)fork_gate_stack.ss_sp;rtc_record.h[16]=fork_gate_stack.ss_size;
- rtc_copy(&rtc_record.hardware,&selected_hardware,sizeof selected_hardware);
- checked(selected_hardware.leaf0[0]>=13 && (selected_hardware.leaf1[2]&UINT32_C(0x18000000))==UINT32_C(0x18000000) &&
-         (selected_hardware.leaf7[1]&UINT32_C(0x40010000))==UINT32_C(0x40010000),1790,4);
+ /* This observer-owned pre-arm probe also exists on early initialization refusals. */
+ checked(!li2_selected_observe_hardware(&rtc_record.hardware),1790,9);
+ checked(rtc_record.hardware.leaf0[0]>=13 && (rtc_record.hardware.leaf1[2]&UINT32_C(0x18000000))==UINT32_C(0x18000000) &&
+         (rtc_record.hardware.leaf7[1]&UINT32_C(0x40010000))==UINT32_C(0x40010000),1790,4);
  const volatile uint64_t *startup=(const void *)li2_saved[7];
  checked(startup && startup[0]==1 && !startup[2],1790,5);
  size_t end=3;while(end<126 && startup[end])++end;
@@ -98,6 +99,10 @@ static void rtc_initialize(void) {
   rtc_record.xstate[i][2]=a;rtc_record.xstate[i][3]=cx;
  }
  rtc_record.h[7]=1;
+}
+static void rtc_selected_initialized(void) {
+ /* Paths reaching production initialization must match its independent actual probe. */
+ checked(rtc_record.h[7] && equal(&rtc_record.hardware,&selected_hardware,sizeof selected_hardware),1790,10);
 }
 static size_t rtc_private_size(void) {
  return rtc_record.h[3]==4?(size_t)(vdso_end-vdso_first):0;

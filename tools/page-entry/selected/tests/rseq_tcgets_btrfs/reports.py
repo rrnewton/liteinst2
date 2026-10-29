@@ -50,8 +50,8 @@ def initial_reports(stderr):
          'initial gate failure precedes real first entry/selftest/source effects and vDSO closure')
     need(all(n[k]==0 for k in nx.NATIVE_KEYS-{'version','status','failure_code','revisit_ns','epoch_error','close_complete'})and n['revisit_ns']==[]and n['epoch_error']==1207 and n['close_complete']==1,
          'no native admission; terminal error and actual zero-page close remain distinct')
-    need(c['hardware_entered']==c['hardware_returned']==1 and all(c[k]==0 for k in nx.NX_SCALARS-{'version','status','failure_code','hardware_entered','hardware_returned'})and
-         c['raw']==c['result']==[0]*4,'pre-arm hardware occurred, no target CPUID dispatch')
+    need(c['hardware_entered']==c['hardware_returned']==0 and all(c[k]==0 for k in nx.NX_SCALARS-{'version','status','failure_code','hardware_entered','hardware_returned'})and
+         c['raw']==c['result']==[0]*4,'production hardware observation and target CPUID dispatch not reached')
     for x,scalars,arrays in((rn,native.SCALARS,{'before':28,'after':28}),(b,old.SCALARS,old.ARRAYS),
                              (run,nx.register.SCALARS,arrays)):
         need(all(x[k]==0 for k in scalars-{'version','status','failure_code','detail_abs','detail_negative'})and

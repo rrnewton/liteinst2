@@ -67,6 +67,8 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
     for name,path in tools.items():
         _,out,err=run(prefix+'-'+name+'-version',[path,'--version'],env=gdb_env if name=='gdb'else builder.environment)
         need(out and not err,'actual inspection tool identity '+name)
+    btrfs=pin(shutil.which('btrfs',path='/usr/sbin:/usr/bin:/sbin:/bin'))
+    state['tools']['btrfs']=dict(path=str(btrfs),**fact(btrfs))
     def inspect(name,path,record=None,bridge=False):
         binary(path)
         if bridge:bridge_check(path)
@@ -136,6 +138,16 @@ def qualify(builder,products,root,private,library_root,pin,binary,aliases,run,re
             for alias in item['names']:pin(interpreter.parent/alias)
         prep=directory/'preparation.json';capture_preparation=directory/'capture-preparation.json';capture_object=directory/'capture-object';ns=directory/'namespace';carrier=directory/'carrier'
         route=corpus['cases'][case]['parent_fd_route']
+        if route=='subvolume':
+            need(case==5 and not injected and os.getuid()==os.geteuid()>0,'fixed unprivileged real subvolume case')
+            subvolume=directory/'capture-subvolume';setup=name+'-subvolume-create'
+            need(not os.path.lexists(subvolume),'fresh unique subvolume destination')
+            row['subvolume_preparation']=dict(command=setup,path=str(subvolume),euid=os.geteuid(),attempted=True)
+            command,created,err=run(setup,[btrfs,'subvolume','create','--',subvolume],env=ENV)
+            need(command['exit']==0 and command['reaped']is True and not err and
+                 subvolume.is_dir()and not subvolume.is_symlink(),'actual bounded subvolume creation before capture open')
+            st=subvolume.stat();row['subvolume_preparation'].update(pid=command['pid'],exit=command['exit'],device=st.st_dev,inode=st.st_ino,mode=st.st_mode)
+            capture_object=subvolume/'capture-object'
         argv=[builder.tools['python'],launch_tool,'--mode',lane,'--original',original,'--library-root',interpreter.parent,
             '--preparation',prep,'--record-fd','{record_fd}','--capture-route',route,'--capture-object',capture_object,
             '--layout',native_layout_path if native else gated_layout_path]

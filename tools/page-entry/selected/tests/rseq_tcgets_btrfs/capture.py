@@ -74,7 +74,7 @@ def check(actual,route,layout):
     if route=='subvolume':
         row=next(x for x in calls if x['name']=='get_subvol_info');raw=bytes.fromhex(row['raw'])
         need(row['fd']==query[0]['fd']and row['command']==layout['subvolume_command']==0x81f8943c and
-             row['result']==0 and row['bytes']==len(raw)==504 and row['before']==row['after']==identity and
+             type(row['result'])is int and row['result']in(0,1)and row['bytes']==len(raw)==504 and row['before']==row['after']==identity and
              raw==bytes.fromhex(actual['subvolume']['raw'])and struct.unpack_from('<Q',raw)[0]==actual['subvolume']['treeid']>=256 and
              any(raw[296:312])and not any(raw[440:]),'actual same-FD complete GET_SUBVOL_INFO proves non-top-level subvolume')
     else:need(actual['subvolume']is None,'no subvolume inference from pathname/device')

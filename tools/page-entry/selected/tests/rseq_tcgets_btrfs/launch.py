@@ -62,7 +62,8 @@ def prepare_capture(route,path,layout_path,retained):
             buf=bytearray(t['bytes']);result=fcntl.ioctl(fd,command,buf,True)
             note('get_subvol_info',fd=fd,command=command,result=result,bytes=len(buf),raw=bytes(buf).hex(),before=before,after=info(fd))
             treeid=struct.unpack_from('<Q',buf,bf['treeid']['offset'])[0]
-            if result!=0 or treeid<256 or not any(buf[296:312])or any(buf[440:]):raise ValueError('actual non-top-level subvolume capture')
+            # Successful same-leaf BACKREF copies retain the real search-slot return1.
+            if type(result)is not int or result not in(0,1)or treeid<256 or not any(buf[296:312])or any(buf[440:]):raise ValueError('actual non-top-level subvolume capture')
             subvolume=dict(treeid=treeid,raw=bytes(buf).hex())
         if info(fd)!=before:raise ValueError('capture FD changed during identity observations')
         if route=='dup':

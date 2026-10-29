@@ -10,6 +10,7 @@ static int selected_native_fetch(int sig,siginfo_t *si,ucontext_t *uc) {
 """
 PROTOTYPES="""static void fail(unsigned,long) __attribute__((noreturn));
 static void rtc_initialize(void);
+static void rtc_selected_initialized(void);
 static void rtc_terminal(unsigned,unsigned,long);
 static void rtc_stage(unsigned,long,const long *,long);
 static long rtc_result_argument(long,const long *,long);
@@ -23,6 +24,7 @@ ADAPTERS=(
  ('runtime_loader.c','#include "selected_controller.inc"','#include "rseq_tcgets_observe.inc"\n#include "selected_controller.inc"'),
  ('runtime_loader.c','    li2_rseq_native_preentry();','    li2_rseq_native_preentry();\n    rtc_entry(sig,si,ptr);'),
  ('runtime_loader.c','    rseq_error=li2_rseq_tcgets_initialize();','    rtc_initialize();\n    rseq_error=li2_rseq_tcgets_initialize();\n    rtc_stage(0,0,0,0);'),
+ ('runtime_loader.c','    selected_initialize();','    selected_initialize();\n    rtc_selected_initialized();'),
  ('runtime_loader.c','    int rseq_error=li2_rseq_before_syscall(n,a);','    rtc_stage(1,n,a,0);\n    int rseq_error=li2_rseq_before_syscall(n,a);\n    if(!rseq_error)rtc_stage(2,n,a,0);'),
  ('runtime_loader.c','        rseq_error=li2_rseq_tcgets_issuing(n,a);','        rseq_error=li2_rseq_tcgets_issuing(n,a);\n        if(!rseq_error)rtc_stage(3,n,a,0);'),
  ('runtime_loader.c','        rseq_error=li2_rseq_tcgets_result(n,a,result);','        rseq_error=li2_rseq_tcgets_result(n,a,rtc_result_argument(n,a,result));\n        if(!rseq_error)rtc_stage(5,n,a,result);'),
