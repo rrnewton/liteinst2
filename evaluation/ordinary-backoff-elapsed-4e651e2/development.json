@@ -1,0 +1,170 @@
+{
+  "invocations": [
+    {
+      "base": "6edf0a2216ffa3cf0b426d211d69d60b06d35c85",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "684df963160b616218bc7a450acc7488465bb792668bd4aa0f7ae07fd3baeabd",
+        "reaped_descendants": 0,
+        "seconds": 17.477291425922886,
+        "start_utc": "2026-10-29T03:49:58.912726+00:00",
+        "termination": null
+      },
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/a5/normal-perf-decode-root-v1/tmp",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py"
+      ],
+      "name": "normal-backoff-elapsed-checker-development-v1",
+      "receipt_sha256": "9ada1b2f09a9786b30bdbace3b4748d929d0f83e271b93112f8913739361d151",
+      "working_source_sha256": {
+        "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "7fe4839456bf3d4b272c9e7567a0ac0ffb6fbb8422d797bf8bfaf162e93b0e50",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37"
+      }
+    },
+    {
+      "base": "6edf0a2216ffa3cf0b426d211d69d60b06d35c85",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 6.752009293064475,
+        "start_utc": "2026-10-29T03:52:08.170788+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "name": "normal-backoff-elapsed-format-v1",
+      "receipt_sha256": "27cb28b1630f490c863f5a38639b093abd13bdd9e5437276b951eb87c4e6cd94",
+      "working_source_sha256": {
+        "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "7fe4839456bf3d4b272c9e7567a0ac0ffb6fbb8422d797bf8bfaf162e93b0e50",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37",
+        "tools/rapid-profiler/ordinary-interval/main.rs": "7734dcc64a91dcea692ee8d8ee78a221e67a7559f2eb1b8efc7022a837aded4b",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": "f26968ad3711519e4c3687ff656d468ec2baf91aee67449a4380e24bd9215465",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed.rs": "09288b512ec6287c6074dbdb36876e3d207cf4648bb4cee87d53f98e318cc52e",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": "e52d1a2c782197be587981d78aca045cc5b2676472bb69edef208c8fd880eb2d",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": "b2ca666cf550eead438feb81cc3fff25e35e2c3fd678a26f6a8448e706352587"
+      }
+    },
+    {
+      "base": "6edf0a2216ffa3cf0b426d211d69d60b06d35c85",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "a4261cabc4037d1ce2c1e34be2abb4edd8ce7eaea248880dbefdc5193a792351",
+        "reaped_descendants": 0,
+        "seconds": 3.9478742100764066,
+        "start_utc": "2026-10-29T03:53:43.968019+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "normal::observer::backoff::",
+        "--",
+        "--test-threads=1"
+      ],
+      "name": "normal-backoff-elapsed-rust-development-v1",
+      "receipt_sha256": "c09dba9f5b8668592d35fa7e12fa22ade73a629d71ea18a442566cc670dd39c8",
+      "working_source_sha256": {
+        "tools/rapid-profiler/README.md": "95179db9660e22792880e22c03a90fa68b8f7a091c0174261353a4d1924314a3",
+        "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "7fe4839456bf3d4b272c9e7567a0ac0ffb6fbb8422d797bf8bfaf162e93b0e50",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37",
+        "tools/rapid-profiler/ordinary-interval/main.rs": "7734dcc64a91dcea692ee8d8ee78a221e67a7559f2eb1b8efc7022a837aded4b",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": "41041971cdebdbb12db72990019dda09b728042ee868c015e254bf27fe523cf6",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed.rs": "46e08ca762ead4b1e3ad75f5f28ae98e534d2d029a5b55d6ccbcd63223b1e779",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": "00a69e01739cee5cb24b8d18dc50d7ef6f8dd1f283605b1570fbca568225ead6",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": "a49e4a9e9ce0f3797c56bf0adaf6d039dd9bfe1f727010dca0daee702c955293"
+      }
+    },
+    {
+      "base": "6edf0a2216ffa3cf0b426d211d69d60b06d35c85",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "6d21d4748db4669622770c0446f1a27fccb5610de26553c3975b6ad826ab43dd",
+        "reaped_descendants": 0,
+        "seconds": 0.6996142438147217,
+        "start_utc": "2026-10-29T03:56:02.860596+00:00",
+        "termination": null
+      },
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/a5/normal-perf-decode-root-v1/tmp",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_probe.py"
+      ],
+      "name": "normal-backoff-elapsed-probe-development-v1",
+      "receipt_sha256": "061311045d488ec89d69b3bc0c8644b82740fbc1e7b707667f6ec6745f7b5495",
+      "working_source_sha256": {
+        "tools/rapid-profiler/NORMAL_BACKOFF_ELAPSED.md": "2a35e227d11c3211b72e7b53c28dfb718f98e92cb98a49443f114beff6fb300c",
+        "tools/rapid-profiler/README.md": "95179db9660e22792880e22c03a90fa68b8f7a091c0174261353a4d1924314a3",
+        "tools/rapid-profiler/normal-work/backoff_elapsed_probe.py": "5678b33ad513ad6f19d0cacec9fdce5d2f63bf95f168b2df336b4a429ee6d039",
+        "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "7fe4839456bf3d4b272c9e7567a0ac0ffb6fbb8422d797bf8bfaf162e93b0e50",
+        "tools/rapid-profiler/normal-work/backoff_probe.py": "f63d909650a0f07733c61977e3fe03837355560b2fcb3268f1a6069cbe9402b0",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_probe.py": "97cdd96e0632b8802ef1302a24a5fef5db5cfd97d2d69cafded7f351e33f4c4f",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37",
+        "tools/rapid-profiler/normal-work/test_backoff_probe.py": "b1350808681ad95645543967a7433f9272e70a53d955eea07c5bad4cad84c24e",
+        "tools/rapid-profiler/ordinary-interval/main.rs": "7734dcc64a91dcea692ee8d8ee78a221e67a7559f2eb1b8efc7022a837aded4b",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": "41041971cdebdbb12db72990019dda09b728042ee868c015e254bf27fe523cf6",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed.rs": "46e08ca762ead4b1e3ad75f5f28ae98e534d2d029a5b55d6ccbcd63223b1e779",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": "00a69e01739cee5cb24b8d18dc50d7ef6f8dd1f283605b1570fbca568225ead6",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": "a49e4a9e9ce0f3797c56bf0adaf6d039dd9bfe1f727010dca0daee702c955293"
+      }
+    },
+    {
+      "base": "6edf0a2216ffa3cf0b426d211d69d60b06d35c85",
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "546b04d8c80214700b341a77aed434d3fb5753443b6a948b3caa1ae8d1facfe2",
+        "reaped_descendants": 0,
+        "seconds": 1.2448953250423074,
+        "start_utc": "2026-10-29T03:56:09.588450+00:00",
+        "termination": null
+      },
+      "command": [
+        "/usr/bin/env",
+        "TMPDIR=$REPO/ignored/a5/normal-perf-decode-root-v1/tmp",
+        "/usr/local/bin/python3",
+        "-B",
+        "tools/rapid-profiler/normal-work/test_backoff_probe.py"
+      ],
+      "name": "normal-backoff-elapsed-prior-probe-development-v1",
+      "receipt_sha256": "84d6859c515d058b8b19f0414d506b3cbeb734d2e3dbcc78690002061e72c4c3",
+      "working_source_sha256": {
+        "tools/rapid-profiler/NORMAL_BACKOFF_ELAPSED.md": "2a35e227d11c3211b72e7b53c28dfb718f98e92cb98a49443f114beff6fb300c",
+        "tools/rapid-profiler/README.md": "95179db9660e22792880e22c03a90fa68b8f7a091c0174261353a4d1924314a3",
+        "tools/rapid-profiler/normal-work/backoff_elapsed_probe.py": "5678b33ad513ad6f19d0cacec9fdce5d2f63bf95f168b2df336b4a429ee6d039",
+        "tools/rapid-profiler/normal-work/backoff_elapsed_work.py": "7fe4839456bf3d4b272c9e7567a0ac0ffb6fbb8422d797bf8bfaf162e93b0e50",
+        "tools/rapid-profiler/normal-work/backoff_probe.py": "f63d909650a0f07733c61977e3fe03837355560b2fcb3268f1a6069cbe9402b0",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_probe.py": "97cdd96e0632b8802ef1302a24a5fef5db5cfd97d2d69cafded7f351e33f4c4f",
+        "tools/rapid-profiler/normal-work/test_backoff_elapsed_work.py": "3727104985c3875fb2c3f4e780b9a1d98014ba14a33edbd326af0cf0d5eb8e37",
+        "tools/rapid-profiler/normal-work/test_backoff_probe.py": "b1350808681ad95645543967a7433f9272e70a53d955eea07c5bad4cad84c24e",
+        "tools/rapid-profiler/ordinary-interval/main.rs": "7734dcc64a91dcea692ee8d8ee78a221e67a7559f2eb1b8efc7022a837aded4b",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff.rs": "41041971cdebdbb12db72990019dda09b728042ee868c015e254bf27fe523cf6",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed.rs": "46e08ca762ead4b1e3ad75f5f28ae98e534d2d029a5b55d6ccbcd63223b1e779",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/backoff/elapsed/tests.rs": "00a69e01739cee5cb24b8d18dc50d7ef6f8dd1f283605b1570fbca568225ead6",
+        "tools/rapid-profiler/ordinary-interval/normal/observer/throughput.rs": "a49e4a9e9ce0f3797c56bf0adaf6d039dd9bfe1f727010dca0daee702c955293"
+      }
+    }
+  ],
+  "scope": "All five pre-commit development invocations, including formatting. Operational times only; exact dirty-source hashes retained. Merged exact revision validation is checks.json."
+}

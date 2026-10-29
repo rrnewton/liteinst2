@@ -1,0 +1,237 @@
+{
+  "artifacts": {
+    "binary": {
+      "bytes": 6698000,
+      "sha256": "f580049b94a483516e334246ebe53a894551a72bdb066a5c5f23166327f52c0b"
+    },
+    "caller": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "caller_candidate": {
+      "bytes": 13448,
+      "sha256": "03a87e1379f0d5e34cfd89b329c645990ca19ce75d638c0fdb48920d2b52c0c5"
+    },
+    "libtest": {
+      "bytes": 4346368,
+      "sha256": "8a9f764e732c1cdd58ca8e64b85af77e4824282429442550cc523c7d0072a363"
+    },
+    "selection": {
+      "bytes": 586,
+      "sha256": "4e39b07dac6bad3bb2575a4c11ba966ea4e8965d97813bde839f6539731c6eb4"
+    },
+    "subject": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    },
+    "trusted": {
+      "bytes": 13360,
+      "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+    }
+  },
+  "current_source_readback_verified": true,
+  "failed_stage": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "elapsed_seconds": 20.65949048101902,
+    "exit": -9,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "inputs_unchanged": true,
+    "request_sha256": "1c039c402d9c243485787292a0c72dfccff0f13332145b1a1c7011ff988060af",
+    "stderr_sha256": "a350e9f897688140366f5f21456c728387e13fa74fa673a445a759bfb6a16747",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "measured": {
+    "failed_count": 0,
+    "functional_rows": 0,
+    "pass_count": 0,
+    "timing_rows": 0,
+    "unrun_count": 20
+  },
+  "no_after_manifest": true,
+  "owner_controls": [
+    {
+      "control": 1,
+      "hold_ordinal": 22,
+      "k": 10,
+      "name": "pending-owner-k10",
+      "reason": "AUTHORITY_CUSTODY_OR_PREREQUISITE_FAILURE",
+      "status": "UNRUN"
+    },
+    {
+      "control": 2,
+      "hold_ordinal": 1006,
+      "k": 1000,
+      "name": "pending-owner-k1000",
+      "reason": "AUTHORITY_CUSTODY_OR_PREREQUISITE_FAILURE",
+      "status": "UNRUN"
+    }
+  ],
+  "prerequisite": {
+    "closure": {
+      "nested_normal_helpers": 46,
+      "nested_outer_owners": 48,
+      "owned_stages": 34,
+      "rescues": 0
+    },
+    "result": {
+      "bytes": 143865,
+      "sha256": "a102c40325e8f9dd65692d77963e320f8e877aa23c39171a2ead817d893d2638"
+    },
+    "tools": {
+      "as": {
+        "bytes": 727360,
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cc1": {
+        "bytes": 28991152,
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "collect2": {
+        "bytes": 349536,
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "gcc": {
+        "bytes": 1093144,
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "ld": {
+        "bytes": 1791600,
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "readelf": {
+        "bytes": 683296,
+        "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "strip": {
+        "bytes": 189816,
+        "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+      }
+    }
+  },
+  "revision": "4e651e2f2af283c8d61191598e52b6dcda3b969d",
+  "scope": "SIGKILL after20.66s under20CPU/30wall bounds; wall_timeout=false. Consistent with CPU limit, without a direct CPU-use receipt or kernel-cause witness. No measured member executed.",
+  "stage": "elapsed-checker",
+  "stages": [
+    {
+      "exit": 0,
+      "name": "prerequisite",
+      "result": {
+        "bytes": 651,
+        "sha256": "391553849dc39a92242ae6645dedee833d6a546bcc8377c62d7152a96efefb51"
+      },
+      "status": "PASS"
+    },
+    {
+      "exit": 0,
+      "name": "throughput-checker",
+      "result": {
+        "bytes": 1510,
+        "sha256": "b984522fc6b837b2691d39c3be7a0b6d3706f2d1adddeb8845a5767bbd462ac4"
+      },
+      "status": "PASS"
+    },
+    {
+      "exit": 0,
+      "name": "backoff-checker",
+      "result": {
+        "bytes": 1506,
+        "sha256": "88e6f227ac0cc66893264802039aa71eb7bb845816bb543b99db094a97c750a6"
+      },
+      "status": "PASS"
+    },
+    {
+      "exit": 0,
+      "name": "pending-checker",
+      "result": {
+        "bytes": 1506,
+        "sha256": "3274cc70bf96e226742f9fe28a6fa9db5e39514058f9768da15c4ee08c4bf159"
+      },
+      "status": "PASS"
+    },
+    {
+      "exit": -9,
+      "name": "elapsed-checker",
+      "result": {
+        "bytes": 1507,
+        "sha256": "c8a332e7c2551c4eb1d63ea3e4b0d83183b26c0c19483226dc43c287565023c6"
+      },
+      "status": "FAILED"
+    },
+    {
+      "exit": null,
+      "name": "throughput-driver",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "backoff-driver",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "elapsed-driver",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "timer-controls",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "throughput-rust",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "backoff-rust",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "pending-rust",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "elapsed-rust",
+      "result": null,
+      "status": "UNRUN"
+    },
+    {
+      "exit": null,
+      "name": "timer-build",
+      "result": null,
+      "status": "UNRUN"
+    }
+  ],
+  "status": "FAILED"
+}
