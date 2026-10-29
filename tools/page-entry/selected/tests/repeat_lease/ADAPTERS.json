@@ -42,10 +42,10 @@
   {
     "source": "repeat_lease.inc",
     "target": "repeat_lease.inc",
-    "before_sha256": "da36cd00e8cd7253cb12550537ed183171256558a098e25c1c1bf593499144f2",
-    "after_sha256": "2ddf052604ecdbadef94b6c39a37e1ee9e9d3e278ca7d87c626f32e9c77ed2b0",
-    "before_bytes": 20733,
-    "after_bytes": 20895,
+    "before_sha256": "8af311ee4dba8db59fba7bb4922ee5d25583de179eb71621411097d663a8c6ad",
+    "after_sha256": "4d37e39a9f42a20db5af477126ecc36f13384a44acf9634159f7556f276d6307",
+    "before_bytes": 21474,
+    "after_bytes": 21636,
     "edits": [
       [
         "#include \"repeat_custody.h\"",
@@ -64,10 +64,10 @@
   {
     "source": "repeat_custody.inc",
     "target": "repeat_custody.inc",
-    "before_sha256": "921dc1fb6cfce46e08e253bf9804abccec53dfd129f19dd1b92e2340fd8b6681",
-    "after_sha256": "5d6384f608d3a46884d072d5e5374b14acce2fcba6998a9b69293bbcb792a406",
-    "before_bytes": 24566,
-    "after_bytes": 24652,
+    "before_sha256": "91f0b5c6e50d0b67ed3472d3eba68318165cd0f62dcb6d04fc972dfda6a48fd9",
+    "after_sha256": "ad93d58f9870ebe5a1627ecb947dc85e24465e7437bb0d7c1c0243ea5bb564ac",
+    "before_bytes": 25300,
+    "after_bytes": 25386,
     "edits": [
       [
         "#include \"register_run_publish.h\"",

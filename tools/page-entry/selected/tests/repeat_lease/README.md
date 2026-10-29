@@ -9,6 +9,17 @@ owner. The evaluator rebuilds the current release archive and the finite
 fixture, authenticates every conditional compiler dependency and actual ELF
 and file-only DWARF, and runs the fixed OUTCOMES population once each.
 
+The finite fixture explicitly enables `LI2_FAST_EQUAL=1` as its fifth macro,
+after the same effect, registered-rseq, maps-reuse and REP-lease macros. This
+exercises both complete word-plus-tail zero predicates and the existing exact
+fast-equality implementation in the actual owner translation unit. The five
+instrumented views still use the same ten reversible edits; only the two
+changed runtime include facts are refreshed. All 46 cases, full-state readers,
+supplied controls, output and process limits below remain required. The earlier
+`17b3adf00603` attempt failed before any native subject because those source
+facts were stale; it remains failed. This source update grants no execution or
+performance credit.
+
 The 46-process required population is fixed before execution:
 
 - Eight registered positive processes cover width4/8, DF0/1, and either three

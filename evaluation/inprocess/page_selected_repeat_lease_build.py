@@ -14,7 +14,7 @@ def build(builder,products,root,private,pin,binary,aliases,run,receipt,inputs):
     output=private/'finite';output.mkdir()
     state=receipt['finite_build']=dict(status='failed',archive=fact(products['archive']))
     adapter_path=pin(fixture/'ADAPTERS.json')
-    need(fact(adapter_path)==dict(bytes=3768,sha256='03497cd06bb03f3917e225ef55d220555502632e94edfd1b2178b8106e6f43b1'),'fixed exact instrumentation inverse catalogue')
+    need(fact(adapter_path)==dict(bytes=3768,sha256='1acc6fd0b2a330b104aa1208808eea47ac67aef97baf6d92c77a0a4391b5e40e'),'fixed exact instrumentation inverse catalogue')
     adapters=decode(adapter_path.read_bytes());expected=[]
     for row in adapters:
         need(fact(pin(selected/row['source']))==dict(bytes=row['before_bytes'],sha256=row['before_sha256']),
@@ -37,9 +37,9 @@ def build(builder,products,root,private,pin,binary,aliases,run,receipt,inputs):
     binary_path=output/'repeat-lease-fixture'
     need(argv[-2:]==['-o',str(binary_path)] and all(x in argv for x in
         ('-std=gnu11','-O2','-g','-nostdlib','-static','-no-pie','-fno-pie',
-         '-DLI2_EFFECT_PROVIDER=1','-DLI2_RSEQ_INACTIVE=1','-DLI2_MAPS_PHASE_REUSE=1','-DLI2_REPEAT_RX_LEASE=1')),'exact optimized freestanding REP lease fixture')
+         '-DLI2_EFFECT_PROVIDER=1','-DLI2_RSEQ_INACTIVE=1','-DLI2_MAPS_PHASE_REUSE=1','-DLI2_REPEAT_RX_LEASE=1','-DLI2_FAST_EQUAL=1')),'exact optimized freestanding REP lease fixture')
     need([x for x in argv if x.startswith('-D')]==['-DLI2_EFFECT_PROVIDER=1','-DLI2_RSEQ_INACTIVE=1',
-         '-DLI2_MAPS_PHASE_REUSE=1','-DLI2_REPEAT_RX_LEASE=1'],'exact four macros, no dormant alternative profile')
+         '-DLI2_MAPS_PHASE_REUSE=1','-DLI2_REPEAT_RX_LEASE=1','-DLI2_FAST_EQUAL=1'],'exact five macros including fast equality and complete zero checks')
     state['argv']=argv
     headers('chain-headers',argv,sources,products['archive'],builder,pin,aliases,run,state)
     run('chain-link',argv,profile='fixture_link',env=builder.environment)
