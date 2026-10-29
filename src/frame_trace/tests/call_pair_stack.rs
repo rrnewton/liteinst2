@@ -17,31 +17,16 @@ fn plan(profile: ObservationStackProfile) -> TrampolinePlan {
     .unwrap()
 }
 
-// Drive the existing independent Machine from each actual encoded instruction.
-// Check the full enclosing window, including bytes above this role's RSP. The
-// saved-state model checks byte extents and matching save/restore addresses, not
-// architectural XSAVE contents or an arbitrary callback's stack consumption.
-fn preservation(
-    emission: &FrameEmission,
-    role_rsp: u64,
-    low: u64,
-    high: u64,
-    seed: u64,
-) -> (bool, bool) {
+// Decode immutable encoded bytes once per emission. The borrowed image and
+// helper rows stay paired; no Machine, memory, seed or walk result is retained.
+struct DecodedHelpers<'a> {
+    image: &'a TrampolineImage,
+    rows: Vec<(&'a HelperFrame, Instruction)>,
+}
+
+fn decoded_helpers(emission: &FrameEmission) -> DecodedHelpers<'_> {
     let image = emission.image();
-    let profile = image.layout().observation_stack_profile;
-    let prefix = profile.context_stack_prefix_bytes() as u64;
-    let layout = image.layout().saved_extended_state;
-    let mut machine = Machine::new(seed);
-    machine.original[7] = role_rsp;
-    machine.registers[7] = role_rsp;
-    let expected: Vec<_> = (low..high).map(|at| (at, (at ^ seed) as u8)).collect();
-    machine.memory.extend(expected.iter().copied());
-    let mut untouched = true;
-    let mut save = None;
-    let mut restores = 0;
-    let mut returned = 0;
-    let mut stores = 0;
+    let mut rows = Vec::new();
     for row in emission.trace().unwrap().instructions() {
         let FrameInstructionKind::Helper(helper) = row.kind() else {
             continue;
@@ -58,6 +43,37 @@ fn preservation(
         assert!(!i.is_invalid() && !decoder.can_decode());
         assert_eq!(i.next_ip(), row.end());
         assert_eq!(i.code(), helper.instruction().code());
+        rows.push((helper.as_ref(), i));
+    }
+    DecodedHelpers { image, rows }
+}
+
+// Drive the existing independent Machine from each actual encoded instruction.
+// Check the full enclosing window, including bytes above this role's RSP. The
+// saved-state model checks byte extents and matching save/restore addresses, not
+// architectural XSAVE contents or an arbitrary callback's stack consumption.
+fn preservation(
+    decoded: &DecodedHelpers<'_>,
+    role_rsp: u64,
+    low: u64,
+    high: u64,
+    seed: u64,
+) -> (bool, bool) {
+    let image = decoded.image;
+    let profile = image.layout().observation_stack_profile;
+    let prefix = profile.context_stack_prefix_bytes() as u64;
+    let layout = image.layout().saved_extended_state;
+    let mut machine = Machine::new(seed);
+    machine.original[7] = role_rsp;
+    machine.registers[7] = role_rsp;
+    let expected: Vec<_> = (low..high).map(|at| (at, (at ^ seed) as u8)).collect();
+    machine.memory.extend(expected.iter().copied());
+    let mut untouched = true;
+    let mut save = None;
+    let mut restores = 0;
+    let mut returned = 0;
+    let mut stores = 0;
+    for &(helper, i) in &decoded.rows {
         assert_eq!(helper.before().observation_stack_profile(), profile);
         assert_eq!(helper.after().observation_stack_profile(), profile);
         machine.check(helper.before());
@@ -137,6 +153,7 @@ fn call_pair240_all_bounded_roles_preserve_enclosing_window() {
         emission.trace().unwrap().observation_stack_profile(),
         ObservationStackProfile::CallPair240
     );
+    let decoded = decoded_helpers(&emission);
     let outer = 0x20_0008_u64;
     let mut geometries = 0;
     let mut widest = 0;
@@ -161,7 +178,7 @@ fn call_pair240_all_bounded_roles_preserve_enclosing_window() {
                 ] {
                     for seed in [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567] {
                         assert_eq!(
-                            preservation(&emission, outer - delta, outer - bound, outer + 8, seed),
+                            preservation(&decoded, outer - delta, outer - bound, outer + 8, seed),
                             (true, true)
                         );
                     }
@@ -182,17 +199,31 @@ fn call_pair240_old144_overlaps_child_and_earlier_caller_excursions() {
     let new = plan(ObservationStackProfile::CallPair240)
         .emit_with_frame_trace_at(NEAR)
         .unwrap();
+    let old_decoded = decoded_helpers(&old);
+    let new_decoded = decoded_helpers(&new);
     let outer = 0x20_0008_u64;
     // First: maximum child red zone. Second: earlier deep enclosing excursion,
     // restored to sp=-8 before CALL. Neither may be masked from the snapshot.
     for (deepest, parent_delta, child_delta) in [(8_u64, 16_u64, 64_u64), (256, 16, 16)] {
         let bound = deepest.max(parent_delta + child_delta + 128);
         assert_eq!(
-            preservation(&old, outer - parent_delta, outer - bound, outer + 8, 0x1234),
+            preservation(
+                &old_decoded,
+                outer - parent_delta,
+                outer - bound,
+                outer + 8,
+                0x1234
+            ),
             (false, false)
         );
         assert_eq!(
-            preservation(&new, outer - parent_delta, outer - bound, outer + 8, 0x1234),
+            preservation(
+                &new_decoded,
+                outer - parent_delta,
+                outer - bound,
+                outer + 8,
+                0x1234
+            ),
             (true, true)
         );
     }

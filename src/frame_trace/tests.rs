@@ -75,6 +75,26 @@ impl Machine {
         }
     }
     fn load(&self, address: u64) -> u64 {
+        if address & 7 == 0 {
+            // One tree search; adjacent bytes must still exist individually.
+            // An aligned u64 address always leaves room for offsets 0..=7.
+            let mut entries = self.memory.range(address..);
+            let mut bytes = [0; 8];
+            let mut complete = true;
+            for (index, byte) in bytes.iter_mut().enumerate() {
+                match entries.next() {
+                    Some((&at, &value)) if at == address + index as u64 => *byte = value,
+                    _ => {
+                        complete = false;
+                        break;
+                    }
+                }
+            }
+            if complete {
+                return u64::from_le_bytes(bytes);
+            }
+        }
+        // Preserve the original failure and unaligned-address semantics.
         u64::from_le_bytes(core::array::from_fn(|index| {
             self.memory[&(address + index as u64)]
         }))
@@ -564,4 +584,5 @@ fn invalid_producer_rows_and_uncovered_bytes_are_explicit_metadata_failures() {
 }
 
 mod call_pair_stack;
+mod memory;
 mod stack_profile;
