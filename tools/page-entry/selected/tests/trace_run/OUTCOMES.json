@@ -1,0 +1,94 @@
+{
+  "bounds": {
+    "core_bytes": 0,
+    "cores": 1,
+    "file_bytes": 16777216,
+    "native_address_bytes": 536870912,
+    "native_cpu_seconds": 5,
+    "wall_seconds": 15
+  },
+  "cardinality": {
+    "completed_programs": 1,
+    "completed_runs": 2,
+    "native_completed": 18,
+    "native_failed": 1,
+    "old_encoding_refusals_per_process": 47,
+    "old_startup_pairs_per_process": 1,
+    "processes": 7,
+    "required_failed_operations": 6
+  },
+  "commands": [
+    {
+      "env": {
+        "LI2_TRACE_RUN_MODE": "0"
+      },
+      "exit": 0,
+      "mode": 0,
+      "name": "trace-miss-hit",
+      "operation": "completed",
+      "stdout": "LI2_TRACE_RUN_PASS native=3 miss=1 hit=1 predecessor=2 run=2\n"
+    },
+    {
+      "env": {
+        "LI2_TRACE_RUN_MODE": "1"
+      },
+      "exit": 125,
+      "mode": 1,
+      "name": "null-origin",
+      "operation": "failed",
+      "stdout": "LI2_TRACE_RUN_EXPECTED_FAILURE\n"
+    },
+    {
+      "env": {
+        "LI2_TRACE_RUN_MODE": "2"
+      },
+      "exit": 125,
+      "mode": 2,
+      "name": "changed-frame",
+      "operation": "failed",
+      "stdout": "LI2_TRACE_RUN_EXPECTED_FAILURE\n"
+    },
+    {
+      "env": {
+        "LI2_TRACE_RUN_MODE": "3"
+      },
+      "exit": 125,
+      "mode": 3,
+      "name": "consumed-origin",
+      "operation": "failed",
+      "stdout": "LI2_TRACE_RUN_EXPECTED_FAILURE\n"
+    },
+    {
+      "env": {
+        "LI2_TRACE_RUN_MODE": "4"
+      },
+      "exit": 125,
+      "mode": 4,
+      "name": "released-source",
+      "operation": "failed",
+      "stdout": "LI2_TRACE_RUN_EXPECTED_FAILURE\n"
+    },
+    {
+      "env": {
+        "LI2_TRACE_RUN_MODE": "5"
+      },
+      "exit": 125,
+      "mode": 5,
+      "name": "nested-tgkill",
+      "operation": "failed",
+      "stdout": "LI2_TRACE_RUN_EXPECTED_FAILURE\n"
+    },
+    {
+      "env": {
+        "LI2_TRACE_RUN_MODE": "6"
+      },
+      "exit": 125,
+      "mode": 6,
+      "name": "predecessor-read-fault",
+      "operation": "failed",
+      "stdout": "LI2_TRACE_RUN_EXPECTED_FAILURE\n"
+    }
+  ],
+  "schema": 1,
+  "scope": "Additive standalone original-PC owner/proof API. No existing population replaced; no registered-rseq, runtime controller, geometry/capacity, application or timing qualification."
+}
