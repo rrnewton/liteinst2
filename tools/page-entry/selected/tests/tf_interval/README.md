@@ -116,3 +116,53 @@ projection assertions and malformed-record controls. It runs with limits of
 preserves the recorder's exact historical 350-test inventory; the combined
 validation does not claim a 352-test recorder run. These supplied-data tests
 grant no native qualification or performance credit.
+
+The explicit `--sealed-custody` interval mode adds no production changes. It
+requires three passed receipts at the same current revision and reserved CPU:
+the original full lease cohort (148 subjects plus 6/49/17 prerequisites), the
+separate 69-command/17-subject custody cohort including its exact stale-proof
+and nested-cleanup refusals, and the original 40-command/17-subject interval
+cohort. All source files must be committed before those prerequisites run.
+
+The new mode builds an unobserved bridge with the fixed
+`build-tf-sealed-custody.sh` recipe: the same 15 translation units and release
+flags, with its exact 14 macros. Five additional header/link/import/symbol/reset
+commands make the custody interval inventory 45 commands. The unchanged 17
+subjects remain eight normal lanes, five protocol failures and four pre-exec
+descriptor refusals. The two observed lanes use an explicit custody appendage
+and actual emitted DWARF; native reference lanes and timing lanes keep their
+original record contracts. A retained origin never satisfies a current fresh
+maps receipt predicate.
+
+Within the actual BODY, N=1 requires one fresh cancelled stage, no custody seed,
+retained stage/check or commit, and one original permission-owner close. N=256
+requires one fresh stage/seed, 255 retained stages, 509 fresh backing checks on
+the retained route and 255 committed transfers. The final retained stage is the
+old-NOP miss, with no commit. Each stage uses exactly the predecessor RX serial
+plus one; only genuine handler-end changes RETURN to READY. Full original
+frame/source/rseq/owner predicates remain, with complete FP at the original
+endpoints and final close rather than an invented per-TRACE FP claim.
+
+```sh
+python3 -B evaluation/inprocess/page_selected_tf_interval.py \
+  --expect-revision REV --qualification-receipt LEASE_RECEIPT \
+  --qualification-sha256 LEASE_SHA --sealed-custody \
+  --custody-receipt CUSTODY_RECEIPT --custody-sha256 CUSTODY_SHA \
+  --baseline-interval-receipt BASELINE_INTERVAL_RECEIPT \
+  --baseline-interval-sha256 BASELINE_INTERVAL_SHA --output FRESH_FINITE_DIR
+python3 -B evaluation/inprocess/page_tf_interval_performance.py \
+  --expect-revision REV --qualification-receipt CUSTODY_INTERVAL_RECEIPT \
+  --qualification-sha256 CUSTODY_INTERVAL_SHA --sealed-custody \
+  --output FRESH_PERFORMANCE_DIR
+```
+
+Performance still records all 20 fixed alternating native/gated samples and the
+complete CSV under the original per-child limits and protocol. It reuses the
+exact authenticated unobserved artifact; empty FD3 carries no BODY-local
+custody claim. Original complete report predicates and the fixed global lease
+and six loader counter joins remain mandatory. The raw observed custody proof
+and separate required stale refusals precede timing; output equality alone
+does not qualify the optimization. Run the original mode separately at the
+same source/revision for a baseline comparison. Historical measurements are
+not a controlled speedup comparison, and GO-to-DONE retains its full workload
+round-trip meaning described above.

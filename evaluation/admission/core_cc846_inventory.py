@@ -80,7 +80,7 @@ def before_ac0963(declared):
 
 
 def peel_ac0963(declared):
-    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.CURRENT43D7, main813.CURRENT0DF8, main813.CURRENT0A8, main813.CURRENT09FE, main813.CURRENT727, main813.CURRENTABAB, main813.CURRENT83B, main813.LATEST) else declared
+    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.CURRENT43D7, main813.CURRENT0DF8, main813.CURRENT0A8, main813.CURRENT09FE, main813.CURRENT727, main813.CURRENTABAB, main813.CURRENT83B, main813.CURRENT850, main813.CURRENT5A0, main813.CURRENT9950, main813.CURRENT2754, main813.LATEST) else declared
 
 
 def source_before_cc846(path, data, error):
@@ -167,6 +167,7 @@ def peel_python(identities):
 def require_current(declared):
     """Live preflight has no historical-catalog acceptance path."""
     require(type(declared) is dict and digest(declared) == main813.LATEST, 'ac0963_inventory_differs')
+    main813.precheck_current_sources('ac0963_source_inventory_differs')
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):

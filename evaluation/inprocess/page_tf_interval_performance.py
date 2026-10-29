@@ -33,6 +33,7 @@ def main():
     parser.add_argument('--qualification-receipt', type=Path, required=True)
     parser.add_argument('--qualification-sha256', required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--sealed-custody', action='store_true')
     args = parser.parse_args()
     os.chdir(ROOT)
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}', args.expect_revision) and
@@ -42,7 +43,7 @@ def main():
     need(private.is_relative_to(ROOT / 'target') and not private.exists(), 'fresh private output')
     private.mkdir(parents=True, mode=0o700)
     cpu = next(iter(os.sched_getaffinity(0)))
-    receipt = dict(schema=1, profile='page-tf-interval-release-performance-v1',
+    receipt = dict(schema=1, profile='page-tf-interval-custody-release-performance-v1' if args.sealed_custody else 'page-tf-interval-release-performance-v1',
                    expected_revision=args.expect_revision, source=None, source_unchanged=False,
                    qualification_verified=False, cpu=cpu, hardware=hardware(cpu),
                    status='failed', error=None, final_errors=[], commands=[], samples=[])
@@ -51,6 +52,8 @@ def main():
                             '--expect-revision', args.expect_revision, '--qualification-receipt',
                             '${SAME_REVISION_INTERVAL_RECEIPT}', '--qualification-sha256',
                             args.qualification_sha256, '--output', '${FRESH_PRIVATE_OUTPUT}']
+    if args.sealed_custody:
+        receipt['reproduce'].append('--sealed-custody')
     pins, aliases, artifacts, presence, namespace_links = {}, {}, {}, {}, {}
     namespaces = []
 
@@ -76,7 +79,7 @@ def main():
             config = receipt['prerequisite_configuration']
             need(admission.cargo_configuration(config['environment']) == config['cargo_configuration'],
                  'qualified compiler configuration unchanged')
-        for name in ('qualified_namespace_aliases', 'interval_namespace_aliases'):
+        for name in ('qualified_namespace_aliases', 'interval_namespace_aliases', 'custody_namespace_aliases', 'baseline_interval_namespace_aliases'):
             need(all(Path(p).is_symlink() and os.readlink(p) == target
                      for p, target in receipt.get(name, {}).items()), 'qualified namespace unchanged')
         need(all(Path(p).is_symlink() and os.readlink(p) == target
@@ -157,7 +160,7 @@ def main():
         receipt['required_source_inputs'] = {str(pin(ROOT / os.fsdecode(n))): fact(ROOT / os.fsdecode(n))
             for n in names.split(b'\0') if n and not n.startswith(b'evaluation/inprocess/results/')}
         assets = authenticate(args.qualification_receipt, args.qualification_sha256,
-                              receipt['source'], pin, binary, receipt)
+                              receipt['source'], pin, binary, receipt, sealed_custody=args.sealed_custody)
         receipt['requested_qualification'] = fact(pin(args.qualification_receipt))
         need(receipt['requested_qualification']['sha256'] == args.qualification_sha256,
              'requested finite receipt bytes remain exact')
@@ -168,9 +171,9 @@ def main():
             for n, asset in assets['programs'].items()}
         fixture = ROOT / 'tools/page-entry/selected/tests/tf_interval'
         pipe = load('interval_perf_pipe', fixture / 'pipe_run.py')
-        check = load('interval_perf_check', fixture / 'check.py')
+        check = load('interval_perf_check', fixture / ('custody.py' if args.sealed_custody else 'check.py'))
         namespace = load('interval_perf_namespace', ROOT / 'tools/page-entry/namespace.py')
-        reports = load('interval_perf_reports', ROOT / 'tools/page-entry/selected/tests/tf_same_page/reports.py')
+        reports = check.reports if args.sealed_custody else load('interval_perf_reports', ROOT / 'tools/page-entry/selected/tests/tf_same_page/reports.py')
         need(pipe.BOUNDS == [5, 512 << 20, 16 << 20, 15], 'unchanged finite-qualified child limits')
         for module in tuple(sys.modules.values()):
             path = getattr(module, '__file__', None)

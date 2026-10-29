@@ -10,10 +10,11 @@ from parsing import require
 import inventory_syntax
 import inventory_digest
 import inventory_copy
+import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == '6bcab469ca976fd5a787cbdd09d5cca78f019aa190f8e19dc7a6751796cc8a49', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == '7c74ef7c16fc877a054efd7923702854f4141e19c84240bda174ae9cfcc20623', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -43,7 +44,15 @@ CURRENTABAB = MAINABAB['current_corpus_sha256']
 MAIN83B = DATA['main83b']
 CURRENT83B = MAIN83B['current_corpus_sha256']
 MAIN850 = DATA['main850']
-LATEST = MAIN850['current_corpus_sha256']
+CURRENT850 = MAIN850['current_corpus_sha256']
+MAIN5A0 = DATA['main5a0']
+CURRENT5A0 = MAIN5A0['current_corpus_sha256']
+MAIN9950 = DATA['main9950']
+CURRENT9950 = MAIN9950['current_corpus_sha256']
+MAIN2754 = DATA['main2754']
+CURRENT2754 = MAIN2754['current_corpus_sha256']
+MAIN9C70 = DATA['main9c70']
+LATEST = MAIN9C70['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -54,8 +63,253 @@ def digest(value):
     return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())
 
 
+def precheck_current_sources(error):
+    """Reject changed current blobs early; never replace historical validation."""
+    layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
+              MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70)
+    expected = {}
+    for layer in layers:
+        # Non-plain metadata stays on the original path, without new callbacks
+        # or file reads. This is eligibility for an extra rejection check only.
+        if type(layer) is not dict or any(type(key) is not str for key in layer):
+            return
+        sources = layer.get('sources')
+        if (type(sources) is not dict or
+                any(type(path) is not str or type(value) is not str
+                    for path, value in sources.items())):
+            return
+        expected.update(sources)
+    for path, value in expected.items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == value, error)
+
+
+def source_before_9c70(path, data, error):
+    """Only the fixed 9c70 whole blob may reach its exact historical source."""
+    if path not in MAIN9C70['projections']:
+        return data
+    row = MAIN9C70['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_9c70_sources(error='main9c70_source_inventory_differs'):
+    for path, expected in MAIN9C70['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN9C70['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN9C70['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN9C70['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN9C70['module_chains'][path]), error)
+        if path in MAIN9C70['python_methods']:
+            found = list(inventory_syntax.identities(raw.decode()))
+            require(found == MAIN9C70['python_methods'][path], error)
+
+
+def before_9c70(declared, error='main9c70_inventory_differs', source_error='main9c70_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_9c70_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN9C70['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN9C70['previous_corpus_sha256'] == CURRENT2754, error)
+    return old
+
+
+def peel_9c70(declared, error, source_error):
+    return before_9c70(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
+def source_before_2754(path, data, error):
+    """Only the fixed 2754 whole blob may reach its exact historical source."""
+    data = source_before_9c70(path, data, error)
+    if path not in MAIN2754['projections']:
+        return data
+    row = MAIN2754['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_2754_sources(error='main2754_source_inventory_differs'):
+    require_9c70_sources(error)
+    for path, expected in MAIN2754['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        raw = source_before_9c70(path, raw, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN2754['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN2754['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN2754['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN2754['module_chains'][path]), error)
+        if path in MAIN2754['python_methods']:
+            found = list(inventory_syntax.identities(raw.decode()))
+            require(found == MAIN2754['python_methods'][path], error)
+
+
+def before_2754(declared, error='main2754_inventory_differs', source_error='main2754_source_inventory_differs'):
+    declared = peel_9c70(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT2754, error)
+    require_2754_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN2754['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN2754['previous_corpus_sha256'] == CURRENT9950, error)
+    return old
+
+
+def peel_2754(declared, error, source_error):
+    declared = peel_9c70(declared, error, source_error)
+    return before_2754(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT2754 else declared
+
+
+def source_before_9950(path, data, error):
+    """Only the fixed 9950 whole blob may reach its exact historical source."""
+    data = source_before_2754(path, data, error)
+    if path not in MAIN9950['projections']:
+        return data
+    row = MAIN9950['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_9950_sources(error='main9950_source_inventory_differs'):
+    require_2754_sources(error)
+    for path, expected in MAIN9950['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        raw = source_before_2754(path, raw, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN9950['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN9950['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN9950['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN9950['module_chains'][path]), error)
+        if path in MAIN9950['python_methods']:
+            found = list(inventory_syntax.identities(raw.decode()))
+            require(found == MAIN9950['python_methods'][path], error)
+
+
+def before_9950(declared, error='main9950_inventory_differs', source_error='main9950_source_inventory_differs'):
+    declared = peel_2754(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT9950, error)
+    require_9950_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN9950['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN9950['previous_corpus_sha256'] == CURRENT5A0, error)
+    return old
+
+
+def peel_9950(declared, error, source_error):
+    declared = peel_2754(declared, error, source_error)
+    return before_9950(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT9950 else declared
+
+
+def source_before_5a0(path, data, error):
+    """Only the fixed 5a0 whole blob may reach its exact historical source."""
+    data = source_before_9950(path, data, error)
+    if path not in MAIN5A0['projections']:
+        return data
+    row = MAIN5A0['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_5a0_sources(error='main5a0_source_inventory_differs'):
+    require_9950_sources(error)
+    for path, expected in MAIN5A0['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        raw = source_before_9950(path, raw, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN5A0['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN5A0['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN5A0['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN5A0['module_chains'][path]), error)
+        if path in MAIN5A0['python_methods']:
+            found = list(inventory_syntax.identities(raw.decode()))
+            require(found == MAIN5A0['python_methods'][path], error)
+
+
+def before_5a0(declared, error='main5a0_inventory_differs', source_error='main5a0_source_inventory_differs'):
+    declared = peel_9950(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT5A0, error)
+    require_5a0_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN5A0['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN5A0['previous_corpus_sha256'] == CURRENT850, error)
+    return old
+
+
+def peel_5a0(declared, error, source_error):
+    declared = peel_9950(declared, error, source_error)
+    return before_5a0(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT5A0 else declared
+
+
 def source_before_850(path, data, error):
     """Only the fixed 850 whole blob may reach its exact historical source."""
+    data = source_before_5a0(path, data, error)
     if path not in MAIN850['projections']:
         return data
     row = MAIN850['projections'][path]
@@ -63,18 +317,20 @@ def source_before_850(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
 
 
 def require_850_sources(error='main850_source_inventory_differs'):
+    require_5a0_sources(error)
     for path, expected in MAIN850['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_5a0(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN850['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -90,7 +346,8 @@ def require_850_sources(error='main850_source_inventory_differs'):
 
 
 def before_850(declared, error='main850_inventory_differs', source_error='main850_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_5a0(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT850, error)
     require_850_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -102,7 +359,8 @@ def before_850(declared, error='main850_inventory_differs', source_error='main85
 
 
 def peel_850(declared, error, source_error):
-    return before_850(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_5a0(declared, error, source_error)
+    return before_850(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT850 else declared
 
 
 def source_before_83b(path, data, error):
@@ -115,7 +373,7 @@ def source_before_83b(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -195,7 +453,7 @@ def source_before_abab(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -275,7 +533,7 @@ def source_before_727(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -355,7 +613,7 @@ def source_before_09fe(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -427,7 +685,7 @@ def source_before_0a8(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -499,7 +757,7 @@ def source_before_0df8(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -571,7 +829,7 @@ def source_before_43d7(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -641,7 +899,7 @@ def source_before_7cdc(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -695,7 +953,7 @@ def source_before_f0ef(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -749,7 +1007,7 @@ def source_before_e797(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -807,7 +1065,7 @@ def source_before_c1(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -858,7 +1116,7 @@ def source_before_c0(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -909,7 +1167,7 @@ def source_before_690(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data
@@ -960,7 +1218,7 @@ def source_before(path, data, error):
     last = len(data)
     for start, end, old in reversed(row['edits']):
         require(0 <= start <= end <= last, error)
-        data = data[:start] + old.encode() + data[end:]
+        data = inventory_splice.splice(data, start, end, old)
         last = start
     require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
     return data

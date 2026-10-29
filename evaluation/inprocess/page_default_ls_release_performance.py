@@ -100,6 +100,8 @@ def summary(r):
         performance_credit=complete,full_b2_complete=False,full_b3_complete=False,reproduce=r['reproduce'])
     if r['profile']=='page-default-ls-tf-same-page-release-performance-v1':
         support('page_default_ls_release_lease_reports').project(value,r)
+    if r['profile']=='page-default-ls-sealed-custody-release-performance-v1':
+        support('page_default_ls_release_custody_reports').project(value,r)
     return value
 
 def qualified(path,sha,current,pin,binary,record,lease_mode=False):
@@ -280,7 +282,9 @@ def main():
     ap.add_argument('--qualification-sha256',required=True,help='reviewed closed finite receipt SHA256, at this exact revision')
     ap.add_argument('--library-root',type=Path,default=Path('/usr/lib64'))
     ap.add_argument('--tf-same-page-lease',action='store_true',help='require the full same-revision seventeen-subject lease qualifier')
+    ap.add_argument('--sealed-custody',action='store_true',help='require the complete same-revision custody interval45/17 qualifier')
     args=ap.parse_args();os.chdir(ROOT)
+    need(not(args.tf_same_page_lease and args.sealed_custody),'one explicit release profile')
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision) and
          re.fullmatch('[0-9a-f]{64}',args.qualification_sha256) and
          len(os.sched_getaffinity(0))==1, 'exact revision/hash, checks enabled and one reserved CPU')
@@ -298,6 +302,9 @@ def main():
     if args.tf_same_page_lease:
         lease_reader=support('page_default_ls_release_lease_reports')
         r['profile']=lease_reader.PROFILE;r['reproduce'].append('--tf-same-page-lease')
+    if args.sealed_custody:
+        lease_reader=support('page_default_ls_release_custody_reports')
+        r['profile']=lease_reader.PROFILE;r['reproduce'].append('--sealed-custody')
     env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1')
     def pin(path):
         alias=str(Path(path).absolute());p=Path(alias).resolve(strict=True);value=fact(p)
@@ -312,6 +319,8 @@ def main():
             config=r['prerequisite_configuration']
             need(admission.cargo_configuration(config['environment'])==config['cargo_configuration'],'prerequisite configuration unchanged')
         need(all(Path(p).is_symlink() and os.readlink(p)==v for p,v in r.get('qualified_namespace_aliases',{}).items()),'all qualified namespace aliases unchanged')
+        for name in('interval_namespace_aliases','custody_namespace_aliases','baseline_interval_namespace_aliases'):
+            need(all(Path(p).is_symlink()and os.readlink(p)==v for p,v in r.get(name,{}).items()),'all additional authenticated namespace aliases unchanged')
         need(all(os.path.lexists(p)==v for p,v in presence.items()),'loader configuration presence unchanged')
         need(all(str(Path(p).resolve(strict=True))==v for p,v in roots.items()),'library root aliases unchanged')
         need(all(Path(p).is_symlink() and os.readlink(p)==v for p,v in namespace_links.items()),'namespace links unchanged')
@@ -407,7 +416,10 @@ def main():
         r['candidate_source']={str(p.relative_to(ROOT)):fact(pin(p))for p in
             sorted(SUPPORT.iterdir())if p.is_file()}
         r['required_source_inputs']={str((ROOT/os.fsdecode(n)).resolve()):fact(ROOT/os.fsdecode(n))for n in names if n and not n.startswith(b'evaluation/inprocess/results/')}
-        if args.tf_same_page_lease:
+        if args.sealed_custody:
+            assets=support('page_tf_interval_qualified').authenticate(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r,sealed_custody=True)
+            tools,bridge=assets['tools'],assets['release_bridge']
+        elif args.tf_same_page_lease:
             tools,bridge=qualified(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r,lease_mode=True)
         else:
             tools,bridge=qualified(args.qualification_receipt,args.qualification_sha256,r['source'],pin,binary,r)
@@ -429,6 +441,8 @@ def main():
         binary(carrier);need(not err,'carrier stderr');r['carrier']=decode(out)
         need(r['carrier']['original_sha256']==planned['original_sha256'] and
              r['carrier']['interpreter_sha256']==planned['interpreter_sha256'],'actual carrier identities')
+        if args.sealed_custody:
+            need(r['carrier']['bridge_sha256']==fact(bridge)['sha256']and r['carrier']['carrier_sha256']==fact(carrier)['sha256'],'actual ls carrier embeds the independently authenticated unobserved custody bridge')
         _,listing,lerr=run('native-libraries',[pin(planned['interpreter']),'--list','/bin/ls'])
         need(not lerr,'actual native loader listing stderr')
         r['native_libraries']=native_libraries(namespace,planned,listing,pin)

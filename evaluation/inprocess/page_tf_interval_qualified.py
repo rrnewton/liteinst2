@@ -11,6 +11,7 @@ from pathlib import Path
 import shlex
 import struct
 import sys
+sys.dont_write_bytecode = True
 from types import SimpleNamespace
 
 import page_selected_tf_interval as finite
@@ -33,8 +34,10 @@ def _load(name, path, pin):
     return module
 
 
-def _observed(prepare, selected, output, pin, binary):
+def _observed(prepare, selected, output, pin, binary, sealed_custody=False):
     """Reconstruct the declared adapters in memory; never call prepare()."""
+    if sealed_custody:
+        return _custody_observed(prepare, selected, output, pin, binary)
     facts, generated = [], {}
     for name in prepare.FILES:
         original = pin(selected / name)
@@ -78,6 +81,36 @@ def _observed(prepare, selected, output, pin, binary):
     return facts, generated
 
 
+def _custody_observed(prepare, selected, output, pin, binary):
+    """Exact custody compose()/copy products; no output writes or prepare call."""
+    old = prepare.original(ROOT, pin)
+    leaf = selected / 'tests/tf_interval'
+    facts, generated = [], {}
+    def check(name, source, data):
+        actual = pin(binary(output / name))
+        need(actual.read_bytes() == data, 'entire actual custody observation product')
+        facts.append(dict(name=name, before=fact(source), after=fact(actual)))
+        generated[name] = fact(actual)
+    for name in prepare.FILES:
+        source = pin(selected / name)
+        check(name, source, prepare.compose(name, source.read_bytes(), old))
+    source = pin(leaf / 'observe.inc')
+    check('tf_interval_observe.inc', source, prepare.compose('tf_interval_observe.inc', source.read_bytes(), old))
+    source = pin(leaf / 'record.h')
+    a, b = b'#include "../rseq_native/record.h"', b'#include "tf_interval_old_record.h"'
+    before = source.read_bytes()
+    need(before.count(a) == 1 and b not in before, 'one original frame include')
+    value = before.replace(a, b)
+    need(value.replace(b, a) == before, 'whole original frame include inverse')
+    check('tf_interval_record.h', source, value)
+    for source, name in ((selected / 'tests/rseq_native/record.h', 'tf_interval_old_record.h'),
+                         (leaf / 'custody_record.h', 'tf_interval_custody_record.h'),
+                         (leaf / 'custody_observe.inc', 'tf_interval_custody_observe.inc')):
+        source = pin(source); check(name, source, source.read_bytes())
+    need(tuple(generated) == prepare.GENERATED, 'complete thirteen custody observation products')
+    return facts, generated
+
+
 def _interpreter(images, directory, pin, binary):
     """The source-defined emitter's literal bytes, reconstructed without writes."""
     dynamic, strings = 0x400, 0x480
@@ -105,8 +138,9 @@ def _interpreter(images, directory, pin, binary):
     return path, metadata
 
 
-def authenticate(path, sha, current_source, pin, binary, record):
+def authenticate(path, sha, current_source, pin, binary, record, *, sealed_custody=False):
     """Return only authenticated timing assets after all forty saved rows replay."""
+    need(type(sealed_custody) is bool, 'explicit fixed interval authentication mode')
     path = pin(path)
     need(fact(path)['sha256'] == sha, 'explicit complete interval receipt SHA256')
     q = decode(path.read_bytes())
@@ -115,7 +149,7 @@ def authenticate(path, sha, current_source, pin, binary, record):
     fixture = selected / 'tests/tf_interval'
     cpu = record['cpu']
     need(type(cpu) is int and cpu >= 0 and q['schema'] == 1 and
-         q['profile'] == 'page-selected-tf-interval-v1' and q['status'] == 'passed' and
+         q['profile'] == ('page-selected-tf-interval-custody-v1' if sealed_custody else 'page-selected-tf-interval-v1') and q['status'] == 'passed' and
          q['expected_revision'] == current_source['revision'] and
          q['source'] == q['source_after'] == current_source and
          q['source_unchanged'] is True and q['error'] is None and q['final_errors'] == [],
@@ -161,7 +195,7 @@ def authenticate(path, sha, current_source, pin, binary, record):
          'unchanged original148 plus6/49/17 qualification, Build, and namespace joins')
     prior = decode(prerequisite.read_bytes())
     archive = pin(prior['build']['artifacts']['decoder.a']['path'])
-    need(q['unobserved_bridge'] == dict(path=str(unobserved), **fact(unobserved)) and
+    need(q['prerequisite_bridge' if sealed_custody else 'unobserved_bridge'] == dict(path=str(unobserved), **fact(unobserved)) and
          q['archive'] == dict(path=str(archive), **fact(archive)),
          'exact qualified production bridge/archive, without an observation overlay')
     gd = prior['tf_same_page_fixture']['tools']['gdb']
@@ -171,19 +205,44 @@ def authenticate(path, sha, current_source, pin, binary, record):
          pin(sys.executable) == tools['python'], 'complete exact actual finite tool inventory')
     builder = SimpleNamespace(tools=tools, environment=record['prerequisite_configuration']['environment'])
     gdb_env = dict(builder.environment, XDG_CACHE_HOME=str(output / 'gdb-cache'))
-    prepare = _load('interval_auth_prepare', fixture / 'prepare.py', pin)
-    check = _load('interval_auth_check', fixture / 'check.py', pin)
+    if sealed_custody:
+        from page_tf_custody_qualified import authenticate as custody_authenticate
+        baseline = q['baseline_interval_receipt']
+        baseline_path = pin(baseline['path'])
+        need(dict(path=str(baseline_path), **fact(baseline_path)) == baseline,
+             'exact separate same-revision baseline interval receipt')
+        scratch = dict(cpu=cpu, hardware=record['hardware'], required_source_inputs=record['required_source_inputs'])
+        baseline_assets = authenticate(baseline_path, baseline['sha256'], current_source, pin, binary, scratch)
+        need(scratch['qualification'] == q['qualification'] and
+             scratch['prerequisite_configuration'] == q['prerequisite_configuration'] and
+             scratch['interval_qualification'] == q['baseline_interval_qualification'] and
+             scratch['interval_namespace_aliases'] == q['baseline_interval_namespace_aliases'] and
+             baseline_assets['tools'] == tools, 'entire original interval prerequisite, configuration and tool joins')
+        record['baseline_interval_namespace_aliases'] = scratch['interval_namespace_aliases']
+        record['baseline_interval_qualification'] = scratch['interval_qualification']
+        custody = q['custody_receipt']; custody_path = pin(custody['path'])
+        need(dict(path=str(custody_path), **fact(custody_path)) == custody,
+             'exact separate same-revision custody prerequisite receipt')
+        custody_assets = custody_authenticate(custody_path, custody['sha256'], current_source, pin, binary, record)
+        need(custody_assets['tools'] == tools and custody_assets['archive'] == archive and
+             custody_assets['prerequisite_bridge'] == unobserved and
+             custody_assets['prerequisite_configuration'] == record['prerequisite_configuration'] and
+             record['custody_qualification'] == q['custody_qualification'] and
+             record['custody_namespace_aliases'] == q['custody_namespace_aliases'],
+             'complete original custody69/17 and exact shared build/namespace authority')
+    prepare = _load('interval_auth_prepare', fixture / ('custody_prepare.py' if sealed_custody else 'prepare.py'), pin)
+    check = _load('interval_auth_check', fixture / ('custody.py' if sealed_custody else 'check.py'), pin)
     pipe = _load('interval_auth_pipe', fixture / 'pipe_run.py', pin)
     images = _load('interval_auth_images', selected / 'tests/provider_launch/interpreter.py', pin)
     namespace = _load('interval_auth_namespace', ROOT / 'tools/page-entry/namespace.py', pin)
     policy = _load('interval_auth_policy', selected / 'tests/oneshot_integrated/check.py', pin)
-    reports = _load('interval_auth_reports', selected / 'tests/tf_same_page/reports.py', pin)
+    reports = check.reports if sealed_custody else _load('interval_auth_reports', selected / 'tests/tf_same_page/reports.py', pin)
     need(pipe.BOUNDS == finite.BOUNDS['interval'] and pipe.CONTROLS ==
          {'normal': '0', 'bad-ready': '1', 'extra-done': '2', 'missing-done': '3',
           'wrong-go': '0', 'eof-go': '0'}, 'unchanged fixed protocol/control contract')
 
     rows = q['commands']
-    need([(r['name'], r['profile']) for r in rows] == finite.inventory(),
+    need([(r['name'], r['profile']) for r in rows] == finite.inventory(sealed_custody),
          'all forty actual commands in their original order')
     captures = {}
     for row in rows:
@@ -263,10 +322,14 @@ def authenticate(path, sha, current_source, pin, binary, record):
                 '--disassemble=memset', artifact], profile='inspect', env=builder.environment)
             need(not err, 'actual complete reset assembly')
             value['reset'] = hidden_memset(artifact, body_check(artifact, symbols, assembly, 'fast', symbol_name='memset'))
+        if record_name is None:
+            need(sealed_custody and name == 'interval-unobserved' and bridge,
+                 'only the explicit custody production build lacks an observation record')
+            return value
         _, out, err = replay(name + '-layout', [tools['gdb'], '-q', '-nx', '-batch', '-iex',
             'set auto-load off', '-iex', 'set debuginfod enabled off', '-iex', 'set index-cache enabled off',
             '-iex', 'maintenance set worker-threads 1', '--readnow', '--se=' + str(artifact),
-            '-x', fixture / 'layout.py'], env=gdb_env)
+            '-x', fixture / ('custody_layout.py' if sealed_custody else 'layout.py')], env=gdb_env)
         need(not err, 'actual file-only DWARF capture')
         layout = value['layout'] = decode(out)
         symbols = [x.split() for x in symbols.splitlines() if x.split()[-1:] == [record_name.encode()]]
@@ -280,21 +343,36 @@ def authenticate(path, sha, current_source, pin, binary, record):
         return value
 
     observed = output / 'observed'
-    adapters, generated = _observed(prepare, selected, observed, pin, binary)
+    adapters, generated = _observed(prepare, selected, observed, pin, binary, sealed_custody)
     need(adapters == q['adapters'], 'all actual whole-product observation adapter joins')
-    recipe_path = pin(selected / 'build-tf-same-page-lease.sh')
+    recipe_path = pin(selected / ('build-tf-sealed-custody.sh' if sealed_custody else 'build-tf-same-page-lease.sh'))
     argv = commands(recipe_path, builder, output, archive, pin)[0]
     units = [str(selected.parent / p) for p in UNITS[:-1]]
     macros = (MACROS - {'-DLI2_ONESHOT_PUBLICATION=1'}) | {
         '-DLI2_CPUID_NX_ONLY=1', '-DLI2_RSEQ_NATIVE=1', '-DLI2_RSEQ_NATIVE_BOUNDARY=1',
         '-DLI2_RSEQ_TCGETS_BTRFS=1', '-DLI2_RSEQ_TIOCGWINSZ_BTRFS=1', '-DLI2_TF_SAME_PAGE_LEASE=1'}
+    if sealed_custody:
+        macros = macros | {'-DLI2_TF_SEALED_CUSTODY=1'}
     need([x for x in argv if x.endswith(('.c', '.S'))] == units and len(units) == 15 and
          {x for x in argv if x.startswith('-DLI2_')} == macros and
-         sum(x.startswith('-DLI2_') for x in argv) == len(macros) == 13 and
-         argv[-2:] == ['-o', str(output / 'bridge-tf-same-page-lease.so')] and
+         sum(x.startswith('-DLI2_') for x in argv) == len(macros) == (14 if sealed_custody else 13) and
+         argv[-2:] == ['-o', str(output / ('bridge-tf-sealed-custody.so' if sealed_custody else 'bridge-tf-same-page-lease.so'))] and
          all(x in argv for x in ('-O2', '-g', '-nostdlib', '-shared', '-fPIC', '-fvisibility=hidden',
                                 '-mgeneral-regs-only', '-fno-builtin', '-Werror')),
          'unchanged complete fifteen-TU thirteen-macro release recipe')
+    expected_builds = []
+    if sealed_custody:
+        unobserved = pin(binary(output / 'bridge-tf-sealed-custody.so'))
+        release = dict(name='interval-unobserved', recipe=fact(recipe_path), argv=argv,
+                       archive=fact(archive), translation_units=15, status='passed')
+        headers('interval-unobserved-headers', argv, units, archive, builder,
+                pin, {}, replay, release)
+        replay('interval-unobserved-link', argv, profile='interval_build', env=builder.environment)
+        release['artifact'] = fact(unobserved)
+        release['inspection'] = inspect('interval-unobserved', unobserved, None, True)
+        need(q['unobserved_bridge'] == dict(path=str(unobserved), **fact(unobserved)),
+             'exact new fully inspected unobserved custody release bridge')
+        expected_builds.append(release)
     actual, sources = argv.copy(), units.copy()
     actual[-1] = str(output / 'observed.so')
     for basename in ('runtime_loader.c', 'lifecycle_loader.c'):
@@ -307,14 +385,15 @@ def authenticate(path, sha, current_source, pin, binary, record):
     header_aliases = {}
     headers('interval-observed-headers', actual, sources, archive, builder,
             pin, header_aliases, replay, build)
-    need({str(observed / n) for n in (*prepare.FILES, 'tf_interval_observe.inc',
-         'tf_interval_record.h', 'tf_interval_old_record.h')} <= set(build['headers']),
+    generated_names = prepare.GENERATED if sealed_custody else (*prepare.FILES, 'tf_interval_observe.inc', 'tf_interval_record.h', 'tf_interval_old_record.h')
+    need({str(observed / n) for n in generated_names} <= set(build['headers']),
          'all generated observer files in actual compiler include closure')
     replay('interval-observed-link', actual, profile='interval_build', env=builder.environment)
     bridge = pin(binary(output / 'observed.so'))
     build['artifact'] = fact(bridge)
     build['inspection'] = inspect('interval-observed', bridge, 'tfi_record', True)
-    need(q['builds'] == [build], 'entire actual observed build, headers, ELF and DWARF join')
+    expected_builds.append(build)
+    need(q['builds'] == expected_builds, 'entire actual observed build, headers, ELF and DWARF join')
     gated_layout = build['inspection']['layout']
     interpreter, metadata = _interpreter(images, output / 'interpreter', pin, binary)
     for p in (interpreter, metadata):
@@ -503,7 +582,7 @@ def authenticate(path, sha, current_source, pin, binary, record):
              status='passed', operation_status='pre_exec_refusal', comparison=result,
              **{k: row[k] for k in ('pid', 'exit', 'reaped', 'timed_out')}),
              'original actual pre-exec descriptor guard and exact failed-outcome identity')
-    need(cursor == 40 and case_cursor == 17 and namespace_links == q['namespace_links'],
+    need(cursor == (45 if sealed_custody else 40) and case_cursor == 17 and namespace_links == q['namespace_links'],
          'all fixed actual commands/subjects and sealed namespace aliases replayed')
     public = finite.summary(q)
     public['private_receipt'] = fact(path)
@@ -519,8 +598,13 @@ def authenticate(path, sha, current_source, pin, binary, record):
     need(fact(path)['sha256'] == sha, 'explicit qualification receipt remains unchanged after replay')
     record['interval_namespace_aliases'] = namespace_links
     record['interval_qualification'] = dict(receipt=dict(path=str(path), **fact(path)),
-        commands=40, actual_children=17, normal_children=8, full_state_pairs=2,
+        commands=45 if sealed_custody else 40, actual_children=17, normal_children=8, full_state_pairs=2,
         required_protocol_failures=5, required_pre_exec_refusals=4,
         public=fact(private / 'public.json'),
         qualification_credit='replayed complete same-revision finite receipt; no new target execution')
-    return dict(tools=tools, programs=assets)
+    result = dict(tools=tools, programs=assets)
+    if sealed_custody:
+        # This exact artifact passed the new release link/header/ELF/reset joins.
+        # The inherited qualification bridge remains the macro-off prerequisite.
+        result['release_bridge'] = unobserved
+    return result

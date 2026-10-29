@@ -8,9 +8,9 @@
       "sha256": "d9462b5ec03f3085564907d0fa1d42e882d49900651e05899d5b3f4122ddab3f"
     },
     {
-      "bytes": 7592,
+      "bytes": 7782,
       "path": "evaluation/inprocess/checks.py",
-      "sha256": "81f439c54c5a14498621b24c0a131b4d494394ce3c185d355743b8b16d8e9e23"
+      "sha256": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39"
     },
     {
       "bytes": 29973,
@@ -48,9 +48,9 @@
       "sha256": "1a6476c364586b1563701e1a82484eb63ac907e0a33508b392bc69fc11f88d7a"
     },
     {
-      "bytes": 1711,
+      "bytes": 1773,
       "path": "tools/page-entry/selected/maps_phase.h",
-      "sha256": "69126941704abc1015d4a7f0aaf6076395203d75cf3d32c27844a2354db029fe"
+      "sha256": "0b5197a0fefcef50567792970ffd6bcb62d58a410ae12710224f11042d4fe7ef"
     },
     {
       "bytes": 10046,
@@ -108,9 +108,9 @@
       "sha256": "2e7ce1001056ca9ea5aefc6792ccb098a473510b49566f345ca6b62f01111d50"
     },
     {
-      "bytes": 20818,
+      "bytes": 21184,
       "path": "tools/page-entry/selected/tf_chain.inc",
-      "sha256": "5b2b00eae196bc1b604d7c79dec03656aee4a9c9de820a276815dd4ec00d41cb"
+      "sha256": "0789a5d77c0c7a7e4a5a435064bb5437453bb9a4fe31b91e9a0edc9f165c4ead"
     },
     {
       "bytes": 619,
