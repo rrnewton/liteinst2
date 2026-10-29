@@ -6604,6 +6604,1558 @@
       }
     }
   },
+  "main9950": {
+    "added_methods": {
+      "tests/support/native_normal_module/tests.rs": [
+        "module_case_domain_preserves_all_inputs_and_mixed_extents",
+        "module_ready_requires_complete_shared_union_and_unique_maps",
+        "module_wire_refuses_extra_missing_and_oversized_fields",
+        "module_four_transfers_require_order_target_rsp_and_real_words",
+        "module_helper_effects_keep_full_state_and_four_store_slots",
+        "module_data_and_journal_cover_both_inputs_targets_and_closed_owners",
+        "module_population_requires_all_cases_seeds_returns_and_reaps",
+        "module_geometry_has_all_40_heads_and_four_exact_calls"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/check_tests.rs": [
+        "module_rows_join_function_owner_ack_and_all_512_words",
+        "module_report_keeps_global_slots_and_function_local_ranks"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module/tests.rs": [
+        "module_keeps_all_csv_and_length_inputs_and_per_function_counters",
+        "module_batch_requires_function_entry_return_owner_and_final_ack_joins",
+        "module_requires_both_ret_populations_and_all_512_words_for_each_k",
+        "module_report_keeps_global_slots_and_function_local_ranks"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": [
+        "module_profile_and_config_keep_old_profiles_separate",
+        "module_k1_cross_function_confirmation_keeps_global_slots_and_local_budgets",
+        "module_k16_full_batch_joins_both_functions_all_payloads_and_512_words",
+        "module_wrong_legal_return_and_function_closed_reason_preserve_receipt",
+        "module_transfer_checks_every_word_and_final_function_tag_before_finish",
+        "module_allocation_and_output_refusal_retain_function_closed_owner",
+        "module_completed_function_check_is_stronger_than_summary_equality",
+        "module_role_metadata_and_old_handle_checks_never_alias_functions"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": [
+        "module_composes_shared_page_two_scopes_all_roles_and_excluded_allocations",
+        "module_refuses_wrong_identity_source_or_unpatchable_second_function",
+        "module_role_table_keeps_each_function_and_mandatory_control_distinct",
+        "module_reaches_derived_ten_group_cap_without_larger_leaf_windows"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_module/tests.rs": [
+        "pair_selection_requires_same_final_bytes_and_canonical_disjoint_extents",
+        "canonical_union_deduplicates_exact_pages_and_refuses_conflict_or_third_page",
+        "final_union_checks_both_body_overlays_and_every_untouched_byte"
+      ]
+    },
+    "base": "762a66157c4c0103acd59605554c216ac5e8db18",
+    "current_corpus_sha256": "54781938d9ed1e3233a6ca846b1ebfc9edb3b27e45f8adc1e156ba930958659c",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 29,
+      "rust_tests": 29
+    },
+    "doctests": {},
+    "instances": {
+      "tests/support/native_normal_module/tests.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::normal_caller::module::tests::"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/check_tests.rs": {
+        "test/frontend_native_calibrations": "normal_module_check::tests::"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/tests.rs": {
+        "unit/ordinary_interval/main": "normal::module::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::normal::module::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::site::ordinary::normal_module::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_module/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::module::ordinary::normal_module::tests::"
+      }
+    },
+    "listed_additions": {
+      "test/frontend_native_calibrations": [
+        "normal_module_check::tests::module_report_keeps_global_slots_and_function_local_ranks",
+        "normal_module_check::tests::module_rows_join_function_owner_ack_and_all_512_words",
+        "oracle::native_ordinary::normal_caller::module::tests::module_case_domain_preserves_all_inputs_and_mixed_extents",
+        "oracle::native_ordinary::normal_caller::module::tests::module_data_and_journal_cover_both_inputs_targets_and_closed_owners",
+        "oracle::native_ordinary::normal_caller::module::tests::module_four_transfers_require_order_target_rsp_and_real_words",
+        "oracle::native_ordinary::normal_caller::module::tests::module_geometry_has_all_40_heads_and_four_exact_calls",
+        "oracle::native_ordinary::normal_caller::module::tests::module_helper_effects_keep_full_state_and_four_store_slots",
+        "oracle::native_ordinary::normal_caller::module::tests::module_population_requires_all_cases_seeds_returns_and_reaps",
+        "oracle::native_ordinary::normal_caller::module::tests::module_ready_requires_complete_shared_union_and_unique_maps",
+        "oracle::native_ordinary::normal_caller::module::tests::module_wire_refuses_extra_missing_and_oversized_fields"
+      ],
+      "unit/ordinary_interval/main": [
+        "normal::module::tests::module_batch_requires_function_entry_return_owner_and_final_ack_joins",
+        "normal::module::tests::module_keeps_all_csv_and_length_inputs_and_per_function_counters",
+        "normal::module::tests::module_report_keeps_global_slots_and_function_local_ranks",
+        "normal::module::tests::module_requires_both_ret_populations_and_all_512_words_for_each_k"
+      ],
+      "unit/rapid_profiler/lib": [
+        "frontend_native::always_on::normal::module::tests::module_allocation_and_output_refusal_retain_function_closed_owner",
+        "frontend_native::always_on::normal::module::tests::module_completed_function_check_is_stronger_than_summary_equality",
+        "frontend_native::always_on::normal::module::tests::module_k16_full_batch_joins_both_functions_all_payloads_and_512_words",
+        "frontend_native::always_on::normal::module::tests::module_k1_cross_function_confirmation_keeps_global_slots_and_local_budgets",
+        "frontend_native::always_on::normal::module::tests::module_profile_and_config_keep_old_profiles_separate",
+        "frontend_native::always_on::normal::module::tests::module_role_metadata_and_old_handle_checks_never_alias_functions",
+        "frontend_native::always_on::normal::module::tests::module_transfer_checks_every_word_and_final_function_tag_before_finish",
+        "frontend_native::always_on::normal::module::tests::module_wrong_legal_return_and_function_closed_reason_preserve_receipt",
+        "frontend_native::always_on::site::ordinary::normal_module::tests::module_composes_shared_page_two_scopes_all_roles_and_excluded_allocations",
+        "frontend_native::always_on::site::ordinary::normal_module::tests::module_reaches_derived_ten_group_cap_without_larger_leaf_windows",
+        "frontend_native::always_on::site::ordinary::normal_module::tests::module_refuses_wrong_identity_source_or_unpatchable_second_function",
+        "frontend_native::always_on::site::ordinary::normal_module::tests::module_role_table_keeps_each_function_and_mandatory_control_distinct",
+        "frontend_native::module::ordinary::normal_module::tests::canonical_union_deduplicates_exact_pages_and_refuses_conflict_or_third_page",
+        "frontend_native::module::ordinary::normal_module::tests::final_union_checks_both_body_overlays_and_every_untouched_byte",
+        "frontend_native::module::ordinary::normal_module::tests::pair_selection_requires_same_final_bytes_and_canonical_disjoint_extents"
+      ]
+    },
+    "macros": {},
+    "merge_base": "5a0bcf651e6b41d318a6202fb061c9fcd8351af0",
+    "methods": {
+      "tests/support/native_normal_module/tests.rs": {
+        "all": [
+          "module_case_domain_preserves_all_inputs_and_mixed_extents",
+          "module_ready_requires_complete_shared_union_and_unique_maps",
+          "module_wire_refuses_extra_missing_and_oversized_fields",
+          "module_four_transfers_require_order_target_rsp_and_real_words",
+          "module_helper_effects_keep_full_state_and_four_store_slots",
+          "module_data_and_journal_cover_both_inputs_targets_and_closed_owners",
+          "module_population_requires_all_cases_seeds_returns_and_reaps",
+          "module_geometry_has_all_40_heads_and_four_exact_calls"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/native-interval/normal/module/check_tests.rs": {
+        "all": [
+          "module_rows_join_function_owner_ack_and_all_512_words",
+          "module_report_keeps_global_slots_and_function_local_ranks"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/module/tests.rs": {
+        "all": [
+          "module_keeps_all_csv_and_length_inputs_and_per_function_counters",
+          "module_batch_requires_function_entry_return_owner_and_final_ack_joins",
+          "module_requires_both_ret_populations_and_all_512_words_for_each_k",
+          "module_report_keeps_global_slots_and_function_local_ranks"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
+        "all": [
+          "module_profile_and_config_keep_old_profiles_separate",
+          "module_k1_cross_function_confirmation_keeps_global_slots_and_local_budgets",
+          "module_k16_full_batch_joins_both_functions_all_payloads_and_512_words",
+          "module_wrong_legal_return_and_function_closed_reason_preserve_receipt",
+          "module_transfer_checks_every_word_and_final_function_tag_before_finish",
+          "module_allocation_and_output_refusal_retain_function_closed_owner",
+          "module_completed_function_check_is_stronger_than_summary_equality",
+          "module_role_metadata_and_old_handle_checks_never_alias_functions"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": {
+        "all": [
+          "module_composes_shared_page_two_scopes_all_roles_and_excluded_allocations",
+          "module_refuses_wrong_identity_source_or_unpatchable_second_function",
+          "module_role_table_keeps_each_function_and_mandatory_control_distinct",
+          "module_reaches_derived_ten_group_cap_without_larger_leaf_windows"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_module/tests.rs": {
+        "all": [
+          "pair_selection_requires_same_final_bytes_and_canonical_disjoint_extents",
+          "canonical_union_deduplicates_exact_pages_and_refuses_conflict_or_third_page",
+          "final_union_checks_both_body_overlays_and_every_untouched_byte"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "Cargo.toml": [
+        "name = \"precontext_native\"\npath = \"tests/precontext_native.rs\"\nharness = false"
+      ],
+      "tests/precontext_native.rs": [
+        "#[path = \"support/native_interval_oracle.rs\"]\nmod oracle;"
+      ],
+      "tests/support/native_interval_oracle.rs": [
+        "#[path = \"native_ordinary.rs\"]\npub mod native_ordinary;"
+      ],
+      "tests/support/native_normal_caller.rs": [
+        "#[path = \"native_normal_module.rs\"]\npub mod module;"
+      ],
+      "tests/support/native_normal_module.rs": [
+        "#[cfg(test)]\n#[path = \"native_normal_module/tests.rs\"]\nmod tests;"
+      ],
+      "tests/support/native_ordinary.rs": [
+        "#[path = \"native_normal_caller.rs\"]\npub mod normal_caller;"
+      ],
+      "tools/rapid-profiler/Cargo.toml": [
+        "name = \"frontend-native-calibrations\"\npath = \"native-interval/calibrations.rs\"",
+        "name = \"frontend-native-oracle\"\npath = \"native-interval/main.rs\"\ntest = false",
+        "name = \"frontend-native-point\"\npath = \"native-point/main.rs\"\ntest = false",
+        "name = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true"
+      ],
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;",
+        "#[path = \"normal/module/check.rs\"]\nmod normal_module_check;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/check.rs": [
+        "#[cfg(test)]\n#[path = \"check_tests.rs\"]\nmod tests;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/main.rs": [
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal.rs": [
+        "pub(super) mod module;"
+      ],
+      "tools/rapid-profiler/ordinary-interval/normal/module.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": [
+        "pub(super) mod normal;",
+        "pub(super) mod site;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": [
+        "mod module;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site.rs": [
+        "pub mod ordinary;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": [
+        "mod normal_module;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/mod.rs": [
+        "mod always_on;",
+        "mod module;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/module.rs": [
+        "#[path = \"ordinary/mod.rs\"]\npub(super) mod ordinary;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": [
+        "mod normal_module;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_module.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/lib.rs": [
+        "pub mod frontend_native;"
+      ]
+    },
+    "origin": "9950c633cba1afcaebb96da01eca6e203752256f",
+    "previous_corpus_sha256": "be422fc824a36d9417012794c620ee17d2ba25c3051669faea1bf616c6eadcbb",
+    "projections": {
+      "tests/support/native_normal_caller.rs": {
+        "current_sha256": "f3b204870a1fcea226d27655fccac715783f8d5c1a02eab38e24a0fb249105ba",
+        "edits": [
+          [
+            351,
+            426,
+            ""
+          ],
+          [
+            577,
+            589,
+            ""
+          ],
+          [
+            762,
+            812,
+            ""
+          ],
+          [
+            979,
+            1029,
+            ""
+          ],
+          [
+            1045,
+            1084,
+            "    fn calls(self) -> [u64; 2] {\n"
+          ],
+          [
+            1105,
+            1249,
+            "            Self::Legacy => CALLS,\n            Self::Reference => reference::bytes::CALLS,\n"
+          ],
+          [
+            1265,
+            1312,
+            "    fn continuations(self) -> [u64; 2] {\n"
+          ],
+          [
+            1333,
+            1501,
+            "            Self::Legacy => CONTINUATIONS,\n            Self::Reference => reference::bytes::CONTINUATIONS,\n"
+          ],
+          [
+            1669,
+            1723,
+            ""
+          ],
+          [
+            1783,
+            1869,
+            "        self == Self::Legacy || reference::bytes::RESTORED_HEADS.contains(&offset)\n"
+          ],
+          [
+            2143,
+            2170,
+            "        ready: &NormalReady,\n"
+          ],
+          [
+            2280,
+            2557,
+            "            Self::Legacy => call_before(r, ready, index, rsp, data, bound),\n            Self::Reference => reference::call_before(r, ready, index, rsp, data, bound),\n"
+          ],
+          [
+            2642,
+            2669,
+            "        ready: &NormalReady,\n"
+          ],
+          [
+            2757,
+            3010,
+            "            Self::Legacy => call_after(r, ready, index, rsp, word),\n            Self::Reference => reference::call_after(r, ready, index, rsp, word),\n"
+          ],
+          [
+            3095,
+            3122,
+            "        ready: &NormalReady,\n"
+          ],
+          [
+            3230,
+            3504,
+            "            Self::Legacy => ret_before(r, ready, index, rsp, value, word),\n            Self::Reference => reference::ret_before(r, ready, index, rsp, value, word),\n"
+          ],
+          [
+            3588,
+            3615,
+            "        ready: &NormalReady,\n"
+          ],
+          [
+            3723,
+            3994,
+            "            Self::Legacy => ret_after(r, ready, index, rsp, value, word),\n            Self::Reference => reference::ret_after(r, ready, index, rsp, value, word),\n"
+          ],
+          [
+            4046,
+            4073,
+            "        ready: &NormalReady,\n"
+          ],
+          [
+            4197,
+            4471,
+            "            Self::Legacy => journal_words(ready, mode, pid, rsp, returns),\n            Self::Reference => reference::journal_words(ready, mode, pid, rsp, returns),\n"
+          ],
+          [
+            23718,
+            23752,
+            ""
+          ],
+          [
+            26188,
+            26235,
+            ""
+          ],
+          [
+            28269,
+            28430,
+            "        if self.reference.is_some() {\n"
+          ],
+          [
+            29911,
+            29937,
+            ""
+          ],
+          [
+            30082,
+            30129,
+            "        self.caller_rsp() - PROTECTED_STACK_BELOW_CALLER\n"
+          ],
+          [
+            30284,
+            30370,
+            "    fn snapshot(&self, child: &Tracee, ready: &NormalReady, logical: u64) -> Snapshot {\n"
+          ],
+          [
+            30401,
+            30482,
+            "        for (a, b) in ready.caller_immutable.iter().chain(&ready.immutable) {\n"
+          ],
+          [
+            30874,
+            30974,
+            "            application_stack: child.memory(\n                self.stack_start(),\n                (PROTECTED_STACK_BELOW_CALLER + 8) as usize,\n            ),\n"
+          ],
+          [
+            30985,
+            31037,
+            "        guard_data(self.data.bytes(), &point.data);\n"
+          ],
+          [
+            31088,
+            31183,
+            "    fn reach_caller(&self, walk: &mut Walk<'_>, ready: &NormalReady) -> libc::user_regs_struct {\n"
+          ],
+          [
+            31326,
+            31387,
+            "        while walk.child.registers().rip != ready.caller {\n"
+          ],
+          [
+            32325,
+            32369,
+            "                ready.entry,\n"
+          ],
+          [
+            32545,
+            32616,
+            "                .memory(ready.caller, self.profile().bytes().len()),\n"
+          ],
+          [
+            38089,
+            38139,
+            "pub struct NormalPairResult {\n"
+          ],
+          [
+            38230,
+            38285,
+            "    pub visits: [usize; 2],\n    pub returns: [u64; 2],\n"
+          ],
+          [
+            38326,
+            38352,
+            "    pub values: [u64; 2],\n"
+          ],
+          [
+            42363,
+            42796,
+            ""
+          ],
+          [
+            43150,
+            43317,
+            ""
+          ],
+          [
+            47399,
+            47750,
+            "            match &self.reference {\n                None => NormalReady::decode(&wire),\n                Some(cells) => reference::ReferenceReady::decode(&wire, cells.address()),\n"
+          ],
+          [
+            48072,
+            48318,
+            "        let maps = if let Body::Csv(case) = self.body {\n"
+          ],
+          [
+            48493,
+            48644,
+            "                csv::validate_ready(&ready[0], false, self.extent),\n                csv::validate_ready(&ready[1], true, self.extent),\n"
+          ],
+          [
+            48725,
+            48874,
+            "                ready[0].validate(false, self.extent, self.mode),\n                ready[1].validate(true, self.extent, self.mode),\n"
+          ],
+          [
+            48919,
+            49186,
+            "                ready[0].validate_profile(false, self.extent, self.mode, profile),\n                ready[1].validate_profile(true, self.extent, self.mode, profile),\n"
+          ],
+          [
+            50569,
+            50740,
+            "        let mut witnesses = self\n            .reference\n            .as_ref()\n            .map(|_| std::array::from_fn::<_, 2, _>(|i| reference::Witness::new(self, &ready[i])));\n"
+          ],
+          [
+            51214,
+            51277,
+            "                    .any(|&offset| r.caller + offset == pc);\n"
+          ],
+          [
+            51983,
+            52065,
+            "                    let compare = !caller_pc || profile.compare(pc - r.caller);\n"
+          ],
+          [
+            52854,
+            52918,
+            "                    if pc == r.caller + profile.outer_ret() {\n"
+          ],
+          [
+            53081,
+            53224,
+            "                    .position(|&offset| r.caller + offset == pc);\n                let ret = logical.filter(|logical| r.returns.contains(logical));\n"
+          ],
+          [
+            53264,
+            53698,
+            "                    call_order(calls[index], returns[index].len(), n);\n                    assert_eq!(walk.child.memory(pc, 3), [0x41, 0xff, 0xd5]);\n"
+          ],
+          [
+            53930,
+            53969,
+            "                        self.body.bound(),\n"
+          ],
+          [
+            54109,
+            54330,
+            "                    ret_order(calls[index], n);\n"
+          ],
+          [
+            54544,
+            54637,
+            "                    profile.ret_before(&regs, r, n, self.caller_rsp(), self.body.scalar(), word);\n"
+          ],
+          [
+            54727,
+            54781,
+            "                        let j = r.journal.as_ref().unwrap();\n"
+          ],
+          [
+            56818,
+            56894,
+            "                    let address = self.caller_rsp() - SUBJECT_RSP_DELTA;\n"
+          ],
+          [
+            56984,
+            57076,
+            "                    profile.ret_after(&regs, r, n, self.caller_rsp(), self.body.scalar(), word);\n"
+          ],
+          [
+            57108,
+            57198,
+            "            assert_eq!(calls[index], 2);\n            assert_eq!(returns[index].len(), 2);\n"
+          ],
+          [
+            57298,
+            57431,
+            "            assert_eq!(actual.rax, self.body.scalar().wrapping_mul(2));\n            final_data(\n                self.data.bytes(),\n                &walk.child.memory(self.data.address(), PAGE),\n                self.body.scalar(),\n            );\n"
+          ],
+          [
+            57497,
+            57546,
+            "        if profile == CallerProfile::Legacy {\n"
+          ],
+          [
+            57767,
+            57848,
+            "            assert_eq!(actual.rip, ready[index].caller + profile.outer_ret());\n"
+          ],
+          [
+            60427,
+            60743,
+            "                ready[0].caller,\n                ready[0].entry,\n"
+          ],
+          [
+            60900,
+            61155,
+            "        let value = self.body.scalar();\n"
+          ],
+          [
+            61400,
+            61572,
+            "            declared_returns: ready[0].returns.iter().copied().collect(),\n            values: [value; 2],\n            outer_value: value.wrapping_mul(2),\n            target_calls: 4,\n            target_returns: 4,\n"
+          ],
+          [
+            61710,
+            61754,
+            "    fn disjoint(&self, ready: &NormalReady) {\n"
+          ],
+          [
+            62039,
+            62091,
+            "            cells.disjoint(ready, &owned);\n"
+          ],
+          [
+            62101,
+            62182,
+            "        for (a, b) in ready.caller_immutable.iter().chain(&ready.immutable) {\n"
+          ],
+          [
+            62334,
+            62377,
+            "        if let Some(j) = &ready.journal {\n"
+          ]
+        ],
+        "previous_sha256": "02e6995756f9fad0d15b4c5616c15c9e4ba6d4effade2b81e71e183927705163"
+      },
+      "tests/support/native_normal_csv.rs": {
+        "current_sha256": "01d4bcd0332f0e9b51abb1a13a43ec58e6d528a2238c87193ad7fdd9ca46ecd0",
+        "edits": [
+          [
+            1925,
+            2071,
+            "struct Graph {\n    heads: BTreeSet<u64>,\n    edges: BTreeSet<(u64, u64)>,\n    returns: BTreeSet<u64>,\n"
+          ],
+          [
+            2073,
+            2117,
+            "fn graph(code: &[u8]) -> Graph {\n"
+          ],
+          [
+            4382,
+            4853,
+            ""
+          ],
+          [
+            5035,
+            5097,
+            "    code: Vec<u8>,\n    declared: Graph,\n"
+          ],
+          [
+            5270,
+            5532,
+            "    assert_eq!(body.entry, ready.entry);\n"
+          ],
+          [
+            5715,
+            5729,
+            "        ready\n            .heads\n"
+          ],
+          [
+            5891,
+            5907,
+            "        ready\n            .returns\n"
+          ]
+        ],
+        "previous_sha256": "783d8ac3ec136295f6e97114ea5481d46cafd7421eecf1cac992fdc1184b85db"
+      },
+      "tools/rapid-profiler/native-interval/calibrations.rs": {
+        "current_sha256": "dea04da1176e8cdbaec40f80467baaa8611889bdc7fa250eac4d06b0ecbefb0b",
+        "edits": [
+          [
+            420,
+            560,
+            ""
+          ]
+        ],
+        "previous_sha256": "60c2e699e3d4224aab090c9163075380384a564863c6c5fdbb9193fae150c0f2"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "510778142906e7bdb1ec8ca05b84bdec535f58c84f8dee7e497b0ffadeb5a2c7",
+        "edits": [
+          [
+            39640,
+            41047,
+            ""
+          ]
+        ],
+        "previous_sha256": "dbfca6e6b736d4f6fb609ae399e5863a9920c5c2cfb62e224f9a8db3cfeb30ab"
+      },
+      "tools/rapid-profiler/native-interval/normal.rs": {
+        "current_sha256": "a48e7eef5f37c1096813b40a789c2389fd293faa1fb029e806932da8e9f68cc9",
+        "edits": [
+          [
+            932,
+            955,
+            ""
+          ]
+        ],
+        "previous_sha256": "fa2bbcc23912b419926bd4bc6387d6d0f6373ca4ea5fe76426bd045518bf6575"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "a7f474e6a52a382fcac9041d0074ff0c31a044b43a6056f74ab2956218914fa4",
+        "edits": [
+          [
+            12751,
+            12890,
+            ""
+          ]
+        ],
+        "previous_sha256": "bf41820b971f1e0763ec7e872d3d8c0518b3073f49e72c8077bf1055877f8ef5"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal.rs": {
+        "current_sha256": "b8470a0f514e796c98dd2e843b51468e85ebc8c9bdc4495c077e3d25c4b6c97d",
+        "edits": [
+          [
+            900,
+            923,
+            ""
+          ]
+        ],
+        "previous_sha256": "adb85c37787484fca070c7065ba46f09295ddc4c9cc057d8b795d64a6393c61d"
+      },
+      "tools/rapid-profiler/ordinary-interval/normal/csv.rs": {
+        "current_sha256": "26fc3b55ded584e4c97dccd9a6044d89d7854c6ac331a365cf1f97d89616d9f3",
+        "edits": [
+          [
+            878,
+            928,
+            "const CASES: [(&[u8], u64); CALLS] = [\n"
+          ],
+          [
+            1295,
+            1341,
+            "fn inputs() -> [[u8; 96]; CALLS] {\n"
+          ],
+          [
+            3111,
+            3180,
+            "type Csv = unsafe extern \"C\" fn(*const u8, usize) -> u64;\n"
+          ],
+          [
+            3252,
+            3327,
+            "unsafe fn invoke(target: Csv, input: &[u8], output: &mut u64) {\n"
+          ],
+          [
+            3693,
+            3764,
+            "fn mapping(address: u64, permissions: &str) -> (u64, u64) {\n"
+          ],
+          [
+            4584,
+            4629,
+            "fn stack_bounds() -> (u64, u64) {\n"
+          ],
+          [
+            4763,
+            5143,
+            "struct Custody<'a> {\n    candidate: &'a Path,\n    trusted: &'a Path,\n    bytes: &'a [u8],\n    cpu: usize,\n    pid: u32,\n    stack: (u64, u64),\n    caller: (u64, u64),\n    source: Vec<(u64, Vec<u8>)>,\n    generated: Vec<(u64, Vec<u8>)>,\n    deadline: Instant,\n"
+          ],
+          [
+            5164,
+            5197,
+            "    fn check(&self) {\n"
+          ],
+          [
+            7638,
+            7683,
+            "struct FailStop(bool);\n"
+          ]
+        ],
+        "previous_sha256": "dd8469990ae9a507e932d4e85a38247ada68f819eac11f9d544154e9e12a4f5c"
+      },
+      "tools/rapid-profiler/src/frontend.rs": {
+        "current_sha256": "103fadfac8a894b05a8bf2fddcc2614e4a2fc75ad5bfff351896598dd5eced79",
+        "edits": [
+          [
+            42557,
+            42688,
+            "    BindingChange, IntervalEntry, IntervalEntryError, IntervalEntrySummary, IntervalExitError,\n    UnsampledSummary,\n"
+          ]
+        ],
+        "previous_sha256": "ec7826d8b4e602b95c999183655384fb84cd974b367d904fb376b3faba09c2c1"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": {
+        "current_sha256": "f3fe46c160fbf29ccb009112306c89797ed25dafbeb2abe982831477fcd6a819",
+        "edits": [
+          [
+            1013,
+            1152,
+            "    IntervalExitError, Limits, ModelReturnSlot, Observation, Report, Session, SetupError,\n    ThreadModel, UnsampledSummary,\n"
+          ],
+          [
+            2217,
+            2777,
+            ""
+          ],
+          [
+            2816,
+            2845,
+            "    site: Arc<site::Site>,\n"
+          ],
+          [
+            2895,
+            2895,
+            "    function: FunctionId,\n"
+          ],
+          [
+            3139,
+            3361,
+            ""
+          ],
+          [
+            4111,
+            4140,
+            "    site: Arc<site::Site>,\n"
+          ],
+          [
+            4176,
+            4176,
+            "    function: FunctionId,\n"
+          ],
+          [
+            5877,
+            5997,
+            "            site: site.site,\n"
+          ],
+          [
+            6049,
+            6049,
+            "            function,\n"
+          ],
+          [
+            7016,
+            7136,
+            "            site: site.site,\n"
+          ],
+          [
+            7188,
+            7188,
+            "            function,\n"
+          ],
+          [
+            9396,
+            9697,
+            ""
+          ],
+          [
+            10995,
+            11030,
+            "            site: self.site,\n"
+          ],
+          [
+            11129,
+            11129,
+            "            function: self.function,\n"
+          ],
+          [
+            11283,
+            11283,
+            "        let client = IntervalClient {\n            binding: Arc::clone(&binding),\n        };\n"
+          ],
+          [
+            11329,
+            11376,
+            "                binding,\n"
+          ],
+          [
+            11469,
+            11490,
+            "            client,\n"
+          ],
+          [
+            21971,
+            22019,
+            ""
+          ],
+          [
+            23438,
+            23515,
+            "                    timing: self.binding.site.gate.as_ref().map(|_| timing::Rows::new()),\n"
+          ],
+          [
+            24579,
+            24633,
+            ""
+          ],
+          [
+            27417,
+            27457,
+            "                        .site\n"
+          ],
+          [
+            30324,
+            30364,
+            "                        .site\n"
+          ],
+          [
+            35756,
+            35788,
+            "                .site\n"
+          ],
+          [
+            36107,
+            36165,
+            "        if word != self.binding.site.terminal {\n"
+          ],
+          [
+            36750,
+            36814,
+            "        let timed = self.binding.site.gate.is_some();\n"
+          ],
+          [
+            38099,
+            38155,
+            ""
+          ],
+          [
+            38247,
+            38269,
+            "            self.binding.function,\n"
+          ],
+          [
+            38632,
+            38654,
+            "            function: self.binding.function,\n"
+          ],
+          [
+            40120,
+            40265,
+            "        let timed = self.binding.site.gate.is_some();\n"
+          ],
+          [
+            40860,
+            40901,
+            "            || pair.function != self.binding.function\n"
+          ],
+          [
+            43102,
+            43124,
+            "            self.binding\n                .site\n                .gate\n"
+          ],
+          [
+            45591,
+            45631,
+            "                        .site\n"
+          ]
+        ],
+        "previous_sha256": "33b4c806de3b1b535e8e6f75768a0f9c08e58beaba7af89bb848c85b39217414"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/drain.rs": {
+        "current_sha256": "a5a80d6a96a16c94f7ed06b7c59bec9cd6bdec24369e81362892211361554abd",
+        "edits": [
+          [
+            8177,
+            8213,
+            "                    .site\n"
+          ],
+          [
+            12693,
+            12757,
+            "                    function: state.binding.function,\n"
+          ]
+        ],
+        "previous_sha256": "4a377eae3095fc354453540aeed9d3746b4b5b42a96ff9c53a9c7b5c1e601e3e"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/drain/tests.rs": {
+        "current_sha256": "333d7d89ce2cf3fe844d6e00843eb323ebbc8aa49d54598e3e6e2f2780c80add",
+        "edits": [
+          [
+            10567,
+            10652,
+            "            let continuation = state(|s| s.binding.site.terminal);\n"
+          ]
+        ],
+        "previous_sha256": "f302eafbc53af39765ed598d7ac2215a5dbf6789cd0f02b244b029a2c0d3792e"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": {
+        "current_sha256": "46b6ef814e6b6ffa79692878881c97b577477473f96fe140f9fb8c8fde9dd0cb",
+        "edits": [
+          [
+            1557,
+            1629,
+            "    if !normal_profile(&prepared.site, prepared.limits) {\n"
+          ],
+          [
+            3379,
+            3517,
+            "        if !normal_profile(&self.binding.site, self.binding.limits)\n"
+          ]
+        ],
+        "previous_sha256": "ab0530d13cda58b09fd61b8c427ffc8905fdd8a69b416ca60d5c0e5000fd2da8"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage/tests.rs": {
+        "current_sha256": "29f409273bd8fe9837a5fc3ca8be8b986d73c7ec6f41cd045dcdb5b5d55689de",
+        "edits": [
+          [
+            6401,
+            6549,
+            "    wrong.site = site::synthetic_site().site;\n"
+          ]
+        ],
+        "previous_sha256": "c4de33d6998e822cf9b72731d591f1e4b43f1f5d8232bd637fe165a5ecb76795"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/drain_tests.rs": {
+        "current_sha256": "ed3b6d7d55a281e9b497ed13aa70fdbea45efc1e77900dbb8f185e87bf73beaf",
+        "edits": [
+          [
+            1328,
+            1404,
+            "    let gate = state.binding.site.gate.as_ref().unwrap();\n"
+          ],
+          [
+            2120,
+            2196,
+            "    let gate = state.binding.site.gate.as_ref().unwrap();\n"
+          ],
+          [
+            2774,
+            2850,
+            "    let gate = state.binding.site.gate.as_ref().unwrap();\n"
+          ]
+        ],
+        "previous_sha256": "523cb57362e382835d8f0ba4e3aeec8e2c0b9095e92d55a0e0e02e7e816fa04b"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/history.rs": {
+        "current_sha256": "ed3b71ad207a20ea0b89feb8e5b722ad78db0a22997319257e4f21e0155d13f1",
+        "edits": [
+          [
+            1643,
+            1695,
+            ""
+          ],
+          [
+            1880,
+            1898,
+            "        function: binding.function,\n"
+          ],
+          [
+            8748,
+            9082,
+            "    if binding.session.history_mode() == HistoryMode::Legacy {\n        packed(summary, binding.function)\n"
+          ],
+          [
+            9095,
+            9171,
+            "        packed_absolute(\n            summary,\n            binding.function,\n            binding.session.history_committed_end(),\n        )\n"
+          ]
+        ],
+        "previous_sha256": "34e578b8c13d0dea479cb25331e1cf592258515023f1cd0ecd5139b47b81bf90"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+        "current_sha256": "c075a0b0041ff888c11bfd9e365768647b2a247e482b5890a373a6dc448b79a1",
+        "edits": [
+          [
+            335,
+            347,
+            ""
+          ],
+          [
+            364,
+            528,
+            ""
+          ],
+          [
+            3934,
+            6168,
+            ""
+          ],
+          [
+            11541,
+            11658,
+            ""
+          ],
+          [
+            11675,
+            11707,
+            ""
+          ],
+          [
+            12171,
+            12221,
+            ""
+          ],
+          [
+            14006,
+            14058,
+            "        if !self.binding.site.is_normal()\n"
+          ],
+          [
+            14800,
+            16270,
+            "        NORMAL\n            .try_with(|cell| {\n                if NORMAL_POISON.get() {\n                    return Err(error(Cause::Attachment));\n                }\n                let mut storage = cell\n                    .try_borrow_mut()\n                    .map_err(|_| error(Cause::Attachment))?;\n                if storage.0.is_some() {\n                    return Err(error(Cause::Attachment));\n                }\n                // No registration is consumed before all local attachment checks.\n                let model = self\n                    .binding\n                    .session\n                    .register_thread(registration)\n                    .map_err(|e| error(Cause::Setup(e)))?;\n                let thread = thread::current().id();\n                let tid = tid();\n                let mut state = Box::new(NormalState::new(\n                    Arc::clone(&self.binding),\n                    registration,\n                    stack,\n                    journal,\n                    model,\n                ));\n                state.journal.header(tid, 0);\n                storage.0 = Some(state);\n                Ok(NormalThread {\n                    key: Arc::clone(&self.binding.key),\n                    pid: self.binding.pid,\n                    thread,\n                    tid,\n                    registration,\n                    active: true,\n                    _local: PhantomData,\n                })\n"
+          ],
+          [
+            16285,
+            16346,
+            "            .unwrap_or(Err(error(Cause::Attachment)))\n    }\n"
+          ],
+          [
+            16404,
+            16543,
+            "    (binding.site.is_normal() && binding.limits.threads == 1 && binding.limits.depth == 1)\n"
+          ],
+          [
+            19118,
+            19782,
+            ""
+          ],
+          [
+            19801,
+            20932,
+            ""
+          ],
+          [
+            22208,
+            22246,
+            ""
+          ],
+          [
+            24338,
+            24478,
+            ""
+          ],
+          [
+            24690,
+            24746,
+            "    ) -> Result<u64, BridgeError> {\n"
+          ],
+          [
+            24779,
+            24873,
+            "        if !normal_binding_matches(&self.binding)\n"
+          ],
+          [
+            25211,
+            25211,
+            "            || !self\n                .binding\n                .site\n                .matches(context.instruction_pointer, control, entry)\n"
+          ],
+          [
+            25279,
+            25801,
+            ""
+          ],
+          [
+            26104,
+            26133,
+            "        Ok(word)\n"
+          ],
+          [
+            26139,
+            26156,
+            ""
+          ],
+          [
+            26307,
+            26632,
+            ""
+          ],
+          [
+            27629,
+            27660,
+            "            self.binding.function,\n"
+          ],
+          [
+            27888,
+            27910,
+            ""
+          ],
+          [
+            28309,
+            28444,
+            "        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;\n"
+          ],
+          [
+            28663,
+            28680,
+            ""
+          ],
+          [
+            28831,
+            29103,
+            ""
+          ],
+          [
+            29126,
+            29271,
+            ""
+          ],
+          [
+            29339,
+            29521,
+            "        if p.returned.is_some() || p.rsp != rsp || p.word != word || p.slot.identity != p.ordinal {\n"
+          ],
+          [
+            29642,
+            29777,
+            "        let (kind, generation, bits) = history::packed_for(&self.binding, summary)?;\n"
+          ],
+          [
+            30877,
+            31078,
+            "        let (_, _, bits) = history::packed_for(&self.binding, summary)?;\n"
+          ],
+          [
+            31212,
+            31262,
+            ""
+          ],
+          [
+            33541,
+            33659,
+            "        if Some(result.summary()) != p.summary\n"
+          ],
+          [
+            33995,
+            34048,
+            ""
+          ],
+          [
+            35568,
+            35768,
+            ""
+          ],
+          [
+            37367,
+            37384,
+            ""
+          ],
+          [
+            37420,
+            37686,
+            "        mut records: Vec<NormalRecord>,\n"
+          ],
+          [
+            37717,
+            37849,
+            "    ) -> Result<Option<NormalBatch>, BridgeError> {\n        if !records.is_empty()\n            || !journal.is_empty()\n            || records.capacity() < CALLS\n            || journal.capacity() < 512\n        {\n"
+          ],
+          [
+            37969,
+            38016,
+            "        let stream = history::stream_for(&self.binding);\n        let history_end = stream.as_ref().map(|_| self.history_bound());\n"
+          ],
+          [
+            38193,
+            38663,
+            "        // All validation/allocation preceded consumption. The remaining copies,\n        // fixed-buffer reset and cursor update are infallible and do not drop owners.\n        records.extend(self.records[..self.len].iter().flatten().copied());\n"
+          ],
+          [
+            39084,
+            39122,
+            "        let batch = NormalBatch {\n            stream,\n            history_end,\n"
+          ],
+          [
+            39272,
+            39272,
+            "            function: self.binding.function,\n"
+          ],
+          [
+            39340,
+            39340,
+            "            records,\n            journal,\n"
+          ],
+          [
+            39389,
+            39429,
+            ""
+          ],
+          [
+            39595,
+            39654,
+            "        Ok(Some(batch))\n"
+          ],
+          [
+            39732,
+            40091,
+            ""
+          ],
+          [
+            40427,
+            40427,
+            "            && normal_binding_matches(&s.binding)\n"
+          ],
+          [
+            40575,
+            40690,
+            ""
+          ],
+          [
+            40905,
+            40959,
+            "                if !self.matches(state) {\n"
+          ],
+          [
+            42282,
+            42431,
+            ""
+          ],
+          [
+            42557,
+            42642,
+            "        self.totals()?;\n        let (records, journal) = outputs()?;\n"
+          ],
+          [
+            42907,
+            42964,
+            "                if !self.matches(state) {\n"
+          ],
+          [
+            43108,
+            43169,
+            "                match state.transfer(records, journal) {\n"
+          ],
+          [
+            43680,
+            43799,
+            ""
+          ],
+          [
+            44112,
+            44166,
+            "                if !self.matches(state) {\n"
+          ],
+          [
+            45320,
+            45411,
+            ""
+          ],
+          [
+            46575,
+            46656,
+            "                let word = state.identity(context, control, entry)?;\n"
+          ],
+          [
+            46683,
+            46759,
+            "                    state.enter(\n"
+          ],
+          [
+            46967,
+            47045,
+            "                    state.observe(\n"
+          ]
+        ],
+        "previous_sha256": "44f9a42be90c9e53725659cd6bf273fd7fc48158b33ca63144a24807de16b068"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+        "current_sha256": "5cb9a8c308a098ebaa224f884c8b9eb0d07121c8ea6910793593451dd53a6eac",
+        "edits": [
+          [
+            1426,
+            1551,
+            "            site,\n"
+          ],
+          [
+            1644,
+            1644,
+            "            function: FunctionId(11),\n"
+          ]
+        ],
+        "previous_sha256": "cedd8f9533b75d53d2d82185a729dcce0d9e8b1e4cedee355e9deb688a90ccee"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers.rs": {
+        "current_sha256": "9773c4da4cfa25cc2fb8ffdf04f716c16f2d5fe27c96aa5da0adfb22e5f84ae7",
+        "edits": [
+          [
+            295,
+            395,
+            "    profile_matches(&binding.site, binding.limits)\n"
+          ],
+          [
+            7052,
+            7216,
+            "            site: site::synthetic_normal_site(two).site,\n"
+          ],
+          [
+            7309,
+            7309,
+            "            function: FunctionId(11),\n"
+          ]
+        ],
+        "previous_sha256": "a3a5ae89713982f3c398a350030831c3528525982bd812cfc9f6e428ccb402d3"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+        "current_sha256": "93f8f70873e7a5ba385a5f1e189eebc32450a06f0d7b4213f66ccf15cf63e7bb",
+        "edits": [
+          [
+            1003,
+            1022,
+            ""
+          ],
+          [
+            1112,
+            1374,
+            ""
+          ],
+          [
+            20253,
+            20364,
+            "    let roles: Vec<_> = pcs\n        .iter()\n        .enumerate()\n        .map(|(i, &pc)| {\n            let (control, writer) = ProbeControl::new_managed_bound(\n                if matches!(\n                    profile,\n                    CallbackProfile::Normal | CallbackProfile::NormalTwoCallers\n                ) {\n                    if i == 0 {\n                        super::super::normal::entry_callback\n                    } else {\n                        super::super::normal::exit_callback\n                    }\n                } else if i == 0 {\n                    timed_entry_callback\n                } else {\n                    timed_exit_callback\n                },\n                true,\n            );\n            drop(writer); // Mandatory pairing can never be disabled.\n            Role { pc, control }\n        })\n        .collect();\n    let entries = LegalEntrySet {\n        identity,\n        scope,\n        provenance: EntryProvenance::Declared(\n            \"admitted complete local CFG plus unsafe sole external entry/no saved-resume contract\"\n                .into(),\n        ),\n        completeness: EntryCompleteness::Complete,\n        entries: certificate\n            .entries()\n            .iter()\n            .map(|&address| LegalEntry {\n                address,\n                requires_endbr: false,\n            })\n            .collect(),\n        resumes: ResumeObligation::NoneExist,\n    };\n"
+          ],
+          [
+            20740,
+            20958,
+            "    for (index, group) in groups.iter().enumerate() {\n        let actions: Vec<_> = group\n            .roles\n            .iter()\n            .map(|&i| ControlledAction {\n                logical_pc: roles[i].pc,\n                control: roles[i].control.clone(),\n            })\n            .collect();\n        let logical = actions[0].logical_pc;\n        let mut allocation = base_allocation(entry)?;\n        allocation.preferred_address = Some(\n            (entry & !4095)\n                .checked_add(0x10_0000 + index as u64 * 0x1_0000)\n                .ok_or(Refusal::InvalidRange)?,\n        );\n        for &prior in &reserved {\n            exclude(&mut allocation.ranges, prior)?;\n        }\n        let member = match policy {\n            PreparationPolicy::CertifiedBlocks => plan_coalesced_detailed_after(\n                &InstallRequest {\n                    identity,\n                    code: owner.code(),\n                    base_address: entry,\n                    function: scope,\n                    block: group.block,\n                    logical_pc: logical,\n                    entries: &entries,\n                    hook: impossible_ordinary_dispatch,\n                    semantics: HookSemantics::Observe,\n                    allocation: &allocation,\n                    search: SearchPolicy {\n                        tactics: TacticPolicy::RelocationOnly,\n                        max_upstream_bytes: if logical == entry { 0 } else { 64 },\n                        max_displaced_bytes: 80,\n                        max_sites: if logical == entry { 1 } else { 65 },\n                    },\n                },\n                &actions,\n                &predecessor,\n            ),\n            PreparationPolicy::WholeFunction => {\n                // SAFETY: the exclusive admitted owner authenticates the\n                // exact complete scalar CFG, sole external entry, no saved\n                // resumes/foreign transfers and continuous source lifetime.\n                // The permanent distinct controls above are our managed\n                // non-unwinding state-preserving entry/RET observers. The\n                // core independently checks complete leaders, every C3 and\n                // exact whole extent, using this original source and the\n                // authenticated predecessor overlay. Publication/execution\n                // still require the unchanged explicit unsafe contracts.\n                unsafe {\n                    plan_whole_function_controlled_detailed_after(\n                        &WholeFunctionRequest {\n                            identity,\n                            code: owner.code(),\n                            base_address: entry,\n                            entries: &entries,\n                            allocation: &allocation,\n                        },\n                        &actions,\n                        &predecessor,\n                    )\n                }\n            }\n        }\n        .map_err(SiteError::Planning)?;\n        let p = member.plan().parts();\n        if p.kind != PlanKind::Relocation\n            || p.profile != ApplicationProfile::InstallOnce\n            || p.identity != identity\n            || p.entries != entries\n            || p.logical_pc != logical\n            || !group.block.covers(p.displaced)\n            || p.physical_pc != p.displaced.start()\n            || p.writes.len() != 1\n            || p.writes[0].address != p.physical_pc\n            || p.writes[0].bytes.len() as u64 != p.displaced.len()\n            || p.reads\n                != [ExpectedBytes {\n                    address: entry,\n                    bytes: overlay.clone(),\n                }]\n            || member.image().controls()\n                != actions\n                    .iter()\n                    .map(|a| a.control.clone())\n                    .collect::<Vec<_>>()\n            || member\n                .image()\n                .instruction_boundaries()\n                .iter()\n                .map(|&(pc, _)| pc)\n                .collect::<Vec<_>>()\n                != certificate\n                    .heads()\n                    .iter()\n                    .copied()\n                    .filter(|&pc| p.displaced.contains(pc))\n                    .collect::<Vec<_>>()\n            || actions.iter().any(|a| !p.displaced.contains(a.logical_pc))\n        {\n            return Err(SiteError::Correspondence);\n        }\n        if policy == PreparationPolicy::WholeFunction {\n            if groups.len() != 1 || index != 0 || group.block != scope {\n                return Err(SiteError::Correspondence);\n            }\n            whole::check_plan(scope, certificate.heads(), &member)?;\n        }\n        predecessor.append(member.plan())?;\n        for request in &p.allocations {\n            if reserved.iter().any(|r| r.overlaps(request.range)) {\n                return Err(SiteError::Correspondence);\n            }\n            reserved.push(request.range);\n        }\n        for edit in &p.writes {\n            let at = usize::try_from(\n                edit.address\n                    .checked_sub(entry)\n                    .ok_or(Refusal::InvalidRange)?,\n            )\n            .map_err(|_| Refusal::InvalidRange)?;\n            let end = at\n                .checked_add(edit.bytes.len())\n                .ok_or(Refusal::InvalidRange)?;\n            if overlay.get(at..end) != owner.code().get(at..end) {\n                return Err(SiteError::Correspondence);\n            }\n            overlay\n                .get_mut(at..end)\n                .ok_or(Refusal::InvalidRange)?\n                .copy_from_slice(&edit.bytes);\n            let at = usize::try_from(\n                edit.address\n                    .checked_sub(source_start)\n                    .ok_or(Refusal::InvalidRange)?,\n            )\n            .map_err(|_| Refusal::InvalidRange)?;\n            let end = at\n                .checked_add(edit.bytes.len())\n                .ok_or(Refusal::InvalidRange)?;\n            full_overlay\n                .get_mut(at..end)\n                .ok_or(Refusal::InvalidRange)?\n                .copy_from_slice(&edit.bytes);\n        }\n        members.push(member);\n"
+          ],
+          [
+            20964,
+            21105,
+            ""
+          ],
+          [
+            22548,
+            31943,
+            ""
+          ]
+        ],
+        "previous_sha256": "434c1b75d1d75c6abe32b938ad5f84220cca67e11a62112e4711cb6f457ffd59"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/drain_native.rs": {
+        "current_sha256": "ccd4e6f22a50d84ff3cfa1dd5b6f44849a00bcf21cc1597313d2cf2746438fd4",
+        "edits": [
+          [
+            1415,
+            1501,
+            "            Arc::as_ptr(state.binding.site.gate.as_ref().unwrap()),\n"
+          ],
+          [
+            1710,
+            1768,
+            "                state.binding.function,\n"
+          ]
+        ],
+        "previous_sha256": "06539a8d9b253ebfd693dc776058535aad4c1bbd277f12db6d7e3ca320a5f7e4"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/history_native.rs": {
+        "current_sha256": "e5738a2c6967b5bd996ea927232c2bcc6376146c45d7dd56ef490906b8497912",
+        "edits": [
+          [
+            1540,
+            1626,
+            "            Arc::as_ptr(state.binding.site.gate.as_ref().unwrap()),\n"
+          ],
+          [
+            1838,
+            1896,
+            "                state.binding.function,\n"
+          ]
+        ],
+        "previous_sha256": "7a520e24e53b95a2e0ba713ecefe7bdb201a26cb6b8d171711c9f4e4e8d22479"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "ca99273cd11329f91f2b0d4a0a451aa8e8d2a48345f96af00e95e3843eabd722",
+        "edits": [
+          [
+            4814,
+            4906,
+            ""
+          ],
+          [
+            5226,
+            5731,
+            "    NormalAcknowledgement, NormalBatch, NormalClient, NormalRecord, NormalThread, NormalTotals,\n    PreparedNormalController, PreparedTwoCallerNormalController,\n"
+          ]
+        ],
+        "previous_sha256": "9a3fef07d183f79111575d6d83ee2c5246dd5ff8df4051cde8a525273006cbb4"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+        "current_sha256": "dcbe1312b2a74441b9a82c4178bf1fb33cbb839e9b51efd23595de7f6fe49519",
+        "edits": [
+          [
+            616,
+            811,
+            ""
+          ]
+        ],
+        "previous_sha256": "5b0acfd9f903334387cd1c94185c1129040031e814242690cafe77babbcb468d"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs": {
+        "current_sha256": "bbac8b05d149b1af81995e4a610e52e6e47c8b0ebb8e27cb6b1aaad953a4d304",
+        "edits": [
+          [
+            3204,
+            3299,
+            "fn resolve(owner: &Retained, parsed: &Parsed) -> Result<(u64, u64), SetupRefusal> {\n"
+          ]
+        ],
+        "previous_sha256": "5e9bccc32cbae07eb5ab03d2267af8e5542d5a94be01db4814fd811527d8f8b6"
+      }
+    },
+    "prospective_tree": "8c17dbf0ee389bea36a3f730dadfbe0bbe567e99",
+    "python_methods": {},
+    "scope": "29 exact new declarations in three existing automatic test harnesses. Native-oracle/point bins remain test=false and precontext_native remains harness=false. Historical layers,350 recorder identities,serial1039,all failures and limits remain exact. Upstream reported terminal sums may include nested summaries and are not canonical inventory counts.",
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/ordinary-module-native/controls.py": "a97fd145b4884c53c29caf0787c9fa4dfe88c5643bda609521a36b75691eaff7",
+      "evaluation/ordinary-module-native/module_native.py": "e8208da5b7641c40458e0df0722bc553615945fcf0980213454620d8408696dd",
+      "evaluation/ordinary-module-native/reproduce.py": "6c338cb742dc45e2b9b6c1e9ddc8a158841eff62e54218957be505592c20bfba",
+      "evaluation/ordinary-module/controls.py": "5a987100b0d21d38cbff6efffa8d09f4e2d616324e729035589abc2993e36490",
+      "evaluation/ordinary-module/output.py": "8f4819c3758bf847a88020cafbf5d0349b7d81cf21b9a0f756c121bbe1510e5c",
+      "evaluation/ordinary-module/reproduce.py": "60a73415980261fa1f1176f58423da8c77bf6775c2033def4f7469c74677c84c",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_normal_caller.rs": "f3b204870a1fcea226d27655fccac715783f8d5c1a02eab38e24a0fb249105ba",
+      "tests/support/native_normal_csv.rs": "01d4bcd0332f0e9b51abb1a13a43ec58e6d528a2238c87193ad7fdd9ca46ecd0",
+      "tests/support/native_normal_module.rs": "85b8aba6f06adbf0a67b5a6b2ef74d32ed5ead40e125dd27c0e0259c68b2f3a9",
+      "tests/support/native_normal_module/tests.rs": "25bbf0cb854c2089622849e77a26dc03a385b5877a242893726159b02ae5cc8f",
+      "tests/support/native_normal_module/trace.rs": "5de94e9604f9b3c29f3837b76d6a29cbd8337226941b4da0392044dd5bb7d0a7",
+      "tests/support/native_normal_module/witness.rs": "2588d9fabfbacdf98c82e50e0feedca734fd6b0e76d0a8b590332f4256fc6cf3",
+      "tests/support/native_ordinary.rs": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "dea04da1176e8cdbaec40f80467baaa8611889bdc7fa250eac4d06b0ecbefb0b",
+      "tools/rapid-profiler/native-interval/main.rs": "510778142906e7bdb1ec8ca05b84bdec535f58c84f8dee7e497b0ffadeb5a2c7",
+      "tools/rapid-profiler/native-interval/normal.rs": "a48e7eef5f37c1096813b40a789c2389fd293faa1fb029e806932da8e9f68cc9",
+      "tools/rapid-profiler/native-interval/normal/module.rs": "cd35d212e713e692a450c959c0c59778a49de5dda4e07d83ce938d2d9b2f0da3",
+      "tools/rapid-profiler/native-interval/normal/module/check.rs": "40931bb5633b9beec0f4d1cce5ecd2607499639a5c53377bfc0481a4f9a14ed7",
+      "tools/rapid-profiler/native-interval/normal/module/check_tests.rs": "4da8123ce7ae44e400f0eb671fbeee26c6ce91a93ffe39a07e9c1e19227ca6f2",
+      "tools/rapid-profiler/native-interval/normal/module/owner.rs": "ce97a698e7d78041fd58dcf6c8e6c496e13f045b9035484d54ba4c48fcac0e87",
+      "tools/rapid-profiler/normal-work/module_caller.c": "de9216e29051b86ffd041dcc49f4df655e645e3cfb9032cad818538a3ba4b267",
+      "tools/rapid-profiler/normal-work/module_caller_bytes.rs": "855504a1091b80a88d393579760028f31bd27f5620389e5bab55bd98b93b7a2e",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "a7f474e6a52a382fcac9041d0074ff0c31a044b43a6056f74ab2956218914fa4",
+      "tools/rapid-profiler/ordinary-interval/normal.rs": "b8470a0f514e796c98dd2e843b51468e85ebc8c9bdc4495c077e3d25c4b6c97d",
+      "tools/rapid-profiler/ordinary-interval/normal/csv.rs": "26fc3b55ded584e4c97dccd9a6044d89d7854c6ac331a365cf1f97d89616d9f3",
+      "tools/rapid-profiler/ordinary-interval/normal/module.rs": "49bb81e5da089cb9fca46b90ade55dc8c7692789a50cea65dec08752ec5da790",
+      "tools/rapid-profiler/ordinary-interval/normal/module/check.rs": "f3e8363b45a31b11ffb2aa2c270e501dcc6bacce71ca65ae7a99863adadceef1",
+      "tools/rapid-profiler/ordinary-interval/normal/module/tests.rs": "b244e030e3586501037ed0c985364d4e85047c9eba24a3881f39f105040c8b60",
+      "tools/rapid-profiler/src/frontend.rs": "103fadfac8a894b05a8bf2fddcc2614e4a2fc75ad5bfff351896598dd5eced79",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "f3fe46c160fbf29ccb009112306c89797ed25dafbeb2abe982831477fcd6a819",
+      "tools/rapid-profiler/src/frontend_native/always_on/drain.rs": "a5a80d6a96a16c94f7ed06b7c59bec9cd6bdec24369e81362892211361554abd",
+      "tools/rapid-profiler/src/frontend_native/always_on/drain/tests.rs": "333d7d89ce2cf3fe844d6e00843eb323ebbc8aa49d54598e3e6e2f2780c80add",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "46b6ef814e6b6ffa79692878881c97b577477473f96fe140f9fb8c8fde9dd0cb",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage/tests.rs": "29f409273bd8fe9837a5fc3ca8be8b986d73c7ec6f41cd045dcdb5b5d55689de",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/drain_tests.rs": "ed3b6d7d55a281e9b497ed13aa70fdbea45efc1e77900dbb8f185e87bf73beaf",
+      "tools/rapid-profiler/src/frontend_native/always_on/history.rs": "ed3b71ad207a20ea0b89feb8e5b722ad78db0a22997319257e4f21e0155d13f1",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "c075a0b0041ff888c11bfd9e365768647b2a247e482b5890a373a6dc448b79a1",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "0671234df9a9a97269f28eba1305ec727d835009ac061ee4e3866a2b3f707d07",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": "1172b71c18b95cef986b447f13d81560b25266beb1f42fcf41985722718400a6",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": "5cb9a8c308a098ebaa224f884c8b9eb0d07121c8ea6910793593451dd53a6eac",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers.rs": "9773c4da4cfa25cc2fb8ffdf04f716c16f2d5fe27c96aa5da0adfb22e5f84ae7",
+      "tools/rapid-profiler/src/frontend_native/always_on/site.rs": "5f0679a8a29ae8c3c047fc905c705075005eeee9989f0a88419263cc67d9906c",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "93f8f70873e7a5ba385a5f1e189eebc32450a06f0d7b4213f66ccf15cf63e7bb",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": "0eb210b714c03417dcda7747776035495b07a91c48924390e8bd24be5b52c56e",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": "c08707bdfcc16fcd25be20042b541fef65045561747896a4a4a5e48701f4df16",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/drain_native.rs": "ccd4e6f22a50d84ff3cfa1dd5b6f44849a00bcf21cc1597313d2cf2746438fd4",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/history_native.rs": "e5738a2c6967b5bd996ea927232c2bcc6376146c45d7dd56ef490906b8497912",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "ca99273cd11329f91f2b0d4a0a451aa8e8d2a48345f96af00e95e3843eabd722",
+      "tools/rapid-profiler/src/frontend_native/module.rs": "f893147ba9e48bfe23570cb66c9f26470505da8b9ebf9bd3377ae2c0ac613eff",
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "dcbe1312b2a74441b9a82c4178bf1fb33cbb839e9b51efd23595de7f6fe49519",
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_module.rs": "21684469e923a89a0696f9ed22cf6976aa011c9272b67f3adfea8ade64a92ee1",
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_module/tests.rs": "3a0ed7a60bc5b2cef119ba3e71460d2ea677026bb6027f502949e47aca9e8f26",
+      "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs": "bbac8b05d149b1af81995e4a610e52e6e47c8b0ebb8e27cb6b1aaad953a4d304",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 160
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 150
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 194
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 190
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 31,
+          "tests": 461
+        },
+        "previous": {
+          "ignored": 31,
+          "tests": 446
+        }
+      }
+    }
+  },
   "mainabab": {
     "added_methods": {
       "tests/support/native_normal_caller.rs": [

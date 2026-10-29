@@ -6283,7 +6283,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 1,
-        "tests": 150
+        "tests": 160
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6495,11 +6495,11 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 0,
-        "tests": 190
+        "tests": 194
       },
       "unit/rapid_profiler/lib": {
         "ignored": 31,
-        "tests": 446
+        "tests": 461
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
