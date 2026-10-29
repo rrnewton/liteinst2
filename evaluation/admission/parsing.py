@@ -237,7 +237,10 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 255, 1),
                                   # 0a8 adds seven whole-function tests; the child
                                   # body and exact nested stack remain unchanged.
-                                  ("unit/liteinst2/lib", 262, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 262, 1),
+                                  # b66 adds nine tests; the exact live ptrace
+                                  # parent/child and authenticated exit41 are unchanged.
+                                  ("unit/liteinst2/lib", 271, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

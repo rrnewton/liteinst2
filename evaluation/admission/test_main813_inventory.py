@@ -1590,7 +1590,7 @@ class Main813InventoryTests(unittest.TestCase):
                          {'unit/ordinary_interval/main': 12, 'unit/rapid_profiler/lib': 18})
 
         self.assertEqual(main813.digest(main813.before_469(actual)), main813.CURRENTE11)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_b66(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 3320, 36))
         self.assertEqual(sum(len(x) for x in main813.MAIN469['added_methods'].values()), 24)
@@ -1657,6 +1657,80 @@ class Main813InventoryTests(unittest.TestCase):
 
         self.assertEqual({k: len(v) for k, v in main813.MAIN469['listed_additions'].items()},
                          {'test/frontend_native_calibrations': 20, 'unit/ordinary_interval/main': 4})
+
+        self.assertEqual(main813.digest(main813.before_b66(actual)), main813.CURRENT469)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 3558, 37))
+        self.assertEqual(sum(len(x) for x in main813.MAINB66['added_methods'].values()), 65)
+        self.assertEqual(sum(len(main813.MAINB66['added_methods'][p]) * len(v)
+                             for p, v in main813.MAINB66['instances'].items()), 74)
+        self.assertEqual(main813.MAINB66['declared_delta'],
+                         {'rust_tests': 238, 'rust_declarations': 65, 'new_instances_of_existing_declarations': 164, 'second_instances_of_new_declarations': 9, 'doctests': 0, 'ignored': 1, 'harnesses': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_b66(actual))
+        for name, change in main813.MAINB66['workspace_changes'].items():
+            self.assertEqual(current_rows[name], change['current'])
+            current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
+            for value in (current_count - 1, current_count + 1,
+                          True, float(current_count)):
+                self.assertTrue(type(value) is not int or value != current_count)
+                changed = plain.deepcopy(actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(mainb66_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+            changed = plain.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.subTest(mainb66_missing=name), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        for key in actual:
+            changed = plain.deepcopy(actual); changed[key] = None
+            with self.subTest(mainb66_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main813.before_b66(changed)
+        for path in main813.MAINB66['sources']:
+            for missing in (False, True):
+                mutation_target = main813.ROOT / path
+                def changed(candidate):
+                    if candidate == mutation_target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(mainb66_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        main813.require_b66_sources()
+        integration_path = 'tests/support/native_call_pair/tests.rs'
+        self.assertIn(integration_path, main813.MAINB66['added_methods'])
+        mutation_target = main813.ROOT / integration_path
+        for missing in (False, True):
+            def changed(candidate):
+                if candidate == mutation_target:
+                    if missing:
+                        raise FileNotFoundError(integration_path)
+                    return read_bytes(candidate) + b'\n'
+                return read_bytes(candidate)
+            with self.subTest(mainb66_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                with self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(actual)
+        for path, row in main813.MAINB66['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_b66(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(mainb66_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_b66(path, bad, 'changed')
+
+        self.assertEqual(sum(len(x) for x in main813.MAINB66['doctests'].values()), 0)
+
+        self.assertEqual(sum(len(x['ignored']) for x in main813.MAINB66['methods'].values()), 1)
+
+        self.assertEqual({k: len(v) for k, v in main813.MAINB66['listed_additions'].items()},
+                         {'test/frontend_native_calibrations': 9, 'unit/ordinary_interval/main': 190, 'unit/liteinst2/lib': 9, 'unit/rapid_profiler/lib': 30})
+
+        self.assertEqual(len(main813.MAINB66['new_instances']), 164)
+        self.assertEqual(sum(row['ignored'] for row in main813.MAINB66['new_instances']), 1)
+        self.assertEqual(sum(map(len, main813.MAINB66['listed_additions'].values())), 238)
+        self.assertEqual({row['harness'] for row in main813.MAINB66['new_instances']}, {'unit/ordinary_interval/main'})
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -1777,6 +1851,41 @@ class Main813InventoryTests(unittest.TestCase):
                              summary(total - ignored, ignored=ignored)))
             with self.assertRaises(parsing.InvalidEvidence):
                 parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+
+        # Exact b66 cohort: two summarized children and one authenticated
+        # ptrace child exit. None of the nested rows adds to outer test counts.
+        raw = '\n'.join((header('liteinst2'), 'running 271 tests',
+                         'running 1 test', summary(1, filtered=270),
+                         'running 1 test', summary(1, filtered=270),
+                         'running 1 test',
+                         'test trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack ... ok',
+                         summary(270, ignored=1)))
+        expected = {'unit/liteinst2/lib': counts(271, 1)}
+        row = parsing.parse_harnesses(raw, expected, 0)[0]
+        self.assertEqual(row['outer']['passed'], 270)
+        self.assertEqual(row['outer']['ignored'], 1)
+        self.assertEqual([x['passed'] for x in row['nested']], [1, 1])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((270, 1, 1), (272, 1, 1), (271, 0, 1),
+                                       (271, 2, 1), (271, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                             f'running {nested} tests', summary(total - ignored, ignored=ignored)))
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        changes = [raw.replace('liteinst2', 'other'),
+                   raw.replace('running 271 tests', 'running 272 tests'),
+                   raw.replace(summary(1, filtered=270), summary(1, filtered=269), 1),
+                   raw.replace(summary(270, ignored=1), summary(270, ignored=1, filtered=1)),
+                   raw.replace(summary(270, ignored=1), summary(269, ignored=1, measured=1)),
+                   raw.replace(summary(270, ignored=1), summary(269, ignored=1, failed=1)),
+                   raw.replace(summary(270, ignored=1), summary(270, ignored=1, result='FAILED')),
+                   raw.replace('test trampoline::tests::live::ptrace',
+                               'running 1 test\ntest trampoline::tests::live::ptrace'),
+                   raw.replace(summary(270, ignored=1), ''),
+                   raw + '\n' + summary(270, ignored=1)]
+        for bad in changes:
+            with self.subTest(core_b66=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
 
         doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
                          'running 36 tests', summary(36),
