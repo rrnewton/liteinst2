@@ -23,9 +23,15 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 mod normal;
+mod normal_module;
 mod two_callers;
 mod whole;
 pub use normal::{InstalledNormalSite, NormalSitePreparation};
+pub(in crate::frontend_native::always_on) use normal_module::ModuleSite;
+pub use normal_module::{
+    InstalledNormalModuleSite, NormalModuleFunctionSite, NormalModulePreparationPolicy,
+    NormalModuleRole, NormalModuleRoleKind, NormalModuleSitePreparation,
+};
 pub use two_callers::{InstalledTwoCallerNormalSite, TwoCallerNormalSitePreparation};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -494,49 +500,8 @@ fn prepare_source(
     {
         return Err(SiteError::Correspondence);
     }
-    let roles: Vec<_> = pcs
-        .iter()
-        .enumerate()
-        .map(|(i, &pc)| {
-            let (control, writer) = ProbeControl::new_managed_bound(
-                if matches!(
-                    profile,
-                    CallbackProfile::Normal | CallbackProfile::NormalTwoCallers
-                ) {
-                    if i == 0 {
-                        super::super::normal::entry_callback
-                    } else {
-                        super::super::normal::exit_callback
-                    }
-                } else if i == 0 {
-                    timed_entry_callback
-                } else {
-                    timed_exit_callback
-                },
-                true,
-            );
-            drop(writer); // Mandatory pairing can never be disabled.
-            Role { pc, control }
-        })
-        .collect();
-    let entries = LegalEntrySet {
-        identity,
-        scope,
-        provenance: EntryProvenance::Declared(
-            "admitted complete local CFG plus unsafe sole external entry/no saved-resume contract"
-                .into(),
-        ),
-        completeness: EntryCompleteness::Complete,
-        entries: certificate
-            .entries()
-            .iter()
-            .map(|&address| LegalEntry {
-                address,
-                requires_endbr: false,
-            })
-            .collect(),
-        resumes: ResumeObligation::NoneExist,
-    };
+    let roles = mandatory_roles(&pcs, profile);
+    let entries = legal_entries(identity, scope, certificate);
     let mut predecessor = Composition::new(
         identity,
         vec![ExpectedBytes {
@@ -548,157 +513,24 @@ fn prepare_source(
     let mut full_overlay = owner.original_source().to_vec();
     let mut reserved = vec![source];
     let mut members = Vec::new();
-    for (index, group) in groups.iter().enumerate() {
-        let actions: Vec<_> = group
-            .roles
-            .iter()
-            .map(|&i| ControlledAction {
-                logical_pc: roles[i].pc,
-                control: roles[i].control.clone(),
-            })
-            .collect();
-        let logical = actions[0].logical_pc;
-        let mut allocation = base_allocation(entry)?;
-        allocation.preferred_address = Some(
-            (entry & !4095)
-                .checked_add(0x10_0000 + index as u64 * 0x1_0000)
-                .ok_or(Refusal::InvalidRange)?,
-        );
-        for &prior in &reserved {
-            exclude(&mut allocation.ranges, prior)?;
-        }
-        let member = match policy {
-            PreparationPolicy::CertifiedBlocks => plan_coalesced_detailed_after(
-                &InstallRequest {
-                    identity,
-                    code: owner.code(),
-                    base_address: entry,
-                    function: scope,
-                    block: group.block,
-                    logical_pc: logical,
-                    entries: &entries,
-                    hook: impossible_ordinary_dispatch,
-                    semantics: HookSemantics::Observe,
-                    allocation: &allocation,
-                    search: SearchPolicy {
-                        tactics: TacticPolicy::RelocationOnly,
-                        max_upstream_bytes: if logical == entry { 0 } else { 64 },
-                        max_displaced_bytes: 80,
-                        max_sites: if logical == entry { 1 } else { 65 },
-                    },
-                },
-                &actions,
-                &predecessor,
-            ),
-            PreparationPolicy::WholeFunction => {
-                // SAFETY: the exclusive admitted owner authenticates the
-                // exact complete scalar CFG, sole external entry, no saved
-                // resumes/foreign transfers and continuous source lifetime.
-                // The permanent distinct controls above are our managed
-                // non-unwinding state-preserving entry/RET observers. The
-                // core independently checks complete leaders, every C3 and
-                // exact whole extent, using this original source and the
-                // authenticated predecessor overlay. Publication/execution
-                // still require the unchanged explicit unsafe contracts.
-                unsafe {
-                    plan_whole_function_controlled_detailed_after(
-                        &WholeFunctionRequest {
-                            identity,
-                            code: owner.code(),
-                            base_address: entry,
-                            entries: &entries,
-                            allocation: &allocation,
-                        },
-                        &actions,
-                        &predecessor,
-                    )
-                }
-            }
-        }
-        .map_err(SiteError::Planning)?;
-        let p = member.plan().parts();
-        if p.kind != PlanKind::Relocation
-            || p.profile != ApplicationProfile::InstallOnce
-            || p.identity != identity
-            || p.entries != entries
-            || p.logical_pc != logical
-            || !group.block.covers(p.displaced)
-            || p.physical_pc != p.displaced.start()
-            || p.writes.len() != 1
-            || p.writes[0].address != p.physical_pc
-            || p.writes[0].bytes.len() as u64 != p.displaced.len()
-            || p.reads
-                != [ExpectedBytes {
-                    address: entry,
-                    bytes: overlay.clone(),
-                }]
-            || member.image().controls()
-                != actions
-                    .iter()
-                    .map(|a| a.control.clone())
-                    .collect::<Vec<_>>()
-            || member
-                .image()
-                .instruction_boundaries()
-                .iter()
-                .map(|&(pc, _)| pc)
-                .collect::<Vec<_>>()
-                != certificate
-                    .heads()
-                    .iter()
-                    .copied()
-                    .filter(|&pc| p.displaced.contains(pc))
-                    .collect::<Vec<_>>()
-            || actions.iter().any(|a| !p.displaced.contains(a.logical_pc))
-        {
-            return Err(SiteError::Correspondence);
-        }
-        if policy == PreparationPolicy::WholeFunction {
-            if groups.len() != 1 || index != 0 || group.block != scope {
-                return Err(SiteError::Correspondence);
-            }
-            whole::check_plan(scope, certificate.heads(), &member)?;
-        }
-        predecessor.append(member.plan())?;
-        for request in &p.allocations {
-            if reserved.iter().any(|r| r.overlaps(request.range)) {
-                return Err(SiteError::Correspondence);
-            }
-            reserved.push(request.range);
-        }
-        for edit in &p.writes {
-            let at = usize::try_from(
-                edit.address
-                    .checked_sub(entry)
-                    .ok_or(Refusal::InvalidRange)?,
-            )
-            .map_err(|_| Refusal::InvalidRange)?;
-            let end = at
-                .checked_add(edit.bytes.len())
-                .ok_or(Refusal::InvalidRange)?;
-            if overlay.get(at..end) != owner.code().get(at..end) {
-                return Err(SiteError::Correspondence);
-            }
-            overlay
-                .get_mut(at..end)
-                .ok_or(Refusal::InvalidRange)?
-                .copy_from_slice(&edit.bytes);
-            let at = usize::try_from(
-                edit.address
-                    .checked_sub(source_start)
-                    .ok_or(Refusal::InvalidRange)?,
-            )
-            .map_err(|_| Refusal::InvalidRange)?;
-            let end = at
-                .checked_add(edit.bytes.len())
-                .ok_or(Refusal::InvalidRange)?;
-            full_overlay
-                .get_mut(at..end)
-                .ok_or(Refusal::InvalidRange)?
-                .copy_from_slice(&edit.bytes);
-        }
-        members.push(member);
+    FunctionPlanning {
+        code: owner.code(),
+        certificate,
+        policy,
+        identity,
+        scope,
+        groups: &groups,
+        roles: &roles,
+        entries: &entries,
+        source_start,
     }
+    .append(
+        &mut predecessor,
+        &mut reserved,
+        &mut members,
+        &mut overlay,
+        &mut full_overlay,
+    )?;
     let planned = PlannedBundle::compose(
         vec![ExpectedBytes {
             address: source_start,
@@ -746,6 +578,247 @@ fn prepare_source(
         gate,
     });
     Ok((planned, site))
+}
+
+// Shared implementation below the leaf-only identity/source checks. This private
+// value conveys planning inputs only; it cannot mint a loader or sealed site.
+struct FunctionPlanning<'a> {
+    code: &'a [u8],
+    certificate: &'a crate::frontend_native::IntegerLeafCertificate,
+    policy: PreparationPolicy,
+    identity: CodeIdentity,
+    scope: AddressRange,
+    groups: &'a [BlockActions],
+    roles: &'a [Role],
+    entries: &'a LegalEntrySet,
+    source_start: u64,
+}
+impl FunctionPlanning<'_> {
+    fn append(
+        self,
+        predecessor: &mut Composition,
+        reserved: &mut Vec<AddressRange>,
+        members: &mut Vec<liteinst2::quiescent::PlannedInstall>,
+        overlay: &mut [u8],
+        full_overlay: &mut [u8],
+    ) -> Result<(), SiteError> {
+        let Self {
+            code,
+            certificate,
+            policy,
+            identity,
+            scope,
+            groups,
+            roles,
+            entries,
+            source_start,
+        } = self;
+        let entry = certificate.entry();
+        for (index, group) in groups.iter().enumerate() {
+            let actions: Vec<_> = group
+                .roles
+                .iter()
+                .map(|&i| ControlledAction {
+                    logical_pc: roles[i].pc,
+                    control: roles[i].control.clone(),
+                })
+                .collect();
+            let logical = actions[0].logical_pc;
+            let mut allocation = base_allocation(entry)?;
+            allocation.preferred_address = Some(
+                (entry & !4095)
+                    .checked_add(0x10_0000 + index as u64 * 0x1_0000)
+                    .ok_or(Refusal::InvalidRange)?,
+            );
+            for &prior in reserved.iter() {
+                exclude(&mut allocation.ranges, prior)?;
+            }
+            let member = match policy {
+                PreparationPolicy::CertifiedBlocks => plan_coalesced_detailed_after(
+                    &InstallRequest {
+                        identity,
+                        code,
+                        base_address: entry,
+                        function: scope,
+                        block: group.block,
+                        logical_pc: logical,
+                        entries,
+                        hook: impossible_ordinary_dispatch,
+                        semantics: HookSemantics::Observe,
+                        allocation: &allocation,
+                        search: SearchPolicy {
+                            tactics: TacticPolicy::RelocationOnly,
+                            max_upstream_bytes: if logical == entry { 0 } else { 64 },
+                            max_displaced_bytes: 80,
+                            max_sites: if logical == entry { 1 } else { 65 },
+                        },
+                    },
+                    &actions,
+                    predecessor,
+                ),
+                PreparationPolicy::WholeFunction => {
+                    // SAFETY: the exclusive admitted owner authenticates the
+                    // exact complete scalar CFG, sole external entry, no saved
+                    // resumes/foreign transfers and continuous source lifetime.
+                    // The permanent distinct controls above are our managed
+                    // non-unwinding state-preserving entry/RET observers. The
+                    // core independently checks complete leaders, every C3 and
+                    // exact whole extent, using this original source and the
+                    // authenticated predecessor overlay. Publication/execution
+                    // still require the unchanged explicit unsafe contracts.
+                    unsafe {
+                        plan_whole_function_controlled_detailed_after(
+                            &WholeFunctionRequest {
+                                identity,
+                                code,
+                                base_address: entry,
+                                entries,
+                                allocation: &allocation,
+                            },
+                            &actions,
+                            predecessor,
+                        )
+                    }
+                }
+            }
+            .map_err(SiteError::Planning)?;
+            let p = member.plan().parts();
+            if p.kind != PlanKind::Relocation
+                || p.profile != ApplicationProfile::InstallOnce
+                || p.identity != identity
+                || p.entries != *entries
+                || p.logical_pc != logical
+                || !group.block.covers(p.displaced)
+                || p.physical_pc != p.displaced.start()
+                || p.writes.len() != 1
+                || p.writes[0].address != p.physical_pc
+                || p.writes[0].bytes.len() as u64 != p.displaced.len()
+                || p.reads
+                    != [ExpectedBytes {
+                        address: entry,
+                        bytes: overlay.to_vec(),
+                    }]
+                || member.image().controls()
+                    != actions
+                        .iter()
+                        .map(|a| a.control.clone())
+                        .collect::<Vec<_>>()
+                || member
+                    .image()
+                    .instruction_boundaries()
+                    .iter()
+                    .map(|&(pc, _)| pc)
+                    .collect::<Vec<_>>()
+                    != certificate
+                        .heads()
+                        .iter()
+                        .copied()
+                        .filter(|&pc| p.displaced.contains(pc))
+                        .collect::<Vec<_>>()
+                || actions.iter().any(|a| !p.displaced.contains(a.logical_pc))
+            {
+                return Err(SiteError::Correspondence);
+            }
+            if policy == PreparationPolicy::WholeFunction {
+                if groups.len() != 1 || index != 0 || group.block != scope {
+                    return Err(SiteError::Correspondence);
+                }
+                whole::check_plan(scope, certificate.heads(), &member)?;
+            }
+            predecessor.append(member.plan())?;
+            for request in &p.allocations {
+                if reserved.iter().any(|r| r.overlaps(request.range)) {
+                    return Err(SiteError::Correspondence);
+                }
+                reserved.push(request.range);
+            }
+            for edit in &p.writes {
+                let at = usize::try_from(
+                    edit.address
+                        .checked_sub(entry)
+                        .ok_or(Refusal::InvalidRange)?,
+                )
+                .map_err(|_| Refusal::InvalidRange)?;
+                let end = at
+                    .checked_add(edit.bytes.len())
+                    .ok_or(Refusal::InvalidRange)?;
+                if overlay.get(at..end) != code.get(at..end) {
+                    return Err(SiteError::Correspondence);
+                }
+                overlay
+                    .get_mut(at..end)
+                    .ok_or(Refusal::InvalidRange)?
+                    .copy_from_slice(&edit.bytes);
+                let at = usize::try_from(
+                    edit.address
+                        .checked_sub(source_start)
+                        .ok_or(Refusal::InvalidRange)?,
+                )
+                .map_err(|_| Refusal::InvalidRange)?;
+                let end = at
+                    .checked_add(edit.bytes.len())
+                    .ok_or(Refusal::InvalidRange)?;
+                full_overlay
+                    .get_mut(at..end)
+                    .ok_or(Refusal::InvalidRange)?
+                    .copy_from_slice(&edit.bytes);
+            }
+            members.push(member);
+        }
+        Ok(())
+    }
+}
+
+fn mandatory_roles(pcs: &[u64], profile: CallbackProfile<'_>) -> Vec<Role> {
+    pcs.iter()
+        .enumerate()
+        .map(|(i, &pc)| {
+            let (control, writer) = ProbeControl::new_managed_bound(
+                if matches!(
+                    profile,
+                    CallbackProfile::Normal | CallbackProfile::NormalTwoCallers
+                ) {
+                    if i == 0 {
+                        super::super::normal::entry_callback
+                    } else {
+                        super::super::normal::exit_callback
+                    }
+                } else if i == 0 {
+                    timed_entry_callback
+                } else {
+                    timed_exit_callback
+                },
+                true,
+            );
+            drop(writer); // Mandatory pairing can never be disabled.
+            Role { pc, control }
+        })
+        .collect()
+}
+
+fn legal_entries(
+    identity: CodeIdentity,
+    scope: AddressRange,
+    certificate: &crate::frontend_native::IntegerLeafCertificate,
+) -> LegalEntrySet {
+    LegalEntrySet {
+        identity,
+        scope,
+        provenance: EntryProvenance::Declared(
+            "admitted complete local CFG plus unsafe sole external entry/no saved-resume contract"
+                .into(),
+        ),
+        completeness: EntryCompleteness::Complete,
+        entries: certificate
+            .entries()
+            .iter()
+            .map(|&address| LegalEntry {
+                address,
+                requires_endbr: false,
+            })
+            .collect(),
+        resumes: ResumeObligation::NoneExist,
+    }
 }
 
 // Called only after a sealed factory retained the real successful publication.

@@ -85,7 +85,7 @@ pub(super) fn object_identity(bias: u64, found: bool, base: u64) -> Result<(), S
     Ok(())
 }
 
-fn resolve(owner: &Retained, parsed: &Parsed) -> Result<(u64, u64), SetupRefusal> {
+pub(super) fn resolve(owner: &Retained, parsed: &Parsed) -> Result<(u64, u64), SetupRefusal> {
     let mut link: *const u64 = std::ptr::null();
     // SAFETY: the retained normal-loader handle remains live. RTLD_DI_LINKMAP
     // writes a borrowed link_map pointer; its first ELF64 ABI field is l_addr.

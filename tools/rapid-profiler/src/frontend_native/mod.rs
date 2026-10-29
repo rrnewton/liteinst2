@@ -110,6 +110,7 @@ pub use module::ordinary::TrustedFunctionSelection;
 pub use module::ordinary::{IntegerLeafCertificate, IntegerLeafContract, LoadedIntegerLeaf};
 /// Separate ordinary-caller admission without a per-call library gate.
 pub use module::ordinary::{LoadedNormalLeaf, NormalLeafContract};
+pub use module::ordinary::{LoadedNormalModule, NormalModuleContract, NormalModuleFunction};
 pub use module::ordinary::{LoadedTwoCallerNormalLeaf, TwoCallerNormalLeafContract};
 
 /// Closed two-function admission only; execution awaits its separate tree profile.
@@ -120,6 +121,10 @@ pub use module::ordinary::{
 pub use always_on::normal::{
     NormalAcknowledgement, NormalBatch, NormalClient, NormalRecord, NormalThread, NormalTotals,
     PreparedNormalController, PreparedTwoCallerNormalController,
+};
+pub use always_on::site::ordinary::{
+    InstalledNormalModuleSite, NormalModuleFunctionSite, NormalModulePreparationPolicy,
+    NormalModuleRole, NormalModuleRoleKind, NormalModuleSitePreparation,
 };
 pub use always_on::site::ordinary::{InstalledNormalSite, NormalSitePreparation};
 pub use always_on::site::ordinary::{InstalledTwoCallerNormalSite, TwoCallerNormalSitePreparation};
