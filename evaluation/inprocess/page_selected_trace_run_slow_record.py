@@ -90,7 +90,7 @@ def plan(p,pc,source,immediate,positive):
              'one eligible instruction is descriptive SLOW before generated-code construction')
     need(all(zero(x) for x in p['instructions'][count:]) and p['guard']==dict(pc=pc+length,
          next_pc=pc+length+2,abi_version=1,decode_status=0,code=7,kind=0,destination=16,width_bits=0,
-         step_disposition=1,available=15-length,length=2,reserved=0,bytes=source[length:]+bytes(1+length)),
+         step_disposition=0,available=15-length,length=2,reserved=0,bytes=source[length:]+bytes(1+length)),
          'exact unexecuted guard/full tail and no extra planned instruction')
 
 
