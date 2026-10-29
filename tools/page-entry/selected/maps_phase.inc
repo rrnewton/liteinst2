@@ -10,6 +10,9 @@ static uint64_t maps_receipt_handler,maps_receipt_epoch;
 #define MAPS_LOAD(p) __atomic_load_n((p),__ATOMIC_ACQUIRE)
 #define MAPS_STORE(p,v) __atomic_store_n((p),(v),__ATOMIC_RELEASE)
 static void maps_poison(void) {
+#ifdef LI2_TF_SEALED_CUSTODY
+    li2_page_custody_discard(LI2_CUSTODY_ERROR);
+#endif
     MAPS_STORE(&maps_stats.valid,0);
     MAPS_STORE(&maps_stats.active,0);
     MAPS_STORE(&maps_stats.poisoned,1);
@@ -33,8 +36,18 @@ void li2_maps_phase_end(void) {
     MAPS_STORE(&maps_stats.active,0);
     maps_invalidate();
 }
-void li2_maps_phase_fail(void) { li2_maps_phase_end(); }
-void li2_maps_event_boundary(void) { li2_maps_phase_end(); }
+void li2_maps_phase_fail(void) {
+#ifdef LI2_TF_SEALED_CUSTODY
+    li2_page_custody_discard(LI2_CUSTODY_ERROR);
+#endif
+    li2_maps_phase_end();
+}
+void li2_maps_event_boundary(void) {
+#ifdef LI2_TF_SEALED_CUSTODY
+    li2_page_custody_boundary();
+#endif
+    li2_maps_phase_end();
+}
 int li2_maps_phase_begin(void) {
     /* Caller has only established nonnested runtime routing. This is NOT a
        substitute for the subsequent actual frame/session/owner checks. */
@@ -76,6 +89,9 @@ static int maps_nonmutating(long n,long a,long b,long c,long d,long e,long f) {
     return 0;
 }
 void li2_maps_before_raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_TF_SEALED_CUSTODY
+    if(!maps_nonmutating(n,a,b,c,d,e,f))li2_page_custody_discard(LI2_CUSTODY_EFFECT);
+#endif
     if(!maps_nonmutating(n,a,b,c,d,e,f))maps_invalidate();
 }
 void li2_maps_after_raw(long n,long a,long b,long c,long d,long e,long f,long result) {

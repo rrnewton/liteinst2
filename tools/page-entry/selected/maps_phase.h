@@ -1,6 +1,9 @@
 #ifndef LI2_MAPS_PHASE_H
 #define LI2_MAPS_PHASE_H
 #include <stdint.h>
+#ifdef LI2_TF_SEALED_CUSTODY
+#include "page_custody.h"
+#endif
 /* Private singleton-handler optimization; not mapping or source authority.
    The shared key is ONLY (handler_id, mutation_epoch). Every query retains its
    own current allocation/generation/record/transaction and byte predicates. */

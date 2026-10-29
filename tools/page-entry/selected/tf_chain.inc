@@ -109,6 +109,9 @@ static int chain_closed(const struct li2_tf_chain_slot *s) {
         s->release.started && s->release.complete && !s->release.result && !s->fetch.progress.held;
 }
 static struct li2_tf_chain_slot *chain_next(struct li2_tf_chain *c,unsigned index) {
+#ifdef LI2_TF_SEALED_CUSTODY
+    li2_page_custody_discard(LI2_CUSTODY_SLOT);
+#endif
     struct li2_tf_chain_slot *s=&c->slots[index];
     chain_need(c,s->phase==LI2_CHAIN_EMPTY || chain_closed(s) ||
         (s->phase==LI2_CHAIN_FALLBACK && s->release.complete && !s->release.result &&
@@ -125,6 +128,9 @@ static struct li2_tf_chain_slot *chain_next(struct li2_tf_chain *c,unsigned inde
 static void chain_release(struct li2_tf_chain *c,struct li2_tf_chain_slot *s,
                           struct li2_chain_release *r) {
     chain_need(c,!r->started && !r->complete,LI2_CHAIN_STATE,1);
+#ifdef LI2_TF_SEALED_CUSTODY
+    li2_page_custody_discard(LI2_CUSTODY_RELEASE);
+#endif
     r->started=1;r->result=li2_lifecycle_fetch_release(&s->fetch.ref);
     chain_observe(&s->fetch);
     chain_need(c,!r->result,LI2_CHAIN_RELEASE,r->result);
@@ -202,6 +208,9 @@ void li2_tf_chain_event_boundary(struct li2_tf_chain *c) {
 void li2_tf_chain_handler_end(struct li2_tf_chain *c) {
     if(!c || !c->initialized)return;
     chain_invalidate(c);chain_need(c,!c->in_handler,LI2_CHAIN_STATE,2);
+#ifdef LI2_TF_SEALED_CUSTODY
+    int e=li2_page_custody_return(c);chain_need(c,!e,LI2_CHAIN_PREPARE,e);
+#endif
 }
 void li2_tf_chain_begin_nx(struct li2_tf_chain *c,const struct li2_fetch_ref *ref,
                           const struct li2_decoded *d,uint64_t flags,int sig,siginfo_t *si,ucontext_t *uc) {
@@ -292,6 +301,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
     chain_need(c,p->phase==LI2_CHAIN_EXECUTING && c->event_id>p->event_id,LI2_CHAIN_ORIGIN,5);
 #ifdef LI2_TF_SAME_PAGE_LEASE
     if(chain_same_page(c,sig,si,uc))return LI2_CHAIN_LEASE_RUNNING;
+#endif
+#ifdef LI2_TF_SEALED_CUSTODY
+    li2_page_custody_discard(LI2_CUSTODY_MISS);
 #endif
     p->phase=LI2_CHAIN_CLOSING;li2_tf_trace(&p->owner,sig,si,uc);
     chain_observe(&p->fetch);

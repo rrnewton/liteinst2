@@ -12,6 +12,24 @@
    remains held, and its actual permission owner remains responsible for RX. */
 enum li2_rx_phase { LI2_RX_EMPTY, LI2_RX_STAGING, LI2_RX_STAGED,
     LI2_RX_COMMITTING, LI2_RX_COMMITTED, LI2_RX_CANCELLED };
+#ifdef LI2_TF_SEALED_CUSTODY
+#include "page_custody.h"
+enum li2_custody_kind { LI2_CUSTODY_NONE, LI2_CUSTODY_FRESH, LI2_CUSTODY_RETAINED };
+enum { LI2_CUSTODY_MANAGED_SEALED=1 };
+struct li2_custody_owner {
+    const void *chain;
+    const struct li2_step_owner *owner;
+    unsigned slot;
+    uint64_t generation,event;
+};
+struct li2_page_custody_receipt {
+    unsigned kind,provenance,slot,checks;
+    uint64_t epoch,origin_sequence,owner_generation,event;
+    uintptr_t chain,owner,session;
+    /* Original real acquisition only, never this transfer's maps receipt. */
+    struct li2_fetch_map_progress origin;
+};
+#endif
 struct li2_fetch_rx_view {
     unsigned phase,complete;
     int result;
@@ -23,6 +41,10 @@ struct li2_fetch_rx_view {
     struct li2_fetch_page page;
     struct li2_fetch_backing backing;
     struct li2_fetch_map_progress maps;
+#ifdef LI2_TF_SEALED_CUSTODY
+    unsigned maps_observed;
+    struct li2_page_custody_receipt custody;
+#endif
 };
 int li2_lifecycle_fetch_rx_stage(const struct li2_fetch_ref *,uintptr_t,
                                 const struct li2_fetch_rx_view **);
@@ -30,6 +52,14 @@ int li2_lifecycle_fetch_rx_commit(const struct li2_fetch_ref *,
                                  const struct li2_fetch_rx_view *,struct li2_fetch_ref *);
 int li2_lifecycle_fetch_rx_cancel(const struct li2_fetch_ref *,const struct li2_fetch_rx_view *);
 const struct li2_fetch_rx_view *li2_lifecycle_fetch_rx_progress(void);
+#ifdef LI2_TF_SEALED_CUSTODY
+int li2_lifecycle_fetch_rx_stage_custody(const struct li2_fetch_ref *,uintptr_t,
+    const struct li2_custody_owner *,const struct li2_fetch_rx_view **);
+int li2_lifecycle_fetch_rx_commit_custody(const struct li2_fetch_ref *,
+    const struct li2_fetch_rx_view *,const struct li2_custody_owner *,struct li2_fetch_ref *);
+int li2_lifecycle_fetch_rx_publish_custody(const struct li2_fetch_ref *,
+    const struct li2_fetch_rx_view *,const struct li2_custody_owner *);
+#endif
 
 /* This is a permission lease over multiple separately observed instructions.
    Original open_* fields still describe the one real opening. No successor
