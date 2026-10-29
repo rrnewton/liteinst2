@@ -25,6 +25,8 @@ MAGIC = 0x31524941504e534c
 SOURCE_BYTES, DATA_BYTES, FRAME_BYTES = 28672, 16384, 117248
 ROWS, STAGES = 12, 24
 U64 = (1 << 64)-1
+# This composed release reserves SIGILL for its reusable patch landing.
+PAIR_MASK = U64 & ~sum(1 << (s-1) for s in (4,5,11,31,9,19))
 
 
 def exact_shape(types, name, fields, alignment=8):
@@ -112,6 +114,13 @@ class Reader(old.Reader):
         for first,end in self.padding.get(id(shape),()):
             need(not any(data[first:end]), 'all source-required alignment padding is zero')
         return super().field(data,shape,name)
+
+    def envelope(self,f,lo,cap,native):
+        need(type(lo)is int and lo>0 and cap==(131072 if native else 512*1024) and lo<=f['h'][3]<=lo+cap-self.ucn and
+          lo<=word(f['uc'],self.fo)<=lo+cap-f['h'][2],'actual UC/FP pointers in the observed installed altstack')
+        o=self.layout['offsets'];mask=PAIR_MASK
+        need(word(f['uc'],o['stack_sp'])==lo and word(f['uc'],o['stack_size'])==cap and struct.unpack_from('<I',f['uc'],o['stack_flags'])[0]==0 and
+          word(f['uc'],o['mask'])==mask and f['greg'][21]==mask,'actual altstack and exact pre-delivery application mask')
 
     def frame(self, data, image):
         h = q(self.field(data,self.ft,'h'))
@@ -614,7 +623,7 @@ def inner_frame(reader,raw,image,outer,pid,uid,lo,cap,base):
          h[3]+reader.ucn <= lo+cap and lo <= word(uc,reader.fo) <= lo+cap-h[2] and
          word(uc,reader.fo)%16 == 0 and word(uc,o['stack_sp']) == lo and
          word(uc,o['stack_size']) == cap and struct.unpack_from('<I',uc,o['stack_flags'])[0] == 1 and
-         word(uc,o['mask']) == old.SELECTED_MASK and g[21] == old.SELECTED_MASK,
+         word(uc,o['mask']) == PAIR_MASK and g[21] == PAIR_MASK,
          'actual deeper on-altstack nested context with exact installed reserved-signal mask')
     need(g[16] == g[14] == raw_pc and g[13] == 0 and
          (g[8],g[9],g[12],g[2],g[0],g[1]) == (pid,pid,5,0,0,0) and

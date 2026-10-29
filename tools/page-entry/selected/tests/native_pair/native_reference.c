@@ -152,7 +152,7 @@ RSEC long npf_native_setup(unsigned c) {
  struct {void (*function)(int,siginfo_t *,void *);unsigned long flags;void (*restorer)(void);uint64_t mask;} action={handler,0x0c000004UL,rn_restorer,0};
  if(call6(131,(long)&stack,0,0,0,0,0) || call6(13,11,(long)&action,0,8,0,0))return -1;
  uint64_t mask=UINT64_MAX & ~(UINT64_C(1)<<10) & ~(UINT64_C(1)<<4) &
-  ~(UINT64_C(1)<<30) & ~(UINT64_C(1)<<8) & ~(UINT64_C(1)<<18);
+  ~(UINT64_C(1)<<3) & ~(UINT64_C(1)<<30) & ~(UINT64_C(1)<<8) & ~(UINT64_C(1)<<18);
  if(call6(14,2,(long)&mask,0,8,0,0) || call6(10,RN_BODY,4096,1,0,0,0) ||
     call6(10,RN_TAIL,4096,1,0,0,0) || call6(10,RN_GUARD,4096,1,0,0,0))return -1;
  return 0;
