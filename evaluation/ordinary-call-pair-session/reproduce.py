@@ -25,6 +25,8 @@ PASS = 'CALL_PAIR_SESSION_FUNCTIONAL_PASS'
 SCOPE = 'Functional input-session outcomes only. Native prerequisite is separate; no performance, accuracy, whole-worker state or broader A5 claim.'
 RECEIPT_API_SHA = '575922eadd3dc9784f688e0de5fd3f188da8902f27dc32d99f919be6de8690eb'
 RECIPE_SHA = '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'
+NATIVE_LAUNCHER = 'evaluation/ordinary-call-pair-native/launch.py'
+NATIVE_LAUNCHER_SHA = '5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5'
 COUNTS = (0, 1, 182, 2048, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2048, 2048, 2048, 0, 3, 48, 2048)
 SETUP = ('tool-cc1', 'tool-collect2', 'tool-as', 'tool-ld', 'module-build', 'module-symbols', 'parent-disassembly', 'child-disassembly', 'application-build', 'application-caller-disassembly', 'application-caller-symbols', 'ordinary-build', 'ordinary-list', 'ordinary-controls', 'sdk-build', 'sdk-list', 'sdk-controls', 'core-build', 'core-list', 'core-controls', 'old-module-python-controls', 'old-leaf-checker-controls', 'old-leaf-runner-controls', 'old-leaf-original-controls', 'old-whole-profile-controls', 'checker-controls', 'runner-controls', 'original-python-controls', 'mount-controls-build', 'mount-controls', 'original-controls-build', 'original-controls', 'original-build', 'original-caller-disassembly', 'original-caller-symbols')
 APP_CONTROLS = ('normal::call_pair::tests::exact_cli_preserves_logical_roles_both_address_orders_and_all_bounds', 'normal::call_pair::tests::typed_input_outcomes_remain_nonzero_after_finalization_and_preserve_empty_record', 'normal::call_pair::check::tests::nested_rows_join_real_shape_lifo_payloads_and_independent_generations', 'normal::call_pair::check::tests::full_512_word_journal_event_order_and_both_identity_rows_refuse_corruption', 'normal::call_pair::check::tests::independent_function_budgets_closed_removed_initial_and_stop_between_entries', 'normal::call_pair::check::tests::returned_completion_payload_and_report_bijection_predicates_refuse_coherent_changes', 'normal::call_pair::check::tests::raw_endpoints_keep_zero_maximum_migration_and_regression_without_timing_claim', 'normal::call_pair::check::tests::every_report_generation_and_sample_has_one_complete_join_including_empty_epochs', 'normal::call_pair::check::tests::numeric_rows_have_exact_fields_complete_raw_values_and_bounded_ascii_framing', 'normal::call_pair::check::tests::complete_role_census_preserves_original_call_continuation_and_every_child_ret', 'normal::call_pair::worker::tests::complete_roots_require_both_rows_child_acks_and_all_pair_totals', 'normal::call_pair::worker::tests::packed_guarded_parent_value_keeps_one_real_call_owner_shape')
@@ -52,6 +54,23 @@ def load(name, path, data):
     sys.modules[name] = module
     exec(compile(data, str(path), 'exec'), module.__dict__)
     return module
+
+
+def source_inventory(git, recipe, launcher, extra):
+    # The actual campaign must retain every source later required by accept_native.
+    required = set(REQUIRED_NATIVE) | set(HELPER_PINS) | set(recipe.MODULES.values()) | set(extra.values()) | {
+        'evaluation/ordinary-call-pair-session/'+n for n in ('reproduce.py', 'runner_controls.py', 'README.md', 'produce.py',
+            'producer_controls.py', 'receipt_controls.py', 'controls.py', 'original.c', 'original_controls.c', 'original_controls.py')}
+    required.update(launcher.COMMON + launcher.EXTRA['call-pair-original-native'])
+    required.add(NATIVE_LAUNCHER)
+    source_dirs = ('evaluation/ordinary-module-session', 'evaluation/ordinary-leaf-set-session', 'evaluation/ordinary-leaf-set-whole-session')
+    for directory in source_dirs:
+        names = git('ls-files', '-z', '--', directory).decode().rstrip('\0').split('\0')
+        required.update(n for n in names if n.endswith(('.py', '.c', '.S', '.md')))
+    names = git('ls-files', '-z', '--', 'src', 'crates', 'tests/support', 'tools/rapid-profiler', 'Cargo.toml', 'Cargo.lock',
+                'README.md', 'build.rs', '.cargo', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
+    assert all(names) and len(names) == len(set(names)) and required <= set(names)
+    return required, names
 
 
 def catalog(shared, corpus):
@@ -371,26 +390,19 @@ def main():
     # Bootstrap source is held and joined to Git before any project import.
     recipe_path = ROOT/'evaluation/ordinary-module-session/reproduce.py'
     held = {}
-    for path in (Path(__file__).resolve(), recipe_path):
+    for path in (Path(__file__).resolve(), recipe_path, ROOT/NATIVE_LAUNCHER):
         assert not path.is_symlink() and path.is_file() and path.stat().st_size <= MIB
         data = path.read_bytes(); assert data == git('show', a.revision+':'+str(path.relative_to(ROOT)))
         held[str(path.relative_to(ROOT))] = data
     assert pin(held[str(recipe_path.relative_to(ROOT))])['sha256'] == RECIPE_SHA
+    assert pin(held[NATIVE_LAUNCHER])['sha256'] == NATIVE_LAUNCHER_SHA
     recipe = load('_call_pair_campaign_owner', recipe_path, held[str(recipe_path.relative_to(ROOT))])
+    native_launcher = load('_call_pair_campaign_native_launcher', ROOT/NATIVE_LAUNCHER, held[NATIVE_LAUNCHER])
     extra = dict(leaf='evaluation/ordinary-leaf-set-session/reproduce.py', native_recipe='evaluation/ordinary-call-pair-native/reproduce.py',
         owners='evaluation/ordinary-module-session/owners.py', native_receipt='evaluation/ordinary-call-pair-session/native_receipt.py',
         profile='evaluation/ordinary-call-pair-session/profile.py', pair_output='evaluation/ordinary-call-pair-session/output.py',
         original_output='evaluation/ordinary-call-pair-session/original_output.py')
-    required = set(REQUIRED_NATIVE) | set(HELPER_PINS) | set(recipe.MODULES.values()) | set(extra.values()) | {
-        'evaluation/ordinary-call-pair-session/'+n for n in ('reproduce.py', 'runner_controls.py', 'README.md', 'produce.py',
-            'producer_controls.py', 'receipt_controls.py', 'controls.py', 'original.c', 'original_controls.c', 'original_controls.py')}
-    source_dirs = ('evaluation/ordinary-module-session', 'evaluation/ordinary-leaf-set-session', 'evaluation/ordinary-leaf-set-whole-session')
-    for directory in source_dirs:
-        names = git('ls-files', '-z', '--', directory).decode().rstrip('\0').split('\0')
-        required.update(n for n in names if n.endswith(('.py', '.c', '.S', '.md')))
-    names = git('ls-files', '-z', '--', 'src', 'crates', 'tests/support', 'tools/rapid-profiler', 'Cargo.toml', 'Cargo.lock',
-                'README.md', 'build.rs', '.cargo', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
-    assert all(names) and len(names) == len(set(names)) and required <= set(names)
+    required, names = source_inventory(git, recipe, native_launcher, extra)
     sources = {}
     for name in names:
         data = recipe.read(ROOT/name); assert data == git('show', a.revision+':'+name)
@@ -420,9 +432,9 @@ def main():
         return setup_stage(run, stages, name, argv, validator, **kwargs)
     try:
         run.unchanged()
-        launcher = ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'
+        launcher = ROOT/NATIVE_LAUNCHER
         launcher_bytes = recipe.read(launcher, MIB)
-        assert pin(launcher_bytes)['sha256'] == '5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5'
+        assert pin(launcher_bytes)['sha256'] == NATIVE_LAUNCHER_SHA
         run.remember(launcher, pin(launcher_bytes), MIB)
         source_pin = run.freeze(a.raw/'sources-before.json', sources, cap=16*MIB)
         run.result['references']['sources'] = dict(status='PASS', pin=dict(path=str(a.raw/'sources-before.json'), **source_pin))

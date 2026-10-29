@@ -75,6 +75,24 @@ class Controls(unittest.TestCase):
         self.assertEqual(len(calls),1)
         expected=next(k.value for k in calls[0].keywords if k.arg=='expected')
         self.assertEqual({k.arg for k in expected.keywords},{'revision','protocol_pin','source_pins','tool_pins','module_pin','application_pin','geometry'})
+        # The real inventory helper must retain the native owner's whole domain,
+        # even when it is broader than the campaign's original explicit tuple.
+        native = set(Receipt.L.COMMON + Receipt.L.EXTRA['call-pair-original-native'])
+        self.assertIn('evaluation/ordinary-leaf-set-native/README.md', native)
+        omitted = None
+        def git(*args):
+            self.assertEqual(args[:3], ('ls-files', '-z', '--'))
+            if len(args) == 4:
+                names = [args[3]+'/fabricated.py']
+            else:
+                names = list(args[args.index(':(glob)**/Cargo.toml')+1:])+['src/fabricated.rs', 'Cargo.toml']
+            return ('\0'.join(sorted(set(names)-{omitted}))+'\0').encode()
+        extra = {'fixture': 'evaluation/fabricated-extra.py'}
+        required, names = R.source_inventory(git, Producer.R, Receipt.L, extra)
+        self.assertTrue(native | {R.NATIVE_LAUNCHER} <= required <= set(names))
+        self.assertTrue(set(R.REQUIRED_NATIVE) | set(R.HELPER_PINS) | set(Producer.R.MODULES.values()) | set(extra.values()) <= required)
+        for omitted in sorted(native | {R.NATIVE_LAUNCHER}):
+            with self.assertRaises(AssertionError): R.source_inventory(git, Producer.R, Receipt.L, extra)
 
     def test_actual_pid_stream_hash_json_profile_before_custody_release(self):
         plan, _, _ = Producer.plan(); result=dict(child_pid=12)

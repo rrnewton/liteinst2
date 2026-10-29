@@ -18,7 +18,7 @@ FIXTURE_PATH=R.ROOT/'evaluation/ordinary-call-pair-native/controls.py'
 fixture_source=R._read(FIXTURE_PATH,R.MIB)
 assert R._pin(fixture_source)['sha256']=='33293f4a201d8b717cfa2d46dde16a31e67e257ef4bdab994c0e8a847f07c059'
 F=R._module('wire_fixture',FIXTURE_PATH,fixture_source)
-LAUNCHER_PATH=R.ROOT/'ignored/a5/normal-call-pair-launch-source-v1/launch.py'
+LAUNCHER_PATH=R.ROOT/'evaluation/ordinary-call-pair-native/launch.py'
 launcher_source=R._read(LAUNCHER_PATH,R.MIB)
 assert R._pin(launcher_source)['sha256']==R.LAUNCHER_SHA
 L=R._module('launcher_fixture',LAUNCHER_PATH,launcher_source)
