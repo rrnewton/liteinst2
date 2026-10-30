@@ -618,7 +618,7 @@ fn short_only_projection_and_search_caps_are_not_widened() {
 }
 
 fn owned_fixture(all_conflict: bool) -> (Vec<u8>, String, String) {
-    let mut code = vec![0x90; 48];
+    let mut code = [0x90; 48];
     code[..3].copy_from_slice(&[0x75, 0, 0xc3]);
     code[14..16].copy_from_slice(if all_conflict {
         &[0x75, 0]
