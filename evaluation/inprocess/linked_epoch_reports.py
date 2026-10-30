@@ -330,7 +330,7 @@ def controls(stderr,*args):
     def protected_refusal(key,value):
         v=dict(parsed);v[key]=value;caught=False
         try:args[-2].terminal(v,args[-3],**(dict(native_hint=True)if native_hint else{}))
-        except ValueError as error:caught=str(error)=='entire actual protected terminal row '+key
+        except ValueError as error:caught=str(error)=='entire actual protected '+('reuse 'if args[-1]==6 else'')+'terminal row '+key
         need(caught,'every supplied '+key+' field reaches its full protected equality')
     for _,data in native_trials:
         line=next(x for x in data.splitlines()if x.startswith(b'LI2_NATIVE '))
@@ -445,7 +445,7 @@ def hint_controls(stderr,*args):
         value=dict(hint);value[key]^=1
         p=dict(parsed,native_hint=value);caught=False
         try:args[-2].terminal(p,args[-3],native_hint=True)
-        except ValueError as exc:caught=str(exc)=='entire actual protected terminal row native_hint'
+        except ValueError as exc:caught=str(exc)=='entire actual protected '+('reuse 'if args[-1]==6 else'')+'terminal row native_hint'
         need(caught,'every actual hint field reaches its complete protected equality')
         change('hint_field_'+key,[(terminal.HINT_PREFIX,value)])
     value=copy.deepcopy(linked);value['graph_refaults']+=1;change('graph_refaults_field',[(PREFIX,value)])
