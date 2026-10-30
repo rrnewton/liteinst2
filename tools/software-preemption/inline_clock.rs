@@ -522,6 +522,7 @@ fn run(
             .expect("fresh callback-only rejection witness")
     });
     let worker = std::thread::spawn(move || {
+        let worker_tid = unsafe { libc::syscall(libc::SYS_gettid) };
         // SAFETY: private callable source is reachable only through this worker;
         // no signal/callback has an entry pointer. The call guard precedes the
         // first generated spill. All source/image/clock owners outlive join.
@@ -529,7 +530,7 @@ fn run(
             unsafe { worker_clock.acquire(quantum, max_work) }.expect("exclusive clock lease");
         let mut state = State {
             pid: std::process::id(),
-            tid: unsafe { libc::syscall(libc::SYS_gettid) },
+            tid: worker_tid,
             site: entry + offset,
             offset,
             condition,
@@ -565,7 +566,7 @@ fn run(
         }
         let elapsed_ns = start.elapsed().as_nanos();
         drop(clear);
-        (elapsed_ns, checksum, state.stops)
+        (elapsed_ns, checksum, state.stops, worker_tid)
     });
     let mut stops = Vec::new();
     let mut parked_checks = 0;
@@ -633,9 +634,11 @@ fn run(
             Err(HandoffError::Protocol) => panic!("inline rendezvous protocol refusal"),
         }
     }
-    let (elapsed_ns, checksum, closed_stops) = worker.join().expect("exact inline worker joined");
+    let (elapsed_ns, checksum, closed_stops, worker_tid) =
+        worker.join().expect("exact inline worker joined");
     assert_eq!(closed_stops, stops.len());
     assert!(CURRENT.get().is_null());
+    joined_worker_retired(worker_tid);
     let (words, tail) = unsafe { clock.snapshot_parked() };
     assert_eq!(tail, [CLOCK_CANARY; 4064]);
     assert!(words.counted <= max_work && words.encounters <= max_work);
