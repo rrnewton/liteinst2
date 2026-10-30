@@ -78,6 +78,13 @@ pub struct Disassembly {
     jumps: Vec<JumpSite>,
 }
 impl Disassembly {
+    #[cfg(feature = "offline-router")]
+    pub(crate) fn original_heads(&self) -> Vec<u64> {
+        self.regions
+            .iter()
+            .flat_map(|r| r.instructions.iter().map(Instruction::ip))
+            .collect()
+    }
     pub fn jumps(&self) -> &[JumpSite] {
         &self.jumps
     }

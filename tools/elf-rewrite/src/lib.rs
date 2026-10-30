@@ -4,6 +4,8 @@
 mod adjacent_b2_frontend;
 pub mod carrier;
 pub mod disassembly;
+#[cfg(feature = "offline-router")]
+pub mod offline_router;
 pub use adjacent_b2_frontend::prepare_disassembly_adjacent_b2;
 pub use adjacent_b2_frontend::routed_jmp::prepare_disassembly_adjacent_routed_jmp;
 mod ledger;
@@ -159,8 +161,54 @@ fn prepare_selection_with_pair_gate(
     mode: disassembly::NeighborMode,
     adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
     pair_profile: adjacent_b2_frontend::PairProfile,
-    mut gate: impl FnMut(&'static str) -> Result<(), Error>,
+    gate: impl FnMut(&'static str) -> Result<(), Error>,
 ) -> Result<Product, Error> {
+    prepare_selection_transaction(
+        original,
+        selection,
+        owned_neighbors,
+        mode,
+        adjacent,
+        pair_profile,
+        TransactionHooks { addon: None, gate },
+    )
+}
+
+// Private extension of the final all-selected transaction. Legacy entry points
+// always pass None and retain their original writer and complete bytes.
+trait CandidateAddon {
+    fn reservation(&self, legacy_bytes: u64) -> Result<u64, Error>;
+    fn carrier(
+        &self,
+        elf: &Elf64<'_>,
+        request: carrier::ImageRequest<'_>,
+        edits: &[carrier::DeclaredEdit],
+        policy: carrier::ImagePolicy,
+    ) -> Result<carrier::CarrierOutput, carrier::Error>;
+    fn finish(
+        &self,
+        original: &[u8],
+        selection: &Selection,
+        accepted: &[(u64, ArtifactPlan)],
+        files: &mut BTreeMap<String, Vec<u8>>,
+    ) -> Result<(), Error>;
+}
+
+struct TransactionHooks<'a, F> {
+    addon: Option<&'a dyn CandidateAddon>,
+    gate: F,
+}
+
+fn prepare_selection_transaction(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+    adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
+    pair_profile: adjacent_b2_frontend::PairProfile,
+    hooks: TransactionHooks<'_, impl FnMut(&'static str) -> Result<(), Error>>,
+) -> Result<Product, Error> {
+    let TransactionHooks { addon, mut gate } = hooks;
     if owned_neighbors && mode != disassembly::NeighborMode::LongOnly {
         return Err(Error::new(
             "neighbor-mode",
@@ -210,6 +258,10 @@ fn prepare_selection_with_pair_gate(
             .and_then(|v| v.checked_add(128))
             .ok_or_else(|| Error::new("carrier-reservation", "overflow"))?,
     )?;
+    let carrier_reserve = match addon {
+        Some(addon) => addon.reservation(carrier_reserve)?,
+        None => carrier_reserve,
+    };
     occupied.push(addr(s.carrier_pc, carrier_reserve)?);
     let mut dependencies = Vec::new();
     for hook in &s.hooks {
@@ -410,29 +462,29 @@ fn prepare_selection_with_pair_gate(
         if adjacent.is_some() {
             gate("carrier-construction")?;
         }
-        let result = write_carrier(
-            &elf,
-            carrier::ImageRequest {
-                carrier_vaddr: ElfVaddr(s.carrier_pc),
-                payload: &payload,
-                images: &images,
-                source_dependencies: &dependencies,
+        let request = carrier::ImageRequest {
+            carrier_vaddr: ElfVaddr(s.carrier_pc),
+            payload: &payload,
+            images: &images,
+            source_dependencies: &dependencies,
+        };
+        let policy = carrier::ImagePolicy {
+            layout: carrier::CarrierPolicy {
+                page_size: 4096,
+                user_address_limit: 1 << 47,
+                max_added_file_bytes: s.limits.added_file_bytes,
+                max_output_file_bytes: s.limits.output_bytes,
+                max_program_headers: s.limits.program_headers,
+                max_virtual_span: s.limits.virtual_span,
             },
-            &edits,
-            carrier::ImagePolicy {
-                layout: carrier::CarrierPolicy {
-                    page_size: 4096,
-                    user_address_limit: 1 << 47,
-                    max_added_file_bytes: s.limits.added_file_bytes,
-                    max_output_file_bytes: s.limits.output_bytes,
-                    max_program_headers: s.limits.program_headers,
-                    max_virtual_span: s.limits.virtual_span,
-                },
-                dynamic: carrier::dynamic::Limits::default(),
-                max_images: s.limits.images,
-                max_new_load_pages: s.limits.new_load_pages,
-            },
-        );
+            dynamic: carrier::dynamic::Limits::default(),
+            max_images: s.limits.images,
+            max_new_load_pages: s.limits.new_load_pages,
+        };
+        let result = match addon {
+            Some(addon) => addon.carrier(&elf, request, &edits, policy),
+            None => write_carrier(&elf, request, &edits, policy),
+        };
         match result {
             Ok(output) => {
                 if adjacent.is_some() {
@@ -528,6 +580,12 @@ fn prepare_selection_with_pair_gate(
     }
     if adjacent.is_some() {
         gate("complete-output-serialization")?;
+    }
+    if complete {
+        if let Some(addon) = addon {
+            gate("startup-catalog")?;
+            addon.finish(original, s, &accepted, &mut files)?;
+        }
     }
     files.insert("bundle-index.tsv".into(), ledger::index(s.original, &files));
     Ok(Product {
