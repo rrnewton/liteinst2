@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "python": "/usr/bin/python3.9",
+  "scope": "source-batch and E9 execution-call-site controls only",
+  "attempts": [
+    {
+      "id": "native-batch-controls-v1",
+      "base": "d32f705ccc9de0546db1a1807a948ecb2b43b8f8",
+      "working_source_sha256": {
+        "evaluation/adjacent-b2/artifact-verifier/startup_custody.py": "6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5",
+        "evaluation/adjacent-b2/artifact-verifier/startup_source_controls.py": "3467ef2c14329b14b7ffb7098781ff33d293dc77e5df9c8f38f7fe7de3b9738d",
+        "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": "c66928731b11cb4a77652c421435084a54b78c701e34e1b689f7d1e402ead3ec",
+        "evaluation/offline-corpus/full_startup_e9_execute.py": "4c5574329a8c6e81a7325f89a2bb034881c756292d0a0a553a582a27fb1d483b",
+        "evaluation/offline-corpus/full_startup_e9_execute_controls.py": "564babf3e364e4720f301342661de15a800ad721b1c72014ff4939a8efe476b1",
+        "evaluation/offline-router-native/absolute_profile_controls.py": "a6bb1d774c2a2f86366290fbd8b8524467ced3e536898b16c24657c7647326f6",
+        "evaluation/offline-router-native/final_admission.py": "cd95a03b9733123dd4fe520c25cf4cf8b780595fecb15489c4b708949a624d31"
+      },
+      "owner_sha256": "abe16d56e3b48df934dd73e9a387e99d2f4abaf0dc690fc56809f0cf828b2f17",
+      "log_sha256": "fb07909fdbc152f1e1d96ffe086bab60064e89bf80433624f5dd8a3d765f5c7c",
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/offline-router-corpus/reproduce_preparation.py",
+        "controls-inner"
+      ],
+      "start_utc": "2026-10-30T14:03:00.795334+00:00",
+      "seconds": 3.815760021097958,
+      "exit": 1,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "reserved_cpus": [
+        15,
+        35,
+        54,
+        65
+      ],
+      "load_before": [
+        "62.17",
+        "70.32",
+        "79.82"
+      ],
+      "load_after": [
+        "61.92",
+        "70.13",
+        "79.70"
+      ],
+      "test_counts": [
+        159,
+        207
+      ],
+      "errors": [
+        5
+      ]
+    },
+    {
+      "id": "native-batch-controls-v2",
+      "base": "d32f705ccc9de0546db1a1807a948ecb2b43b8f8",
+      "working_source_sha256": {
+        "evaluation/adjacent-b2/artifact-verifier/startup_custody.py": "6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5",
+        "evaluation/adjacent-b2/artifact-verifier/startup_source_controls.py": "3467ef2c14329b14b7ffb7098781ff33d293dc77e5df9c8f38f7fe7de3b9738d",
+        "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": "c66928731b11cb4a77652c421435084a54b78c701e34e1b689f7d1e402ead3ec",
+        "evaluation/offline-corpus/full_startup_e9_execute.py": "4c5574329a8c6e81a7325f89a2bb034881c756292d0a0a553a582a27fb1d483b",
+        "evaluation/offline-corpus/full_startup_e9_execute_controls.py": "564babf3e364e4720f301342661de15a800ad721b1c72014ff4939a8efe476b1",
+        "evaluation/offline-router-native/absolute_profile_controls.py": "dc5d7f7d19e4f61178f3bb1bdd19f6f2386bf03b9d72772bc7041df108525487",
+        "evaluation/offline-router-native/final_admission.py": "cd95a03b9733123dd4fe520c25cf4cf8b780595fecb15489c4b708949a624d31"
+      },
+      "owner_sha256": "a534c6151e266d086d513a424ad41a5b1a14390f1b588efa5f4b5f897dfb85f5",
+      "log_sha256": "531dc38ce9c9132d157ec829424ff7020a30b3d95c81b5163a17b6d04b91d716",
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/offline-router-native",
+        "-p",
+        "*controls.py"
+      ],
+      "start_utc": "2026-10-30T14:03:48.885497+00:00",
+      "seconds": 1.3470793729647994,
+      "exit": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "reserved_cpus": [
+        173,
+        176,
+        246,
+        311
+      ],
+      "load_before": [
+        "64.61",
+        "69.68",
+        "79.10"
+      ],
+      "load_after": [
+        "64.61",
+        "69.68",
+        "79.10"
+      ],
+      "test_counts": [
+        207
+      ],
+      "errors": []
+    },
+    {
+      "id": "absolute-e9-execution-controls-v2",
+      "base": "d32f705ccc9de0546db1a1807a948ecb2b43b8f8",
+      "working_source_sha256": {
+        "evaluation/adjacent-b2/artifact-verifier/startup_custody.py": "6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5",
+        "evaluation/adjacent-b2/artifact-verifier/startup_source_controls.py": "3467ef2c14329b14b7ffb7098781ff33d293dc77e5df9c8f38f7fe7de3b9738d",
+        "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": "c66928731b11cb4a77652c421435084a54b78c701e34e1b689f7d1e402ead3ec",
+        "evaluation/offline-corpus/full_startup_e9_execute.py": "4c5574329a8c6e81a7325f89a2bb034881c756292d0a0a553a582a27fb1d483b",
+        "evaluation/offline-corpus/full_startup_e9_execute_controls.py": "564babf3e364e4720f301342661de15a800ad721b1c72014ff4939a8efe476b1",
+        "evaluation/offline-router-native/absolute_profile_controls.py": "dc5d7f7d19e4f61178f3bb1bdd19f6f2386bf03b9d72772bc7041df108525487",
+        "evaluation/offline-router-native/final_admission.py": "cd95a03b9733123dd4fe520c25cf4cf8b780595fecb15489c4b708949a624d31"
+      },
+      "owner_sha256": "28274d06e1702684956d1dd53ee50737d23a5c2fa258dd1813af9c6ca076a3d4",
+      "log_sha256": "246630d4b5e235c15aa390137ccfb7dcbad088749b99ae3ffa4b22f6ce40aeea",
+      "command": [
+        "/usr/bin/python3.9",
+        "-I",
+        "-B",
+        "evaluation/offline-corpus/full_startup_e9_execute_controls.py",
+        "$ROOT"
+      ],
+      "start_utc": "2026-10-30T14:03:47.665609+00:00",
+      "seconds": 0.12672916799783707,
+      "exit": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "reserved_cpus": [
+        33,
+        55,
+        70,
+        83
+      ],
+      "load_before": [
+        "64.61",
+        "69.68",
+        "79.10"
+      ],
+      "load_after": [
+        "64.61",
+        "69.68",
+        "79.10"
+      ],
+      "test_counts": [
+        21
+      ],
+      "errors": []
+    }
+  ],
+  "final_passed": {
+    "artifact": 159,
+    "native": 207,
+    "e9": 21
+  },
+  "retained_failure": "First full Python run: 159 artifact controls passed; native suite had five test-fixture errors because a string pathname was used as a Path. Only that recorder was corrected. The native suite and separate E9 suite then passed.",
+  "native_dispatches": 0,
+  "qualification_complete": false,
+  "performance_eligible": false
+}

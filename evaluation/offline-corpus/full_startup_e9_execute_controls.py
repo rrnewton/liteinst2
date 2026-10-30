@@ -25,7 +25,7 @@ TOOLS['helper']['sha256'] = N.HELPER_SHA
 
 class Invocation(unittest.TestCase):
     def args(self,phase='produce'):
-        return [phase,'--root','/root','--plan','/root/ignored/prepared/plan.json',
+        return [phase,'--source-revision','6'*40,'--root','/root','--plan','/root/ignored/prepared/plan.json',
                 '--plan-sha256','1'*64,'--executor-sha256','2'*64]
 
     def test_phases_are_separate_and_outputs_require_actual_hashes(self):
@@ -170,7 +170,7 @@ class TerminalPublication(unittest.TestCase):
             stable=mock.Mock(),close=mock.Mock())
 
     def argv(self):
-        return ['produce','--root','/root','--plan','/root/ignored/p/plan.json','--plan-sha256','1'*64,'--executor-sha256','2'*64]
+        return ['produce','--source-revision','6'*40,'--root','/root','--plan','/root/ignored/p/plan.json','--plan-sha256','1'*64,'--executor-sha256','2'*64]
 
     def test_existing_result_directory_bytes_unchanged_on_refusal(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -202,6 +202,71 @@ class TerminalPublication(unittest.TestCase):
             result=M.json.loads((directory/'production.json').read_bytes())
             self.assertIs(result['structural_complete'],True);self.assertIsNone(result['error'])
             self.assertEqual(result['new_e9_invocations'],0);self.assertEqual(result['joined_n01_invocations'],0)
+
+
+class RetentionDiagnostics(unittest.TestCase):
+    def instance(self, store):
+        inputs=object.__new__(M.Inputs);inputs.store=store;inputs.members=[]
+        return inputs
+
+    def test_actual_retain_command_accepts_real_eight_file_directory_repeatedly(self):
+        custody=load(ROOT/'evaluation/adjacent-b2/artifact-verifier/startup_custody.py','e9_real_retention_custody')
+        with tempfile.TemporaryDirectory() as tmp:
+            directory=Path(tmp).resolve()
+            for name in M.CONTROL:(directory/name).write_bytes(name.encode())
+            store=custody.Store()
+            try:
+                inputs=self.instance(store)
+                for _ in range(3):inputs.retain_command(directory)
+                self.assertEqual(len(inputs.members),3)
+                self.assertEqual(inputs.members[0][1]['members'],sorted(M.CONTROL))
+                store.verify()
+            finally:store.close()
+
+    def test_real_retention_predicate_reports_actual_and_expected_without_accepting(self):
+        actual=['command.json','request.json','unexpected']
+        inputs=self.instance(types.SimpleNamespace(members=mock.Mock(return_value={'stat':[1,2,3,4,5,6],'members':actual})))
+        with self.assertRaises(ValueError) as raised:inputs.retain_command(Path('/root/ignored/closed'))
+        self.assertIn('actual='+repr(actual),str(raised.exception))
+        self.assertIn('expected='+repr(sorted(M.CONTROL)),str(raised.exception))
+        self.assertEqual(inputs.members,[])
+
+    def test_closed_exit_is_retained_before_real_membership_refusal(self):
+        commands=[dict(program=p,lane=l,phase=phase,directory='/fixed/'+p+'/'+l+'/'+phase,argv=['/producer'])
+                  for p in N.PROGRAMS for l in ('stock','reference') for phase in ('transport','producer')]
+        inputs=self.instance(types.SimpleNamespace(members=mock.Mock(return_value={'stat':[1,2,3,4,5,6],'members':[]})))
+        inputs.plan={'commands':commands};inputs.root=Path('/root');inputs.tools=TOOLS;inputs.stable=mock.Mock()
+        inputs.m={'prepare':types.SimpleNamespace(PROGRAMS=N.PROGRAMS,E9={'stock':None,'reference':None}),
+                  'custody':types.SimpleNamespace(closed=mock.Mock(return_value=(0,{})))}
+        result={}
+        with mock.patch.object(M,'invoke',return_value=({},{})) as invoke:
+            with self.assertRaisesRegex(ValueError,r'actual=\[\] expected='):M.produce(inputs,result)
+        self.assertEqual(invoke.call_count,1)
+        self.assertEqual(result['commands'][0]['exit'],0)
+        self.assertIs(result['commands'][0]['closure_complete'],True)
+        self.assertEqual(result['commands'][0]['status'],'FAILED')
+        self.assertEqual([r['status'] for r in result['commands'][1:]],['UNRUN']*7)
+
+    def test_source_revision_is_explicit_canonical_and_recorded(self):
+        args=['produce','--root','/root','--plan','/root/ignored/p/plan.json','--plan-sha256','1'*64,'--executor-sha256','2'*64]
+        with self.assertRaises(SystemExit):M.arguments(args)
+        for value in ('a'*39,'a'*41,'A'*40,'g'*40):
+            with self.subTest(value=value),self.assertRaises(SystemExit):M.arguments(args+['--source-revision',value])
+        self.assertEqual(M.arguments(args+['--source-revision','a'*40]).source_revision,'a'*40)
+        with tempfile.TemporaryDirectory() as tmp:
+            directory=Path(tmp);fixture=TerminalPublication();inputs=fixture.fixture(directory)
+            def produce(inputs,result):result['structural_complete']=True
+            with mock.patch.object(M,'Inputs',return_value=inputs),mock.patch.object(M,'production_ready'),mock.patch.object(M,'produce',side_effect=produce):
+                self.assertEqual(M.main(args+['--source-revision','a'*40]),0)
+            result=M.json.loads((directory/'production.json').read_bytes())
+            self.assertEqual(result['source_revision'],'a'*40)
+            self.assertEqual(result['provenance']['source_revision'],'a'*40)
+
+    def test_selected_revision_must_equal_the_actual_plan(self):
+        inputs=object.__new__(M.Inputs);inputs.source_revision='a'*40
+        inputs.plan={'profile':'actual-profile','source_revision':'b'*40}
+        inputs.m={'prepare':types.SimpleNamespace(PROFILE='actual-profile'), 'adapter':None, 'corpus':None}
+        with self.assertRaisesRegex(ValueError,'current full-startup source'):inputs.validate_plan()
 
 
 if __name__ == '__main__':

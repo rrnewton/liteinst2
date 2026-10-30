@@ -45,7 +45,8 @@ automatically proceeds from preparation to native execution.
 The separately pinned E9 executor and its controls were run as private source
 and are published byte-for-byte in `../../offline-corpus/full_startup_e9_execute.py`
 and `full_startup_e9_execute_controls.py`. Their bytes were **not** in the frozen
-60495e5 source inventory. The executor accepts the recorded plan hash and its
+60495e5 source inventory. Commit `d32f705` preserves those exact historical
+executor bytes; later changes do not reinterpret this result. The executor accepts the recorded plan hash and its
 own source hash, and pins its seven dependencies to that revision. To reproduce
 this historical attempt, use those exact dependencies and executor bytes with
 fresh outputs. Its `outputs` phase requires a separately completed N01 result

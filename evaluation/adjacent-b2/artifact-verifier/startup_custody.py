@@ -260,12 +260,21 @@ class SourceBatch:
     Expected content digests come from the external source profile. Git's object
     ID is checked separately against the full blob framing and contents. A batch
     is a fresh read on every call, never a cache or a substitute for live reads.
+    Optional exact lengths bind each header to independently retained bytes.
     """
-    def __init__(self, expected):
+    def __init__(self, expected, *, expected_lengths=None):
         self.expected = tuple(expected)
         need(bool(self.expected), 'nonempty source batch')
         for value in self.expected:
             digest(value)
+        self.expected_lengths = None
+        if expected_lengths is not None:
+            need(type(expected_lengths) in (list, tuple), 'source batch exact length roster')
+            self.expected_lengths = tuple(expected_lengths)
+            need(len(self.expected_lengths) == len(self.expected) and
+                 all(type(size) is int and 0 <= size <= SOURCE_FILE_BYTES for size in self.expected_lengths),
+                 'source batch exact length roster')
+            need(sum(self.expected_lengths) <= SOURCE_BYTES, 'source batch file/aggregate bound')
         self.index = 0
         self.total = 0
         self.header = bytearray()
@@ -290,6 +299,8 @@ class SourceBatch:
                 size = int(match[2])
                 need(size <= SOURCE_FILE_BYTES and size <= SOURCE_BYTES - self.total,
                      'source batch file/aggregate bound')
+                if self.expected_lengths is not None:
+                    need(size == self.expected_lengths[self.index], 'exact committed source size')
                 self.total += size
                 self.oid = match[1].decode('ascii')
                 self.content_hash = hashlib.sha256()
@@ -315,7 +326,7 @@ class SourceBatch:
              'source batch missing/truncated record')
 
 
-def source_batch(root, revision, ordered, env):
+def source_batch(root, revision, ordered, env, *, expected_lengths=None):
     """One bounded Git process and one strict 15-second command deadline."""
     need(type(revision) is str and re.fullmatch('[0-9a-f]{40}', revision) is not None,
          'source batch exact revision')
@@ -328,7 +339,7 @@ def source_batch(root, revision, ordered, env):
         row = (revision + ':' + relative + '\n').encode('utf-8')
         need(len(row) <= SOURCE_REQUEST_BYTES - len(request), 'source batch request bound')
         request.extend(row)
-    decoder = SourceBatch([expected for _, expected in ordered])
+    decoder = SourceBatch([expected for _, expected in ordered], expected_lengths=expected_lengths)
     argv = ['/usr/bin/git', '-C', str(root), 'cat-file', '--batch']
     deadline = time.monotonic() + GIT_SECONDS
     child = subprocess.Popen(argv, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,

@@ -12,15 +12,15 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import sys
 import types
 
 MIB = 1048576
-SOURCE_REVISION = '60495e5b69fd0d48a15d6a22c7e2bfe73a7b73b0'
 SOURCES = {
     'prepare': ('evaluation/offline-corpus/full_startup_e9.py', 'c3b4a4bb09bb428105e037d72733d76990bcaf524cfa25b029a7bb5b9e028666'),
-    'custody': ('evaluation/adjacent-b2/artifact-verifier/startup_custody.py', '37cbe467c0734be1e74549553d04c2c2d0692f244ca93894e4a5fc7789d73425'),
+    'custody': ('evaluation/adjacent-b2/artifact-verifier/startup_custody.py', '6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5'),
     'collector': ('evaluation/offline-corpus/adjacent_whole.py', 'b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3'),
     'n01': ('evaluation/offline-router-native/n01.py', '0f09b1ea2bb211f94d709d99c759abc90ed1fa51da567b6470220f731c87fe56'),
     'corpus': ('evaluation/offline-corpus/corpus.py', '007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07'),
@@ -62,9 +62,15 @@ def request_command(root, directory, argv, env, tools):
     return request, command
 
 
+def source_revision(value):
+    need(re.fullmatch('[0-9a-f]{40}', value) is not None, 'exact 40-hex source revision')
+    return value
+
+
 def arguments(argv=None):
     p = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     p.add_argument('phase', choices=('produce', 'outputs'))
+    p.add_argument('--source-revision', type=source_revision, required=True)
     for name in ('root', 'plan'):
         p.add_argument('--'+name, type=Path, required=True)
     for name in ('plan-sha256', 'executor-sha256'):
@@ -86,6 +92,7 @@ class Inputs:
     """Existing custody and readers; no new process owner or authority class."""
     def __init__(self, args):
         self.root = args.root; self.directory = args.plan.parent
+        self.source_revision = args.source_revision
         need(self.root.is_absolute() and self.root.resolve(strict=True) == self.root
              and Path.cwd() == self.root, 'canonical source root/current directory')
         need(args.plan.name == 'plan.json' and self.directory.is_relative_to(self.root/'ignored')
@@ -133,12 +140,14 @@ class Inputs:
 
     def retain_command(self, directory):
         record = self.store.members(directory)
-        need(record['members'] == sorted(CONTROL), 'whole exact raw command closure')
+        expected = sorted(CONTROL)
+        need(record['members'] == expected, 'whole exact raw command closure: actual='
+             + repr(record['members']) + ' expected=' + repr(expected))
         self.members.append((directory, record))
 
     def validate_plan(self):
         f, a, corpus, p = self.m['prepare'], self.m['adapter'], self.m['corpus'], self.plan
-        need(p['profile'] == f.PROFILE and p['source_revision'] == SOURCE_REVISION
+        need(p['profile'] == f.PROFILE and p['source_revision'] == self.source_revision
              and tuple(p['programs']) == f.PROGRAMS, 'current full-startup source and both programs')
         need(p['source'] == dict(adapter=dict(path=str(self.root/SOURCES['adapter'][0]), sha256=SOURCES['adapter'][1]),
             comparator=dict(path=str(self.root/SOURCES['compare'][0]), sha256=SOURCES['compare'][1]),
@@ -245,8 +254,9 @@ def produce(inputs, result):
         folder = Path(row['directory'])
         req, cmd = invoke(inputs, folder, row['argv'], ENV, cwd=inputs.root, prepared=True)
         code, _ = inputs.m['custody'].closed(inputs.store, folder, req, cmd, inputs.tools['helper']['sha256'])
+        row.update(exit=code, closure_complete=True)
         inputs.retain_command(folder); inputs.stable()
-        row.update(exit=code, status='PASS' if code == 0 else 'FAILED', closure_complete=True)
+        row.update(status='PASS' if code == 0 else 'FAILED')
         need(code >= 0, 'signal termination stops fixed production campaign')
     for row in result['products']:
         pair = [r for r in result['commands'] if (r['program'],r['lane']) == (row['program'],row['lane'])]
@@ -368,8 +378,8 @@ def outputs(inputs, args, result, destination):
 def main(argv=None):
     args = arguments(argv); need(not sys.flags.optimize, 'assertions required')
     inputs = Inputs(args)
-    result = dict(plan=inputs.reference, phase=args.phase, source_revision=SOURCE_REVISION,
-        provenance=dict(executor_sha256=args.executor_sha256, sources={p:h for p,h in SOURCES.values()}),
+    result = dict(plan=inputs.reference, phase=args.phase, source_revision=args.source_revision,
+        provenance=dict(source_revision=args.source_revision, executor_sha256=args.executor_sha256, sources={p:h for p,h in SOURCES.values()}),
         cases=copy.deepcopy(inputs.plan['cases']), retained_history=inputs.plan['retained_history'],
         structural_complete=False, application_outputs_checked=False, qualification_complete=False,
         architectural_full_state=False, performance_eligible=False, error=None)
