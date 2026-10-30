@@ -96,3 +96,65 @@ Clients still own ABI, memory, entry exclusion and work bounds. Code remains
 process-lived. This adds no performance, full-XSAVE/whole-stack,
 arbitrary-ELF/general-ABI, asynchronous-cancellation or retirement claim.
 The four-literal profile and evidence remain unchanged.
+
+
+## Explicit SPSC handoff experiment
+
+`inline-clock-spsc-v1` selects a separate handoff implementation for the same
+four literal functions and unchanged generated gate. One Arc-owned slot uses
+release/acquire publication, an exact-generation stop event and the actual
+`(site,count)` reply. The worker spins with the same two-second failure backstop;
+it does not resume on endpoint closure, an unconsumed event or a timeout. The
+callback retains every identity, work-bound, 18-word saved-state, whole-clock
+and canary check. The controller retains every actual application-page and
+clock comparison, including the one-millisecond qualification hold. Disconnect
+still requires exact worker join before final reads or retirement. The existing
+unsafe entry/exclusion contract and process-lived failure retention are unchanged.
+
+The profile is source-only until an actual reviewed release run records otherwise.
+No speedup or CPU-cost improvement is established. Spinning can consume more
+controller/worker CPU and does not resolve the separate consumer campaign's
+strict 2 ms scheduling failures. The old profiles, defaults and results remain.
+
+After source review and transport controls, the explicit reproduction is the
+same `evaluate.py` command above with `--profile inline-clock-spsc-v1`. Its
+binding uses `ROOT_REVIEWED_INLINE_CLOCK_SPSC_RELEASE_BINARY`. It keeps all six
+commands, 96 stop cells, 256 parked checks, 48 exact repeats and all 108 timing
+rows, including the unchanged quantum/work/stop formula. The prefix-only gate
+receipt correctly retains `inline-clock-v1`: those unchanged gate checks end
+before the callback, and cannot qualify the new handoff or full stack after it.
+Build, per-command, whole-experiment, affinity and cleanup bounds are unchanged.
+Matched release cohorts with every result retained are required to attribute a
+wall-time change to the transport; wall time alone does not prove lower CPU cost.
+
+The separate `--profile inline-clock-spsc-fatal-v1` uses authority
+`ROOT_REVIEWED_INLINE_CLOCK_SPSC_FATAL_RELEASE_BINARY` and runs exactly three
+expected-rejection controls: wrong site, wrong count and withheld reply. Each
+installs the actual countdown callback, retains an exact first-stop marker
+(site 27, count/encounters 1, words `[2,1,1]`, zero remaining budget), and must
+exit 123 with empty stdout/stderr. The callback must also write an exact
+104-byte `refusal.bin` witness through its sole owned descriptor, after consuming
+the actual tuple/error and comparing all 18 saved words, the complete clock
+snapshot and three application words against its pre-exchange state. The witness
+records that actual cause, tuple presence/values and parked clock/application
+facts; it receives no requested fault name. Wrong-site/count require their exact
+bad tuple, while no-reply requires Timeout. A controller delay causing Timeout
+cannot pass a wrong-tuple control. Partial/missing/trailing witnesses, other
+causes or changed parked facts fail. The callback always exits after witnessing;
+it never refills or resumes on any error. The helper's actual nonzero result
+remains recorded; these are rejection controls, with no qualification or timing credit.
+Each has 5 CPU / 8 wall seconds / 1 MiB, outer 18 seconds / kill-after 10,
+parent 33 / cleanup 10, and unchanged strict ECHILD/no-rescue checks. The
+separate three-control parent is 174 seconds; the release build keeps its old
+bounds. Neither profile can consume the other's binding. There is no retry or
+replacement of a failed control. Run these separately from the six-command
+measurement population. `cargo test --bin liteinst-preempt` also includes the
+focused transport ownership, queued-message, timeout and generation controls;
+all original tests remain.
+
+The cause-witness regression controls run with
+`python3 -B tools/software-preemption/refusal_controls.py`. They use synthetic
+104-byte records through the actual runner comparator, including every pairwise
+wrong-case substitution, altered parked fields and truncated/trailing output.
+They do not execute the candidate. Two additive Rust witness controls also
+preserve the successful-reply/no-refusal and distinct-actual-cause boundary.

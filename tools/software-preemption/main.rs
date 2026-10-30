@@ -519,7 +519,7 @@ fn benchmark(case: Case, output: &Path) {
         case.name()
     );
 }
-fn inline_qualify(output: &Path) {
+fn inline_qualify(output: &Path, transport: inline_clock::Transport) {
     let conditions = condition_controls();
     let mut rows = String::from(
         "case,n,quantum,repeat,taken_edges,branch_encounters,stops,parked_checks,checksum\n",
@@ -530,10 +530,16 @@ fn inline_qualify(output: &Path) {
     let mut cells = 0;
     let mut parked = 0;
     for case in CASES {
-        let mut counted_program =
-            inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Counter);
-        let mut program =
-            inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Stop);
+        let mut counted_program = inline_clock::InlineProgram::with_transport(
+            case,
+            liteinst2::backedge_clock::ClockMode::Counter,
+            transport,
+        );
+        let mut program = inline_clock::InlineProgram::with_transport(
+            case,
+            liteinst2::backedge_clock::ClockMode::Stop,
+            transport,
+        );
         for n in [1, 2, 7, 17] {
             let native = program.run(Mode::Native, n, 1, 1, false);
             validate(case, Mode::Native, n, 1, 1, &native);
@@ -592,16 +598,24 @@ fn inline_qualify(output: &Path) {
     assert_eq!(parked, 256);
     std::fs::write(output.join("qualification.csv"), rows).unwrap();
     std::fs::write(output.join("stops.csv"), events).unwrap();
-    std::fs::write(output.join("summary.json"),format!("{{\"scope\":\"inline-clock-v1-before-taken-backedge\",\"stop_cells\":96,\"native_cells\":16,\"counter_cells\":16,\"condition_controls\":{conditions},\"parked_checks\":{parked},\"deterministic_repeats\":48,\"status\":\"PASS\"}}\n")).unwrap();
+    let profile = transport.profile();
+    std::fs::write(output.join("summary.json"),format!("{{\"scope\":\"{profile}-before-taken-backedge\",\"stop_cells\":96,\"native_cells\":16,\"counter_cells\":16,\"condition_controls\":{conditions},\"parked_checks\":{parked},\"deterministic_repeats\":48,\"status\":\"PASS\"}}\n")).unwrap();
     println!(
-        "preemption:inline-qualify:96-stop-cells:16-native:16-counter:512-setcc:48-exact-repeats"
+        "preemption:{}-qualify:96-stop-cells:16-native:16-counter:512-setcc:48-exact-repeats",
+        transport.command_prefix()
     );
 }
-fn inline_benchmark(case: Case, output: &Path) {
-    let mut counted_program =
-        inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Counter);
-    let mut program =
-        inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Stop);
+fn inline_benchmark(case: Case, output: &Path, transport: inline_clock::Transport) {
+    let mut counted_program = inline_clock::InlineProgram::with_transport(
+        case,
+        liteinst2::backedge_clock::ClockMode::Counter,
+        transport,
+    );
+    let mut program = inline_clock::InlineProgram::with_transport(
+        case,
+        liteinst2::backedge_clock::ClockMode::Stop,
+        transport,
+    );
     let mut csv = String::from(
         "case,mode,phase,repetition,n,rounds,work_units,elapsed_ns,checksum,taken_edges,branch_encounters,stops\n",
     );
@@ -634,7 +648,8 @@ fn inline_benchmark(case: Case, output: &Path) {
     counted_program.retire();
     std::fs::write(output.join("measurements.csv"), csv).unwrap();
     println!(
-        "preemption:inline-benchmark:{}:27-rows:2-warmups:7-measured:equal-work",
+        "preemption:{}-benchmark:{}:27-rows:2-warmups:7-measured:equal-work",
+        transport.command_prefix(),
         case.name()
     );
 }
@@ -650,8 +665,23 @@ fn main() {
         "qualify" if args.len() == 3 => qualify(&output),
         "bench" if args.len() == 4 => benchmark(Case::parse(&args[2]), &output),
         "inline-gates" if args.len() == 3 => inline_gate::qualify(&output),
-        "inline-qualify" if args.len() == 3 => inline_qualify(&output),
-        "inline-bench" if args.len() == 4 => inline_benchmark(Case::parse(&args[2]), &output),
+        "inline-qualify" if args.len() == 3 => {
+            inline_qualify(&output, inline_clock::Transport::Channels)
+        }
+        "inline-bench" if args.len() == 4 => inline_benchmark(
+            Case::parse(&args[2]),
+            &output,
+            inline_clock::Transport::Channels,
+        ),
+        "inline-spsc-qualify" if args.len() == 3 => {
+            inline_qualify(&output, inline_clock::Transport::Spsc)
+        }
+        "inline-spsc-bench" if args.len() == 4 => inline_benchmark(
+            Case::parse(&args[2]),
+            &output,
+            inline_clock::Transport::Spsc,
+        ),
+        "inline-spsc-fault" if args.len() == 4 => inline_clock::fatal_control(&args[2], &output),
         _ => panic!("usage: liteinst-preempt qualify NEW_OUTPUT | bench CASE NEW_OUTPUT"),
     }
 }
