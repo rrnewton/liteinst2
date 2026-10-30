@@ -1388,6 +1388,1347 @@
       }
     }
   },
+  "adjacent_routed_native": {
+    "base_revision": "92b0f77cd1e7c0e12b467c8541911eee0e1bedae",
+    "core_child": {
+      "identity": "unit/liteinst2/lib",
+      "ignored": 1,
+      "outer_tests": 399,
+      "protocol_unchanged": true,
+      "unmatched_child_tests": 1
+    },
+    "current_corpus_sha256": "09b2c7592bd110c3aa800d57a439b91c0ccf2fedb5987a6826fe4460744323f3",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 1,
+      "ignored": 0,
+      "inherited_instances": 35,
+      "recorder_tests": 0,
+      "rust_new_cases": 63,
+      "rust_tests": 98,
+      "serial_tests": 0
+    },
+    "instances": {
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::"
+      },
+      "tests/support/boundary_signal.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::oracle::ordered_trace::boundary_signal::"
+      },
+      "tests/support/e9_common_planning_profile.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::oracle::elf_exec_oracle::common_image::core_pair::planning_profile::"
+      },
+      "tests/support/e9_common_recording.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::oracle::elf_exec_oracle::common_image::recording::"
+      },
+      "tests/support/e9_common_router_contract.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::oracle::elf_exec_oracle::common_image::core_pair::router_contract::"
+      },
+      "tests/support/parked_signal.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::oracle::ordered_trace::parked_signal::"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::oracle::"
+      },
+      "tests/support/word_sync.rs": {
+        "unit/liteinst2/lib": "entry_router::imp::routed_jmp_native_tests::oracle::ordered_trace::word_sync::"
+      },
+      "tools/elf-rewrite/examples/adjacent_routed_jmp_disassembly_sites.rs": {
+        "unit/adjacent_routed_jmp_disassembly_sites/adjacent_routed_jmp_disassembly_sites": "tests::"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": {
+        "unit/liteinst_rewrite/lib": "adjacent_b2_frontend::tests::routed_tests::"
+      },
+      "tools/elf-rewrite/src/carrier/gap_carrier_fixtures.rs": {
+        "unit/liteinst_rewrite/lib": "carrier::image_fixtures::gap_carrier_fixtures::"
+      }
+    },
+    "macro_tests": {
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "definition": "macro_rules! row {\n    ($name:ident, $index:expr) => {\n        #[test]\n        fn $name() {\n            isolated::run(\n                concat!(\n                    \"entry_router::imp::routed_jmp_native_tests::\",\n                    stringify!($name)\n                ),\n                \"LI2_ROUTED_JMP_NATIVE_ROW_V1\",\n                || native::run::<ProductionRoutes>($index),\n            );\n        }\n    };\n}",
+        "rows": [
+          [
+            "row_00",
+            "0"
+          ],
+          [
+            "row_01",
+            "1"
+          ],
+          [
+            "row_02",
+            "2"
+          ],
+          [
+            "row_03",
+            "3"
+          ],
+          [
+            "row_04",
+            "4"
+          ],
+          [
+            "row_05",
+            "5"
+          ],
+          [
+            "row_06",
+            "6"
+          ],
+          [
+            "row_07",
+            "7"
+          ],
+          [
+            "row_08",
+            "8"
+          ],
+          [
+            "row_09",
+            "9"
+          ],
+          [
+            "row_10",
+            "10"
+          ],
+          [
+            "row_11",
+            "11"
+          ],
+          [
+            "row_12",
+            "12"
+          ],
+          [
+            "row_13",
+            "13"
+          ],
+          [
+            "row_14",
+            "14"
+          ],
+          [
+            "row_15",
+            "15"
+          ],
+          [
+            "row_16",
+            "16"
+          ],
+          [
+            "row_17",
+            "17"
+          ],
+          [
+            "row_18",
+            "18"
+          ],
+          [
+            "row_19",
+            "19"
+          ],
+          [
+            "row_20",
+            "20"
+          ],
+          [
+            "row_21",
+            "21"
+          ],
+          [
+            "row_22",
+            "22"
+          ],
+          [
+            "row_23",
+            "23"
+          ],
+          [
+            "row_24",
+            "24"
+          ],
+          [
+            "row_25",
+            "25"
+          ],
+          [
+            "row_26",
+            "26"
+          ],
+          [
+            "row_27",
+            "27"
+          ],
+          [
+            "row_28",
+            "28"
+          ],
+          [
+            "row_29",
+            "29"
+          ],
+          [
+            "row_30",
+            "30"
+          ]
+        ],
+        "template_tests": 1
+      }
+    },
+    "methods": {
+      "src/entry_router.rs": {
+        "all": [
+          "quiescent_sigill_contract"
+        ],
+        "ignored": []
+      },
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "all": [
+          "actual_f_after_deactivation_uses_default_sigill",
+          "actual_f_without_owner_uses_default_sigill",
+          "readiness_disposition_and_duplicate_owner_refuse_before_source_publication"
+        ],
+        "ignored": []
+      },
+      "src/trampoline.rs": {
+        "all": [
+          "open_result_reports_numeric_errno_without_reading",
+          "read_error_reports_numeric_errno",
+          "read_error_retains_kind_without_display_or_debug_of_its_payload",
+          "open_result_delegates_success_to_the_bounded_reader",
+          "process_maps_reader_accepts_the_exact_cap_and_rejects_one_extra_byte",
+          "arena_seals_preserve_existing_writer_and_close_external_mutation_paths",
+          "exhausted_arena_reservation_cannot_wrap_and_reuse_storage",
+          "failed_emission_consumes_its_slot_without_overwriting_published_bytes",
+          "reachable_mapping_order_preserves_upward_heap_growth",
+          "total_length_includes_every_section",
+          "total_length_rejects_overflow",
+          "relocates_multiple_short_instructions_as_one_patch_window",
+          "short_instruction_constructor_rejects_nonheads_and_long_instructions",
+          "short_instruction_emission_maps_exact_entry_and_original_end",
+          "short_instruction_native_observe_and_replace_resume_at_original_successor",
+          "validates_exact_instruction_and_ordered_action_boundaries",
+          "callback_free_lengths_and_far_branch_maps_are_exact",
+          "native_instructions_actions_and_backedges",
+          "window_emission_separates_entry_routes_from_architectural_boundaries",
+          "window_constructor_requires_complete_physical_logical_and_end_boundaries",
+          "same_site_window_emits_identical_legacy_bytes_and_layout",
+          "staged_image_rejects_wrong_address_without_mapping",
+          "upstream_entries_execute_the_required_prefix_hook_and_suffix",
+          "dropping_staged_image_releases_its_exact_mapping",
+          "rejects_a_short_region_without_five_complete_bytes",
+          "out_of_range_return_uses_cet_notrack_indirect_jump",
+          "replace_first_omits_a_two_byte_syscall_but_relocates_its_tail",
+          "ptrace_stops_restore_saved_state_but_leave_rsp_at_owned_top",
+          "emits_checked_layouts_for_five_seven_and_ten_byte_instructions",
+          "preserves_memory_targets_for_all_operand_classes",
+          "preserves_eip_wrap_and_high_ip_external_targets",
+          "keeps_entry_branches_and_memory_at_application_address",
+          "retained_interior_branches_still_follow_their_relocated_instruction",
+          "observing_entry_targets_stay_external_for_direct_control_flow",
+          "maps_consecutive_far_entry_backedges_to_their_original_pcs",
+          "far_entry_relay_preserves_all_direct_transfer_kinds_and_fallthrough",
+          "far_external_direct_branch_uses_cet_relay",
+          "far_external_relays_cover_all_direct_forms_and_plan_modes",
+          "branch_relay_grouping_is_deterministic_for_shared_and_mixed_targets",
+          "mixed_short_jcc_and_call_get_distinct_relays_in_public_plans",
+          "near_entry_backedges_do_not_add_relay_or_change_encoding",
+          "near_external_branches_keep_iced_bytes_and_offsets_in_all_plan_modes",
+          "relay_selection_uses_relocations_not_equal_immediates_or_continuation_identity",
+          "far_branch_relays_preserve_entry_and_external_destinations",
+          "preserves_replace_first_omitted_and_retained_targets",
+          "preserves_memory_and_pc_mappings_with_far_branch_literals",
+          "refuses_unreachable_original_memory_instead_of_rebinding_it",
+          "normalization_preserves_direct_branch_operand_widths",
+          "reencodes_rip_relative_memory_for_the_trampoline_address",
+          "relocates_relative_calls_and_expands_out_of_range_branches",
+          "maps_each_consecutive_expanded_branch_to_its_original_pc",
+          "far_tail_code_and_data_have_distinct_pc_mappings",
+          "terminal_instruction_does_not_capture_low_application_targets",
+          "branch_relay_rejects_malformed_final_offset64_slots",
+          "branch_relay_layout_refuses_length_address_and_rel32_overflow",
+          "hook_fires_preserves_result_and_toggles_idempotently",
+          "arena_hook_replaces_a_short_first_instruction_and_runs_the_tail",
+          "ptrace_stopped_hook_leaves_global_pc_publication_explicit",
+          "ptrace_stopped_hook_executes_on_owned_stack",
+          "quiescent_arena_hook_patches_a_cache_line_straddler",
+          "relocates_rip_relative_load_and_returns_to_original_code",
+          "relocates_relative_call_and_resumes_after_its_return",
+          "preserves_live_flags_and_the_system_v_red_zone",
+          "preserves_xmm_argument_across_a_clobbering_callback",
+          "preserves_avx_upper_lane_across_a_clobbering_callback",
+          "concurrent_execution_survives_rapid_hook_toggling",
+          "observing_control_plans_and_images_release_unused_references",
+          "observing_control_refusals_leave_no_hidden_control_owner",
+          "observing_control_changes_leave_all_emitted_bytes_and_maps_identical",
+          "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+          "observing_control_grouped_rollback_releases_its_clones",
+          "observing_control_executable_drop_keeps_code_dependencies_alive",
+          "observing_control_arena_refusal_preserves_slots_bytes_and_static_support",
+          "observing_control_native_subsets_and_retained_dispatch_after_handle_drop"
+        ],
+        "ignored": []
+      },
+      "tests/support/boundary_signal.rs": {
+        "all": [
+          "repeated_boundaries_keep_order_and_physical_identity",
+          "rejects_missing_terminal_roundtrip",
+          "rejects_duplicate_roundtrip",
+          "rejects_wrong_logical_pc",
+          "rejects_wrong_physical_pc",
+          "rejects_uncompleted_roundtrip"
+        ],
+        "ignored": []
+      },
+      "tests/support/e9_common_planning_profile.rs": {
+        "all": [
+          "exact_caller_profile_and_whole_marker_must_agree"
+        ],
+        "ignored": []
+      },
+      "tests/support/e9_common_recording.rs": {
+        "all": [
+          "exact_trailing_profile_preserves_legacy_arguments_and_rejects_aliases",
+          "entire_journal_append_and_unselected_state_are_exact",
+          "journal_owner_header_tail_and_existing_record_mutations_refuse",
+          "clean_call_stack_words_have_independent_offsets_and_full_tail",
+          "exact_clean_template_encodes_logical_argument_call_and_return",
+          "complete_hook_symbol_extent_and_load_bytes_are_exact"
+        ],
+        "ignored": []
+      },
+      "tests/support/e9_common_router_contract.rs": {
+        "all": [
+          "exact_legacy_and_invalid_evex_markers",
+          "route_identity_and_explicit_opt_in"
+        ],
+        "ignored": []
+      },
+      "tests/support/parked_signal.rs": {
+        "all": [
+          "rejects_frame_mutation",
+          "rejects_old_source_after_publication",
+          "rejects_extra_source_write",
+          "rejects_wrong_receipt_identity",
+          "rejects_failed_publication_status"
+        ],
+        "ignored": []
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "all": [
+          "campaign_initializer_keeps_default_memory_and_flags_exact",
+          "campaign_initializer_matches_independent_memory_vectors_and_flags",
+          "rejects_fault_address_corruption",
+          "rejects_gpr_corruption",
+          "rejects_defined_flag_corruption",
+          "rejects_simd_corruption",
+          "rejects_application_memory_corruption",
+          "rejects_redzone_corruption"
+        ],
+        "ignored": []
+      },
+      "tests/support/word_sync.rs": {
+        "all": [
+          "accepts_exact_child_publication_record",
+          "rejects_wrong_child_process",
+          "rejects_wrong_transition_direction",
+          "rejects_failed_publication_status",
+          "rejects_missing_synchronization",
+          "rejects_wrong_bound_patch_identity",
+          "rejects_trailing_receipt_field"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/adjacent_b2_disassembly_sites.rs": {
+        "all": [
+          "f24_reread_every_input_and_complete_last",
+          "f24_actual_rereads_and_create_new_publication_fail_closed",
+          "f24_complete_candidate_is_published_then_withheld_on_each_final_reread_change"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/adjacent_routed_jmp_disassembly_sites.rs": {
+        "all": [
+          "rj16_reread_every_input_and_complete_last",
+          "rj16_actual_rereads_and_create_new_publication_fail_closed",
+          "rj16_complete_candidate_is_published_then_withheld_on_each_final_reread_change"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": {
+        "all": [
+          "rj01_full_independent_binding_and_strict_versions",
+          "rj02_rj03_real_primary_predecessor_and_routes",
+          "rj06_rj07_original_dispatch_exclusions_never_retry_another_family",
+          "rj08_rj09_pending_and_original_identity_are_not_discharged",
+          "rj10_rj11_independent_budgets_and_original_upper_prefix",
+          "rj04_unchanged_forward_jcc_geometry_uses_only_original_api",
+          "rj05_exact_no_fallback_all_files_and_mutants",
+          "rj12_public_resources_include_real_predecessor_pair_and_carrier",
+          "rj13_atomic_stages_use_real_pair_and_restore_every_field",
+          "rj14_fatal_serialization_has_no_product_and_carrier_failure_keeps_roster",
+          "rj15_scalars_family_tactics_and_offsets_are_exact",
+          "rj17_real_importer_full_rosters_never_reduce_selected_denominator",
+          "rj14_later_selected_failure_keeps_actual_pair_but_no_subset_candidate",
+          "rj15_one_immutable_selection_contains_both_real_families",
+          "rj07_rj08_complete_original_domain_and_head_mutants_refuse",
+          "rj14_real_loader_write_over_suffix_refuses_after_core_acceptance",
+          "rj06_original_greedy_chains_preserve_groups_and_one_family_calls"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+        "all": [
+          "f02_f03_f08_primary_full_candidate_and_literal_cap1_baseline",
+          "f04_f08_real_predecessor_retains_every_association",
+          "f06_first_upper_fit_refusal_is_retained",
+          "f07_frontend_aggregate_recovery_has_its_own_complete_envelope",
+          "f09_independent_zeros_and_exact_boundaries_do_not_retry",
+          "f07_cumulative_lower_work_uses_real_selected_predecessor",
+          "f10_public_limits_include_predecessor_and_carrier_page",
+          "f11_whole_generated_hull_and_carrier_hull_are_terminal",
+          "f17_f18_full_draft_rollback_after_actual_pair_stages",
+          "f19_later_selected_failure_discards_whole_artifact",
+          "f21_f25_member_bindings_and_remaining_authority_are_exact",
+          "f05_exact_no_fallback_comparator",
+          "f28_comparator_rejects_every_identity_and_nonidentity_mutation",
+          "f12_failed_pending_rows_and_full_intervals_remain_owned",
+          "f13_original_bytes_and_identity_are_never_current_substitutes",
+          "f14_f15_static_exclusions_keep_every_selected_row_and_old_search",
+          "f16_original_data_carrier_and_prior_allocations_stay_occupied",
+          "f22_full_new_identity_strict_markers_and_real_bounds",
+          "f23_chains_fixed_edges_and_every_baseline_attempt",
+          "f27_independent_internal_accounting_caps_are_not_public_policy_knobs",
+          "f20_actual_final_carrier_limits_and_construction_failures_do_not_dispatch",
+          "f14_prefix_fetch_cache_line_and_unverified_targets_keep_denominator",
+          "f20_real_loader_dependency_refusal_after_core_pair_success"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/gap_carrier_fixtures.rs": {
+        "all": [
+          "gap_carrier_preserves_complete_headers_pages_and_images",
+          "gap_carrier_rejects_original_file_bss_and_partial_page_overlap",
+          "gap_carrier_rejects_declared_metadata_and_new_image_aliases",
+          "gap_carrier_union_span_includes_highest_original_load",
+          "gap_carrier_resource_and_address_bounds_remain_exact",
+          "gap_carrier_is_explicit_exec_only_and_legacy_refusals_remain",
+          "gap_carrier_above_originals_is_byte_identical_to_interleaved_images",
+          "gap_carrier_zero_file_bss_empty_load_ties_and_original_high_span",
+          "gap_carrier_retains_rx_metadata_mutual_overlap_and_target_policy_guards"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/image_fixtures.rs": {
+        "all": [
+          "additive_exec_pie_and_dso_profiles_preserve_old_records_and_exact_rx_images",
+          "rela_rel_relr_and_jmprel_have_exact_widths_counts_and_zero_fill_ownership",
+          "every_supported_loader_write_width_is_exact_and_copy_is_not_guessed",
+          "relocation_in_unchanged_successor_or_padding_is_a_dependency_refusal",
+          "duplicate_or_partially_overlapping_loader_writes_refuse",
+          "unmapped_cross_boundary_and_overflowing_loader_fields_refuse",
+          "relr_bitmap_anchor_alignment_order_overflow_and_expansion_are_checked",
+          "dynamic_tag_shapes_termination_and_unknown_formats_fail_closed",
+          "dynamic_metadata_cannot_hide_in_executable_or_zero_fill_storage",
+          "dynamic_entry_and_record_limits_are_prospective",
+          "images_cannot_overlap_original_bss_other_images_or_ro_carrier",
+          "image_page_count_and_file_span_budgets_are_exact",
+          "interpreter_shape_order_and_gnu_property_remain_explicit_requirements",
+          "appended_image_pages_cannot_cover_original_declared_metadata_memory",
+          "dynamic_string_and_symbol_metadata_is_explicit_and_bounded",
+          "loader_symbol_record_cannot_hide_across_ro_rx_owner_boundary",
+          "sysv_hash_buckets_and_chains_cannot_cross_into_executable_source",
+          "gnu_hash_bloom_buckets_and_chains_cannot_cross_into_executable_source",
+          "versym_full_symbol_inventory_cannot_cross_into_executable_source",
+          "verdef_auxiliary_chain_cannot_hide_in_executable_source",
+          "verneed_auxiliary_chain_cannot_hide_in_executable_source",
+          "complete_hash_symbol_and_version_extents_retain_a_real_positive",
+          "metadata_work_is_aggregate_across_repeated_hash_bucket_walks",
+          "zero_write_relocation_cannot_hide_version_read_in_executable_source",
+          "zero_write_all_formats_preserve_bounded_symbol_references_and_valid_ownership",
+          "zero_write_symbol_indices_cannot_expand_complete_hash_or_evade_metadata_budget",
+          "mixed_relocation_reference_inventory_is_ordered_and_distinct_from_writes",
+          "interleaved_exec_low_gap_high_preserve_header_mapping_order_and_image_identity",
+          "interleaved_empty_load_ties_keep_original_first_and_phdr_interpreter_precedence",
+          "interleaved_all_original_pages_bss_crossings_and_new_load_overlaps_refuse",
+          "interleaved_metadata_and_original_header_ownership_are_not_exemptions",
+          "interleaved_union_span_and_all_allocation_budgets_have_exact_edges",
+          "interleaved_profile_is_explicit_exec_only_and_legacy_low_image_refusal_remains",
+          "interleaved_above_only_output_is_byte_identical_to_legacy_append_profile"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "src/entry_router.rs": [
+        "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod imp {",
+        "    #[cfg(test)]\n    mod routed_jmp_native_tests;"
+      ],
+      "src/entry_router/imp/routed_jmp_native_tests.rs": [
+        "#[path = \"../../../tests/support/isolated_native_test.rs\"]\nmod isolated;",
+        "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\nmod oracle;"
+      ],
+      "src/lib.rs": [
+        "mod entry_router;"
+      ],
+      "tests/support/adjacent_b2_native.rs": [
+        "#[path = \"adjacent_b2_fixture.rs\"]"
+      ],
+      "tests/support/e9_common_app.rs": [
+        "#[path = \"e9_common_app_data.rs\"]"
+      ],
+      "tests/support/e9_common_core.rs": [
+        "#[path = \"e9_common_planning_profile.rs\"]",
+        "#[path = \"e9_common_router_contract.rs\"]",
+        "#[path = \"e9_common_router_native.rs\"]",
+        "#[path = \"e9_common_router_controls.rs\"]"
+      ],
+      "tests/support/e9_common_image.rs": [
+        "#[path = \"e9_common_seed.rs\"]",
+        "#[path = \"e9_common_recording.rs\"]",
+        "#[path = \"e9_common_recording_native.rs\"]",
+        "#[path = \"e9_common_core.rs\"]",
+        "#[path = \"e9_common_e9.rs\"]",
+        "#[path = \"e9_common_core_pages.rs\"]"
+      ],
+      "tests/support/elf_exec_oracle.rs": [
+        "#[path = \"elf_exec_tactics.rs\"]",
+        "#[path = \"e9_common_app.rs\"]",
+        "#[path = \"e9_common_image.rs\"]",
+        "#[path = \"elf_exec_provider.rs\"]",
+        "#[path = \"adjacent_b2_native.rs\"]"
+      ],
+      "tests/support/elf_exec_tactics.rs": [
+        "#[path = \"elf_exec_tactics_contract.rs\"]"
+      ],
+      "tests/support/isolated_native_test.rs": [
+        "#[path = \"bounded_proc_stat.rs\"]"
+      ],
+      "tests/support/quiescent_oracle.rs": [
+        "include!(\"entry_signal.rs\");",
+        "include!(\"parked_signal.rs\");",
+        "include!(\"boundary_signal.rs\");",
+        "include!(\"word_sync.rs\");",
+        "include!(\"word_trace_method.rs\");",
+        "include!(\"routed_jmp_native.rs\");",
+        "#[path = \"process_text.rs\"]",
+        "#[path = \"elf_exec_oracle.rs\"]",
+        "#[path = \"neighbor_fixture_arena.rs\"]"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[[example]]\nname = \"adjacent_routed_jmp_disassembly_sites\"\npath = \"examples/adjacent_routed_jmp_disassembly_sites.rs\"\ntest = true\nbench = false"
+      ],
+      "tools/elf-rewrite/examples/adjacent_routed_jmp_disassembly_sites.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": [
+        "#[cfg(test)]\nmod tests;",
+        "#[path = \"adjacent_routed_jmp_frontend.rs\"]\npub(crate) mod routed_jmp;"
+      ],
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": [
+        "#[path = \"routed_jmp.rs\"]\nmod routed_tests;"
+      ],
+      "tools/elf-rewrite/src/carrier/image_fixtures.rs": [
+        "#[path = \"gap_carrier_fixtures.rs\"]\nmod gap_carrier_fixtures;"
+      ],
+      "tools/elf-rewrite/src/carrier/mod.rs": [
+        "#[cfg(test)]\n#[path = \"image_fixtures.rs\"]\nmod image_fixtures;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "mod adjacent_b2_frontend;",
+        "pub mod carrier;"
+      ]
+    },
+    "previous_corpus_sha256": "b5f5fd7a3c5922cc9a3d195edc6ab50be666f1d9c347f56d7dcf850166430a3d",
+    "projections": {
+      "evaluation/admission/parsing.py": {
+        "current_sha256": "cea3ffeee090af1f2cd4af5ebc108eee67772dfb4cc22033b7d0287536f2c1d3",
+        "edits": [
+          [
+            15642,
+            15967,
+            "                                  (\"unit/liteinst2/lib\", 330, 1), (\"test/stress\", 7, 3))\n"
+          ]
+        ],
+        "previous_sha256": "9d6d4ad54442f7c648bb2bf2253358ab2477e19ec2d92692029feaf29b678469"
+      },
+      "evaluation/offline-corpus/adjacent_whole.py": {
+        "current_sha256": "b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3",
+        "edits": [
+          [
+            101,
+            136,
+            ""
+          ],
+          [
+            632,
+            713,
+            "BUILDER_SHA = '0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592'\n"
+          ],
+          [
+            1800,
+            3143,
+            ""
+          ],
+          [
+            14711,
+            14959,
+            "def summary():\n    return dict(milestone='D01_FULL_ROSTER_PRODUCER_DIAGNOSTIC', placement_profile=PROFILE,\n                capture_profile=CAPTURE, importer_profile=IMPORTER,\n"
+          ],
+          [
+            17365,
+            17472,
+            "def check_material(program, result, material, original):\n"
+          ],
+          [
+            17510,
+            17658,
+            "    need(result['profile'] == PROFILE and result['program'] == program and\n         result['adjacent_b2'] == 'fallback-two-site-v1' and\n"
+          ],
+          [
+            18927,
+            19017,
+            "    need(rows[:8] == ['LI2DISASM-POLICY 5', 'original ' + sha(original),\n"
+          ],
+          [
+            19189,
+            19367,
+            "         'adjacent-b2 fallback-two-site-v1', 'adjacent-b2-budgets 2 1 2'],\n         'material', 'v5 literal prefix')\n"
+          ],
+          [
+            20371,
+            20458,
+            "def check_stdout(raw, stderr, code):\n"
+          ],
+          [
+            20554,
+            20655,
+            "    expected = (f'profile={IMPORTER} candidate_complete={\"true\" if code == 0 else \"false\"} '\n"
+          ],
+          [
+            21531,
+            21637,
+            "def check_inventory(raw, selected, original, material):\n"
+          ],
+          [
+            21659,
+            21757,
+            "    prefix = [['LI2DISASSEMBLY-INVENTORY', '1'], ['profile', IMPORTER], *FAMILY,\n"
+          ],
+          [
+            22931,
+            23027,
+            "def check_selection(raw, selected, original):\n"
+          ],
+          [
+            23404,
+            23498,
+            "              'adjacent-b2 fallback-two-site-v1', 'adjacent-b2-budgets 2 1 2']\n"
+          ],
+          [
+            25192,
+            25371,
+            "def check_evidence(prefix, selection, count):\n"
+          ],
+          [
+            26982,
+            29128,
+            "def check_product(reader, program, original, material, code):\n"
+          ],
+          [
+            29320,
+            29440,
+            "        keep = cap if name in TEXT or (name == 'ledger.tsv' and code == 2) else 8192 if name == 'adjacent-b2-evidence.txt' else 0\n"
+          ],
+          [
+            29655,
+            29735,
+            "    prefix = [['LI2DISASSEMBLY-DIRECTORY', '1'], ['profile', IMPORTER],\n"
+          ],
+          [
+            30553,
+            30663,
+            "        check_inventory(observed['disassembly-inventory.tsv']['data'], selected, original, material)\n"
+          ],
+          [
+            30696,
+            30796,
+            "        selection = check_selection(observed['selection.txt']['data'], selected, original)\n"
+          ],
+          [
+            31216,
+            31298,
+            "        prefix = [['LI2DISASSEMBLY-FAILURE', '1'], ['profile', IMPORTER],\n"
+          ],
+          [
+            31974,
+            32119,
+            "    expected = PRODUCT | {'COMPLETE'} | {f'site-{r[0]}.diagnostics.txt' for r in selected}\n"
+          ],
+          [
+            32902,
+            32997,
+            "    expected_profile = [['LI2PLANNING', '1'], ['profile', IMPORTER], *FAMILY,\n"
+          ],
+          [
+            33681,
+            33782,
+            "    evidence = check_evidence(observed['adjacent-b2-evidence.txt']['data'], selection, len(selected))\n"
+          ],
+          [
+            38767,
+            38862,
+            "def authenticate_capture(ctx, args, report):\n"
+          ],
+          [
+            38939,
+            39138,
+            "    builder = ctx.load('build_adjacent_whole.py', BUILDER_SHA)\n"
+          ],
+          [
+            39415,
+            39648,
+            ""
+          ],
+          [
+            42220,
+            42308,
+            ""
+          ],
+          [
+            45788,
+            45859,
+            "    need(all(name in streams for name in ('build-adjacent_b2_disassembly_sites',\n"
+          ],
+          [
+            45949,
+            46018,
+            "    binary = ctx.ROOT / 'target/release/examples/adjacent_b2_disassembly_sites'\n"
+          ],
+          [
+            46343,
+            46431,
+            "                env=env, tools=tools, stable=stable)\n"
+          ],
+          [
+            47503,
+            47609,
+            "def program_attempt(ctx, args, captured, program, row):\n"
+          ],
+          [
+            49449,
+            49743,
+            "        result = ctx.D.attempt_adjacent_b2(program, inputs, expected, upper=2, lower=1, joint=2)\n"
+          ],
+          [
+            51007,
+            51097,
+            "        selected = check_material(program, result, material, inputs['original'])\n"
+          ],
+          [
+            52859,
+            52953,
+            "            check_stdout(streams['stdout']['data'], streams['stderr']['data'], code)\n"
+          ],
+          [
+            53012,
+            53251,
+            "            row.update(check_product(reader, program, inputs['original'], material, code))\n"
+          ],
+          [
+            54491,
+            54591,
+            "def run(args, ctx):\n    report = summary()\n"
+          ],
+          [
+            55296,
+            55452,
+            "        captured = authenticate_capture(ctx, args, report)\n"
+          ],
+          [
+            55768,
+            55982,
+            "        drive_programs(report, lambda program, row: program_attempt(ctx, args, captured, program, row))\n"
+          ]
+        ],
+        "previous_sha256": "a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e"
+      },
+      "evaluation/offline-corpus/adjacent_whole_controls.py": {
+        "current_sha256": "131c48c34e34d81edadc5e06c7ecb00a26c384944b56884055f541b30fb02510",
+        "edits": [
+          [
+            434,
+            567,
+            "assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c'\n"
+          ],
+          [
+            694,
+            900,
+            "A = R.load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')\nB = R.load('build_adjacent_whole.py', '0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592')\n"
+          ],
+          [
+            32649,
+            32765,
+            "                    R.load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')\n"
+          ],
+          [
+            51735,
+            51877,
+            "        frame.ctx.load.assert_called_once_with('build_adjacent_whole.py', '0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592')\n"
+          ]
+        ],
+        "previous_sha256": "bb3fc51f74aed6f8f8280e47b5cc388406318f2334760fd0d057253790c768ef"
+      },
+      "evaluation/offline-corpus/build_adjacent_whole.py": {
+        "current_sha256": "4c0552f2f523edc56d96237c4739ad589f439d7ced0d65ef898fff2c4e34b051",
+        "edits": [
+          [
+            1050,
+            1934,
+            "def labels():\n    return dict(capture_profile=CAPTURE_PROFILE, material_profile=MATERIAL_PROFILE,\n                importer_profile=IMPORTER_PROFILE, adjacent_upper=2, adjacent_lower=1,\n"
+          ],
+          [
+            3237,
+            3342,
+            "def phase_plan(repo, raw, tools, source):\n"
+          ],
+          [
+            3358,
+            3433,
+            "    for package, kind, name in (('liteinst-rewrite', 'example', 'adjacent_b2_disassembly_sites'),\n"
+          ],
+          [
+            5125,
+            5200,
+            "def main():\n"
+          ],
+          [
+            7512,
+            7604,
+            "              [Path(__file__), Path(B.__file__), source / 'layout.ld',\n"
+          ],
+          [
+            8076,
+            8236,
+            "    phases = phase_plan(repo, raw, tools, source)\n    before = dict(**labels(), revision=revision, hardware='AMD EPYC Zen 5 dev host', env=env,\n"
+          ],
+          [
+            12910,
+            13005,
+            "        write(raw / 'closed.json', dict(**labels(), revision=revision, results=results,\n"
+          ]
+        ],
+        "previous_sha256": "0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592"
+      },
+      "evaluation/offline-corpus/reproduce_whole.py": {
+        "current_sha256": "cd01ee97b046a382fcb2881a4b642836d9c6b0d2dd60273ba27b1432536c9c2f",
+        "edits": [
+          [
+            1009,
+            1094,
+            ""
+          ],
+          [
+            11919,
+            12155,
+            "    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE, D.ADJACENT_B2_PROFILE), default=D.PROFILE,\n"
+          ],
+          [
+            13320,
+            13894,
+            "    module = load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')\n"
+          ],
+          [
+            14151,
+            14243,
+            ""
+          ]
+        ],
+        "previous_sha256": "cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c"
+      },
+      "evaluation/offline-corpus/reproduce_whole_controls.py": {
+        "current_sha256": "4ac6b175805fa6e64daaac5358f8d4978805a168c76a4788fd485539eb20d238",
+        "edits": [
+          [
+            436,
+            569,
+            "assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c'\n"
+          ],
+          [
+            39724,
+            39850,
+            "        load.assert_called_once_with('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')\n"
+          ],
+          [
+            40635,
+            43185,
+            ""
+          ]
+        ],
+        "previous_sha256": "85c01ed2db0384813156bec6fdcdeb3dbe38d3c73aa8af327fcde37112c55b18"
+      },
+      "src/entry_router.rs": {
+        "current_sha256": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280",
+        "edits": [
+          [
+            15002,
+            15053,
+            ""
+          ]
+        ],
+        "previous_sha256": "7e70ab4558af5ae1494799607053b2039faa5efc8d1d22d03c7b994d3cbd6bb5"
+      },
+      "src/lib.rs": {
+        "current_sha256": "9c6f507955722eff3fed9fa43625bcce7b60eb76a61bcd1a6b53fe9bad847cc7",
+        "edits": [
+          [
+            116,
+            162,
+            ""
+          ]
+        ],
+        "previous_sha256": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "cf4cf98e6dcfc1eddd2753922e4c68aa78233dd68ed3313a455b1747b8ea586f",
+        "edits": [
+          [
+            22216,
+            22398,
+            ""
+          ]
+        ],
+        "previous_sha256": "60bf5f36692677f03e62211a9f12542c945310cbd6c1c942d613f5c56a689f3a"
+      },
+      "tools/elf-rewrite/Cargo.toml": {
+        "current_sha256": "24861b7a7e7f9047091f7acd55c2aefb83fd12683bf99f9d8ddd6124cb08aca2",
+        "edits": [
+          [
+            1325,
+            1470,
+            ""
+          ]
+        ],
+        "previous_sha256": "21dfb7b64d3aff55451b412ed9b8210d4813ffec73e3e036ac54b3b2c454a746"
+      },
+      "tools/elf-rewrite/examples/adjacent_b2_disassembly_sites.rs": {
+        "current_sha256": "f23684e3242d6e58eab41151d503c9ef26115f0097428748a58e9b67fa1d5277",
+        "edits": [
+          [
+            0,
+            73,
+            "//! Explicit adjacent-B2 artifact profile. This executable never maps code.\n"
+          ],
+          [
+            97,
+            306,
+            "use formats::ContentId;\nuse liteinst_rewrite::{disassembly, prepare_disassembly_adjacent_b2, selection};\n"
+          ],
+          [
+            338,
+            338,
+            "use std::io::{Read as _, Write as _};\nuse std::os::unix::fs::{DirBuilderExt as _, OpenOptionsExt as _};\n"
+          ],
+          [
+            359,
+            447,
+            "\nconst PROFILE: &str = disassembly::adjacent_b2::PROFILE;\nfn digest(bytes: &[u8]) -> String {\n    ContentId::of(bytes)\n        .0\n        .iter()\n        .map(|b| format!(\"{b:02x}\"))\n        .collect()\n}\nfn read(path: &Path, limit: usize) -> Result<Vec<u8>, String> {\n    let mut bytes = Vec::new();\n    std::fs::File::open(path)\n        .map_err(|e| e.to_string())?\n        .take(limit as u64 + 1)\n        .read_to_end(&mut bytes)\n        .map_err(|e| e.to_string())?;\n    if bytes.len() > limit {\n        return Err(\"input size bound\".into());\n    }\n    Ok(bytes)\n}\nfn write(path: &Path, bytes: &[u8]) -> Result<(), String> {\n    let mut file = std::fs::OpenOptions::new()\n        .write(true)\n        .create_new(true)\n        .mode(0o600)\n        .open(path)\n        .map_err(|e| e.to_string())?;\n    file.write_all(bytes)\n        .and_then(|()| file.sync_all())\n        .map_err(|e| e.to_string())\n}\nfn snapshots_match(before: &[Vec<u8>; 3], after: &[Vec<u8>; 3]) -> Result<(), String> {\n    if before != after {\n        Err(\"inputs changed during preparation\".into())\n    } else {\n        Ok(())\n    }\n}\n"
+          ],
+          [
+            558,
+            615,
+            "    mut put: impl FnMut(&Path, &[u8]) -> Result<(), String>,\n"
+          ],
+          [
+            641,
+            803,
+            "    let mut index = format!(\n        \"LI2DISASSEMBLY-DIRECTORY\\t1\\nprofile\\t{PROFILE}\\nobserved_original_sha256\\t{}\\ncandidate_complete\\t{complete}\\nqualification_complete\\tfalse\\n\",\n        digest(original)\n    );\n    for (name, bytes) in files {\n        put(&output.join(name), bytes)?;\n        index.push_str(&format!(\n            \"file\\t{name}\\t{}\\t{}\\n\",\n            bytes.len(),\n            digest(bytes)\n        ));\n    }\n    put(&output.join(\"COMPLETE\"), index.as_bytes())\n"
+          ],
+          [
+            926,
+            989,
+            "    mut read: impl FnMut(&Path, usize) -> Result<Vec<u8>, String>,\n"
+          ],
+          [
+            1017,
+            1102,
+            "    // The executable itself fixes PROFILE before parsing or reading any input.\n    if args.len() != 7 {\n        return Err(format!(\n            \"{PROFILE}: adjacent_b2_disassembly_sites ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY\"\n        ));\n    }\n    let expected_ledger = selection::id(&args[3]).map_err(|e| e.to_string())?;\n    let expected_policy = selection::id(&args[5]).map_err(|e| e.to_string())?;\n    let paths = [\n        Path::new(&args[1]),\n        Path::new(&args[2]),\n        Path::new(&args[4]),\n    ];\n    let limits = [\n        disassembly::INPUT_LIMIT,\n        disassembly::TEXT_LIMIT,\n        disassembly::TEXT_LIMIT,\n    ];\n    let initial = [\n        read(paths[0], limits[0])?,\n        read(paths[1], limits[1])?,\n        read(paths[2], limits[2])?,\n    ];\n    let [original, ledger, policy] = &initial;\n    let mut files = BTreeMap::from([\n        (\"disassembly.txt\".into(), ledger.clone()),\n        (\"disassembly-policy.txt\".into(), policy.clone()),\n    ]);\n    let prepared = (|| {\n        let imported = disassembly::import(original, ledger, expected_ledger)?;\n        files.insert(\n            \"disassembly-inventory.tsv\".into(),\n            imported.inventory_adjacent_b2(),\n        );\n        let selected = imported.bind_adjacent_b2(policy, expected_policy)?;\n        files.insert(\"selection.txt\".into(), selected.manifest().to_vec());\n        prepare_disassembly_adjacent_b2(original, &selected)\n    })();\n    let final_read = [\n        read(paths[0], limits[0])?,\n        read(paths[1], limits[1])?,\n        read(paths[2], limits[2])?,\n    ];\n    snapshots_match(&initial, &final_read)?;\n    let complete = match prepared {\n        Ok(product) => {\n            files.extend(product.files().clone());\n            product.candidate_complete()\n        }\n        Err(error) => {\n            let detail: String = error\n                .to_string()\n                .bytes()\n                .map(|b| format!(\"{b:02x}\"))\n                .collect();\n            files.insert(\"program-failure.tsv\".into(), format!(\n                \"LI2DISASSEMBLY-FAILURE\\t1\\nprofile\\t{PROFILE}\\nobserved_original_sha256\\t{}\\nexpected_ledger_sha256\\t{}\\nexpected_policy_sha256\\t{}\\nqualification_complete\\tfalse\\ndetail_hex\\t{detail}\\n\",\n                digest(original), args[3], args[5]).into_bytes());\n            false\n        }\n    };\n    let output = Path::new(&args[6]);\n    std::fs::DirBuilder::new()\n        .mode(0o700)\n        .create(output)\n        .map_err(|e| e.to_string())?;\n    publish(output, &files, original, complete, write)?;\n    std::fs::File::open(output)\n        .and_then(|f| f.sync_all())\n        .map_err(|e| e.to_string())?;\n    println!(\"profile={PROFILE} candidate_complete={complete} qualification_complete=false\");\n    Ok(complete)\n"
+          ]
+        ],
+        "previous_sha256": "058767bfc39e36b63927b14e8da90f3e4e1d63479058ea122e899548f53eac6a"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": {
+        "current_sha256": "f328aba37b8e386c7dc73cda2dc3130b57c933d97ff19a4d10d8f8351b4ca0d5",
+        "edits": [
+          [
+            444,
+            943,
+            ""
+          ],
+          [
+            8474,
+            8509,
+            ""
+          ],
+          [
+            12576,
+            13781,
+            ""
+          ],
+          [
+            15411,
+            15600,
+            ""
+          ],
+          [
+            15894,
+            15909,
+            "    Ok(plan_adjacent_b2_with_emission_after(\n"
+          ],
+          [
+            15962,
+            15962,
+            "        &draft.composition,\n"
+          ],
+          [
+            15980,
+            16003,
+            "        budget,\n"
+          ],
+          [
+            16249,
+            16817,
+            ""
+          ],
+          [
+            17013,
+            17478,
+            ""
+          ],
+          [
+            17693,
+            17789,
+            "    if pair.logical_pcs() != [s.sites[upper].pc, s.sites[lower].pc]\n        || pair.qualification_complete()\n        || !pair.evidence().accepted\n    {\n"
+          ],
+          [
+            18058,
+            18155,
+            "    for (ordinal, (index, member)) in [upper, lower].into_iter().zip(pair.members()).enumerate() {\n"
+          ],
+          [
+            18364,
+            18938,
+            ""
+          ],
+          [
+            22372,
+            22443,
+            "        next.reports[index].core_tactic = Some(Tactic::GeneralizedPun);\n"
+          ],
+          [
+            23017,
+            23200,
+            ""
+          ],
+          [
+            23961,
+            24566,
+            ""
+          ],
+          [
+            24646,
+            25005,
+            ""
+          ],
+          [
+            25253,
+            25302,
+            "                exclusion: exclusion(elf, a, b),\n"
+          ],
+          [
+            25356,
+            25673,
+            ""
+          ],
+          [
+            25881,
+            26081,
+            "            .filter(|&i| exclusion(elf, &s.sites[i], &s.sites[upper]).is_none());\n        groups.push((upper, lower));\n"
+          ],
+          [
+            26138,
+            26179,
+            "    for (upper, lower) in groups {\n"
+          ],
+          [
+            27592,
+            28064,
+            ""
+          ],
+          [
+            28734,
+            28802,
+            "        let attempt = before.work.len();\n"
+          ],
+          [
+            28839,
+            29736,
+            "            Ok(pair) => Some(stage_pair(\n                elf,\n                dynamic,\n                s,\n                &before,\n                PairAssociation {\n                    lower,\n                    upper,\n                    attempt,\n                },\n                pair,\n                |_, _| Ok(()),\n            )),\n"
+          ],
+          [
+            30469,
+            30762,
+            ""
+          ]
+        ],
+        "previous_sha256": "b4ead44d5df52824a30689499fb648ece9f53914e32ee7f49b47eab93921669e"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+        "current_sha256": "59ec3d07190419104372f76ffc5e32f507aae1e7e30a688f058df802d086282e",
+        "edits": [
+          [
+            11045,
+            11089,
+            ""
+          ],
+          [
+            85230,
+            85275,
+            ""
+          ]
+        ],
+        "previous_sha256": "41706c3642245e1ca5c9cf61c2aa9e550a2892fe5f1e8e2b969c4902eccbcd27"
+      },
+      "tools/elf-rewrite/src/carrier/image_fixtures.rs": {
+        "current_sha256": "357886c161da1742937f054817d140b2161e9a3b103e43a0186ed92dee417be9",
+        "edits": [
+          [
+            156,
+            219,
+            ""
+          ]
+        ],
+        "previous_sha256": "dc4d4a95c5729a873b644fe89d873765d9dfefaaf3bd79c6739c0a6fb807cd3b"
+      },
+      "tools/elf-rewrite/src/carrier/mod.rs": {
+        "current_sha256": "a0d67be32f9efd847d5a5c419519335fea9aabcf0aa1d6e4e51d44f16d6d3c72",
+        "edits": [
+          [
+            6408,
+            6560,
+            "    /// Requested carrier placement is unaligned, not after all original loads, or overlapping.\n"
+          ],
+          [
+            9369,
+            9396,
+            "        false,\n"
+          ],
+          [
+            10119,
+            10195,
+            "    append_internal(input, request, edits, policy, true, false)\n"
+          ],
+          [
+            10986,
+            12030,
+            "    append_internal(input, request, edits, policy, true, true)\n"
+          ],
+          [
+            12186,
+            12212,
+            "    interleaved: bool,\n"
+          ],
+          [
+            12248,
+            12302,
+            ""
+          ],
+          [
+            14363,
+            14592,
+            "        || carrier_vaddr.0 < last_page_end\n        || input\n            .segments(SegmentType::Load)\n            .any(|item| item.vaddr > carrier_vaddr)\n"
+          ],
+          [
+            20549,
+            20952,
+            ""
+          ],
+          [
+            24739,
+            24957,
+            ""
+          ],
+          [
+            24993,
+            25024,
+            "        added.last().ok_or(Error::OutputInvariant)?.page_end - span_start,\n"
+          ]
+        ],
+        "previous_sha256": "835bc65d5a5537b2e51adf893525f81f992c82e55ef853f43740685a0eeadbac"
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "current_sha256": "e86f13e9f33bd9e55c8c1f167a7666bbdfe4fc4bc45c507dbe4cc0b81644e4bc",
+        "edits": [
+          [
+            24080,
+            24205,
+            ""
+          ]
+        ],
+        "previous_sha256": "cb9ae2be082195d97713457e272c230df5c863effcc13841a43d501fc6958fab"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "97229aadc44e76e99ce2025b0929597d87cceebfae7dc2e881bcd71586ddb026",
+        "edits": [
+          [
+            316,
+            399,
+            ""
+          ],
+          [
+            4991,
+            5555,
+            ""
+          ],
+          [
+            10097,
+            10133,
+            ""
+          ],
+          [
+            10177,
+            10876,
+            "        adjacent_b2_frontend::plan(&elf, &dynamic, s, identity, limits, &ordered, &mut draft)?;\n"
+          ],
+          [
+            11410,
+            11743,
+            "        Some(adjacent_b2_frontend::evidence(s, &draft)?)\n"
+          ],
+          [
+            12589,
+            12608,
+            ""
+          ],
+          [
+            14492,
+            14747,
+            "            carrier::append_exec_carrier_with_interleaved_images\n"
+          ],
+          [
+            18552,
+            18835,
+            "        files.insert(\"adjacent-b2-evidence.txt\".into(), bytes);\n"
+          ]
+        ],
+        "previous_sha256": "4908769da8e76fe2cc6553d1ca08b6fd456eeae1c08e65f28ba45120feb58f3f"
+      }
+    },
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/admission/parsing.py": "cea3ffeee090af1f2cd4af5ebc108eee67772dfb4cc22033b7d0287536f2c1d3",
+      "evaluation/offline-corpus/adjacent_routed_jmp_material.py": "05e86b0652d7989a0f8abd825d5001d2e6fc5bcf4440504651633034b32834db",
+      "evaluation/offline-corpus/adjacent_routed_jmp_material_controls.py": "c513ed95f33aefc9c78a56065eae9ddd4349e2c4fcc31d1b8266c6ab3bb6f330",
+      "evaluation/offline-corpus/adjacent_routed_jmp_whole.py": "e89c8adadc413111a7ca2a2dc7aac753826f2659616e83e38ded9c3c3f079206",
+      "evaluation/offline-corpus/adjacent_routed_jmp_whole_controls.py": "dc6fb691b0c8be4c018ac45e365a1c359eb5329a41225344a9ec30337bd8b44b",
+      "evaluation/offline-corpus/adjacent_whole.py": "b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3",
+      "evaluation/offline-corpus/adjacent_whole_controls.py": "131c48c34e34d81edadc5e06c7ecb00a26c384944b56884055f541b30fb02510",
+      "evaluation/offline-corpus/build_adjacent_routed_jmp_whole.py": "00c5c95474dc9ee57bc8e0b534a0e8a4bdbdb289e2ef30a83652147fb05feb9f",
+      "evaluation/offline-corpus/build_adjacent_whole.py": "4c0552f2f523edc56d96237c4739ad589f439d7ced0d65ef898fff2c4e34b051",
+      "evaluation/offline-corpus/reproduce_whole.py": "cd01ee97b046a382fcb2881a4b642836d9c6b0d2dd60273ba27b1432536c9c2f",
+      "evaluation/offline-corpus/reproduce_whole_controls.py": "4ac6b175805fa6e64daaac5358f8d4978805a168c76a4788fd485539eb20d238",
+      "src/entry_router.rs": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280",
+      "src/entry_router/imp/routed_jmp_native_tests.rs": "a1a0c6aa6c666012451fcb9169255bcdd4c6701dc498bf0da1326761fc767fe0",
+      "src/lib.rs": "9c6f507955722eff3fed9fa43625bcce7b60eb76a61bcd1a6b53fe9bad847cc7",
+      "src/trampoline.rs": "a375982a56a6b54e94b6392377f82a675d4b1082ffdfc043d865ba037d656996",
+      "tests/support/adjacent_b2_fixture.rs": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0",
+      "tests/support/adjacent_b2_native.rs": "2ea1625733ccf5a1f9b87db1ac480bc00421eca7b54a63f9b6dc19ceec7e1771",
+      "tests/support/boundary_signal.rs": "949ccf6ee19949cdc1f16305dfb6d161f313df5536ec509968572afc21727a60",
+      "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
+      "tests/support/e9_common_app.rs": "faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae",
+      "tests/support/e9_common_app_data.rs": "92bca80e47c0d20825a4ec278f0de47a178dd1f11b0062bf01b2bbfa12659bf4",
+      "tests/support/e9_common_core.rs": "0feda92bd5c0d5f0ae5cfb151fe39899f1afc3996ba9511fed99ed8526be3c32",
+      "tests/support/e9_common_core_pages.rs": "a23d6e230831f5ff54d19b95394ac21c5c0a5cd4dd083a62ad1416f3c44c620e",
+      "tests/support/e9_common_e9.rs": "92712fecdfbb2a0f7d77cd86b4ae2b5f451e17eea2c87ac096ad64ed0673eae5",
+      "tests/support/e9_common_image.rs": "f112e774d705838c74fe51d7636140c8c4805830f1fb3a78c5007846f8c8e66e",
+      "tests/support/e9_common_planning_profile.rs": "873bfbd50f2878e37bbef91193db4726faed18af5dacf395b1726882e637dcf5",
+      "tests/support/e9_common_recording.rs": "d0419f184093a5c1ef658028c7a8a2869dea8c849a5da44cd1f191c3b5085bc7",
+      "tests/support/e9_common_recording_native.rs": "a3e8d4e326bada12b9c77c4770cfab6d44dbb59a6eb82d4a5517542602d8d129",
+      "tests/support/e9_common_router_contract.rs": "117e56b69a8f6020e8a9eadcf0802dbf5ab0fd2a84893be4dbbf3a7d8a582cfb",
+      "tests/support/e9_common_router_controls.rs": "4104cce63784b34d4a572799da60f80d824a75aaf50394138596a59185ce1d1d",
+      "tests/support/e9_common_router_native.rs": "4e793a2f48588060fb827807a882461e7f23a3dcd81d86d568facec08c5108d8",
+      "tests/support/e9_common_seed.rs": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3",
+      "tests/support/elf_exec_oracle.rs": "b595b7d5cd19e72c4754a60f5fe3b4a359772334f9dda6f9526882fbe4358f04",
+      "tests/support/elf_exec_provider.rs": "9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730",
+      "tests/support/elf_exec_tactics.rs": "c0910c4d918a5b34e6af1933fe9490b973e767a9ebc5a890cb62484b3a2a5c61",
+      "tests/support/elf_exec_tactics_contract.rs": "caca8169432f466dc00967304eacd187c7bc2915b5f73add9f6edce491af768e",
+      "tests/support/entry_signal.rs": "44d22039625dcc98dbef1877c3c904c939708e0d0be90e91ae106a80ffdb41b9",
+      "tests/support/isolated_native_test.rs": "66ccab461fa755676a55fe6398bd9a1e3afa2dd7ed3208611350c371263406a6",
+      "tests/support/neighbor_fixture_arena.rs": "a4d18c3bbfbe0d17f48362a4172771d7c2f2cfcf2d6d0dc7f7480949bacda19a",
+      "tests/support/parked_signal.rs": "9554d55be8397a500005f3a5f4f3e73c5bf647900b0d013646fcc7f8b8b2e355",
+      "tests/support/process_text.rs": "ab415bb64e48a78700ac3fe6648eedf76644a533c2de3380f592e6ce260644f1",
+      "tests/support/quiescent_oracle.rs": "cf4cf98e6dcfc1eddd2753922e4c68aa78233dd68ed3313a455b1747b8ea586f",
+      "tests/support/routed_jmp_artifact.rs": "f9f37eeb884a3004328478129790a6b98305e5af70c31e2ce267346c7e123735",
+      "tests/support/routed_jmp_fixture.rs": "9edb02b399e0d7c330c53eedefbad3d5c0b82876ac758f693f758ccdd5d77241",
+      "tests/support/routed_jmp_native.rs": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b",
+      "tests/support/word_sync.rs": "8d7a590a68378251dfce241481f9549e38332f54e28201e41c7b011284448786",
+      "tests/support/word_trace_method.rs": "04d38273f303f5d9211ac42751e96f04cd7a5db7ce9f3ba1bce4416bf66106b0",
+      "tools/elf-rewrite/Cargo.toml": "24861b7a7e7f9047091f7acd55c2aefb83fd12683bf99f9d8ddd6124cb08aca2",
+      "tools/elf-rewrite/examples/adjacent_b2_disassembly_sites.rs": "f23684e3242d6e58eab41151d503c9ef26115f0097428748a58e9b67fa1d5277",
+      "tools/elf-rewrite/examples/adjacent_routed_jmp_disassembly_sites.rs": "6a267a7411fa3aa72b944744a89fe0c734e16e68dfd39dbf253b791e246533b3",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/combined.hex": "e139f91c691b77b6afdd4b2c992e401953794cdb9d9437008df6d1a26af3a5a5",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/combined.ledger": "9995fbec7f11b773e93f538baf05e4ddbd46ff66407049cb3baed6f6d25ea6d3",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/combined.policy": "d0c5d59f39b5daba2e2f31ad1bb1d2dc05f02983071ed2a5b0e60ccd5fcbb44e",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/predecessor.hex": "f2fc3956fabcd1bf6eb052b07b4ee7a350e275c3d46118e1ecdca406e266b699",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/predecessor.ledger": "a182cf137c565184921b61c1ab9d4ea8c1fb4f01963e088e5db224b1c6ef1f91",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/predecessor.policy": "465a842f6bffaef517560411268874746502174ce4f9c8b803965f3fe3e7140f",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/primary.hex": "c7854292cd5d7fc490db614fc6f8673ccaeacad2fb93d264af51e8a64496e654",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/primary.ledger": "62b7bc103c2c4f9a28fce5e3760a686c73954dd2c0f8934b92648f0e3d66cc60",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp/primary.policy": "7bf21c4d913aa07605031d9c747496189e15ade41a566e072da5e05d45d70bbe",
+      "tools/elf-rewrite/examples/fixtures/adjacent_routed_jmp_publication.rs": "dd372f88836bf6fb9710d4a4c950df5d6998a696b1cf491b1e8b014170df2229",
+      "tools/elf-rewrite/examples/support/adjacent_publication.rs": "1585a4e02863301b67ae7d376a0c8ebbc0a8610a39f3599a961b04b89ef8917b",
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": "f328aba37b8e386c7dc73cda2dc3130b57c933d97ff19a4d10d8f8351b4ca0d5",
+      "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": "8d1accf2078eefd77160f9d0d95b10554aeb1c4a4822e917e61d20a4061400cc",
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": "59ec3d07190419104372f76ffc5e32f507aae1e7e30a688f058df802d086282e",
+      "tools/elf-rewrite/src/adjacent_routed_jmp_frontend.rs": "81b84acf377425ee8b5e125894d8994558527ae2b6bde159e5bb1b86ef951ab0",
+      "tools/elf-rewrite/src/carrier/gap_carrier_fixtures.rs": "d86cd01e226753cac1f1a2ea8ec0fb67719a772a8d6f21b70b473040b9a66f85",
+      "tools/elf-rewrite/src/carrier/image_fixtures.rs": "357886c161da1742937f054817d140b2161e9a3b103e43a0186ed92dee417be9",
+      "tools/elf-rewrite/src/carrier/mod.rs": "a0d67be32f9efd847d5a5c419519335fea9aabcf0aa1d6e4e51d44f16d6d3c72",
+      "tools/elf-rewrite/src/disassembly.rs": "e86f13e9f33bd9e55c8c1f167a7666bbdfe4fc4bc45c507dbe4cc0b81644e4bc",
+      "tools/elf-rewrite/src/disassembly/adjacent_routed_jmp.rs": "381d24b900920e4d859bfa90d22e5bb9db70d90b21c1065147875030eb154df0",
+      "tools/elf-rewrite/src/lib.rs": "97229aadc44e76e99ce2025b0929597d87cceebfae7dc2e881bcd71586ddb026"
+    },
+    "upstream_revision": "ac8b2abf3499ad80def4e650c9b14834000b65ab",
+    "workspace_changes": {
+      "unit/adjacent_routed_jmp_disassembly_sites/adjacent_routed_jmp_disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 3
+        },
+        "previous": null
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 399
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 330
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 159
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 133
+        }
+      }
+    }
+  },
   "current_corpus_sha256": "884864b391332b735ebe3a3c72a935132ed95910cdc16d1793c4befdc01edc31",
   "doctests": {
     "src/backedge_clock.rs": [

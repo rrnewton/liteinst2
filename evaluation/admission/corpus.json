@@ -6457,6 +6457,10 @@
         "ignored": 0,
         "tests": 3
       },
+      "unit/adjacent_routed_jmp_disassembly_sites/adjacent_routed_jmp_disassembly_sites": {
+        "ignored": 0,
+        "tests": 3
+      },
       "unit/common_sites/common_sites": {
         "ignored": 0,
         "tests": 24
@@ -6467,7 +6471,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 330
+        "tests": 399
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6495,7 +6499,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 133
+        "tests": 159
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
