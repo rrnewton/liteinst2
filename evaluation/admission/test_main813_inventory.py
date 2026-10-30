@@ -1035,6 +1035,36 @@ class Main813InventoryTests(unittest.TestCase):
                 self.assertEqual(group, [x for x in recorder_ids if x in group])
         self.assertEqual((recorder_parallel.WALL, recorder_parallel.LIMIT), (180, 8 * 1024 * 1024))
 
+        # Discovery, rather than the generic partition helper, owns the complete
+        # runtime population. Renaming one shard keeps count and declared/runtime
+        # identity equality exact, isolating the required-shard membership gate.
+        class RecorderCase:
+            def __init__(self, identity):
+                self.identity = identity
+            def id(self):
+                return self.identity
+        recorder_cases = [RecorderCase(name) for name in recorder_ids]
+        with patch.object(recorder_parallel.unittest.defaultTestLoader, 'discover', return_value=None), \
+             patch.object(recorder_parallel.unittest.defaultTestLoader, 'errors', []), \
+             patch.object(recorder_parallel, 'flatten', return_value=recorder_cases), \
+             patch.object(main5c, 'python_identities', return_value=recorder_ids):
+            self.assertEqual(recorder_parallel.discover(), (recorder_cases, recorder_ids))
+        for recorder_missing in shards.ADDED:
+            recorder_changed_ids = [name + '_renamed' if name == recorder_missing else name
+                                    for name in recorder_ids]
+            recorder_cases = [RecorderCase(name) for name in recorder_changed_ids]
+            with patch.object(recorder_parallel.unittest.defaultTestLoader, 'discover', return_value=None), \
+                 patch.object(recorder_parallel.unittest.defaultTestLoader, 'errors', []), \
+                 patch.object(recorder_parallel, 'flatten', return_value=recorder_cases), \
+                 patch.object(main5c, 'python_identities', return_value=recorder_changed_ids):
+                with self.assertRaisesRegex(ValueError, '^missing_historical_shard$'):
+                    recorder_parallel.discover()
+        for recorder_code in ('main091_inventory_differs', 'main091_source_inventory_differs',
+                              'main091_inverse_control'):
+            recorder_error = parsing.InvalidEvidence(recorder_code)
+            self.assertIs(type(recorder_error), parsing.InvalidEvidence)
+            self.assertEqual((recorder_error.code, str(recorder_error)), (recorder_code, recorder_code))
+
     def test_historical_sources_core813_through_83b(self):
         plain = main813.inventory_copy
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
@@ -4127,7 +4157,7 @@ class Main813InventoryTests(unittest.TestCase):
             changed=plain.deepcopy(offline_actual)
             changed['harness_test_counts']['workspace_tests'][name]['tests']=good-1
             with patch.object(main813,'LATEST',main813.digest(changed)):
-                with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_inventory_differs$'):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_inventory_differs$'):
                     main813.before_091(changed)
         for identity in ('unit/offline_router_sites/offline_router_sites','unit/liteinst_bootstrap/lib'):
             changed=plain.deepcopy(offline_actual)
@@ -4142,37 +4172,37 @@ class Main813InventoryTests(unittest.TestCase):
                         return replacement
                     return adjacent_read(candidate)
                 with patch.object(Path,'read_bytes',offline_changed):
-                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
                         main813.require_091_sources()
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
                         inventory.require_historical350(offline_actual)
         for path,row in offline['projections'].items():
             raw=adjacent_read(main813.ROOT/path)
-            restored=main813.source_before_091(path,raw,'091_inverse_control')
+            restored=main813.source_before_091(path,raw,'main091_inverse_control')
             self.assertEqual(hashlib.sha256(restored).hexdigest(),row['previous_sha256'])
             for bad in (raw+b'\n',raw[:-1],restored,bytearray(raw),raw.decode()):
-                with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_inverse_control$'):
-                    main813.source_before_091(path,bad,'091_inverse_control')
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_inverse_control$'):
+                    main813.source_before_091(path,bad,'main091_inverse_control')
             for changed in (dict(row,current_sha256='0'*64),dict(row,previous_sha256='0'*64),
                             dict(row,edits=[]),dict(row,edits=[[1,0,'']]),dict(row,edits=[[0,len(raw)+1,'']])):
                 with patch.dict(offline['projections'],{path:changed}):
-                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_inverse_control$'):
-                        main813.source_before_091(path,raw,'091_inverse_control')
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_inverse_control$'):
+                        main813.source_before_091(path,raw,'main091_inverse_control')
         for path,count in (('crates/liteinst-artifact/src/fixtures.rs',18),
                            ('crates/liteinst-artifact/src/startup/tests.rs',8)):
             row=offline['methods'][path]
             self.assertEqual((len(row['all']),row['ignored']),(count,[]))
             for changed in (dict(row,all=row['all'][:-1]),dict(row,ignored=['unregistered'])):
                 with patch.dict(offline['methods'],{path:changed}):
-                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
                         main813.require_091_sources()
         with patch.dict(offline['module_chains'],{'crates/liteinst-artifact/src/lib.rs':['pub mod missing_elf64;']}):
-            with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
                 main813.require_091_sources()
         for previous,row in offline['relocations'].items():
             self.assertEqual(hashlib.sha256(adjacent_read(main813.ROOT/row['current_path'])).hexdigest(),row['sha256'])
             with patch.dict(offline['relocations'],{previous:dict(row,sha256='0'*64)}):
-                with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
                     main813.require_091_sources()
             if row['old_path_absent']:
                 target=main813.ROOT/previous
@@ -4181,7 +4211,7 @@ class Main813InventoryTests(unittest.TestCase):
                 for method in ('exists','is_symlink'):
                     original=exists if method=='exists'else symlink
                     with patch.object(Path,method,lambda candidate:True if candidate==target else original(candidate)):
-                        with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):
+                        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
                             main813.require_091_sources()
 
     def test_exact_precontext_header_scope_and_old_bytes(self):

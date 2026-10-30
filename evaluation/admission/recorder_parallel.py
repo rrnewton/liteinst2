@@ -51,6 +51,8 @@ def discover():
     require(type(count) is int and count == 354 and len(identities) == count
             and len(set(identities)) == count and sorted(identities) == sorted(declared),
             'changed_recorder_identity_population')
+    from recorder_shards_inventory import ADDED
+    require(all(name in identities for name in ADDED), 'missing_historical_shard')
     return cases, identities
 
 
@@ -59,7 +61,24 @@ def partition(identities, workers):
     require(type(identities) is list and identities and all(type(x) is str for x in identities)
             and len(set(identities)) == len(identities), 'invalid_identity_population')
     from recorder_shards_inventory import ADDED
-    require(all(name in identities for name in ADDED), 'missing_historical_shard')
+    # The pure helper also accepts synthetic/non-shard populations.
+    # Actual workers authenticate all354 and allfour in discover().
+    if not all(name in identities for name in ADDED):
+        modules = list(dict.fromkeys(name.split('.', 1)[0] for name in identities))
+        groups = [[] for _ in range(workers)]
+        heavy = 'test_main813_inventory'
+        if workers > 1 and heavy in modules and len(modules) >= workers:
+            # Keep the complete inventory module isolated; no test is split or omitted.
+            others = [module for module in modules if module != heavy]
+            for name in identities:
+                module = name.split('.', 1)[0]
+                index = 0 if module == heavy else 1 + others.index(module) % (workers - 1)
+                groups[index].append(name)
+        else:
+            for name in identities:
+                groups[modules.index(name.split('.', 1)[0]) % workers].append(name)
+        require(all(groups) and sum(map(len, groups)) == len(identities), 'empty_worker_partition')
+        return groups
     # Four complete historical cases run on different workers when four CPUs
     # are supplied. All remaining modules retain stable module grouping; the
     # five other main813 cases are ordinary cases, without cross-case state.

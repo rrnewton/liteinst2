@@ -6,7 +6,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'f6660d518fb3ba304ef597bd8af0866f1b75da8cca7fc63545cf533594a1fe53', 'recorder_shards_data_differs')
+require(hashlib.sha256(RAW).hexdigest() == '55e4cdcc53533e6cc2f335b91acbaead6daa6356b787786e50532c9fbda5b453', 'recorder_shards_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']

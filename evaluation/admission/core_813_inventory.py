@@ -154,7 +154,7 @@ def source_before_091(path, data, error):
     return data
 
 
-def require_091_sources(error='091_source_inventory_differs'):
+def require_091_sources(error='main091_source_inventory_differs'):
     for path, expected in MAIN091['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
@@ -178,7 +178,7 @@ def require_091_sources(error='091_source_inventory_differs'):
 
 
 
-def before_091(declared, error='091_inventory_differs', source_error='091_source_inventory_differs'):
+def before_091(declared, error='main091_inventory_differs', source_error='main091_source_inventory_differs'):
     precheck_null_corpus(declared, error)
     declared = recorder_shards.peel_current(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == LATEST, error)
