@@ -340,8 +340,11 @@ class Check(donor.Check):
             for key in ('before','flags','final_fetch'):
                 f=r.types['sr_record']['fields'][key];expected[f['offset']:f['offset']+f['bytes']]=self.f(current,'sr_record',key)
             need(current==expected and h[30]==2,'exact pre-source refusal owner prefix')
-            ft='li2_fetch_progress';f=self.f(current,'sr_record','final_fetch');self.eq(f,ft,held=1,complete=1,first_error=0,first_detail=0,identity_observed=1,pages_copied=1,bytes_copied=15,last_backing_page=0,last_backing_observed=1)
-            need(self.i(f,ft,'sequence')>0 and self.i(f,ft,'validation_calls')>0,'real pre-source held fetch after old routes');self.maps(self.f(f,ft,'preparation'));self.maps(self.f(f,ft,'validation'))
+            # The fixed non-hash head passes prepare15 but control6 fails sr_nx
+            # before region_source. No later fetch_validate has run.
+            ft='li2_fetch_progress';f=self.f(current,'sr_record','final_fetch');self.eq(f,ft,held=1,complete=1,first_error=0,first_detail=0,identity_observed=1,pages_copied=1,bytes_copied=15,last_backing_page=0,last_backing_observed=0,validation_calls=0)
+            need(self.i(f,ft,'sequence')>0,'real complete pre-source held fetch');self.maps(self.f(f,ft,'preparation'))
+            zero(self.f(f,ft,'validation'),'pre-source refusal has no fetch validation observation')
         elif failed:need(h[30]==0 and self.i(rows[0],'sro_entry','terminal')==1,'actual failed focal terminal prefix')
         elif self.i(current,'sr_record','completed'):
             self.record(current,slots);need(current==last,'whole current completed owner equals retained last')
@@ -559,7 +562,7 @@ def terminal(parsed,scalar,unrolled,owner,reuse):
 
 
 BASE_COUNTS={(0, 0): 86, (1, 0): 86, (2, 0): 86, (3, 0): 86, (4, 0): 86, (5, 0): 88, (6, 0): 88, (7, 0): 88, (8, 0): 88, (9, 0): 88, (10, 0): 88, (11, 0): 96, (12, 0): 96, (0, 1): 102, (0, 2): 82, (0, 3): 86, (0, 4): 82, (0, 5): 82, (0, 6): 49, (0, 7): 83, (0, 8): 68, (0, 9): 68, (0, 10): 68, (0, 11): 82, (0, 12): 68, (0, 13): 68, (0, 14): 81, (0, 15): 82, (0, 16): 82, (0, 17): 82}
-CONTROL_COUNTS={(0, 0): 140, (1, 0): 140, (2, 0): 140, (3, 0): 140, (4, 0): 140, (5, 0): 142, (6, 0): 142, (7, 0): 142, (8, 0): 142, (9, 0): 142, (10, 0): 142, (11, 0): 157, (12, 0): 157, (0, 1): 156, (0, 2): 136, (0, 3): 140, (0, 4): 136, (0, 5): 136, (0, 6): 103, (0, 7): 137, (0, 8): 122, (0, 9): 122, (0, 10): 122, (0, 11): 136, (0, 12): 122, (0, 13): 122, (0, 14): 135, (0, 15): 136, (0, 16): 136, (0, 17): 136}
+CONTROL_COUNTS={(0, 0): 140, (1, 0): 140, (2, 0): 140, (3, 0): 140, (4, 0): 140, (5, 0): 142, (6, 0): 142, (7, 0): 142, (8, 0): 142, (9, 0): 142, (10, 0): 142, (11, 0): 157, (12, 0): 157, (0, 1): 156, (0, 2): 136, (0, 3): 140, (0, 4): 136, (0, 5): 136, (0, 6): 106, (0, 7): 137, (0, 8): 122, (0, 9): 122, (0, 10): 122, (0, 11): 136, (0, 12): 122, (0, 13): 122, (0, 14): 135, (0, 15): 136, (0, 16): 136, (0, 17): 136}
 
 def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,boundaries):
     """Finite supplied-copy refusals. No native operation or acceptance credit."""
@@ -581,8 +584,8 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,boundaries):
     add('owner_first_error',[('owner',None,'scalar_owner'),('first_error',None,None)])
     add('actual_native_closed',[('terminal_native_counts',None,'li2_native_counts'),('closed',None,None)])
     add('actual_global_close',[('terminal_global_close',None,'li2_native_close'),('complete',None,None)])
-    add('terminal_rseq_epoch',[('terminal_owners',None,'uho_owners'),('rseq',None,'li2_rseq_state'),('epoch',None,None)])
-    add('terminal_pair_live',[('terminal_owners',None,'uho_owners'),('pair',None,P),('live',None,None)])
+    add('terminal_rseq_epoch',[('terminal_owners',None,'sro_owners'),('rseq',None,'li2_rseq_state'),('epoch',None,None)])
+    add('terminal_pair_live',[('terminal_owners',None,'sro_owners'),('pair',None,P),('live',None,None)])
     count=0 if control==6 else app['invocations']
     if count:
         base=[('entries',0,'sro_entry')]
@@ -752,6 +755,16 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,boundaries):
     causal=[where(p+[('completion',None,None)])for p in permit_paths if number(p+[('generation',None,None)])==generation]
     causal += [where(p+[('completion',None,None)])for p in retire_paths if number(p+[('old_generation',None,None)])==generation]
     tests.append(('permit_completion_before_generation',sorted(set(causal))))
+    if control==6:
+        # Preserve both actual captured copies so whole-copy equality cannot
+        # reject before the exact pre-source chronology predicates.
+        fetches=[[('owner',None,'scalar_owner'),('current',None,'sr_record'),('final_fetch',None,'li2_fetch_progress')],
+                 [('terminal_fetch',None,'li2_fetch_progress')]]
+        for name,tail in (
+            ('pre_source_validation_calls',[('validation_calls',None,None)]),
+            ('pre_source_backing_observed',[('last_backing_observed',None,None)]),
+            ('pre_source_validation_observation',[('validation',None,'li2_fetch_map_progress'),('observation',None,'li2_maps_observation'),('io_performed',None,None)])):
+            tests.append((name,[where(path+tail)for path in fetches]))
     need(len(tests)+len(metadata)==CONTROL_COUNTS[(app['mode'],control)],'exact additive reuse supplied-control population')
     need(len({name for name,_ in tests})==len(tests),'unique fixed supplied record controls')
     names=[]
@@ -774,6 +787,9 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,boundaries):
                 need(str(error)=='entire nested FP equals independent live state, destination preimage and exact kernel writes',
                     'coherent nested state control reaches the whole-buffer comparator')
             expected_error={
+                'pre_source_validation_calls':'exact li2_fetch_progress.validation_calls',
+                'pre_source_backing_observed':'exact li2_fetch_progress.last_backing_observed',
+                'pre_source_validation_observation':'pre-source refusal has no fetch validation observation',
                 'actual_conserved_rsp':'every actual GPR outside complete typed write union',
                 'actual_conserved_flags':'all actual flags outside typed union; undefined AF is not predicted',
                 'actual_conserved_full_fp':'entire actual FP/mask/TLS unchanged',

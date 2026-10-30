@@ -22,6 +22,7 @@ from scalar_region_build import build_bridge
 import namespace
 import scalar_region_app_reports as reports
 import scalar_region_mapping_controls as mapping_controls
+import scalar_case_strings
 BOUNDS=dict(PROFILES,release_build=[30,512<<20,16<<20,60],program=[30,512<<20,16<<20,60],seed=[5,512<<20,16<<20,15],boundary=[3,256<<20,1<<20,10],mapping_guard=[3,256<<20,1<<20,10])
 MASK=((1<<64)-1)^sum(1<<(s-1)for s in(4,5,9,11,19,31))
 H=lambda b:hashlib.sha256(b).hexdigest()
@@ -30,7 +31,7 @@ OWNER_CONTROL_COUNTS={(mode,0):86 if mode<5 else 88 if mode<11 else 96 for mode 
 OWNER_CONTROL_COUNTS.update({(0,control):count for control,count in enumerate(
     (102,82,86,82,82,49,83,68,68,68,82,68,68,81),1)})
 REUSE_ORDER=ORDER+tuple(('gated',0,c)for c in (15,16,17))
-REUSE_CONTROL_COUNTS={(0, 0): 140, (1, 0): 140, (2, 0): 140, (3, 0): 140, (4, 0): 140, (5, 0): 142, (6, 0): 142, (7, 0): 142, (8, 0): 142, (9, 0): 142, (10, 0): 142, (11, 0): 157, (12, 0): 157, (0, 1): 156, (0, 2): 136, (0, 3): 140, (0, 4): 136, (0, 5): 136, (0, 6): 103, (0, 7): 137, (0, 8): 122, (0, 9): 122, (0, 10): 122, (0, 11): 136, (0, 12): 122, (0, 13): 122, (0, 14): 135, (0, 15): 136, (0, 16): 136, (0, 17): 136}
+REUSE_CONTROL_COUNTS={(0, 0): 140, (1, 0): 140, (2, 0): 140, (3, 0): 140, (4, 0): 140, (5, 0): 142, (6, 0): 142, (7, 0): 142, (8, 0): 142, (9, 0): 142, (10, 0): 142, (11, 0): 157, (12, 0): 157, (0, 1): 156, (0, 2): 136, (0, 3): 140, (0, 4): 136, (0, 5): 136, (0, 6): 106, (0, 7): 137, (0, 8): 122, (0, 9): 122, (0, 10): 122, (0, 11): 136, (0, 12): 122, (0, 13): 122, (0, 14): 135, (0, 15): 136, (0, 16): 136, (0, 17): 136}
 
 
 def digest(value):return H(json.dumps(value,sort_keys=True,separators=(',',':')).encode())
@@ -38,6 +39,7 @@ def digest(value):return H(json.dumps(value,sort_keys=True,separators=(',',':'))
 
 def expand_cases(public):
     """Restore ordinary numerical case dictionaries from the published tables."""
+    if public['case_encoding']=='shared-numerical-columns-v2':public=scalar_case_strings.restore(public)
     columns=public['case_columns'];subcolumns=public['case_subcolumns'];result=[]
     def expand(row,keys):
         need(type(row)is list and len(row)==len(keys)+1 and type(row[0])is int and 0<=row[0]<1<<len(keys),
@@ -495,7 +497,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     required_counts=REUSE_CONTROL_COUNTS if r['reuse']else OWNER_CONTROL_COUNTS
     expected_keys={(mode,0)for mode in range(13)}|{(0,control)for control in range(1,18 if r['reuse']else 15)}
     need(type(owner_reader.CONTROL_COUNTS)is dict and owner_reader.CONTROL_COUNTS==required_counts and
-         set(required_counts)==expected_keys and sum(required_counts.values())==(4099 if r['reuse']else 2219) and
+         set(required_counts)==expected_keys and sum(required_counts.values())==(4102 if r['reuse']else 2219) and
          all(type(k)is tuple and len(k)==2 and all(type(x)is int for x in k)for k in owner_reader.CONTROL_COUNTS) and
          all(type(n)is int and 0<n<=(157 if r['reuse']else 128)for n in owner_reader.CONTROL_COUNTS.values()),
          'complete source-fixed supplied owner-control population for every gated case')
@@ -602,7 +604,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     need(sum(c.get('pair',{}).get('qualified_case',0)for c in r['cases'])==13 and
         sum(c.get('application_controls',{}).get('supplied_refusals',0)for c in r['cases'])==348 and
         sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==(1964 if r['reuse']else 27*49+7*2)and
-        sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==(4099 if r['reuse']else 2219),
+        sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==(4102 if r['reuse']else 2219),
         'all13 actual pairs and fixed application/terminal/owner-record refusal controls')
     need(sum(x['profile']=='boundary'for x in r['commands'])==(30 if r['reuse']else 27)and r['boundary_probe_build']['status']=='passed',
          'every gated record has one separately bounded metadata observation, without execution authority')
@@ -684,7 +686,7 @@ def main():
         git=pin(shutil.which('git',path=ENV['PATH']))
         _,names,err=run('source-paths',[git,'-C',ROOT,'ls-files','-z','tools/page-entry','evaluation/inprocess']);need(not err,'source enumeration stderr')
         tracked={os.fsdecode(name)for name in names.split(b'\0')if name}
-        required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'scalar_region_app_reports.py',HERE/'scalar_region_build.py',HERE/'scalar_region_mapping_controls.py',
+        required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'scalar_region_app_reports.py',HERE/'scalar_region_build.py',HERE/'scalar_region_mapping_controls.py',HERE/'scalar_case_strings.py',
             FIXTURE/'main.c',FIXTURE/'pure.c',FIXTURE/'pure.ld',FIXTURE/'machine.S',FIXTURE/'app.h',FIXTURE/'read.py',FIXTURE/'build.sh',FIXTURE/'launch.py',
             OWNER/'read.py',OWNER/'layout.py',OWNER/'wire.py',OWNER/'plan.py',OWNER/'boundaries.py',OWNER/'boundary_probe.c')}
         required|={str((SELECTED/'tests/provider_app/seed_probe'/n).relative_to(ROOT))for n in('probe.c','record.h','read.py','build.sh')}
@@ -804,6 +806,14 @@ def main():
         raw=stream.getvalue().encode();public_csv=HERE/'results'/(stem+'.csv');public_json=HERE/'results'/(stem+'.json')
         need(len(raw)<=8192,'all40 compact outcome CSV rows')
         public['csv']=dict(file=public_csv.name,bytes=len(raw),sha256=H(raw))
+        if r['reuse']:
+            original=json.dumps(public,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
+            need(not any(x and len(x)>1 and(x in original or x in stream.getvalue())for x in(str(ROOT),str(Path.home()),platform.node(),'/home/')),
+                 'complete uncompressed public numerical result has no private paths or host names')
+            compact=scalar_case_strings.project(public)
+            need(digest(scalar_case_strings.restore(json.loads(json.dumps(compact,allow_nan=False))))==digest(public),
+                 'complete canonical typed public inverse including all case and mapping fields')
+            public=compact
         encoded=json.dumps(public,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
         need(len(encoded.encode())<=32<<10 and not any(x and len(x)>1 and(x in encoded or x in stream.getvalue())for x in(str(ROOT),str(Path.home()),platform.node(),'/home/')),'compact public numerical result without private paths/host names')
         with public_csv.open('xb')as f:f.write(raw)
