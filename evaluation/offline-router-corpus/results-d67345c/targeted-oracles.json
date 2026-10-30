@@ -1,0 +1,81 @@
+{
+  "schema": "LI2-FOCUSED-CORRECTNESS-1",
+  "revision": "ddff7fc85c7f39701c691d8d4ff8aa81e364bd46",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "command": [
+    "env",
+    "RUST_TEST_THREADS=316",
+    "cargo",
+    "test",
+    "-j",
+    "4",
+    "-p",
+    "liteinst2",
+    "--test",
+    "prefixed_pun_oracle",
+    "--test",
+    "quiescent_oracle"
+  ],
+  "owner_receipt_sha256": "46d1686a6fe706c4a0a8f69c440dbb30710c6fa3970ae724cddef0f759da4b3f",
+  "owner_source_sha256": "306459600d6c22c15c6d0814b2693a224236e702656d4b5623144864027c92e8",
+  "source_unchanged": true,
+  "tracked_working_delta": {},
+  "reserved_cpus": [
+    64,
+    159,
+    166,
+    195
+  ],
+  "load_before": [
+    "124.31",
+    "114.75",
+    "116.88"
+  ],
+  "load_after": [
+    "119.43",
+    "114.00",
+    "116.62"
+  ],
+  "attempts": 1,
+  "wall_limit_seconds": 1200,
+  "output_limit_bytes": 8388608,
+  "closed": {
+    "start_utc": "2026-10-30T12:50:51.080909+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 7.993290898157284,
+    "private_log_sha256": "16c8aa4170364a701a4ecb35d8e9cd00dfb18c1504b719311343ef52e13db7a2",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "test_summaries": [
+    {
+      "binary": "prefixed_pun_oracle",
+      "passed": 36,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered_out": 0
+    },
+    {
+      "binary": "quiescent_oracle",
+      "passed": 39,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered_out": 0
+    }
+  ],
+  "required_pass_lines": [
+    "native_state_covers_every_prefixed_pun_and_original_successor",
+    "native_no_op_oracle_covers_same_site_upstream_and_every_entry",
+    "native_no_op_oracle_covers_generalized_puns_and_unchanged_successors",
+    "native_no_op_oracle_preserves_synchronous_fault_state",
+    "native_no_op_oracle_preserves_generalized_pun_fault_state"
+  ],
+  "workspace_complete": false,
+  "qualification_complete": false,
+  "performance_eligible": false,
+  "note": "Separate targeted run of two binaries omitted by the preceding workspace timeout; it does not complete or relabel that workspace run. Timings are debug correctness receipts."
+}

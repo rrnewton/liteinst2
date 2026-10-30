@@ -1,0 +1,6 @@
+name,exit,termination,elapsed_seconds,passed,failed,ignored,command
+fmt,0,,8.996136015979573,,,,"[""cargo"",""fmt"",""--check""]"
+clippy,0,,46.00373364519328,,,,"[""cargo"",""clippy"",""--workspace"",""--all-targets"",""--all-features"",""--"",""-D"",""warnings""]"
+check,0,,31.351011021994054,,,,"[""cargo"",""check"",""--workspace"",""--all-features"",""--all-targets""]"
+workspace,-9,timeout,900.2252537461463,2204,0,1,"[""cargo"",""test"",""-j"",""16"",""--workspace"",""--no-fail-fast""]"
+serial-launch,0,,172.08188623702154,1039,0,0,"[""cargo"",""test"",""-p"",""liteinst-launch"",""--tests"",""--"",""--test-threads=1"",""--nocapture""]"

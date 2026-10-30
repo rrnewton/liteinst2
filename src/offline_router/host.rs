@@ -313,7 +313,7 @@ pub(super) fn observe(catalog: &Catalog, embedded: &'static [u8]) -> Result<Owne
     let elf = c::parse(&catalog.input().main)?;
     let a = auxv(&observation("/proc/self/auxv", 4096)?)?;
     let get = |k| a.get(&k).copied().ok_or(E::Ownership);
-    if get(3)? != c::validate_startup(&elf, &catalog.input().policy)?
+    if get(3)? != catalog.validate_startup(&elf)?
         || get(4)? != 56
         || get(5)? != u64::from(elf.header().program_count)
         || get(6)? != c::PAGE

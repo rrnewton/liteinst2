@@ -1,0 +1,331 @@
+{
+  "schema": "LI2-REQUIRED-VALIDATION-1",
+  "revision": "559a8450c78105af681bf7d6f371f15e374b16a6",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "scope": "Debug correctness command accounting; not performance. Workspace incomplete at unchanged 900-second deadline.",
+  "source_unchanged": true,
+  "tracked_working_delta": {},
+  "validation_script": {
+    "path": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+  },
+  "validation_closed_sha256": "650ab732f330304d8b3571e86bfc4e84348104da9e416eacc16e9c445fd8157f",
+  "owner_receipt_sha256": "08ca67daaaf0ae966274657b92a60274ddc0072df7b2f727cffbc0e558ddb1b0",
+  "owner": {
+    "start_utc": "2026-10-30T12:18:15.830607+00:00",
+    "exit_code": 1,
+    "termination": null,
+    "seconds": 1158.7368010941427,
+    "private_log_sha256": "b02e3f827765ebee9c521691697963798601965cf16a5e8b7023927581650d71",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "reserved_cpus": [
+    8,
+    10,
+    74,
+    90,
+    148,
+    174,
+    214,
+    285,
+    300,
+    302,
+    307,
+    308,
+    312,
+    313,
+    314,
+    315
+  ],
+  "load_before": [
+    "64.85",
+    "68.42",
+    "66.59"
+  ],
+  "load_after": [
+    "192.79",
+    "149.95",
+    "111.48"
+  ],
+  "profile": {
+    "workspace_jobs": 16,
+    "default_jobs": 4,
+    "test_threads": 316,
+    "opt_level": 0,
+    "debug_info": 0,
+    "incremental": false,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "offline": true
+  },
+  "checks": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 8.996136015979573,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "load_before": [
+        "64.85",
+        "68.42",
+        "66.59"
+      ],
+      "load_after": [
+        "61.95",
+        "67.68",
+        "66.37"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 46.00373364519328,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "0084fe9cb9841fe9e69745515b1e6c530374701a59ddaad7f7f2d115b6298e3d",
+      "load_before": [
+        "61.95",
+        "67.68",
+        "66.37"
+      ],
+      "load_after": [
+        "70.45",
+        "68.96",
+        "66.85"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 31.351011021994054,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "6dc669af7e0e487d05d8c34b3fb24e57c1b58b95232736d1ecf13fa59710398d",
+      "load_before": [
+        "70.45",
+        "68.96",
+        "66.85"
+      ],
+      "load_after": [
+        "67.59",
+        "68.46",
+        "66.77"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit_seconds": 900,
+      "exit_code": -9,
+      "termination": "timeout",
+      "elapsed_seconds": 900.2252537461463,
+      "cleanup_complete": true,
+      "reaped_descendants": 2,
+      "totals": {
+        "passed": 2204,
+        "failed": 0,
+        "ignored": 1,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "unfiltered_summary_count": 72,
+      "excluded_filtered_summary_count": 3,
+      "excluded_filtered_totals": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 105
+      },
+      "raw_log_sha256": "d43faf686c3af1209eb96462c05fac2d00a6013619b87e3a9dee04790dd217d6",
+      "load_before": [
+        "67.59",
+        "68.46",
+        "66.77"
+      ],
+      "load_after": [
+        "145.04",
+        "127.34",
+        "98.45"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 172.08188623702154,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "unfiltered_summary_count": 27,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "08382c1575be65cdc02613e09c37d61831d7ad8f2f31efc10729687a7b212b1a",
+      "load_before": [
+        "145.04",
+        "127.34",
+        "98.45"
+      ],
+      "load_after": [
+        "192.79",
+        "149.95",
+        "111.48"
+      ]
+    }
+  ],
+  "summary_rule": "Count each unfiltered Rust summary; retain filtered nested child summaries separately; no doctest deduplication. Totals describe completed summaries only.",
+  "required_groups": {
+    "rapid_rejection": {
+      "PASS_LINE_OBSERVED": 2
+    },
+    "prefixed_pun": {
+      "NOT_OBSERVED_PASS": 1
+    },
+    "quiescent_oracle": {
+      "NOT_OBSERVED_PASS": 4
+    },
+    "observing_control": {
+      "PASS_LINE_OBSERVED": 8
+    },
+    "short_neighbor": {
+      "PASS_LINE_OBSERVED": 21
+    },
+    "routed_jmp_native": {
+      "PASS_LINE_OBSERVED": 34
+    },
+    "routed_jmp_frontend": {
+      "PASS_LINE_OBSERVED": 17
+    },
+    "gap_carrier": {
+      "PASS_LINE_OBSERVED": 9
+    },
+    "routed_jmp_publication": {
+      "PASS_LINE_OBSERVED": 3
+    },
+    "startup_carrier": {
+      "PASS_LINE_OBSERVED": 9
+    },
+    "staged_image_drop": {
+      "PASS_LINE_OBSERVED": 1
+    },
+    "startup_catalog": {
+      "PASS_LINE_OBSERVED": 8
+    }
+  },
+  "not_observed": [
+    {
+      "group": "prefixed_pun",
+      "test": "native_state_covers_every_prefixed_pun_and_original_successor"
+    },
+    {
+      "group": "quiescent_oracle",
+      "test": "native_no_op_oracle_covers_same_site_upstream_and_every_entry"
+    },
+    {
+      "group": "quiescent_oracle",
+      "test": "native_no_op_oracle_covers_generalized_puns_and_unchanged_successors"
+    },
+    {
+      "group": "quiescent_oracle",
+      "test": "native_no_op_oracle_preserves_synchronous_fault_state"
+    },
+    {
+      "group": "quiescent_oracle",
+      "test": "native_no_op_oracle_preserves_generalized_pun_fault_state"
+    }
+  ],
+  "workspace_complete": false,
+  "qualification_complete": false,
+  "performance_eligible": false
+}

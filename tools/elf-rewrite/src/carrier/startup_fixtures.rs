@@ -728,3 +728,319 @@ fn startup_input_metadata_is_bounded_checked_and_protected_from_source_edits() {
         Error::InvalidDependency { index: 0 }
     );
 }
+
+const LIBGCC: &str = "/owned/libgcc_s.so.1";
+const LIBC: &str = "/owned/libc.so.6";
+fn absolute_startup() -> StaticExecAbsolutePrerequisites<'static> {
+    let mut limits = startup().limits;
+    limits.max_dynamic_bytes = 144;
+    StaticExecAbsolutePrerequisites {
+        interpreter: INTERPRETER,
+        libgcc: LIBGCC,
+        libc: LIBC,
+        bootstrap_dso: BOOTSTRAP,
+        limits,
+    }
+}
+fn build_absolute(
+    input: &[u8],
+    startup: StaticExecAbsolutePrerequisites<'_>,
+    policy: ImagePolicy,
+) -> Result<CarrierOutput, Error> {
+    let input = Elf64::parse(input, ParseLimits::default()).unwrap();
+    let images = [RxImage {
+        entry: ElfVaddr(0x700003),
+        bytes: vec![0x90, 0xc3],
+    }];
+    let edits = [DeclaredEdit {
+        offset: FileOffset(0x300),
+        expected: vec![0x31, 0xc0],
+        replacement: vec![0x90, 0x90],
+    }];
+    let dependencies = [FileRange::checked(FileOffset(0x300), 2).unwrap()];
+    append_static_exec_with_router_absolute_prerequisites(
+        &input,
+        ImageRequest {
+            carrier_vaddr: ElfVaddr(0x500000),
+            payload: b"catalog!",
+            images: &images,
+            source_dependencies: &dependencies,
+        },
+        &edits,
+        policy,
+        startup,
+    )
+}
+
+#[test]
+fn absolute_startup_has_exact_nine_rows_and_original_preservation() {
+    for phdr in [false, true] {
+        for stack in [false, true] {
+            let input = original(phdr, stack);
+            let output = build_absolute(&input, absolute_startup(), policy()).unwrap();
+            assert_preservation(&input, &output);
+            let elf = Elf64::parse(output.bytes(), ParseLimits::default()).unwrap();
+            let layout = output.startup.as_ref().unwrap();
+            assert_eq!(elf.header().program_count, 8);
+            assert_eq!(output.new_load_pages, 2);
+            assert_eq!(layout.metadata.start(), output.payload.end());
+            assert_eq!(layout.metadata.end(), layout.dynamic.end());
+            assert_eq!(
+                bytes(&output, layout.interpreter),
+                [INTERPRETER.as_bytes(), &[0]].concat()
+            );
+            assert_eq!(
+                bytes(&output, layout.string_table),
+                [
+                    &[0],
+                    LIBGCC.as_bytes(),
+                    &[0],
+                    LIBC.as_bytes(),
+                    &[0],
+                    BOOTSTRAP.as_bytes(),
+                    &[0]
+                ]
+                .concat()
+            );
+            assert_eq!(bytes(&output, layout.symbol_table), &[0; 24]);
+            assert_eq!(
+                bytes(&output, layout.hash_table),
+                &[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            );
+            let va = |range: FileRange| 0x500000 + range.start().0 - output.program_table.start().0;
+            let expected = [
+                (1, 1),
+                (1, LIBGCC.len() as u64 + 2),
+                (1, (LIBGCC.len() + LIBC.len()) as u64 + 3),
+                (5, va(layout.string_table)),
+                (10, layout.string_table.len()),
+                (6, va(layout.symbol_table)),
+                (11, 24),
+                (4, va(layout.hash_table)),
+                (0, 0),
+            ];
+            let table = bytes(&output, layout.dynamic);
+            assert_eq!(table.len(), 144);
+            for (index, expected) in expected.into_iter().enumerate() {
+                assert_eq!(
+                    (word(table, index * 16), word(table, index * 16 + 8)),
+                    expected
+                );
+            }
+            for range in [
+                layout.interpreter,
+                layout.string_table,
+                layout.symbol_table,
+                layout.hash_table,
+                layout.dynamic,
+            ] {
+                let owner = elf.file_to_virtual(range.start(), range.len()).unwrap();
+                assert_eq!(
+                    (
+                        owner.program_header,
+                        owner.flags.0,
+                        owner.virtual_range.start().0
+                    ),
+                    (output.carrier_index, 4, va(range))
+                );
+            }
+            let owner = &elf.program_headers()[output.carrier_index];
+            assert_eq!(owner.file_size, layout.dynamic.end().0 - owner.offset.0);
+            assert_eq!(owner.memory_size, owner.file_size);
+            let inventory = dynamic::inspect(&elf, dynamic::Limits::default()).unwrap();
+            assert_eq!(
+                (inventory.dynamic_entries, inventory.relocation_records),
+                (9, 0)
+            );
+            assert!(inventory.writes.is_empty() && inventory.symbol_references.is_empty());
+            assert!(output.dynamic.tables.is_empty());
+        }
+    }
+}
+
+#[test]
+fn absolute_startup_path_roles_are_literal_and_distinct() {
+    let input = original(false, false);
+    let valid = absolute_startup();
+    build_absolute(&input, valid, policy()).unwrap();
+    for names in [
+        [LIBC, LIBC, BOOTSTRAP],
+        [INTERPRETER, LIBC, BOOTSTRAP],
+        [LIBGCC, LIBC, INTERPRETER],
+        [BOOTSTRAP, LIBC, BOOTSTRAP],
+        ["libgcc.so", LIBC, BOOTSTRAP],
+        ["/owned/$LIB/libgcc.so", LIBC, BOOTSTRAP],
+        ["/owned/../libgcc.so", LIBC, BOOTSTRAP],
+        [LIBGCC, "/owned//libc.so", BOOTSTRAP],
+    ] {
+        let changed = StaticExecAbsolutePrerequisites {
+            libgcc: names[0],
+            libc: names[1],
+            bootstrap_dso: names[2],
+            ..valid
+        };
+        assert!(
+            build_absolute(&input, changed, policy()).is_err(),
+            "names {names:?}"
+        );
+    }
+}
+
+#[test]
+fn absolute_startup_charges_all_names_and_exact_new_table_to_old_aggregate_caps() {
+    let input = original(false, false);
+    let output = build_absolute(&input, absolute_startup(), policy()).unwrap();
+    let layout = output.startup.as_ref().unwrap();
+    let needed = (LIBGCC.len() + LIBC.len() + BOOTSTRAP.len() + 3) as u64;
+    let mut exact = absolute_startup();
+    exact.limits.max_interpreter_bytes = INTERPRETER.len() as u64 + 1;
+    exact.limits.max_needed_bytes = needed;
+    exact.limits.max_string_table_bytes = needed + 1;
+    exact.limits.max_metadata_bytes = layout.metadata.len();
+    build_absolute(&input, exact, policy()).unwrap();
+    for field in 0..6 {
+        let mut changed = exact;
+        match field {
+            0 => changed.limits.max_interpreter_bytes -= 1,
+            1 => changed.limits.max_needed_bytes -= 1,
+            2 => changed.limits.max_string_table_bytes -= 1,
+            3 => changed.limits.max_dynamic_bytes = 143,
+            4 => changed.limits.max_dynamic_bytes = 145,
+            5 => changed.limits.max_metadata_bytes -= 1,
+            _ => unreachable!(),
+        }
+        assert!(
+            build_absolute(&input, changed, policy()).is_err(),
+            "startup cap {field}"
+        );
+    }
+    for field in 0..8 {
+        let mut changed = policy();
+        match field {
+            0 => changed.dynamic.dynamic_entries = 8,
+            1 => changed.dynamic.metadata_records = 2,
+            2 => changed.dynamic.metadata_bytes = (48 + needed) as usize,
+            3 => changed.layout.max_output_file_bytes = output.bytes().len() as u64 - 1,
+            4 => {
+                changed.layout.max_added_file_bytes =
+                    output.bytes().len() as u64 - input.len() as u64 - 1
+            }
+            5 => changed.max_new_load_pages = output.new_load_pages - 1,
+            6 => changed.layout.max_program_headers = 7,
+            7 => changed.layout.max_virtual_span = 0x700fff - 0x400000,
+            _ => unreachable!(),
+        }
+        assert!(
+            build_absolute(&input, exact, changed).is_err(),
+            "aggregate cap {field}"
+        );
+    }
+    let mut excessive = exact;
+    excessive.limits.max_needed_bytes = 4097;
+    assert!(build_absolute(&input, excessive, policy()).is_err());
+    let bootstrap_len = 4096 - (LIBGCC.len() + 1) - (LIBC.len() + 1) - 1;
+    let bootstrap = format!("/{}", "z".repeat(bootstrap_len - 1));
+    let mut ceiling = absolute_startup();
+    ceiling.bootstrap_dso = &bootstrap;
+    ceiling.limits.max_needed_bytes = 4096;
+    ceiling.limits.max_string_table_bytes = 4097;
+    let at_ceiling = build_absolute(&input, ceiling, policy()).unwrap();
+    assert_eq!(
+        at_ceiling.startup.as_ref().unwrap().string_table.len(),
+        4097
+    );
+    let longer = format!("{bootstrap}z");
+    ceiling.bootstrap_dso = &longer;
+    assert!(build_absolute(&input, ceiling, policy()).is_err());
+}
+
+#[test]
+fn absolute_startup_output_recheck_rejects_all_metadata_bytes_and_writable_owner() {
+    let input = original(false, false);
+    let original_elf = Elf64::parse(&input, ParseLimits::default()).unwrap();
+    let prepared = startup::prepare(
+        &original_elf,
+        startup::Request::Absolute(absolute_startup()),
+    )
+    .unwrap();
+    let output = build_absolute(&input, absolute_startup(), policy()).unwrap();
+    let layout = output.startup.as_ref().unwrap();
+    for at in layout.metadata.start().0 as usize..layout.metadata.end().0 as usize {
+        let mut changed = output.bytes().to_vec();
+        changed[at] ^= 1;
+        let elf = Elf64::parse(&changed, ParseLimits::default()).unwrap();
+        assert!(
+            startup::verify(
+                &elf,
+                layout,
+                &prepared,
+                output.carrier_index,
+                policy().dynamic
+            )
+            .is_err(),
+            "metadata byte {at}"
+        );
+    }
+    let mut changed = output.bytes().to_vec();
+    put32(
+        &mut changed,
+        output.program_table.start().0 as usize + output.carrier_index * 56 + 4,
+        6,
+    );
+    let elf = Elf64::parse(&changed, ParseLimits::default()).unwrap();
+    assert!(
+        startup::verify(
+            &elf,
+            layout,
+            &prepared,
+            output.carrier_index,
+            policy().dynamic
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn absolute_startup_still_checks_original_sections_and_carrier_aliases() {
+    let input = with_static_symbols();
+    let output = build_absolute(&input, absolute_startup(), policy()).unwrap();
+    assert_preservation(&input, &output);
+    let mut section = input.clone();
+    put32(&mut section, 0x2100 + 128 + 4, 6);
+    assert_eq!(
+        build_absolute(&section, absolute_startup(), policy()).unwrap_err(),
+        Error::Startup(startup::Error::UnsupportedSection { index: 2, kind: 6 })
+    );
+    let mut resolver = input.clone();
+    resolver[0x203c] = 0x1a;
+    assert_eq!(
+        build_absolute(&resolver, absolute_startup(), policy()).unwrap_err(),
+        Error::Startup(startup::Error::ResolverSymbol {
+            section: 2,
+            index: 1
+        })
+    );
+    let mut bounded = absolute_startup();
+    bounded.limits.max_input_sections = 3;
+    assert_eq!(
+        build_absolute(&input, bounded, policy()).unwrap_err(),
+        Error::Budget {
+            resource: "startup input sections",
+            required: 4,
+            limit: 3
+        }
+    );
+    let mut metadata = original(false, false);
+    put16(&mut metadata, 56, 3);
+    phdr(&mut metadata, 2, (4, 4, 0x1000, 0x500100, 4, 4, 1));
+    assert_eq!(
+        build_absolute(&metadata, absolute_startup(), policy()).unwrap_err(),
+        Error::CarrierMetadataOverlap { index: 2 }
+    );
+    let mut stale = original(false, false);
+    stale[0x300] = 0xcc;
+    assert_eq!(
+        build_absolute(&stale, absolute_startup(), policy()).unwrap_err(),
+        Error::StaleEdit { index: 0 }
+    );
+}

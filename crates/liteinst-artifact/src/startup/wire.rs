@@ -26,11 +26,18 @@ impl Writer {
         }
     }
 }
-pub(super) fn encode(x: &Input) -> Result<Vec<u8>> {
-    validate(x)?;
+pub(super) fn encode(x: &Input, class: StartupClass) -> Result<Vec<u8>> {
+    validate(x, class)?;
     let mut w = Writer(MAGIC.to_vec());
-    w.n(2);
+    w.n(match class {
+        StartupClass::SingleBootstrap => 2,
+        StartupClass::AbsolutePrerequisites(_) => 3,
+    });
     w.n(x.program);
+    if let StartupClass::AbsolutePrerequisites(roles) = class {
+        w.n(roles.libgcc_dependency as u64);
+        w.n(roles.libc_dependency as u64);
+    }
     let p = &x.policy;
     w.bytes(&p.interpreter);
     w.bytes(&p.bootstrap_dso);
@@ -197,7 +204,7 @@ impl Reader<'_> {
         (0..n).map(|_| self.blob()).collect()
     }
 }
-pub(super) fn decode(b: &[u8]) -> Result<Input> {
+pub(super) fn decode(b: &[u8]) -> Result<(Input, StartupClass)> {
     if b.len() > MAX_CATALOG || b.len() < 56 {
         return Err(Error::Limit);
     }
@@ -210,10 +217,23 @@ pub(super) fn decode(b: &[u8]) -> Result<Input> {
         at: 0,
         records: MAX_RECORDS,
     };
-    if r.take(8)? != MAGIC || r.n()? != 2 {
+    if r.take(8)? != MAGIC {
+        return Err(Error::Shape);
+    }
+    let version = r.n()?;
+    if version != 2 && version != 3 {
         return Err(Error::Shape);
     }
     let program = r.n()?;
+    let class = if version == 2 {
+        StartupClass::SingleBootstrap
+    } else {
+        r.records = r.records.checked_sub(2).ok_or(Error::Limit)?;
+        StartupClass::AbsolutePrerequisites(AbsolutePrerequisites {
+            libgcc_dependency: usize::try_from(r.n()?).map_err(|_| Error::Limit)?,
+            libc_dependency: usize::try_from(r.n()?).map_err(|_| Error::Limit)?,
+        })
+    };
     let interpreter = r.bytes(4095)?;
     let bootstrap_dso = r.bytes(4095)?;
     let n = r.records(16)?;
@@ -345,26 +365,29 @@ pub(super) fn decode(b: &[u8]) -> Result<Input> {
     if r.at != body.len() {
         return Err(Error::Shape);
     }
-    Ok(Input {
-        program,
-        policy: Policy {
-            interpreter,
-            bootstrap_dso,
-            dependencies,
-            app_stack,
-            hook_pc,
-            hook_id,
-            state,
-            qualification_contract,
+    Ok((
+        Input {
+            program,
+            policy: Policy {
+                interpreter,
+                bootstrap_dso,
+                dependencies,
+                app_stack,
+                hook_pc,
+                hook_id,
+                state,
+                qualification_contract,
+            },
+            original,
+            main,
+            selection,
+            metadata,
+            target,
+            ledger,
+            heads,
+            steps,
+            images,
         },
-        original,
-        main,
-        selection,
-        metadata,
-        target,
-        ledger,
-        heads,
-        steps,
-        images,
-    })
+        class,
+    ))
 }

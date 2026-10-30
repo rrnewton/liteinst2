@@ -19,7 +19,9 @@ PROGRAMS = ('checksum', 'rle-roundtrip')
 COUNTS = {'checksum': (80, 16), 'rle-roundtrip': (107, 26)}
 CRATE = 'evaluation/adjacent-b2/artifact-verifier'
 # Filled with the exact reviewed Rust/manifest bytes when this source packet closes.
-VERIFIER_SOURCES = {'Cargo.toml': '3c1d5a89b9779529772e080011bf480be89d68969047e207cebe5a87fae01f7b', 'src/main.rs': '874c885a0e6aac9e0274e1c55480803eb4e18400340db216a43a6a47357ce625', 'src/transport_tests.rs': 'd8f5c6b7998b0048ff5d4a426405ea8da71bfad0b56dffbd3e65465051ca6323', 'src/verify/association.rs': '4f5fa3b5a5d1dc8fc0c67a71e99117f8f7fa899c630467dc0ae37f8985bae169', 'src/verify/candidate.rs': '972062b7424f1b34dc02dba8f583455f2d2507af21c412e4f1f7ac12bac75636', 'src/verify/candidate_tests.rs': '0eff6d76b79454c1c5ef7f5e95c832e28d0cb5d58aef69ab0c4dcc987ad7f102', 'src/verify/ledger.rs': '28c30de28b386a700d8581c6bed8716b22d3056bb152662606a9e7f1c1e8bb1e', 'src/verify/tests.rs': '44dc385771365d824a786ccd5cec4d0a69e39c79364acc9eae5fdc2482c1da0f', 'src/verify.rs': '2dd4e91b6cb51c94cdf6765d5f6aa90e5f55cb256eb9fe27fa5755931566b8a8'}
+VERIFIER_SOURCES = {'Cargo.toml': '3c1d5a89b9779529772e080011bf480be89d68969047e207cebe5a87fae01f7b', 'src/main.rs': 'fc32fdb0437339a22a86e0d77b5643e6ff0378eed1577ac261d2ae63f09738ee', 'src/startup_transport.rs': '35b6346e79c5c0f827e87c39f1ced572ec5a3ec5372ab5df055cf76825bf010e', 'src/transport_tests.rs': 'd8f5c6b7998b0048ff5d4a426405ea8da71bfad0b56dffbd3e65465051ca6323', 'src/verify/association.rs': '4f5fa3b5a5d1dc8fc0c67a71e99117f8f7fa899c630467dc0ae37f8985bae169', 'src/verify/candidate.rs': 'b6015031b5dec52c3fc059ed05c4f8966c589fd63ce3769ed0f48dabecfa1677', 'src/verify/candidate_tests.rs': '26be1e9dda4817bc9a12d6374ddfa1362522419b126b7458e3beb4417d9f37de', 'src/verify/ledger.rs': '32f2d3a62e33d2eaf68f74d30ba69cd5f9fba43b3d6cbdea4926aa5c4907af07', 'src/verify/startup/catalog.rs': 'a1f3eaa41eae0416d10f1d4c2284e836c9c48e665a4dde93aa0242025e7c9f92', 'src/verify/startup/dependencies.rs': 'a6743d24e22c92c749012a9c38b309f79f305fa4985dec3f267ea87fb2e39208', 'src/verify/startup/layout.rs': '9392bdde69c3def9171c9631548be21ee416a9fa9be9dad49e0dfe5f8c84b17c', 'src/verify/startup/tests.rs': 'e5bfc7c66d2bcf69995c46831ed6bc619de37e2d2e50119eb67a44e1ad9da6a4', 'src/verify/startup.rs': '097176575c5481984e66c29547d3faa5bb2bd6337f4215b8010f1f23c96b2a85', 'src/verify/tests.rs': '5d031626803a3890ded56c7a33178e91462a53949c9c3f6f81261a4cc51d8f32', 'src/verify.rs': '6f84826ad4045eba942bda9611ef9ca23bd9fa3377f34ab1ac1cc745c8ef90ec'}
+# Separate additive startup modules, bound to exact closed source packets.
+STARTUP_MODULES = {'startup_cargo_from_root.py': 'd9189f38057a1167f74de2c93ce22b361cdcd2ca10e6bf68862c8281f2c4aa89', 'startup_custody.py': '37cbe467c0734be1e74549553d04c2c2d0692f244ca93894e4a5fc7789d73425', 'startup_originals.py': 'fe1c9bc33800a8216a9c3bc12a33be3579d92e07c5dbc1c10bd0ea75566bd03c', 'startup_pins.py': 'b11f1d05d80a604cb63e1f13288933b14ada1ec28f0d1034928901d4fa4ede3a', 'startup_produce.py': '42d97f0fe862ad43ac16531c854707db260960a66858ce28050e64a768009eb0', 'startup_saved.py': 'f9b888833e907af4bef59848ea94472f5d5f968134dd55686ff906baef5f9c0b', 'startup_target_from_root.py': '81ef52660559ee2f4088d02470eddbe64b981d16625392cbd0481123dd63312d'}
 ROOTED_BUILD_SOURCES = {'cargo_from_root.py': '515060bdbff75aba566cd2778636772adf942a2277e6ef34d6bdfab094139a5c', 'rooted_build.py': '812fe73a6b31551d828177c4e7597f4367fab29a3eadc39f7a248b44e291a468'}
 sha = lambda b: hashlib.sha256(b).hexdigest()
 
@@ -448,18 +450,61 @@ def run(args,ctx,a):
     return code
 
 
+def startup_modules(ctx):
+    """Authenticate new-profile modules before executing their source text."""
+    required = {'startup_pins.py','startup_custody.py','startup_saved.py',
+                'startup_cargo_from_root.py','startup_originals.py','startup_target_from_root.py',
+                'startup_produce.py'}
+    need(set(STARTUP_MODULES) == required, 'startup module profile UNBOUND')
+    raw_files = {}
+    for name,digest in STARTUP_MODULES.items():
+        path = ctx.ROOT / CRATE / name
+        raw = ctx.read(path,cap=MIB)
+        need(type(digest) is str and len(digest)==64 and sha(raw)==digest, 'exact startup module source')
+        raw_files[name] = raw
+    modules = {}
+    for name,raw in raw_files.items():
+        path = ctx.ROOT / CRATE / name
+        module = types.ModuleType('_w01_' + name[:-3]); module.__file__ = str(path)
+        exec(compile(raw,str(path),'exec'),module.__dict__)
+        modules[name] = module
+    return modules
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('capture','diagnostic','verifier-build','output'):
         parser.add_argument('--'+name,type=Path,required=True)
     for name in ('capture-sha256','diagnostic-sha256','verifier-build-sha256','verifier-lock-sha256'):
         parser.add_argument('--'+name,required=True)
+    parser.add_argument('--startup-binding',type=Path)
+    parser.add_argument('--startup-binding-sha256')
+    parser.add_argument('--source-profile',type=Path)
+    parser.add_argument('--source-profile-sha256')
     args=parser.parse_args();root=Path(__file__).resolve().parents[3]
+    need((args.startup_binding is None) == (args.startup_binding_sha256 is None), 'paired explicit startup binding flags')
+    need((args.source_profile is None) == (args.source_profile_sha256 is None) and
+         (args.source_profile is None) == (args.startup_binding is None), 'startup source profile is required only with explicit startup binding')
     for name in ('capture','diagnostic','verifier_build'):
-        path=getattr(args,name);need(path.is_absolute() and path.resolve(strict=True)==path and path.is_relative_to(root/'ignored'), 'canonical saved input directory')
+        path=getattr(args,name)
+        if name=='verifier_build' and args.startup_binding is not None and not os.path.lexists(path):
+            # A failed saved producer needs no verifier build. Success still
+            # requires the exact complete new-profile build closure in run().
+            need(path.is_absolute() and path.parent.resolve(strict=True)==path.parent and path.is_relative_to(root/'ignored'), 'canonical prospective startup verifier directory')
+        else:
+            need(path.is_absolute() and path.resolve(strict=True)==path and path.is_relative_to(root/'ignored'), 'canonical saved input directory')
     for name in ('capture_sha256','diagnostic_sha256','verifier_build_sha256','verifier_lock_sha256'):
         value=getattr(args,name);need(len(value)==64 and all(c in '0123456789abcdef' for c in value), 'frozen digest')
     ctx,a=context(root)
+    if args.startup_binding is not None:
+        path=args.startup_binding
+        need(path.is_absolute() and path.resolve(strict=True)==path and path.is_relative_to(root/'ignored'), 'canonical startup binding file')
+        value=args.startup_binding_sha256
+        need(len(value)==64 and all(c in '0123456789abcdef' for c in value), 'frozen startup binding digest')
+        modules=startup_modules(ctx)
+        pins=modules['startup_pins.py'].load(ctx,args.source_profile,args.source_profile_sha256)
+        return modules['startup_saved.py'].run(args,ctx,a,sys.modules[__name__],
+            modules['startup_custody.py'],pins,modules['startup_originals.py'])
     return run(args,ctx,a)
 
 

@@ -6,7 +6,9 @@
 
 pub mod dynamic;
 pub mod startup;
-pub use startup::{StartupLayout, StartupLimits, StaticExecStartup};
+pub use startup::{
+    StartupLayout, StartupLimits, StaticExecAbsolutePrerequisites, StaticExecStartup,
+};
 #[path = "elf64.rs"]
 pub mod elf64;
 
@@ -334,7 +336,27 @@ pub fn append_static_exec_with_router_startup(
         policy,
         true,
         Placement::AllLoads,
-        Some(startup),
+        Some(startup::Request::Single(startup)),
+    )
+}
+
+/// Emit the separately named three-absolute-dependency main grammar.
+/// This does not authenticate the named files or grant loader execution authority.
+pub fn append_static_exec_with_router_absolute_prerequisites(
+    input: &Elf64<'_>,
+    request: ImageRequest<'_>,
+    edits: &[DeclaredEdit],
+    policy: ImagePolicy,
+    startup: StaticExecAbsolutePrerequisites<'_>,
+) -> Result<CarrierOutput, Error> {
+    append_internal(
+        input,
+        request,
+        edits,
+        policy,
+        true,
+        Placement::AllLoads,
+        Some(startup::Request::Absolute(startup)),
     )
 }
 
@@ -352,7 +374,7 @@ fn append_internal(
     image_policy: ImagePolicy,
     extended: bool,
     placement: Placement,
-    startup_request: Option<StaticExecStartup<'_>>,
+    startup_request: Option<startup::Request<'_>>,
 ) -> Result<CarrierOutput, Error> {
     let interleaved = placement != Placement::Append;
     let startup = startup_request

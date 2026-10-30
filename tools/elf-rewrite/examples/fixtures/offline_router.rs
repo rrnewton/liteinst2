@@ -99,3 +99,35 @@ pub fn case(program: u64) -> Case {
         runtime,
     }
 }
+
+/// Additive prospective control; all original/planning bytes and denominators stay exact.
+pub fn absolute_case(program: u64) -> Case {
+    let mut c = case(program);
+    let name = if program == 1 {
+        "checksum"
+    } else {
+        "rle-roundtrip"
+    };
+    c.runtime = String::from_utf8(c.runtime)
+        .unwrap()
+        .replace("LI2BOOTSTRAP-POLICY 1", "LI2BOOTSTRAP-POLICY 2")
+        .replace(
+            "linux-x86-64-static-exec-router-bootstrap-v1",
+            "linux-x86-64-static-exec-router-absolute-prerequisites-v1",
+        )
+        .replace(
+            &format!("bootstrap /pkg/{name}.so"),
+            &format!("absolute-prerequisites /pkg/libgcc.so /pkg/libc.so /pkg/{name}.so"),
+        )
+        .replace("4096 4096 4097 112", "4096 4096 4097 144")
+        .into_bytes();
+    c.runtime.extend_from_slice(
+        format!(
+            "dependency /pkg/libc.so {}\ndependency /pkg/libgcc.so {}\n",
+            digest(b"prospectively pinned libc bytes"),
+            digest(b"prospectively pinned libgcc bytes")
+        )
+        .as_bytes(),
+    );
+    c
+}

@@ -13,6 +13,8 @@ use geometry::{near_target, validate_neighbors, validate_source_encoding};
 mod tests;
 
 pub const PROFILE: &str = "linux-x86-64-static-exec-router-bootstrap-v1";
+pub const ABSOLUTE_PREREQUISITES_PROFILE: &str =
+    "linux-x86-64-static-exec-router-absolute-prerequisites-v1";
 pub const MAX_CATALOG: usize = 64 * 1024 * 1024;
 pub const MAX_FILE: usize = 16 * 1024 * 1024;
 pub const MAX_MAPPED: u64 = 64 * 1024 * 1024;
@@ -150,24 +152,51 @@ pub struct Input {
     pub steps: Vec<Step>,
     pub images: Vec<Image>,
 }
+/// Ordered roles in the existing sorted dependency roster, never loader authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AbsolutePrerequisites {
+    pub libgcc_dependency: usize,
+    pub libc_dependency: usize,
+}
+/// Finite main metadata grammar. A class is checked before any runtime use.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StartupClass {
+    SingleBootstrap,
+    AbsolutePrerequisites(AbsolutePrerequisites),
+}
 /// Opaque structurally checked catalog. Still not a semantic or executable receipt.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Catalog(Input);
+pub struct Catalog(Input, StartupClass);
 impl Catalog {
     /// Checks all cross-record joins, not the external semantic admission contract.
     pub fn new(input: Input) -> Result<Self> {
-        validate(&input)?;
-        Ok(Self(input))
+        Self::new_class(input, StartupClass::SingleBootstrap)
+    }
+    /// Bind exactly two ordered prerequisites from the actual dependency roster.
+    pub fn new_absolute_prerequisites(input: Input, roles: AbsolutePrerequisites) -> Result<Self> {
+        Self::new_class(input, StartupClass::AbsolutePrerequisites(roles))
+    }
+    fn new_class(input: Input, class: StartupClass) -> Result<Self> {
+        validate(&input, class)?;
+        Ok(Self(input, class))
+    }
+    pub fn startup_class(&self) -> StartupClass {
+        self.1
+    }
+    /// Revalidate the selected exact grammar; the old free function stays old-only.
+    pub fn validate_startup(&self, elf: &Elf64<'_>) -> Result<u64> {
+        validate_startup_class(elf, &self.0.policy, self.1)
     }
     pub fn input(&self) -> &Input {
         &self.0
     }
     pub fn encode(&self) -> Result<Vec<u8>> {
-        wire::encode(&self.0)
+        wire::encode(&self.0, self.1)
     }
     /// Reject corruption, surplus data, noncanonical form, limits and bad joins.
     pub fn decode(bytes: &[u8]) -> Result<Self> {
-        Self::new(wire::decode(bytes)?)
+        let (input, class) = wire::decode(bytes)?;
+        Self::new_class(input, class)
     }
     pub fn main_id(&self) -> ContentId {
         ContentId::of(&self.0.main)
@@ -251,6 +280,54 @@ fn exactly_one<'a>(
 }
 /// Validate exact child-carrier startup grammar independently from its writer.
 pub fn validate_startup(elf: &Elf64<'_>, policy: &Policy) -> Result<u64> {
+    validate_startup_class(elf, policy, StartupClass::SingleBootstrap)
+}
+fn needed_paths(policy: &Policy, class: StartupClass) -> Result<Vec<&[u8]>> {
+    let names = match class {
+        StartupClass::SingleBootstrap => vec![policy.bootstrap_dso.as_slice()],
+        StartupClass::AbsolutePrerequisites(roles) => {
+            if roles.libgcc_dependency == roles.libc_dependency
+                || policy
+                    .dependencies
+                    .windows(2)
+                    .any(|w| w[0].path >= w[1].path)
+                || policy.dependencies.iter().any(|d| d.path.contains(&b'$'))
+                || policy.interpreter.contains(&b'$')
+            {
+                return Err(Error::Startup);
+            }
+            let get = |index: usize| -> Result<&[u8]> {
+                let d = policy.dependencies.get(index).ok_or(Error::Startup)?;
+                if d.path == policy.interpreter || d.path == policy.bootstrap_dso {
+                    return Err(Error::Startup);
+                }
+                Ok(&d.path)
+            };
+            let names = vec![
+                get(roles.libgcc_dependency)?,
+                get(roles.libc_dependency)?,
+                policy.bootstrap_dso.as_slice(),
+            ];
+            let total = names.iter().try_fold(0usize, |sum, path| {
+                if !path_ok(path) || path.contains(&b'$') {
+                    return Err(Error::Startup);
+                }
+                sum.checked_add(path.len() + 1).ok_or(Error::Limit)
+            })?;
+            if total > 4096 {
+                return Err(Error::Limit);
+            }
+            names
+        }
+    };
+    Ok(names)
+}
+fn validate_startup_class(elf: &Elf64<'_>, policy: &Policy, class: StartupClass) -> Result<u64> {
+    let names = needed_paths(policy, class)?;
+    let dynamic_bytes = match class {
+        StartupClass::SingleBootstrap => 112,
+        StartupClass::AbsolutePrerequisites(_) => 144,
+    };
     if elf.header().object_type != ObjectType::Executable
         || elf.header().flags != 0
         || !path_ok(&policy.interpreter)
@@ -276,8 +353,8 @@ pub fn validate_startup(elf: &Elf64<'_>, policy: &Policy) -> Result<u64> {
         || interp.memory_size != interp.file_size
         || interp.alignment != 1
         || dynamic.alignment != 8
-        || dynamic.file_size != 112
-        || dynamic.memory_size != 112
+        || dynamic.file_size != dynamic_bytes
+        || dynamic.memory_size != dynamic_bytes
     {
         return Err(Error::Startup);
     }
@@ -295,7 +372,13 @@ pub fn validate_startup(elf: &Elf64<'_>, policy: &Policy) -> Result<u64> {
         return Err(Error::Startup);
     }
     let str_start = ir.end;
-    let str_bytes = [&[0][..], policy.bootstrap_dso.as_slice(), &[0]].concat();
+    let mut str_bytes = vec![0];
+    let mut needed = Vec::new();
+    for name in names {
+        needed.push((1, str_bytes.len() as u64));
+        str_bytes.extend_from_slice(name);
+        str_bytes.push(0);
+    }
     let str_end = str_start.checked_add(str_bytes.len()).ok_or(Error::Limit)?;
     let sym_start = (str_end + 7) & !7;
     let sym_end = sym_start + 24;
@@ -311,9 +394,14 @@ pub fn validate_startup(elf: &Elf64<'_>, policy: &Policy) -> Result<u64> {
     if dynamic.offset.0 != dyn_start as u64 || dynamic.vaddr.0 != va(dyn_start)? {
         return Err(Error::Startup);
     }
-    let all = file_range(elf, interp.vaddr.0, (dyn_start + 112 - ir.start) as u64, 4)?;
+    let all = file_range(
+        elf,
+        interp.vaddr.0,
+        (dyn_start + dynamic_bytes as usize - ir.start) as u64,
+        4,
+    )?;
     if all.start != ir.start
-        || all.end != dyn_start + 112
+        || all.end != dyn_start + dynamic_bytes as usize
         || elf.bytes().get(str_start..str_end) != Some(str_bytes.as_slice())
     {
         return Err(Error::Startup);
@@ -330,20 +418,20 @@ pub fn validate_startup(elf: &Elf64<'_>, policy: &Policy) -> Result<u64> {
     if elf.bytes()[hash_start..hash_end] != expected_hash {
         return Err(Error::Startup);
     }
-    let tags = [
-        (1, 1),
+    let mut tags = needed;
+    tags.extend([
         (5, va(str_start)?),
         (10, str_bytes.len() as u64),
         (6, va(sym_start)?),
         (11, 24),
         (4, va(hash_start)?),
         (0, 0),
-    ];
+    ]);
     let expected = tags
         .into_iter()
         .flat_map(|(a, b): (u64, u64)| a.to_le_bytes().into_iter().chain(b.to_le_bytes()))
         .collect::<Vec<_>>();
-    if elf.bytes()[dyn_start..dyn_start + 112] != expected {
+    if elf.bytes()[dyn_start..dyn_start + dynamic_bytes as usize] != expected {
         return Err(Error::Startup);
     }
     if file_range(elf, ph.vaddr.0, ph.file_size, 4)?.start != ph.offset.0 as usize {
@@ -354,7 +442,10 @@ pub fn validate_startup(elf: &Elf64<'_>, policy: &Policy) -> Result<u64> {
         .map_err(|_| Error::Startup)?
         .program_header;
     if elf
-        .virtual_to_storage(interp.vaddr, (dyn_start + 112 - ir.start) as u64)
+        .virtual_to_storage(
+            interp.vaddr,
+            (dyn_start + dynamic_bytes as usize - ir.start) as u64,
+        )
         .map_err(|_| Error::Startup)?
         .program_header
         != owner
@@ -366,15 +457,16 @@ pub fn validate_startup(elf: &Elf64<'_>, policy: &Policy) -> Result<u64> {
         || ph.vaddr != load.vaddr
         || ph.alignment != 8
         || load.file_size != load.memory_size
-        || load.offset.0.checked_add(load.file_size) != Some((dyn_start + 112) as u64)
+        || load.offset.0.checked_add(load.file_size)
+            != Some((dyn_start + dynamic_bytes as usize) as u64)
     {
         return Err(Error::Startup);
     }
     Ok(ph.vaddr.0)
 }
 
-fn validate(x: &Input) -> Result<()> {
-    bounded_shape(x)?;
+fn validate(x: &Input, class: StartupClass) -> Result<()> {
+    bounded_shape(x, class)?;
     let (nh, ns) = match x.program {
         1 => (80, 16),
         2 => (107, 26),
@@ -521,7 +613,7 @@ fn validate(x: &Input) -> Result<()> {
     if mapped > MAX_MAPPED {
         return Err(Error::Limit);
     }
-    validate_startup(&main, &x.policy)?;
+    validate_startup_class(&main, &x.policy, class)?;
     for p in main.program_headers() {
         if !matches!(
             p.kind,
@@ -880,7 +972,7 @@ pub fn validate_marker(elf: &Elf64<'_>, pc: u64) -> Result<()> {
     Err(Error::Route)
 }
 
-fn bounded_shape(x: &Input) -> Result<()> {
+fn bounded_shape(x: &Input, class: StartupClass) -> Result<()> {
     let mut used = 1024usize;
     let mut records = x.heads.len()
         + x.steps.len()
@@ -895,6 +987,10 @@ fn bounded_shape(x: &Input) -> Result<()> {
             Ok(())
         }
     };
+    if matches!(class, StartupClass::AbsolutePrerequisites(_)) {
+        add(16)?;
+        records = records.checked_add(2).ok_or(Error::Limit)?;
+    }
     for b in [
         &x.original,
         &x.main,

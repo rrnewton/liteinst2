@@ -1,0 +1,373 @@
+{
+ "schema": "LI2-REQUIRED-VALIDATION-1",
+ "revision": "a72c96408d51b366ad2b1433821f534a593b4d26",
+ "hardware": "AMD EPYC Zen 5 dev host",
+ "scope": "Debug correctness validation; no performance or full-program native qualification.",
+ "source_unchanged": true,
+ "tracked_working_delta": {},
+ "validation_script": {
+  "path": "evaluation/short-neighbor-parallel/validate.py",
+  "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+ },
+ "validation_closed_sha256": "8638b3291bd22825560d35fe8e1171a4cf96a42b02f4d5a23645ec5541b0274c",
+ "owner_receipt_sha256": "f27be2366ff047aa31dbe557e7702cc35316753fb12c41f10d34c8ca99f8b5f8",
+ "owner": {
+  "start_utc": "2026-10-30T13:18:02.074240+00:00",
+  "exit_code": 0,
+  "termination": null,
+  "seconds": 1101.3181323141325,
+  "private_log_sha256": "851a9e714e7a2cf2f80a31c9bb0a821ae27f777fb2ced549bf664980b3d6a8b7",
+  "cleanup_complete": true,
+  "reaped_descendants": 0,
+  "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+ },
+ "reserved_cpus": [
+  17,
+  30,
+  67,
+  73,
+  100,
+  101,
+  102,
+  147,
+  164,
+  232,
+  235,
+  243,
+  280,
+  283,
+  290,
+  309
+ ],
+ "load_before": [
+  "101.80",
+  "88.27",
+  "89.57"
+ ],
+ "load_after": [
+  "93.07",
+  "89.22",
+  "85.36"
+ ],
+ "profile": {
+  "workspace_jobs": 16,
+  "default_jobs": 4,
+  "test_threads": 316,
+  "opt_level": 0,
+  "debug_info": 0,
+  "incremental": false,
+  "debug_assertions": true,
+  "overflow_checks": true,
+  "offline": true
+ },
+ "checks": [
+  {
+   "name": "fmt",
+   "command": [
+    "cargo",
+    "fmt",
+    "--check"
+   ],
+   "wall_limit_seconds": 180,
+   "exit_code": 0,
+   "termination": null,
+   "elapsed_seconds": 9.396835724124685,
+   "cleanup_complete": true,
+   "reaped_descendants": 0,
+   "totals": null,
+   "unfiltered_summary_count": 0,
+   "excluded_filtered_summary_count": 0,
+   "excluded_filtered_totals": {
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0
+   },
+   "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "load_before": [
+    "101.80",
+    "88.27",
+    "89.57"
+   ],
+   "load_after": [
+    "100.38",
+    "88.20",
+    "89.54"
+   ]
+  },
+  {
+   "name": "clippy",
+   "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--all-features",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "wall_limit_seconds": 180,
+   "exit_code": 0,
+   "termination": null,
+   "elapsed_seconds": 49.594320013187826,
+   "cleanup_complete": true,
+   "reaped_descendants": 0,
+   "totals": null,
+   "unfiltered_summary_count": 0,
+   "excluded_filtered_summary_count": 0,
+   "excluded_filtered_totals": {
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0
+   },
+   "raw_log_sha256": "7207bff5ccfebd47b817d9eaa6e95f1715b917034ab5113c37f0f43ced60be04",
+   "load_before": [
+    "100.38",
+    "88.20",
+    "89.54"
+   ],
+   "load_after": [
+    "92.98",
+    "88.22",
+    "89.49"
+   ]
+  },
+  {
+   "name": "check",
+   "command": [
+    "cargo",
+    "check",
+    "--workspace",
+    "--all-features",
+    "--all-targets"
+   ],
+   "wall_limit_seconds": 180,
+   "exit_code": 0,
+   "termination": null,
+   "elapsed_seconds": 36.08544344292022,
+   "cleanup_complete": true,
+   "reaped_descendants": 0,
+   "totals": null,
+   "unfiltered_summary_count": 0,
+   "excluded_filtered_summary_count": 0,
+   "excluded_filtered_totals": {
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0
+   },
+   "raw_log_sha256": "0143d4104e1189b0a4c2e64c68de23e585ece5c07529a46dc1906e46a1ef0d32",
+   "load_before": [
+    "92.98",
+    "88.22",
+    "89.49"
+   ],
+   "load_after": [
+    "93.41",
+    "88.92",
+    "89.67"
+   ]
+  },
+  {
+   "name": "workspace",
+   "command": [
+    "cargo",
+    "test",
+    "-j",
+    "16",
+    "--workspace",
+    "--no-fail-fast"
+   ],
+   "wall_limit_seconds": 900,
+   "exit_code": 0,
+   "termination": null,
+   "elapsed_seconds": 865.8504022730049,
+   "cleanup_complete": true,
+   "reaped_descendants": 0,
+   "totals": {
+    "passed": 3794,
+    "failed": 0,
+    "ignored": 37,
+    "measured": 0,
+    "filtered_out": 0
+   },
+   "unfiltered_summary_count": 107,
+   "excluded_filtered_summary_count": 3,
+   "excluded_filtered_totals": {
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 105
+   },
+   "raw_log_sha256": "248764d7f0ac2fcc0f52bda728089eff53c90cf8d9675042670faa497e1aa5af",
+   "load_before": [
+    "93.41",
+    "88.92",
+    "89.67"
+   ],
+   "load_after": [
+    "94.79",
+    "81.84",
+    "82.49"
+   ]
+  },
+  {
+   "name": "serial-launch",
+   "command": [
+    "cargo",
+    "test",
+    "-p",
+    "liteinst-launch",
+    "--tests",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+   ],
+   "wall_limit_seconds": 180,
+   "exit_code": 0,
+   "termination": null,
+   "elapsed_seconds": 140.28608965710737,
+   "cleanup_complete": true,
+   "reaped_descendants": 0,
+   "totals": {
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0
+   },
+   "unfiltered_summary_count": 27,
+   "excluded_filtered_summary_count": 0,
+   "excluded_filtered_totals": {
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered_out": 0
+   },
+   "raw_log_sha256": "9609764cec5402fccf654cd7d76431b727f856e7e677518006d2bb6dc5fa279e",
+   "load_before": [
+    "94.79",
+    "81.84",
+    "82.49"
+   ],
+   "load_after": [
+    "93.07",
+    "89.22",
+    "85.36"
+   ]
+  }
+ ],
+ "summary_rule": "Count each unfiltered Rust summary; retain filtered nested child summaries separately; no doctest deduplication. Totals describe completed summaries only.",
+ "required_groups": {
+  "rapid_rejection": {
+   "PASS_LINE_OBSERVED": 2
+  },
+  "prefixed_pun": {
+   "PASS_LINE_OBSERVED": 1
+  },
+  "quiescent_oracle": {
+   "PASS_LINE_OBSERVED": 4
+  },
+  "observing_control": {
+   "PASS_LINE_OBSERVED": 8
+  },
+  "short_neighbor": {
+   "PASS_LINE_OBSERVED": 21
+  },
+  "routed_jmp_native": {
+   "PASS_LINE_OBSERVED": 34
+  },
+  "routed_jmp_frontend": {
+   "PASS_LINE_OBSERVED": 17
+  },
+  "gap_carrier": {
+   "PASS_LINE_OBSERVED": 9
+  },
+  "routed_jmp_publication": {
+   "PASS_LINE_OBSERVED": 3
+  },
+  "startup_carrier": {
+   "PASS_LINE_OBSERVED": 9
+  },
+  "staged_image_drop": {
+   "PASS_LINE_OBSERVED": 1
+  },
+  "startup_catalog": {
+   "PASS_LINE_OBSERVED": 8
+  }
+ },
+ "not_observed": [],
+ "workspace_complete": true,
+ "qualification_complete": false,
+ "performance_eligible": false,
+ "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+ "owner_command": [
+  "/usr/bin/python3.9",
+  "-B",
+  "evaluation/short-neighbor-parallel/validate.py",
+  "--revision",
+  "a72c96408d51b366ad2b1433821f534a593b4d26",
+  "--output",
+  "$OUTPUT"
+ ],
+ "owner_wall_limit_seconds": 1200,
+ "output_limit_bytes": 8388608,
+ "attempts": 1,
+ "required_roster": {
+  "source_revision": "559a8450c78105af681bf7d6f371f15e374b16a6",
+  "rows": 117,
+  "source_files": 30,
+  "canonical_rows_sha256": "1023e736171e09a22a45b958ad15419e0e510836a408702af74ebaba03c04f9b",
+  "canonical_source_inventory_sha256": "684275569560788a82660295cc7aba6c7d19bdb96425609b67fc65f5f0b35f46",
+  "canonicalization": "UTF-8 JSON; sorted object keys; comma/colon separators; no trailing newline",
+  "source_only_roster_script_sha256": "14e8b89f37a00a0dcbccdca27cc2a4fa5aaf1a05912390ed983a6db918227443"
+ },
+ "new_explicit_rust_tests": {
+  "comparison_revision": "559a8450c78105af681bf7d6f371f15e374b16a6",
+  "added": 21,
+  "workspace_pass_lines": 9,
+  "outside_this_invocation": 12,
+  "by_source": [
+   {
+    "path": "crates/liteinst-artifact/src/startup/tests.rs",
+    "added": 4,
+    "workspace_pass_lines": 4
+   },
+   {
+    "path": "evaluation/adjacent-b2/artifact-verifier/src/verify/startup/tests.rs",
+    "added": 7,
+    "workspace_pass_lines": 0
+   },
+   {
+    "path": "tools/elf-rewrite/examples/offline_router_sites.rs",
+    "added": 1,
+    "workspace_pass_lines": 0
+   },
+   {
+    "path": "tools/elf-rewrite/src/carrier/startup_fixtures.rs",
+    "added": 5,
+    "workspace_pass_lines": 5
+   },
+   {
+    "path": "tools/elf-rewrite/src/offline_router/tests.rs",
+    "added": 4,
+    "workspace_pass_lines": 0
+   }
+  ]
+ },
+ "prior_validation": {
+  "path": "evaluation/offline-router-corpus/validation-559a845/receipt.json",
+  "sha256": "393482a989fe3e2b8ed2b45586ee703b1e69bd66a1d25e2c487143a135bb8116",
+  "workspace_complete": false,
+  "workspace_status": "TIMEOUT",
+  "required_pass_lines": 112,
+  "required_roster": 117
+ }
+}

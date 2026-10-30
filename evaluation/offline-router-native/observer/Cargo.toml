@@ -1,0 +1,18 @@
+[package]
+name = "li2-kernel-exec-observer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+
+# Separate opt-in source slice; no workspace/default execution entry point.
+[workspace]
+
+[dependencies]
+libc = "=0.2.189"
+sha2 = "=0.10.9"
+
+[profile.release]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true

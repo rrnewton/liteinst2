@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 mod compiler;
 mod host;
-pub use compiler::catalog_from_plans;
+pub use compiler::{catalog_from_plans, catalog_from_plans_absolute_prerequisites};
 
 /// Typed startup failure. The constructor must terminate on every error.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

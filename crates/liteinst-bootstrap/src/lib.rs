@@ -57,9 +57,9 @@ where
 
 #[cfg(not(test))]
 unsafe extern "C" fn initialize() {
-    // SAFETY: this artifact is admitted only as the sole constructor in the
-    // explicitly reviewed static-exec package/loader contract, including the
-    // exclusive process-global panic-hook lease stated above. Integration must
+    // SAFETY: this is the sole LiteInst activation constructor in the complete
+    // startup roster covered by the reviewed static-exec package/loader contract,
+    // including the exclusive process-global panic-hook lease. Integration must
     // qualify that contract before launch. The core independently enforces
     // measurable file/map/target/signal facts; it cannot infer historical
     // quiescence, semantic/lifetime facts, or the hook lease. This DSO must never

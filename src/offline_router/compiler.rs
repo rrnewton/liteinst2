@@ -15,7 +15,22 @@ use liteinst_artifact::{
 /// required, including every auxiliary step/image. This pure bridge replans and
 /// emits nothing. Its result still requires independent W01 and semantic/package
 /// qualification; it is not execution permission.
-pub fn catalog_from_plans(mut input: Input, plans: &[(u64, ArtifactPlan)]) -> c::Result<Catalog> {
+pub fn catalog_from_plans(input: Input, plans: &[(u64, ArtifactPlan)]) -> c::Result<Catalog> {
+    catalog_from_plans_class(input, plans, c::StartupClass::SingleBootstrap)
+}
+/// The same complete opaque-plan bridge, with an explicit ordered prerequisite class.
+pub fn catalog_from_plans_absolute_prerequisites(
+    input: Input,
+    plans: &[(u64, ArtifactPlan)],
+    roles: c::AbsolutePrerequisites,
+) -> c::Result<Catalog> {
+    catalog_from_plans_class(input, plans, c::StartupClass::AbsolutePrerequisites(roles))
+}
+fn catalog_from_plans_class(
+    mut input: Input,
+    plans: &[(u64, ArtifactPlan)],
+    class: c::StartupClass,
+) -> c::Result<Catalog> {
     if !input.steps.is_empty() || !input.images.is_empty() || plans.len() > 4096 {
         return Err(c::Error::Shape);
     }
@@ -203,7 +218,12 @@ pub fn catalog_from_plans(mut input: Input, plans: &[(u64, ArtifactPlan)]) -> c:
             });
         }
     }
-    Catalog::new(input)
+    match class {
+        c::StartupClass::SingleBootstrap => Catalog::new(input),
+        c::StartupClass::AbsolutePrerequisites(roles) => {
+            Catalog::new_absolute_prerequisites(input, roles)
+        }
+    }
 }
 
 fn check_hook(image: &crate::emission::ArtifactImageView<'_>, policy: &c::Policy) -> c::Result<()> {

@@ -1,5 +1,6 @@
 //! Read-only structural verifier. Input is a closed adapter-owned byte transport;
 //! this executable never opens a product, creates an executable, or dispatches it.
+mod startup_transport;
 mod verify;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
@@ -178,11 +179,14 @@ fn run() -> Result<()> {
         fs::{MetadataExt, OpenOptionsExt},
     };
     let args: Vec<_> = std::env::args_os().collect();
+    let absolute_mode = args.len() == 4 && args[1] == "--startup-absolute-prerequisites";
+    let startup_mode = args.len() == 4 && (args[1] == "--startup" || absolute_mode);
     require(
-        args.len() == 3 && cfg!(target_os = "linux"),
-        "usage: verifier TRANSPORT SHA256 (Linux read-only transport)",
+        (args.len() == 3 || startup_mode) && cfg!(target_os = "linux"),
+        "usage: verifier [--startup | --startup-absolute-prerequisites] TRANSPORT SHA256 (Linux read-only transport)",
     )?;
-    let expected_hash = checked(std::str::from_utf8(args[2].as_bytes()))?;
+    let transport_arg = if startup_mode { 2 } else { 1 };
+    let expected_hash = checked(std::str::from_utf8(args[transport_arg + 1].as_bytes()))?;
     require(
         expected_hash.len() == 64 && verify::unhex(expected_hash)?.len() == 32,
         "transport hash",
@@ -193,22 +197,24 @@ fn run() -> Result<()> {
         std::fs::OpenOptions::new()
             .read(true)
             .custom_flags(0x20000 | 0x800)
-            .open(&args[1]),
+            .open(&args[transport_arg]),
     )?;
     let before = checked(input.metadata())?;
     require(
         before.is_file(),
         "bounded regular transport before allocation",
     )?;
-    transport_bound(before.len())?;
+    let limit = if startup_mode {
+        startup_transport::complete_bound(before.len())?;
+        startup_transport::BYTES
+    } else {
+        transport_bound(before.len())?;
+        TRANSPORT_BYTES
+    };
     let mut raw = Vec::with_capacity(host(before.len())?);
-    checked(
-        (&mut input)
-            .take(TRANSPORT_BYTES as u64 + 1)
-            .read_to_end(&mut raw),
-    )?;
+    checked((&mut input).take(limit as u64 + 1).read_to_end(&mut raw))?;
     let after = checked(input.metadata())?;
-    let named = checked(std::fs::symlink_metadata(&args[1]))?;
+    let named = checked(std::fs::symlink_metadata(&args[transport_arg]))?;
     let stamp = |m: &std::fs::Metadata| {
         (
             m.dev(),
@@ -228,6 +234,37 @@ fn run() -> Result<()> {
             && digest(&raw) == expected_hash,
         "immutable transport custody",
     )?;
+    if startup_mode {
+        let (program, original, expected, product, input) = if absolute_mode {
+            startup_transport::decode_absolute_prerequisites(&mut raw.as_slice())?
+        } else {
+            startup_transport::decode(&mut raw.as_slice())?
+        };
+        let (result, startup) = if absolute_mode {
+            verify::startup::verify_absolute_prerequisites(
+                &program, &original, &expected, &product, &input,
+            )?
+        } else {
+            verify::startup::verify(&program, &original, &expected, &product, &input)?
+        };
+        println!(
+            "LI2W01-PROGRAM\t2\nprofile\t{}\nprogram\t{}\noriginal_heads\t{}\nselected\t{}\nimages\t{}\ncandidate_sha256\t{}\ncatalog_sha256\t{}\nstartup_policy_sha256\t{}\ndependency_roster_sha256\t{}\nstructural_joins_complete\ttrue\nqualification_complete\tfalse\nclassification_complete\tfalse\nnative_correctness_complete\tfalse\nperformance_eligible\tfalse",
+            if absolute_mode {
+                verify::startup::ABSOLUTE_PROFILE
+            } else {
+                verify::startup::PROFILE
+            },
+            result.program,
+            startup.original_heads,
+            result.selected,
+            result.images,
+            result.candidate_sha256,
+            startup.catalog_sha256,
+            startup.startup_policy_sha256,
+            startup.dependency_roster_sha256
+        );
+        return Ok(());
+    }
     let (program, original, expected, product) = transport(&mut raw.as_slice())?;
     indices(&original, &product)?;
     let result = verify::verify(&program, &original, &expected, &product)?;

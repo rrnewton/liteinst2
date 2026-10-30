@@ -466,3 +466,198 @@ fn coherently_rebound_selected_count_only_refuses_exact_full_denominator() {
         assert_denominator_refusal(&changed);
     }
 }
+
+fn bind_absolute(c: &fixture::Case) -> Result<Bound, Error> {
+    Bound::bind_absolute_prerequisites(
+        &c.original,
+        &c.ledger,
+        ContentId::of(&c.ledger),
+        &c.planning,
+        ContentId::of(&c.planning),
+        &c.runtime,
+        ContentId::of(&c.runtime),
+    )
+}
+
+#[test]
+fn absolute_pair_uses_all_real_plans_and_the_same_original_planning_contract() {
+    let a = fixture::absolute_case(1);
+    let b = fixture::absolute_case(2);
+    let aa = bind_absolute(&a).unwrap();
+    let bb = bind_absolute(&b).unwrap();
+    let products = prepare_programs([&a.original, &b.original], [&aa, &bb]).unwrap();
+    for (index, (product, bound)) in products.iter().zip([&aa, &bb]).enumerate() {
+        let old_case = fixture::case(index as u64 + 1);
+        let old_bound = bind(&old_case).unwrap();
+        assert_eq!(bound.manifest(), old_bound.manifest());
+        assert_eq!(bound.selected.limits, old_bound.selected.limits);
+        assert_eq!(
+            bound.binding_files()["disassembly-policy.txt"],
+            old_case.planning
+        );
+        assert_eq!(bound.profile(), ABSOLUTE_PREREQUISITES_PROFILE);
+        assert!(product.candidate_complete());
+        assert!(!product.qualification_complete());
+        assert_eq!(product.reports().len(), [16, 26][index]);
+        assert!(
+            product
+                .reports()
+                .iter()
+                .all(|r| r.candidate_emitted && r.refusal.is_none())
+        );
+        let files = product.files();
+        let catalog = boot::Catalog::decode(&files["catalog.li2boot"]).unwrap();
+        assert_eq!(
+            catalog.startup_class(),
+            boot::StartupClass::AbsolutePrerequisites(boot::AbsolutePrerequisites {
+                libgcc_dependency: 2,
+                libc_dependency: 1
+            })
+        );
+        assert_eq!(&files["catalog.li2boot"][8..16], &3u64.to_le_bytes());
+        let input = catalog.input();
+        assert_eq!(
+            (input.heads.len(), input.steps.len(), input.images.len()),
+            ([80, 107][index], [16, 26][index], [16, 26][index])
+        );
+        assert_eq!(input.main, files["candidate.elf"]);
+        assert_eq!(input.metadata, files["metadata.li2meta"]);
+        assert_eq!(input.ledger, files["ledger.tsv"]);
+        assert_eq!(input.target, files["target.tsv"]);
+        assert_eq!(input.selection, bound.manifest());
+        assert_eq!(catalog.encode().unwrap(), files["catalog.li2boot"]);
+        assert!(catalog.routes().is_empty());
+        let elf = boot::parse(&input.main).unwrap();
+        assert_eq!(
+            elf.header().entry,
+            boot::parse(&input.original).unwrap().header().entry
+        );
+        let dynamic = elf
+            .segments(carrier::elf64::SegmentType::Dynamic)
+            .collect::<Vec<_>>();
+        assert_eq!(dynamic.len(), 1);
+        assert_eq!((dynamic[0].file_size, dynamic[0].memory_size), (144, 144));
+        assert!(catalog.validate_startup(&elf).is_ok());
+        assert!(boot::validate_startup(&elf, &input.policy).is_err());
+        for (i, image) in input.images.iter().enumerate() {
+            assert_eq!(image.body.bytes, files[&format!("image-{i:04}.bin")]);
+        }
+        let profile = std::str::from_utf8(&files["startup-profile.tsv"]).unwrap();
+        assert!(profile.contains(&format!("profile\t{ABSOLUTE_PREREQUISITES_PROFILE}\n")));
+        assert!(profile.contains("qualification_complete\tfalse\nexecution_authority\tnone\n"));
+    }
+}
+
+#[test]
+fn absolute_binding_is_explicit_and_mixed_pairs_refuse_before_any_planning() {
+    let a = fixture::absolute_case(1);
+    let b = fixture::case(2);
+    assert!(bind(&a).is_err());
+    assert!(bind_absolute(&b).is_err());
+    let aa = bind_absolute(&a).unwrap();
+    let bb = bind(&b).unwrap();
+    assert!(
+        prepare_programs_with_gate([&a.original, &b.original], [&aa, &bb], |_, _| {
+            panic!("mixed startup classes reached planner")
+        })
+        .is_err()
+    );
+    assert!(
+        Bound::bind_absolute_prerequisites(
+            &a.original,
+            &a.ledger,
+            ContentId::of(&a.ledger),
+            &a.planning,
+            ContentId::of(&a.planning),
+            &a.runtime,
+            ContentId::of(b"stale policy")
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn absolute_policy_charges_the_complete_name_roster_and_rejects_unbound_roles() {
+    let base = fixture::absolute_case(1);
+    bind_absolute(&base).unwrap();
+    let text = std::str::from_utf8(&base.runtime).unwrap();
+    for (from, to) in [
+        ("LI2BOOTSTRAP-POLICY 2", "LI2BOOTSTRAP-POLICY 1"),
+        (boot::ABSOLUTE_PREREQUISITES_PROFILE, boot::PROFILE),
+        (
+            "absolute-prerequisites /pkg/libgcc.so /pkg/libc.so",
+            "absolute-prerequisites /pkg/libc.so /pkg/libc.so",
+        ),
+        (
+            "absolute-prerequisites /pkg/libgcc.so",
+            "absolute-prerequisites /pkg/missing.so",
+        ),
+        (
+            "absolute-prerequisites /pkg/libgcc.so",
+            "absolute-prerequisites /pkg/ld.so",
+        ),
+        ("/pkg/libgcc.so", "/pkg/$LIB.so"),
+        ("4096 4096 4097 144", "4096 4096 4097 112"),
+        ("4096 4096 4097 144", "4096 4096 4097 145"),
+        ("4096 4096 4097 144", "4096 30 4097 144"),
+        ("4096 4096 4097 144", "4096 4096 30 144"),
+    ] {
+        assert!(text.contains(from));
+        let mut changed = fixture::absolute_case(1);
+        changed.runtime = text.replace(from, to).into_bytes();
+        assert!(
+            bind_absolute(&changed).is_err(),
+            "required absolute policy mutant {from} -> {to}"
+        );
+    }
+    let mut missing = fixture::absolute_case(1);
+    missing.runtime = (text
+        .lines()
+        .filter(|r| !r.starts_with("dependency /pkg/libgcc.so "))
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n")
+        .into_bytes();
+    assert!(bind_absolute(&missing).is_err());
+}
+
+#[test]
+fn absolute_pair_final_refusals_still_attempt_both_and_release_no_product() {
+    let a = fixture::absolute_case(1);
+    let b = fixture::absolute_case(2);
+    let aa = bind_absolute(&a).unwrap();
+    let bb = bind_absolute(&b).unwrap();
+    for stop in [
+        "evidence-serialization",
+        "carrier-construction",
+        "sparse-serialization",
+        "complete-output-serialization",
+        "startup-catalog",
+    ] {
+        let mut first = Vec::new();
+        let mut second = Vec::new();
+        let result =
+            prepare_programs_with_gate([&a.original, &b.original], [&aa, &bb], |program, stage| {
+                if program == 1 {
+                    first.push(stage);
+                } else {
+                    second.push(stage);
+                }
+                if program == 1 && stage == stop {
+                    Err(Error::new("injected-absolute-boundary", stop))
+                } else {
+                    Ok(())
+                }
+            });
+        assert!(result.is_err(), "required terminal boundary {stop}");
+        assert_eq!(first.last(), Some(&stop));
+        assert_eq!(
+            second
+                .iter()
+                .filter(|&&s| s == "evidence-serialization")
+                .count(),
+            1
+        );
+        assert_eq!(second.last(), Some(&"startup-catalog"));
+    }
+}
