@@ -72,6 +72,10 @@ int li2_rseq_after_syscall(long,const long[6]);
 int li2_rseq_check_instruction(const struct li2_decoded *,const ucontext_t *);
 struct li2_run_plan;
 int li2_rseq_check_run(const struct li2_run_plan *,const ucontext_t *);
+#ifdef LI2_UNROLLED_HASH
+struct li2_unrolled_hash_plan;
+int li2_rseq_check_unrolled(const struct li2_unrolled_hash_plan *,const ucontext_t *);
+#endif
 
 #ifdef LI2_RSEQ_TCGETS_BTRFS
 #include "rseq_tcgets_btrfs.h"

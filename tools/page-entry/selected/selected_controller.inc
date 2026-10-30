@@ -551,6 +551,9 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_REGISTER_RUN
     if(!selected_selftesting && selected_run_try(sig,si,context,flags))return;
 #endif
+#ifdef LI2_UNROLLED_HASH
+    if(!selected_selftesting && selected_unrolled_try(sig,si,context,flags))return;
+#endif
     /* The descriptive Nopw candidate also includes canonical 66 90. The
        initial owner only qualifies single-byte 90; use the already-qualified
        generic padding owner for this exact two-byte form. */

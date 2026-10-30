@@ -1,0 +1,127 @@
+{
+  "backing_cleanup_query_required": true,
+  "backing_cleanup_required": true,
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "evaluation/admission/recorder_parallel.py"
+      ],
+      "environment_delta": {},
+      "id": "recorder_tests",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "environment_delta": {},
+      "id": "fmt",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "environment_delta": {},
+      "id": "clippy",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "environment_delta": {},
+      "id": "workspace_tests",
+      "status": "not_run",
+      "timeout_seconds": 900
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "environment_delta": {},
+      "id": "workspace_check",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "environment_delta": {
+        "LITEINST_EVALUATION": "1"
+      },
+      "id": "serial_launch",
+      "status": "not_run",
+      "timeout_seconds": 180
+    }
+  ],
+  "configuration_unchanged": null,
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "target",
+    "CARGO_TERM_COLOR": "never",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RLIMIT_CORE": 0,
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOCFLAGS": "",
+    "RUSTFLAGS": "",
+    "RUST_TEST_THREADS": "4",
+    "TMPDIR": "private_run/tmp"
+  },
+  "error": "revision_differs",
+  "expected_revision": "de4feb9f135e2a0bb7b8d7ebbe854f1251873e26",
+  "log_limit_bytes_per_command": 8388608,
+  "precontext_native_required": true,
+  "profile": "inprocess-required-checks-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/checks.py",
+    "--expect-revision",
+    "de4feb9f135e2a0bb7b8d7ebbe854f1251873e26"
+  ],
+  "runner_sha256": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39",
+  "schema_version": 1,
+  "scope": "900-second workspace; complete recorder discovery across at most 4 exec workers within the original 180 seconds. Serial timeouts remain failed.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "de4feb92422208e8c69cbdef6d14dfcf0f51618d",
+    "source_manifest_sha256": "becab2fe4a5de2f87c2801ab29fce1e4e675785a3ca0b75a4a8b471f31703542",
+    "tracked_clean": true,
+    "tree": "b3a0a680fa572cd60458d2ca777e634f7de18881"
+  },
+  "source_unchanged": null,
+  "started_utc": "20261030T085512.608604Z",
+  "status": "failed"
+}

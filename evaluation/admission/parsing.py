@@ -61,6 +61,18 @@ def harness_id(line):
         r"\(target/debug/examples/disassembly_sites-[a-f0-9]+\)", line)
     if example:
         return "unit/disassembly_sites/disassembly_sites"
+    # One additional exact test=true example; no generic example spelling.
+    example = re.fullmatch(
+        r"\s*Running unittests examples/adjacent_b2_disassembly_sites\.rs "
+        r"\(target/debug/examples/adjacent_b2_disassembly_sites-[a-f0-9]+\)", line)
+    if example:
+        return "unit/adjacent_b2_disassembly_sites/adjacent_b2_disassembly_sites"
+    # Exact routed-jump example declared test=true by the merged Cargo target.
+    example = re.fullmatch(
+        r"\s*Running unittests examples/adjacent_routed_jmp_disassembly_sites\.rs "
+        r"\(target/debug/examples/adjacent_routed_jmp_disassembly_sites-[a-f0-9]+\)", line)
+    if example:
+        return "unit/adjacent_routed_jmp_disassembly_sites/adjacent_routed_jmp_disassembly_sites"
     match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
@@ -75,6 +87,10 @@ def harness_id(line):
             "invalid_harness_source_label")
     require(label != "unittests examples/disassembly_sites.rs" and binary[1] != "disassembly_sites",
             "invalid_harness_source_label")
+    require(label != "unittests examples/adjacent_b2_disassembly_sites.rs"
+            and binary[1] != "adjacent_b2_disassembly_sites", "invalid_harness_source_label")
+    require(label != "unittests examples/adjacent_routed_jmp_disassembly_sites.rs"
+            and binary[1] != "adjacent_routed_jmp_disassembly_sites", "invalid_harness_source_label")
     if label == "unittests ordinary-interval/main.rs" or binary[1] == "ordinary_interval":
         require(label == "unittests ordinary-interval/main.rs" and binary[1] == "ordinary_interval",
                 "invalid_harness_source_label")
@@ -263,7 +279,13 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 299, 1),
                                   # Ten adjacent-B2 tests; the entire old ptrace
                                   # child source and nested stack stay exact.
-                                  ("unit/liteinst2/lib", 309, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 309, 1),
+                                  # Twenty-one mixed-pair controls retain the
+                                  # complete original ptrace child protocol.
+                                  ("unit/liteinst2/lib", 330, 1),
+                                  # Thirty-four routed native cases and thirty-five
+                                  # inherited oracle tests; original child unchanged.
+                                  ("unit/liteinst2/lib", 399, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

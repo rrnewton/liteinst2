@@ -1,0 +1,10 @@
+mode,status,expected_exit,exit,duration_ns,record_bytes,reader_control_count,completed_chunk,completed_loop,required_read_failure,reference_trace,generated_trace,exit_kind
+0,qualified_component,0,0,6860513,556032,41,1,1,0,8,0,2
+1,qualified_component,0,0,5871549,556032,41,1,1,0,16,0,2
+2,qualified_component,0,0,6710978,556032,41,1,1,0,504,0,2
+3,qualified_component,0,0,8849798,556032,41,1,1,0,512,0,2
+4,qualified_component,0,0,6385640,556032,41,1,0,0,512,0,1
+5,qualified_component,0,0,5895175,556032,41,1,1,0,16,0,2
+6,qualified_component,0,0,7029407,556032,41,1,1,0,512,0,2
+7,qualified_required_failure,125,125,8714835,556032,43,0,0,1,5,0,3
+8,qualified_required_failure,125,125,7193803,556032,43,0,0,1,509,0,3
