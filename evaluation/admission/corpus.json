@@ -6499,7 +6499,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 159
+        "tests": 168
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,

@@ -27172,6 +27172,231 @@
     "tools/rapid-profiler/src/lib.rs": "52b54ed20f6e8daa509846e2ac543ff5ef6e8099b1d69cc8623b94421e3c363d",
     "tools/rapid-profiler/verify_ordinary_interval.py": "91a79ef36580a603b69632690f42fa6027b998602685017be175986d0e72f626"
   },
+  "startup_carrier": {
+    "base_revision": "d55bd15ad5951bf64a2e96487af238ba4c108feb",
+    "current_corpus_sha256": "8a246881278619949de5b48d39288d9d893c0be514edaf0dca0c5c9db7000b9f",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "recorder_tests": 0,
+      "rust_tests": 9,
+      "serial_tests": 0
+    },
+    "instances": {
+      "tools/elf-rewrite/src/carrier/startup_fixtures.rs": {
+        "unit/liteinst_rewrite/lib": "carrier::startup_fixtures::"
+      }
+    },
+    "methods": {
+      "tools/elf-rewrite/src/carrier/mod.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/startup.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/startup_fixtures.rs": {
+        "all": [
+          "startup_minimal_static_exec_has_exact_loader_grammar_and_preservation",
+          "startup_existing_phdr_and_stack_keep_literal_records_and_prefix_order",
+          "startup_empty_image_set_has_a_trigger_and_existing_apis_remain_plain",
+          "startup_path_and_metadata_limits_have_exact_boundaries",
+          "startup_all_main_resources_include_added_headers_pages_and_original_high_hull",
+          "startup_refuses_existing_dynamic_tls_unsafe_permissions_and_wrong_object",
+          "startup_keeps_complete_bss_pages_metadata_and_source_ownership_guards",
+          "startup_preserves_static_symbols_and_refuses_dynamic_resolver_startup_sections",
+          "startup_input_metadata_is_bounded_checked_and_protected_from_source_edits"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "all": [],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "Cargo.toml": [
+        "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]"
+      ],
+      "evaluation/adjacent-b2/artifact-verifier/Cargo.toml": [
+        "name = \"adjacent-b2-artifact-verifier\"",
+        "[workspace]\n\n[dependencies]"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\""
+      ],
+      "tools/elf-rewrite/src/carrier/mod.rs": [
+        "pub mod startup;",
+        "#[cfg(test)]\n#[path = \"startup_fixtures.rs\"]\nmod startup_fixtures;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod carrier;"
+      ]
+    },
+    "previous_corpus_sha256": "09b2c7592bd110c3aa800d57a439b91c0ccf2fedb5987a6826fe4460744323f3",
+    "projections": {
+      "tools/elf-rewrite/src/carrier/mod.rs": {
+        "current_sha256": "9ddc5dafa7e7f85604a51526f9bf06e94c1553c24b2f60ac62444e9021fc3b20",
+        "edits": [
+          [
+            343,
+            428,
+            ""
+          ],
+          [
+            4705,
+            4823,
+            ""
+          ],
+          [
+            5708,
+            5811,
+            ""
+          ],
+          [
+            8616,
+            8737,
+            ""
+          ],
+          [
+            9823,
+            9837,
+            ""
+          ],
+          [
+            10560,
+            10642,
+            "    append_internal(input, request, edits, policy, true, Placement::Append)\n"
+          ],
+          [
+            11433,
+            11515,
+            "    append_internal(input, request, edits, policy, true, Placement::Images)\n"
+          ],
+          [
+            12309,
+            13400,
+            "    append_internal(input, request, edits, policy, true, Placement::AllLoads)\n"
+          ],
+          [
+            13678,
+            13730,
+            ""
+          ],
+          [
+            13820,
+            14139,
+            ""
+          ],
+          [
+            18683,
+            18784,
+            ""
+          ],
+          [
+            21370,
+            21466,
+            ""
+          ],
+          [
+            22260,
+            22528,
+            ""
+          ],
+          [
+            28010,
+            28102,
+            "        let order = interleaved_header_order(input, &added, insert_phdr);\n"
+          ],
+          [
+            28437,
+            28681,
+            ""
+          ],
+          [
+            33134,
+            33445,
+            ""
+          ],
+          [
+            36338,
+            36581,
+            ""
+          ],
+          [
+            37000,
+            37033,
+            ""
+          ],
+          [
+            37063,
+            37093,
+            ""
+          ],
+          [
+            37253,
+            37298,
+            ""
+          ],
+          [
+            37323,
+            37529,
+            "    let mut order =\n        Vec::with_capacity(input.program_headers().len() + added.len() + usize::from(insert_phdr));\n"
+          ],
+          [
+            37598,
+            37716,
+            ""
+          ],
+          [
+            38215,
+            38376,
+            ""
+          ],
+          [
+            38479,
+            38718,
+            ""
+          ],
+          [
+            46670,
+            46738,
+            ""
+          ]
+        ],
+        "previous_sha256": "a0d67be32f9efd847d5a5c419519335fea9aabcf0aa1d6e4e51d44f16d6d3c72"
+      }
+    },
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/adjacent-b2/artifact-verifier/Cargo.toml": "3c1d5a89b9779529772e080011bf480be89d68969047e207cebe5a87fae01f7b",
+      "tools/elf-rewrite/Cargo.toml": "24861b7a7e7f9047091f7acd55c2aefb83fd12683bf99f9d8ddd6124cb08aca2",
+      "tools/elf-rewrite/src/carrier/mod.rs": "9ddc5dafa7e7f85604a51526f9bf06e94c1553c24b2f60ac62444e9021fc3b20",
+      "tools/elf-rewrite/src/carrier/startup.rs": "0691706c78fd58e53a66dfa998772b3f40e259854a7146881a5335a429b393ab",
+      "tools/elf-rewrite/src/carrier/startup_fixtures.rs": "78f1029151c39a413711307a8dca8923c0a47b5e7aa6d7fd7cf9368ee41e3157",
+      "tools/elf-rewrite/src/lib.rs": "97229aadc44e76e99ce2025b0929597d87cceebfae7dc2e881bcd71586ddb026"
+    },
+    "standalone_workspace": {
+      "path": "evaluation/adjacent-b2/artifact-verifier/Cargo.toml",
+      "root_workspace_harnesses_added": 0,
+      "root_workspace_member": false
+    },
+    "upstream_revision": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+    "workspace_changes": {
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 168
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 159
+        }
+      }
+    }
+  },
   "upstream_revision": "813249c92a95c66b01944b6651ce1b9d32f44d21",
   "workspace_changes": {
     "doc/liteinst2": {
