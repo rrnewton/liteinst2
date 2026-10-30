@@ -1,0 +1,15 @@
+[package]
+name = "adjacent-b2-artifact-verifier"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+
+# Validation-only workspace. Producer manifests and source remain byte-identical.
+[workspace]
+
+[dependencies]
+formats = { package = "liteinst-artifact", path = "../../../crates/liteinst-artifact" }
+liteinst-rewrite = { path = "../../../tools/elf-rewrite" }
+li2core = { package = "liteinst2", path = "../../.." }
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }

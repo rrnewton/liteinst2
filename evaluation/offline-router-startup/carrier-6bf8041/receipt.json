@@ -1,0 +1,335 @@
+{
+  "schema": 1,
+  "claim": 4,
+  "source_revision": "6bf8041fa00476d12f14da1b52afbb9f52e08d8c",
+  "source_tree": "9b4717685f91e1a5a404c227dd3cc371d23f5f47",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+  "python": "3.9.25",
+  "debug_correctness_not_performance": true,
+  "scope": "Opt-in static ET_EXEC metadata carrier only; no runtime bootstrap or native qualification.",
+  "runs": [
+    {
+      "name": "startup-carrier-rust-v1",
+      "base": "eb8a6b3b4841590e0fbcf7a9d0c625c4445c44f3",
+      "working_delta_sha256": "b5f05091b0674c5d9bb7421a7f97df96836ee38b4e0c92e5f846cf58a4b3cfba",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-rewrite",
+        "--lib",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 6.759957876987755,
+      "raw_log_sha256": "fbb8a735c3c04c922cd376908bd08e7562fb79121bb95721cbb888f1743ce226",
+      "receipt_sha256": "bbaf4a50d39c19e1d38f9c8b72ed9fa68297bfec43cf8f44d3a344786bab5336",
+      "reserved_cpus": [
+        27,
+        35,
+        192,
+        237
+      ],
+      "load_before": [
+        "56.12",
+        "57.06",
+        "58.97"
+      ],
+      "load_after": [
+        "56.43",
+        "57.11",
+        "58.98"
+      ],
+      "rust_summaries": [
+        {
+          "status": "ok",
+          "passed": 168,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered_out": 0
+        }
+      ],
+      "python_methods": [],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "source_unchanged": true
+    },
+    {
+      "name": "startup-carrier-clippy-v1",
+      "base": "eb8a6b3b4841590e0fbcf7a9d0c625c4445c44f3",
+      "working_delta_sha256": "b5f05091b0674c5d9bb7421a7f97df96836ee38b4e0c92e5f846cf58a4b3cfba",
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-rewrite",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "termination": null,
+      "elapsed_seconds": 2.7976988591253757,
+      "raw_log_sha256": "067eb59e515b7afa9cd7b5cbf9c48543e9058bd5afe7daa731f84416f0786551",
+      "receipt_sha256": "13417840efaf97d104e4be85b2baaa950b07465837f5afb75113e6927a2c85ab",
+      "reserved_cpus": [
+        3,
+        139,
+        164,
+        173
+      ],
+      "load_before": [
+        "52.45",
+        "56.79",
+        "58.73"
+      ],
+      "load_after": [
+        "52.09",
+        "56.64",
+        "58.67"
+      ],
+      "rust_summaries": [],
+      "python_methods": [],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "source_unchanged": true
+    },
+    {
+      "name": "startup-carrier-clippy-v2",
+      "base": "eb8a6b3b4841590e0fbcf7a9d0c625c4445c44f3",
+      "working_delta_sha256": "e27499f153efd8a7f89cd4ff4d0dd1a339bbfb7cd7b8651c1698ee0bca2b0d87",
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-rewrite",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 5.687192857963964,
+      "raw_log_sha256": "f9d8b3c7b7698fcca1e2d2aaf8db5a936cec04a649e6656aef49035e8e6912a8",
+      "receipt_sha256": "31610a9f339a04a82658d2f1a537aaee8eb351ac89eef77aa471988abe03d0d6",
+      "reserved_cpus": [
+        3,
+        80,
+        98,
+        110
+      ],
+      "load_before": [
+        "54.43",
+        "56.84",
+        "58.66"
+      ],
+      "load_after": [
+        "55.44",
+        "57.00",
+        "58.71"
+      ],
+      "rust_summaries": [],
+      "python_methods": [],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "source_unchanged": true
+    },
+    {
+      "name": "startup-carrier-rust-v2",
+      "base": "eb8a6b3b4841590e0fbcf7a9d0c625c4445c44f3",
+      "working_delta_sha256": "e27499f153efd8a7f89cd4ff4d0dd1a339bbfb7cd7b8651c1698ee0bca2b0d87",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-rewrite",
+        "--lib",
+        "--locked",
+        "--offline",
+        "carrier::startup_fixtures::"
+      ],
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 3.3882066120859236,
+      "raw_log_sha256": "a115a2a26e4ddc4a76c68f50aeec2d7721766ea6728778f6ef71e4befa476945",
+      "receipt_sha256": "7ad81f6c0737914999daf0cccb186498a26db3455d89107257affee77c9c1c9d",
+      "reserved_cpus": [
+        72,
+        130,
+        165,
+        169
+      ],
+      "load_before": [
+        "53.20",
+        "56.42",
+        "58.49"
+      ],
+      "load_after": [
+        "53.20",
+        "56.42",
+        "58.49"
+      ],
+      "rust_summaries": [
+        {
+          "status": "ok",
+          "passed": 9,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered_out": 159
+        }
+      ],
+      "python_methods": [],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "source_unchanged": true
+    },
+    {
+      "name": "routed-jmp-w01-public-carrier-v10",
+      "base": "eb8a6b3b4841590e0fbcf7a9d0c625c4445c44f3",
+      "working_delta_sha256": "b5f05091b0674c5d9bb7421a7f97df96836ee38b4e0c92e5f846cf58a4b3cfba",
+      "command": [
+        "./evaluation/adjacent-b2/artifact-verifier/check.sh"
+      ],
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 64.7399548299145,
+      "raw_log_sha256": "97749a5b94d087ff3ea0a1f1ccd8856aec2e045b8c03c1c26757724f0600bb30",
+      "receipt_sha256": "aba2b946a758e090ac819f3337b275607ec466422b5c314c5eb2d26208a882ab",
+      "reserved_cpus": [
+        70,
+        85,
+        196,
+        245
+      ],
+      "load_before": [
+        "59.18",
+        "57.69",
+        "59.15"
+      ],
+      "load_after": [
+        "61.52",
+        "58.93",
+        "59.50"
+      ],
+      "rust_summaries": [
+        {
+          "status": "ok",
+          "passed": 22,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered_out": 0
+        }
+      ],
+      "python_methods": [
+        14
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "source_unchanged": true
+    },
+    {
+      "name": "w01-startup-validation-6bf8041",
+      "base": "6bf8041fa00476d12f14da1b52afbb9f52e08d8c",
+      "working_delta_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "command": [
+        "python3",
+        "-B",
+        "evaluation/short-neighbor-parallel/validate.py",
+        "--revision",
+        "6bf80412daa6c436d57ed202ec1fef93e5a682df",
+        "--output",
+        "ignored/a3/w01-startup-validation-6bf8041"
+      ],
+      "exit_code": 1,
+      "termination": null,
+      "elapsed_seconds": 0.042544265976175666,
+      "raw_log_sha256": "c373d1a549e162ab3867a80cc7588412604f64bfc0a7aa9f3b1664a5b398580d",
+      "receipt_sha256": "c3e7e08fa7fffb45b5eceac789b0931bfac2390afb59cf09ef390932d35a369a",
+      "reserved_cpus": [
+        6,
+        10,
+        17,
+        19,
+        23,
+        45,
+        101,
+        138,
+        175,
+        177,
+        184,
+        186,
+        192,
+        234,
+        256,
+        286
+      ],
+      "load_before": [
+        "51.21",
+        "54.70",
+        "57.65"
+      ],
+      "load_after": [
+        "51.21",
+        "54.70",
+        "57.65"
+      ],
+      "rust_summaries": [],
+      "python_methods": [],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "source_unchanged": true
+    }
+  ],
+  "reviews": {
+    "source": "0e732b781d06d2fc03e8553cfc58163d4e189eea82a6e9de776074b60ef0ef09",
+    "formatting": "6bbaee6f2c75998270bba8d098dffc8ad2bcb755171884b5dcc3dc6bbe90fe67",
+    "lint": "77e5c97d802c3d694fe80142f66d9ed13571c32a1673a6b59dde182d5a76639e"
+  },
+  "source_changes": "Two redundant RHS borrows removed, two lifetimes elided, seven program-header fields grouped with all eight call argument lists unchanged. All75 test and11 helper assertions retained; no lint allows.",
+  "retained_failures": {
+    "startup-carrier-clippy-v1": "Five strict lint findings; no source assertion failed.",
+    "w01-startup-validation-6bf8041": "Caller supplied a wrong full revision; driver refused before creating output or running any check. Corrected invocation uses actual HEAD."
+  },
+  "reproduction": [
+    "cargo test -j 4 -p liteinst-rewrite --lib --locked --offline",
+    "cargo clippy -j 4 -p liteinst-rewrite --all-targets --all-features --locked --offline -- -D warnings",
+    "./evaluation/adjacent-b2/artifact-verifier/check.sh"
+  ],
+  "profile": {
+    "cargo_jobs": 4,
+    "incremental": false,
+    "offline": true,
+    "opt_level": 0,
+    "debug_info": 0,
+    "debug_assertions": true,
+    "overflow_checks": true
+  },
+  "qualification": {
+    "W01": false,
+    "N01": "UNRUN",
+    "native": false,
+    "performance": false
+  }
+}

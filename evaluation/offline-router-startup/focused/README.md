@@ -1,0 +1,9 @@
+The public check ran on base `ac8b2ab` with a 17-file working overlay identical to the verifier files committed as `f88cf9feebc19b211687c53b3c606365e29599e1`. It passed formatting, strict Clippy, 22 Rust methods and 13 Python methods: 35 focused methods. All 17 verifier-file hashes match committed Git blobs; 15 implementation files match the approved review, plus README.md and check.sh.
+
+`focused-checks.csv` retains all 15 closed focused receipts through Python v9: eleven successful commands and four failed commands. The failed initial fixtures, semantic-mutant checks, diagnostic attempt and strict Clippy remain visible. Filtered runs are distinguished from the full suite. Every raw log hash matches; all receipts report complete cleanup and unchanged base/working delta.
+
+Python v9 separately passed 14 controls on a four-file working overlay based at f88cf9f. Each receipt records changed/untracked files over its exact base; untouched tracked files in the inspected source scope are fixed by that base. The entire overlay object is hashed. V9 is not attributed to the committed 35-method check or v3 source approval.
+
+`focused-summary.json` records bases, delta digests, final verifier identities and exact review-binding hashes. Review v1 requested F01–F04 repairs; v2 retained F05; v3 approved the repairs. All 39 original literal Rust assertion sites remain. Those source-only reviews did not read outcomes; this later summary reads closed focused receipts.
+
+No checks were rerun. Raw logs are identified by SHA-256 without private environment paths. CPU/load observations describe development checks, not a benchmark. This evidence does not verify saved artifacts, establish W01 acceptance, authorize N01/native execution, or claim corpus correctness or performance eligibility. Rooted builds and lock generation are excluded.

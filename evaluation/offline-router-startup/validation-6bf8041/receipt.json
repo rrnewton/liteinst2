@@ -1,0 +1,271 @@
+{
+  "schema": 1,
+  "claim": 4,
+  "revision": "6bf8041fa00476d12f14da1b52afbb9f52e08d8c",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+  "python": "3.9.25",
+  "scope": "Debug correctness validation only; command elapsed times are not performance measurements.",
+  "profile": {
+    "incremental": false,
+    "offline": true,
+    "cargo_jobs_default": 4,
+    "workspace_jobs": 16,
+    "opt_level": 0,
+    "debug_info": 0,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test_threads": 316
+  },
+  "source_unchanged": true,
+  "tracked_working_delta": {},
+  "closed_receipt_sha256": "300a19374add7f850e22ac8e772db4a6a583fddb121dfe5794065d52e64a02a8",
+  "owner_receipt_sha256": "dcd22a833f15b1c96a020d60be68fa439c7b30ee4205e17fb61992cf425e508a",
+  "private_summary_sha256": "f3b8848c1a0b1ae4335eb0aa04acc6dd6f963c6d92942bc2d97fc89a5a3e02f5",
+  "summary_script_sha256": "80fdfc02f1a26c79092698197e5c0b538da3972d436ef90db54c01ce48b7dfff",
+  "commands_file": "commands.csv",
+  "required_pass_groups_file": "controls.csv",
+  "source_inventory_sha256": {
+    "evaluation/short-neighbor-parallel/validate.py": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd",
+    "src/entry_router.rs": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280",
+    "src/entry_router/imp/routed_jmp_native_tests.rs": "a1a0c6aa6c666012451fcb9169255bcdd4c6701dc498bf0da1326761fc767fe0",
+    "src/lib.rs": "9c6f507955722eff3fed9fa43625bcce7b60eb76a61bcd1a6b53fe9bad847cc7",
+    "src/rapid.rs": "9287665d69a3b5a053de7147fd91b67adc5a79d95407d4671b0aedf4779d2316",
+    "src/trampoline.rs": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b",
+    "tests/neighbor_eviction_oracle.rs": "553f4bda0a64bd55c03ba145487e57be7acce9a7fef6a83d0f64b0b94f5ecc23",
+    "tests/prefixed_pun_oracle.rs": "d9b2fd9b992685dedf336e019fde36c939f1bbcd8b34c31fc068e1a48e42bd7f",
+    "tests/quiescent_oracle.rs": "a6bac6403624e53bf561be4a0aa3737f929b941296ea3737b560c8ed0eb36d2d",
+    "tests/support/neighbor_short_eviction_oracle.rs": "89b55d484d6b440a658bbce64bb09bd561ce29e9eebf2b0753c5964fab3ff5c1",
+    "tools/elf-rewrite/examples/adjacent_routed_jmp_disassembly_sites.rs": "6a267a7411fa3aa72b944744a89fe0c734e16e68dfd39dbf253b791e246533b3",
+    "tools/elf-rewrite/src/adjacent_b2_frontend.rs": "f328aba37b8e386c7dc73cda2dc3130b57c933d97ff19a4d10d8f8351b4ca0d5",
+    "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": "8d1accf2078eefd77160f9d0d95b10554aeb1c4a4822e917e61d20a4061400cc",
+    "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": "59ec3d07190419104372f76ffc5e32f507aae1e7e30a688f058df802d086282e",
+    "tools/elf-rewrite/src/carrier/gap_carrier_fixtures.rs": "d86cd01e226753cac1f1a2ea8ec0fb67719a772a8d6f21b70b473040b9a66f85",
+    "tools/elf-rewrite/src/carrier/image_fixtures.rs": "357886c161da1742937f054817d140b2161e9a3b103e43a0186ed92dee417be9",
+    "tools/elf-rewrite/src/carrier/mod.rs": "9ddc5dafa7e7f85604a51526f9bf06e94c1553c24b2f60ac62444e9021fc3b20",
+    "tools/elf-rewrite/src/lib.rs": "97229aadc44e76e99ce2025b0929597d87cceebfae7dc2e881bcd71586ddb026",
+    "tools/elf-rewrite/src/carrier/startup.rs": "0691706c78fd58e53a66dfa998772b3f40e259854a7146881a5335a429b393ab",
+    "tools/elf-rewrite/src/carrier/startup_fixtures.rs": "78f1029151c39a413711307a8dca8923c0a47b5e7aa6d7fd7cf9368ee41e3157"
+  },
+  "reserved_cpus": [
+    1,
+    34,
+    43,
+    100,
+    102,
+    120,
+    121,
+    164,
+    172,
+    177,
+    181,
+    232,
+    234,
+    236,
+    239,
+    296
+  ],
+  "load_before": [
+    "50.38",
+    "54.41",
+    "57.52"
+  ],
+  "load_after": [
+    "44.80",
+    "49.42",
+    "53.06"
+  ],
+  "owner": {
+    "start_utc": "2026-10-30T09:20:00.115362+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 995.060052724788,
+    "private_log_sha256": "f6dab554860cc04050cd409d268135a9f9844bc38c4984633a5fa44b3e097c42",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "checks": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "parse_issues": []
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "parse_issues": []
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "parse_issues": []
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit_seconds": 900,
+      "exit_code": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": {
+        "passed": 3777,
+        "failed": 0,
+        "ignored": 37,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "unfiltered_summary_count": 107,
+      "excluded_filtered_summary_count": 5,
+      "excluded_filtered_totals": {
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 901
+      },
+      "parse_issues": []
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "unfiltered_summary_count": 27,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "parse_issues": []
+    }
+  ],
+  "required_exact_pass_lines": 108,
+  "all_requested_debug_checks_observed_ok": true,
+  "total_unfiltered_rust_counts": {
+    "passed": 4816,
+    "failed": 0,
+    "ignored": 37,
+    "measured": 0,
+    "filtered_out": 0
+  },
+  "total_count_scope": "Across commands; repeat runs are counted as executions, not unique test cases.",
+  "summary_rule": "Keep every summary with filtered_out == 0; retain filtered child summaries separately, including failures. Never deduplicate targets or doctest groups.",
+  "rapid_profiler_doctests": {
+    "groups": 2,
+    "passed_per_group": [
+      2,
+      45
+    ]
+  },
+  "qualification": {
+    "W01": "NOT_EVALUATED",
+    "N01": "NOT_EVALUATED",
+    "native": false,
+    "performance": false
+  },
+  "reproduction": [
+    "git checkout --detach 6bf8041fa00476d12f14da1b52afbb9f52e08d8c",
+    "RUST_TEST_THREADS=316 CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=4 CARGO_NET_OFFLINE=true CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_DEV_OPT_LEVEL=0 CARGO_PROFILE_TEST_OPT_LEVEL=0 CARGO_PROFILE_DEV_DEBUG_ASSERTIONS=true CARGO_PROFILE_TEST_DEBUG_ASSERTIONS=true CARGO_PROFILE_DEV_OVERFLOW_CHECKS=true CARGO_PROFILE_TEST_OVERFLOW_CHECKS=true python3 -B evaluation/short-neighbor-parallel/validate.py --revision 6bf8041fa00476d12f14da1b52afbb9f52e08d8c --output ignored/reproduce-w01-startup-validation"
+  ],
+  "notes": [
+    "Reserve 16 disjoint CPUs before the reproduction command; the script records actual affinity and host load.",
+    "Five filtered nested child summaries are retained separately, not added to workspace totals. No unfiltered summary or doctest group was deduplicated.",
+    "Prior wrong-revision invocation is retained in carrier-6bf8041/receipt.json; it failed before any validation command ran.",
+    "Custom non-Rust harness results remain part of the command exit status; Rust counts are not a census of every custom assertion."
+  ]
+}
