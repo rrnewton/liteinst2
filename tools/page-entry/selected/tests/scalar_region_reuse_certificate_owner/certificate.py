@@ -184,7 +184,9 @@ class Checks:
             if i:need(self.v(registers,'li2_write_registers','fs_base gs_base')==self.v(self.f(rseq[0],ot,'registers'),'li2_write_registers','fs_base gs_base'),'copied rseq bases retain their protected-state origin')
             need(q(self.f(registers,'li2_write_registers','gpr'))==tuple(frame['greg'][j]for j in GREG),'all actual live-rseq GPR inputs equal authentic current frame')
             if i:need(self.v(obs,ot,'registered epoch')==self.v(rseq[0],ot,'registered epoch'),'same actual live-rseq registration across entry')
-        terminal=kind=='fault' or c in (1,7)
+        # Nested tgkill (control1) arrives while handling is set. The genuine
+        # unexpected route captures it but cannot call sr_map_actual/srcg_terminal.
+        terminal=kind=='fault' or c==7
         self.certificate_match(self.f(b,t,'certificate_terminal'),generation,terminal)
 
     def certificate_control_prefix(self,before,current,c):
@@ -197,7 +199,7 @@ class Checks:
             for name in ('certificate','certificate_live','certificate_terminal','live_rseq'):zero(self.f(before,'sr_record',name),'slot mutation precedes all certificate checks')
 
     def certificate_control_fields(self,c):
-        if c in (1,7):return ('certificate_terminal',)
+        if c==7:return ('certificate_terminal',)
         if c==3:return ('certificate','certificate_live','live_rseq')
         if c in (11,16):return ('certificate',)
         return ()
@@ -229,7 +231,7 @@ class Checks:
         adjust={1:-1,2:-1,3:0,4:-1,5:-2,6:0,7:-1,8:0,9:0,10:0,11:-2,12:0,13:0,14:0,15:-2,16:-1,17:-2}
         live={1:-1,2:-2,3:0,4:-2,5:-3,6:0,7:-1,8:0,9:0,10:0,11:-3,12:0,13:0,14:0,15:-3,16:-3,17:-3}
         self.eq(self.store,'scalar_certificate_store',publications=publications,retirements=self.i(self.reuse,'scalar_reuse','retirements'),
-            checks=2*a+(adjust[c]if c else -int(failed)),live_checks=3*a+(live[c]if c else -int(failed)),terminal_matches=self.i(self.owner,'scalar_owner','unexpected')-int(c==14))
+            checks=2*a+(adjust[c]if c else -int(failed)),live_checks=3*a+(live[c]if c else -int(failed)),terminal_matches=self.i(self.owner,'scalar_owner','unexpected')-int(c in (1,14)))
 
     def certificate_report(self,outcome):
         t='scalar_certificate_store';return dict(version=1,**outcome,initialized=self.i(self.store,t,'initialized'),publications=self.i(self.store,t,'publications'),
@@ -309,6 +311,7 @@ class Checks:
 # and six for every actual focal slot. All original4102 are a separate table.
 CONTROL_COUNTS={(m,0):(48 if m in (11,12) else 34)for m in range(13)}
 CONTROL_COUNTS.update({(0,c):20 if c==6 else 28 if c in (8,9,10,12,13,14) else 34 for c in range(1,18)})
+CONTROL_COUNTS[0,1]+=1 # Coherent forged association from inside the active handler.
 MAPPING_CONTROL_COUNT=20
 
 
@@ -374,7 +377,30 @@ def mutations(data,layout,Reader):
             need(offsets and len(set(offsets))==len(offsets),'all actual identical record aliases for supplied certificate control')
             tests.append(('focal'+str(i)+'_'+name,offsets))
         add('focal'+str(i)+'_retired_payload',base+[('retirement',None,'srcg_retirement'),('old_bytes',None,None)],BYTES-1)
+    if q(r.field(body,'sro_wire','control'))[0]==1:
+        add('nested_forged_terminal_association',store+[('terminal_matches',None,None)])
     return tests
+
+
+def forge_nested_terminal(changed,data,layout,Reader):
+    # This extra stimulus supplies a coherent valid-looking association in every
+    # identical current/focal record and the actual global count. It must fail
+    # the source-derived no-association counter, not an unrelated alias check.
+    r=Reader(data,layout);types=r.types;body=data[:-64]
+    wf=types['sro_wire']['fields'];ot=types['scalar_owner'];rt=types['sr_record']
+    owner=r.field(body,'sro_wire','owner');current=r.field(owner,'scalar_owner','current')
+    generation=r.integer(current,'sr_record','publication_generation')
+    need(generation>0 and not any(r.field(current,'sr_record','certificate_terminal')),
+         'actual nested terminal proof starts wholly zero with a published generation')
+    rows=r.items(body,'sro_wire','entries','sro_entry');et=types['sro_entry']
+    offsets=[wf['owner']['offset']+ot['fields'][key]['offset'] for key in ('current','last')
+             if r.field(owner,'scalar_owner',key)==current]
+    offsets += [wf['entries']['offset']+i*et['bytes']+et['fields']['owner']['offset']
+                for i,e in enumerate(rows) if r.field(e,'sro_entry','owner')==current]
+    if r.field(body,'sro_wire','control_before')==current:offsets.append(wf['control_before']['offset'])
+    need(len(offsets)>=2 and len(set(offsets))==len(offsets),'all actual nested current/focal aliases')
+    for offset in offsets:
+        struct.pack_into('<IIi4xQQ',changed,offset+rt['fields']['certificate_terminal']['offset'],1,1,0,BYTES,generation)
 
 
 def controls(data,layout,image,app,pid,cpu,exit_status,control,boundaries,read,Reader):
@@ -384,9 +410,12 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control,boundaries,read,R
     for name,offsets in tests:
         changed=bytearray(data)
         for offset in offsets:changed[offset]^=1
+        if name=='nested_forged_terminal_association':forge_nested_terminal(changed,data,layout,Reader)
         rejected=False
         try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,boundaries=boundaries)
         except ValueError as error:
+            if name=='nested_forged_terminal_association':need(str(error)=='exact scalar_certificate_store.terminal_matches','nested forgery reaches exact no-association counter')
+            if control==1 and name=='focal0_terminal_match':need(str(error)=='unattempted certificate proof is wholly zero','nested match mutation reaches whole zero proof')
             if name=='coherent_header_archive':need(str(error)=='certificate binds actual archive digest','coherent digest mutation reaches independent build binding')
             if name=='coherent_header_plan_proof':need(str(error)=='exact cold plan-proof ordinal precedes this retirement reconstruction','coherent proof mutation reaches actual proof chronology')
             rejected=True

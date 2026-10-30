@@ -252,6 +252,53 @@ class Check(certificate.Checks,donor.Check):
                 need(self.f(scratch,'li2_region_plan','source')==source['bytes'],'complete last refused-plan input retained')
         return before
 
+    # runtime fail() calls native_pair_abort before sro_finish. The dispatcher
+    # already proved quiet and closed native pages; abort changes only the pair
+    # controller phase/first-error, while every lifecycle/rseq closure stays exact.
+    def mapping_owners(self,b,redirected=False,pc=None):
+        need(self.mapping_code in (136,144,155,158) and not redirected and
+             b==self.f(self.b,'sro_wire','terminal_owners'),
+             'only the exact mapping-terminal abort uses failed native-pair state')
+        need(pc is None,'scalar callers use typed-plan footprint join')
+        t='uho_owners';self.eq(b,t,captured=1,word=0)
+        state=self.f(b,t,'rseq');st='li2_rseq_state'
+        self.eq(state,st,initialized=1,first_error=0,first_detail=0,pid=self.pid,tid=self.pid)
+        reg=self.i(state,st,'registered');need(reg in (0,1),'actual optional registration')
+        self.eq(b,t,word_observed=int(redirected and reg))
+        need(self.i(state,st,'calls')==sum(self.i(state,st,k) for k in ('registrations','unregistrations','kernel_errors')),'all actual registration calls accounted')
+        need(self.i(state,st,'registrations')-self.i(state,st,'unregistrations')==reg,'actual current registration lifetime')
+        self.eq(state,st,epoch=self.i(state,st,'registrations'))
+        if reg:
+            self.eq(state,st,held=1,phase=3,length=32,tls_attempted=1,tls_complete=1,fs_result=0,gs_result=0)
+            need(self.i(state,st,'epoch')>0,'actual registered epoch')
+            data=self.f(state,st,'data');identity=self.pin(data,self.pid)
+            need(self.v(state,st,'address page')==identity[:2],'current exact retained pin')
+        else:self.eq(state,st,held=0,phase=0)
+        if pc is not None:
+            self.eq(state,st,last_pc=pc+22,last_code=176,last_policy=1,last_first=0,last_end=0)
+            self.eq(self.f(state,st,'last_footprint'),'li2_write_footprint',pc=pc+22,next_pc=pc+24,first=0,end=0,abi_version=1,policy=1,code=176,length=2)
+        # This build routes all physical native epochs through native_pair;
+        # the old registered one-page owner is never initialized or entered.
+        zero(self.f(b,t,'rseq_native'),'complete unused old one-page rseq owner')
+        p,l,r=(self.f(b,t,k) for k in ('pair','lifecycle','rseq_pair'))
+        self.eq(p,P,initialized=1,phase=11,in_handler=0,first_error=self.mapping_code,first_detail=7 if self.mapping_code==136 else 0,live=0,entry_pending=0,pid=self.pid,tid=self.pid,session=self.symbol('selected_session'))
+        self.eq(l,L,initialized=1,busy=0,live=0,first_error=0,first_detail=0,opening=0,pid=self.pid,tid=self.pid)
+        self.eq(r,R,initialized=1,active=0,checking=0,entry_checked=0,first_error=0,first_detail=0,unsafe_terminal=0)
+        need(self.i(l,L,'owner')==self.i(r,R,'owner') and canonical(self.i(l,L,'owner')),'same private pair owner')
+        need(self.i(l,L,'published')==self.i(l,L,'closed_pages')==self.i(r,R,'published'),'all actual pair pages closed')
+        need(self.i(p,P,'seeds')==self.i(p,P,'epochs_closed')==self.i(r,R,'attempts')==self.i(r,R,'closed'),'all actual pair epochs closed')
+        need(self.i(r,R,'preentries')==self.i(r,R,'entries') and self.i(p,P,'refaults')==self.i(p,P,'refault_completed'),'every prior native boundary/refault completed')
+        need(self.i(p,P,'epochs_closed')==self.i(p,P,'one_page_closes')+self.i(p,P,'two_page_closes') and self.i(l,L,'published')==self.i(p,P,'seeds')+self.i(p,P,'extensions'),'pair page/epoch conservation')
+        if self.i(r,R,'attempts'):
+            self.eq(r,R,pid=self.pid,tid=self.pid,word_before=0,word_entry=0,word_after=0)
+            if self.i(r,R,'registered'):
+                x=self.pin(self.f(r,R,'before'),self.pid);y=self.pin(self.f(r,R,'after'),self.pid)
+                need(x==y and self.v(r,R,'address page')==x[:2],'closed pair pin retains full allocation/generation')
+            else:
+                for k in ('before','after'):zero(self.f(r,R,k),'unregistered pair has no invented pin')
+        return b
+
+
     def report_rows(self,outcome):
         expected=self.physical_rows(outcome);own=Fields(self.r,self.owner,'scalar_owner');cur=own.child('current','sr_record')
         names='initialized first_error used candidates source_misses plan_misses capacity_misses publications hits entries completed unexpected events plan_checks rseq_checks'.split()
@@ -369,7 +416,9 @@ class Check(certificate.Checks,donor.Check):
                 h[38]==self.i(current,'sr_record','flags'),'actual interrupted owner active/handling/route/flags prefix')
             need(self.f(self.b,'sro_wire','terminal_fetch')==self.f(current,'sr_record','final_fetch'),'whole failed fetch capture equals unreleased current ticket')
         self.reuse_final(current,outputs,slots,0 if self.mapping_code is not None else exit_status)
-        self.owners(self.f(self.b,'sro_wire','terminal_owners'));self.controls(current,outputs[0] if outputs else None);self.scratch(slots)
+        if self.mapping_code is None:self.owners(self.f(self.b,'sro_wire','terminal_owners'))
+        else:self.mapping_owners(self.f(self.b,'sro_wire','terminal_owners'))
+        self.controls(current,outputs[0] if outputs else None);self.scratch(slots)
         self.certificate_finish(outputs,slots,failed)
         expected=self.report_rows(outcome)
         return dict(mode=mode,control=c,entries=outputs,focal=focal,terminal_expected=expected,
@@ -819,7 +868,7 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,boundaries):
 
 
 CERTIFICATE_CONTROL_COUNTS=certificate.CONTROL_COUNTS
-CERTIFICATE_MAPPING_CONTROL_COUNT=certificate.MAPPING_CONTROL_COUNT
+CERTIFICATE_MAPPING_CONTROL_COUNT=certificate.MAPPING_CONTROL_COUNT+3
 
 def mapping(data,layout,image,app,pid,cpu,exit_status,code,*,boundaries):
     need(type(pid)is int and pid>0 and type(cpu)is int and cpu>=0 and exit_status==125 and type(code)is int and code in (136,144,155,158), 'exact actual mapping refusal identity')
@@ -840,4 +889,21 @@ def mapping_controls(data,layout,image,app,pid,cpu,exit_status,code,*,boundaries
         try:mapping(bytes(changed),layout,image,app,pid,cpu,exit_status,code,boundaries=boundaries)
         except ValueError:rejected=True
         need(rejected,'actual mapping certificate reader rejected supplied '+name);names.append(name)
+    # Mapping has no focal entries; this is the sole actual terminal pair copy.
+    # Replace complete typed fields, keeping every other captured byte and the
+    # independently supplied mapping code/detail unchanged. Each must reach its
+    # exact post-abort semantic predicate, not a structural/alias failure.
+    types=layout['types'];base=types['sro_wire']['fields']['terminal_owners']['offset']+types['sro_owners']['fields']['pair']['offset']
+    for key,value in (('phase',2),('first_error',0),('first_detail',0 if code==136 else 1)):
+        field=types['li2_native_pair_progress']['fields'][key];changed=bytearray(data)
+        changed[base+field['offset']:base+field['offset']+field['bytes']]=value.to_bytes(field['bytes'],'little')
+        rejected=False
+        try:mapping(bytes(changed),layout,image,app,pid,cpu,exit_status,code,boundaries=boundaries)
+        except ValueError as error:
+            need(str(error)=='exact li2_native_pair_progress.'+key,
+                 'mapping abort mutation reaches its exact independent terminal predicate')
+            rejected=True
+        need(rejected,'actual mapping abort reader rejected supplied '+key)
+        names.append('mapping_terminal_pair_'+key)
+    need(len(names)==len(set(names))==CERTIFICATE_MAPPING_CONTROL_COUNT,'all old20 plus three mapping-abort refusals')
     return dict(certificate_refusals=names,original_sha256=hashlib.sha256(data).hexdigest(),native_operations=0)

@@ -152,19 +152,19 @@ def component_summary(state):
         totals=None if state is None else state.get('totals'))
 
 
-CERTIFICATE_CONTROL_COUNTS={(0, 0): 34, (1, 0): 34, (2, 0): 34, (3, 0): 34, (4, 0): 34, (5, 0): 34, (6, 0): 34, (7, 0): 34, (8, 0): 34, (9, 0): 34, (10, 0): 34, (11, 0): 48, (12, 0): 48, (0, 1): 34, (0, 2): 34, (0, 3): 34, (0, 4): 34, (0, 5): 34, (0, 6): 20, (0, 7): 34, (0, 8): 28, (0, 9): 28, (0, 10): 28, (0, 11): 34, (0, 12): 28, (0, 13): 28, (0, 14): 28, (0, 15): 34, (0, 16): 34, (0, 17): 34}
+CERTIFICATE_CONTROL_COUNTS={(0, 0): 34, (1, 0): 34, (2, 0): 34, (3, 0): 34, (4, 0): 34, (5, 0): 34, (6, 0): 34, (7, 0): 34, (8, 0): 34, (9, 0): 34, (10, 0): 34, (11, 0): 48, (12, 0): 48, (0, 1): 35, (0, 2): 34, (0, 3): 34, (0, 4): 34, (0, 5): 34, (0, 6): 20, (0, 7): 34, (0, 8): 28, (0, 9): 28, (0, 10): 28, (0, 11): 34, (0, 12): 28, (0, 13): 28, (0, 14): 28, (0, 15): 34, (0, 16): 34, (0, 17): 34}
 
 
 def require_controls(owner_reader,r):
     need(r.get('certificate')is True and r['reuse']is True,'distinct explicit reuse certificate profile')
     need(type(owner_reader.CERTIFICATE_MAPPING_CONTROL_COUNT)is int and
-         owner_reader.CERTIFICATE_MAPPING_CONTROL_COUNT==20,
-         'exact20 new certificate mapping-record refusals per actual case')
+         owner_reader.CERTIFICATE_MAPPING_CONTROL_COUNT==23,
+         'exact23 certificate mapping-record refusals per actual case')
     actual=owner_reader.CERTIFICATE_CONTROL_COUNTS
     need(type(actual)is dict and all(type(k)is tuple and len(k)==2 and
          all(type(v)is int for v in k)and type(n)is int for k,n in actual.items())and
-         actual==CERTIFICATE_CONTROL_COUNTS and sum(actual.values())==998,
-         'exact source-fixed998 additive certificate controls over the original30 gated records')
+         actual==CERTIFICATE_CONTROL_COUNTS and sum(actual.values())==999,
+         'exact source-fixed999 additive certificate controls over the original30 gated records')
     r['required_certificate_reader_controls']={str(mode)+':'+str(control):count
         for (mode,control),count in sorted(CERTIFICATE_CONTROL_COUNTS.items())}
 
@@ -192,11 +192,11 @@ def complete(r):
          'all eight actual transaction components and256 refusals remain separately mandatory')
     need(len(rows)==43 and sum(c['lane']=='gated'for c in rows)==30 and
          all(c['status'].startswith('qualified_')for c in rows)and not r['error']and
-         sum(len(c.get('owner_reader_controls',{}).get('certificate_refusals',[]))for c in rows)==998 and
+         sum(len(c.get('owner_reader_controls',{}).get('certificate_refusals',[]))for c in rows)==999 and
          sum(len(c.get('terminal_controls',{}).get('certificate_refusals',[]))for c in rows)==450,
-         'all43 old owner cases plus every998 record and450 terminal certificate refusal')
+         'all43 old owner cases plus every999 record and450 terminal certificate refusal')
     need(mapping['status']=='passed'and len(mapping['cases'])==8 and
-         sum(len(c.get('certificate_controls',{}).get('certificate_refusals',[]))for c in mapping['cases'])==160 and
-         all(c['reader_refusals']==19 and len(c['certificate_controls']['certificate_refusals'])==20
+         sum(len(c.get('certificate_controls',{}).get('certificate_refusals',[]))for c in mapping['cases'])==184 and
+         all(c['reader_refusals']==19 and len(c['certificate_controls']['certificate_refusals'])==23
              for c in mapping['cases'])and sum(c['profile']=='boundary'for c in r['commands'])==38,
-         'all eight v3 mapping refusals retain old152 plus new160 controls and all38 metadata commands')
+         'all eight v3 mapping refusals retain old152 plus new184 controls and all38 metadata commands')

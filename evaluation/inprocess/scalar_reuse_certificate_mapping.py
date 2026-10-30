@@ -157,9 +157,9 @@ def run_controls(*,builder,private,pin,binary,run,r,reader,app_layout,seed_refer
                  'whole typed additional certificate mapping-control result')
             names=extra['certificate_refusals']
             need(type(names)is list and all(type(name)is str for name in names)and
-                 len(names)==len(set(names))==20 and type(extra['native_operations'])is int and
+                 len(names)==len(set(names))==23 and type(extra['native_operations'])is int and
                  extra['native_operations']==0 and extra['original_sha256']==H(record),
-                 'all20 additional certificate mapping-record mutations are actually refused')
+                 'all old20 plus three exact mapping-abort mutations are actually refused')
             result['certificate_controls']=extra
             result['status']='qualified_mapping_refusal'
         except Exception as error:
@@ -171,6 +171,6 @@ def run_controls(*,builder,private,pin,binary,run,r,reader,app_layout,seed_refer
                      c.get('cleanup_errors')==[] and isinstance(c.get('descriptors'),list)and
                      all(d.get('closed')is True for d in c['descriptors'])for c in actual),
                  'failed mapping subject and its single bound metadata child require full cleanup')
-    need(len(rows)==8 and all(c['status']=='qualified_mapping_refusal'and c['reader_refusals']==19 and len(c['certificate_controls']['certificate_refusals'])==20 and c['boundary_observation']['exit']==0 for c in rows),
-         'all eight actual mapping refusals retain old152 plus160 additional certificate controls')
+    need(len(rows)==8 and all(c['status']=='qualified_mapping_refusal'and c['reader_refusals']==19 and len(c['certificate_controls']['certificate_refusals'])==23 and c['boundary_observation']['exit']==0 for c in rows),
+         'all eight actual mapping refusals retain old152 plus184 additional certificate controls')
     state['status']='passed'

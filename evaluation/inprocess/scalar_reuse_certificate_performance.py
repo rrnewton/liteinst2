@@ -66,8 +66,8 @@ def prerequisites(a,r,pin,binary):
     expected=dict(planned=43,launched=43,qualified=43,native=13,gated=13,owner_controls=17,qualified_pairs=13,
         completed_applications=14,required_read_faults=6,required_reference_faults=6,required_owner_refusals=17,
         application_reader_refusals=348,terminal_reader_refusals=1964,owner_reader_refusals=4102,
-        boundary_metadata_commands=38,certificate_owner_reader_refusals=998,
-        certificate_terminal_reader_refusals=450,certificate_mapping_reader_refusals=160)
+        boundary_metadata_commands=38,certificate_owner_reader_refusals=999,
+        certificate_terminal_reader_refusals=450,certificate_mapping_reader_refusals=184)
     need(digest(actual['totals'])==digest(expected)and
          digest(actual['bounds'])==digest(dict(qualification.BOUNDS,certificate_component=profile.COMPONENT_BOUNDS))and
          actual['build']['decoder_features']==['scalar-region'],
@@ -88,7 +88,7 @@ def prerequisites(a,r,pin,binary):
          for (m,c),n in sorted(qualification.REUSE_CONTROL_COUNTS.items())})and
          digest(actual['required_certificate_reader_controls'])==digest({str(m)+':'+str(c):n
          for (m,c),n in sorted(profile.CERTIFICATE_CONTROL_COUNTS.items())}),
-         'exact old4102 and additional998 control tables')
+         'exact old4102 and additional999 control tables')
     fields=('label','lane','mode','control','expected_exit','status','launched','exit','whole_process_ns','timed_out',
             'captures','pair','owner_summary','control_reference','boundary_observation','error_type')
     rows=[]
@@ -121,7 +121,7 @@ def prerequisites(a,r,pin,binary):
              c['failure_code']==spec[-1]and c['reader_refusals']==19 and c['completed_applications']==0 and
              c['generated_owner_credit']is False and c['boundary_observation']['exit']==0,
              'actual v3 mapping refusal retains old19 controls and metadata child without execution credit')
-        named(c['certificate_controls'],'certificate_refusals',20)
+        named(c['certificate_controls'],'certificate_refusals',23)
         need(c['certificate_controls']['original_sha256']==commands['subject-mapping-'+c['name']]['captures']['record']['sha256'],
              'additional mapping mutations bind the actual whole v3 capture')
     guard=actual['mapping_guard_summary'];seed=actual['seed_prerequisite']
@@ -159,7 +159,7 @@ def prerequisites(a,r,pin,binary):
         private_receipt=public['private_receipt'],profile=actual['profile'],status='passed',totals=expected,
         transaction_component=profile.component_summary(component),commands=len(actual['commands']),
         commands_sha256=digest(actual['commands']),mapping_refusals=8,mapping_reader_refusals=152,
-        certificate_mapping_refusals=160,predicate_cases=754,
+        certificate_mapping_refusals=184,predicate_cases=754,
         binding={k:binding[k]for k in('version','archive','policy','header')},
         policy_inputs_sha256=digest(binding['policy_inputs']))
 
