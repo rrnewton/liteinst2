@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(li2_dr_null C)
+find_package(DynamoRIO 11.91.0 EXACT REQUIRED)
+add_library(li2_dr_null SHARED null.c)
+configure_DynamoRIO_client(li2_dr_null)

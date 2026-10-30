@@ -2,6 +2,9 @@
    The real ld.so runs against an explicit namespace of inherited sealed DSOs. */
 #include "bridge.h"
 #include "lifecycle_loader.h"
+#if defined(LI2_COST_PROFILE) && (!defined(LI2_NATIVE_PAIR) || LI2_COST_PROFILE != 1)
+#error "cost profile requires the explicit native-pair release profile"
+#endif
 #ifdef LI2_NATIVE_PAGES
 #include "native_pages.h"
 #include "native_epoch.h"
@@ -194,6 +197,10 @@ static void selected_repeat_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
+#ifdef LI2_COST_PROFILE
+    struct li2_native_pair_cost cost;struct li2_maps_stats cost_maps;
+    li2_lifecycle_pair_cost_snapshot(&cost);li2_maps_stats_read(&cost_maps);
+#endif
     if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
 #if defined(LI2_ONESHOT_PUBLICATION)
@@ -317,6 +324,9 @@ static void report(unsigned status,unsigned code,long detail) {
     li2_entry_time_report(status,code,detail);
 #endif
 #endif
+#endif
+#ifdef LI2_COST_PROFILE
+    selected_cost_report(status,code,detail,&cost,&cost_maps);
 #endif
 }
 static void fail(unsigned code,long detail) {

@@ -30,8 +30,8 @@
     "path": "tools/page-entry/selected/runtime_loader.c"
   },
   {
-    "after": "#endif\n#endif\n    application_terminal(status,code,detail,(unsigned)selected_pending_route,selected_step_pending,&selected_chain);\n}\nstatic void fail(unsigned code,long detail)",
-    "before": "#endif\n#endif\n}\nstatic void fail(unsigned code,long detail)",
+    "after": "#endif\n#endif\n#ifdef LI2_COST_PROFILE\n    selected_cost_report(status,code,detail,&cost,&cost_maps);\n#endif\n    application_terminal(status,code,detail,(unsigned)selected_pending_route,selected_step_pending,&selected_chain);\n}\nstatic void fail(unsigned code,long detail)",
+    "before": "#endif\n#endif\n#ifdef LI2_COST_PROFILE\n    selected_cost_report(status,code,detail,&cost,&cost_maps);\n#endif\n}\nstatic void fail(unsigned code,long detail)",
     "count": 1,
     "path": "tools/page-entry/selected/runtime_loader.c"
   }

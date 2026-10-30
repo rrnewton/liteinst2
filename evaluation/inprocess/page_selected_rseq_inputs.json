@@ -346,9 +346,9 @@
       "sha256": "20ab3a150b7537be684a438dfcec93ec49506cd79725ea871b86e8f3aa53c42f"
     },
     {
-      "bytes": 38806,
+      "bytes": 39243,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "fc3994d27b98c85227eb685993f62c0248819e235d2ebd03beaf4978b27d8c11"
+      "sha256": "33fa6699e7626869a878f9b245e1a44a64c21b53ff4afcb6d4900762c722fb2f"
     },
     {
       "bytes": 6497,
@@ -411,9 +411,9 @@
       "sha256": "7ebb51c596306e3db062fcce88ff3238b9a60a10f54d729b733bf9ea0094d551"
     },
     {
-      "bytes": 1545,
+      "bytes": 1739,
       "path": "tools/page-entry/selected/tests/rseq_application/ADAPTERS.json",
-      "sha256": "d50887a48bf73240bdfc11aab5675cdd0069b914197c352e95d325eabb5f3ad5"
+      "sha256": "29df3429ca4f0be61a06be77a871b365974a072bdb54b19d469c1c0c8734ea8c"
     },
     {
       "bytes": 3374,
@@ -693,9 +693,9 @@
       "sha256": "20ab3a150b7537be684a438dfcec93ec49506cd79725ea871b86e8f3aa53c42f"
     },
     {
-      "bytes": 38806,
+      "bytes": 39243,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "fc3994d27b98c85227eb685993f62c0248819e235d2ebd03beaf4978b27d8c11"
+      "sha256": "33fa6699e7626869a878f9b245e1a44a64c21b53ff4afcb6d4900762c722fb2f"
     },
     {
       "bytes": 6497,

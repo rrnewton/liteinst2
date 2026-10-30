@@ -12,6 +12,16 @@ static int repeat_lease_zero(const void *p,size_t n) {
        Each alignment-one load stays within [p,p+n); no suffix is read. */
     typedef uint64_t word __attribute__((__may_alias__,__aligned__(1)));
     _Static_assert(sizeof(word)==8 && __alignof__(word)==1,"bounded unaligned zero word");
+    /* Four complete words reduce loop overhead without retaining zero state.
+       n>=32 proves every load is inside this call's exact requested range. */
+    while(n>=4*sizeof(word)) {
+        const word merged=*(const word *)(const void *)(b+0*sizeof(word)) |
+                          *(const word *)(const void *)(b+1*sizeof(word)) |
+                          *(const word *)(const void *)(b+2*sizeof(word)) |
+                          *(const word *)(const void *)(b+3*sizeof(word));
+        if(merged)return 0;
+        b+=4*sizeof(word);n-=4*sizeof(word);
+    }
     while(n>=sizeof(word)) {
         if(*(const word *)(const void *)b)return 0;
         b+=sizeof(word);n-=sizeof(word);
