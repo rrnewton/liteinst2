@@ -30,7 +30,7 @@ def load(name, digest):
 
 assert not sys.flags.optimize, 'assertions required'
 B = load('build_whole.py', '2731a71ee7848098be194111baf240b498dbbaf18c82252877d1a95345d1d3d2')
-H = load('head_capture.py', 'd5f964d6e72abe6dad6d66ff61b97dbb0590dc96ec8275928806f89495d1c8d8')
+H = load('head_capture.py', 'ae10489d1ff6449a596d491f5732cc58c95040e7353d6815b4c00e0f49eb0d01')
 D = H.D
 
 
@@ -92,7 +92,10 @@ def invoke(directory, argv, env, tools):
 
 
 def importer_metadata(profile):
-    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE), 'explicit placement profile'
+    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE), 'explicit placement profile'
+    if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
+        return [['profile', 'elf-disassembly-null-jumps-short-t3-ownership-v1'],
+                ['neighbor_victims', 'short-only'], ['neighbor_ownership', 'inherited-t3']]
     if profile == D.SHORT_PROFILE:
         return [['profile', 'elf-disassembly-null-jumps-short-only-v1'],
                 ['neighbor_victims', 'short-only']]
@@ -102,12 +105,20 @@ def importer_metadata(profile):
 def importer_arguments(binary, original, ledger, policy, output, material, profile):
     importer_metadata(profile)
     mode = ['--short-neighbors-only'] if profile == D.SHORT_PROFILE else []
+    if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
+        mode = ['--short-neighbors-owned']
     return [str(binary), *mode, str(original), str(ledger), sha(material['ledger.txt']),
             str(policy), sha(material['policy.txt']), str(output)]
 
 
 def importer_stdout(raw, profile, exit_code):
     importer_metadata(profile)
+    if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
+        assert exit_code in (0, 2)
+        complete = 'true' if exit_code == 0 else 'false'
+        assert raw == (f'profile=elf-disassembly-null-jumps-short-t3-ownership-v1 '
+                       f'neighbor_victims=short-only neighbor_ownership=inherited-t3 '
+                       f'candidate_complete={complete} qualification_complete=false\n').encode('ascii')
     if profile == D.SHORT_PROFILE:
         assert exit_code in (0, 2)
         complete = 'true' if exit_code == 0 else 'false'
@@ -147,6 +158,17 @@ def inventory(directory, original, material, exit_code, *, profile=D.PROFILE):
                 assert rows[:3] == [[tag, '1'], *mode]
                 assert sum(r[:1] == ['profile'] for r in rows) == 1
                 assert sum(r[:1] == ['neighbor_victims'] for r in rows) == 1
+    if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
+        assert 'planning-profile.tsv' in names or 'program-failure.tsv' in names
+        assert exit_code == 2 or 'program-failure.tsv' not in names
+        for name, tag in (('planning-profile.tsv', 'LI2PLANNING'),
+                          ('program-failure.tsv', 'LI2DISASSEMBLY-FAILURE')):
+            if name in names:
+                rows = table(read(directory / name, cap=1048576))
+                assert rows[:1 + len(mode)] == [[tag, '1'], *mode]
+                assert sum(r[:1] == ['profile'] for r in rows) == 1
+                assert sum(r[:1] == ['neighbor_victims'] for r in rows) == 1
+                assert sum(r[:1] == ['neighbor_ownership'] for r in rows) == 1
     return exit_code == 0
 
 
@@ -154,17 +176,19 @@ def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', type=Path, required=True); parser.add_argument('--capture-sha256', required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE), default=D.PROFILE,
+    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE), default=D.PROFILE,
                         help='fixed placement policy for both programs; default preserves fixed-page placement')
     return parser.parse_args(argv)
 
 
 def material_attempt(program, inputs, expected, profile):
-    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE), 'explicit placement profile'
+    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE), 'explicit placement profile'
     if profile == D.PROFILE:
         return D.attempt(program, inputs, expected)
     if profile == D.BROAD_PROFILE:
         return D.attempt(program, inputs, expected, profile=D.BROAD_PROFILE)
+    if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
+        return D.attempt(program, inputs, expected, profile=D.SHORT_T3_OWNERSHIP_PROFILE)
     if profile == D.SHORT_PROFILE:
         return D.attempt(program, inputs, expected, profile=D.SHORT_PROFILE)
     return D.attempt(program, inputs, expected, profile=D.WINDOW_PROFILE)

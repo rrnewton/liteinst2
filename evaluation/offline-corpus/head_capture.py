@@ -10,7 +10,7 @@ if sys.flags.optimize:
     raise SystemExit('assertions required')
 
 CAP = 1048576
-ADAPTER_SHA = 'e6768d5233a1ffc6f8a0bac2928599773ec3f22b130b2dfcd6aa713d6a1e2e26'
+ADAPTER_SHA = 'e6db32a5a345c5b8423f17d39427f66e93b73636b3acd780bcc8d32d8c462f46'
 path = Path(__file__).resolve().with_name('disassembly.py')
 with path.open('rb') as stream:
     raw = stream.read(CAP + 1)

@@ -62,10 +62,54 @@ fn labels(short_only: bool) -> (&'static str, &'static str, &'static str) {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Mode {
+    LongOnly,
+    ShortOnly,
+    ShortT3Ownership,
+}
+
+fn arguments_with_ownership(args: &[String]) -> Result<(&[String], Mode), String> {
+    if args.len() == 8 && args[1] == "--short-neighbors-owned" {
+        if args[2..].iter().any(|s| {
+            matches!(
+                s.as_str(),
+                "--short-neighbors-only" | "--short-neighbors-owned"
+            )
+        }) {
+            return Err("disassembly_sites --short-neighbors-owned ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY".into());
+        }
+        Ok((&args[2..], Mode::ShortT3Ownership))
+    } else {
+        arguments(args).map(|(args, short_only)| {
+            (
+                args,
+                if short_only {
+                    Mode::ShortOnly
+                } else {
+                    Mode::LongOnly
+                },
+            )
+        })
+    }
+}
+
+fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static str) {
+    match mode {
+        Mode::LongOnly => labels(false),
+        Mode::ShortOnly => labels(true),
+        Mode::ShortT3Ownership => (
+            disassembly::SHORT_T3_OWNERSHIP_PROFILE,
+            "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\n",
+            " neighbor_victims=short-only neighbor_ownership=inherited-t3",
+        ),
+    }
+}
+
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, short_only) = arguments(&raw_args)?;
-    let (profile, family, stdout_family) = labels(short_only);
+    let (args, mode) = arguments_with_ownership(&raw_args)?;
+    let (profile, family, stdout_family) = labels_with_ownership(mode);
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;
     let original = read(Path::new(&args[0]), disassembly::INPUT_LIMIT)?;
@@ -80,16 +124,16 @@ fn run() -> Result<bool, String> {
         // This denominator is retained even if policy/placement/loader refuses.
         files.insert(
             "disassembly-inventory.tsv".into(),
-            if short_only {
-                imported.inventory_short_neighbors()
-            } else {
-                imported.inventory()
+            match mode {
+                Mode::LongOnly => imported.inventory(),
+                Mode::ShortOnly => imported.inventory_short_neighbors(),
+                Mode::ShortT3Ownership => imported.inventory_short_t3_ownership(),
             },
         );
-        let selected = if short_only {
-            imported.bind_short_neighbors(&policy, expected_policy)?
-        } else {
-            imported.bind(&policy, expected_policy)?
+        let selected = match mode {
+            Mode::LongOnly => imported.bind(&policy, expected_policy)?,
+            Mode::ShortOnly => imported.bind_short_neighbors(&policy, expected_policy)?,
+            Mode::ShortT3Ownership => imported.bind_short_t3_ownership(&policy, expected_policy)?,
         };
         assert_eq!(selected.profile(), profile);
         files.insert("selection.txt".into(), selected.manifest().to_vec());
@@ -218,5 +262,64 @@ mod tests {
         ] {
             assert!(arguments(&bad).is_err());
         }
+    }
+
+    #[test]
+    fn owned_short_cli_preserves_positional_paths_and_exact_prebind_labels() {
+        let base: Vec<String> = [
+            "program",
+            "original",
+            "ledger",
+            "ledger-sha",
+            "policy",
+            "policy-sha",
+            "out",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+        for path in ["--short-neighbors-only", "--short-neighbors-owned"] {
+            let mut old = base.clone();
+            old[1] = path.into();
+            let (positional, mode) = arguments_with_ownership(&old).unwrap();
+            assert_eq!(positional, &old[1..]);
+            assert_eq!(mode, Mode::LongOnly);
+            assert_eq!(labels_with_ownership(mode), labels(false));
+        }
+        let mut old_short = base.clone();
+        old_short[1] = "--short-neighbors-owned".into(); // an existing legal positional filename
+        old_short.insert(1, "--short-neighbors-only".into());
+        let (positional, mode) = arguments_with_ownership(&old_short).unwrap();
+        assert_eq!(positional, &old_short[2..]);
+        assert_eq!(mode, Mode::ShortOnly);
+        assert_eq!(labels_with_ownership(mode), labels(true));
+        let mut owned = base.clone();
+        owned.insert(1, "--short-neighbors-owned".into());
+        let (positional, mode) = arguments_with_ownership(&owned).unwrap();
+        assert_eq!(positional, &base[1..]);
+        assert_eq!(mode, Mode::ShortT3Ownership);
+        let expected = (
+            disassembly::SHORT_T3_OWNERSHIP_PROFILE,
+            "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\n",
+            " neighbor_victims=short-only neighbor_ownership=inherited-t3",
+        );
+        assert_eq!(labels_with_ownership(mode), expected);
+        assert!(disassembly::import(&[], &[], ContentId::of(&[])).is_err());
+        assert_eq!(labels_with_ownership(mode), expected);
+        for flag in ["--short-neighbors-only", "--short-neighbors-owned"] {
+            let mut bad = owned.clone();
+            bad[2] = flag.into();
+            assert!(arguments_with_ownership(&bad).is_err());
+        }
+        let mut unknown = owned.clone();
+        unknown[1] = "--unknown".into();
+        assert_eq!(
+            arguments_with_ownership(&unknown).unwrap_err(),
+            arguments(&unknown).unwrap_err()
+        );
+        assert!(arguments_with_ownership(&owned[..6]).is_err());
+        let mut extra = owned;
+        extra.push("extra".into());
+        assert!(arguments_with_ownership(&extra).is_err());
     }
 }

@@ -14,7 +14,7 @@ import unittest
 
 if sys.flags.optimize:
     raise SystemExit('assertions required')
-ADAPTER_SHA = 'e6768d5233a1ffc6f8a0bac2928599773ec3f22b130b2dfcd6aa713d6a1e2e26'
+ADAPTER_SHA = 'e6db32a5a345c5b8423f17d39427f66e93b73636b3acd780bcc8d32d8c462f46'
 path = Path(__file__).resolve().with_name('disassembly.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
@@ -590,6 +590,71 @@ class AuthoredDisassemblyControls(unittest.TestCase):
         self.assertEqual((result['status'], result['roster_checked_heads'], result['roster_checked_jumps']),
                          ('MATERIALS_REFUSED', 80, 16))
         self.assertEqual(set(result['files']), {'ledger.txt', 'source-inventory.tsv'})
+
+
+    def test_owned_short_profile_changes_only_two_bound_mode_rows(self):
+        profile = D.SHORT_T3_OWNERSHIP_PROFILE
+        self.assertEqual(profile, 'offline-whole-authored-short-t3-ownership-2g-v1')
+        for short_jumps in (False, True):
+            totals = [0, 0]
+            for program, counts in D.COUNTS.items():
+                inputs = fixture(program, short_jumps=short_jumps)
+                expected = {key: D.sha(value) for key, value in inputs.items()}
+                broad = D.attempt(program, inputs, expected, profile=D.BROAD_PROFILE)
+                short = D.attempt(program, inputs, expected, profile=D.SHORT_PROFILE)
+                owned = D.attempt(program, inputs, expected, profile=profile)
+                self.assertEqual((broad['status'], short['status'], owned['status']),
+                                 ('MATERIALS_READY', 'MATERIALS_READY', 'MATERIALS_READY'))
+                self.assertEqual(owned['profile'], profile)
+                self.assertEqual(set(owned), set(broad))
+                for key in broad.keys() - {'profile', 'files'}:
+                    self.assertEqual(owned[key], broad[key])
+                self.assertEqual(set(owned['files']), set(broad['files']))
+                for key in ('ledger.txt', 'source-inventory.tsv'):
+                    self.assertEqual(owned['files'][key], broad['files'][key])
+                rows = owned['files']['policy.txt'].splitlines(keepends=True)
+                old = broad['files']['policy.txt'].splitlines(keepends=True)
+                self.assertEqual(rows[:5], [b'LI2DISASM-POLICY 3\n', old[1], old[2],
+                                           b'neighbor-victims short-only\n', b'neighbor-ownership inherited-t3\n'])
+                self.assertEqual(rows.count(b'neighbor-victims short-only\n'), 1)
+                self.assertEqual(rows.count(b'neighbor-ownership inherited-t3\n'), 1)
+                self.assertEqual(b''.join([b'LI2DISASM-POLICY 1\n', *rows[1:3], *rows[5:]]), broad['files']['policy.txt'])
+                self.assertEqual(b''.join([b'LI2DISASM-POLICY 2\n', *rows[1:4], *rows[5:]]), short['files']['policy.txt'])
+                self.assertEqual(rows[8], b'limits 1048576 32 32 131072 128 2097152 1048576 128 2147483648\n')
+                self.assertEqual(rows[10:], old[8:])
+                allocations = [row.split() for row in rows if row.startswith(b'allocation ')]
+                self.assertEqual(len(allocations), counts[1] * 2)
+                self.assertTrue(all(row[4:6] == [b'1', b'4096'] for row in allocations))
+                self.assertNotEqual(D.sha(owned['files']['policy.txt']), D.sha(short['files']['policy.txt']))
+                self.assertEqual((owned['roster_checked_heads'], owned['roster_checked_jumps']), counts)
+                self.assertFalse(owned['importer_verified'])
+                self.assertFalse(owned['qualification_complete'])
+                totals = [a + b for a, b in zip(totals, counts)]
+            self.assertEqual(totals, [187, 42])
+
+    def test_owned_short_profile_keeps_material_refusals_and_helper_guard(self):
+        profile = D.SHORT_T3_OWNERSHIP_PROFILE
+        for key in D.INPUTS:
+            inputs = fixture()
+            expected = {name: D.sha(value) for name, value in inputs.items()}
+            inputs[key] += b'x'
+            result = D.attempt('checksum', inputs, expected, profile=profile)
+            self.assertEqual((result['status'], result['source_expected_heads'],
+                              result['source_expected_jumps'], result['files']),
+                             ('MATERIALS_REFUSED', 80, 16, {}))
+            self.assertFalse(result['qualification_complete'])
+        inputs = fixture()
+        expected = {key: D.sha(value) for key, value in inputs.items()}
+        for wrong in ('owned', profile + ' ', profile.replace('-v1', '-v2'), None, True):
+            with self.assertRaises(AssertionError):
+                D.attempt('checksum', inputs, expected, profile=wrong)
+        with self.assertRaises(AssertionError):
+            D._window_policy(D.Elf(inputs['original'], 2), [(0x401000, 2, 4096)], profile)
+        inputs['target'] = b'target fxsave64\n'
+        refused = D.attempt('checksum', inputs, {key: D.sha(value) for key, value in inputs.items()}, profile=profile)
+        self.assertEqual((refused['status'], refused['roster_checked_heads'], refused['roster_checked_jumps']),
+                         ('MATERIALS_REFUSED', 80, 16))
+        self.assertEqual(set(refused['files']), {'ledger.txt', 'source-inventory.tsv'})
 
 
 if __name__ == '__main__':

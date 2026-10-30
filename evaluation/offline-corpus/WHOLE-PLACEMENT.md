@@ -73,3 +73,29 @@ The new LI2TOOL projection retains its explicit family row. The unchanged
 legacy selection parser rejects that unknown row; this profile does not strip
 it for an E9 or other comparator. No comparator qualification, fit, native,
 loader or performance result is established.
+
+
+The separate `offline-whole-authored-short-t3-ownership-2g-v1` choice retains
+all BROAD/ShortOnly limits, seeds, carrier exclusions, permits, search rows and
+one-candidate/4096-byte allocation rows. It changes only the policy header to
+`LI2DISASM-POLICY 3` and inserts `neighbor-ownership inherited-t3` immediately
+after `neighbor-victims short-only`. Select it explicitly with
+`--placement-profile offline-whole-authored-short-t3-ownership-2g-v1` after the
+same current-source release capture. There is one importer invocation per ready
+program, using the leading `--short-neighbors-owned` option.
+
+The importer profile must be
+`elf-disassembly-null-jumps-short-t3-ownership-v1`, with both
+`neighbor_victims\tshort-only` and `neighbor_ownership\tinherited-t3` rows and
+matching stdout. The complete 187-head/42-jump population, indexed files,
+configuration, custody, release and refusal checks remain mandatory. An old
+profile's directory cannot satisfy this mode. Existing profiles and their results
+are not relabeled or retried.
+
+Only short T3 complete-pair admission consults inherited composition ownership.
+Generalized pun, ordinary relocation, prefixed pun and successor eviction can
+still return a locally valid plan that fails the final append; no T3 retry follows.
+Final caller append, hook/entry/aggregate/carrier checks and whole-program refusal
+remain. The projection retains both mode rows and has no legacy comparator/E9
+replay adapter. This profile adds no native, loader, performance or qualification
+claim and does not promise that a whole-program candidate exists.

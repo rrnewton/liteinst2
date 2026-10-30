@@ -68,12 +68,8 @@ pub fn prepare_disassembly(
     original: &[u8],
     selected: &disassembly::DisassemblySelection,
 ) -> Result<Product, Error> {
-    let mut product = prepare_selection_mode(
-        original,
-        selected.selection.clone(),
-        false,
-        selected.short_only,
-    )?;
+    let mut product =
+        prepare_selection_with_mode(original, selected.selection.clone(), false, selected.mode)?;
     product.files.remove("bundle-index.tsv");
     product.files.extend(selected.files.clone());
     product.files.insert(
@@ -94,7 +90,25 @@ fn prepare_selection_mode(
     owned_neighbors: bool,
     short_only: bool,
 ) -> Result<Product, Error> {
-    if owned_neighbors && short_only {
+    prepare_selection_with_mode(
+        original,
+        selection,
+        owned_neighbors,
+        if short_only {
+            disassembly::NeighborMode::ShortOnly
+        } else {
+            disassembly::NeighborMode::LongOnly
+        },
+    )
+}
+
+fn prepare_selection_with_mode(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+) -> Result<Product, Error> {
+    if owned_neighbors && mode != disassembly::NeighborMode::LongOnly {
         return Err(Error::new(
             "neighbor-mode",
             "short-only has no foreign owner route",
@@ -256,7 +270,14 @@ fn prepare_selection_mode(
                     policy,
                     &foreign,
                 )
-            } else if short_only {
+            } else if mode == disassembly::NeighborMode::ShortT3Ownership {
+                engine::plan_with_emission_after_and_short_t3_ownership(
+                    &request,
+                    &composition,
+                    &site.victim_allocation,
+                    policy,
+                )
+            } else if mode == disassembly::NeighborMode::ShortOnly {
                 engine::plan_with_emission_after_and_short_neighbors(
                     &request,
                     &composition,

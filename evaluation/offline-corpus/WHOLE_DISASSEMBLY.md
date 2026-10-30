@@ -165,3 +165,37 @@ original row. The ordinary selection parser rejects this new row. Neither this
 profile nor its runner adapts E9 or other comparators, removes the row for legacy
 replay, or grants comparator qualification. The additive supplied-input controls
 exercise the actual adapter and dispatch/inventory helpers.
+
+
+## Explicit short T3 inherited-ownership profile
+
+`attempt(program, inputs, expected, profile=SHORT_T3_OWNERSHIP_PROFILE)` selects
+`offline-whole-authored-short-t3-ownership-2g-v1`. It uses exactly the existing
+broad placement helper and limits. The policy starts with:
+
+```text
+LI2DISASM-POLICY 3
+original ORIGINAL_SHA256
+ledger LEDGER_SHA256
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+```
+
+All remaining bytes match the broad policy. Removing just the ownership row and
+restoring header version two reproduces the ShortOnly policy exactly. Every
+original source/head/relocation join, ledger and inventory row remains unchanged;
+there is no corpus subset, additional candidate, widened permit or retry.
+
+The reproducer selects `--short-neighbors-owned` and requires exact importer
+profile `elf-disassembly-null-jumps-short-t3-ownership-v1`. Both mode rows follow
+profile in inventory, planning, failure and COMPLETE, and their stdout tokens
+must match the exit code. Material refusal, exception retention, one invocation
+per ready program and all current-source release/custody/configuration checks
+remain unchanged. Old profiles keep their original bytes and behavior.
+
+Short T3 alone can continue after a complete pair conflicts with inherited locks,
+physical sites or allocation ownership, within the same existing counters. The
+other four tactics retain first local success and possible final append refusal.
+The importer still requires its actual append, complete selection and every hook,
+entry, aggregate and carrier guard. No native or E9 adapter is provided, and
+neither materials nor a structural candidate establishes execution qualification.

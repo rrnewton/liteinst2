@@ -616,3 +616,329 @@ fn short_only_projection_and_search_caps_are_not_widened() {
     assert!(checked(&o, &malformed).is_err());
     assert!(short_bind(&o, &l, &(p.clone() + &"x".repeat(TEXT_LIMIT))).is_err());
 }
+
+fn owned_fixture(all_conflict: bool) -> (Vec<u8>, String, String) {
+    let mut code = vec![0x90; 48];
+    code[..3].copy_from_slice(&[0x75, 0, 0xc3]);
+    code[14..16].copy_from_slice(if all_conflict {
+        &[0x75, 0]
+    } else {
+        &[0xff, 0xc0]
+    });
+    code[16..22].copy_from_slice(&[0x2e, 0xb8, 0x37, 0x31, 0x42, 0x53]);
+    code[22..28].copy_from_slice(&[0xb8, 1, 1, 1, 1, 0xc3]);
+    code[30..32].copy_from_slice(&[0x75, 0]);
+    code[32..38].copy_from_slice(&[0x2e, 0xb8, 0x27, 0x31, 0x42, 0x53]);
+    code[38..44].copy_from_slice(&[0xb8, 1, 1, 1, 1, 0xc3]);
+    let heads: [usize; 27] = [
+        0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 22, 27, 28, 29, 30, 32, 38, 43, 44, 45,
+        46, 47,
+    ];
+    let chunks: Vec<_> = heads
+        .iter()
+        .enumerate()
+        .map(|(i, &start)| &code[start..heads.get(i + 1).copied().unwrap_or(code.len())])
+        .collect();
+    let (original, ledger) = fixture(&chunks);
+    let count = if all_conflict { 3 } else { 2 };
+    let base = policy(&original, &ledger, count);
+    let mut rows: Vec<String> = base.lines().take(8).map(str::to_owned).collect();
+    rows[0] = "LI2DISASM-POLICY 3".into();
+    rows[6] = rows[6].replace("4294967296", "2147483648");
+    rows.insert(3, "neighbor-victims short-only".into());
+    rows.insert(4, "neighbor-ownership inherited-t3".into());
+    let selected_u = PC + 26 + 0x010101b8;
+    let selected_v = PC + 42 + 0x010101b8;
+    let victim = PC + 0x06000080;
+    let high_gp = PC + 35 + 0x27b82e00;
+    let low_gp = PC + 19 + 0x37b82e00;
+    assert_eq!(selected_u & !4095, selected_v & !4095);
+    let pages = [
+        selected_u & !4095,
+        victim & !4095,
+        high_gp & !4095,
+        low_gp & !4095,
+    ];
+    for (i, &a) in pages.iter().enumerate() {
+        assert!(a >= BASE + 0x9000 && a + 8192 - BASE < 2147483648);
+        for &b in &pages[i + 1..] {
+            assert!(a + 8192 <= b || b + 8192 <= a);
+        }
+    }
+    for id in 1..=count {
+        let target = if id == 1 {
+            selected_v
+        } else if all_conflict && id == 2 {
+            low_gp
+        } else {
+            high_gp
+        };
+        let tactic = if id == 1 { "T3" } else { "B2" };
+        rows.push(format!("search {id} {tactic} 0 80 1 none 2 2"));
+        rows.push(format!(
+            "allocation {id} selected {target} 1 8192 {}:8192",
+            target & !4095
+        ));
+        rows.push(format!(
+            "allocation {id} victim {victim} 1 8192 {}:8192",
+            victim & !4095
+        ));
+    }
+    (original, ledger, rows.join("\n") + "\n")
+}
+
+fn owned_bind(original: &[u8], ledger: &str, p: &str) -> Result<DisassemblySelection, Error> {
+    checked(original, ledger)?.bind_short_t3_ownership(p.as_bytes(), ContentId::of(p.as_bytes()))
+}
+
+#[test]
+fn short_t3_ownership_policy_and_projection_bind_both_modes() {
+    let (o, l, p) = owned_fixture(false);
+    let selected = owned_bind(&o, &l, &p).unwrap();
+    assert_eq!(selected.profile(), SHORT_T3_OWNERSHIP_PROFILE);
+    let manifest = std::str::from_utf8(selected.manifest()).unwrap();
+    let family = "neighbor-victims short-only\n";
+    let ownership = "neighbor-ownership inherited-t3\n";
+    let mode = format!("{family}{ownership}");
+    assert_eq!(
+        manifest.lines().take(4).collect::<Vec<_>>(),
+        [
+            "LI2TOOL 1",
+            &format!("original {}", digest(&o)),
+            "neighbor-victims short-only",
+            "neighbor-ownership inherited-t3",
+        ]
+    );
+    assert!(selection::parse(selected.manifest()).is_err());
+    assert!(selection::parse_short_neighbor_projection(selected.manifest()).is_err());
+    assert!(crate::prepare(&o, selected.manifest()).is_err());
+    assert!(bind(&o, &l, &p).is_err());
+    assert!(short_bind(&o, &l, &p).is_err());
+    let old = p
+        .replace("LI2DISASM-POLICY 3", "LI2DISASM-POLICY 2")
+        .replace(ownership, "");
+    assert!(owned_bind(&o, &l, &old).is_err());
+    assert!(owned_bind(&o, &l, &policy(&o, &l, 2)).is_err());
+    assert!(
+        checked(&o, &l)
+            .unwrap()
+            .bind_short_t3_ownership(p.as_bytes(), ContentId([0; 32]))
+            .is_err()
+    );
+    for wrong in [
+        p.replace(family, ""),
+        p.replace(ownership, ""),
+        p.replace(family, "neighbor-victims long-only\n"),
+        p.replace(ownership, "neighbor-ownership local-only\n"),
+        p.replace(ownership, &format!("{ownership}{ownership}")),
+        p.replace(family, &format!("{family}{family}")),
+        p.replace(&mode, &format!("{ownership}{family}")),
+        p.replace(ownership, "") + ownership,
+        p.replace("LI2DISASM-POLICY 3", "LI2DISASM-POLICY 2"),
+    ] {
+        assert!(owned_bind(&o, &l, &wrong).is_err()); // each receives its recomputed digest
+    }
+    for wrong in [
+        manifest.replace(family, ""),
+        manifest.replace(ownership, ""),
+        manifest.replace(ownership, &format!("{ownership}{ownership}")),
+        manifest.replace(&mode, &format!("{ownership}{family}")),
+        manifest.replace(ownership, "") + ownership,
+        manifest.replace(ownership, "neighbor-ownership local-only\n"),
+    ] {
+        assert!(selection::parse_short_t3_ownership_projection(wrong.as_bytes()).is_err());
+    }
+    let profile = std::str::from_utf8(&selected.files["planning-profile.tsv"]).unwrap();
+    assert!(profile.starts_with(&format!("LI2PLANNING\t1\nprofile\t{SHORT_T3_OWNERSHIP_PROFILE}\nneighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\n")));
+    assert!(profile.contains(&format!(
+        "selection_sha256\t{}\n",
+        digest(selected.manifest())
+    )));
+    assert!(profile.contains(&format!("policy_sha256\t{}\n", digest(p.as_bytes()))));
+    assert_ne!(
+        ContentId::of(selected.manifest()),
+        ContentId::of(manifest.replace(&mode, "").as_bytes())
+    );
+    assert_eq!(
+        selected.files["disassembly-inventory.tsv"],
+        checked(&o, &l).unwrap().inventory_short_t3_ownership()
+    );
+}
+
+#[test]
+fn short_t3_ownership_actual_preceding_jump_admits_second_victim() {
+    let (o, l, p) = owned_fixture(false);
+    assert_eq!(l.lines().filter(|r| r.starts_with("head ")).count(), 28);
+    let selected = owned_bind(&o, &l, &p).unwrap();
+    assert_eq!(
+        selected
+            .selection
+            .sites
+            .iter()
+            .map(|s| s.pc)
+            .collect::<Vec<_>>(),
+        [PC, PC + 30]
+    );
+    assert!(selected.selection.sites.iter().all(|s| s.heads.len() == 27));
+    let product = prepare_disassembly(&o, &selected).unwrap();
+    assert!(product.candidate_complete()); // refusal cannot satisfy this positive
+    assert!(!product.qualification_complete());
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal.is_none() && r.candidate_emitted)
+    );
+    assert_eq!(
+        product.reports()[0].core_tactic,
+        Some(li2core::engine::Tactic::NeighborEviction)
+    );
+    assert_eq!(
+        product.reports()[1].core_tactic,
+        Some(li2core::engine::Tactic::GeneralizedPun)
+    );
+    let evidence = &product.reports()[0].diagnostics;
+    assert!(evidence.contains("OwnershipConflict") && evidence.contains("stage: Composition"));
+    assert!(evidence.contains("pairs_examined: 2") && evidence.contains("victims_examined: 2"));
+    assert_eq!(
+        product
+            .files()
+            .keys()
+            .filter(|n| n.starts_with("image-") && n.ends_with(".bin"))
+            .count(),
+        3
+    );
+    let mut expected = o[0x1100..0x1130].to_vec();
+    expected[..2].copy_from_slice(&[0xeb, 19]); // S -> U+5
+    expected[16..21].copy_from_slice(&[0xe9, 0x6b, 0, 0, 6]); // U -> fixed victim image
+    expected[21..26].copy_from_slice(&[0xe9, 0xb8, 1, 1, 1]); // fixed suffix -> selected U image
+    expected[30..35].copy_from_slice(&[0xe9, 0, 0x2e, 0xb8, 0x27]); // actual prior selected GP
+    let candidate = &product.files()["candidate.elf"];
+    assert_eq!(&candidate[0x1100..0x1130], expected.as_slice());
+    assert_eq!(&candidate[0x1120..0x1126], &o[0x1120..0x1126]); // rejected V stays original
+    assert_eq!(candidate[0x1f00], 0xc3);
+    let old = p
+        .replace("LI2DISASM-POLICY 3", "LI2DISASM-POLICY 2")
+        .replace("neighbor-ownership inherited-t3\n", "");
+    let legacy = prepare_disassembly(&o, &short_bind(&o, &l, &old).unwrap()).unwrap();
+    assert!(!legacy.candidate_complete());
+    assert_eq!(
+        legacy.reports()[0].core_tactic,
+        Some(li2core::engine::Tactic::NeighborEviction)
+    );
+    assert!(
+        legacy
+            .reports()
+            .iter()
+            .all(|r| r.refusal.is_some() && !r.candidate_emitted)
+    );
+    assert!(!legacy.files().contains_key("candidate.elf"));
+}
+
+#[test]
+fn short_t3_ownership_conflicts_and_pair_cap_keep_every_report() {
+    for all_conflict in [false, true] {
+        let (o, l, mut p) = owned_fixture(all_conflict);
+        if !all_conflict {
+            p = p.replace(
+                "search 1 T3 0 80 1 none 2 2\n",
+                "search 1 T3 0 80 1 none 2 1\n",
+            );
+        }
+        let selected = owned_bind(&o, &l, &p).unwrap();
+        let product = prepare_disassembly(&o, &selected).unwrap();
+        let count = if all_conflict { 3 } else { 2 };
+        assert_eq!(
+            product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+            (1..=count).collect::<Vec<_>>()
+        );
+        assert!(
+            product
+                .reports()
+                .iter()
+                .all(|r| r.refusal.is_some() && !r.candidate_emitted)
+        );
+        assert!(
+            product.reports()[0]
+                .diagnostics
+                .contains("OwnershipConflict")
+        );
+        assert!(
+            product.reports()[0]
+                .diagnostics
+                .contains("stage: Composition")
+        );
+        if !all_conflict {
+            let evidence = &product.reports()[0].diagnostics;
+            let runs: Vec<_> = evidence.split("SearchRun {").skip(1).collect();
+            assert_eq!(runs.len(), 6);
+            for (run, (domain, examined, stop)) in runs.iter().zip([
+                ("Victims", 2, "Interrupted"),
+                ("JointPairs", 1, "BudgetLimited"),
+                ("VictimImages", 1, "BudgetLimited"),
+                ("SelectedImages", 1, "DomainComplete"),
+                ("VictimImages", 1, "Interrupted"),
+                ("SelectedImages", 0, "Interrupted"),
+            ]) {
+                assert!(run.contains(&format!("domain: {domain},")));
+                assert!(run.contains(&format!("examined: {examined},")));
+                assert!(run.contains(&format!("stop: {stop}")));
+            }
+            assert!(runs[1].contains("remaining_at_least: 1"));
+        }
+        assert!(!product.candidate_complete() && !product.qualification_complete());
+        assert!(!product.files().contains_key("candidate.elf"));
+        assert!(!product.files().contains_key("source.li2sparse"));
+        assert_eq!(product.files()["disassembly.txt"], l.as_bytes());
+        assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+    }
+}
+
+#[test]
+fn short_t3_ownership_full_projection_bound_and_resource_refusals() {
+    let (o, l, p) = owned_fixture(false);
+    let selected = owned_bind(&o, &l, &p).unwrap();
+    let mut exact = selected.manifest().to_vec();
+    exact.resize(TEXT_LIMIT, b'\n');
+    assert_eq!(
+        selection::parse_short_t3_ownership_projection(&exact)
+            .unwrap()
+            .manifest,
+        exact
+    );
+    exact.push(b'\n');
+    assert!(selection::parse_short_t3_ownership_projection(&exact).is_err());
+    let stripped = std::str::from_utf8(&exact)
+        .unwrap()
+        .replace("neighbor-victims short-only\n", "")
+        .replace("neighbor-ownership inherited-t3\n", "");
+    assert!(selection::parse(stripped.as_bytes()).is_ok());
+    let search = "search 1 T3 0 80 1 none 2 2\n";
+    for wrong in [
+        p.replace(search, ""),
+        p.clone() + search,
+        p.clone() + "search 3 T3 0 80 1 none 2 2\n",
+        p.replace("1048576 16 16", "1048576 1025 16"),
+        p.replace("T3 0 80", "T3 0 65537"),
+        p.clone() + &"x".repeat(TEXT_LIMIT),
+    ] {
+        assert!(owned_bind(&o, &l, &wrong).is_err());
+    }
+    for wrong in [
+        p.replace(search, "search 1 T3 0 80 1 none 0 2\n"),
+        p.replace(search, "search 1 T3 0 80 1 none 2 0\n"),
+        p.replace("1048576 16 16", "1048576 16 2"), // prior image plus locally valid two-image T3
+    ] {
+        let selected = owned_bind(&o, &l, &wrong).unwrap();
+        let product = prepare_disassembly(&o, &selected).unwrap();
+        assert_eq!(product.reports().len(), 2);
+        assert!(product.reports().iter().all(|r| r.refusal.is_some()));
+        assert!(!product.candidate_complete() && !product.files().contains_key("candidate.elf"));
+    }
+    let malformed = l.replace(&format!("head {PC} "), &format!("head {} ", PC + 1));
+    assert!(checked(&o, &malformed).is_err());
+}

@@ -197,3 +197,54 @@ last entrypoint authenticates the predecessor's original identity and current
 overlay; callers must still append every returned step transactionally to enforce
 inherited locks, physical sites and allocation ownership. Foreign-neighbor
 planning remains on its existing long-only route.
+
+
+## Explicit inherited admission for short T3
+
+`elf-disassembly-null-jumps-short-t3-ownership-v1` is a separate sealed mode:
+
+```text
+disassembly_sites --short-neighbors-owned ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY
+```
+
+Use `Disassembly::bind_short_t3_ownership` and
+`inventory_short_t3_ownership` for the equivalent library selection. The policy
+starts with these exact rows, followed by the existing target, domain, carrier,
+limits, null-hook, search and allocation records:
+
+```text
+LI2DISASM-POLICY 3
+original WHOLE_ORIGINAL_SHA256
+ledger TRUSTED_LEDGER_SHA256
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+```
+
+The complete policy digest binds both mode rows. The LI2TOOL projection retains
+both immediately after its original digest. Its full one-MiB limit is checked
+before a private sealed-parser call removes the two rows; the complete projection
+is restored as its manifest identity. The public legacy parser and older binders
+reject this projection. Every original head/jump and refusal remains required.
+
+Only complete short neighboring-instruction eviction pairs are preflighted by
+appending all steps to a fresh clone of the actual preceding composition. An
+inherited refusal consumes its existing pair slot and continues the same bounded
+search. Generalized pun, ordinary relocation, prefixed pun and successor eviction
+retain their first local success and possible later caller-append refusal. That
+refusal does not restart the engine. The importer still performs its real final
+append and all entry, dynamic-relocation, hook, aggregate, carrier and atomic
+whole-selection checks. No budget, long-family fallback or second attempt is added.
+
+Inventory, planning, failure and COMPLETE metadata place
+`neighbor_victims\tshort-only` and `neighbor_ownership\tinherited-t3` immediately
+after the new profile row. Stdout uses the corresponding `key=value` tokens in
+that order. Mode labels are selected before binding, including failure paths.
+The six-position legacy invocation and existing ShortOnly option retain their
+positional-path behavior and output bytes. In particular a seven-argv path that
+spells a flag stays positional; the existing ShortOnly invocation can still use
+`--short-neighbors-owned` as a positional filename. Only the new leading option
+rejects either repeated mode flag among its six remaining arguments.
+
+This same-region mode is distinct from the foreign-owner
+`prepare_with_owned_neighbors` API. It does not provide fully composition-aware
+planning, native admission or a comparator adapter. Existing modes remain separate.
