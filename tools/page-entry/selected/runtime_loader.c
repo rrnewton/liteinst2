@@ -154,6 +154,32 @@ static _Noreturn void selected_run_abort(unsigned,long);
 static _Noreturn void selected_run_unexpected(int,siginfo_t *,ucontext_t *);
 #endif
 
+#if defined(LI2_UNROLLED_HASH_CAPTURE) && (!defined(LI2_UNROLLED_HASH) || LI2_UNROLLED_HASH_CAPTURE != 1 || LI2_UNROLLED_HASH != 1)
+#error "owner capture requires the literal complete unrolled profile"
+#endif
+#ifdef LI2_UNROLLED_HASH_OBSERVE_ONLY
+#if LI2_UNROLLED_HASH_OBSERVE_ONLY != 1 || !defined(LI2_UNROLLED_HASH) || LI2_UNROLLED_HASH != 1
+#error "unrolled observation-only requires the complete unrolled hash profile"
+#endif
+#endif
+#ifdef LI2_UNROLLED_HASH
+#if LI2_UNROLLED_HASH != 1 || !defined(LI2_NATIVE_PAIR) || LI2_NATIVE_PAIR != 1 || !defined(LI2_MAPS_MAINTAINED) || LI2_MAPS_MAINTAINED != 1 || !defined(LI2_RUN_CACHE_REUSE) || LI2_RUN_CACHE_REUSE != 1 || !defined(LI2_EFFECT_PROVIDER) || LI2_EFFECT_PROVIDER != 1
+#error "unrolled hash requires the complete maintained native-pair effect profile"
+#endif
+#include "unrolled_source.h"
+static volatile sig_atomic_t selected_unrolled_active,selected_unrolled_busy;
+static void selected_unrolled_initialize(void);
+static int selected_unrolled_try(int,siginfo_t *,ucontext_t *,uint64_t);
+static void selected_unrolled_exit(int,siginfo_t *,ucontext_t *);
+static void selected_unrolled_preentry(int,siginfo_t *,ucontext_t *);
+static _Noreturn void selected_unrolled_abort(unsigned,long);
+static _Noreturn void selected_unrolled_unexpected(int,siginfo_t *,ucontext_t *);
+static void selected_unrolled_report(unsigned,unsigned,long);
+#ifdef LI2_UNROLLED_HASH_CAPTURE
+static void uho_fd_guard(long,const long[6]);
+#endif
+#endif
+
 #include "fork_profile.h"
 #ifdef LI2_NATIVE_PAIR
 static void selected_native_pair_report(unsigned,unsigned,long);
@@ -358,11 +384,18 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_COST_PROFILE
     selected_cost_report(status,code,detail,&cost,&cost_maps);
 #endif
+#ifdef LI2_UNROLLED_HASH
+    selected_unrolled_report(status,code,detail);
+#endif
 #ifdef LI2_EVENT_PROFILE
     event_report();
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_UNROLLED_HASH
+    if(selected_unrolled_active || selected_unrolled_busy || selected_pending_route==SELECTED_UNROLLED_HASH)
+        selected_unrolled_abort(code,detail);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     if(selected_pending_route==SELECTED_ONESHOT || selected_oneshot_active)
         selected_oneshot_abort(code,detail);
@@ -492,6 +525,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_SELECTED_PROVIDER_BUILTINS
     if(selected_provider_builtins_enabled)selected_provider_syscall_decide(n,a,context);
+#endif
+#ifdef LI2_UNROLLED_HASH_CAPTURE
+    uho_fd_guard(n,a);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
 #ifdef LI2_EFFECT_PROVIDER
@@ -643,6 +679,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_REGISTER_RUN
 #include "selected_register_run.inc"
 #endif
+#ifdef LI2_UNROLLED_HASH
+#include "selected_unrolled_hash.inc"
+#endif
 
 #ifdef LI2_NATIVE_PAGES
 #include "native_controller.inc"
@@ -663,6 +702,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_RSEQ_NATIVE
     /* Must precede every old checked/fail and returning cleanup path. */
     li2_rseq_native_preentry();
+#endif
+#ifdef LI2_UNROLLED_HASH
+    selected_unrolled_preentry(sig,si,ptr);
 #endif
 #ifdef LI2_ONESHOT_PUBLICATION
     /* No generic ingress may resume a reserved-signal interruption of a writer
@@ -750,6 +792,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_ENTRY_TIMING
     li2_entry_time_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_UNROLLED_HASH
+    if(selected_pending_route==SELECTED_UNROLLED_HASH) {
+        selected_unrolled_exit(sig,si,ptr);
+    } else
 #endif
 #ifdef LI2_ONESHOT_PUBLICATION
     if(selected_pending_route==SELECTED_ONESHOT) {
@@ -899,6 +946,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_EVENT_PROFILE
     event_initialize();
+#endif
+#ifdef LI2_UNROLLED_HASH
+    selected_unrolled_initialize();
 #endif
 #ifdef LI2_MAPS_MAINTAINED
     checked(!li2_maps_view_enable(),770,1);

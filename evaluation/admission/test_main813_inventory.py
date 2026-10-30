@@ -620,6 +620,70 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(cache.cache_info().currsize, 512)
         cache.cache_clear()
 
+        # A separate bounded large-value cache keeps the original512 small
+        # entries and every live-source/expectation guard unchanged.
+        large_cache = main813.inventory_digest._large_hexdigest
+        large_cache.cache_clear()
+        self.assertEqual(large_cache.cache_parameters(), {'maxsize': 64, 'typed': True})
+        cache.cache_clear()
+        for size in (65536, 65537, 1048576, 1048577):
+            value = b'z' * size
+            before_small, before_large = cache.cache_info(), large_cache.cache_info()
+            self.assertEqual(digest(value), original_sha256(value).hexdigest())
+            self.assertEqual(digest(value), original_sha256(value).hexdigest())
+            selected = large_cache if 65536 < size <= 1048576 else cache
+            unchanged = cache if selected is large_cache else large_cache
+            previous = before_large if selected is large_cache else before_small
+            self.assertEqual(selected.cache_info().misses, previous.misses + 1)
+            self.assertEqual(selected.cache_info().hits, previous.hits + 1)
+            self.assertEqual(unchanged.cache_info(), before_small if selected is large_cache else before_large)
+        value = b'large' * 14000
+        self.assertEqual(digest(value), original_sha256(value).hexdigest())
+        self.assertEqual(digest(value + b'!'), original_sha256(value + b'!').hexdigest())
+        self.assertNotEqual(digest(value), digest(value + b'!'))
+        before_small, before_large = cache.cache_info(), large_cache.cache_info()
+        for unsupported in (bytearray(value), memoryview(value), BytesSubclass(value)):
+            self.assertEqual(digest(unsupported), original_sha256(unsupported).hexdigest())
+        mutable_large = bytearray(value)
+        self.assertEqual(digest(mutable_large), original_sha256(value).hexdigest())
+        mutable_large[-1] ^= 1
+        self.assertEqual(digest(mutable_large), original_sha256(mutable_large).hexdigest())
+        self.assertNotEqual(digest(mutable_large), original_sha256(value).hexdigest())
+        self.assertEqual(cache.cache_info(), before_small)
+        self.assertEqual(large_cache.cache_info(), before_large)
+        for before_import in (False, True):
+            large_spec = importlib.util.spec_from_file_location('_inventory_large_hash_control',
+                main813.inventory_digest.__file__)
+            fresh_large = importlib.util.module_from_spec(large_spec)
+            if not before_import:
+                large_spec.loader.exec_module(fresh_large)
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(value).hexdigest())
+            with patch.object(hashlib, 'sha256', side_effect=[original_sha256(b'a'),
+                    original_sha256(b'b'), ValueError('live large hash failure')]) as changed_hash:
+                if before_import:
+                    large_spec.loader.exec_module(fresh_large)
+                old_large = fresh_large._large_hexdigest.cache_info()
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(b'a').hexdigest())
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(b'b').hexdigest())
+                with self.assertRaisesRegex(ValueError, '^live large hash failure$'):
+                    fresh_large.hexdigest(value)
+                self.assertEqual(changed_hash.call_count, 3)
+                self.assertEqual(fresh_large._large_hexdigest.cache_info(), old_large)
+            with patch.object(hashlib, 'sha256', UnhashableHash()):
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(value + b'changed').hexdigest())
+                self.assertEqual(fresh_large._large_hexdigest.cache_info(), old_large)
+            self.assertEqual(fresh_large.hexdigest(value), original_sha256(value).hexdigest())
+        large_cache.cache_clear()
+        large_keys = [b'x' * 65536 + bytes((i,)) for i in range(65)]
+        for key in large_keys:
+            self.assertEqual(digest(key), original_sha256(key).hexdigest())
+        self.assertEqual(large_cache.cache_info().currsize, 64)
+        large_misses = large_cache.cache_info().misses
+        self.assertEqual(digest(large_keys[0]), original_sha256(large_keys[0]).hexdigest())
+        self.assertEqual(large_cache.cache_info().misses, large_misses + 1)
+        cache.cache_clear()
+        large_cache.cache_clear()
+
         # Only immutable bounded splice results are reused; validation is live.
         splice = main813.inventory_splice.splice
         splice_cache = main813.inventory_splice._splice
@@ -3143,7 +3207,10 @@ class Main813InventoryTests(unittest.TestCase):
 
         # Complete pending successor: exact current input must reach old history.
         pending = main813.MAINSHORTPENDING
-        adjacent_actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        routed_native_actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        routed_actual = main813.before_routed_native(routed_native_actual)
+        frontend_actual = main813.before_routed(routed_actual)
+        adjacent_actual = main813.before_frontend(frontend_actual)
         pending_actual = main813.before_adjacent(adjacent_actual)
         pending_saved = plain.deepcopy(pending_actual)
         pending_prior = main813.before_short_pending(pending_actual)
@@ -3160,13 +3227,13 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.before_short_ownership(pending_prior), engine_current)
         self.assertEqual(main813.before_short_ownership(pending_actual), engine_current)
         with patch.object(inventory, 'before_cc846', wraps=inventory.before_cc846) as history:
-            inventory.require_current(adjacent_actual)
-            self.assertEqual(history.call_args_list, [unittest.mock.call(adjacent_actual)])
+            inventory.require_current(routed_native_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(routed_native_actual)])
         with patch.object(inventory, 'before_cc846',
                           side_effect=RuntimeError('pending original history reached')) as history:
             with self.assertRaisesRegex(RuntimeError, '^pending original history reached$'):
-                inventory.require_current(adjacent_actual)
-            self.assertEqual(history.call_args_list, [unittest.mock.call(adjacent_actual)])
+                inventory.require_current(routed_native_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(routed_native_actual)])
         pending_rows = pending_actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(pending_rows), sum(x['tests'] for x in pending_rows.values()),
                           sum(x['ignored'] for x in pending_rows.values())), (104, 3649, 37))
@@ -3272,7 +3339,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_source_control$'):
                         main813.require_short_pending_sources('pending_source_control')
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(adjacent_actual)
+                        inventory.require_current(routed_native_actual)
         for path, pending_row in pending['projections'].items():
             pending_raw = pending_read(main813.ROOT / path)
             pending_restored = main813.source_before_short_pending(path, pending_raw, 'pending_inverse_control')
@@ -3312,10 +3379,16 @@ class Main813InventoryTests(unittest.TestCase):
                 return pending_restored if candidate == main813.ROOT / path else pending_read(candidate)
             with patch.object(Path, 'read_bytes', pending_historical):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                    inventory.require_current(adjacent_actual)
-        pending_unchanged = pending_read(main813.ROOT / 'src/trampoline.rs')
-        self.assertIs(main813.source_before_short_pending('src/trampoline.rs', pending_unchanged, 'changed'),
-                      pending_unchanged)
+                    inventory.require_current(routed_native_actual)
+        pending_current = pending_read(main813.ROOT / 'src/trampoline.rs')
+        pending_unchanged = main813.source_before_routed('src/trampoline.rs', pending_current, 'changed')
+        self.assertEqual(main813.source_before_short_pending('src/trampoline.rs', pending_current, 'changed'),
+                         pending_unchanged)
+        historical_projections = dict(main813.MAINROUTED['projections'])
+        del historical_projections['src/trampoline.rs']
+        with patch.dict(main813.MAINROUTED, projections=historical_projections):
+            self.assertIs(main813.source_before_short_pending('src/trampoline.rs', pending_unchanged, 'changed'),
+                          pending_unchanged)
         # Bad old tables must fail after a valid pending source/inverse, not before it.
         old_path = 'src/neighbor_short/tests.rs'
         old_row = ownership['methods'][old_path]
@@ -3344,6 +3417,7 @@ class Main813InventoryTests(unittest.TestCase):
                 self.assertEqual(pending['listed_additions'][identity],
                                  [prefix + name for name in pending['added_methods'][path]])
             pending_raw = pending_read(main813.ROOT / path)
+            pending_raw = main813.source_before_adjacent(path, pending_raw, 'pending_methods_control')
             self.assertIsNone(main813._require_short_pending_blob(path, pending_raw,
                               pending['sources'][path], 'pending_methods_control'))
             for changed_row in ([dict(row, all=row['all'][:i] + row['all'][i+1:]) for i in range(len(row['all']))] +
@@ -3364,6 +3438,7 @@ class Main813InventoryTests(unittest.TestCase):
             self.assertEqual([name for name in names if name not in pending['python_added_methods'][path]],
                              ownership['python_methods'][path])
             pending_raw = pending_read(main813.ROOT / path)
+            pending_raw = main813.source_before_adjacent(path, pending_raw, 'pending_python_control')
             self.assertIsNone(main813._require_short_pending_blob(path, pending_raw,
                               pending['sources'][path], 'pending_python_control'))
             for changed_names in ([names[:i] + names[i+1:] for i in range(len(names))] +
@@ -3383,6 +3458,7 @@ class Main813InventoryTests(unittest.TestCase):
                 main813._require_short_pending_blob(path, broken, hashlib.sha256(broken).hexdigest(), 'changed')
         for path, literals in pending['module_chains'].items():
             pending_raw = pending_read(main813.ROOT / path)
+            pending_raw = main813.source_before_adjacent(path, pending_raw, 'pending_route_control')
             self.assertIsNone(main813._require_short_pending_blob(path, pending_raw,
                               pending['sources'][path], 'pending_route_control'))
             for literal in literals:
@@ -3456,7 +3532,7 @@ class Main813InventoryTests(unittest.TestCase):
         adjacent = main813.MAINADJACENT
         self.assertEqual(main813.before_adjacent(adjacent_actual), pending_actual)
         self.assertEqual(main813.digest(pending_actual), main813.CURRENTSHORTPENDING)
-        self.assertEqual(main813.digest(adjacent_actual), main813.LATEST)
+        self.assertEqual(main813.digest(adjacent_actual), main813.CURRENTADJACENT)
         self.assertEqual(adjacent_actual['harness_test_counts']['workspace_tests']['unit/liteinst2/lib'], counts(309, 1))
         self.assertEqual(adjacent_actual['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle'], counts(101))
         adjacent_rows = adjacent_actual['harness_test_counts']['workspace_tests']
@@ -3469,7 +3545,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(len(adjacent['methods']['src/quiescent/adjacent_b2/tests.rs']['all']), 10)
         self.assertEqual(adjacent['methods']['src/quiescent/adjacent_b2/tests.rs']['ignored'], [])
         self.assertEqual(main813.before_short_pending(adjacent_actual), pending_prior)
-        inventory.require_current(adjacent_actual)
+        inventory.require_current(routed_native_actual)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
             inventory.require_current(pending_actual)
         for field, values in (('tests', (308, 310, True, 309.0, None)), ('ignored', (0, 2, True, 1.0, None))):
@@ -3488,7 +3564,7 @@ class Main813InventoryTests(unittest.TestCase):
         for name in adjacent['workspace_changes']:
             changed = plain.deepcopy(adjacent_actual)
             changed['harness_test_counts']['workspace_tests'][name]['tests'] += 1
-            with patch.object(main813, 'LATEST', main813.digest(changed)):
+            with patch.object(main813, 'CURRENTADJACENT', main813.digest(changed)):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_inventory_differs$'):
                     main813.before_adjacent(changed)
         adjacent_read = Path.read_bytes
@@ -3506,7 +3582,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_source_inventory_differs$'):
                         main813.require_adjacent_sources()
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(adjacent_actual)
+                        inventory.require_current(routed_native_actual)
         path = 'src/quiescent.rs'
         raw = adjacent_read(main813.ROOT / path)
         row = adjacent['projections'][path]
@@ -3543,7 +3619,8 @@ class Main813InventoryTests(unittest.TestCase):
         parser_raw = adjacent_read(main813.ROOT / parser_path)
         parser_row = adjacent['projections'][parser_path]
         parser_old = main813.source_before_adjacent(parser_path, parser_raw, 'parser_composition_control')
-        self.assertEqual(hashlib.sha256(parser_raw).hexdigest(), adjacent['sources'][parser_path])
+        self.assertEqual(hashlib.sha256(main813.source_before_frontend(
+            parser_path, parser_raw, 'parser_composition_control')).hexdigest(), adjacent['sources'][parser_path])
         self.assertEqual(hashlib.sha256(parser_old).hexdigest(), pending['sources'][parser_path])
         self.assertEqual(parser_row['previous_sha256'], pending['sources'][parser_path])
         self.assertEqual(hashlib.sha256(main813.source_before_short_pending(
@@ -3566,9 +3643,22 @@ class Main813InventoryTests(unittest.TestCase):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
                 main813.require_short_pending_sources('parser_composition_control')
         without_parser = dict(adjacent['sources']); del without_parser[parser_path]
-        with patch.dict(adjacent, sources=without_parser):
-            with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
-                main813.precheck_current_sources('parser_composition_control')
+        frontend_parser = main813.source_before_frontend(parser_path, parser_raw, 'parser_composition_control')
+        frontend_without_parser = dict(main813.MAINFRONTEND['sources'])
+        del frontend_without_parser[parser_path]
+        routed_without_parser = dict(main813.MAINROUTED['sources'])
+        del routed_without_parser[parser_path]
+        native_without_parser = dict(main813.MAINROUTEDNATIVE['sources'])
+        del native_without_parser[parser_path]
+        def historical_parser(candidate):
+            return frontend_parser if candidate == main813.ROOT / parser_path else adjacent_read(candidate)
+        with patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):
+            with patch.object(Path, 'read_bytes', historical_parser):
+                self.assertIsNone(main813.precheck_current_sources('parser_composition_control'))
+        with patch.dict(adjacent, sources=without_parser), patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):
+            with patch.object(Path, 'read_bytes', historical_parser):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
+                    main813.precheck_current_sources('parser_composition_control')
         adjacent_method_path = 'src/quiescent/adjacent_b2/tests.rs'
         methods = adjacent['methods'][adjacent_method_path]
         with patch.dict(adjacent['methods'], {adjacent_method_path: dict(methods, all=methods['all'][:-1])}):
@@ -3577,6 +3667,226 @@ class Main813InventoryTests(unittest.TestCase):
         with patch.dict(adjacent['module_chains'], {'src/quiescent.rs': ['mod missing_adjacent;']}):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_source_inventory_differs$'):
                 main813.require_adjacent_sources()
+
+
+        # Exact new frontend/count layer; all older historical checks stay above.
+        frontend = main813.MAINFRONTEND
+        self.assertEqual(main813.before_frontend(frontend_actual), adjacent_actual)
+        self.assertEqual(main813.digest(frontend_actual), main813.CURRENTFRONTEND)
+        fresh_rows = frontend_actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(fresh_rows), sum(v['tests'] for v in fresh_rows.values()),
+                          sum(v['ignored'] for v in fresh_rows.values())), (105, 3686, 37))
+        self.assertEqual(fresh_rows['unit/liteinst_rewrite/lib'], counts(133))
+        fresh_id = 'unit/adjacent_b2_disassembly_sites/adjacent_b2_disassembly_sites'
+        self.assertEqual(fresh_rows[fresh_id], counts(3))
+        self.assertEqual(frontend_actual['harness_test_counts']['serial_launch'], adjacent_actual['harness_test_counts']['serial_launch'])
+        self.assertEqual(frontend_actual['recorder_tests'], 350)
+        inventory.require_current(routed_native_actual)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+            inventory.require_current(adjacent_actual)
+        for identity, row in frontend['workspace_changes'].items():
+            for field, values in (('tests', (row['current']['tests']-1, row['current']['tests']+1, True, float(row['current']['tests']))),
+                                  ('ignored', (1, False, 0.0))):
+                for value in values:
+                    changed = plain.deepcopy(frontend_actual)
+                    changed['harness_test_counts']['workspace_tests'][identity][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_frontend_inventory_differs$'):
+                        main813.before_frontend(changed)
+            changed = plain.deepcopy(frontend_actual)
+            changed['harness_test_counts']['workspace_tests'][identity]['tests'] += 1
+            with patch.object(main813, 'CURRENTFRONTEND', main813.digest(changed)):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_frontend_inventory_differs$'):
+                    main813.before_frontend(changed)
+        for path in frontend['sources']:
+            target = main813.ROOT / path
+            raw = adjacent_read(target)
+            for replacement in (raw+b'\n', raw[:-1], None):
+                def frontend_changed(candidate):
+                    if candidate == target:
+                        if replacement is None:
+                            raise FileNotFoundError(path)
+                        return replacement
+                    return adjacent_read(candidate)
+                with patch.object(Path, 'read_bytes', frontend_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_frontend_source_inventory_differs$'):
+                        main813.require_frontend_sources()
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_current(routed_native_actual)
+        for path, row in frontend['projections'].items():
+            raw = adjacent_read(main813.ROOT / path)
+            old = main813.source_before_frontend(path, raw, 'frontend_inverse_control')
+            self.assertEqual(hashlib.sha256(old).hexdigest(), row['previous_sha256'])
+            for bad in (raw+b'\n', raw[:-1], old, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^frontend_inverse_control$'):
+                    main813.source_before_frontend(path, bad, 'frontend_inverse_control')
+            for mutation in (dict(row, previous_sha256='0'*64), dict(row, edits=[]),
+                             dict(row, edits=[[1, 0, '']]), dict(row, edits=[[0, len(raw)+1, '']])):
+                with patch.dict(frontend['projections'], {path: mutation}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^frontend_inverse_control$'):
+                        main813.source_before_frontend(path, raw, 'frontend_inverse_control')
+        for path, row in frontend['methods'].items():
+            for changed in (dict(row, all=row['all'][:-1]), dict(row, ignored=['unregistered'])):
+                with patch.dict(frontend['methods'], {path: changed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_frontend_source_inventory_differs$'):
+                        main813.require_frontend_sources()
+        with patch.dict(frontend['module_chains'], {'tools/elf-rewrite/src/lib.rs':['mod absent_frontend;']}):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_frontend_source_inventory_differs$'):
+                main813.require_frontend_sources()
+        # One new Cargo spelling, three complete tests; old examples/children
+        # keep their original grammar and refusal behavior.
+        example = '     Running unittests examples/adjacent_b2_disassembly_sites.rs (target/debug/examples/adjacent_b2_disassembly_sites-0123456789abcdef)\n'
+        complete = example+'running 3 tests\n'+summary(3)+'\n'
+        parsed = parsing.parse_harnesses(complete, {fresh_id:counts(3)}, 0)
+        self.assertEqual((parsed[0]['nested_starts'], parsed[0]['unmatched_nested_starts']), (0, 0))
+        for bad in (complete.replace('running 3 tests','running 2 tests'),
+                    complete.replace('3 passed','2 passed'), complete+summary(3)+'\n',
+                    complete.replace('target/debug/examples/','target/debug/deps/'),
+                    complete.replace('examples/adjacent_b2_disassembly_sites.rs','examples/other.rs'),
+                    example+'running 3 tests\nrunning 1 test\n'+summary(3)+'\n'):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, {fresh_id:counts(3)}, 0)
+        # Actual isolated children write no stdout; their pinned parents require
+        # exit102. No unmatched-child exception is introduced for these harnesses.
+        for identity, total in (('quiescent_oracle',39),('prefixed_pun_oracle',36)):
+            ident='test/'+identity
+            h='     Running tests/'+identity+'.rs (target/debug/deps/'+identity+'-0123456789abcdef)\n'
+            raw=h+'running '+str(total)+' tests\n'+summary(total)+'\n'
+            row=parsing.parse_harnesses(raw,{ident:counts(total)},0)[0]
+            self.assertEqual((row['nested_starts'],row['unmatched_nested_starts']),(0,0))
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(raw.replace('tests\n','tests\nrunning 1 test\n',1),{ident:counts(total)},0)
+
+        # Exact additive mixed-pair layer; every old source/count test above remains.
+        routed = main813.MAINROUTED
+        self.assertEqual(main813.before_routed(routed_actual), frontend_actual)
+        self.assertEqual(main813.digest(routed_actual), main813.CURRENTROUTED)
+        rows = routed_actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows), sum(v['tests'] for v in rows.values()),
+                          sum(v['ignored'] for v in rows.values())), (105, 3707, 37))
+        self.assertEqual(rows['unit/liteinst2/lib'], counts(330, 1))
+        self.assertEqual(routed_actual['harness_test_counts']['serial_launch'], frontend_actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((routed_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
+        self.assertEqual(routed['declared_delta'], dict(rust_tests=21, rust_declarations=21,
+                         harnesses=0, ignored=0, doctests=0, serial_tests=0, recorder_tests=0))
+        inventory.require_current(routed_native_actual)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+            inventory.require_current(frontend_actual)
+        for field, values in (('tests', (329,331,True,330.0,None)), ('ignored',(0,2,True,1.0,None))):
+            for value in values:
+                changed=plain.deepcopy(routed_actual)
+                changed['harness_test_counts']['workspace_tests']['unit/liteinst2/lib'][field]=value
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_inventory_differs$'):
+                    main813.before_routed(changed)
+        changed=plain.deepcopy(routed_actual)
+        changed['harness_test_counts']['workspace_tests']['unit/liteinst2/lib']['tests']+=1
+        with patch.object(main813,'CURRENTROUTED',main813.digest(changed)):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_inventory_differs$'):
+                main813.before_routed(changed)
+        for path in routed['sources']:
+            target=main813.ROOT/path; raw=adjacent_read(target)
+            for replacement in (raw+b'\n',raw[:-1],None):
+                def routed_changed(candidate):
+                    if candidate==target:
+                        if replacement is None:raise FileNotFoundError(path)
+                        return replacement
+                    return adjacent_read(candidate)
+                with patch.object(Path,'read_bytes',routed_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_source_inventory_differs$'):
+                        main813.require_routed_sources()
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_current(routed_native_actual)
+        for path,row in routed['projections'].items():
+            raw=adjacent_read(main813.ROOT/path)
+            old=main813.source_before_routed(path,raw,'routed_inverse_control')
+            self.assertEqual(hashlib.sha256(old).hexdigest(),row['previous_sha256'])
+            for bad in (raw+b'\n',raw[:-1],old,bytearray(raw),raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^routed_inverse_control$'):
+                    main813.source_before_routed(path,bad,'routed_inverse_control')
+            for changed in (dict(row,current_sha256='0'*64),dict(row,previous_sha256='0'*64),
+                            dict(row,edits=[]),dict(row,edits=[[1,0,'']]),dict(row,edits=[[0,len(raw)+1,'']])):
+                with patch.dict(routed['projections'],{path:changed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^routed_inverse_control$'):
+                        main813.source_before_routed(path,raw,'routed_inverse_control')
+        path='src/quiescent/adjacent_routed_jmp/tests.rs';row=routed['methods'][path]
+        self.assertEqual((len(row['all']),row['ignored']),(21,[]))
+        for changed in (dict(row,all=row['all'][:-1]),dict(row,ignored=['unregistered'])):
+            with patch.dict(routed['methods'],{path:changed}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_source_inventory_differs$'):
+                    main813.require_routed_sources()
+        with patch.dict(routed['module_chains'],{'src/quiescent.rs':['mod absent_routed;']}):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_source_inventory_differs$'):
+                main813.require_routed_sources()
+
+        # Exact routed-native/ELF successor, including inherited helper instances.
+        native = main813.MAINROUTEDNATIVE
+        self.assertEqual(main813.before_routed_native(routed_native_actual), routed_actual)
+        self.assertEqual(main813.digest(routed_native_actual), main813.LATEST)
+        rows = routed_native_actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows), sum(v['tests'] for v in rows.values()),
+                          sum(v['ignored'] for v in rows.values())), (106, 3805, 37))
+        self.assertEqual(rows['unit/liteinst2/lib'], counts(399, 1))
+        self.assertEqual(rows['unit/liteinst_rewrite/lib'], counts(159))
+        self.assertEqual(rows['unit/adjacent_routed_jmp_disassembly_sites/adjacent_routed_jmp_disassembly_sites'], counts(3))
+        self.assertEqual(routed_native_actual['harness_test_counts']['serial_launch'], routed_actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((routed_native_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
+        self.assertEqual(native['declared_delta'], dict(rust_tests=98,rust_new_cases=63,
+                         inherited_instances=35,harnesses=1,ignored=0,doctests=0,serial_tests=0,recorder_tests=0))
+        inventory.require_current(routed_native_actual)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+            inventory.require_current(routed_actual)
+        for identity, row in native['workspace_changes'].items():
+            for field in ('tests','ignored'):
+                for value in (row['current'][field]+1,True,float(row['current'][field]),None):
+                    changed=plain.deepcopy(routed_native_actual)
+                    changed['harness_test_counts']['workspace_tests'][identity][field]=value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_inventory_differs$'):
+                        main813.before_routed_native(changed)
+            changed=plain.deepcopy(routed_native_actual)
+            changed['harness_test_counts']['workspace_tests'][identity]['tests']+=1
+            with patch.object(main813,'LATEST',main813.digest(changed)):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_inventory_differs$'):
+                    main813.before_routed_native(changed)
+        for path in native['sources']:
+            target=main813.ROOT/path;raw=adjacent_read(target)
+            for replacement in (raw+b'\n',raw[:-1],None):
+                def native_changed(candidate):
+                    if candidate==target:
+                        if replacement is None:raise FileNotFoundError(path)
+                        return replacement
+                    return adjacent_read(candidate)
+                with patch.object(Path,'read_bytes',native_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_source_inventory_differs$'):
+                        main813.require_routed_native_sources()
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_current(routed_native_actual)
+        for path,row in native['projections'].items():
+            raw=adjacent_read(main813.ROOT/path)
+            old=main813.source_before_routed_native(path,raw,'native_inverse_control')
+            self.assertEqual(hashlib.sha256(old).hexdigest(),row['previous_sha256'])
+            for bad in (raw+b'\n',raw[:-1],old,bytearray(raw),raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^native_inverse_control$'):
+                    main813.source_before_routed_native(path,bad,'native_inverse_control')
+            for changed in (dict(row,current_sha256='0'*64),dict(row,previous_sha256='0'*64),
+                            dict(row,edits=[]),dict(row,edits=[[1,0,'']]),dict(row,edits=[[0,len(raw)+1,'']])):
+                with patch.dict(native['projections'],{path:changed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^native_inverse_control$'):
+                        main813.source_before_routed_native(path,raw,'native_inverse_control')
+        macro_path='src/entry_router/imp/routed_jmp_native_tests.rs'
+        macro=native['macro_tests'][macro_path]
+        self.assertEqual(macro['rows'],[[f'row_{i:02}',str(i)]for i in range(31)])
+        for changed in (dict(macro,rows=macro['rows'][:-1]),dict(macro,definition=macro['definition']+' '),dict(macro,template_tests=0)):
+            with patch.dict(native['macro_tests'],{macro_path:changed}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_source_inventory_differs$'):
+                    main813.require_routed_native_sources()
+        for path in native['instances']:
+            row=native['methods'][path]
+            for changed in (dict(row,all=row['all'][:-1]),dict(row,ignored=['unregistered'])):
+                with patch.dict(native['methods'],{path:changed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_source_inventory_differs$'):
+                        main813.require_routed_native_sources()
+        with patch.dict(native['module_chains'],{'src/entry_router.rs':['mod missing_native;']}):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_source_inventory_differs$'):
+                main813.require_routed_native_sources()
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -4201,6 +4511,82 @@ class Main813InventoryTests(unittest.TestCase):
         adjacent_row = parsing.parse_harnesses(failed, adjacent_expected, 1)[0]
         self.assertEqual((adjacent_row['outer']['result'], adjacent_row['outer']['passed'],
                           adjacent_row['outer']['failed'], adjacent_row['outer']['ignored']), ('FAILED',307,1,1))
+        # New330 outer cohort retains the same exact unmatched child contract.
+        routed_raw = pending_raw.replace('running 299 tests', 'running 330 tests').replace(
+            '298', '329')
+        routed_expected = {'unit/liteinst2/lib': counts(330, 1)}
+        routed_row = parsing.parse_harnesses(routed_raw, routed_expected, 0)[0]
+        self.assertEqual(routed_row['outer'], dict(passed=329, failed=0, ignored=1,
+                                                   measured=0, filtered=0, result='ok'))
+        self.assertEqual((routed_row['nested_starts'], routed_row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((329, 1, 1), (331, 1, 1), (330, 0, 1), (330, 2, 1), (330, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                            f'running {nested} tests', summary(total-ignored, ignored=ignored)))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^summary_start_count_mismatch$'):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        for bad in (routed_raw.replace(summary(1, filtered=329), summary(1, filtered=328), 1),
+                    routed_raw.replace(summary(329, ignored=1), summary(329, ignored=1, filtered=1)),
+                    routed_raw.replace(summary(329, ignored=1), ''), routed_raw+'\n'+summary(329, ignored=1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, routed_expected, 0)
+        failed = routed_raw.replace(summary(329, ignored=1), summary(328, ignored=1, failed=1))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^successful_exit_with_failed_summary$'):
+            parsing.parse_harnesses(failed, routed_expected, 0)
+        routed_row = parsing.parse_harnesses(failed, routed_expected, 1)[0]
+        self.assertEqual((routed_row['outer']['result'], routed_row['outer']['passed'],
+                          routed_row['outer']['failed'], routed_row['outer']['ignored']), ('FAILED',328,1,1))
+        # New399 outer cohort retains the same exact unmatched child contract.
+        routed_native_raw = pending_raw.replace('running 299 tests', 'running 399 tests').replace(
+            '298', '398')
+        routed_native_expected = {'unit/liteinst2/lib': counts(399, 1)}
+        routed_native_row = parsing.parse_harnesses(routed_native_raw, routed_native_expected, 0)[0]
+        self.assertEqual(routed_native_row['outer'], dict(passed=398, failed=0, ignored=1,
+                                                   measured=0, filtered=0, result='ok'))
+        self.assertEqual((routed_native_row['nested_starts'], routed_native_row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((398, 1, 1), (400, 1, 1), (399, 0, 1), (399, 2, 1), (399, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                            f'running {nested} tests', summary(total-ignored, ignored=ignored)))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^summary_start_count_mismatch$'):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        for bad in (routed_native_raw.replace(summary(1, filtered=398), summary(1, filtered=397), 1),
+                    routed_native_raw.replace(summary(398, ignored=1), summary(398, ignored=1, filtered=1)),
+                    routed_native_raw.replace(summary(398, ignored=1), ''), routed_native_raw+'\n'+summary(398, ignored=1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, routed_native_expected, 0)
+        failed = routed_native_raw.replace(summary(398, ignored=1), summary(397, ignored=1, failed=1))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^successful_exit_with_failed_summary$'):
+            parsing.parse_harnesses(failed, routed_native_expected, 0)
+        routed_native_row = parsing.parse_harnesses(failed, routed_native_expected, 1)[0]
+        self.assertEqual((routed_native_row['outer']['result'], routed_native_row['outer']['passed'],
+                          routed_native_row['outer']['failed'], routed_native_row['outer']['ignored']), ('FAILED',397,1,1))
+        native_example = 'unit/adjacent_routed_jmp_disassembly_sites/adjacent_routed_jmp_disassembly_sites'
+        native_header = ('     Running unittests examples/adjacent_routed_jmp_disassembly_sites.rs '
+                         '(target/debug/examples/adjacent_routed_jmp_disassembly_sites-0123456789abcdef)')
+        native_log = native_header+'\nrunning 3 tests\n'+summary(3)+'\n'
+        self.assertEqual(parsing.harness_id(native_header),native_example)
+        native_row=parsing.parse_harnesses(native_log,{native_example:counts(3)},0)[0]
+        self.assertEqual((native_row['nested_starts'],native_row['unmatched_nested_starts']),(0,0))
+        self.assertEqual(native_row['outer'], dict(passed=3, failed=0, ignored=0,
+                                                  measured=0, filtered=0, result='ok'))
+        # Only the actual Cargo source/binary/output-directory tuple is admitted.
+        for malformed in (
+                native_header.replace('target/debug/examples/', 'target/debug/deps/'),
+                native_header.replace('unittests examples/adjacent_routed_jmp_disassembly_sites.rs',
+                                      'unittests src/lib.rs').replace('target/debug/examples/', 'target/debug/deps/'),
+                native_header.replace('target/debug/examples/adjacent_routed_jmp_disassembly_sites-',
+                                      'target/debug/examples/other-'),
+                native_header.replace('examples/adjacent_routed_jmp_disassembly_sites.rs',
+                                      'examples/other.rs'),
+                native_header.replace('adjacent_routed_jmp_disassembly_sites',
+                                      'adjacent_routed_jmp_disassembly_sites_extra'),
+                native_header.replace('-0123456789abcdef)', '-nothex)')):
+            with self.subTest(routed_example_header=malformed), self.assertRaises(parsing.InvalidEvidence):
+                parsing.harness_id(malformed)
+        for bad in (native_log.replace('running 3 tests','running 4 tests'),
+                    native_log.replace('running 3 tests','running 3 tests\nrunning 1 test'),
+                    native_log+summary(3)+'\n'):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad,{native_example:counts(3)},0)
         # New importer and CLI counts stay on the unchanged generic parser.
         for identity, source_header, total in (
                 ('unit/liteinst_rewrite/lib', header('liteinst_rewrite'), 110),

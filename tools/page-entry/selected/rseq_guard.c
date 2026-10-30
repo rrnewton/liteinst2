@@ -510,3 +510,6 @@ int li2_rseq_native_closed(void) {
 #ifdef LI2_NATIVE_PAIR
 #include "rseq_native_pair.inc"
 #endif
+#ifdef LI2_UNROLLED_HASH
+#include "rseq_unrolled.inc"
+#endif
