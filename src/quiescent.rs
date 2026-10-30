@@ -22,6 +22,12 @@ pub use adjacent_b2::{
     plan_adjacent_b2_with_emission_after,
 };
 
+pub(crate) mod adjacent_routed_jmp;
+pub use adjacent_routed_jmp::{
+    RoutedJmpArtifactPlan, RoutedJmpBudget, RoutedJmpEvent, RoutedJmpEvidence, RoutedJmpFailure,
+    RoutedJmpStage, RoutedJmpStop, plan_adjacent_routed_jmp_with_emission_after,
+};
+
 mod whole_function;
 pub use whole_function::{
     WholeFunctionRequest, plan_whole_function_controlled_detailed,
@@ -1335,20 +1341,30 @@ fn plan_at_with_controls(
             end,
             displaced,
             instructions,
-            whole_function: None,
+            authority: RelocationAuthority::Ordinary,
         },
         search_evidence,
     )
 }
 
-// Only whole_function::Verified can authorize a closed multi-block window.
-// Legacy callers reach this seam after their unchanged same-block checks.
+// Existing callers retain their same-block/closed-function proofs. The new
+// authority covers only a sealed JMP plus one independently enterable MOV.
+#[derive(Clone, Copy)]
+enum RelocationAuthority<'a> {
+    Ordinary,
+    WholeFunction(&'a whole_function::Verified),
+    RoutedJmp {
+        proof: &'a adjacent_routed_jmp::VerifiedRoutedJmpSuffix,
+        ordinal: usize,
+        target: u64,
+    },
+}
 struct RelocationWindow<'a> {
     physical: u64,
     end: u64,
     displaced: AddressRange,
     instructions: Vec<&'a crate::scanner::ScannedInstruction>,
-    whole_function: Option<&'a whole_function::Verified>,
+    authority: RelocationAuthority<'a>,
 }
 
 fn emit_relocation_window(
@@ -1368,8 +1384,40 @@ fn emit_relocation_window(
         end,
         displaced,
         instructions,
-        whole_function,
+        authority,
     } = window;
+    let whole_function = match authority {
+        RelocationAuthority::WholeFunction(proof) => Some(proof),
+        _ => None,
+    };
+    let routed = match authority {
+        RelocationAuthority::RoutedJmp {
+            proof,
+            ordinal,
+            target,
+        } => Some((proof, ordinal, target)),
+        _ => None,
+    };
+    if let Some((proof, _, _)) = routed {
+        if controls.is_some()
+            || clock.is_some()
+            || physical != proof.upper()
+            || end != proof.end()
+            || source != proof.source()
+            || displaced.start() != physical
+            || displaced.end() != end
+            || instructions.len() != 2
+            || instructions[0].address() != physical
+            || instructions[1].address() != physical + 2
+            || !proof.matches_request(request, scan)
+            || !matches!(
+                request.emission,
+                crate::emission::EmissionContext::Artifact(_)
+            )
+        {
+            return Err(Refusal::InvalidPlan);
+        }
+    }
     let scope = SearchScope {
         physical_pc: Some(physical),
         ..SearchScope::default()
@@ -1414,33 +1462,37 @@ fn emit_relocation_window(
     request
         .require_original(displaced)
         .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
-    let trampoline = match (clock, controls) {
-        (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {
-            return Err(Refusal::InvalidPlan);
+    let trampoline = if let Some((proof, _, _)) = routed {
+        TrampolinePlan::from_symbolic_routed_jmp(scan, proof)
+    } else {
+        match (clock, controls) {
+            (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {
+                return Err(Refusal::InvalidPlan);
+            }
+            (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),
+            (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
+            (None, Some(CoalescedActions::Controlled(actions))) => {
+                TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
+            }
+            (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {
+                TrampolinePlan::from_controlled_actions_with_stack_profile(
+                    scan, physical, end, actions, profile,
+                )
+            }
+            (None, Some(CoalescedActions::PreContext(actions))) => {
+                // SAFETY: this private variant comes only from the unsafe typed
+                // wrappers, which retain the entire leaf/frame/callback contract.
+                // Original scan/current-read/whole-window guards above are unchanged.
+                unsafe { TrampolinePlan::from_precontext_actions(scan, physical, end, actions) }
+            }
+            (None, None) => request.emission.window(
+                scan,
+                physical,
+                request.logical_pc,
+                end,
+                request.semantics == HookSemantics::ReplaceFirst,
+            ),
         }
-        (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),
-        (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
-        (None, Some(CoalescedActions::Controlled(actions))) => {
-            TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
-        }
-        (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {
-            TrampolinePlan::from_controlled_actions_with_stack_profile(
-                scan, physical, end, actions, profile,
-            )
-        }
-        (None, Some(CoalescedActions::PreContext(actions))) => {
-            // SAFETY: this private variant comes only from the unsafe typed
-            // wrappers, which retain the entire leaf/frame/callback contract.
-            // Original scan/current-read/whole-window guards above are unchanged.
-            unsafe { TrampolinePlan::from_precontext_actions(scan, physical, end, actions) }
-        }
-        (None, None) => request.emission.window(
-            scan,
-            physical,
-            request.logical_pc,
-            end,
-            request.semantics == HookSemantics::ReplaceFirst,
-        ),
     }
     .map_err(|e| Refusal::Backend(e.to_string()))?;
     let mut mask = [false; 4];
@@ -1466,10 +1518,26 @@ fn emit_relocation_window(
         policy.max_candidates,
         None,
     );
-    for attempt in 0..policy.max_candidates {
+    let slots = if routed.is_some() {
+        1
+    } else {
+        policy.max_candidates
+    };
+    for attempt in 0..slots {
         search_evidence.visit(image_search);
-        let Some(target) = candidate_target(physical, mask, policy.preferred_address, attempt)
-        else {
+        let target = if let Some((_, ordinal, target)) = routed {
+            if mask != [false, true, false, false]
+                || ordinal >= policy.max_candidates
+                || candidate_target(physical, mask, policy.preferred_address, ordinal)
+                    != Some(target)
+            {
+                return Err(Refusal::InvalidPlan);
+            }
+            Some(target)
+        } else {
+            candidate_target(physical, mask, policy.preferred_address, attempt)
+        };
+        let Some(target) = target else {
             continue;
         };
         if !seen.insert(target) {
@@ -1609,12 +1677,19 @@ fn emit_relocation_window(
     }
     search_evidence.finish_candidates(
         image_search,
-        candidate_target_proof(
-            physical,
-            mask,
-            policy.preferred_address,
-            policy.max_candidates,
-        ),
+        if routed.is_some() {
+            crate::search::CandidateProof::Indexed {
+                permanent_end_exclusive: Some(1),
+                omitted: None,
+            }
+        } else {
+            candidate_target_proof(
+                physical,
+                mask,
+                policy.preferred_address,
+                policy.max_candidates,
+            )
+        },
     );
     Err(last_error)
 }

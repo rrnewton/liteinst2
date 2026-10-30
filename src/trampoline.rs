@@ -1393,6 +1393,19 @@ impl TrampolinePlan {
         Self::from_window_binding(scan, physical, logical, end, None, replace)
     }
 
+    /// Sealed artifact-only two-entry window; does not widen from_symbolic_window.
+    pub(crate) fn from_symbolic_routed_jmp(
+        scan: &ScanResult,
+        proof: &crate::quiescent::adjacent_routed_jmp::VerifiedRoutedJmpSuffix,
+    ) -> Result<Self, TrampolineError> {
+        if !proof.matches_scan(scan) {
+            return Err(encoding_error(
+                "routed JMP original proof differs from scan",
+            ));
+        }
+        Self::from_window_binding(scan, proof.upper(), proof.upper(), proof.end(), None, false)
+    }
+
     fn from_window_binding(
         scan: &ScanResult,
         physical: u64,

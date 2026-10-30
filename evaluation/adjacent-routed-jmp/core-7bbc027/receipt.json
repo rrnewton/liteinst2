@@ -1,0 +1,799 @@
+{
+  "schema": 1,
+  "claim": 4,
+  "milestone": "A3 core increment; incomplete",
+  "source_revision": "b9d2dab6b4348f08733408d031cee524fcaf637c",
+  "tested_revision": "7bbc027f91ab271c27f47a4893b53a7e61e71606",
+  "merged_main": "fd0b707b3b7760a94a7e08799df1f659b9194e8f",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "python": "3.12.15",
+  "profile": {
+    "opt_level": 0,
+    "debug": 0,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "incremental": false
+  },
+  "scope": "Artifact planner correctness; no mixed native, router, frontend, whole-corpus or performance qualification.",
+  "qualification_complete": false,
+  "source_sets": [
+    {
+      "src/quiescent/adjacent_routed_jmp.rs": "8cdc7340de6a119cd2621c87842e3ada36fab51034dbafd90f5caa386a8e3942",
+      "src/quiescent/adjacent_routed_jmp/fixture.hex": "fe2e9439bbfb7203e586b0aafcfb278d99d04ae1f38c7cb50370f5a0396b37a3",
+      "src/quiescent/adjacent_routed_jmp/tests.rs": "b2ae264d7223ccec6583d8f95483354e6a42befd8af1f2e56b140f5216a5d0f3",
+      "src/quiescent.rs": "044993aed251547a4bcf10ad1522764342750aadbb79d0aeeedabe3d67713a81",
+      "src/quiescent/whole_function.rs": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
+      "src/trampoline.rs": "219011019c42c7dad376d6a3aa5f9c252e8479787d09db2e1040d3f8900f621e"
+    },
+    {
+      "src/quiescent/adjacent_routed_jmp.rs": "8cdc7340de6a119cd2621c87842e3ada36fab51034dbafd90f5caa386a8e3942",
+      "src/quiescent/adjacent_routed_jmp/fixture.hex": "fe2e9439bbfb7203e586b0aafcfb278d99d04ae1f38c7cb50370f5a0396b37a3",
+      "src/quiescent/adjacent_routed_jmp/tests.rs": "eca18c36857084d7c1425402bc0ccaed39c0361bab2233a0998d44600e38bc6e",
+      "src/quiescent.rs": "044993aed251547a4bcf10ad1522764342750aadbb79d0aeeedabe3d67713a81",
+      "src/quiescent/whole_function.rs": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
+      "src/trampoline.rs": "219011019c42c7dad376d6a3aa5f9c252e8479787d09db2e1040d3f8900f621e"
+    },
+    {
+      "src/quiescent/adjacent_routed_jmp.rs": "4169508b3b2d6927d7964384ee20ae0c7d956c706aa8076c64f87b0b9a63c3e3",
+      "src/quiescent/adjacent_routed_jmp/fixture.hex": "fe2e9439bbfb7203e586b0aafcfb278d99d04ae1f38c7cb50370f5a0396b37a3",
+      "src/quiescent/adjacent_routed_jmp/tests.rs": "5adf141cf809db3501537aaea5c58a534a732312c77716376af909436b4fc0bc",
+      "src/quiescent.rs": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d",
+      "src/quiescent/whole_function.rs": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
+      "src/trampoline.rs": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b"
+    },
+    {
+      "src/quiescent/adjacent_routed_jmp.rs": "439186e591b231ed61627ebd60ee4d4883308a013c03aafbac82941896ee2d06",
+      "src/quiescent/adjacent_routed_jmp/fixture.hex": "fe2e9439bbfb7203e586b0aafcfb278d99d04ae1f38c7cb50370f5a0396b37a3",
+      "src/quiescent/adjacent_routed_jmp/tests.rs": "a0513abd4c96b21a022b88f547cd9dadbfd0c691ba46cd94b974a464ef1f39ef",
+      "src/quiescent.rs": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d",
+      "src/quiescent/whole_function.rs": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
+      "src/trampoline.rs": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b"
+    },
+    {
+      "src/quiescent/adjacent_routed_jmp.rs": "eda4961a6e8cd1abc349971830f5f5324c66877d2a5a451f061aa0298243012f",
+      "src/quiescent/adjacent_routed_jmp/fixture.hex": "fe2e9439bbfb7203e586b0aafcfb278d99d04ae1f38c7cb50370f5a0396b37a3",
+      "src/quiescent/adjacent_routed_jmp/tests.rs": "a0513abd4c96b21a022b88f547cd9dadbfd0c691ba46cd94b974a464ef1f39ef",
+      "src/quiescent.rs": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d",
+      "src/quiescent/whole_function.rs": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
+      "src/trampoline.rs": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b"
+    }
+  ],
+  "checks": [
+    {
+      "name": "routed-jmp-core-v1",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 0,
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "quiescent::adjacent_routed_jmp::tests::",
+        "--",
+        "--test-threads=4",
+        "--nocapture"
+      ],
+      "start_utc": "2026-10-30T07:20:24.036828+00:00",
+      "exit_code": 101,
+      "termination": null,
+      "elapsed_seconds": 3.6556368849705905,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        60,
+        157,
+        249,
+        295
+      ],
+      "load_before": [
+        "88.23",
+        "72.65",
+        "70.17"
+      ],
+      "load_after": [
+        "84.52",
+        "72.14",
+        "70.02"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "9af36dfafe8f400bf73a8ccfdea979136fd78699b98427d9ccfdba202d7e5e78"
+    },
+    {
+      "name": "routed-jmp-core-v2",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 0,
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "quiescent::adjacent_routed_jmp::tests::",
+        "--",
+        "--test-threads=4",
+        "--nocapture"
+      ],
+      "start_utc": "2026-10-30T07:21:19.425142+00:00",
+      "exit_code": 101,
+      "termination": null,
+      "elapsed_seconds": 3.631386377150193,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        92,
+        148,
+        169,
+        315
+      ],
+      "load_before": [
+        "64.62",
+        "68.73",
+        "68.97"
+      ],
+      "load_after": [
+        "62.96",
+        "68.31",
+        "68.84"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "9af36dfafe8f400bf73a8ccfdea979136fd78699b98427d9ccfdba202d7e5e78"
+    },
+    {
+      "name": "routed-jmp-core-v3",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 1,
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "quiescent::adjacent_routed_jmp::tests::",
+        "--",
+        "--test-threads=4",
+        "--nocapture"
+      ],
+      "start_utc": "2026-10-30T07:21:35.650892+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 6.377244842005894,
+      "passed": 21,
+      "failed": 0,
+      "ignored": 0,
+      "result_summaries": 1,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        45,
+        50,
+        160,
+        175
+      ],
+      "load_before": [
+        "62.32",
+        "67.99",
+        "68.73"
+      ],
+      "load_after": [
+        "61.01",
+        "67.63",
+        "68.60"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "0b1ca5ce174f70ce449e0ea02489d02b04aa9b3a604f85db70224c29519e0544"
+    },
+    {
+      "name": "routed-jmp-clippy",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 2,
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "start_utc": "2026-10-30T07:25:10.349723+00:00",
+      "exit_code": 101,
+      "termination": null,
+      "elapsed_seconds": 5.60779382311739,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        19,
+        25,
+        251,
+        263
+      ],
+      "load_before": [
+        "49.76",
+        "59.48",
+        "65.16"
+      ],
+      "load_after": [
+        "49.94",
+        "59.36",
+        "65.09"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "687a40ffef8ac0241c3904504f6f047f1df743011c5d2847c8d46d5d97799d2e"
+    },
+    {
+      "name": "routed-jmp-clippy-fixed",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 3,
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "start_utc": "2026-10-30T07:25:48.797244+00:00",
+      "exit_code": 101,
+      "termination": null,
+      "elapsed_seconds": 6.794666400179267,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        80,
+        90,
+        156,
+        252
+      ],
+      "load_before": [
+        "45.82",
+        "57.49",
+        "64.27"
+      ],
+      "load_after": [
+        "47.59",
+        "57.67",
+        "64.29"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "26ae757b151917a990dba8552a34943b1eb6bafc835db0a990cbda82b689fd0b"
+    },
+    {
+      "name": "routed-jmp-core-lib",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "--",
+        "--test-threads=316"
+      ],
+      "start_utc": "2026-10-30T07:27:14.313687+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 25.350708628073335,
+      "passed": 329,
+      "failed": 0,
+      "ignored": 1,
+      "result_summaries": 1,
+      "nested_summaries_excluded": 2,
+      "reserved_cpus": [
+        111,
+        193,
+        257,
+        277
+      ],
+      "load_before": [
+        "47.35",
+        "55.09",
+        "62.83"
+      ],
+      "load_after": [
+        "59.04",
+        "57.26",
+        "63.34"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "e282bc200669bc6782ede39cc649091e5619e491a8e1785d280189b468f34db1"
+    },
+    {
+      "name": "routed-jmp-clippy-final",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "start_utc": "2026-10-30T07:29:58.536476+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 65.01105417194776,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        33,
+        249,
+        260,
+        266
+      ],
+      "load_before": [
+        "94.61",
+        "71.59",
+        "67.78"
+      ],
+      "load_after": [
+        "152.69",
+        "92.01",
+        "75.02"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "17d5bd80e0bb81378e28bbf3f5cd1115e6ffc446b41e3bfdec0476364afc3f61"
+    },
+    {
+      "name": "routed-jmp-workspace-check",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "check",
+        "-j",
+        "4",
+        "--workspace",
+        "--all-targets",
+        "--all-features"
+      ],
+      "start_utc": "2026-10-30T07:31:21.592051+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 38.53945200704038,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        121,
+        170,
+        259,
+        277
+      ],
+      "load_before": [
+        "153.16",
+        "95.16",
+        "76.32"
+      ],
+      "load_after": [
+        "141.97",
+        "99.26",
+        "78.49"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "13c187330dd79ce82d4e615a6c380c220ab2936b96e68598f907a91dc19c08df"
+    },
+    {
+      "name": "routed-jmp-fmt-check",
+      "revision": "6711a24ae444b2c5f5894fa3b2fba33ae166d0b6",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "start_utc": "2026-10-30T07:32:10.840829+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 10.064666480058804,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        33,
+        280,
+        287,
+        307
+      ],
+      "load_before": [
+        "142.36",
+        "100.76",
+        "79.20"
+      ],
+      "load_after": [
+        "137.98",
+        "101.18",
+        "79.57"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "merged-fmt",
+      "revision": "7bbc027f91ab271c27f47a4893b53a7e61e71606",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "start_utc": "2026-10-30T07:33:49.058822+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 9.829620884964243,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        25,
+        52,
+        102,
+        126,
+        148,
+        206,
+        254,
+        258,
+        264,
+        268,
+        301,
+        303,
+        306,
+        310,
+        312,
+        315
+      ],
+      "load_before": [
+        "122.97",
+        "106.93",
+        "83.67"
+      ],
+      "load_after": [
+        "119.05",
+        "106.60",
+        "83.82"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "merged-clippy",
+      "revision": "7bbc027f91ab271c27f47a4893b53a7e61e71606",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "start_utc": "2026-10-30T07:33:58.889155+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 0.18756077089346945,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        25,
+        52,
+        102,
+        126,
+        148,
+        206,
+        254,
+        258,
+        264,
+        268,
+        301,
+        303,
+        306,
+        310,
+        312,
+        315
+      ],
+      "load_before": [
+        "119.05",
+        "106.60",
+        "83.82"
+      ],
+      "load_after": [
+        "119.05",
+        "106.60",
+        "83.82"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "3fe980a0f9709b0a2d093ea2a65202e1e589d4893ac71be4272c165923b9e527"
+    },
+    {
+      "name": "merged-check",
+      "revision": "7bbc027f91ab271c27f47a4893b53a7e61e71606",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "start_utc": "2026-10-30T07:33:59.077296+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 0.15812144614756107,
+      "passed": null,
+      "failed": null,
+      "ignored": null,
+      "result_summaries": 0,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        25,
+        52,
+        102,
+        126,
+        148,
+        206,
+        254,
+        258,
+        264,
+        268,
+        301,
+        303,
+        306,
+        310,
+        312,
+        315
+      ],
+      "load_before": [
+        "119.05",
+        "106.60",
+        "83.82"
+      ],
+      "load_after": [
+        "119.05",
+        "106.60",
+        "83.82"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191"
+    },
+    {
+      "name": "merged-workspace",
+      "revision": "7bbc027f91ab271c27f47a4893b53a7e61e71606",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "start_utc": "2026-10-30T07:33:59.235990+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 868.4123387960717,
+      "passed": 3670,
+      "failed": 0,
+      "ignored": 37,
+      "result_summaries": 106,
+      "nested_summaries_excluded": 5,
+      "reserved_cpus": [
+        25,
+        52,
+        102,
+        126,
+        148,
+        206,
+        254,
+        258,
+        264,
+        268,
+        301,
+        303,
+        306,
+        310,
+        312,
+        315
+      ],
+      "load_before": [
+        "119.05",
+        "106.60",
+        "83.82"
+      ],
+      "load_after": [
+        "72.46",
+        "66.95",
+        "74.98"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "337debe9048200629d7378d75ffb5245c59fba51332c01eadfba81ec23d55630"
+    },
+    {
+      "name": "merged-serial-launch",
+      "revision": "7bbc027f91ab271c27f47a4893b53a7e61e71606",
+      "source_set": 4,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "start_utc": "2026-10-30T07:48:27.650326+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 127.61512031499296,
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "result_summaries": 27,
+      "nested_summaries_excluded": 0,
+      "reserved_cpus": [
+        25,
+        52,
+        102,
+        126,
+        148,
+        206,
+        254,
+        258,
+        264,
+        268,
+        301,
+        303,
+        306,
+        310,
+        312,
+        315
+      ],
+      "load_before": [
+        "72.46",
+        "66.95",
+        "74.98"
+      ],
+      "load_after": [
+        "59.34",
+        "63.40",
+        "72.61"
+      ],
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "raw_log_sha256": "80cef860bf1972b9a4ebbd66d6449ce4728b5f5d1b575ccbb2bbb8baed2c4c4a"
+    }
+  ],
+  "review": {
+    "core": "d353efac9ba44ee44b9a9bd8d092e355503a2374210bf839ae394a3da5458eb2",
+    "integration": "66626db02721bdd576e86aede8d5afdcf2c93e265c16ba15c5fda44966299ec1",
+    "scope": "Independent source-only reviews; no runtime outcomes inspected."
+  },
+  "retained_development_failures": [
+    "Two compile failures on the same source: the second followed an edit-precondition refusal; no tests ran.",
+    "The shared verifier closure tied temporary borrows together; six calls were inlined with identical arguments/assertions.",
+    "Initial strict Clippy rejected bind_instead_of_map and clone_on_copy; the next run rejected manual_inspect.",
+    "Final inspect_err records the same error and propagates it unchanged; direct Copy and formatting retain the tests."
+  ],
+  "reproduction": {
+    "script": "evaluation/short-neighbor-parallel/validate.py",
+    "test_threads": 316,
+    "cores": 16,
+    "wall_limits_seconds": {
+      "fmt": 180,
+      "clippy": 180,
+      "check": 180,
+      "workspace": 900,
+      "serial_launch": 180
+    },
+    "output_cap_bytes": 8388608,
+    "attempts_per_source": 1,
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TERM_COLOR": "never",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "LITEINST_EVALUATION": "1",
+      "RUST_TEST_THREADS": "316"
+    }
+  },
+  "elapsed_scope": "Correctness command receipts, not performance measurements.",
+  "development_command_bounds": {
+    "wall_seconds": 1200,
+    "output_bytes": 8388608
+  },
+  "parallel_regressions": {
+    "observed_pass": [
+      "rapid::tests::live::install_rejects_each_mutated_window_byte",
+      "rapid::tests::live::tail_overlap_failure_discards_non_page_aligned_trampoline",
+      "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+      "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+      "native_state_covers_every_prefixed_pun_and_original_successor"
+    ],
+    "short_neighbor_tests_passed": 21
+  },
+  "custom_harnesses_outside_libtest_totals": [
+    {
+      "harness": "exec_backing_cleanup",
+      "controls": 5,
+      "trajectories": 6,
+      "physical_cleanup": true
+    },
+    {
+      "harness": "precontext_native",
+      "status": "PASS"
+    }
+  ],
+  "full_workspace_summary_rule": "Sum unfiltered libtest summaries, including both rapid-profiler doctest groups; exclude five filtered nested-child summaries already counted by parents."
+}
