@@ -38,11 +38,12 @@ def child(config, ready, release):
     os.execve(c['argv'][0], c['argv'], c['environment'])
 
 
-def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
+def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False):
     """One fresh exact launch. Caller still validates source/namespace/terminal reports."""
     import page_default_ls_release_provenance as provenance
     observe, same = provenance.observe, provenance.same
     from page_cost_profile_read import summarize, bridge_file, same_bridge
+    need(type(kernel_callchains) is bool, 'explicit scalar or kernel-callchain profile')
     directory = Path(directory).resolve(); directory.mkdir(exist_ok=False)
     python = str(Path(sys.executable).resolve()); perf = str(Path(perf).resolve()); bridge = Path(bridge).resolve()
     need(tuple(row['bounds']) == TARGET and row['capture_limit'] == 16 << 20,
@@ -72,6 +73,7 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
         bridge_identity_before=bridge_identity_before,
         target=row, perf=dict(bounds=list(PERF)), inputs_before=before, cleanup_errors=[],
         adopted=[], children_before='ECHILD', children_after=None, target_bounds=list(TARGET), cpu=cpu, owner_pid=os.getpid())
+    if kernel_callchains: result.update(format='page-cost-kernel-callchains-v1', kernel_callchains=True)
     row.update(pid=None, exit=None, reaped=False, timed_out=False, error=None, cleanup_errors=[])
 
     def pipe():
@@ -133,6 +135,7 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
             '--mmap-pages=256', '--timestamp', '--sample-cpu', '--period', '--clockid=mono',
             '--delay=-1', '--control=fd:'+str(cr)+','+str(aw), '--pid', str(target.pid),
             '--output', str((directory/'perf.data').resolve())]
+        if kernel_callchains: perf_argv[2:2] = ['--call-graph', 'fp,64', '--kernel-callchains']
         env = dict(row['environment'], PERF_CONFIG='/dev/null')
         result['perf'].update(argv=perf_argv, environment=env, start_ns=time.monotonic_ns())
         profiler = spawn('perf', perf_argv, env, (cr, aw), PERF); close(cr); close(aw)
@@ -237,7 +240,8 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf'):
     try:
         result['sampling'] = summarize(directory/'perf.data', Path(bridge), row['pid'], cpu, directory,
                                        result['release_ns'], result['target_exit_ready_ns'],
-                                       bridge_identity=result['bridge_identity_after'])
+                                       bridge_identity=result['bridge_identity_after'],
+                                       **({'kernel_callchains':True} if kernel_callchains else {}))
         need(all(result['sampling']['bridge'][k] == bridge_fact[k] for k in ('bytes', 'sha256')),
              'sample symbol ELF equals independently bound actual bridge')
     except BaseException as exc:
