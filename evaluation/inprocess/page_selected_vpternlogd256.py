@@ -11,6 +11,7 @@ from page_selected import ENV,fact,need,save,elf
 from page_selected_generic import digest
 from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
+from page_record_storage import RecordStorage
 from page_selected_components import plain_executable
 from page_selected_register_time_build import recipe,expand,headers
 from page_selected_register_time_compare import decode
@@ -38,6 +39,10 @@ def publish(path,r,private):
         cases=[[c['group'],c['fault_kind'],int(c['status']=='accepted_observation'),c['actual_exit'],c.get('record',{}).get('bytes'),
             *[c.get('outcome',{}).get(k)for k in('pairs','new_pairs','verified_memory_failures','actual_before_queries','refusals')]]for c in r['cases']],
         records_sha256=digest([c.get('record')for c in r['cases']]),
+        record_storage=dict(archived=sum(x['status']=='archived'for x in r['record_storage']['records']),
+          raw_bytes=sum(x['raw']['bytes']for x in r['record_storage']['records']if x['status']=='archived'),
+          compressed_bytes=sum(x['compressed']['bytes']for x in r['record_storage']['records']if x['status']=='archived'),
+          bindings_sha256=digest(r['record_storage'])),
         failure_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
         command_recipe=dict(generate=['python3','tools/page-entry/selected/tests/vpternlogd256/generate.py',
             'tools/page-entry/selected/tests/vpxorq128','<unique private generated output>'],
@@ -72,13 +77,19 @@ def main():
         commands=[],cases=[],error=None,final_errors=[],
         totals=dict(pairs=0,new_pairs=0,startup_pairs=0,verified_memory_failures=0,refusals=0,actual_before_queries=0,ending_pairs=0,crossing_pairs=0,vtn_typed_promotions=0,vtn_supplied_none_queries=0,vpx256_typed_promotions=0,vpx256_supplied_none_queries=0,promoted_encoding_checks=0,promoted_footprint_queries=0))
     pins,binaries,aliases={},{},{}
+    storage=RecordStorage(private,r)
+    def retained_fact(path):
+        if storage.contains(path):return {k:v for k,v in storage.original(path).items()if k in ('bytes','sha256')}
+        return fact(path)
     def pin(path):
         lexical=str(Path(path).absolute());p=Path(path).resolve(strict=True);value=fact(p)
         need(lexical not in aliases or aliases[lexical]==str(p),'input resolution changed');aliases[lexical]=str(p)
         need(str(p)not in pins or pins[str(p)]==value,'input changed');pins[str(p)]=value;return p
-    def artifact(path):return dict(fact(path),mode=Path(path).stat().st_mode&0o777)
+    def artifact(path):
+        if storage.contains(path):return storage.original(path)
+        return dict(fact(path),mode=Path(path).stat().st_mode&0o777)
     def binary(path):
-        p=Path(path).resolve(strict=True);value=artifact(p)
+        p=storage.path_for(path)if storage.contains(path)else Path(path).resolve(strict=True);value=artifact(p)
         need(str(p)not in binaries or binaries[str(p)]==value,'artifact changed');binaries[str(p)]=value;return p
     def closure():
         need(all(fact(p)==v for p,v in pins.items()) and all(artifact(p)==v for p,v in binaries.items()) and
@@ -184,6 +195,7 @@ def main():
                  'no failed operation relabelled completed')
             for key in r['totals']:r['totals'][key]+=value[key]
             item.update(status='accepted_observation',outcome=value)
+            storage.archive(path,row,item)
         need(r['totals']==dict(pairs=2391,new_pairs=2250,startup_pairs=147,verified_memory_failures=6,refusals=147*REFUSALS,actual_before_queries=4512,ending_pairs=401,crossing_pairs=1849,vtn_typed_promotions=1470,vtn_supplied_none_queries=1470,vpx256_typed_promotions=147,vpx256_supplied_none_queries=147,promoted_encoding_checks=147,promoted_footprint_queries=147) and
             len(r['cases'])==147 and all(c['status']=='accepted_observation'for c in r['cases']),
             'all2250 selected pairs plus141 completed startup pairs and six true failed-read prefixes')
@@ -201,7 +213,7 @@ def main():
         for row in r['commands']:
             for capture in row.get('captures',{}).values():
                 try:
-                    path=private/capture['file'];need(path.parent==private and fact(path)=={k:capture[k]for k in ('bytes','sha256')},'retained capture closure');binary(path)
+                    path=private/capture['file'];need(path.parent==private and retained_fact(path)=={k:capture[k]for k in ('bytes','sha256')},'retained capture closure');binary(path)
                 except BaseException as exc:r['final_errors'].append('capture closure: '+repr(exc))
         r['inputs_before'],r['binaries_before'],r['aliases']=pins,binaries,aliases
         for name,before,observe in (('inputs_after',pins,fact),('binaries_after',binaries,artifact)):
@@ -211,6 +223,8 @@ def main():
                 except BaseException as exc:r['final_errors'].append(p+': '+repr(exc))
         try:closure()
         except BaseException as exc:r['final_errors'].append('closure: '+repr(exc))
+        try:storage.finish()
+        except BaseException as exc:r['final_errors'].append('record storage closure: '+repr(exc))
         try:r['source_unchanged']=source()==r['source'];need(r['source_unchanged'],'source closure')
         except BaseException as exc:r['final_errors'].append('source closure: '+repr(exc))
         r['cleanup_complete']=all(x.get('reaped')and not x.get('timed_out')and not x.get('error')and
