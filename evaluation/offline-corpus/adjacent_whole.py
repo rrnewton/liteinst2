@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """D01 custody and producer declarations only; W01/N01 remain unevaluated."""
+from collections import namedtuple
 import hashlib
 import json
 import os
@@ -17,7 +18,7 @@ COUNTS = {'checksum': (80, 16), 'rle-roundtrip': (107, 26)}
 PROFILE = 'offline-whole-authored-adjacent-b2-short-t3-pending-2g-v1'
 IMPORTER = 'elf-disassembly-null-jumps-adjacent-b2-short-t3-pending-v1'
 CAPTURE = 'offline-whole-capture-adjacent-b2-u2-l1-j2-v1'
-BUILDER_SHA = '0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592'
+BUILDER_SHA = '4c0552f2f523edc56d96237c4739ad589f439d7ced0d65ef898fff2c4e34b051'
 OUTPUT_BYTES = 64 * MIB
 FILE_BYTES = 16 * MIB
 MEMBERS = 256
@@ -34,6 +35,29 @@ TEXT = {'COMPLETE', 'bundle-index.tsv', 'disassembly-inventory.tsv', 'disassembl
         'disassembly.txt', 'planning-profile.tsv', 'report.tsv', 'selection.txt', 'program-failure.tsv',
         'target.tsv'}
 sha = lambda data: hashlib.sha256(data).hexdigest()
+
+# Only these immutable descriptors are accepted; no policy/output selects one.
+_Profile = namedtuple('_Profile', 'material importer capture builder builder_sha producer result_key marker_tag marker_value budget_tag version evidence')
+LEGACY = _Profile(PROFILE, IMPORTER, CAPTURE, 'build_adjacent_whole.py', BUILDER_SHA,
+    'adjacent_b2_disassembly_sites', 'adjacent_b2', 'adjacent-b2',
+    'fallback-two-site-v1', 'adjacent-b2-budgets', '5', 'adjacent-b2-evidence.txt')
+ROUTED = _Profile('offline-whole-authored-adjacent-routed-jmp-short-t3-pending-2g-v1',
+    'elf-disassembly-null-jumps-adjacent-routed-jmp-short-t3-pending-v1',
+    'offline-whole-capture-adjacent-routed-jmp-u2-l1-j2-v1',
+    'build_adjacent_routed_jmp_whole.py', '00c5c95474dc9ee57bc8e0b534a0e8a4bdbdb289e2ef30a83652147fb05feb9f',
+    'adjacent_routed_jmp_disassembly_sites', 'adjacent_pairs', 'adjacent-pairs',
+    'original-geometry-jcc-or-routed-jmp-v1', 'adjacent-pair-budgets', '6',
+    'adjacent-routed-jmp-evidence.txt')
+MATERIAL_SHA = '05e86b0652d7989a0f8abd825d5001d2e6fc5bcf4440504651633034b32834db'
+
+
+def descriptor(profile):
+    need(profile is LEGACY or profile is ROUTED, 'profile', 'fixed internal descriptor')
+    return profile
+
+
+def family(profile):
+    return FAMILY if profile is LEGACY else FAMILY[:3] + [[profile.result_key, profile.marker_value]]
 
 
 class Failure(Exception):
@@ -305,9 +329,10 @@ def program_row(program):
                 **dict.fromkeys(FALSE_FLAGS, False))
 
 
-def summary():
-    return dict(milestone='D01_FULL_ROSTER_PRODUCER_DIAGNOSTIC', placement_profile=PROFILE,
-                capture_profile=CAPTURE, importer_profile=IMPORTER,
+def summary(profile=LEGACY):
+    profile = descriptor(profile)
+    return dict(milestone='D01_FULL_ROSTER_PRODUCER_DIAGNOSTIC', placement_profile=profile.material,
+                capture_profile=profile.capture, importer_profile=profile.importer,
                 adjacent_upper=2, adjacent_lower=1, adjacent_joint=2,
                 expected_programs=2, expected_heads=187, expected_selected=42,
                 aggregate_output_read_bytes_per_program=OUTPUT_BYTES,
@@ -353,10 +378,11 @@ def selected_rows(program, material):
     return selected
 
 
-def check_material(program, result, material, original):
+def check_material(program, result, material, original, profile=LEGACY):
+    profile = descriptor(profile)
     heads, selected = COUNTS[program]
-    need(result['profile'] == PROFILE and result['program'] == program and
-         result['adjacent_b2'] == 'fallback-two-site-v1' and
+    need(result['profile'] == profile.material and result['program'] == program and
+         result[profile.result_key] == profile.marker_value and
          all(type(result[key]) is int for key in ('adjacent_upper', 'adjacent_lower', 'adjacent_joint')) and
          [result['adjacent_upper'], result['adjacent_lower'], result['adjacent_joint']] == [2, 1, 2] and
          result['neighbor_victims'] == 'short-only' and result['neighbor_ownership'] == 'inherited-t3' and
@@ -375,11 +401,11 @@ def check_material(program, result, material, original):
          'material', 'full checked roster')
     selected_rows(program, material)
     rows = material['policy.txt'].decode('ascii').splitlines()
-    need(rows[:8] == ['LI2DISASM-POLICY 5', 'original ' + sha(original),
+    need(rows[:8] == ['LI2DISASM-POLICY ' + profile.version, 'original ' + sha(original),
          'ledger ' + sha(material['ledger.txt']), 'neighbor-victims short-only',
          'neighbor-ownership inherited-t3', 'pending-selected full-instruction-ownership',
-         'adjacent-b2 fallback-two-site-v1', 'adjacent-b2-budgets 2 1 2'],
-         'material', 'v5 literal prefix')
+         profile.marker_tag + ' ' + profile.marker_value, profile.budget_tag + ' 2 1 2'],
+         'material', 'v5 literal prefix' if profile is LEGACY else 'v6 literal prefix')
     need(rows[8].startswith('target ') and rows[9:13] == ['domain 1', 'carrier 4718592',
          'limits 1048576 32 32 131072 128 2097152 1048576 128 2147483648', 'null-hook 4206592']
          and len(rows) == 13 + 3 * selected, 'material', 'unchanged complete policy limits')
@@ -397,9 +423,10 @@ def check_material(program, result, material, original):
     return selected_rows(program, material)
 
 
-def check_stdout(raw, stderr, code):
+def check_stdout(raw, stderr, code, profile=LEGACY):
+    profile = descriptor(profile)
     need(type(code) is int and code in (0, 2), 'producer-response', 'non-normal producer exit')
-    expected = (f'profile={IMPORTER} candidate_complete={"true" if code == 0 else "false"} '
+    expected = (f'profile={profile.importer} candidate_complete={"true" if code == 0 else "false"} '
                 'qualification_complete=false\n').encode('ascii')
     need(raw == expected and stderr == b'', 'producer-response', 'exact normal response')
 
@@ -420,9 +447,10 @@ def index_rows(raw, prefix):
     return result
 
 
-def check_inventory(raw, selected, original, material):
+def check_inventory(raw, selected, original, material, profile=LEGACY):
+    profile = descriptor(profile)
     rows = table(raw)
-    prefix = [['LI2DISASSEMBLY-INVENTORY', '1'], ['profile', IMPORTER], *FAMILY,
+    prefix = [['LI2DISASSEMBLY-INVENTORY', '1'], ['profile', profile.importer], *family(profile),
               ['original_sha256', sha(original)], ['ledger_sha256', sha(material['ledger.txt'])],
               ['complete_jump_count', str(len(selected))], ['qualification_complete', 'false'],
               ['id', 'pc', 'length', 'file_offset', 'region_pc', 'region_length', 'block_pc', 'block_length']]
@@ -442,13 +470,14 @@ def check_inventory(raw, selected, original, material):
              'producer-roster', 'region owner/block bounds')
 
 
-def check_selection(raw, selected, original):
+def check_selection(raw, selected, original, profile=LEGACY):
+    profile = descriptor(profile)
     need(len(raw) <= MIB and raw.endswith(b'\n') and
          re.fullmatch(rb'[\x20-\x7e\n]+', raw) is not None, 'producer-roster', 'selection text')
     rows = raw.decode('ascii').splitlines()
     prefix = ['LI2TOOL 1', 'original ' + sha(original), 'neighbor-victims short-only',
               'neighbor-ownership inherited-t3', 'pending-selected full-instruction-ownership',
-              'adjacent-b2 fallback-two-site-v1', 'adjacent-b2-budgets 2 1 2']
+              profile.marker_tag + ' ' + profile.marker_value, profile.budget_tag + ' 2 1 2']
     need(rows[:7] == prefix, 'producer-roster', 'selection profile prefix')
     records = [row.split(' ') for row in rows if row.startswith('site ')]
     need(len(records) == len(selected) and all(len(row) == 14 for row in records) and
@@ -481,7 +510,10 @@ def check_report(raw, selected, original, selection, complete):
                  'producer-roster', 'whole-selection refusal declaration')
 
 
-def check_evidence(prefix, selection, count):
+def check_evidence(prefix, selection, count, profile=LEGACY):
+    profile = descriptor(profile)
+    if profile is ROUTED:
+        return routed_evidence(prefix, selection, count)
     lines = prefix.split(b'\n')
     need(len(lines) >= 11 and lines[10].startswith(b'resources\t'),
          'producer-evidence', 'diagnostic suffix delimiter')
@@ -507,17 +539,48 @@ def check_evidence(prefix, selection, count):
                 debug_association_verified=False)
 
 
-def check_product(reader, program, original, material, code):
+def routed_evidence(prefix, selection, count):
+    lines = prefix.split(b'\n')
+    need(len(lines) >= 15 and lines[14].startswith(b'resources\t'),
+         'producer-evidence', 'routed diagnostic suffix delimiter')
+    rows = [line.decode('ascii').split('\t') for line in lines[:14]]
+    need(rows[0] == ['LI2ADJACENT-ROUTED-JMP-EVIDENCE', '1'] and
+         rows[1] == ['selection_sha256', selection] and rows[2] == ['selected_count', str(count)] and
+         rows[10:12] == [['qualification_complete', 'false'], ['classification_complete', 'false']],
+         'producer-evidence', 'routed stable prefix')
+    shapes = [(3, 'baseline_calls', 2), (4, 'pair_calls', 2), (5, 'adjacent_counts', 4),
+              (6, 'forward_jcc_calls', 2), (7, 'forward_jcc_counts', 4),
+              (8, 'routed_jmp_calls', 2), (9, 'routed_jmp_counts', 4),
+              (12, 'legacy_image_slots', 2), (13, 'combined_image_work_upper_bound', 2)]
+    need(all(rows[i][0] == name and len(rows[i]) == width for i, name, width in shapes),
+         'producer-evidence', 'routed scalar shape')
+    baseline, calls, forward, routed = (uint(rows[i][1]) for i in (3, 4, 6, 8))
+    total, fc, rc = (list(map(uint, rows[i][1:])) for i in (5, 7, 9))
+    legacy, combined = (uint(rows[i][1]) for i in (12, 13))
+    need(baseline == count and calls == forward + routed <= count // 2 and
+         total == [a + b for a, b in zip(fc, rc)] and
+         all(c[0] <= 2 * n and c[1] <= n and c[2] <= 2 * n and c[2] <= c[0]
+             for c, n in ((fc, forward), (rc, routed))) and
+         combined == legacy + total[0] + total[1] <= (1 << 64) - 1,
+         'producer-evidence', 'routed fixed budget arithmetic')
+    return dict(baseline_calls=baseline, pair_calls=calls, upper=total[0], lower=total[1],
+                joint=total[2], forward_jcc_calls=forward, forward_jcc_counts=fc,
+                routed_jmp_calls=routed, routed_jmp_counts=rc, legacy_image_slots=legacy,
+                combined_image_work_upper_bound=combined, debug_association_verified=False)
+
+
+def check_product(reader, program, original, material, code, profile=LEGACY):
+    profile = descriptor(profile)
     root = 'importer/product'
     names = reader.names(root)
     observed = {}
     for name in names:
         cap = MIB if name in TEXT else 2 * MIB if name == 'candidate.elf' else FILE_BYTES
-        keep = cap if name in TEXT or (name == 'ledger.tsv' and code == 2) else 8192 if name == 'adjacent-b2-evidence.txt' else 0
+        keep = cap if name in TEXT or (name == 'ledger.tsv' and code == 2) else 8192 if name == profile.evidence else 0
         observed[name] = reader.read(root + '/' + name, cap, keep)
     need(reader.names(root) == names, 'output-identity', 'membership changed')
     need('COMPLETE' in observed, 'output-index', 'missing COMPLETE')
-    prefix = [['LI2DISASSEMBLY-DIRECTORY', '1'], ['profile', IMPORTER],
+    prefix = [['LI2DISASSEMBLY-DIRECTORY', '1'], ['profile', profile.importer],
               ['observed_original_sha256', sha(original)],
               ['candidate_complete', 'true' if code == 0 else 'false'],
               ['qualification_complete', 'false']]
@@ -532,16 +595,16 @@ def check_product(reader, program, original, material, code):
          'producer-identity', 'exact ledger/policy')
     selection = None
     if 'disassembly-inventory.tsv' in names:
-        check_inventory(observed['disassembly-inventory.tsv']['data'], selected, original, material)
+        check_inventory(observed['disassembly-inventory.tsv']['data'], selected, original, material, profile)
     if 'selection.txt' in names:
-        selection = check_selection(observed['selection.txt']['data'], selected, original)
+        selection = check_selection(observed['selection.txt']['data'], selected, original, profile)
     if 'program-failure.tsv' in names:
         base = {'COMPLETE', 'disassembly.txt', 'disassembly-policy.txt', 'program-failure.tsv'}
         shapes = [base, base | {'disassembly-inventory.tsv'},
                   base | {'disassembly-inventory.tsv', 'selection.txt'}]
         need(code == 2 and set(names) in shapes, 'output-shape', 'preparation refusal')
         rows = table(observed['program-failure.tsv']['data'])
-        prefix = [['LI2DISASSEMBLY-FAILURE', '1'], ['profile', IMPORTER],
+        prefix = [['LI2DISASSEMBLY-FAILURE', '1'], ['profile', profile.importer],
                   ['observed_original_sha256', sha(original)],
                   ['expected_ledger_sha256', sha(material['ledger.txt'])],
                   ['expected_policy_sha256', sha(material['policy.txt'])],
@@ -552,7 +615,7 @@ def check_product(reader, program, original, material, code):
         reader.verify()
         return dict(producer_candidate_complete=False, producer_roster_join=False,
                     preparation_failure=True, selection_sha256=selection)
-    expected = PRODUCT | {'COMPLETE'} | {f'site-{r[0]}.diagnostics.txt' for r in selected}
+    expected = (PRODUCT - {'adjacent-b2-evidence.txt'} | {profile.evidence}) | {'COMPLETE'} | {f'site-{r[0]}.diagnostics.txt' for r in selected}
     images = sorted(name for name in names if re.fullmatch(r'image-[0-9]{4}\.bin', name))
     if code == 0:
         need(1 <= len(images) <= 32 and images == [f'image-{i:04}.bin' for i in range(len(images))],
@@ -564,7 +627,7 @@ def check_product(reader, program, original, material, code):
          ['consumer_action', 'RuntimeScan-while-gated-until-qualified']])
     need(bundle == {name: row for name, row in recorded.items() if name != 'bundle-index.tsv'},
          'output-index', 'exact nested bundle membership')
-    expected_profile = [['LI2PLANNING', '1'], ['profile', IMPORTER], *FAMILY,
+    expected_profile = [['LI2PLANNING', '1'], ['profile', profile.importer], *family(profile),
         ['adjacent_upper', '2'], ['adjacent_lower', '1'], ['adjacent_joint', '2'],
         ['scope', 'artifact-code-regions-not-functions'], ['entries', 'all-verified-instruction-heads'],
         ['original_sha256', sha(original)], ['ledger_sha256', sha(material['ledger.txt'])],
@@ -573,7 +636,7 @@ def check_product(reader, program, original, material, code):
     need(table(observed['planning-profile.tsv']['data']) == expected_profile,
          'producer-identity', 'exact planning profile')
     check_report(observed['report.tsv']['data'], selected, original, selection, code == 0)
-    evidence = check_evidence(observed['adjacent-b2-evidence.txt']['data'], selection, len(selected))
+    evidence = check_evidence(observed[profile.evidence]['data'], selection, len(selected), profile)
     if code == 2:
         ledger = reader.bytes(root + '/ledger.tsv', FILE_BYTES)
         need(ledger == (f'LI2ADJACENT-NO-CANDIDATE\t1\nselection_sha256\t{selection}\n'
@@ -670,15 +733,21 @@ def check_capture_labels(plan, captured, builder):
          'capture', 'qualification')
 
 
-def authenticate_capture(ctx, args, report):
+def authenticate_capture(ctx, args, report, profile=LEGACY):
+    profile = descriptor(profile)
     read = ctx.read
     jread = lambda path: json_value(read(path, cap=MIB))
-    builder = ctx.load('build_adjacent_whole.py', BUILDER_SHA)
+    builder = ctx.load(profile.builder, profile.builder_sha)
+    material_adapter = (ctx.load('adjacent_routed_jmp_material.py', MATERIAL_SHA)
+                        if profile is ROUTED else None)
     capture = args.capture
     raw = read(capture / 'closed.json', cap=MIB)
     need(sha(raw) == args.capture_sha256, 'capture', 'root frozen capture hash')
     captured, plan = json_value(raw), jread(capture / 'planned.json')
     check_capture_labels(plan, captured, builder)
+    if profile is ROUTED:
+        need(plan['material_profile'] == profile.material and plan['importer_profile'] == profile.importer
+             and plan['capture_profile'] == profile.capture, 'capture', 'routed descriptor labels')
     need(captured['revision'] == plan['revision'] and
          re.fullmatch(r'[0-9a-f]{40}', captured['revision']), 'capture', 'revision')
     env, tools = plan['env'], plan['tools']
@@ -714,6 +783,8 @@ def authenticate_capture(ctx, args, report):
     inputs = {str(Path(builder.__file__)), str(Path(ctx.B.__file__)), str(ctx.HERE / 'layout.ld'),
               str(ctx.ROOT / 'Cargo.toml'), str(ctx.ROOT / 'Cargo.lock'),
               *(str(ctx.HERE / (p + '.S')) for p in PROGRAMS)}
+    if profile is ROUTED:
+        inputs.add(str(ctx.HERE / 'build_adjacent_whole.py'))
     need(set(plan['inputs']) == inputs and
          all(captured['files'][p] == value for p, value in plan['inputs'].items()),
          'capture', 'exact initial source inputs')
@@ -774,15 +845,15 @@ def authenticate_capture(ctx, args, report):
             if 'product' in phase:
                 builder.check_artifact(phase_streams['stdout'], phase)
                 read(Path(phase['product']), captured['files'][phase['product']])
-    need(all(name in streams for name in ('build-adjacent_b2_disassembly_sites',
+    need(all(name in streams for name in ('build-' + profile.producer,
          'build-elf-exec-oracle', 'target')), 'capture', 'required release/target build')
-    binary = ctx.ROOT / 'target/release/examples/adjacent_b2_disassembly_sites'
+    binary = ctx.ROOT / 'target/release/examples' / profile.producer
     read(binary, captured['files'][str(binary)])
     stable()
     report.update(capture_revision=captured['revision'], current_revision=current,
                   configuration_complete=configuration_complete, capture_results=captured['results'])
     return dict(plan=plan, captured=captured, streams=streams, binary=binary,
-                env=env, tools=tools, stable=stable)
+                env=env, tools=tools, stable=stable, material_adapter=material_adapter)
 
 
 def error_row(error):
@@ -813,7 +884,8 @@ def importer_arguments(binary, original, directory, material):
             str(directory / 'policy.txt'), sha(material['policy.txt']), str(directory / 'importer/product')]
 
 
-def program_attempt(ctx, args, captured, program, row):
+def program_attempt(ctx, args, captured, program, row, profile=LEGACY):
+    profile = descriptor(profile)
     directory = args.output / program
     directory.mkdir(mode=0o700)
     reader = None
@@ -842,7 +914,11 @@ def program_attempt(ctx, args, captured, program, row):
         expected = {key: sha(value) for key, value in inputs.items()}
         ctx.B.write(directory / 'input-hashes.json', expected)
         row['material_calls'] += 1
-        result = ctx.D.attempt_adjacent_b2(program, inputs, expected, upper=2, lower=1, joint=2)
+        if profile is LEGACY:
+            result = ctx.D.attempt_adjacent_b2(program, inputs, expected, upper=2, lower=1, joint=2)
+        else:
+            result = captured['material_adapter'].attempt_adjacent_routed_jmp(
+                program, inputs, expected, upper=2, lower=1, joint=2)
         material = result['files']
         for name, data in material.items():
             need(name in {'ledger.txt', 'policy.txt', 'source-inventory.tsv'} and
@@ -862,7 +938,7 @@ def program_attempt(ctx, args, captured, program, row):
             if name == 'heads.txt':
                 need(record['bytes'] == len(inputs['heads']) and record['sha256'] == sha(inputs['heads']),
                      'material-identity', 'written head transport')
-        selected = check_material(program, result, material, inputs['original'])
+        selected = check_material(program, result, material, inputs['original'], profile)
         captured['stable']()
         if selected is None:
             reader.verify()
@@ -898,9 +974,11 @@ def program_attempt(ctx, args, captured, program, row):
             need(streams['stdout']['bytes'] == len(streams['stdout']['data']) and
                  streams['stderr']['bytes'] == len(streams['stderr']['data']),
                  'producer-response', 'bounded exact response')
-            check_stdout(streams['stdout']['data'], streams['stderr']['data'], code)
+            check_stdout(streams['stdout']['data'], streams['stderr']['data'], code, profile)
             row['producer_candidate_complete'] = code == 0
-            row.update(check_product(reader, program, inputs['original'], material, code))
+            row.update(check_product(reader, program, inputs['original'], material, code)
+                       if profile is LEGACY else
+                       check_product(reader, program, inputs['original'], material, code, profile))
             reader.verify()
         except Exception as error:
             if getattr(error, 'stage', None) != 'output-bound':
@@ -932,8 +1010,9 @@ def collect_partial(reader):
     reader.verify()
 
 
-def run(args, ctx):
-    report = summary()
+def run(args, ctx, profile=LEGACY):
+    profile = descriptor(profile)
+    report = summary(profile)
     report.update(capture=str(args.capture), capture_sha256=args.capture_sha256)
     capture, output = args.capture, args.output
     need(capture.is_absolute() and capture.resolve(strict=True) == capture and
@@ -945,7 +1024,8 @@ def run(args, ctx):
     output.mkdir(mode=0o700)
     custody = OutputCustody()
     try:
-        captured = authenticate_capture(ctx, args, report)
+        captured = (authenticate_capture(ctx, args, report) if profile is LEGACY else
+                    authenticate_capture(ctx, args, report, profile))
         captured['output_custody'] = custody
         input_stable = captured['stable']
         def stable():
@@ -953,7 +1033,9 @@ def run(args, ctx):
             custody.verify()
         captured['stable'] = stable
         ctx.B.write(output / 'inputs.json', dict(report=report, first_pins=ctx.PINS, build_plan=captured['plan']))
-        drive_programs(report, lambda program, row: program_attempt(ctx, args, captured, program, row))
+        drive_programs(report, lambda program, row:
+            program_attempt(ctx, args, captured, program, row) if profile is LEGACY else
+            program_attempt(ctx, args, captured, program, row, profile))
         input_stable()
     except Exception as error:
         report['error'] = error_row(error)

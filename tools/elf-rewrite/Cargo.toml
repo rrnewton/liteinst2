@@ -51,3 +51,9 @@ name = "adjacent_b2_disassembly_sites"
 path = "examples/adjacent_b2_disassembly_sites.rs"
 test = true
 bench = false
+
+[[example]]
+name = "adjacent_routed_jmp_disassembly_sites"
+path = "examples/adjacent_routed_jmp_disassembly_sites.rs"
+test = true
+bench = false

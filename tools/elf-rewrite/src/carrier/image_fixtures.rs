@@ -4,6 +4,9 @@ use super::*;
 #[path = "property_fixtures.rs"]
 mod property_fixtures;
 
+#[path = "gap_carrier_fixtures.rs"]
+mod gap_carrier_fixtures;
+
 fn put16(bytes: &mut [u8], at: usize, value: u16) {
     bytes[at..at + 2].copy_from_slice(&value.to_le_bytes());
 }

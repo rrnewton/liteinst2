@@ -157,7 +157,8 @@ pub enum Error {
     AddressLimit { index: Option<usize> },
     /// Original load pages overlap; this slice does not reinterpret loader precedence.
     OverlappingLoadPages { before: usize, after: usize },
-    /// Requested carrier placement is unaligned, not after all original loads, or overlapping.
+    /// Requested carrier placement is unaligned, overlaps original pages, or
+    /// violates the selected profile's after-original-loads requirement.
     CarrierPlacement,
     /// The new load pages would occupy a declared non-load metadata memory extent.
     CarrierMetadataOverlap { index: usize },
@@ -233,7 +234,7 @@ pub fn append_read_only_carrier(
             max_new_load_pages: u64::MAX,
         },
         false,
-        false,
+        Placement::Append,
     )
 }
 
@@ -251,7 +252,7 @@ pub fn append_carrier_with_images(
     edits: &[DeclaredEdit],
     policy: ImagePolicy,
 ) -> Result<CarrierOutput, Error> {
-    append_internal(input, request, edits, policy, true, false)
+    append_internal(input, request, edits, policy, true, Placement::Append)
 }
 
 /// Explicit ET_EXEC profile for independently backed RX images below or between
@@ -269,7 +270,32 @@ pub fn append_exec_carrier_with_interleaved_images(
     if input.header().object_type != ObjectType::Executable {
         return Err(Error::UnsupportedObjectType);
     }
-    append_internal(input, request, edits, policy, true, true)
+    append_internal(input, request, edits, policy, true, Placement::Images)
+}
+
+/// Explicit ET_EXEC profile placing both the R-only carrier and immutable RX
+/// images in disjoint gaps among original LOADs, or below/above them. Every new
+/// mapped page must avoid original file/BSS pages and declared metadata extents.
+/// Original header order, PHDR/INTERP precedence and full union-span limits are
+/// checked exactly as for interleaved images. This is an artifact layout API;
+/// it does not qualify native loading, entry routing or runtime publication.
+pub fn append_exec_carrier_with_interleaved_loads(
+    input: &Elf64<'_>,
+    request: ImageRequest<'_>,
+    edits: &[DeclaredEdit],
+    policy: ImagePolicy,
+) -> Result<CarrierOutput, Error> {
+    if input.header().object_type != ObjectType::Executable {
+        return Err(Error::UnsupportedObjectType);
+    }
+    append_internal(input, request, edits, policy, true, Placement::AllLoads)
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum Placement {
+    Append,
+    Images,
+    AllLoads,
 }
 
 fn append_internal(
@@ -278,8 +304,9 @@ fn append_internal(
     edits: &[DeclaredEdit],
     image_policy: ImagePolicy,
     extended: bool,
-    interleaved: bool,
+    placement: Placement,
 ) -> Result<CarrierOutput, Error> {
+    let interleaved = placement != Placement::Append;
     let ImageRequest {
         carrier_vaddr,
         payload,
@@ -344,10 +371,11 @@ fn append_internal(
         previous_index = Some(item.index);
     }
     if carrier_vaddr.0 % policy.page_size != 0
-        || carrier_vaddr.0 < last_page_end
-        || input
-            .segments(SegmentType::Load)
-            .any(|item| item.vaddr > carrier_vaddr)
+        || (placement != Placement::AllLoads
+            && (carrier_vaddr.0 < last_page_end
+                || input
+                    .segments(SegmentType::Load)
+                    .any(|item| item.vaddr > carrier_vaddr)))
     {
         return Err(Error::CarrierPlacement);
     }
@@ -489,6 +517,15 @@ fn append_internal(
     if carrier_page_end > policy.user_address_limit {
         return Err(Error::AddressLimit { index: None });
     }
+    if placement == Placement::AllLoads {
+        for old in &loads {
+            let original_start = align_down(old.vaddr.0, policy.page_size);
+            let original_end = align_up(old.memory_range()?.end().0, policy.page_size)?;
+            if carrier_vaddr.0 < original_end && original_start < carrier_page_end {
+                return Err(Error::CarrierPlacement);
+            }
+        }
+    }
     let mut added = vec![AddedLoad {
         offset: carrier_offset,
         vaddr: carrier_vaddr.0,
@@ -595,9 +632,14 @@ fn append_internal(
     } else {
         lowest_page
     };
+    let span_end = if placement == Placement::AllLoads {
+        last_page_end.max(added.last().ok_or(Error::OutputInvariant)?.page_end)
+    } else {
+        added.last().ok_or(Error::OutputInvariant)?.page_end
+    };
     budget(
         "virtual span",
-        added.last().ok_or(Error::OutputInvariant)?.page_end - span_start,
+        span_end - span_start,
         policy.max_virtual_span,
     )?;
     let output_len = host_index(output_len)?;

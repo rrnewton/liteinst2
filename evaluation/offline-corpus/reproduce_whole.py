@@ -32,6 +32,7 @@ assert not sys.flags.optimize, 'assertions required'
 B = load('build_whole.py', '2731a71ee7848098be194111baf240b498dbbaf18c82252877d1a95345d1d3d2')
 H = load('head_capture.py', 'd805c5da621637946e8d103787a3390073e87d83267e10231e0d38cbc8467373')
 D = H.D
+ROUTED_PROFILE = 'offline-whole-authored-adjacent-routed-jmp-short-t3-pending-2g-v1'
 
 
 def read(path, expected=None, cap=256 * 1048576):
@@ -209,7 +210,7 @@ def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', type=Path, required=True); parser.add_argument('--capture-sha256', required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE, D.ADJACENT_B2_PROFILE), default=D.PROFILE,
+    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE, D.ADJACENT_B2_PROFILE, ROUTED_PROFILE), default=D.PROFILE,
                         help='fixed placement policy for both programs; default preserves fixed-page placement')
     return parser.parse_args(argv)
 
@@ -231,7 +232,15 @@ def material_attempt(program, inputs, expected, profile):
 
 def adjacent_diagnostic(args):
     assert args.placement_profile == D.ADJACENT_B2_PROFILE, 'explicit adjacent diagnostic profile'
-    module = load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
+    module = load('adjacent_whole.py', 'b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3')
+    context = types.SimpleNamespace(B=B, H=H, D=D, ROOT=ROOT, HERE=HERE, PINS=PINS,
+                                    read=read, closed=closed, load=load, reproducer_file=__file__)
+    return module.run(args, context)
+
+
+def routed_jmp_diagnostic(args):
+    assert args.placement_profile == ROUTED_PROFILE, 'explicit routed-JMP diagnostic profile'
+    module = load('adjacent_routed_jmp_whole.py', 'e89c8adadc413111a7ca2a2dc7aac753826f2659616e83e38ded9c3c3f079206')
     context = types.SimpleNamespace(B=B, H=H, D=D, ROOT=ROOT, HERE=HERE, PINS=PINS,
                                     read=read, closed=closed, load=load, reproducer_file=__file__)
     return module.run(args, context)
@@ -239,6 +248,8 @@ def adjacent_diagnostic(args):
 
 def main():
     args = arguments()
+    if args.placement_profile == ROUTED_PROFILE:
+        return routed_jmp_diagnostic(args)
     if args.placement_profile == D.ADJACENT_B2_PROFILE:
         return adjacent_diagnostic(args)
     capture, output = args.capture, args.output
