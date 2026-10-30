@@ -76,6 +76,18 @@ int li2_rseq_check_run(const struct li2_run_plan *,const ucontext_t *);
 struct li2_unrolled_hash_plan;
 int li2_rseq_check_unrolled(const struct li2_unrolled_hash_plan *,const ucontext_t *);
 #endif
+#ifdef LI2_SCALAR_REGION
+#if LI2_SCALAR_REGION != 1 || !defined(LI2_NATIVE_PAIR) || LI2_NATIVE_PAIR != 1 || \
+    !defined(LI2_RSEQ_NATIVE) || LI2_RSEQ_NATIVE != 1
+#error "Scalar regions require the explicit native-pair registered-rseq profile"
+#endif
+struct li2_region_plan;
+/* Separate typed no-write proof. The caller first validates the complete plan
+   and held full-page source ticket, authenticates the actual current kernel
+   frame/session/TLS, and serializes decoder use. This helper grants neither
+   source nor executable authority and does not synthesize a run/unroll plan. */
+int li2_rseq_check_region(const struct li2_region_plan *,const ucontext_t *);
+#endif
 
 #ifdef LI2_RSEQ_TCGETS_BTRFS
 #include "rseq_tcgets_btrfs.h"

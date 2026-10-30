@@ -37,7 +37,8 @@ def u(data, at=0, count=1):
     return struct.unpack_from('<' + 'I' * count, data, at)
 
 
-def elf(data, native_policy):
+def elf(data, native_policy, *, current_custody=False):
+    need(type(current_custody) is bool, 'explicit typed current-custody ELF profile')
     need(type(data) is bytes and 64 <= len(data) <= 16 << 20, 'complete bounded ELF')
     def take(at, n):
         need(type(at) is int and type(n) is int and 0 <= at <= len(data) and 0 <= n <= len(data) - at, 'ELF range')
@@ -65,6 +66,8 @@ def elf(data, native_policy):
     need(t[6] < len(sections), 'symbol string index')
     strings = sections[t[6]]; names = take(strings[4], strings[5])
     wanted = {'unrolled_app_' + n for n in ('head', 'stop', 'source_end', 'helper', 'helper_end', 'enter', 'capture', 'seed_x87', 'pure', 'pure_end', 'capture_high', 'entry_jump', 'head_pointer', 'return_end')} | {'ua_' + n for n in ('vectors', 'masks', 'host', 'host_fcw', 'input', 'before', 'after', 'before_live', 'after_live')}
+    if current_custody:
+        wanted |= {'unrolled_current_head', 'unrolled_current_end', 'unrolled_current_return_high'}
     symbols = {}; symbol_sizes = {}
     for at in range(t[4], t[4] + t[5], 24):
         name, _, _, section, value, size = struct.unpack('<IBBHQQ', take(at, 24))
@@ -100,11 +103,24 @@ def elf(data, native_policy):
          memory(capture, PAGE)[0][1] == 5 and memory(capture, PAGE)[1] ==
          b'\xff\x25\0\0\0\0' + struct.pack('<Q', high_capture) + b'\xcc' * (PAGE - 14),
          'complete low return page with transparent original-PC JMP and exact immutable high target')
+    entry_pointer = head
+    if current_custody:
+        entry_pointer = symbols['unrolled_current_head']
+        high_return = symbols['unrolled_current_return_high']
+        prefix_load, prefix_image = memory(entry_pointer, PAGE)
+        need(PAGE <= entry_pointer < 1 << 31 and entry_pointer % PAGE == 0 and
+             entry_pointer not in (head, capture) and symbols['unrolled_current_end'] == entry_pointer + PAGE and
+             prefix_load[1] == 5 and prefix_image == bytes.fromhex('669066906690ff2500000000') +
+             struct.pack('<Q', high_return) + b'\xcc' * (PAGE - 20),
+             'whole distinct low current-TF NOP/transparent-transfer page and immutable high target')
+        need(helper <= high_return and high_return + 16 <= helper + PAGE and
+             memory(high_return, 16)[1] == bytes.fromhex('f390ff2500000000') + struct.pack('<Q', head),
+             'exact native-policy-qualified PAUSE/transparent-return stub without a runtime routing exemption')
     ro, constants = memory(0x200010000, PAGE)
     need(ro[1] == 4 and ro[3] == 0x200010000 and ro[5] == ro[6] == PAGE and
          symbols['ua_vectors'] == ro[3] and symbols['ua_masks'] == ro[3] + 2048 and
          symbols['unrolled_app_head_pointer'] == ro[3] + 2112 and
-         constants == VECTORS + MASKS + struct.pack('<Q', head) + bytes(PAGE - 2120),
+         constants == VECTORS + MASKS + struct.pack('<Q', entry_pointer) + bytes(PAGE - 2120),
          'complete immutable nonexecuting assembly constants and actual low head pointer')
     state_loads = [x for x in loads if x[3] == 0x200030000]
     need(len(state_loads) == 1 and state_loads[0][1] == 6 and state_loads[0][5:7] == (0, 2 * PAGE),
@@ -124,7 +140,10 @@ def elf(data, native_policy):
          -(1 << 31) <= displacement < 1 << 31 and
          memory(transfer, 6)[1] == b'\xff\x25' + struct.pack('<i', displacement),
          'exact seed/entry/capture positions and transparent high-to-low immutable-pointer JMP')
-    return dict(symbols=symbols, head=head, stop=stop, source=source, interpreter=path[:-1].decode(), sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), phnum=h[10])
+    result = dict(symbols=symbols, head=head, stop=stop, source=source, interpreter=path[:-1].decode(), sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), phnum=h[10])
+    if current_custody:
+        result['current'] = dict(head=entry_pointer, high_return=high_return, source=prefix_image)
+    return result
 
 
 def live(data):

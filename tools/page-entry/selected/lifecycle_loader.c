@@ -72,6 +72,10 @@ struct object {
 #endif
 };
 static struct object objects[OBJECTS];
+#ifdef LI2_INITIAL_CODE_PROTECTION
+/* Set only after complete initial-image registration, before application entry. */
+static unsigned char initial_sealed_object[OBJECTS];
+#endif
 static size_t object_count;
 static struct transaction tx;
 static struct li2_lifecycle_counts counts;
@@ -150,7 +154,7 @@ static void spaces(size_t *at,size_t end) {
 #define read_maps_fresh read_maps_event_body
 #endif
 #endif
-#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+#if defined(LI2_MAPS_MAINTAINED) && (defined(LI2_MAPS_DIFFERENTIAL) || defined(LI2_MAPS_CURRENT_TF))
 static const char mv_maps_path[]="/proc/self/maps";
 static long mv_observer_raw(long,long,long,long,long,long,long);
 #define MAPS_READ_RAW(n,a,b,c,d,e,f) mv_observer_raw((n),(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
@@ -159,7 +163,7 @@ static long mv_observer_raw(long,long,long,long,long,long,long);
 #endif
 static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress *p) {
     *p=(struct li2_fetch_map_progress){.fd=-1};
-#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+#if defined(LI2_MAPS_MAINTAINED) && (defined(LI2_MAPS_DIFFERENTIAL) || defined(LI2_MAPS_CURRENT_TF))
     const char *path=mv_maps_path;
 #else
     const char path[]="/proc/self/maps";
@@ -493,6 +497,9 @@ void li2_lifecycle_snapshot(struct li2_lifecycle_counts *out) {
 
 void li2_lifecycle_initialize(const int *fds,size_t n,const struct li2_lifecycle_hooks *supplied) {
     hooks=*supplied;
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    if (!hooks.protected_mprotect) DIE(183,-1);
+#endif
     if (active || !n || n>32) DIE(183,n);
     for (size_t index=0;index<n;index++) {
         struct object *o=&objects[index]; o->original_fd=fds[index];
@@ -573,6 +580,9 @@ void li2_lifecycle_register_initial(const struct image *image) {
         }
         if (!equal((const void *)(image->bias+p->p_vaddr),image->source+p->p_offset,p->p_filesz)) DIE(189,0);
     }
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    initial_sealed_object[object]=1;
+#endif
 }
 
 int li2_lifecycle_known_code(uintptr_t first,size_t bytes) {
@@ -748,10 +758,22 @@ static long protect_call(const long a[6]) {
        genuine error (or zero-length success), rather than synthesizing one. */
     if (((uintptr_t)a[0]&(PAGE-1)) || !a[1]) return no_effect_call(SYS_mprotect,a);
     size_t extent=rounded((size_t)a[1]); uintptr_t first=(uintptr_t)a[0];
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    if (extent/PAGE>RECORDS || first>UINTPTR_MAX-extent ||
+        hooks.protected_mprotect(first,extent,(unsigned)a[2])) DIE(155,0);
+#else
     if (extent/PAGE>RECORDS || first>UINTPTR_MAX-extent || hooks.protected_range(first,extent)) DIE(155,0);
+#endif
     uintptr_t end=first+extent; read_maps(); size_t owners=0;
     for (uintptr_t p=first;p<end;p+=PAGE) {
         struct owned_page *old=current(p); const struct map_row *r=mapping(p);
+#ifdef LI2_INITIAL_CODE_PROTECTION
+        /* A typed initial range is not an execution/source grant: require its
+           current live sealed initial-object owner before the original checks. */
+        if (hooks.protected_range(p,PAGE) &&
+            (!old || old->backing!=SEALED || old->object>=object_count ||
+             !initial_sealed_object[old->object])) DIE(155,1);
+#endif
         if (old) { verify_page(old,r); if (r->prot!=old->actual) DIE(156,0); ++owners; }
         /* Holes are accepted so genuine ENOMEM/partial-error semantics remain
            observable. Existing unknown mappings cannot acquire execution. */
@@ -913,6 +935,10 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #undef li2_lifecycle_fetch_prepare
 #undef li2_lifecycle_fetch_interlock
 #endif
+#ifdef LI2_MAPS_CURRENT_TF
+#include "fetch_current_view.inc"
+#include "fetch_current_custody.inc"
+#endif
 
 #ifdef LI2_REPEAT_RX_LEASE
 #include "repeat_custody.inc"
@@ -942,9 +968,18 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_RUN_CACHE_REUSE
 #include "run_reuse_lifecycle.inc"
 #endif
+#ifdef LI2_SCALAR_REGION
+#include "region_source.inc"
+#endif
 #ifdef LI2_UNROLLED_HASH
 #include "unrolled_source.inc"
 #endif
 #ifdef LI2_UNROLLED_HASH_CAPTURE
 #include "unrolled_hash_observe_memory.inc"
+#endif
+#ifdef LI2_SCALAR_REGION_CAPTURE
+#include "scalar_region_observe_memory.inc"
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+#include "current_tf_observe_lifecycle.inc"
 #endif

@@ -53,6 +53,9 @@ enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENE
 #ifdef LI2_UNROLLED_HASH
     , SELECTED_UNROLLED_HASH
 #endif
+#ifdef LI2_SCALAR_REGION
+    , SELECTED_SCALAR_REGION
+#endif
 };
 static volatile sig_atomic_t selected_pending_route;
 #ifdef LI2_REPEAT_RX_LEASE

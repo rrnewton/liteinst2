@@ -482,7 +482,13 @@ static void selected_unrolled_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 }
 static void selected_unrolled_report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_UNROLLED_HASH_CAPTURE
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_terminal_snapshot(status,code,detail);
+#endif
     uho_finish(status,code,detail);
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_write(status,code);
+#endif
 #endif
     struct writer w={.used=0};text(&w,"LI2_UNROLLED_HASH {\"version\":1");
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);

@@ -16,9 +16,9 @@
       "sha256": "74dea5e7e11f56a2179b51a802facb496078ea044cf1e298cccef2fdbd0b5735"
     },
     {
-      "bytes": 13382,
+      "bytes": 15355,
       "path": "evaluation/inprocess/page_selected_generic_build.py",
-      "sha256": "d6d7ea7c9e83c9fd1d39e62d25876c2b4ddc86910bbe582fb7b335ce0c5e4864"
+      "sha256": "9b3f0d0ec21b628409b2b1453ef8ae6cfbdc8692ee9b7f3c49cf605379ddd896"
     },
     {
       "bytes": 7089,
@@ -61,9 +61,9 @@
       "sha256": "64688455305f942c11251dbb37e3e2d53a9f41f1f16ef70c2919c8aa9e2a7649"
     },
     {
-      "bytes": 3014,
+      "bytes": 3268,
       "path": "tools/page-entry/selected/build.sh",
-      "sha256": "e453596f873279e5de1ccb6ecc78141fdcf365ae78fb781ab0ba7bd3386a5ab6"
+      "sha256": "9b7ba3e5d0789d7928c15828cc737808119f2e81b3dcc7cc8d093018b901ca79"
     },
     {
       "bytes": 2900,

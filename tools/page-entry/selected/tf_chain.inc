@@ -1,6 +1,12 @@
 /* Included by step_owner.c only in LI2_TF_HANDOFF builds. Reuses unchanged
    frame/identity/revoke helpers and the complete existing generic owner. */
 #include "tf_chain.h"
+#ifdef LI2_CURRENT_TF_CAPTURE
+#include "current_tf_observe.h"
+#endif
+#ifdef LI2_MAPS_CURRENT_TF
+#include "fetch_current_custody.h"
+#endif
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_guard.h"
 #endif
@@ -388,7 +394,19 @@ void li2_tf_chain_handler_end(struct li2_tf_chain *c) {
     if(!c || !c->initialized)return;
     chain_invalidate(c);chain_need(c,!c->in_handler,LI2_CHAIN_STATE,2);
 #ifdef LI2_TF_SEALED_CUSTODY
+#ifdef LI2_MAPS_CURRENT_TF
+#ifdef LI2_CURRENT_TF_CAPTURE
+    unsigned observed_current=(unsigned)li2_current_custody_owned();
+    li2_current_tf_observe(LI2_CTO_RETURN_BEFORE,0,observed_current,c,&c->slots[c->active].fetch.ref,0);
+#endif
+    int e=li2_current_custody_owned()?li2_current_custody_return(c):li2_page_custody_return(c);
+#ifdef LI2_CURRENT_TF_CAPTURE
+    li2_current_tf_observe(LI2_CTO_RETURN_AFTER,e,observed_current,c,&c->slots[c->active].fetch.ref,0);
+#endif
+    chain_need(c,!e,LI2_CHAIN_PREPARE,e);
+#else
     int e=li2_page_custody_return(c);chain_need(c,!e,LI2_CHAIN_PREPARE,e);
+#endif
 #endif
 }
 void li2_tf_chain_begin_nx(struct li2_tf_chain *c,const struct li2_fetch_ref *ref,

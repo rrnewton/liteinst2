@@ -65,6 +65,8 @@ pub unsafe extern "C" fn li2_decoder_initialize(
         return status;
     }
     decode::warm_tables();
+    #[cfg(feature = "scalar-region")]
+    region::initialize();
     arena::seal();
     // SAFETY: same retained output header; all table ownership is now sealed.
     unsafe {
@@ -234,6 +236,36 @@ pub unsafe extern "C" fn li2_decoder_write_footprint(
     let source = unsafe { core::slice::from_raw_parts(bytes, length) };
     let state = unsafe { &*registers };
     match write_footprint::one(pc, source, state) {
+        Ok(row) => { unsafe { out.write(row); } abi::OK }
+        Err(error) => error,
+    }
+}
+
+#[cfg(feature = "scalar-region")]
+mod region;
+#[cfg(feature = "scalar-region")]
+pub use region::Description as RegionDescription;
+
+/// # Safety
+/// Same owned immutable 1..15-byte source, disjoint aligned output, sealed
+/// arena and single-caller obligations as li2_decoder_decode. This separate
+/// scalar profile grants no RX, live-mapping, data, entry or rseq authority.
+/// Non-OK leaves the output zero; OK describes an accepted or refused decode.
+#[cfg(feature = "scalar-region")]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn li2_decoder_region_describe(
+    pc: u64, bytes: *const u8, length: usize, out: *mut RegionDescription,
+) -> u32 {
+    if out.is_null() { return abi::BAD_ARGUMENT; }
+    // SAFETY: the caller supplies the unique writable output on every refusal.
+    unsafe { out.write(RegionDescription::default()); }
+    if bytes.is_null() || !(1..=15).contains(&length)
+        || (bytes as usize).checked_add(length).is_none()
+    { return abi::BAD_ARGUMENT; }
+    let call = match arena::enter() { Ok(call) => call, Err(error) => return error };
+    // SAFETY: caller owns this bounded immutable/disjoint source allocation.
+    let source = unsafe { core::slice::from_raw_parts(bytes, length) };
+    match region::one(pc, source, &call) {
         Ok(row) => { unsafe { out.write(row); } abi::OK }
         Err(error) => error,
     }

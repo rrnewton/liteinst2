@@ -2907,6 +2907,437 @@
     ]
   },
   "listing_revision": "18f8c106fe4167dce41b77956917f8e45c583b42",
+  "main091": {
+    "base_revision": "c2a3703fe1d0459ae57a045f1b86e1c520b77887",
+    "current_corpus_sha256": "ff3d8649d884d3380cd78447fb789ae1eda527885029529038605393fceefebb",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "moved_tests": 18,
+      "recorder_tests": 0,
+      "rust_tests": 8,
+      "serial_tests": 0
+    },
+    "excluded_default": {
+      "bootstrap_standalone_tests": 5,
+      "core_feature_tests": 7,
+      "example_feature_tests": 4,
+      "required_feature": "offline-router",
+      "rewrite_feature_tests": 8,
+      "standalone_manifest": "crates/liteinst-bootstrap/Cargo.toml"
+    },
+    "instances": {
+      "crates/liteinst-artifact/src/fixtures.rs": {
+        "unit/liteinst_artifact/lib": "elf64::fixtures::"
+      },
+      "crates/liteinst-artifact/src/startup/tests.rs": {
+        "unit/liteinst_artifact/lib": "startup::tests::"
+      }
+    },
+    "methods": {
+      "crates/liteinst-artifact/src/elf64.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "crates/liteinst-artifact/src/fixtures.rs": {
+        "all": [
+          "exec_inventory_preserves_every_header_and_unknown_fields",
+          "sectionless_dyn_zero_entry_needs_no_sections_or_symbols",
+          "program_table_is_read_as_bytes_without_host_alignment_assumptions",
+          "exact_bidirectional_translation_and_permissions",
+          "zero_fill_and_file_boundary_are_not_original_file_bytes",
+          "empty_file_load_can_have_an_anchor_beyond_eof",
+          "nonexecuting_owner_is_not_filtered_out_of_ambiguity_checks",
+          "disjoint_virtual_aliases_remain_inventory_but_inverse_is_ambiguous",
+          "disjoint_segments_crossing_is_distinct_from_overlapping_ownership",
+          "table_and_segment_file_bounds_are_checked_before_indexing",
+          "all_address_arithmetic_rejects_unsigned_wraparound",
+          "alignment_size_and_load_order_refusals_are_precise",
+          "alignment_zero_one_and_large_powers_are_supported",
+          "target_page_congruence_is_explicit_even_when_declared_alignment_is_one",
+          "unsupported_ident_and_fixed_header_fields_are_not_guessed",
+          "extended_count_refusal_and_resource_cutoff_are_distinct",
+          "null_fields_are_unused_while_real_header_records_are_retained",
+          "no_program_table_is_inventory_only_and_queries_remain_explicit"
+        ],
+        "ignored": []
+      },
+      "crates/liteinst-artifact/src/lib.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "crates/liteinst-artifact/src/startup.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "crates/liteinst-artifact/src/startup/geometry.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "crates/liteinst-artifact/src/startup/tests.rs": {
+        "all": [
+          "exact_complete_catalog_round_trip",
+          "rejects_omissions_extras_and_wrong_owners_before_activation",
+          "rejects_exact_byte_and_startup_tampering",
+          "closed_wire_refuses_corruption_truncation_and_surplus",
+          "exact_marker_and_full_fetch_rules",
+          "complete_auxiliary_image_retains_exact_role_and_router_requirement",
+          "exact_complete_rle_catalog_retains_107_heads_and_26_selected",
+          "geometry_wire_version_is_explicit_and_old_envelope_is_not_reinterpreted"
+        ],
+        "ignored": []
+      },
+      "crates/liteinst-artifact/src/startup/wire.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "crates/liteinst-bootstrap/build.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "crates/liteinst-bootstrap/src/lib.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "crates/liteinst-bootstrap/src/tests.rs": {
+        "all": [
+          "error_with_full_blocking_stderr",
+          "panic_with_full_blocking_stderr",
+          "error_with_closed_stderr",
+          "panic_with_closed_stderr",
+          "success_restores_exact_prior_hook_before_completion"
+        ],
+        "ignored": []
+      },
+      "src/lib.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "src/offline_router.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "src/offline_router/compiler.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "src/offline_router/compiler/fixture.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "src/offline_router/compiler/tests.rs": {
+        "all": [
+          "actual_plan_families_preserve_both_complete_denominators_and_authored_stack_layout",
+          "accepted_pun_consumed_obligation_and_current_view_mutants_refuse",
+          "accepted_neighbor_chain_and_owner_mutants_refuse",
+          "file_backed_stack_preserves_full_original_owner_bytes_and_bounds",
+          "compiler_does_not_accept_caller_steps_images_omitted_or_aliased_plans",
+          "short_neighbor_accepts_selected_eb_in_current_victim_fetch_suffix"
+        ],
+        "ignored": []
+      },
+      "src/offline_router/host.rs": {
+        "all": [
+          "exact_maps_and_auxv_shapes"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/fixtures/offline_router.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/offline_router_sites.rs": {
+        "all": [
+          "all_eight_snapshots_are_exact",
+          "every_member_failure_is_terminal_and_complete_is_last",
+          "cli_requires_the_fixed_two_program_interface",
+          "unchanged_valid_bundle_publishes_and_actual_reread_mutants_leave_no_directory"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/support/adjacent_publication.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/support/publication_io.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/elf64.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/mod.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/offline_router.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/offline_router/tests.rs": {
+        "all": [
+          "complete_two_program_transaction_uses_real_plans_and_exact_catalog_bytes",
+          "every_final_boundary_error_keeps_both_attempts_and_no_product_escape",
+          "immutable_denominator_and_distinct_dso_paths_refuse_before_planning",
+          "runtime_policy_is_canonical_and_fully_bound_before_planning",
+          "old_profile_outputs_remain_separate_and_keep_original_limits",
+          "existing_page_cap_refusal_withholds_whole_bundle_without_retry",
+          "coherently_rebound_head_count_only_refuses_exact_full_denominator",
+          "coherently_rebound_selected_count_only_refuses_exact_full_denominator"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "Cargo.toml": [
+        "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]",
+        "offline-router = [\"dep:liteinst-artifact\"]"
+      ],
+      "crates/liteinst-artifact/src/elf64.rs": [
+        "#[cfg(test)]\n#[path = \"fixtures.rs\"]\nmod fixtures;"
+      ],
+      "crates/liteinst-artifact/src/lib.rs": [
+        "pub mod elf64;",
+        "pub mod startup;"
+      ],
+      "crates/liteinst-artifact/src/startup.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "crates/liteinst-bootstrap/Cargo.toml": [
+        "[workspace]\n\n[lib]"
+      ],
+      "src/lib.rs": [
+        "#[cfg(all(\n    feature = \"offline-router\",\n    target_os = \"linux\",\n    target_arch = \"x86_64\"\n))]\npub mod offline_router;"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "offline-router = [\"li2core/offline-router\"]",
+        "name = \"offline_router_sites\"\npath = \"examples/offline_router_sites.rs\"\nrequired-features = [\"offline-router\"]\ntest = true\nbench = false"
+      ],
+      "tools/elf-rewrite/src/carrier/elf64.rs": [
+        "pub use formats::elf64::*;"
+      ],
+      "tools/elf-rewrite/src/carrier/mod.rs": [
+        "#[path = \"elf64.rs\"]\npub mod elf64;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "#[cfg(feature = \"offline-router\")]\npub mod offline_router;"
+      ]
+    },
+    "previous_corpus_sha256": "8a246881278619949de5b48d39288d9d893c0be514edaf0dca0c5c9db7000b9f",
+    "projections": {
+      "Cargo.lock": {
+        "current_sha256": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
+        "edits": [
+          [
+            3181,
+            3203,
+            ""
+          ]
+        ],
+        "previous_sha256": "b48007c0e7bb6b43b9c6fae433119b03ccbf0b9130266163e69ad73d40e01390"
+      },
+      "Cargo.toml": {
+        "current_sha256": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+        "edits": [
+          [
+            2400,
+            2475,
+            ""
+          ],
+          [
+            2751,
+            2865,
+            ""
+          ]
+        ],
+        "previous_sha256": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8"
+      },
+      "src/lib.rs": {
+        "current_sha256": "d05e417aa91c4b118f7e71289acbe4f9be6cd3e9f6017e6c63e6bb11fd56d955",
+        "edits": [
+          [
+            764,
+            887,
+            ""
+          ]
+        ],
+        "previous_sha256": "9c6f507955722eff3fed9fa43625bcce7b60eb76a61bcd1a6b53fe9bad847cc7"
+      },
+      "tools/elf-rewrite/Cargo.toml": {
+        "current_sha256": "a196c50c210e0b4b33e497dbd0bd8147c01a5cc6707ecf9e4dddad62daaab9cf",
+        "edits": [
+          [
+            1470,
+            1756,
+            ""
+          ]
+        ],
+        "previous_sha256": "24861b7a7e7f9047091f7acd55c2aefb83fd12683bf99f9d8ddd6124cb08aca2"
+      },
+      "tools/elf-rewrite/examples/support/adjacent_publication.rs": {
+        "current_sha256": "83efc5dd60ff5bc28c27d63dcfc78a0ce13652bad581f230e15750eff289312e",
+        "edits": [
+          [
+            100,
+            100,
+            "use formats::ContentId;\n"
+          ],
+          [
+            265,
+            308,
+            "use std::io::{Read as _, Write as _};\nuse std::os::unix::fs::{DirBuilderExt as _, OpenOptionsExt as _};\n"
+          ],
+          [
+            329,
+            443,
+            ""
+          ],
+          [
+            1265,
+            1265,
+            "    }\n}\npub fn digest(bytes: &[u8]) -> String {\n    ContentId::of(bytes)\n        .0\n        .iter()\n        .map(|b| format!(\"{b:02x}\"))\n        .collect()\n}\npub fn read(path: &Path, limit: usize) -> Result<Vec<u8>, String> {\n    let mut bytes = Vec::new();\n    std::fs::File::open(path)\n        .map_err(|e| e.to_string())?\n        .take(limit as u64 + 1)\n        .read_to_end(&mut bytes)\n        .map_err(|e| e.to_string())?;\n    if bytes.len() > limit {\n        return Err(\"input size bound\".into());\n    }\n    Ok(bytes)\n}\npub fn write(path: &Path, bytes: &[u8]) -> Result<(), String> {\n    let mut file = std::fs::OpenOptions::new()\n        .write(true)\n        .create_new(true)\n        .mode(0o600)\n        .open(path)\n        .map_err(|e| e.to_string())?;\n    file.write_all(bytes)\n        .and_then(|()| file.sync_all())\n        .map_err(|e| e.to_string())\n}\npub fn snapshots_match(before: &[Vec<u8>; 3], after: &[Vec<u8>; 3]) -> Result<(), String> {\n    if before != after {\n        Err(\"inputs changed during preparation\".into())\n    } else {\n        Ok(())\n"
+          ]
+        ],
+        "previous_sha256": "1585a4e02863301b67ae7d376a0c8ebbc0a8610a39f3599a961b04b89ef8917b"
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "current_sha256": "653a31cf28074449a5a75c2653f76782590cc2440723f4337953ef4b081295f1",
+        "edits": [
+          [
+            3130,
+            3363,
+            ""
+          ]
+        ],
+        "previous_sha256": "e86f13e9f33bd9e55c8c1f167a7666bbdfe4fc4bc45c507dbe4cc0b81644e4bc"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "2320f63f707dd2f0ec51a2a10e12525926737043c0c0829c2e23c6ae62678ed7",
+        "edits": [
+          [
+            253,
+            312,
+            ""
+          ],
+          [
+            5614,
+            5671,
+            "    mut gate: impl FnMut(&'static str) -> Result<(), Error>,\n"
+          ],
+          [
+            5701,
+            7115,
+            ""
+          ],
+          [
+            8899,
+            9039,
+            ""
+          ],
+          [
+            16517,
+            17147,
+            "        let result = write_carrier(\n            &elf,\n            carrier::ImageRequest {\n                carrier_vaddr: ElfVaddr(s.carrier_pc),\n                payload: &payload,\n                images: &images,\n                source_dependencies: &dependencies,\n"
+          ],
+          [
+            17162,
+            17514,
+            "            &edits,\n            carrier::ImagePolicy {\n                layout: carrier::CarrierPolicy {\n                    page_size: 4096,\n                    user_address_limit: 1 << 47,\n                    max_added_file_bytes: s.limits.added_file_bytes,\n                    max_output_file_bytes: s.limits.output_bytes,\n                    max_program_headers: s.limits.program_headers,\n                    max_virtual_span: s.limits.virtual_span,\n                },\n                dynamic: carrier::dynamic::Limits::default(),\n                max_images: s.limits.images,\n                max_new_load_pages: s.limits.new_load_pages,\n            },\n        );\n"
+          ],
+          [
+            21327,
+            21499,
+            ""
+          ]
+        ],
+        "previous_sha256": "97229aadc44e76e99ce2025b0929597d87cceebfae7dc2e881bcd71586ddb026"
+      }
+    },
+    "relocations": {
+      "tools/elf-rewrite/src/carrier/elf64.rs": {
+        "current_path": "crates/liteinst-artifact/src/elf64.rs",
+        "methods": 0,
+        "old_path_absent": false,
+        "sha256": "241f3ba99d6874f38ae6d6242be56e2b5b15c7ef05ce644302ddaafcc3b91b56"
+      },
+      "tools/elf-rewrite/src/carrier/fixtures.rs": {
+        "current_path": "crates/liteinst-artifact/src/fixtures.rs",
+        "methods": 18,
+        "old_path_absent": true,
+        "sha256": "79427c6aebd59b88aacc43cdbe13cb3d43b9e832448a698c1fe07f47d3ebc68f"
+      }
+    },
+    "sources": {
+      "A3-OFFLINE.md": "5912484867995298752920550878848909e3042dc07cf63cd8453524eb45115c",
+      "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
+      "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+      "crates/liteinst-artifact/Cargo.toml": "767f94d9faabfb89d6a3da79dc67f02f2ba9ac6f166920f21267b848c38c5d50",
+      "crates/liteinst-artifact/src/elf64.rs": "241f3ba99d6874f38ae6d6242be56e2b5b15c7ef05ce644302ddaafcc3b91b56",
+      "crates/liteinst-artifact/src/fixtures.rs": "79427c6aebd59b88aacc43cdbe13cb3d43b9e832448a698c1fe07f47d3ebc68f",
+      "crates/liteinst-artifact/src/lib.rs": "8732f98cfe9bd721998cd09a01ffd939b4b033159e1e62697b12a80403532d1d",
+      "crates/liteinst-artifact/src/startup.rs": "466ce272367f3b864e195ebe41f084dd8c017ab9bb7e04254250cf9f7956ccd8",
+      "crates/liteinst-artifact/src/startup/geometry.rs": "e4c0ed2f7ab5f8bc99bd0792a8657317c2d978296bac3f41741016613a037c5a",
+      "crates/liteinst-artifact/src/startup/tests.rs": "581ed79f450f699390c0ba73d2e1a4bc22c0c72bdf99406b9bd6a7747b093f42",
+      "crates/liteinst-artifact/src/startup/wire.rs": "2ecec021a987b5a8e12ef98d34366b3cb7a9c07141cc4fb9825eb55fe4448c87",
+      "crates/liteinst-bootstrap/Cargo.lock": "f6c8ba19ab14d1b3f1d5cc534a039abb84cbcf56ecd1cd0d0e56031ab7019fe5",
+      "crates/liteinst-bootstrap/Cargo.toml": "c0c4218ca378f523289be68da62aff3dbddb837f7a7e926107b29024bb7c717c",
+      "crates/liteinst-bootstrap/build.rs": "09659c7599622de3748a8c6dd59d9a5bd2ccd19b2a074800669dc5c9e5828e6f",
+      "crates/liteinst-bootstrap/src/lib.rs": "8c25f348370f8cdcccf0c1281778c595dc581f14556dd4b512965fc21c3620ee",
+      "crates/liteinst-bootstrap/src/tests.rs": "fe80cdb90dc48ed9f21a6acdcc180060129b123294661a9c109e9fe1421e90c1",
+      "evaluation/admission/run.py": "d9462b5ec03f3085564907d0fa1d42e882d49900651e05899d5b3f4122ddab3f",
+      "evaluation/inprocess/checks.py": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39",
+      "src/lib.rs": "d05e417aa91c4b118f7e71289acbe4f9be6cd3e9f6017e6c63e6bb11fd56d955",
+      "src/offline_router.rs": "4b78328a2dde6605106a8a9ec3b11de1ee413e747bfcb1fdcd70d384d7e933fd",
+      "src/offline_router/compiler.rs": "3e1d441e0d30bbb4a32537c63f6b6c1f95493e863183897eb7dcbff1741b7d5b",
+      "src/offline_router/compiler/fixture.rs": "91eba87e3c1a8f2ffe5d6a5208798c3b0808fcf9306d53b2cc3c45f490bc37e0",
+      "src/offline_router/compiler/tests.rs": "08ffeb301d0ae9a6dbcb6c85d540a3cb82668e7e99463f7ce37e9ef999dae7ab",
+      "src/offline_router/host.rs": "be555ec6e61f201e675d12f807df32ca365ed838d1e536d1e9e787f0800b0fda",
+      "tools/elf-rewrite/Cargo.toml": "a196c50c210e0b4b33e497dbd0bd8147c01a5cc6707ecf9e4dddad62daaab9cf",
+      "tools/elf-rewrite/examples/fixtures/offline_router.rs": "057a70e47acda47eba2e39ada7c31d606a877dd6ff48ecfb3c5b0f9e60a7635f",
+      "tools/elf-rewrite/examples/offline_router_sites.rs": "0efec45f63d6320c0cced59bdbfc42e5ed64d5d3b6f2f7a226dbfc1c4237b030",
+      "tools/elf-rewrite/examples/support/adjacent_publication.rs": "83efc5dd60ff5bc28c27d63dcfc78a0ce13652bad581f230e15750eff289312e",
+      "tools/elf-rewrite/examples/support/publication_io.rs": "94ecadce54f1bd60e7150d22e506330ddfeb53aea39221be2b6dc20ff3cc4259",
+      "tools/elf-rewrite/src/carrier/elf64.rs": "ae6b786e70d1c857b735b212f896d36461d2ca77dd657efb9e947745d6a84e67",
+      "tools/elf-rewrite/src/carrier/mod.rs": "9ddc5dafa7e7f85604a51526f9bf06e94c1553c24b2f60ac62444e9021fc3b20",
+      "tools/elf-rewrite/src/disassembly.rs": "653a31cf28074449a5a75c2653f76782590cc2440723f4337953ef4b081295f1",
+      "tools/elf-rewrite/src/lib.rs": "2320f63f707dd2f0ec51a2a10e12525926737043c0c0829c2e23c6ae62678ed7",
+      "tools/elf-rewrite/src/offline_router.rs": "18ec01bced9079db99ecaaf0e3c6c5eb149e8025860af28064113c074f01b5e2",
+      "tools/elf-rewrite/src/offline_router/tests.rs": "da74e5f4f0a9bbe43f0d4c65ff05ad093691c09bae49e4476da5fb7156765fc8"
+    },
+    "upstream_revision": "091b0cfebbc696a683e03f338ef01e0fa3c8f938",
+    "workspace_changes": {
+      "unit/liteinst_artifact/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 46
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 20
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 150
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 168
+        }
+      }
+    }
+  },
   "main09fe": {
     "added_methods": {
       "tests/support/native_normal_caller.rs": [
@@ -27171,6 +27602,231 @@
     "tools/rapid-profiler/src/generation.rs": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1",
     "tools/rapid-profiler/src/lib.rs": "52b54ed20f6e8daa509846e2ac543ff5ef6e8099b1d69cc8623b94421e3c363d",
     "tools/rapid-profiler/verify_ordinary_interval.py": "91a79ef36580a603b69632690f42fa6027b998602685017be175986d0e72f626"
+  },
+  "startup_carrier": {
+    "base_revision": "d55bd15ad5951bf64a2e96487af238ba4c108feb",
+    "current_corpus_sha256": "8a246881278619949de5b48d39288d9d893c0be514edaf0dca0c5c9db7000b9f",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "recorder_tests": 0,
+      "rust_tests": 9,
+      "serial_tests": 0
+    },
+    "instances": {
+      "tools/elf-rewrite/src/carrier/startup_fixtures.rs": {
+        "unit/liteinst_rewrite/lib": "carrier::startup_fixtures::"
+      }
+    },
+    "methods": {
+      "tools/elf-rewrite/src/carrier/mod.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/startup.rs": {
+        "all": [],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/carrier/startup_fixtures.rs": {
+        "all": [
+          "startup_minimal_static_exec_has_exact_loader_grammar_and_preservation",
+          "startup_existing_phdr_and_stack_keep_literal_records_and_prefix_order",
+          "startup_empty_image_set_has_a_trigger_and_existing_apis_remain_plain",
+          "startup_path_and_metadata_limits_have_exact_boundaries",
+          "startup_all_main_resources_include_added_headers_pages_and_original_high_hull",
+          "startup_refuses_existing_dynamic_tls_unsafe_permissions_and_wrong_object",
+          "startup_keeps_complete_bss_pages_metadata_and_source_ownership_guards",
+          "startup_preserves_static_symbols_and_refuses_dynamic_resolver_startup_sections",
+          "startup_input_metadata_is_bounded_checked_and_protected_from_source_edits"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "all": [],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "Cargo.toml": [
+        "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]"
+      ],
+      "evaluation/adjacent-b2/artifact-verifier/Cargo.toml": [
+        "name = \"adjacent-b2-artifact-verifier\"",
+        "[workspace]\n\n[dependencies]"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\""
+      ],
+      "tools/elf-rewrite/src/carrier/mod.rs": [
+        "pub mod startup;",
+        "#[cfg(test)]\n#[path = \"startup_fixtures.rs\"]\nmod startup_fixtures;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod carrier;"
+      ]
+    },
+    "previous_corpus_sha256": "09b2c7592bd110c3aa800d57a439b91c0ccf2fedb5987a6826fe4460744323f3",
+    "projections": {
+      "tools/elf-rewrite/src/carrier/mod.rs": {
+        "current_sha256": "9ddc5dafa7e7f85604a51526f9bf06e94c1553c24b2f60ac62444e9021fc3b20",
+        "edits": [
+          [
+            343,
+            428,
+            ""
+          ],
+          [
+            4705,
+            4823,
+            ""
+          ],
+          [
+            5708,
+            5811,
+            ""
+          ],
+          [
+            8616,
+            8737,
+            ""
+          ],
+          [
+            9823,
+            9837,
+            ""
+          ],
+          [
+            10560,
+            10642,
+            "    append_internal(input, request, edits, policy, true, Placement::Append)\n"
+          ],
+          [
+            11433,
+            11515,
+            "    append_internal(input, request, edits, policy, true, Placement::Images)\n"
+          ],
+          [
+            12309,
+            13400,
+            "    append_internal(input, request, edits, policy, true, Placement::AllLoads)\n"
+          ],
+          [
+            13678,
+            13730,
+            ""
+          ],
+          [
+            13820,
+            14139,
+            ""
+          ],
+          [
+            18683,
+            18784,
+            ""
+          ],
+          [
+            21370,
+            21466,
+            ""
+          ],
+          [
+            22260,
+            22528,
+            ""
+          ],
+          [
+            28010,
+            28102,
+            "        let order = interleaved_header_order(input, &added, insert_phdr);\n"
+          ],
+          [
+            28437,
+            28681,
+            ""
+          ],
+          [
+            33134,
+            33445,
+            ""
+          ],
+          [
+            36338,
+            36581,
+            ""
+          ],
+          [
+            37000,
+            37033,
+            ""
+          ],
+          [
+            37063,
+            37093,
+            ""
+          ],
+          [
+            37253,
+            37298,
+            ""
+          ],
+          [
+            37323,
+            37529,
+            "    let mut order =\n        Vec::with_capacity(input.program_headers().len() + added.len() + usize::from(insert_phdr));\n"
+          ],
+          [
+            37598,
+            37716,
+            ""
+          ],
+          [
+            38215,
+            38376,
+            ""
+          ],
+          [
+            38479,
+            38718,
+            ""
+          ],
+          [
+            46670,
+            46738,
+            ""
+          ]
+        ],
+        "previous_sha256": "a0d67be32f9efd847d5a5c419519335fea9aabcf0aa1d6e4e51d44f16d6d3c72"
+      }
+    },
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/adjacent-b2/artifact-verifier/Cargo.toml": "3c1d5a89b9779529772e080011bf480be89d68969047e207cebe5a87fae01f7b",
+      "tools/elf-rewrite/Cargo.toml": "24861b7a7e7f9047091f7acd55c2aefb83fd12683bf99f9d8ddd6124cb08aca2",
+      "tools/elf-rewrite/src/carrier/mod.rs": "9ddc5dafa7e7f85604a51526f9bf06e94c1553c24b2f60ac62444e9021fc3b20",
+      "tools/elf-rewrite/src/carrier/startup.rs": "0691706c78fd58e53a66dfa998772b3f40e259854a7146881a5335a429b393ab",
+      "tools/elf-rewrite/src/carrier/startup_fixtures.rs": "78f1029151c39a413711307a8dca8923c0a47b5e7aa6d7fd7cf9368ee41e3157",
+      "tools/elf-rewrite/src/lib.rs": "97229aadc44e76e99ce2025b0929597d87cceebfae7dc2e881bcd71586ddb026"
+    },
+    "standalone_workspace": {
+      "path": "evaluation/adjacent-b2/artifact-verifier/Cargo.toml",
+      "root_workspace_harnesses_added": 0,
+      "root_workspace_member": false
+    },
+    "upstream_revision": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+    "workspace_changes": {
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 168
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 159
+        }
+      }
+    }
   },
   "upstream_revision": "813249c92a95c66b01944b6651ce1b9d32f44d21",
   "workspace_changes": {
