@@ -341,4 +341,3 @@ def hint_controls(stderr,*args):
         except ValueError:rejected=True
         need(rejected,'complete hinted finite reader refuses '+name);names.append(name)
     return dict(hint_refusals=names,native_operations=0,original_stderr_sha256=H(stderr))
-
