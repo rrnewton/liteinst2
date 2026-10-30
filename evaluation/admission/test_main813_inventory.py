@@ -620,6 +620,70 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(cache.cache_info().currsize, 512)
         cache.cache_clear()
 
+        # A separate bounded large-value cache keeps the original512 small
+        # entries and every live-source/expectation guard unchanged.
+        large_cache = main813.inventory_digest._large_hexdigest
+        large_cache.cache_clear()
+        self.assertEqual(large_cache.cache_parameters(), {'maxsize': 64, 'typed': True})
+        cache.cache_clear()
+        for size in (65536, 65537, 1048576, 1048577):
+            value = b'z' * size
+            before_small, before_large = cache.cache_info(), large_cache.cache_info()
+            self.assertEqual(digest(value), original_sha256(value).hexdigest())
+            self.assertEqual(digest(value), original_sha256(value).hexdigest())
+            selected = large_cache if 65536 < size <= 1048576 else cache
+            unchanged = cache if selected is large_cache else large_cache
+            previous = before_large if selected is large_cache else before_small
+            self.assertEqual(selected.cache_info().misses, previous.misses + 1)
+            self.assertEqual(selected.cache_info().hits, previous.hits + 1)
+            self.assertEqual(unchanged.cache_info(), before_small if selected is large_cache else before_large)
+        value = b'large' * 14000
+        self.assertEqual(digest(value), original_sha256(value).hexdigest())
+        self.assertEqual(digest(value + b'!'), original_sha256(value + b'!').hexdigest())
+        self.assertNotEqual(digest(value), digest(value + b'!'))
+        before_small, before_large = cache.cache_info(), large_cache.cache_info()
+        for unsupported in (bytearray(value), memoryview(value), BytesSubclass(value)):
+            self.assertEqual(digest(unsupported), original_sha256(unsupported).hexdigest())
+        mutable_large = bytearray(value)
+        self.assertEqual(digest(mutable_large), original_sha256(value).hexdigest())
+        mutable_large[-1] ^= 1
+        self.assertEqual(digest(mutable_large), original_sha256(mutable_large).hexdigest())
+        self.assertNotEqual(digest(mutable_large), original_sha256(value).hexdigest())
+        self.assertEqual(cache.cache_info(), before_small)
+        self.assertEqual(large_cache.cache_info(), before_large)
+        for before_import in (False, True):
+            large_spec = importlib.util.spec_from_file_location('_inventory_large_hash_control',
+                main813.inventory_digest.__file__)
+            fresh_large = importlib.util.module_from_spec(large_spec)
+            if not before_import:
+                large_spec.loader.exec_module(fresh_large)
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(value).hexdigest())
+            with patch.object(hashlib, 'sha256', side_effect=[original_sha256(b'a'),
+                    original_sha256(b'b'), ValueError('live large hash failure')]) as changed_hash:
+                if before_import:
+                    large_spec.loader.exec_module(fresh_large)
+                old_large = fresh_large._large_hexdigest.cache_info()
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(b'a').hexdigest())
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(b'b').hexdigest())
+                with self.assertRaisesRegex(ValueError, '^live large hash failure$'):
+                    fresh_large.hexdigest(value)
+                self.assertEqual(changed_hash.call_count, 3)
+                self.assertEqual(fresh_large._large_hexdigest.cache_info(), old_large)
+            with patch.object(hashlib, 'sha256', UnhashableHash()):
+                self.assertEqual(fresh_large.hexdigest(value), original_sha256(value + b'changed').hexdigest())
+                self.assertEqual(fresh_large._large_hexdigest.cache_info(), old_large)
+            self.assertEqual(fresh_large.hexdigest(value), original_sha256(value).hexdigest())
+        large_cache.cache_clear()
+        large_keys = [b'x' * 65536 + bytes((i,)) for i in range(65)]
+        for key in large_keys:
+            self.assertEqual(digest(key), original_sha256(key).hexdigest())
+        self.assertEqual(large_cache.cache_info().currsize, 64)
+        large_misses = large_cache.cache_info().misses
+        self.assertEqual(digest(large_keys[0]), original_sha256(large_keys[0]).hexdigest())
+        self.assertEqual(large_cache.cache_info().misses, large_misses + 1)
+        cache.cache_clear()
+        large_cache.cache_clear()
+
         # Only immutable bounded splice results are reused; validation is live.
         splice = main813.inventory_splice.splice
         splice_cache = main813.inventory_splice._splice
