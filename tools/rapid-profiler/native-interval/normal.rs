@@ -31,6 +31,7 @@ pub(super) mod leaf_set_copied;
 pub(super) mod module;
 pub(super) mod reference;
 mod rust_invoke_artifact;
+pub(super) mod selected_leaf_set;
 use check::{Facts, rows_match};
 use oracle::native_ordinary::strnlen::{Arguments, CASES, Deadline, LABEL, SEEDS, cases};
 use rapid_profiler::frontend::{
