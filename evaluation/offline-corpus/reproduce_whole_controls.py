@@ -14,7 +14,7 @@ if sys.flags.optimize:
 path = Path(__file__).resolve().with_name('reproduce_whole.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
-assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == '0ce68a9845cda218f67778bd1b41af0c9c227f963e535968f4c861078b89c3aa'
+assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == '68ad7eaf3ac2a4febe8232d2de13a822ef8b293ebbb04e793051c3232d315dfc'
 R = types.ModuleType('authenticated_whole_reproducer')
 R.__file__ = str(path)
 exec(compile(raw, str(path), 'exec'), R.__dict__)
@@ -550,6 +550,45 @@ class WholeReproducerControls(unittest.TestCase):
                 check(bad_digest)
             totals = [a + b for a, b in zip(totals, (heads, jumps))]
         self.assertEqual(totals, [187, 42])
+
+
+    def test_adjacent_d01_cli_is_separate_and_fixed(self):
+        argv = ['--capture', '/synthetic-closed', '--capture-sha256', 'a' * 64,
+                '--output', '/synthetic-new']
+        args = R.arguments(argv + ['--placement-profile', R.D.ADJACENT_B2_PROFILE])
+        self.assertEqual(args.placement_profile,
+                         'offline-whole-authored-adjacent-b2-short-t3-pending-2g-v1')
+        self.assertEqual(R.arguments(argv).placement_profile, R.D.PROFILE)
+        for override in (['--upper', '3'], ['--lower', '0'], ['--joint', '1'],
+                         ['--program', 'checksum'], ['--binary', '/other'],
+                         ['--subset'], ['--placement-profile', 'adjacent']):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                R.arguments(argv + ['--placement-profile', R.D.ADJACENT_B2_PROFILE] + override)
+            self.assertEqual(error.exception.code, 2)
+        with mock.patch.object(R, 'arguments', return_value=args), \
+             mock.patch.object(R, 'adjacent_diagnostic', return_value=2) as adjacent, \
+             mock.patch.object(R, 'read', side_effect=AssertionError('old path must not run')):
+            self.assertEqual(R.main(), 2)
+        adjacent.assert_called_once_with(args)
+
+    def test_adjacent_d01_authenticated_helper_once_without_old_fallthrough(self):
+        args = types.SimpleNamespace(placement_profile=R.D.ADJACENT_B2_PROFILE)
+        helper = types.SimpleNamespace(run=mock.Mock(return_value=1))
+        with mock.patch.object(R, 'load', return_value=helper) as load:
+            self.assertEqual(R.adjacent_diagnostic(args), 1)
+        load.assert_called_once_with('adjacent_whole.py', 'b2621c7a796c7dde74c6fa1ae299d8a886c34c61d106d2a95c6f393c92634c95')
+        helper.run.assert_called_once()
+        actual_args, context = helper.run.call_args.args
+        self.assertIs(actual_args, args)
+        for key in ('B', 'H', 'D', 'ROOT', 'HERE', 'PINS', 'read', 'closed'):
+            self.assertIs(getattr(context, key), getattr(R, key))
+        self.assertIs(context.load, load)
+        self.assertEqual(context.reproducer_file, R.__file__)
+        for profile in (R.D.PROFILE, R.D.WINDOW_PROFILE, R.D.BROAD_PROFILE, R.D.SHORT_PROFILE,
+                        R.D.SHORT_T3_OWNERSHIP_PROFILE, R.D.SHORT_T3_PENDING_PROFILE):
+            with mock.patch.object(R, 'load') as load, self.assertRaises(AssertionError):
+                R.adjacent_diagnostic(types.SimpleNamespace(placement_profile=profile))
+            load.assert_not_called()
 
 
 if __name__ == '__main__':

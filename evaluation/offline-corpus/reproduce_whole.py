@@ -209,7 +209,7 @@ def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', type=Path, required=True); parser.add_argument('--capture-sha256', required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE), default=D.PROFILE,
+    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE, D.ADJACENT_B2_PROFILE), default=D.PROFILE,
                         help='fixed placement policy for both programs; default preserves fixed-page placement')
     return parser.parse_args(argv)
 
@@ -229,8 +229,18 @@ def material_attempt(program, inputs, expected, profile):
     return D.attempt(program, inputs, expected, profile=D.WINDOW_PROFILE)
 
 
+def adjacent_diagnostic(args):
+    assert args.placement_profile == D.ADJACENT_B2_PROFILE, 'explicit adjacent diagnostic profile'
+    module = load('adjacent_whole.py', 'b2621c7a796c7dde74c6fa1ae299d8a886c34c61d106d2a95c6f393c92634c95')
+    context = types.SimpleNamespace(B=B, H=H, D=D, ROOT=ROOT, HERE=HERE, PINS=PINS,
+                                    read=read, closed=closed, load=load, reproducer_file=__file__)
+    return module.run(args, context)
+
+
 def main():
     args = arguments()
+    if args.placement_profile == D.ADJACENT_B2_PROFILE:
+        return adjacent_diagnostic(args)
     capture, output = args.capture, args.output
     assert capture.is_absolute() and capture.resolve(strict=True) == capture and capture.is_relative_to(ROOT / 'ignored')
     assert output.is_absolute() and output.is_relative_to(ROOT / 'ignored') and not output.is_relative_to(capture)
