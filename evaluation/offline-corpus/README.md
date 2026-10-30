@@ -60,14 +60,17 @@ this packet neither edits nor claims their authority.
 | Pinned PLDI2020 E9 test | Two real programs: `e9tool`, `e9patch`; five actions | `ignored/a3/upstream/e9patch-pldi2020/e9test.sh`; two-generation whole-output binary equality, ten terminal rows |
 | New finite expansion | Checksum and RLE roundtrip | This packet: all 14 kernel jumps, 20 program/dataset pairs, four lanes, 80 required comparison rows |
 
-The existing eight-cell native common corpus still has **704 core-null and 2,112
-recording pairs unfinished**. Its earlier eight-cell E9 result and the
-newly closed official E9 script's ten passing rows do not satisfy those
-obligations. These 80 new comparisons neither replace that corpus nor reduce
-its fixed denominators. The workspace tests already cover the complete
-authored Rust offline/tactic corpus; they do not prove common-program native
-equivalence. The next separate launch plan retains the full original corpus
-and the now-passing 13 debug0 pure controls as prerequisites, not native credit.
+The later [complete common-corpus run](../e9-common-e8a8b6d/) at
+`e8a8b6d447673aa7b98e00ff18df2eedf5e07d82` completed the previously outstanding
+**704 core-null, 2,112 recording and 1,408 E9-null pairs**: 24 cells, 4,224
+pairs, 8,448 children and 12,672 live state comparisons, with zero mismatches.
+Its earlier failures and partial populations remain in that report. The
+separate [checksum/RLE run](../offline-corpus-e8a8b6d/) passed all 80 complete
+output cases and 96 saved-artifact controls. Neither cohort establishes
+arbitrary-program support or full A3 qualification. The newer
+[whole-program pending-selection attempt](../pending-selected-eff2f47/)
+retains all 187 instruction heads and 42 jumps but refuses both candidates;
+those startup-inclusive failures do not replace the successful kernel cohorts.
 
 The newer upstream tree at `5e098f7920b5b5535f553de599c94ee980e97e29`
 also has `test/regtest` and a ten-action two-program `test/stresstest`.
@@ -89,7 +92,7 @@ tool binaries yet.
 
 Use [reproduce.py](reproduce.py) and its [argument and build contract](REPRODUCE.md) to build fresh release products, capture the current target and run the complete comparison. The manual catalog interface below documents what that wrapper constructs.
 
-The initial comparison at `2cf9a6e` passed all 80 output cases. The fresh
+The initial comparison at `2cf9a6e` passed all 80 output cases. The subsequent
 [1345b10 comparison](../offline-corpus-1345b10/README.md) also passed all 80
 with the stronger helper-prefix witness; its 96 saved-artifact controls include
 68 expected refusals. The receipt distinguishes valid positive controls from
@@ -164,9 +167,10 @@ controls should alter one original kernel byte, remove/reorder a selected
 branch, alter a complete entry, change a relocated condition/destination,
 change an unselected original byte, truncate a producer index, mutate an input
 owner, substitute a debug product, and alter one output byte. Each must refuse
-at its real consuming check. No such controls or subject runs have occurred.
-The fixed source programs and new assertions are additive; all prior source,
-comparators, test identities, budgets and failures remain untouched.
+at its real consuming check. The recorded runs and saved-artifact controls are
+linked above; they do not validate a different source revision. The fixed
+source programs and assertions are additive; prior comparators, test identities,
+budgets and failures remain untouched.
 
 ## Saved-artifact witness controls
 

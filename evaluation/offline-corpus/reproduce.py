@@ -18,7 +18,7 @@ MIB = 1048576
 HELPER_SHA = 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'
 PROFILE = dict(opt_level='3', debuginfo=0, debug_assertions=True, overflow_checks=True, test=False)
 SOURCE_PINS = {
-    'compare.py': '40bff57aff2fee47219ac75b130de1e31869e6f5dbd10da3ad0310c207f2524e',
+    'compare.py': '1fa50991916fc6912b632cbbac9dd29517c40e9a9c3d8cd51344c9e2673769dc',
     'adapter.py': 'db7d33395fa0af59eaffaa648039e28bc0e42f68461f2902f1fec1dc582dbb30',
     'corpus.py': '007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07',
     'checksum.S': '7a265d79394772b9bc4d9e9c48b4b1461251ff91df939b8a6ad26ce884148dfe',
