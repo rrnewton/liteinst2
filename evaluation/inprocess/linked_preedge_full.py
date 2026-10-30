@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Typed preedge original26 plus primitive9; cut-failure cases remain pending."""
+"""Typed preedge full eligibility: original26 plus actual primitive9 and cutfailure3."""
 import argparse,ctypes,csv,hashlib,importlib.util,io,json,os,platform,re,shlex,shutil,struct,sys
 from datetime import datetime,timezone
 from pathlib import Path
@@ -22,6 +22,7 @@ from linked_epoch_build import build_bridge
 import namespace
 import unrolled_hash_owner as donor
 import linked_preedge_full_reports as reports
+import linked_preedge_eligibility as eligibility
 import scalar_region_owner as columns
 import scalar_case_strings as strings
 BOUNDS=dict(PROFILES,release_build=[30,512<<20,16<<20,60],program=[30,512<<20,16<<20,60],seed=[5,512<<20,16<<20,15],finite=[5,512<<20,16<<20,15])
@@ -217,8 +218,21 @@ def names(value,key,count,sha,hash_key):
          'complete separately counted typed controls on actual bytes')
 
 
+def cut_prerequisite(path,r,pin,binary,primitive):
+    """Unchanged strict cut3 reader first, then compact actual metadata joins."""
+    import linked_preedge_failure as failure
+    value=failure.prerequisite(path,r,pin,binary)
+    path=Path(path).resolve(strict=True)
+    private=pin(ROOT/'target/evaluation/inprocess'/path.stem/'receipt.json')
+    public_fact,private_fact=fact(pin(path)),fact(private)
+    need(digest(private_fact)==digest(value['private_receipt']),'actual cut3 private bytes before projection')
+    projected=eligibility.project(json.loads(private.read_bytes()))
+    eligibility.cut_join(r,primitive,value,projected,public_fact,private_fact)
+    return value,dict(actual=projected,public_fact=public_fact,private_fact=private_fact)
+
+
 def prerequisite(path,r,pin,binary,*,native_hint=True):
-    """Authenticate exactly the selected closed23 or distinct26 profile; no replay."""
+    """Authenticate full26 plus both closed prerequisites and final eligibility."""
     need(native_hint is True,'literal typed v2 full prerequisite profile')
     import scalar_reuse_performance as prior
     from scalar_span_trace_build import fast_bytes_completed
@@ -229,7 +243,7 @@ def prerequisite(path,r,pin,binary,*,native_hint=True):
         if want is not None:need(digest(fact(result))==digest(want),'exact retained prerequisite input')
         return result
     public,actual=prior.closed(path,r,pinned,binary)
-    need(public['profile']==actual['profile']=='linked-preedge-original-v2'and public['status']==actual['status']=='passed',
+    need(public['profile']==actual['profile']==eligibility.PROFILE and public['status']==actual['status']=='passed',
          'only the complete distinct linked23 prerequisite')
     expected=dict(planned=23,hardware_planned=22,metadata_qualified=1,launched=23,qualified=23,
         native=7,gated=7,owner_controls=4,qualified_pairs=7,completed_applications=10,
@@ -240,9 +254,9 @@ def prerequisite(path,r,pin,binary,*,native_hint=True):
         required_hint_rejections=3,hint_owner_reader_refusals=366,hint_terminal_reader_refusals=738,actual_hint_witnesses=1)
     expected.update(preedge_owner_reader_refusals=199,preedge_terminal_reader_refusals=54)
     need(actual.get('native_hint',False)is native_hint and actual.get('preedge')is True and
-         public.get('whole_profile_qualified')is False and
-         digest(public.get('pending_cut_cases'))==digest(PENDING_CUT_CASES),
-         'same exact explicit typed profile with cut failures still pending')
+         public.get('whole_profile_qualified')is actual.get('whole_profile_qualified')is True and
+         public.get('pending_cut_cases')==actual.get('pending_cut_cases')==[],
+         'same exact eligible typed full profile with every cut case qualified')
     need(digest(actual['totals'])==digest(expected)and digest(public['totals'])==digest(expected)and
          digest(actual['bounds'])==digest(BOUNDS)and digest(public['bounds'])==digest(BOUNDS),
          'exact23 populations, all original16/reuse65 plus retry controls and unchanged resource bounds')
@@ -377,8 +391,15 @@ def prerequisite(path,r,pin,binary,*,native_hint=True):
     need(digest(primitive)==digest(actual['primitive_prerequisite'])and digest(archive)==digest(primitive['archive'])and
          digest(bindings[0])==digest(primitive['binding']),
          'full26 retains its same-source primitive9 and exact decoder archive')
-    return dict(whole_profile_qualified=False,pending_cut_cases=PENDING_CUT_CASES,file=path.name,**fact(pinned(path)),private_receipt=public['private_receipt'],
+    cut,inputs=cut_prerequisite(HERE/'results'/actual['cut_failure_prerequisite']['file'],r,pin,binary,primitive)
+    need(digest(cut)==digest(actual['cut_failure_prerequisite'])==digest(public['cut_failure_prerequisite'])and
+         digest(inputs)==digest(actual['eligibility_inputs']),'full receipt retains exact actual cut3 prerequisite and metadata')
+    eligibility.complete(actual,primitive,cut,**inputs)
+    need(digest(public['eligibility_controls'])==digest(dict(count=eligibility.CONTROL_COUNT,sha256=digest(actual['eligibility_controls']),native_operations=0)),
+         'exact public separately counted eligibility metadata controls')
+    return dict(whole_profile_qualified=True,pending_cut_cases=[],file=path.name,**fact(pinned(path)),private_receipt=public['private_receipt'],
         profile=actual['profile'],status=actual['status'],totals=expected,archive=archive,binding=bindings[0],
+        primitive_prerequisite=primitive,cut_failure_prerequisite=cut,
         commands=len(actual['commands']),commands_sha256=digest(actual['commands']),performance_credit=False)
 
 def load(name,path,pin):
@@ -710,6 +731,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,*,reuse=False,seed_
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expect-revision',required=True)
     parser.add_argument('--primitive-receipt',required=True,type=Path,help='same-source/CPU/archive primitive9 receipt')
+    parser.add_argument('--cut-failure-receipt',required=True,type=Path,help='same-source/CPU/archive cutfailure3 receipt')
     parser.set_defaults(native_hint=True)
     args=parser.parse_args()
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision)and len(os.sched_getaffinity(0))==1,'exact revision/assertions and one reserved CPU')
@@ -724,7 +746,7 @@ def main():
         seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
             bounds=BOUNDS['seed'],owner_subjects=0,completed_applications=0,performance_credit=False))
     if args.native_hint:
-        r.update(profile='linked-preedge-original-v2',native_hint=True,preedge=True,whole_profile_qualified=False,pending_cut_cases=PENDING_CUT_CASES)
+        r.update(profile=eligibility.PROFILE,native_hint=True,preedge=True,whole_profile_qualified=False,pending_cut_cases=PENDING_CUT_CASES)
         r['cases']=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control)+('-refault-'+str(rc)if rc else'')+('-hint-'+str(hc)if hc else''),
             lane=lane,mode=mode,control=control,refault_control=rc,hint_control=hc,expected_exit=125 if control or rc or hc or mode in(2,3)else 0,
             status='unexecuted',launched=False)for lane,mode,control,rc,hc in HINT_ORDER]
@@ -790,6 +812,7 @@ def main():
         required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'linked_preedge_full_reports.py',HERE/'linked_epoch_terminal.py',HERE/'scalar_region_owner.py',HERE/'scalar_case_strings.py',HERE/'linked_epoch_base_reports.py',HERE/'linked_epoch_build.py',HERE/'linked_epoch_cache_reports.py',HERE/'scalar_span_trace_chain_reports.py',HERE/'scalar_span_trace_repeat_reports.py',HERE/'scalar_span_trace_build.py',HERE/'unrolled_hash_owner.py',HERE/'scalar_reuse_performance_reports.py',
             FIXTURE/'main.c',FIXTURE/'pure.c',FIXTURE/'pure.ld',FIXTURE/'machine.S',FIXTURE/'app.h',FIXTURE/'read.py',FIXTURE/'build.sh',FIXTURE/'launch.py',OWNER/'read.py',OWNER/'layout.py',OWNER/'wire.py',OWNER/'plan.py',OWNER/'refault.py')}
         required.add(str(FULL_LAUNCHER.relative_to(ROOT)))
+        required|={str((HERE/name).relative_to(ROOT))for name in('linked_preedge_eligibility.py','linked_preedge_failure.py','linked_preedge_failure_reports.py')}
         required|={str((SELECTED/name).relative_to(ROOT))for name in('linked_preedge_full_observe.h','linked_preedge_full_observe.inc',
             'linked_preedge_full_observe_memory.h','linked_preedge_full_observe_memory.inc','linked_preedge_full_refault_observe.h','linked_preedge_full_refault_observe.inc',
             'linked_preedge_full_hint_observe.h','linked_preedge_full_hint_observe.inc','linked_preedge_reuse_observe.h','linked_preedge_reuse_observe.inc',
@@ -817,6 +840,8 @@ def main():
         need(not out and re.search(rb'\nRan 12 tests in [0-9.]+s\n\nOK\n\Z',err)is not None,'all five existing and seven additive namespace controls')
         r['namespace_controls']=dict(status='passed',tests=12,existing=5,added=7)
         r['primitive_prerequisite']=primitive_prerequisite(args.primitive_receipt,r,pin,binary)
+        r['cut_failure_prerequisite'],r['eligibility_inputs']=cut_prerequisite(args.cut_failure_receipt,r,pin,binary,r['primitive_prerequisite'])
+        r['eligibility_controls']=eligibility.controls(r,r['primitive_prerequisite'],r['cut_failure_prerequisite'],**r['eligibility_inputs'])
         products=builder.prepare()
         need(digest(fact(products['archive']))==digest(r['primitive_prerequisite']['archive']),
              'new actual full26 build uses exactly the primitive9 decoder archive')
@@ -897,6 +922,14 @@ def main():
             actual_hint_witnesses=sum(c['mode']==5 and c['lane']=='gated'and c['control']==c['refault_control']==c['hint_control']==0 and c['status'].startswith('qualified_')and c.get('hint_witness',{}).get('native_closed')==1 for c in r['cases']))
         r['totals'].update(preedge_owner_reader_refusals=sum(len(c.get('preedge_reader_controls',{}).get('preedge_refusals',[]))for c in r['cases']),
             preedge_terminal_reader_refusals=sum(len(c.get('preedge_terminal_controls',{}).get('preedge_refusals',[]))for c in r['cases']))
+        r['whole_profile_qualified']=False
+        if r['status']=='passed':
+            try:
+                eligibility.complete(r,r['primitive_prerequisite'],r['cut_failure_prerequisite'],**r['eligibility_inputs'])
+            except BaseException as error:
+                r['final_errors'].append('whole-profile eligibility: '+repr(error));r['status']='failed'
+            else:
+                r['whole_profile_qualified']=True;r['pending_cut_cases']=[]
         save(private/'receipt.json',r)
         hw=dict(r['hardware']);flags=hw.pop('isa_flags');hw.update(isa_flags_count=len(flags),isa_flags_sha256=digest(flags))
         public={k:r.get(k)for k in('schema','profile','status','expected_revision','started_utc','cpu','source','source_unchanged','cleanup_complete','bounds','totals','namespace_controls')}
@@ -906,14 +939,16 @@ def main():
         public['linked_metadata']=public_metadata(r)
         public['cases']=[public_case(c)for c in r['cases']]
         public.update(hardware=hw,private_receipt=fact(private/'receipt.json'),
-            reproduce=['python3','-B','evaluation/inprocess/linked_preedge_full.py','--expect-revision',args.expect_revision,'--primitive-receipt','evaluation/inprocess/results/'+args.primitive_receipt.name],
+            reproduce=['python3','-B','evaluation/inprocess/linked_preedge_full.py','--expect-revision',args.expect_revision,'--primitive-receipt','evaluation/inprocess/results/'+args.primitive_receipt.name,'--cut-failure-receipt','evaluation/inprocess/results/'+args.cut_failure_receipt.name],
             input_manifest_sha256=digest(pins),artifact_manifest_sha256=digest(artifacts),command_count=len(r['commands']),commands_sha256=digest(r['commands']),
             failure_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
             performance_credit=False,whole_ls_eligibility_credit=False,
             scope='Distinct finite linked epoch: six genuine native references and six full-state pairs, with two actual read faults, unsupported frontier continuation and real map/GS/rseq lifecycle changes; four required owner failures and four distinct actual helper refusals. Mode5 retains the actual unchanged TRACE-to-NX/native-close witness. Original metadata and completed65-key replacement are separate mandatory subjects. No whole-program or performance qualification')
         if args.native_hint:
-            public.update(whole_profile_qualified=False,pending_cut_cases=PENDING_CUT_CASES,primitive_prerequisite=r.get('primitive_prerequisite'))
-            public['scope']='Typed preedge v2 original26: all old metadata, original23 hardware and real65-key replacement pair remain required with every old control, plus199 typed owner and54 typed terminal refusals. Same-source/CPU/archive primitive9 is separately mandatory. Missing relocation or GRAPH witnesses is failure. Three additional cut-failure subjects remain pending; no whole-profile, LS or performance eligibility.'
+            public.update(whole_profile_qualified=r['whole_profile_qualified'],pending_cut_cases=r['pending_cut_cases'],
+                primitive_prerequisite=r.get('primitive_prerequisite'),cut_failure_prerequisite=r.get('cut_failure_prerequisite'),
+                eligibility_controls=dict(count=len(r.get('eligibility_controls',{}).get('refusals',[])),sha256=digest(r.get('eligibility_controls',{})),native_operations=0))
+            public['scope']='Typed preedge v2 full profile: unchanged original26 including all65 replacement and every old/typed control, plus strict same-source/CPU/hardware/archive/policy/binding primitive9 and cutfailure3 prerequisites. Eligibility is granted only after all three populations and final process/input/artifact closure pass. Eleven supplied metadata refusals are separate and confer no native credit. No LS or performance result is claimed.'
         raw=csv_projection(public['cases'],public['linked_metadata'],native_hint=args.native_hint);public_csv=HERE/'results'/(stem+'.csv');public_json=HERE/'results'/(stem+'.json')
         need(len(raw)<=8192,'all actual compact outcome CSV rows')
         public['csv']=dict(file=public_csv.name,bytes=len(raw),sha256=H(raw))
