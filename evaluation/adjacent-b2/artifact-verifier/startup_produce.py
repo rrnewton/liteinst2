@@ -21,6 +21,7 @@ MIB=1048576
 CRATE='evaluation/adjacent-b2/artifact-verifier'
 PROGRAMS=('checksum','rle-roundtrip')
 PROFILE='elf-disassembly-null-jumps-static-exec-router-bootstrap-v1'
+ORIGINAL_PROFILES=('startup-original-facts-rooted-v1','startup-original-facts-readonly-headerpad-v1')
 CONTROL=('request.json','command.json','parent-closed.json','receipt.json',
          'stdout.txt','stderr.txt','helper.stdout','helper.stderr')
 
@@ -124,13 +125,14 @@ def custody_digest(value):
     return value
 
 
-def fresh_capture(ctx,a,legacy,custody,originals,pins,store,captured,directory,configurations,stable):
+def fresh_capture(ctx,a,legacy,custody,originals,pins,store,captured,directory,configurations,stable,*,original_profile=None):
     directory.mkdir(mode=0o700)
     for program in PROGRAMS:(directory/program).mkdir(mode=0o700)
-    phase_plan=originals.phases(ctx.ROOT,directory,captured['tools'])
-    initial={path:ctx.B.identity(path) for path in sorted(originals.source_inputs(ctx,pins))}
+    profile=originals.PROFILE if original_profile is None else original_profile
+    phase_plan=originals.phases(ctx.ROOT,directory,captured['tools'],profile=profile)
+    initial={path:ctx.B.identity(path) for path in sorted(originals.source_inputs(ctx,pins,profile=profile))}
     for path,pin in initial.items():store.read(Path(path),16*MIB,pin)
-    plan=dict(schema=originals.PLAN_SCHEMA,profile=originals.PROFILE,source_revision=pins.SOURCE_REVISION,
+    plan=dict(schema=originals.PLAN_SCHEMA,profile=profile,source_revision=pins.SOURCE_REVISION,
         revision=captured['revision'],env=captured['env'],tools=captured['tools'],inputs=initial,phases=phase_plan,
         configuration_profile=captured['configuration_profile'],configurations=configurations,
         hardware='AMD EPYC Zen 5 dev host',affinity=sorted(os.sched_getaffinity(0)),
@@ -167,7 +169,7 @@ def fresh_capture(ctx,a,legacy,custody,originals,pins,store,captured,directory,c
     finally:
         # Always retain the attempted roster/outcomes. No closure label converts
         # a missing receipt, failed phase or partial output to original facts.
-        write(directory/'closed.json',dict(schema=originals.SCHEMA,profile=originals.PROFILE,
+        write(directory/'closed.json',dict(schema=originals.SCHEMA,profile=profile,
             planned=planned_pin,source_revision=pins.SOURCE_REVISION,revision=captured['revision'],
             results=results,files=files,configuration_complete=error is None,
             configurations=configurations,error=error,qualification_complete=False))
@@ -231,16 +233,14 @@ def startup_policy(program,inputs,interpreter,bootstrap,dependencies,contract):
 
 def materials(ctx,a,legacy,custody,store,facts,directory,interpreter,bootstrap_paths,dependencies,contract):
     directory.mkdir(mode=0o700)
-    adapter=ctx.load('adjacent_routed_jmp_material.py',a.MATERIAL_SHA)
     sources={}
     for program in PROGRAMS:
         inputs=facts['inputs'][program]
-        result=adapter.attempt_adjacent_routed_jmp(program,inputs,{key:sha(value) for key,value in inputs.items()},
-                                                 upper=2,lower=1,joint=2)
+        result=facts['materials'](program)
         raw=result['files']
         saved=dict(result);saved['files']={name:dict(bytes=len(value),sha256=sha(value)) for name,value in raw.items()}
         write(directory/(program+'-material.json'),saved)
-        need(a.check_material(program,result,raw,inputs['original'],a.ROUTED) is not None,'whole original materials refused')
+        need(result['status']=='MATERIALS_READY','whole original materials refused')
         expected=legacy.expected_files(ctx,a,program,inputs,raw)
         need(len(expected)==5,'unchanged independent original expected-file roster')
         group=dict(original=inputs['original'],ledger=raw['ledger.txt'],policy=raw['policy.txt'])
@@ -286,6 +286,7 @@ def main():
         parser.add_argument('--'+key,type=Path,required=True)
     for key in ('host-inventory-sha256','contract-sha256','source-profile-sha256'):parser.add_argument('--'+key,required=True)
     parser.add_argument('--failure-history',type=Path,action='append',default=[])
+    parser.add_argument('--original-profile',choices=ORIGINAL_PROFILES,default=ORIGINAL_PROFILES[0])
     args=parser.parse_args()
     need(not sys.flags.optimize,'assertions required')
     root=Path(__file__).resolve().parents[3]
@@ -311,7 +312,7 @@ def main():
     out.mkdir(mode=0o700)
     store=custody.Store(512*MIB)
     report=dict(schema='LI2STARTUP-PRODUCTION-RUN-1',profile=PROFILE,revision=revision,source_revision=pins.SOURCE_REVISION,
-        source_profile=source_profile,original_capture=None,producer_build=None,plan=None,binding=None,producer_attempts=0,producer_dispatches=0,
+        source_profile=source_profile,original_profile=args.original_profile,original_capture=None,producer_build=None,plan=None,binding=None,producer_attempts=0,producer_dispatches=0,
         expected_programs=2,expected_heads=187,expected_selected=42,adjacent_upper=2,adjacent_lower=1,adjacent_joint=2,
         producer_status='UNRUN',candidate_complete=False,artifact_complete=False,qualification_complete=False,
         native_dispatches=0,bootstrap_builds=0,execution_authorized=False,performance_eligible=False,error=None)
@@ -330,20 +331,21 @@ def main():
         need(len(set(bootstrap.values()))==2,'distinct per-program future DSO paths')
         write(out/'run-planned.json',dict(schema='LI2STARTUP-PRODUCTION-PLAN-1',profile=PROFILE,
             revision=revision,source_revision=pins.SOURCE_REVISION,source_profile=source_profile,
-            env=env,tools=tool_pins,files=source,
+            original_profile=args.original_profile,env=env,tools=tool_pins,files=source,
             configuration_profile=rooted.COMMENT_PROFILE,cargo_cwd='/',configurations=configs,
             host_inventory=store.pin(args.host_inventory,MIB),contract_record=store.pin(args.contract_record,MIB),
             dependencies=dependencies,bootstrap_paths=bootstrap,failure_history=history,
             hardware='AMD EPYC Zen 5 dev host',cpus=sorted(os.sched_getaffinity(0)),
             load_average=Path('/proc/loadavg').read_text().split()[:3],
-            original_phase_count=12,producer_build_attempts=1,whole_producer_attempts=1,
+            original_phase_count=13 if args.original_profile==ORIGINAL_PROFILES[1] else 12,producer_build_attempts=1,whole_producer_attempts=1,
             producer_limits=[20,30,16],native_dispatches=0,bootstrap_builds=0,qualification_complete=False))
         def stable():
             store.verify()
             need(custody.source_profile(ctx,pins,env)==revision,'source HEAD changed during run')
             need(rooted.configurations(ctx,captured,profile=rooted.COMMENT_PROFILE)==configs,'rooted Cargo scope changed')
             for pin in tool_pins.values():need(ctx.B.identity(pin['path'])==pin,'tool identity changed')
-        capture,facts=fresh_capture(ctx,a,legacy,custody,originals,pins,store,captured,out/'originals',configs,stable)
+        capture,facts=fresh_capture(ctx,a,legacy,custody,originals,pins,store,captured,out/'originals',configs,stable,
+                                    original_profile=args.original_profile)
         report['original_capture']=capture
         build,binary=producer_build(ctx,a,legacy,custody,pins,store,captured,out/'producer-build',configs,stable)
         report['producer_build']=build

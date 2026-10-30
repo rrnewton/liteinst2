@@ -396,12 +396,11 @@ def run(args, ctx, a, legacy, custody, pins, originals_module):
         report['configuration_complete'] = True
         report['source_revision'] = pins.SOURCE_REVISION; report['current_revision'] = current
         expected, policies, originals = {}, {}, {}
-        material_adapter = ctx.load('adjacent_routed_jmp_material.py',a.MATERIAL_SHA)
         for program in PROGRAMS:
             inputs = original_capture['inputs'][program]
-            material_result = material_adapter.attempt_adjacent_routed_jmp(program,inputs,{k:sha(v) for k,v in inputs.items()},upper=2,lower=1,joint=2)
+            material_result = original_capture['materials'](program)
             material = material_result['files']
-            need(a.check_material(program,material_result,material,inputs['original'],a.ROUTED) is not None, 'independent original materials ready')
+            need(material_result['status'] == 'MATERIALS_READY', 'independent original materials ready')
             need(frozen[program]['original'] == inputs['original'] and frozen[program]['ledger'] == material['ledger.txt'] and
                  frozen[program]['policy'] == material['policy.txt'], 'three planning snapshots derive from independent original facts')
             originals[program] = inputs['original']

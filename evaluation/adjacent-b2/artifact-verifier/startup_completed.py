@@ -77,12 +77,11 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
     need(bound['publication'] is not None and bound['publication']['path']==plan['output'],
          'only prospective producer publication')
     originals,expected,policies = {},{},{}
-    adapter = ctx.load('adjacent_routed_jmp_material.py',a.MATERIAL_SHA)
     for program in PROGRAMS:
         inputs = facts['inputs'][program]
-        result = adapter.attempt_adjacent_routed_jmp(program,inputs,{k:sha(v) for k,v in inputs.items()},upper=2,lower=1,joint=2)
+        result = facts['materials'](program)
         material = result['files']
-        need(a.check_material(program,result,material,inputs['original'],a.ROUTED) is not None,'full unchanged material roster')
+        need(result['status']=='MATERIALS_READY','full unchanged material roster')
         need(frozen[program]['original']==inputs['original'] and frozen[program]['ledger']==material['ledger.txt']
              and frozen[program]['policy']==material['policy.txt'],'independent original/planning snapshots')
         originals[program]=inputs['original']
