@@ -1,5 +1,7 @@
 `ordinary-interval normal-selected-session` accepts caller-selected scalar functions in one independently trusted final DSO. It uses the existing leaf-set loader, preparation, publication, actual CALL/RET worker, controller, journal, history and retirement paths. The selected functions need not implement one of the four built-in application operations. The old `normal-leaf-set-session` command and its output checks are unchanged.
 
+The [public reproduction recipe](BUILD.md) now has a successful release example using the explicit `selected-session-whole-functional-v1` profile: both complete compiled functions, stripped and unstripped DSOs, and all K10/K1000 inputs. Its [eight-cell result](../ordinary-selected-results/whole-d696/README.md) checks 4,052 reference and 4,052 installed calls. The initial certified-profile population described below retains its recorded refusals; selecting `whole` is an explicit planning choice with the existing 5–80-byte bound.
+
 The trusted-input CLI is:
 
 ```
