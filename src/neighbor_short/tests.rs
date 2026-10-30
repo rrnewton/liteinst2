@@ -1382,3 +1382,1032 @@ fn short_engine_defaults_and_long_schedule_are_unchanged() {
         format!("{:?}", BundleBudget::default())
     );
 }
+
+// Inherited ShortOnly T3 controls. Artifact planning and contract checks only;
+// the live wrapper below is exercised only at pre-emission authentication refusal.
+fn ownership_empty(f: &Fixture) -> Composition {
+    Composition::new(
+        f.entries.identity,
+        vec![ExpectedBytes {
+            address: f.base,
+            bytes: f.code.clone(),
+        }],
+    )
+    .unwrap()
+}
+
+fn ownership_policy(f: &Fixture) -> crate::engine::EnginePolicy {
+    crate::engine::EnginePolicy {
+        forced: Some(crate::engine::Tactic::NeighborEviction),
+        neighbor: NeighborSearch {
+            max_pairs: 2,
+            ..f.search()
+        },
+        bundle: BundleBudget {
+            max_steps: 2,
+            max_mappings: 2,
+            max_virtual_bytes: 16384,
+            max_backing_bytes: 16384,
+            max_virtual_span: 1 << 32,
+        },
+        ..Default::default()
+    }
+}
+
+fn ownership_gp_fixture() -> Fixture {
+    let mut f = Fixture::new(2, 6, 124);
+    f.selected = 0;
+    f.victim = 32;
+    f.code = vec![
+        0xff, 0xc0, 0xc3, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0xff,
+        0xc0, 0x2e, 0xb8, 0x37, 0x31, 0x42, 0x53, 0xb8, 1, 1, 1, 1, 0xc3, 0x90, 0x90, 0xff, 0xc0,
+        0x2e, 0xb8, 0x27, 0x31, 0x42, 0x53, 0xb8, 1, 1, 1, 1, 0xc3, 0x90, 0x90, 0x90, 0x90,
+    ];
+    assert_eq!(f.code.len(), 48);
+    f.entries.scope = f.source();
+    f.entries.entries = [
+        0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 22, 27, 28, 29, 30, 32, 38, 43, 44, 45,
+        46, 47,
+    ]
+    .into_iter()
+    .map(|offset| LegalEntry {
+        address: f.base + offset,
+        requires_endbr: false,
+    })
+    .collect();
+    f.selected_policy = policy(f.base + 0x0101_01e2);
+    f.victim_policy = policy(f.base + 0x0600_0080);
+    f
+}
+
+fn ownership_allocation_fixture() -> Fixture {
+    let mut f = Fixture::new(2, 9, 124);
+    for offset in [16, 32] {
+        f.code[offset..offset + 5].copy_from_slice(&[0xb8, 1, 2, 3, 4]);
+        f.entries.entries.retain(|e| {
+            !(f.base + (offset as u64) < e.address && e.address < f.base + (offset as u64) + 5)
+        });
+    }
+    let target = f.base - 0x7000_0000 + 0x3000;
+    f.selected_policy = AllocationPolicy {
+        ranges: vec![range(target, 8192)],
+        preferred_address: Some(target),
+        max_candidates: 2,
+        max_mappings: 1,
+        max_mapped_bytes: 4096,
+    };
+    let victim = f.base + 0x0600_0000;
+    f.victim_policy = AllocationPolicy {
+        ranges: vec![range(victim, 4096)],
+        preferred_address: Some(victim),
+        max_candidates: 1,
+        max_mappings: 1,
+        max_mapped_bytes: 4096,
+    };
+    // Literal fixed-suffix arithmetic, independent of the planner's Relay.
+    let low = f.v() + 10 - 0x7000_0000;
+    assert_eq!(low, 0x41ff_9000_0186);
+    assert!(low <= target && target + 4096 < low + (1 << 24));
+    f
+}
+
+fn ownership_append(prior: &Composition, plan: &ArtifactPlan) -> Composition {
+    let mut next = prior.clone();
+    for step in plan.source_steps() {
+        next.append(step).unwrap();
+    }
+    next
+}
+
+fn ownership_prior(
+    f: &Fixture,
+    prior: &Composition,
+    offset: usize,
+    len: usize,
+    target: u64,
+    tactic: crate::engine::Tactic,
+) -> (Composition, ArtifactPlan) {
+    let allocation = policy(target);
+    let mut request = f.request();
+    request.site.logical_pc = f.base + offset as u64;
+    request.site.block = range(request.site.logical_pc, len);
+    request.site.allocation = &allocation;
+    let plan = crate::engine::plan_with_emission_after(
+        &request,
+        prior,
+        &f.victim_policy,
+        crate::engine::EnginePolicy {
+            forced: Some(tactic),
+            ..ownership_policy(f)
+        },
+    )
+    .unwrap();
+    let next = ownership_append(prior, &plan);
+    (next, plan)
+}
+
+fn ownership_next(
+    f: &Fixture,
+    prior: &Composition,
+    policy: crate::engine::EnginePolicy,
+) -> Result<ArtifactPlan, crate::engine::EngineFailure> {
+    crate::engine::plan_with_emission_after_and_short_t3_ownership(
+        &f.request(),
+        prior,
+        &f.victim_policy,
+        policy,
+    )
+}
+
+fn ownership_details(plan: &ArtifactPlan) -> (&NeighborGeometry, &NeighborMetrics) {
+    let ArtifactMetrics::Engine(
+        crate::engine::Tactic::NeighborEviction,
+        crate::engine::SelectedMetrics::Neighbor(g, m),
+        attempts,
+    ) = plan.metrics()
+    else {
+        panic!("expected actual T3 result")
+    };
+    assert_eq!(attempts.len(), 1);
+    assert_eq!(attempts[0].refusal, None);
+    assert!(attempts[0].outer_refusal.is_none());
+    assert_eq!(attempts[0].search, m.search);
+    let crate::engine::CandidateEvidence::Neighbor(rows) = &attempts[0].candidates else {
+        panic!("expected neighbor evidence")
+    };
+    assert_eq!(rows, &m.attempts);
+    assert!(m.search.accepted);
+    assert!(!m.search.classification_complete);
+    assert!(!plan.qualification_complete());
+    (g, m)
+}
+
+fn ownership_failure(
+    error: &crate::engine::EngineFailure,
+    reason: Refusal,
+) -> (&[NeighborAttempt], &SearchEvidence) {
+    assert_eq!(error.reason, reason);
+    assert_eq!(error.attempts.len(), 1);
+    let a = &error.attempts[0];
+    assert_eq!(a.tactic, crate::engine::Tactic::NeighborEviction);
+    assert_eq!(a.refusal.as_ref(), Some(&reason));
+    assert!(a.outer_refusal.is_none());
+    assert!(!a.search.accepted && !a.search.classification_complete);
+    let crate::engine::CandidateEvidence::Neighbor(rows) = &a.candidates else {
+        panic!("expected neighbor failure evidence")
+    };
+    (rows, &a.search)
+}
+
+fn ownership_row(
+    victim: u64,
+    victim_target: u64,
+    selected: u64,
+    refusal: Option<Refusal>,
+) -> NeighborAttempt {
+    NeighborAttempt {
+        victim,
+        stage: NeighborAttemptStage::Composition,
+        victim_target: Some(victim_target),
+        selected_target: Some(selected),
+        refusal,
+    }
+}
+
+fn ownership_artifact_equal(prior: &Composition, a: &ArtifactPlan, b: &ArtifactPlan) {
+    assert_eq!(a.source_steps(), b.source_steps());
+    assert_eq!(ownership_append(prior, a), ownership_append(prior, b));
+    ownership_images_equal(a, b);
+}
+
+fn ownership_images_equal(a: &ArtifactPlan, b: &ArtifactPlan) {
+    let aa: Vec<_> = a.images().collect();
+    let bb: Vec<_> = b.images().collect();
+    assert_eq!(aa.len(), bb.len());
+    for (a, b) in aa.iter().zip(&bb) {
+        assert_eq!(a.address(), b.address());
+        assert_eq!(a.bytes(), b.bytes());
+        assert_eq!(a.entry_routes(), b.entry_routes());
+        assert_eq!(a.instruction_boundaries(), b.instruction_boundaries());
+        assert_eq!(a.program_counter_mappings(), b.program_counter_mappings());
+        assert_eq!(a.metadata().fields(), b.metadata().fields());
+        assert_eq!(a.metadata().requirements(), b.metadata().requirements());
+        assert!(!a.metadata().qualification_complete() && !b.metadata().qualification_complete());
+    }
+    assert!(!a.qualification_complete() && !b.qualification_complete());
+}
+
+#[test]
+fn short_t3_ownership_real_gp_continues_to_second_victim() {
+    use crate::engine::{self, Tactic};
+    let f = ownership_gp_fixture();
+    let empty = ownership_empty(&f);
+    let (prior, gp) = ownership_prior(
+        &f,
+        &empty,
+        30,
+        2,
+        f.base + 0x27b8_2e23,
+        Tactic::GeneralizedPun,
+    );
+    assert!(matches!(
+        gp.source_steps()[0].parts().kind,
+        PlanKind::GeneralizedPun(_)
+    ));
+    assert_eq!(&prior.final_bytes()[0].bytes[32..38], &f.code[32..38]);
+    assert!(prior.locks().iter().any(|r| r.covers(range(f.v(), 3))));
+    let saved = prior.clone();
+    let p = crate::engine::EnginePolicy {
+        neighbor: NeighborSearch {
+            forced_victim: None,
+            max_victims: 2,
+            max_pairs: 2,
+        },
+        ..ownership_policy(&f)
+    };
+    let old = engine::plan_with_emission_after_and_short_neighbors(
+        &f.request(),
+        &prior,
+        &f.victim_policy,
+        p,
+    )
+    .unwrap();
+    assert_eq!(ownership_details(&old).0.victim, f.v());
+    let mut refused = prior.clone();
+    assert_eq!(
+        refused.append(&old.source_steps()[0]),
+        Err(Refusal::OwnershipConflict)
+    );
+    assert_eq!(refused, saved);
+    let next = ownership_next(&f, &prior, p).unwrap();
+    let (g, m) = ownership_details(&next);
+    assert_eq!(
+        (g.victim, g.selected_target, g.victim_target),
+        (f.base + 16, f.base + 0x0101_01d2, f.base + 0x0600_0080)
+    );
+    assert_eq!((m.victims_examined, m.pairs_examined), (2, 2));
+    assert_eq!(
+        m.attempts,
+        [
+            ownership_row(
+                f.v(),
+                g.victim_target,
+                f.base + 0x0101_01e2,
+                Some(Refusal::OwnershipConflict)
+            ),
+            ownership_row(f.base + 16, g.victim_target, g.selected_target, None),
+        ]
+    );
+    assert_eq!(
+        m.search.runs.iter().map(|r| r.examined).collect::<Vec<_>>(),
+        [2, 2, 1, 1, 1, 1]
+    );
+    assert_eq!(
+        ownership_append(&prior, &next).originals(),
+        empty.originals()
+    );
+    assert_eq!(prior, saved);
+    let mut forced = p;
+    forced.neighbor.forced_victim = Some(f.v());
+    ownership_failure(
+        &ownership_next(&f, &prior, forced).unwrap_err(),
+        Refusal::OwnershipConflict,
+    );
+    forced.neighbor.forced_victim = Some(f.base + 16);
+    let direct = ownership_next(&f, &prior, forced).unwrap();
+    ownership_artifact_equal(&prior, &next, &direct);
+    assert_eq!(prior, saved);
+    let (both, _) = ownership_prior(
+        &f,
+        &prior,
+        14,
+        2,
+        f.base + 0x37b8_2e13,
+        Tactic::GeneralizedPun,
+    );
+    let both_saved = both.clone();
+    let error = ownership_next(&f, &both, p).unwrap_err();
+    let (rows, search) = ownership_failure(&error, Refusal::OwnershipConflict);
+    assert_eq!(
+        rows,
+        [
+            ownership_row(
+                f.v(),
+                g.victim_target,
+                f.base + 0x0101_01e2,
+                Some(Refusal::OwnershipConflict)
+            ),
+            ownership_row(
+                f.base + 16,
+                g.victim_target,
+                f.base + 0x0101_01d2,
+                Some(Refusal::OwnershipConflict)
+            ),
+        ]
+    );
+    assert_eq!(search.runs[0].stop, SearchStop::DomainComplete);
+    assert_eq!(search.runs[1].stop, SearchStop::UnclassifiedBoundedStop);
+    assert_eq!(search.runs[1].examined, 2);
+    assert_eq!(both, both_saved);
+}
+
+#[test]
+fn short_t3_ownership_real_allocations_continue_after_partial_append() {
+    use crate::engine::{self, Tactic};
+    let mut f = ownership_allocation_fixture();
+    let t0 = f.selected_policy.preferred_address.unwrap();
+    let t1 = t0 + 4096;
+    let empty = ownership_empty(&f);
+    let (prior, first) = ownership_prior(&f, &empty, 16, 5, t0, Tactic::Relocation);
+    assert_eq!(
+        first.source_steps()[0].parts().allocations[0].range,
+        range(t0, 4096)
+    );
+    let saved = prior.clone();
+    let p = ownership_policy(&f);
+    let old = engine::plan_with_emission_after_and_short_neighbors(
+        &f.request(),
+        &prior,
+        &f.victim_policy,
+        p,
+    )
+    .unwrap();
+    assert_eq!(ownership_details(&old).0.selected_target, t0);
+    assert_eq!(old.source_steps().len(), 2);
+    assert_eq!(old.source_steps()[0].parts().physical_pc, f.v());
+    assert_eq!(old.source_steps()[1].parts().physical_pc, f.s());
+    let mut partial = prior.clone();
+    partial.append(&old.source_steps()[0]).unwrap();
+    let first_appended = partial.clone();
+    assert_ne!(partial, prior);
+    assert_eq!(
+        partial.append(&old.source_steps()[1]),
+        Err(Refusal::OwnershipConflict)
+    );
+    assert_eq!(partial, first_appended);
+    assert_eq!(prior, saved);
+    let next = ownership_next(&f, &prior, p).unwrap();
+    let (g, m) = ownership_details(&next);
+    assert_eq!(g.selected_target, t1);
+    assert_eq!((m.victims_examined, m.pairs_examined), (1, 2));
+    assert_eq!(
+        m.attempts,
+        [
+            ownership_row(f.v(), g.victim_target, t0, Some(Refusal::OwnershipConflict)),
+            ownership_row(f.v(), g.victim_target, t1, None),
+        ]
+    );
+    assert_eq!(
+        m.search.runs.iter().map(|r| r.examined).collect::<Vec<_>>(),
+        [1, 2, 1, 2]
+    );
+    assert!(m.search.runs.iter().all(|r| r.stop == SearchStop::Accepted));
+    let committed = ownership_append(&prior, &next);
+    assert_eq!(committed.originals(), empty.originals());
+    assert_eq!(
+        &committed.final_bytes()[0].bytes[16..21],
+        &prior.final_bytes()[0].bytes[16..21]
+    );
+    assert_eq!(prior, saved);
+    // Reference at the admitted address uses the unchanged short wrapper.
+    f.selected_policy.ranges = vec![range(t1, 4096)];
+    f.selected_policy.preferred_address = Some(t1);
+    f.selected_policy.max_candidates = 1;
+    let reference = engine::plan_with_emission_after_and_short_neighbors(
+        &f.request(),
+        &prior,
+        &f.victim_policy,
+        p,
+    )
+    .unwrap();
+    ownership_artifact_equal(&prior, &next, &reference);
+    f.selected_policy.ranges = vec![range(t0, 8192)];
+    f.selected_policy.preferred_address = Some(t0);
+    f.selected_policy.max_candidates = 2;
+    let (both, second) = ownership_prior(&f, &prior, 32, 5, t1, Tactic::Relocation);
+    assert_eq!(
+        second.source_steps()[0].parts().allocations[0].range,
+        range(t1, 4096)
+    );
+    let saved = both.clone();
+    let error = ownership_next(&f, &both, p).unwrap_err();
+    let (rows, search) = ownership_failure(&error, Refusal::OwnershipConflict);
+    assert_eq!(rows.len(), 2);
+    assert_eq!(
+        rows.iter().map(|r| r.selected_target).collect::<Vec<_>>(),
+        [Some(t0), Some(t1)]
+    );
+    assert!(
+        rows.iter()
+            .all(|r| r.stage == NeighborAttemptStage::Composition
+                && r.refusal == Some(Refusal::OwnershipConflict))
+    );
+    assert_eq!(search.runs[0].stop, SearchStop::DomainComplete);
+    assert_eq!(search.runs[1].stop, SearchStop::UnclassifiedBoundedStop);
+    assert_eq!(search.runs[3].stop, SearchStop::DomainComplete);
+    assert_eq!(both, saved);
+}
+
+#[test]
+fn short_t3_ownership_caps_and_evidence_are_not_restarted() {
+    use crate::engine::{self, Tactic};
+    let f = ownership_gp_fixture();
+    let (prior, _) = ownership_prior(
+        &f,
+        &ownership_empty(&f),
+        30,
+        2,
+        f.base + 0x27b8_2e23,
+        Tactic::GeneralizedPun,
+    );
+    let p = crate::engine::EnginePolicy {
+        neighbor: NeighborSearch {
+            forced_victim: None,
+            max_victims: 2,
+            max_pairs: 1,
+        },
+        ..ownership_policy(&f)
+    };
+    let error = ownership_next(&f, &prior, p).unwrap_err();
+    let (rows, s) = ownership_failure(&error, Refusal::OwnershipConflict);
+    assert_eq!(
+        rows,
+        [ownership_row(
+            f.v(),
+            f.base + 0x0600_0080,
+            f.base + 0x0101_01e2,
+            Some(Refusal::OwnershipConflict)
+        )]
+    );
+    assert_eq!(
+        s.runs
+            .iter()
+            .map(|r| (r.domain, r.examined))
+            .collect::<Vec<_>>(),
+        [
+            (SearchDomain::Victims, 2),
+            (SearchDomain::JointPairs, 1),
+            (SearchDomain::VictimImages, 1),
+            (SearchDomain::SelectedImages, 1),
+            (SearchDomain::VictimImages, 1),
+            (SearchDomain::SelectedImages, 0),
+        ]
+    );
+    assert_eq!(
+        s.runs.iter().map(|r| r.stop).collect::<Vec<_>>(),
+        [
+            SearchStop::Interrupted,
+            SearchStop::BudgetLimited {
+                remaining_at_least: 1
+            },
+            SearchStop::BudgetLimited {
+                remaining_at_least: 1
+            },
+            SearchStop::DomainComplete,
+            SearchStop::Interrupted,
+            SearchStop::Interrupted,
+        ]
+    );
+    assert_eq!(s.runs[4].scope.physical_pc, Some(f.base + 16));
+    assert!(s.runs[5].candidates.is_none());
+    let mut capped = p;
+    capped.neighbor.max_pairs = 2;
+    capped.neighbor.max_victims = 1;
+    let error = ownership_next(&f, &prior, capped).unwrap_err();
+    let (rows, s) = ownership_failure(&error, Refusal::OwnershipConflict);
+    assert_eq!(rows.len(), 1);
+    assert_eq!(s.runs[0].examined, 1);
+    assert_eq!(
+        s.runs[0].stop,
+        SearchStop::BudgetLimited {
+            remaining_at_least: 1
+        }
+    );
+    let mut positive = p;
+    positive.neighbor.max_pairs = 2;
+    assert_eq!(
+        ownership_details(&ownership_next(&f, &prior, positive).unwrap())
+            .0
+            .victim,
+        f.base + 16
+    );
+
+    let mut f = ownership_allocation_fixture();
+    let t0 = f.selected_policy.preferred_address.unwrap();
+    let (prior, _) = ownership_prior(&f, &ownership_empty(&f), 16, 5, t0, Tactic::Relocation);
+    let saved = prior.clone();
+    let mut capped = ownership_policy(&f);
+    capped.neighbor.max_pairs = 1;
+    let error = ownership_next(&f, &prior, capped).unwrap_err();
+    let (rows, s) = ownership_failure(&error, Refusal::OwnershipConflict);
+    assert_eq!(rows.len(), 1);
+    assert_eq!(
+        s.runs.iter().map(|r| r.examined).collect::<Vec<_>>(),
+        [1, 1, 1, 1]
+    );
+    assert_eq!(
+        s.runs[1].stop,
+        SearchStop::BudgetLimited {
+            remaining_at_least: 1
+        }
+    );
+    f.selected_policy.max_candidates = 1;
+    let error = ownership_next(&f, &prior, ownership_policy(&f)).unwrap_err();
+    let (rows, s) = ownership_failure(&error, Refusal::OwnershipConflict);
+    assert_eq!(rows.len(), 1);
+    assert!(
+        matches!(&s.runs[3].candidates, Some(CandidateProof::PageBoundary {
+        returned: 1, omitted: Some(t), ..
+    }) if *t == t0 + 4096)
+    );
+    assert_eq!(
+        s.runs[3].stop,
+        SearchStop::BudgetLimited {
+            remaining_at_least: 1
+        }
+    );
+    // A later unavailable victim placement must not erase the earlier joint error.
+    f.victim_policy.max_candidates = 2;
+    let error = ownership_next(&f, &prior, ownership_policy(&f)).unwrap_err();
+    let (rows, _) = ownership_failure(&error, Refusal::OwnershipConflict);
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0].stage, NeighborAttemptStage::Composition);
+    assert_eq!(rows[0].refusal, Some(Refusal::OwnershipConflict));
+    assert_eq!(rows[1].stage, NeighborAttemptStage::VictimPlacement);
+    assert_eq!(rows[1].refusal, Some(Refusal::AllocationUnavailable));
+    assert_eq!(prior, saved);
+    // These are local refusals before inherited admission: their complete old
+    // evidence must survive, rather than become an ownership fallback/retry.
+    for mutation in 0..13 {
+        let mut f = ownership_allocation_fixture();
+        let mut p = ownership_policy(&f);
+        match mutation {
+            0 => p.neighbor.max_victims = 0,
+            1 => p.neighbor.max_pairs = 0,
+            2 => f.selected_policy.max_candidates = 0,
+            3 => f.victim_policy.max_candidates = 0,
+            4 => f.selected_policy.max_mapped_bytes = 4095,
+            5 => p.bundle.max_steps = 1,
+            6 => p.bundle.max_mappings = 1,
+            7 => p.bundle.max_virtual_bytes = 8191,
+            8 => p.bundle.max_backing_bytes = 8191,
+            9 => p.bundle.max_virtual_span = 4096,
+            10 => f.victim_policy.max_mapped_bytes = 4095,
+            11 => f.selected_policy.max_mappings = 0,
+            12 => f.victim_policy.max_mappings = 0,
+            _ => unreachable!(),
+        }
+        let old = engine::plan_with_emission_after_and_short_neighbors(
+            &f.request(),
+            &prior,
+            &f.victim_policy,
+            p,
+        )
+        .unwrap_err();
+        let new = ownership_next(&f, &prior, p).unwrap_err();
+        assert_eq!(old.reason, Refusal::AllocationUnavailable);
+        assert_eq!(new.reason, old.reason);
+        assert_eq!(format!("{:?}", new.attempts), format!("{:?}", old.attempts));
+        assert_eq!(new.attempts.len(), 1);
+        assert_eq!(prior, saved);
+    }
+}
+
+#[test]
+fn short_t3_ownership_original_and_overlay_identity_are_independent() {
+    use crate::engine::Tactic;
+    let mut f = Fixture::new(2, 6, -6);
+    f.code[16..21].copy_from_slice(&[0xb8, 1, 2, 3, 4]);
+    f.entries
+        .entries
+        .retain(|e| !(f.base + 16 < e.address && e.address < f.base + 21));
+    let empty = ownership_empty(&f);
+    let (prior, _) = ownership_prior(&f, &empty, 16, 5, f.base + 0x2000_0080, Tactic::Relocation);
+    let saved = prior.clone();
+    let p = ownership_policy(&f);
+    let next = ownership_next(&f, &prior, p).unwrap();
+    assert_eq!(next.source_steps()[0].parts().reads, prior.final_bytes());
+    assert_ne!(prior.final_bytes(), prior.originals());
+    let complete = ownership_append(&prior, &next);
+    assert_eq!(
+        &complete.final_bytes()[0].bytes[16..21],
+        &prior.final_bytes()[0].bytes[16..21]
+    );
+    assert_eq!(
+        &complete.final_bytes()[0].bytes[f.selected..f.selected + 2],
+        &[0xeb, 0xfd]
+    );
+    assert_eq!(prior, saved);
+    for mutation in 0..3 {
+        let mut request = f.request();
+        let mut bytes = f.code.clone();
+        match mutation {
+            0 => request.site.identity.generation += 1,
+            1 => {
+                bytes[0] ^= 1;
+                request.site.code = &bytes;
+            }
+            2 => request.site.code = &prior.final_bytes()[0].bytes,
+            _ => unreachable!(),
+        }
+        let error = crate::engine::plan_with_emission_after_and_short_t3_ownership(
+            &request,
+            &prior,
+            &f.victim_policy,
+            p,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.reason,
+            if mutation == 0 {
+                Refusal::StaleGeneration
+            } else {
+                Refusal::ExpectedBytesChanged
+            }
+        );
+        assert!(error.attempts.is_empty());
+        assert_eq!(prior, saved);
+    }
+    let gap = Composition::new(
+        f.entries.identity,
+        vec![
+            ExpectedBytes {
+                address: f.base,
+                bytes: f.code[..64].to_vec(),
+            },
+            ExpectedBytes {
+                address: f.base + 65,
+                bytes: f.code[65..].to_vec(),
+            },
+        ],
+    )
+    .unwrap();
+    let error = ownership_next(&f, &gap, p).unwrap_err();
+    assert_eq!(error.reason, Refusal::DependencyNotHeld);
+    assert!(error.attempts.is_empty());
+    // The selected operation is the first member in this overlap fixture.
+    let plain = f.plan();
+    assert_eq!(plain.source_steps()[0].parts().physical_pc, f.s());
+    let mut changed_selected = empty.clone();
+    changed_selected.append(&plain.source_steps()[0]).unwrap();
+    let (changed_victim, _) = ownership_prior(
+        &f,
+        &empty,
+        f.victim,
+        f.victim_len,
+        f.base + 0x2200_0080,
+        Tactic::Relocation,
+    );
+    for changed in [&changed_selected, &changed_victim] {
+        let saved = (*changed).clone();
+        for semantics in [HookSemantics::Observe, HookSemantics::ReplaceFirst] {
+            let mut request = f.request();
+            request.site.semantics = semantics;
+            let error = crate::engine::plan_with_emission_after_and_short_t3_ownership(
+                &request,
+                changed,
+                &f.victim_policy,
+                p,
+            )
+            .unwrap_err();
+            ownership_failure(&error, Refusal::ExpectedBytesChanged);
+            assert_eq!(*changed, saved);
+        }
+    }
+}
+
+// A structurally checked metadata reservation isolates actual Composition site
+// and byte-lock rules. It is never an emitted/publication/native witness.
+fn ownership_reservation(
+    f: &Fixture,
+    prior: &Composition,
+    template: &PatchPlan,
+    site: u64,
+    byte: Option<u64>,
+) -> Composition {
+    let mut parts = template.parts().clone();
+    parts.kind = PlanKind::Relocation;
+    parts.logical_pc = site;
+    parts.physical_pc = site;
+    parts.displaced = range(site, 1);
+    parts.obligations = vec![EntryObligation::Preserved(site)];
+    parts.reads = prior.final_bytes().to_vec();
+    parts.generated.clear();
+    parts.allocations.clear();
+    parts.writes = byte
+        .into_iter()
+        .map(|at| ByteEdit {
+            address: at,
+            bytes: vec![prior.final_bytes()[0].bytes[(at - f.base) as usize]],
+        })
+        .collect();
+    let reservation = PatchPlan::checked(parts).unwrap();
+    let mut next = prior.clone();
+    next.append(&reservation).unwrap();
+    assert_eq!(next.final_bytes(), prior.final_bytes());
+    next
+}
+
+#[test]
+fn short_t3_ownership_exact_current_suffix_and_identical_locks() {
+    use crate::engine::Tactic;
+    let mut f = ownership_allocation_fixture();
+    // Original successor is one MOV, independently relocated by a real plan.
+    let at = f.victim + f.victim_len;
+    f.code[at..at + 5].copy_from_slice(&[0xb8, 1, 2, 3, 4]);
+    f.code[at + 5] = 0xc3;
+    f.entries
+        .entries
+        .retain(|e| !(f.base + (at as u64) < e.address && e.address < f.base + (at as u64) + 5));
+    let empty = ownership_empty(&f);
+    let (prior, _) = ownership_prior(&f, &empty, at, 5, f.base + 0x2400_0080, Tactic::Relocation);
+    assert_eq!(prior.final_bytes()[0].bytes[at], 0xe9);
+    assert_eq!(f.code[at], 0xb8);
+    // L9 contributes three free low bytes. Only the ACTUAL current E9 byte is
+    // fixed, so the new signed window is [V+10-0x17000000, +2^24).
+    let low = f.v() + 10 - 0x1700_0000;
+    let target = (low + 4095) & !4095;
+    f.selected_policy = AllocationPolicy {
+        ranges: vec![range(target, 4096)],
+        preferred_address: Some(target),
+        max_candidates: 1,
+        max_mappings: 1,
+        max_mapped_bytes: 4096,
+    };
+    let saved = prior.clone();
+    let next = ownership_next(&f, &prior, ownership_policy(&f)).unwrap();
+    assert_eq!(ownership_details(&next).0.selected_target, target);
+    let joined = ownership_append(&prior, &next);
+    assert_eq!(
+        &joined.final_bytes()[0].bytes[at..at + 5],
+        &prior.final_bytes()[0].bytes[at..at + 5]
+    );
+    assert_eq!(prior, saved);
+    // Permits for the original B8 suffix must not authorize the current E9.
+    let old_target = ((f.v() + 10 - 0x4800_0000) + 4095) & !4095;
+    f.selected_policy.ranges = vec![range(old_target, 4096)];
+    f.selected_policy.preferred_address = Some(old_target);
+    ownership_failure(
+        &ownership_next(&f, &prior, ownership_policy(&f)).unwrap_err(),
+        Refusal::AllocationUnavailable,
+    );
+
+    let f = ownership_allocation_fixture();
+    let empty = ownership_empty(&f);
+    let plain = ownership_next(&f, &empty, ownership_policy(&f)).unwrap();
+    let locked = ownership_reservation(
+        &f,
+        &empty,
+        &plain.source_steps()[0],
+        f.base + 64,
+        Some(f.v() + 9),
+    );
+    assert!(locked.locks().iter().any(|r| r.contains(f.v() + 9)));
+    let saved = locked.clone();
+    let next = ownership_next(&f, &locked, ownership_policy(&f)).unwrap();
+    // An overlapping inherited lock holding exactly the preserved suffix value
+    // is admissible; rejecting all overlaps would change Composition semantics.
+    ownership_artifact_equal(&locked, &next, &plain);
+    assert_eq!(
+        ownership_append(&locked, &next).final_bytes()[0].bytes[f.victim + 9],
+        0x90
+    );
+    assert_eq!(locked, saved);
+}
+
+#[test]
+fn short_t3_ownership_duplicate_sites_and_byte_locks_refuse() {
+    let f = ownership_allocation_fixture();
+    let empty = ownership_empty(&f);
+    let plain = ownership_next(&f, &empty, ownership_policy(&f)).unwrap();
+    for (site, byte) in [
+        (f.s(), None),
+        (f.v(), None),
+        (f.base + 64, Some(f.s())),
+        (f.base + 64, Some(f.v())),
+    ] {
+        let prior = ownership_reservation(&f, &empty, &plain.source_steps()[0], site, byte);
+        let saved = prior.clone();
+        let old = crate::engine::plan_with_emission_after_and_short_neighbors(
+            &f.request(),
+            &prior,
+            &f.victim_policy,
+            ownership_policy(&f),
+        )
+        .unwrap();
+        let mut scratch = prior.clone();
+        let failed_step = if site == f.s() || byte == Some(f.s()) {
+            scratch.append(&old.source_steps()[0]).unwrap();
+            1
+        } else {
+            0
+        };
+        let before_failed_step = scratch.clone();
+        assert_eq!(
+            scratch.append(&old.source_steps()[failed_step]),
+            Err(Refusal::OwnershipConflict)
+        );
+        assert_eq!(scratch, before_failed_step);
+        let error = ownership_next(&f, &prior, ownership_policy(&f)).unwrap_err();
+        let (rows, search) = ownership_failure(&error, Refusal::OwnershipConflict);
+        assert_eq!(rows.len(), 2);
+        assert!(
+            rows.iter()
+                .all(|r| r.stage == NeighborAttemptStage::Composition
+                    && r.refusal == Some(Refusal::OwnershipConflict))
+        );
+        assert_eq!(search.runs[1].examined, 2);
+        assert_eq!(prior, saved);
+    }
+}
+
+#[test]
+fn short_t3_ownership_first_four_and_legacy_paths_are_unchanged() {
+    use crate::engine::{self, Tactic};
+    let mut f = Fixture::new(2, 6, 124);
+    f.code[f.selected..f.selected + 4].copy_from_slice(&[0x75, 1, 0x90, 0xc3]);
+    let empty = ownership_empty(&f);
+    for (tactic, reason) in [
+        (Tactic::GeneralizedPun, Refusal::AllocationUnavailable),
+        (Tactic::Relocation, Refusal::NoPatchWindow),
+        (Tactic::PrefixedPun, Refusal::AllocationUnavailable),
+        (Tactic::SuccessorEviction, Refusal::NoPatchWindow),
+    ] {
+        let p = crate::engine::EnginePolicy {
+            forced: Some(tactic),
+            ..ownership_policy(&f)
+        };
+        let old = engine::plan_with_emission_after_and_short_neighbors(
+            &f.request(),
+            &empty,
+            &f.victim_policy,
+            p,
+        )
+        .unwrap_err();
+        let new = ownership_next(&f, &empty, p).unwrap_err();
+        assert_eq!(old.reason, reason);
+        assert_eq!(new.reason, reason);
+        assert_eq!(format!("{:?}", old.attempts), format!("{:?}", new.attempts));
+        assert_eq!(new.attempts.len(), 1);
+    }
+    let p = crate::engine::EnginePolicy {
+        forced: None,
+        ..ownership_policy(&f)
+    };
+    let old = engine::plan_with_emission_after_and_short_neighbors(
+        &f.request(),
+        &empty,
+        &f.victim_policy,
+        p,
+    )
+    .unwrap();
+    let new = ownership_next(&f, &empty, p).unwrap();
+    ownership_artifact_equal(&empty, &new, &old);
+    assert_eq!(
+        format!("{:?}", new.metrics()),
+        format!("{:?}", old.metrics())
+    );
+    let ArtifactMetrics::Engine(Tactic::NeighborEviction, _, attempts) = new.metrics() else {
+        panic!("required fifth-arm success")
+    };
+    assert_eq!(
+        attempts.iter().map(|a| a.tactic).collect::<Vec<_>>(),
+        [
+            Tactic::GeneralizedPun,
+            Tactic::Relocation,
+            Tactic::PrefixedPun,
+            Tactic::SuccessorEviction,
+            Tactic::NeighborEviction,
+        ]
+    );
+    // A real inherited allocation conflict in preferred GP remains the caller's
+    // responsibility: the new T3-only option must not restart after GP succeeds.
+    let mut f = Fixture::new(2, 6, 124);
+    f.code[16..21].copy_from_slice(&[0xb8, 1, 2, 3, 4]);
+    f.entries
+        .entries
+        .retain(|e| !(f.base + 16 < e.address && e.address < f.base + 21));
+    let gp = u64::try_from(
+        i128::from(f.s() + 5) + i128::from(i32::from_le_bytes([0, 0xc3, 0x90, 0x90])),
+    )
+    .unwrap();
+    f.selected_policy.ranges.push(range(gp & !4095, 8192));
+    f.selected_policy.preferred_address = Some(gp);
+    let (prior, _) = ownership_prior(&f, &ownership_empty(&f), 16, 5, gp, Tactic::Relocation);
+    let saved = prior.clone();
+    let p = crate::engine::EnginePolicy {
+        forced: None,
+        ..ownership_policy(&f)
+    };
+    let old = engine::plan_with_emission_after_and_short_neighbors(
+        &f.request(),
+        &prior,
+        &f.victim_policy,
+        p,
+    )
+    .unwrap();
+    let new = ownership_next(&f, &prior, p).unwrap();
+    assert_eq!(new.source_steps(), old.source_steps());
+    ownership_images_equal(&new, &old);
+    assert_eq!(
+        format!("{:?}", new.metrics()),
+        format!("{:?}", old.metrics())
+    );
+    let ArtifactMetrics::Engine(Tactic::GeneralizedPun, _, attempts) = new.metrics() else {
+        panic!("required GP success")
+    };
+    assert_eq!(attempts.len(), 1);
+    let mut scratch = prior.clone();
+    assert_eq!(
+        scratch.append(&new.source_steps()[0]),
+        Err(Refusal::OwnershipConflict)
+    );
+    assert_eq!(scratch, saved);
+    assert_eq!(prior, saved);
+    for len in 10..=15 {
+        let mut f = Fixture::new(2, 9, -131);
+        let mut bytes = vec![0x2e; len - 10];
+        bytes.extend_from_slice(&[0x48, 0xb8, 1, 2, 3, 4, 5, 6, 7, 8]);
+        f.code[f.victim..f.victim + len].copy_from_slice(&bytes);
+        let v = f.v();
+        f.entries
+            .entries
+            .retain(|e| !(v < e.address && e.address < v + len as u64));
+        let empty = ownership_empty(&f);
+        let p = ownership_policy(&f);
+        let old =
+            engine::plan_with_emission_after(&f.request(), &empty, &f.victim_policy, p).unwrap();
+        assert_eq!(ownership_details(&old).0.victim_len, len);
+        ownership_failure(
+            &ownership_next(&f, &empty, p).unwrap_err(),
+            Refusal::NoPatchWindow,
+        );
+    }
+}
+
+#[test]
+fn short_t3_ownership_live_and_artifact_preflight_refuse_before_emission() {
+    unsafe extern "C" fn never_called(_: *mut crate::trampoline::HookContext) {
+        unreachable!("authentication refusals must precede emission/callback use");
+    }
+    let f = ownership_allocation_fixture();
+    let empty = ownership_empty(&f);
+    let gap = Composition::new(
+        f.entries.identity,
+        vec![ExpectedBytes {
+            address: f.base,
+            bytes: f.code[..64].to_vec(),
+        }],
+    )
+    .unwrap();
+    for mutation in 0..3 {
+        let prior = if mutation == 2 { &gap } else { &empty };
+        let saved = (*prior).clone();
+        let mut bytes = f.code.clone();
+        if mutation == 1 {
+            bytes[0] ^= 1;
+        }
+        let mut a = f.request();
+        a.site.code = &bytes;
+        if mutation == 0 {
+            a.site.identity.generation += 1;
+        }
+        let live = crate::quiescent::InstallRequest {
+            identity: a.site.identity,
+            code: a.site.code,
+            base_address: a.site.base_address,
+            function: a.site.function,
+            block: a.site.block,
+            logical_pc: a.site.logical_pc,
+            entries: a.site.entries,
+            hook: never_called,
+            semantics: a.site.semantics,
+            allocation: a.site.allocation,
+            search: a.site.search,
+        };
+        let a = crate::engine::plan_with_emission_after_and_short_t3_ownership(
+            &a,
+            prior,
+            &f.victim_policy,
+            ownership_policy(&f),
+        )
+        .unwrap_err();
+        let l = crate::engine::plan_after_and_short_t3_ownership(
+            &live,
+            prior,
+            &f.victim_policy,
+            ownership_policy(&f),
+        )
+        .unwrap_err();
+        let reason = match mutation {
+            0 => Refusal::StaleGeneration,
+            1 => Refusal::ExpectedBytesChanged,
+            2 => Refusal::DependencyNotHeld,
+            _ => unreachable!(),
+        };
+        assert_eq!(a.reason, reason);
+        assert_eq!(l.reason, reason);
+        assert!(a.attempts.is_empty() && l.attempts.is_empty());
+        assert_eq!(*prior, saved);
+    }
+}

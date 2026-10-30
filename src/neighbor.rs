@@ -5,6 +5,7 @@
 //! both immutable images and every source dependency are published as a bundle.
 
 use crate::bundle::{BundleBudget, PlannedBundle};
+use crate::composition::Composition;
 use crate::contracts::*;
 use crate::emission::{ArtifactMetrics, ArtifactPlan, ArtifactRequest, PlanningRequest};
 use crate::eviction::{
@@ -221,12 +222,47 @@ pub(crate) fn plan_neighbor_short_core(
     plan_neighbor_mode(request, victim_allocation, search, budget, true)
 }
 
+pub(crate) fn plan_neighbor_short_after_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_inherited(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        true,
+        Some(predecessor),
+    )
+}
+
 fn plan_neighbor_mode(
     request: &PlanningRequest<'_>,
     victim_allocation: &AllocationPolicy,
     search: NeighborSearch,
     budget: BundleBudget,
     short_victims: bool,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_inherited(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        short_victims,
+        None,
+    )
+}
+
+fn plan_neighbor_mode_with_inherited(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    short_victims: bool,
+    inherited: Option<&Composition>,
 ) -> Result<PlannedNeighbor, NeighborFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
@@ -509,6 +545,17 @@ fn plan_neighbor_mode(
                         budget,
                         short_relay.as_ref(),
                     );
+                    // Inherited refusal consumes this already charged pair. Check
+                    // every step before recording success, without mutating prior state.
+                    let composed = composed.and_then(|bundle| {
+                        if let Some(predecessor) = inherited {
+                            let mut current = predecessor.clone();
+                            for step in bundle.plan().steps() {
+                                current.append(step)?;
+                            }
+                        }
+                        Ok(bundle)
+                    });
                     attempts.push(NeighborAttempt {
                         victim: victim.address(),
                         stage: NeighborAttemptStage::Composition,

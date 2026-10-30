@@ -265,6 +265,80 @@ pub fn plan_with_emission_after_and_short_neighbors(
     .map(artifact_plan)
 }
 
+/// Short-only neighboring-instruction eviction with inherited T3 admission.
+///
+/// The predecessor authenticates the request's complete immutable original
+/// source and supplies its current overlay. Original instruction identity stays
+/// separate from current read expectations. Each complete short-neighbor pair
+/// must append, in order, to a fresh predecessor clone before selection; a
+/// refusal continues within the same victim, image and pair limits.
+///
+/// Generalized pun, ordinary relocation, prefixed pun and successor eviction
+/// keep their order, bounds and first local success. Those four tactics do not
+/// preflight inherited ownership and may still fail the caller's later append;
+/// that refusal does not retry neighboring-instruction eviction. Only the
+/// explicit 6..=9-byte neighboring-instruction family uses inherited admission.
+///
+/// This does not mutate the predecessor, reserve executable memory or publish
+/// source bytes. The caller must append every returned step transactionally and
+/// retain the existing entry, hook, lease, aggregate-budget, publication and
+/// retirement checks. The complete ten-byte victim fetch remains required.
+pub fn plan_after_and_short_t3_ownership(
+    request: &InstallRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<EnginePlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(request.identity, request.base_address, request.code)
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    let original = PlanningRequest::live(request);
+    plan_core_family_with_inherited(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        true,
+        Some(predecessor),
+    )
+}
+
+/// Symbolic counterpart of [`plan_after_and_short_t3_ownership`].
+///
+/// Only complete short neighboring-instruction eviction pairs preflight against
+/// inherited ownership. Generalized pun, ordinary relocation, prefixed pun and
+/// successor eviction keep their first local success and may still refuse the
+/// caller's final append. The caller retains all aggregate and publication
+/// obligations; artifact plans gain no live publication authority or conversion.
+pub fn plan_with_emission_after_and_short_t3_ownership(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family_with_inherited(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        true,
+        Some(predecessor),
+    )
+    .map(artifact_plan)
+}
+
 // Explicit artifact-only continuation; all existing engine entry points stay literal.
 #[path = "engine_foreign.rs"]
 mod foreign;
@@ -294,6 +368,16 @@ fn plan_core_family(
     victim_allocation: &AllocationPolicy,
     policy: EnginePolicy,
     short_only: bool,
+) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family_with_inherited(request, victim_allocation, policy, short_only, None)
+}
+
+fn plan_core_family_with_inherited(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    short_only: bool,
+    inherited: Option<&Composition>,
 ) -> Result<EnginePlan, EngineFailure> {
     const ORDER: [Tactic; 5] = [
         Tactic::GeneralizedPun,
@@ -370,12 +454,21 @@ fn plan_core_family(
                 }
             }
             Tactic::NeighborEviction => match if short_only {
-                neighbor::plan_neighbor_short_core(
-                    request,
-                    victim_allocation,
-                    policy.neighbor,
-                    policy.bundle,
-                )
+                match inherited {
+                    Some(predecessor) => neighbor::plan_neighbor_short_after_core(
+                        request,
+                        predecessor,
+                        victim_allocation,
+                        policy.neighbor,
+                        policy.bundle,
+                    ),
+                    None => neighbor::plan_neighbor_short_core(
+                        request,
+                        victim_allocation,
+                        policy.neighbor,
+                        policy.bundle,
+                    ),
+                }
             } else {
                 neighbor::plan_neighbor_core(
                     request,
