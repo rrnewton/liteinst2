@@ -281,8 +281,18 @@ def generate(kind, output, manifest):
                 need(fact(path) == {k:capture[k] for k in ('bytes','sha256')}, 'actual command capture')
             path=binary(private/(name+'.json'))
             need(CANON(json.loads(path.read_bytes()))==CANON(row), 'exact retained command row')
+    def clean_decoder(phase):
+        # Historical snapshots share one target. Invalidate only this package;
+        # private retained archives/dep-info and dependency artifacts survive.
+        return run('decoder-clean-'+phase, [builder.tools['cargo'], 'clean', '--release',
+            '--package', 'li2-page-selected-decoder', '--manifest-path',
+            directory/'tools/page-entry/selected/decoder/Cargo.toml',
+            '--target-dir', ROOT/'target', '--locked', '--offline'],
+            profile='build', env=builder.environment)
     def build_run(name, argv, profile='metadata', env=None, expected=0):
         before_default(name, argv, builder, pin, r['aliases'], run, r)
+        if name == 'selected-build':
+            clean_decoder('before')
         return run(name, argv, profile=profile, env=env, expected=expected)
     options = dict(extra_decoder_sources=('region.rs',), scalar_span=True, linked_epoch=True) if kind == 'positive' else {}
     builder = Build(r, private, pin, binary, build_run, **options)
@@ -316,6 +326,13 @@ def generate(kind, output, manifest):
     finally:
         try:r['final_errors'].extend(builder.finish())
         except BaseException as exc:r['final_errors'].append('build finalization: '+repr(exc))
+        if any(c['name'] == 'decoder-clean-before' for c in r['commands']):
+            try:clean_decoder('after')
+            except BaseException as exc:r['final_errors'].append('decoder package cleanup: '+repr(exc))
+            # Retention precedes deletion; registry/configuration closure follows
+            # the final Cargo command, including an unsuccessful cleanup attempt.
+            try:r['final_errors'].extend(builder.finish())
+            except BaseException as exc:r['final_errors'].append('post-clean build finalization: '+repr(exc))
         try:
             source_check(directory,spec);stable()
             r['executed_modules'] = modules(directory,spec)
