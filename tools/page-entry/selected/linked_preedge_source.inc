@@ -8,6 +8,8 @@ struct li2_preedge_epoch {
 static struct li2_preedge_epoch preedge_epoch;
 static unsigned preedge_registered;
 int li2_lifecycle_preedge_initialize(void) {
+    /* Keep the real inactive v1 flag addressable for complete private-storage binding. */
+    __asm__ volatile(""::"r"(&linked_registered):"memory");
     if(preedge_registered || preedge_epoch.p.phase || li2_lifecycle_link_interlock() || !hooks.protected_range)return LI2_FETCH_STATE;
     /* The bridge protects its actual full RW/NX PT_LOAD. Independently check
        every metadata byte with the existing strict mutation guard, since its
