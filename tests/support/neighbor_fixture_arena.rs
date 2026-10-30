@@ -95,7 +95,7 @@ impl NeighborFixtureArena {
     // and reserve all collection capacity before changing a live owner.
     fn take(&mut self, address: u64, len: usize) -> Mapping {
         assert!(
-            len != 0 && len % PAGE == 0,
+            len != 0 && len & (PAGE - 1) == 0,
             "invalid neighbor fixture length"
         );
         assert_eq!(
@@ -235,7 +235,7 @@ impl NativeOracle {
         assert!(code.len() < PAGE / 2);
         let mut total = PAGE;
         for &len in lengths {
-            assert!(len != 0 && len % PAGE == 0);
+            assert!(len != 0 && len & (PAGE - 1) == 0);
             total = total
                 .checked_add(len)
                 .expect("fixture mapping length overflow");

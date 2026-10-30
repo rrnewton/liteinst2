@@ -2655,6 +2655,7 @@ pub mod process_text;
 pub mod elf_exec_oracle;
 
 // Private address-space ownership for the same-function short-neighbor cohort.
+#[cfg(test)]
 #[allow(dead_code)]
 #[path = "neighbor_fixture_arena.rs"]
 pub(crate) mod neighbor_fixture_arena;
