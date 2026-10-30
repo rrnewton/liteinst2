@@ -655,6 +655,9 @@ static void lpero_fd_guard(long,const long[6]);
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 static void leto_fd_guard(long,const long[6]);
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+static void lpef_fd_guard(long,const long[6]);
+#endif
 static void dispatch_operation(long n,ucontext_t *context) {
 #ifdef LI2_LINKED_EPOCH
     if(li2_lifecycle_link_interlock() || selected_linked_epoch_active || selected_linked_epoch_busy)
@@ -701,6 +704,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_fd_guard(n,a);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_fd_guard(n,a);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_fd_guard(n,a);
@@ -900,6 +906,13 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #endif
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_ingress(sig);
+    lpef_refault_ingress(sig,si,ptr);
+#ifdef LI2_LINKED_NATIVE_HINT
+    lpef_hint_ingress(sig,si,ptr);
+#endif
+#endif
 #ifdef LI2_NATIVE_PAIR
     li2_native_pair_preentry();
 #endif
@@ -1068,6 +1081,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
         leto_hint_native();
 #endif
         if(!native_admitted)
+#elif defined(LI2_LINKED_PREEDGE_FULL_CAPTURE)
+        int native_admitted=selected_native_fetch(sig,si,ptr);
+        lpef_refault_native();
+        lpef_hint_native();
+        if(!native_admitted)
 #else
         if(!selected_native_fetch(sig,si,ptr))
 #endif
@@ -1089,6 +1107,12 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     leto_refault_end(sig,si,ptr);
 #ifdef LI2_LINKED_NATIVE_HINT
     leto_hint_end(sig,si,ptr);
+#endif
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_refault_end(sig,si,ptr);
+#ifdef LI2_LINKED_NATIVE_HINT
+    lpef_hint_end(sig,si,ptr);
 #endif
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE

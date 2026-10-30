@@ -22,6 +22,9 @@
 #include "linked_epoch_observe.h"
 #endif
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+#include "linked_preedge_full_observe.h"
+#endif
 #include "linked_rseq.h"
 #include "linked_proof.h"
 #ifdef LI2_LINKED_PREEDGE
@@ -402,6 +405,9 @@ static _Noreturn void selected_linked_epoch_abort(unsigned code,long detail) {
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_abort_observe();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_abort_observe();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_abort_observe();
 #endif
@@ -523,6 +529,9 @@ static void selected_linked_epoch_initialize(void) {
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_initialize();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_initialize();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_initialize();
 #endif
@@ -589,6 +598,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
         le_identity() && le_protected(),LE_SOURCE,0);le_tls(&r->before);
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_source();
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_source();
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_source();
@@ -719,6 +731,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_held();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_held();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_held();
 #endif
@@ -743,6 +758,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
     __asm__ volatile("":::"memory");uc->uc_mcontext.gregs[REG_RIP]=(greg_t)le_plan(s)->generated;
     #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_redirected(sig,si,uc);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_redirected(sig,si,uc);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_redirected(sig,si,uc);
@@ -792,11 +810,17 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
         leto_hint_before(sig,si,uc);
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+        lpef_hint_before(sig,si,uc);
+#endif
         r->hint_checked=1;
         r->hint_hit=(unsigned)li2_lifecycle_link_native_hint_choose(
             &r->source,r->transfer.serial,&r->hint_publication);
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
         leto_hint_chosen();
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+        lpef_hint_chosen();
 #endif
         if(!r->hint_hit)return 0;
     }
@@ -813,6 +837,9 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
         le_unchanged(&r->before,si,uc),LE_STATE,23);
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
     leto_refault_before(sig,si,uc);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_refault_before(sig,si,uc);
 #endif
     r->refault_started=1;
     r->refault_result=li2_tf_chain_span_refault(selected_linked_epoch_ticket,r->transfer.serial,sig,si,uc);
@@ -839,6 +866,12 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
     leto_hint_after();
 #endif
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_refault_after(sig,si,uc);
+#ifdef LI2_LINKED_NATIVE_HINT
+    lpef_hint_after();
+#endif
+#endif
     selected_linked_epoch_ticket=0;selected_initialized();
     /* No page is executable and no event metadata is manufactured. Returning
        the unchanged closed TRACE frame causes the original instruction fetch
@@ -857,6 +890,9 @@ static int selected_linked_epoch_trace_try(int sig,siginfo_t *si,ucontext_t *uc)
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_begin();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_begin();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_begin();
 #endif
@@ -874,6 +910,9 @@ static int selected_linked_epoch_trace_try(int sig,siginfo_t *si,ucontext_t *uc)
     r->close_complete=1;le_count(&selected_linked_epoch.closed);
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_closed();
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_closed();
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_closed();
@@ -909,6 +948,9 @@ static int selected_linked_epoch_trace_try(int sig,siginfo_t *si,ucontext_t *uc)
         le_unchanged(&r->before,si,uc),LE_STATE,21);
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
     leto_refault_before_release(sig,si,uc);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_refault_before_release(sig,si,uc);
 #endif
     r->miss_release_started=1;
     r->miss_release_result=li2_lifecycle_fetch_release(&selected_borrow);
@@ -995,6 +1037,9 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_before_close();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_before_close();
+#endif
 #ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
     lpero_before_close();
 #endif
@@ -1033,6 +1078,9 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_complete();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_complete();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_complete();
 #endif
@@ -1044,6 +1092,9 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 static void selected_linked_epoch_report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_finish(status,code,detail);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_finish(status,code,detail);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_finish(status,code,detail);
@@ -1150,6 +1201,9 @@ _Static_assert(114*21+1552<=sizeof(((struct writer *)0)->bytes),"bounded linked-
 #else
 #include "linked_epoch_observe.inc"
 #endif
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+#include "linked_preedge_full_observe.inc"
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
 #include "linked_preedge_observe.inc"

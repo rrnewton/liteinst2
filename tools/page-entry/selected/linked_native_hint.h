@@ -40,7 +40,7 @@ int li2_lifecycle_link_native_hint_choose(const struct li2_span_source *,uint64_
    admission, clean refusal and fatal prefix; the hint cannot claim success. */
 int li2_lifecycle_link_native_hint_outcome(int);
 const struct li2_link_native_hint_progress *li2_lifecycle_link_native_hint_progress(void);
-#if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
+#if (defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)) || defined(LI2_LINKED_PREEDGE_FULL_CAPTURE)
 /* Deliberate actual advisory-receipt corruption, never a runtime selector.
    attempted0 leaves state untouched; attempted1 requires terminal caller. */
 int li2_lifecycle_link_native_hint_probe(const struct li2_span_source *,uint64_t,unsigned,

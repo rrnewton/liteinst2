@@ -1024,3 +1024,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #if defined(LI2_LINKED_PREEDGE_CAPTURE) || defined(LI2_LINKED_PREEDGE_REUSE_CAPTURE)
 #include "linked_preedge_observe_memory.inc"
 #endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+#include "linked_preedge_full_observe_memory.inc"
+#endif
