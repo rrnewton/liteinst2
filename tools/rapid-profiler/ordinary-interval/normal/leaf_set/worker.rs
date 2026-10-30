@@ -4,12 +4,15 @@ use rapid_profiler::frontend_native::{NormalLeafSetClient, NormalLeafSetThread};
 use shared::worker::{Event, Runtime};
 pub(in crate::normal) struct Call {
     pub inner: pair_worker::Call,
-    operation: Operation,
+    expectation: Expectation,
 }
 impl Call {
     pub(super) fn check(&self, n: usize) {
-        self.inner
-            .check_expected(n, self.operation.value(&self.inner.record));
+        self.inner.check_expected(
+            n,
+            self.expectation
+                .value(&self.inner.record, self.inner.function, n),
+        );
     }
     pub(super) fn value(&self) -> u64 {
         self.inner.value()
@@ -21,7 +24,7 @@ struct Worker<const N: usize> {
     attached: Option<NormalLeafSetThread>,
     calls: Vec<Call>,
     targets: [csv::Csv; N],
-    operations: [Operation; N],
+    expectations: Expectations<N>,
     custody: Arc<pair_worker::Custody>,
     identity: pair_worker::Identity,
 }
@@ -39,7 +42,7 @@ impl<const N: usize> Worker<N> {
     }
     fn attach(
         entries: [u64; N],
-        operations: [Operation; N],
+        expectations: Expectations<N>,
         client: NormalLeafSetClient,
         custody: Arc<pair_worker::Custody>,
         cpu: usize,
@@ -66,7 +69,7 @@ impl<const N: usize> Worker<N> {
             calls: Vec::with_capacity(4),
             targets: entries
                 .map(|entry| unsafe { std::mem::transmute::<usize, csv::Csv>(entry as usize) }),
-            operations,
+            expectations,
             custody,
             identity,
         };
@@ -89,7 +92,10 @@ impl<const N: usize> Runtime for Worker<N> {
             unreachable!()
         };
         assert!(self.calls.is_empty());
-        for function in 0..N {
+        // Independently authenticate the complete frozen row before the first
+        // actual invocation; no value is learned from target output.
+        let witnesses = self.expectations.record(&record).unwrap();
+        for (function, expectation) in witnesses.into_iter().enumerate() {
             self.postflight();
             record.check();
             // SAFETY: independently selected actual scalar target, live original input
@@ -97,10 +103,7 @@ impl<const N: usize> Runtime for Worker<N> {
             let inner = unsafe {
                 pair_worker::Call::invoke(Arc::clone(&record), function, self.targets[function])
             };
-            self.calls.push(Call {
-                inner,
-                operation: self.operations[function],
-            });
+            self.calls.push(Call { inner, expectation });
             // Returned owners are already retained before fallible postflight.
             self.postflight();
         }
@@ -144,7 +147,7 @@ impl<const N: usize> Runtime for Worker<N> {
     }
 }
 pub(super) fn run<const N: usize>(
-    targets: [(u64, Operation); N],
+    targets: ([u64; N], Expectations<N>),
     client: NormalLeafSetClient,
     custody: Arc<pair_worker::Custody>,
     ready: Arc<OnceLock<pair_worker::Identity>>,
@@ -152,13 +155,7 @@ pub(super) fn run<const N: usize>(
     tx: mpsc::SyncSender<Event<Call, NormalLeafSetBatch>>,
     cpu: usize,
 ) {
-    let worker = Worker::attach(
-        targets.map(|t| t.0),
-        targets.map(|t| t.1),
-        client,
-        custody,
-        cpu,
-    );
+    let worker = Worker::attach(targets.0, targets.1, client, custody, cpu);
     let id = worker.identity;
     ready.set(id).unwrap();
     tx.send(Event::Ready { tid: id.tid }).unwrap();
@@ -225,19 +222,19 @@ mod tests {
         {
             let call = Call {
                 inner: pair_worker::Call::fabricated(Arc::clone(&record), f, value),
-                operation,
+                expectation: Expectation::Builtin(operation),
             };
             call.check(4);
             assert!(Arc::ptr_eq(&call.inner.record, &record));
             let wrong = Call {
                 inner: pair_worker::Call::fabricated(Arc::clone(&record), f, value + 1),
-                operation,
+                expectation: Expectation::Builtin(operation),
             };
             refuse(|| wrong.check(4));
             for before in [false, true] {
                 let mut bad = Call {
                     inner: pair_worker::Call::fabricated(Arc::clone(&record), f, value),
-                    operation,
+                    expectation: Expectation::Builtin(operation),
                 };
                 bad.inner.corrupt_guard_for_test(before);
                 refuse(|| bad.check(4));
@@ -245,10 +242,70 @@ mod tests {
         }
         let bad = Call {
             inner: pair_worker::Call::fabricated(Arc::clone(&record), 4, 2),
-            operation: Operation::Csv,
+            expectation: Expectation::Builtin(Operation::Csv),
         };
         refuse(|| bad.check(4));
         record.check();
         assert_eq!(record.bytes(), b"\"1 2\", 3");
+    }
+}
+
+#[cfg(test)]
+pub(in crate::normal) mod selected_controls {
+    use super::*;
+    fn refuse(f: impl FnOnce()) {
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err());
+    }
+    pub(in crate::normal) fn selected_guarded_returns_reject_each_value_and_guard_drift() {
+        let functions = [FunctionId(1), FunctionId(2), FunctionId(3), FunctionId(4)];
+        let table = selected::Table::parse(
+            b"LI2SELECTED 1 4 1\nfunctions 1 2 3 4\nrecord 1 413d62 0 66 18446744073709551614 18446744073709551615\nEND\n",
+            &functions,
+        ).unwrap();
+        let source = Expectations::frozen(Arc::new(table), functions);
+        let record = Arc::new(input::Record::new(1, b"A=b").unwrap());
+        for (function, value) in [0, 66, u64::MAX - 1, u64::MAX].into_iter().enumerate() {
+            let call = Call {
+                inner: pair_worker::Call::fabricated(Arc::clone(&record), function, value),
+                expectation: source
+                    .record(&record)
+                    .unwrap()
+                    .into_iter()
+                    .nth(function)
+                    .unwrap(),
+            };
+            call.check(4);
+            assert!(Arc::ptr_eq(&call.inner.record, &record));
+            let wrong = Call {
+                inner: pair_worker::Call::fabricated(Arc::clone(&record), function, value ^ 1),
+                expectation: source
+                    .record(&record)
+                    .unwrap()
+                    .into_iter()
+                    .nth(function)
+                    .unwrap(),
+            };
+            refuse(|| wrong.check(4));
+            for before in [false, true] {
+                let mut bad = Call {
+                    inner: pair_worker::Call::fabricated(Arc::clone(&record), function, value),
+                    expectation: source
+                        .record(&record)
+                        .unwrap()
+                        .into_iter()
+                        .nth(function)
+                        .unwrap(),
+                };
+                bad.inner.corrupt_guard_for_test(before);
+                refuse(|| bad.check(4));
+            }
+        }
+        let shifted = Call {
+            inner: pair_worker::Call::fabricated(Arc::clone(&record), 1, 0),
+            expectation: source.record(&record).unwrap().into_iter().next().unwrap(),
+        };
+        refuse(|| shifted.check(4));
+        record.check();
+        assert_eq!(record.bytes(), b"A=b");
     }
 }

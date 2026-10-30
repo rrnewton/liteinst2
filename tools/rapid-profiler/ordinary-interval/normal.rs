@@ -29,6 +29,9 @@ mod lifecycle;
 pub(super) mod module;
 pub(super) mod observer;
 pub(super) mod reference;
+#[cfg(test)]
+#[path = "normal/selected_session_controls.rs"]
+mod selected_session_controls;
 pub(super) mod session;
 
 #[derive(Clone, Copy, Eq, PartialEq)]

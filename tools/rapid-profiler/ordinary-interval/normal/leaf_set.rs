@@ -13,6 +13,17 @@ use shared::io::Io;
 use shared::{Application as ApplicationTrait, failure};
 use std::sync::OnceLock;
 mod check;
+mod expectation;
+mod selected;
+#[cfg(test)]
+pub(in crate::normal) use check::selected_controls as selected_output_controls;
+#[cfg(test)]
+pub(in crate::normal) use expectation::controls as expected_controls;
+use expectation::{Expectation, Expectations};
+#[cfg(test)]
+pub(in crate::normal) use selected::controls as selected_controls;
+#[cfg(test)]
+pub(in crate::normal) use worker::selected_controls as selected_worker_controls;
 mod preparation_diagnostic;
 mod worker;
 const INSTALL: u64 = 0x6d6f_6401;
@@ -85,6 +96,28 @@ struct Leaf {
     va: u64,
     extent: usize,
     policy: Preparation,
+}
+// Selection geometry is independent of application result semantics. A caller
+// supplying this table must independently establish the complete unsafe scalar
+// contract of LoadedNormalLeafSet::load_selected; labels/results cannot do so.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Selection {
+    function: FunctionId,
+    label: selected::Label,
+    va: u64,
+    extent: usize,
+    policy: Preparation,
+}
+impl From<Leaf> for Selection {
+    fn from(leaf: Leaf) -> Self {
+        Self {
+            function: leaf.function,
+            label: selected::Label::new(leaf.operation.label()).unwrap(),
+            va: leaf.va,
+            extent: leaf.extent,
+            policy: leaf.policy,
+        }
+    }
 }
 fn record_cap(n: usize) -> usize {
     assert!((1..=4).contains(&n));
@@ -240,7 +273,7 @@ pub(in crate::normal) struct Application<const N: usize> {
     ledger: check::Ledger<N>,
     input: input::Input,
     custody: Arc<pair_worker::Custody>,
-    leaves: [Leaf; N],
+    leaves: [Selection; N],
     entries: [u64; N],
     ends: [u64; N],
     returns: [Vec<u64>; N],
@@ -261,7 +294,8 @@ impl<const N: usize> Application<N> {
         emit(
             io,
             format!(
-                "READY,leaf-set-session-v1,{},{},10,2,64,{},{},1,{},{},{},{},{},{},{},{},{}\n",
+                "READY,{},{},{},10,2,64,{},{},1,{},{},{},{},{},{},{},{},{}\n",
+                self.ledger.expectations.wire_version(),
                 self.k,
                 self.epochs,
                 record_cap(N),
@@ -284,7 +318,7 @@ impl<const N: usize> Application<N> {
                     "LEAF,{},{},{},{},{},{},{},{},{}\n",
                     i,
                     leaf.function.0,
-                    leaf.operation.label(),
+                    leaf.label.as_str(),
                     leaf.policy.label(),
                     leaf.va,
                     leaf.extent,
@@ -317,8 +351,7 @@ impl<const N: usize> ApplicationTrait for Application<N> {
         let input::Command::Record(record) = command else {
             unreachable!()
         };
-        self.ledger.accept(record);
-        Ok(())
+        self.ledger.accept(record)
     }
     fn batch(
         &mut self,
@@ -347,7 +380,7 @@ impl<const N: usize> ApplicationTrait for Application<N> {
             self.ledger.population.rows.len(),
             self.ledger.population.accepted.len() * N
         );
-        Ok(())
+        self.ledger.expectations.complete(self.accepted_len())
     }
     fn final_custody(&self) -> Result<(), String> {
         pair_worker::cpu_is(self.cpus[0]);
@@ -487,6 +520,54 @@ fn run_selected<const N: usize>(
     epochs: u32,
     leaves: [Leaf; N],
 ) -> Result<(), String> {
+    run_common(
+        args,
+        k,
+        epochs,
+        leaves.map(Selection::from),
+        Expectations::Builtin(leaves.map(|leaf| leaf.operation)),
+    )
+}
+
+/// Trusted-input CLI for complete caller-selected scalar leaves. The expected
+/// table is a frozen functional oracle, never permission to call arbitrary code.
+/// The caller must establish every load_selected safety precondition described
+/// in the selected-session documentation before invoking this command.
+pub(crate) fn run_selected_session(args: &[std::ffi::OsString]) {
+    let outcome = (|| -> Result<(), String> {
+        let (k, epochs, leaves, table) = selected::arguments(args)?;
+        match leaves.len() {
+            1 => run_frozen::<1>(args, k, epochs, leaves, table),
+            2 => run_frozen::<2>(args, k, epochs, leaves, table),
+            3 => run_frozen::<3>(args, k, epochs, leaves, table),
+            4 => run_frozen::<4>(args, k, epochs, leaves, table),
+            _ => unreachable!(),
+        }
+    })();
+    if let Err(error) = outcome {
+        eprintln!("normal-selected-session FAILED: {error}");
+        std::process::exit(1);
+    }
+}
+fn run_frozen<const N: usize>(
+    args: &[std::ffi::OsString],
+    k: usize,
+    epochs: u32,
+    leaves: Vec<Selection>,
+    table: Arc<selected::Table>,
+) -> Result<(), String> {
+    let leaves: [Selection; N] = leaves.try_into().unwrap();
+    let expectations = Expectations::frozen(table, leaves.map(|leaf| leaf.function));
+    run_common(args, k, epochs, leaves, expectations)
+}
+fn run_common<const N: usize>(
+    args: &[std::ffi::OsString],
+    k: usize,
+    epochs: u32,
+    leaves: [Selection; N],
+    expectations: Expectations<N>,
+) -> Result<(), String> {
+    let command = expectations.command();
     single_main();
     let cpus = shared::cpus();
     assert!(cpus.iter().all(|&cpu| cpu < 1024));
@@ -497,7 +578,7 @@ fn run_selected<const N: usize>(
     let selections: Vec<_> = leaves
         .iter()
         .map(|leaf| {
-            TrustedFunctionSelection::new(&bytes, leaf.va, leaf.extent, leaf.operation.label())
+            TrustedFunctionSelection::new(&bytes, leaf.va, leaf.extent, leaf.label.as_str())
                 .map_err(failure)
         })
         .collect::<Result<_, _>>()?;
@@ -609,7 +690,7 @@ fn run_selected<const N: usize>(
     let mut application = Application {
         ledger: check::Ledger::new(
             stream,
-            leaves,
+            (leaves, expectations.clone()),
             entries,
             ends,
             returns.clone(),
@@ -633,7 +714,7 @@ fn run_selected<const N: usize>(
     let worker_custody = Arc::clone(&custody);
     let mut handle = Some(joined_task::spawn(move || {
         worker::run::<N>(
-            std::array::from_fn(|i| (entries[i], leaves[i].operation)),
+            (entries, expectations),
             client,
             worker_custody,
             ready,
@@ -675,11 +756,18 @@ fn run_selected<const N: usize>(
             let retirement = joined
                 .as_ref()
                 .map_or_else(String::new, |task| format!("; {}", task.diagnostic()));
-            eprintln!("normal-leaf-set-session FAILED: {error}{details}{retirement}");
+            eprintln!("{command} FAILED: {error}{details}{retirement}");
             std::process::exit(1);
         }
         Ok(Err(completion)) => {
-            eprint!("{}", completion_stderr(completion));
+            if command == "normal-leaf-set-session" {
+                eprint!("{}", completion_stderr(completion));
+            } else {
+                eprint!(
+                    "{}",
+                    completion_stderr(completion).replacen("normal-leaf-set-session", command, 1)
+                );
+            }
             std::process::exit(1);
         }
         Ok(Ok(())) => {}

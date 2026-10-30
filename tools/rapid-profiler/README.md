@@ -32,6 +32,13 @@ parent after the caller returns. Its input-driven session shares the existing
 controller and worker loops. Native preservation and timing qualification remain
 separate requirements; source and control tests alone do not establish them.
 
+The [selected scalar session](../../evaluation/ordinary-selected-session/README.md)
+accepts complete caller-selected functions in a trusted final DSO, including
+stripped files, using explicit ELF addresses and extents. An immutable table
+supplies independent expected results for every input. This path keeps the
+existing scalar ABI, input bounds, timing gates and caller lifetime obligations;
+the table does not establish permission to execute native code.
+
 ## Entry-to-exit sampling
 
 An armed entry callback reads the original return address from the application

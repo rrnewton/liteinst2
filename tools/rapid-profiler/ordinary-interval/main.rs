@@ -416,6 +416,10 @@ fn main() {
         normal::call_pair::run(&args[2..]);
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-selected-session") {
+        normal::leaf_set::run_selected_session(&args[2..]);
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-leaf-set-session") {
         normal::leaf_set::run(&args[2..]);
         return;
