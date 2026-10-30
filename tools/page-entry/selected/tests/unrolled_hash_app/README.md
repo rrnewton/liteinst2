@@ -19,7 +19,7 @@ FIP/FDP. Both probe machine observations include all 67 CPUID rows, XCR0 and
 actual supported/permitted XCOMP masks. Each application's corresponding actual
 observations must equal this complete profile. Prefix words 26/27 and 28/29
 now retain the return/value pairs from `ARCH_GET_XCOMP_SUPP/PERM`; words 30/31
-remain zero. Record sizes and the assembly producer are unchanged.
+remain zero. Record sizes and the FNINIT/FLD1/FLDPI seed sequence are unchanged.
 
 This corrects the former unsupported prediction that FLDPI must leave its ELF
 address in FIP. The earlier provider run at revision `5110f2d80b8c` already
@@ -35,3 +35,21 @@ whole 65,536-byte native conservation and native/gated FP comparisons, every
 GPR, actual AF, stack and data comparison remain intact. Different seed
 behavior, an unqualified probe, a changed format or any nonzero pointer refuses
 qualification. A fresh complete committed run is required for new evidence.
+
+The seed/capture assembly now occupies a separate high RX page, surrounded by
+complete CC pages; its state and constants have distinct nearby RW and R-only
+loads. This meets the unchanged native admission address bound without asking
+the generic TF path to execute PUSHFQ/POPFQ, x87 or memory KMOV forms. The
+ordinary CRT and focal loop remain low. An exact original-PC FF25 return stub
+and a bound R-only entry pointer transfer between them without changing any
+GPR, flag or stack byte. The reader checks every transfer/literal and complete
+load extent, and still requires the actual whole helper plus 14-byte halos to
+pass the unchanged all-offset native policy. An emitted layout or policy
+failure refuses before application launches; no new admission is inferred.
+
+The three complete struct observations use the existing high pure copy
+helper, avoiding compiler-generated REP MOVSL while retaining every byte. The
+failed `8e6497ae0fec` run remains failed; its nine native references and fresh
+seed passed, while all sixteen gated subjects refused before the prefix. The
+new geometry requires a fresh complete 25-subject qualification, with the same
+limits and all 441/234/528 owner/application/terminal controls.

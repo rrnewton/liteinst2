@@ -64,15 +64,15 @@ def elf(data, native_policy):
     t = tables[0]
     need(t[6] < len(sections), 'symbol string index')
     strings = sections[t[6]]; names = take(strings[4], strings[5])
-    wanted = {'unrolled_app_' + n for n in ('head', 'stop', 'source_end', 'helper', 'helper_end', 'enter', 'capture', 'seed_x87', 'pure', 'pure_end')}
-    symbols = {}
+    wanted = {'unrolled_app_' + n for n in ('head', 'stop', 'source_end', 'helper', 'helper_end', 'enter', 'capture', 'seed_x87', 'pure', 'pure_end', 'capture_high', 'entry_jump', 'head_pointer', 'return_end')} | {'ua_' + n for n in ('vectors', 'masks', 'host', 'host_fcw', 'input', 'before', 'after', 'before_live', 'after_live')}
+    symbols = {}; symbol_sizes = {}
     for at in range(t[4], t[4] + t[5], 24):
-        name, _, _, section, value, _ = struct.unpack('<IBBHQQ', take(at, 24))
+        name, _, _, section, value, size = struct.unpack('<IBBHQQ', take(at, 24))
         need(name < len(names) and b'\0' in names[name:], 'whole symbol name')
         name = names[name:names.index(b'\0', name)].decode()
         if name in wanted:
             need(name not in symbols and section != 0, 'unique defined fixture symbol')
-            symbols[name] = value
+            symbols[name] = value; symbol_sizes[name] = size
     need(set(symbols) == wanted, 'all actual fixture symbols')
     head, stop = symbols['unrolled_app_head'], symbols['unrolled_app_stop']
     p, source = memory(head, PAGE)
@@ -88,10 +88,42 @@ def elf(data, native_policy):
          pure_load[5] == pure_load[6] == 3 * PAGE and
          pure_image[:PAGE] == pure_image[2 * PAGE:] == b'\xcc' * PAGE,
          'actual separate high RX helper load with complete unchanged-policy halos')
-    helper = symbols['unrolled_app_helper']
-    need(PAGE <= head < 1 << 31 and PAGE <= helper < 1 << 31 and pure >= 0x200000000,
-         'low focal/assembly and high bulk helper meet distinct original address contracts')
-    need(helper <= symbols['unrolled_app_enter'] <= symbols['unrolled_app_seed_x87'] - 4 and symbols['unrolled_app_seed_x87'] < symbols['unrolled_app_capture'] < helper + PAGE and memory(symbols['unrolled_app_seed_x87'] - 4, 6)[1] == b'\xdb\xe3\xd9\xe8\xd9\xeb', 'exact complete FNINIT/FLD1/FLDPI seed/entry/capture positions')
+    helper = symbols['unrolled_app_helper']; capture = symbols['unrolled_app_capture']
+    high_capture = symbols['unrolled_app_capture_high']; transfer = symbols['unrolled_app_entry_jump']
+    machine_load, machine_image = memory(0x200020000, 3 * PAGE)
+    need(helper == 0x200021000 and machine_load[1] == 5 and machine_load[3] == 0x200020000 and
+         machine_load[5] == machine_load[6] == 3 * PAGE and
+         machine_image[:PAGE] == machine_image[2 * PAGE:] == b'\xcc' * PAGE,
+         'actual separate high assembly RX load and complete CC halos')
+    need(PAGE <= head < 1 << 31 and PAGE <= capture < 1 << 31 and head != capture and
+         capture % PAGE == 0 and symbols['unrolled_app_return_end'] == capture + PAGE and
+         memory(capture, PAGE)[0][1] == 5 and memory(capture, PAGE)[1] ==
+         b'\xff\x25\0\0\0\0' + struct.pack('<Q', high_capture) + b'\xcc' * (PAGE - 14),
+         'complete low return page with transparent original-PC JMP and exact immutable high target')
+    ro, constants = memory(0x200010000, PAGE)
+    need(ro[1] == 4 and ro[3] == 0x200010000 and ro[5] == ro[6] == PAGE and
+         symbols['ua_vectors'] == ro[3] and symbols['ua_masks'] == ro[3] + 2048 and
+         symbols['unrolled_app_head_pointer'] == ro[3] + 2112 and
+         constants == VECTORS + MASKS + struct.pack('<Q', head) + bytes(PAGE - 2120),
+         'complete immutable nonexecuting assembly constants and actual low head pointer')
+    state_loads = [x for x in loads if x[3] == 0x200030000]
+    need(len(state_loads) == 1 and state_loads[0][1] == 6 and state_loads[0][5:7] == (0, 2 * PAGE),
+         'separate zero-initialized nonexecuting assembly state load')
+    extents = []
+    for name, size in (('input', 152), ('before', 152), ('after', 152),
+                       ('before_live', LIVE), ('after_live', LIVE), ('host', 64), ('host_fcw', 2)):
+        address = symbols['ua_' + name]
+        need(symbol_sizes['ua_' + name] == size and 0x200030000 <= address <= 0x200032000 - size and
+             all(address + size <= a or a + n <= address for a, n in extents),
+             'complete distinct assembly state objects in the exact high RW load')
+        extents.append((address, size))
+    displacement = symbols['unrolled_app_head_pointer'] - (transfer + 6)
+    need(helper <= symbols['unrolled_app_enter'] <= symbols['unrolled_app_seed_x87'] - 4 and
+         symbols['unrolled_app_seed_x87'] < transfer and transfer + 6 == high_capture < helper + PAGE and
+         memory(symbols['unrolled_app_seed_x87'] - 4, 6)[1] == b'\xdb\xe3\xd9\xe8\xd9\xeb' and
+         -(1 << 31) <= displacement < 1 << 31 and
+         memory(transfer, 6)[1] == b'\xff\x25' + struct.pack('<i', displacement),
+         'exact seed/entry/capture positions and transparent high-to-low immutable-pointer JMP')
     return dict(symbols=symbols, head=head, stop=stop, source=source, interpreter=path[:-1].decode(), sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), phnum=h[10])
 
 

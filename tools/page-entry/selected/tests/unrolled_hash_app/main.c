@@ -22,8 +22,8 @@
 #define UA_TF UINT64_C(0x100)
 #define UA_RF UINT64_C(0x10000)
 #define UA_MASK UINT64_C(0xffffffffbffbfae7)
-struct ua_live ua_input,ua_before,ua_after;
-unsigned char ua_before_live[UA_LIVE],ua_after_live[UA_LIVE];
+__attribute__((section(".li2_ua_state"))) struct ua_live ua_input,ua_before,ua_after;
+__attribute__((section(".li2_ua_state"))) unsigned char ua_before_live[UA_LIVE],ua_after_live[UA_LIVE];
 static struct ua_prefix prefix;
 static struct ua_suffix suffix;
 static unsigned mode,native,handling,started,ended,frame_count,fault_seen;
@@ -174,14 +174,14 @@ int main(int argc,char **argv){
  ua_input.flags=mode==5?0xad7:0x202;need((ua_input.g[4]&15)==8,88);
  ua_stack_pattern(prefix.stack,UA_STACK);
  copy((void *)UA_DATA_BASE,prefix.data,UA_DATA);copy((void *)(ua_input.g[4]-128),prefix.stack,UA_STACK);
- prefix.seed=ua_input;copy(prefix.source,source_bytes,UA_PAGE);
+ copy(&prefix.seed,&ua_input,sizeof prefix.seed);copy(prefix.source,source_bytes,UA_PAGE);
  if(native)native_setup();
  need(output(&prefix,sizeof prefix),89);unrolled_app_enter();
  need(!handling&&same(&ua_before.g,&ua_input.g,sizeof ua_input.g)&&ua_before.flags==ua_input.flags&&same(ua_before.selectors,ua_after.selectors,sizeof ua_before.selectors),90);
  if(native)need(started&&ended&&frame_count==(mode==4?3U:2U)&&fault_seen==(mode>=7)&&copies==(mode>=7?fault_copy[mode]:nul_at[mode])&&steps==copies*8+(mode>=7?5:0),91);
  else need(!started&&!ended&&!frame_count&&!fault_seen&&mode<7,92);
  suffix.h[0]=UA_MAGIC^1;suffix.h[1]=1;suffix.h[2]=mode;suffix.h[3]=native;suffix.h[4]=first_error;suffix.h[6]=frame_count;suffix.h[7]=steps;suffix.h[8]=copies;suffix.h[9]=fault_seen;
- suffix.before=ua_before;suffix.after=ua_after;copy(suffix.before_live,ua_before_live,UA_LIVE);copy(suffix.after_live,ua_after_live,UA_LIVE);
+ copy(&suffix.before,&ua_before,sizeof suffix.before);copy(&suffix.after,&ua_after,sizeof suffix.after);copy(suffix.before_live,ua_before_live,UA_LIVE);copy(suffix.after_live,ua_after_live,UA_LIVE);
  need(same(ua_before_live,ua_after_live,UA_LIVE),93);
  copy(suffix.source,unrolled_app_head,UA_PAGE);copy(suffix.stack,(void *)(ua_input.g[4]-128),UA_STACK);copy(suffix.data,(void *)UA_DATA_BASE,UA_DATA);
  need(same(prefix.source,suffix.source,UA_PAGE)&&same(prefix.stack,suffix.stack,UA_STACK)&&same(prefix.data,suffix.data,UA_DATA),94);

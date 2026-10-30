@@ -1,5 +1,5 @@
 #include "app.h"
-.section .text.ua_helper,"ax",@progbits
+.section .li2_ua_machine,"ax",@progbits
 .balign 4096
 .globl unrolled_app_helper,unrolled_app_helper_end
 unrolled_app_helper:
@@ -55,7 +55,7 @@ unrolled_app_helper:
     mov \name+120(%rip),%r15
     mov \name+32(%rip),%rsp
 .endm
-.globl unrolled_app_enter,unrolled_app_capture,unrolled_app_seed_x87
+.globl unrolled_app_enter,unrolled_app_capture_high,unrolled_app_seed_x87,unrolled_app_entry_jump
 .type unrolled_app_enter,@function
 unrolled_app_enter:
     mov %rsp,ua_host(%rip)
@@ -89,10 +89,11 @@ unrolled_app_seed_x87:
     pushq ua_before+128(%rip)
     popfq
     load ua_before
-    jmp unrolled_app_head
+unrolled_app_entry_jump:
+    jmp *unrolled_app_head_pointer(%rip)
 .size unrolled_app_enter,.-unrolled_app_enter
-.type unrolled_app_capture,@function
-unrolled_app_capture:
+.type unrolled_app_capture_high,@function
+unrolled_app_capture_high:
     gprs ua_after
     mov ua_host(%rip),%rsp
     pushfq
@@ -109,7 +110,7 @@ unrolled_app_capture:
     pushq ua_host+56(%rip)
     popfq
     ret
-.size unrolled_app_capture,.-unrolled_app_capture
+.size unrolled_app_capture_high,.-unrolled_app_capture_high
 .org 4096,0xcc
 unrolled_app_helper_end:
 .section .text.ua_hash,"ax",@progbits
@@ -124,8 +125,21 @@ unrolled_app_stop:
 .size unrolled_app_head,.-unrolled_app_head
 .org 4096,0xcc
 unrolled_app_source_end:
-.section .rodata
+/* A low, unchanged-state return boundary: the focal guard still uses rel32.
+   This original-PC indirect jump reads only its complete immutable literal. */
+.section .text.ua_return,"ax",@progbits
+.balign 4096
+.globl unrolled_app_capture,unrolled_app_return_end
+.type unrolled_app_capture,@function
+unrolled_app_capture:
+    .byte 0xff,0x25,0,0,0,0
+    .quad unrolled_app_capture_high
+.size unrolled_app_capture,6
+.org 4096,0xcc
+unrolled_app_return_end:
+.section .li2_ua_rodata,"a",@progbits
 .p2align 6
+.globl ua_vectors,ua_masks,unrolled_app_head_pointer
 ua_vectors:
 .set v,1
 .rept 256
@@ -135,8 +149,15 @@ ua_vectors:
 ua_masks:
 .quad 0x0123456789abcdef,0xfedcba9876543210,0xaaaaaaaa55555555,0x0f0ff0f0a5a55a5a
 .quad 0x1111222233334444,0x8877665544332211,0xffff00000000ffff,0x5a5a5a5aa5a5a5a5
-.bss
 .p2align 3
+unrolled_app_head_pointer:.quad unrolled_app_head
+.section .li2_ua_state,"aw",@nobits
+.p2align 3
+.globl ua_host,ua_host_fcw
+.type ua_host,@object
 ua_host:.zero 64
+.size ua_host,64
+.type ua_host_fcw,@object
 ua_host_fcw:.zero 2
+.size ua_host_fcw,2
 .section .note.GNU-stack,"",@progbits
