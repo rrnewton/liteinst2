@@ -13,7 +13,7 @@ static int leto_hint_candidate(void) {
 }
 static void leto_hint_idle(struct leto_hint_idle *out) {
     const struct li2_native_pair_progress *p=li2_native_pair_progress();
-    le_need(p,LE_STATE,160);
+    le_need(p!=NULL,LE_STATE,160);
 #define LETO_HINT_COPY(name) out->name=p->name
     LETO_HINT_COPY(initialized);LETO_HINT_COPY(phase);LETO_HINT_COPY(in_handler);
     LETO_HINT_COPY(first_error);LETO_HINT_COPY(live);LETO_HINT_COPY(entry_pending);
