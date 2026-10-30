@@ -91,7 +91,7 @@ def elf(data, native_policy):
     helper = symbols['unrolled_app_helper']
     need(PAGE <= head < 1 << 31 and PAGE <= helper < 1 << 31 and pure >= 0x200000000,
          'low focal/assembly and high bulk helper meet distinct original address contracts')
-    need(helper <= symbols['unrolled_app_enter'] < symbols['unrolled_app_seed_x87'] < symbols['unrolled_app_capture'] < helper + PAGE and memory(symbols['unrolled_app_seed_x87'], 2)[1] == b'\xd9\xeb', 'exact x87 seed/entry/capture positions')
+    need(helper <= symbols['unrolled_app_enter'] <= symbols['unrolled_app_seed_x87'] - 4 and symbols['unrolled_app_seed_x87'] < symbols['unrolled_app_capture'] < helper + PAGE and memory(symbols['unrolled_app_seed_x87'] - 4, 6)[1] == b'\xdb\xe3\xd9\xe8\xd9\xeb', 'exact complete FNINIT/FLD1/FLDPI seed/entry/capture positions')
     return dict(symbols=symbols, head=head, stop=stop, source=source, interpreter=path[:-1].decode(), sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), phnum=h[10])
 
 
@@ -158,19 +158,25 @@ def reference_frame(data, prefix, layout, kind, steps, copies):
             need(offset + 8 <= h[9] - 4 and q(fp, offset)[0] == 0x3141592653589793 + reg * 8 + word + 1, 'every actual vector word')
     opmask = prefix['hardware'][8]
     need(opmask[2] >= 64 and fp[opmask[3]:opmask[3] + 64] == MASKS, 'every actual opmask byte')
-    need(q(fp, 8)[0] == layout['symbols']['unrolled_app_seed_x87'] and struct.unpack_from('<HH', fp) == (0x37f, 0x3000) and fp[4] == 0xc0 and u(fp, 24)[0] == 0x1f80, 'ELF-bound x87 and initial scalar FP')
+    # The unchanged independent seed probe qualifies these exact zero pointers,
+    # including observations before and after FNSTCW/FNSTSW. No byte is ignored.
+    need(fp[8:24] == bytes(16) and struct.unpack_from('<HH', fp) == (0x37f, 0x3000) and fp[4] == 0xc0 and u(fp, 24)[0] == 0x1f80, 'independently qualified exact zero FIP/FDP and initial scalar FP')
     return dict(header=h, si=si, uc=uc, fp=fp, greg=g)
 
 
-def _prefix(data, mode, native, layout, pid, cpu):
+def _prefix(data, mode, native, layout, pid, cpu, seed_reference):
     need(type(data) is bytes and len(data) == PREFIX and type(mode) is int and 0 <= mode < 9 and type(native) is bool, 'exact typed application prefix')
     p = data; h = q(p, 0, 32); hardware = [u(p, 256 + i * 24, 6) for i in range(67)]
     seed = live(p[1864:2016]); machine = q(p, 2016, 8); source, stack, memory = p[2080:6176], p[6176:6336], p[6336:]
-    need(h[:9] == (MAGIC, 1, PREFIX, SUFFIX, mode, int(native), pid, pid, cpu) and h[10:14] == (layout['head'], layout['stop'], DATA, STACK) and h[16:26] == (NUL[mode], int(mode >= 7), layout['symbols']['unrolled_app_seed_x87'], 968, FRAME, 40, 224, 296, 16, 16) and h[26:] == (0,) * 6, 'exact application prefix/schema/ELF/process')
+    need(h[:9] == (MAGIC, 1, PREFIX, SUFFIX, mode, int(native), pid, pid, cpu) and h[10:14] == (layout['head'], layout['stop'], DATA, STACK) and h[16:26] == (NUL[mode], int(mode >= 7), layout['symbols']['unrolled_app_seed_x87'], 968, FRAME, 40, 224, 296, 16, 16) and h[26] == h[28] == 0 and h[30:] == (0, 0), 'exact application prefix/schema/ELF/process and successful permission observations')
     need(type(pid) is int and 0 < pid < 1 << 31 and type(cpu) is int and cpu >= 0 and h[9] <= 0xffffffff, 'actual process and CPU')
     need(source == layout['source'] and machine[0] == MASK and machine[1] > 0 and machine[3:5] == (0x33, 0x2b) and machine[5:] == (0, 0, 0), 'full ELF source and real application machine')
     need([x[:2] for x in hardware] == [(0, 0), (1, 0), (7, 0)] + [(13, i) for i in range(64)] and hardware[0][2] >= 13 and hardware[1][4] & 0x0c000000 == 0x0c000000 and hardware[2][3] & 0x40010000 == 0x40010000, 'actual complete CPUID inputs')
     need(h[14] & 0xe7 == 0xe7 and h[15] == hardware[3][3] and 576 <= h[15] <= FP, 'actual XCR0/standard capacity')
+    seed_probe, xstate, profile, facts = seed_reference
+    need(seed_probe.require(profile, facts, cpu=cpu) == bytes(16) and
+         xstate.profile(hardware, h[14], h[27], h[29], cpu, h[9]) == facts,
+         'same reserved CPU and complete actual CPUID/XCR0/permission seed profile')
     for i in range(2, 64):
         if h[14] >> i & 1:
             row = hardware[3 + i]
@@ -187,16 +193,16 @@ def _prefix(data, mode, native, layout, pid, cpu):
     return result
 
 
-def control_prefix(data, control, exit_status, layout, pid, cpu):
+def control_prefix(data, control, exit_status, layout, pid, cpu, seed_reference):
     need(type(control) is int and 1 <= control <= 7 and type(exit_status) is int and exit_status == 125, 'fixed required owner control outcome')
-    return _prefix(data, 0, False, layout, pid, cpu)
+    return _prefix(data, 0, False, layout, pid, cpu, seed_reference)
 
 
-def read(data, mode, native, exit_status, layout, pid, cpu):
+def read(data, mode, native, exit_status, layout, pid, cpu, seed_reference):
     need(type(data) is bytes and type(mode) is int and 0 <= mode < 9 and type(native) is bool and type(exit_status) is int and exit_status == (125 if mode >= 7 else 0), 'typed actual application outcome')
     full = native or mode < 7
     need(len(data) == PREFIX + (SUFFIX if full else 0), 'complete prefix/terminal extent; no failed-operation completion')
-    result = _prefix(data[:PREFIX], mode, native, layout, pid, cpu)
+    result = _prefix(data[:PREFIX], mode, native, layout, pid, cpu, seed_reference)
     seed, memory, stack, source = (result[k] for k in ('seed', 'data', 'stack', 'source'))
     if not full:
         return result

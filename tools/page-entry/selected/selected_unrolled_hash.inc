@@ -112,6 +112,9 @@ static int uh_capture(struct uh_frame *f,int sig,const siginfo_t *si,const ucont
     if(f->started)return UH_FRAME;
     f->started=1;f->sig=sig;
     if(!uh_range(si,sizeof(*si)) || !uh_range(uc,sizeof(*uc)))return UH_FRAME;
+    /* Linux x86-64 ends ucontext after its 64-signal mask; siginfo follows.
+       The remaining glibc sigset_t bytes alias that distinct event record. */
+    if((const unsigned char *)si!=(const unsigned char *)&uc->uc_sigmask+sizeof(f->frame.mask))return UH_FRAME;
     copy(&f->si,si,sizeof(*si));f->si_saved=1;copy(&f->uc,uc,sizeof(*uc));f->uc_saved=1;
     struct li2_step_frame *s=&f->frame;
     copy(s->greg,uc->uc_mcontext.gregs,sizeof s->greg);copy(&s->mask,&uc->uc_sigmask,8);
@@ -447,7 +450,8 @@ static void selected_unrolled_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     for(unsigned i=0;i<NGREG;i++)
         if(i!=REG_RAX && i!=REG_RCX && i!=REG_RDX && i!=REG_RBX && i!=REG_RIP && i!=REG_EFL && i!=REG_CR2)
             uh_need(a[i]==b[i],UH_RESULT,i+2);
-    uh_need(equal(&r->before.uc.uc_sigmask,&r->after.uc.uc_sigmask,sizeof(uc->uc_sigmask)) &&
+    /* Compare every Linux mask bit, not glibc's overlapping siginfo tail. */
+    uh_need(r->before.frame.mask==r->after.frame.mask &&
         equal(&r->before.uc.uc_stack,&r->after.uc.uc_stack,sizeof(uc->uc_stack)) &&
         r->before.uc.uc_flags==r->after.uc.uc_flags && r->before.uc.uc_link==r->after.uc.uc_link &&
         r->before.frame.fp_bytes==r->after.frame.fp_bytes &&

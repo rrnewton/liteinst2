@@ -382,6 +382,7 @@ class Check:
         fp=self.f(s,'li2_step_frame','fp');lo,cap=self.h[12:14]
         need(cap==524288 and lo%PAGE==0 and fpaddr%16==0 and lo<=fpaddr and 580<=n<=FP and fpaddr+n<=lo+cap and initialized==n,'actual signal FP extent on configured altstack')
         need(q(uc[40:224])==greg and int.from_bytes(uc[224:232],'little')==fpaddr and int.from_bytes(uc[296:304],'little')==mask,'all copied signal GREG/mask/FP pointers')
+        need(uc[304:424]==si[:120],'glibc mask tail is the exact following kernel siginfo, not additional signal-mask bits')
         need(struct.unpack_from('<II',fp,464)==(0x46505853,n) and struct.unpack_from('<I',fp,480)[0]==n-4 and struct.unpack_from('<I',fp,n-4)[0]==0x46505845 and q(fp[520:528])==(0,),'full standard kernel FP metadata')
         zero(fp[n:],'every unused FP byte')
         need(int.from_bytes(uc[16:24],'little')==lo and int.from_bytes(uc[24:28],'little')==0 and int.from_bytes(uc[32:40],'little')==cap,'actual installed altstack, no invented SS_ONSTACK')
@@ -516,7 +517,7 @@ class Check:
                 need(g[17]&0x8c5==defined and g[17]&~(0x8d5|RF)==flags&~0x8d5,'all defined final TEST flags; AF remains actual')
                 need(all(a[i]==g[i] for i in range(23) if i not in (13,14,12,11,16,17,22)),'all unchanged actual GREGs')
                 need(before['fp']==after['fp'] and before['fp_bytes']==after['fp_bytes'] and before['mask']==after['mask'] and (before['fs'],before['gs'])==(after['fs'],after['gs']),'complete FP/mask/TLS preservation')
-                need(before['uc'][:40]==after['uc'][:40] and before['uc'][296:424]==after['uc'][296:424],'whole unchanged UC stack/flags/link/mask')
+                need(before['uc'][:40]==after['uc'][:40] and before['uc'][296:304]==after['uc'][296:304],'whole unchanged UC stack/flags/link and complete Linux signal mask')
                 result['after']=after
                 self.eq(b,t,exit_seen=1,completed=int(kind=='complete'),iterations=count if kind=='complete' else 0,release_started=int(kind=='complete'),release_complete=int(kind=='complete'),release_result=0,unexpected_seen=0,map_result=0,closed_bytes=PAGE if kind=='complete' else 0)
                 self.permission(self.f(b,t,'close'),entry,1,error=-13 if kind=='close_error' else 0)
@@ -638,11 +639,13 @@ class Check:
             changed=self.f(current,t,'before');desired=bytearray(supplied)
             at=self.r.types['uh_frame']['fields']['si']['offset']+16
             struct.pack_into('<Q',desired,at,self.h[20]+1)
+            struct.pack_into('<Q',desired,self.r.types['uh_frame']['fields']['uc']['offset']+320,self.h[20]+1)
             need(changed==desired,'entire actual entry frame retained separately from supplied SI mutation')
         else:
             if kind==7:
                 actual=self.frame(supplied,False);self.nx(actual,self.h[20]+24)
                 desired=bytearray(supplied);f=self.r.types['uh_frame']['fields'];struct.pack_into('<Q',desired,f['si']['offset']+16,self.h[20]+25)
+                struct.pack_into('<Q',desired,f['uc']['offset']+320,self.h[20]+25)
                 for k in ('fs','gs','fs_result','gs_result','tls_complete'):
                     x=f[k];desired[x['offset']:x['offset']+x['bytes']]=self.f(result['unexpected']['raw'],'uh_frame',k)
                 need(result['unexpected']['raw']==desired,'whole actual exit retained; only supplied SI+1 and actual later TLS observations differ')

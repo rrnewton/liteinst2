@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fixed25 actual native/application-owner subjects; no throughput credit."""
-import argparse,ctypes,csv,hashlib,importlib.util,io,json,os,platform,re,shlex,shutil,sys
+import argparse,ctypes,csv,hashlib,importlib.util,io,json,os,platform,re,shlex,shutil,struct,sys
 from datetime import datetime,timezone
 from pathlib import Path
 sys.dont_write_bytecode=True
@@ -19,7 +19,7 @@ from page_selected_register_time_build import expand,recipe
 from unrolled_hash_build import build_bridge
 import namespace
 import unrolled_hash_app_reports as reports
-BOUNDS=dict(PROFILES,release_build=[30,512<<20,16<<20,60],program=[30,512<<20,16<<20,60])
+BOUNDS=dict(PROFILES,release_build=[30,512<<20,16<<20,60],program=[30,512<<20,16<<20,60],seed=[5,512<<20,16<<20,15])
 MASK=((1<<64)-1)^sum(1<<(s-1)for s in(4,5,9,11,19,31))
 H=lambda b:hashlib.sha256(b).hexdigest()
 ORDER=tuple((lane,mode,0)for lane in('native','gated')for mode in range(9))+tuple(('gated',0,c)for c in range(1,8))
@@ -117,6 +117,63 @@ def observed_layout(builder,bridge,private,pin,binary,run,r):
     path=private/'owner-dwarf-layout.json'
     with path.open('xb')as f:f.write(out)
     r['owner_layout']=dict(artifact=fact(binary(path)),bridge=fact(bridge),reader=fact(script));return layout
+
+
+def seed_prerequisite(builder,private,pin,binary,run,r):
+    """One unchanged native seed probe; never an owner/application subject."""
+    directory=SELECTED/'tests/provider_app/seed_probe'
+    seed_reader=load('unrolled_seed_read',directory/'read.py',pin)
+    xstate=load('unrolled_seed_xstate',SELECTED/'tests/b2_reference/xstate.py',pin)
+    script=pin(directory/'build.sh');rows=recipe(script,'"${LI2_CC:')
+    need(len(rows)==1,'one unchanged independent seed recipe')
+    executable=private/'seed-probe'
+    argv=expand(rows[0],{'${LI2_CC:?exact compiler required}':builder.tools['cc'],'$1':directory,'$2':executable})
+    unit=str(pin(directory/'probe.c'));state=r['seed_prerequisite'];state['status']='failed'
+    need(argv[-2:]==['-o',str(executable)]and[x for x in argv if x.endswith(('.c','.S'))]==[unit]and
+         not any(x.startswith('-D')for x in argv)and all(x in argv for x in
+         ('-O2','-g','-Wall','-Wextra','-Werror','-mgeneral-regs-only','-fno-tree-vectorize',
+          '-fno-tree-loop-distribute-patterns','-fno-builtin','-fno-pie','-no-pie')),
+         'unchanged seed compiler/producer recipe')
+    flags=[x for x in argv[1:-2]if x!=unit and not x.startswith('-Wl,')]
+    _,out,err=run('seed-headers',[builder.tools['cc'],*flags,'-M','-MT','li2_seed',unit],env=builder.environment)
+    lines=out.decode().replace('\\\n',' ').splitlines()
+    need(not err and len(lines)==1 and lines[0].startswith('li2_seed: '),'complete seed include rule')
+    headers={str(pin(p)):fact(pin(p))for p in shlex.split(lines[0].split(':',1)[1])}
+    need({unit,str(directory/'record.h')}<=set(headers),'whole seed source/header closure before compilation')
+    state.update(recipe=fact(script),argv=argv,headers=headers)
+    run('seed-link',argv,profile='release_build',env=builder.environment)
+    executable=binary(executable);_,head,segments=elf(executable)
+    need(executable.stat().st_mode&0o111 and head[1:4]==(2,62,1)and
+         not any(p[0]==1 and p[1]&3==3 for p in segments),'actual fixed seed ELF without WX')
+    state['elf']=fact(executable)
+    loader=pin(interpreter(executable))
+    _,out,err=run('seed-libraries',[loader,'--list',executable],profile='inspect',env=builder.environment)
+    need(not err,'actual seed library list');libraries={}
+    for line in out.decode().splitlines():
+        if re.fullmatch(r'\s*linux-vdso.so.1 \(0x[0-9a-f]+\)',line):continue
+        match=re.fullmatch(r'\s*(?:\S+ => )?(/\S+) \(0x[0-9a-f]+\)',line)
+        need(match is not None,'complete actual seed resolved library')
+        path=pin(match[1]);need(path.name not in libraries,'unique seed library basename')
+        libraries[path.name]=dict(path=str(path),**fact(path))
+    need(any(v['path']==str(loader)for v in libraries.values()),'actual seed interpreter in resolved library closure')
+    state['runtime_libraries']=libraries
+    try:row,out,err=run('seed-prerequisite',[executable],profile='seed')
+    finally:
+        if r['commands'][-1]['name']=='seed-prerequisite':
+            actual=r['commands'][-1]
+            state.update(launched=type(actual.get('pid'))is int,exit=actual.get('exit'),pid=actual.get('pid'),
+                         whole_process_ns=actual.get('duration_ns'),timed_out=actual.get('timed_out'))
+            state['captures']={k:{j:v[j]for j in('bytes','sha256')}for k,v in actual.get('captures',{}).items()}
+    need(not err and len(out)==seed_reader.SIZE,'complete unchanged seed output and empty stderr')
+    # Derive the candidate format from the actual first machine observation;
+    # unchanged read() validates both machines and all four complete FXSAVEs.
+    h=struct.unpack_from('<16Q',out,128)
+    cp=[struct.unpack_from('<6I',out,256+24*i)for i in range(67)]
+    facts=xstate.profile(cp,h[8],h[10],h[12],h[5],h[6])
+    profile=seed_reader.read(out,executable.read_bytes(),facts,xstate,cpu=r['cpu'],pid=row['pid'])
+    need(seed_reader.require(profile,facts,cpu=r['cpu'])==bytes(16),'independently qualified exact zero seed pointers')
+    state.update(status='passed',profile=profile,format=facts)
+    return seed_reader,xstate,profile,facts
 
 
 def prepare_inputs(original,bridge,builder,private,pin,binary,run,r):
@@ -229,6 +286,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     reader,owner_reader,native_policy=reader_support(builder,private,pin,binary,run,r)
     original=compile_subject(builder,private,pin,binary,run,r);app_layout=reader.elf(original.read_bytes(),native_policy)
     r['application_layout']={k:v for k,v in app_layout.items()if k!='source'}
+    seed_reference=seed_prerequisite(builder,private,pin,binary,run,r)
     bridge=build_bridge(builder,products,private,pin,binary,aliases,run,r,('UNROLLED_HASH_CAPTURE',),capture_image=original)
     layout=observed_layout(builder,bridge,private,pin,binary,run,r)
     interp,roots,objects,description,images,raws,carrier=prepare_inputs(original,bridge,builder,private,pin,binary,run,r)
@@ -251,14 +309,14 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
             manifest=preparation(c,row,directory,original,roots,objects,description,carrier,private,binary,r)
             if lane=='native':
                 need(err==b'','native stderr remains empty')
-                parsed=reader.read(out,mode,True,row['exit'],app_layout,row['pid'],r['cpu'])
+                parsed=reader.read(out,mode,True,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)
                 native_records[mode]=(out,row['pid']);c['status']='qualified_native_reference'
             else:
                 capture=row['captures']['record'];record_path=binary(private/capture['file'])
                 need(fact(record_path)=={k:capture[k]for k in('bytes','sha256')},'whole actual protected owner record')
                 record=record_path.read_bytes();image=image_inventory(original,interp,carrier,objects,manifest)
-                parsed=(reader.control_prefix(out,control,row['exit'],app_layout,row['pid'],r['cpu'])if control else
-                        reader.read(out,mode,False,row['exit'],app_layout,row['pid'],r['cpu']))
+                parsed=(reader.control_prefix(out,control,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)if control else
+                        reader.read(out,mode,False,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference))
                 actual_owner=owner_reader.read(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'],control=control)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader)
                 terminal,c['terminal']=reports.check(err,*terminal_args);r['terminal_reports'][label]=terminal
@@ -270,15 +328,15 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 if control:
                     need(0 in native_records,'actual mode0 native reference required for every control')
                     nout,npid=native_records[0]
-                    native=reader.read(nout,0,True,0,app_layout,npid,r['cpu'])
+                    native=reader.read(nout,0,True,0,app_layout,npid,r['cpu'],seed_reference)
                     c['control_reference']=control_reference(reader,native,parsed,actual_owner,control)
                     c['status']='qualified_required_owner_refusal'
                 else:
                     need(mode in native_records,'same-mode complete native reference required')
                     nout,npid=native_records[mode]
                     def compare(n,g):
-                        native=reader.read(n,mode,True,125 if mode>=7 else 0,app_layout,npid,r['cpu'])
-                        gated=reader.read(g,mode,False,row['exit'],app_layout,row['pid'],r['cpu'])
+                        native=reader.read(n,mode,True,125 if mode>=7 else 0,app_layout,npid,r['cpu'],seed_reference)
+                        gated=reader.read(g,mode,False,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)
                         owner=owner_reader.read(record,layout,image,gated,row['pid'],r['cpu'],row['exit'],control=0)
                         return reader.pair(native,gated,owner)
                     c['pair']=compare(nout,out);c['application_controls']=reader.controls(compare,nout,out,mode)
@@ -311,7 +369,9 @@ def main():
     r=dict(schema=1,profile='unrolled-hash-owner-v1',status='failed',expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,
         hardware=hardware(cpu),commands=[],cases=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control),lane=lane,mode=mode,control=control,
         expected_exit=125 if control or mode>=7 else 0,status='unexecuted',launched=False)for lane,mode,control in ORDER],
-        namespace_aliases={},terminal_reports={},bounds=BOUNDS,error=None,final_errors=[])
+        namespace_aliases={},terminal_reports={},bounds=BOUNDS,error=None,final_errors=[],
+        seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
+            bounds=BOUNDS['seed'],owner_subjects=0,completed_applications=0,performance_credit=False))
     def pin(path):
         alias = Path(os.path.abspath(path))
         p = alias.resolve(strict=True)
@@ -373,6 +433,8 @@ def main():
         tracked={os.fsdecode(name)for name in names.split(b'\0')if name}
         required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'unrolled_hash_app_reports.py',HERE/'unrolled_hash_build.py',
             FIXTURE/'main.c',FIXTURE/'pure.c',FIXTURE/'pure.ld',FIXTURE/'machine.S',FIXTURE/'app.h',FIXTURE/'read.py',FIXTURE/'build.sh',FIXTURE/'launch.py',OWNER/'read.py',OWNER/'layout.py')}
+        required|={str((SELECTED/'tests/provider_app/seed_probe'/n).relative_to(ROOT))for n in('probe.c','record.h','read.py','build.sh')}
+        required.add(str((SELECTED/'tests/b2_reference/xstate.py').relative_to(ROOT)))
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)
@@ -391,6 +453,7 @@ def main():
             if path and Path(path).is_file():pin(path)
         cohort(builder,products,private,pin,binary,aliases,run,r)
         need(len(r['cases'])==25 and all(c['status'].startswith('qualified_')for c in r['cases']),'all25 native/application/control attempts required')
+        need(r['seed_prerequisite']['status']=='passed','independent seed prerequisite remains separately mandatory')
         r['status']='passed'
     except BaseException as error:
         if r['error']is None:r['error']=type(error).__name__+': '+str(error)
@@ -449,6 +512,9 @@ def main():
         save(private/'receipt.json',r)
         hw=dict(r['hardware']);flags=hw.pop('isa_flags');hw.update(isa_flags_count=len(flags),isa_flags_sha256=digest(flags))
         public={k:r.get(k)for k in('schema','profile','status','expected_revision','started_utc','cpu','source','source_unchanged','cleanup_complete','bounds','totals','namespace_controls')}
+        public['seed_prerequisite']={k:v for k,v in r['seed_prerequisite'].items()if k in
+            ('planned','status','launched','expected_exit','bounds','owner_subjects','completed_applications','performance_credit',
+             'elf','exit','pid','whole_process_ns','timed_out','captures','profile')}
         public['cases']=[]
         for c in r['cases']:
             value={k:c[k]for k in('label','lane','mode','control','expected_exit','status','launched','exit','whole_process_ns','timed_out','captures','pair','owner_summary','control_reference','error_type')if k in c}
@@ -461,7 +527,7 @@ def main():
             input_manifest_sha256=digest(pins),artifact_manifest_sha256=digest(artifacts),command_count=len(r['commands']),commands_sha256=digest(r['commands']),
             failure_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
             performance_credit=False,whole_ls_eligibility_credit=False,
-            scope='Required25 subjects: nine actual native references, nine actual generated-owner pairs including two real read faults, and seven required owner refusals. Whole native/gated GPR, actual AF, FP, stack and data comparisons are mandatory. Failed operations never count as completed applications. This finite fixture qualifies this owner only; no general function/data-pointer authority or throughput claim.')
+            scope='Required25 subjects: nine actual native references, nine actual generated-owner pairs including two real read faults, and seven required owner refusals. One separate unchanged seed prerequisite qualifies exact zero FIP/FDP on the same CPU and complete actual format; it earns no owner/application/performance credit. Whole native/gated GPR, actual AF, FP, stack and data comparisons are mandatory. Failed operations never count as completed applications. This finite fixture qualifies this owner only; no general function/data-pointer authority or throughput claim.')
         columns=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count')
         stream=io.StringIO(newline='');writer=csv.writer(stream,lineterminator='\n');writer.writerow(columns)
         for c in public['cases']:writer.writerow([c.get(k,'')for k in columns])
