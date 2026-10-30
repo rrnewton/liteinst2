@@ -26,10 +26,9 @@ use oracle::{
 };
 use std::sync::{Mutex, MutexGuard};
 
-// Short and legacy neighbor fixtures share source-relative exact image windows.
-// Hold one crate-local guard before source allocation through image retirement
-// and teardown. Calibrations with jointly reserved images and other workspace
-// test crates remain parallel.
+// Legacy neighbor fixtures share source-relative exact image windows. Hold one
+// crate-local guard through image retirement and teardown. Short fixtures own
+// separate address arenas; they and the other workspace test crates run parallel.
 static EXACT_ADDRESS_WINDOW: Mutex<()> = Mutex::new(());
 
 fn exact_address_window() -> MutexGuard<'static, ()> {

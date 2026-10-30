@@ -175,6 +175,13 @@ impl NativeOracle {
             adjacent.push(tail);
         }
         adjacent.reverse();
+        (Self::from_code_mapping(code, code_mapping), adjacent)
+    }
+
+    // Both ordinary and reserved fixtures use the identical one-page snapshot,
+    // data, stack, return PC, and unseeded flag initialization.
+    fn from_code_mapping(code: &[u8], code_mapping: Mapping) -> Self {
+        assert!(code.len() < PAGE / 2);
         assert_eq!(code_mapping.len, PAGE);
         code_mapping.initialize(0, &vec![0xcc; PAGE]);
         code_mapping.initialize(0, code);
@@ -197,18 +204,15 @@ impl NativeOracle {
             &return_pc.to_ne_bytes(),
         );
         let original_code = code_mapping.bytes().to_vec();
-        (
-            Self {
-                code: code_mapping,
-                data,
-                stack,
-                initial_rsp,
-                return_pc,
-                original_code,
-                seeded_arithmetic_flags: false,
-            },
-            adjacent,
-        )
+        Self {
+            code: code_mapping,
+            data,
+            stack,
+            initial_rsp,
+            return_pc,
+            original_code,
+            seeded_arithmetic_flags: false,
+        }
     }
 
     /// Opt-in campaign initialization. All 4096 application data bytes use
@@ -226,6 +230,11 @@ impl NativeOracle {
         lengths: &[usize],
     ) -> (Self, Vec<Mapping>) {
         let (mut oracle, adjacent) = Self::with_adjacent_code_mappings(code, lengths);
+        oracle.initialize_seeded_memory_and_flags(memory_seed);
+        (oracle, adjacent)
+    }
+
+    fn initialize_seeded_memory_and_flags(&mut self, memory_seed: u64) {
         let mut state = memory_seed;
         let mut memory = [0_u8; PAGE];
         for chunk in memory.chunks_exact_mut(8) {
@@ -236,9 +245,8 @@ impl NativeOracle {
             word ^= word >> 31;
             chunk.copy_from_slice(&word.to_le_bytes());
         }
-        oracle.data.initialize(0, &memory);
-        oracle.seeded_arithmetic_flags = true;
-        (oracle, adjacent)
+        self.data.initialize(0, &memory);
+        self.seeded_arithmetic_flags = true;
     }
 
     pub fn return_pc(&self) -> u64 {
@@ -2645,3 +2653,8 @@ pub mod process_text;
 #[allow(dead_code)]
 #[path = "elf_exec_oracle.rs"]
 pub mod elf_exec_oracle;
+
+// Private address-space ownership for the same-function short-neighbor cohort.
+#[allow(dead_code)]
+#[path = "neighbor_fixture_arena.rs"]
+pub(crate) mod neighbor_fixture_arena;

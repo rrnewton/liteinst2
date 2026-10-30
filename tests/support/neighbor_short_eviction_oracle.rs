@@ -3,6 +3,7 @@
 use super::*;
 use liteinst2::neighbor::{plan_neighbor_short, plan_neighbor_short_detailed};
 use oracle::ShortSourceRelay;
+use oracle::neighbor_fixture_arena::NeighborFixtureArena;
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 
 const ENDPOINTS: [(usize, usize, bool, usize); 8] = [
@@ -231,7 +232,6 @@ fn short_conditional_fallthrough_and_taken() {
 }
 
 fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
-    let _address_window = exact_address_window();
     let bit = 1 << layout_index;
     assert_eq!(
         STARTED.fetch_or(bit, SeqCst) & bit,
@@ -246,7 +246,7 @@ fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
     let mut direct_victim_count = 0;
     assert_eq!(puzzle.heads.len(), expected_heads);
     head_count += puzzle.heads.len();
-    let mut oracle = NativeOracle::new(&puzzle.code);
+    let (mut oracle, _, mut arena) = NativeOracle::with_neighbor_fixture(&puzzle.code, &[]);
     let base = oracle.code.address();
     let selected = base + puzzle.selected as u64;
     let victim = base + puzzle.victim as u64;
@@ -289,6 +289,10 @@ fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
     victim_allocation.ranges = vec![AddressRange::new(victim_target & !4095, 8192).unwrap()];
     victim_allocation.preferred_address = Some(victim_target);
     victim_allocation.max_candidates = 1;
+    // Live planning must see these exact existing policy windows as vacant.
+    // All surrounding pages remain reserved through publication and retirement.
+    arena.release(selected_target & !4095, 8192);
+    arena.release(victim_target & !4095, 8192);
     let request = InstallRequest {
         identity,
         code: &puzzle.code[..puzzle.function_len],
@@ -538,7 +542,7 @@ fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
     assert_eq!(direct_victim_count, SEEDS.len());
     // Exactly eleven source owners remain pinned through process exit, as in
     // the legacy cohort; there is no outcome-dependent mapping cache or retry.
-    let _pinned_source = Box::leak(Box::new(oracle));
+    let _pinned_source = Box::leak(Box::new((oracle, arena)));
     HEADS.fetch_add(head_count, SeqCst);
     INSTALLED.fetch_add(installed_count, SeqCst);
     RETIRED.fetch_add(retired_count, SeqCst);
@@ -575,7 +579,7 @@ fn exact_mapping_conflicts(targets: &[u64]) -> Vec<String> {
 }
 
 // This scaffold is hand-emitted independently of the short planner/decoder.
-// The fixed suffix dictates one exact target and one exact mapping attempt.
+// The fixed suffix dictates one exact target inside its continuously owned arena.
 struct Calibration {
     oracle: NativeOracle,
     trace: NativeTrace,
@@ -586,6 +590,7 @@ struct Calibration {
     target: u64,
     images: Vec<Mapping>,
     selected_page: Mapping,
+    _arena: NeighborFixtureArena,
 }
 impl Calibration {
     fn new(seed: u64) -> Self {
@@ -625,15 +630,20 @@ impl Calibration {
             code.resize(136, 0x90);
             code[128..136].copy_from_slice(&0xf1e2_d3c4_b5a6_9788_u64.to_le_bytes());
         }
-        let (oracle, images) = if seeded_flags {
-            NativeOracle::with_seeded_memory_and_flags_adjacent(&code, seed, &[4096; 4])
+        let (oracle, images, mut arena) = if seeded_flags {
+            NativeOracle::with_seeded_memory_and_flags_neighbor_fixture(&code, seed, &[4096; 4])
         } else {
-            NativeOracle::with_adjacent_code_mappings(&code, &[4096; 4])
+            NativeOracle::with_neighbor_fixture(&code, &[4096; 4])
         };
         let victim = oracle.code.address();
         let selected_pc = victim + selected as u64;
         let target = suffix_target(&code, victim, selected, 0, len);
-        let selected_page = Mapping::exact_page(target & !4095);
+        let selected_page = arena.take_writable(target & !4095, 4096);
+        assert_eq!(
+            selected_page.address(),
+            target & !4095,
+            "exact fixture page was not honored"
+        );
         let mut heads: Vec<_> = (0..function_len)
             .filter(|&pc| !(1..len).contains(&pc) && pc != selected + 1)
             .map(|pc| victim + pc as u64)
@@ -698,6 +708,7 @@ impl Calibration {
             target,
             images,
             selected_page,
+            _arena: arena,
         }
     }
     fn relay(&self) -> ShortSourceRelay<'_> {
@@ -781,7 +792,6 @@ fn refused(reason: &str, action: impl FnOnce()) {
 
 #[test]
 fn short_independent_native_calibration() {
-    let _address_window = exact_address_window();
     for seed in SEEDS {
         let f = Calibration::new(seed);
         f.positive();
@@ -800,7 +810,6 @@ fn short_independent_native_calibration() {
 
 #[test]
 fn short_reject_foreign_or_wrong_grammar() {
-    let _address_window = exact_address_window();
     let f = Calibration::new(SEEDS[0]);
     f.positive();
     let foreign = Calibration::new(SEEDS[0]);
@@ -890,7 +899,6 @@ fn short_reject_foreign_or_wrong_grammar() {
 
 #[test]
 fn short_reject_suffix_overlay_corruption() {
-    let _address_window = exact_address_window();
     for offset in 6..10 {
         let f = Calibration::new(SEEDS[0]);
         f.positive();
@@ -918,7 +926,6 @@ fn short_reject_suffix_overlay_corruption() {
 
 #[test]
 fn short_reject_head_gateway_image_mismatch() {
-    let _address_window = exact_address_window();
     let mut f = Calibration::new(SEEDS[0]);
     f.positive();
     f.map.boundaries.retain(|&(pc, _)| pc != f.victim + 6);
@@ -997,7 +1004,6 @@ fn short_reject_head_gateway_image_mismatch() {
 
 #[test]
 fn short_reject_displacement_or_visit_corruption() {
-    let _address_window = exact_address_window();
     for (offset, value, reason) in [
         (32, 0x90, "short selected EB mismatch"),
         (33, 0, "short selected EB mismatch"),
@@ -1042,7 +1048,6 @@ fn short_reject_displacement_or_visit_corruption() {
 
 #[test]
 fn short_reject_full_state_or_hook_corruption() {
-    let _address_window = exact_address_window();
     for (code, reason) in [
         (&[0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0][..], "rax mismatch"),
         (&[0xf8][..], "defined RFLAGS mismatch"),
@@ -1115,7 +1120,6 @@ fn short_reject_full_state_or_hook_corruption() {
 
 #[test]
 fn short_reject_fetch_or_bound_violation() {
-    let _address_window = exact_address_window();
     let f = Calibration::new(SEEDS[0]);
     f.positive();
     for (logical, relay, reason) in [
@@ -1167,7 +1171,6 @@ fn short_reject_fetch_or_bound_violation() {
 // Engine dispatch bridge; the direct planner and NativeOracle remain unchanged.
 #[test]
 fn short_engine_overlap_bundle_matches_direct_and_native() {
-    let _address_window = exact_address_window();
     use liteinst2::engine::{self, CandidateEvidence, EnginePolicy, SelectedMetrics, Tactic};
     // Independent five-head bridge; do not enroll in the old 1102-head census.
     let puzzle = ShortPuzzle::overlap();
@@ -1181,7 +1184,7 @@ fn short_engine_overlap_bundle_matches_direct_and_native() {
     let mut direct_victim_count = 0;
     assert_eq!(puzzle.heads.len(), expected_heads);
     head_count += puzzle.heads.len();
-    let mut oracle = NativeOracle::new(&puzzle.code);
+    let (mut oracle, _, mut arena) = NativeOracle::with_neighbor_fixture(&puzzle.code, &[]);
     let base = oracle.code.address();
     let selected = base + puzzle.selected as u64;
     let victim = base + puzzle.victim as u64;
@@ -1224,6 +1227,10 @@ fn short_engine_overlap_bundle_matches_direct_and_native() {
     victim_allocation.ranges = vec![AddressRange::new(victim_target & !4095, 8192).unwrap()];
     victim_allocation.preferred_address = Some(victim_target);
     victim_allocation.max_candidates = 1;
+    // Live planning must see these exact existing policy windows as vacant.
+    // All surrounding pages remain reserved through publication and retirement.
+    arena.release(selected_target & !4095, 8192);
+    arena.release(victim_target & !4095, 8192);
     let request = InstallRequest {
         identity,
         code: &puzzle.code[..puzzle.function_len],
@@ -1510,5 +1517,10 @@ fn short_engine_overlap_bundle_matches_direct_and_native() {
     assert_eq!(originals.len() + installed_count + retired_count, 30);
     // Own this one additional mapping through process exit, independently of
     // the legacy endpoint census; neither a successful retry nor shared cache.
-    let _pinned_source = Box::leak(Box::new(oracle));
+    let _pinned_source = Box::leak(Box::new((oracle, arena)));
+}
+
+#[test]
+fn short_fixture_arena_ownership_controls() {
+    NeighborFixtureArena::assert_ownership_controls();
 }
