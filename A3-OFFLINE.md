@@ -36,6 +36,21 @@ a temporary composition and retains the existing byte-lock, allocation and
 whole-selection checks before accepting them. Sparse expectations remain
 relative to the original ELF.
 
+The core also provides `quiescent::plan_adjacent_b2_with_emission_after` for
+explicit joint planning of two adjacent observing, forward two-byte Jccs. It
+tries an upper placement and then derives the lower pun window from that actual
+overlay. Upper and lower image allowances remain cumulative, with a separate
+continuation bound. Its ordered evidence retains refused attempts and omitted
+targets; bounded failure does not establish global impossibility.
+
+This artifact-only API accepts the original sites in lower/upper order and
+returns two opaque members in upper/lower append order. Callers must commit both
+members together, supply every external pending instruction, and check resources
+for the complete predecessor plus pair. The returned memory and bundle budget
+cover only the two new members. Existing frontend profiles do not yet call it.
+[The control receipt](evaluation/adjacent-b2/README.md) records its current
+structural validation; native execution and frontend integration remain separate.
+
 ## Three outputs from one plan
 
 `candidate.elf` preserves the original entry and LOAD mappings, applies the

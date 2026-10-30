@@ -1,0 +1,11 @@
+test,outcome
+quiescent::adjacent_b2::tests::adjacent_b2_actual_images_and_pair,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_aggregate_and_rollback,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_allocation_and_hook_boundaries,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_cap_boundaries,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_entry_and_domain_boundaries,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_failure_precedence,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_legacy_projection,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_no_cumulative_reset,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_original_current_identity,PASS
+quiescent::adjacent_b2::tests::adjacent_b2_pending_full_ranges,PASS
