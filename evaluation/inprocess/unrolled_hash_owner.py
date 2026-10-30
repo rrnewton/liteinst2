@@ -114,7 +114,7 @@ def observed_layout(builder,bridge,private,pin,binary,run,r):
         profile='inspect',env=dict(builder.environment,MALLOC_ARENA_MAX='1'))
     need(not err and out.endswith(b'\n')and out.count(b'\n')==1,'one actual bounded DWARF observation; no inferior execution')
     layout=json.loads(out);need(layout['record']=='uho_wire'and 0<layout['types']['uho_wire']['bytes']<4<<20,'actual retained owner wire')
-    path=private/'owner-layout.json'
+    path=private/'owner-dwarf-layout.json'
     with path.open('xb')as f:f.write(out)
     r['owner_layout']=dict(artifact=fact(binary(path)),bridge=fact(bridge),reader=fact(script));return layout
 
