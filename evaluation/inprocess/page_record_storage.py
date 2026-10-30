@@ -17,7 +17,7 @@ def stable(path):
 
 class RecordStorage:
     def __init__(self,private,receipt):
-        self.private=Path(private).resolve(strict=True);self.entries={};self.log=None
+        self.private=Path(private).resolve(strict=True);self.entries={};self.journal_started=False
         self.path=self.private/'record-storage.jsonl'
         self.receipt=receipt['record_storage']=dict(schema=1,scope='Lossless storage only; original capture facts and full reader results are unchanged.',records=[],journal=None)
 
@@ -44,8 +44,9 @@ class RecordStorage:
         return dict(value,mode=before[5])
 
     def emit(self,value):
-        if self.log is None:self.log=self.path.open('x')
-        self.log.write(json.dumps(value,sort_keys=True,separators=(',',':'))+'\n');self.log.flush();os.fsync(self.log.fileno())
+        with self.path.open('r+'if self.journal_started else'x')as log:
+            self.journal_started=True;log.seek(0,os.SEEK_END)
+            log.write(json.dumps(value,sort_keys=True,separators=(',',':'))+'\n');log.flush();os.fsync(log.fileno())
 
     def archive(self,path,command,accepted):
         p=Path(path).resolve(strict=True);cap=command['captures']['record'];want={k:cap[k]for k in('bytes','sha256')}
@@ -98,8 +99,4 @@ class RecordStorage:
             for path in self.entries:self.original(path)
             need(len(self.entries)==len(self.receipt['records'])and all(x['status']=='archived'for x in self.receipt['records']),'all archive attempts completed')
         finally:
-            if self.log is not None:
-                log=self.log;self.log=None
-                try:log.flush();os.fsync(log.fileno())
-                finally:log.close()
-                self.receipt['journal']=dict(file=self.path.name,**fact(self.path))
+            if self.journal_started:self.receipt['journal']=dict(file=self.path.name,**fact(self.path))
