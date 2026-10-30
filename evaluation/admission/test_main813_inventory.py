@@ -9,6 +9,7 @@ from unittest.mock import patch
 import core_813_inventory as main813
 import core_5cda_inventory as main5c
 import core_cc846_inventory as inventory
+import recorder_shards_inventory as shards
 import precontext_native as protocol
 import parsing
 import run
@@ -45,10 +46,59 @@ class Main813InventoryTests(unittest.TestCase):
     def parse(self, raw, succeeded=True):
         return protocol.separate(raw, [protocol.specification()], succeeded)
 
+    def _historical_corpus(self):
+        # Independent fresh read and exact current354 -> historical350 projection;
+        # no shared mutable fixture, source-read cache or reused validation result.
+        declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        return shards.before_current(declared)
+
     def test_exact_inventory_sources_docs_and_historical_denominators(self):
         # Optional syntax reuse: public eligibility and the pure kernel are
         # separate obligations. Unsupported stdlib builds still run every
         # live-fallback control; they receive no public-cache coverage credit.
+        # Impossible null fields are rejected before historical dispatch; every
+        # non-null declaration still executes the complete original body.
+        null_actual = json.loads((main813.ROOT / 'evaluation/admission/corpus.json').read_bytes())
+        null_actual = shards.before_current(null_actual)
+        self.assertEqual(len(null_actual), 10)
+        self.assertTrue(all(value is not None for value in null_actual.values()))
+        with patch.object(main813, 'digest', side_effect=AssertionError('extra serialization')):
+            self.assertIsNone(main813.precheck_null_corpus(null_actual, 'null_control'))
+            for null_key in null_actual:
+                null_changed = dict(null_actual); null_changed[null_key] = None
+                with self.subTest(null_field=null_key), self.assertRaisesRegex(
+                        parsing.InvalidEvidence, '^null_control$'):
+                    main813.precheck_null_corpus(null_changed, 'null_control')
+            self.assertIsNone(main813.precheck_null_corpus({'nested': [None]}, 'null_control'))
+            class NullRoot(dict):
+                def __iter__(self):
+                    raise AssertionError('foreign root callback')
+                def values(self):
+                    raise AssertionError('foreign values callback')
+            class NullKey(str):
+                pass
+            for null_foreign in (None, [], 1, NullRoot(a=None), {NullKey('a'): None}):
+                self.assertIsNone(main813.precheck_null_corpus(null_foreign, 'null_control'))
+        class NullReached(BaseException):
+            pass
+        for null_before, null_next in (
+                ('before_current', 'peel_690'), ('before_0a8', 'peel_09fe'),
+                ('before_startup', 'peel_091')):
+            with patch.object(main813, null_next, side_effect=NullReached) as null_dispatch:
+                with self.assertRaises(NullReached):
+                    getattr(main813, null_before)(null_actual)
+                self.assertEqual(null_dispatch.call_count, 1)
+                for null_key in null_actual:
+                    null_changed = dict(null_actual); null_changed[null_key] = None
+                    with self.subTest(null_before=null_before, null_field=null_key), self.assertRaisesRegex(
+                            parsing.InvalidEvidence, '^null_body_control$'):
+                        getattr(main813, null_before)(null_changed, 'null_body_control')
+                self.assertEqual(null_dispatch.call_count, 1)
+        with patch.object(main813, 'require_091_sources', side_effect=NullReached) as null_source:
+            with self.assertRaises(NullReached):
+                main813.before_091(null_actual)
+            self.assertEqual(null_source.call_count, 1)
+
         import ast
         import builtins
         import importlib.util
@@ -918,17 +968,117 @@ class Main813InventoryTests(unittest.TestCase):
             self.assertFalse(plain._eligible())
         self.assertEqual(plain.deepcopy(copy_value), original_copy(copy_value))
 
+        # The new live recorder has exactly four additional independent cases.
+        # Historical350 is accepted only by the named historical API, never by
+        # the live entry point. Every source read and historical guard stays live.
+        recorder_live = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        recorder_ids = main5c.python_identities(Path(__file__).parent)
+        self.assertEqual((recorder_live['recorder_tests'], len(recorder_ids)), (354, 354))
+        self.assertEqual(inventory.RECORDER_TESTS, 354)
+        self.assertEqual(shards.digest(recorder_live), shards.CURRENT)
+        recorder_old = shards.before_current(recorder_live)
+        self.assertEqual(recorder_old['recorder_tests'], 350)
+        self.assertEqual(shards.digest(recorder_old), main813.LATEST)
+        self.assertEqual(dict(recorder_live, recorder_tests=350), recorder_old)
+        self.assertEqual(len(shards.before_python(recorder_ids)), 350)
+        self.assertEqual(shards.digest(shards.before_python(recorder_ids)), main813.PYTHON_CURRENT)
+        self.assertIsNone(inventory.require_current(recorder_live))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+            inventory.require_current(recorder_old)
+        for recorder_count in (350, 353, 355, True, 354.0):
+            recorder_bad = copy.deepcopy(recorder_live)
+            recorder_bad['recorder_tests'] = recorder_count
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(recorder_bad)
+        for recorder_key in recorder_live:
+            recorder_bad = copy.deepcopy(recorder_live)
+            recorder_bad[recorder_key] = None
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^recorder_shards_corpus_differs$'):
+                shards.before_current(recorder_bad)
+        for recorder_bad in (recorder_ids[:-1], recorder_ids + [recorder_ids[0]],
+                             list(reversed(recorder_ids)),
+                             [x for x in recorder_ids if x != shards.ADDED[0]],
+                             [x + '_changed' if x == shards.ADDED[0] else x for x in recorder_ids]):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^recorder_shards_python_differs$'):
+                shards.before_python(recorder_bad)
+            self.assertEqual(shards.peel_python(recorder_bad), recorder_bad)
+        recorder_read = Path.read_bytes
+        for recorder_path, recorder_row in shards.DATA['sources'].items():
+            recorder_target = shards.ROOT / recorder_path
+            recorder_raw = recorder_read(recorder_target)
+            self.assertEqual(hashlib.sha256(recorder_raw).hexdigest(), recorder_row['current_sha256'])
+            recorder_prior = shards.source_before(recorder_path, recorder_raw, 'recorder_source_control')
+            self.assertEqual(hashlib.sha256(recorder_prior).hexdigest(), recorder_row['previous_sha256'])
+            for recorder_bad in (recorder_raw + b'\n', recorder_raw[:-1], recorder_prior,
+                                 bytearray(recorder_raw), recorder_raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^recorder_source_control$'):
+                    shards.source_before(recorder_path, recorder_bad, 'recorder_source_control')
+            for recorder_missing in (False, True):
+                def recorder_changed(candidate):
+                    if candidate == recorder_target:
+                        if recorder_missing:
+                            raise FileNotFoundError(recorder_path)
+                        return recorder_raw + b'\n'
+                    return recorder_read(candidate)
+                with patch.object(Path, 'read_bytes', recorder_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_current(recorder_live)
+        import recorder_parallel
+        for recorder_workers in (1, 2, 3, 4):
+            recorder_groups = recorder_parallel.partition(recorder_ids, recorder_workers)
+            self.assertEqual(len(recorder_groups), recorder_workers)
+            self.assertEqual(sorted(x for group in recorder_groups for x in group), sorted(recorder_ids))
+            self.assertTrue(all(recorder_groups))
+            for recorder_index, recorder_identity in enumerate(shards.ADDED):
+                self.assertIn(recorder_identity, recorder_groups[recorder_index % recorder_workers])
+            for group in recorder_groups:
+                self.assertEqual(group, [x for x in recorder_ids if x in group])
+        self.assertEqual((recorder_parallel.WALL, recorder_parallel.LIMIT), (180, 8 * 1024 * 1024))
+
+        # Discovery, rather than the generic partition helper, owns the complete
+        # runtime population. Renaming one shard keeps count and declared/runtime
+        # identity equality exact, isolating the required-shard membership gate.
+        class RecorderCase:
+            def __init__(self, identity):
+                self.identity = identity
+            def id(self):
+                return self.identity
+        recorder_cases = [RecorderCase(name) for name in recorder_ids]
+        with patch.object(recorder_parallel.unittest.defaultTestLoader, 'discover', return_value=None), \
+             patch.object(recorder_parallel.unittest.defaultTestLoader, 'errors', []), \
+             patch.object(recorder_parallel, 'flatten', return_value=recorder_cases), \
+             patch.object(main5c, 'python_identities', return_value=recorder_ids):
+            self.assertEqual(recorder_parallel.discover(), (recorder_cases, recorder_ids))
+        for recorder_missing in shards.ADDED:
+            recorder_changed_ids = [name + '_renamed' if name == recorder_missing else name
+                                    for name in recorder_ids]
+            recorder_cases = [RecorderCase(name) for name in recorder_changed_ids]
+            with patch.object(recorder_parallel.unittest.defaultTestLoader, 'discover', return_value=None), \
+                 patch.object(recorder_parallel.unittest.defaultTestLoader, 'errors', []), \
+                 patch.object(recorder_parallel, 'flatten', return_value=recorder_cases), \
+                 patch.object(main5c, 'python_identities', return_value=recorder_changed_ids):
+                with self.assertRaisesRegex(ValueError, '^missing_historical_shard$'):
+                    recorder_parallel.discover()
+        for recorder_code in ('main091_inventory_differs', 'main091_source_inventory_differs',
+                              'main091_inverse_control'):
+            recorder_error = parsing.InvalidEvidence(recorder_code)
+            self.assertIs(type(recorder_error), parsing.InvalidEvidence)
+            self.assertEqual((recorder_error.code, str(recorder_error)), (recorder_code, recorder_code))
+
+    def test_historical_sources_core813_through_83b(self):
+        plain = main813.inventory_copy
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
-        inventory.require_current(declared)
+        declared = shards.before_current(declared)
+        inventory.require_historical350(declared)
         # The early current-blob rejection never grants historical acceptance.
         with patch.object(inventory, 'before_cc846',
                           side_effect=RuntimeError('original history reached')) as history:
             with self.assertRaisesRegex(RuntimeError, '^original history reached$'):
-                inventory.require_current(declared)
+                inventory.require_historical350(declared)
             self.assertEqual(history.call_args_list, [unittest.mock.call(declared)])
         with patch.object(main813, 'precheck_current_sources') as precheck:
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current({})
+                inventory.require_historical350({})
             self.assertEqual(precheck.call_count, 0)
         precheck_path = 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs'
         precheck_target = main813.ROOT / precheck_path
@@ -936,7 +1086,7 @@ class Main813InventoryTests(unittest.TestCase):
         with patch.dict(main813.MAIN2754['sources'], {precheck_path: '0' * 64}):
             with patch.object(inventory, 'before_cc846') as history:
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                    inventory.require_current(declared)
+                    inventory.require_historical350(declared)
                 self.assertEqual(history.call_count, 0)
         # A changed/missing first read refuses early; the same change after a
         # valid precheck is still rejected by the untouched original traversal.
@@ -953,7 +1103,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return precheck_read(candidate)
                 with patch.object(Path, 'read_bytes', precheck_changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(declared)
+                        inventory.require_historical350(declared)
                 self.assertEqual(len(precheck_reads), 2 if late else 1)
         # Unsupported metadata cannot run custom callbacks during the precheck.
         class PrecheckMap(dict):
@@ -977,7 +1127,7 @@ class Main813InventoryTests(unittest.TestCase):
             with patch.object(inventory, 'before_cc846',
                               side_effect=RuntimeError('fallback history reached')):
                 with self.assertRaisesRegex(RuntimeError, '^fallback history reached$'):
-                    inventory.require_current(declared)
+                    inventory.require_historical350(declared)
         actual = plain.deepcopy(declared)
         declared = main813.before_e797(declared)
         live = plain.deepcopy(declared)
@@ -1002,6 +1152,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(previous['native_validation_fixtures'], declared['native_validation_fixtures'])
         self.assertEqual(previous['backing_cleanup_harnesses'], declared['backing_cleanup_harnesses'])
         identities = main5c.python_identities(Path(__file__).parent)
+        identities = shards.before_python(identities)
         self.assertEqual(len(identities), 350)
         self.assertEqual(len(main813.peel_python(identities)), 345)
         self.assertEqual(len(inventory.peel_python(identities)), 330)
@@ -1011,7 +1162,7 @@ class Main813InventoryTests(unittest.TestCase):
                 main813.before_current(changed)
         for old in (previous, main5c.before_current(previous)):
             with self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(old)
+                inventory.require_historical350(old)
         read_bytes = Path.read_bytes
         for path in main813.DATA['sources']:
             mutation_target = main813.ROOT / path
@@ -1039,7 +1190,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.digest(main813.before_690(latest)), main813.CURRENT)
         latest = actual  # Later live-source mutations must reach the current guard.
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(declared)
+            inventory.require_historical350(declared)
         for key in latest:
             changed = plain.deepcopy(latest); changed[key] = None
             with self.subTest(main690_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1050,7 +1201,7 @@ class Main813InventoryTests(unittest.TestCase):
             changed = plain.deepcopy(latest)
             changed['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']['tests'] = value
             with self.subTest(main690_count=value), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for path in main813.MAIN690['sources']:
             for missing in (False, True):
                 mutation_target = main813.ROOT / path
@@ -1062,7 +1213,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main690_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(latest)
+                        inventory.require_historical350(latest)
         for path, row in main813.MAIN690['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_690(path, raw, 'changed')
@@ -1078,7 +1229,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(sum(len(x['all']) for x in main813.MAINC0['methods'].values()), 22)
         self.assertEqual(sum(len(x['ignored']) for x in main813.MAINC0['methods'].values()), 0)
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_c0(newest))
+            inventory.require_historical350(main813.before_c0(newest))
         live = actual
         for name, change in main813.MAINC0['workspace_changes'].items():
             self.assertEqual(rows[name], change['current'])
@@ -1089,13 +1240,13 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(live)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainc0_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
         for key in newest:
             changed = plain.deepcopy(newest); changed[key] = None
             with self.subTest(mainc0_field=key), self.assertRaises(parsing.InvalidEvidence):
                 main813.before_c0(changed)
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(newest)
+            inventory.require_historical350(newest)
         newest = actual  # Source mutation controls authenticate the actual current catalog.
         for path in main813.MAINC0['sources']:
             for missing in (False, True):
@@ -1108,7 +1259,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(mainc0_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(newest)
+                        inventory.require_historical350(newest)
         for path, row in main813.MAINC0['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_c0(path, raw, 'changed')
@@ -1127,7 +1278,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(sum(len(main813.MAINC1['methods'][p]['all']) * len(v)
                              for p, v in main813.MAINC1['instances'].items()), 36)
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_c1(live))
+            inventory.require_historical350(main813.before_c1(live))
         live = actual
         for name, change in main813.MAINC1['workspace_changes'].items():
             self.assertEqual(rows[name], change['current'])
@@ -1138,7 +1289,7 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(live)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainc1_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
         for key in live:
             changed = plain.deepcopy(live); changed[key] = None
             with self.subTest(mainc1_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1154,7 +1305,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(mainc1_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(live)
+                        inventory.require_historical350(live)
         for path, row in main813.MAINC1['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_c1(path, raw, 'changed')
@@ -1173,7 +1324,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(sum(len(x) for x in main813.MAINE797['doctests'].values()), 18)
         self.assertEqual(sum(len(x['ignored']) for x in main813.MAINE797['methods'].values()), 1)
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_e797(actual))
+            inventory.require_historical350(main813.before_e797(actual))
         for name, change in main813.MAINE797['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1183,11 +1334,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(maine797_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(maine797_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(maine797_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1203,7 +1354,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(maine797_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAINE797['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_e797(path, raw, 'changed')
@@ -1222,7 +1373,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAINF0EF['declared_delta'],
                          {'rust_tests': 9, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_f0ef(actual))
+            inventory.require_historical350(main813.before_f0ef(actual))
         for name, change in main813.MAINF0EF['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1232,11 +1383,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainf0ef_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(mainf0ef_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(mainf0ef_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1252,7 +1403,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(mainf0ef_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAINF0EF['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_f0ef(path, raw, 'changed')
@@ -1271,7 +1422,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN7CDC['declared_delta'],
                          {'rust_tests': 10, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_7cdc(actual))
+            inventory.require_historical350(main813.before_7cdc(actual))
         for name, change in main813.MAIN7CDC['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1281,11 +1432,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main7cdc_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main7cdc_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main7cdc_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1301,7 +1452,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main7cdc_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN7CDC['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_7cdc(path, raw, 'changed')
@@ -1320,7 +1471,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN43D7['declared_delta'],
                          {'rust_tests': 39, 'doctests': 7, 'ignored': 20, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_43d7(actual))
+            inventory.require_historical350(main813.before_43d7(actual))
         for name, change in main813.MAIN43D7['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1330,11 +1481,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main43d7_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main43d7_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main43d7_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1350,7 +1501,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main43d7_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN43D7['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_43d7(path, raw, 'changed')
@@ -1377,7 +1528,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN0DF8['declared_delta'],
                          {'rust_tests': 28, 'doctests': 0, 'ignored': 1, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_0df8(actual))
+            inventory.require_historical350(main813.before_0df8(actual))
         for name, change in main813.MAIN0DF8['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1387,11 +1538,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main0df8_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main0df8_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main0df8_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1407,7 +1558,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main0df8_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN0DF8['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_0df8(path, raw, 'changed')
@@ -1431,7 +1582,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN0A8['declared_delta'],
                          {'rust_tests': 26, 'rust_declarations': 19, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_0a8(actual))
+            inventory.require_historical350(main813.before_0a8(actual))
         for name, change in main813.MAIN0A8['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1441,11 +1592,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main0a8_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main0a8_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main0a8_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1461,7 +1612,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main0a8_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN0A8['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_0a8(path, raw, 'changed')
@@ -1482,7 +1633,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN09FE['declared_delta'],
                          {'rust_tests': 24, 'rust_declarations': 24, 'doctests': 2, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_09fe(actual))
+            inventory.require_historical350(main813.before_09fe(actual))
         for name, change in main813.MAIN09FE['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1492,11 +1643,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main09fe_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main09fe_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main09fe_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1512,7 +1663,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main09fe_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN09FE['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_09fe(path, raw, 'changed')
@@ -1533,7 +1684,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN727['declared_delta'],
                          {'rust_tests': 33, 'rust_declarations': 33, 'doctests': 0, 'ignored': 3, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_727(actual))
+            inventory.require_historical350(main813.before_727(actual))
         for name, change in main813.MAIN727['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1543,11 +1694,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main727_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main727_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main727_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1563,7 +1714,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main727_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN727['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_727(path, raw, 'changed')
@@ -1586,7 +1737,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAINABAB['declared_delta'],
                          {'rust_tests': 69, 'rust_declarations': 54, 'new_instances_of_existing_declarations': 6, 'second_instances_of_new_declarations': 9, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_abab(actual))
+            inventory.require_historical350(main813.before_abab(actual))
         for name, change in main813.MAINABAB['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1596,11 +1747,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainabab_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(mainabab_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(mainabab_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1616,7 +1767,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(mainabab_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAINABAB['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_abab(path, raw, 'changed')
@@ -1642,7 +1793,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN83B['declared_delta'],
                          {'rust_tests': 32, 'rust_declarations': 32, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_83b(actual))
+            inventory.require_historical350(main813.before_83b(actual))
         for name, change in main813.MAIN83B['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1652,11 +1803,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main83b_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main83b_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main83b_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1672,7 +1823,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main83b_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN83B['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_83b(path, raw, 'changed')
@@ -1688,6 +1839,10 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual({k: len(v) for k, v in main813.MAIN83B['listed_additions'].items()},
                          {'unit/rapid_profiler/lib': 21, 'unit/ordinary_interval/main': 11})
 
+    def test_historical_sources_850_through_12e(self):
+        plain = main813.inventory_copy
+        read_bytes = Path.read_bytes
+        actual = self._historical_corpus()
         self.assertEqual(main813.digest(main813.before_850(actual)), main813.CURRENT83B)
         current_rows = main813.before_5a0(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
@@ -1698,7 +1853,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN850['declared_delta'],
                          {'rust_tests': 27, 'rust_declarations': 27, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_850(actual))
+            inventory.require_historical350(main813.before_850(actual))
         for name, change in main813.MAIN850['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1708,11 +1863,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main850_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main850_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main850_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1728,7 +1883,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main850_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN850['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_850(path, raw, 'changed')
@@ -1754,7 +1909,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN5A0['declared_delta'],
                          {'rust_tests': 21, 'rust_declarations': 21, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_5a0(actual))
+            inventory.require_historical350(main813.before_5a0(actual))
         for name, change in main813.MAIN5A0['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1764,11 +1919,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main5a0_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main5a0_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main5a0_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1784,7 +1939,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main5a0_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN5A0['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_5a0(path, raw, 'changed')
@@ -1810,7 +1965,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN9950['declared_delta'],
                          {'rust_tests': 29, 'rust_declarations': 29, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_9950(actual))
+            inventory.require_historical350(main813.before_9950(actual))
         for name, change in main813.MAIN9950['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1820,11 +1975,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main9950_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main9950_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main9950_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1840,7 +1995,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return read_bytes(candidate)
                 with self.subTest(main9950_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in main813.MAIN9950['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_9950(path, raw, 'changed')
@@ -1866,7 +2021,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN2754['declared_delta'],
                          {'rust_tests': 14, 'rust_declarations': 14, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_2754(actual))
+            inventory.require_historical350(main813.before_2754(actual))
         for name, change in main813.MAIN2754['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1876,11 +2031,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main2754_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main2754_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main2754_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1909,7 +2064,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return read_bytes(candidate)
             with self.subTest(main2754_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
                 with self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(actual)
+                    inventory.require_historical350(actual)
         for path, row in main813.MAIN2754['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_2754(path, raw, 'changed')
@@ -1935,7 +2090,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN9C70['declared_delta'],
                          {'rust_tests': 17, 'rust_declarations': 17, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_9c70(actual))
+            inventory.require_historical350(main813.before_9c70(actual))
         for name, change in main813.MAIN9C70['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -1945,11 +2100,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main9c70_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main9c70_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main9c70_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -1978,7 +2133,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return read_bytes(candidate)
             with self.subTest(main9c70_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
                 with self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(actual)
+                    inventory.require_historical350(actual)
         for path, row in main813.MAIN9C70['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_9c70(path, raw, 'changed')
@@ -2004,7 +2159,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN0A088['declared_delta'],
                          {'rust_tests': 34, 'rust_declarations': 34, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_0a088(actual))
+            inventory.require_historical350(main813.before_0a088(actual))
         for name, change in main813.MAIN0A088['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -2014,11 +2169,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main0a088_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main0a088_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main0a088_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -2047,7 +2202,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return read_bytes(candidate)
             with self.subTest(main0a088_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
                 with self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(actual)
+                    inventory.require_historical350(actual)
         for path, row in main813.MAIN0A088['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_0a088(path, raw, 'changed')
@@ -2073,7 +2228,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAINE11['declared_delta'],
                          {'rust_tests': 30, 'rust_declarations': 30, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_e11(actual))
+            inventory.require_historical350(main813.before_e11(actual))
         for name, change in main813.MAINE11['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -2083,11 +2238,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(maine11_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(maine11_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(maine11_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -2116,7 +2271,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return read_bytes(candidate)
             with self.subTest(maine11_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
                 with self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(actual)
+                    inventory.require_historical350(actual)
         for path, row in main813.MAINE11['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_e11(path, raw, 'changed')
@@ -2142,7 +2297,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN469['declared_delta'],
                          {'rust_tests': 24, 'rust_declarations': 24, 'doctests': 0, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_469(actual))
+            inventory.require_historical350(main813.before_469(actual))
         for name, change in main813.MAIN469['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -2152,11 +2307,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main469_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(main469_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(main469_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -2185,7 +2340,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return read_bytes(candidate)
             with self.subTest(main469_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
                 with self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(actual)
+                    inventory.require_historical350(actual)
         for path, row in main813.MAIN469['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_469(path, raw, 'changed')
@@ -2211,7 +2366,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAINB66['declared_delta'],
                          {'rust_tests': 238, 'rust_declarations': 65, 'new_instances_of_existing_declarations': 164, 'second_instances_of_new_declarations': 9, 'doctests': 0, 'ignored': 1, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_b66(actual))
+            inventory.require_historical350(main813.before_b66(actual))
         for name, change in main813.MAINB66['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             current_count = actual['harness_test_counts']['workspace_tests'][name]['tests']
@@ -2221,11 +2376,11 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(mainb66_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.subTest(mainb66_missing=name), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual); changed[key] = None
             with self.subTest(mainb66_field=key), self.assertRaises(parsing.InvalidEvidence):
@@ -2254,7 +2409,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return read_bytes(candidate)
             with self.subTest(mainb66_integration=integration_path, missing=missing), patch.object(Path, 'read_bytes', changed):
                 with self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(actual)
+                    inventory.require_historical350(actual)
         for path, row in main813.MAINB66['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
             restored = main813.source_before_b66(path, raw, 'changed')
@@ -2315,7 +2470,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_8f622_sources()
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
 
         self.assertEqual(set(main813.MAIN8F622_CURRENT), {
             'evaluation/ordinary-call-pair-session/receipt_controls.py',
@@ -2347,7 +2502,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAIN12E['declared_delta'],
                          {'rust_tests': 16, 'rust_declarations': 8, 'ignored': 0, 'harnesses': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_12e(actual))
+            inventory.require_historical350(main813.before_12e(actual))
         for name, change in main813.MAIN12E['workspace_changes'].items():
             self.assertEqual(current_rows[name], change['current'])
             self.assertEqual(change['previous'], main813.MAINB66['workspace_changes'][name]['current'])
@@ -2356,7 +2511,7 @@ class Main813InventoryTests(unittest.TestCase):
                 changed = plain.deepcopy(actual)
                 changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.subTest(main12e_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
             changed = plain.deepcopy(actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.assertRaises(parsing.InvalidEvidence):
@@ -2374,7 +2529,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_12e_sources()
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         self.assertEqual(len(main813.MAIN12E['projections']), 20)
         for path, row in main813.MAIN12E['projections'].items():
             raw = (main813.ROOT / path).read_bytes()
@@ -2391,7 +2546,7 @@ class Main813InventoryTests(unittest.TestCase):
             def historical(candidate):
                 return restored if candidate == mutation_target else read_bytes(candidate)
             with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(actual)
+                inventory.require_historical350(actual)
         new_sources = {'tests/support/native_call_pair/trace_join.rs',
                        'tests/support/native_call_pair/trace_join/tests.rs',
                        'tests/support/native_call_pair/witness.rs',
@@ -2435,7 +2590,10 @@ class Main813InventoryTests(unittest.TestCase):
                 with patch.dict(main813.MAIN12E['module_chains'], {path: changed}), self.assertRaises(parsing.InvalidEvidence):
                     main813.require_12e_sources()
 
-
+    def test_historical_sources_importer_through_ownership(self):
+        plain = main813.inventory_copy
+        read_bytes = Path.read_bytes
+        actual = self._historical_corpus()
         # The disassembly importer adds eight library tests, no default example
         # harness. Old source/catalog checks receive exact pre-importer images.
         self.assertEqual(main813.digest(main813.before_c6f(actual)), main813.CURRENT12E)
@@ -2449,7 +2607,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.before_c6f(actual)['harness_test_counts']['workspace_tests'][harness],
                          {'tests': 86, 'ignored': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(main813.before_c6f(actual))
+            inventory.require_historical350(main813.before_c6f(actual))
         importer_current = main813.before_short(actual)
         main813.before_c6f(importer_current)
         for count in (93, 95, True, 94.0):
@@ -2474,7 +2632,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_c6f_sources()
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         self.assertEqual(len(main813.MAINC6F['sources']), 7)
         self.assertEqual(set(main813.MAINC6F['projections']),
                          {'src/emission.rs', 'tools/elf-rewrite/Cargo.toml', 'tools/elf-rewrite/src/lib.rs'})
@@ -2491,7 +2649,7 @@ class Main813InventoryTests(unittest.TestCase):
             def historical(candidate):
                 return restored if candidate == mutation_target else read_bytes(candidate)
             with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(actual)
+                inventory.require_historical350(actual)
         test_source = 'tools/elf-rewrite/src/disassembly/tests.rs'
         methods = main813.MAINC6F['methods'][test_source]
         self.assertEqual(len(methods['all']), 8)
@@ -2520,7 +2678,7 @@ class Main813InventoryTests(unittest.TestCase):
         changed = plain.deepcopy(actual)
         changed['harness_test_counts']['workspace_tests']['unit/disassembly_sites/disassembly_sites'] = {'tests': 0, 'ignored': 0}
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(changed)
+            inventory.require_historical350(changed)
         mutation_target = main813.ROOT / 'tools/elf-rewrite/Cargo.toml'
         historical_cargo = main813.source_before_short('tools/elf-rewrite/Cargo.toml',
             read_bytes(mutation_target), 'changed')
@@ -2552,9 +2710,9 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.MAINSHORT['declared_delta'],
                          {'rust_declarations': 7, 'rust_tests': 7, 'harnesses': 0, 'ignored': 0, 'doctests': 0})
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(previous_short)
+            inventory.require_historical350(previous_short)
         main813.require_short_sources()
-        inventory.require_current(actual)
+        inventory.require_historical350(actual)
         short_current = main813.before_short_native(actual)
         main813.before_short(short_current)
         for value in (277, 279, True, 278.0):
@@ -2588,7 +2746,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_short_sources()
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         self.assertEqual(set(main813.MAINSHORT['projections']),
                          {'src/neighbor.rs', 'evaluation/admission/parsing.py'})
         for path, row in main813.MAINSHORT['projections'].items():
@@ -2611,7 +2769,7 @@ class Main813InventoryTests(unittest.TestCase):
             def historical(candidate):
                 return restored if candidate == mutation_target else short_read_bytes(candidate)
             with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(actual)
+                inventory.require_historical350(actual)
         neighbor = short_read_bytes(main813.ROOT / 'src/neighbor.rs')
         self.assertEqual(hashlib.sha256(main813.source_before('src/neighbor.rs', neighbor, 'changed')).hexdigest(),
                          '7ffea697019b497757032b92dd8db2dadad0e43ed0bae047810dd02168af49ea')
@@ -2659,9 +2817,9 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(set(native_layer['workspace_changes']), {'test/neighbor_eviction_oracle'})
         self.assertEqual(actual['recorder_tests'], 350)
         main813.require_short_native_sources()
-        inventory.require_current(actual)
+        inventory.require_historical350(actual)
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(native_previous)
+            inventory.require_historical350(native_previous)
         # Historical 100 remains invalid for the authenticated native99 catalog.
         for count in (80, 98, 100, True, 99.0):
             changed = plain.deepcopy(native_current)
@@ -2679,7 +2837,7 @@ class Main813InventoryTests(unittest.TestCase):
         changed = plain.deepcopy(actual)
         changed['harness_test_counts']['workspace_tests']['test/extra'] = {'tests': 1, 'ignored': 0}
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(changed)
+            inventory.require_historical350(changed)
         for key in actual:
             changed = plain.deepcopy(actual)
             changed[key] = None
@@ -2706,7 +2864,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_short_sources()
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in native_layer['projections'].items():
             raw = native_read_bytes(main813.ROOT / path)
             restored = main813.source_before_short_native(path, raw, 'changed')
@@ -2729,7 +2887,7 @@ class Main813InventoryTests(unittest.TestCase):
             def historical(candidate):
                 return restored if candidate == mutation_target else native_read_bytes(candidate)
             with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(actual)
+                inventory.require_historical350(actual)
         native_methods = native_layer['methods'][native_source]
         self.assertEqual(native_methods['all'], [
             'short_endpoint_census', 'short_endpoint_back_l6', 'short_endpoint_forward_l6',
@@ -2832,7 +2990,7 @@ class Main813InventoryTests(unittest.TestCase):
                               test_field=True, workspace_test_harness=True))
         for prior in (engine_previous, native_previous, previous_short, importer_current):
             with self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(prior)
+                inventory.require_historical350(prior)
             with self.assertRaises(parsing.InvalidEvidence):
                 main813.before_short_engine(prior)
         main813.require_short_engine_sources()
@@ -2840,7 +2998,7 @@ class Main813InventoryTests(unittest.TestCase):
         main813.require_short_sources()
         main813.require_c6f_sources()
         main813.require_12e_sources()
-        inventory.require_current(actual)
+        inventory.require_historical350(actual)
         with patch.object(main813, '_require_short_native_blob',
                           wraps=main813._require_short_native_blob) as blob_guard:
             main813.require_short_native_sources()
@@ -2871,7 +3029,7 @@ class Main813InventoryTests(unittest.TestCase):
                     changed_engine = plain.deepcopy(engine_current)
                     changed_engine['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.subTest(engine_count=(name, field, value)), self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(changed)
+                        inventory.require_historical350(changed)
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.before_short_engine(changed_engine)
             changed = plain.deepcopy(engine_current)
@@ -2890,7 +3048,7 @@ class Main813InventoryTests(unittest.TestCase):
         changed = plain.deepcopy(actual)
         changed['harness_test_counts']['workspace_tests']['test/extra_engine'] = counts(1)
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(changed)
+            inventory.require_historical350(changed)
         self.assertEqual(set(engine_layer['sources']), {
             'Cargo.toml', 'src/lib.rs', 'src/engine.rs', 'src/neighbor.rs',
             'src/neighbor_short.rs', 'src/neighbor_short/tests.rs', 'src/trampoline.rs',
@@ -2922,7 +3080,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_short_native_sources()
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in engine_layer['projections'].items():
             raw = current_read_bytes(main813.ROOT / path)
             restored = main813.source_before_short_engine(path, raw, 'changed')
@@ -2955,7 +3113,7 @@ class Main813InventoryTests(unittest.TestCase):
             def historical(candidate):
                 return restored if candidate == main813.ROOT / path else current_read_bytes(candidate)
             with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(actual)
+                inventory.require_historical350(actual)
         self.assertEqual({p: len(names) for p, names in engine_layer['added_methods'].items()},
                          {'src/neighbor_short/tests.rs': 5,
                           'tools/elf-rewrite/src/disassembly/tests.rs': 4,
@@ -3071,7 +3229,7 @@ class Main813InventoryTests(unittest.TestCase):
             'src/lib.rs', 'src/neighbor_short.rs', 'src/trampoline.rs', 'tools/elf-rewrite/Cargo.toml'})
         for prior in (engine_current, engine_previous, native_previous, previous_short, importer_current):
             with self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(prior)
+                inventory.require_historical350(prior)
             with self.assertRaises(parsing.InvalidEvidence):
                 main813.before_short_ownership(prior)
         for name, change in ownership['workspace_changes'].items():
@@ -3084,7 +3242,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.before_short_ownership(changed)
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(changed)
+                        inventory.require_historical350(changed)
             for field in ('current', 'previous'):
                 with patch.dict(ownership['workspace_changes'],
                                 {name: dict(change, **{field: counts(999)})}):
@@ -3102,7 +3260,7 @@ class Main813InventoryTests(unittest.TestCase):
         changed = plain.deepcopy(actual)
         changed['harness_test_counts']['workspace_tests']['test/extra_ownership'] = counts(1)
         with self.assertRaises(parsing.InvalidEvidence):
-            inventory.require_current(changed)
+            inventory.require_historical350(changed)
         with patch.object(main813, '_require_short_engine_blob',
                           wraps=main813._require_short_engine_blob) as blob_guard:
             main813.require_short_engine_sources()
@@ -3127,7 +3285,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.require_short_engine_sources()
                     with self.assertRaises(parsing.InvalidEvidence):
-                        inventory.require_current(actual)
+                        inventory.require_historical350(actual)
         for path, row in ownership['projections'].items():
             current_raw = current_read_bytes(main813.ROOT / path)
             raw = main813.source_before_short_pending(path, current_raw, 'changed')
@@ -3157,7 +3315,7 @@ class Main813InventoryTests(unittest.TestCase):
             def historical(candidate):
                 return restored if candidate == main813.ROOT / path else current_read_bytes(candidate)
             with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
-                inventory.require_current(actual)
+                inventory.require_historical350(actual)
         for path, row in ownership['methods'].items():
             self.assertEqual([n for n in row['all'] if n not in ownership['added_methods'][path]],
                              engine_layer['methods'][path]['all'])
@@ -3204,10 +3362,24 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(ownership['sources']['src/trampoline.rs'], engine_layer['sources']['src/trampoline.rs'])
         self.assertEqual(ownership['example'], engine_layer['example'])
 
-
+    def test_historical_sources_pending_through_main091(self):
+        plain = main813.inventory_copy
+        import ast
+        syntax = main813.inventory_syntax
+        actual = self._historical_corpus()
+        importer_current = main813.before_short(actual)
+        previous_short = main813.before_short(actual)
+        native_previous = main813.before_short_native(actual)
+        engine_current = main813.before_short_ownership(actual)
+        engine_previous = main813.before_short_engine(actual)
+        ownership = main813.MAINSHORTOWNERSHIP
+        ownership_current = main813.before_short_pending(actual)
         # Complete pending successor: exact current input must reach old history.
         pending = main813.MAINSHORTPENDING
-        routed_native_actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        offline_actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        offline_actual = shards.before_current(offline_actual)
+        startup_actual = main813.before_091(offline_actual)
+        routed_native_actual = main813.before_startup(startup_actual)
         routed_actual = main813.before_routed_native(routed_native_actual)
         frontend_actual = main813.before_routed(routed_actual)
         adjacent_actual = main813.before_frontend(frontend_actual)
@@ -3227,13 +3399,13 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.before_short_ownership(pending_prior), engine_current)
         self.assertEqual(main813.before_short_ownership(pending_actual), engine_current)
         with patch.object(inventory, 'before_cc846', wraps=inventory.before_cc846) as history:
-            inventory.require_current(routed_native_actual)
-            self.assertEqual(history.call_args_list, [unittest.mock.call(routed_native_actual)])
+            inventory.require_historical350(offline_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(offline_actual)])
         with patch.object(inventory, 'before_cc846',
                           side_effect=RuntimeError('pending original history reached')) as history:
             with self.assertRaisesRegex(RuntimeError, '^pending original history reached$'):
-                inventory.require_current(routed_native_actual)
-            self.assertEqual(history.call_args_list, [unittest.mock.call(routed_native_actual)])
+                inventory.require_historical350(offline_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(offline_actual)])
         pending_rows = pending_actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(pending_rows), sum(x['tests'] for x in pending_rows.values()),
                           sum(x['ignored'] for x in pending_rows.values())), (104, 3649, 37))
@@ -3271,7 +3443,7 @@ class Main813InventoryTests(unittest.TestCase):
         for pending_old in (pending_prior, engine_current, engine_previous, native_previous,
                             previous_short, importer_current):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(pending_old)
+                inventory.require_historical350(pending_old)
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^neighbor_short_pending_inventory_differs$'):
                 main813.before_short_pending(pending_old)
         for name, change in pending['workspace_changes'].items():
@@ -3284,7 +3456,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^neighbor_short_pending_inventory_differs$'):
                         main813.before_short_pending(changed)
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                        inventory.require_current(changed)
+                        inventory.require_historical350(changed)
             for field in ('current', 'previous'):
                 with patch.dict(pending['workspace_changes'], {name: dict(change, **{field: counts(999)})}):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_catalog_control$'):
@@ -3299,7 +3471,7 @@ class Main813InventoryTests(unittest.TestCase):
             changed = plain.deepcopy(pending_actual)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(changed)
+                inventory.require_historical350(changed)
         for key in pending_actual:
             changed = plain.deepcopy(pending_actual); changed[key] = None
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^neighbor_short_pending_inventory_differs$'):
@@ -3307,7 +3479,7 @@ class Main813InventoryTests(unittest.TestCase):
         changed = plain.deepcopy(pending_actual)
         changed['harness_test_counts']['workspace_tests']['test/extra_pending'] = counts(1)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-            inventory.require_current(changed)
+            inventory.require_historical350(changed)
         with patch.object(main813, '_require_short_pending_blob',
                           wraps=main813._require_short_pending_blob) as pending_guard:
             self.assertIsNone(main813.require_short_pending_sources())
@@ -3339,7 +3511,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_source_control$'):
                         main813.require_short_pending_sources('pending_source_control')
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(routed_native_actual)
+                        inventory.require_historical350(offline_actual)
         for path, pending_row in pending['projections'].items():
             pending_raw = pending_read(main813.ROOT / path)
             pending_restored = main813.source_before_short_pending(path, pending_raw, 'pending_inverse_control')
@@ -3379,7 +3551,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return pending_restored if candidate == main813.ROOT / path else pending_read(candidate)
             with patch.object(Path, 'read_bytes', pending_historical):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                    inventory.require_current(routed_native_actual)
+                    inventory.require_historical350(offline_actual)
         pending_current = pending_read(main813.ROOT / 'src/trampoline.rs')
         pending_unchanged = main813.source_before_routed('src/trampoline.rs', pending_current, 'changed')
         self.assertEqual(main813.source_before_short_pending('src/trampoline.rs', pending_current, 'changed'),
@@ -3545,9 +3717,9 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(len(adjacent['methods']['src/quiescent/adjacent_b2/tests.rs']['all']), 10)
         self.assertEqual(adjacent['methods']['src/quiescent/adjacent_b2/tests.rs']['ignored'], [])
         self.assertEqual(main813.before_short_pending(adjacent_actual), pending_prior)
-        inventory.require_current(routed_native_actual)
+        inventory.require_historical350(offline_actual)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-            inventory.require_current(pending_actual)
+            inventory.require_historical350(pending_actual)
         for field, values in (('tests', (308, 310, True, 309.0, None)), ('ignored', (0, 2, True, 1.0, None))):
             for value in values:
                 changed = plain.deepcopy(adjacent_actual)
@@ -3555,7 +3727,7 @@ class Main813InventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_inventory_differs$'):
                     main813.before_adjacent(changed)
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                    inventory.require_current(changed)
+                    inventory.require_historical350(changed)
         for tests, ignored in ((100,0),(102,0),(101,1),(True,0),(101.0,0),(101,False)):
             changed = plain.deepcopy(adjacent_actual)
             changed['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle'] = dict(tests=tests, ignored=ignored)
@@ -3582,7 +3754,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_source_inventory_differs$'):
                         main813.require_adjacent_sources()
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(routed_native_actual)
+                        inventory.require_historical350(offline_actual)
         path = 'src/quiescent.rs'
         raw = adjacent_read(main813.ROOT / path)
         row = adjacent['projections'][path]
@@ -3681,9 +3853,9 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(fresh_rows[fresh_id], counts(3))
         self.assertEqual(frontend_actual['harness_test_counts']['serial_launch'], adjacent_actual['harness_test_counts']['serial_launch'])
         self.assertEqual(frontend_actual['recorder_tests'], 350)
-        inventory.require_current(routed_native_actual)
+        inventory.require_historical350(offline_actual)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-            inventory.require_current(adjacent_actual)
+            inventory.require_historical350(adjacent_actual)
         for identity, row in frontend['workspace_changes'].items():
             for field, values in (('tests', (row['current']['tests']-1, row['current']['tests']+1, True, float(row['current']['tests']))),
                                   ('ignored', (1, False, 0.0))):
@@ -3711,7 +3883,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_frontend_source_inventory_differs$'):
                         main813.require_frontend_sources()
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(routed_native_actual)
+                        inventory.require_historical350(offline_actual)
         for path, row in frontend['projections'].items():
             raw = adjacent_read(main813.ROOT / path)
             old = main813.source_before_frontend(path, raw, 'frontend_inverse_control')
@@ -3768,9 +3940,9 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual((routed_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
         self.assertEqual(routed['declared_delta'], dict(rust_tests=21, rust_declarations=21,
                          harnesses=0, ignored=0, doctests=0, serial_tests=0, recorder_tests=0))
-        inventory.require_current(routed_native_actual)
+        inventory.require_historical350(offline_actual)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-            inventory.require_current(frontend_actual)
+            inventory.require_historical350(frontend_actual)
         for field, values in (('tests', (329,331,True,330.0,None)), ('ignored',(0,2,True,1.0,None))):
             for value in values:
                 changed=plain.deepcopy(routed_actual)
@@ -3794,7 +3966,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_source_inventory_differs$'):
                         main813.require_routed_sources()
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(routed_native_actual)
+                        inventory.require_historical350(offline_actual)
         for path,row in routed['projections'].items():
             raw=adjacent_read(main813.ROOT/path)
             old=main813.source_before_routed(path,raw,'routed_inverse_control')
@@ -3820,7 +3992,7 @@ class Main813InventoryTests(unittest.TestCase):
         # Exact routed-native/ELF successor, including inherited helper instances.
         native = main813.MAINROUTEDNATIVE
         self.assertEqual(main813.before_routed_native(routed_native_actual), routed_actual)
-        self.assertEqual(main813.digest(routed_native_actual), main813.LATEST)
+        self.assertEqual(main813.digest(routed_native_actual), main813.CURRENTROUTEDNATIVE)
         rows = routed_native_actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(v['tests'] for v in rows.values()),
                           sum(v['ignored'] for v in rows.values())), (106, 3805, 37))
@@ -3831,9 +4003,9 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual((routed_native_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
         self.assertEqual(native['declared_delta'], dict(rust_tests=98,rust_new_cases=63,
                          inherited_instances=35,harnesses=1,ignored=0,doctests=0,serial_tests=0,recorder_tests=0))
-        inventory.require_current(routed_native_actual)
+        inventory.require_historical350(offline_actual)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-            inventory.require_current(routed_actual)
+            inventory.require_historical350(routed_actual)
         for identity, row in native['workspace_changes'].items():
             for field in ('tests','ignored'):
                 for value in (row['current'][field]+1,True,float(row['current'][field]),None):
@@ -3843,7 +4015,7 @@ class Main813InventoryTests(unittest.TestCase):
                         main813.before_routed_native(changed)
             changed=plain.deepcopy(routed_native_actual)
             changed['harness_test_counts']['workspace_tests'][identity]['tests']+=1
-            with patch.object(main813,'LATEST',main813.digest(changed)):
+            with patch.object(main813,'CURRENTROUTEDNATIVE',main813.digest(changed)):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_inventory_differs$'):
                     main813.before_routed_native(changed)
         for path in native['sources']:
@@ -3858,7 +4030,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_source_inventory_differs$'):
                         main813.require_routed_native_sources()
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(routed_native_actual)
+                        inventory.require_historical350(offline_actual)
         for path,row in native['projections'].items():
             raw=adjacent_read(main813.ROOT/path)
             old=main813.source_before_routed_native(path,raw,'native_inverse_control')
@@ -3887,6 +4059,160 @@ class Main813InventoryTests(unittest.TestCase):
         with patch.dict(native['module_chains'],{'src/entry_router.rs':['mod missing_native;']}):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_routed_native_source_inventory_differs$'):
                 main813.require_routed_native_sources()
+
+        # Additive startup carrier: one existing harness, nine exact methods.
+        startup = main813.MAINSTARTUP
+        self.assertEqual(main813.before_startup(startup_actual), routed_native_actual)
+        self.assertEqual(main813.digest(startup_actual), main813.CURRENTSTARTUP)
+        rows = startup_actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows), sum(v['tests'] for v in rows.values()),
+                          sum(v['ignored'] for v in rows.values())), (106, 3814, 37))
+        self.assertEqual(rows['unit/liteinst_rewrite/lib'], counts(168))
+        self.assertEqual(rows['unit/liteinst2/lib'], counts(399, 1))
+        self.assertEqual(startup_actual['harness_test_counts']['serial_launch'],
+                         routed_native_actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((startup_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
+        self.assertEqual(startup['declared_delta'], dict(rust_tests=9, harnesses=0,
+                         ignored=0, doctests=0, serial_tests=0, recorder_tests=0))
+        self.assertEqual(startup['standalone_workspace'],
+                         dict(path='evaluation/adjacent-b2/artifact-verifier/Cargo.toml',
+                              root_workspace_member=False, root_workspace_harnesses_added=0))
+        self.assertFalse(any('artifact_verifier' in name or 'artifact-verifier' in name for name in rows))
+        main813.require_startup_sources()
+        inventory.require_historical350(offline_actual)
+        for value in (167, 169, True, 168.0):
+            changed=plain.deepcopy(startup_actual)
+            changed['harness_test_counts']['workspace_tests']['unit/liteinst_rewrite/lib']['tests']=value
+            with self.assertRaises(parsing.InvalidEvidence):inventory.require_historical350(changed)
+        changed=plain.deepcopy(startup_actual)
+        changed['harness_test_counts']['workspace_tests']['unit/adjacent_b2_artifact_verifier/main']=counts(1)
+        with self.assertRaises(parsing.InvalidEvidence):inventory.require_historical350(changed)
+        changed=plain.deepcopy(startup_actual)
+        changed['harness_test_counts']['workspace_tests']['unit/liteinst_rewrite/lib']['tests']=167
+        with patch.object(main813,'CURRENTSTARTUP',main813.digest(changed)):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^startup_inventory_differs$'):
+                main813.before_startup(changed)
+        for path in startup['sources']:
+            target=main813.ROOT/path;raw=adjacent_read(target)
+            for replacement in (raw+b'\n', raw[:-1], None):
+                def startup_changed(candidate):
+                    if candidate==target:
+                        if replacement is None:raise FileNotFoundError(path)
+                        return replacement
+                    return adjacent_read(candidate)
+                with patch.object(Path,'read_bytes',startup_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^startup_source_inventory_differs$'):
+                        main813.require_startup_sources()
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_historical350(offline_actual)
+        for path,row in startup['projections'].items():
+            raw=adjacent_read(main813.ROOT/path)
+            old=main813.source_before_startup(path,raw,'startup_inverse_control')
+            self.assertEqual(hashlib.sha256(old).hexdigest(),row['previous_sha256'])
+            for bad in (raw+b'\n',raw[:-1],old,bytearray(raw),raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^startup_inverse_control$'):
+                    main813.source_before_startup(path,bad,'startup_inverse_control')
+            for changed in (dict(row,current_sha256='0'*64),dict(row,previous_sha256='0'*64),
+                            dict(row,edits=[]),dict(row,edits=[[1,0,'']]),dict(row,edits=[[0,len(raw)+1,'']])):
+                with patch.dict(startup['projections'],{path:changed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^startup_inverse_control$'):
+                        main813.source_before_startup(path,raw,'startup_inverse_control')
+        fixture='tools/elf-rewrite/src/carrier/startup_fixtures.rs';row=startup['methods'][fixture]
+        self.assertEqual((len(row['all']),row['ignored']),(9,[]))
+        for changed in (dict(row,all=row['all'][:-1]),dict(row,ignored=['unregistered'])):
+            with patch.dict(startup['methods'],{fixture:changed}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^startup_source_inventory_differs$'):
+                    main813.require_startup_sources()
+        with patch.dict(startup['module_chains'],{'tools/elf-rewrite/src/carrier/mod.rs':['mod absent_startup;']}):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^startup_source_inventory_differs$'):
+                main813.require_startup_sources()
+
+        # Main091 preserves every moved ELF fixture and adds eight startup tests.
+        offline = main813.MAIN091
+        self.assertEqual(main813.before_091(offline_actual), startup_actual)
+        self.assertEqual(main813.digest(offline_actual), main813.LATEST)
+        rows = offline_actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows), sum(v['tests'] for v in rows.values()),
+                          sum(v['ignored'] for v in rows.values())), (106, 3822, 37))
+        self.assertEqual(rows['unit/liteinst_rewrite/lib'], counts(150))
+        self.assertEqual(rows['unit/liteinst_artifact/lib'], counts(46))
+        self.assertEqual(rows['unit/liteinst2/lib'], counts(399, 1))
+        self.assertEqual(offline_actual['harness_test_counts']['serial_launch'],
+                         startup_actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((offline_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
+        self.assertEqual(offline['declared_delta'], dict(rust_tests=8, moved_tests=18,
+                         harnesses=0, ignored=0, doctests=0, serial_tests=0, recorder_tests=0))
+        self.assertEqual(offline['excluded_default'], dict(core_feature_tests=7,
+                         rewrite_feature_tests=8, example_feature_tests=4,
+                         bootstrap_standalone_tests=5, required_feature='offline-router',
+                         standalone_manifest='crates/liteinst-bootstrap/Cargo.toml'))
+        self.assertFalse(any('offline_router' in name or 'liteinst_bootstrap' in name for name in rows))
+        main813.require_091_sources()
+        inventory.require_historical350(offline_actual)
+        for name, good in (('unit/liteinst_rewrite/lib',150),('unit/liteinst_artifact/lib',46)):
+            for bad in (good-1,good+1,True,float(good)):
+                changed=plain.deepcopy(offline_actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests']=bad
+                with self.assertRaises(parsing.InvalidEvidence):inventory.require_historical350(changed)
+            changed=plain.deepcopy(offline_actual)
+            changed['harness_test_counts']['workspace_tests'][name]['tests']=good-1
+            with patch.object(main813,'LATEST',main813.digest(changed)):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_inventory_differs$'):
+                    main813.before_091(changed)
+        for identity in ('unit/offline_router_sites/offline_router_sites','unit/liteinst_bootstrap/lib'):
+            changed=plain.deepcopy(offline_actual)
+            changed['harness_test_counts']['workspace_tests'][identity]=counts(1)
+            with self.assertRaises(parsing.InvalidEvidence):inventory.require_historical350(changed)
+        for path in offline['sources']:
+            target=main813.ROOT/path;raw=adjacent_read(target)
+            for replacement in (raw+b'\n',raw[:-1],None):
+                def offline_changed(candidate):
+                    if candidate==target:
+                        if replacement is None:raise FileNotFoundError(path)
+                        return replacement
+                    return adjacent_read(candidate)
+                with patch.object(Path,'read_bytes',offline_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
+                        main813.require_091_sources()
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_historical350(offline_actual)
+        for path,row in offline['projections'].items():
+            raw=adjacent_read(main813.ROOT/path)
+            restored=main813.source_before_091(path,raw,'main091_inverse_control')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(),row['previous_sha256'])
+            for bad in (raw+b'\n',raw[:-1],restored,bytearray(raw),raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_inverse_control$'):
+                    main813.source_before_091(path,bad,'main091_inverse_control')
+            for changed in (dict(row,current_sha256='0'*64),dict(row,previous_sha256='0'*64),
+                            dict(row,edits=[]),dict(row,edits=[[1,0,'']]),dict(row,edits=[[0,len(raw)+1,'']])):
+                with patch.dict(offline['projections'],{path:changed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_inverse_control$'):
+                        main813.source_before_091(path,raw,'main091_inverse_control')
+        for path,count in (('crates/liteinst-artifact/src/fixtures.rs',18),
+                           ('crates/liteinst-artifact/src/startup/tests.rs',8)):
+            row=offline['methods'][path]
+            self.assertEqual((len(row['all']),row['ignored']),(count,[]))
+            for changed in (dict(row,all=row['all'][:-1]),dict(row,ignored=['unregistered'])):
+                with patch.dict(offline['methods'],{path:changed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
+                        main813.require_091_sources()
+        with patch.dict(offline['module_chains'],{'crates/liteinst-artifact/src/lib.rs':['pub mod missing_elf64;']}):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
+                main813.require_091_sources()
+        for previous,row in offline['relocations'].items():
+            self.assertEqual(hashlib.sha256(adjacent_read(main813.ROOT/row['current_path'])).hexdigest(),row['sha256'])
+            with patch.dict(offline['relocations'],{previous:dict(row,sha256='0'*64)}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
+                    main813.require_091_sources()
+            if row['old_path_absent']:
+                target=main813.ROOT/previous
+                self.assertFalse(target.exists() or target.is_symlink())
+                exists=Path.exists;symlink=Path.is_symlink
+                for method in ('exists','is_symlink'):
+                    original=exists if method=='exists'else symlink
+                    with patch.object(Path,method,lambda candidate:True if candidate==target else original(candidate)):
+                        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main091_source_inventory_differs$'):
+                            main813.require_091_sources()
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'

@@ -34,8 +34,11 @@ def load(name,path,pin):
 
 
 def reader_support(builder,private,pin,binary,run,r):
-    reader=load('unrolled_app_read',FIXTURE/'read.py',pin)
-    owner=load('unrolled_owner_read',OWNER/'read.py',pin)
+    current=r.get('current_custody',False)
+    reader=load('current_app_read'if current else 'unrolled_app_read',
+        SELECTED/'tests/current_custody_app/read.py'if current else FIXTURE/'read.py',pin)
+    owner=load('current_owner_read'if current else 'unrolled_owner_read',
+        SELECTED/'tests/current_custody_owner/read.py'if current else OWNER/'read.py',pin)
     policy=private/'native-policy.so';unit=pin(SELECTED/'native_policy.c')
     flags=['-std=gnu11','-O2','-g','-Wall','-Wextra','-Werror','-fPIC','-shared']
     _,out,err=run('policy-headers',[builder.tools['cc'],*flags,'-M','-MT','li2_policy',unit],env=builder.environment)
@@ -50,12 +53,14 @@ def reader_support(builder,private,pin,binary,run,r):
 
 
 def compile_subject(builder,private,pin,binary,run,r):
-    script=pin(FIXTURE/'build.sh');rows=recipe(script,'"$cc"');need(len(rows)==1,'one exact three-TU app recipe')
+    current=r.get('current_custody',False)
+    script=pin(SELECTED/'tests/current_custody_app/build.sh'if current else FIXTURE/'build.sh')
+    rows=recipe(script,'"$cc"');need(len(rows)==1,'one exact three-TU app recipe')
     output=private/'application';output.mkdir()
     argv=expand(rows[0],{'$cc':builder.tools['cc'],'$source_dir':FIXTURE,'$output':output})
     sources=[str(pin(FIXTURE/x))for x in('main.c','pure.c','machine.S')]
     need(argv[-2:]==['-o',str(output/'unrolled-hash-app')]and[x for x in argv if x.endswith(('.c','.S'))]==sources and
-         [x for x in argv if x.startswith('-D')]==['-DLI2_FAST_EQUAL=1']and all(x in argv for x in
+         [x for x in argv if x.startswith('-D')]==(['-DLI2_FAST_EQUAL=1','-DLI2_CURRENT_TF_APP=1']if current else ['-DLI2_FAST_EQUAL=1'])and all(x in argv for x in
          ('-O2','-g','-Wall','-Wextra','-Werror','-fno-builtin','-mgeneral-regs-only','-mcmodel=large',
           '-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-pie','-no-pie')),
          'actual release application source/whole-range helper configuration')
@@ -69,6 +74,8 @@ def compile_subject(builder,private,pin,binary,run,r):
     for line in lines:
         for name in shlex.split(line.split(':',1)[1]):p=pin(name);includes[str(p)]=fact(p)
     need(set(sources)|{str(FIXTURE/'app.h')}<=set(includes),'actual complete app header/source inputs before compilation')
+    if current:need({str(SELECTED/'tests/current_custody_app'/x)for x in ('types.h','native.inc')}<=set(includes),
+        'actual compiler observes the explicit complete current application profile')
     state['headers']=includes
     run('app-link',argv,profile='release_build',env=builder.environment)
     original=binary(output/'unrolled-hash-app');_,head,segments=elf(original)
@@ -267,9 +274,16 @@ def prepare_inputs(original,bridge,builder,private,pin,binary,run,r):
 
 def preparation(case,row,directory,original,roots,objects,description,carrier,private,binary,r):
     lane,mode,control=case['lane'],case['mode'],case['control'];prep=json.loads(binary(directory/'preparation.json').read_bytes())
+    current=r.get('current_custody',False);physical=case.get('physical_fallback',False);current_control=case.get('current_control',0)
+    need(type(physical)is bool and type(current_control)is int and current_control in(0,1) and
+         (current or not(physical or current_control)),'exact additional current-custody launch scope')
+    if current:
+        need(prep.get('current_custody')is True and prep.get('current_control')==current_control and
+             prep.get('physical_fallback')is physical,'actual explicit current-custody preparation profile')
+    else:need(not any(k in prep for k in('current_custody','current_control','physical_fallback')),'old preparation has no hidden current-custody profile')
     need(prep['schema_version']==1 and prep['status']=='prepared_not_executed'and prep['role']==lane and
         prep['pid']==row['pid']and prep['cpu']==[r['cpu']]and prep['reset_mask']==0 and prep['launch_mask']==(MASK if lane=='native'else 0)and
-        prep['argv']==[str(original),str(mode),lane]and prep['default_rseq']is True and prep['mode']==mode and prep['control']==control and
+        prep['argv']==[str(original),str(mode),lane]+(['physical-fallback']if physical else [])and prep['default_rseq']is True and prep['mode']==mode and prep['control']==control and
         [x['signal']for x in prep['dispositions']]==[n for n in range(1,65)if n not in(9,19)]and all(x['after']==0 for x in prep['dispositions']),
         'actual exact launch signal/mode/environment preparation')
     if lane=='native':
@@ -291,7 +305,8 @@ def preparation(case,row,directory,original,roots,objects,description,carrier,pr
             p=ns/name;value='/proc/self/fd/'+str(observed['fd']);need(p.is_symlink()and os.readlink(p)==value,'actual sealed dependency alias');r['namespace_aliases'][str(p)]=value
     need(launch==dict(schema_version=1,scope='first_entry_loader_candidate',status='prepared_not_executed',argv=prep['argv'],dependency_fds=fds,
         carrier_sha256=fact(carrier)['sha256'],carrier_size=fact(carrier)['bytes'],environment=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',
-        LD_BIND_NOW='1',LD_LIBRARY_PATH=str(ns),LI2_DEPENDENCY_FDS=','.join(map(str,fds)),LI2_UNROLLED_CAPTURE_CONTROL=str(control)))and
+        LD_BIND_NOW='1',LD_LIBRARY_PATH=str(ns),LI2_DEPENDENCY_FDS=','.join(map(str,fds)),LI2_UNROLLED_CAPTURE_CONTROL=str(control),
+        **({'LI2_CURRENT_TF_CONTROL':str(current_control)}if current else {})))and
         prep['late_sonames']==[]and prep['environment_source']==str(ns/'launch.json'),'actual exact gated capture-control exec environment')
     record=private/row['captures']['record']['file'];st=record.stat()
     need(prep['observer']==dict(fd=3,device=st.st_dev,inode=st.st_ino)and st.st_nlink==1 and st.st_mode&0o7777==0o600,'same exclusive owner record descriptor')
@@ -342,13 +357,18 @@ def control_reference(reader,native,gated,owner,control):
 
 
 def cohort(builder,products,private,pin,binary,aliases,run,r):
+    current=r.get('current_custody',False)
+    adapter=load('current_custody_profile',HERE/'current_custody_profile.py',pin)if current else None
     reader,owner_reader,native_policy=reader_support(builder,private,pin,binary,run,r)
     original=compile_subject(builder,private,pin,binary,run,r);app_layout=reader.elf(original.read_bytes(),native_policy)
-    r['application_layout']={k:v for k,v in app_layout.items()if k!='source'}
+    r['application_layout']={k:v for k,v in app_layout.items()if k not in('source','current')}
+    if current:r['application_layout']['current']={k:v for k,v in app_layout['current'].items()if k!='source'}
     seed_reference=seed_prerequisite(builder,private,pin,binary,run,r)
-    bridge=build_bridge(builder,products,private,pin,binary,aliases,run,r,('UNROLLED_HASH_CAPTURE',),capture_image=original)
+    bridge=(adapter.build_bridge(builder,products,private,pin,binary,aliases,run,r,(),capture_image=original)if current else
+        build_bridge(builder,products,private,pin,binary,aliases,run,r,('UNROLLED_HASH_CAPTURE',),capture_image=original))
     nested_emission(builder,bridge,pin,run,r)
     layout=observed_layout(builder,bridge,private,pin,binary,run,r)
+    if current:layout=adapter.observed_layout(builder,bridge,private,pin,binary,run,r,layout)
     interp,roots,objects,description,images,raws,carrier=prepare_inputs(original,bridge,builder,private,pin,binary,run,r)
     carrier_bytes=carrier.read_bytes();launcher=pin(FIXTURE/'launch.py');native_records={}
     for module in tuple(sys.modules.values()):
@@ -358,6 +378,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
         lane,mode,control=c['lane'],c['mode'],c['control'];label=c['label'];c['status']='failed';directory=private/label;directory.mkdir()
         argv=[builder.tools['python'],'-B',launcher,'--root',ROOT,'--role',lane,'--mode',str(mode),'--control',str(control),
             '--original',original,'--preparation',directory/'preparation.json']
+        if current:argv+=['--current-custody']
         for p in roots:argv+=['--library-root',p]
         if lane=='gated':argv+=['--carrier',carrier,'--namespace',directory/'namespace','--record-fd','{record_fd}']
         try:
@@ -371,16 +392,19 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 need(err==b'','native stderr remains empty')
                 parsed=reader.read(out,mode,True,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)
                 native_records[mode]=(out,row['pid']);c['status']='qualified_native_reference'
+                if current:c['current_prefix']=dict(native_frames=len(parsed['current']['frames']),runtime_frames=0)
             else:
                 capture=row['captures']['record'];record_path=binary(private/capture['file'])
                 need(fact(record_path)=={k:capture[k]for k in('bytes','sha256')},'whole actual protected owner record')
                 record=record_path.read_bytes();image=image_inventory(original,interp,carrier,objects,manifest)
+                if current:image.update(current_elf=app_layout['current'],current_bridge=bridge.read_bytes())
                 parsed=(reader.control_prefix(out,control,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)if control else
                         reader.read(out,mode,False,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference))
                 actual_owner=owner_reader.read(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'],control=control)
+                if current:adapter.case_summary(c,actual_owner)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader)
-                terminal,c['terminal']=reports.check(err,*terminal_args);r['terminal_reports'][label]=terminal
-                c['terminal_controls']=reports.controls(err,*terminal_args)
+                terminal,c['terminal']=(adapter.reports.check_current if current else reports.check)(err,*terminal_args);r['terminal_reports'][label]=terminal
+                c['terminal_controls']=(adapter.reports.controls_current if current else reports.controls)(err,*terminal_args)
                 c['owner_summary']=actual_owner['summary']
                 need(type(c['owner_summary'])is dict and c['owner_summary']and
                      all(type(k)is str and type(v)is int and 0<=v<1<<64 for k,v in c['owner_summary'].items()),
@@ -390,6 +414,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                     nout,npid=native_records[0]
                     native=reader.read(nout,0,True,0,app_layout,npid,r['cpu'],seed_reference)
                     c['control_reference']=control_reference(reader,native,parsed,actual_owner,control)
+                    if current:c['current_prefix']=adapter.frames(native,parsed,actual_owner)
                     c['status']='qualified_required_owner_refusal'
                 else:
                     need(mode in native_records,'same-mode complete native reference required')
@@ -398,9 +423,16 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                         native=reader.read(n,mode,True,125 if mode>=7 else 0,app_layout,npid,r['cpu'],seed_reference)
                         gated=reader.read(g,mode,False,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)
                         owner=owner_reader.read(record,layout,image,gated,row['pid'],r['cpu'],row['exit'],control=0)
-                        return reader.pair(native,gated,owner)
+                        result=reader.pair(native,gated,owner)
+                        if current:adapter.frames(native,gated,owner)
+                        return result
                     c['pair']=compare(nout,out);c['application_controls']=reader.controls(compare,nout,out,mode)
                     need(c['application_controls']==dict(supplied_refusals=26,native_operations=0),'all fixed app rejection controls')
+                    if current:
+                        native=reader.read(nout,mode,True,125 if mode>=7 else 0,app_layout,npid,r['cpu'],seed_reference)
+                        c['current_prefix']=adapter.frames(native,parsed,actual_owner)
+                        c['current_application_controls']=reader.current_controls(compare,nout,out,mode)
+                        need(c['current_application_controls']==dict(supplied_refusals=15,native_operations=0),'all15 additive actual prefix controls')
                     c['status']='qualified_required_read_failure'if mode>=7 else 'qualified_application'
                 c['owner_reader_controls']=owner_reader.controls(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'],control=control)
                 want=48 if control==1 else 21 if control==6 else 28 if control in(2,4,5)else 29
@@ -412,6 +444,10 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
             last=r['commands'][-1]if r['commands']else{}
             if not(last.get('name')==label and last.get('reaped')is True and last.get('cleanup_errors')==[]and
                 isinstance(last.get('descriptors'),list)and all(d.get('closed')is True for d in last['descriptors'])):raise
+    if current:
+        adapter.extras(sys.modules[__name__],builder,private,pin,binary,run,r,reader,owner_reader,original,app_layout,
+            seed_reference,bridge,layout,interp,roots,objects,description,images,raws,carrier,carrier_bytes,launcher,native_records)
+        adapter.complete(r,owner_reader)
     need(len(r['cases'])==25 and all(c['status'].startswith('qualified_')for c in r['cases'])and not r['error'],'all25 actual subjects qualify, no failed-prefix completion credit')
     need(sum(c.get('pair',{}).get('qualified_case',0)for c in r['cases'])==9 and
         sum(c.get('application_controls',{}).get('supplied_refusals',0)for c in r['cases'])==234 and
@@ -421,10 +457,16 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expect-revision',required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expect-revision',required=True)
+    parser.add_argument('--current-custody',action='store_true',help='separate genuine current-TF profile; all original25 remain required')
+    parser.add_argument('--component-receipt',type=Path)
+    parser.add_argument('--current-component-receipt',type=Path)
+    args=parser.parse_args()
+    need(args.current_custody or(args.component_receipt is None and args.current_component_receipt is None),'current prerequisites require the explicit current profile')
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision)and len(os.sched_getaffinity(0))==1,'exact revision/assertions and one reserved CPU')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-unrolled-hash-owner-'+args.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(mode=0o700)
+    stem=stamp+('-current-custody-owner-'if args.current_custody else '-unrolled-hash-owner-')+args.expect_revision[:12]
+    private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(mode=0o700)
     pins,aliases,artifacts,presence={},{},{},{}
     r=dict(schema=1,profile='unrolled-hash-owner-v1',status='failed',expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,
         hardware=hardware(cpu),commands=[],cases=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control),lane=lane,mode=mode,control=control,
@@ -432,6 +474,13 @@ def main():
         namespace_aliases={},terminal_reports={},bounds=BOUNDS,error=None,final_errors=[],
         seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
             bounds=BOUNDS['seed'],owner_subjects=0,completed_applications=0,performance_credit=False))
+    if args.current_custody:
+        r.update(profile='current-custody-owner-v1',current_custody=True,
+            current_cases=[dict(label='subject-current-'+name,lane='gated',mode=0,control=0,
+                current_control=control,physical_fallback=fallback,expected_exit=expected,
+                status='unexecuted',launched=False)for name,control,fallback,expected in
+                (('stale',1,False,125),('physical-fallback',0,True,0))],
+            current_qualification=dict(status='unexecuted',planned=27))
     def pin(path):
         alias = Path(os.path.abspath(path))
         p = alias.resolve(strict=True)
@@ -486,6 +535,7 @@ def main():
         return run(name, argv, profile=profile, expected=expected, env=env)
 
     builder=Build(r,private,pin,binary,build_run)
+    current_profile=None
     try:
         r['source']=source();need(r['source']['revision']==args.expect_revision,'exact clean committed source')
         git=pin(shutil.which('git',path=ENV['PATH']))
@@ -495,6 +545,12 @@ def main():
             FIXTURE/'main.c',FIXTURE/'pure.c',FIXTURE/'pure.ld',FIXTURE/'machine.S',FIXTURE/'app.h',FIXTURE/'read.py',FIXTURE/'build.sh',FIXTURE/'launch.py',OWNER/'read.py',OWNER/'layout.py')}
         required|={str((SELECTED/'tests/provider_app/seed_probe'/n).relative_to(ROOT))for n in('probe.c','record.h','read.py','build.sh')}
         required.add(str((SELECTED/'tests/b2_reference/xstate.py').relative_to(ROOT)))
+        if args.current_custody:
+            current_profile=load('current_custody_profile',HERE/'current_custody_profile.py',pin)
+            current_profile.arguments(args)
+            r['current_reproduce']=['--component-receipt',str(args.component_receipt.relative_to(ROOT)),
+                '--current-component-receipt',str(args.current_component_receipt.relative_to(ROOT))]
+            required.update(current_profile.REQUIRED)
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)
@@ -502,6 +558,7 @@ def main():
             presence[name]=os.path.lexists(name)
             if presence[name]:pin(name)
         need(not presence['/etc/ld.so.preload'],'no global preload')
+        if args.current_custody:current_profile.prerequisites(args,r,pin,binary)
         temporary=private/'tmp';temporary.mkdir()
         _,out,err=run('namespace-controls',[pin(sys.executable),'-B','-m','unittest','discover','-s',SELECTED.parent,'-p','namespace*_tests.py','-v'],
             profile='program',env=dict(ENV,TMPDIR=str(temporary)))
@@ -588,12 +645,21 @@ def main():
             failure_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
             performance_credit=False,whole_ls_eligibility_credit=False,
             scope='Required25 subjects: nine actual native references, nine actual generated-owner pairs including two real read faults, and seven required owner refusals. One separate unchanged seed prerequisite qualifies exact zero FIP/FDP on the same CPU and complete actual format; it earns no owner/application/performance credit. Whole native/gated GPR, actual AF, FP, stack and data comparisons are mandatory. Failed operations never count as completed applications. This finite fixture qualifies this owner only; no general function/data-pointer authority or throughput claim.')
+        if args.current_custody:
+            if current_profile is not None:current_profile.project(public,r)
+            else:
+                public['current_custody']=dict(qualification=r['current_qualification'],cases=r['current_cases'])
+                public['reproduce']+=['--current-custody']
+                public['scope']='Current-custody source/prerequisite preparation failed; no native or custody credit.'
         columns=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count')
         stream=io.StringIO(newline='');writer=csv.writer(stream,lineterminator='\n');writer.writerow(columns)
         for c in public['cases']:writer.writerow([c.get(k,'')for k in columns])
+        if args.current_custody:
+            for c in public['current_custody']['cases']:writer.writerow([c.get(k,'')for k in columns])
         raw=stream.getvalue().encode();public_csv=HERE/'results'/(stem+'.csv');public_json=HERE/'results'/(stem+'.json')
         need(len(raw)<=8192,'all25 compact outcome CSV rows')
         public['csv']=dict(file=public_csv.name,bytes=len(raw),sha256=H(raw))
+        if args.current_custody and current_profile is not None:public=current_profile.encode_public(public)
         encoded=json.dumps(public,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
         need(len(encoded.encode())<=32<<10 and not any(x and len(x)>1 and(x in encoded or x in stream.getvalue())for x in(str(ROOT),str(Path.home()),platform.node(),'/home/')),'compact public numerical result without private paths/host names')
         with public_csv.open('xb')as f:f.write(raw)

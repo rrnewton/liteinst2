@@ -11,10 +11,11 @@ import inventory_syntax
 import inventory_digest
 import inventory_copy
 import inventory_splice
+import recorder_shards_inventory as recorder_shards
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == 'dc7c1bbc6806f7ebdc6b2f3a857fdbbd0b18c0b9edab5465c1c1117d4602ba33', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == 'e25c57dd34959825b9589731ddb8356da87733280d7e97657f7100b5c3ec338e', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -84,7 +85,11 @@ CURRENTFRONTEND = MAINFRONTEND['current_corpus_sha256']
 MAINROUTED = DATA['adjacent_routed_jmp']
 CURRENTROUTED = MAINROUTED['current_corpus_sha256']
 MAINROUTEDNATIVE = DATA['adjacent_routed_native']
-LATEST = MAINROUTEDNATIVE['current_corpus_sha256']
+CURRENTROUTEDNATIVE = MAINROUTEDNATIVE['current_corpus_sha256']
+MAINSTARTUP = DATA['startup_carrier']
+CURRENTSTARTUP = MAINSTARTUP['current_corpus_sha256']
+MAIN091 = DATA['main091']
+LATEST = MAIN091['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -95,11 +100,24 @@ def digest(value):
     return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())
 
 
+def precheck_null_corpus(declared, error):
+    """Reject an impossible top-level null before repeated historical peels.
+
+    Every admitted corpus in this module has ten non-null top-level fields.
+    This extra structural rejection never accepts a corpus, caches a result,
+    serializes a value or substitutes for any original historical predicate.
+    Foreign roots/keys stay on their original path without custom callbacks.
+    """
+    if (type(declared) is dict and all(type(key) is str for key in declared)
+            and any(value is None for value in declared.values())):
+        require(False, error)
+
+
 def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -112,6 +130,7 @@ def precheck_current_sources(error):
                     for path, value in sources.items())):
             return
         expected.update(sources)
+    recorder_shards.require_sources(error)
     for path, value in expected.items():
         try:
             raw = (ROOT / path).read_bytes()
@@ -120,8 +139,128 @@ def precheck_current_sources(error):
         require(inventory_digest.hexdigest(raw) == value, error)
 
 
+def source_before_091(path, data, error):
+    """Whole current source, exact sparse inverse, then whole historical source."""
+    if path not in MAIN091['projections']:
+        return data
+    row = MAIN091['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_091_sources(error='main091_source_inventory_differs'):
+    for path, expected in MAIN091['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN091['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN091['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN091['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN091['module_chains'][path]), error)
+        source_before_091(path, raw, error)
+    for previous, row in MAIN091['relocations'].items():
+        require(MAIN091['sources'][row['current_path']] == row['sha256'], error)
+        if row['old_path_absent']:
+            old = ROOT / previous
+            require(not old.exists() and not old.is_symlink(), error)
+
+
+
+def before_091(declared, error='main091_inventory_differs', source_error='main091_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
+    declared = recorder_shards.peel_current(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_091_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN091['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN091['previous_corpus_sha256'] == CURRENTSTARTUP, error)
+    return old
+
+
+def peel_091(declared, error, source_error):
+    declared = recorder_shards.peel_current(declared, error, source_error)
+    return before_091(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
+def source_before_startup(path, data, error):
+    """Whole current source, exact sparse inverse, then whole historical source."""
+    data = source_before_091(path, data, error)
+    if path not in MAINSTARTUP['projections']:
+        return data
+    row = MAINSTARTUP['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_startup_sources(error='startup_source_inventory_differs'):
+    for path, expected in MAINSTARTUP['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        observed = raw
+        raw = source_before_091(path, raw, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAINSTARTUP['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAINSTARTUP['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAINSTARTUP['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAINSTARTUP['module_chains'][path]), error)
+        source_before_startup(path, observed, error)
+
+
+def before_startup(declared, error='startup_inventory_differs', source_error='startup_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
+    declared = peel_091(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTSTARTUP, error)
+    require_startup_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAINSTARTUP['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAINSTARTUP['previous_corpus_sha256'] == CURRENTROUTEDNATIVE, error)
+    return old
+
+
+def peel_startup(declared, error, source_error):
+    declared = peel_091(declared, error, source_error)
+    return before_startup(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTSTARTUP else declared
+
+
 def source_before_routed_native(path, data, error):
     """Whole current source, exact sparse inverse, then whole historical source."""
+    data = source_before_startup(path, data, error)
     if path not in MAINROUTEDNATIVE['projections']:
         return data
     row = MAINROUTEDNATIVE['projections'][path]
@@ -141,6 +280,8 @@ def require_routed_native_sources(error='adjacent_routed_native_source_inventory
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        observed = raw
+        raw = source_before_startup(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINROUTEDNATIVE['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -157,11 +298,13 @@ def require_routed_native_sources(error='adjacent_routed_native_source_inventory
                     macro['rows'] == [[f'row_{i:02}', str(i)] for i in range(31)], error)
         if path in MAINROUTEDNATIVE['module_chains']:
             require(all(raw.decode().count(literal) == 1 for literal in MAINROUTEDNATIVE['module_chains'][path]), error)
-        source_before_routed_native(path, raw, error)
+        source_before_routed_native(path, observed, error)
 
 
 def before_routed_native(declared, error='adjacent_routed_native_inventory_differs', source_error='adjacent_routed_native_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    precheck_null_corpus(declared, error)
+    declared = peel_startup(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTROUTEDNATIVE, error)
     require_routed_native_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -176,7 +319,8 @@ def before_routed_native(declared, error='adjacent_routed_native_inventory_diffe
 
 
 def peel_routed_native(declared, error, source_error):
-    return before_routed_native(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_startup(declared, error, source_error)
+    return before_routed_native(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTROUTEDNATIVE else declared
 
 
 def source_before_routed(path, data, error):
@@ -216,6 +360,7 @@ def require_routed_sources(error='adjacent_routed_source_inventory_differs'):
 
 
 def before_routed(declared, error='adjacent_routed_inventory_differs', source_error='adjacent_routed_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_routed_native(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTROUTED, error)
     require_routed_sources(source_error)
@@ -273,6 +418,7 @@ def require_frontend_sources(error='adjacent_frontend_source_inventory_differs')
 
 
 def before_frontend(declared, error='adjacent_frontend_inventory_differs', source_error='adjacent_frontend_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_routed(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTFRONTEND, error)
     require_frontend_sources(source_error)
@@ -328,6 +474,7 @@ def require_adjacent_sources(error='adjacent_b2_source_inventory_differs'):
 
 
 def before_adjacent(declared, error='adjacent_b2_inventory_differs', source_error='adjacent_b2_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_frontend(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTADJACENT, error)
     require_adjacent_sources(source_error)
@@ -399,6 +546,7 @@ def require_short_pending_sources(error='neighbor_short_pending_source_inventory
 
 
 def before_short_pending(declared, error='neighbor_short_pending_inventory_differs', source_error='neighbor_short_pending_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_adjacent(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTSHORTPENDING, error)
     require_short_pending_sources(source_error)
@@ -471,6 +619,7 @@ def require_short_ownership_sources(error='neighbor_short_ownership_source_inven
 
 
 def before_short_ownership(declared, error='neighbor_short_ownership_inventory_differs', source_error='neighbor_short_ownership_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_short_pending(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTSHORTOWNERSHIP, error)
     require_short_ownership_sources(source_error)
@@ -528,6 +677,7 @@ def require_short_engine_sources(error='neighbor_short_engine_source_inventory_d
 
 
 def before_short_engine(declared, error='neighbor_short_engine_inventory_differs', source_error='neighbor_short_engine_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_short_ownership(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTSHORTENGINE, error)
     require_short_engine_sources(source_error)
@@ -588,6 +738,7 @@ def require_short_native_sources(error='neighbor_short_native_source_inventory_d
 
 
 def before_short_native(declared, error='neighbor_short_native_inventory_differs', source_error='neighbor_short_native_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_short_engine(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTSHORTNATIVE, error)
     require_short_native_sources(source_error)
@@ -641,6 +792,7 @@ def require_short_sources(error='neighbor_short_source_inventory_differs'):
 
 
 def before_short(declared, error='neighbor_short_inventory_differs', source_error='neighbor_short_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_short_native(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTSHORT, error)
     require_short_sources(source_error)
@@ -742,6 +894,7 @@ def require_c6f_sources(error='mainc6f_source_inventory_differs'):
 
 
 def before_c6f(declared, error='mainc6f_inventory_differs', source_error='mainc6f_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_short(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTC6F, error)
     require_c6f_sources(source_error)
@@ -801,6 +954,7 @@ def require_12e_sources(error='main12e_source_inventory_differs'):
 
 
 def before_12e(declared, error='main12e_inventory_differs', source_error='main12e_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_c6f(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT12E, error)
     require_12e_sources(source_error)
@@ -857,6 +1011,7 @@ def require_b66_sources(error='mainb66_source_inventory_differs'):
 
 
 def before_b66(declared, error='mainb66_inventory_differs', source_error='mainb66_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_12e(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTB66, error)
     require_b66_sources(source_error)
@@ -913,6 +1068,7 @@ def require_469_sources(error='main469_source_inventory_differs'):
 
 
 def before_469(declared, error='main469_inventory_differs', source_error='main469_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_b66(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT469, error)
     require_469_sources(source_error)
@@ -969,6 +1125,7 @@ def require_e11_sources(error='maine11_source_inventory_differs'):
 
 
 def before_e11(declared, error='maine11_inventory_differs', source_error='maine11_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_469(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTE11, error)
     require_e11_sources(source_error)
@@ -1025,6 +1182,7 @@ def require_0a088_sources(error='main0a088_source_inventory_differs'):
 
 
 def before_0a088(declared, error='main0a088_inventory_differs', source_error='main0a088_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_e11(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT0A088, error)
     require_0a088_sources(source_error)
@@ -1081,6 +1239,7 @@ def require_9c70_sources(error='main9c70_source_inventory_differs'):
 
 
 def before_9c70(declared, error='main9c70_inventory_differs', source_error='main9c70_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_0a088(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT9C70, error)
     require_9c70_sources(source_error)
@@ -1137,6 +1296,7 @@ def require_2754_sources(error='main2754_source_inventory_differs'):
 
 
 def before_2754(declared, error='main2754_inventory_differs', source_error='main2754_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_9c70(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT2754, error)
     require_2754_sources(source_error)
@@ -1193,6 +1353,7 @@ def require_9950_sources(error='main9950_source_inventory_differs'):
 
 
 def before_9950(declared, error='main9950_inventory_differs', source_error='main9950_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_2754(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT9950, error)
     require_9950_sources(source_error)
@@ -1249,6 +1410,7 @@ def require_5a0_sources(error='main5a0_source_inventory_differs'):
 
 
 def before_5a0(declared, error='main5a0_inventory_differs', source_error='main5a0_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_9950(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT5A0, error)
     require_5a0_sources(source_error)
@@ -1305,6 +1467,7 @@ def require_850_sources(error='main850_source_inventory_differs'):
 
 
 def before_850(declared, error='main850_inventory_differs', source_error='main850_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_5a0(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT850, error)
     require_850_sources(source_error)
@@ -1382,6 +1545,7 @@ def require_83b_sources(error='main83b_source_inventory_differs'):
 
 
 def before_83b(declared, error='main83b_inventory_differs', source_error='main83b_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_850(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT83B, error)
     require_83b_sources(source_error)
@@ -1462,6 +1626,7 @@ def require_abab_sources(error='mainabab_source_inventory_differs'):
 
 
 def before_abab(declared, error='mainabab_inventory_differs', source_error='mainabab_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_83b(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTABAB, error)
     require_abab_sources(source_error)
@@ -1542,6 +1707,7 @@ def require_727_sources(error='main727_source_inventory_differs'):
 
 
 def before_727(declared, error='main727_inventory_differs', source_error='main727_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_abab(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT727, error)
     require_727_sources(source_error)
@@ -1614,6 +1780,7 @@ def require_09fe_sources(error='main09fe_source_inventory_differs'):
 
 
 def before_09fe(declared, error='main09fe_inventory_differs', source_error='main09fe_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_727(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT09FE, error)
     require_09fe_sources(source_error)
@@ -1686,6 +1853,7 @@ def require_0a8_sources(error='main0a8_source_inventory_differs'):
 
 
 def before_0a8(declared, error='main0a8_inventory_differs', source_error='main0a8_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_09fe(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT0A8, error)
     require_0a8_sources(source_error)
@@ -1758,6 +1926,7 @@ def require_0df8_sources(error='main0df8_source_inventory_differs'):
 
 
 def before_0df8(declared, error='main0df8_inventory_differs', source_error='main0df8_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_0a8(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT0DF8, error)
     require_0df8_sources(source_error)
@@ -1828,6 +1997,7 @@ def require_43d7_sources(error='main43d7_source_inventory_differs'):
 
 
 def before_43d7(declared, error='main43d7_inventory_differs', source_error='main43d7_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_0df8(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT43D7, error)
     require_43d7_sources(source_error)
@@ -1882,6 +2052,7 @@ def require_7cdc_sources(error='main7cdc_source_inventory_differs'):
 
 
 def before_7cdc(declared, error='main7cdc_inventory_differs', source_error='main7cdc_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_43d7(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT7CDC, error)
     require_7cdc_sources(source_error)
@@ -1936,6 +2107,7 @@ def require_f0ef_sources(error='mainf0ef_source_inventory_differs'):
 
 
 def before_f0ef(declared, error='mainf0ef_inventory_differs', source_error='mainf0ef_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_7cdc(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTF0EF, error)
     require_f0ef_sources(source_error)
@@ -1994,6 +2166,7 @@ def require_e797_sources(error='maine797_source_inventory_differs'):
 
 
 def before_e797(declared, error='maine797_inventory_differs', source_error='maine797_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_f0ef(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTE797, error)
     require_e797_sources(source_error)
@@ -2048,6 +2221,7 @@ def require_c1_sources(error='mainc1_source_inventory_differs'):
 
 
 def before_c1(declared, error='mainc1_inventory_differs', source_error='mainc1_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_e797(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTC1, error)
     require_c1_sources(source_error)
@@ -2099,6 +2273,7 @@ def require_c0_sources(error='mainc0_source_inventory_differs'):
 
 
 def before_c0(declared, error='mainc0_inventory_differs', source_error='mainc0_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_c1(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENTC0, error)
     require_c0_sources(source_error)
@@ -2150,6 +2325,7 @@ def require_690_sources(error='main690_source_inventory_differs'):
 
 
 def before_690(declared, error='main690_inventory_differs', source_error='main690_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_c0(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT690, error)
     require_690_sources(source_error)
@@ -2205,6 +2381,7 @@ def require_sources(error='main813_source_inventory_differs'):
 
 
 def before_current(declared, error='main813_inventory_differs', source_error='main813_source_inventory_differs'):
+    precheck_null_corpus(declared, error)
     declared = peel_690(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     require_sources(source_error)
@@ -2231,6 +2408,7 @@ def peel_current(declared, error='main813_inventory_differs', source_error='main
 
 
 def peel_python(identities):
+    identities = recorder_shards.peel_python(identities)
     if type(identities) is list and digest(identities) == PYTHON_CURRENT:
         require(len(identities) == len(set(identities)) == RECORDER_TESTS, 'main813_python_inventory_differs')
         new = [x for x in identities if x.startswith('test_main813_inventory.')]

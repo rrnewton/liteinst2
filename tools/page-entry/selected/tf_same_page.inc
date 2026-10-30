@@ -48,11 +48,30 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
 #ifdef LI2_TF_SEALED_CUSTODY
     const struct li2_custody_owner custody_owner={.chain=c,.owner=p,.slot=s->index,
         .generation=s->generation,.event=c->event_id};
+#ifdef LI2_MAPS_CURRENT_TF
+    unsigned current_route=1;
+    int e=li2_lifecycle_fetch_rx_stage_current_custody(&s->fetch.ref,pc,&custody_owner,&v);
+#ifdef LI2_CURRENT_TF_CAPTURE
+    li2_current_tf_observe(LI2_CTO_ATTEMPT,e,1,c,&s->fetch.ref,v);
+#endif
+    if(e==LI2_MAPS_CURRENT_UNAVAILABLE) {
+        current_route=0;e=li2_lifecycle_fetch_rx_stage_custody(&s->fetch.ref,pc,&custody_owner,&v);
+    }
+#else
     int e=li2_lifecycle_fetch_rx_stage_custody(&s->fetch.ref,pc,&custody_owner,&v);
+#endif
 #else
     int e=li2_lifecycle_fetch_rx_stage(&s->fetch.ref,pc,&v);
 #endif
+#ifdef LI2_MAPS_CURRENT_TF
+    l->transfer=*(current_route?li2_lifecycle_fetch_rx_current_progress():li2_lifecycle_fetch_rx_progress());
+    chain_observe(&s->fetch);
+#else
     l->transfer=*li2_lifecycle_fetch_rx_progress();chain_observe(&s->fetch);
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    li2_current_tf_observe(LI2_CTO_STAGE,e,current_route,c,&s->fetch.ref,v);
+#endif
     chain_need(c,!e && v && v->phase==LI2_RX_STAGED && v->complete &&
         v->before_sequence==s->fetch.ref.sequence && v->pid==c->session->pid &&
         v->tid==c->session->tid && v->pc==pc && v->length && v->length<=15 &&
@@ -86,8 +105,20 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
 #ifdef LI2_TF_SEALED_CUSTODY
         li2_page_custody_discard(LI2_CUSTODY_MISS);
 #endif
+#ifdef LI2_MAPS_CURRENT_TF
+        e=current_route?li2_lifecycle_fetch_rx_cancel_current_custody(&s->fetch.ref,v):
+            li2_lifecycle_fetch_rx_cancel(&s->fetch.ref,v);
+#else
         e=li2_lifecycle_fetch_rx_cancel(&s->fetch.ref,v);
+#endif
+#ifdef LI2_MAPS_CURRENT_TF
+        l->transfer=*(current_route?li2_lifecycle_fetch_rx_current_progress():li2_lifecycle_fetch_rx_progress());
+#else
         l->transfer=*li2_lifecycle_fetch_rx_progress();
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+        li2_current_tf_observe(LI2_CTO_CANCEL,e,current_route,c,&s->fetch.ref,v);
+#endif
         chain_need(c,!e && chain_frame_equal(&p->after,uc,0),LI2_CHAIN_FRAME,e);
         chain_count(c,&l->misses);l->phase=LI2_LEASE_MISS;
         p->in_handler=0;return 0; /* Original trace now really closes/releases. */
@@ -113,11 +144,24 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
        untouched. Even a nested event between these two ref stores revokes the
        original real page; stale authentication is terminal, never a release. */
 #ifdef LI2_TF_SEALED_CUSTODY
+#ifdef LI2_MAPS_CURRENT_TF
+    e=current_route?li2_lifecycle_fetch_rx_commit_current_custody(&s->fetch.ref,v,&custody_owner,&s->fetch.ref):
+        li2_lifecycle_fetch_rx_commit_custody(&s->fetch.ref,v,&custody_owner,&s->fetch.ref);
+#else
     e=li2_lifecycle_fetch_rx_commit_custody(&s->fetch.ref,v,&custody_owner,&s->fetch.ref);
+#endif
 #else
     e=li2_lifecycle_fetch_rx_commit(&s->fetch.ref,v,&s->fetch.ref);
 #endif
+#ifdef LI2_MAPS_CURRENT_TF
+    l->transfer=*(current_route?li2_lifecycle_fetch_rx_current_progress():li2_lifecycle_fetch_rx_progress());
+    chain_observe(&s->fetch);
+#else
     l->transfer=*li2_lifecycle_fetch_rx_progress();chain_observe(&s->fetch);
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    li2_current_tf_observe(LI2_CTO_COMMIT,e,current_route,c,&s->fetch.ref,v);
+#endif
     chain_need(c,!e && l->transfer.phase==LI2_RX_COMMITTED &&
         l->transfer.after_sequence==s->fetch.ref.sequence && s->fetch.progress.held &&
         s->fetch.progress.complete && !s->fetch.progress.first_error &&
@@ -132,7 +176,15 @@ static int chain_same_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext
     /* TF stays set; no application register, flag, mask or FP byte was edited. */
     l->phase=LI2_LEASE_RUNNING;p->in_handler=0;c->in_handler=0;
 #ifdef LI2_TF_SEALED_CUSTODY
+#ifdef LI2_MAPS_CURRENT_TF
+    e=current_route?li2_lifecycle_fetch_rx_publish_current_custody(&s->fetch.ref,v,&custody_owner):
+        li2_lifecycle_fetch_rx_publish_custody(&s->fetch.ref,v,&custody_owner);
+#else
     e=li2_lifecycle_fetch_rx_publish_custody(&s->fetch.ref,v,&custody_owner);
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    li2_current_tf_observe(LI2_CTO_PUBLISH,e,current_route,c,&s->fetch.ref,v);
+#endif
     chain_need(c,!e,LI2_CHAIN_PREPARE,e);
 #endif
     return 1;

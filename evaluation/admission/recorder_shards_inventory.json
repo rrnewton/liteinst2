@@ -1,0 +1,976 @@
+{
+  "added": [
+    "test_main813_inventory.Main813InventoryTests.test_historical_sources_core813_through_83b",
+    "test_main813_inventory.Main813InventoryTests.test_historical_sources_850_through_12e",
+    "test_main813_inventory.Main813InventoryTests.test_historical_sources_importer_through_ownership",
+    "test_main813_inventory.Main813InventoryTests.test_historical_sources_pending_through_main091"
+  ],
+  "current_corpus_sha256": "1c10c051e9b6518a7e63ea841b5b2f8db2dafdc5c508966793dfc71a9db04782",
+  "previous_corpus_sha256": "ff3d8649d884d3380cd78447fb789ae1eda527885029529038605393fceefebb",
+  "previous_recorder_tests": 350,
+  "python_current_sha256": "83441a7e7d0dc225dc9b161d442607393696c156e326e41e721830a3a42b939c",
+  "python_previous_sha256": "af962c7203b5c1a5d250ca5767c1c67bca84c1638d1ca88f30be3ecd55b35aaa",
+  "recorder_tests": 354,
+  "schema": 1,
+  "sources": {
+    "evaluation/admission/core_813_inventory.py": {
+      "current_sha256": "86443c76dda887dd8127a8effa713efab57229ff407274f709b6596de699e7b0",
+      "edits": [
+        [
+          293,
+          345,
+          ""
+        ],
+        [
+          5641,
+          5684,
+          ""
+        ],
+        [
+          6540,
+          6607,
+          "def require_091_sources(error='091_source_inventory_differs'):\n"
+        ],
+        [
+          7769,
+          7879,
+          "def before_091(declared, error='091_inventory_differs', source_error='091_source_inventory_differs'):\n"
+        ],
+        [
+          7921,
+          7996,
+          ""
+        ],
+        [
+          8625,
+          8700,
+          ""
+        ],
+        [
+          117995,
+          118052,
+          ""
+        ]
+      ],
+      "previous_sha256": "ebe0dadd879eee27d2479a730423d5e211c4a4876806b35f09e2de03279097d1"
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "current_sha256": "bd0fead5d6aad50a735a403e06a8bf258a05f973e8d9581c48300c9a4ecde6fb",
+      "edits": [
+        [
+          295,
+          347,
+          ""
+        ],
+        [
+          783,
+          879,
+          "RECORDER_TESTS = main813.RECORDER_TESTS\nPYTHON_CURRENT = main813.PYTHON_CURRENT\n"
+        ],
+        [
+          4816,
+          5719,
+          "    return before_ac0963(declared) if type(declared) is dict and digest(declared) in (LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.CURRENT43D7, main813.CURRENT0DF8, main813.CURRENT0A8, main813.CURRENT09FE, main813.CURRENT727, main813.CURRENTABAB, main813.CURRENT83B, main813.CURRENT850, main813.CURRENT5A0, main813.CURRENT9950, main813.CURRENT2754, main813.CURRENT9C70, main813.CURRENT0A088, main813.CURRENTE11, main813.CURRENT469, main813.CURRENTB66, main813.CURRENT12E, main813.CURRENTC6F, main813.CURRENTSHORT, main813.CURRENTSHORTNATIVE, main813.CURRENTSHORTENGINE, main813.CURRENTSHORTPENDING, main813.CURRENTADJACENT, main813.CURRENTFRONTEND, main813.CURRENTROUTED, main813.CURRENTROUTEDNATIVE, main813.CURRENTSTARTUP, main813.LATEST) else declared\n"
+        ],
+        [
+          9562,
+          9599,
+          "def require_current(declared):\n"
+        ],
+        [
+          9667,
+          9755,
+          ""
+        ],
+        [
+          10184,
+          10277,
+          ""
+        ],
+        [
+          10411,
+          10714,
+          ""
+        ]
+      ],
+      "previous_sha256": "98361cbe7700389db2ee5f66e179b5f530903704653a1d113232356569bef164"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "current_sha256": "d20fea3fb28325b72e9c7612f2590c23ef5dcf1a395086361d111e11e583bb46",
+      "edits": [
+        [
+          1392,
+          1469,
+          "    require(type(count) is int and count == 350 and len(identities) == count\n"
+        ],
+        [
+          1611,
+          1742,
+          ""
+        ],
+        [
+          2073,
+          3626,
+          "    modules = list(dict.fromkeys(name.split('.', 1)[0] for name in identities))\n"
+        ],
+        [
+          3668,
+          3834,
+          "    heavy = 'test_main813_inventory'\n    if workers > 1 and heavy in modules and len(modules) >= workers:\n        # Keep the complete inventory module isolated; no test is split or omitted.\n        others = [module for module in modules if module != heavy]\n        for name in identities:\n            module = name.split('.', 1)[0]\n            index = 0 if module == heavy else 1 + others.index(module) % (workers - 1)\n            groups[index].append(name)\n    else:\n        for name in identities:\n            groups[modules.index(name.split('.', 1)[0]) % workers].append(name)\n"
+        ]
+      ],
+      "previous_sha256": "037715bdb690287e45671bb3a229cee746d7a2c53efa471b48fd46488ca20ee9"
+    },
+    "evaluation/admission/test_main813_inventory.py": {
+      "current_sha256": "25adc14510727287a6a0b1e064f78c0439f56060f361043273139b78b4f24a64",
+      "edits": [
+        [
+          308,
+          351,
+          ""
+        ],
+        [
+          2243,
+          2576,
+          ""
+        ],
+        [
+          3135,
+          3192,
+          ""
+        ],
+        [
+          55130,
+          62165,
+          ""
+        ],
+        [
+          62249,
+          62350,
+          "        inventory.require_current(declared)\n"
+        ],
+        [
+          62659,
+          62717,
+          "                inventory.require_current(declared)\n"
+        ],
+        [
+          62974,
+          63026,
+          "                inventory.require_current({})\n"
+        ],
+        [
+          63539,
+          63601,
+          "                    inventory.require_current(declared)\n"
+        ],
+        [
+          64570,
+          64636,
+          "                        inventory.require_current(declared)\n"
+        ],
+        [
+          66082,
+          66144,
+          "                    inventory.require_current(declared)\n"
+        ],
+        [
+          67874,
+          67928,
+          ""
+        ],
+        [
+          68469,
+          68522,
+          "                inventory.require_current(old)\n"
+        ],
+        [
+          70364,
+          70418,
+          "            inventory.require_current(declared)\n"
+        ],
+        [
+          71134,
+          71191,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          71817,
+          71881,
+          "                        inventory.require_current(latest)\n"
+        ],
+        [
+          72968,
+          73039,
+          "            inventory.require_current(main813.before_c0(newest))\n"
+        ],
+        [
+          73757,
+          73818,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          74104,
+          74156,
+          "            inventory.require_current(newest)\n"
+        ],
+        [
+          74873,
+          74937,
+          "                        inventory.require_current(newest)\n"
+        ],
+        [
+          76236,
+          76305,
+          "            inventory.require_current(main813.before_c1(live))\n"
+        ],
+        [
+          77023,
+          77084,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          77933,
+          77995,
+          "                        inventory.require_current(live)\n"
+        ],
+        [
+          79391,
+          79464,
+          "            inventory.require_current(main813.before_e797(actual))\n"
+        ],
+        [
+          80147,
+          80208,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          80423,
+          80480,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          81341,
+          81405,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          82772,
+          82845,
+          "            inventory.require_current(main813.before_f0ef(actual))\n"
+        ],
+        [
+          83528,
+          83589,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          83804,
+          83861,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          84722,
+          84786,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          86156,
+          86229,
+          "            inventory.require_current(main813.before_7cdc(actual))\n"
+        ],
+        [
+          86912,
+          86973,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          87188,
+          87245,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          88106,
+          88170,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          89539,
+          89612,
+          "            inventory.require_current(main813.before_43d7(actual))\n"
+        ],
+        [
+          90295,
+          90356,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          90571,
+          90628,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          91489,
+          91553,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          93459,
+          93532,
+          "            inventory.require_current(main813.before_0df8(actual))\n"
+        ],
+        [
+          94215,
+          94276,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          94491,
+          94548,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          95409,
+          95473,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          97179,
+          97251,
+          "            inventory.require_current(main813.before_0a8(actual))\n"
+        ],
+        [
+          97932,
+          97993,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          98207,
+          98264,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          99121,
+          99185,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          100661,
+          100734,
+          "            inventory.require_current(main813.before_09fe(actual))\n"
+        ],
+        [
+          101417,
+          101478,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          101693,
+          101750,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          102611,
+          102675,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          104152,
+          104224,
+          "            inventory.require_current(main813.before_727(actual))\n"
+        ],
+        [
+          104905,
+          104966,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          105180,
+          105237,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          106094,
+          106158,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          107819,
+          107892,
+          "            inventory.require_current(main813.before_abab(actual))\n"
+        ],
+        [
+          108575,
+          108636,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          108851,
+          108908,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          109769,
+          109833,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          111607,
+          111679,
+          "            inventory.require_current(main813.before_83b(actual))\n"
+        ],
+        [
+          112360,
+          112421,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          112635,
+          112692,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          113549,
+          113613,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          114513,
+          114687,
+          ""
+        ],
+        [
+          115543,
+          115615,
+          "            inventory.require_current(main813.before_850(actual))\n"
+        ],
+        [
+          116296,
+          116357,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          116571,
+          116628,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          117485,
+          117549,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          119275,
+          119347,
+          "            inventory.require_current(main813.before_5a0(actual))\n"
+        ],
+        [
+          120028,
+          120089,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          120303,
+          120360,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          121217,
+          121281,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          123082,
+          123155,
+          "            inventory.require_current(main813.before_9950(actual))\n"
+        ],
+        [
+          123838,
+          123899,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          124114,
+          124171,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          125032,
+          125096,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          126906,
+          126979,
+          "            inventory.require_current(main813.before_2754(actual))\n"
+        ],
+        [
+          127662,
+          127723,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          127938,
+          127995,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          129673,
+          129733,
+          "                    inventory.require_current(actual)\n"
+        ],
+        [
+          131469,
+          131542,
+          "            inventory.require_current(main813.before_9c70(actual))\n"
+        ],
+        [
+          132225,
+          132286,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          132501,
+          132558,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          134224,
+          134284,
+          "                    inventory.require_current(actual)\n"
+        ],
+        [
+          136067,
+          136141,
+          "            inventory.require_current(main813.before_0a088(actual))\n"
+        ],
+        [
+          136826,
+          136887,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          137103,
+          137160,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          138805,
+          138865,
+          "                    inventory.require_current(actual)\n"
+        ],
+        [
+          140677,
+          140749,
+          "            inventory.require_current(main813.before_e11(actual))\n"
+        ],
+        [
+          141430,
+          141491,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          141705,
+          141762,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          143427,
+          143487,
+          "                    inventory.require_current(actual)\n"
+        ],
+        [
+          145243,
+          145315,
+          "            inventory.require_current(main813.before_469(actual))\n"
+        ],
+        [
+          145996,
+          146057,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          146271,
+          146328,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          147963,
+          148023,
+          "                    inventory.require_current(actual)\n"
+        ],
+        [
+          149879,
+          149951,
+          "            inventory.require_current(main813.before_b66(actual))\n"
+        ],
+        [
+          150632,
+          150693,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          150907,
+          150964,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          152593,
+          152653,
+          "                    inventory.require_current(actual)\n"
+        ],
+        [
+          156583,
+          156647,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          158782,
+          158854,
+          "            inventory.require_current(main813.before_12e(actual))\n"
+        ],
+        [
+          159463,
+          159524,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          160495,
+          160559,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          161771,
+          161827,
+          "                inventory.require_current(actual)\n"
+        ],
+        [
+          164898,
+          165083,
+          "\n"
+        ],
+        [
+          166124,
+          166196,
+          "            inventory.require_current(main813.before_c6f(actual))\n"
+        ],
+        [
+          167546,
+          167610,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          168781,
+          168837,
+          "                inventory.require_current(actual)\n"
+        ],
+        [
+          170892,
+          170945,
+          "            inventory.require_current(changed)\n"
+        ],
+        [
+          173235,
+          173295,
+          "            inventory.require_current(previous_short)\n"
+        ],
+        [
+          173335,
+          173383,
+          "        inventory.require_current(actual)\n"
+        ],
+        [
+          175203,
+          175267,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          176854,
+          176910,
+          "                inventory.require_current(actual)\n"
+        ],
+        [
+          180280,
+          180328,
+          "        inventory.require_current(actual)\n"
+        ],
+        [
+          180385,
+          180446,
+          "            inventory.require_current(native_previous)\n"
+        ],
+        [
+          181548,
+          181601,
+          "            inventory.require_current(changed)\n"
+        ],
+        [
+          183106,
+          183170,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          184819,
+          184875,
+          "                inventory.require_current(actual)\n"
+        ],
+        [
+          192779,
+          192834,
+          "                inventory.require_current(prior)\n"
+        ],
+        [
+          193156,
+          193204,
+          "        inventory.require_current(actual)\n"
+        ],
+        [
+          195509,
+          195574,
+          "                        inventory.require_current(changed)\n"
+        ],
+        [
+          196708,
+          196761,
+          "            inventory.require_current(changed)\n"
+        ],
+        [
+          198927,
+          198991,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          201300,
+          201356,
+          "                inventory.require_current(actual)\n"
+        ],
+        [
+          210602,
+          210657,
+          "                inventory.require_current(prior)\n"
+        ],
+        [
+          211523,
+          211588,
+          "                        inventory.require_current(changed)\n"
+        ],
+        [
+          212605,
+          212658,
+          "            inventory.require_current(changed)\n"
+        ],
+        [
+          214271,
+          214335,
+          "                        inventory.require_current(actual)\n"
+        ],
+        [
+          216462,
+          216518,
+          "                inventory.require_current(actual)\n"
+        ],
+        [
+          220453,
+          221069,
+          "\n"
+        ],
+        [
+          221284,
+          221347,
+          ""
+        ],
+        [
+          222914,
+          222974,
+          "            inventory.require_current(offline_actual)\n"
+        ],
+        [
+          223311,
+          223375,
+          "                inventory.require_current(offline_actual)\n"
+        ],
+        [
+          226555,
+          226616,
+          "                inventory.require_current(pending_old)\n"
+        ],
+        [
+          227615,
+          227680,
+          "                        inventory.require_current(changed)\n"
+        ],
+        [
+          228791,
+          228848,
+          "                inventory.require_current(changed)\n"
+        ],
+        [
+          229356,
+          229409,
+          "            inventory.require_current(changed)\n"
+        ],
+        [
+          231761,
+          231833,
+          "                        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          234991,
+          235059,
+          "                    inventory.require_current(offline_actual)\n"
+        ],
+        [
+          248977,
+          249033,
+          "        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          249125,
+          249185,
+          "            inventory.require_current(pending_actual)\n"
+        ],
+        [
+          249748,
+          249809,
+          "                    inventory.require_current(changed)\n"
+        ],
+        [
+          251539,
+          251611,
+          "                        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          259821,
+          259877,
+          "        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          259969,
+          260030,
+          "            inventory.require_current(adjacent_actual)\n"
+        ],
+        [
+          261897,
+          261969,
+          "                        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          266568,
+          266624,
+          "        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          266716,
+          266777,
+          "            inventory.require_current(frontend_actual)\n"
+        ],
+        [
+          268372,
+          268444,
+          "                        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          271438,
+          271494,
+          "        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          271586,
+          271645,
+          "            inventory.require_current(routed_actual)\n"
+        ],
+        [
+          273385,
+          273457,
+          "                        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          277259,
+          277315,
+          "        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          277518,
+          277619,
+          "            with self.assertRaises(parsing.InvalidEvidence):inventory.require_current(changed)\n"
+        ],
+        [
+          277777,
+          277874,
+          "        with self.assertRaises(parsing.InvalidEvidence):inventory.require_current(changed)\n"
+        ],
+        [
+          279019,
+          279091,
+          "                        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          282486,
+          282542,
+          "        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          282836,
+          282941,
+          "                with self.assertRaises(parsing.InvalidEvidence):inventory.require_current(changed)\n"
+        ],
+        [
+          283149,
+          283250,
+          "                with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_inventory_differs$'):\n"
+        ],
+        [
+          283537,
+          283638,
+          "            with self.assertRaises(parsing.InvalidEvidence):inventory.require_current(changed)\n"
+        ],
+        [
+          284131,
+          284243,
+          "                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):\n"
+        ],
+        [
+          284408,
+          284480,
+          "                        inventory.require_current(offline_actual)\n"
+        ],
+        [
+          284585,
+          284668,
+          "            restored=main813.source_before_091(path,raw,'091_inverse_control')\n"
+        ],
+        [
+          284840,
+          285021,
+          "                with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_inverse_control$'):\n                    main813.source_before_091(path,bad,'091_inverse_control')\n"
+        ],
+        [
+          285299,
+          285488,
+          "                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_inverse_control$'):\n                        main813.source_before_091(path,raw,'091_inverse_control')\n"
+        ],
+        [
+          285923,
+          286035,
+          "                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):\n"
+        ],
+        [
+          286207,
+          286311,
+          "            with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):\n"
+        ],
+        [
+          286625,
+          286733,
+          "                with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):\n"
+        ],
+        [
+          287242,
+          287358,
+          "                        with self.assertRaisesRegex(parsing.InvalidEvidence, '^091_source_inventory_differs$'):\n"
+        ]
+      ],
+      "previous_sha256": "d9e824d8f378c5a8b3a02083f8dd50a8b89a44fdfa0bdba6bff1fb8b0971206d"
+    }
+  }
+}

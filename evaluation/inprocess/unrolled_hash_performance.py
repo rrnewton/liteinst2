@@ -25,7 +25,7 @@ H=lambda b:hashlib.sha256(b).hexdigest()
 KEYS=maps.KEYS
 ROUTES=maps.ROUTES
 UNROLLED_KEYS=tuple(k for k in reports.KEYS if k not in ('current','signals'))
-DEPENDENCIES=dict(maps.DEPENDENCIES,**{'evaluation/inprocess/maps_view.py':{'bytes': 34110, 'sha256': '088322f27506f639848c6cef168841afcee29d492217ee66217ac3998175ad2f'}})
+DEPENDENCIES=dict(maps.DEPENDENCIES,**{'evaluation/inprocess/maps_view.py':{'bytes': 34110, 'sha256': 'b4a0a9bd8fd72a35514416d32bed96bada9f3ae92e9e42f290b5e2f42a623687'}})
 
 
 def prerequisite(public,revision,pin,binary,kind):
@@ -177,21 +177,41 @@ def publish(path,r,private):
     with path.open('x')as f:f.write(text)
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--expect-revision',required=True);ap.add_argument('--component-receipt',type=Path,required=True);ap.add_argument('--owner-receipt',type=Path,required=True);a=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('--expect-revision',required=True);ap.add_argument('--component-receipt',type=Path,required=True);ap.add_argument('--owner-receipt',type=Path,required=True)
+    ap.add_argument('--scalar-reuse',action='store_true')
+    ap.add_argument('--current-custody',action='store_true')
+    ap.add_argument('--current-component-receipt',type=Path)
+    ap.add_argument('--current-owner-receipt',type=Path)
+    for option in ('region-decoder-receipt','region-component-receipt','reuse-owner-receipt','sdk'):ap.add_argument('--'+option,type=Path)
+    a=ap.parse_args();extension=None;extra_builders=[]
+    need(not(a.scalar_reuse and a.current_custody),'one explicit performance profile')
+    need(a.current_custody or(a.current_component_receipt is None and a.current_owner_receipt is None),
+         'current receipts require explicit current-custody profile')
+    if a.current_custody:
+        import current_custody_performance as extension
+        extension.arguments(a)
+    elif a.scalar_reuse:
+        import scalar_reuse_performance as extension
+        extension.arguments(a)
+    else:need(all(getattr(a,k)is None for k in ('region_decoder_receipt','region_component_receipt','reuse_owner_receipt','sdk')),
+              'additional receipts/SDK require explicit scalar-reuse profile')
+    order=extension.ORDER if extension else ORDER;names=extension.NAMES if extension else NAMES
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1 and re.fullmatch('[0-9a-f]{40}',a.expect_revision),
          'exact committed revision, assertions and one reserved CPU')
     a.component_receipt=a.component_receipt.resolve().relative_to(ROOT);a.owner_receipt=a.owner_receipt.resolve().relative_to(ROOT)
     need(all(p.parent==Path('evaluation/inprocess/results')and p.suffix=='.json'for p in(a.component_receipt,a.owner_receipt)),'public qualification receipts inside evaluation results')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-unrolled-hash-performance-'+a.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem
+    stem=stamp+('-current-custody-performance-'if a.current_custody else '-scalar-reuse-performance-'if extension else'-unrolled-hash-performance-')+a.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem
     private.mkdir(parents=True,mode=0o700);public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
     bounds=dict(BUILD_PROFILES,**BOUNDS,finite=[5,512<<20,16<<20,15])
+    if extension:bounds['program_dr']=[30,16<<30,16<<20,60]
     pins={};aliases={};artifacts={};presence={};commands=[]
     r=dict(schema=1,profile='unrolled-hash-performance-v1',scope='42 fixed observe-only/unrolled/differential attempts after full component/owner qualification; original limits and terminal gates retained',
         status='failed',expected_revision=a.expect_revision,started_utc=stamp,source=None,source_unchanged=False,
-        cpu=cpu,hardware=hardware(cpu),bounds=bounds,commands=commands,cases=[dict(ordinal=i,workload=k,repeat=n,lane=l,status='not_run') for i,(k,n,l) in enumerate(ORDER)],error=None,final_errors=[],
+        cpu=cpu,hardware=hardware(cpu),bounds=bounds,commands=commands,cases=[dict(ordinal=i,workload=k,repeat=n,lane=l,status='not_run') for i,(k,n,l) in enumerate(order)],error=None,final_errors=[],
         finite_cases=[dict(mode=i,expected_exit=exit,status='not_run',qualified_case=0,supplied_return_control=(i==4),performance_credit=False)for i,exit in enumerate((0,125,125,125,125,0))],
         reproduce=['python3','evaluation/inprocess/unrolled_hash_performance.py','--expect-revision',a.expect_revision,'--component-receipt',str(a.component_receipt),'--owner-receipt',str(a.owner_receipt)])
+    if extension:r.update(profile='current-custody-performance-v1'if a.current_custody else'scalar-reuse-performance-v1',scope='All82 fixed launches after four same-revision prerequisites; no aggregate credit unless complete'if a.current_custody else'All82 fixed launches after five same-revision prerequisites; no aggregate credit unless complete',reproduce=r['reproduce']+extension.reproduce(a))
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
         need(want is None or f=={k:want[k]for k in('bytes','sha256')},'exact requested input bytes')
@@ -212,7 +232,7 @@ def main():
         row=dict(name=name,argv=list(map(str,argv)),profile=profile,bounds=bounds[profile],capture_limit=16<<20,
                  environment=dict(ENV if env is None else env),expected_exit=expected);commands.append(row)
         try:
-            out,err=(program_invoke if name in NAMES else invoke)(row,private,cpu,record=record,step=step)
+            out,err=(program_invoke if name in names else invoke)(row,private,cpu,record=record,step=step)
             need(type(row['exit'])is int and(expected is None or row['exit']==expected),'actual command exit '+name)
             return row,out,err
         finally:
@@ -241,6 +261,7 @@ def main():
         required={b'evaluation/inprocess/maps_view.py',b'tools/page-entry/selected/maps_view.h',b'tools/page-entry/selected/maps_view.inc',
             *[('tools/page-entry/selected/tests/maps_view/'+x).encode()for x in('oracle.c','build.sh','check.py')]}
         required|={b'evaluation/inprocess/unrolled_hash_performance.py',b'evaluation/inprocess/unrolled_hash_build.py',b'evaluation/inprocess/unrolled_hash_reports.py',b'tools/page-entry/selected/build-unrolled-hash.sh',b'tools/page-entry/selected/unrolled_hash.h',b'tools/page-entry/selected/selected_unrolled_hash.inc'}
+        if extension:required|={p.encode()for p in extension.REQUIRED}
         need(required<=set(out.split(b'\0')),'new harness and maintained body are tracked at the requested revision')
         for name in out.split(b'\0'):
             if name and not name.startswith(b'evaluation/inprocess/results/'):pin(ROOT/os.fsdecode(name))
@@ -256,10 +277,13 @@ def main():
         for name in('maps_view.h','maps_view.inc'):pin(SELECTED/name)
         for name in('oracle.c','build.sh','check.py'):pin(SELECTED/'tests/maps_view'/name)
         r['prerequisites']={k:prerequisite(path,a.expect_revision,pin,binary,k)for k,path in(('component',a.component_receipt),('owner',a.owner_receipt))}
+        if extension:extension.prerequisites(a,r,pin,binary)
         r['reproduce']=['python3','evaluation/inprocess/unrolled_hash_performance.py','--expect-revision',a.expect_revision,'--component-receipt',str(a.component_receipt.resolve().relative_to(ROOT)),'--owner-receipt',str(a.owner_receipt.resolve().relative_to(ROOT))]
+        if extension:r['reproduce']+=extension.reproduce(a)
         products=builder.prepare();r['archive']=fact(products['archive'])
         maps.finite(builder,private,pin,binary,aliases,run,r)
-        cohort(builder,products,private,pin,binary,aliases,run,r)
+        if extension:extension.cohort(builder,products,private,pin,binary,aliases,run,r,a,extra_builders)
+        else:cohort(builder,products,private,pin,binary,aliases,run,r)
         need(not r['final_errors'],'no retained command errors')
         r['status']='passed'
     except BaseException as error:
@@ -270,6 +294,9 @@ def main():
                 path=getattr(m,'__file__',None)
                 if path and Path(path).resolve().is_relative_to(ROOT):pin(path)
         except BaseException as error:r['final_errors'].append('final imported source closure: '+repr(error))
+        for additional in extra_builders:
+            try:r['final_errors'].extend(additional.finish())
+            except BaseException as error:r['final_errors'].append('region build finalization: '+type(error).__name__+': '+str(error))
         try:r['final_errors'].extend(builder.finish())
         except BaseException as error:r['final_errors'].append('build finalization: '+type(error).__name__+': '+str(error))
         for p in sorted(private.rglob('*')):
@@ -293,7 +320,8 @@ def main():
             c.get('timed_out')is False and not c.get('error')and c.get('cleanup_errors')==[] and
             all(d['closed']for d in c.get('descriptors',[]))for c in commands)
         if r['error']or r['final_errors']or not r['source_unchanged']or r['artifacts_before']!=r['artifacts_after']or not r['cleanup_complete']:r['status']='failed'
-        save(private/'receipt.json',r);publish(public,r,private)
+        save(private/'receipt.json',r)
+        (extension.publish if extension else publish)(public,r,private)
         print(json.dumps(dict(status=r['status'],receipt=str(public.relative_to(ROOT)),commands=len(commands),
                              failure_type=r['error'].split(':',1)[0]if r['error']else None)))
     return 0 if r['status']=='passed'else 1

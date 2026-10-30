@@ -2,6 +2,15 @@
    The real ld.so runs against an explicit namespace of inherited sealed DSOs. */
 #include "bridge.h"
 #include "lifecycle_loader.h"
+#ifdef LI2_CURRENT_TF_CAPTURE
+#include "current_tf_observe.h"
+#endif
+#ifdef LI2_MAPS_CURRENT_TF
+#include "fetch_current_custody.h"
+#endif
+#ifdef LI2_INITIAL_CODE_PROTECTION
+#include "initial_code_protection.h"
+#endif
 #if defined(LI2_COST_PROFILE) && (!defined(LI2_NATIVE_PAIR) || LI2_COST_PROFILE != 1)
 #error "cost profile requires the explicit native-pair release profile"
 #endif
@@ -95,6 +104,11 @@ static void selected_cpuid_nx_report(unsigned,unsigned);
 #define ALT_BYTES (512UL*1024)
 struct action { void (*handler)(int,siginfo_t *,void *); unsigned long flags; void (*restorer)(void); uint64_t mask; };
 static struct li2_fork_range protected[RANGES];
+#ifdef LI2_INITIAL_CODE_PROTECTION
+/* Append-only range indices; zero is strict. Only protect_image below marks
+   initial guest executable mappings, before signals/application activation. */
+static unsigned char initial_code_range[RANGES];
+#endif
 static size_t protected_count,dependency_count;
 static struct image original_main,original_interpreter;
 static volatile sig_atomic_t handling,reported;
@@ -175,9 +189,38 @@ static void selected_unrolled_preentry(int,siginfo_t *,ucontext_t *);
 static _Noreturn void selected_unrolled_abort(unsigned,long);
 static _Noreturn void selected_unrolled_unexpected(int,siginfo_t *,ucontext_t *);
 static void selected_unrolled_report(unsigned,unsigned,long);
+#ifdef LI2_CURRENT_TF_CAPTURE
+static void cto_initialize(void);
+static void cto_begin(int,const siginfo_t *,const ucontext_t *);
+static void cto_end(int,const siginfo_t *,const ucontext_t *);
+static void cto_terminal_snapshot(unsigned,unsigned,long);
+static void cto_write(unsigned,unsigned);
+#endif
 #ifdef LI2_UNROLLED_HASH_CAPTURE
 static void uho_fd_guard(long,const long[6]);
 #endif
+#endif
+
+#ifdef LI2_SCALAR_REGION_CAPTURE
+#if LI2_SCALAR_REGION_CAPTURE != 1 || !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1 || \
+    defined(LI2_UNROLLED_HASH_CAPTURE) || defined(LI2_UNROLLED_HASH_OBSERVE_ONLY)
+#error "scalar capture requires its distinct complete qualification profile"
+#endif
+static void sro_fd_guard(long,const long[6]);
+#endif
+#ifdef LI2_SCALAR_REGION
+#if LI2_SCALAR_REGION != 1 || !defined(LI2_UNROLLED_HASH) || LI2_UNROLLED_HASH != 1
+#error "scalar region requires the literal complete unrolled profile"
+#endif
+#include "region_source.h"
+static volatile sig_atomic_t selected_scalar_region_active,selected_scalar_region_busy;
+static void selected_scalar_region_initialize(void);
+static int selected_scalar_region_try(int,siginfo_t *,ucontext_t *,uint64_t);
+static void selected_scalar_region_exit(int,siginfo_t *,ucontext_t *);
+static void selected_scalar_region_preentry(int,siginfo_t *,ucontext_t *);
+static _Noreturn void selected_scalar_region_abort(unsigned,long);
+static _Noreturn void selected_scalar_region_unexpected(int,siginfo_t *,ucontext_t *);
+static void selected_scalar_region_report(unsigned,unsigned,long);
 #endif
 
 #include "fork_profile.h"
@@ -234,6 +277,19 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_MAPS_MAINTAINED
     struct li2_maps_view_stats view;li2_maps_view_snapshot(&view);
     struct writer view_writer={.used=0};
+#ifdef LI2_MAPS_CURRENT_TF
+    struct li2_current_custody_stats current;li2_current_custody_snapshot(&current);
+    text(&view_writer,"LI2_MAPS_CURRENT_TF {\"version\":1");
+    field(&view_writer,",\"status\":",status);field(&view_writer,",\"failure_code\":",code);
+#define CURRENT_FIELD(name) field(&view_writer,",\"" #name "\":",current.name)
+    CURRENT_FIELD(attempts);CURRENT_FIELD(current_stages);CURRENT_FIELD(current_seeds);
+    CURRENT_FIELD(physical_fallbacks);CURRENT_FIELD(retained_stages);CURRENT_FIELD(retained_checks);
+    CURRENT_FIELD(commits);CURRENT_FIELD(cancels);CURRENT_FIELD(first_error);
+#undef CURRENT_FIELD
+    field(&view_writer,",\"first_detail_abs\":",current.first_detail<0?0ULL-(uint64_t)current.first_detail:(uint64_t)current.first_detail);
+    field(&view_writer,",\"first_detail_negative\":",current.first_detail<0);
+    text(&view_writer,"}\n");
+#endif
     text(&view_writer,"LI2_MAPS_VIEW {\"version\":1");
 #define VIEW_FIELD(name) text(&view_writer,",\"" #name "\":");number(&view_writer,view.name)
     VIEW_FIELD(queries);VIEW_FIELD(hits);VIEW_FIELD(refreshes);VIEW_FIELD(updates);
@@ -387,11 +443,18 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_UNROLLED_HASH
     selected_unrolled_report(status,code,detail);
 #endif
+#ifdef LI2_SCALAR_REGION
+    selected_scalar_region_report(status,code,detail);
+#endif
 #ifdef LI2_EVENT_PROFILE
     event_report();
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_SCALAR_REGION
+    if(selected_scalar_region_active || selected_scalar_region_busy || selected_pending_route==SELECTED_SCALAR_REGION)
+        selected_scalar_region_abort(code,detail);
+#endif
 #ifdef LI2_UNROLLED_HASH
     if(selected_unrolled_active || selected_unrolled_busy || selected_pending_route==SELECTED_UNROLLED_HASH)
         selected_unrolled_abort(code,detail);
@@ -445,6 +508,16 @@ static int intersects(uintptr_t first,size_t bytes) {
 #endif
     return 0;
 }
+#ifdef LI2_INITIAL_CODE_PROTECTION
+static int intersects_mprotect(uintptr_t first,size_t bytes,unsigned prot) {
+    if(li2_initial_code_protection_intersects(protected,initial_code_range,
+                                             protected_count,first,bytes,prot)) return 1;
+#ifdef LI2_RSEQ_INACTIVE
+    if(li2_rseq_mapping_overlap(first,bytes)) return 1;
+#endif
+    return 0;
+}
+#endif
 static int image_code(const struct image *image,uintptr_t pc) {
     for(size_t i=0;i<image->n;i++) {
         const Elf64_Phdr *p=&image->ph[i];
@@ -458,6 +531,10 @@ static void protect_image(const struct image *image,int whole) {
         if(p->p_type!=PT_LOAD || !p->p_memsz || (!whole && !(p->p_flags&PF_X))) continue;
         uintptr_t a=(image->bias+p->p_vaddr)&~(PAGE-1),b=(image->bias+p->p_vaddr+p->p_memsz+PAGE-1)&~(PAGE-1);
         protect(a,b-a);
+#ifdef LI2_INITIAL_CODE_PROTECTION
+        if(!whole && (image->kind==IMAGE_MAIN || image->kind==IMAGE_INTERPRETER))
+            initial_code_range[protected_count-1]=1;
+#endif
     }
     if(image->source) protect((uintptr_t)image->source,(image->source_size+PAGE-1)&~(PAGE-1));
 }
@@ -528,6 +605,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_UNROLLED_HASH_CAPTURE
     uho_fd_guard(n,a);
+#endif
+#ifdef LI2_SCALAR_REGION_CAPTURE
+    sro_fd_guard(n,a);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
 #ifdef LI2_EFFECT_PROVIDER
@@ -682,6 +762,12 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_UNROLLED_HASH
 #include "selected_unrolled_hash.inc"
 #endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+#include "current_tf_observe.inc"
+#endif
+#ifdef LI2_SCALAR_REGION
+#include "selected_scalar_region.inc"
+#endif
 
 #ifdef LI2_NATIVE_PAGES
 #include "native_controller.inc"
@@ -702,6 +788,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_RSEQ_NATIVE
     /* Must precede every old checked/fail and returning cleanup path. */
     li2_rseq_native_preentry();
+#endif
+#ifdef LI2_SCALAR_REGION
+    selected_scalar_region_preentry(sig,si,ptr);
 #endif
 #ifdef LI2_UNROLLED_HASH
     selected_unrolled_preentry(sig,si,ptr);
@@ -793,6 +882,14 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_ENTRY_TIMING
     li2_entry_time_ingress(sig,si,ptr);
 #endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_begin(sig,si,ptr);
+#endif
+#ifdef LI2_SCALAR_REGION
+    if(selected_pending_route==SELECTED_SCALAR_REGION) {
+        selected_scalar_region_exit(sig,si,ptr);
+    } else
+#endif
 #ifdef LI2_UNROLLED_HASH
     if(selected_pending_route==SELECTED_UNROLLED_HASH) {
         selected_unrolled_exit(sig,si,ptr);
@@ -836,6 +933,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_TF_HANDOFF
     li2_tf_chain_handler_end(&selected_chain);
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_end(sig,si,ptr);
 #endif
 #ifdef LI2_REPEAT_RX_LEASE
     selected_repeat_lease_end(ptr);
@@ -887,7 +987,11 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     checked(!raw(SYS_mprotect,(long)area+PAGE,ALT_BYTES,PROT_READ|PROT_WRITE,0,0,0),232,0);
     stack_t stack={.ss_sp=(char *)area+PAGE,.ss_size=ALT_BYTES}; fork_gate_stack=stack;checked(!raw(SYS_sigaltstack,(long)&stack,0,0,0,0,0),233,0);
     int fds[32];dependency_count=parse_fds(fds);
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    const struct li2_lifecycle_hooks hooks={raw,fail,intersects,intersects_mprotect};li2_lifecycle_initialize(fds,dependency_count,&hooks);
+#else
     const struct li2_lifecycle_hooks hooks={raw,fail,intersects};li2_lifecycle_initialize(fds,dependency_count,&hooks);
+#endif
 #ifdef LI2_RSEQ_INACTIVE
     int rseq_error=li2_rseq_initialize(private_intersects);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
@@ -949,6 +1053,12 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_UNROLLED_HASH
     selected_unrolled_initialize();
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_initialize();
+#endif
+#ifdef LI2_SCALAR_REGION
+    selected_scalar_region_initialize();
 #endif
 #ifdef LI2_MAPS_MAINTAINED
     checked(!li2_maps_view_enable(),770,1);

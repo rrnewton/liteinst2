@@ -61,7 +61,13 @@ def package_check(package):
 
 class Build:
     """Caller retains commands/first errors and checks source() before and after."""
-    def __init__(self, record, private, pin, binary, run):
+    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=()):
+        need(type(extra_decoder_sources) is tuple and len(set(extra_decoder_sources)) == len(extra_decoder_sources) and
+             all(type(n) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\.rs", n) for n in extra_decoder_sources),
+             'exact unique local extra decoder source names')
+        need(extra_decoder_sources in ((), ("region.rs",)), "closed decoder feature/source profiles")
+        self.extra_decoder_sources = extra_decoder_sources
+        self.decoder_features = ("scalar-region",) if extra_decoder_sources else ()
         self.record = record.setdefault('build', {'status': 'failed', 'artifacts': {}, 'artifact_prefix': [],
             'output_before': {}, 'started': False, 'command_completed': False, 'final_errors': []})
         self.private, self.pin, self.binary, self.invoke = private, pin, binary, run
@@ -129,11 +135,20 @@ class Build:
             need(value is not None, 'numeric actual tool version')
             numeric[name] = [int(value[i]) for i in (1, 2, 3)]
         decoder = PRODUCT/'decoder'
+        self.record["decoder_features"] = list(self.decoder_features)
+        if self.decoder_features:
+            self.environment["LI2_DECODER_FEATURES"] = "scalar-region"
+        feature_argv = ["--features", "scalar-region"] if self.decoder_features else []
         out, err = self.run('cargo-metadata', [self.tools['cargo'], 'metadata', '--manifest-path',
-            decoder/'Cargo.toml', '--format-version', '1', '--locked', '--offline'])
+            decoder/'Cargo.toml', '--format-version', '1', '--locked', '--offline', *feature_argv])
         need(not err, 'metadata stderr')
         metadata = json.loads(out)
         need(Path(metadata['target_directory']).resolve() == REPO/'target', 'one repository Cargo target')
+        local = [p for p in metadata['packages'] if p['source'] is None]
+        need(len(local) == 1, 'one actual local decoder package')
+        nodes = [n for n in metadata['resolve']['nodes'] if n['id'] == local[0]['id']]
+        need(len(nodes) == 1 and nodes[0]['features'] == ['default', *self.decoder_features],
+             'exact root decoder features, including empty default')
         locked = tomllib.loads((decoder/'Cargo.lock').read_text())['package']
         expected = {(x['name'], x['version']): x for x in locked}
         need({(x['name'], x['version']) for x in metadata['packages']} == set(expected), 'exact locked package closure')
@@ -166,7 +181,10 @@ class Build:
         need(dep.startswith(target) and '\n' not in dep, 'archive dep-info target')
         dependencies = shlex.split(dep[len(target):])
         expected = {str(decoder/'src'/name) for name in ('lib.rs', 'abi.rs', 'arena.rs', 'decode.rs', 'scan.rs', 'tf.rs', 'write_footprint.rs', 'admission_oneshot.rs')}
-        need(set(dependencies) == expected and len(dependencies) == len(expected), 'exact eight decoder sources')
+        additions = {str(decoder/'src'/name) for name in self.extra_decoder_sources}
+        need(not expected & additions, 'extra decoder sources do not duplicate original eight')
+        expected |= additions
+        need(set(dependencies) == expected and len(dependencies) == len(expected), 'exact eight plus explicitly named decoder sources')
         self.record['dep_info'] = {str(Path(p).relative_to(REPO)): fact(self.pin(p)) for p in dependencies}
         out, err = self.run('archive-text-exports', [self.tools['nm'], '-g', '--defined-only', archive], 'inspect')
         need(not err, 'archive symbol inspection stderr')
@@ -175,6 +193,13 @@ class Build:
             rows = [line.split() for line in out.splitlines() if line.split()[-1:] == [symbol.encode()]]
             need(len(rows) == 1 and rows[0][-2:] == [b'T', symbol.encode()], 'one real text definition')
             self.record['archive_text_exports'][symbol] = 1
+        region_rows = [line.split() for line in out.splitlines()
+                       if line.split()[-1:] == [b'li2_decoder_region_describe']]
+        need(region_rows == [] if not self.decoder_features else
+             len(region_rows) == 1 and region_rows[0][-2:] == [b'T', b'li2_decoder_region_describe'],
+             'region descriptor export exactly matches selected feature')
+        if self.decoder_features:
+            self.record['archive_text_exports']['li2_decoder_region_describe'] = 1
         out, err = self.run('bridge-undefined', [self.tools['nm'], '-u', bridge], 'inspect')
         need(out == err == b'', 'no unresolved bridge imports')
         _, err = self.run('bridge-elf', [self.tools['readelf'], '-h', '-l', '-d', '-r', '-W', bridge], 'inspect')

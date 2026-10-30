@@ -2,6 +2,11 @@
 #define LI2_LOADER_LIFECYCLE_H
 #include <stddef.h>
 #include <stdint.h>
+#ifdef LI2_INITIAL_CODE_PROTECTION
+#if LI2_INITIAL_CODE_PROTECTION != 1
+#error "initial code protection requires the explicit value 1"
+#endif
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
 #include "maps_phase.h"
 #endif
@@ -11,6 +16,12 @@ struct li2_lifecycle_hooks {
     long (*raw)(long,long,long,long,long,long,long);
     void (*fail)(unsigned,long) __attribute__((noreturn));
     int (*protected_range)(uintptr_t,size_t);
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    /* Separate mprotect-only predicate; nonzero still refuses. The runtime
+       may exempt only registered initial sealed guest code for exact R/RX.
+       protected_range remains mandatory and unchanged for every other use. */
+    int (*protected_mprotect)(uintptr_t,size_t,unsigned);
+#endif
 };
 struct li2_lifecycle_counts {
     uint64_t enabled, transactions, mappings, generations, retired, admissions;

@@ -109,9 +109,9 @@
       "sha256": "e5e7690309267be887cee9b04d26e90a29f8d379110e22214948922c857a139a"
     },
     {
-      "bytes": 13382,
+      "bytes": 15355,
       "path": "evaluation/inprocess/page_selected_generic_build.py",
-      "sha256": "d6d7ea7c9e83c9fd1d39e62d25876c2b4ddc86910bbe582fb7b335ce0c5e4864"
+      "sha256": "9b3f0d0ec21b628409b2b1453ef8ae6cfbdc8692ee9b7f3c49cf605379ddd896"
     },
     {
       "bytes": 10868,
@@ -204,9 +204,9 @@
       "sha256": "fb240d7dfa404f9053b17ecfa4b64a25f4fd813a1b6598742244efae33b5c015"
     },
     {
-      "bytes": 3014,
+      "bytes": 3268,
       "path": "tools/page-entry/selected/build.sh",
-      "sha256": "e453596f873279e5de1ccb6ecc78141fdcf365ae78fb781ab0ba7bd3386a5ab6"
+      "sha256": "9b7ba3e5d0789d7928c15828cc737808119f2e81b3dcc7cc8d093018b901ca79"
     },
     {
       "bytes": 2627,
@@ -219,9 +219,9 @@
       "sha256": "1006555168c3320ddeed45455bf5171086bf3683b78633f839df63819ff8e41e"
     },
     {
-      "bytes": 385,
+      "bytes": 450,
       "path": "tools/page-entry/selected/decoder/Cargo.toml",
-      "sha256": "24f0b3ec5be0d18577f40e1353e898d358261640cb6537b883632d6978a4d243"
+      "sha256": "915d3e7783772ae3514019dba9addcff9b8f93c30740d53a169b312ee10b010c"
     },
     {
       "bytes": 2353,
@@ -239,9 +239,9 @@
       "sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
     },
     {
-      "bytes": 8127,
+      "bytes": 9548,
       "path": "tools/page-entry/selected/decoder/src/lib.rs",
-      "sha256": "d92bb24241bfdcd8efb3b8c9700670455617afe0b33ad9cbe8966a18742ceee6"
+      "sha256": "266401040160c8618cb7d0799356263794a5f4657489234865f3ff9e357e843f"
     },
     {
       "bytes": 2626,

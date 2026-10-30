@@ -513,3 +513,6 @@ int li2_rseq_native_closed(void) {
 #ifdef LI2_UNROLLED_HASH
 #include "rseq_unrolled.inc"
 #endif
+#ifdef LI2_SCALAR_REGION
+#include "rseq_region.inc"
+#endif
