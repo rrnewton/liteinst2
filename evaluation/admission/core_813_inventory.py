@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == 'd27376856532ea81e2cf77efcc857507834199bdd668be0c145ca803cde24564', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == 'dc7c1bbc6806f7ebdc6b2f3a857fdbbd0b18c0b9edab5465c1c1117d4602ba33', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']

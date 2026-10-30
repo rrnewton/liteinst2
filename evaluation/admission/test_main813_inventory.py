@@ -4566,6 +4566,22 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(parsing.harness_id(native_header),native_example)
         native_row=parsing.parse_harnesses(native_log,{native_example:counts(3)},0)[0]
         self.assertEqual((native_row['nested_starts'],native_row['unmatched_nested_starts']),(0,0))
+        self.assertEqual(native_row['outer'], dict(passed=3, failed=0, ignored=0,
+                                                  measured=0, filtered=0, result='ok'))
+        # Only the actual Cargo source/binary/output-directory tuple is admitted.
+        for malformed in (
+                native_header.replace('target/debug/examples/', 'target/debug/deps/'),
+                native_header.replace('unittests examples/adjacent_routed_jmp_disassembly_sites.rs',
+                                      'unittests src/lib.rs').replace('target/debug/examples/', 'target/debug/deps/'),
+                native_header.replace('target/debug/examples/adjacent_routed_jmp_disassembly_sites-',
+                                      'target/debug/examples/other-'),
+                native_header.replace('examples/adjacent_routed_jmp_disassembly_sites.rs',
+                                      'examples/other.rs'),
+                native_header.replace('adjacent_routed_jmp_disassembly_sites',
+                                      'adjacent_routed_jmp_disassembly_sites_extra'),
+                native_header.replace('-0123456789abcdef)', '-nothex)')):
+            with self.subTest(routed_example_header=malformed), self.assertRaises(parsing.InvalidEvidence):
+                parsing.harness_id(malformed)
         for bad in (native_log.replace('running 3 tests','running 4 tests'),
                     native_log.replace('running 3 tests','running 3 tests\nrunning 1 test'),
                     native_log+summary(3)+'\n'):

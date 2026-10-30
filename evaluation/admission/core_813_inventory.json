@@ -1942,12 +1942,22 @@
     "previous_corpus_sha256": "b5f5fd7a3c5922cc9a3d195edc6ab50be666f1d9c347f56d7dcf850166430a3d",
     "projections": {
       "evaluation/admission/parsing.py": {
-        "current_sha256": "cea3ffeee090af1f2cd4af5ebc108eee67772dfb4cc22033b7d0287536f2c1d3",
+        "current_sha256": "57c941ff7f09f139a5fc0c973f9d1ec072d89c12d934e5868ce2333d2e6fd8db",
         "edits": [
           [
-            15642,
-            15967,
-            "                                  (\"unit/liteinst2/lib\", 330, 1), (\"test/stress\", 7, 3))\n"
+            2958,
+            3355,
+            ""
+          ],
+          [
+            4377,
+            4562,
+            ""
+          ],
+          [
+            16289,
+            16525,
+            ""
           ]
         ],
         "previous_sha256": "9d6d4ad54442f7c648bb2bf2253358ab2477e19ec2d92692029feaf29b678469"
@@ -2626,7 +2636,7 @@
     },
     "sources": {
       "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
-      "evaluation/admission/parsing.py": "cea3ffeee090af1f2cd4af5ebc108eee67772dfb4cc22033b7d0287536f2c1d3",
+      "evaluation/admission/parsing.py": "57c941ff7f09f139a5fc0c973f9d1ec072d89c12d934e5868ce2333d2e6fd8db",
       "evaluation/offline-corpus/adjacent_routed_jmp_material.py": "05e86b0652d7989a0f8abd825d5001d2e6fc5bcf4440504651633034b32834db",
       "evaluation/offline-corpus/adjacent_routed_jmp_material_controls.py": "c513ed95f33aefc9c78a56065eae9ddd4349e2c4fcc31d1b8266c6ab3bb6f330",
       "evaluation/offline-corpus/adjacent_routed_jmp_whole.py": "e89c8adadc413111a7ca2a2dc7aac753826f2659616e83e38ded9c3c3f079206",
