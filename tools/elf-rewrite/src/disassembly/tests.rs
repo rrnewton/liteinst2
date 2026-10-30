@@ -872,6 +872,63 @@ fn short_t3_ownership_conflicts_and_pair_cap_keep_every_report() {
                 .diagnostics
                 .contains("stage: Composition")
         );
+        // Atomic selection must not mask a failed predecessor or a successful T3.
+        for report in &product.reports()[1..] {
+            assert_eq!(
+                report.core_tactic,
+                Some(li2core::engine::Tactic::GeneralizedPun)
+            );
+            assert_eq!(report.refusal.as_ref().unwrap().stage, "atomic-selection");
+            assert_eq!(report.refusal_code, Some(10_003));
+        }
+        let report = &product.reports()[0];
+        assert_eq!(report.core_tactic, None);
+        assert_eq!(report.refusal.as_ref().unwrap().stage, "core");
+        assert_eq!(report.refusal.as_ref().unwrap().detail, "OwnershipConflict");
+        assert_eq!(report.refusal_code, Some(12));
+        let evidence: String = report.diagnostics.split_whitespace().collect();
+        assert!(evidence.starts_with("EngineFailure{reason:OwnershipConflict,"));
+        assert_eq!(evidence.matches("EngineAttempt{").count(), 1);
+        assert_eq!(evidence.matches("accepted:false").count(), 1);
+        assert!(!evidence.contains("accepted:true"));
+        assert!(!evidence.contains("stop:Accepted"));
+        let expected_pairs = if all_conflict {
+            vec![
+                (PC + 32, PC + 42 + 0x010101b8),
+                (PC + 16, PC + 26 + 0x010101b8),
+            ]
+        } else {
+            vec![(PC + 32, PC + 42 + 0x010101b8)]
+        };
+        let expected_attempts: Vec<_> = expected_pairs
+            .into_iter()
+            .map(
+                |(victim, selected_target)| li2core::neighbor::NeighborAttempt {
+                    victim,
+                    stage: li2core::neighbor::NeighborAttemptStage::Composition,
+                    victim_target: Some(PC + 0x06000080),
+                    selected_target: Some(selected_target),
+                    refusal: Some(li2core::contracts::Refusal::OwnershipConflict),
+                },
+            )
+            .collect();
+        let expected_evidence: String = format!("candidates:Neighbor({expected_attempts:#?},)")
+            .split_whitespace()
+            .collect();
+        assert!(evidence.contains(&expected_evidence));
+        assert_eq!(evidence.matches("candidates:Neighbor(").count(), 1);
+        assert_eq!(
+            evidence.matches("NeighborAttempt{").count(),
+            if all_conflict { 2 } else { 1 }
+        );
+        assert_eq!(
+            product
+                .files()
+                .keys()
+                .filter(|n| n.starts_with("image-") && n.ends_with(".bin"))
+                .count(),
+            if all_conflict { 2 } else { 1 }
+        );
         if !all_conflict {
             let evidence = &product.reports()[0].diagnostics;
             let runs: Vec<_> = evidence.split("SearchRun {").skip(1).collect();
