@@ -66,7 +66,7 @@
       "previous_sha256": "017a527178dd8c183856b008c9c47079571023ea6a33815d53123897b9651318"
     },
     "evaluation/admission/core_c712_inventory.py": {
-      "current_sha256": "6e3e978d68d0d03fbc6876ce5043cbae4b54cd289a1d5d31f78bedd4a69450ff",
+      "current_sha256": "65f16e14f2f3af514348f8a2cace00af9efbb12ed4104c97ac86c988095baeb2",
       "edits": [
         [
           189,
@@ -94,23 +94,13 @@
           "        source_before(path, raw, error)\n        source_before_evaluation(path, raw, error)\n"
         ],
         [
-          3209,
-          3279,
-          ""
-        ],
-        [
+          3836,
           3906,
-          3976,
           ""
         ],
         [
-          4181,
-          4240,
-          ""
-        ],
-        [
-          4722,
-          4781,
+          4593,
+          4652,
           ""
         ]
       ],
@@ -157,6 +147,22 @@
         ]
       ],
       "previous_sha256": "c67bc1873b38c59d29d8ebb3749c4e6056a65afb3da27d1703d40418bb422065"
+    },
+    "evaluation/admission/test_main367_inventory.py": {
+      "current_sha256": "acf5d4549050b46238d7d0167fe26003b6fb4579e4abfad25217978ce8ad2417",
+      "edits": [
+        [
+          494,
+          653,
+          "        actual = current.mainc712.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))\n"
+        ],
+        [
+          2796,
+          2944,
+          "        identities = current.mainc712.before_python(historical.python_identities(Path(__file__).parent))\n"
+        ]
+      ],
+      "previous_sha256": "c1142cf5d928e1935852f2f24f822be7c58f160a74bc2fa21cb52db85cbc468f"
     },
     "evaluation/admission/test_mainc712_inventory.py": {
       "current_sha256": "a2b1133af957b90cc33a03a2055a6766614a91c82c82ab313990bb7aba6ea13a",
@@ -1109,10 +1115,11 @@
     "evaluation/adjacent-b2/artifact-verifier/startup_members_controls.py": "2bfa935de719ce972a2cd2d500c00176d4c13836f3eb78b469bc1812fbc8aa69",
     "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": "fb2a53a1b5538f6ebb2e16da9039905e08951c33c6a2303d06a5a92bc398f17a",
     "evaluation/admission/core_813_inventory.py": "edb64b725e2f340a4d808ad692a47eeb243716a8b853612ff71b9e60381db4ca",
-    "evaluation/admission/core_c712_inventory.py": "6e3e978d68d0d03fbc6876ce5043cbae4b54cd289a1d5d31f78bedd4a69450ff",
+    "evaluation/admission/core_c712_inventory.py": "65f16e14f2f3af514348f8a2cace00af9efbb12ed4104c97ac86c988095baeb2",
     "evaluation/admission/core_cc846_inventory.py": "dc546f03b47470c32878ce800457ff2d802179cbafd65649c8e345cab768460e",
     "evaluation/admission/recorder_parallel.py": "e932991d805f483bc3313a8ddbf21b249560d7020a3b3233ab35d155ef4f2596",
     "evaluation/admission/test_main0fb574_inventory.py": "a6fe029b80f825353143f09bda0c20b95e834523081863aa7fed4a7d10ff2cbd",
+    "evaluation/admission/test_main367_inventory.py": "acf5d4549050b46238d7d0167fe26003b6fb4579e4abfad25217978ce8ad2417",
     "evaluation/admission/test_mainc712_inventory.py": "a2b1133af957b90cc33a03a2055a6766614a91c82c82ab313990bb7aba6ea13a",
     "evaluation/offline-corpus/full_startup_e9_execute.py": "08f0f81806dbf2933597a55dfa37f88836dfbcc48a079bcee1b4beae50caa13e",
     "evaluation/offline-router-corpus/REPRODUCE.md": "876f76d6987bc4d6510d27fa2a430dcc8c1eba16b16926ebb055794d47981338",

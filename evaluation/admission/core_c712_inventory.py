@@ -76,7 +76,6 @@ def require_sources(error='mainc712_source_inventory_differs'):
 
 def before_current(declared, error='mainc712_inventory_differs',
                    source_error='mainc712_source_inventory_differs'):
-    declared = main0fb574.peel_current(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     require_sources(source_error)
     old = copy.deepcopy(declared)
@@ -96,7 +95,6 @@ def peel_current(declared, error, source_error):
 
 
 def before_python(identities, error='mainc712_python_inventory_differs'):
-    identities = main0fb574.peel_python(identities, error)
     require(type(identities) is list and all(type(x) is str for x in identities) and
             len(identities) == len(set(identities)) == RECORDER_TESTS and
             digest(identities) == PYTHON_CURRENT, error)
