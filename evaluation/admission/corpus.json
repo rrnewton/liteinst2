@@ -6459,11 +6459,11 @@
       },
       "unit/disassembly_sites/disassembly_sites": {
         "ignored": 0,
-        "tests": 1
+        "tests": 2
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 283
+        "tests": 291
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6491,7 +6491,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 98
+        "tests": 102
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,

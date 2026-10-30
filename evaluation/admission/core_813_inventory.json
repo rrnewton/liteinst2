@@ -22168,6 +22168,682 @@
       }
     }
   },
+  "neighbor_short_ownership": {
+    "added_methods": {
+      "src/neighbor_short/tests.rs": [
+        "short_t3_ownership_real_gp_continues_to_second_victim",
+        "short_t3_ownership_real_allocations_continue_after_partial_append",
+        "short_t3_ownership_caps_and_evidence_are_not_restarted",
+        "short_t3_ownership_original_and_overlay_identity_are_independent",
+        "short_t3_ownership_exact_current_suffix_and_identical_locks",
+        "short_t3_ownership_duplicate_sites_and_byte_locks_refuse",
+        "short_t3_ownership_first_four_and_legacy_paths_are_unchanged",
+        "short_t3_ownership_live_and_artifact_preflight_refuse_before_emission"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "owned_short_cli_preserves_positional_paths_and_exact_prebind_labels"
+      ],
+      "tools/elf-rewrite/src/disassembly/tests.rs": [
+        "short_t3_ownership_policy_and_projection_bind_both_modes",
+        "short_t3_ownership_actual_preceding_jump_admits_second_victim",
+        "short_t3_ownership_conflicts_and_pair_cap_keep_every_report",
+        "short_t3_ownership_full_projection_bound_and_resource_refusals"
+      ]
+    },
+    "base": "00859a54ce2d66b045131439599565859ce929ac",
+    "core_child": {
+      "authenticated_exit": 41,
+      "harness": "unit/liteinst2/lib",
+      "ignored": 1,
+      "outer_tests": 291,
+      "sha256": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+      "source": "src/trampoline.rs",
+      "unmatched_start_tests": 1
+    },
+    "correction_binding_sha256": "d6b544f718f2ac306ad8b747078875834c7e8037e6557459a6f1dc12d7976a37",
+    "current_corpus_sha256": "1baa36deb8c94cdce16f785a4bf2f309f560c6e82b432666cf81aab5600fb906",
+    "declared_delta": {
+      "admission_python_methods": 0,
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "profile_python_methods": 5,
+      "rust_declarations": 13,
+      "rust_tests": 13
+    },
+    "example": {
+      "name": "disassembly_sites",
+      "path": "examples/disassembly_sites.rs",
+      "test_field": true,
+      "workspace_test_harness": true
+    },
+    "instances": {
+      "src/neighbor_short/tests.rs": {
+        "unit/liteinst2/lib": "neighbor::short::tests::"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "unit/disassembly_sites/disassembly_sites": "tests::"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "unit/liteinst_rewrite/lib": "disassembly::tests::"
+      }
+    },
+    "listed_additions": {
+      "unit/disassembly_sites/disassembly_sites": [
+        "tests::owned_short_cli_preserves_positional_paths_and_exact_prebind_labels"
+      ],
+      "unit/liteinst2/lib": [
+        "neighbor::short::tests::short_t3_ownership_real_gp_continues_to_second_victim",
+        "neighbor::short::tests::short_t3_ownership_real_allocations_continue_after_partial_append",
+        "neighbor::short::tests::short_t3_ownership_caps_and_evidence_are_not_restarted",
+        "neighbor::short::tests::short_t3_ownership_original_and_overlay_identity_are_independent",
+        "neighbor::short::tests::short_t3_ownership_exact_current_suffix_and_identical_locks",
+        "neighbor::short::tests::short_t3_ownership_duplicate_sites_and_byte_locks_refuse",
+        "neighbor::short::tests::short_t3_ownership_first_four_and_legacy_paths_are_unchanged",
+        "neighbor::short::tests::short_t3_ownership_live_and_artifact_preflight_refuse_before_emission"
+      ],
+      "unit/liteinst_rewrite/lib": [
+        "disassembly::tests::short_t3_ownership_policy_and_projection_bind_both_modes",
+        "disassembly::tests::short_t3_ownership_actual_preceding_jump_admits_second_victim",
+        "disassembly::tests::short_t3_ownership_conflicts_and_pair_cap_keep_every_report",
+        "disassembly::tests::short_t3_ownership_full_projection_bound_and_resource_refusals"
+      ]
+    },
+    "methods": {
+      "src/neighbor_short/tests.rs": {
+        "all": [
+          "short_endpoints_preserve_whole_victims_and_all_successor_bytes",
+          "short_window_sign_endpoints_and_reencoding_are_exact",
+          "selected_inside_suffix_uses_exact_prospective_overlay",
+          "full_fetch_scope_original_identity_and_boundaries_fail_closed",
+          "suffix_locks_and_leases_keep_all_ten_bytes_protected",
+          "short_search_charges_real_pairs_and_keeps_full_mapping_limits",
+          "short_entrypoints_do_not_admit_long_victims_or_change_long_search",
+          "short_engine_forced_matches_direct_at_all_endpoints",
+          "short_engine_preferred_keeps_five_stage_order",
+          "short_engine_never_spends_a_second_neighbor_budget",
+          "short_engine_after_binds_original_and_current_suffix",
+          "short_engine_defaults_and_long_schedule_are_unchanged",
+          "short_t3_ownership_real_gp_continues_to_second_victim",
+          "short_t3_ownership_real_allocations_continue_after_partial_append",
+          "short_t3_ownership_caps_and_evidence_are_not_restarted",
+          "short_t3_ownership_original_and_overlay_identity_are_independent",
+          "short_t3_ownership_exact_current_suffix_and_identical_locks",
+          "short_t3_ownership_duplicate_sites_and_byte_locks_refuse",
+          "short_t3_ownership_first_four_and_legacy_paths_are_unchanged",
+          "short_t3_ownership_live_and_artifact_preflight_refuse_before_emission"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "all": [
+          "short_profile_cli_labels_mode_before_policy_binding",
+          "owned_short_cli_preserves_positional_paths_and_exact_prebind_labels"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "all": [
+          "complete_jump_denominator_ignores_names_reachability_and_call_cycles",
+          "whole_hash_and_each_head_byte_length_and_location_are_independent_gates",
+          "complete_ledger_checks_rx_inverse_owner_and_known_entry_contradictions",
+          "policy_cannot_omit_add_select_replace_or_increase_existing_caps",
+          "null_hook_must_be_original_single_c3_and_endbr_heads_stay_marked",
+          "shared_prepare_retains_every_refusal_and_never_emits_partial_candidate",
+          "one_original_jump_uses_shared_carrier_and_hook_guard_without_live_authority",
+          "bounded_text_and_whole_program_projection_refuse_without_splitting",
+          "short_only_policy_is_explicit_digest_bound_and_not_legacy",
+          "short_only_disassembly_forced_t3_preserves_all_heads_and_bytes",
+          "short_only_disassembly_refusal_retains_the_complete_denominator",
+          "short_only_projection_and_search_caps_are_not_widened",
+          "short_t3_ownership_policy_and_projection_bind_both_modes",
+          "short_t3_ownership_actual_preceding_jump_admits_second_victim",
+          "short_t3_ownership_conflicts_and_pair_cap_keep_every_report",
+          "short_t3_ownership_full_projection_bound_and_resource_refusals"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "src/lib.rs": [
+        "pub mod engine;",
+        "pub mod neighbor;",
+        "pub mod trampoline;"
+      ],
+      "src/neighbor.rs": [
+        "#[path = \"neighbor_short.rs\"]\nmod short;"
+      ],
+      "src/neighbor_short.rs": [
+        "#[cfg(test)]\n#[path = \"neighbor_short/tests.rs\"]\nmod tests;"
+      ],
+      "src/trampoline.rs": [
+        "fn ptrace_stopped_child(control_fd: libc::c_int) -> ! {",
+        "unsafe { libc::_exit(if result == 41 { 41 } else { 121 }) }",
+        "fn ptrace_stopped_hook_executes_on_owned_stack() {",
+        "assert_eq!(libc::WEXITSTATUS(exit_status), 41);",
+        "assert_eq!(child.wait_for_exit().code(), Some(41));"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\"",
+        "[[example]]\nname = \"disassembly_sites\"\npath = \"examples/disassembly_sites.rs\"\ntest = true"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod disassembly;"
+      ]
+    },
+    "previous_corpus_sha256": "c78d43da9117521b5e9f6a23ab12a0b9eaca56d0e21a4da42000b4afbb453bc5",
+    "projections": {
+      "evaluation/admission/parsing.py": {
+        "current_sha256": "e63bbcf6c644e4f6b8c17d98dc9494cd62e81049a825545eebbfd6331c74202d",
+        "edits": [
+          [
+            14217,
+            14532,
+            "                                  (\"unit/liteinst2/lib\", 283, 1), (\"test/stress\", 7, 3))\n"
+          ]
+        ],
+        "previous_sha256": "4b3f8739a04d17f105719b22652d15011912ac2d91a0a0a0695ed2df71a8efec"
+      },
+      "evaluation/offline-corpus/WHOLE-PLACEMENT.md": {
+        "current_sha256": "8f19798aff6a3dc9257c2d29cc24095645d0a856d4ea3ee1aeab11f4ad7e4d46",
+        "edits": [
+          [
+            4111,
+            5697,
+            ""
+          ]
+        ],
+        "previous_sha256": "954d672501de2c7755bff8d0398f12371d8e556cfe692fadaa6a0b110a247e3b"
+      },
+      "evaluation/offline-corpus/WHOLE_DISASSEMBLY.md": {
+        "current_sha256": "edd9f74e5fd3db28b9da743d80ee60bea89ff5101163eade26c6e1f7f7e68896",
+        "edits": [
+          [
+            9449,
+            11123,
+            ""
+          ]
+        ],
+        "previous_sha256": "5a3ccf426fa0a009c399808924b00b866800359d6206ebf2aea16c01ea774ab1"
+      },
+      "evaluation/offline-corpus/disassembly.py": {
+        "current_sha256": "e6db32a5a345c5b8423f17d39427f66e93b73636b3acd780bcc8d32d8c462f46",
+        "edits": [
+          [
+            811,
+            890,
+            ""
+          ],
+          [
+            20547,
+            20683,
+            "    assert profile in (PROFILE, WINDOW_PROFILE, BROAD_PROFILE, SHORT_PROFILE), 'explicit placement profile'\n"
+          ],
+          [
+            23926,
+            24010,
+            "        elif profile in (BROAD_PROFILE, SHORT_PROFILE):\n"
+          ],
+          [
+            24172,
+            24360,
+            ""
+          ]
+        ],
+        "previous_sha256": "e6768d5233a1ffc6f8a0bac2928599773ec3f22b130b2dfcd6aa713d6a1e2e26"
+      },
+      "evaluation/offline-corpus/disassembly_controls.py": {
+        "current_sha256": "b369d49735f3274cab5256836ff7b5e567fbe2a4ee3f9ce2c177e6b3d19b376a",
+        "edits": [
+          [
+            488,
+            569,
+            "ADAPTER_SHA = 'e6768d5233a1ffc6f8a0bac2928599773ec3f22b130b2dfcd6aa713d6a1e2e26'\n"
+          ],
+          [
+            34920,
+            39466,
+            ""
+          ]
+        ],
+        "previous_sha256": "c2b3523aac51b7829c127d7393d6dcd48446fc5d76d64207d24804ef224b87e9"
+      },
+      "evaluation/offline-corpus/head_capture.py": {
+        "current_sha256": "ae10489d1ff6449a596d491f5732cc58c95040e7353d6815b4c00e0f49eb0d01",
+        "edits": [
+          [
+            265,
+            346,
+            "ADAPTER_SHA = 'e6768d5233a1ffc6f8a0bac2928599773ec3f22b130b2dfcd6aa713d6a1e2e26'\n"
+          ]
+        ],
+        "previous_sha256": "d5f964d6e72abe6dad6d66ff61b97dbb0590dc96ec8275928806f89495d1c8d8"
+      },
+      "evaluation/offline-corpus/head_capture_controls.py": {
+        "current_sha256": "afd2125686bb8c07fe630a8755c44397db359e2b5e4f3bc05cbefc52c1989883",
+        "edits": [
+          [
+            669,
+            869,
+            "H = load('head_capture.py', 'd5f964d6e72abe6dad6d66ff61b97dbb0590dc96ec8275928806f89495d1c8d8')\nF = load('disassembly_controls.py', 'c2b3523aac51b7829c127d7393d6dcd48446fc5d76d64207d24804ef224b87e9')\n"
+          ]
+        ],
+        "previous_sha256": "3e62612ac4d4143dd0e3122d3ed6014624890c51b50865989eaa9df3313a1959"
+      },
+      "evaluation/offline-corpus/reproduce_whole.py": {
+        "current_sha256": "d9daa5018f2850bcca9199f48d7950aedb6d5c5e6c9fe8cab234ff2ecb0d62f0",
+        "edits": [
+          [
+            905,
+            1001,
+            "H = load('head_capture.py', 'd5f964d6e72abe6dad6d66ff61b97dbb0590dc96ec8275928806f89495d1c8d8')\n"
+          ],
+          [
+            4362,
+            4729,
+            "    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE), 'explicit placement profile'\n"
+          ],
+          [
+            5141,
+            5232,
+            ""
+          ],
+          [
+            5467,
+            5882,
+            ""
+          ],
+          [
+            8696,
+            9425,
+            ""
+          ],
+          [
+            9718,
+            9887,
+            "    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE), default=D.PROFILE,\n"
+          ],
+          [
+            10095,
+            10241,
+            "    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE), 'explicit placement profile'\n"
+          ],
+          [
+            10434,
+            10572,
+            ""
+          ]
+        ],
+        "previous_sha256": "a7785dd2eb46b5718e55f76bbda60478623f6a1931210e2de6b590ea38721150"
+      },
+      "evaluation/offline-corpus/reproduce_whole_controls.py": {
+        "current_sha256": "8430d726254d0a901191d680db4253f9f2cb95b6b25aee186fe36643283db81f",
+        "edits": [
+          [
+            436,
+            569,
+            "assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'a7785dd2eb46b5718e55f76bbda60478623f6a1931210e2de6b590ea38721150'\n"
+          ],
+          [
+            13262,
+            22768,
+            ""
+          ]
+        ],
+        "previous_sha256": "761202d2123592a530670067b6c5888a2c78970340415f366e71a152ba34eca2"
+      },
+      "src/engine.rs": {
+        "current_sha256": "f2841f6ce27f260bd1dc102a9df4d57f14af183fefc0a9ec092a5a97a8adaea5",
+        "edits": [
+          [
+            10507,
+            13571,
+            ""
+          ],
+          [
+            14385,
+            14717,
+            ""
+          ],
+          [
+            18085,
+            18679,
+            "                neighbor::plan_neighbor_short_core(\n                    request,\n                    victim_allocation,\n                    policy.neighbor,\n                    policy.bundle,\n                )\n"
+          ]
+        ],
+        "previous_sha256": "0828c1ef125eb11d1ecde005e6dd33ab03bbefe244a9cdd4603c7de0f311acd7"
+      },
+      "src/neighbor.rs": {
+        "current_sha256": "10d7e052a6b88dfb0c9c147bf4f2a5cf989063f205ab47601c30d2f3d6ab82fd",
+        "edits": [
+          [
+            344,
+            381,
+            ""
+          ],
+          [
+            8707,
+            9128,
+            ""
+          ],
+          [
+            9307,
+            9747,
+            ""
+          ],
+          [
+            22424,
+            23025,
+            ""
+          ]
+        ],
+        "previous_sha256": "d93181322163c05b193cfc5886e23263a3c8cd99f7f5b3714ede59e067d2b8c7"
+      },
+      "src/neighbor_short/tests.rs": {
+        "current_sha256": "cc09ed0ad300fdb9f664a5051d98040ca28bd20e1b4180fa050c710f2e6ed78a",
+        "edits": [
+          [
+            51159,
+            87003,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3e3d8a4d624b7106dddc9008139bfb2ab4e70a4ccc934414e7eb37d0e05ee4d"
+      },
+      "tools/elf-rewrite/DISASSEMBLY.md": {
+        "current_sha256": "b2a65d86ab18f5753ee4b8821e987e3a7ef5d0c41f90a73f5695ca7f68fa0b5e",
+        "edits": [
+          [
+            10714,
+            13318,
+            ""
+          ]
+        ],
+        "previous_sha256": "ac376ee9151d7df01385f2bba4f1e70a6700ab7523f4776135df5ef3fd4f5521"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "current_sha256": "7276600bafd1e7c9856468ec282b48e3d1098ac1665cf4e0a9902260b7729251",
+        "edits": [
+          [
+            2056,
+            3430,
+            ""
+          ],
+          [
+            3520,
+            3653,
+            "    let (args, short_only) = arguments(&raw_args)?;\n    let (profile, family, stdout_family) = labels(short_only);\n"
+          ],
+          [
+            4446,
+            4683,
+            "            if short_only {\n                imported.inventory_short_neighbors()\n            } else {\n                imported.inventory()\n"
+          ],
+          [
+            4709,
+            5005,
+            "        let selected = if short_only {\n            imported.bind_short_neighbors(&policy, expected_policy)?\n        } else {\n            imported.bind(&policy, expected_policy)?\n"
+          ],
+          [
+            9611,
+            12161,
+            ""
+          ]
+        ],
+        "previous_sha256": "a6f4c7925fb39ac74f4938a97f3d0dea704c2344b3b2ad7bdbcfbc6460814509"
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "current_sha256": "541483d8de256be41b907c2b9d05c54f6108489a2793da86a3f7511ff07afcfe",
+        "edits": [
+          [
+            864,
+            1037,
+            ""
+          ],
+          [
+            1098,
+            1791,
+            ""
+          ],
+          [
+            3007,
+            3219,
+            ""
+          ],
+          [
+            3279,
+            3364,
+            "        let profile = if short_only {\n            SHORT_ONLY_PROFILE\n"
+          ],
+          [
+            3381,
+            3576,
+            "            PROFILE\n        };\n        let family = if short_only { SHORT_FAMILY } else { \"\" };\n"
+          ],
+          [
+            5328,
+            5989,
+            ""
+          ],
+          [
+            6153,
+            6562,
+            ""
+          ],
+          [
+            6783,
+            7030,
+            "        let shift = usize::from(short_only);\n        let header = if short_only {\n            \"LI2DISASM-POLICY 2\"\n        } else {\n            \"LI2DISASM-POLICY 1\"\n"
+          ],
+          [
+            7155,
+            7199,
+            "        if short_only {\n"
+          ],
+          [
+            7280,
+            7477,
+            ""
+          ],
+          [
+            8343,
+            8645,
+            "        let projection_family = if short_only {\n            \"neighbor-victims short-only\\n\"\n        } else {\n            \"\"\n"
+          ],
+          [
+            10558,
+            10960,
+            "        let mut selection = if short_only {\n            selection::parse_short_neighbor_projection(manifest.as_bytes())?\n        } else {\n            selection::parse(manifest.as_bytes())?\n"
+          ],
+          [
+            11369,
+            11450,
+            "        let profile_name = if short_only {\n            SHORT_ONLY_PROFILE\n        } else {\n            PROFILE\n        };\n        let family = if short_only { SHORT_FAMILY } else { \"\" };\n"
+          ],
+          [
+            12033,
+            12051,
+            "            short_only,\n"
+          ],
+          [
+            12388,
+            12440,
+            "                    self.inventory_mode(short_only),\n"
+          ],
+          [
+            12709,
+            12744,
+            "    pub(crate) short_only: bool,\n"
+          ],
+          [
+            12974,
+            13002,
+            "        if self.short_only {\n            SHORT_ONLY_PROFILE\n        } else {\n            PROFILE\n        }\n"
+          ]
+        ],
+        "previous_sha256": "5eb3d607873e32923041c5d04584ff5cad22200caaadc7f719ffd2ad8b02dc0d"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "current_sha256": "bd886f1cb6b35717c3c485783614e6af73872514e69aa943763141715b668667",
+        "edits": [
+          [
+            24500,
+            40190,
+            ""
+          ]
+        ],
+        "previous_sha256": "a97fa24ac253023bc50f47bac820cf13640be620f71e7c48f85e7c94bd536fba"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "9812cb41f0a115c0c950975b9029c8334a8a4a07ba652cedb97f3ae9d9adc0f1",
+        "edits": [
+          [
+            2769,
+            2889,
+            "    let mut product = prepare_selection_mode(\n        original,\n        selected.selection.clone(),\n        false,\n        selected.short_only,\n    )?;\n"
+          ],
+          [
+            3518,
+            4016,
+            "    if owned_neighbors && short_only {\n"
+          ],
+          [
+            10406,
+            10779,
+            "            } else if short_only {\n"
+          ]
+        ],
+        "previous_sha256": "cb5d3ae0b8e647dbdf94a975e289b21984979f2d11cb9bcbaf7b2e5b78db165a"
+      },
+      "tools/elf-rewrite/src/selection.rs": {
+        "current_sha256": "58889f49456db243bad9bd587eeefc34e7ef1b0037a6da26d14106c186587aa7",
+        "edits": [
+          [
+            11974,
+            13694,
+            ""
+          ]
+        ],
+        "previous_sha256": "7651f362a9f4c6fb45980cb0e613468bb56fa156b734a3c741fe928922b88da7"
+      }
+    },
+    "python_added_methods": {
+      "evaluation/offline-corpus/disassembly_controls.py": [
+        "test_owned_short_profile_changes_only_two_bound_mode_rows",
+        "test_owned_short_profile_keeps_material_refusals_and_helper_guard"
+      ],
+      "evaluation/offline-corpus/head_capture_controls.py": [],
+      "evaluation/offline-corpus/reproduce_whole_controls.py": [
+        "test_owned_short_material_dispatch_is_explicit_and_once",
+        "test_owned_short_importer_routing_and_stdout_contract",
+        "test_owned_short_inventory_binds_both_modes_and_complete_rows"
+      ]
+    },
+    "python_methods": {
+      "evaluation/offline-corpus/disassembly_controls.py": [
+        "test_complete_two_program_source_rosters",
+        "test_first_pins_and_authored_sources_are_exact",
+        "test_complete_sections_and_unique_file_owners",
+        "test_every_head_is_retained_and_canonical",
+        "test_relocations_and_linked_bytes_are_not_trusted_from_heads",
+        "test_symbol_extent_and_relocation_completeness",
+        "test_target_refusal_retains_complete_roster",
+        "test_whole_input_failures_do_not_publish_subset",
+        "test_window_permits_are_exact_existing_carrier_arena",
+        "test_joint_short_branch_targets_match_encoded_successor",
+        "test_placement_profile_keeps_complete_material_denominator",
+        "test_broad_profile_keeps_seeds_limits_and_complete_denominator",
+        "test_broad_permits_preserve_page_carrier_and_address_refusals",
+        "test_short_profile_changes_only_explicit_mode_policy_bytes",
+        "test_short_profile_retains_exact_material_refusals_and_placement_contract",
+        "test_owned_short_profile_changes_only_two_bound_mode_rows",
+        "test_owned_short_profile_keeps_material_refusals_and_helper_guard"
+      ],
+      "evaluation/offline-corpus/head_capture_controls.py": [
+        "test_complete_two_program_transport_and_opaque_rendering",
+        "test_headers_encoding_and_capture_bounds_refuse",
+        "test_every_head_omission_duplicate_and_order_refuse",
+        "test_instruction_bytes_addresses_and_width_refuse",
+        "test_verified_local_labels_and_wrong_duplicate_labels",
+        "test_actual_ownership_and_relocation_helpers_remain_required"
+      ],
+      "evaluation/offline-corpus/reproduce_whole_controls.py": [
+        "test_fixed_cli_choices_and_unchanged_default",
+        "test_dispatch_is_once_and_preserves_refusal_or_exception",
+        "test_broad_cli_dispatch_once_preserves_status_and_exception",
+        "test_short_cli_material_dispatch_is_explicit_and_once",
+        "test_short_importer_argument_routing_and_stdout_contract",
+        "test_short_inventory_requires_exact_profile_family_and_complete_rows",
+        "test_owned_short_material_dispatch_is_explicit_and_once",
+        "test_owned_short_importer_routing_and_stdout_contract",
+        "test_owned_short_inventory_binds_both_modes_and_complete_rows"
+      ]
+    },
+    "scope": "Exact inherited ShortOnly T3 ownership source successor; declarations only, no execution or native qualification.",
+    "source_binding_sha256": "132fa7236683aa595ef4df2897e00fb93d94e3a2f0d72caf0bbb232b833295e0",
+    "sources": {
+      "evaluation/admission/parsing.py": "e63bbcf6c644e4f6b8c17d98dc9494cd62e81049a825545eebbfd6331c74202d",
+      "evaluation/offline-corpus/WHOLE-PLACEMENT.md": "8f19798aff6a3dc9257c2d29cc24095645d0a856d4ea3ee1aeab11f4ad7e4d46",
+      "evaluation/offline-corpus/WHOLE_DISASSEMBLY.md": "edd9f74e5fd3db28b9da743d80ee60bea89ff5101163eade26c6e1f7f7e68896",
+      "evaluation/offline-corpus/disassembly.py": "e6db32a5a345c5b8423f17d39427f66e93b73636b3acd780bcc8d32d8c462f46",
+      "evaluation/offline-corpus/disassembly_controls.py": "b369d49735f3274cab5256836ff7b5e567fbe2a4ee3f9ce2c177e6b3d19b376a",
+      "evaluation/offline-corpus/head_capture.py": "ae10489d1ff6449a596d491f5732cc58c95040e7353d6815b4c00e0f49eb0d01",
+      "evaluation/offline-corpus/head_capture_controls.py": "afd2125686bb8c07fe630a8755c44397db359e2b5e4f3bc05cbefc52c1989883",
+      "evaluation/offline-corpus/reproduce_whole.py": "d9daa5018f2850bcca9199f48d7950aedb6d5c5e6c9fe8cab234ff2ecb0d62f0",
+      "evaluation/offline-corpus/reproduce_whole_controls.py": "8430d726254d0a901191d680db4253f9f2cb95b6b25aee186fe36643283db81f",
+      "src/engine.rs": "f2841f6ce27f260bd1dc102a9df4d57f14af183fefc0a9ec092a5a97a8adaea5",
+      "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+      "src/neighbor.rs": "10d7e052a6b88dfb0c9c147bf4f2a5cf989063f205ab47601c30d2f3d6ab82fd",
+      "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+      "src/neighbor_short/tests.rs": "cc09ed0ad300fdb9f664a5051d98040ca28bd20e1b4180fa050c710f2e6ed78a",
+      "src/trampoline.rs": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+      "tools/elf-rewrite/Cargo.toml": "acd1736d8bdd0846ed0a7a2f17d1a33eba83fdc6940b643d9434730fde5637c4",
+      "tools/elf-rewrite/DISASSEMBLY.md": "b2a65d86ab18f5753ee4b8821e987e3a7ef5d0c41f90a73f5695ca7f68fa0b5e",
+      "tools/elf-rewrite/examples/disassembly_sites.rs": "7276600bafd1e7c9856468ec282b48e3d1098ac1665cf4e0a9902260b7729251",
+      "tools/elf-rewrite/src/disassembly.rs": "541483d8de256be41b907c2b9d05c54f6108489a2793da86a3f7511ff07afcfe",
+      "tools/elf-rewrite/src/disassembly/tests.rs": "bd886f1cb6b35717c3c485783614e6af73872514e69aa943763141715b668667",
+      "tools/elf-rewrite/src/lib.rs": "9812cb41f0a115c0c950975b9029c8334a8a4a07ba652cedb97f3ae9d9adc0f1",
+      "tools/elf-rewrite/src/selection.rs": "58889f49456db243bad9bd587eeefc34e7ef1b0037a6da26d14106c186587aa7"
+    },
+    "workspace_changes": {
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 2
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 1
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 291
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 283
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 102
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 98
+        }
+      }
+    }
+  },
   "precontext_inventory": {
     "workspace_tests": [
       {
