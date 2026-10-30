@@ -86,8 +86,19 @@ def compile_subject(builder,private,pin,binary,run,r):
         need(size>0 and sum(p[0]==1 and p[1]==5 and p[3]<=address<address+size<=p[3]+p[5]for p in segments)==1,'whole symbol in exact actual RX segment')
         if name!='main':need(0x200001000<=address<address+size<=0x200002000,'actual high full-range helper body')
         symbols[name]=dict(address=address,bytes=size)
-        _,assembly,err=run('app-body-'+name,[objdump,'-d','-w','-M','att','--disassemble='+name,original],profile='inspect',env=builder.environment)
+        _,assembly,err=run('app-body-'+name,[objdump,'-d','-w','-M','att','--start-address='+hex(address),'--stop-address='+hex(address+size),original],profile='inspect',env=builder.environment)
         need(assembly and not err and ('<'+name+'>:').encode()in assembly,'complete emitted helper/caller inspection')
+        emitted=[];cursor=address
+        for line in assembly.decode().splitlines():
+            matched=re.fullmatch(r'\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s+)+)(.*)',line)
+            if matched:
+                chunk=bytes.fromhex(matched[2]);need(int(matched[1],16)==cursor and chunk and cursor+len(chunk)<=address+size,
+                    'every emitted instruction byte lies contiguously inside the actual symbol')
+                emitted.append(chunk);cursor+=len(chunk)
+        segment=next(p for p in segments if p[0]==1 and p[1]==5 and p[3]<=address<address+size<=p[3]+p[5])
+        offset=segment[2]+address-segment[3]
+        need(cursor==address+size and b''.join(emitted)==original.read_bytes()[offset:offset+size],
+             'complete actual nm-sized body bytes equal the retained ELF range')
         if name=='main':main_assembly=assembly.decode()
     for name in ('copy','same','ua_data_pattern','ua_stack_pattern'):
         need(re.search(r'\bmovabsq?\s+\$0x'+format(symbols[name]['address'],'x')+r',',main_assembly)is not None,
