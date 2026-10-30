@@ -223,8 +223,15 @@ pub(super) enum WalkReady {
     CopiedRust(copied_rust::Ready),
     LeafSetCopied(leaf_set_copied::Ready),
     SelectedLeafSet(selected_leaf_set::Ready),
+    ExactAccuracy(exact_accuracy::Ready),
 }
 impl WalkReady {
+    pub(super) fn exact_accuracy(&self) -> &exact_accuracy::Ready {
+        match self {
+            Self::ExactAccuracy(r) => r,
+            _ => panic!("Exact37 accuracy readiness required"),
+        }
+    }
     pub(super) fn call_pair(&self) -> &call_pair::Ready {
         match self {
             Self::CallPair(r) => r,
@@ -266,6 +273,7 @@ impl WalkReady {
             Self::CopiedRust(r) => r.view(),
             Self::LeafSetCopied(r) => r.view(),
             Self::SelectedLeafSet(r) => r.view(),
+            Self::ExactAccuracy(r) => r.view(),
             _ => panic!("admitted copied machine profile required"),
         }
     }
@@ -276,6 +284,7 @@ impl WalkReady {
             Self::CopiedRust(r) => r.caller,
             Self::LeafSetCopied(r) => r.caller,
             Self::SelectedLeafSet(r) => r.caller,
+            Self::ExactAccuracy(r) => r.caller,
             Self::CallPair(r) => r.caller,
         }
     }
@@ -286,6 +295,7 @@ impl WalkReady {
             Self::CopiedRust(r) => &r.caller_immutable,
             Self::LeafSetCopied(r) => &r.caller_immutable,
             Self::SelectedLeafSet(r) => &r.caller_immutable,
+            Self::ExactAccuracy(r) => &r.caller_immutable,
             Self::CallPair(r) => &r.caller_immutable,
         }
     }
@@ -296,6 +306,7 @@ impl WalkReady {
             Self::CopiedRust(r) => &r.immutable,
             Self::LeafSetCopied(r) => &r.immutable,
             Self::SelectedLeafSet(r) => &r.immutable,
+            Self::ExactAccuracy(r) => &r.immutable,
             Self::CallPair(r) => &r.immutable,
         }
     }
@@ -306,6 +317,7 @@ impl WalkReady {
             Self::CopiedRust(r) => r.journal.as_ref(),
             Self::LeafSetCopied(r) => r.journal.as_ref(),
             Self::SelectedLeafSet(r) => r.journal.as_ref(),
+            Self::ExactAccuracy(r) => r.journal.as_ref(),
             Self::CallPair(r) => r.journal.as_ref(),
         }
     }
@@ -316,6 +328,7 @@ impl WalkReady {
             Self::CopiedRust(r) => r.target().returns.contains(&pc),
             Self::LeafSetCopied(r) => r.target().returns.contains(&pc),
             Self::SelectedLeafSet(r) => r.target().returns.contains(&pc),
+            Self::ExactAccuracy(r) => r.target().returns.contains(&pc),
             Self::CallPair(r) => r.functions.iter().any(|f| f.returns.contains(&pc)),
         }
     }
@@ -325,6 +338,7 @@ impl WalkReady {
             Self::CopiedRust(r) => r.target().returns.iter().copied().collect(),
             Self::LeafSetCopied(r) => r.target().returns.iter().copied().collect(),
             Self::SelectedLeafSet(r) => r.target().returns.iter().copied().collect(),
+            Self::ExactAccuracy(r) => r.target().returns.iter().copied().collect(),
             Self::CallPair(r) => r
                 .functions
                 .iter()
@@ -344,6 +358,7 @@ impl WalkReady {
             (Self::CopiedRust(a), Self::CopiedRust(b)) => a.same_source(b),
             (Self::LeafSetCopied(a), Self::LeafSetCopied(b)) => a.same_source(b),
             (Self::SelectedLeafSet(a), Self::SelectedLeafSet(b)) => a.same_source(b),
+            (Self::ExactAccuracy(a), Self::ExactAccuracy(b)) => a.same_source(b),
             (Self::CallPair(a), Self::CallPair(b)) => a.same_source(b),
             _ => panic!("profile mismatch"),
         }
@@ -700,7 +715,9 @@ impl NormalOracle {
         if let Some(p) = &self.call_pair {
             return p.stack_below();
         }
-        if let Some(p) = &self.selected_leaf_set {
+        if let Some(p) = &self.exact_accuracy {
+            p.plan.protected_stack_below()
+        } else if let Some(p) = &self.selected_leaf_set {
             p.plan.protected_stack_below()
         } else if let Some(p) = &self.leaf_set_copied {
             p.plan.protected_stack_below()
@@ -716,7 +733,9 @@ impl NormalOracle {
         if let Some(p) = &self.call_pair {
             return p.plan.subject_rsp_delta();
         }
-        if let Some(p) = &self.selected_leaf_set {
+        if let Some(p) = &self.exact_accuracy {
+            p.plan.subject_rsp_delta()
+        } else if let Some(p) = &self.selected_leaf_set {
             p.plan.subject_rsp_delta()
         } else if let Some(p) = &self.leaf_set_copied {
             p.plan.subject_rsp_delta()
@@ -747,11 +766,14 @@ impl NormalOracle {
             WalkReady::CopiedRust(r) => r.target().entry,
             WalkReady::LeafSetCopied(r) => r.target().entry,
             WalkReady::SelectedLeafSet(r) => r.target().entry,
+            WalkReady::ExactAccuracy(r) => r.target().entry,
             WalkReady::CallPair(r) => r.parent().entry,
         }
     }
     pub(super) fn check_data(&self, ready: &WalkReady, actual: &[u8], final_check: bool) {
         if let WalkReady::CallPair(r) = ready {
+            copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);
+        } else if let WalkReady::ExactAccuracy(r) = ready {
             copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);
         } else if let WalkReady::SelectedLeafSet(r) = ready {
             copied_rust::check_data(self.data.bytes(), actual, r.case.value(), final_check);

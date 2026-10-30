@@ -159,7 +159,8 @@ def _run_owner(args,options,invocation,command,checked,owner_name,owner_schema):
     # Only fixed entrypoint wrappers call this; process supervision remains unchanged.
     assert (owner_name,owner_schema) in (('owner.py','selected-session-public-owner-v1'),
         ('accuracy_owner.py','selected-sdk-accuracy-public-owner-v1'),
-        ('accuracy_functional_owner.py','selected-accuracy-functional-public-owner-v1'))
+        ('accuracy_functional_owner.py','selected-accuracy-functional-public-owner-v1'),
+        ('exact_state_owner.py','exact37-accuracy-native-public-owner-v1'))
     phase=args.phase
     os.chdir(ROOT)
     for name in checked:

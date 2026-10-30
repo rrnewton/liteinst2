@@ -33,3 +33,7 @@ mod normal_leaf_set_copied_check;
 // Distinct fixed selected compiled LeafSet joins; inherited controls stay exact.
 #[path = "normal/selected_leaf_set/check.rs"]
 mod selected_leaf_set_check;
+
+// Separate Exact37 accuracy accounting; all existing registrations stay literal.
+#[path = "normal/selected_leaf_set/exact_check.rs"]
+mod exact_accuracy_check;
