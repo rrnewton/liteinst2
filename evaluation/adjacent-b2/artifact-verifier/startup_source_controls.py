@@ -4,6 +4,7 @@ import hashlib
 from pathlib import Path
 import subprocess
 import types
+import tempfile
 import unittest
 from unittest import mock
 import startup_custody as C
@@ -94,15 +95,32 @@ class SourceSemantics(unittest.TestCase):
         files = {'src/b.rs': b'B', 'Cargo.toml': b'cargo', 'src/a.rs': b'A'}
         pins = types.SimpleNamespace(SOURCE_REVISION=REVISION,
             SOURCE_PINS={name:C.sha(raw) for name,raw in files.items()})
+        # The live snapshot now owns real no-follow reads and ctx.PINS. Only
+        # Git transport is mocked; identical source assertions below remain.
+        if hasattr(self, '_read_patch'):
+            self._read_patch.stop()
+        temporary = tempfile.TemporaryDirectory(); self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        for name, raw in files.items():
+            path = root/name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(raw)
         reads = []
-        def read(path, *, cap):
-            self.assertEqual(cap, 16 * C.MIB)
-            name = str(path.relative_to('/repo')); reads.append(name)
-            return files[name]
-        ctx = types.SimpleNamespace(ROOT=Path('/repo'), read=read)
+        original_read = C.Store.read
+        def read(store, path, cap, pin=None):
+            if str(path) not in store.files:
+                self.assertEqual(cap, 16 * C.MIB)
+                name = str(path.relative_to(root)); reads.append(name)
+            else:
+                # Final metadata verification is additional to the fresh byte
+                # reads counted by the unchanged assertions below.
+                self.assertEqual(cap, store.files[str(path)][0]['bytes'])
+                self.assertEqual(pin, store.files[str(path)][0])
+            return original_read(store, path, cap, pin)
+        self._read_patch = mock.patch.object(C.Store, 'read', read)
+        self._read_patch.start(); self.addCleanup(self._read_patch.stop)
+        ctx = types.SimpleNamespace(ROOT=root, PINS={})
         calls = []
         def git(argv, *, env, timeout):
-            self.assertEqual(argv[:3], ['/usr/bin/git', '-C', '/repo'])
+            self.assertEqual(argv[:3], ['/usr/bin/git', '-C', str(root)])
             self.assertEqual(env, {'TOKEN': 'fixed'})
             self.assertEqual(timeout, 15)
             command = argv[3:]; calls.append(command)
@@ -154,15 +172,18 @@ class SourceSemantics(unittest.TestCase):
         with mock.patch.object(C.subprocess, 'check_output', side_effect=git), \
              mock.patch.object(C, 'source_batch') as batch:
             self.assertEqual(C.source_profile(ctx, pins, {'TOKEN': 'fixed'}), REVISION)
-            files['src/a.rs'] = b'changed'
+            files['src/a.rs'] = b'changed'; (ctx.ROOT/'src/a.rs').write_bytes(files['src/a.rs'])
             with self.assertRaisesRegex(ValueError, 'reviewed startup source bytes'):
                 C.source_profile(ctx, pins, {'TOKEN': 'fixed'})
             self.assertEqual(batch.call_count, 2)
             self.assertEqual(reads.count('src/a.rs'), 2)
-            files['src/a.rs'] = b'A'
-            with mock.patch.object(C, 'SOURCE_BYTES', 6):
-                with self.assertRaisesRegex(ValueError, 'live source file/aggregate bound'):
-                    C.source_profile(ctx, pins, {'TOKEN': 'fixed'})
+        # A fresh custody lifetime isolates the aggregate bound from the inode
+        # drift deliberately introduced above; both prior assertions are kept.
+        files, pins, ctx, reads, calls, git = self.fixture()
+        with mock.patch.object(C.subprocess, 'check_output', side_effect=git), \
+             mock.patch.object(C, 'source_batch'), mock.patch.object(C, 'SOURCE_BYTES', 6):
+            with self.assertRaisesRegex(ValueError, 'live source file/aggregate bound'):
+                C.source_profile(ctx, pins, {'TOKEN': 'fixed'})
 
     def test_request_injection_invalid_digest_and_bound_refuse_before_spawn(self):
         with mock.patch.object(C.subprocess, 'Popen') as spawn:

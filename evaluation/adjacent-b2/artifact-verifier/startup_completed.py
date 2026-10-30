@@ -65,6 +65,7 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
          'main rooted build configuration')
     args.startup_custody=custody;args.startup_pins=pins
     facts = originals_module.authenticate(ctx,a,legacy,args,store,plan['capture'])
+    custody.join_stability(facts['stability'],ctx,pins,store,captured,configs,rooted.COMMENT_PROFILE)
     producer,pc = custody.build(ctx,a,legacy,pins,store,'producer',plan['producer_build'],captured)
     verifier,vc = custody.build(ctx,a,legacy,pins,store,'verifier',
         dict(directory=str(args.verifier_build),sha256=args.verifier_build_sha256),captured)
@@ -135,9 +136,12 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
             catalog_pin=bound['publication']['files'][program+'-catalog.li2boot'],
             main_pin=bound['publication']['files'][program+'-candidate.elf'],transport_pin=store.pin(transport_path,startup.TRANSPORT_BYTES))
     def stable():
-        facts['stable']();store.verify()
-        need(rooted.configurations(ctx,captured,profile=rooted.COMMENT_PROFILE)==configs,'completed main config drift')
+        custody.join_stability(facts['stability'],ctx,pins,store,captured,configs,rooted.COMMENT_PROFILE)
+        # Same Store/source/config predicates, checked afresh by the original
+        # callback. No producer, verifier, write or external dispatch intervenes.
+        revision = facts['stable']()
         need(store.members(Path(plan['output']))==bound['publication']['directory'],'completed publication drift')
+        return revision
     stable()
     return dict(programs=joined,plan=plan,captured=captured,configurations=configs,history=history,
-        reference=reference,stable=stable)
+        reference=reference,stable=stable,stability=facts['stability'])

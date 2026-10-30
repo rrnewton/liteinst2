@@ -163,11 +163,15 @@ def build_inputs(root,plan,modules,store):
     modules.custody.environment(modules.ctx,captured['env'],captured['tools'])
     rooted=modules.legacy.rooted_module(modules.ctx)
     configs=rooted.configurations(modules.ctx,captured,profile=rooted.COMMENT_PROFILE)
+    modules.custody.join_stability(originals['stability'],modules.ctx,modules.pins,store,
+        captured,configs,rooted.COMMENT_PROFILE)
     revision=modules.custody.source_profile(modules.ctx,modules.pins,captured['env'])
     def stable():
-        originals['stable']();store.verify()
-        need(rooted.configurations(modules.ctx,captured,profile=rooted.COMMENT_PROFILE)==configs,'observer build config drift')
-        need(modules.custody.source_profile(modules.ctx,modules.pins,captured['env'])==revision,'observer build revision drift')
+        modules.custody.join_stability(originals['stability'],modules.ctx,modules.pins,store,
+            captured,configs,rooted.COMMENT_PROFILE)
+        # No operation between duplicate predicates: the joined original
+        # callback checks Store, source and config once, freshly on each call.
+        need(originals['stable']()==revision,'observer build revision drift')
     return captured,configs,revision,stable
 
 

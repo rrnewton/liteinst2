@@ -1,4 +1,5 @@
 """Bounded saved-startup custody. No build, producer, or candidate invocation."""
+import copy
 import hashlib
 import json
 import os
@@ -71,9 +72,11 @@ def leaf(value):
 class Store:
     """Read each regular file once, cache bytes, and recheck every identity.
 
-    Every pathname component is opened without following symlinks. Directory
-    descriptors stay anchored until close; both paths and descriptors are
-    checked again. Separate namespace counters are enforced by callers before
+    Every new pathname component is opened without following symlinks. Existing
+    components are checked on EVERY lookup through their held parent descriptor:
+    no-follow edge stat plus held-child fstat, starting at the checked root. This
+    reuses descriptors, never a successful validation or a resolved pathname.
+    Separate namespace counters are enforced by callers before
     product/dependency allocation, not replaced by this outer storage budget.
     """
     def __init__(self, maximum=512 * MIB):
@@ -81,26 +84,51 @@ class Store:
         self.used = 0
         self.files = {}
         self.directories = {}
+        self.root = None
+        self.chains = {}
+
+    @staticmethod
+    def _directory_identity(info):
+        return [info.st_dev, info.st_ino, info.st_mode]
 
     def directory(self, path):
         path = absolute(str(path))
-        fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY)
-        current = Path('/')
-        try:
-            for component in path.parts[1:]:
-                child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+        if self.root is None:
+            fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                self.root = (fd, self._directory_identity(os.fstat(fd)))
+            except BaseException:
                 os.close(fd)
-                fd = child
-                current = current / component
-                observed = stamp(os.fstat(fd))
-                key = str(current)
-                if key not in self.directories:
-                    self.directories[key] = (os.dup(fd), observed[:3])
-                need(self.directories[key][1] == observed[:3], 'directory identity changed')
-            return fd
-        except BaseException:
-            os.close(fd)
-            raise
+                raise
+        parent, root_identity = self.root
+        need(self._directory_identity(os.fstat(parent)) == root_identity ==
+             self._directory_identity(os.stat('/', follow_symlinks=False)), 'retained root replaced')
+        key = str(path)
+        if key not in self.chains:
+            current = ''
+            chain = []
+            for component in path.parts[1:]:
+                current += '/' + component
+                chain.append((current, component))
+            self.chains[key] = tuple(chain)
+        for current, component in self.chains[key]:
+            if current not in self.directories:
+                child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+                try:
+                    observed = self._directory_identity(os.fstat(child))
+                    need(observed == self._directory_identity(os.stat(component, dir_fd=parent,
+                         follow_symlinks=False)), 'directory identity changed')
+                    self.directories[current] = (child, observed)
+                except BaseException:
+                    os.close(child)
+                    raise
+            child, identity = self.directories[current]
+            need(self._directory_identity(os.fstat(child)) == identity ==
+                 self._directory_identity(os.stat(component, dir_fd=parent, follow_symlinks=False)),
+                 'directory identity changed')
+            parent = child
+        # The caller owns its duplicate; cached ancestors stay open until close.
+        return os.dup(parent)
 
     def read(self, path, cap, pin=None):
         path = absolute(str(path))
@@ -155,6 +183,10 @@ class Store:
             os.close(fd)
 
     def verify(self):
+        if self.root is not None:
+            fd, identity = self.root
+            need(self._directory_identity(os.fstat(fd)) == identity ==
+                 self._directory_identity(os.stat('/', follow_symlinks=False)), 'retained root replaced')
         for path, (fd, identity) in self.directories.items():
             need(stamp(os.fstat(fd))[:3] == identity == stamp(os.lstat(path))[:3], 'retained directory replaced')
         for path, (pin, _) in self.files.items():
@@ -168,6 +200,14 @@ class Store:
             except OSError as error:
                 errors.append(str(error))
         self.directories.clear()
+        self.chains.clear()
+        if self.root is not None:
+            fd, _ = self.root
+            self.root = None
+            try:
+                os.close(fd)
+            except OSError as error:
+                errors.append(str(error))
         need(not errors, 'custody descriptor close failure: ' + repr(errors))
 
 
@@ -352,16 +392,79 @@ def source_profile(ctx, pins, env):
     # self-reported files. Exact Git and live bytes must both match every pin.
     ordered = sorted(pins.SOURCE_PINS.items())
     source_batch(ctx.ROOT, revision, ordered, env)
+    # A fresh Store reads every live source on every call. It shares only the
+    # historical exact ctx.PINS relation with ctx.read, never bytes or a prior
+    # successful validation. The no-follow held-parent read supplies the same
+    # full before/after inode stamp and content digest without three file reads.
+    live = Store(SOURCE_BYTES)
     total = 0
-    for relative, expected in ordered:
-        need(not relative.startswith('/') and '..' not in relative.split('/'), 'reviewed source path')
-        digest(expected)
-        raw = ctx.read(ctx.ROOT / relative, cap=SOURCE_FILE_BYTES)
-        need(len(raw) <= SOURCE_FILE_BYTES and len(raw) <= SOURCE_BYTES - total,
-             'live source file/aggregate bound')
-        total += len(raw)
-        need(sha(raw) == expected, 'reviewed startup source bytes')
+    try:
+        for relative, expected in ordered:
+            need(not relative.startswith('/') and '..' not in relative.split('/'), 'reviewed source path')
+            digest(expected)
+            path = ctx.ROOT / relative
+            try:
+                raw = live.read(path, SOURCE_FILE_BYTES)
+            except ValueError as error:
+                # Preserve the source-profile aggregate refusal while charging
+                # before allocation in Store, rather than after the old read.
+                if str(error) == 'outer custody byte bound':
+                    raise ValueError('live source file/aggregate bound') from error
+                raise
+            need(len(raw) <= SOURCE_FILE_BYTES and len(raw) <= SOURCE_BYTES - total,
+                 'live source file/aggregate bound')
+            total += len(raw)
+            need(sha(raw) == expected, 'reviewed startup source bytes')
+            key = str(path)
+            pin = live.files[key][0]
+            need(key not in ctx.PINS or ctx.PINS[key] == pin, 'reviewed startup source identity drift')
+            ctx.PINS[key] = dict(pin)
+        # The payload read is anchored to a held parent. Revalidate the whole
+        # absolute directory graph and every leaf before accepting the snapshot,
+        # including changes made during the LAST file's read.
+        live.verify()
+    finally:
+        live.close()
     return current
+
+
+def verify_stability(ctx, pins, store, captured, rooted, configurations):
+    """Fresh endpoint checks for one shared source/config/artifact boundary.
+
+    Source inspection includes read-only Git subprocesses and many file reads.
+    Neither a pre-source Store check nor source-file custody covers non-source
+    artifacts changed during that interval. Keep a terminal config and whole
+    Store pass before returning; wrappers can share this completed boundary.
+    """
+    store.verify()
+    need(rooted.configurations(ctx,captured,profile=rooted.COMMENT_PROFILE)==configurations,
+         'original-facts configuration drift')
+    revision = source_profile(ctx,pins,captured['env'])
+    need(rooted.configurations(ctx,captured,profile=rooted.COMMENT_PROFILE)==configurations,
+         'original-facts configuration drift')
+    store.verify()
+    return revision
+
+
+def stability_inputs(ctx, pins, store, captured, configurations, configuration_profile):
+    """Internal composition descriptor, never an admission receipt or cache."""
+    return dict(store=store, ctx=ctx, root=str(ctx.ROOT), source_revision=pins.SOURCE_REVISION,
+        source_pins=dict(pins.SOURCE_PINS), captured=copy.deepcopy(captured),
+        configurations=copy.deepcopy(configurations), configuration_profile=configuration_profile)
+
+
+def join_stability(value, ctx, pins, store, captured, configurations, configuration_profile):
+    """Require identical predicates before sharing one composite boundary pass.
+
+    A wrapper still invokes the original stable callback afresh on EVERY call.
+    The callback verifies the whole shared Store, including files added later.
+    Publication, tool and platform predicates remain the wrapper's own checks.
+    """
+    expected = stability_inputs(ctx, pins, store, captured, configurations, configuration_profile)
+    need(type(value) is dict and set(value) == set(expected) and value['store'] is store
+         and value['ctx'] is ctx
+         and all(value[k] == expected[k] for k in expected if k not in ('store','ctx')),
+         'identical composed stability inputs')
 
 
 def build(ctx, a, legacy, pins, store, role, reference, captured):

@@ -86,6 +86,8 @@ def authenticate(ctx, a, legacy, custody, pins, originals, startup, completed_re
          'qualification_complete'} and plan['schema'] == 'LI2STARTUP-BOOTSTRAP-PLAN-1' and
          re.fullmatch('[0-9a-f]{40}', plan['revision']) is not None, 'whole prospective two-build plan')
     captured = complete['captured']
+    custody.join_stability(complete['stability'],ctx,pins,store,captured,
+        complete['configurations'],complete['plan']['configuration_profile'])
     custody.source_profile(ctx, pins, captured['env'])
     sources = driver.source_snapshot(ctx, pins, legacy, store)
     package = dso.resolver(ctx)
@@ -154,10 +156,13 @@ def authenticate(ctx, a, legacy, custody, pins, originals, startup, completed_re
         joined[program] = dict(main=complete['programs'][program], bootstrap_pin=destination,
             bootstrap=raw_dso, linked=inspected, build=closure_pin)
     def stable():
-        complete['stable']()
-        store.verify()
-        custody.source_profile(ctx, pins, captured['env'])
+        custody.join_stability(complete['stability'],ctx,pins,store,captured,
+            complete['configurations'],complete['plan']['configuration_profile'])
+        # The joined callback checks these identical Store/source/config facts
+        # once per fresh composite boundary; retain separate tool checks below.
+        revision = complete['stable']()
         for tool in captured['tools'].values():
             need(ctx.B.identity(tool['path']) == tool, 'final build tool drift')
+        return revision
     stable()
     return dict(programs=joined, completed=complete, reference=reference, stable=stable)

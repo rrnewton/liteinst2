@@ -183,13 +183,11 @@ def authenticate(ctx, a, legacy, args, store, reference):
     def materials(program):
         return material.derive(ctx,a,profile,program,inputs[program])
     def stable():
-        store.verify()
-        need(rooted.configurations(ctx,captured,profile=rooted.COMMENT_PROFILE)==configs,
-             'original-facts configuration drift')
-        custody.source_profile(ctx,pins,plan['env'])
+        return custody.verify_stability(ctx,pins,store,captured,rooted,configs)
     stable()
     return dict(inputs=inputs,materials=materials,capture_profile=profile,summary=dict(schema=SCHEMA,
         profile=profile,linker=str(ctx.ROOT/linker_relative(profile)),source_revision=closed['source_revision'],
         revision=closed['revision'],phase_count=len(expected),phases_passed=len(expected),configuration_complete=True,
         configurations=configs,artifact_producer_dispatches=0,native_dispatches=0,
-        qualification_complete=False,closure_sha256=reference['sha256']),stable=stable)
+        qualification_complete=False,closure_sha256=reference['sha256']),stable=stable,
+        stability=custody.stability_inputs(ctx,pins,store,captured,configs,rooted.COMMENT_PROFILE))

@@ -6,6 +6,7 @@ Existing package, saved-reader, bootstrap and observer controls remain unchanged
 """
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -19,6 +20,12 @@ import final_admission as A
 import final_bootstrap as B
 import final_platform as P
 import package as R
+
+# Use the real common composition join in this already-mocked build fixture.
+_custody_path = Path(__file__).resolve().parents[1]/'adjacent-b2/artifact-verifier/startup_custody.py'
+_custody_spec = importlib.util.spec_from_file_location('_final_control_custody', _custody_path)
+C = importlib.util.module_from_spec(_custody_spec)
+_custody_spec.loader.exec_module(C)
 
 
 def pin(path='/private/output.so', mode=stat.S_IFREG | 0o400, inode=2, raw=b'ELF'):
@@ -271,7 +278,9 @@ class SavedBootstrap(unittest.TestCase):
             B.need(P.decode(store.read(directory/'command.json',B.MIB))==command,'fixture raw command join')
             return 0,dict(stdout=b'artifact',stderr=b'')
         custody=types.SimpleNamespace(absolute=lambda path:Path(path),digest=P.digest,json_value=P.decode,
-            source_profile=lambda *args:'a'*40,stamp=A.stamp,closed=closed)
+            source_profile=lambda *args:'a'*40,stamp=A.stamp,closed=closed,join_stability=C.join_stability)
+        complete['stability']=C.stability_inputs(ctx,pins,store,complete['captured'],
+            complete['configurations'],complete['plan']['configuration_profile'])
         legacy=types.SimpleNamespace(request_and_command=request_and_command)
         driver=types.SimpleNamespace(source_snapshot=lambda *args:source_map)
         bootstrap=types.SimpleNamespace(build_plan=lambda *args:builds,artifact=lambda *args:root/'target/release/libliteinst_bootstrap.so')
