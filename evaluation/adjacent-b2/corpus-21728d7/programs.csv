@@ -1,0 +1,5 @@
+attempt_revision,program,expected_heads,expected_selected,observed_heads,observed_selected,material_calls,producer_dispatches,producer_exit,status,image_count,output_read_bytes,output_stability,selection_sha256,failure,baseline_calls,combined_image_work_upper_bound,debug_association_verified,joint,legacy_image_slots,lower,pair_calls,upper
+6cf74f9241ffb9f6ff75786b3819d189d2acd57c,checksum,80,16,,,1,0,,FAILED,,13106,VERIFIED,,"{""detail"":""material: unchanged cap-1 allocation"",""error"":""Failure"",""stage"":""material""}",,,,,,,,
+6cf74f9241ffb9f6ff75786b3819d189d2acd57c,rle-roundtrip,107,26,,,1,0,,FAILED,,17093,VERIFIED,,"{""detail"":""material: unchanged cap-1 allocation"",""error"":""Failure"",""stage"":""material""}",,,,,,,,
+21728d7aea329f36e34bb456d4ad90bfcf9c15c1,checksum,80,16,80,16,1,1,2,PRODUCER_REFUSED,0,1345717,VERIFIED,94cfa21c0a9b05e11521c55c6f41b67760361db26477c8886944d6e0e6874445,,16,28,False,0,28,0,0,0
+21728d7aea329f36e34bb456d4ad90bfcf9c15c1,rle-roundtrip,107,26,107,26,1,1,2,PRODUCER_REFUSED,0,2074273,VERIFIED,1c69ce16144489ff75be7a4d6facb735b7b7f1f5f4e9bc5233d787014971cfde,,26,38,False,0,38,0,0,0

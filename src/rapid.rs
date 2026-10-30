@@ -947,7 +947,7 @@ mod tests {
                 let mapping = DualMapping::new();
                 let (plan, placeholder, code, _expected) = plan_fixture(&mapping);
                 let target_address = plan.target_address();
-                placeholder.release();
+                // Keep the target page owned through every rejection assertion.
                 let expected: [u8; NEAR_JUMP_BYTES] = code[..NEAR_JUMP_BYTES].try_into().unwrap();
                 let mut observed = expected;
                 observed[window_offset] = observed[window_offset].wrapping_add(1);
@@ -978,7 +978,8 @@ mod tests {
                         } if error_expected == expected && error_observed == observed
                     ));
                 }
-                assert_eq!(permissions(target_address), None);
+                assert_eq!(permissions(target_address).as_deref(), Some("---p"));
+                placeholder.release();
             }
         }
 
@@ -988,7 +989,7 @@ mod tests {
             let mapping = DualMapping::new();
             let (plan, placeholder, code, _expected) = plan_fixture(&mapping);
             let target_address = plan.target_address();
-            placeholder.release();
+            // Keep the target page owned through every rejection assertion.
             let execute_address = usize::try_from(mapping.executable_address(SITE_OFFSET)).unwrap();
             let tail_address = execute_address + NEAR_JUMP_BYTES - 1;
             let blocker =
@@ -1013,7 +1014,8 @@ mod tests {
             unsafe { &*tail }.store(original_tail, Ordering::Release);
             blocker.finish();
             assert!(matches!(error, RapidToggleError::OverlappingPatchSite));
-            assert_eq!(permissions(target_address), None);
+            assert_eq!(permissions(target_address).as_deref(), Some("---p"));
+            placeholder.release();
         }
 
         #[test]

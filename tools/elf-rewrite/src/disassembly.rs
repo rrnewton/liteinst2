@@ -202,6 +202,16 @@ impl Disassembly {
         expected_policy: ContentId,
         mode: NeighborMode,
     ) -> Result<DisassemblySelection, Error> {
+        self.bind_with_manifest_extra(policy, expected_policy, mode, None)
+    }
+
+    fn bind_with_manifest_extra(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+        mode: NeighborMode,
+        extra: Option<&str>,
+    ) -> Result<DisassemblySelection, Error> {
         check(policy.len() <= TEXT_LIMIT, "policy size")?;
         check(ContentId::of(policy) == expected_policy, "policy digest")?;
         let rows = rows(policy)?;
@@ -317,18 +327,31 @@ impl Disassembly {
         }
         // Inherit every old numeric ceiling, exact record cardinality and permit
         // check. No zero-site success or overflowing whole-program batching.
+        let projection = manifest.clone();
+        if let Some(extra) = extra {
+            let pivot = "pending-selected full-instruction-ownership\n";
+            check(
+                mode == NeighborMode::ShortT3Pending,
+                "adjacent projection mode",
+            )?;
+            let full = manifest.replacen(pivot, &(pivot.to_owned() + extra), 1);
+            check(full.len() <= TEXT_LIMIT, "whole selection exceeds 1 MiB")?;
+            manifest = full;
+        }
+        // Check the FULL new bytes before invoking the old projection parser.
         let mut selection = match mode {
-            NeighborMode::LongOnly => selection::parse(manifest.as_bytes())?,
+            NeighborMode::LongOnly => selection::parse(projection.as_bytes())?,
             NeighborMode::ShortOnly => {
-                selection::parse_short_neighbor_projection(manifest.as_bytes())?
+                selection::parse_short_neighbor_projection(projection.as_bytes())?
             }
             NeighborMode::ShortT3Ownership => {
-                selection::parse_short_t3_ownership_projection(manifest.as_bytes())?
+                selection::parse_short_t3_ownership_projection(projection.as_bytes())?
             }
             NeighborMode::ShortT3Pending => {
-                selection::parse_short_t3_pending_projection(manifest.as_bytes())?
+                selection::parse_short_t3_pending_projection(projection.as_bytes())?
             }
         };
+        selection.manifest = manifest.into_bytes();
         check(
             selection.sites.len() == self.jumps.len(),
             "selection denominator",
@@ -601,6 +624,9 @@ fn check(ok: bool, why: &'static str) -> Result<(), Error> {
         Err(Error::new("disassembly", why))
     }
 }
+
+pub mod adjacent_b2;
+pub use adjacent_b2::{AdjacentB2DisassemblySelection, AdjacentB2Limits};
 
 #[cfg(test)]
 mod tests;

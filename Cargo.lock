@@ -130,6 +130,7 @@ name = "liteinst-rewrite"
 version = "0.1.0"
 dependencies = [
  "iced-x86",
+ "libc",
  "liteinst-artifact",
  "liteinst2",
 ]

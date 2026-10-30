@@ -8,6 +8,9 @@
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
+#[path = "support/isolated_native_test.rs"]
+mod isolated_native_test;
+
 use liteinst2::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, LegalEntry,
     LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
@@ -59,6 +62,14 @@ struct Puzzle {
 
 #[test]
 fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
+    isolated_native_test::run(
+        "native_no_op_oracle_covers_same_site_upstream_and_every_entry",
+        "LITEINST2_QUIESCENT_ORACLE_CHILD",
+        native_no_op_oracle_covers_same_site_upstream_and_every_entry_body,
+    );
+}
+
+fn native_no_op_oracle_covers_same_site_upstream_and_every_entry_body() {
     let mut puzzles = vec![
         Puzzle {
             name: "same-site-gprs-flags-data-redzone".into(),
@@ -403,6 +414,14 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
 
 #[test]
 fn native_no_op_oracle_covers_generalized_puns_and_unchanged_successors() {
+    isolated_native_test::run(
+        "native_no_op_oracle_covers_generalized_puns_and_unchanged_successors",
+        "LITEINST2_QUIESCENT_ORACLE_CHILD",
+        native_no_op_oracle_covers_generalized_puns_and_unchanged_successors_body,
+    );
+}
+
+fn native_no_op_oracle_covers_generalized_puns_and_unchanged_successors_body() {
     // The bytes after each first instruction freeze the high rel32 bytes.
     // These four independently chosen streams force disjoint far windows,
     // away from adjacent loader mappings and the relocation corpus's targets.
@@ -630,6 +649,14 @@ fn native_no_op_oracle_covers_generalized_puns_and_unchanged_successors() {
 
 #[test]
 fn native_no_op_oracle_preserves_synchronous_fault_state() {
+    isolated_native_test::run(
+        "native_no_op_oracle_preserves_synchronous_fault_state",
+        "LITEINST2_QUIESCENT_ORACLE_CHILD",
+        native_no_op_oracle_preserves_synchronous_fault_state_body,
+    );
+}
+
+fn native_no_op_oracle_preserves_synchronous_fault_state_body() {
     // MOV EAX,0; MOV RAX,[RAX]; RET. The 3-byte load plus RET cannot host a
     // same-site patch, forcing the five-byte zeroing prefix before the hook.
     // The only permitted external entry is offset 0; the fault is at offset 5.
@@ -742,6 +769,14 @@ fn native_no_op_oracle_preserves_synchronous_fault_state() {
 
 #[test]
 fn native_no_op_oracle_preserves_generalized_pun_fault_state() {
+    isolated_native_test::run(
+        "native_no_op_oracle_preserves_generalized_pun_fault_state",
+        "LITEINST2_QUIESCENT_ORACLE_CHILD",
+        native_no_op_oracle_preserves_generalized_pun_fault_state_body,
+    );
+}
+
+fn native_no_op_oracle_preserves_generalized_pun_fault_state_body() {
     // The original zeroing prefix remains in place. Only the three-byte load
     // becomes a generalized pun; RET and authenticated padding freeze its high
     // displacement bytes, and the four-byte store must preserve the RET pad.

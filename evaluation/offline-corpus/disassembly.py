@@ -480,3 +480,44 @@ def attempt(program, inputs, expected, *, profile=PROFILE):
     result['observed_input_bytes'] = {k: len(v) if type(v) is bytes else None for k, v in inputs.items()}
     result['expected_input_sha256'] = dict(expected)
     return result
+
+
+# This named profile has independently declared adjacent work. Existing attempt()
+# branches, 16 MiB / 2 GiB policies, cap-1 allocation rows and results stay literal.
+ADJACENT_B2_PROFILE = 'offline-whole-authored-adjacent-b2-short-t3-pending-2g-v1'
+
+
+def attempt_adjacent_b2(program, inputs, expected, *, upper, lower, joint):
+    """One prospective material binding; no planner is called and no retry occurs."""
+    # Labels exist before validation, including the budget-refusal path.
+    labels = dict(profile=ADJACENT_B2_PROFILE, adjacent_b2='fallback-two-site-v1',
+                  adjacent_upper=upper, adjacent_lower=lower, adjacent_joint=joint,
+                  neighbor_victims='short-only', neighbor_ownership='inherited-t3',
+                  pending_selected='full-instruction-ownership',
+                  qualification_complete=False)
+    if (any(type(n) is not int or not 0 <= n <= 256 for n in (upper, lower, joint))
+            or joint > upper):
+        return dict(labels, program=program, status='MATERIALS_REFUSED', files={},
+                    source_expected_heads=COUNTS[program][0],
+                    source_expected_jumps=COUNTS[program][1],
+                    roster_checked_heads=None, roster_checked_jumps=None,
+                    importer_verified=False,
+                    failure=dict(stage='adjacent-budgets', error='ValueError'))
+    result = attempt(program, inputs, expected, profile=SHORT_T3_PENDING_PROFILE)
+    result.update(labels)
+    if result['status'] == 'MATERIALS_READY':
+        rows = result['files']['policy.txt'].decode('ascii').splitlines()
+        assert rows[0] == 'LI2DISASM-POLICY 4'
+        assert rows[3:6] == ['neighbor-victims short-only',
+                            'neighbor-ownership inherited-t3',
+                            'pending-selected full-instruction-ownership']
+        rows[0] = 'LI2DISASM-POLICY 5'
+        rows[6:6] = ['adjacent-b2 fallback-two-site-v1',
+                     f'adjacent-b2-budgets {upper} {lower} {joint}']
+        policy = ('\n'.join(rows) + '\n').encode('ascii')
+        if len(policy) > CAP:
+            result['status'] = 'MATERIALS_REFUSED'
+            result['failure'] = dict(stage='adjacent-policy-bound', error='ValueError')
+            # Retain the exact attempted full bytes as diagnostic evidence.
+        result['files']['policy.txt'] = policy
+    return result
