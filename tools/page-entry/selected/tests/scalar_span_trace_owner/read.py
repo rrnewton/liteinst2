@@ -367,8 +367,25 @@ class Check(old.Check):
             fetch=self.f(self.b,'spto_wire','terminal_fetch');self.eq(fetch,'li2_fetch_progress',held=0,complete=1,first_error=0,first_detail=0)
         chain=self.f(self.b,'spto_wire','terminal_chain');self.eq(chain,'li2_tf_chain',initialized=1,first_error=0,first_detail=0,pending=0,in_handler=0)
         for slot in self.r.items(chain,'li2_tf_chain','slots','li2_tf_chain_slot'):
-            phase=self.i(slot,'li2_tf_chain_slot','phase');need(phase in(0,5,6),'no terminal live ordinary permission owner')
-            if phase in(5,6):self.eq(self.f(slot,'li2_tf_chain_slot','release'),'li2_chain_release',started=1,complete=1,result=0);self.eq(self.f(self.f(slot,'li2_tf_chain_slot','fetch'),'li2_chain_fetch','progress'),'li2_fetch_progress',held=0,complete=1,first_error=0,first_detail=0)
+            # This finite boundary has two CLOSED owners, not the old terminal
+            # unexecuted FALLBACK. Keep the complete close/query/release proof.
+            self.eq(slot,'li2_tf_chain_slot',phase=5,fallback=0,unexpected_frame_observed=0)
+            owner=self.f(slot,'li2_tf_chain_slot','owner');step=self.f(owner,'li2_tf_owner','step')
+            self.eq(step,'li2_step_owner',phase=5,first_error=0,first_detail=0,in_handler=0,
+                trace_seen=1,revoke_sync_started=1,open_sync=0,revoke_sync=0)
+            self.eq(owner,'li2_tf_owner',continuation_started=1,continuation_complete=1,continuation_result=0,unexpected_frame_observed=0)
+            request=self.f(step,'li2_step_owner','request');pages=self.i(request,'li2_step_request','page_count')
+            need(pages in(1,2),'actual bounded terminal source bundle')
+            for key in ('open_started','opened','revoke_started','revoked'):
+                need(struct.unpack('<2I',self.f(step,'li2_step_owner',key))==tuple(int(i<pages)for i in range(2)),
+                     'entire terminal source permission mask closed')
+            for key in ('open_result','revoke_result'):zero(self.f(step,'li2_step_owner',key),'all actual terminal permission results')
+            query=self.f(slot,'li2_tf_chain_slot','query')
+            self.eq(query,'li2_tf_continuation',attempted=1,page_observed=1,complete=1,result=0,pc=self.i(owner,'li2_tf_owner','actual_post_pc'))
+            self.eq(self.f(slot,'li2_tf_chain_slot','release'),'li2_chain_release',started=1,complete=1,result=0)
+            fetch=self.f(slot,'li2_tf_chain_slot','fetch');ref=self.f(fetch,'li2_chain_fetch','ref')
+            seq=self.i(ref,'li2_fetch_ref','sequence');need(seq>0,'actual retained released borrow')
+            self.eq(self.f(fetch,'li2_chain_fetch','progress'),'li2_fetch_progress',held=0,complete=1,first_error=0,first_detail=0,sequence=seq)
         need(self.i(self.f(chain,'li2_tf_chain','entry'),'li2_tf_trace_entry','valid')==0,'no terminal one-use ordinary capability')
         need(not self.i(self.f(chain,'li2_tf_chain','lease'),'li2_tf_same_page','origin_active'),'no terminal same-page permission lease')
         return dict(control=self.control,entry=entry,outcome=outcome,summary=c,events=events,original_sha256=hashlib.sha256(self.r.data).hexdigest(),_check=self)
@@ -412,6 +429,26 @@ def read(data,layout,image,app,pid,cpu,exit_status,control=0):
     return Check(wire.Reader(data,layout),image,app,pid,cpu,control).finish(exit_status)
 
 
+def chain_report(r,b,outcome):
+    f,i=r.field,r.integer;t='li2_tf_chain'
+    row=dict(version=1,scope='opt_in_same_page_tf_lease',**outcome)
+    mapping={'active':'active','pending':'pending','error':'first_error','event':'event_id','sequence':'sequence','attempts':'attempts','steps':'steps','nx_entries':'nx_entries','trace_entries':'trace_entries','fallbacks':'fallbacks','preparations':'prepare_attempts','releases':'releases','unexpected':'unexpected_events'}
+    row.update({k:i(b,t,v)for k,v in mapping.items()});row['proof_valid']=i(f(b,t,'entry'),'li2_tf_trace_entry','valid')
+    for n,s in enumerate(r.items(b,t,'slots','li2_tf_chain_slot')):
+        st='li2_tf_chain_slot';owner=f(s,st,'owner');step=f(owner,'li2_tf_owner','step');d=f(s,st,'decoded');fetch=f(s,st,'fetch');progress=f(fetch,'li2_chain_fetch','progress');query=f(s,st,'query');release=f(s,st,'release')
+        values={k:i(s,st,v)for k,v in dict(phase='phase',origin='origin',fallback='fallback',generation='generation',event='event_id',prepare='prepare_attempted',prepared='prepare_complete',retry='retry',unexpected='unexpected_frame_observed').items()}
+        values.update({k:i(d,'li2_decoded',k)for k in('pc','code','length')})
+        values.update(owner_phase=i(step,'li2_step_owner','phase'),owner_error=i(step,'li2_step_owner','first_error'),trace=i(step,'li2_step_owner','trace_seen'),post_pc=i(owner,'li2_tf_owner','actual_post_pc'),borrow=i(f(fetch,'li2_chain_fetch','ref'),'li2_fetch_ref','sequence'),held=i(progress,'li2_fetch_progress','held'),fetch_error=i(progress,'li2_fetch_progress','first_error'),validations=i(progress,'li2_fetch_progress','validation_calls'),query=i(query,'li2_tf_continuation','attempted'),queried=i(query,'li2_tf_continuation','complete'),query_pc=i(query,'li2_tf_continuation','pc'),release=i(release,'li2_chain_release','started'),released=i(release,'li2_chain_release','complete'))
+        for k,member in(('open','open_started'),('opened','opened'),('revoke','revoke_started'),('revoked','revoked')):
+            a,z=struct.unpack('<2I',f(step,'li2_step_owner',member));need(a in(0,1)and z in(0,1),'actual permission bit pair');values[k]=a|(z<<1)
+        row.update({'s'+str(n)+'_'+k:v for k,v in values.items()})
+    lease=f(b,t,'lease');lt='li2_tf_same_page'
+    for key,field in dict(phase='phase',active='origin_active',candidates='candidates',misses='misses',transfers='transfers',closed='closed_leases',event='completed_event').items():row['lease_'+key]=i(lease,lt,field)
+    transfer=f(lease,lt,'transfer')
+    for key,field in dict(phase='phase',before='before_sequence',after='after_sequence').items():row['lease_fetch_'+key]=i(transfer,'li2_fetch_rx_view',field)
+    return row
+
+
 def terminal(parsed,owner):
     """Bind exact newly reported rows and old physical/rseq rows to raw capture.
 
@@ -432,7 +469,9 @@ def terminal(parsed,owner):
     current=dict(version=1,status=outcome['status'],failure_code=outcome['failure_code'],
         **{k:f.integer(k)for k in 'attempts current_stages current_seeds physical_fallbacks retained_stages retained_checks commits cancels first_error'.split()},
         first_detail_abs=abs(f.signed('first_detail')),first_detail_negative=int(f.signed('first_detail')<0))
-    expected=dict(scalar_span=span,scalar_span_reuse=reuse,current_tf=current,**check.physical_rows(outcome))
+    chain=chain_report(check.r,check.f(check.b,'spto_wire','terminal_chain'),outcome)
+    lease={k:v for k,v in chain.items()if k.startswith('lease_')}
+    expected=dict(scalar_span=span,scalar_span_reuse=reuse,current_tf=current,chain=chain,lease=lease,**check.physical_rows(outcome))
     for key,value in expected.items():need(key in parsed and parsed[key]==value,'entire actual protected terminal row '+key)
     return dict(actual_terminal_rows=len(expected),whole_focal_transfer=1,whole_program_qualification=0)
 

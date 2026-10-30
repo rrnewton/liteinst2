@@ -11,6 +11,9 @@ import current_custody_reports as current
 import scalar_reuse_reports as reuse
 import scalar_reuse_performance_reports as scalar_current
 import unrolled_hash_app_reports as application
+import scalar_span_trace_cache_reports as prior_cache
+import scalar_span_trace_repeat_reports as prior_repeat
+import scalar_span_trace_chain_reports as prior_chain
 
 old,maps_view,cost,unrolled=reuse.prior,reuse.maps_view,reuse.cost,reuse.unrolled
 H=reuse.H
@@ -24,7 +27,8 @@ ARRAYS=dict(transfer=19,signals=5,refusals=4,exit_indices=8,current=34)
 OUTCOME=('status','failure_code','detail_abs','detail_negative')
 SPAN_ROW_REFUSALS=59
 CURRENT_ROW_REFUSALS=26
-CONTROL_COUNTS={(0,0):152,(1,0):152,(2,0):152,(3,0):150,(0,1):150}
+NATIVE_ROW_REFUSALS=20
+CONTROL_COUNTS={(0,0):305,(1,0):305,(2,0):305,(3,0):287,(0,1):287}
 
 
 def split(stderr):
@@ -91,7 +95,8 @@ def check(stderr,pid,exit_status,parent,images,image_bytes,carrier,carrier_bytes
     row,suffix=unrolled.split(suffix);current_row,suffix=current.split_current(suffix)
     view,original=maps_view.split_report(suffix,'maintained')
     parsed=old.reports(original);old.extensions(parsed)
-    _,same,gate=old.gate(parsed,pid,exit_status,parent,0)
+    _,same,gate=old.gate(parsed,pid,exit_status,parent,0,cache_completed=prior_cache.completed,
+        chain_closure=lambda loader,c:prior_chain.completed(loader,c,span))
     need(same is parsed and all(all(value[k]==parsed['loader'][k]for k in OUTCOME)
          for value in (span,retirement,scalar,scalar_retirement,row))and
          current_row['status']==exit_status and current_row['failure_code']==parsed['loader']['failure_code'],
@@ -99,6 +104,7 @@ def check(stderr,pid,exit_status,parent,images,image_bytes,carrier,carrier_bytes
     parsed.update(scalar_span=span,scalar_span_reuse=retirement,current_tf=current_row,
                   scalar_region=scalar,scalar_reuse=scalar_retirement,unrolled=row)
     joined=owner_reader.terminal(parsed,owner)
+    prior_chain.quiet(parsed['loader'],parsed['chain'],span)
     reuse.prior_unrolled(row);prior_scalar(scalar,scalar_retirement)
     # Span preentry precedes both old observers. A required fault/nested event
     # terminates there, so exactly that final event never reaches either old
@@ -110,13 +116,13 @@ def check(stderr,pid,exit_status,parent,images,image_bytes,carrier,carrier_bytes
          'exact preentry-order signal partition including the nonreturning final span event')
     need(current_row['first_error']==current_row['first_detail_abs']==current_row['first_detail_negative']==0,
          'current custody stayed error-free before the distinct focal span outcome')
-    summary=dict(application_completed=exit_status==0,gate=gate,repeat_lease=application.unused_repeat(parsed),
+    summary=dict(application_completed=exit_status==0,gate=gate,repeat_lease=prior_repeat.completed(parsed,pid,images,image_bytes,carrier,carrier_bytes),
         input_authentication=cost._retained_inputs(images,image_bytes,carrier,carrier_bytes),maps_view=view,
         terminal_join=joined,required_refusal=int(exit_status==125),whole_program_qualification=False)
     if exit_status==0:
         reuse.scalar_completed(scalar,scalar_retirement);unrolled.completed(row,False)
         summary.update(lease=old.lease.counters(parsed),trace_run=old.trace_completed(parsed),
-            native_pair=old.pair_completed(parsed,pid),cache_reuse=old.reuse_completed(parsed['run'],parsed['reuse']))
+            native_pair=old.pair_completed(parsed,pid),cache_reuse=prior_cache.completed(parsed['run'],parsed['reuse']))
         # The fixture has the exact original successful partition:67 CPUID;
         # identity/getcpu3,XCOMP2,machine6,map/protect4,writes2,getcpu1,unmap2.
         # Native-only signal setup and source protection never run gated.
@@ -208,7 +214,64 @@ def controls(stderr,*args):
         ('current_misplaced',b'\n'.join([lines[1],lines[0]]+lines[2:])+b'\n'),
         ('current_truncated',stderr[:-1]),('current_duplicate_key',lines[0][:-1]+b',"version":1}\n'+b'\n'.join(lines[1:])+b'\n')])
     need(len(current_trials)==CURRENT_ROW_REFUSALS,'all26 additional current-row refusals')
-    all_trials=trials+new+current_trials
+    # Every emitted native field is joined to the actual protected terminal
+    # observation. Keep this population separate from all original controls.
+    native_trials=[]
+    need(len(parsed['native'])==NATIVE_ROW_REFUSALS,'all20 actual native terminal fields')
+    for key in parsed['native']:
+        value=copy.deepcopy(parsed['native'])
+        if key=='revisit_ns':
+            if value[key]:value[key][0]^=1
+            else:value[key]=[1]
+        else:value[key]^=1
+        changed('native_'+key,b'LI2_NATIVE ',value,native_trials)
+    # Also require each native field to reach the full protected equality,
+    # even if its raw report mutation is rejected earlier by a schema gate.
+    def protected_refusal(key,value):
+        v=dict(parsed);v[key]=value;caught=False
+        try:args[-2].terminal(v,args[-3])
+        except ValueError as error:caught=str(error)=='entire actual protected terminal row '+key
+        need(caught,'every supplied '+key+' field reaches its full protected equality')
+    for _,data in native_trials:
+        line=next(x for x in data.splitlines()if x.startswith(b'LI2_NATIVE '))
+        protected_refusal('native',json.loads(line[len(b'LI2_NATIVE '):]))
+    chain_trials=[]
+    need(len(parsed['chain'])==prior_chain.ROW_CONTROL_COUNT,'all88 actual chain/slot/lease terminal fields')
+    for key in parsed['chain']:
+        value=dict(parsed['chain']);value[key]='invalid_scope'if key=='scope'else value[key]^1
+        protected_refusal('chain',value)
+        changed('chain_field_'+key,b'LI2_CHAIN ',value,chain_trials)
+    structural_trials=[]
+    if parsed['loader']['status']==0:
+        for name,loader_value,chain_value in prior_chain.mutations(parsed['loader'],parsed['chain']):
+            caught=False
+            try:prior_chain.completed(loader_value,chain_value,span)
+            except ValueError:caught=True
+            need(caught,'new finite TRACE conservation predicate refuses '+name)
+            data=list(lines)
+            for prefix,value in ((b'LI2_LOADER ',loader_value),(b'LI2_CHAIN ',chain_value)):
+                at=next(i for i,line in enumerate(data)if line.startswith(prefix))
+                data[at]=prefix+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
+            structural_trials.append((name,b'\n'.join(data)+b'\n'))
+    need(len(chain_trials)==prior_chain.ROW_CONTROL_COUNT and
+         len(structural_trials)==(prior_chain.CONTROL_COUNT if parsed['loader']['status']==0 else 0),
+         'every chain field and each applicable finite conservation obligation')
+    cache_trials=[]
+    if parsed['loader']['status']==0:
+        for name,run_value,reuse_value in prior_cache.mutations(parsed['run'],parsed['reuse']):
+            data=list(lines)
+            for prefix,value in ((b'LI2_RUN ',run_value),(b'LI2_RUN_REUSE ',reuse_value)):
+                places=[i for i,line in enumerate(data)if line.startswith(prefix)]
+                need(len(places)==1,'one actual old-cache supplied target')
+                data[places[0]]=prefix+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
+            cache_trials.append((name,b'\n'.join(data)+b'\n'))
+    need(len(native_trials)==NATIVE_ROW_REFUSALS and
+         len(cache_trials)==(prior_cache.CONTROL_COUNT if parsed['loader']['status']==0 else 0),
+         'all actual native fields and applicable finite prior-cache obligations')
+    repeat_trials=[]
+    for name,value in prior_repeat.mutations(parsed):changed(name,b'LI2_REPEAT_LEASE ',value,repeat_trials)
+    need(len(repeat_trials)==29,'all29 prior completed REP controls')
+    all_trials=trials+new+current_trials+native_trials+cache_trials+chain_trials+structural_trials+repeat_trials
     need(len(all_trials)==len({n for n,_ in all_trials})==CONTROL_COUNTS[(args[-1],args[-3]['control'])],
          'complete exact finite terminal-control population')
     names=[]
@@ -221,4 +284,8 @@ def controls(stderr,*args):
             else:rejected=name not in specific or str(error)=='exact application publication and unpatched class accounting'
         need(rejected,'complete TRACE terminal reader refuses '+name);names.append(name)
     return dict(refusals=names,legacy_refusals=names[:legacy],span_refusals=names[legacy:legacy+SPAN_ROW_REFUSALS],
-        current_row_refusals=names[legacy+SPAN_ROW_REFUSALS:],native_operations=0,original_stderr_sha256=H(stderr))
+        current_row_refusals=names[legacy+SPAN_ROW_REFUSALS:legacy+SPAN_ROW_REFUSALS+CURRENT_ROW_REFUSALS],
+        native_refusals=names[legacy+SPAN_ROW_REFUSALS+CURRENT_ROW_REFUSALS:legacy+SPAN_ROW_REFUSALS+CURRENT_ROW_REFUSALS+NATIVE_ROW_REFUSALS],
+        prior_cache_refusals=[name for name,_ in cache_trials],
+        chain_row_refusals=[name for name,_ in chain_trials],chain_refusals=[name for name,_ in structural_trials],
+        prior_repeat_refusals=names[-29:],native_operations=0,original_stderr_sha256=H(stderr))

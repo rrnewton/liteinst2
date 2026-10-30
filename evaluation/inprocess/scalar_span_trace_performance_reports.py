@@ -13,9 +13,12 @@ import current_custody_reports as current
 import scalar_reuse_reports as reuse
 import scalar_reuse_performance_reports as scalar
 import scalar_span_trace_reports as fixture
+import scalar_span_trace_release_chain as chain_reports
 
 SPAN_CONTROL_COUNT=113
 CURRENT_CONTROL_COUNT=26
+CHAIN_CONTROL_COUNT=11
+SUPPLIED_LEASE_CONTROL_COUNT=2
 
 
 def current_completed(row):
@@ -85,9 +88,10 @@ def check(stdout,stderr,args,kind,lane):
     need(lane in('span-trace','differential'),'explicit genuine-TRACE span release profile')
     span,retirement,suffix=fixture.split(stderr)
     current_row,scalar_suffix=current.split_current(suffix)
-    parsed,summary,view,unrolled,prior,prior_retirement=scalar.check(
-        stdout,scalar_suffix,args,kind,'differential'if lane=='differential'else'scalar-reuse')
     current_completed(current_row);completed(span,retirement)
+    parsed,summary,view,unrolled,prior,prior_retirement=scalar.check(
+        stdout,scalar_suffix,args,kind,'differential'if lane=='differential'else'scalar-reuse',
+        chain_closure=lambda loader,c:chain_reports.completed(loader,c,span))
     need(all(span[k]==retirement[k]==parsed['loader'][k]for k in fixture.OUTCOME)and
          current_row['status']==parsed['loader']['status']and
          current_row['failure_code']==parsed['loader']['failure_code'],
@@ -99,11 +103,12 @@ def check(stdout,stderr,args,kind,lane):
 
 
 def controls(stdout,stderr,args,kind,lane):
-    _,_,_,unrolled,prior,_,current_row,span,retirement=check(stdout,stderr,args,kind,lane)
+    parsed,_,_,unrolled,prior,_,current_row,span,retirement=check(stdout,stderr,args,kind,lane)
     _,_,without_span=fixture.split(stderr)
     _,without_current=current.split_current(without_span)
     inherited=scalar.controls(stdout,without_current,args,kind,
-        'differential'if lane=='differential'else'scalar-reuse')
+        'differential'if lane=='differential'else'scalar-reuse',
+        chain_closure=lambda loader,c:chain_reports.completed(loader,c,span))
     lines=stderr[:-1].split(b'\n');trials=[]
     def changed(name,prefix,value):
         rows=list(lines);places=[i for i,line in enumerate(rows)if line.startswith(prefix)]
@@ -183,6 +188,31 @@ def controls(stdout,stderr,args,kind,lane):
         try:check(stdout,value,args,kind,lane)
         except ValueError:caught=True
         need(caught,'complete TRACE release reader refuses '+name);current_refused.append(name)
+    # The pure source-derived predicate must reject for its exact new reason;
+    # the complete actual stream must also reject through every original gate.
+    chain_refused=[]
+    for name,loader,chain,changed_span,error in chain_reports.mutations(parsed['loader'],parsed['chain'],span):
+        caught=False
+        try:chain_reports.completed(loader,chain,changed_span)
+        except ValueError as exc:caught=str(exc)==error
+        need(caught,'exact release TRACE causal refusal '+name)
+        rows=list(lines)
+        for prefix,value in ((b'LI2_LOADER ',loader),(b'LI2_CHAIN ',chain),(fixture.PREFIX,changed_span)):
+            places=[i for i,line in enumerate(rows)if line.startswith(prefix)]
+            need(len(places)==1,'one original complete release TRACE mutation row')
+            rows[places[0]]=prefix+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
+        changed=b'\n'.join(rows)+b'\n';need(changed!=stderr,'actual release TRACE mutation changes bytes')
+        caught=False
+        try:check(stdout,changed,args,kind,lane)
+        except ValueError:caught=True
+        need(caught,'complete release TRACE reader refuses '+name);chain_refused.append(name)
+    need(len(chain_refused)==len(set(chain_refused))==CHAIN_CONTROL_COUNT==chain_reports.CONTROL_COUNT,
+         'eleven additional release TRACE chain controls without changing any old population')
+    supplied_lease=chain_reports.supplied_lease_controls()
+    need(len(supplied_lease['positive_controls'])==len(supplied_lease['refusals'])==
+         SUPPLIED_LEASE_CONTROL_COUNT==chain_reports.SUPPLIED_LEASE_CONTROL_COUNT,
+         'two separately counted supplied lease tuple controls')
     return dict(original=inherited['original'],scalar_reuse_refusals=inherited['scalar_reuse_refusals'],
-        current_refusals=current_refused,span_refusals=refused,native_operations=0,
+        current_refusals=current_refused,span_refusals=refused,chain_refusals=chain_refused,native_operations=0,
+        supplied_lease_controls=supplied_lease,
         original_stderr_sha256=reuse.H(stderr))

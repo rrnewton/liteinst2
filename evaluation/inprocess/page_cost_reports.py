@@ -76,7 +76,7 @@ def _retained_inputs(images, image_bytes, carrier, carrier_bytes):
 
 
 def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
-          carrier_bytes, *, workload):
+          carrier_bytes, *, workload, chain_closure=None):
     """Return actual parsed rows and closure only after exact application output."""
     need(workload in ('ls', 'true'), 'explicit whole-process ls or true subject')
     need(type(stdout) is bytes and stdout == (b'.\n' if workload == 'ls' else b''),
@@ -84,11 +84,11 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
     need(type(exit_code) is int and exit_code == 0, 'actual successful process required')
     if workload == 'ls':
         return original.check(stderr, pid, exit_code, parent, images, image_bytes,
-                              carrier, carrier_bytes, workload='ls')
+                              carrier, carrier_bytes, workload='ls',chain_closure=chain_closure)
 
     parsed = original.reports(stderr)
     original.extensions(parsed)
-    _, same, gate = original.gate(parsed, pid, exit_code, parent, 0)
+    _, same, gate = original.gate(parsed, pid, exit_code, parent, 0,chain_closure=chain_closure)
     need(same is parsed, 'original actual true report values retained')
     lease = original.lease.counters(parsed)
     original.effect_exit(parsed)
@@ -239,16 +239,16 @@ def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carr
 
 
 def supplied_controls(stdout, stderr, pid, exit_code, parent, images,
-                      image_bytes, carrier, carrier_bytes, *, workload):
+                      image_bytes, carrier, carrier_bytes, *, workload, chain_closure=None):
     """Supplied changes to accepted actual evidence; no additional native credit."""
     args = (pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes)
-    check(stdout, stderr, *args, workload=workload)
+    check(stdout, stderr, *args, workload=workload,chain_closure=chain_closure)
     actual_stdout, actual_stderr = H(stdout), H(stderr)
     if workload == 'ls':
-        result = original.supplied_controls(stderr, *args, workload='ls')
+        result = original.supplied_controls(stderr, *args, workload='ls',chain_closure=chain_closure)
     else:
         result = _terminal_controls(stderr, *args, workload='true',
-                                    read=partial(check, stdout))
+                                    read=partial(check, stdout, chain_closure=chain_closure))
     names = list(result['refusals'])
     for name, changed_stdout, changed_exit in (
             ('unexpected_stdout', stdout + b'!', exit_code),
@@ -256,7 +256,7 @@ def supplied_controls(stdout, stderr, pid, exit_code, parent, images,
         refused = False
         try:
             check(changed_stdout, stderr, pid, changed_exit, parent, images,
-                  image_bytes, carrier, carrier_bytes, workload=workload)
+                  image_bytes, carrier, carrier_bytes, workload=workload,chain_closure=chain_closure)
         except ValueError:
             refused = True
         need(refused, 'same complete reader refuses supplied ' + name)

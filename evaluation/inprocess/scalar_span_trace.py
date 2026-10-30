@@ -171,7 +171,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
         path=getattr(module,'__file__',None)
         if path and Path(path).is_file():pin(path)
     need(owner_reader.CONTROL_COUNTS=={(0,0):32,(1,0):32,(2,0):32,(3,0):33,(0,1):35},'literal finite protected refusal table')
-    need(reports.CONTROL_COUNTS=={(0,0):152,(1,0):152,(2,0):152,(3,0):150,(0,1):150},'literal finite terminal-refusal table')
+    need(reports.CONTROL_COUNTS=={(0,0):305,(1,0):305,(2,0):305,(3,0):287,(0,1):287},'literal finite terminal-refusal table')
     for c in r['cases']:
         lane,mode,control=c['lane'],c['mode'],c['control'];label=c['label'];c['status']='failed';directory=private/label;directory.mkdir()
         argv=[builder.tools['python'],'-B',launcher,'--root',ROOT,'--role',lane,'--mode',str(mode),'--control',str(control),
@@ -223,7 +223,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
          sum(c.get('application_controls',{}).get('supplied_refusals',0)for c in r['cases'])==112 and
          sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==164,
          'exact four native/owner pairs and112/164 evidence refusals')
-    need(sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==756,'exact fixed report-refusal population')
+    need(sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==1489,'exact fixed report-refusal population')
 
 
 def main():
@@ -299,7 +299,7 @@ def main():
         git=pin(shutil.which('git',path=ENV['PATH']))
         _,names,err=run('source-paths',[git,'-C',ROOT,'ls-files','-z','tools/page-entry','evaluation/inprocess']);need(not err,'source enumeration stderr')
         tracked={os.fsdecode(name)for name in names.split(b'\0')if name}
-        required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'scalar_span_trace_reports.py',HERE/'scalar_span_trace_build.py',HERE/'unrolled_hash_owner.py',HERE/'scalar_reuse_performance_reports.py',
+        required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'scalar_span_trace_reports.py',HERE/'scalar_span_trace_cache_reports.py',HERE/'scalar_span_trace_chain_reports.py',HERE/'scalar_span_trace_repeat_reports.py',HERE/'scalar_span_trace_build.py',HERE/'unrolled_hash_owner.py',HERE/'scalar_reuse_performance_reports.py',
             FIXTURE/'main.c',FIXTURE/'pure.c',FIXTURE/'pure.ld',FIXTURE/'machine.S',FIXTURE/'app.h',FIXTURE/'read.py',FIXTURE/'build.sh',FIXTURE/'launch.py',OWNER/'read.py',OWNER/'layout.py',OWNER/'wire.py',OWNER/'plan.py')}
         required|={str((SELECTED/'tests/provider_app/seed_probe'/n).relative_to(ROOT))for n in('probe.c','record.h','read.py','build.sh')}
         required.add(str((SELECTED/'tests/b2_reference/xstate.py').relative_to(ROOT)))

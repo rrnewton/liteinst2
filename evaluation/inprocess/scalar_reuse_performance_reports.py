@@ -32,11 +32,11 @@ def current(row):
         need(c==expected,'entire final non-entry prefix is canonical and owns no generated execution')
 
 
-def check(stdout,stderr,args,kind,lane):
+def check(stdout,stderr,args,kind,lane, *, chain_closure=None):
     need(lane in('scalar-reuse','differential'),'explicit scalar-reuse release profile')
     scalar,retirement,suffix=reuse.split(stderr)
     parsed,summary,view,unrolled,unused=old.check(stdout,suffix,args,kind,
-        'differential'if lane=='differential'else'unrolled')
+        'differential'if lane=='differential'else'unrolled',chain_closure=chain_closure)
     reuse.scalar_completed(scalar,retirement);current(scalar)
     need(all(scalar[k]==unrolled[k]==parsed['loader'][k]for k in
          ('status','failure_code','detail_abs','detail_negative')),
@@ -46,10 +46,10 @@ def check(stdout,stderr,args,kind,lane):
     return parsed,summary,view,unrolled,scalar,retirement
 
 
-def controls(stdout,stderr,args,kind,lane):
-    _,_,_,_,scalar,retirement=check(stdout,stderr,args,kind,lane)
+def controls(stdout,stderr,args,kind,lane, *, chain_closure=None):
+    _,_,_,_,scalar,retirement=check(stdout,stderr,args,kind,lane,chain_closure=chain_closure)
     _,_,suffix=reuse.split(stderr)
-    prior=old.controls(stdout,suffix,args,kind,'differential'if lane=='differential'else'unrolled')
+    prior=old.controls(stdout,suffix,args,kind,'differential'if lane=='differential'else'unrolled',chain_closure=chain_closure)
     lines=stderr[:-1].split(b'\n');trials=[]
     def changed(name,index,value):
         rows=list(lines);prefix=reuse.PREFIX if index==-2 else reuse.old.PREFIX
@@ -83,7 +83,7 @@ def controls(stdout,stderr,args,kind,lane):
     names=[]
     for name,data in trials:
         rejected=False
-        try:check(stdout,data,args,kind,lane)
+        try:check(stdout,data,args,kind,lane,chain_closure=chain_closure)
         except ValueError:rejected=True
         need(rejected,'complete release reader refuses supplied '+name);names.append(name)
     return dict(original=prior,scalar_reuse_refusals=names,native_operations=0,

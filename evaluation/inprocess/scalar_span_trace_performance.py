@@ -26,7 +26,11 @@ RECEIPTS=('current_component_receipt','current_owner_receipt','span_component_re
 REQUIRED=certificate.REQUIRED|custody.REQUIRED|set(component.LEAVES)|{
     'evaluation/inprocess/scalar_span_trace_performance.py',
     'evaluation/inprocess/scalar_span_trace_performance_reports.py',
+    'evaluation/inprocess/scalar_span_trace_release_chain.py',
     'evaluation/inprocess/scalar_span_trace.py','evaluation/inprocess/scalar_span_trace_reports.py',
+    'evaluation/inprocess/scalar_span_trace_cache_reports.py',
+    'evaluation/inprocess/scalar_span_trace_chain_reports.py',
+    'evaluation/inprocess/scalar_span_trace_repeat_reports.py',
     'evaluation/inprocess/scalar_span_trace_build.py','evaluation/inprocess/scalar_span_component.py',
     'tools/page-entry/selected/build-scalar-span-trace.sh',
     *('tools/page-entry/selected/'+name for name in
@@ -129,7 +133,7 @@ def span_trace(a,r,pin,binary):
     public,actual=reuse.closed(a.span_trace_receipt,r,pin,binary)
     expected=dict(planned=9,launched=9,qualified=9,native=4,gated=4,owner_controls=1,qualified_pairs=4,
         completed_applications=6,required_read_faults=1,required_reference_faults=1,required_owner_refusals=1,
-        application_reader_refusals=112,terminal_reader_refusals=756,owner_reader_refusals=164)
+        application_reader_refusals=112,terminal_reader_refusals=1489,owner_reader_refusals=164)
     need(public['profile']==actual['profile']=='scalar-span-trace-finite-v1'and
          public['status']==actual['status']=='passed'and digest(actual['totals'])==digest(expected)and
          digest(actual['bounds'])==digest(fixture.BOUNDS)and public['performance_credit']is False and
@@ -139,7 +143,7 @@ def span_trace(a,r,pin,binary):
     need(digest([(c['lane'],c['mode'],c['control'])for c in cases])==digest(list(fixture.ORDER)),
          'all four actual native/gated references and the nested refusal')
     owner_counts={(0,0):32,(1,0):32,(2,0):32,(3,0):33,(0,1):35}
-    terminal_counts={(0,0):152,(1,0):152,(2,0):152,(3,0):150,(0,1):150}
+    terminal_counts={(0,0):305,(1,0):305,(2,0):305,(3,0):287,(0,1):287}
     rows=[]
     for c in cases:
         lane,mode,control=c['lane'],c['mode'],c['control'];cmd=commands[c['label']]
@@ -221,7 +225,8 @@ def span_builder(private,pin,binary,aliases,run,r,builders):
 def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
     lanes,order,names=LANES,ORDER,NAMES
     active_build=build_span
-    need(reports.SPAN_CONTROL_COUNT==113 and reports.CURRENT_CONTROL_COUNT==26,
+    need(reports.SPAN_CONTROL_COUNT==113 and reports.CURRENT_CONTROL_COUNT==26 and reports.CHAIN_CONTROL_COUNT==11 and
+         reports.SUPPLIED_LEASE_CONTROL_COUNT==2,
          'exact source-bound additive span/current terminal populations')
     need(builder.extra_decoder_sources==()and builder.decoder_features==()and
          builder.record['decoder_features']==[],'old unrolled baseline uses the original default archive')
@@ -288,7 +293,10 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
                     parsed,summary,view,owner,scalar,retirement,current,span,span_reuse=reports.check(out,err,args,kind,lane)
                     controls=reports.controls(out,err,args,kind,lane)
                     need(len(controls['scalar_reuse_refusals'])==86 and len(controls['current_refusals'])==26 and
-                         len(controls['span_refusals'])==reports.SPAN_CONTROL_COUNT,
+                         len(controls['span_refusals'])==reports.SPAN_CONTROL_COUNT and
+                         len(controls['chain_refusals'])==reports.CHAIN_CONTROL_COUNT and
+                         len(controls['supplied_lease_controls']['positive_controls'])==
+                         len(controls['supplied_lease_controls']['refusals'])==reports.SUPPLIED_LEASE_CONTROL_COUNT,
                          'all old scalar/current and fixed additive span terminal refusals')
                     case.update(current=current,span=span,span_reuse=span_reuse)
                 routes=[parsed[k][f]for k,fields in maps.ROUTES.items()for f in fields]
@@ -359,6 +367,9 @@ def publish(path,r,private):
         controls[name]=dict(original=len(prior['original']['original']['refusals']),maps_view=len(prior['original']['maps_view_refusals']),
             unrolled=len(prior['unrolled_refusals']),scalar_reuse=len(v['scalar_reuse_refusals'])if span else 0,
             current=len(v['current_refusals'])if span else 0,span=len(v['span_refusals'])if span else 0,
+            chain=len(v['chain_refusals'])if span else 0,
+            supplied_lease_positive=len(v['supplied_lease_controls']['positive_controls'])if span else 0,
+            supplied_lease_refusals=len(v['supplied_lease_controls']['refusals'])if span else 0,
             raw_stderr_sha256=v['original_stderr_sha256'])
     value={k:r.get(k)for k in('schema','profile','status','expected_revision','source','source_unchanged','cleanup_complete','hardware','cpu',
         'bounds','reproduce','archive','region_archive','carriers','system_inputs','prerequisites')}
@@ -366,7 +377,7 @@ def publish(path,r,private):
     value.update(statistics=statistics_rows,quantiles='inclusive linear interpolation at (n-1)*p; ten samples per complete measured lane/workload',
         scope='Finite82 experiment:40 ordinary unrolled/span-TRACE, two span-TRACE differential validations, then40 fresh native/DynamoRIO samples. Ten exact same-revision/same-CPU prerequisites and six actual-TU maps cases are mandatory. Whole-profile comparison includes current custody and old scalar reuse; no certificate or observer-only subtraction.',
         timing_scope='Actual pre-Popen through reap includes startup/reporting. No medians/IQR/ratios unless all82, every prerequisite and final closure pass. Differential and DR identity diagnostics receive no timing credit. No fixed speed threshold.',
-        count_scope='Full actual producer rows are retained in shared-column counter tables. Successful observers have equal actual event/signal populations. Routes overlap and are not summed; physical fresh requests=refreshes+comparisons. Entries are not instruction counts or inferred traps saved. Absent current seeds/retained activity earns no current optimization credit. Native/DR have no invented counters.',
+        count_scope='Full actual producer rows are retained in shared-column counter tables. Successful observers have equal actual event/signal populations. Routes overlap and are not summed; physical fresh requests=refreshes+comparisons. Entries are not instruction counts or inferred traps saved. Absent current seeds/retained activity earns no current optimization credit. Chain closure uses the source-derived consumed-span/fallback domain, retains the original positive exhausted-cache gate, and is report-only evidence. Two supplied lease-tuple positives/refusals per span record are reported separately from actual-stream controls and confer no native credit. Native/DR have no invented counters.',
         qualification_scope='Finite9 establishes only its genuine TRACE paths. Full new-owner stale/repeated/capability/close/release/query/permission/retirement/late-fault/cache-generation qualification remains pending. Old43 is not a substitute; no landing or complete owner qualification is claimed.',
         complete_new_owner_qualification=False,
         sdk_scope='Existing exact DynamoRIO11.91.0 SDK and empty Release client. DR retains16GiB virtual address space; all other lanes512MiB. All previous failed cohorts remain failed.',
@@ -384,7 +395,8 @@ def publish(path,r,private):
         reader_controls=None,captures=None,
         case_error_types={str(c['ordinal']):c['error'].split(':',1)[0]for c in r['cases']if c.get('error')},
         error_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']))
-    control_fields=('original','maps_view','unrolled','scalar_reuse','current','span','raw_stderr_sha256')
+    control_fields=('original','maps_view','unrolled','scalar_reuse','current','span','chain',
+                    'supplied_lease_positive','supplied_lease_refusals','raw_stderr_sha256')
     control_rows=[[i,*[controls[name][k]for k in control_fields]]for i,name in enumerate(NAMES)if name in controls]
     need({NAMES[row[0]]:dict(zip(control_fields,row[1:],strict=True))for row in control_rows}==controls,
          'whole public control columns invert exactly to every actual control summary')
