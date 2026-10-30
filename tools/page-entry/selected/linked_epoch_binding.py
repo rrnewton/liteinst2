@@ -27,15 +27,21 @@ HINT_LEAVES = ('linked_native_hint.h', 'linked_native_hint.inc',
                'native_pair_controller.inc', 'build-linked-epoch-native-hint.sh')
 
 
+PREEDGE_LEAVES = ('linked_preedge_plan.h','linked_preedge_plan.c','linked_preedge_source.h',
+    'linked_preedge_source.inc','linked_preedge_rseq.h','linked_preedge_rseq.inc',
+    'linked_preedge_proof.h','build-linked-preedge.sh')
+
+
 def main():
-    native_hint = len(sys.argv) == 5 and sys.argv[4] == 'native-hint'
+    preedge = len(sys.argv) == 5 and sys.argv[4] == 'native-hint-preedge'
+    native_hint = preedge or len(sys.argv) == 5 and sys.argv[4] == 'native-hint'
     if len(sys.argv) != 4 and not native_hint:
         raise ValueError('selected directory, actual archive, existing output directory')
     selected, archive, output = (Path(x).resolve(strict=True) for x in sys.argv[1:4])
     if not selected.is_dir() or not archive.is_file() or not output.is_dir():
         raise ValueError('binding inputs')
     facts = []
-    for name in LEAVES + (HINT_LEAVES if native_hint else ()):
+    for name in LEAVES + (HINT_LEAVES if native_hint else ()) + (PREEDGE_LEAVES if preedge else ()):
         source = selected / name
         if source.is_symlink() or not source.is_file():
             raise ValueError('exact regular source')
@@ -48,6 +54,7 @@ def main():
         return '{' + ','.join('0x' + digest[i:i + 2] for i in range(0, 64, 2)) + '}'
     header = ('#ifndef LI2_LINKED_EPOCH_CONFIG_H\n#define LI2_LINKED_EPOCH_CONFIG_H\n'
               '#define LI2_LINK_BINDING_VERSION 1\n'
+              + ('#define LI2_LINK_PREEDGE_BINDING_VERSION 2\n' if preedge else '') +
               '#define LI2_LINK_ARCHIVE_SHA256 ' + literal(archive_hash) + '\n'
               '#define LI2_LINK_POLICY_SHA256 ' + literal(policy) + '\n#endif\n')
     (output / 'linked_epoch_config.h').write_text(header)

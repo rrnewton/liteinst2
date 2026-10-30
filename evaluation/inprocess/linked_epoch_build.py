@@ -26,15 +26,19 @@ POLICY_INPUTS=(
 )
 HINT_POLICY_INPUTS=POLICY_INPUTS+('linked_native_hint.h','linked_native_hint.inc',
     'native_pair_controller.inc','build-linked-epoch-native-hint.sh')
+PREEDGE_POLICY_INPUTS=HINT_POLICY_INPUTS+('linked_preedge_plan.h','linked_preedge_plan.c','linked_preedge_source.h',
+    'linked_preedge_source.inc','linked_preedge_rseq.h','linked_preedge_rseq.inc',
+    'linked_preedge_proof.h','build-linked-preedge.sh')
 CAPTURE_HEADERS=('linked_epoch_observe.h','linked_epoch_observe.inc','linked_refault_observe.h','linked_refault_observe.inc',
     'linked_epoch_observe_memory.h','linked_epoch_observe_memory.inc','unrolled_hash_nested_fp.h')
 
 
-def binding_config(builder,archive,output,pin,binary,run,*,native_hint=False):
+def binding_config(builder,archive,output,pin,binary,run,*,native_hint=False,preedge=False):
     """Run the source-owned binder, then independently authenticate every byte."""
     need(type(native_hint)is bool,'exact native-hint binding selector')
+    need(type(preedge)is bool and (not preedge or native_hint),'exact v2 pre-edge binding selector')
     values=[]
-    for name in HINT_POLICY_INPUTS if native_hint else POLICY_INPUTS:
+    for name in PREEDGE_POLICY_INPUTS if preedge else HINT_POLICY_INPUTS if native_hint else POLICY_INPUTS:
         path=pin(SELECTED/name);value=fact(path)
         if name in FIXED_DOMAIN:
             size,sha=FIXED_DOMAIN[name]
@@ -52,11 +56,12 @@ def binding_config(builder,archive,output,pin,binary,run,*,native_hint=False):
     header=output/'linked_epoch_config.h';manifest=output/'linked_epoch_binding.json'
     need(not header.exists()and not manifest.exists(),'fresh exclusive binding output paths')
     _,out,err=run('linked-policy-binding',[builder.tools['python'],'-B',SELECTED/'linked_epoch_binding.py',
-        SELECTED,archive,output,*(['native-hint']if native_hint else[])],env=builder.environment)
+        SELECTED,archive,output,*(['native-hint-preedge']if preedge else['native-hint']if native_hint else[])],env=builder.environment)
     need(out==err==b'','complete actual production policy binder without diagnostics')
     literal=lambda sha:'{'+','.join('0x'+sha[i:i+2]for i in range(0,64,2))+'}'
     expected=('#ifndef LI2_LINKED_EPOCH_CONFIG_H\n#define LI2_LINKED_EPOCH_CONFIG_H\n'
         '#define LI2_LINK_BINDING_VERSION 1\n'
+        + ('#define LI2_LINK_PREEDGE_BINDING_VERSION 2\n'if preedge else'') +
         '#define LI2_LINK_ARCHIVE_SHA256 '+literal(archive_fact['sha256'])+'\n'
         '#define LI2_LINK_POLICY_SHA256 '+literal(policy)+'\n#endif\n').encode()
     header=pin(binary(header));manifest=pin(binary(manifest))
@@ -123,8 +128,10 @@ def capture_config(path,output,pin,binary,reuse=False):
     return dict(image=fact(path),head_rva=pc,source_sha256=H(source),header=fact(header),path=str(header))
 
 
-def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False):
+def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False,preedge=False):
     need(type(native_hint)is bool,'exact distinct native-hint build selector')
+    need(type(preedge)is bool and (not preedge or native_hint and not graph_observe and
+         extra==()and capture_image is None),'explicit release-only pre-edge v2 profile; old capture is rejected')
     need(type(graph_observe)is bool and (not graph_observe or
          native_hint and extra==()and capture_image is None),'release-only native-hint graph observer')
     need(builder.linked_epoch is True and builder.scalar_span is True and builder.extra_decoder_sources==('region.rs',)and
@@ -137,26 +144,34 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     need(extra in((),('MAPS_DIFFERENTIAL',),('LINKED_EPOCH_CAPTURE',),('LINKED_EPOCH_CAPTURE','LINKED_EPOCH_REUSE_CAPTURE')),'exact normal, differential or finite capture profile')
     reuse=extra==('LINKED_EPOCH_CAPTURE','LINKED_EPOCH_REUSE_CAPTURE');capture='LINKED_EPOCH_CAPTURE'in extra
     need((capture_image is not None)==capture,'fresh image iff explicit linked capture profile')
-    output=private/'release';output.mkdir();binding=binding_config(builder,archive,output,pin,binary,run,native_hint=native_hint)
+    output=private/'release';output.mkdir();binding=binding_config(builder,archive,output,pin,binary,run,native_hint=native_hint,preedge=preedge)
     config=capture_config(capture_image,output,pin,binary,reuse)if capture else None
-    script=pin(SELECTED/('build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-epoch-graph-observe.sh'if graph_observe else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
+    script=pin(SELECTED/('build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-preedge.sh'if preedge else'build-linked-epoch-graph-observe.sh'if graph_observe else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
     rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one exact linked runtime compiler recipe')
     argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$selected_dir':SELECTED,'$parent_dir':SELECTED.parent,
         '$archive':archive,'$output':output})
     if not capture:argv[1:1]=['-DLI2_'+x+'=1'for x in extra]
     elif native_hint:argv.insert(argv.index('-DLI2_LINKED_EPOCH=1'),'-DLI2_LINKED_NATIVE_HINT=1')
-    units=[str(SELECTED.parent/x)for x in UNITS]+[str(SELECTED/x)for x in('unrolled_hash_plan.c','region_plan.c','linked_plan.c')]
-    macros=(('LINK_GRAPH_OBSERVE',)if graph_observe else())+extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
+    units=[str(SELECTED.parent/x)for x in UNITS]+[str(SELECTED/x)for x in(('unrolled_hash_plan.c','region_plan.c','linked_plan.c','linked_preedge_plan.c')if preedge else('unrolled_hash_plan.c','region_plan.c','linked_plan.c'))]
+    macros=(('LINKED_PREEDGE',)if preedge else())+(('LINK_GRAPH_OBSERVE',)if graph_observe else())+extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
         'SCALAR_REGION','SCALAR_REGION_REUSE','INITIAL_CODE_PROTECTION','UNROLLED_HASH','MAPS_MAINTAINED')+MACROS
     need(argv[-2:]==['-o',str(output/'bridge-linked-epoch.so')]and
          [x for x in argv if x.endswith(('.c','.S'))]==units and
          [x for x in argv if x.startswith('-DLI2_')]==['-DLI2_'+x+'=1'for x in macros]and
          all(x in argv for x in('-O2','-g','-nostdlib','-shared','-fPIC','-fvisibility=hidden','-mgeneral-regs-only',
              '-fno-builtin','-fno-tree-loop-distribute-patterns','-fno-tree-vectorize','-Wall','-Wextra','-Werror')),
-         'exact21-TU linked runtime macro/feature/no-FP recipe')
+         'exact22-TU pre-edge runtime macro/feature/no-FP recipe'if preedge else'exact21-TU linked runtime macro/feature/no-FP recipe')
     state=r['release_build']=dict(status='failed',recipe=fact(script),archive=fact(archive),argv=argv,
         linked_binding=binding,capture_config=config)
     if native_hint:state['native_hint']=True
+    if preedge:
+        state['preedge']=dict(version=2,plan_bytes=40744,proof_payload_bytes=45288,capture=False)
+        donor=pin(SELECTED/'build-linked-epoch-native-hint.sh')
+        expected=donor.read_bytes().replace(b'# Distinct positive-native-receipt advisory; every actual NX admission remains mandatory.',b'# Distinct typed v2 pre-edge release profile; original NX cuts require separate qualification.',1)
+        expected=expected.replace(b'\"$output\" native-hint',b'\"$output\" native-hint-preedge',1).replace(b'-DLI2_LINKED_NATIVE_HINT=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_NATIVE_HINT=1',1)
+        expected=expected.replace(b'--undefined=li2_link_plan_validate ',b'--undefined=li2_link_plan_validate,--undefined=li2_preedge_plan_page,--undefined=li2_preedge_plan_validate ',1)
+        expected=expected.replace(b'\"$selected_dir/linked_plan.c\" \"$archive\"',b'\"$selected_dir/linked_plan.c\" \"$selected_dir/linked_preedge_plan.c\" \"$archive\"',1)
+        need(script.read_bytes()==expected,'whole v2 recipe differs only by explicit profile, providers and TU')
     if graph_observe:
         donor=pin(SELECTED/'build-linked-epoch-native-hint.sh')
         need(script.read_bytes()==donor.read_bytes().replace(b'-DLI2_LINKED_NATIVE_HINT=1',
@@ -178,6 +193,10 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     need(all((str((SELECTED/name).resolve())in state['headers'])==native_hint
          for name in('linked_native_hint.h','linked_native_hint.inc')),
          'actual native-hint headers iff the distinct literal profile is selected')
+    need(all((str((SELECTED/name).resolve())in state['headers'])==preedge for name in
+         ('linked_preedge_plan.h','linked_preedge_plan.c','linked_preedge_source.h','linked_preedge_source.inc',
+          'linked_preedge_rseq.h','linked_preedge_rseq.inc','linked_preedge_proof.h')),
+         'actual v2 typed plan/source/NONE/proof closure iff pre-edge selected')
     need(all(str((SELECTED/name).resolve())not in state['headers']for name in
          ('selected_scalar_span.inc','selected_scalar_span_reuse.inc','scalar_region_observe.inc',
           'unrolled_hash_observe.inc','current_tf_observe.inc','span_trace_observe.inc')),
@@ -198,7 +217,7 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     _,out,err=run('release-objdump-version',[objdump,'--version'],env=builder.environment);need(out and not err,'actual objdump identity')
     _,symbols,err=run('release-bridge-symbols',[builder.tools['nm'],'-S','--defined-only',bridge],profile='inspect',env=builder.environment)
     need(not err,'complete actual linked bridge symbols')
-    for name in ('li2_decoder_link_none','li2_link_plan_page','li2_link_plan_validate'):
+    for name in ('li2_decoder_link_none','li2_link_plan_page','li2_link_plan_validate')+(('li2_preedge_plan_page','li2_preedge_plan_validate','li2_rseq_check_preedge_cold','li2_lifecycle_preedge_begin','li2_lifecycle_preedge_release')if preedge else()):
         found=[line.split()for line in symbols.splitlines()if line.split()[-1:]==[name.encode()]]
         need(len(found)==1 and len(found[0])==4 and found[0][2]in(b't',b'T')and int(found[0][1],16)>0,
              'whole retained linked proof provider in actual bridge')
