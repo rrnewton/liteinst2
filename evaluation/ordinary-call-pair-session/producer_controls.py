@@ -118,6 +118,13 @@ def default_digest(tree):
     node.name = 'main'
     node.args.kwonlyargs = []; node.args.kw_defaults = []
     node = DefaultOnly().visit(node)
+    # Python 3.12 adds this empty grammar field; retain one historical AST
+    # representation across interpreters and refuse actual type parameters.
+    for child in ast.walk(node):
+        if 'type_params' in child._fields:
+            assert isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            assert type(child.type_params) is list and child.type_params == []
+            child._fields = tuple(field for field in child._fields if field != 'type_params')
     return pin(ast.dump(node, include_attributes=False).encode())
 
 
@@ -262,7 +269,9 @@ class Controls(unittest.TestCase):
                          and isinstance(c.func.value, ast.Name) and c.func.value.id == 'call_pair'
                          and c.func.attr == 'history_complete' for c in ast.walk(n))]
         self.assertEqual(len(gates), 1)
-        expected = 'e3d884e110f12f54b17f45e62e65adda330f3309d2f58a607fbfeb2ac278bc7f'
+        # Exact main from bab35bcde867688d2b980627bc4e08c3bdef296b,
+        # with only absent/empty type_params canonicalized as above.
+        expected = '68b2c373ae49fc0b2a9a0e0964fe7e10d1129a0d9642d79aeb6e121b4992f64a'
         self.assertEqual(default_digest(tree), expected)
         # Real old deadline/cap/cleanup statements survive extraction; changing
         # any selected old constant invalidates the independent old-body digest.
@@ -271,6 +280,24 @@ class Controls(unittest.TestCase):
             node = next(n for n in ast.walk(bad) if isinstance(n, ast.Constant) and type(n.value) is type(literal) and n.value == literal)
             node.value = literal + 1
             self.assertNotEqual(default_digest(bad), expected)
+
+        # Inject the same empty field on Python 3.9 as on Python 3.12, then
+        # independently reject nonempty parameters on both owned functions.
+        with_empty = copy.deepcopy(tree)
+        main = next(n for n in with_empty.body if isinstance(n, ast.FunctionDef) and n.name == '_main')
+        functions = [n for n in ast.walk(main) if isinstance(n, ast.FunctionDef)]
+        self.assertEqual([n.name for n in functions], ['_main', 'line'])
+        for node in functions:
+            if 'type_params' not in node._fields:
+                node._fields = (*node._fields, 'type_params')
+            node.type_params = []
+        self.assertEqual(default_digest(with_empty), expected)
+        for name in ('_main', 'line'):
+            bad = copy.deepcopy(with_empty)
+            node = next(n for n in ast.walk(bad) if isinstance(n, ast.FunctionDef) and n.name == name)
+            node.type_params = [ast.Name(id='T', ctx=ast.Load())]
+            with self.assertRaises(AssertionError):
+                default_digest(bad)
 
     def test_authenticated_imports_and_optimized_refusal(self):
         self.assertEqual(W.REQUIRED, P.SOURCES)
