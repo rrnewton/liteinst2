@@ -31,6 +31,7 @@ fn ordinary(i: &iced_x86::Instruction) -> bool {
             | Mnemonic::Lea
             | Mnemonic::Xor
             | Mnemonic::Add
+            | Mnemonic::Adc
             | Mnemonic::Sub
             | Mnemonic::And
             | Mnemonic::Or
@@ -233,3 +234,7 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
         edges,
     })
 }
+
+#[cfg(test)]
+#[path = "cfg_adc_tests.rs"]
+mod adc_tests;

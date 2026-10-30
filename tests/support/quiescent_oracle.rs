@@ -807,6 +807,9 @@ mod ordered_trace {
         }
     }
 
+    // Additive ADC semantic observations; all old oracle methods stay exact.
+    include!("adc_state.rs");
+
     impl NativeOracle {
         /// Execute one native instruction between successive snapshots, even
         /// when a branch returns to the same PC. Every visited PC must be a
