@@ -397,6 +397,702 @@
       }
     }
   },
+  "adjacent_b2_frontend": {
+    "base_revision": "a688c1f92503dc6376236e792eec2c22e0c93927",
+    "current_corpus_sha256": "cbe0bb22584ebf2c0cd64d8c55ee90cea11b87fa7db176596deac8b8a6d5da93",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 1,
+      "ignored": 0,
+      "recorder_tests": 0,
+      "rust_declarations": 26,
+      "rust_tests": 26,
+      "serial_tests": 0
+    },
+    "instances": {
+      "tools/elf-rewrite/examples/adjacent_b2_disassembly_sites.rs": {
+        "unit/adjacent_b2_disassembly_sites/adjacent_b2_disassembly_sites": "tests::"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+        "unit/liteinst_rewrite/lib": "adjacent_b2_frontend::tests::"
+      }
+    },
+    "isolation": {
+      "body_returned": 102,
+      "helper": "tests/support/isolated_native_test.rs",
+      "new_parser_nested_exemptions": 0,
+      "parent_validates_exact_exit": true,
+      "stdout": "null"
+    },
+    "methods": {
+      "src/quiescent.rs": {
+        "all": [
+          "unmappable_last_cache_line_refuses_without_address_overflow",
+          "indexed_endpoint_preserves_invalid_prefix_and_eager_default",
+          "invalid_choice_is_not_permanent_end_and_unproved_tail_stays_unknown",
+          "all_masks_keep_their_original_slots_and_prove_permanent_upper_end",
+          "pun_duplicate_preference_ranges_and_both_caps_have_exact_evidence",
+          "exact_five_mandatory_prefix_forms_require_admission",
+          "nearby_simd_string_address_and_extra_prefix_forms_stay_refused",
+          "exact_codes_do_not_bypass_register_or_memory_operand_checks",
+          "existing_gpr_and_refused_special_forms_keep_their_outcomes"
+        ],
+        "ignored": []
+      },
+      "src/quiescent/adjacent_b2/tests.rs": {
+        "all": [
+          "adjacent_b2_actual_images_and_pair",
+          "adjacent_b2_cap_boundaries",
+          "adjacent_b2_no_cumulative_reset",
+          "adjacent_b2_original_current_identity",
+          "adjacent_b2_entry_and_domain_boundaries",
+          "adjacent_b2_pending_full_ranges",
+          "adjacent_b2_allocation_and_hook_boundaries",
+          "adjacent_b2_aggregate_and_rollback",
+          "adjacent_b2_failure_precedence",
+          "adjacent_b2_legacy_projection"
+        ],
+        "ignored": []
+      },
+      "src/rapid.rs": {
+        "all": [
+          "original_tail_bytes_determine_the_exact_target",
+          "rejects_an_existing_near_jump_opcode",
+          "rejects_stale_scan_even_when_instruction_lengths_match",
+          "rejects_semantically_equivalent_byte_staleness",
+          "rejects_an_instruction_head_inside_the_pun_window",
+          "rejects_a_direct_branch_target_inside_the_pun_window",
+          "toggling_changes_only_the_opcode_and_preserves_semantics",
+          "occupied_exact_destination_fails_without_replacing_it",
+          "install_rejects_each_mutated_window_byte",
+          "tail_overlap_failure_discards_non_page_aligned_trampoline",
+          "many_threads_toggle_while_other_threads_execute",
+          "benchmark_single_byte_toggle_latency"
+        ],
+        "ignored": [
+          "benchmark_single_byte_toggle_latency"
+        ]
+      },
+      "src/trampoline.rs": {
+        "all": [
+          "open_result_reports_numeric_errno_without_reading",
+          "read_error_reports_numeric_errno",
+          "read_error_retains_kind_without_display_or_debug_of_its_payload",
+          "open_result_delegates_success_to_the_bounded_reader",
+          "process_maps_reader_accepts_the_exact_cap_and_rejects_one_extra_byte",
+          "arena_seals_preserve_existing_writer_and_close_external_mutation_paths",
+          "exhausted_arena_reservation_cannot_wrap_and_reuse_storage",
+          "failed_emission_consumes_its_slot_without_overwriting_published_bytes",
+          "reachable_mapping_order_preserves_upward_heap_growth",
+          "total_length_includes_every_section",
+          "total_length_rejects_overflow",
+          "relocates_multiple_short_instructions_as_one_patch_window",
+          "short_instruction_constructor_rejects_nonheads_and_long_instructions",
+          "short_instruction_emission_maps_exact_entry_and_original_end",
+          "short_instruction_native_observe_and_replace_resume_at_original_successor",
+          "validates_exact_instruction_and_ordered_action_boundaries",
+          "callback_free_lengths_and_far_branch_maps_are_exact",
+          "native_instructions_actions_and_backedges",
+          "window_emission_separates_entry_routes_from_architectural_boundaries",
+          "window_constructor_requires_complete_physical_logical_and_end_boundaries",
+          "same_site_window_emits_identical_legacy_bytes_and_layout",
+          "staged_image_rejects_wrong_address_without_mapping",
+          "upstream_entries_execute_the_required_prefix_hook_and_suffix",
+          "dropping_staged_image_releases_its_exact_mapping",
+          "rejects_a_short_region_without_five_complete_bytes",
+          "out_of_range_return_uses_cet_notrack_indirect_jump",
+          "replace_first_omits_a_two_byte_syscall_but_relocates_its_tail",
+          "ptrace_stops_restore_saved_state_but_leave_rsp_at_owned_top",
+          "emits_checked_layouts_for_five_seven_and_ten_byte_instructions",
+          "preserves_memory_targets_for_all_operand_classes",
+          "preserves_eip_wrap_and_high_ip_external_targets",
+          "keeps_entry_branches_and_memory_at_application_address",
+          "retained_interior_branches_still_follow_their_relocated_instruction",
+          "observing_entry_targets_stay_external_for_direct_control_flow",
+          "maps_consecutive_far_entry_backedges_to_their_original_pcs",
+          "far_entry_relay_preserves_all_direct_transfer_kinds_and_fallthrough",
+          "far_external_direct_branch_uses_cet_relay",
+          "far_external_relays_cover_all_direct_forms_and_plan_modes",
+          "branch_relay_grouping_is_deterministic_for_shared_and_mixed_targets",
+          "mixed_short_jcc_and_call_get_distinct_relays_in_public_plans",
+          "near_entry_backedges_do_not_add_relay_or_change_encoding",
+          "near_external_branches_keep_iced_bytes_and_offsets_in_all_plan_modes",
+          "relay_selection_uses_relocations_not_equal_immediates_or_continuation_identity",
+          "far_branch_relays_preserve_entry_and_external_destinations",
+          "preserves_replace_first_omitted_and_retained_targets",
+          "preserves_memory_and_pc_mappings_with_far_branch_literals",
+          "refuses_unreachable_original_memory_instead_of_rebinding_it",
+          "normalization_preserves_direct_branch_operand_widths",
+          "reencodes_rip_relative_memory_for_the_trampoline_address",
+          "relocates_relative_calls_and_expands_out_of_range_branches",
+          "maps_each_consecutive_expanded_branch_to_its_original_pc",
+          "far_tail_code_and_data_have_distinct_pc_mappings",
+          "terminal_instruction_does_not_capture_low_application_targets",
+          "branch_relay_rejects_malformed_final_offset64_slots",
+          "branch_relay_layout_refuses_length_address_and_rel32_overflow",
+          "hook_fires_preserves_result_and_toggles_idempotently",
+          "arena_hook_replaces_a_short_first_instruction_and_runs_the_tail",
+          "ptrace_stopped_hook_leaves_global_pc_publication_explicit",
+          "ptrace_stopped_hook_executes_on_owned_stack",
+          "quiescent_arena_hook_patches_a_cache_line_straddler",
+          "relocates_rip_relative_load_and_returns_to_original_code",
+          "relocates_relative_call_and_resumes_after_its_return",
+          "preserves_live_flags_and_the_system_v_red_zone",
+          "preserves_xmm_argument_across_a_clobbering_callback",
+          "preserves_avx_upper_lane_across_a_clobbering_callback",
+          "concurrent_execution_survives_rapid_hook_toggling",
+          "observing_control_plans_and_images_release_unused_references",
+          "observing_control_refusals_leave_no_hidden_control_owner",
+          "observing_control_changes_leave_all_emitted_bytes_and_maps_identical",
+          "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+          "observing_control_grouped_rollback_releases_its_clones",
+          "observing_control_executable_drop_keeps_code_dependencies_alive",
+          "observing_control_arena_refusal_preserves_slots_bytes_and_static_support",
+          "observing_control_native_subsets_and_retained_dispatch_after_handle_drop"
+        ],
+        "ignored": []
+      },
+      "tests/prefixed_pun_oracle.rs": {
+        "all": [
+          "native_state_covers_every_prefixed_pun_and_original_successor"
+        ],
+        "ignored": []
+      },
+      "tests/quiescent_oracle.rs": {
+        "all": [
+          "native_no_op_oracle_covers_same_site_upstream_and_every_entry",
+          "native_no_op_oracle_covers_generalized_puns_and_unchanged_successors",
+          "native_no_op_oracle_preserves_synchronous_fault_state",
+          "native_no_op_oracle_preserves_generalized_pun_fault_state"
+        ],
+        "ignored": []
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "all": [
+          "campaign_initializer_keeps_default_memory_and_flags_exact",
+          "campaign_initializer_matches_independent_memory_vectors_and_flags",
+          "rejects_fault_address_corruption",
+          "rejects_gpr_corruption",
+          "rejects_defined_flag_corruption",
+          "rejects_simd_corruption",
+          "rejects_application_memory_corruption",
+          "rejects_redzone_corruption"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/examples/adjacent_b2_disassembly_sites.rs": {
+        "all": [
+          "f24_reread_every_input_and_complete_last",
+          "f24_actual_rereads_and_create_new_publication_fail_closed",
+          "f24_complete_candidate_is_published_then_withheld_on_each_final_reread_change"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+        "all": [
+          "f02_f03_f08_primary_full_candidate_and_literal_cap1_baseline",
+          "f04_f08_real_predecessor_retains_every_association",
+          "f06_first_upper_fit_refusal_is_retained",
+          "f07_frontend_aggregate_recovery_has_its_own_complete_envelope",
+          "f09_independent_zeros_and_exact_boundaries_do_not_retry",
+          "f07_cumulative_lower_work_uses_real_selected_predecessor",
+          "f10_public_limits_include_predecessor_and_carrier_page",
+          "f11_whole_generated_hull_and_carrier_hull_are_terminal",
+          "f17_f18_full_draft_rollback_after_actual_pair_stages",
+          "f19_later_selected_failure_discards_whole_artifact",
+          "f21_f25_member_bindings_and_remaining_authority_are_exact",
+          "f05_exact_no_fallback_comparator",
+          "f28_comparator_rejects_every_identity_and_nonidentity_mutation",
+          "f12_failed_pending_rows_and_full_intervals_remain_owned",
+          "f13_original_bytes_and_identity_are_never_current_substitutes",
+          "f14_f15_static_exclusions_keep_every_selected_row_and_old_search",
+          "f16_original_data_carrier_and_prior_allocations_stay_occupied",
+          "f22_full_new_identity_strict_markers_and_real_bounds",
+          "f23_chains_fixed_edges_and_every_baseline_attempt",
+          "f27_independent_internal_accounting_caps_are_not_public_policy_knobs",
+          "f20_actual_final_carrier_limits_and_construction_failures_do_not_dispatch",
+          "f14_prefix_fetch_cache_line_and_unverified_targets_keep_denominator",
+          "f20_real_loader_dependency_refusal_after_core_pair_success"
+        ],
+        "ignored": []
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "all": [
+          "complete_jump_denominator_ignores_names_reachability_and_call_cycles",
+          "whole_hash_and_each_head_byte_length_and_location_are_independent_gates",
+          "complete_ledger_checks_rx_inverse_owner_and_known_entry_contradictions",
+          "policy_cannot_omit_add_select_replace_or_increase_existing_caps",
+          "null_hook_must_be_original_single_c3_and_endbr_heads_stay_marked",
+          "shared_prepare_retains_every_refusal_and_never_emits_partial_candidate",
+          "one_original_jump_uses_shared_carrier_and_hook_guard_without_live_authority",
+          "bounded_text_and_whole_program_projection_refuse_without_splitting",
+          "short_only_policy_is_explicit_digest_bound_and_not_legacy",
+          "short_only_disassembly_forced_t3_preserves_all_heads_and_bytes",
+          "short_only_disassembly_refusal_retains_the_complete_denominator",
+          "short_only_projection_and_search_caps_are_not_widened",
+          "short_t3_ownership_policy_and_projection_bind_both_modes",
+          "short_t3_ownership_actual_preceding_jump_admits_second_victim",
+          "short_t3_ownership_conflicts_and_pair_cap_keep_every_report",
+          "short_t3_ownership_full_projection_bound_and_resource_refusals",
+          "pending_selected_victim_is_preserved_for_its_later_hook",
+          "pending_selected_unchanged_suffix_is_not_available_for_borrowing",
+          "pending_selected_budget_and_forced_refusals_are_exact",
+          "pending_selected_all_conflicts_keep_both_rows_and_complete_reports",
+          "pending_selected_guard_reads_actual_transactional_coverage_and_locks",
+          "pending_selected_failed_site_stays_pending_and_first_four_do_not_restart",
+          "pending_selected_mode_identity_and_complete_denominator_are_explicit",
+          "pending_selected_full_mode_bytes_count_toward_bounds_and_old_caps"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "tests/prefixed_pun_oracle.rs": [
+        "#[path = \"support/isolated_native_test.rs\"]\nmod isolated_native_test;"
+      ],
+      "tests/quiescent_oracle.rs": [
+        "#[path = \"support/isolated_native_test.rs\"]\nmod isolated_native_test;"
+      ],
+      "tests/support/elf_exec_oracle.rs": [
+        "#[path = \"adjacent_b2_native.rs\"]\npub mod adjacent_b2;"
+      ],
+      "tests/support/isolated_native_test.rs": [
+        "#[path = \"bounded_proc_stat.rs\"]\nmod bounded_proc_stat;",
+        ".stdout(Stdio::null())",
+        "const BODY_RETURNED: i32 = 102;"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "name = \"adjacent_b2_disassembly_sites\"\npath = \"examples/adjacent_b2_disassembly_sites.rs\"\ntest = true\nbench = false",
+        "name = \"adjacent_b2_native\"\npath = \"examples/adjacent_b2_native.rs\"\ntest = false\nbench = false"
+      ],
+      "tools/elf-rewrite/examples/adjacent_b2_disassembly_sites.rs": [
+        "#[path = \"fixtures/adjacent_b2_publication.rs\"]\nmod publication_fixture;",
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "pub mod adjacent_b2;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "mod adjacent_b2_frontend;"
+      ]
+    },
+    "previous_corpus_sha256": "e627cebaf10c5e74a0ed51dac5611ce92eefed7061cde397fa9c926e9d439dcb",
+    "projections": {
+      "Cargo.lock": {
+        "current_sha256": "b48007c0e7bb6b43b9c6fae433119b03ccbf0b9130266163e69ad73d40e01390",
+        "edits": [
+          [
+            3045,
+            3054,
+            ""
+          ]
+        ],
+        "previous_sha256": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088"
+      },
+      "evaluation/admission/parsing.py": {
+        "current_sha256": "3cd5e6c80a1dc1c9fedcdf576ddc307a57732b5ee004b3cfe8ac64ea78d9133d",
+        "edits": [
+          [
+            2593,
+            2954,
+            ""
+          ],
+          [
+            3864,
+            4033,
+            ""
+          ]
+        ],
+        "previous_sha256": "7d22bbd8f83c2035c1ef0a7a594a7045d4d1ce6a34c0eea60bb157a6bbde3f40"
+      },
+      "evaluation/offline-corpus/disassembly.py": {
+        "current_sha256": "0ae4995cccbeeb3d414849962b9b946b5e9c3fa3b391cdfd403ea5405730e374",
+        "edits": [
+          [
+            25724,
+            28103,
+            ""
+          ]
+        ],
+        "previous_sha256": "6e5344c6bf78ec7b2bb84b11d95adb95dd0b5a0615b19010d27b329a9bde2eb5"
+      },
+      "evaluation/offline-corpus/disassembly_controls.py": {
+        "current_sha256": "f0d7f5572017fcc8a8f14c59e2980e97e50359e7d165c2b748de99439d93346d",
+        "edits": [
+          [
+            420,
+            446,
+            ""
+          ],
+          [
+            514,
+            595,
+            "ADAPTER_SHA = '6e5344c6bf78ec7b2bb84b11d95adb95dd0b5a0615b19010d27b329a9bde2eb5'\n"
+          ],
+          [
+            48336,
+            66474,
+            ""
+          ]
+        ],
+        "previous_sha256": "6f023794a0c71e36afdc480278bf17bb7aa18692ece35e8732d598184f2c5a46"
+      },
+      "evaluation/offline-corpus/head_capture.py": {
+        "current_sha256": "d805c5da621637946e8d103787a3390073e87d83267e10231e0d38cbc8467373",
+        "edits": [
+          [
+            265,
+            346,
+            "ADAPTER_SHA = '6e5344c6bf78ec7b2bb84b11d95adb95dd0b5a0615b19010d27b329a9bde2eb5'\n"
+          ]
+        ],
+        "previous_sha256": "dd8a4c5db6ae7c1f4e3a7aaf7c3336e62e62ae3301670738a0cadf10923f3e31"
+      },
+      "evaluation/offline-corpus/head_capture_controls.py": {
+        "current_sha256": "0c2e363ea48007ecc15696989c3757a5f527fa12c8f40e88b05408e1676e835a",
+        "edits": [
+          [
+            669,
+            869,
+            "H = load('head_capture.py', 'dd8a4c5db6ae7c1f4e3a7aaf7c3336e62e62ae3301670738a0cadf10923f3e31')\nF = load('disassembly_controls.py', '6f023794a0c71e36afdc480278bf17bb7aa18692ece35e8732d598184f2c5a46')\n"
+          ]
+        ],
+        "previous_sha256": "388bd2b3f818e20864f76dd66a753ad84f779534980d1bd09c7ff6c7ce1a976f"
+      },
+      "evaluation/offline-corpus/reproduce_whole.py": {
+        "current_sha256": "cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c",
+        "edits": [
+          [
+            905,
+            1001,
+            "H = load('head_capture.py', 'dd8a4c5db6ae7c1f4e3a7aaf7c3336e62e62ae3301670738a0cadf10923f3e31')\n"
+          ],
+          [
+            11834,
+            12054,
+            "    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE), default=D.PROFILE,\n"
+          ],
+          [
+            13089,
+            13548,
+            ""
+          ],
+          [
+            13583,
+            13680,
+            ""
+          ]
+        ],
+        "previous_sha256": "0e16f2416fef8668c913f5661a96b59d99bbae13cc0e6f70020abdb4acf11ca0"
+      },
+      "evaluation/offline-corpus/reproduce_whole_controls.py": {
+        "current_sha256": "85c01ed2db0384813156bec6fdcdeb3dbe38d3c73aa8af327fcde37112c55b18",
+        "edits": [
+          [
+            436,
+            569,
+            "assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == '0e16f2416fef8668c913f5661a96b59d99bbae13cc0e6f70020abdb4acf11ca0'\n"
+          ],
+          [
+            38054,
+            40635,
+            ""
+          ]
+        ],
+        "previous_sha256": "3330f7fd114aae965f7f8419fe309023730e3e15c3b4840fd57b811f1fdbc1b0"
+      },
+      "src/rapid.rs": {
+        "current_sha256": "9287665d69a3b5a053de7147fd91b67adc5a79d95407d4671b0aedf4779d2316",
+        "edits": [
+          [
+            37307,
+            37388,
+            "                placeholder.release();\n"
+          ],
+          [
+            38959,
+            39080,
+            "                assert_eq!(permissions(target_address), None);\n"
+          ],
+          [
+            39416,
+            39493,
+            "            placeholder.release();\n"
+          ],
+          [
+            40887,
+            41000,
+            "            assert_eq!(permissions(target_address), None);\n"
+          ]
+        ],
+        "previous_sha256": "b48dfb7b0db6791bb48e616ecb0e65210a299a2b60adf17f0163b08e15ab73ed"
+      },
+      "tests/prefixed_pun_oracle.rs": {
+        "current_sha256": "d9b2fd9b992685dedf336e019fde36c939f1bbcd8b34c31fc068e1a48e42bd7f",
+        "edits": [
+          [
+            363,
+            433,
+            "#[path = \"support/bounded_proc_stat.rs\"]\nmod bounded_proc_stat;\n"
+          ],
+          [
+            2554,
+            2774,
+            "    isolated_prefixed_pun();\n}\n\n// Fresh exec excludes the support module's other mapping tests. The original\n// body below, all 26 support tests, and each trace's bounds remain unchanged.\nfn isolated_prefixed_pun() {\n    use bounded_proc_stat::read_bounded_stat;\n    use std::os::unix::process::CommandExt;\n    use std::process::{Child, Command, Stdio};\n    use std::time::{Duration, Instant};\n\n    const NAME: &str = \"native_state_covers_every_prefixed_pun_and_original_successor\";\n    const SELECTOR: &str = \"LITEINST2_PREFIXED_PUN_CHILD\";\n    const BODY_RETURNED: i32 = 102;\n\n    if let Some(selected) = std::env::var_os(SELECTOR) {\n        assert_eq!(\n            selected,\n            std::ffi::OsStr::new(NAME),\n            \"wrong isolated test selector\"\n        );\n        native_state_covers_every_prefixed_pun_and_original_successor_body();\n        // SAFETY: the complete body and its local destructors have returned.\n        // Zero-test harness success cannot produce this completion status.\n        unsafe { libc::_exit(BODY_RETURNED) };\n    }\n\n    #[derive(Clone, Copy, Debug, PartialEq, Eq)]\n    struct Exit {\n        code: i32,\n        status: i32,\n    }\n\n    // WNOWAIT leaves the direct child waitable: its PID/PGID cannot be recycled\n    // until the final exact-PID reap, after every group signal and peer wait.\n    fn peek(pid: i32) -> Result<Option<Exit>, String> {\n        // SAFETY: initialized output and exact still-owned child PID.\n        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };\n        let result = unsafe {\n            libc::waitid(\n                libc::P_PID,\n                pid as libc::id_t,\n                &mut info,\n                libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,\n            )\n        };\n        if result == -1 {\n            return Err(std::io::Error::last_os_error().to_string());\n        }\n        // SAFETY: successful waitid initialized the child-status union fields.\n        let found = unsafe { info.si_pid() };\n        if found == 0 {\n            return Ok(None);\n        }\n        if found != pid {\n            return Err(\"waitid returned a different owned child\".into());\n        }\n        Ok(Some(Exit {\n            code: info.si_code,\n            status: unsafe { info.si_status() },\n        }))\n    }\n\n    // Same finite nonrecursive /proc grammar used by the approved parked v5\n    // helper: <=65536 entries, <=4096 bytes per stat, deadline on every read.\n    // The optional /proc/PID/task/TID/children interface is not available here.\n    fn owned_group(group: i32, deadline: Instant) -> Result<Vec<i32>, String> {\n        let mut result = Vec::new();\n        let entries = std::fs::read_dir(\"/proc\").map_err(|e| e.to_string())?;\n        for (index, entry) in entries.enumerate() {\n            if index >= 65536 || Instant::now() >= deadline {\n                return Err(\"bounded process inventory exhausted\".into());\n            }\n            let entry = entry.map_err(|e| e.to_string())?;\n            let name = entry.file_name();\n            let Some(name) = name.to_str() else {\n                continue;\n            };\n            if name.is_empty() || !name.bytes().all(|byte| byte.is_ascii_digit()) {\n                continue;\n            }\n            let pid: i32 = name.parse().map_err(|_| \"invalid numeric process ID\")?;\n            let file = match std::fs::File::open(entry.path().join(\"stat\")) {\n                Ok(file) => file,\n                Err(error) if matches!(error.raw_os_error(), Some(libc::ENOENT | libc::ESRCH)) => {\n                    continue;\n                }\n                Err(error) => return Err(error.to_string()),\n            };\n            let Some(bytes) = read_bounded_stat(file)\n                .map_err(|error| format!(\"read /proc/{pid}/stat: {error}\"))?\n            else {\n                continue;\n            };\n            if bytes.len() > 4096 || Instant::now() >= deadline {\n                return Err(\"bounded process stat read exhausted\".into());\n            }\n            if !bytes.starts_with(format!(\"{pid} (\").as_bytes()) {\n                return Err(\"process stat identity mismatch\".into());\n            }\n            // comm may contain arbitrary non-UTF8 bytes and parentheses. Only\n            // the numeric fields after its final delimiter are ASCII-parsed.\n            let close = bytes\n                .windows(2)\n                .rposition(|pair| pair == b\") \")\n                .ok_or(\"malformed process stat\")?;\n            let suffix = std::str::from_utf8(&bytes[close + 2..])\n                .map_err(|_| \"non-ASCII numeric process fields\")?;\n            let fields: Vec<_> = suffix.split_whitespace().collect();\n            if fields.len() < 3 {\n                return Err(\"short process stat\".into());\n            }\n            let parent: u32 = fields[1].parse().map_err(|_| \"invalid parent PID\")?;\n            let pgrp: i32 = fields[2].parse().map_err(|_| \"invalid process group\")?;\n            if parent == std::process::id() && pgrp == group {\n                result.push(pid);\n            }\n        }\n        if Instant::now() >= deadline {\n            return Err(\"bounded process inventory deadline\".into());\n        }\n        result.sort_unstable();\n        Ok(result)\n    }\n\n    struct Group {\n        _child: Child,\n        pid: libc::pid_t,\n        cleanup_attempted: bool,\n        leader_status: Option<i32>,\n        peers: Vec<libc::pid_t>,\n    }\n    impl Group {\n        fn cleanup(&mut self) -> Result<(), String> {\n            assert!(!self.cleanup_attempted, \"owned group cleanup repeated\");\n            self.cleanup_attempted = true;\n            // SAFETY: the unreaped leader pins the exact new process group.\n            // Kill nested ptrace children too, including on worker abort. The\n            // leader is reaped last, after all peer signals and waits.\n            if unsafe { libc::kill(-self.pid, libc::SIGKILL) } != 0\n                && std::io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)\n            {\n                return Err(\"owned process group kill failed\".into());\n            }\n            let deadline = Instant::now() + Duration::from_secs(2);\n            loop {\n                if Instant::now() >= deadline {\n                    return Err(\"owned process group cleanup exceeded two seconds\".into());\n                }\n                // The leader's exit notification follows orphan adoption. Keep\n                // that leader waitable while finding and reaping its tracees.\n                if peek(self.pid)?.is_none() {\n                    std::thread::sleep(Duration::from_millis(5));\n                    continue;\n                }\n                let children = owned_group(self.pid, deadline)?;\n                if !children.contains(&self.pid) {\n                    return Err(\"owned unreaped leader absent from inventory\".into());\n                }\n                let peers: Vec<_> = children\n                    .into_iter()\n                    .filter(|&pid| pid != self.pid)\n                    .collect();\n                if peers.is_empty() {\n                    let mut status = 0;\n                    // SAFETY: reap the exact pinned leader last. No group\n                    // operation or wait follows this ownership release.\n                    if unsafe { libc::waitpid(self.pid, &mut status, libc::WNOHANG | libc::__WALL) }\n                        != self.pid\n                    {\n                        return Err(\"exact final leader reap failed\".into());\n                    }\n                    self.leader_status = Some(status);\n                    return Ok(());\n                }\n                for pid in peers {\n                    if Instant::now() >= deadline {\n                        return Err(\"owned peer cleanup deadline\".into());\n                    }\n                    if !self.peers.contains(&pid) {\n                        self.peers.push(pid);\n                    }\n                    // Prove direct-child ownership without releasing the PID.\n                    let _ = peek(pid)?;\n                    if unsafe { libc::kill(pid, libc::SIGKILL) } != 0\n                        && std::io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)\n                    {\n                        return Err(\"owned peer kill failed\".into());\n                    }\n                    let mut status = 0;\n                    // SAFETY: only the exact still-owned same-group child.\n                    let reaped =\n                        unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG | libc::__WALL) };\n                    if reaped == -1 {\n                        return Err(\"exact owned peer reap failed\".into());\n                    }\n                }\n                std::thread::sleep(Duration::from_millis(1));\n            }\n        }\n    }\n    impl Drop for Group {\n        fn drop(&mut self) {\n            if self.cleanup_attempted {\n                return;\n            }\n            if let Err(error) = self.cleanup() {\n                eprintln!(\"prefixed-PUN cleanup during unwind failed: {error}\");\n            }\n        }\n    }\n\n    // SAFETY: the existing chain-isolation pattern uses this idempotent flag.\n    // It is process-wide; cleanup still waits/signals only our new owned group.\n    assert_eq!(unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) }, 0);\n    let mut command = Command::new(std::env::current_exe().unwrap());\n    command\n        .args([\"--exact\", NAME, \"--nocapture\", \"--test-threads=1\"])\n        .env(SELECTOR, NAME)\n        .stdin(Stdio::null())\n        // Exact exit receipts below authenticate body completion; keep its\n        // diagnostics on stderr without unfinished child libtest progress.\n        .stdout(Stdio::null())\n        .stderr(Stdio::inherit())\n        .process_group(0);\n    // SAFETY: only async-signal-safe syscalls are used before exec.\n    unsafe {\n        command.pre_exec(|| {\n            for (resource, seconds) in [(libc::RLIMIT_CORE, 0), (libc::RLIMIT_CPU, 20)] {\n                let limit = libc::rlimit {\n                    rlim_cur: seconds,\n                    rlim_max: seconds,\n                };\n                if libc::setrlimit(resource, &limit) != 0 {\n                    return Err(std::io::Error::last_os_error());\n                }\n            }\n            Ok(())\n        });\n    }\n    let child = command.spawn().expect(\"launch isolated prefixed-PUN test\");\n    let pid = i32::try_from(child.id()).unwrap();\n    let mut group = Group {\n        _child: child,\n        pid,\n        cleanup_attempted: false,\n        leader_status: None,\n        peers: Vec::new(),\n    };\n    let deadline = Instant::now() + Duration::from_secs(30);\n    let outcome = loop {\n        if let Some(outcome) = peek(group.pid).expect(\"poll isolated prefixed-PUN test\") {\n            break Some(outcome);\n        }\n        if Instant::now() >= deadline {\n            break None;\n        }\n        std::thread::sleep(Duration::from_millis(5));\n    };\n    group\n        .cleanup()\n        .expect(\"clean up isolated prefixed-PUN process group\");\n    assert_eq!(\n        outcome,\n        Some(Exit {\n            code: libc::CLD_EXITED,\n            status: BODY_RETURNED,\n        }),\n        \"isolated body failed or timed out\"\n    );\n    let status = group.leader_status.expect(\"isolated leader was not reaped\");\n    assert!(libc::WIFEXITED(status));\n    assert_eq!(libc::WEXITSTATUS(status), BODY_RETURNED);\n    assert!(\n        group.peers.is_empty(),\n        \"successful body left ptrace children: {:?}\",\n        group.peers\n"
+          ]
+        ],
+        "previous_sha256": "c1538a91a3c34f8e743c459867883402a7f235e1457490ada8c805f36a921296"
+      },
+      "tests/quiescent_oracle.rs": {
+        "current_sha256": "a6bac6403624e53bf561be4a0aa3737f929b941296ea3737b560c8ed0eb36d2d",
+        "edits": [
+          [
+            369,
+            440,
+            ""
+          ],
+          [
+            2098,
+            2406,
+            ""
+          ],
+          [
+            15786,
+            16115,
+            ""
+          ],
+          [
+            25726,
+            26010,
+            ""
+          ],
+          [
+            30316,
+            30612,
+            ""
+          ]
+        ],
+        "previous_sha256": "3e3f2e03d6c3425c06555a943f64aea13e4ef7b9b42bd32f03cf08b8b769d7d7"
+      },
+      "tests/support/elf_exec_oracle.rs": {
+        "current_sha256": "b595b7d5cd19e72c4754a60f5fe3b4a359772334f9dda6f9526882fbe4358f04",
+        "edits": [
+          [
+            46370,
+            46514,
+            ""
+          ]
+        ],
+        "previous_sha256": "1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b"
+      },
+      "tools/elf-rewrite/Cargo.toml": {
+        "current_sha256": "21dfb7b64d3aff55451b412ed9b8210d4813ffec73e3e036ac54b3b2c454a746",
+        "edits": [
+          [
+            583,
+            600,
+            ""
+          ],
+          [
+            1010,
+            1325,
+            ""
+          ]
+        ],
+        "previous_sha256": "acd1736d8bdd0846ed0a7a2f17d1a33eba83fdc6940b643d9434730fde5637c4"
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "current_sha256": "cb9ae2be082195d97713457e272c230df5c863effcc13841a43d501fc6958fab",
+        "edits": [
+          [
+            7940,
+            8232,
+            ""
+          ],
+          [
+            12835,
+            13399,
+            ""
+          ],
+          [
+            13440,
+            13520,
+            "            NeighborMode::LongOnly => selection::parse(manifest.as_bytes())?,\n"
+          ],
+          [
+            13561,
+            13644,
+            "                selection::parse_short_neighbor_projection(manifest.as_bytes())?\n"
+          ],
+          [
+            13706,
+            13793,
+            "                selection::parse_short_t3_ownership_projection(manifest.as_bytes())?\n"
+          ],
+          [
+            13853,
+            13938,
+            "                selection::parse_short_t3_pending_projection(manifest.as_bytes())?\n"
+          ],
+          [
+            13963,
+            14015,
+            ""
+          ],
+          [
+            23985,
+            24080,
+            ""
+          ]
+        ],
+        "previous_sha256": "9ac7f1bfac885293e8e1043b61a14153c958366535ae26c86706d66c32f807bb"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "4908769da8e76fe2cc6553d1ca08b6fd456eeae1c08e65f28ba45120feb58f3f",
+        "edits": [
+          [
+            189,
+            215,
+            ""
+          ],
+          [
+            253,
+            316,
+            ""
+          ],
+          [
+            4033,
+            4999,
+            ""
+          ],
+          [
+            7459,
+            7481,
+            "    let mut composition =\n"
+          ],
+          [
+            8364,
+            8392,
+            "    let mut reports: Vec<_> = s\n"
+          ],
+          [
+            8905,
+            9793,
+            "    let mut accepted = Vec::<(u64, ArtifactPlan)>::new();\n    let mut image_count = 0_usize;\n    let mut image_bytes = 0_usize;\n    let mut allocation_pages = 0_u64;\n    for index in ordered {\n        let site = &s.sites[index];\n        let report = &mut reports[index];\n        let pending_ranges: Vec<_> = pending\n            .iter()\n            .filter_map(|(other, range)| (*other != index).then_some(*range))\n            .collect();\n        let prepared = (|| {\n            validate_site(&elf, site)?;\n            let code = elf\n                .executable_bytes(ElfVaddr(site.snapshot.start()), site.snapshot.len())\n                .map_err(|e| Error::new(\"snapshot\", e))?;\n            let entries = LegalEntrySet {\n                identity,\n                scope: site.function,\n                provenance: EntryProvenance::Declared(format!(\n                    \"selection provenance SHA-256 {}\",\n                    ledger::hex(&site.provenance.0)\n                )),\n                completeness: site.completeness,\n                entries: site.heads.clone(),\n                resumes: site.resumes.clone(),\n            };\n            let hook = s\n                .hooks\n                .iter()\n                .find(|h| h.id == site.hook)\n                .ok_or_else(|| Error::new(\"hook\", \"missing\"))?;\n            let emission = ArtifactEmission::new(\n                TargetProfile::linux_x86_64_legacy_evex(s.target, s.bias_domain)\n                    .map_err(|e| Error::new(\"target\", e))?,\n                SymbolicHook {\n                    identity: hook.id,\n                    address: Some(hook.pc),\n                },\n                occupied.clone(),\n            );\n            let request = ArtifactRequest {\n                site: PlanningSite {\n"
+          ],
+          [
+            9823,
+            9930,
+            "                    code,\n                    base_address: site.snapshot.start(),\n                    function: site.function,\n                    block: site.block,\n                    logical_pc: site.pc,\n                    entries: &entries,\n                    semantics: site.semantics,\n                    allocation: &site.selected_allocation,\n                    search: site.search,\n"
+          ],
+          [
+            9949,
+            10648,
+            "                emission: &emission,\n            };\n            let policy = EnginePolicy {\n                forced: site.forced,\n                successor_puns: TacticPolicy::PreferGeneralizedPun,\n                neighbor: NeighborSearch {\n                    forced_victim: site.forced_victim,\n                    max_victims: site.max_victims,\n                    max_pairs: site.max_pairs,\n                },\n                bundle: li2core::bundle::BundleBudget {\n                    max_steps: 2,\n                    max_mappings: s.limits.images,\n                    max_virtual_bytes: s.limits.new_load_pages.saturating_mul(4096),\n                    max_backing_bytes: s.limits.new_load_pages.saturating_mul(4096),\n                    max_virtual_span: s.limits.virtual_span,\n                },\n            };\n            let result = if mode == disassembly::NeighborMode::ShortT3Pending {\n                engine::plan_with_emission_after_and_short_t3_pending(\n                    &request,\n                    &composition,\n                    &pending_ranges,\n                    &site.victim_allocation,\n                    policy,\n                )\n            } else if owned_neighbors {\n                let owners = neighbor_catalogue::collect(&elf, s, identity, site)?;\n                let foreign: Vec<_> = owners.iter().map(|owner| owner.site(site)).collect();\n                engine::plan_with_emission_after_with_foreign(\n                    &request,\n                    &composition,\n                    &site.victim_allocation,\n                    policy,\n                    &foreign,\n                )\n            } else if mode == disassembly::NeighborMode::ShortT3Ownership {\n                engine::plan_with_emission_after_and_short_t3_ownership(\n                    &request,\n                    &composition,\n                    &site.victim_allocation,\n                    policy,\n                )\n            } else if mode == disassembly::NeighborMode::ShortOnly {\n                engine::plan_with_emission_after_and_short_neighbors(\n                    &request,\n                    &composition,\n                    &site.victim_allocation,\n                    policy,\n                )\n            } else {\n                engine::plan_with_emission_after(\n                    &request,\n                    &composition,\n                    &site.victim_allocation,\n                    policy,\n                )\n            };\n            let plan = match result {\n                Ok(plan) => plan,\n                Err(failure) => {\n                    report.refusal_code = Some(model::core_code(&failure.reason));\n                    report.diagnostics = format!(\"{failure:#?}\");\n                    return Err(Error::new(\"core\", failure.reason));\n                }\n            };\n            report.diagnostics = format!(\"{:#?}\", plan.metrics());\n            let ArtifactMetrics::Engine(tactic, _, _) = plan.metrics() else {\n                return Err(Error::new(\"core-invariant\", \"engine metric missing\"));\n            };\n            report.core_tactic = Some(*tactic);\n            if plan.qualification_complete() {\n                return Err(Error::new(\n                    \"readiness-invariant\",\n                    \"unexpected qualification\",\n                ));\n            }\n            let new_images = plan.images().count();\n            let new_bytes = plan\n                .images()\n                .try_fold(0_usize, |n, i| n.checked_add(i.bytes().len()))\n                .ok_or_else(|| Error::new(\"image-budget\", \"overflow\"))?;\n            let mut new_pages = 0_u64;\n            let mut new_dependencies = Vec::new();\n            let mut next = composition.clone();\n            for step in plan.source_steps() {\n                // T2/T3 steps intentionally read their preceding internal overlay.\n                next.append(step)\n                    .map_err(|e| Error::new(\"composition\", e))?;\n                for dependency in &step.parts().dependencies {\n                    let file = translate(&elf, dependency.start(), dependency.len())?;\n                    dynamic\n                        .check_source_ranges(&[file])\n                        .map_err(|e| Error::new(\"source-relocation\", e))?;\n                    new_dependencies.push(file);\n                }\n                for allocation in &step.parts().allocations {\n                    new_pages = new_pages\n                        .checked_add(allocation.range.len() / 4096)\n                        .ok_or_else(|| Error::new(\"allocation-budget\", \"overflow\"))?;\n                }\n            }\n            if image_count\n                .checked_add(new_images)\n                .is_none_or(|v| v > s.limits.images)\n                || image_bytes\n                    .checked_add(new_bytes)\n                    .is_none_or(|v| v > s.limits.image_bytes)\n                || allocation_pages\n                    .checked_add(new_pages)\n                    .is_none_or(|v| v > s.limits.new_load_pages)\n            {\n                return Err(Error::new(\n                    \"aggregate-budget\",\n                    \"complete selected set exceeds declared resources\",\n                ));\n            }\n            // Same-module hook contents are immutable dependencies too.\n            for hook in &s.hooks {\n                for bytes in next.final_bytes() {\n                    let left = bytes.address.max(hook.pc);\n                    let right = (bytes.address + bytes.bytes.len() as u64)\n                        .min(hook.pc + hook.length as u64);\n                    if left < right {\n                        let actual = &bytes.bytes\n                            [(left - bytes.address) as usize..(right - bytes.address) as usize];\n                        if actual\n                            != elf\n                                .executable_bytes(ElfVaddr(left), right - left)\n                                .map_err(|e| Error::new(\"hook-owner\", e))?\n                        {\n                            return Err(Error::new(\n                                \"hook-ownership\",\n                                \"source transformation changes hook\",\n                            ));\n                        }\n                    }\n                }\n            }\n            // Preserve every existing append/dependency/resource/hook failure first.\n            // First-four local success may refuse here; this never restarts search.\n            if mode == disassembly::NeighborMode::ShortT3Pending {\n                next.require_unclaimed_ranges(&pending_ranges)\n                    .map_err(|e| Error::new(\"pending-selected\", e))?;\n            }\n            for step in plan.source_steps() {\n                occupied.extend(step.parts().allocations.iter().map(|a| a.range));\n            }\n            dependencies.extend(new_dependencies);\n            image_count += new_images;\n            image_bytes += new_bytes;\n            allocation_pages += new_pages;\n            composition = next;\n            Ok(plan)\n        })();\n        match prepared {\n            Ok(plan) => {\n                accepted.push((site.id, plan));\n                pending.retain(|(other, _)| *other != index);\n            }\n            Err(error) => {\n                report.refusal = Some(error);\n                if report.refusal_code.is_none() {\n                    report.refusal_code = Some(10_001);\n                }\n"
+          ],
+          [
+            10678,
+            11042,
+            ""
+          ],
+          [
+            12748,
+            12819,
+            "        let write_carrier = if owned_neighbors\n"
+          ],
+          [
+            13052,
+            13137,
+            ""
+          ],
+          [
+            14134,
+            14243,
+            ""
+          ],
+          [
+            16307,
+            16851,
+            ""
+          ],
+          [
+            17601,
+            17683,
+            ""
+          ],
+          [
+            17837,
+            27369,
+            ""
+          ]
+        ],
+        "previous_sha256": "05f857bd9b92b406d99d176b7e673f010fba74dbcf68bcbc679b97c47f306391"
+      }
+    },
+    "sources": {
+      "Cargo.lock": "b48007c0e7bb6b43b9c6fae433119b03ccbf0b9130266163e69ad73d40e01390",
+      "evaluation/admission/parsing.py": "3cd5e6c80a1dc1c9fedcdf576ddc307a57732b5ee004b3cfe8ac64ea78d9133d",
+      "evaluation/offline-corpus/adjacent_whole.py": "a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e",
+      "evaluation/offline-corpus/adjacent_whole_controls.py": "bb3fc51f74aed6f8f8280e47b5cc388406318f2334760fd0d057253790c768ef",
+      "evaluation/offline-corpus/build_adjacent_whole.py": "0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592",
+      "evaluation/offline-corpus/disassembly.py": "0ae4995cccbeeb3d414849962b9b946b5e9c3fa3b391cdfd403ea5405730e374",
+      "evaluation/offline-corpus/disassembly_controls.py": "f0d7f5572017fcc8a8f14c59e2980e97e50359e7d165c2b748de99439d93346d",
+      "evaluation/offline-corpus/head_capture.py": "d805c5da621637946e8d103787a3390073e87d83267e10231e0d38cbc8467373",
+      "evaluation/offline-corpus/head_capture_controls.py": "0c2e363ea48007ecc15696989c3757a5f527fa12c8f40e88b05408e1676e835a",
+      "evaluation/offline-corpus/reproduce_whole.py": "cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c",
+      "evaluation/offline-corpus/reproduce_whole_controls.py": "85c01ed2db0384813156bec6fdcdeb3dbe38d3c73aa8af327fcde37112c55b18",
+      "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+      "src/quiescent.rs": "1ab25c3243922fc354a011a5158fc3207e1690605f3a52a91aa6deb4fe79c2eb",
+      "src/quiescent/adjacent_b2.rs": "59fc8b512f7cba5121d4c1674701fac3457f683324e5bc8fb6e3e654af837bdf",
+      "src/quiescent/adjacent_b2/tests.rs": "11cd3ba61a6f7000db7a4fffe1f0473f0bedb01bd825aea9dea373e8f485843e",
+      "src/rapid.rs": "9287665d69a3b5a053de7147fd91b67adc5a79d95407d4671b0aedf4779d2316",
+      "src/trampoline.rs": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+      "tests/prefixed_pun_oracle.rs": "d9b2fd9b992685dedf336e019fde36c939f1bbcd8b34c31fc068e1a48e42bd7f",
+      "tests/quiescent_oracle.rs": "a6bac6403624e53bf561be4a0aa3737f929b941296ea3737b560c8ed0eb36d2d",
+      "tests/support/adjacent_b2_fixture.rs": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0",
+      "tests/support/adjacent_b2_native.rs": "2ea1625733ccf5a1f9b87db1ac480bc00421eca7b54a63f9b6dc19ceec7e1771",
+      "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
+      "tests/support/elf_exec_oracle.rs": "b595b7d5cd19e72c4754a60f5fe3b4a359772334f9dda6f9526882fbe4358f04",
+      "tests/support/isolated_native_test.rs": "66ccab461fa755676a55fe6398bd9a1e3afa2dd7ed3208611350c371263406a6",
+      "tests/support/quiescent_oracle.rs": "60bf5f36692677f03e62211a9f12542c945310cbd6c1c942d613f5c56a689f3a",
+      "tools/elf-rewrite/Cargo.toml": "21dfb7b64d3aff55451b412ed9b8210d4813ffec73e3e036ac54b3b2c454a746",
+      "tools/elf-rewrite/examples/adjacent_b2_disassembly_sites.rs": "058767bfc39e36b63927b14e8da90f3e4e1d63479058ea122e899548f53eac6a",
+      "tools/elf-rewrite/examples/adjacent_b2_native.rs": "ee96785efd905f2944e423c7ac88931acc1541f31457220a994963b833a97274",
+      "tools/elf-rewrite/examples/adjacent_b2_support/admission_controls.rs": "145f850883809e4a529e11a9f8f7f670cc8bbb1d43240da5052011e183b5ab1e",
+      "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": "4a668c16d1606dccb2748c4545c0a7fae82e11167f4990dca1f1931d47d73d61",
+      "tools/elf-rewrite/examples/adjacent_b2_support/packets.rs": "c32af9179948b30cfbc217091086d2d7434dfdb5877ef8eb6ddc2b38d1fbe51b",
+      "tools/elf-rewrite/examples/fixtures/adjacent_b2_publication.rs": "a5ed05a82834f11959fcb1a2627f2181a78b4878bc46724691ae4a249b3dd63a",
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": "b4ead44d5df52824a30689499fb648ece9f53914e32ee7f49b47eab93921669e",
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": "41706c3642245e1ca5c9cf61c2aa9e550a2892fe5f1e8e2b969c4902eccbcd27",
+      "tools/elf-rewrite/src/disassembly.rs": "cb9ae2be082195d97713457e272c230df5c863effcc13841a43d501fc6958fab",
+      "tools/elf-rewrite/src/disassembly/adjacent_b2.rs": "4d5a0c788751ee56e8f71d3bb6488ae2d122afba9b6252b35abf766501c79a17",
+      "tools/elf-rewrite/src/disassembly/tests.rs": "4b0075db07f5902442c9e7ede7133ac41081de041fd03fa04967c613884ee56f",
+      "tools/elf-rewrite/src/lib.rs": "4908769da8e76fe2cc6553d1ca08b6fd456eeae1c08e65f28ba45120feb58f3f"
+    },
+    "upstream_revision": "5cbe5be84555e37f5027963afb55726d1fda839d",
+    "workspace_changes": {
+      "unit/adjacent_b2_disassembly_sites/adjacent_b2_disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 3
+        },
+        "previous": null
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 133
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 110
+        }
+      }
+    }
+  },
   "current_corpus_sha256": "884864b391332b735ebe3a3c72a935132ed95910cdc16d1793c4befdc01edc31",
   "doctests": {
     "src/backedge_clock.rs": [

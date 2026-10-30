@@ -6453,6 +6453,10 @@
         "ignored": 0,
         "tests": 16
       },
+      "unit/adjacent_b2_disassembly_sites/adjacent_b2_disassembly_sites": {
+        "ignored": 0,
+        "tests": 3
+      },
       "unit/common_sites/common_sites": {
         "ignored": 0,
         "tests": 24
@@ -6491,7 +6495,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 110
+        "tests": 133
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,

@@ -61,6 +61,12 @@ def harness_id(line):
         r"\(target/debug/examples/disassembly_sites-[a-f0-9]+\)", line)
     if example:
         return "unit/disassembly_sites/disassembly_sites"
+    # One additional exact test=true example; no generic example spelling.
+    example = re.fullmatch(
+        r"\s*Running unittests examples/adjacent_b2_disassembly_sites\.rs "
+        r"\(target/debug/examples/adjacent_b2_disassembly_sites-[a-f0-9]+\)", line)
+    if example:
+        return "unit/adjacent_b2_disassembly_sites/adjacent_b2_disassembly_sites"
     match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
@@ -75,6 +81,8 @@ def harness_id(line):
             "invalid_harness_source_label")
     require(label != "unittests examples/disassembly_sites.rs" and binary[1] != "disassembly_sites",
             "invalid_harness_source_label")
+    require(label != "unittests examples/adjacent_b2_disassembly_sites.rs"
+            and binary[1] != "adjacent_b2_disassembly_sites", "invalid_harness_source_label")
     if label == "unittests ordinary-interval/main.rs" or binary[1] == "ordinary_interval":
         require(label == "unittests ordinary-interval/main.rs" and binary[1] == "ordinary_interval",
                 "invalid_harness_source_label")
