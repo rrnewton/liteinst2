@@ -405,9 +405,9 @@ def publish(path,r,private):
     capture_rows=[[int(ordinal),stream,row['bytes'],row['sha256']]
                   for ordinal,streams in captured.items()for stream,row in streams.items()]
     restored={str(c['ordinal']):{}for c in r['cases']}
-    for ordinal,stream,size,sha in capture_rows:
-        need(stream not in restored[str(ordinal)],'one actual capture stream per subject')
-        restored[str(ordinal)][stream]=dict(bytes=size,sha256=sha)
+    for ordinal,capture_stream,size,sha in capture_rows:
+        need(capture_stream not in restored[str(ordinal)],'one actual capture stream per subject')
+        restored[str(ordinal)][capture_stream]=dict(bytes=size,sha256=sha)
     need(restored==captured,'whole public capture columns invert exactly; no omitted failed capture')
     value['captures']=dict(columns=['ordinal','stream','bytes','sha256'],rows=capture_rows)
     tables={}
