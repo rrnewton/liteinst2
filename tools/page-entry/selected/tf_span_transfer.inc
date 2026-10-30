@@ -98,8 +98,14 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
     if(pc<page || pc-page>LI2_STEP_PAGE-15)return LI2_ST_ORIGIN;
     /* New caller's busy guard is already visible. From here all fallible old
        operations retain the actual old chain cleanup prefix and terminate. */
+#ifdef LI2_SPAN_FAST_BYTES
+    /* Valid remains zero and the caller's CLOSING prefix remains installed
+       through the entire volatile assembly clear; no ticket is issued here. */
+    li2_span_bytes_zero(&span_transfer,sizeof span_transfer);
+#else
     volatile unsigned char *zero=(void *)&span_transfer;
     for(size_t i=0;i<sizeof span_transfer;i++)zero[i]=0;
+#endif
     struct li2_tf_span_transfer *t=&span_transfer;
     t->chain=c;t->session=c->session;copy(&t->saved_session,c->session,sizeof t->saved_session);
     struct li2_span_transfer_progress *e=&t->progress;

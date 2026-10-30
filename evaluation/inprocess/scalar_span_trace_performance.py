@@ -8,7 +8,7 @@ from pathlib import Path
 from page_cost_compare import (Build,PROGRAM_ENV,SELECTED,need,fact,digest,source,
     before_default,pair,build_dr,dr_diagnostics)
 from unrolled_hash_build import build_bridge as build_unrolled
-from scalar_span_trace_build import build_bridge as build_span
+from scalar_span_trace_build import build_bridge as build_span,fast_bytes_completed
 import scalar_reuse_performance as reuse
 import scalar_reuse_certificate_performance as certificate
 import current_custody_performance as custody
@@ -29,6 +29,8 @@ REQUIRED=certificate.REQUIRED|custody.REQUIRED|set(component.LEAVES)|{
     'evaluation/inprocess/scalar_span_trace.py','evaluation/inprocess/scalar_span_trace_reports.py',
     'evaluation/inprocess/scalar_span_trace_build.py','evaluation/inprocess/scalar_span_component.py',
     'tools/page-entry/selected/build-scalar-span-trace.sh',
+    *('tools/page-entry/selected/'+name for name in
+      ('span_fast_bytes.h','tests/span_fast_bytes/oracle.c','tests/span_fast_bytes/build.sh')),
     *('tools/page-entry/selected/'+name for name in('tf_span_transfer.h','tf_span_transfer.inc',
       'span_fetch.h','span_fetch.inc','span_source.h','span_source.inc','rseq_span.inc',
       'selected_scalar_span.inc','selected_scalar_span_reuse.inc',
@@ -175,6 +177,7 @@ def span_trace(a,r,pin,binary):
     need(pin(a.span_trace_receipt.with_suffix('.csv')).read_bytes()==out.getvalue().encode(),
          'all9 exact public TRACE CSV rows')
     seed=actual['seed_prerequisite'];built=actual['release_build']
+    fast_bytes_completed(built,actual['commands'],binary)
     seed_fixed=dict(status='passed',launched=True,exit=0,bounds=[5,512<<20,16<<20,15],owner_subjects=0,performance_credit=False)
     need(digest(actual['namespace_controls'])==digest(public['namespace_controls'])==digest(dict(status='passed',tests=12,existing=5,added=7))and
          digest({k:seed[k]for k in seed_fixed})==digest(seed_fixed)and

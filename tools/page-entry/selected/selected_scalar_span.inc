@@ -1,3 +1,6 @@
+#ifdef LI2_SPAN_FAST_BYTES
+#include "span_fast_bytes.h"
+#endif
 /* Distinct genuine-TRACE scalar-span owner. Include after the unchanged
    scalar-region owner. Anonymous generation-bound slots use actual W^X
    provenance, not fabricated memfd seals. C does not pre-read region load
@@ -110,9 +113,13 @@ static uint32_t sp_u32(const unsigned char *p) {
     return (uint32_t)p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24;
 }
 
+#ifdef LI2_SPAN_FAST_BYTES
+static void sp_zero(void *p,size_t n) { li2_span_bytes_zero(p,n); }
+#else
 static void sp_zero(void *p,size_t n) {
     unsigned char *b=p;for(size_t i=0;i<n;i++)b[i]=0;
 }
+#endif
 
 static int sp_range(const void *p,size_t n) {
     uintptr_t a=(uintptr_t)p,b=(uintptr_t)fork_gate_stack.ss_sp;
