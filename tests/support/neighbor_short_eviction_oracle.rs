@@ -1,7 +1,7 @@
 //! Separate same-function short-victim cohort. All mappings are required;
 //! allocation refusal is a failure, never a skip or a retried layout.
 use super::*;
-use liteinst2::neighbor::plan_neighbor_short;
+use liteinst2::neighbor::{plan_neighbor_short, plan_neighbor_short_detailed};
 use oracle::ShortSourceRelay;
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 
@@ -306,7 +306,7 @@ fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
             ..SearchPolicy::default()
         },
     };
-    let planned = plan_neighbor_short(
+    let planned = plan_neighbor_short_detailed(
         &request,
         &victim_allocation,
         NeighborSearch {
@@ -318,7 +318,8 @@ fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
     )
     .unwrap_or_else(|error| {
         panic!(
-            "required short layout{layout_index} L{selected_len}/M{victim_len} refused: {error:?}"
+            "required short layout{layout_index} L{selected_len}/M{victim_len} refused: {error:?}; base={base:#x}, selected_target={selected_target:#x}, victim_target={victim_target:#x}, conflicts={:?}",
+            exact_mapping_conflicts(&[selected_target, victim_target])
         )
     });
     let geometry = planned.geometry();
@@ -547,6 +548,30 @@ fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
         assert_eq!(INSTALLED.load(SeqCst), 2204);
         assert_eq!(RETIRED.load(SeqCst), 2204);
     }
+}
+
+// Failure-only diagnostics: preserve numeric occupancy and permissions without
+// embedding filenames or host paths in the assertion message.
+fn exact_mapping_conflicts(targets: &[u64]) -> Vec<String> {
+    std::fs::read_to_string("/proc/self/maps")
+        .expect("read fixture mapping diagnostics")
+        .lines()
+        .filter_map(|line| {
+            let mut fields = line.split_whitespace();
+            let range = fields.next().unwrap();
+            let permissions = fields.next().unwrap();
+            let (start, end) = range.split_once('-').unwrap();
+            let start = u64::from_str_radix(start, 16).unwrap();
+            let end = u64::from_str_radix(end, 16).unwrap();
+            targets
+                .iter()
+                .any(|target| {
+                    let page = target & !4095;
+                    start < page + 8192 && page < end
+                })
+                .then(|| format!("{range} {permissions}"))
+        })
+        .collect()
 }
 
 // This scaffold is hand-emitted independently of the short planner/decoder.
