@@ -60,21 +60,31 @@ static int ler_permitted(size_t slot) {
     return 1;
 }
 #ifdef LI2_LINKED_PREEDGE
+/* Compare exact age/head ratios without overflow, floating point, or a
+   permanent size priority. Callers authenticate positive heads and age. */
+static int ler_age_greater(uint64_t age,unsigned heads,uint64_t previous_age,unsigned previous_heads) {
+    uint64_t quotient=age/heads,previous_quotient=previous_age/previous_heads;
+    if(quotient!=previous_quotient)return quotient>previous_quotient;
+    return (age%heads)*previous_heads>(previous_age%previous_heads)*heads;
+}
 static size_t ler_choose(void) {
     le_need(selected_linked_epoch.used==LE_PAGES && !ler.pending && !ler.retiring &&
         le_quiet(&selected_borrow),LE_STATE,305);
-    size_t chosen=LE_PAGES;unsigned smallest=0;
+    size_t chosen=LE_PAGES;uint64_t chosen_age=0;unsigned chosen_heads=0;
     for(size_t n=0;n<LE_PAGES;n++) {
         size_t slot=(ler.cursor+n)%LE_PAGES;
         if(ler_permitted(slot)) {
-            /* Weight is advisory only, read from the immutable primary plan
-               after the unchanged completed-permit/identity check. Strictly
-               smaller wins; equal weights retain the original FIFO order. */
+            /* Every timestamp is the actual most recent successful completion
+               of this permitted generation, including genuine cache hits. */
             unsigned heads=le_plan(&selected_linked_epoch.slots[slot])->heads;
-            if(chosen==LE_PAGES || heads<smallest) {chosen=slot;smallest=heads;}
+            le_need(heads && heads<=LI2_PREEDGE_HEADS,LE_STATE,317);
+            uint64_t age=selected_linked_epoch.completed-ler.permits[slot].completion+1;
+            if(chosen==LE_PAGES || ler_age_greater(age,heads,chosen_age,chosen_heads)) {
+                chosen=slot;chosen_age=age;chosen_heads=heads;
+            }
         }
     }
-    return chosen; /* No completed generation: original clean capacity MISS. */
+    return chosen; /* Equal ratios retain cyclic scan-hand order; no permit is MISS. */
 }
 #else
 static size_t ler_choose(void) {
@@ -155,7 +165,13 @@ static void ler_published(size_t slot) {
         struct ler_retirement *t=&ler.retirement;
         le_need(t->started && t->consumed && t->target_ready && !t->replaced &&
             t->slot==slot && t->new_generation==ler.generation,LE_STATE,310);
+#ifdef LI2_LINKED_PREEDGE
+        /* The aging-policy hand advances once per completed retirement; it is
+           only a tie-order origin, not the selected victim's successor. */
+        t->replaced=1;le_count(&ler.retirements);ler.cursor=(ler.cursor+1)%LE_PAGES;ler.retiring=0;
+#else
         t->replaced=1;le_count(&ler.retirements);ler.cursor=(slot+1)%LE_PAGES;ler.retiring=0;
+#endif
     }
 }
 static void ler_claim(size_t slot,int hit) {
