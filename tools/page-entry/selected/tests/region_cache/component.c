@@ -38,7 +38,23 @@ long raw(long n,long a,long b,long c,long d,long e,long f) {
 }
 #define RAW(n,a,b,c,d,e,f) raw(n,(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
 static void bytes(void *d,const void *s,size_t n){unsigned char *x=d;const unsigned char *y=s;for(size_t i=0;i<n;i++)x[i]=y[i];}
-static int same(const void *a,const void *b,size_t n){const unsigned char *x=a,*y=b;for(size_t i=0;i<n;i++)if(x[i]!=y[i])return 0;return 1;}
+static int same(const void *a,const void *b,size_t n) {
+    const unsigned char *x=a,*y=b;
+#ifdef LI2_FAST_EQUAL
+    /* GCC's alias-anything, alignment-one integer type permits the same
+       immutable byte ranges as the scalar path. Each load is wholly inside
+       the requested range; neither alignment nor a readable suffix is needed.
+       No vector/string instruction or application-state normalization is used. */
+    typedef uint64_t word __attribute__((__may_alias__,__aligned__(1)));
+    _Static_assert(sizeof(word)==8 && __alignof__(word)==1,"bounded unaligned word");
+    while(n>=sizeof(word)) {
+        if(*(const word *)(const void *)x!=*(const word *)(const void *)y)return 0;
+        x+=sizeof(word);y+=sizeof(word);n-=sizeof(word);
+    }
+#endif
+    for(size_t i=0;i<n;i++)if(x[i]!=y[i])return 0;
+    return 1;
+}
 static void zero(void *d,size_t n){
 #if defined(LI2_FAST_MEMSET) && LI2_FAST_MEMSET
     /* Exact production bridge memset instruction/constraint body, with fill0.
@@ -92,7 +108,7 @@ static void sync_core(void){need(!RAW(SYS_membarrier,32,0,0,0,0,0),12);}
 static void source_prot(int prot){need(!RAW(SYS_mprotect,source.at,source.n,prot,0,0,0),13);sync_core();need(audit_mapping(&source,prot),14);}
 static void singleton(void){char out[8192];long fd=RAW(SYS_openat,AT_FDCWD,"/proc/self/status",O_RDONLY|O_CLOEXEC,0,0,0);need(fd>=0,137);long n=RAW(SYS_read,fd,out,sizeof(out)-1,0,0,0);need(n>0&&n<(long)sizeof(out)-1&&!RAW(SYS_close,fd,0,0,0,0,0),138);out[n]=0;unsigned threads=0,tracer=0;const char *p=out;while(*p){if(!strncmp(p,"Threads:\t1\n",11))threads++;if(!strncmp(p,"TracerPid:\t0\n",13))tracer++;while(*p&&*p!='\n')p++;if(*p)p++;}need(threads==1&&tracer==1,139);}
 static int read_maps(void){long fd=RAW(SYS_openat,AT_FDCWD,"/proc/self/maps",O_RDONLY|O_CLOEXEC,0,0,0);if(fd<0)return 0;size_t n=0;int ok=1;for(;;){if(n==sizeof(maps)-1){ok=0;break;}long k=RAW(SYS_read,fd,maps+n,sizeof(maps)-1-n,0,0,0);if(k<0){ok=0;break;}if(!k)break;n+=(size_t)k;}if(RAW(SYS_close,fd,0,0,0,0,0))ok=0;maps[n]=0;return ok;}
-static uint64_t number(const char **p,unsigned radix,int *ok){uint64_t v=0;unsigned count=0;while(**p){unsigned c=(unsigned char)**p,x;if(c>='0'&&c<='9')x=c-'0';else if(c>='a'&&c<='f')x=c-'a'+10;else break;if(x>=radix)break;if(v>(UINT64_MAX-x)/radix){*ok=0;return 0;}v=v*radix+x;++*p;++count;}if(!count)*ok=0;return v;}
+static __attribute__((always_inline)) inline uint64_t number(const char **p,unsigned radix,int *ok){uint64_t v=0;unsigned count=0;while(**p){unsigned c=(unsigned char)**p,x;if(c>='0'&&c<='9')x=c-'0';else if(c>='a'&&c<='f')x=c-'a'+10;else break;if(x>=radix)break;if(v>(UINT64_MAX-x)/radix){*ok=0;return 0;}v=v*radix+x;++*p;++count;}if(!count)*ok=0;return v;}
 static int mapping_rows(uintptr_t address,size_t size,int prot,const struct stat *st){
     if(!read_maps()||!size||address>UINTPTR_MAX-size)return 0;unsigned found=0,aliases=0;const char *p=maps;
     while(*p){int ok=1;uint64_t lo=number(&p,16,&ok);if(*p++!='-')return 0;uint64_t hi=number(&p,16,&ok);if(!ok||lo>=hi||*p++!=' ')return 0;
