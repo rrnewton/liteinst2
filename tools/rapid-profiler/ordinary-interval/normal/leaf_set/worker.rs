@@ -1,6 +1,6 @@
 //! Private leaf-set adapter; shared receive/idle/Stop loop and actual invoke body.
 use super::*;
-use rapid_profiler::frontend_native::{NormalLeafSetClient, NormalLeafSetThread};
+use rapid_profiler::frontend_native::NormalLeafSetClient;
 use shared::worker::{Event, Runtime};
 pub(in crate::normal) struct Call {
     pub inner: pair_worker::Call,
@@ -21,7 +21,8 @@ impl Call {
 struct Worker<const N: usize> {
     // Fail-stop precedes every attached/code/returned owner in drop order.
     fail_stop: csv::FailStop,
-    attached: Option<NormalLeafSetThread>,
+    attached: Option<counter::Thread>,
+    counter: Option<Arc<counter::Custody>>,
     calls: Vec<Call>,
     targets: [csv::Csv; N],
     expectations: Expectations<N>,
@@ -46,6 +47,7 @@ impl<const N: usize> Worker<N> {
         client: NormalLeafSetClient,
         custody: Arc<pair_worker::Custody>,
         cpu: usize,
+        counter: Option<Arc<counter::Custody>>,
     ) -> Self {
         assert!((1..=4).contains(&N));
         let mut fail_stop = csv::FailStop(true);
@@ -61,11 +63,12 @@ impl<const N: usize> Worker<N> {
         custody.worker(identity);
         // SAFETY: sole actual caller, retained immutable complete leaf set, no signals,
         // reentry/nonlocal exits or stack substitution; main is independent controller.
-        let attached = unsafe { client.attach(1, readable, IntervalJournal::allocate()) }.unwrap();
-        assert_eq!(attached.totals().unwrap(), NormalTotals::default());
+        let attached = unsafe { counter::Thread::attach(&client, readable, counter.as_deref()) };
+        assert_eq!(attached.totals(), NormalTotals::default());
         let worker = Self {
             fail_stop: csv::FailStop(true),
             attached: Some(attached),
+            counter,
             calls: Vec::with_capacity(4),
             targets: entries
                 .map(|entry| unsafe { std::mem::transmute::<usize, csv::Csv>(entry as usize) }),
@@ -80,7 +83,7 @@ impl<const N: usize> Worker<N> {
 impl<const N: usize> Runtime for Worker<N> {
     type Command = input::Command;
     type Call = Call;
-    type Batch = NormalLeafSetBatch;
+    type Batch = counter::Batch;
     fn pending(&self) -> usize {
         self.calls.len()
     }
@@ -109,14 +112,14 @@ impl<const N: usize> Runtime for Worker<N> {
         }
         assert!(complete_record(self.calls.len(), N));
     }
-    fn flush(&mut self, tx: &mpsc::SyncSender<Event<Call, NormalLeafSetBatch>>) {
+    fn flush(&mut self, tx: &mpsc::SyncSender<Event<Call, counter::Batch>>) {
         self.postflight();
         // SAFETY: every actual call returned through CALL/store, with complete
         // input/output/source/caller/thread/stack custody checked above.
-        let batch = unsafe { self.attached.as_mut().unwrap().checkpoint_after_returns() }.unwrap();
+        let batch = unsafe { self.attached.as_mut().unwrap().checkpoint() };
         if let Some(native) = batch {
-            assert_eq!(native.records().len(), N);
-            assert_eq!(native.records().len(), self.calls.len());
+            assert_eq!(native.normal().records().len(), N);
+            assert_eq!(native.normal().records().len(), self.calls.len());
             let calls = std::mem::replace(&mut self.calls, Vec::with_capacity(4));
             if let Err(error) = tx.send(Event::Batch {
                 calls,
@@ -130,32 +133,39 @@ impl<const N: usize> Runtime for Worker<N> {
         }
     }
     fn totals(&self) -> NormalTotals {
-        self.attached.as_ref().unwrap().totals().unwrap()
+        self.attached.as_ref().unwrap().totals()
     }
     fn finish(mut self) -> NormalTotals {
         self.postflight();
-        assert!(
-            unsafe { self.attached.as_mut().unwrap().checkpoint_after_returns() }
+        assert!(unsafe { self.attached.as_mut().unwrap().checkpoint() }.is_none());
+        let totals = self.attached.as_ref().unwrap().totals();
+        assert_eq!(
+            self.attached
+                .take()
                 .unwrap()
-                .is_none()
+                .detach(self.counter.as_deref()),
+            totals
         );
-        let totals = self.attached.as_ref().unwrap().totals().unwrap();
-        assert_eq!(self.attached.take().unwrap().detach().unwrap(), totals);
         self.postflight();
         self.fail_stop.0 = false;
         totals
     }
 }
+type WorkerEvidence = (
+    Arc<OnceLock<pair_worker::Identity>>,
+    Option<Arc<counter::Custody>>,
+);
 pub(super) fn run<const N: usize>(
     targets: ([u64; N], Expectations<N>),
     client: NormalLeafSetClient,
     custody: Arc<pair_worker::Custody>,
-    ready: Arc<OnceLock<pair_worker::Identity>>,
+    evidence: WorkerEvidence,
     rx: mpsc::Receiver<input::Command>,
-    tx: mpsc::SyncSender<Event<Call, NormalLeafSetBatch>>,
+    tx: mpsc::SyncSender<Event<Call, counter::Batch>>,
     cpu: usize,
 ) {
-    let worker = Worker::attach(targets.0, targets.1, client, custody, cpu);
+    let (ready, counter) = evidence;
+    let worker = Worker::attach(targets.0, targets.1, client, custody, cpu, counter);
     let id = worker.identity;
     ready.set(id).unwrap();
     tx.send(Event::Ready { tid: id.tid }).unwrap();

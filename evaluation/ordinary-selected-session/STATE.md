@@ -114,3 +114,37 @@ does not qualify the concurrent clock schedule, asynchronous preemption, strict
 or other programs, inputs, compilers or xstate configurations. It leaves the
 existing core populations, certified-profile failures and prior timing results
 unchanged.
+
+## Accuracy attachment state campaign
+
+The separate `selected-leaf-set-accuracy-state-v1` command uses the identical
+192-key population, complete caller/function bodies, 39-column output and
+architectural comparator through `attach_accuracy`. It manually arms one bank
+with K10 or K1000, a 10 ms policy and 4,096-call limit. Within each child, it
+retains and checks the raw acquisition, per-call counter endpoints and explicit
+close records. Those records are not exported in the 39-column CSV. This
+does not qualify PMU metrics, cadence, performance or the seeded accuracy matrix.
+
+Start with the same five fresh preparation phases in [BUILD.md](BUILD.md):
+products, tests, whole-functional controls, sdk-build and sdk-controls, at one
+clean revision and one three-CPU reservation. Run
+`python3 -B evaluation/ordinary-selected-session/accuracy_state_controls.py`
+separately; it includes all thirteen inherited controls and eight new controls.
+Native execution remains a separate requirement.
+
+Use `accuracy_owner.py` for `accuracy-cohort` and `accuracy-collect`, preserving
+the common/build/SDK-build/SDK-controls/geometry option order in BUILD.md.
+The four cohort names and final ordered reference array are unchanged. Supply
+new independently reviewed geometry with kind
+`selected-sdk-accuracy-geometry-acceptance-v1`, scope
+`selected-leaf-set-accuracy-state-v1` and status
+`INDEPENDENTLY_ACCEPTED_FOR_FIXED_COPIED_ACCURACY_STATE`. Preserve every original
+geometry/build/caller/premise field, including `native_state` as
+`UNRUN_SEPARATE_REQUIRED`. Add `accuracy_policy` with `k: [10, 1000]`,
+`epoch_ms: 10`, `epochs: 1`, `calls: 4096`, `arm: "manual-one-bank"`, and
+`qualification` with `pmu_metric`, `cadence` and `performance` all false.
+
+Every key retains one attempt and the original process/step limits. Closed
+failures stay failed; uncertain custody stops later dispatch. Only the complete
+192-pair collection and normal owner closure can establish callback-state PASS.
+All three qualification flags remain false even after such a state result.

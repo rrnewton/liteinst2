@@ -1,0 +1,548 @@
+{
+ "schema": "accuracy-workspace-validation-summary-v1",
+ "status": "CLOSED_CORRECTNESS_VALIDATION_PASS",
+ "executed_revision": "5d1f888f5d2a4f4ff6fa5dcfbbdc851228c85e73",
+ "source": {
+  "clean_at_start": true,
+  "unchanged_at_close": true,
+  "working_overlay": {},
+  "difference_from_d96": "Five committed accuracy evidence files only; no code, helper, recipe or assertion changes.",
+  "reproduction_sources": {
+   "evaluation/short-neighbor-parallel/validate.py": {
+    "bytes": 3717,
+    "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+   },
+   "evaluation/admission/processes.py": {
+    "bytes": 15760,
+    "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+   }
+  }
+ },
+ "machine": {
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "rust": "1.97.1",
+  "rust_version_basis": "Operator-reported toolchain; this receipt does not authenticate compiler binary provenance.",
+  "reserved_cpus": [
+   37,
+   98,
+   111,
+   120,
+   157,
+   173,
+   204,
+   236,
+   244,
+   248,
+   251,
+   254,
+   267,
+   283,
+   289,
+   302
+  ],
+  "reserved_cpu_count": 16,
+  "reservation": "One 16-CPU allocation held across all five commands; CPU numbers are observations, not a portable reservation recipe.",
+  "rust_test_threads": 316,
+  "workspace_cargo_jobs": 16,
+  "default_cargo_build_jobs": 4
+ },
+ "outer": {
+  "command": [
+   "/usr/bin/python3.9",
+   "-B",
+   "evaluation/short-neighbor-parallel/validate.py",
+   "--revision",
+   "5d1f888f5d2a4f4ff6fa5dcfbbdc851228c85e73",
+   "--output",
+   "${RUN}"
+  ],
+  "environment": {
+   "HOME": "${USER_HOME}",
+   "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+   "RUSTC": "${TOOLCHAIN}/bin/rustc",
+   "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+   "CARGO_HOME": "${CARGO_HOME}",
+   "CARGO_TARGET_DIR": "${ROOT}/target",
+   "CARGO_INCREMENTAL": "0",
+   "CARGO_BUILD_JOBS": "4",
+   "CARGO_NET_OFFLINE": "true",
+   "CARGO_TERM_COLOR": "never",
+   "CARGO_PROFILE_DEV_DEBUG": "0",
+   "CARGO_PROFILE_TEST_DEBUG": "0",
+   "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+   "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+   "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+   "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+   "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+   "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+   "LANG": "C.UTF-8",
+   "LC_ALL": "C.UTF-8",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "LITEINST_EVALUATION": "1",
+   "TMPDIR": "${RUN_TMP}",
+   "TEMP": "${RUN_TMP}",
+   "TMP": "${RUN_TMP}"
+  },
+  "attempts": 1,
+  "wall_limit_seconds": 1200,
+  "output_limit_bytes": 8388608,
+  "separate_cleanup_budget_seconds": 3,
+  "outcome": {
+   "start_utc": "2026-10-30T22:05:43.600540+00:00",
+   "exit_code": 0,
+   "termination": null,
+   "seconds": 1055.9513180109207,
+   "private_log_sha256": "09125c719f6376320afc70817bd66f14af7f6e11161ab20928af961f35f67122",
+   "cleanup_complete": true,
+   "reaped_descendants": 0,
+   "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "load_before": [
+   "106.59",
+   "110.27",
+   "96.19"
+  ],
+  "load_after": [
+   "53.19",
+   "61.28",
+   "76.50"
+  ],
+  "private_log_bytes": 2641
+ },
+ "phases": [
+  {
+   "name": "fmt",
+   "command": [
+    "cargo",
+    "fmt",
+    "--check"
+   ],
+   "attempts": 1,
+   "wall_limit_seconds": 180,
+   "output_limit_bytes": 8388608,
+   "outcome": {
+    "start_utc": "2026-10-30T22:05:43.674836+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 13.273907169001177,
+    "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+   },
+   "load_before": [
+    "106.59",
+    "110.27",
+    "96.19"
+   ],
+   "load_after": [
+    "100.07",
+    "108.76",
+    "95.85"
+   ],
+   "private_log_bytes": 0
+  },
+  {
+   "name": "clippy",
+   "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--all-features",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "attempts": 1,
+   "wall_limit_seconds": 180,
+   "output_limit_bytes": 8388608,
+   "outcome": {
+    "start_utc": "2026-10-30T22:05:56.949405+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 16.77521060197614,
+    "private_log_sha256": "4b6f6f5fbcf87483548a6f4f29e5cbf1c911cb9b9bc03e0eed73790b36687d8b",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+   },
+   "load_before": [
+    "100.07",
+    "108.76",
+    "95.85"
+   ],
+   "load_after": [
+    "106.47",
+    "109.64",
+    "96.41"
+   ],
+   "private_log_bytes": 181
+  },
+  {
+   "name": "check",
+   "command": [
+    "cargo",
+    "check",
+    "--workspace",
+    "--all-features",
+    "--all-targets"
+   ],
+   "attempts": 1,
+   "wall_limit_seconds": 180,
+   "output_limit_bytes": 8388608,
+   "outcome": {
+    "start_utc": "2026-10-30T22:06:13.725367+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 10.079500596038997,
+    "private_log_sha256": "e9fcdd43c5576b929042f476f6a7cddd63d27229410009f62d8fafe8acc5d518",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+   },
+   "load_before": [
+    "106.47",
+    "109.64",
+    "96.41"
+   ],
+   "load_after": [
+    "103.19",
+    "108.84",
+    "96.29"
+   ],
+   "private_log_bytes": 181
+  },
+  {
+   "name": "workspace",
+   "command": [
+    "cargo",
+    "test",
+    "-j",
+    "16",
+    "--workspace",
+    "--no-fail-fast"
+   ],
+   "attempts": 1,
+   "wall_limit_seconds": 900,
+   "output_limit_bytes": 8388608,
+   "outcome": {
+    "start_utc": "2026-10-30T22:06:23.805565+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 887.656656407984,
+    "private_log_sha256": "831dbd6b8f7654e02026c780404c2be846e1878ed98334fdbd1c7d213b31d4d8",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+   },
+   "load_before": [
+    "103.19",
+    "108.84",
+    "96.29"
+   ],
+   "load_after": [
+    "64.87",
+    "67.03",
+    "80.39"
+   ],
+   "private_log_bytes": 485859
+  },
+  {
+   "name": "serial-launch",
+   "command": [
+    "cargo",
+    "test",
+    "-p",
+    "liteinst-launch",
+    "--tests",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+   ],
+   "attempts": 1,
+   "wall_limit_seconds": 180,
+   "output_limit_bytes": 8388608,
+   "outcome": {
+    "start_utc": "2026-10-30T22:21:11.464045+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 128.06798505410552,
+    "private_log_sha256": "333dd1c5da7bca4b23432206b673b0fe29b514ec557a2092e227c91393af47ad",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+   },
+   "load_before": [
+    "64.87",
+    "67.03",
+    "80.39"
+   ],
+   "load_after": [
+    "53.19",
+    "61.28",
+    "76.50"
+   ],
+   "private_log_bytes": 1404580
+  }
+ ],
+ "minimum_version_check": {
+  "scope": "Separate rapid-profiler target check only; no full Rust 1.85 workspace or runtime claim.",
+  "revision": "5d1f888f5d2a4f4ff6fa5dcfbbdc851228c85e73",
+  "source_unchanged": true,
+  "working_overlay": {},
+  "rust": "1.85.0 (4d91de4e4 2025-02-17)",
+  "version_basis": "Separately observed by the operator; compiler binary provenance is not authenticated by this receipt.",
+  "command": [
+   "/usr/bin/timeout",
+   "--signal=TERM",
+   "--kill-after=5s",
+   "180s",
+   "/usr/bin/env",
+   "RUSTC=${MSRV_TOOLCHAIN}/bin/rustc",
+   "RUSTDOC=${MSRV_TOOLCHAIN}/bin/rustdoc",
+   "${MSRV_TOOLCHAIN}/bin/cargo",
+   "check",
+   "-p",
+   "rapid-profiler",
+   "--all-targets",
+   "--all-features"
+  ],
+  "environment_ref": "outer.environment",
+  "attempts": 1,
+  "reserved_cpus": [
+   6,
+   52,
+   74,
+   141
+  ],
+  "reserved_cpu_count": 4,
+  "command_timeout_seconds": 180,
+  "timeout_signal": "TERM",
+  "kill_after_seconds": 5,
+  "outer_wall_limit_seconds": 1200,
+  "output_limit_bytes": 8388608,
+  "separate_owner_cleanup_budget_seconds": 3,
+  "outcome": {
+   "start_utc": "2026-10-30T22:25:18.959333+00:00",
+   "exit_code": 0,
+   "termination": null,
+   "seconds": 10.913299383129925,
+   "private_log_sha256": "4825ab5fb6bf88c712ca852cf35c4cd23e11390bf8b1d0aad2e2d3e404e3c4f2",
+   "cleanup_complete": true,
+   "reaped_descendants": 0,
+   "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "load_before": [
+   "44.51",
+   "55.69",
+   "72.65"
+  ],
+  "load_after": [
+   "45.18",
+   "55.46",
+   "72.39"
+  ],
+  "private_log_bytes": 181,
+  "owner_receipt": {
+   "bytes": 2648,
+   "sha256": "3fb18604ffb75a6db3b21d64648bc163792e36ea4bd45a7a211c2272a33b67c5"
+  }
+ },
+ "tests": {
+  "workspace": {
+   "totals": {
+    "failed": 0,
+    "filtered_out": 0,
+    "ignored": 37,
+    "measured": 0,
+    "passed": 4048
+   },
+   "summary_count": 110,
+   "raw_totals": {
+    "failed": 0,
+    "filtered_out": 105,
+    "ignored": 37,
+    "measured": 0,
+    "passed": 4051
+   },
+   "raw_summary_count": 113,
+   "nested_children_excluded_only_from_totals": [
+    {
+     "passed": 1,
+     "failed": 0,
+     "ignored": 0,
+     "measured": 0,
+     "filtered_out": 35,
+     "seconds": 28.96
+    },
+    {
+     "passed": 1,
+     "failed": 0,
+     "ignored": 0,
+     "measured": 0,
+     "filtered_out": 35,
+     "seconds": 9.15
+    },
+    {
+     "passed": 1,
+     "failed": 0,
+     "ignored": 0,
+     "measured": 0,
+     "filtered_out": 35,
+     "seconds": 69.0
+    }
+   ],
+   "nested_child_identity": {
+    "count": 3,
+    "count_policy": "Keep every raw summary; exclude only these three filtered child summaries from aggregate totals; any child failure still prevents a passing audit.",
+    "modes": [
+     "emitter",
+     "single",
+     "grouped"
+    ],
+    "source": "tests/controlled_oracle.rs",
+    "test": "runtime_control_oracle_modes"
+   },
+   "custom_harnesses_without_libtest_counts": [
+    "tests/exec_backing_cleanup.rs",
+    "tests/precontext_native.rs"
+   ],
+   "rapid_profiler_doctest_groups": [
+    {
+     "passed": 2,
+     "failed": 0,
+     "ignored": 0,
+     "measured": 0,
+     "filtered_out": 0,
+     "seconds": 0.0
+    },
+    {
+     "passed": 45,
+     "failed": 0,
+     "ignored": 0,
+     "measured": 0,
+     "filtered_out": 0,
+     "seconds": 0.11
+    }
+   ]
+  },
+  "serial_launch": {
+   "totals": {
+    "failed": 0,
+    "filtered_out": 0,
+    "ignored": 0,
+    "measured": 0,
+    "passed": 1039
+   },
+   "summary_count": 27,
+   "custom_harnesses_without_libtest_counts": [
+    "tests/exec_backing_cleanup.rs"
+   ]
+  },
+  "counting": "Summary occurrences, not unique test names. Workspace and serial overlap; do not add them as unique coverage. No count is invented for custom harnesses. Raw summaries and failures remain in the private audit.",
+  "required_regressions": {
+   "required": 122,
+   "exact_names_passed": 122,
+   "absent_or_nonpassing": [],
+   "prior_names": 117,
+   "added_exec_source": 3,
+   "added_b3_exec": 2,
+   "groups": {
+    "b3_exec": 2,
+    "exec_source": 3,
+    "gap_carrier": 9,
+    "observing_control": 8,
+    "prefixed_pun": 1,
+    "quiescent_oracle": 4,
+    "rapid_rejection": 2,
+    "routed_jmp_frontend": 17,
+    "routed_jmp_native": 34,
+    "routed_jmp_publication": 3,
+    "short_neighbor": 21,
+    "staged_image_drop": 1,
+    "startup_carrier": 9,
+    "startup_catalog": 8
+   }
+  },
+  "ignored": {
+   "outcomes": 37,
+   "distinct_names": 36,
+   "unchanged_by_name_reason_multiplicity": true,
+   "basis_revision": "f1428066cc624066642ca20cc8e8c154212a87ca",
+   "reason_groups": {
+    "requires exact fresh release process and independently rebuilt selected strnlen fixture": {
+     "distinct_names": 3,
+     "outcomes": 3
+    },
+    "requires release fixture reproducer": {
+     "distinct_names": 7,
+     "outcomes": 7
+    },
+    "requires release tree batch fixture reproducer; one fresh process": {
+     "distinct_names": 20,
+     "outcomes": 20
+    },
+    "requires release tree fixture reproducer": {
+     "distinct_names": 1,
+     "outcomes": 1
+    },
+    "long-running M5 live stress matrix": {
+     "distinct_names": 1,
+     "outcomes": 1
+    },
+    "requires explicit fresh-process release hardware-stop prerequisite": {
+     "distinct_names": 1,
+     "outcomes": 2
+    },
+    "opt-in release-mode cross-core LiveJumpPatch latency distribution": {
+     "distinct_names": 1,
+     "outcomes": 1
+    },
+    "release-mode M5 overhead benchmark": {
+     "distinct_names": 1,
+     "outcomes": 1
+    },
+    "release-mode latency benchmark": {
+     "distinct_names": 1,
+     "outcomes": 1
+    }
+   },
+   "exact_names": "Retained in the authenticated detailed private audit; this public summary groups outcomes by reason."
+  }
+ },
+ "evidence": {
+  "closure": {
+   "bytes": 5389,
+   "sha256": "1141ee186c5a744769d5dcdc200228c05229911cce714e91f5195a01f5405066"
+  },
+  "outer_owner": {
+   "bytes": 2524,
+   "sha256": "e9ae56d67791dab12f382216c2385fcf615aa72a5b21f36f8e83eca7b7a74da5"
+  },
+  "prepared_audit_binding": {
+   "bytes": 1068,
+   "sha256": "e6c91cbee3309d2fc9f3df8aade75f34a9aaa411598c689a0eb1ca48ce99a65c"
+  },
+  "closed_audit_binding": {
+   "bytes": 3477,
+   "sha256": "957ba879cb43cc234e4002c11a5d47a943cf37baadd24838a17a3298fda6e47a"
+  },
+  "detailed_private_audit": {
+   "bytes": 217165,
+   "sha256": "fb081ee5c17ea3c201de103bb00f7ee9a64e092d0e0d04518d813c191e3dcbfe"
+  },
+  "verdict": "APPROVE_CLOSED_VALIDATION_EVIDENCE",
+  "findings": [],
+  "scope": "Closed-data authentication, exact commands/bounds/source/required-name/ignored-census joins. Logs and the detailed audit remain private; hashes identify them."
+ },
+ "qualification": {
+  "correctness_validation": true,
+  "pmu_accuracy": false,
+  "cadence": false,
+  "strict_two_ms_deadline": false,
+  "performance": false,
+  "complete_a5_accuracy_matrix": false,
+  "limits": "This debug-profile workspace validation does not rerun or extend the separate 192-pair release campaign. Historical failures and ignored prerequisites remain unchanged."
+ }
+}

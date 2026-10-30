@@ -230,6 +230,60 @@ class Controls(unittest.TestCase):
             with self.assertRaises(AssertionError, msg=drift):
                 driver.source_build_join(build, current, git)
 
+        # Exercise the real shared census; all old and accuracy names execute.
+        leaf = driver.load('_selected_roster_leaf', driver.ROOT / 'evaluation/ordinary-leaf-set-session/reproduce.py')
+        recipe = driver.load('_selected_roster_recipe', driver.ROOT / 'evaluation/ordinary-module-session/reproduce.py')
+        single = driver.load('_selected_roster_single', driver.ROOT / recipe.MODULES['single'])
+        module = driver.load('_selected_roster_module', driver.ROOT / recipe.MODULES['module'])
+        modules = {'single': single, 'module': module}
+        prior = (tuple(single.SESSION) + tuple(single.TRACE) + recipe.CONSUMER +
+                 tuple(module.MODULE_TESTS) + tuple(module.CSV_TESTS) + recipe.OWNER_CONTROLS + recipe.REUSE_CONTROLS)
+        old = prior + leaf.APP_CONTROLS[:16]
+        accuracy = (
+            'normal::leaf_set::accuracy_tests::accuracy_ready_binds_actual_period_and_old_headers_remain_literal',
+            'normal::leaf_set::accuracy_tests::consumer_refuses_legacy_substitution_wrong_k_epochs_calls_or_transport_options',
+            'normal::leaf_set::accuracy_tests::arm_wire_keeps_actual_observations_and_late_completed_arms',
+            'normal::leaf_set::selected::accuracy_tests::full_matrix_preserves_every_selected_function_and_full_input_denominator',
+            'normal::leaf_set::selected::accuracy_tests::invalid_accuracy_profile_and_selection_refuse_before_table_loading',
+            'normal::leaf_set::selected::accuracy_tests::table_refusal_remains_terminal_and_old_parser_does_not_accept_new_k_or_grammar',
+            'normal::leaf_set::counter::tests::failed_acquisition_and_close_keep_all_raw_attribute_bytes_and_absences',
+            'normal::leaf_set::counter::tests::short_and_failed_reads_preserve_return_errno_length_buffer_and_both_clocks',
+            'normal::leaf_set::counter::tests::numeric_extremes_fit_350_without_scaling_id_loss_or_debug_fields',
+            'normal::session::io::accuracy_tests::complete_rosters_fit_only_the_explicit_accuracy_output_capacity',
+            'normal::session::io::accuracy_tests::both_caps_refuse_one_byte_over_without_discarding_pending_output',
+        )
+        self.assertEqual(leaf.ACCURACY_CONTROLS, accuracy)
+        self.assertEqual(leaf.APP_CONTROLS[16:], accuracy)
+        self.assertEqual(len(old), 68)
+        self.assertEqual(len(driver.SELECTED_RUST), 24)
+        self.assertEqual(len(accuracy), 11)
+        wanted = prior + leaf.APP_CONTROLS + driver.SELECTED_RUST
+        inventory = list(wanted) + ['unrelated::test']
+        with patch.object(leaf, 'ordinary_inventory', wraps=leaf.ordinary_inventory) as inherited:
+            self.assertEqual(driver.selected_inventory(inventory, leaf, recipe, modules), wanted)
+            inherited.assert_called_once_with(inventory, recipe, single, module)
+        self.assertEqual(len(wanted), 103)
+        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy))
+        for name in wanted:
+            for changed in ([n for n in inventory if n != name], inventory + [name]):
+                with self.assertRaises(AssertionError, msg=name):
+                    driver.selected_inventory(changed, leaf, recipe, modules)
+        with self.assertRaises(AssertionError):
+            driver.selected_inventory(list(old + driver.SELECTED_RUST), leaf, recipe, modules)
+        prefixes = ('normal::leaf_set::accuracy_tests::',
+                    'normal::leaf_set::selected::accuracy_tests::',
+                    'normal::leaf_set::counter::tests::',
+                    'normal::session::io::accuracy_tests::',
+                    'normal::leaf_set::tests::', 'normal::session::io::tests::',
+                    'normal::selected_session_controls::')
+        for prefix in prefixes:
+            with self.assertRaises(AssertionError, msg=prefix):
+                driver.selected_inventory(inventory + [prefix + 'unregistered'], leaf, recipe, modules)
+        for name in accuracy:
+            changed = [n if n != name else name.rsplit('::', 1)[0] + '::unregistered' for n in inventory]
+            with self.assertRaises(AssertionError, msg=name):
+                driver.selected_inventory(changed, leaf, recipe, modules)
+
     def test_symbol_suffix_keeps_every_contiguous_byte_and_refuses_bad_headers(self):
         prefix = b'ELF Header:\n  Machine: Advanced Micro Devices X86-64\n\nSection Headers:\n  data\n'
         suffix = (b"Symbol table '.dynsym' contains 3 entries:\nall dynamic rows\n\n"

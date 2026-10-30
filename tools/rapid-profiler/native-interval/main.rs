@@ -1001,7 +1001,10 @@ fn main() {
         }
         return;
     }
-    if args.get(1).and_then(|s| s.to_str()) == Some("selected-leaf-set-copied-state-v1") {
+    if matches!(
+        args.get(1).and_then(|s| s.to_str()),
+        Some("selected-leaf-set-copied-state-v1" | "selected-leaf-set-accuracy-state-v1")
+    ) {
         let deadline = oracle::native_ordinary::strnlen::Deadline::start();
         assert_eq!(
             args.len(),
@@ -1019,7 +1022,12 @@ fn main() {
         std::fs::create_dir(&output).unwrap();
         assert_eq!(output.canonicalize().unwrap(), output);
         deadline.check();
-        normal::selected_leaf_set::run(
+        let run = if args[1] == "selected-leaf-set-accuracy-state-v1" {
+            normal::selected_leaf_set::run_accuracy
+        } else {
+            normal::selected_leaf_set::run
+        };
+        run(
             &subject,
             &expected,
             &app,

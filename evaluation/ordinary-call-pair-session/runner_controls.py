@@ -168,6 +168,45 @@ class Controls(unittest.TestCase):
         for name in (*R.RUNNER_CONTROLS,*P.CONTROLS):
             with self.assertRaises(AssertionError):R.runner_census(b'',b'\n'.join(line for line in stderr.split(b'\n') if not line.startswith(name.encode()+b' ')),P.CONTROLS)
 
+        # Exercise the real shared census: every old ordinary control and each
+        # newly required accuracy control must execute in this public recipe.
+        leaf = load('_callpair_roster_leaf', R.ROOT/'evaluation/ordinary-leaf-set-session/reproduce.py')
+        recipe = load('_callpair_roster_recipe', R.ROOT/'evaluation/ordinary-module-session/reproduce.py')
+        single = load('_callpair_roster_single', R.ROOT/recipe.MODULES['single'])
+        module = load('_callpair_roster_module', R.ROOT/recipe.MODULES['module'])
+        modules = {'single': single, 'module': module}
+        prior = (tuple(single.SESSION) + tuple(single.TRACE) + recipe.CONSUMER +
+                 tuple(module.MODULE_TESTS) + tuple(module.CSV_TESTS) + recipe.OWNER_CONTROLS + recipe.REUSE_CONTROLS)
+        inherited = prior + leaf.APP_CONTROLS
+        wanted = inherited + R.APP_CONTROLS
+        inventory = list(wanted) + ['unrelated::test']
+        self.assertEqual(len(prior), 52)
+        self.assertEqual(len(inherited), 79)
+        self.assertEqual(len(leaf.ACCURACY_CONTROLS), 11)
+        self.assertEqual(leaf.APP_CONTROLS[16:], leaf.ACCURACY_CONTROLS)
+        self.assertEqual(len(R.APP_CONTROLS), 12)
+        self.assertEqual(len(wanted), 91)
+        with patch.object(leaf, 'ordinary_inventory', wraps=leaf.ordinary_inventory) as shared:
+            self.assertEqual(R.ordinary_inventory(inventory, leaf, recipe, modules), wanted)
+            shared.assert_called_once_with(
+                [n for n in inventory if n not in R.APP_CONTROLS], recipe, single, module)
+        for name in wanted:
+            for changed in ([n for n in inventory if n != name], inventory + [name]):
+                with self.assertRaises(AssertionError, msg=name):
+                    R.ordinary_inventory(changed, leaf, recipe, modules)
+        old = prior + leaf.APP_CONTROLS[:16] + R.APP_CONTROLS
+        self.assertEqual(len(old), 80)
+        with self.assertRaises(AssertionError):
+            R.ordinary_inventory(list(old), leaf, recipe, modules)
+        for prefix in (*leaf.ACCURACY_PREFIXES, 'normal::call_pair::tests::',
+                       'normal::leaf_set::tests::', 'normal::session::io::tests::'):
+            with self.assertRaises(AssertionError, msg=prefix):
+                R.ordinary_inventory(inventory + [prefix + 'unregistered'], leaf, recipe, modules)
+        for name in leaf.ACCURACY_CONTROLS:
+            changed = [n if n != name else name.rsplit('::', 1)[0] + '::unregistered' for n in inventory]
+            with self.assertRaises(AssertionError, msg=name):
+                R.ordinary_inventory(changed, leaf, recipe, modules)
+
 
 class ReceiptControls(Receipt.Controls):
     """The six immutable receipt controls retain their separate source identity."""

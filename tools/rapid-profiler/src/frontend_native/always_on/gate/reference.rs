@@ -5,6 +5,12 @@ use std::rc::Rc;
 
 mod hardware;
 
+// One strict admission implementation for the opt-in reference and raw-counter
+// brackets. The legacy callback clock remains unchanged.
+pub(in crate::frontend_native::always_on) fn check_clock() -> Result<(), GateError> {
+    hardware::check()
+}
+
 /// Immutable gate ABI. Selecting a profile never changes an existing descriptor.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GateProfile {

@@ -1,5 +1,6 @@
 //! Bounded leaf-set profile using the existing NORMAL receipt and bank paths.
 use super::*;
+use crate::frontend_native::backoff::Policy;
 use liteinst2::contracts::CodeIdentity;
 mod history;
 pub use history::{
@@ -45,6 +46,9 @@ fn fixed(n: usize, k: usize) -> Option<(Limits, Config)> {
     if !(1..=4).contains(&n) || !matches!(k, 10 | 1000) {
         return None;
     }
+    limits_for(n, k)
+}
+fn limits_for(n: usize, k: usize) -> Option<(Limits, Config)> {
     let a = n.checked_mul(k)?;
     Some((
         Limits {
@@ -61,22 +65,45 @@ fn fixed(n: usize, k: usize) -> Option<(Limits, Config)> {
         },
     ))
 }
+fn fixed_for(n: usize, k: usize, accuracy: Option<Policy>) -> Option<(Limits, Config)> {
+    match accuracy {
+        None => fixed(n, k),
+        Some(policy) if policy.is_accuracy() && policy.retained() == k && (1..=4).contains(&n) => {
+            limits_for(n, k)
+        }
+        Some(_) => None,
+    }
+}
 pub(in crate::frontend_native::always_on) fn profile_matches(
     profile: &BindingProfile,
     limits: Limits,
     config: Config,
 ) -> bool {
-    let BindingProfile::LeafSet { site, functions } = profile else {
+    let BindingProfile::LeafSet {
+        site,
+        functions,
+        accuracy,
+    } = profile
+    else {
         return false;
     };
     functions.valid()
         && site.functions().len() == functions.as_slice().len()
         && site.identity().generation != 0
         && site.identity().mapping == site.functions()[0].entry()
-        && fixed(functions.as_slice().len(), config.retained_per_function) == Some((limits, config))
+        && fixed_for(
+            functions.as_slice().len(),
+            config.retained_per_function,
+            *accuracy,
+        ) == Some((limits, config))
 }
 pub(in crate::frontend_native::always_on) fn binding_matches(binding: &Binding) -> bool {
-    let BindingProfile::LeafSet { functions, .. } = &binding.profile else {
+    let BindingProfile::LeafSet {
+        functions,
+        accuracy,
+        ..
+    } = &binding.profile
+    else {
         return false;
     };
     if !functions.valid() {
@@ -84,7 +111,7 @@ pub(in crate::frontend_native::always_on) fn binding_matches(binding: &Binding) 
     }
     let n = functions.as_slice().len();
     let k = binding.limits.records_per_epoch / n;
-    let Some((_, config)) = fixed(n, k) else {
+    let Some((_, config)) = fixed_for(n, k, *accuracy) else {
         return false;
     };
     profile_matches(&binding.profile, binding.limits, config)
@@ -111,6 +138,28 @@ impl PreparedNormalLeafSetSessionController {
         }
         Self::prepare(site.site, install, functions, k)
     }
+    /// Explicit accuracy preparation using the same NORMAL worker, E3 banks,
+    /// mandatory hooks and absolute history. Accepts only Policy::accuracy.
+    /// K is bound into the sealed profile and fixed Config; the caller must drive
+    /// Schedule with this same policy. This constructor does not run a clock or
+    /// certify accuracy, residency, cadence or native return.
+    pub fn new_accuracy(
+        site: site::ordinary::InstalledNormalLeafSetSite,
+        install: u64,
+        functions: &[FunctionId],
+        policy: Policy,
+    ) -> Result<Self, BridgeError> {
+        if !timing::supported() {
+            return Err(error(Cause::ClockProfile));
+        }
+        Self::prepare_for(
+            site.site,
+            install,
+            functions,
+            policy.retained(),
+            Some(policy),
+        )
+    }
     // Also used by nonexecuting metadata controls; never fabricates a loaded owner.
     fn prepare(
         site: Arc<site::ordinary::LeafSetSite>,
@@ -118,9 +167,18 @@ impl PreparedNormalLeafSetSessionController {
         functions: &[FunctionId],
         k: usize,
     ) -> Result<Self, BridgeError> {
+        Self::prepare_for(site, install, functions, k, None)
+    }
+    fn prepare_for(
+        site: Arc<site::ordinary::LeafSetSite>,
+        install: u64,
+        functions: &[FunctionId],
+        k: usize,
+        accuracy: Option<Policy>,
+    ) -> Result<Self, BridgeError> {
         let functions = LeafFunctions::new(functions)?;
         let (limits, config) =
-            fixed(functions.as_slice().len(), k).ok_or(error(Cause::Identity))?;
+            fixed_for(functions.as_slice().len(), k, accuracy).ok_or(error(Cause::Identity))?;
         if site.functions().len() != functions.as_slice().len() {
             return Err(error(Cause::Identity));
         }
@@ -141,7 +199,11 @@ impl PreparedNormalLeafSetSessionController {
         Ok(Self {
             inner: PreparedIntervalController {
                 session,
-                profile: BindingProfile::LeafSet { site, functions },
+                profile: BindingProfile::LeafSet {
+                    site,
+                    functions,
+                    accuracy,
+                },
                 key: Arc::new(()),
                 install,
                 limits,
@@ -269,6 +331,41 @@ pub struct NormalLeafSetClient {
     binding: Arc<Binding>,
 }
 impl NormalLeafSetClient {
+    /// Opt in to lossless instructions:u endpoints for every real invocation.
+    /// PMU refusal is retained as acquisition/endpoint evidence, not a work skip.
+    /// # Safety
+    /// All attach obligations below hold, including the actual-thread, no-fork,
+    /// no-signal, readable-stack and full-state-save contracts. This separately
+    /// instrumented path requires native state validation before measurement.
+    /// The admitted AMD reference-clock feature set and enabled actual-thread
+    /// TSC policy must remain valid throughout attachment. Migration grants no
+    /// synchronized-clock claim; both AUX words remain part of each endpoint.
+    pub unsafe fn attach_accuracy(
+        &self,
+        registration: u64,
+        stack: ReadableStack,
+        journal: IntervalJournal,
+    ) -> Result<NormalLeafSetAccuracyThread, BridgeError> {
+        let _scope = ControllerScope::enter()?;
+        self.binding.process()?;
+        if self.accuracy_policy().is_none()
+            || !binding_matches(&self.binding)
+            || registration == 0
+            || journal.page.0.iter().any(|&word| word != 0)
+        {
+            return Err(error(Cause::Attachment));
+        }
+        super::super::gate::reference::check_clock().map_err(|_| error(Cause::ClockProfile))?;
+        accuracy::attach(&self.binding, registration, stack, journal)
+    }
+    /// Immutable constructor policy, or None for the original leaf-set profile.
+    /// This grants no execution, counter, scheduling or return authority.
+    pub fn accuracy_policy(&self) -> Option<Policy> {
+        match &self.binding.profile {
+            BindingProfile::LeafSet { accuracy, .. } => *accuracy,
+            _ => None,
+        }
+    }
     /// # Safety
     /// The sealed union-wide module contract holds continuously. This actual
     /// caller owns all valid input/stack/journal storage and sufficient callback
@@ -457,3 +554,19 @@ impl TransferOutput for LeafSetOutput {
 
 #[cfg(test)]
 pub(super) mod tests;
+
+#[cfg(test)]
+mod accuracy_tests;
+
+// Reuse the existing real Session/receipt metadata fixture without changing any
+// old test body or granting loaded-code/native authority.
+#[cfg(test)]
+pub(super) fn accuracy_fixture() -> (
+    NormalState,
+    NormalLeafSetSessionController,
+    Option<IntervalEpoch>,
+    Vec<IntervalEpochStorage>,
+) {
+    let f = tests::Fixture::new(2, 10);
+    (f.state, f.controller, f.epoch, f.banks)
+}

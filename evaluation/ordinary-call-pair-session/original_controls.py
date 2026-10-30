@@ -11,7 +11,7 @@ import unittest
 
 HERE = Path(__file__).resolve().parent
 PARSER = HERE / 'original_output.py'
-assert not PARSER.is_symlink() and hashlib.sha256(PARSER.read_bytes()).hexdigest() == '3a2b1dc5c9ca7a802751e2826ad4fe809bce720c51b3ccf81c9cd6012f4894b8'
+assert not PARSER.is_symlink() and hashlib.sha256(PARSER.read_bytes()).hexdigest() == '9533d93dbdeb692ae24350d65e634ea892d8a1e3aacdcbb85d125f49ae5129de'
 _spec = importlib.util.spec_from_file_location('_call_pair_original', PARSER)
 output = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(output)
@@ -134,7 +134,7 @@ class Controls(unittest.TestCase):
         for bad in (True, -1, (1<<64)):
             self.refuses(lambda: output.integer(bad))
         source = PARSER.read_text()
-        altered = source.replace('f8f60977519304a9ae615c44b4e193a7b5f663885b07074d4b30b6106498f3fe','0'*64,1)
+        altered = source.replace('c804a953b97494d7ec4ff3cc94ff23a69b1a34d010bd332030ca938db97681b4','0'*64,1)
         self.assertNotEqual(altered,source)
         self.refuses(lambda: exec(compile(altered,str(PARSER),'exec'),{'__file__':str(PARSER),'__name__':'_refuse_dependency'}))
         result = subprocess.run([sys.executable,'-O','-B',str(PARSER)],capture_output=True,timeout=5,

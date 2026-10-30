@@ -39,7 +39,7 @@ results must match before installed cohorts start. Each reference makes one
 uninstalled parent call whose original E8 reaches the child. The C caller is
 independently admitted; Rust-caller full-state proof is the separate native gate.
 
-Controls require all 80 ordinary methods (68 prior plus 12 CallPair), 48 SDK
+Controls require all 91 ordinary methods (79 prior plus 12 CallPair), 48 SDK
 methods (18 prior plus all 30 CallPair), eight core methods, all 61 prior Python
 methods, ten nested checker methods, six campaign methods, six separately named receipt
 methods and five producer methods, four original Python methods, six unchanged mount C controls and four
