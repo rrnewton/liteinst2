@@ -4,7 +4,7 @@
 
 The software clock counts **taken backward branch decisions BEFORE the branch executes**. It evaluates the original Jcc condition using saved RFLAGS; an unconditional backward JMP is always taken. Untaken conditional branches are encounters but consume no clock quantum. At a positive quantum boundary the actual callback sends `(logical site offset, taken-edge count, branch encounters, saved state)` to its controller and blocks until the controller returns the exact matching resume. The original branch executes only after that return. Neither a timeout nor ptrace triggers preemption, and no callback edits RIP/RSP or unwinds through generated code. Calls/indirect branches, multiple sites, external application concurrency, asynchronous cancellation, and mid-instruction stops are outside this increment.
 
-The instance belongs to one worker's TLS and authenticates process/thread, exact managed control, and original logical PC. The enabled control has no remaining writer. Publication and retirement require the sole main thread and a lease over the complete original and generated dependencies; workers receive a callable address only after final RX permissions, byte checks and publication receipt. Every successful run joins its worker. No mapping becomes RWX. Failure retains executable/control owners until process exit; this is not a drain claim. The strict helper owns bounded abnormal-process cleanup. The callback's two-second wait is a failure backstop, not optional success or a scheduling threshold.
+The instance belongs to one worker's TLS and authenticates process/thread, exact managed control, and original logical PC. The enabled control has no remaining writer. Publication and retirement require the sole main thread and a lease over the complete original and generated dependencies; workers receive a callable address only after final RX permissions, byte checks and publication receipt. Every successful run joins its worker, then waits under one two-second cleanup deadline for that exact worker TID to disappear from the kernel task directory. Only main plus that joined TID may be observed while waiting; unknown tasks, malformed snapshots or a deadline refuse. Publication still requires exactly the main task. This wait is outside the measured worker loop. No mapping becomes RWX. Failure retains executable/control owners until process exit; this is not a drain claim. The strict helper owns bounded abnormal-process cleanup. The callback's two-second wait is a failure backstop, not optional success or a scheduling threshold.
 
 Qualification executes 512 independent native SETcc truth-table checks; 16 native and 16 counter-only cells; 96 stop/resume cells covering four input sizes, three quanta and two repeats. Every one of the 256 actual stops compares the whole 4 KiB result page and progress counter before and after a one-millisecond parked interval. All 48 paired stop sequences compare the exact ordered projection `(logical site offset, taken-edge count, branch encounters, [RAX, RCX, RDX], RFLAGS & 0x8d5)`. This repeated-run comparison omits other registers, RSP, instance addresses and the remaining flag bits; the separate comparison across each parked wait retains all 18 saved context words exactly. Results and whole-page canaries must match independent formulas and the native function. The callback compares its entire 18-word saved context across each wait. It uses the core's unchanged GPR/RFLAGS/extended-state-preserving trampoline, but this packet does **not** add an independent ptrace XSAVE/full-application-stack comparison for this new corpus. It cannot claim that distinct qualification.
 
@@ -96,3 +96,66 @@ Clients still own ABI, memory, entry exclusion and work bounds. Code remains
 process-lived. This adds no performance, full-XSAVE/whole-stack,
 arbitrary-ELF/general-ABI, asynchronous-cancellation or retirement claim.
 The four-literal profile and evidence remain unchanged.
+
+
+## Explicit SPSC handoff experiment
+
+`inline-clock-spsc-v1` selects a separate handoff implementation for the same
+four literal functions and unchanged generated gate. One Arc-owned slot uses
+release/acquire publication, an exact-generation stop event and the actual
+`(site,count)` reply. The worker spins with the same two-second failure backstop;
+it does not resume on endpoint closure, an unconsumed event or a timeout. The
+callback retains every identity, work-bound, 18-word saved-state, whole-clock
+and canary check. The controller retains every actual application-page and
+clock comparison, including the one-millisecond qualification hold. Disconnect
+still requires exact worker join before final reads or retirement. The existing
+unsafe entry/exclusion contract and process-lived failure retention are unchanged.
+
+The first [release result](../../evaluation/software-preemption-spsc/README.md)
+records finite SPSC qualification and wall timings; its channel comparison failed
+before timing. No matched speedup or CPU-cost improvement is established. Spinning can consume more
+controller/worker CPU and does not resolve the separate consumer campaign's
+strict 2 ms scheduling failures. The old profiles, defaults and results remain.
+
+After source review and transport controls, the explicit reproduction is the
+same `evaluate.py` command above with `--profile inline-clock-spsc-v1`. Its
+binding uses `ROOT_REVIEWED_INLINE_CLOCK_SPSC_RELEASE_BINARY`. It keeps all six
+commands, 96 stop cells, 256 parked checks, 48 exact repeats and all 108 timing
+rows, including the unchanged quantum/work/stop formula. The prefix-only gate
+receipt correctly retains `inline-clock-v1`: those unchanged gate checks end
+before the callback, and cannot qualify the new handoff or full stack after it.
+Build, per-command, whole-experiment, affinity and cleanup bounds are unchanged.
+Matched release cohorts with every result retained are required to attribute a
+wall-time change to the transport; wall time alone does not prove lower CPU cost.
+
+The separate `--profile inline-clock-spsc-fatal-v1` uses authority
+`ROOT_REVIEWED_INLINE_CLOCK_SPSC_FATAL_RELEASE_BINARY` and runs exactly three
+expected-rejection controls: wrong site, wrong count and withheld reply. Each
+installs the actual countdown callback, retains an exact first-stop marker
+(site 27, count/encounters 1, words `[2,1,1]`, zero remaining budget), and must
+exit 123 with empty stdout/stderr. The callback must also write an exact
+104-byte `refusal.bin` witness through its sole owned descriptor, after consuming
+the actual tuple/error and comparing all 18 saved words, the complete clock
+snapshot and three application words against its pre-exchange state. The witness
+records that actual cause, tuple presence/values and parked clock/application
+facts; it receives no requested fault name. Wrong-site/count require their exact
+bad tuple, while no-reply requires Timeout. A controller delay causing Timeout
+cannot pass a wrong-tuple control. Partial/missing/trailing witnesses, other
+causes or changed parked facts fail. The callback always exits after witnessing;
+it never refills or resumes on any error. The helper's actual nonzero result
+remains recorded; these are rejection controls, with no qualification or timing credit.
+Each has 5 CPU / 8 wall seconds / 1 MiB, outer 18 seconds / kill-after 10,
+parent 33 / cleanup 10, and unchanged strict ECHILD/no-rescue checks. The
+separate three-control parent is 174 seconds; the release build keeps its old
+bounds. Neither profile can consume the other's binding. There is no retry or
+replacement of a failed control. Run these separately from the six-command
+measurement population. `cargo test --bin liteinst-preempt` also includes the
+focused transport ownership, queued-message, timeout and generation controls;
+all original tests remain.
+
+The cause-witness regression controls run with
+`python3 -B tools/software-preemption/refusal_controls.py`. They use synthetic
+104-byte records through the actual runner comparator, including every pairwise
+wrong-case substitution, altered parked fields and truncated/trailing output.
+They do not execute the candidate. Two additive Rust witness controls also
+preserve the successful-reply/no-refusal and distinct-actual-cause boundary.

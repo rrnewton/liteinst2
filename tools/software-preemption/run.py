@@ -13,6 +13,7 @@ import re
 import signal
 import stat
 import statistics
+import struct
 import subprocess
 import sys
 import time
@@ -21,6 +22,13 @@ MIB = 1048576
 HELPER_SHA = 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'
 CASES = ('countdown-jnz', 'signed-jg', 'unsigned-jb', 'direct-jmp')
 MODES = ('native', 'counter-only', 'before-taken-backedge-stop-resume')
+PROFILES = ('full-callback-v1', 'inline-clock-v1', 'inline-clock-spsc-v1', 'inline-clock-spsc-fatal-v1')
+INLINE_AUTHORITIES = {
+    'inline-clock-v1': 'ROOT_REVIEWED_INLINE_CLOCK_RELEASE_BINARY',
+    'inline-clock-spsc-v1': 'ROOT_REVIEWED_INLINE_CLOCK_SPSC_RELEASE_BINARY',
+    'inline-clock-spsc-fatal-v1': 'ROOT_REVIEWED_INLINE_CLOCK_SPSC_FATAL_RELEASE_BINARY',
+}
+FAULTS = ('wrong-site', 'wrong-count', 'no-reply')
 BUILD_ENV = dict(CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='4',
     CARGO_PROFILE_RELEASE_OPT_LEVEL='3', CARGO_PROFILE_RELEASE_DEBUG='0',
     CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS='true', CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS='true')
@@ -56,6 +64,18 @@ def save(root, name, value):
         f.write(data)
 
 
+def require_refusal_witness(fault, data):
+    # Independently specified callback outcome, not a controller intent marker.
+    # Exact bytes reject truncated/trailing output and any changed parked fact.
+    outcomes = {'wrong-site': (1, 1, 28, 1), 'wrong-count': (1, 1, 27, 2),
+                'no-reply': (2, 0, 0, 0)}
+    assert fault in outcomes
+    cause, present, actual_site, actual_count = outcomes[fault]
+    expected = b'LI2SPSC1' + struct.pack('<12Q', cause, 27, 1, 1, 0, 1,
+        present, actual_site, actual_count, 2, 1, 1)
+    assert data == expected, 'actual callback rejection cause and parked state'
+
+
 def main():
     if sys.flags.optimize:
         raise SystemExit('assertions required')
@@ -63,12 +83,14 @@ def main():
     ap.add_argument('--binding', type=Path, required=True)
     ap.add_argument('--binding-sha256', required=True)
     ap.add_argument('--raw', type=Path, required=True)
-    ap.add_argument('--profile', choices=('full-callback-v1', 'inline-clock-v1'), default='full-callback-v1')
+    ap.add_argument('--profile', choices=PROFILES, default='full-callback-v1')
     a = ap.parse_args()
     original, binding_owner = read(a.binding, 16*MIB)
     assert sha(original) == a.binding_sha256
     b = json.loads(original)
-    inline = a.profile == 'inline-clock-v1'
+    inline = a.profile != 'full-callback-v1'
+    spsc = a.profile in ('inline-clock-spsc-v1', 'inline-clock-spsc-fatal-v1')
+    fatal_controls = a.profile == 'inline-clock-spsc-fatal-v1'
     if inline:
         assert b.keys() == {'schema', 'authority', 'revision', 'repo', 'caller_sha256', 'binary',
                             'binary_owner', 'sources', 'tools', 'affinity', 'build', 'profile'}
@@ -78,7 +100,7 @@ def main():
                             'binary_owner', 'sources', 'tools', 'affinity', 'build'}
     assert type(b['schema']) is int and b['schema'] == 1
     if inline:
-        assert b['authority'] == 'ROOT_REVIEWED_INLINE_CLOCK_RELEASE_BINARY'
+        assert b['authority'] == INLINE_AUTHORITIES[a.profile]
     else:
         assert b['authority'] == 'ROOT_REVIEWED_PREEMPT_RELEASE_BINARY'
     assert type(b['revision']) is str and re.fullmatch('[0-9a-f]{40}', b['revision'])
@@ -145,8 +167,11 @@ def main():
         libc=platform.libc_ver(), affinity=sorted(os.sched_getaffinity(0)),
         cpu_model=next(x.split(':',1)[1].strip() for x in Path('/proc/cpuinfo').read_text().splitlines() if x.startswith('model name'))))
     rows = [dict(id='qualify', status='UNRUN')] + [dict(id=name, status='UNRUN') for name in CASES]
-    if inline:
+    if fatal_controls:
+        rows = [dict(id=name, kind='expected-refusal-control', expected_exit=123, status='UNRUN') for name in FAULTS]
+    elif inline:
         rows.insert(0, dict(id='gates', status='UNRUN'))
+    cpu_seconds, wall_seconds, outer_seconds, parent_seconds = (5, 8, 18, 33) if fatal_controls else (60, 90, 100, 115)
     metrics = []
     try:
         for row in rows:
@@ -160,20 +185,24 @@ def main():
                     argv = [str(binary), 'inline-gates', str(work/'output')] if row['id']=='gates' else (
                         [str(binary), 'inline-qualify', str(work/'output')] if row['id']=='qualify' else
                         [str(binary), 'inline-bench', row['id'], str(work/'output')])
+                if spsc and row['id'] != 'gates':
+                    argv[1] = argv[1].replace('inline-', 'inline-spsc-', 1)
+                if fatal_controls:
+                    argv = [str(binary), 'inline-spsc-fault', row['id'], str(work/'output')]
                 case_env = dict(env, TMPDIR=str(work/'tmp'))
                 request = dict(argv=argv, cwd=str(repo), env=case_env, stdout=str(work/'stdout.txt'),
-                    stderr=str(work/'stderr.txt'), cpu_seconds=60, wall_seconds=90, file_bytes=MIB)
+                    stderr=str(work/'stderr.txt'), cpu_seconds=cpu_seconds, wall_seconds=wall_seconds, file_bytes=MIB)
                 save(work, 'request.json', request)
-                outer = [tools['timeout']['path'], '--signal=TERM', '--kill-after=10s', '100s', tools['python']['path'],
+                outer = [tools['timeout']['path'], '--signal=TERM', '--kill-after=10s', str(outer_seconds)+'s', tools['python']['path'],
                          '-B', str(helper), '--request', str(work/'request.json'), '--receipt', str(work/'receipt.json')]
                 save(work, 'command.json', dict(argv=outer, cwd=str(repo), env=case_env, affinity=b['affinity'],
-                    parent_timeout_seconds=115, parent_failure_cleanup_seconds=10))
+                    parent_timeout_seconds=parent_seconds, parent_failure_cleanup_seconds=10))
                 with (work/'helper.stdout').open('xb') as out, (work/'helper.stderr').open('xb') as err:
                     try:
                         child = subprocess.Popen(outer, cwd=repo, env=case_env, stdin=subprocess.DEVNULL,
                             stdout=out, stderr=err, start_new_session=True)
                         save(work, 'started.json', dict(pid=child.pid))
-                        child.wait(timeout=115)
+                        child.wait(timeout=parent_seconds)
                     except BaseException as error:
                         parent_error = repr(error)
                         if child is not None:
@@ -189,21 +218,43 @@ def main():
                                 parent_wait_returned=child.returncode is not None, parent_error=parent_error,
                                 elapsed_seconds=time.monotonic()-began))
                 receipt = json.loads(read(work/'receipt.json', MIB)[0])
-                assert child.returncode == 0 and parent_error is None
-                assert type(receipt['exit']) is int and receipt['exit'] == 0
+                if fatal_controls:
+                    assert child.returncode == 1 and parent_error is None
+                    assert type(receipt['exit']) is int and receipt['exit'] == 123
+                else:
+                    assert child.returncode == 0 and parent_error is None
+                    assert type(receipt['exit']) is int and receipt['exit'] == 0
                 assert receipt['request_sha256'] == sha(read(work/'request.json')[0]) and receipt['helper_sha256'] == HELPER_SHA
                 assert receipt['wall_timeout'] is False and receipt['inputs_unchanged'] is True
                 assert receipt['absence_proof'] == 'ECHILD' and receipt['unexpected_descendants'] == receipt['cleanup_events'] == []
                 assert receipt['cleanup_error'] is receipt['aborted'] is None
-                assert math.isfinite(receipt['elapsed_seconds']) and 0 <= receipt['elapsed_seconds'] <= 90
+                assert math.isfinite(receipt['elapsed_seconds']) and 0 <= receipt['elapsed_seconds'] <= wall_seconds
                 for name in ('stdout', 'stderr'):
                     assert receipt[name+'_sha256'] == sha(read(work/(name+'.txt'),MIB)[0])
                 assert read(work/'stderr.txt')[0] == read(work/'helper.stderr')[0] == b''
+                if fatal_controls:
+                    # An expected rejection is not relabelled as a successful
+                    # child: retain the actual nonzero exit and helper failure.
+                    assert json.loads(read(work/'helper.stdout')[0]) == dict(exit=123,wall_timeout=False,absence_proof='ECHILD',descendants=0,success=False)
+                    assert read(work/'stdout.txt')[0] == b''
+                    output = work/'output'
+                    assert {p.name for p in output.iterdir()} == {'parked.json', 'refusal.bin'}
+                    assert read(output/'parked.json', MIB)[0] == ('{\"fault\":\"'+row['id']+'\",\"site\":27,\"count\":1,\"encounters\":1,\"words\":[2,1,1],\"remaining\":0}\n').encode()
+                    witness, witness_owner = read(output/'refusal.bin', 104)
+                    require_refusal_witness(row['id'], witness)
+                    save(work, 'output-files.json', {'parked.json':read(output/'parked.json',MIB)[1],
+                        'refusal.bin':witness_owner})
+                    assert watched() == before
+                    row['observed_exit'] = receipt['exit']
+                    row['status'] = 'PASS'
+                    continue
                 assert json.loads(read(work/'helper.stdout')[0]) == dict(exit=0,wall_timeout=False,absence_proof='ECHILD',descendants=0,success=True)
                 terminal = 'preemption:qualify:96-stop-cells:16-native:16-counter:512-setcc:48-exact-repeats\n' if row['id']=='qualify' else 'preemption:benchmark:'+row['id']+':27-rows:2-warmups:7-measured:equal-work\n'
                 if inline:
                     terminal = ('preemption:inline-gates:28-pairs:56-children:28-full-state-prefixes\n'
                         if row['id']=='gates' else terminal.replace('preemption:', 'preemption:inline-', 1))
+                if spsc and row['id'] != 'gates':
+                    terminal = terminal.replace('preemption:inline-', 'preemption:inline-spsc-', 1)
                 assert read(work/'stdout.txt', MIB)[0] == terminal.encode()
                 output = work/'output'
                 names = {'qualification.csv','stops.csv','summary.json'} if row['id']=='qualify' else {'measurements.csv'}
@@ -228,7 +279,7 @@ def main():
                 elif row['id']=='qualify':
                     summary = json.loads(read(output/'summary.json')[0])
                     if inline:
-                        assert summary['status']=='PASS' and summary['scope']=='inline-clock-v1-before-taken-backedge'
+                        assert summary['status']=='PASS' and summary['scope']==a.profile+'-before-taken-backedge'
                     else:
                         assert summary['status']=='PASS' and summary['scope']=='finite-before-taken-backedge'
                     assert [summary[x] for x in ('stop_cells','native_cells','counter_cells','condition_controls','deterministic_repeats')] == [96,16,16,512,48]
@@ -260,7 +311,7 @@ def main():
             stable=False;save(raw,'postcheck-error.json',dict(error=repr(error)))
         success=stable and all(r['status']=='PASS' for r in rows)
         save(raw,'summary.json',dict(revision=b['revision'],status='PASS' if success else 'FAILED',commands=rows,
-            sources_unchanged=stable,metrics=metrics,scope='finite authored taken-backedge prototype; no general progress bound'))
+            sources_unchanged=stable,metrics=metrics,scope=('expected callback rejection controls; no qualification or timing credit' if fatal_controls else 'finite authored taken-backedge prototype; no general progress bound')))
     return 0 if success else 1
 
 

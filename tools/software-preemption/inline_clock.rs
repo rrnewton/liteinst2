@@ -3,14 +3,116 @@
 use super::*;
 use counter::{MAX_STOPS, Memory, Stop, WAIT};
 use liteinst2::backedge_clock::{
-    BackedgeClock, BackedgeClockAction, CLOCK_CANARY, ClockGateLayout, ClockMode,
+    BackedgeClock, BackedgeClockAction, CLOCK_CANARY, ClockGateLayout, ClockMode, ClockWords,
 };
 use liteinst2::controls::ControlIdentity;
 use liteinst2::quiescent::plan_backedge_clock_detailed;
 use liteinst2::trampoline::HookContext;
 use std::cell::Cell;
+use std::io::Write;
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
+
+mod rendezvous;
+use rendezvous::Error as HandoffError;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum Transport {
+    Channels,
+    Spsc,
+}
+impl Transport {
+    pub(super) fn profile(self) -> &'static str {
+        match self {
+            Self::Channels => "inline-clock-v1",
+            Self::Spsc => "inline-clock-spsc-v1",
+        }
+    }
+    pub(super) fn command_prefix(self) -> &'static str {
+        match self {
+            Self::Channels => "inline",
+            Self::Spsc => "inline-spsc",
+        }
+    }
+    fn channel(self) -> (WorkerTransport, ControllerTransport) {
+        match self {
+            Self::Channels => {
+                let (events_tx, events_rx) = mpsc::sync_channel(1);
+                let (resume_tx, resume_rx) = mpsc::sync_channel(1);
+                (
+                    WorkerTransport::Channels(events_tx, resume_rx),
+                    ControllerTransport::Channels(events_rx, resume_tx),
+                )
+            }
+            Self::Spsc => {
+                let (worker, controller) = rendezvous::channel();
+                (
+                    WorkerTransport::Spsc(worker),
+                    ControllerTransport::Spsc(controller),
+                )
+            }
+        }
+    }
+}
+fn receive_error(error: mpsc::RecvTimeoutError) -> HandoffError {
+    match error {
+        mpsc::RecvTimeoutError::Disconnected => HandoffError::Disconnected,
+        mpsc::RecvTimeoutError::Timeout => HandoffError::Timeout,
+    }
+}
+enum WorkerTransport {
+    Channels(mpsc::SyncSender<Stop>, mpsc::Receiver<(u64, u64)>),
+    Spsc(rendezvous::Worker),
+}
+impl WorkerTransport {
+    fn exchange(&mut self, event: Stop) -> Result<(u64, u64), HandoffError> {
+        match self {
+            Self::Channels(events, resumes) => {
+                events.send(event).map_err(|_| HandoffError::Disconnected)?;
+                resumes.recv_timeout(WAIT).map_err(receive_error)
+            }
+            Self::Spsc(worker) => worker.exchange(event, WAIT),
+        }
+    }
+}
+enum ControllerTransport {
+    Channels(mpsc::Receiver<Stop>, mpsc::SyncSender<(u64, u64)>),
+    Spsc(rendezvous::Controller),
+}
+enum Received<'a> {
+    Channels(Stop, &'a mpsc::SyncSender<(u64, u64)>),
+    Spsc(rendezvous::Event<'a>),
+}
+impl ControllerTransport {
+    fn receive(&mut self) -> Result<Received<'_>, HandoffError> {
+        match self {
+            Self::Channels(events, resumes) => events
+                .recv_timeout(WAIT)
+                .map(|event| Received::Channels(event, resumes))
+                .map_err(receive_error),
+            Self::Spsc(controller) => controller.receive(WAIT).map(Received::Spsc),
+        }
+    }
+}
+impl Received<'_> {
+    fn stop(&self) -> &Stop {
+        match self {
+            Self::Channels(event, _) => event,
+            Self::Spsc(event) => event.stop(),
+        }
+    }
+    fn resume(self, site: u64, count: u64) -> Result<Stop, HandoffError> {
+        match self {
+            Self::Channels(event, resumes) => {
+                resumes
+                    .send((site, count))
+                    .map_err(|_| HandoffError::Disconnected)?;
+                Ok(event)
+            }
+            Self::Spsc(event) => event.resume(site, count),
+        }
+    }
+}
 
 pub(super) struct InlineProgram {
     pub(super) inner: Program,
@@ -18,6 +120,7 @@ pub(super) struct InlineProgram {
     pub(super) gate: ClockGateLayout,
     pub(super) image: (u64, usize),
     mode: ClockMode,
+    transport: Transport,
 }
 // The two page spans are disjoint owners: process-lived source + owned RW clock.
 // Their initial adjacency supplies a bounded RIP-relative clock operand without
@@ -47,6 +150,9 @@ fn mapped_pair(bytes: &[u8]) -> (Mapping, BackedgeClock) {
 }
 impl InlineProgram {
     pub(super) fn new(case: Case, mode: ClockMode) -> Self {
+        Self::with_transport(case, mode, Transport::Channels)
+    }
+    pub(super) fn with_transport(case: Case, mode: ClockMode, transport: Transport) -> Self {
         single_main();
         let bytes = case.bytes();
         let native = Mapping::new(&bytes);
@@ -199,6 +305,7 @@ impl InlineProgram {
             gate,
             image,
             mode,
+            transport,
         }
     }
     pub(super) fn run(
@@ -220,7 +327,7 @@ impl InlineProgram {
                 ClockMode::Stop
             }
         );
-        run(self, n, rounds, quantum, hold)
+        run(self, n, rounds, quantum, hold, None)
     }
     pub(super) fn retire(&mut self) {
         self.inner.retire();
@@ -240,12 +347,51 @@ struct State {
     stops: usize,
     last_count: u64,
     memory: Arc<Memory>,
-    events: mpsc::SyncSender<Stop>,
-    resumes: mpsc::Receiver<(u64, u64)>,
+    // Only separately selected negative controls own this callback-write FD.
+    refusal: Option<std::fs::File>,
+    handoff: WorkerTransport,
 }
 thread_local! { static CURRENT: Cell<*mut State> = const { Cell::new(std::ptr::null_mut()) }; }
 fn fatal() -> ! {
     unsafe { libc::_exit(123) }
+}
+// Fixed witness of the ACTUAL returned handoff outcome, never the requested
+// fault name. A matching acknowledgement cannot produce a rejection witness.
+fn refusal_witness(
+    outcome: Result<(u64, u64), HandoffError>,
+    site: u64,
+    clock: ClockWords,
+    words: [u64; 3],
+) -> Option<[u8; 104]> {
+    let (cause, present, actual_site, actual_count) = match outcome {
+        Ok((actual_site, actual_count)) if (actual_site, actual_count) != (site, clock.counted) => {
+            (1, 1, actual_site, actual_count)
+        }
+        Ok(_) => return None,
+        Err(HandoffError::Timeout) => (2, 0, 0, 0),
+        Err(HandoffError::Disconnected) => (3, 0, 0, 0),
+        Err(HandoffError::Protocol) => (4, 0, 0, 0),
+    };
+    let fields = [
+        cause,
+        site,
+        clock.counted,
+        clock.encounters,
+        clock.remaining,
+        clock.saved_rcx,
+        present,
+        actual_site,
+        actual_count,
+        words[0],
+        words[1],
+        words[2],
+    ];
+    let mut bytes = [0; 104];
+    bytes[..8].copy_from_slice(b"LI2SPSC1");
+    for (i, value) in fields.into_iter().enumerate() {
+        bytes[8 + i * 8..16 + i * 8].copy_from_slice(&value.to_le_bytes());
+    }
+    Some(bytes)
 }
 fn registers(c: &HookContext) -> [u64; 18] {
     [
@@ -307,12 +453,32 @@ unsafe extern "C" fn hook(context: *mut HookContext, identity: ControlIdentity<'
         registers: before,
         words,
     };
-    if state.events.send(event).is_err() {
-        fatal();
-    }
-    match state.resumes.recv_timeout(WAIT) {
+    match state.handoff.exchange(event) {
         Ok((site, count)) if site == state.offset && count == clock.counted => {}
-        _ => fatal(),
+        outcome => {
+            if let Some(file) = state.refusal.as_mut() {
+                let current_words: [u64; 3] = std::array::from_fn(|i| unsafe {
+                    state.memory.pointer().add(i).read_volatile()
+                });
+                // A cause witness is emitted only by this stopped callback,
+                // after its actual result and exact parked-state comparisons.
+                // Missing/partial output or any other failure refuses the control.
+                if before == registers(c)
+                    && unsafe { state.clock.snapshot_parked() } == (clock, tail)
+                    && current_words == words
+                {
+                    if let Some(witness) = refusal_witness(outcome, state.offset, clock, words) {
+                        // One fixed write, with no retry or substitute evidence.
+                        // A short/error result leaves a nonmatching witness.
+                        let complete = matches!(file.write(&witness), Ok(104));
+                        if !complete {
+                            fatal();
+                        }
+                    }
+                }
+            }
+            fatal(); // No error, including a witnessed error, reaches refill.
+        }
     }
     if before != registers(c) || unsafe { state.clock.snapshot_parked() } != (clock, tail) {
         fatal();
@@ -324,7 +490,14 @@ unsafe extern "C" fn hook(context: *mut HookContext, identity: ControlIdentity<'
     state.last_count = clock.counted;
     state.stops += 1;
 }
-fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -> ResultRow {
+fn run(
+    program: &InlineProgram,
+    n: u64,
+    rounds: u64,
+    quantum: u64,
+    hold: bool,
+    fault: Option<(&str, &Path)>,
+) -> ResultRow {
     assert!(quantum > 0 && (1..=4096).contains(&n) && (1..=128).contains(&rounds));
     let max_work = n.checked_mul(rounds).unwrap();
     assert!(max_work <= 32768 && (!hold || program.mode == ClockMode::Stop));
@@ -338,9 +511,18 @@ fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -
         program.inner.site.offset as u64,
         program.inner.site.condition,
     );
-    let (events_tx, events_rx) = mpsc::sync_channel(1);
-    let (resume_tx, resume_rx) = mpsc::sync_channel(1);
+    let (handoff, mut controller) = program.transport.channel();
+    // Create-new prevents stale witness reuse. The File moves into the exact
+    // worker; the controller retains no descriptor and never writes this path.
+    let refusal = fault.map(|(_, output)| {
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(output.join("refusal.bin"))
+            .expect("fresh callback-only rejection witness")
+    });
     let worker = std::thread::spawn(move || {
+        let worker_tid = unsafe { libc::syscall(libc::SYS_gettid) };
         // SAFETY: private callable source is reachable only through this worker;
         // no signal/callback has an entry pointer. The call guard precedes the
         // first generated spill. All source/image/clock owners outlive join.
@@ -348,7 +530,7 @@ fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -
             unsafe { worker_clock.acquire(quantum, max_work) }.expect("exclusive clock lease");
         let mut state = State {
             pid: std::process::id(),
-            tid: unsafe { libc::syscall(libc::SYS_gettid) },
+            tid: worker_tid,
             site: entry + offset,
             offset,
             condition,
@@ -359,8 +541,8 @@ fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -
             stops: 0,
             last_count: 0,
             memory: worker_memory,
-            events: events_tx,
-            resumes: resume_rx,
+            refusal,
+            handoff,
         };
         assert!(CURRENT.get().is_null());
         CURRENT.set(&raw mut state);
@@ -384,13 +566,14 @@ fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -
         }
         let elapsed_ns = start.elapsed().as_nanos();
         drop(clear);
-        (elapsed_ns, checksum, state.stops)
+        (elapsed_ns, checksum, state.stops, worker_tid)
     });
     let mut stops = Vec::new();
     let mut parked_checks = 0;
     loop {
-        match events_rx.recv_timeout(WAIT) {
-            Ok(event) => {
+        match controller.receive() {
+            Ok(received) => {
+                let event = received.stop();
                 assert_eq!(program.mode, ClockMode::Stop);
                 assert!(stops.len() < MAX_STOPS);
                 assert_eq!(event.site, offset);
@@ -422,16 +605,40 @@ fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -
                     );
                     parked_checks += 1;
                 }
-                resume_tx.send((event.site, event.count)).unwrap();
+                let reply = if let Some((name, output)) = fault {
+                    assert_eq!(program.transport, Transport::Spsc);
+                    assert_eq!((n, rounds, quantum, stops.len()), (2, 1, 1, 0));
+                    assert_eq!((event.site, event.count, event.encounters), (27, 1, 1));
+                    assert_eq!(event.words, [2, 1, 1]);
+                    std::fs::write(output.join("parked.json"), format!(
+                        "{{\"fault\":\"{name}\",\"site\":27,\"count\":1,\"encounters\":1,\"words\":[2,1,1],\"remaining\":0}}\n"
+                    )).unwrap();
+                    match name {
+                        "wrong-site" => (event.site + 1, event.count),
+                        "wrong-count" => (event.site, event.count + 1),
+                        // Keep the event/owners alive without replying. The
+                        // actual callback's unchanged WAIT must terminate us.
+                        "no-reply" => loop {
+                            std::thread::park_timeout(WAIT);
+                        },
+                        _ => unreachable!("validated fault name"),
+                    }
+                } else {
+                    (event.site, event.count)
+                };
+                let event = received.resume(reply.0, reply.1).unwrap();
                 stops.push(event);
             }
-            Err(mpsc::RecvTimeoutError::Disconnected) => break,
-            Err(mpsc::RecvTimeoutError::Timeout) => panic!("bounded inline rendezvous expired"),
+            Err(HandoffError::Disconnected) => break,
+            Err(HandoffError::Timeout) => panic!("bounded inline rendezvous expired"),
+            Err(HandoffError::Protocol) => panic!("inline rendezvous protocol refusal"),
         }
     }
-    let (elapsed_ns, checksum, closed_stops) = worker.join().expect("exact inline worker joined");
+    let (elapsed_ns, checksum, closed_stops, worker_tid) =
+        worker.join().expect("exact inline worker joined");
     assert_eq!(closed_stops, stops.len());
     assert!(CURRENT.get().is_null());
+    joined_worker_retired(worker_tid);
     let (words, tail) = unsafe { clock.snapshot_parked() };
     assert_eq!(tail, [CLOCK_CANARY; 4064]);
     assert!(words.counted <= max_work && words.encounters <= max_work);
@@ -451,5 +658,49 @@ fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -
         stops,
         memory: memory.snapshot(),
         parked_checks,
+    }
+}
+
+// Separate fatal-control commands; never part of qualification/timing rows.
+pub(super) fn fatal_control(name: &str, output: &Path) -> ! {
+    assert!(matches!(name, "wrong-site" | "wrong-count" | "no-reply"));
+    let program = InlineProgram::with_transport(Case::Countdown, ClockMode::Stop, Transport::Spsc);
+    let _ = run(&program, 2, 1, 1, true, Some((name, output)));
+    panic!("fatal rendezvous control unexpectedly returned");
+}
+
+#[cfg(test)]
+mod refusal_tests {
+    use super::*;
+
+    fn clock() -> ClockWords {
+        ClockWords {
+            saved_rcx: 1,
+            encounters: 1,
+            counted: 1,
+            remaining: 0,
+        }
+    }
+
+    #[test]
+    fn valid_reply_cannot_produce_a_rejection_witness() {
+        assert_eq!(refusal_witness(Ok((27, 1)), 27, clock(), [2, 1, 1]), None);
+    }
+
+    #[test]
+    fn actual_timeout_and_bad_tuple_produce_different_causes() {
+        let timeout = refusal_witness(Err(HandoffError::Timeout), 27, clock(), [2, 1, 1]).unwrap();
+        let wrong_site = refusal_witness(Ok((28, 1)), 27, clock(), [2, 1, 1]).unwrap();
+        let wrong_count = refusal_witness(Ok((27, 2)), 27, clock(), [2, 1, 1]).unwrap();
+        assert_ne!(timeout, wrong_site);
+        assert_ne!(timeout, wrong_count);
+        assert_ne!(wrong_site, wrong_count);
+        assert_eq!(&timeout[8..16], &2u64.to_le_bytes());
+        assert_eq!(&wrong_site[8..16], &1u64.to_le_bytes());
+        assert_eq!(&wrong_count[8..16], &1u64.to_le_bytes());
+        assert_eq!(&wrong_site[64..72], &28u64.to_le_bytes());
+        assert_eq!(&wrong_site[72..80], &1u64.to_le_bytes());
+        assert_eq!(&wrong_count[64..72], &27u64.to_le_bytes());
+        assert_eq!(&wrong_count[72..80], &2u64.to_le_bytes());
     }
 }

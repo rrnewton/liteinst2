@@ -324,10 +324,12 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
                     env=saved['completed']['captured']['env'], timeout=15)
             names = git('ls-tree', '-r', '--name-only', revision, '--', NATIVE).decode('utf-8').splitlines()
             need(set(source_map) == set(names), 'complete separately committed native inventory')
-            for relative, expected in source_map.items():
-                length = git('cat-file', '-s', revision+':'+relative).decode('ascii').strip()
-                need(length == str(len(sources[relative])), 'exact committed native source size')
-                need(sha(git('show', revision+':'+relative)) == expected, 'actual committed native source bytes')
+            ordered = sorted(source_map.items())
+            # Re-read every committed blob at each existing stability boundary.
+            # Exact lengths come from the authenticated retained source bytes;
+            # the shared decoder also checks ordered SHA256 and Git blob IDs.
+            custody.source_batch(root, revision, ordered, saved['completed']['captured']['env'],
+                expected_lengths=[len(sources[relative]) for relative, _ in ordered])
         native_source_profile()
         platform.selected_startup_profile(saved['completed'], absolute_prerequisites=absolute_profile)
         dso = modules['startup_dso']

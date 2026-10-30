@@ -44,6 +44,7 @@ ADDRESS = r'(?:\[absolute\] )?-?0x[0-9a-f]+'
 LOADER_ADDRESS = 0x20FEDC000
 SHORT_T3_OWNERSHIP_PROFILE = 'elf-disassembly-null-jumps-short-t3-ownership-v1'
 SHORT_T3_PENDING_PROFILE = 'elf-disassembly-null-jumps-short-t3-pending-v1'
+ABSOLUTE_STARTUP_PROFILE = 'elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
 
 
 def sha(data):
@@ -178,8 +179,12 @@ def selection_short_t3_pending(raw, original, policy_raw):
     return _selection(raw, original, policy_raw, SHORT_T3_PENDING_PROFILE)
 
 
+def selection_absolute_startup(raw, original, policy_raw):
+    return _selection(raw, original, policy_raw, ABSOLUTE_STARTUP_PROFILE)
+
+
 def _selection(raw, original, policy_raw, selection_profile):
-    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'
+    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE, ABSOLUTE_STARTUP_PROFILE), 'selection profile'
     assert 0 < len(raw) <= 1024 * 1024 and raw.endswith(b'\n'), 'selection length/newline'
     policy = loads(policy_raw)
     assert policy.keys() == {'schema', 'original_sha256', 'selection_sha256', 'e9_revision', 'instrumentation', 'selection_style'}
@@ -189,7 +194,26 @@ def _selection(raw, original, policy_raw, selection_profile):
     assert policy['instrumentation'] in ('null', 'real-hook')
     assert policy['selection_style'] in ('jump-site', 'heap-write', 'forced-puzzle')
     lines = raw.decode().splitlines()
-    if selection_profile == SHORT_T3_PENDING_PROFILE:
+    if selection_profile == ABSOLUTE_STARTUP_PROFILE:
+        prefix = ['LI2TOOL 1', 'original ' + sha(original),
+                  'neighbor-victims short-only', 'neighbor-ownership inherited-t3',
+                  'pending-selected full-instruction-ownership',
+                  'adjacent-pairs original-geometry-jcc-or-routed-jmp-v1',
+                  'adjacent-pair-budgets 2 1 2']
+        assert b'\r' not in raw and raw.startswith(('\n'.join(prefix) + '\n').encode()), 'absolute startup selection prefix'
+        assert lines[:7] == prefix, 'absolute startup selection prefix'
+        assert policy['instrumentation'] == 'null' and policy['selection_style'] == 'jump-site', 'absolute startup null jump policy'
+        modes = {'neighbor-victims', 'neighbor-ownership', 'pending-selected',
+                 'adjacent-pairs', 'adjacent-pair-budgets'}
+        for line in lines[7:]:
+            fields = line.split()
+            assert not fields or fields[0] not in modes, 'duplicate/misplaced absolute startup mode'
+        # The externally bound identity remains the WHOLE selection. This
+        # private view only reuses the existing site geometry parser; it is
+        # never returned, written, hashed or used as a producer input. W01,
+        # startup carrier/catalog and native authority remain separate checks.
+        lines = lines[:2] + lines[7:]
+    elif selection_profile == SHORT_T3_PENDING_PROFILE:
         prefix = ['LI2TOOL 1', 'original ' + sha(original),
                   'neighbor-victims short-only', 'neighbor-ownership inherited-t3',
                   'pending-selected full-instruction-ownership']
@@ -601,6 +625,8 @@ def read_bound(row):
 def _selection_for_profile(raw, original, policy_raw, selection_profile):
     if selection_profile is None:
         return selection(raw, original, policy_raw)
+    if selection_profile == ABSOLUTE_STARTUP_PROFILE:
+        return selection_absolute_startup(raw, original, policy_raw)
     if selection_profile == SHORT_T3_PENDING_PROFILE:
         return selection_short_t3_pending(raw, original, policy_raw)
     assert selection_profile == SHORT_T3_OWNERSHIP_PROFILE, 'selection profile'
@@ -608,7 +634,7 @@ def _selection_for_profile(raw, original, policy_raw, selection_profile):
 
 
 def _selection_binding(result, selection_profile):
-    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'
+    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE, ABSOLUTE_STARTUP_PROFILE), 'selection profile'
     assert 'selection_profile' not in result, 'duplicate selection profile binding'
     if selection_profile is not None:
         result['selection_profile'] = selection_profile
@@ -620,7 +646,7 @@ def validate(envelope, blobs):
 
 
 def _validate(envelope, blobs, selection_profile):
-    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'
+    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE, ABSOLUTE_STARTUP_PROFILE), 'selection profile'
     assert envelope.keys() == {'schema', 'lane', 'reference_commit', 'reference_tree', 'archive_sha256', 'capstone_revision', 'abi_delta_patch_sha256', 'common_argv', 'hook', 'files'}
     assert type(envelope['schema']) is int and envelope['schema'] == 1
     assert (envelope['reference_commit'], envelope['reference_tree'], envelope['archive_sha256'], envelope['capstone_revision'], envelope['abi_delta_patch_sha256']) == (REVISION, TREE, ARCHIVE, CAPSTONE, ABI_PATCH)
@@ -687,7 +713,7 @@ def arguments(argv=None):
     parser.add_argument('envelope', type=Path)
     parser.add_argument('new_output', type=Path)
     parser.add_argument('--envelope-sha256', required=True)
-    parser.add_argument('--selection-profile', choices=(SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), action='append')
+    parser.add_argument('--selection-profile', choices=(SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE, ABSOLUTE_STARTUP_PROFILE), action='append')
     values = list(sys.argv[1:] if argv is None else argv)
     args = parser.parse_args(values)
     if args.selection_profile is not None:

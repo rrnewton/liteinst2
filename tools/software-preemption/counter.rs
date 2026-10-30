@@ -225,9 +225,10 @@ pub fn run(request: Run<'_>) -> ResultRow {
         request.rounds,
     );
     let worker = std::thread::spawn(move || {
+        let worker_tid = unsafe { libc::syscall(libc::SYS_gettid) };
         let mut state = Counter {
             pid: std::process::id(),
-            tid: unsafe { libc::syscall(libc::SYS_gettid) },
+            tid: worker_tid,
             site,
             offset,
             condition,
@@ -269,6 +270,7 @@ pub fn run(request: Run<'_>) -> ResultRow {
             state.counted,
             state.encounters,
             state.stops,
+            worker_tid,
         )
     });
     let mut stops = Vec::new();
@@ -311,13 +313,14 @@ pub fn run(request: Run<'_>) -> ResultRow {
             }
         }
     }
-    let (elapsed_ns, checksum, counted, encounters, closed_stops) =
+    let (elapsed_ns, checksum, counted, encounters, closed_stops, worker_tid) =
         worker.join().expect("owned worker completion");
     assert_eq!(closed_stops, stops.len());
     assert!(
         CURRENT.get().is_null(),
         "worker TLS never installed in controller"
     );
+    crate::joined_worker_retired(worker_tid);
     ResultRow {
         elapsed_ns,
         checksum,

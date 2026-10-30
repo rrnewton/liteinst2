@@ -88,6 +88,85 @@ fn single_main() {
         "publication only before worker creation or after exact join"
     );
 }
+
+// Successful Rust join proves the owned worker finished user code, but the
+// separate Linux task-directory observation can still include its exiting TID.
+// Wait only for that joined identity; publication keeps single_main unchanged.
+fn await_joined_worker_with(
+    main: libc::c_long,
+    worker: libc::c_long,
+    mut snapshot: impl FnMut() -> std::io::Result<Vec<libc::c_long>>,
+    mut now: impl FnMut() -> std::time::Instant,
+    mut pause: impl FnMut(),
+) -> Result<(), String> {
+    if main <= 0 || worker <= 0 || main == worker {
+        return Err("distinct positive main/joined worker identities required".into());
+    }
+    let deadline = now()
+        .checked_add(counter::WAIT)
+        .ok_or("joined worker task deadline overflow")?;
+    let mut permitted = vec![main, worker];
+    permitted.sort_unstable();
+    loop {
+        if now() >= deadline {
+            return Err("joined worker task disappearance deadline".into());
+        }
+        let mut tasks =
+            snapshot().map_err(|error| format!("joined worker task snapshot: {error}"))?;
+        // A slow observation cannot earn success after the absolute deadline.
+        if now() >= deadline {
+            return Err("joined worker task disappearance deadline".into());
+        }
+        tasks.sort_unstable();
+        if tasks == [main] {
+            return Ok(());
+        }
+        if tasks != permitted {
+            return Err(format!(
+                "unexpected tasks after exact join: {tasks:?}; main={main} joined={worker}"
+            ));
+        }
+        pause();
+    }
+}
+
+fn joined_worker_retired(worker: libc::c_long) {
+    let main = libc::c_long::from(std::process::id());
+    assert_eq!(unsafe { libc::syscall(libc::SYS_gettid) }, main);
+    await_joined_worker_with(
+        main,
+        worker,
+        || {
+            let mut tasks = Vec::new();
+            for entry in std::fs::read_dir("/proc/self/task")? {
+                let name = entry?.file_name().into_string().map_err(|_| {
+                    std::io::Error::new(std::io::ErrorKind::InvalidData, "non-UTF8 task name")
+                })?;
+                let tid = name.parse::<libc::c_long>().map_err(|_| {
+                    std::io::Error::new(std::io::ErrorKind::InvalidData, "nonnumeric task name")
+                })?;
+                if tid <= 0 || tid.to_string() != name {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "noncanonical task identity",
+                    ));
+                }
+                tasks.push(tid);
+                if tasks.len() > 2 {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("more than main and joined worker: {tasks:?}"),
+                    ));
+                }
+            }
+            Ok(tasks)
+        },
+        std::time::Instant::now,
+        std::thread::yield_now,
+    )
+    .expect("exact joined worker kernel-task disappearance before returning");
+}
+
 impl Program {
     fn new(case: Case) -> Self {
         single_main();
@@ -519,7 +598,7 @@ fn benchmark(case: Case, output: &Path) {
         case.name()
     );
 }
-fn inline_qualify(output: &Path) {
+fn inline_qualify(output: &Path, transport: inline_clock::Transport) {
     let conditions = condition_controls();
     let mut rows = String::from(
         "case,n,quantum,repeat,taken_edges,branch_encounters,stops,parked_checks,checksum\n",
@@ -530,10 +609,16 @@ fn inline_qualify(output: &Path) {
     let mut cells = 0;
     let mut parked = 0;
     for case in CASES {
-        let mut counted_program =
-            inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Counter);
-        let mut program =
-            inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Stop);
+        let mut counted_program = inline_clock::InlineProgram::with_transport(
+            case,
+            liteinst2::backedge_clock::ClockMode::Counter,
+            transport,
+        );
+        let mut program = inline_clock::InlineProgram::with_transport(
+            case,
+            liteinst2::backedge_clock::ClockMode::Stop,
+            transport,
+        );
         for n in [1, 2, 7, 17] {
             let native = program.run(Mode::Native, n, 1, 1, false);
             validate(case, Mode::Native, n, 1, 1, &native);
@@ -592,16 +677,24 @@ fn inline_qualify(output: &Path) {
     assert_eq!(parked, 256);
     std::fs::write(output.join("qualification.csv"), rows).unwrap();
     std::fs::write(output.join("stops.csv"), events).unwrap();
-    std::fs::write(output.join("summary.json"),format!("{{\"scope\":\"inline-clock-v1-before-taken-backedge\",\"stop_cells\":96,\"native_cells\":16,\"counter_cells\":16,\"condition_controls\":{conditions},\"parked_checks\":{parked},\"deterministic_repeats\":48,\"status\":\"PASS\"}}\n")).unwrap();
+    let profile = transport.profile();
+    std::fs::write(output.join("summary.json"),format!("{{\"scope\":\"{profile}-before-taken-backedge\",\"stop_cells\":96,\"native_cells\":16,\"counter_cells\":16,\"condition_controls\":{conditions},\"parked_checks\":{parked},\"deterministic_repeats\":48,\"status\":\"PASS\"}}\n")).unwrap();
     println!(
-        "preemption:inline-qualify:96-stop-cells:16-native:16-counter:512-setcc:48-exact-repeats"
+        "preemption:{}-qualify:96-stop-cells:16-native:16-counter:512-setcc:48-exact-repeats",
+        transport.command_prefix()
     );
 }
-fn inline_benchmark(case: Case, output: &Path) {
-    let mut counted_program =
-        inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Counter);
-    let mut program =
-        inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Stop);
+fn inline_benchmark(case: Case, output: &Path, transport: inline_clock::Transport) {
+    let mut counted_program = inline_clock::InlineProgram::with_transport(
+        case,
+        liteinst2::backedge_clock::ClockMode::Counter,
+        transport,
+    );
+    let mut program = inline_clock::InlineProgram::with_transport(
+        case,
+        liteinst2::backedge_clock::ClockMode::Stop,
+        transport,
+    );
     let mut csv = String::from(
         "case,mode,phase,repetition,n,rounds,work_units,elapsed_ns,checksum,taken_edges,branch_encounters,stops\n",
     );
@@ -634,7 +727,8 @@ fn inline_benchmark(case: Case, output: &Path) {
     counted_program.retire();
     std::fs::write(output.join("measurements.csv"), csv).unwrap();
     println!(
-        "preemption:inline-benchmark:{}:27-rows:2-warmups:7-measured:equal-work",
+        "preemption:{}-benchmark:{}:27-rows:2-warmups:7-measured:equal-work",
+        transport.command_prefix(),
         case.name()
     );
 }
@@ -650,8 +744,23 @@ fn main() {
         "qualify" if args.len() == 3 => qualify(&output),
         "bench" if args.len() == 4 => benchmark(Case::parse(&args[2]), &output),
         "inline-gates" if args.len() == 3 => inline_gate::qualify(&output),
-        "inline-qualify" if args.len() == 3 => inline_qualify(&output),
-        "inline-bench" if args.len() == 4 => inline_benchmark(Case::parse(&args[2]), &output),
+        "inline-qualify" if args.len() == 3 => {
+            inline_qualify(&output, inline_clock::Transport::Channels)
+        }
+        "inline-bench" if args.len() == 4 => inline_benchmark(
+            Case::parse(&args[2]),
+            &output,
+            inline_clock::Transport::Channels,
+        ),
+        "inline-spsc-qualify" if args.len() == 3 => {
+            inline_qualify(&output, inline_clock::Transport::Spsc)
+        }
+        "inline-spsc-bench" if args.len() == 4 => inline_benchmark(
+            Case::parse(&args[2]),
+            &output,
+            inline_clock::Transport::Spsc,
+        ),
+        "inline-spsc-fault" if args.len() == 4 => inline_clock::fatal_control(&args[2], &output),
         _ => panic!("usage: liteinst-preempt qualify NEW_OUTPUT | bench CASE NEW_OUTPUT"),
     }
 }
@@ -674,5 +783,167 @@ mod tests {
         assert!(corpus::admit(&[0xe8, 0, 0, 0, 0, 0xc3], 0x10000).is_err());
         assert!(corpus::admit(&[0xff, 0xe0], 0x10000).is_err());
         assert!(corpus::admit(&[0x90, 0xc3], 0x10000).is_err());
+    }
+
+    #[test]
+    fn joined_task_disappearance_accepts_only_main_without_a_pause() {
+        let start = std::time::Instant::now();
+        let mut snapshots = 0;
+        await_joined_worker_with(
+            10,
+            20,
+            || {
+                snapshots += 1;
+                Ok(vec![10])
+            },
+            || start,
+            || panic!("already absent joined task must not wait"),
+        )
+        .unwrap();
+        assert_eq!(snapshots, 1);
+        assert_eq!(counter::WAIT, std::time::Duration::from_secs(2));
+    }
+
+    #[test]
+    fn joined_task_disappearance_waits_for_only_its_owned_tid() {
+        let start = std::time::Instant::now();
+        let mut rosters = std::collections::VecDeque::from([vec![20, 10], vec![10, 20], vec![10]]);
+        let mut pauses = 0;
+        await_joined_worker_with(
+            10,
+            20,
+            || Ok(rosters.pop_front().unwrap()),
+            || start,
+            || pauses += 1,
+        )
+        .unwrap();
+        assert!(rosters.is_empty());
+        assert_eq!(pauses, 2);
+    }
+
+    #[test]
+    fn joined_task_disappearance_refuses_unknown_missing_or_duplicate_tasks() {
+        let start = std::time::Instant::now();
+        for roster in [
+            vec![],
+            vec![20],
+            vec![10, 30],
+            vec![10, 20, 30],
+            vec![10, 10],
+            vec![10, 20, 20],
+            vec![10, 0],
+            vec![10, -1],
+        ] {
+            let mut snapshots = 0;
+            let result = await_joined_worker_with(
+                10,
+                20,
+                || {
+                    snapshots += 1;
+                    Ok(roster.clone())
+                },
+                || start,
+                || panic!("unknown task must never be waited out"),
+            );
+            assert!(
+                result
+                    .unwrap_err()
+                    .starts_with("unexpected tasks after exact join:")
+            );
+            assert_eq!(snapshots, 1);
+        }
+    }
+
+    #[test]
+    fn joined_task_disappearance_requires_valid_joined_identity_before_reading() {
+        for (main, worker) in [(0, 20), (-1, 20), (10, 0), (10, -1), (10, 10)] {
+            let result = await_joined_worker_with(
+                main,
+                worker,
+                || panic!("invalid identity must not read tasks"),
+                || panic!("invalid identity must not start a wait"),
+                || panic!("invalid identity must not wait"),
+            );
+            assert_eq!(
+                result.unwrap_err(),
+                "distinct positive main/joined worker identities required"
+            );
+        }
+    }
+
+    #[test]
+    fn joined_task_disappearance_propagates_snapshot_failure_without_waiting() {
+        let start = std::time::Instant::now();
+        for kind in [
+            std::io::ErrorKind::PermissionDenied,
+            std::io::ErrorKind::NotFound,
+            std::io::ErrorKind::InvalidData,
+            std::io::ErrorKind::Other,
+        ] {
+            let result = await_joined_worker_with(
+                10,
+                20,
+                || {
+                    Err(std::io::Error::new(
+                        kind,
+                        "injected task read/entry/parse failure",
+                    ))
+                },
+                || start,
+                || panic!("snapshot failure must not be retried"),
+            );
+            assert_eq!(
+                result.unwrap_err(),
+                "joined worker task snapshot: injected task read/entry/parse failure"
+            );
+        }
+    }
+
+    #[test]
+    fn joined_task_disappearance_keeps_one_absolute_deadline() {
+        let start = std::time::Instant::now();
+        let mut times =
+            std::collections::VecDeque::from([start, start, start, start + counter::WAIT]);
+        let mut snapshots = 0;
+        let mut pauses = 0;
+        let result = await_joined_worker_with(
+            10,
+            20,
+            || {
+                snapshots += 1;
+                Ok(vec![10, 20])
+            },
+            || times.pop_front().unwrap(),
+            || pauses += 1,
+        );
+        assert_eq!(
+            result.unwrap_err(),
+            "joined worker task disappearance deadline"
+        );
+        assert_eq!((snapshots, pauses), (1, 1));
+        assert!(times.is_empty());
+    }
+
+    #[test]
+    fn joined_task_disappearance_cannot_accept_a_late_main_only_snapshot() {
+        let start = std::time::Instant::now();
+        let mut times = std::collections::VecDeque::from([start, start, start + counter::WAIT]);
+        let mut snapshots = 0;
+        let result = await_joined_worker_with(
+            10,
+            20,
+            || {
+                snapshots += 1;
+                Ok(vec![10])
+            },
+            || times.pop_front().unwrap(),
+            || panic!("late success must fail"),
+        );
+        assert_eq!(
+            result.unwrap_err(),
+            "joined worker task disappearance deadline"
+        );
+        assert_eq!(snapshots, 1);
+        assert!(times.is_empty());
     }
 }

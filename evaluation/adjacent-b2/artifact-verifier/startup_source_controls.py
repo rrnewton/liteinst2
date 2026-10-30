@@ -270,5 +270,89 @@ class BatchProcess(unittest.TestCase):
             spawn.assert_called_once(); child.stdout.close.assert_called_once(); child.stderr.close.assert_called_once()
 
 
+class ExactBatchLengths(unittest.TestCase):
+    def parser(self, bodies, lengths):
+        return C.SourceBatch([C.sha(body) for body in bodies], expected_lengths=lengths)
+
+    def test_exact_empty_binary_lengths_and_fragmented_records(self):
+        bodies = [b'', b'a\0b\xff', bytes(range(256))]
+        wire = b''.join(map(record, bodies))
+        for step in (1, 2, 7, 53, 65536):
+            lengths = list(map(len, bodies)); decoder = self.parser(bodies, lengths)
+            lengths[:] = [999]  # The caller cannot change the retained roster.
+            for at in range(0, len(wire), step):decoder.feed(wire[at:at+step])
+            decoder.finish(); self.assertEqual(decoder.index, 3)
+            self.assertEqual(decoder.total, sum(map(len, bodies)))
+
+    def test_honest_hashes_with_wrong_expected_size_refuse_at_header(self):
+        body = b'complete'; header = record(body).split(b'\n', 1)[0] + b'\n'
+        for size in (len(body)-1, len(body)+1):
+            decoder = self.parser([body], [size])
+            with self.assertRaisesRegex(ValueError, 'exact committed source size'):
+                decoder.feed(header)
+            self.assertEqual(decoder.index, 0); self.assertEqual(decoder.total, 0)
+
+    def test_invalid_exact_length_rosters_refuse_before_spawn(self):
+        for lengths in ([], [1, 1], [True], [False], [-1], [1.0], ['1'],
+                        [C.SOURCE_FILE_BYTES+1], '1', 1, {0:1}):
+            with self.subTest(lengths=lengths), mock.patch.object(C.subprocess, 'Popen') as spawn:
+                with self.assertRaisesRegex(ValueError, 'exact length roster'):
+                    C.source_batch(Path('/repo'), REVISION, [('src/a', C.sha(b'A'))], {},
+                        expected_lengths=lengths)
+                spawn.assert_not_called()
+        with mock.patch.object(C.subprocess, 'Popen') as spawn, mock.patch.object(C, 'SOURCE_BYTES', 1):
+            with self.assertRaisesRegex(ValueError, 'file/aggregate bound'):
+                C.source_batch(Path('/repo'), REVISION, [('src/a', C.sha(b'AA'))], {}, expected_lengths=[2])
+            spawn.assert_not_called()
+
+    def test_equal_lengths_never_replace_content_order_or_git_object_checks(self):
+        bodies = [b'AA', b'BB']
+        for wire in (record(b'BB')+record(b'AA'), record(b'AA')+record(b'AA'),
+                     record(b'CC')+record(b'BB'), b'0'*40+record(b'AA')[40:]+record(b'BB')):
+            with self.assertRaisesRegex(ValueError, 'committed source bytes'):
+                self.parser(bodies, [2, 2]).feed(wire)
+
+    def test_exact_lengths_preserve_all_truncations_framing_and_caps(self):
+        body = b'payload\nbody'; wire = record(body)
+        for end in range(len(wire)):
+            decoder = self.parser([body], [len(body)])
+            decoder.feed(wire[:end])
+            with self.assertRaisesRegex(ValueError, 'missing/truncated'):decoder.finish()
+        for malformed in (wire[:-1]+b'X', wire+b'\n', wire+record(b''),
+                          wire.replace(b' blob 12\n', b' blob 012\n', 1)):
+            with self.assertRaises(ValueError):self.parser([body], [len(body)]).feed(malformed)
+        header = b'1'*40+b' blob '+str(C.SOURCE_FILE_BYTES+1).encode()+b'\n'
+        with self.assertRaisesRegex(ValueError, 'file/aggregate bound'):
+            self.parser([b''], [0]).feed(header)
+        decoder = self.parser([b'AA', b'BB'], [2, 2])
+        with mock.patch.object(C, 'SOURCE_BYTES', 3):
+            with self.assertRaisesRegex(ValueError, 'file/aggregate bound'):
+                decoder.feed(record(b'AA')+record(b'BB'))
+
+    def test_transport_enforces_exact_size_and_closes_success_or_refusal(self):
+        for expected in (0, 1, 2):
+            child = BatchProcess.child(self);child.poll.return_value = 0 if expected == 1 else None
+            reads = {11:iter((record(b'A'), b'')), 12:iter((b'',))}
+            def ready(reading, writing, exceptional, seconds):
+                self.assertGreater(seconds, 0);self.assertLessEqual(seconds, 15)
+                return (list(reading), list(writing), [])
+            with mock.patch.object(C.subprocess, 'Popen', return_value=child) as spawn, \
+                 mock.patch.object(C.time, 'monotonic', return_value=100), \
+                 mock.patch.object(C.os, 'set_blocking'), \
+                 mock.patch.object(C.select, 'select', side_effect=ready), \
+                 mock.patch.object(C.os, 'write', side_effect=lambda fd,raw:len(raw)), \
+                 mock.patch.object(C.os, 'read', side_effect=lambda fd,cap:next(reads[fd])):
+                if expected == 1:
+                    C.source_batch(Path('/repo'), REVISION, [('src/a', C.sha(b'A'))], {}, expected_lengths=[expected])
+                else:
+                    with self.assertRaisesRegex(ValueError, 'exact committed source size'):
+                        C.source_batch(Path('/repo'), REVISION, [('src/a', C.sha(b'A'))], {}, expected_lengths=[expected])
+            spawn.assert_called_once()
+            if expected == 1:child.kill.assert_not_called()
+            else:child.kill.assert_called_once()
+            self.assertEqual(child.wait.call_args_list[-1], mock.call(timeout=C.GIT_CLEANUP_SECONDS))
+            child.stdout.close.assert_called_once();child.stderr.close.assert_called_once()
+
+
 if __name__ == '__main__':
     unittest.main()

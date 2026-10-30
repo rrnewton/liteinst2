@@ -6,6 +6,7 @@ patches. Every tested main/table/namespace is parsed from complete ELF bytes.
 These controls establish no real corpus or host qualification.
 """
 import copy
+import hashlib
 from contextlib import ExitStack
 import json
 from pathlib import Path
@@ -281,7 +282,7 @@ class AbsoluteContract(unittest.TestCase):
                 P.selected_startup_profile({'plan':{'profile':profile}},absolute_prerequisites=not absolute)
 
 class AdmissionPath(unittest.TestCase):
-    def admission(self, mutate=None):
+    def admission(self, mutate=None, after_open=None):
         # The actual open_session owns class selection, both graph/namespace
         # checks, reviewed-fact comparison, Session construction and stability.
         # Existing W01/build/source I/O seams are inert, consistently pinned
@@ -331,7 +332,19 @@ class AdmissionPath(unittest.TestCase):
             self.closed=[]
             store=types.SimpleNamespace(read=lambda path,cap:observer_raw,verify=lambda:None,close=lambda:self.closed.append('store'))
             package=types.SimpleNamespace(Elf=R.Elf,Custody=lambda:g.held)
-            custody=types.SimpleNamespace(absolute=lambda path:Path(path),Store=lambda cap:store)
+            self.native_checks=0;self.native_batches=[];self.native_reads=[]
+            def batch(batch_root,revision,ordered,env,*,expected_lengths):
+                self.assertEqual(batch_root,root);self.assertEqual(revision,'a'*40);self.assertEqual(env,{})
+                self.assertEqual(ordered,sorted(source_map.items()))
+                self.assertEqual(expected_lengths,[len(records[str(root/name)][0]) for name,_ in ordered])
+                self.native_batches.append((list(ordered),list(expected_lengths)))
+                decoder=F.C.SourceBatch([digest for _,digest in ordered],expected_lengths=expected_lengths)
+                for name,_ in ordered:
+                    raw=native_raw[name];framing=b'blob '+str(len(raw)).encode()+b'\0'
+                    oid=hashlib.sha1(framing+raw).hexdigest().encode()
+                    decoder.feed(oid+b' blob '+str(len(raw)).encode()+b'\n'+raw+b'\n')
+                decoder.finish()
+            custody=types.SimpleNamespace(absolute=lambda path:Path(path),Store=lambda cap:store,source_batch=batch)
             legacy=types.SimpleNamespace(context=lambda _root:(None,None),STARTUP_MODULES={
                 name:old['sources'][A.CRATE+name] for name in ('startup_custody.py','startup_pins.py','startup_originals.py','startup_saved.py')})
             modules.update(final_platform=P,dependency_constructors=C,package=package,
@@ -339,13 +352,13 @@ class AdmissionPath(unittest.TestCase):
                 startup_custody=custody,startup_pins=types.SimpleNamespace(load=lambda *args:None),startup_dso=D)
             for name in common_names:modules.setdefault(name,types.SimpleNamespace())
             def read(path,cap=A.MIB):
+                if str(path).startswith(str(root/A.NATIVE)+'/'):self.native_reads.append(str(Path(path).relative_to(root)))
                 raw,pin=records[str(path)];self.assertLessEqual(len(raw),cap);return raw,copy.deepcopy(pin)
             def git(argv,**kwargs):
                 command=argv[3:];self.assertEqual(argv[:3],['/usr/bin/git','-C',str(root)])
-                if command[0]=='ls-tree':return ('\n'.join(sorted(source_map))+'\n').encode()
-                relative=command[-1].split(':',1)[1]
-                if command[0]=='cat-file':return str(len(native_raw[relative])).encode()
-                self.assertEqual(command[0],'show');return native_raw[relative]
+                self.assertEqual(command,['ls-tree','-r','--name-only','a'*40,'--',A.NATIVE])
+                self.assertEqual(kwargs,dict(env={},timeout=15));self.native_checks+=1
+                return ('\n'.join(sorted(source_map))+'\n').encode()
             with g.context(),mock.patch.object(A,'__file__',str(running)),mock.patch.object(A,'read_file',side_effect=read), \
                  mock.patch.object(A,'load_source',side_effect=lambda raw,path:modules[path.stem]), \
                  mock.patch.object(A,'no_capabilities'),mock.patch.object(A.subprocess,'check_output',side_effect=git):
@@ -354,6 +367,8 @@ class AdmissionPath(unittest.TestCase):
                 self.assertEqual(set(session.programs),set(P.PROGRAMS))
                 self.assertEqual(session.profile['schema'],'LI2STARTUP-FINAL-PROFILE-3')
                 self.assertEqual(session.programs['checksum']['entry'],H.CODE)
+                if after_open:after_open(session,types.SimpleNamespace(root=root,records=records,
+                    native_raw=native_raw,source_map=source_map))
                 # Public summaries cannot redirect private stability inputs.
                 session.profile['reviewed'].clear();session.programs['checksum']['main_bytes']=b'changed export'
                 session.stable();session.close()
@@ -372,6 +387,55 @@ class AdmissionPath(unittest.TestCase):
             pin=F.pin(item['main']['main_pin']['path'],stat.S_IFREG|0o400,31,bytes(raw))
             item['main']['main_pin']=pin;g.blobs[pin['path']]=bytes(raw)
         with self.assertRaisesRegex(ValueError,'absolute prerequisite main'):self.admission(second)
+
+
+    def test_native_batches_are_fresh_at_every_existing_boundary(self):
+        self.admission()
+        self.assertEqual(self.native_checks,4);self.assertEqual(len(self.native_batches),4)
+        self.assertTrue(all(batch==self.native_batches[0] for batch in self.native_batches))
+        names=[name for name,_ in self.native_batches[0][0]]
+        self.assertEqual(sorted(self.native_reads),sorted(names*4))
+
+    def test_next_native_boundary_refuses_changed_committed_size_or_same_size_bytes(self):
+        def faults(session,f):
+            name=sorted(f.native_raw)[0];original=f.native_raw[name]
+            self.assertEqual(len(self.native_batches),2)
+            for changed,message in ((original+b'X','exact committed source size'),
+                                    (bytes([original[0]^1])+original[1:],'committed source bytes')):
+                try:
+                    f.native_raw[name]=changed
+                    with self.assertRaisesRegex(ValueError,message):session.stable()
+                finally:f.native_raw[name]=original
+            self.assertEqual(len(self.native_batches),4)
+        self.admission(after_open=faults)
+        self.assertEqual(self.native_checks,6);self.assertEqual(len(self.native_batches),6)
+
+    def test_next_native_boundary_refuses_missing_or_extra_inventory_before_batch(self):
+        def faults(session,f):
+            name=sorted(f.source_map)[0];original=f.source_map[name]
+            for missing in (True,False):
+                batches=len(self.native_batches)
+                try:
+                    if missing:del f.source_map[name]
+                    else:f.source_map[A.NATIVE+'extra.py']='0'*64
+                    with self.assertRaisesRegex(ValueError,'complete separately committed native inventory'):session.stable()
+                    self.assertEqual(len(self.native_batches),batches)
+                finally:
+                    f.source_map[name]=original;f.source_map.pop(A.NATIVE+'extra.py',None)
+        self.admission(after_open=faults)
+        self.assertEqual(self.native_checks,6);self.assertEqual(len(self.native_batches),4)
+
+    def test_next_native_boundary_keeps_live_bytes_and_identity_checks(self):
+        def faults(session,f):
+            name=sorted(f.native_raw)[0];path=str(f.root/name);raw,pin=f.records[path]
+            changed_pin=copy.deepcopy(pin);changed_pin['stat'][1]+=1
+            for record in ((bytes([raw[0]^1])+raw[1:],pin),(raw,changed_pin)):
+                try:
+                    f.records[path]=record
+                    with self.assertRaisesRegex(ValueError,'final checker/input source identity drift'):session.stable()
+                finally:f.records[path]=(raw,pin)
+        self.admission(after_open=faults)
+        self.assertEqual(self.native_checks,6);self.assertEqual(len(self.native_batches),6)
 
     def test_exported_graph_facts_cannot_rebind_stable_checks(self):
         g=Graph()
