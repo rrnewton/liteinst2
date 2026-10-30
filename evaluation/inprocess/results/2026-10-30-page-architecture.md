@@ -1,12 +1,12 @@
 # Same-run event budget and the code-cache target
 
-The [event receipt](20261030T042205.505845Z-page-event-budget-22e5225612c4.json) and [CSV](20261030T042205.505845Z-page-event-budget-22e5225612c4.csv) report all twelve fixed launches passed at `22e5225612c495f63bc5fedc6960e8f1a6a33c0e`. The [derived model](2026-10-30-page-architecture-model.json) reproduces the arithmetic below from public artifacts only. The three `/bin/ls -d .` unobserved launches have a 19.411150371 s median (IQR 2.116492946 s); the three observed launches have a 20.671929099 s median (IQR 0.321144062 s). The observed/unobserved median ratio is 1.06495. These are separate actual populations; no observer overhead is subtracted. Both retain 30 CPU seconds, 512 MiB address space, 16 MiB file size and 60 seconds wall time.
+The event-budget cohort passed; the implemented region experiment has not completed qualification or attained the application target. The [event JSON](20261030T042205.505845Z-page-event-budget-22e5225612c4.json)/[CSV](20261030T042205.505845Z-page-event-budget-22e5225612c4.csv) retain all twelve launches at `22e5225612c495f63bc5fedc6960e8f1a6a33c0e`. Unobserved `/bin/ls -d .` median: 19.411150371 s (IQR 2.116492946); observed: 20.671929099 s (IQR 0.321144062), three runs each. The ratio is 1.06495, with no overhead subtraction. Both retain 30 CPU/60 wall seconds, 512 MiB address space and 16 MiB file size. The [model](2026-10-30-page-architecture-model.json) preserves exact public arithmetic.
 
 The ledger below is **actual ordinal 6, `ls-1-events`**, not a synthetic median. It happens to be the observed median run. Its exact accounting is:
 
 `20,150,374,970 handler ns + 521,554,129 residual ns = 20,671,929,099 process ns`.
 
-The residual covers all unmeasured startup, ingress prefixes, application execution, signal transitions, observer edges, reporting and reap work. It is not isolated trap latency. Child CPU accounting is 8.982981 s user plus 11.527450 s system; it is a separate view, not another term to add. Boundary clocks and bookkeeping remain in the recorded intervals.
+Residual includes startup, application work, signal transitions, observer edges, reporting and reap; it is not isolated trap latency. Child CPU is separately 8.982981 s user + 11.527450 s system. Clock/bookkeeping costs stay in measured intervals.
 
 | Exclusive region | Actual calls | Mean µs/call | Total ms | Whole process |
 |---|---:|---:|---:|---:|
@@ -26,49 +26,61 @@ The residual covers all unmeasured startup, ingress prefixes, application execut
 | Native close, excluding nested work | 3,276 | 60.731 | 198.955 | 0.96% |
 | Unmeasured residual | — | — | 521.554 | 2.52% |
 
-Rounded means are presentation only: the model JSON retains every integer duration/count pair, so `Σ count × (duration/count)` equals the exact handler sum. Maps' five exclusive rows total 11.071982928 s (53.56% of the process). Making that entire subtree free, with everything else fixed, still leaves **9.599946171 s**. Making all four decoder wrappers free leaves **20.053877386 s**. These are isolated zero-cost counterfactuals, not speedup predictions. Handler-other is a broad remainder, not a measured single function.
+Integer count/duration pairs ensure `Σ count × (duration/count)` equals the exact handler sum. Making all five maps rows (11.071982928 s, 53.56%) free still leaves 9.599946171 s. Making every decoder wrapper free leaves 20.053877386 s. These counterfactuals predict no speedup; handler-other is a broad remainder.
 
 The overlapping signal view records 40,156 SIGSEGV handlers at 174.554 µs mean body time, 230,995 SIGTRAP handlers at 55.994 µs, and 148 SIGILL handlers at 1,396.299 µs. There are no SIGSYS/other handlers. The signal durations sum to the same 20.150374970 s; do not add this view to the ledger.
 
-| Incoming route | Count | Mean handler-body µs | Inclusive ms |
-|---|---:|---:|---:|
-| NO_STEP | 38,195 | 155.980 | 5,957.668 |
-| OLD_STEP | 15,807 | 46.351 | 732.669 |
-| GENERIC_TF | 215,109 | 56.721 | 12,201.173 |
-| REGISTER_RUN | 1,961 | 536.328 | 1,051.740 |
-| ONESHOT | 148 | 1,396.299 | 206.652 |
-| REPEAT_LEASE | 79 | 5.993 | 0.473 |
-| REPEAT | 0 | — | 0 |
+Incoming routes count 38,195 NO_STEP, 15,807 OLD_STEP, 215,109 GENERIC_TF, 1,961 REGISTER_RUN, 148 ONESHOT and 79 REPEAT_LEASE; REPEAT is zero. Their mean handler-body times are respectively 155.980, 46.351, 56.721, 536.328, 1,396.299 and 5.993 µs. Route durations sum to the same handler total and must not be added to the ledger. They measure ingress-state bodies, not complete trap round trips. Existing RAW-clock admission timing also overlaps; its endpoints are not mixed with these MONOTONIC intervals.
 
-Routes are ingress states, not an extra instruction partition or the exclusive cost of a mechanism. Their durations also sum to the same handler total. These are post-guard handler-body measurements, **not complete trap/exit round trips**. Original COST admission durations use CLOCK_MONOTONIC_RAW and overlap these CLOCK_MONOTONIC regions; neither their endpoints nor totals are combined here.
+The row records 271,299 handlers (230,995 SIGTRAP), 379,086 fresh maps traversals, 1.448 GB read and 14,300,411 rows parsed. Ordinary C RAW calls number 9,768,115; 7,352,066 observer clocks are separate. These are observed-run counts, not unobserved syscall timings. C ptrace requests are zero; external stops remain unmeasured. The 1,094 unique fallback tuples describe 18,757 events (top 32: 15,225; overflow 0), **not all blocks, translations or application coverage**.
 
-The same row exposes the amplification:
+The structural contrast with DynamoRIO's retained code-cache model is ownership lifetime. This bridge's actual row records 215,109 GENERIC_TF ingresses, 271,299 handler entries and 379,086 fresh maps traversals. Retained translated blocks and linked direct edges aim to amortize translation and boundary checks across hot execution under valid lifetime authority, instead of revisiting those owners for each instruction or short run. A generation-owned region cache would need to demonstrate that reduction while preserving its interception and state contracts. The DR-null baseline supplies only an elapsed-time reference: this experiment did not measure DynamoRIO's internal translations, links or invalidations, and does not establish equivalent interception guarantees.
 
-- **271,299 measured handlers** include 230,995 SIGTRAP entries (85.14%), 40,156 SIGSEGV entries and 148 SIGILL entries. The incoming-route view contains 215,109 GENERIC_TF, 15,807 OLD_STEP and 1,961 REGISTER_RUN entries. These expose control-transfer amplification, not the total retired instruction count. Same-page TF reuse still returns after each stepped instruction; this diagnostic does not establish the count of all application instructions.
-- **379,086 fresh maps traversals** perform 822,421 reads, consume 1,447,609,923 bytes and parse 14,300,411 rows: 1.397 fresh traversals per handler. The terminal 703,085 reuse hits coexist with this physical work. A maps phase ID is not a handler count.
-- **981,111 decode/classify/footprint calls** are 3.616 per handler; their combined 618.052 ms is only 2.99% of whole-process time. This is the four instrumented wrapper population, not all decoder internals or all retired instructions.
-- **9,768,115 ordinary C RAW calls** are 36.005 per handler, including 4,860,430 getpid/gettid and 2,669,342 fstat/fcntl calls. Another **7,352,066 diagnostic clock calls** are separately recorded and excluded from that ordinary RAW count. This measures the observer's amplified workload, not unobserved syscall timing. Ordinary C ptrace requests are zero; external ptrace stops remain unmeasured.
-- The bounded fallback table records **1,094 unique tuples** for 18,757 fallback events; its top32 cover 15,225 events, with zero overflow. These are neither all basic blocks nor unique translations. Private terminal details such as copied-instruction counts and cache hits are not reproduced by this public model and are not used to fill the coverage gap.
+The candidate is a **generation-owned linked block cache**: genuine original-PC NX authenticates bytes, object/generation and legal entry heads; supported regions execute from non-writable generated storage with TF clear and original pages NX. Link direct edges only to qualified generated heads with compatible state/lifetime contracts. Indirect, selected-effect and unsupported exits enter an owned boundary at the original logical PC; existing selected owners remain authoritative. Fallback never licenses an unsupported original page.
 
-The structural experiment should therefore keep ordinary instructions and internal branches inside a qualified generated region with TF clear, amortize source/lifetime checks across that region, and eventually link qualified exits. It must preserve current source generations, selected-effect exits, original-page NX, full-state/fault reconstruction and rseq authority. The existing DR fragment-cache design illustrates how to avoid instruction-by-instruction returns; its null-client timing does not establish equivalent interception guarantees. The bounded region component can establish a mechanism, not whole-`ls` coverage.
+A bounded immutable slab should amortize allocation, sealing, map checks and synchronization. Retain source generations and PC maps for every block/link; never permit a writable alias with RX. Before an application effect invalidates a source mapping, revoke incoming links and generated execution, synchronize, then retire the generation; metadata outlives all permitted execution, and reused source gets a new identity. Exact generated-to-original fault PC and full-state/memory semantics must precede any recovery/resume. Rseq, signals, mutation, foreign entry and teardown need explicit owner composition. These remain design obligations.
 
-The target remains **263.060775 ms**, ten times the [separate f7dd baseline](20261030T030044.789458Z-page-cost-compare-f7dd159db74f.json) DR-null median 26.3060775 ms (CPU3; event cohort CPU6, same reported hardware). Against the current unobserved median it requires **73.7896×**, or 98.6448% less elapsed time. That is a target, not an achieved or predicted speedup. Use:
+The implemented [fixture](../../../tools/page-entry/selected/tests/region_cache/README.md) uses the unchanged closed-scalar core planner, sealed publisher, retained disabled controls, original NX and guarded exit. Original/generated/actual-TF lanes compare identical trips and full GPR/flags/FP/stack/data. Its finite singleton/no-rseq, sole-entry, valid-pointer contract is not application coverage. Inter-region direct links, amortized slabs and runtime generation invalidation are absent. Inaccessible-load probes revoke/terminate; they do not establish fault resumption.
 
-`Tnew = Tnative + unique_translations × unit_cold + remaining_exits × unit_exit + incremental_linked_execution_overhead`.
+All four closed cohort attempts remain **FAILED** under the original eleven cases, ten hot invocations per lane, 5 CPU seconds, 15 wall seconds, 512 MiB address space and 16 MiB file-size limit:
 
-The last term is overhead **above native execution**, not total generated execution, avoiding double counting. One algebraically feasible allocation is the historical 4.1683375 ms native median + **100 ms cold translation/publication + 100 ms complete exits + 50 ms incremental linked execution overhead = 254.1683375 ms**, leaving 8.8924375 ms below the target. Only the native reference is measured; the three allocations are assumptions, not demonstrated costs. They require `unique_translations × unit_cold ≤ 100 ms` and `remaining_exits × unit_exit ≤ 100 ms`. Qualified cold/exit measurements must determine the permitted counts; no count or coverage is invented here.
+| Attempt | Positive cases with complete records | Failed case | Fault probes |
+|---|---:|---|---:|
+| [510e75cf](20261030T042741.446280Z-region-component-510e75cf0b5e.json) | 5 | 2×256, exit −9 | Not run |
+| [375aa7cb](20261030T043453.765438Z-region-component-375aa7cb2030.json) | 8 | 4×256, exit −9 | Not run |
+| [ed12a0c3](20261030T044214.742186Z-region-component-ed12a0c358a9.json) | 8 | 4×256, exit −9 | Not run |
+| [6084d0ee](20261030T044709.410653Z-region-component-6084d0ee3692.json) | 8 | 4×256, exit −9 | Both required exits 125 |
 
-Cold construction/publication, complete exit costs, incremental linked execution overhead and application coverage remain unmeasured here. Component results are pending and are not an input to this model. The initial `510e75cf0b5e26ceea133c1e6bfb8005141e736e` attempt failed at case six. The production-helper correction at `375aa7cb203086971a9bcebaa8b8b0283d154485` passed eight cases before case nine was killed; both fault probes remained unexecuted. Both attempts remain failed; no completed component cohort or target attainment is claimed here. For proven bypassable elapsed work `D`, remaining fixed work `F` and new overhead `O`, the conditional requirement is `f ≥ 1 − (263060775 − F − O)/D`. It is a **time-weighted** removal fraction, not instruction coverage. If `F+O` exceeds the target, no coverage fraction suffices. Even deleting every measured handler while freezing this observed residual leaves 521.554 ms; the residual includes observer work and is not a lower bound for a new architecture. This rules out extrapolating a whole-application result from the handler mean alone.
+The first attempt left five cases unexecuted; the next two left both fault probes unexecuted. The 6084 collector attempted all eleven: both genuine inaccessible-load probes qualified their required 125 exits with zero completed operations/timing credit; the maximum positive case still failed. Cleanup passed with zero final errors. Its eight positive records have 33 completed operations and 8 authority controls each:
 
-Reproduce the public arithmetic from a checkout (or supply `--root` for a retained-artifact root) with:
+| Unroll × trips | Instructions/invocation | Prepare ms | Generated hot median µs | TF hot median ms |
+|---|---:|---:|---:|---:|
+| 1×1 | 10 | 2.820755 | 82.659 | 1.441364 |
+| 1×16 | 100 | 2.938472 | 81.202 | 13.958581 |
+| 1×256 | 1,540 | 2.940144 | 82.143 | 211.448206 |
+| 2×1 | 14 | 3.088417 | 79.835 | 1.953968 |
+| 2×16 | 164 | 2.689968 | 82.294 | 22.533870 |
+| 2×256 | 2,564 | 3.064561 | 82.263 | 355.454319 |
+| 4×1 | 22 | 3.024661 | 80.956 | 3.089412 |
+| 4×16 | 292 | 2.921025 | 81.092 | 40.290163 |
+
+Latest preparation spans 2.689968–3.088417 ms: source construction/sealing/hash, core planning and publication, excluding earlier setup. Invocation timing includes capture/guards; `cold_ns` means first observed invocation, not cache-cold construction. Attempting every case did not relax any gate or qualify the whole cohort.
+
+The whole-application target remains **263.060775 ms**, ten times the [f7dd DR-null median](20261030T030044.789458Z-page-cost-compare-f7dd159db74f.json) of 26.3060775 ms (CPU 3; event cohort CPU 6, same reported hardware). Relative to the current unobserved median, it requires 73.7896×, or 98.6448% less elapsed time. The model is:
+
+`Tnew = Tnative + Ncold × Ucold + Nexits × Uexit + incremental linked-execution overhead`.
+
+The last term is additional execution overhead above native, avoiding double counting. A conditional allocation is the historical 4.1683375 ms native median + 100 ms cold construction/publication + 100 ms complete exits + 50 ms incremental linked execution = **254.1683375 ms**, 8.8924375 ms below target. This is feasible algebra, not demonstrated architecture performance. For example, assumptions of 25 constructions at 4 ms and 250 complete exits at 400 µs spend the two 100 ms allocations. Neither count nor complete-exit cost is measured for `ls`.
+
+The partial preparation observations constrain cold work: at the latest measured composite costs, 100 ms buys only **32–37 constructions**; the earlier ed12 maximum 4.117842 ms allows 24. These are failed-cohort observations, not future cost bounds or pure translation costs. Amortized publication, cheaper construction or sufficiently few actual regions must be demonstrated. Signal-body means omit parts of the complete round trip and cannot substitute for `Uexit`; linked overhead and covered paths remain unknown. Fallback tuples fill none of these gaps.
+
+Coverage must remove enough **time-weighted work**, not merely instructions. Even deleting every measured handler while freezing this observed residual leaves 521.554 ms; observer work makes that residual unsuitable as a new-architecture lower bound. **The experiment is implemented, its whole qualification remains failed, and the architecture target is not attained.**
+
+Reproduce the unchanged public event/baseline arithmetic from a checkout, or supply `--root` for retained public artifacts:
 
 ```sh
 python3 -B evaluation/inprocess/page_architecture_model.py \
   --check evaluation/inprocess/results/2026-10-30-page-architecture-model.json
 ```
 
-The [script](../page_architecture_model.py) accepts `--output NEW_FILE` to create the same JSON, or emits it on stdout. Four exact byte/hash pins cover the event JSON/CSV and [original f7dd baseline CSV](20261030T030044.789458Z-page-cost-compare-f7dd159db74f.csv)/JSON. It reconstructs the complete event CSV, checks all twelve event outcomes and all sixty baseline outcomes, and recomputes all medians, inclusive quartiles, counts and timing partitions before output. It imports no evaluator and runs no workload. The 2,299,865-byte private event receipt, SHA256 `9de0f3e1180f7e70bef6e81fa2540d33578b8609b351f3219167cfae867ec014`, is provenance already recorded in the public receipt, **not a reproduction prerequisite**. Source and cleanup facts remain those reported by the original qualified run; this arithmetic does not re-execute their validation.
-
-The independent private DATA_CLEAR review is 7,140 bytes, SHA256 `e6abe9ebae07244efdec87f5f00a9b1461943574322b0cfbfc0d98f5756b4ef1`; its identity is retained as provenance, not an additional script input.
-
-Component results: **pending the complete new cohort**. This placeholder carries no completion or speedup credit.
+The [script](../page_architecture_model.py) pins both JSON/CSV pairs, reconstructs the complete event CSV and checks all twelve event and sixty baseline outcomes. It runs no workload/evaluator. The component table is separate arithmetic from the linked 6084 receipt. Private event receipt SHA256 `9de0f3e1180f7e70bef6e81fa2540d33578b8609b351f3219167cfae867ec014` is provenance, not an input. Source/cleanup statements remain those of the retained runs.
