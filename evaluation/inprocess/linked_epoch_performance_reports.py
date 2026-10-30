@@ -15,6 +15,7 @@ import scalar_reuse_performance_reports as scalar
 import linked_epoch_terminal as fixture
 import linked_epoch_cache_reports as cache_reports
 import scalar_span_trace_release_chain as chain_reports
+import linked_true_repeat_reports as true_repeat_reports
 
 LINKED_CONTROL_COUNT=121
 REFAULT_CONTROL_COUNT=3
@@ -22,6 +23,7 @@ CACHE_CONTROL_COUNT=10
 CONTROL_COUNTS=dict(ls=371,true=529)
 HINT_CONTROL_COUNT=41
 HINT_CONTROL_COUNTS=dict(ls=412,true=570)
+POSITIVE_TRUE_CONTROL_COUNTS=dict(ls=412,true=445)
 CURRENT_CONTROL_COUNT=26
 CHAIN_CONTROL_COUNT=11
 SUPPLIED_LEASE_CONTROL_COUNT=2
@@ -174,9 +176,11 @@ def completed(row,retirement,*,hint=None):
          'actual final one-use TRACE transfer has a newer borrow and exactly consumed, resumed or refaulted terminal state')
 
 
-def check(stdout,stderr,args,kind,lane,*,native_hint=False):
+def check(stdout,stderr,args,kind,lane,*,native_hint=False,positive_true_repeat=False):
     need(lane in('linked','differential'),'explicit genuine-TRACE linked release profile')
     need(type(native_hint)is bool,'literal release advisory profile')
+    need(type(positive_true_repeat)is bool and (not positive_true_repeat or native_hint),
+         'explicit positive REP profile requires the native-hint linked reader')
     if native_hint:linked,retirement,hint,suffix=fixture.split_hint(stderr)
     else:linked,retirement,suffix=fixture.split(stderr)
     current_row,scalar_suffix=current.split_current(suffix)
@@ -184,7 +188,8 @@ def check(stdout,stderr,args,kind,lane,*,native_hint=False):
     parsed,summary,view,unrolled,prior,prior_retirement=scalar.check(
         stdout,scalar_suffix,args,kind,'differential'if lane=='differential'else'scalar-reuse',
         cache_completed=cache_reports.completed,
-        chain_closure=lambda loader,c:chain_completed(loader,c,linked))
+        chain_closure=lambda loader,c:chain_completed(loader,c,linked),
+        true_repeat=true_repeat_reports.PROFILE if positive_true_repeat and kind=='true'else None)
     need(all(linked[k]==retirement[k]==parsed['loader'][k]for k in fixture.OUTCOME)and
          current_row['status']==parsed['loader']['status']and
          current_row['failure_code']==parsed['loader']['failure_code'],
@@ -197,11 +202,12 @@ def check(stdout,stderr,args,kind,lane,*,native_hint=False):
         scalar=prior,scalar_reuse=prior_retirement,current_tf=current_row,
         linked=linked,linked_reuse=retirement)
     if native_hint:result['native_hint']=hint
+    if positive_true_repeat:result['positive_true_repeat']=True
     return result
 
 
-def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
-    observed=check(stdout,stderr,args,kind,lane,native_hint=native_hint)
+def controls(stdout,stderr,args,kind,lane,*,native_hint=False,positive_true_repeat=False):
+    observed=check(stdout,stderr,args,kind,lane,native_hint=native_hint,positive_true_repeat=positive_true_repeat)
     parsed,unrolled,prior,current_row,linked,retirement=(observed[k]for k in
         ('parsed','unrolled','scalar','current_tf','linked','linked_reuse'))
     if native_hint:_,_,_,without_linked=fixture.split_hint(stderr)
@@ -210,7 +216,8 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
     inherited=scalar.controls(stdout,without_current,args,kind,
         'differential'if lane=='differential'else'scalar-reuse',
         cache_completed=cache_reports.completed,
-        chain_closure=lambda loader,c:chain_completed(loader,c,linked))
+        chain_closure=lambda loader,c:chain_completed(loader,c,linked),
+        true_repeat=true_repeat_reports.PROFILE if positive_true_repeat and kind=='true'else None)
     lines=stderr[:-1].split(b'\n');trials=[]
     def changed(name,prefix,value):
         rows=list(lines);places=[i for i,line in enumerate(rows)if line.startswith(prefix)]
@@ -262,7 +269,7 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
     refused=[]
     for name,value in trials:
         caught=False
-        try:check(stdout,value,args,kind,lane,native_hint=native_hint)
+        try:check(stdout,value,args,kind,lane,native_hint=native_hint,positive_true_repeat=positive_true_repeat)
         except ValueError as error:
             caught=name!='linked_coherent_old_population'or str(error)==\
                 'all successful linked and old preentry observers saw the same complete handler population'
@@ -290,7 +297,7 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
     current_refused=[]
     for name,value in trials:
         caught=False
-        try:check(stdout,value,args,kind,lane,native_hint=native_hint)
+        try:check(stdout,value,args,kind,lane,native_hint=native_hint,positive_true_repeat=positive_true_repeat)
         except ValueError:caught=True
         need(caught,'complete TRACE release reader refuses '+name);current_refused.append(name)
     # The pure source-derived predicate must reject for its exact new reason;
@@ -308,7 +315,7 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
             rows[places[0]]=prefix+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
         changed=b'\n'.join(rows)+b'\n';need(changed!=stderr,'actual release TRACE mutation changes bytes')
         caught=False
-        try:check(stdout,changed,args,kind,lane,native_hint=native_hint)
+        try:check(stdout,changed,args,kind,lane,native_hint=native_hint,positive_true_repeat=positive_true_repeat)
         except ValueError:caught=True
         need(caught,'complete release TRACE reader refuses '+name);chain_refused.append(name)
     need(len(chain_refused)==len(set(chain_refused))==CHAIN_CONTROL_COUNT==chain_reports.CONTROL_COUNT,
@@ -321,7 +328,7 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
         need(caught,'exact release refault cause '+name)
         rows=list(lines);rows[linked_at]=fixture.PREFIX+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
         caught=False
-        try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane,native_hint=native_hint)
+        try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane,native_hint=native_hint,positive_true_repeat=positive_true_repeat)
         except ValueError as exc:caught=str(exc)==error
         need(caught,'complete release reader reaches refault cause '+name);refault_refused.append(name)
     value=fixture.refault_chain_mutation(linked);caught=False
@@ -330,7 +337,7 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
     need(caught,'a completed refault requires its already-started ordinary NX segment')
     rows=list(lines);rows[linked_at]=fixture.PREFIX+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
     caught=False
-    try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane,native_hint=native_hint)
+    try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane,native_hint=native_hint,positive_true_repeat=positive_true_repeat)
     except ValueError:caught=True
     need(caught,'complete release reader rejects missing already-started ordinary NX segment');refault_refused.append('refault_missing_nx')
     need(len(refault_refused)==REFAULT_CONTROL_COUNT,'three additional causal refault refusals')
@@ -352,7 +359,7 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
         data=b'\n'.join(rows)+b'\n'
         need(data!=stderr,'actual linked prior-cache mutation changes bytes')
         caught=False
-        try:check(stdout,data,args,kind,lane,native_hint=native_hint)
+        try:check(stdout,data,args,kind,lane,native_hint=native_hint,positive_true_repeat=positive_true_repeat)
         except ValueError:caught=True
         need(caught,'whole linked release reader refuses '+name);cache_refused.append(name)
     need(len(cache_refused)==len(set(cache_refused))==CACHE_CONTROL_COUNT==cache_reports.CONTROL_COUNT,
@@ -361,22 +368,32 @@ def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
     populations=dict(original=base['refusals'],maps=maps['maps_view_refusals'],
         unrolled=unroll['unrolled_refusals'],scalar=inherited['scalar_reuse_refusals'],
         current=current_refused,linked=refused,chain=chain_refused,cache=cache_refused,refault=refault_refused)
-    expected=dict(original=60 if kind=='ls'else 218,maps=23,unrolled=31,scalar=86,
+    positive=positive_true_repeat and kind=='true'
+    expected=dict(original=60 if kind=='ls'else 38 if positive else 218,maps=23,unrolled=31,scalar=86,
         current=CURRENT_CONTROL_COUNT,linked=LINKED_CONTROL_COUNT,chain=CHAIN_CONTROL_COUNT,cache=CACHE_CONTROL_COUNT,refault=REFAULT_CONTROL_COUNT)
     need({k:len(v)for k,v in populations.items()}==expected,'every inherited and new linked release population retained')
     names=[group+'.'+name for group,items in populations.items()for name in items]
-    need(len(names)==len(set(names))==CONTROL_COUNTS[kind],'complete unique linked release refusal population')
+    if positive:
+        additions=base['positive_repeat_refusals']
+        need(base['positive_repeat_profile']==true_repeat_reports.PROFILE and
+             len(additions)==len(set(additions))==true_repeat_reports.POSITIVE_CONTROL_COUNT==55,
+             'separate55 positive REP controls; no unused180 control credit')
+        populations['positive_repeat']=additions
+        names+=['positive_repeat.'+name for name in additions]
+    expected_total=404 if positive else CONTROL_COUNTS[kind]
+    need(len(names)==len(set(names))==expected_total,'complete unique linked release refusal population')
     if native_hint:
-        addition=hint_controls(stdout,stderr,args,kind,lane,observed)
+        addition=hint_controls(stdout,stderr,args,kind,lane,observed,positive_true_repeat=positive_true_repeat)
         populations['native_hint']=addition
         names+=['native_hint.'+name for name in addition]
-        need(len(names)==len(set(names))==HINT_CONTROL_COUNTS[kind],'all old plus separate advisory release controls')
+        expected_total=POSITIVE_TRUE_CONTROL_COUNTS[kind]if positive_true_repeat else HINT_CONTROL_COUNTS[kind]
+        need(len(names)==len(set(names))==expected_total,'exact declared terminal domain plus separate advisory controls')
     return dict(refusals=names,populations=populations,native_operations=0,
         supplied_lease_controls=supplied_lease,original_stdout_sha256=reuse.H(stdout),
         original_stderr_sha256=reuse.H(stderr))
 
 
-def hint_controls(stdout,stderr,args,kind,lane,observed):
+def hint_controls(stdout,stderr,args,kind,lane,observed,*,positive_true_repeat=False):
     """Separate source-derived terminal controls; no protected-record credit."""
     linked,hint,parsed=(observed[k]for k in('linked','native_hint','parsed'))
     lines=stderr[:-1].split(b'\n');trials=[]
@@ -430,7 +447,7 @@ def hint_controls(stdout,stderr,args,kind,lane,observed):
     names=[]
     for name,data in trials:
         caught=False
-        try:check(stdout,data,args,kind,lane,native_hint=True)
+        try:check(stdout,data,args,kind,lane,native_hint=True,positive_true_repeat=positive_true_repeat)
         except ValueError:caught=True
         need(caught,'complete hinted release reader refuses '+name);names.append(name)
     return names
