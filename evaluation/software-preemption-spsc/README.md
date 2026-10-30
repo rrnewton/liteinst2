@@ -1,5 +1,54 @@
 # Software-clock SPSC experiment
 
+At merged revision `73d1830bb83bb8ecca813d9f55e1fc8a6a254f6e` on the AMD EPYC
+Zen 5 dev host, both channel and SPSC profiles passed the fixed six-command
+release population. Each completed 28 gate pairs / 56 children, 96 stop cells,
+256 parked checks, 48 repeated sequences and 108 timing rows. All three separate
+fatal controls passed with exact actual-cause witnesses and exit 123. Focused
+checks passed 32 Rust tests, 394 Python controls and Rust 1.85 compilation.
+
+The repair retains the exact main-only publication guard. After each successful
+join, it waits under one two-second cleanup deadline for that worker's actual
+returned TID to disappear. Unknown tasks, malformed observations and late
+completion refuse. This observation is outside the unchanged measured work loop.
+The earlier failed channel qualification below remains FAILED; its extra TID
+was not recorded, so the historical task's identity remains unknown.
+
+Median wall nanoseconds per work unit (seven measurements after two warmups):
+
+| Function | Native (SPSC cohort) | Counter (SPSC cohort) | Channel stop | SPSC stop | Channel / SPSC stop |
+|---|---:|---:|---:|---:|---:|
+| countdown-jnz | 0.569 | 2.731 | 206.469 | 83.997 | 2.458 |
+| signed-jg | 0.561 | 2.707 | 217.628 | 95.140 | 2.287 |
+| unsigned-jb | 0.581 | 1.865 | 240.407 | 88.107 | 2.729 |
+| direct-jmp | 0.609 | 1.797 | 225.620 | 79.226 | 2.848 |
+
+This one fixed ordered pair used the same release binary and reserved CPUs
+159, 193, 230, 267. The stop medians were 2.287–2.848 times faster with SPSC.
+These observations are not a general speedup bound: native channel/SPSC ratios
+ranged 0.987–1.413, and counter ratios 0.688–1.580. CPU consumption was not measured;
+spinning may use more CPU. There was no endpoint-specific CPU pinning. The
+strict 2 ms consumer campaign remains **one PASS / four FAIL**.
+
+[All 216 raw timing rows](measurements-73d1830.csv) and
+[compact release/focused receipts](results-73d1830.json) retain both complete
+cohorts, every command, build/source/product hash, reservation and load average.
+Reproduce with the command below at revision 73d1830, first the fatal profile,
+then channels, then SPSC, each once in a fresh directory under one four-CPU
+reservation. No command/resource bound, work denominator or comparator changed.
+The failed b4 attempt is separate and is never substituted into this pair.
+
+[Merged-tree validation](validation-73d1830.json) passed fmt, strict Clippy,
+all-feature/all-target check, parallel workspace (**3,824 passed, 0 failed,
+37 ignored**) and serial launch (**1,039 passed, 0 failed**). The workspace used
+16 disjoint reserved CPUs and 316 test threads, completing in 805.818 seconds
+within its unchanged 900-second limit. All 117 named prior regression cases and
+six additional exec-admission/deadline cases passed; three filtered child
+summaries receive no credit in the workspace total. All closures record complete
+cleanup and zero rescued descendants. These checks ran at the exact source
+revision above; later evidence-only commits do not change that tested source.
+
+## Earlier b4 attempt, retained
 Revision `b4bb411157c66f10733285d66d2141f3a9d0eb7e`, AMD EPYC Zen 5 dev host.
 The new single-producer/single-consumer handoff passed all six release commands:
 28 gate pairs / 56 children, 96 stop cells, 256 parked-state comparisons,
