@@ -1,0 +1,170 @@
+{
+  "schema": "LI2-PUBLIC-PREPARATION-CONTROLS-1",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "source_revision": "d67345cf467c2105cd8a38261c2dbec46b5c0ea9",
+  "source_sha256": {
+    "evaluation/offline-router-corpus/reproduce_preparation.py": "38cb37b4950775c086de7456f69f4277e4a2853405901af4c551a6ee8ea1f6ee",
+    "evaluation/offline-router-corpus/platform_inputs.py": "e91edc5a924ccbe56623202b5579170a5ed4d6a09492e2a8433b6340c922a4ed",
+    "evaluation/offline-router-corpus/profile_preflight_controls.py": "78eb0c54659733bf78388e0bd98ffc3cb9f0a346f5c95aa18838728ff0f689b7",
+    "evaluation/offline-router-corpus/REPRODUCE.md": "2348174e8585bfce95a33824eb9ea0e4b981ae7f0a3d5e3b4a09f326188da19e",
+    "evaluation/offline-router-corpus/reproduce_preparation_controls.py": "51ae59f7b8fd33592411653724cffcc2bc0cf2d2b0421a46a939c2541b8fe087"
+  },
+  "source_review_binding_sha256": "c4e0cfa6950f72aea33c69ea3d78ec58e7aeced604a64fd870aa31f43a80c518",
+  "commands": [
+    {
+      "name": "discovery-invocation",
+      "revision": "ddff7fc85c7f39701c691d8d4ff8aa81e364bd46",
+      "tracked_working_delta": {
+        "evaluation/offline-router-corpus/REPRODUCE.md": "2348174e8585bfce95a33824eb9ea0e4b981ae7f0a3d5e3b4a09f326188da19e",
+        "evaluation/offline-router-corpus/platform_inputs.py": "e91edc5a924ccbe56623202b5579170a5ed4d6a09492e2a8433b6340c922a4ed",
+        "evaluation/offline-router-corpus/profile_preflight_controls.py": "78eb0c54659733bf78388e0bd98ffc3cb9f0a346f5c95aa18838728ff0f689b7",
+        "evaluation/offline-router-corpus/reproduce_preparation.py": "38cb37b4950775c086de7456f69f4277e4a2853405901af4c551a6ee8ea1f6ee",
+        "evaluation/offline-router-corpus/reproduce_preparation_controls.py": "51ae59f7b8fd33592411653724cffcc2bc0cf2d2b0421a46a939c2541b8fe087"
+      },
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/offline-router-corpus",
+        "-p",
+        "*controls.py"
+      ],
+      "owner_receipt_sha256": "aa06798690a95c1a32e47c57c3e0001c33e484cd652cb1676af9d250e1602cdf",
+      "source_unchanged": true,
+      "closed": {
+        "start_utc": "2026-10-30T12:52:54.909227+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 0.15183585486374795,
+        "private_log_sha256": "467ce3a0e523b6e7a76df65a28207441031bccc49f4baaef5aa8ce359aa11548",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "reserved_cpus": [
+        64,
+        65,
+        184,
+        211
+      ],
+      "load_before": [
+        "88.26",
+        "105.51",
+        "113.31"
+      ],
+      "load_after": [
+        "88.26",
+        "105.51",
+        "113.31"
+      ],
+      "attempts": 1,
+      "passed_controls": 13,
+      "import_errors": 1,
+      "wall_limit_seconds": 1200,
+      "output_limit_bytes": 8388608
+    },
+    {
+      "name": "profiler-direct",
+      "revision": "ddff7fc85c7f39701c691d8d4ff8aa81e364bd46",
+      "tracked_working_delta": {
+        "evaluation/offline-router-corpus/REPRODUCE.md": "2348174e8585bfce95a33824eb9ea0e4b981ae7f0a3d5e3b4a09f326188da19e",
+        "evaluation/offline-router-corpus/platform_inputs.py": "e91edc5a924ccbe56623202b5579170a5ed4d6a09492e2a8433b6340c922a4ed",
+        "evaluation/offline-router-corpus/profile_preflight_controls.py": "78eb0c54659733bf78388e0bd98ffc3cb9f0a346f5c95aa18838728ff0f689b7",
+        "evaluation/offline-router-corpus/reproduce_preparation.py": "38cb37b4950775c086de7456f69f4277e4a2853405901af4c551a6ee8ea1f6ee",
+        "evaluation/offline-router-corpus/reproduce_preparation_controls.py": "51ae59f7b8fd33592411653724cffcc2bc0cf2d2b0421a46a939c2541b8fe087"
+      },
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/offline-router-corpus/profile_preflight_controls.py"
+      ],
+      "owner_receipt_sha256": "ee722e51e1f97a933acef24f60c9cbda1ad51f2a1cb044f100d9aa0d68f6afca",
+      "source_unchanged": true,
+      "closed": {
+        "start_utc": "2026-10-30T12:53:07.282717+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.1469774970319122,
+        "private_log_sha256": "62524da09646d205427f945b7888f49dc14eed76d75707112108106547d9fc41",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "reserved_cpus": [
+        165,
+        221,
+        265,
+        308
+      ],
+      "load_before": [
+        "81.98",
+        "103.28",
+        "112.46"
+      ],
+      "load_after": [
+        "81.98",
+        "103.28",
+        "112.46"
+      ],
+      "attempts": 1,
+      "passed_controls": 10,
+      "import_errors": 0,
+      "wall_limit_seconds": 1200,
+      "output_limit_bytes": 8388608
+    },
+    {
+      "name": "public-owner-integration",
+      "revision": "d67345cf467c2105cd8a38261c2dbec46b5c0ea9",
+      "tracked_working_delta": {},
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/offline-router-corpus/reproduce_preparation_controls.py"
+      ],
+      "owner_receipt_sha256": "7f70f08cb586dfac22e9a159fb5b14d92f0b332aabd1400128b7954a97d3d978",
+      "source_unchanged": true,
+      "closed": {
+        "start_utc": "2026-10-30T12:53:50.289341+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.17453517415560782,
+        "private_log_sha256": "2e618d84517731be81aa8ea5939a9373854743f957fb51617501b0cb5075a06a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "reserved_cpus": [
+        171,
+        178,
+        227,
+        261
+      ],
+      "load_before": [
+        "73.65",
+        "98.64",
+        "110.52"
+      ],
+      "load_after": [
+        "73.65",
+        "98.64",
+        "110.52"
+      ],
+      "attempts": 1,
+      "passed_controls": 13,
+      "import_errors": 0,
+      "wall_limit_seconds": 1200,
+      "output_limit_bytes": 8388608
+    }
+  ],
+  "distinct_controls": 23,
+  "first_invocation_status": "FAIL_IMPORT_ERROR",
+  "first_invocation_reason": "Root used unittest discovery; profiler controls interpret optional argv[1] as the script pathname, so they attempted to load discover. Thirteen preparation controls passed; the ten profiler controls did not run there.",
+  "repair": "No source change. Invoke all ten profiler controls through their documented direct command. After committing identical source, exercise all thirteen preparation controls through the public bounded stage.",
+  "qualification_complete": false,
+  "performance_eligible": false,
+  "native_dispatches": 0,
+  "scope": "Inert Python controls and one actual public command-owner integration; no native/program/probe qualification or performance measurement."
+}
