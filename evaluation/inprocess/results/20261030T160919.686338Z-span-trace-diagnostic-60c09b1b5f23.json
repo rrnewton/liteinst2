@@ -1,0 +1,588 @@
+{
+  "artifact_revision": "e376443d5c35ab2d63fd05e3f4eb3b4b9ac9e93e",
+  "artifacts_sha256": "54cdf49dc5c4276dc548bfb8aedc12c26012ae5c2b6c32973fcd9fd370ba033a",
+  "cleanup_complete": true,
+  "collector_committed": true,
+  "collector_revision": "60c09b1b5f235f7a2192cb79a9090595c797619b",
+  "collector_unchanged": true,
+  "command_count": 3,
+  "commands": [
+    {
+      "bounds": [
+        10,
+        536870912,
+        16777216,
+        20
+      ],
+      "captures": {
+        "record": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "duration_ns": 11262230799,
+      "exit": -9,
+      "max_rss_kib": 32988,
+      "name": "subject",
+      "reaped": true,
+      "stop_requested": null,
+      "system_cpu_ns": 822698000,
+      "timed_out": false,
+      "user_cpu_ns": 9162379000
+    },
+    {
+      "bounds": [
+        10,
+        268435456,
+        16777216,
+        20
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 252,
+          "sha256": "f992dc6f3402698f48bf0d993de74dd3b1540816137d23a408e1daa1814743d4"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "duration_ns": 6949206282,
+      "exit": -2,
+      "max_rss_kib": 48512,
+      "name": "perf",
+      "reaped": true,
+      "stop_requested": "SIGINT_after_observation_interval",
+      "system_cpu_ns": 1105822000,
+      "timed_out": false,
+      "user_cpu_ns": 63404000
+    },
+    {
+      "bounds": [
+        10,
+        268435456,
+        16777216,
+        20
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 91363,
+          "sha256": "7170c31396f782118b12e3a6dc94b35f4b5dd0b24d27e15eaf0d4577e1af168d"
+        }
+      },
+      "duration_ns": 147889760,
+      "exit": 0,
+      "max_rss_kib": 76288,
+      "name": "perf-symbols",
+      "reaped": true,
+      "stop_requested": null,
+      "system_cpu_ns": 22692000,
+      "timed_out": false,
+      "user_cpu_ns": 119360000
+    }
+  ],
+  "commands_sha256": "7b6a6749909a9d93b11e6e2ecd0a175c41b0a9d4f74e0c6a3add0fecf711ceb3",
+  "cpu": 80,
+  "csv": {
+    "bytes": 228,
+    "file": "20261030T160919.686338Z-span-trace-diagnostic-60c09b1b5f23.csv",
+    "sha256": "96c7c341b93e9311bb47cc6466a9b669838950a2979c1e2a1c4a9bd8ccf52f5a"
+  },
+  "diagnostic_only": true,
+  "error_types": [],
+  "final_error_count": 0,
+  "git_metadata_count": 33,
+  "git_metadata_sha256": "179a98e2c69badeb9956be82505d117e00022e9f5ec4f86ee19fd4a0e7bfd243",
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu": 80,
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "input_manifest_sha256": "0ef615c5b2fb96ddc956ccf32068c2a380b9ac466686c57dbb1c3a39f96af419",
+  "inputs_unchanged": true,
+  "kind": "perf",
+  "observations": {
+    "attach_delay_ns": 400000000,
+    "data_bytes": 1204824,
+    "lost": 0,
+    "other_samples": 36,
+    "perf_data": {
+      "bytes": 1599084,
+      "sha256": "775ed7e6caf451e315730fbae6ecbe1e608a8d9b142a0f3543ef708597a05fa3"
+    },
+    "record_types": {
+      "10": 9784,
+      "3": 1,
+      "68": 38,
+      "69": 1,
+      "73": 1,
+      "74": 1,
+      "78": 3,
+      "79": 1,
+      "82": 1,
+      "9": 453
+    },
+    "requested_attach_ns": 5000000000,
+    "requested_hz": 99,
+    "requested_mmap_pages": 16,
+    "samples": 453,
+    "symbol_groups": 68,
+    "top_symbols": [
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 71,
+        "symbol": "equal"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 69,
+        "symbol": "selected_generic_trace"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 46,
+        "symbol": "copy"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 44,
+        "symbol": "li2_span_plan_page"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 38,
+        "symbol": "li2_tf_chain_span_close"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 32,
+        "symbol": "selected_fetch"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 27,
+        "symbol": "li2_span_plan_validate.part.0"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 17,
+        "symbol": "memcpy"
+      },
+      {
+        "module": "unresolved-module",
+        "module_identity_sha256": "96bd7425d34c8757aaa3f612053fb170ae6d8b10688472863ea1c75c5a18e96f",
+        "samples": 10,
+        "symbol": "membarrier_private_expedited"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 9,
+        "symbol": "li2_region_plan_page"
+      },
+      {
+        "module": "unresolved-module",
+        "module_identity_sha256": "96bd7425d34c8757aaa3f612053fb170ae6d8b10688472863ea1c75c5a18e96f",
+        "samples": 6,
+        "symbol": "perf_iterate_ctx"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 5,
+        "symbol": "intersects"
+      },
+      {
+        "module": "unresolved-module",
+        "module_identity_sha256": "96bd7425d34c8757aaa3f612053fb170ae6d8b10688472863ea1c75c5a18e96f",
+        "samples": 5,
+        "symbol": "__alloc_frozen_pages_noprof"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 3,
+        "symbol": "chain_frame_equal"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 3,
+        "symbol": "li2_region_plan_validate.part.0"
+      },
+      {
+        "module": "unresolved-module",
+        "module_identity_sha256": "96bd7425d34c8757aaa3f612053fb170ae6d8b10688472863ea1c75c5a18e96f",
+        "samples": 3,
+        "symbol": "__seccomp_filter"
+      },
+      {
+        "module": "unresolved-module",
+        "module_identity_sha256": "96bd7425d34c8757aaa3f612053fb170ae6d8b10688472863ea1c75c5a18e96f",
+        "samples": 3,
+        "symbol": "perf_event_mmap"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "handler"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "li2_lifecycle_span_validate"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "li2_page_selected_decoder::decode::one"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "li2_repeat_lease_closed"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "li2_tf_arm.part.0"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "mv_inc"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "uh_quiet"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "unresolved-symbol-1083536590143e2c"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 2,
+        "symbol": "unresolved-symbol-89fc9d023a22abb1"
+      },
+      {
+        "module": "unresolved-module",
+        "module_identity_sha256": "96bd7425d34c8757aaa3f612053fb170ae6d8b10688472863ea1c75c5a18e96f",
+        "samples": 2,
+        "symbol": "___free_pages.llvm.12672333035620763972"
+      },
+      {
+        "module": "unresolved-module",
+        "module_identity_sha256": "96bd7425d34c8757aaa3f612053fb170ae6d8b10688472863ea1c75c5a18e96f",
+        "samples": 2,
+        "symbol": "__x64_sys_newfstat"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 1,
+        "symbol": "inspect"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 1,
+        "symbol": "li2_decoder_span_describe"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 1,
+        "symbol": "li2_lifecycle_region_source"
+      },
+      {
+        "module": "bridge-scalar-span-trace.so",
+        "module_identity_sha256": "357b6e80c747a7339bdd2d06db25f2997d481e8a1b66bc69fe247edf9d866682",
+        "samples": 1,
+        "symbol": "li2_lifecycle_run_reuse_quiet"
+      }
+    ]
+  },
+  "origin": {
+    "historical_launch_files": 29,
+    "historical_launch_manifest_sha256": "57721fdca061040daf837ebb0048eeab98b67543db79baff6906f19d2c85db94",
+    "launch_relocations": [
+      "exact historical launcher/import root",
+      "fresh preparation",
+      "fresh namespace"
+    ],
+    "original_bounds": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "original_command_sha256": "9065a9c10854b30e5fc93e02fa4416cdd608933bd040c727593ad43d0d5b3559",
+    "prior_status": "failed",
+    "prior_subject_exit": -9,
+    "private": {
+      "bytes": 2871946,
+      "sha256": "28eac206dda83ac8fa825f1d73c8245e2b7728a372e4cf6ff32a3a27b3bec8dc"
+    },
+    "public": {
+      "bytes": 10683,
+      "sha256": "acb4a12e16d52f13743e2ec0514e9f34f5663901d3035ba525048c9c5b508e15"
+    },
+    "source": {
+      "head_sources_match": true,
+      "revision": "e376443d5c35ab2d63fd05e3f4eb3b4b9ac9e93e",
+      "source_manifest_sha256": "0ef511554b5011727721ef67e77f4dba4b122fe52a22fb84cd9ecb51defa2830",
+      "tracked_clean": true,
+      "tree": "db0ba90b2910abd25c51b925af70534a67764c2f"
+    }
+  },
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 166850,
+    "sha256": "53f61b23537b90876da9eef0250c43c22bde43688d443ce9a41d07985f579f78"
+  },
+  "profile": "scalar-span-diagnostic-v1",
+  "qualification_credit": false,
+  "reproduce": [
+    "python3",
+    "-B",
+    "evaluation/inprocess/span_trace_diagnostic.py",
+    "--receipt",
+    "evaluation/inprocess/results/20261030T153625.131280Z-scalar-span-trace-e376443d5c35.json",
+    "--expect-artifact-revision",
+    "e376443d5c35ab2d63fd05e3f4eb3b4b9ac9e93e",
+    "--kind",
+    "perf"
+  ],
+  "schema": 1,
+  "scope": "Diagnostic observations only; original finite cohort outcome remains unchanged. Perf perturbs execution; snapshot reads are sequential and unsynchronized. Process-group cleanup does not claim custody of escaped descendants.",
+  "status": "diagnostic_completed",
+  "tools": {
+    "collector": {
+      "bytes": 35060,
+      "sha256": "6ee3e0cfd255e392551c167085287f3060c059ef2ad2b5c6ba1fbb80ea942a6d"
+    },
+    "collector_python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "perf": {
+      "bytes": 12270728,
+      "sha256": "1be5e150695f3bc2b2f6df3cd937fe12527d5b1c7140716e9beb23b9cdd35f46"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    }
+  }
+}
