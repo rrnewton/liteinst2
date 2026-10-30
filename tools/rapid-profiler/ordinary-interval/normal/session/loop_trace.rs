@@ -338,22 +338,23 @@ impl fmt::Display for Iteration {
         } else {
             write!(f, " accounting_end=none")?;
         }
-        if self.after.is_none()
-            && let Some((index, at)) = self.marks[..Phase::End as usize]
+        if self.after.is_none() {
+            if let Some((index, at)) = self.marks[..Phase::End as usize]
                 .iter()
                 .enumerate()
                 .rev()
                 .find_map(|(i, at)| at.map(|at| (i, at)))
-        {
-            let tail = self
-                .last
-                .and_then(|last| last.after.checked_duration_since(at))
-                .map(|d| d.as_nanos());
-            write!(
-                f,
-                " unfinished_from={} unfinished_through_error_ns={tail:?}",
-                NAMES[index]
-            )?;
+            {
+                let tail = self
+                    .last
+                    .and_then(|last| last.after.checked_duration_since(at))
+                    .map(|d| d.as_nanos());
+                write!(
+                    f,
+                    " unfinished_from={} unfinished_through_error_ns={tail:?}",
+                    NAMES[index]
+                )?;
+            }
         }
         write!(f, "]")
     }

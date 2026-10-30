@@ -554,69 +554,69 @@ pub(in crate::normal) fn drive<A: Application>(
         )?;
         loop_trace.progress(progress);
         loop_trace.mark(loop_trace::Phase::Dispatch);
-        if !state.final_output
-            && let Some(totals) = state.finished
-        {
-            if joined.is_none() && handle.as_ref().is_some_and(|h| h.is_finished()) {
-                assert!(schedule.is_stopping() && state.stop_sent && state.pending.is_none());
-                *joined = Some(handle.take().unwrap().join());
-                let captured = joined.as_ref().unwrap().tid();
-                if u64::from(captured) != tid {
-                    return Err(format!(
-                        "joined task identity captured_tids=[{captured}] Ready={tid} observed_tasks=None"
-                    ));
+        if !state.final_output {
+            if let Some(totals) = state.finished {
+                if joined.is_none() && handle.as_ref().is_some_and(|h| h.is_finished()) {
+                    assert!(schedule.is_stopping() && state.stop_sent && state.pending.is_none());
+                    *joined = Some(handle.take().unwrap().join());
+                    let captured = joined.as_ref().unwrap().tid();
+                    if u64::from(captured) != tid {
+                        return Err(format!(
+                            "joined task identity captured_tids=[{captured}] Ready={tid} observed_tasks=None"
+                        ));
+                    }
                 }
-            }
-            // One complete observation per loop. The original Schedule
-            // still bounds shutdown; unrelated tasks refuse immediately.
-            let retired = match joined.as_mut() {
-                Some(task) => joined_task::poll_exclusive(&mut [task], || {
-                    schedule
-                        .wait_bound(Instant::now())
-                        .map(|_| ())
-                        .map_err(|error| {
-                            joined_task::Error::Clock(clock_failure(
-                                error,
-                                "task-retirement",
-                                engine.committed_arms,
-                                &schedule,
-                            ))
-                        })
-                })
-                .map_err(|error| error.to_string())?,
-                None => false,
-            };
-            if retired {
-                joined
-                    .as_ref()
-                    .unwrap()
-                    .result()
-                    .as_ref()
-                    .map_err(|_| "worker panic")?;
-                engine.retire(io)?;
-                engine.history(io)?;
-                assert!(engine.epochs.iter().all(Option::is_none));
-                assert_eq!(engine.banks.len(), 3);
-                assert_eq!(engine.reports.len(), schedule.armed() as usize);
-                assert_eq!(engine.committed_arms, schedule.armed());
-                assert_eq!(
-                    engine.history.last().unwrap().range().end,
-                    u64::from(schedule.armed()) + 1
-                );
-                engine.final_check()?;
-                app.finish(totals, &engine.reports, &engine.history, io)?;
-                app.final_checks()?;
-                single_main();
-                unsafe { immutable(spans) };
-                app.final_custody()?;
-                io.emit(format!("IO,{}\n", io.write_blocked()))?;
-                app.terminal(
-                    &schedule,
-                    engine.history.last().unwrap().range().end,
-                    totals,
-                    io,
-                )?;
-                state.final_output = true;
+                // One complete observation per loop. The original Schedule
+                // still bounds shutdown; unrelated tasks refuse immediately.
+                let retired = match joined.as_mut() {
+                    Some(task) => joined_task::poll_exclusive(&mut [task], || {
+                        schedule
+                            .wait_bound(Instant::now())
+                            .map(|_| ())
+                            .map_err(|error| {
+                                joined_task::Error::Clock(clock_failure(
+                                    error,
+                                    "task-retirement",
+                                    engine.committed_arms,
+                                    &schedule,
+                                ))
+                            })
+                    })
+                    .map_err(|error| error.to_string())?,
+                    None => false,
+                };
+                if retired {
+                    joined
+                        .as_ref()
+                        .unwrap()
+                        .result()
+                        .as_ref()
+                        .map_err(|_| "worker panic")?;
+                    engine.retire(io)?;
+                    engine.history(io)?;
+                    assert!(engine.epochs.iter().all(Option::is_none));
+                    assert_eq!(engine.banks.len(), 3);
+                    assert_eq!(engine.reports.len(), schedule.armed() as usize);
+                    assert_eq!(engine.committed_arms, schedule.armed());
+                    assert_eq!(
+                        engine.history.last().unwrap().range().end,
+                        u64::from(schedule.armed()) + 1
+                    );
+                    engine.final_check()?;
+                    app.finish(totals, &engine.reports, &engine.history, io)?;
+                    app.final_checks()?;
+                    single_main();
+                    unsafe { immutable(spans) };
+                    app.final_custody()?;
+                    io.emit(format!("IO,{}\n", io.write_blocked()))?;
+                    app.terminal(
+                        &schedule,
+                        engine.history.last().unwrap().range().end,
+                        totals,
+                        io,
+                    )?;
+                    state.final_output = true;
+                }
             }
         }
         loop_trace.mark(loop_trace::Phase::Finalize);

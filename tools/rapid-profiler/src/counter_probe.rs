@@ -166,12 +166,16 @@ impl System for Linux {
         if tid.result <= 0 || tid.result > i64::from(i32::MAX) {
             return Err(CpuFailure::Identity(tid));
         }
-        let zero = std::arch::x86_64::__cpuid(0);
+        // SAFETY: CPUID is available on the supported x86-64 target.
+        #[allow(unused_unsafe)] // CPUID is unsafe on the minimum supported Rust.
+        let zero = unsafe { std::arch::x86_64::__cpuid(0) };
         let mut vendor = [0; 12];
         vendor[..4].copy_from_slice(&zero.ebx.to_le_bytes());
         vendor[4..8].copy_from_slice(&zero.edx.to_le_bytes());
         vendor[8..].copy_from_slice(&zero.ecx.to_le_bytes());
-        let signature = std::arch::x86_64::__cpuid(1).eax;
+        // SAFETY: CPUID is available on the supported x86-64 target.
+        #[allow(unused_unsafe)] // CPUID is unsafe on the minimum supported Rust.
+        let signature = unsafe { std::arch::x86_64::__cpuid(1) }.eax;
         let base_family = (signature >> 8) & 15;
         let family = base_family
             + if base_family == 15 {

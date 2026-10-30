@@ -210,8 +210,10 @@ fn observe<T>(
             expected.insert(task.tid);
         }
     }
-    if exclusive && let Some(tid) = census.tids.difference(&expected).next() {
-        return Err(Error::UnexpectedTask(*tid));
+    if exclusive {
+        if let Some(tid) = census.tids.difference(&expected).next() {
+            return Err(Error::UnexpectedTask(*tid));
+        }
     }
     for task in joined.iter_mut() {
         task.retired = !census.tids.contains(&task.tid) && census.absent.contains(&task.tid);
