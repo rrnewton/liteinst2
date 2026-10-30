@@ -6339,7 +6339,7 @@
       },
       "test/neighbor_eviction_oracle": {
         "ignored": 0,
-        "tests": 100
+        "tests": 101
       },
       "test/oracle": {
         "ignored": 0,
@@ -6463,7 +6463,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 299
+        "tests": 309
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,

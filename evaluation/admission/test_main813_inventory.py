@@ -3143,7 +3143,8 @@ class Main813InventoryTests(unittest.TestCase):
 
         # Complete pending successor: exact current input must reach old history.
         pending = main813.MAINSHORTPENDING
-        pending_actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        adjacent_actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        pending_actual = main813.before_adjacent(adjacent_actual)
         pending_saved = plain.deepcopy(pending_actual)
         pending_prior = main813.before_short_pending(pending_actual)
         self.assertEqual(pending_prior, ownership_current)
@@ -3159,13 +3160,13 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.before_short_ownership(pending_prior), engine_current)
         self.assertEqual(main813.before_short_ownership(pending_actual), engine_current)
         with patch.object(inventory, 'before_cc846', wraps=inventory.before_cc846) as history:
-            inventory.require_current(pending_actual)
-            self.assertEqual(history.call_args_list, [unittest.mock.call(pending_actual)])
+            inventory.require_current(adjacent_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(adjacent_actual)])
         with patch.object(inventory, 'before_cc846',
                           side_effect=RuntimeError('pending original history reached')) as history:
             with self.assertRaisesRegex(RuntimeError, '^pending original history reached$'):
-                inventory.require_current(pending_actual)
-            self.assertEqual(history.call_args_list, [unittest.mock.call(pending_actual)])
+                inventory.require_current(adjacent_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(adjacent_actual)])
         pending_rows = pending_actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(pending_rows), sum(x['tests'] for x in pending_rows.values()),
                           sum(x['ignored'] for x in pending_rows.values())), (104, 3649, 37))
@@ -3224,7 +3225,7 @@ class Main813InventoryTests(unittest.TestCase):
             # A coherent new digest reaches the unchanged expected-current-row comparison.
             changed = plain.deepcopy(pending_actual)
             changed['harness_test_counts']['workspace_tests'][name]['tests'] += 1
-            with patch.object(main813, 'LATEST', main813.digest(changed)):
+            with patch.object(main813, 'CURRENTSHORTPENDING', main813.digest(changed)):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_catalog_control$'):
                     main813.before_short_pending(changed, 'pending_catalog_control')
         for name in pending_rows:
@@ -3256,10 +3257,11 @@ class Main813InventoryTests(unittest.TestCase):
         pending_read = Path.read_bytes
         for path, wanted in pending['sources'].items():
             pending_target = main813.ROOT / path
-            pending_raw = pending_read(pending_target)
+            pending_current = pending_read(pending_target)
+            pending_raw = main813.source_before_adjacent(path, pending_current, 'pending_source_control')
             self.assertEqual(hashlib.sha256(pending_raw).hexdigest(), wanted)
             self.assertIsNone(main813._require_short_pending_blob(path, pending_raw, wanted, 'pending_source_control'))
-            for replacement in (pending_raw + b'\n', pending_raw[:-1], None):
+            for replacement in (pending_current + b'\n', pending_current[:-1], None):
                 def pending_changed(candidate):
                     if candidate == pending_target:
                         if replacement is None:
@@ -3270,7 +3272,7 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_source_control$'):
                         main813.require_short_pending_sources('pending_source_control')
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(pending_actual)
+                        inventory.require_current(adjacent_actual)
         for path, pending_row in pending['projections'].items():
             pending_raw = pending_read(main813.ROOT / path)
             pending_restored = main813.source_before_short_pending(path, pending_raw, 'pending_inverse_control')
@@ -3310,7 +3312,7 @@ class Main813InventoryTests(unittest.TestCase):
                 return pending_restored if candidate == main813.ROOT / path else pending_read(candidate)
             with patch.object(Path, 'read_bytes', pending_historical):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                    inventory.require_current(pending_actual)
+                    inventory.require_current(adjacent_actual)
         pending_unchanged = pending_read(main813.ROOT / 'src/trampoline.rs')
         self.assertIs(main813.source_before_short_pending('src/trampoline.rs', pending_unchanged, 'changed'),
                       pending_unchanged)
@@ -3449,6 +3451,132 @@ class Main813InventoryTests(unittest.TestCase):
                                       hashlib.sha256(oversized_names).hexdigest(), 'pending_syntax_control'))
                     self.assertEqual(live_parse.call_args_list, [unittest.mock.call(oversized_names)])
         self.assertEqual(pending_actual, pending_saved)
+
+        # Adjacent-B2 is additive: exact current source and309 rows peel to299.
+        adjacent = main813.MAINADJACENT
+        self.assertEqual(main813.before_adjacent(adjacent_actual), pending_actual)
+        self.assertEqual(main813.digest(pending_actual), main813.CURRENTSHORTPENDING)
+        self.assertEqual(main813.digest(adjacent_actual), main813.LATEST)
+        self.assertEqual(adjacent_actual['harness_test_counts']['workspace_tests']['unit/liteinst2/lib'], counts(309, 1))
+        self.assertEqual(adjacent_actual['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle'], counts(101))
+        adjacent_rows = adjacent_actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(adjacent_rows), sum(x['tests'] for x in adjacent_rows.values()),
+                          sum(x['ignored'] for x in adjacent_rows.values())), (104, 3660, 37))
+        self.assertEqual(adjacent_actual['harness_test_counts']['serial_launch'], pending_actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((adjacent_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
+        self.assertEqual(adjacent['declared_delta'], dict(rust_declarations=11, rust_tests=11,
+                         harnesses=0, ignored=0, doctests=0, admission_python_methods=0))
+        self.assertEqual(len(adjacent['methods']['src/quiescent/adjacent_b2/tests.rs']['all']), 10)
+        self.assertEqual(adjacent['methods']['src/quiescent/adjacent_b2/tests.rs']['ignored'], [])
+        self.assertEqual(main813.before_short_pending(adjacent_actual), pending_prior)
+        inventory.require_current(adjacent_actual)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+            inventory.require_current(pending_actual)
+        for field, values in (('tests', (308, 310, True, 309.0, None)), ('ignored', (0, 2, True, 1.0, None))):
+            for value in values:
+                changed = plain.deepcopy(adjacent_actual)
+                changed['harness_test_counts']['workspace_tests']['unit/liteinst2/lib'][field] = value
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_inventory_differs$'):
+                    main813.before_adjacent(changed)
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                    inventory.require_current(changed)
+        for tests, ignored in ((100,0),(102,0),(101,1),(True,0),(101.0,0),(101,False)):
+            changed = plain.deepcopy(adjacent_actual)
+            changed['harness_test_counts']['workspace_tests']['test/neighbor_eviction_oracle'] = dict(tests=tests, ignored=ignored)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_inventory_differs$'):
+                main813.before_adjacent(changed)
+        for name in adjacent['workspace_changes']:
+            changed = plain.deepcopy(adjacent_actual)
+            changed['harness_test_counts']['workspace_tests'][name]['tests'] += 1
+            with patch.object(main813, 'LATEST', main813.digest(changed)):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_inventory_differs$'):
+                    main813.before_adjacent(changed)
+        adjacent_read = Path.read_bytes
+        for path in adjacent['sources']:
+            target = main813.ROOT / path
+            raw = adjacent_read(target)
+            for replacement in (raw + b'\n', raw[:-1], None):
+                def adjacent_changed(candidate):
+                    if candidate == target:
+                        if replacement is None:
+                            raise FileNotFoundError(path)
+                        return replacement
+                    return adjacent_read(candidate)
+                with patch.object(Path, 'read_bytes', adjacent_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_source_inventory_differs$'):
+                        main813.require_adjacent_sources()
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_current(adjacent_actual)
+        path = 'src/quiescent.rs'
+        raw = adjacent_read(main813.ROOT / path)
+        row = adjacent['projections'][path]
+        restored = main813.source_before_adjacent(path, raw, 'adjacent_inverse_control')
+        self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+        self.assertEqual(main813.source_before_short_pending(path, raw, 'changed'), restored)
+        for bad in (raw + b'\n', raw[:-1], restored, bytearray(raw), raw.decode()):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_inverse_control$'):
+                main813.source_before_adjacent(path, bad, 'adjacent_inverse_control')
+        for mutation in (dict(row, previous_sha256='0'*64), dict(row, edits=[]),
+                         dict(row, edits=[[1, 0, '']]), dict(row, edits=[[0, len(raw)+1, '']])):
+            with patch.dict(adjacent['projections'], {path: mutation}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_inverse_control$'):
+                    main813.source_before_adjacent(path, raw, 'adjacent_inverse_control')
+        for arena_path in adjacent['inherited_arena_projections']:
+            arena_raw = adjacent_read(main813.ROOT / arena_path)
+            arena_row = adjacent['projections'][arena_path]
+            arena_old = main813.source_before_adjacent(arena_path, arena_raw, 'arena_inverse_control')
+            self.assertEqual(hashlib.sha256(arena_old).hexdigest(), arena_row['previous_sha256'])
+            for bad in (arena_raw+b'\n', arena_raw[:-1], arena_old, bytearray(arena_raw)):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^arena_inverse_control$'):
+                    main813.source_before_adjacent(arena_path, bad, 'arena_inverse_control')
+            for i in range(len(arena_row['edits'])):
+                edits = plain.deepcopy(arena_row['edits']); edits[i][2] += 'changed'
+                with patch.dict(adjacent['projections'], {arena_path: dict(arena_row, edits=edits)}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^arena_inverse_control$'):
+                        main813.source_before_adjacent(arena_path, arena_raw, 'arena_inverse_control')
+            with patch.dict(adjacent['projections'], {arena_path: dict(arena_row, edits=[])}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^arena_inverse_control$'):
+                    main813.source_before_adjacent(arena_path, arena_raw, 'arena_inverse_control')
+        # The final parser is current in precheck, then whole-byte restored
+        # before the unchanged pending parser hash and inverse are consulted.
+        parser_path = 'evaluation/admission/parsing.py'
+        parser_raw = adjacent_read(main813.ROOT / parser_path)
+        parser_row = adjacent['projections'][parser_path]
+        parser_old = main813.source_before_adjacent(parser_path, parser_raw, 'parser_composition_control')
+        self.assertEqual(hashlib.sha256(parser_raw).hexdigest(), adjacent['sources'][parser_path])
+        self.assertEqual(hashlib.sha256(parser_old).hexdigest(), pending['sources'][parser_path])
+        self.assertEqual(parser_row['previous_sha256'], pending['sources'][parser_path])
+        self.assertEqual(hashlib.sha256(main813.source_before_short_pending(
+            parser_path, parser_raw, 'parser_composition_control')).hexdigest(),
+            pending['projections'][parser_path]['previous_sha256'])
+        self.assertIsNone(main813.precheck_current_sources('parser_composition_control'))
+        self.assertIsNone(main813.require_short_pending_sources('parser_composition_control'))
+        for bad in (parser_raw+b'\n', parser_raw[:-1], parser_old, bytearray(parser_raw), parser_raw.decode()):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
+                main813.source_before_adjacent(parser_path, bad, 'parser_composition_control')
+        for changed_row in (dict(parser_row, current_sha256='0'*64),
+                            dict(parser_row, previous_sha256='0'*64), dict(parser_row, edits=[]),
+                            dict(parser_row, edits=[[1, 0, '']]),
+                            dict(parser_row, edits=[[0, len(parser_raw)+1, '']])):
+            with patch.dict(adjacent['projections'], {parser_path: changed_row}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
+                    main813.source_before_adjacent(parser_path, parser_raw, 'parser_composition_control')
+        without_parser = dict(adjacent['projections']); del without_parser[parser_path]
+        with patch.dict(adjacent, projections=without_parser):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
+                main813.require_short_pending_sources('parser_composition_control')
+        without_parser = dict(adjacent['sources']); del without_parser[parser_path]
+        with patch.dict(adjacent, sources=without_parser):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
+                main813.precheck_current_sources('parser_composition_control')
+        adjacent_method_path = 'src/quiescent/adjacent_b2/tests.rs'
+        methods = adjacent['methods'][adjacent_method_path]
+        with patch.dict(adjacent['methods'], {adjacent_method_path: dict(methods, all=methods['all'][:-1])}):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_source_inventory_differs$'):
+                main813.require_adjacent_sources()
+        with patch.dict(adjacent['module_chains'], {'src/quiescent.rs': ['mod missing_adjacent;']}):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^adjacent_b2_source_inventory_differs$'):
+                main813.require_adjacent_sources()
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -4048,6 +4176,31 @@ class Main813InventoryTests(unittest.TestCase):
         pending_row = parsing.parse_harnesses(failed, pending_expected, 1)[0]
         self.assertEqual((pending_row['outer']['result'], pending_row['outer']['passed'],
                           pending_row['outer']['failed'], pending_row['outer']['ignored']), ('FAILED', 297, 1, 1))
+
+        # New309 outer cohort retains the same exact unmatched child contract.
+        adjacent_raw = pending_raw.replace('running 299 tests', 'running 309 tests').replace(
+            '298', '308')
+        adjacent_expected = {'unit/liteinst2/lib': counts(309, 1)}
+        adjacent_row = parsing.parse_harnesses(adjacent_raw, adjacent_expected, 0)[0]
+        self.assertEqual(adjacent_row['outer'], dict(passed=308, failed=0, ignored=1,
+                                                   measured=0, filtered=0, result='ok'))
+        self.assertEqual((adjacent_row['nested_starts'], adjacent_row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((308, 1, 1), (310, 1, 1), (309, 0, 1), (309, 2, 1), (309, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                            f'running {nested} tests', summary(total-ignored, ignored=ignored)))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^summary_start_count_mismatch$'):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        for bad in (adjacent_raw.replace(summary(1, filtered=308), summary(1, filtered=307), 1),
+                    adjacent_raw.replace(summary(308, ignored=1), summary(308, ignored=1, filtered=1)),
+                    adjacent_raw.replace(summary(308, ignored=1), ''), adjacent_raw+'\n'+summary(308, ignored=1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, adjacent_expected, 0)
+        failed = adjacent_raw.replace(summary(308, ignored=1), summary(307, ignored=1, failed=1))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^successful_exit_with_failed_summary$'):
+            parsing.parse_harnesses(failed, adjacent_expected, 0)
+        adjacent_row = parsing.parse_harnesses(failed, adjacent_expected, 1)[0]
+        self.assertEqual((adjacent_row['outer']['result'], adjacent_row['outer']['passed'],
+                          adjacent_row['outer']['failed'], adjacent_row['outer']['ignored']), ('FAILED',307,1,1))
         # New importer and CLI counts stay on the unchanged generic parser.
         for identity, source_header, total in (
                 ('unit/liteinst_rewrite/lib', header('liteinst_rewrite'), 110),

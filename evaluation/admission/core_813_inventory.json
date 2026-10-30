@@ -1,4 +1,402 @@
 {
+  "adjacent_b2": {
+    "base": "de1f483dc27aecce62c34715860e18f73e5747d1",
+    "core_child": {
+      "authenticated_exit": 41,
+      "ignored": 1,
+      "outer_tests": 309,
+      "sha256": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+      "source": "src/trampoline.rs",
+      "unmatched_start_tests": 1
+    },
+    "current_corpus_sha256": "e627cebaf10c5e74a0ed51dac5611ce92eefed7061cde397fa9c926e9d439dcb",
+    "declared_additions": {
+      "test/neighbor_eviction_oracle": [
+        "short_neighbor::short_fixture_arena_ownership_controls"
+      ],
+      "unit/liteinst2/lib": [
+        "quiescent::adjacent_b2::tests::adjacent_b2_actual_images_and_pair",
+        "quiescent::adjacent_b2::tests::adjacent_b2_cap_boundaries",
+        "quiescent::adjacent_b2::tests::adjacent_b2_no_cumulative_reset",
+        "quiescent::adjacent_b2::tests::adjacent_b2_original_current_identity",
+        "quiescent::adjacent_b2::tests::adjacent_b2_entry_and_domain_boundaries",
+        "quiescent::adjacent_b2::tests::adjacent_b2_pending_full_ranges",
+        "quiescent::adjacent_b2::tests::adjacent_b2_allocation_and_hook_boundaries",
+        "quiescent::adjacent_b2::tests::adjacent_b2_aggregate_and_rollback",
+        "quiescent::adjacent_b2::tests::adjacent_b2_failure_precedence",
+        "quiescent::adjacent_b2::tests::adjacent_b2_legacy_projection"
+      ]
+    },
+    "declared_delta": {
+      "admission_python_methods": 0,
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "rust_declarations": 11,
+      "rust_tests": 11
+    },
+    "inherited_arena_projections": {
+      "tests/neighbor_eviction_oracle.rs": {
+        "current_bytes": 65145,
+        "edits": 3,
+        "historical_revision": "11e2493f30def00efd271df8afcef44338a5e692",
+        "previous_bytes": 64552
+      },
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "current_bytes": 55244,
+        "edits": 18,
+        "historical_revision": "11e2493f30def00efd271df8afcef44338a5e692",
+        "previous_bytes": 53036
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_bytes": 107637,
+        "edits": 5,
+        "historical_revision": "11e2493f30def00efd271df8afcef44338a5e692",
+        "previous_bytes": 107058
+      }
+    },
+    "instances": {
+      "src/quiescent/adjacent_b2/tests.rs": {
+        "unit/liteinst2/lib": "quiescent::adjacent_b2::tests::"
+      },
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "test/neighbor_eviction_oracle": "short_neighbor::"
+      }
+    },
+    "merged_revision": "ed12a0c358a956d188d211b854da2cb2ffd34eda",
+    "methods": {
+      "src/quiescent/adjacent_b2/tests.rs": {
+        "all": [
+          "adjacent_b2_actual_images_and_pair",
+          "adjacent_b2_cap_boundaries",
+          "adjacent_b2_no_cumulative_reset",
+          "adjacent_b2_original_current_identity",
+          "adjacent_b2_entry_and_domain_boundaries",
+          "adjacent_b2_pending_full_ranges",
+          "adjacent_b2_allocation_and_hook_boundaries",
+          "adjacent_b2_aggregate_and_rollback",
+          "adjacent_b2_failure_precedence",
+          "adjacent_b2_legacy_projection"
+        ],
+        "ignored": []
+      },
+      "tests/neighbor_eviction_oracle.rs": {
+        "all": [
+          "native_neighbor_endpoint_inventory_is_the_complete_frozen_cohort",
+          "native_neighbor_endpoint_backward_l2_m10_all_124_heads",
+          "native_neighbor_endpoint_backward_l3_m12_all_122_heads",
+          "native_neighbor_endpoint_backward_l4_m15_all_119_heads",
+          "native_neighbor_endpoint_forward_l2_m10_all_125_heads",
+          "native_neighbor_endpoint_forward_l3_m12_all_124_heads",
+          "native_neighbor_endpoint_forward_l4_m15_all_123_heads",
+          "independent_native_relay_self_calibration",
+          "rejects_unrecorded_internal_source_relay",
+          "rejects_duplicate_source_relay_record",
+          "rejects_original_head_inside_source_relay",
+          "rejects_restored_boundary_inside_source_relay",
+          "existing_gateway_rule_still_rejects_internal_source_relay",
+          "rejects_wrong_source_relay_offset",
+          "rejects_foreign_native_victim_witness",
+          "rejects_nonqualified_native_victim_witness",
+          "rejects_wrong_selected_relay_opcode",
+          "rejects_wrong_selected_relay_target",
+          "rejects_wrong_relay_e9_target",
+          "rejects_relay_target_inside_image_instead_of_entry",
+          "rejects_relay_image_owning_wrong_original_instruction",
+          "rejects_changed_gpr_at_source_relay",
+          "rejects_application_side_effect_at_source_relay",
+          "rejects_redzone_side_effect_at_source_relay",
+          "rejects_extra_hook_event_before_source_relay",
+          "rejects_unexpected_source_relay_visit",
+          "rejects_missing_required_source_relay_visit",
+          "rejects_malformed_relay_image_range",
+          "rejects_wrong_relay_e9_opcode",
+          "refuses_neighbor_relay_just_outside_both_signed_endpoints",
+          "native_neighbor_loop_seed_derivation_is_reproducible",
+          "native_neighbor_selected_loop_all_33_heads",
+          "native_neighbor_victim_loop_m10_all_25_heads",
+          "native_neighbor_victim_loop_m15_all_20_heads",
+          "native_neighbor_jnz_m10_all_32_heads",
+          "native_neighbor_jnz_m15_all_32_heads",
+          "native_neighbor_rip_load_m10_all_34_heads",
+          "native_neighbor_rip_load_m15_all_34_heads",
+          "native_neighbor_moffs_fault_m10_all_33_heads",
+          "native_neighbor_moffs_fault_m15_all_33_heads",
+          "independent_native_self_loop_relay_calibration",
+          "rejects_loop_witness_with_three_native_visits",
+          "rejects_loop_lookalike_whose_target_coincides_with_native_fallthrough",
+          "rejects_jz_lookalike_whose_target_coincides_with_native_fallthrough"
+        ],
+        "ignored": []
+      },
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "all": [
+          "short_endpoint_census",
+          "short_endpoint_back_l6",
+          "short_endpoint_forward_l6",
+          "short_endpoint_back_l7",
+          "short_endpoint_forward_l7",
+          "short_endpoint_back_l8",
+          "short_endpoint_forward_l8",
+          "short_endpoint_back_l9",
+          "short_endpoint_forward_l9",
+          "short_selected_suffix_overlap",
+          "short_rip_read_effect",
+          "short_conditional_fallthrough_and_taken",
+          "short_independent_native_calibration",
+          "short_reject_foreign_or_wrong_grammar",
+          "short_reject_suffix_overlay_corruption",
+          "short_reject_head_gateway_image_mismatch",
+          "short_reject_displacement_or_visit_corruption",
+          "short_reject_full_state_or_hook_corruption",
+          "short_reject_fetch_or_bound_violation",
+          "short_engine_overlap_bundle_matches_direct_and_native",
+          "short_fixture_arena_ownership_controls"
+        ],
+        "ignored": []
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "all": [
+          "campaign_initializer_keeps_default_memory_and_flags_exact",
+          "campaign_initializer_matches_independent_memory_vectors_and_flags",
+          "rejects_fault_address_corruption",
+          "rejects_gpr_corruption",
+          "rejects_defined_flag_corruption",
+          "rejects_simd_corruption",
+          "rejects_application_memory_corruption",
+          "rejects_redzone_corruption"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "src/lib.rs": [
+        "pub mod quiescent;"
+      ],
+      "src/quiescent.rs": [
+        "mod adjacent_b2;"
+      ],
+      "src/quiescent/adjacent_b2.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tests/neighbor_eviction_oracle.rs": [
+        "#[path = \"support/neighbor_short_eviction_oracle.rs\"]\nmod short_neighbor;"
+      ],
+      "tests/support/quiescent_oracle.rs": [
+        "#[cfg(test)]\n#[allow(dead_code)]\n#[path = \"neighbor_fixture_arena.rs\"]\npub(crate) mod neighbor_fixture_arena;"
+      ]
+    },
+    "previous_corpus_sha256": "96a03dcdda96efdc9e371329ed47536c71a66949adcfb5b66e5d46be757860c8",
+    "projections": {
+      "evaluation/admission/parsing.py": {
+        "current_sha256": "7d22bbd8f83c2035c1ef0a7a594a7045d4d1ce6a34c0eea60bb157a6bbde3f40",
+        "edits": [
+          [
+            14731,
+            14956,
+            ""
+          ]
+        ],
+        "previous_sha256": "7caa8678684188e422debc3006de56ea7e65d6a3d6820a8fcb92273435510482"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "1ab25c3243922fc354a011a5158fc3207e1690605f3a52a91aa6deb4fe79c2eb",
+        "edits": [
+          [
+            737,
+            994,
+            ""
+          ]
+        ],
+        "previous_sha256": "8e639cca9d0cc8bbc2b35acdd422002b68cab2223e2290a05c7cd86c3c0ac8e6"
+      },
+      "tests/neighbor_eviction_oracle.rs": {
+        "current_sha256": "553f4bda0a64bd55c03ba145487e57be7acce9a7fef6a83d0f64b0b94f5ecc23",
+        "edits": [
+          [
+            1197,
+            1690,
+            ""
+          ],
+          [
+            7632,
+            7682,
+            ""
+          ],
+          [
+            47607,
+            47657,
+            ""
+          ]
+        ],
+        "previous_sha256": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc"
+      },
+      "tests/support/neighbor_short_eviction_oracle.rs": {
+        "current_sha256": "89b55d484d6b440a658bbce64bb09bd561ce29e9eebf2b0753c5964fab3ff5c1",
+        "edits": [
+          [
+            160,
+            238,
+            "use liteinst2::neighbor::plan_neighbor_short;\n"
+          ],
+          [
+            268,
+            326,
+            ""
+          ],
+          [
+            8154,
+            8247,
+            "    let mut oracle = NativeOracle::new(&puzzle.code);\n"
+          ],
+          [
+            10025,
+            10281,
+            ""
+          ],
+          [
+            10819,
+            10867,
+            "    let planned = plan_neighbor_short(\n"
+          ],
+          [
+            11129,
+            11404,
+            "            \"required short layout{layout_index} L{selected_len}/M{victim_len} refused: {error:?}\"\n"
+          ],
+          [
+            19799,
+            19862,
+            "    let _pinned_source = Box::leak(Box::new(oracle));\n"
+          ],
+          [
+            20247,
+            21229,
+            ""
+          ],
+          [
+            21306,
+            21389,
+            "// The fixed suffix dictates one exact target and one exact mapping attempt.\n"
+          ],
+          [
+            21612,
+            21646,
+            ""
+          ],
+          [
+            22935,
+            23092,
+            "        let (oracle, images) = if seeded_flags {\n            NativeOracle::with_seeded_memory_and_flags_adjacent(&code, seed, &[4096; 4])\n"
+          ],
+          [
+            23109,
+            23176,
+            "            NativeOracle::with_adjacent_code_mappings(&code, &[4096; 4])\n"
+          ],
+          [
+            23352,
+            23568,
+            "        let selected_page = Mapping::exact_page(target & !4095);\n"
+          ],
+          [
+            26325,
+            26352,
+            ""
+          ],
+          [
+            42036,
+            42129,
+            "    let mut oracle = NativeOracle::new(&puzzle.code);\n"
+          ],
+          [
+            43886,
+            44142,
+            ""
+          ],
+          [
+            55067,
+            55130,
+            "    let _pinned_source = Box::leak(Box::new(oracle));\n"
+          ],
+          [
+            55132,
+            55244,
+            ""
+          ]
+        ],
+        "previous_sha256": "903f900ab0854539289aeb280537fa0938e19eecfa2cc1e899965fc52c48a825"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "60bf5f36692677f03e62211a9f12542c945310cbd6c1c942d613f5c56a689f3a",
+        "edits": [
+          [
+            6777,
+            7104,
+            ""
+          ],
+          [
+            8055,
+            8268,
+            "        (\n            Self {\n                code: code_mapping,\n                data,\n                stack,\n                initial_rsp,\n                return_pc,\n                original_code,\n                seeded_arithmetic_flags: false,\n            },\n            adjacent,\n        )\n"
+          ],
+          [
+            9070,
+            9241,
+            ""
+          ],
+          [
+            9718,
+            9805,
+            "        oracle.data.initialize(0, &memory);\n        oracle.seeded_arithmetic_flags = true;\n        (oracle, adjacent)\n"
+          ],
+          [
+            107446,
+            107637,
+            ""
+          ]
+        ],
+        "previous_sha256": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a"
+      }
+    },
+    "scope": "Exact adjacent-B2 and inherited neighbor-arena source/declaration successor only; no compiled listing or native execution credit.",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/admission/parsing.py": "7d22bbd8f83c2035c1ef0a7a594a7045d4d1ce6a34c0eea60bb157a6bbde3f40",
+      "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+      "src/quiescent.rs": "1ab25c3243922fc354a011a5158fc3207e1690605f3a52a91aa6deb4fe79c2eb",
+      "src/quiescent/adjacent_b2.rs": "59fc8b512f7cba5121d4c1674701fac3457f683324e5bc8fb6e3e654af837bdf",
+      "src/quiescent/adjacent_b2/tests.rs": "11cd3ba61a6f7000db7a4fffe1f0473f0bedb01bd825aea9dea373e8f485843e",
+      "src/trampoline.rs": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+      "tests/neighbor_eviction_oracle.rs": "553f4bda0a64bd55c03ba145487e57be7acce9a7fef6a83d0f64b0b94f5ecc23",
+      "tests/support/neighbor_fixture_arena.rs": "a4d18c3bbfbe0d17f48362a4172771d7c2f2cfcf2d6d0dc7f7480949bacda19a",
+      "tests/support/neighbor_short_eviction_oracle.rs": "89b55d484d6b440a658bbce64bb09bd561ce29e9eebf2b0753c5964fab3ff5c1",
+      "tests/support/quiescent_oracle.rs": "60bf5f36692677f03e62211a9f12542c945310cbd6c1c942d613f5c56a689f3a"
+    },
+    "upstream_revision": "6b10dbd0ac6b251d508d16e8c7e3fad19d767944",
+    "workspace_changes": {
+      "test/neighbor_eviction_oracle": {
+        "current": {
+          "ignored": 0,
+          "tests": 101
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 100
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 309
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 299
+        }
+      }
+    }
+  },
   "current_corpus_sha256": "884864b391332b735ebe3a3c72a935132ed95910cdc16d1793c4befdc01edc31",
   "doctests": {
     "src/backedge_clock.rs": [
