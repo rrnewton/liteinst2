@@ -260,14 +260,18 @@ def preedge_failure_capture_config(path,output,pin,binary):
     return dict(image=fact(path),rvas=rvas,source_sha256=H(source),header=fact(header),path=str(header))
 
 
-def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False,preedge=False):
+def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False,preedge=False,preedge_differential=False):
+    need(type(preedge_differential)is bool and (not preedge_differential or
+         preedge is True and native_hint is True and graph_observe is False and
+         extra==('MAPS_DIFFERENTIAL',)and capture_image is None),
+         'explicit v2 release-only maps differential selector')
     need(type(native_hint)is bool,'exact distinct native-hint build selector')
     preedge_capture=extra==('LINKED_PREEDGE_CAPTURE',)
     preedge_reuse=extra==('LINKED_PREEDGE_REUSE_CAPTURE',)
     preedge_full=extra==('LINKED_PREEDGE_FULL_CAPTURE',)
     preedge_failure=extra==('LINKED_PREEDGE_FAILURE_CAPTURE',)
     need(type(preedge)is bool and (not preedge or native_hint and not graph_observe and
-         (extra==()and capture_image is None or (preedge_capture or preedge_reuse or preedge_full or preedge_failure)and capture_image is not None)),
+         ((extra==()or preedge_differential and extra==('MAPS_DIFFERENTIAL',))and capture_image is None or (preedge_capture or preedge_reuse or preedge_full or preedge_failure)and capture_image is not None)),
          'explicit pre-edge v2 release or dedicated capture; all old capture profiles are rejected')
     need(not (preedge_capture or preedge_reuse or preedge_full or preedge_failure)or preedge,'dedicated pre-edge capture requires the typed v2 runtime')
     need(type(graph_observe)is bool and (not graph_observe or
@@ -288,7 +292,10 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one exact linked runtime compiler recipe')
     argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$selected_dir':SELECTED,'$parent_dir':SELECTED.parent,
         '$archive':archive,'$output':output})
-    if not capture:argv[1:1]=['-DLI2_'+x+'=1'for x in extra]
+    if preedge_differential:
+        at=argv.index('-DLI2_LINKED_PREEDGE=1')+1
+        argv[at:at]=['-DLI2_MAPS_DIFFERENTIAL=1']
+    elif not capture:argv[1:1]=['-DLI2_'+x+'=1'for x in extra]
     elif native_hint and not (preedge_capture or preedge_reuse or preedge_full or preedge_failure):argv.insert(argv.index('-DLI2_LINKED_EPOCH=1'),'-DLI2_LINKED_NATIVE_HINT=1')
     units=[str(SELECTED.parent/x)for x in UNITS]+[str(SELECTED/x)for x in(('unrolled_hash_plan.c','region_plan.c','linked_plan.c','linked_preedge_plan.c')if preedge else('unrolled_hash_plan.c','region_plan.c','linked_plan.c'))]
     macros=(('LINKED_PREEDGE',)if preedge else())+(('LINK_GRAPH_OBSERVE',)if graph_observe else())+extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
