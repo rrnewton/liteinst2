@@ -1,0 +1,827 @@
+{
+  "schema": 1,
+  "claim": 4,
+  "revision": "3fa63147d3969f82c73581c36cc6b160ddcf05ff",
+  "implementation_revisions": [
+    "9cb656d3c48011cccdcbd15aa63961b1558ba12f",
+    "3fa63147d3969f82c73581c36cc6b160ddcf05ff"
+  ],
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Debug correctness checks; elapsed command times are not performance measurements.",
+  "profile": {
+    "workspace_jobs": 16,
+    "default_jobs": 4,
+    "test_threads": 316,
+    "opt_level": 0,
+    "debug_info": 0,
+    "incremental": false,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "offline": true
+  },
+  "source_unchanged": true,
+  "tracked_working_delta": {},
+  "validation_closed_sha256": "b5c53fa866fb407a0a20cb48d476783ecca646e9f26a7a54bdfb26476ba476f1",
+  "owner_receipt_sha256": "ae6a5b1c930d3524a2b45e5b2d6d7fbb9b8d85751a9288c6ec2c0861eae4aca4",
+  "summary_script_sha256": "ed96a8fa08f9a543452f00bc00d4967fa6241e5b805f05dd4e6e6ef15cca83bd",
+  "validation_script": {
+    "path": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+  },
+  "reserved_cpus": [
+    16,
+    25,
+    85,
+    93,
+    120,
+    121,
+    160,
+    168,
+    171,
+    182,
+    191,
+    192,
+    231,
+    238,
+    286,
+    290
+  ],
+  "load_before": [
+    "45.99",
+    "45.87",
+    "48.94"
+  ],
+  "load_after": [
+    "35.50",
+    "35.37",
+    "40.07"
+  ],
+  "owner": {
+    "start_utc": "2026-10-30T10:00:09.253822+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 1035.4111932350788,
+    "private_log_sha256": "cd497d4b7af4c573e4b076fbccebccaf9bead4a3435872a3cad4f1c77cce3999",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "checks": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 9.23518523783423,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "load_before": [
+        "45.99",
+        "45.87",
+        "48.94"
+      ],
+      "load_after": [
+        "44.82",
+        "45.62",
+        "48.83"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 0.13048477307893336,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "af1d2cf35aacaf94dd1c8a40bb1eb81981171b00ae7b6668106f5acb3a38e60c",
+      "load_before": [
+        "44.82",
+        "45.62",
+        "48.83"
+      ],
+      "load_after": [
+        "44.82",
+        "45.62",
+        "48.83"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 29.890303769847378,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": null,
+      "unfiltered_summary_count": 0,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "c3ad754b9f1fd4cfb3d0ab4a7fa8de8c5ad7fb94288dadd53e46ac3cf8b9f387",
+      "load_before": [
+        "44.82",
+        "45.62",
+        "48.83"
+      ],
+      "load_after": [
+        "44.11",
+        "45.35",
+        "48.63"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit_seconds": 900,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 869.0685781720094,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": {
+        "passed": 3785,
+        "failed": 0,
+        "ignored": 37,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "unfiltered_summary_count": 107,
+      "excluded_filtered_summary_count": 5,
+      "excluded_filtered_totals": {
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 901
+      },
+      "raw_log_sha256": "4d3f31a2a801f966c7a0d4c9ad54d3d0b0fcb065323fc2686d5b2a568707c2a9",
+      "load_before": [
+        "44.11",
+        "45.35",
+        "48.63"
+      ],
+      "load_after": [
+        "30.00",
+        "35.20",
+        "40.75"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit_seconds": 180,
+      "exit_code": 0,
+      "termination": null,
+      "elapsed_seconds": 127.00950400787406,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "totals": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "unfiltered_summary_count": 27,
+      "excluded_filtered_summary_count": 0,
+      "excluded_filtered_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "raw_log_sha256": "b2f9654513e9e50cfce9e4d41ba402330ba37093eb0ae7d7ede0b3ae455b0c74",
+      "load_before": [
+        "30.00",
+        "35.20",
+        "40.75"
+      ],
+      "load_after": [
+        "35.19",
+        "35.31",
+        "40.07"
+      ]
+    }
+  ],
+  "required_pass_groups": {
+    "rapid_rejection": 2,
+    "prefixed_pun": 1,
+    "quiescent_oracle": 4,
+    "observing_control": 8,
+    "short_neighbor": 21,
+    "routed_jmp_native": 34,
+    "routed_jmp_frontend": 17,
+    "gap_carrier": 9,
+    "routed_jmp_publication": 3,
+    "startup_carrier": 9,
+    "staged_image_drop": 1,
+    "startup_catalog": 8
+  },
+  "required_exact_pass_lines": 117,
+  "summary_rule": "Keep every summary with filtered_out == 0; retain filtered child summaries separately, including failures. Never deduplicate targets or doctest groups.",
+  "development": [
+    {
+      "name": "runtime-artifact-v1",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "958a945883adfc8c22568d0a878bc4440bc7f57b11db8dd66723c0502d8eb9bc",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [
+        "tools/elf-rewrite/examples/offline_router_sites.rs",
+        "tools/elf-rewrite/src/offline_router.rs"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-artifact",
+        "--lib",
+        "--locked",
+        "--offline"
+      ],
+      "receipt_sha256": "8b2895beea2770d6591a8d460fe6e3d662cf2abdcfc4466932360d077db6ed27",
+      "result": {
+        "start_utc": "2026-10-30T09:48:30.837124+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.4657008051872253,
+        "private_log_sha256": "97d19b29470d4de65bce0634f71dca40ec3a9b7179e1c588fd4a7db46add9c8f",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [
+        {
+          "passed": 46,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        }
+      ],
+      "reserved_cpus": [
+        166,
+        217,
+        232,
+        263
+      ],
+      "load_before": [
+        "54.06",
+        "48.42",
+        "49.80"
+      ],
+      "load_after": [
+        "54.06",
+        "48.42",
+        "49.80"
+      ],
+      "source_unchanged": true
+    },
+    {
+      "name": "runtime-producer-v1",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "958a945883adfc8c22568d0a878bc4440bc7f57b11db8dd66723c0502d8eb9bc",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [
+        "tools/elf-rewrite/examples/offline_router_sites.rs",
+        "tools/elf-rewrite/src/offline_router.rs"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst2",
+        "-p",
+        "liteinst-rewrite",
+        "--lib",
+        "--features",
+        "offline-router",
+        "--locked",
+        "--offline",
+        "offline_router::"
+      ],
+      "receipt_sha256": "3e592b7a4c095920eba14a73b7b19b27a46ea95cd0d85fc4a2a956848644fb01",
+      "result": {
+        "start_utc": "2026-10-30T09:48:48.121061+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 14.53946216776967,
+        "private_log_sha256": "fd3184d7c88a58ac370f7dab8e327fa9c8813570dc539079755eba2b245ce26c",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [
+        {
+          "passed": 8,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 150
+        },
+        {
+          "passed": 7,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 399
+        }
+      ],
+      "reserved_cpus": [
+        159,
+        164,
+        166,
+        196
+      ],
+      "load_before": [
+        "58.96",
+        "49.80",
+        "50.23"
+      ],
+      "load_after": [
+        "61.91",
+        "50.86",
+        "50.57"
+      ],
+      "source_unchanged": true
+    },
+    {
+      "name": "runtime-rewrite-v1",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "958a945883adfc8c22568d0a878bc4440bc7f57b11db8dd66723c0502d8eb9bc",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [
+        "tools/elf-rewrite/examples/offline_router_sites.rs",
+        "tools/elf-rewrite/src/offline_router.rs"
+      ],
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-rewrite",
+        "--lib",
+        "--examples",
+        "--features",
+        "offline-router",
+        "--locked",
+        "--offline"
+      ],
+      "receipt_sha256": "94f8ba2c51e19517fc48f55f6a7bbd7b5069111cafe6da1a50f5cf1bc7c97857",
+      "result": {
+        "start_utc": "2026-10-30T09:49:40.503688+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 18.015066357096657,
+        "private_log_sha256": "14c84247ce97a6fce6d5eeb17c1bbc9f122e3d319e48c856cd92c14003a80d65",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [
+        {
+          "passed": 158,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 35,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 24,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 23,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 0,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        }
+      ],
+      "reserved_cpus": [
+        168,
+        215,
+        216,
+        265
+      ],
+      "load_before": [
+        "63.90",
+        "52.99",
+        "51.31"
+      ],
+      "load_after": [
+        "64.84",
+        "53.71",
+        "51.58"
+      ],
+      "source_unchanged": true
+    },
+    {
+      "name": "runtime-clippy-v1",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "958a945883adfc8c22568d0a878bc4440bc7f57b11db8dd66723c0502d8eb9bc",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [
+        "tools/elf-rewrite/examples/offline_router_sites.rs",
+        "tools/elf-rewrite/src/offline_router.rs"
+      ],
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "receipt_sha256": "62028cef35806932aca6b4d2bb21851e2fcb55c252ff078bb35eab810d774eda",
+      "result": {
+        "start_utc": "2026-10-30T09:50:39.838854+00:00",
+        "exit_code": 101,
+        "termination": null,
+        "seconds": 13.716518184170127,
+        "private_log_sha256": "f04eee6dbd9e45636ad26addc6b5d9c1c35b8e4fa398088dc17db204a494e7e3",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [],
+      "reserved_cpus": [
+        175,
+        194,
+        245,
+        247
+      ],
+      "load_before": [
+        "59.93",
+        "54.14",
+        "51.83"
+      ],
+      "load_after": [
+        "58.41",
+        "54.02",
+        "51.82"
+      ],
+      "source_unchanged": true
+    },
+    {
+      "name": "runtime-clippy-v2",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "32ceda111eadabf406453c7ce0acb6869fce8685536ad0fcdb24b63ccfcee09e",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [
+        "tools/elf-rewrite/examples/offline_router_sites.rs"
+      ],
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "receipt_sha256": "ade5a360e27fbb258d941bf74d2b6713b445abad26b4787e42f120cb5707d49b",
+      "result": {
+        "start_utc": "2026-10-30T09:51:29.467565+00:00",
+        "exit_code": 101,
+        "termination": null,
+        "seconds": 23.368826396064833,
+        "private_log_sha256": "77fca10ca7a475bb87f60d79a4b915c0f4dd239609a11c68c6d1f8e1707642fd",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [],
+      "reserved_cpus": [
+        166,
+        177,
+        185,
+        196
+      ],
+      "load_before": [
+        "57.60",
+        "54.45",
+        "52.06"
+      ],
+      "load_after": [
+        "51.84",
+        "53.38",
+        "51.76"
+      ],
+      "source_unchanged": true
+    },
+    {
+      "name": "runtime-rewrite-v2",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "c348e50732d5e141c4b807d83940ab3d483835986f2381665719e099badb267a",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [],
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-rewrite",
+        "--lib",
+        "--example",
+        "offline_router_sites",
+        "--features",
+        "offline-router",
+        "--locked",
+        "--offline"
+      ],
+      "receipt_sha256": "f6b13e31f62a7748a2349a94fb47dbbf93e4e5899a862069b8e8489be19a0182",
+      "result": {
+        "start_utc": "2026-10-30T09:52:27.350635+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 9.426609262125567,
+        "private_log_sha256": "2b9f4c51fb109b831021bebff24e7fbad1f6ac1693b7ea966a0639cb2374f80e",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [
+        {
+          "passed": 158,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        },
+        {
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0,
+          "filtered": 0
+        }
+      ],
+      "reserved_cpus": [
+        3,
+        37,
+        82,
+        175
+      ],
+      "load_before": [
+        "46.80",
+        "51.98",
+        "51.36"
+      ],
+      "load_after": [
+        "45.10",
+        "51.45",
+        "51.19"
+      ],
+      "source_unchanged": true
+    },
+    {
+      "name": "runtime-clippy-v3",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "c348e50732d5e141c4b807d83940ab3d483835986f2381665719e099badb267a",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [],
+      "command": [
+        "cargo",
+        "clippy",
+        "-j",
+        "4",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--locked",
+        "--offline",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "receipt_sha256": "9953e79ee9b4bf7429cce54af6321a1a70fa61fc14a0a946f6d147f05370fb1e",
+      "result": {
+        "start_utc": "2026-10-30T09:52:44.522770+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 27.918872205074877,
+        "private_log_sha256": "b2688d12374d3e773812b250442f7b2e41dd11b22394c98fd0684884f2f3851b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [],
+      "reserved_cpus": [
+        23,
+        53,
+        54,
+        55
+      ],
+      "load_before": [
+        "44.64",
+        "51.13",
+        "51.09"
+      ],
+      "load_after": [
+        "44.91",
+        "50.81",
+        "50.99"
+      ],
+      "source_unchanged": true
+    },
+    {
+      "name": "runtime-fmt-v1",
+      "source_base": "5b28b7f54b95383b35ca6f7f6dee25d40f16e7cb",
+      "working_source_sha256": "c348e50732d5e141c4b807d83940ab3d483835986f2381665719e099badb267a",
+      "overlay_file_count": 31,
+      "overlay_differences_from_final_revision": [],
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "receipt_sha256": "aa6db9db1b96f25431a9b4b339480065db09dc221cad06c62b7f5c7f39565a55",
+      "result": {
+        "start_utc": "2026-10-30T09:53:49.700210+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 9.364043999928981,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "test_summaries": [],
+      "reserved_cpus": [
+        45,
+        210,
+        219,
+        290
+      ],
+      "load_before": [
+        "56.70",
+        "53.93",
+        "52.08"
+      ],
+      "load_after": [
+        "56.25",
+        "53.88",
+        "52.08"
+      ],
+      "source_unchanged": true
+    }
+  ],
+  "development_source_note": "The eight development commands ran on 5b28b7f plus an explicit 31-path source overlay, not on the final commit. The final rewrite rerun, Clippy and fmt overlays match all 31 final source paths exactly. Earlier differences are the two semantically equivalent lint repairs; original outcomes remain retained.",
+  "source_reviews": {
+    "runtime_v2": "ca5ca3e42fbc5064b99f1785fe528692acf5b50a9b3fd5148768bd497cf2d18c",
+    "producer_v1": "be1a629c1416eb6f2422bee81945f8dcc34e4394c16e19975c59f6c90dfb55ce",
+    "lint_v1": "517c638d197ad8883772109cf730881cce62c87f4abc873a3c78737a211c4b21",
+    "lint_v2": "ac91c9d20ebeb245768f6932332575b1b0719b686bef20c3c66eb364afc0d3bb"
+  },
+  "qualification": {
+    "standalone_bootstrap_build": "UNRUN",
+    "startup_main_joins": "UNRUN",
+    "final_package": "UNRUN",
+    "N01": "UNRUN",
+    "native": false,
+    "performance": false,
+    "A3_complete": false
+  },
+  "toolchain_version_attestation": {
+    "kind": "ROOT_TOOLCHAIN_HOST_ATTESTATION",
+    "observed_utc": "2026-10-30T10:20:24.275416+00:00",
+    "receipt_sha256": "d965adf54b906ebb1c516b1b6e74981e1e86c85880b90c24a075a25f53540e38",
+    "rustc_binary_sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "scope": "Host attestation after validation, not a contemporaneous pre-run compiler digest capture. Validation owner records this explicit toolchain path."
+  }
+}

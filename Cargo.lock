@@ -141,6 +141,7 @@ version = "0.1.0"
 dependencies = [
  "iced-x86",
  "libc",
+ "liteinst-artifact",
  "memmap2",
  "nix",
 ]
