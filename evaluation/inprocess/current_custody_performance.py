@@ -82,7 +82,7 @@ def prerequisites(a,r,pin,binary):
     required=dict(status='passed',planned=27,launched=27,native=9,original_gated=16,
         extra_gated=2,native_prefix_frames=36,protected_prefix_frames=70,stale_refusals=1,physical_fallbacks=1,
         prefix_application_refusals=150,extra_application_refusals=26,extra_terminal_refusals=68,
-        appendix_refusals=1073,current_terminal_refusals=468,extra_legacy_owner_refusals=29,compiled_storage_objects=9,compiled_storage_refusals=44,
+        appendix_refusals=1091,current_terminal_refusals=468,extra_legacy_owner_refusals=29,compiled_storage_objects=9,compiled_storage_refusals=44,
         performance_credit=False)
     need(actual['current_qualification']==required and public['current_custody']['qualification']==required,
          'all27 actual subjects, full native prefix state, protected storage and all separate refusals')

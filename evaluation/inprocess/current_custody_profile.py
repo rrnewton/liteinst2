@@ -21,8 +21,8 @@ SELECTED=ROOT/'tools/page-entry/selected'
 H=lambda b:hashlib.sha256(b).hexdigest()
 MASK=((1<<64)-1)^sum(1<<(s-1)for s in(4,5,9,11,19,31))
 EXTRAS=(('stale',1,False,125),('physical-fallback',0,True,0))
-CURRENT_CONTROL_COUNTS={(control,0,False):60 for control in range(8)}
-CURRENT_CONTROL_COUNTS.update({(0,1,False):52,(0,0,True):61})
+CURRENT_CONTROL_COUNTS={(control,0,False):61 for control in range(8)}
+CURRENT_CONTROL_COUNTS.update({(0,1,False):53,(0,0,True):62})
 REQUIRED={
     'evaluation/inprocess/current_custody_profile.py',
     'evaluation/inprocess/current_custody_reports.py',
@@ -323,8 +323,8 @@ def complete(r,owner_reader):
             need(controls['refusals']==[],'additional subjects do not inflate the original472 control population')
     need(sum(len(c['terminal_controls']['current_row_refusals'])for c in cases)==468,
          'all468 current-row refusals in addition to original542 and extra68')
-    need(sum(len(c['owner_reader_controls']['current_refusals'])for c in cases)==1073,
-         'all1073 separately counted appendix refusals')
+    need(sum(len(c['owner_reader_controls']['current_refusals'])for c in cases)==1091,
+         'all1091 separately counted appendix refusals')
     need(sum(c['current_prefix']['native_frames']for c in r['cases']if c['lane']=='native')==36 and
          sum(c['current_prefix']['runtime_frames']for c in cases)==70 and
          all(c['launched']is True for c in r['current_cases']),
@@ -332,7 +332,7 @@ def complete(r,owner_reader):
     r['current_qualification']=dict(status='passed',planned=27,launched=27,native=9,original_gated=16,
         extra_gated=2,native_prefix_frames=36,protected_prefix_frames=70,stale_refusals=1,physical_fallbacks=1,
         prefix_application_refusals=150,extra_application_refusals=26,extra_terminal_refusals=68,
-        appendix_refusals=1073,current_terminal_refusals=468,extra_legacy_owner_refusals=29,compiled_storage_objects=9,compiled_storage_refusals=44,
+        appendix_refusals=1091,current_terminal_refusals=468,extra_legacy_owner_refusals=29,compiled_storage_objects=9,compiled_storage_refusals=44,
         performance_credit=False)
 
 

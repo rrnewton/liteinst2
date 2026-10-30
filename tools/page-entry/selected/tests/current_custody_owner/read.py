@@ -155,8 +155,8 @@ class Check(old.Check):
         need(self.f(b,t,'bytes')==self.source[offset:offset+15]+b'\0','whole actual15-byte decoder input')
 
     def page(self,b):
-        t='li2_fetch_page';self.eq(b,t,address=self.head,object=self.image['main_object'],backing=1,logical=5,closed_prot=1,offset=self.i(self.cto,'cto_wire','source_offset'))
-        need(all(self.i(b,t,k)>0 for k in ('allocation','generation','initial_extent')),'actual live source generations')
+        t='li2_fetch_page';self.eq(b,t,address=self.head,object=self.image['main_object'],backing=1,logical=5,closed_prot=1,initial_extent=0,offset=self.i(self.cto,'cto_wire','source_offset'))
+        need(all(self.i(b,t,k)>0 for k in ('allocation','generation')),'actual live source generations')
         first,end,major,minor,inode,offset=self.v(b,t,'vma_first vma_end vma_major vma_minor vma_inode vma_offset')
         need(first%PAGE==end%PAGE==offset%PAGE==0 and first<=self.head and self.head+PAGE<=end and offset+self.head-first==self.i(b,t,'offset'),'whole source VMA identity')
         st=self.stat(self.f(self.b,'uho_wire','main_backing'));dev=st['dev'];need((major,minor,inode)==(((dev>>8)&0xfff)|((dev>>32)&0xfffff000),(dev&255)|((dev>>12)&0xffffff00),st['ino']),'source page and retained original backing identity')
@@ -566,8 +566,8 @@ def chain_report(r,b,outcome):
 
 # Sixteen original gated records (nine control0 plus controls1..7), then two
 # distinct additions. The old472 mutations still run on the original old slices.
-CURRENT_CONTROL_COUNTS={(k,0,False):60 for k in range(8)}
-CURRENT_CONTROL_COUNTS.update({(0,1,False):52,(0,0,True):61})
+CURRENT_CONTROL_COUNTS={(k,0,False):61 for k in range(8)}
+CURRENT_CONTROL_COUNTS.update({(0,1,False):53,(0,0,True):62})
 
 
 def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,current_control=0,fallback=False):
@@ -606,6 +606,12 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,current_contr
     for member in ('first','end'):
         tests.append(('coherent_registered_'+member,[where([(field,None,'cto_registry'),('ranges',index,'li2_fork_range'),(member,None,None)])for field,index in registered_indices],1))
 
+    # Both first-handler return copies change coherently. The exact page
+    # predicate, not snapshot equality, must reject a false main loader extent.
+    tests.append(('coherent_main_initial_extent',[where([('rows',0,'cto_row'),
+        ('points',point,'cto_snapshot'),('slot',None,'li2_tf_chain_slot'),
+        ('fetch',None,'li2_chain_fetch'),('pages',0,'li2_fetch_page'),
+        ('initial_extent',None,None)])for point in(5,6)],1))
     add('initial_actual_memory',[('initial_memory',None,'li2_uho_memory'),('data',None,None)])
     add('initial_actual_tls',[('tls_origin',None,'uh_frame'),('fs',None,None)])
     tests.extend([('footer_status',[len(appendix)-16],1),('footer_extent',[len(appendix)-48],1)])
@@ -654,6 +660,7 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,current_contr
             if name.endswith('_coherent_AF'):need(str(error)=='complete prefix signal-origin envelope','coherent UC/GREG mutation reaches exact full-flags predicate')
             if name=='coherent_return_AF':need(str(error)=='whole same-event frame exact except prescribed TF/RF','coherent returned flags reach exact same-event comparator')
             if name.startswith('coherent_registered_'):need(str(error)=='whole registered object equals actual symbol/DWARF extent','coherent range mutation reaches exact registration-boundary predicate')
+            if name=='coherent_main_initial_extent':need(str(error)=='exact li2_fetch_page.initial_extent','coherent main extent reaches its exact lifecycle predicate')
             rejected=True
         need(rejected,'complete appended reader refuses supplied '+name);names.append(name)
     if fallback:
