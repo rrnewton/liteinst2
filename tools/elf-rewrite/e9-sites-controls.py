@@ -803,3 +803,131 @@ if __name__ == '__main__':
     pending_selection_controls()
     pending_producer_scope_controls()
     pending_cli_controls()
+
+
+# Additive absolute-startup controls. Existing cohorts above remain byte-exact.
+# These synthetic MOV fixtures check adaptation/identity, not whole-program W01.
+def absolute_adapt(f):
+    f = pending_adapt(f)
+    raw = f['selection'].replace(b'pending-selected full-instruction-ownership\n',
+        b'pending-selected full-instruction-ownership\n'
+        b'adjacent-pairs original-geometry-jcc-or-routed-jmp-v1\n'
+        b'adjacent-pair-budgets 2 1 2\n', 1)
+    f = owned_rebind(f, raw)
+    policy = json.loads(f['policy']); policy['selection_style'] = 'jump-site'
+    f['policy'] = json.dumps(policy).encode()
+    return f
+
+
+def absolute_case(f):
+    sites, policy = a.selection_absolute_startup(f['selection'], f['original'], f['policy'])
+    assert policy['selection_sha256'] == a.sha(f['selection'])
+    intent = a.rpc(f['rpc'], f['original'], sites, '/fixture/original', policy, None, None, False)
+    outcomes, maps, bypass = a.debug(f['stderr'], sites)
+    saved = a.PRODUCERS
+    try:
+        ownership = synthetic_artifact(f, intent, outcomes, maps, bypass)
+    finally:
+        assert a.PRODUCERS is saved
+    a.statistics(f['stdout'], outcomes, ownership, '/fixture/original')
+    return sites, policy, a.wire(sites, policy, outcomes, intent['trap'])
+
+
+def absolute_selection_controls():
+    for failed, trap, expected in [(False, False, ['trampoline', 'trampoline']),
+                                  (True, False, ['trampoline', 'refused']),
+                                  (False, True, ['trap', 'trap'])]:
+        f = absolute_adapt(fixture(failed, trap))
+        sites, policy, wire = absolute_case(f)
+        assert [r.split('\t')[4] for r in wire.decode().splitlines()[7:]] == expected
+        assert len(sites) == 2 and policy == json.loads(f['policy'])
+        assert wire.decode().splitlines()[2] == 'selection_sha256\t' + a.sha(f['selection'])
+    f = absolute_adapt(fixture()); raw = f['selection']
+    for prior in (fixture(), owned_adapt(fixture()), pending_adapt(fixture())):
+        owned_reject('absolute refuses every old prefix',
+            lambda prior=prior: a.selection_absolute_startup(prior['selection'], prior['original'], prior['policy']),
+            'absolute startup selection prefix')
+    for profile in (None, a.SHORT_T3_OWNERSHIP_PROFILE, a.SHORT_T3_PENDING_PROFILE):
+        owned_reject('no new mode through old route',
+            lambda profile=profile: a._selection_for_profile(raw, f['original'], f['policy'], profile),
+            'unknown/short selection record')
+    modes = raw.splitlines(keepends=True)[2:7]
+    for mode in modes:
+        for bad in (raw.replace(mode, b'', 1), raw.replace(mode, mode+mode, 1), raw+mode):
+            changed = owned_rebind(f, bad)
+            owned_reject('missing/duplicate/misplaced new mode with repaired identity',
+                lambda changed=changed: a.selection_absolute_startup(changed['selection'], changed['original'], changed['policy']))
+    for bad in (raw.replace(b'budgets 2 1 2', b'budgets 3 1 2'),
+                raw.replace(b'budgets 2 1 2', b'budgets 2 0 2'),
+                raw.replace(b'budgets 2 1 2', b'budgets 2 1 1'),
+                raw.replace(b'budgets 2 1 2', b'budgets 02 1 2'),
+                raw.replace(b'original-geometry-jcc-or-routed-jmp-v1', b'fallback-two-site-v1'),
+                raw.replace(b'\n', b'\r\n'), raw[:-1]):
+        changed = owned_rebind(f, bad)
+        owned_reject('exact new prefix/caps', lambda changed=changed:
+            a.selection_absolute_startup(changed['selection'], changed['original'], changed['policy']))
+    for change in ({'selection_style':'forced-puzzle'}, {'selection_style':'heap-write'}, {'instrumentation':'real-hook'}):
+        policy = json.dumps(dict(json.loads(f['policy']), **change)).encode()
+        owned_reject('new route is only null jump-site',
+            lambda policy=policy: a.selection_absolute_startup(raw, f['original'], policy),
+            'absolute startup null jump policy')
+    stripped = raw.replace(b''.join(modes), b'')
+    stale = dict(json.loads(f['policy']), selection_sha256=a.sha(stripped))
+    owned_reject('full identity cannot use stripped digest',
+        lambda: a.selection_absolute_startup(raw, f['original'], json.dumps(stale).encode()))
+    oversized = owned_rebind(f, raw + b'\n' * (1024 * 1024))
+    owned_reject('unchanged full-text cap', lambda: a.selection_absolute_startup(
+        oversized['selection'], oversized['original'], oversized['policy']), 'selection length/newline')
+    print('absolute startup selection controls: complete/refused/trap and exact mode, policy, identity and cap refusals')
+
+
+def absolute_cli_controls():
+    base = ['/fixture/envelope', '/fixture/output', '--envelope-sha256', 'a'*64]
+    profile = a.ABSOLUTE_STARTUP_PROFILE
+    assert a.arguments(base).selection_profile is None
+    assert a.arguments(base+['--selection-profile', profile]).selection_profile == profile
+    assert a.arguments(base+['--selection-profile='+profile]).selection_profile == profile
+    for extra in (['--selection-profile', profile]*2,
+                  ['--selection-profile', profile, '--selection-profile='+a.SHORT_T3_PENDING_PROFILE],
+                  ['--selection-p', profile]):
+        owned_reject('exact single new option', lambda extra=extra: a.arguments(base+extra))
+    f = absolute_adapt(fixture())
+    assert a._selection_for_profile(f['selection'], f['original'], f['policy'], profile) == a.selection_absolute_startup(f['selection'], f['original'], f['policy'])
+    assert a._selection_binding({}, profile) == {'selection_profile':profile}
+    owned_reject('no relabel of existing binding', lambda: a._selection_binding({'selection_profile':profile}, profile), 'duplicate selection profile binding')
+    print('absolute startup CLI controls: explicit dispatch with unchanged default and duplicate-option refusals')
+
+
+def absolute_comparison_controls():
+    spec = importlib.util.spec_from_file_location('absolute_unchanged_comparator', path.with_name('compare-sites.py'))
+    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+    f = absolute_adapt(fixture()); sites, policy, wire = absolute_case(f)
+    common = 'original_sha256\t'+a.sha(f['original'])+'\nselection_sha256\t'+a.sha(f['selection'])+'\n'
+    report = ('LI2REPORT\t1\n'+common+'candidate_complete\ttrue\nqualification_complete\tfalse\n'
+        'site\tpc\tfile_offset\tlength\tcore_tactic\tcandidate_emitted\trefusal_code\tstage\tdetail_hex\n'+
+        ''.join('%d\t%d\t%d\t%d\tB1\ttrue\tnone\tnone\t\n'%(s['site'],s['pc'],s['file_offset'],s['length']) for s in sites))
+    def compare(tool=report, prior=wire, selection=f['selection']):
+        return m.compare(selection, tool, prior.decode(), f['policy'], a.sha(f['policy']))
+    good = compare()
+    assert good['selected_sites'] == good['retained_e9_trampoline_sites'] == 2
+    assert good['lost_e9_trampoline_sites'] == [] and not good['qualification_complete']
+    assert good['application_output_comparison'] == 'not-supplied'
+    refused = report.replace('candidate_complete\ttrue', 'candidate_complete\tfalse').replace(
+        'B1\ttrue\tnone\tnone\t', 'B1\tfalse\t10003\tatomic-selection\t61')
+    assert compare(refused)['lost_e9_trampoline_sites'] == [101, 202]
+    for failed, trap in ((True,False),(False,True)):
+        _, _, prior = absolute_case(absolute_adapt(fixture(failed,trap)))
+        result = compare(prior=prior)
+        assert result['retained_e9_trampoline_sites'] == (0 if trap else 1)
+        assert result['e9_trap_sites'] == ([101,202] if trap else [])
+    for bad in (report.replace(a.sha(f['selection']), '0'*64),
+                report.replace(report.splitlines()[-1]+'\n',''),
+                report.replace('B1\ttrue\tnone\tnone\t','B1\tfalse\t9\tcore\t61',1)):
+        owned_reject('whole identity/denominator/atomicity', lambda bad=bad: compare(tool=bad))
+    print('absolute startup comparator controls: unchanged complete/loss/trap/refusal meanings and exact joins')
+
+
+if __name__ == '__main__':
+    absolute_selection_controls()
+    absolute_cli_controls()
+    absolute_comparison_controls()
