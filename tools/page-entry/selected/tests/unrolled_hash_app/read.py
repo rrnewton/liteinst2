@@ -293,7 +293,7 @@ def pair(native, gated, owner):
         need((entry['after'] is None) == fault and (entry['unexpected'] is not None) == fault, 'required failure has no invented successful after frame')
         if fault:
             mapped = entry['mapped']
-            need(mapped == dict(copy_index=COPIES[mode], source_offset=17, source_length=3, generated_length=3, original_pc=nh[10] + 17, generated_pc=entry['entry'] + COPIES[mode] * 28 + 17, kind=1) and end['greg'][16] == mapped['generated_pc'], 'exact actual generated MOVZX fault association')
+            need(mapped == dict(version=1, ready=1, copy_index=COPIES[mode], source_offset=17, source_length=3, generated_length=3, original_pc=nh[10] + 17, generated_pc=entry['entry'] + COPIES[mode] * 28 + 17, kind=1, reserved=0) and end['greg'][16] == mapped['generated_pc'], 'exact actual generated MOVZX fault association')
         compare(end, native['frames'][i + 1], fault)
     if mode < 7:
         need(native['suffix']['before'] == gated['suffix']['before'] and native['suffix']['after'] == gated['suffix']['after'] and native['suffix']['live'] == gated['suffix']['live'], 'whole actual common postguard state including undefined AF')

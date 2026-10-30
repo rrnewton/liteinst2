@@ -32,6 +32,7 @@ static uintptr_t alt_area;
 static struct sigaction old_actions[2];
 static unsigned actions_installed;
 static unsigned char source_bytes[UA_PAGE];
+static const uint64_t machine_zero[8]={0};
 static const unsigned nul_at[9]={1,2,63,64,65,2,64,0,0};
 static const unsigned fault_copy[9]={0,0,0,0,0,0,0,0,63};
 static const unsigned offsets[8]={0,3,7,11,14,17,20,22};
@@ -185,7 +186,7 @@ int main(int argc,char **argv){
  need(same(ua_before_live,ua_after_live,UA_LIVE),93);
  copy(suffix.source,unrolled_app_head,UA_PAGE);copy(suffix.stack,(void *)(ua_input.g[4]-128),UA_STACK);copy(suffix.data,(void *)UA_DATA_BASE,UA_DATA);
  need(same(prefix.source,suffix.source,UA_PAGE)&&same(prefix.stack,suffix.stack,UA_STACK)&&same(prefix.data,suffix.data,UA_DATA),94);
- uint64_t after_machine[8]={0};machine(after_machine);need(same(prefix.machine,after_machine,sizeof after_machine),95);
+ uint64_t after_machine[8];copy(after_machine,machine_zero,sizeof after_machine);machine(after_machine);need(same(prefix.machine,after_machine,sizeof after_machine),95);
  unsigned after_cpu=0,after_node=0;need(!RAW(SYS_getcpu,&after_cpu,&after_node,0,0,0,0)&&after_cpu==cpu&&after_node==node,96);
  cleanup();need(!first_error&&output(&suffix,sizeof suffix),97);return mode>=7?125:0;
 }

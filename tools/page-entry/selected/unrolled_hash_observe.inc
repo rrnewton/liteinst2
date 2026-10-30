@@ -275,7 +275,11 @@ static void uho_redirected(int sig,siginfo_t *si,ucontext_t *uc) {
         }
         uho_wire.control[6]=selected_session.pid;uho_wire.control[7]=selected_session.tid;
         uho_wire.control[8]=SIGTRAP;uho_wire.control[12]=1;
-        long result=raw(SYS_tgkill,selected_session.pid,selected_session.tid,SIGTRAP,0,0,0);
+        /* Qualification injects a real nested owner event outside a maps RAW
+           transaction. Use the same registered kernel gateway directly: this
+           pointer-free tgkill changes no mappings. The terminal reader still
+           requires the whole nested frame, nonreturn and complete cleanup. */
+        long result=li2_raw6(SYS_tgkill,selected_session.pid,selected_session.tid,SIGTRAP,0,0,0);
         uho_wire.control[13]=1;uho_wire.control[14]=(uint64_t)result;
         uh_need(0,UH_STATE,119); /* A real nested terminal event must not return. */
     }

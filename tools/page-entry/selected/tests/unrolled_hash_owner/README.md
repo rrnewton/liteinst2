@@ -44,3 +44,12 @@ accepted record: 28 for each ordinary mode and controls 3/7, 32 for control 1,
 subjects. These are reader controls, not additional native operations. All 25
 actual application/control subjects and their original resource bounds remain
 the qualifier's responsibility. Qualification requires independent review and fresh observations.
+
+Control 1 injects its genuine nested `tgkill(SIGTRAP)` through the same registered
+kernel gateway while the generated owner is busy, outside a maps-wrapper
+transaction. It still requires the complete real signal frame, initialized
+handler FP, unchanged application memory, no return and complete cleanup. It
+does not qualify interruption of active maps I/O. The failed `f0519493c667`
+cohort used a wrapper that could not return; nested diagnostic calls correctly
+poisoned that outstanding transaction. That result remains failed, and the
+production poison rules and all terminal checks remain unchanged.
