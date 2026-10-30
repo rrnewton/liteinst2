@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == 'fa3598c79103420ce6400185e6cbdd3dd696673eddf510cde43282f87fa4c3fd', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == 'e25c57dd34959825b9589731ddb8356da87733280d7e97657f7100b5c3ec338e', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -86,7 +86,9 @@ CURRENTROUTED = MAINROUTED['current_corpus_sha256']
 MAINROUTEDNATIVE = DATA['adjacent_routed_native']
 CURRENTROUTEDNATIVE = MAINROUTEDNATIVE['current_corpus_sha256']
 MAINSTARTUP = DATA['startup_carrier']
-LATEST = MAINSTARTUP['current_corpus_sha256']
+CURRENTSTARTUP = MAINSTARTUP['current_corpus_sha256']
+MAIN091 = DATA['main091']
+LATEST = MAIN091['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -101,7 +103,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -122,8 +124,67 @@ def precheck_current_sources(error):
         require(inventory_digest.hexdigest(raw) == value, error)
 
 
+def source_before_091(path, data, error):
+    """Whole current source, exact sparse inverse, then whole historical source."""
+    if path not in MAIN091['projections']:
+        return data
+    row = MAIN091['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_091_sources(error='091_source_inventory_differs'):
+    for path, expected in MAIN091['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAIN091['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN091['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAIN091['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAIN091['module_chains'][path]), error)
+        source_before_091(path, raw, error)
+    for previous, row in MAIN091['relocations'].items():
+        require(MAIN091['sources'][row['current_path']] == row['sha256'], error)
+        if row['old_path_absent']:
+            old = ROOT / previous
+            require(not old.exists() and not old.is_symlink(), error)
+
+
+
+def before_091(declared, error='091_inventory_differs', source_error='091_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_091_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN091['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN091['previous_corpus_sha256'] == CURRENTSTARTUP, error)
+    return old
+
+
+def peel_091(declared, error, source_error):
+    return before_091(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_startup(path, data, error):
     """Whole current source, exact sparse inverse, then whole historical source."""
+    data = source_before_091(path, data, error)
     if path not in MAINSTARTUP['projections']:
         return data
     row = MAINSTARTUP['projections'][path]
@@ -143,6 +204,8 @@ def require_startup_sources(error='startup_source_inventory_differs'):
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        observed = raw
+        raw = source_before_091(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAINSTARTUP['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -152,11 +215,12 @@ def require_startup_sources(error='startup_source_inventory_differs'):
                     raw.count(b'#[test]') == len(found), error)
         if path in MAINSTARTUP['module_chains']:
             require(all(raw.decode().count(literal) == 1 for literal in MAINSTARTUP['module_chains'][path]), error)
-        source_before_startup(path, raw, error)
+        source_before_startup(path, observed, error)
 
 
 def before_startup(declared, error='startup_inventory_differs', source_error='startup_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_091(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTSTARTUP, error)
     require_startup_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -171,7 +235,8 @@ def before_startup(declared, error='startup_inventory_differs', source_error='st
 
 
 def peel_startup(declared, error, source_error):
-    return before_startup(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_091(declared, error, source_error)
+    return before_startup(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTSTARTUP else declared
 
 
 def source_before_routed_native(path, data, error):

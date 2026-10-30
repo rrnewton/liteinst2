@@ -6483,7 +6483,7 @@
       },
       "unit/liteinst_artifact/lib": {
         "ignored": 0,
-        "tests": 20
+        "tests": 46
       },
       "unit/liteinst_inprocess/lib": {
         "ignored": 0,
@@ -6499,7 +6499,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 168
+        "tests": 150
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
