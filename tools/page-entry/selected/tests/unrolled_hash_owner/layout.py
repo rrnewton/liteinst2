@@ -38,14 +38,17 @@ def shape(t, name=None):
         if f.name is None or f.name in fields or f.bitpos % 8 or f.bitsize:
             raise ValueError('unique whole-byte captured fields')
         a = align(f.type)
-        if (name, f.name) == ('li2_step_frame', 'fp'):
-            s = symbol('uho_step_frame_fp_alignment')
+        member_symbols = {('li2_step_frame', 'fp'): 'uho_step_frame_fp_alignment',
+            ('uho_nested_fp', 'zero'): 'uho_nested_zero_alignment',
+            ('uho_nested_fp', 'ones'): 'uho_nested_ones_alignment'}
+        if (name, f.name) in member_symbols:
+            s = symbol(member_symbols[name, f.name])
             if int(s.type.sizeof) != 8:
                 raise ValueError('actual member witness extent')
             a = int(s.value())
             if a <= 0 or a & (a - 1):
                 raise ValueError('actual member witness alignment')
-            witnesses['li2_step_frame.fp'] = dict(symbol=s.name, bytes=8, alignment=a)
+            witnesses[name+'.'+f.name] = dict(symbol=s.name, bytes=8, alignment=a)
         offset, size = int(f.bitpos) // 8, int(f.type.sizeof)
         if size <= 0 or offset < 0 or offset + size > int(t.sizeof):
             raise ValueError('bounded complete field')

@@ -106,6 +106,63 @@ def compile_subject(builder,private,pin,binary,run,r):
     state.update(status='passed',artifact=fact(original),symbols=symbols);return original
 
 
+def nested_emission(builder,bridge,pin,run,r):
+    """Whole fresh ELF bytes, including every instruction after the last save."""
+    objdump=pin(shutil.which('objdump',path=ENV['PATH']));data,_,segments=elf(bridge)
+    need(data==bridge.read_bytes(),'same freshly retained bridge for emitted observation proof')
+    _,out,err=run('nested-symbols',[builder.tools['nm'],'-S','--defined-only',bridge],profile='inspect',env=builder.environment)
+    need(out and not err,'complete actual nested shim/gateway symbol inspection');bodies={}
+    for name in ('uho_nested_raw','li2_raw6'):
+        found=[line.split()for line in out.decode().splitlines()if line.split()[-1:]==[name]]
+        need(len(found)==1 and len(found[0])==4 and found[0][2]=='t','one actual hidden nested observation function')
+        address,size=int(found[0][0],16),int(found[0][1],16)
+        loads=[p for p in segments if p[0]==1 and p[1]==5 and p[3]<=address<address+size<=p[3]+p[5]]
+        need(0<size<=1024 and len(loads)==1,'whole bounded observation body in one actual RX load')
+        _,assembly,err=run('nested-body-'+name,[objdump,'-d','-w','-M','att','--start-address='+hex(address),
+            '--stop-address='+hex(address+size),bridge],profile='inspect',env=builder.environment)
+        need(assembly and not err and ('<'+name+'>:').encode()in assembly,'complete actual nested body inspection')
+        rows=[];cursor=address
+        for line in assembly.decode().splitlines():
+            match=re.fullmatch(r'\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s+)+)(.*)',line)
+            if match:
+                chunk=bytes.fromhex(match[2]);need(int(match[1],16)==cursor and chunk and cursor+len(chunk)<=address+size,
+                    'every nested instruction byte lies contiguously in its actual symbol')
+                rows.append((cursor,chunk,re.sub(r'\s+','',match[3])));cursor+=len(chunk)
+        offset=loads[0][2]+address-loads[0][3];raw=b''.join(x[1]for x in rows)
+        need(cursor==address+size and raw==data[offset:offset+size],'whole emitted nested body equals retained ELF bytes')
+        bodies[name]=(address,raw,rows)
+    gateway=bodies['li2_raw6'];shim=bodies['uho_nested_raw']
+    need(gateway[1]==bytes.fromhex('4889f84889f74889d64889ca4d89c24d89c84c8b4c24080f05c3'),
+        'whole original scalar RAW7 gateway and exact syscall return offset25')
+    # GNU AT&T spellings for fixed non-branch instructions. Branches additionally
+    # use their actual encoded displacement, never a printed symbol annotation.
+    expected='''mov%rdi,%r10|movq$0x1,0x8(%r10)|mov%rsp,0x28(%r10)|mov0x8(%rsp),%rax|mov%rax,0x70(%r10)|test%rax,%rax|jne
+mov0x18(%r10),%rsi|cmp%rsi,%rsp|jbe|mov%rsp,%rax|sub%rsi,%rax|mov%rax,0x30(%r10)|add$0x10,%rax|cmp0x20(%r10),%rax|ja|cld
+lea0x80(%r10),%rdi|xor%eax,%eax|mov$0x2000,%ecx|repstos%rax,%es:(%rdi)
+lea0x10080(%r10),%rdi|mov$0xffffffffffffffff,%rax|mov$0x2000,%ecx|repstos%rax,%es:(%rdi)
+lea0x10280(%r10),%rdi|xor%eax,%eax|mov$0x8,%ecx|repstos%rax,%es:(%rdi)
+mov0x58(%r10),%rax|mov%rax,%rdx|shr$0x20,%rdx|xsave640x80(%r10)|movq$0x1,0x60(%r10)
+mov0x58(%r10),%rax|mov%rax,%rdx|shr$0x20,%rdx|xsave640x10080(%r10)|movq$0x1,0x68(%r10)
+mov0x18(%r10),%rsi|lea0x20080(%r10),%rdi|mov0x30(%r10),%rcx|repmovsb%ds:(%rsi),%es:(%rdi)|movq$0x1,0x10(%r10)
+mov0x40(%r10),%rsi|mov0x48(%r10),%rdx|mov0x50(%r10),%rcx|xor%r8d,%r8d|xor%r9d,%r9d|mov$0xea,%edi|jmp
+mov$0xffffffffffffffea,%rax|ret'''.replace('\n','|').split('|')
+    rows=shim[2];need(len(rows)==len(expected),'every instruction of the complete fixed scalar snapshot/tail shim')
+    bad=rows[-2][0]
+    for (pc,chunk,text),want in zip(rows,expected,strict=True):
+        if want in ('jne','jbe','ja','jmp'):
+            short={'jne':0x75,'jbe':0x76,'ja':0x77,'jmp':0xeb}[want]
+            near={'jne':b'\x0f\x85','jbe':b'\x0f\x86','ja':b'\x0f\x87','jmp':b'\xe9'}[want]
+            need((len(chunk)==2 and chunk[0]==short)or(len(chunk)==len(near)+4 and chunk.startswith(near)),
+                'exact conditional or direct branch opcode/extent')
+            width=1 if len(chunk)==2 else 4;target=pc+len(chunk)+int.from_bytes(chunk[-width:],'little',signed=True)
+            need(target==(gateway[0]if want=='jmp'else bad),'actual error branches and direct unchanged-gateway tail target')
+        else:need(text==want,'exact emitted scalar snapshot instruction '+want)
+    need(sum(x=='xsave640x80(%r10)'for x in expected)==1 and sum(x=='xsave640x10080(%r10)'for x in expected)==1,
+        'two exact standard64-bit saves, no compacted or optimized variant')
+    r['nested_emission']=dict(status='passed',bridge=fact(bridge),functions={name:dict(address=v[0],bytes=len(v[1]),
+        sha256=H(v[1]),instructions=len(v[2]))for name,v in bodies.items()})
+
+
 def observed_layout(builder,bridge,private,pin,binary,run,r):
     gdb=pin(shutil.which('gdb',path=ENV['PATH']));script=pin(OWNER/'layout.py')
     _,out,err=run('layout-gdb-version',[gdb,'--version'],env=builder.environment);need(out and not err,'actual GDB identity')
@@ -288,6 +345,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     r['application_layout']={k:v for k,v in app_layout.items()if k!='source'}
     seed_reference=seed_prerequisite(builder,private,pin,binary,run,r)
     bridge=build_bridge(builder,products,private,pin,binary,aliases,run,r,('UNROLLED_HASH_CAPTURE',),capture_image=original)
+    nested_emission(builder,bridge,pin,run,r)
     layout=observed_layout(builder,bridge,private,pin,binary,run,r)
     interp,roots,objects,description,images,raws,carrier=prepare_inputs(original,bridge,builder,private,pin,binary,run,r)
     carrier_bytes=carrier.read_bytes();launcher=pin(FIXTURE/'launch.py');native_records={}
@@ -343,7 +401,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                     need(c['application_controls']==dict(supplied_refusals=26,native_operations=0),'all fixed app rejection controls')
                     c['status']='qualified_required_read_failure'if mode>=7 else 'qualified_application'
                 c['owner_reader_controls']=owner_reader.controls(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'],control=control)
-                want=32 if control==1 else 20 if control==6 else 27 if control in(2,4,5)else 28
+                want=48 if control==1 else 21 if control==6 else 28 if control in(2,4,5)else 29
                 need(len(c['owner_reader_controls']['refusals'])==want and c['owner_reader_controls']['native_operations']==0 and
                      c['owner_reader_controls']['original_sha256']==H(record),'complete fixed actual owner-record refusal controls')
         except Exception as error:
@@ -356,7 +414,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     need(sum(c.get('pair',{}).get('qualified_case',0)for c in r['cases'])==9 and
         sum(c.get('application_controls',{}).get('supplied_refusals',0)for c in r['cases'])==234 and
         sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==16*33+7*2 and
-        sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==441,
+        sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==472,
         'all nine actual pairs and fixed application/terminal/owner-record refusal controls')
 
 

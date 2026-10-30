@@ -14,6 +14,7 @@
 #include <linux/filter.h>
 #include <linux/seccomp.h>
 #include "unrolled_hash_observe_memory.h"
+#include "unrolled_hash_nested_fp.h"
 #define UHO_ROWS 2U
 #define UHO_MAGIC UINT64_C(0x314f48554c49324c)
 #define UHO_FOOTER UINT64_C(0x31464f48554c4932)
@@ -52,8 +53,13 @@ struct uho_wire {
     struct uh_record control_before;
     unsigned char original_source[LI2_UNROLLED_HASH_SOURCE];
     unsigned char generated[UH_PAGES][PAGE];
+    struct uho_nested_fp nested_fp;
 };
 static struct uho_wire uho_wire;
+static const uint64_t uho_nested_zero_alignment __attribute__((used))=
+    __alignof__(((struct uho_nested_fp *)0)->zero);
+static const uint64_t uho_nested_ones_alignment __attribute__((used))=
+    __alignof__(((struct uho_nested_fp *)0)->ones);
 static unsigned uho_ready,uho_finished,uho_current=UHO_ROWS;
 static uintptr_t uho_head;
 static const uint64_t uho_step_frame_fp_alignment __attribute__((used))=
@@ -87,7 +93,8 @@ static int uho_same_sink(const struct stat *s) {
         s->st_uid==a->st_uid && s->st_gid==a->st_gid && s->st_nlink==a->st_nlink;
 }
 static void uho_initialize(void) {
-    __asm__ volatile(""::"r"(&uho_step_frame_fp_alignment):"memory");
+    __asm__ volatile(""::"r"(&uho_step_frame_fp_alignment),
+        "r"(&uho_nested_zero_alignment),"r"(&uho_nested_ones_alignment):"memory");
     uh_need(!uho_ready && !uho_finished,UH_STATE,101);
     uho_wire.h[0]=UHO_MAGIC;uho_wire.h[1]=1;uho_wire.h[2]=sizeof uho_wire;
     uho_wire.h[3]=sizeof selected_unrolled;uho_wire.h[4]=sizeof(struct uho_entry);
@@ -279,7 +286,15 @@ static void uho_redirected(int sig,siginfo_t *si,ucontext_t *uc) {
            transaction. Use the same registered kernel gateway directly: this
            pointer-free tgkill changes no mappings. The terminal reader still
            requires the whole nested frame, nonreturn and complete cleanup. */
-        long result=li2_raw6(SYS_tgkill,selected_session.pid,selected_session.tid,SIGTRAP,0,0,0);
+        struct uho_nested_fp *f=&uho_wire.nested_fp;
+        uh_need((xcr0==UINT64_C(0xe7) || xcr0==UINT64_C(0x2e7)) &&
+            !f->h[0] && fork_gate_stack.ss_size==sizeof f->stack &&
+            (uintptr_t)fork_gate_stack.ss_sp<=UINTPTR_MAX-fork_gate_stack.ss_size,
+            UH_STATE,126); /* Fixed nondynamic user-state profile only. */
+        f->h[0]=1;f->h[3]=(uintptr_t)fork_gate_stack.ss_sp;f->h[4]=fork_gate_stack.ss_size;
+        f->h[7]=xcr0;f->h[8]=selected_session.pid;f->h[9]=selected_session.tid;
+        f->h[10]=SIGTRAP;f->h[11]=xcr0;
+        long result=uho_nested_raw(f,selected_session.pid,selected_session.tid,SIGTRAP,0,0,0);
         uho_wire.control[13]=1;uho_wire.control[14]=(uint64_t)result;
         uh_need(0,UH_STATE,119); /* A real nested terminal event must not return. */
     }

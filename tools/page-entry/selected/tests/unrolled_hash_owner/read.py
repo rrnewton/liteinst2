@@ -139,12 +139,13 @@ def shapes(r):
     form('uho_entry',[('present ordinal committed terminal source_bytes generated_bytes',8,8),('owner',s('uh_record'),64),
         ('redirected',s('uh_frame'),64),('before_memory after_memory',s('li2_uho_memory'),8),
         ('redirected_owners completed_owners',s('uho_owners'),64),('source_page generated_page terminal_source_page',4096,1),('terminal_source_bytes',8,8)],64)
+    form('uho_nested_fp',[('h',128,8),('zero ones',65536,64),('stack',524288,1)],64)
     form('uho_wire',[('h',512,8),('control',192,8),('sink_initial sink_terminal main_backing',s('stat'),8),
         ('main interpreter',s('image'),8),('hardware',s('li2_selected_hardware'),4),('owner',s('unrolled_owner'),64),
         ('terminal_owners',s('uho_owners'),64),('terminal_fetch',s('li2_fetch_progress'),8),
         ('terminal_global_close',s('li2_native_close'),8),('terminal_native_counts',s('li2_native_counts'),8),
         ('entries',2*s('uho_entry'),64),('supplied_before',s('uh_frame'),64),
-        ('control_before',s('uh_record'),64),('original_source',39,1),('generated',64*4096,1)],64)
+        ('control_before',s('uh_record'),64),('original_source',39,1),('generated',64*4096,1),('nested_fp',s('uho_nested_fp'),64)],64)
 
 
 class Reader:
@@ -152,7 +153,9 @@ class Reader:
         self.data,self.layout,self.types=data,layout,layout['types']
         self.padding={}
         need(layout['record']=='uho_wire' and layout['member_witnesses']=={
-            'li2_step_frame.fp':dict(symbol='uho_step_frame_fp_alignment',bytes=8,alignment=64)},'actual symbol/member witness')
+            'li2_step_frame.fp':dict(symbol='uho_step_frame_fp_alignment',bytes=8,alignment=64),
+            'uho_nested_fp.zero':dict(symbol='uho_nested_zero_alignment',bytes=8,alignment=64),
+            'uho_nested_fp.ones':dict(symbol='uho_nested_ones_alignment',bytes=8,alignment=64)},'actual symbol/member witness')
         need(layout['uc_bytes']==968 and layout['uc']==dict(
             offsets=dict(flags=0,link=8,greg=40,fp_pointer=224,mask=296,stack_sp=16,stack_flags=24,stack_size=32),
             widths=dict(flags=8,link=8,greg=184,fp_pointer=8,mask=128,stack_sp=8,stack_flags=4,stack_size=8)),
@@ -196,7 +199,7 @@ class Reader:
             ('uho_wire','li2_selected_hardware','hardware'),('uho_wire','unrolled_owner','owner'),
             ('uho_wire','uho_owners','terminal_owners'),('uho_wire','li2_fetch_progress','terminal_fetch'),
             ('uho_wire','li2_native_close','terminal_global_close'),('uho_wire','li2_native_counts','terminal_native_counts'),
-            ('uho_wire','uho_entry','entries'),('uho_wire','uh_frame','supplied_before'),('uho_wire','uh_record','control_before')):
+            ('uho_wire','uho_entry','entries'),('uho_wire','uh_frame','supplied_before'),('uho_wire','uh_record','control_before'),('uho_wire','uho_nested_fp','nested_fp')):
             for key in keys.split():expected[parent][key]=child
         need(layout['edges']==expected,'every source-declared embedded object and array is traversed')
         need(type(data)is bytes and len(data)==self.types['uho_wire']['bytes']+64<4<<20,'complete wire plus footer')
@@ -556,26 +559,54 @@ class Check:
         saved=outer['fp'];n=outer['fp_bytes'];c=self.control_words;hw=self.app['hardware']
         need(c[22]==1 and c[21]==self.app['header'][14] and c[23]==0,'actual guarded handler XGETBV equals same-process initial XCR0')
         features=0xe7|(0x200 if c[21]&0x200 else 0)
-        need(struct.unpack_from('<IIQI',saved,464)==(0x46505853,n,features,n-4) and q(saved[512:520])==(features,),'closed supported signal user-feature set')
+        need(c[21]==features and struct.unpack_from('<IIQI',saved,464)==(0x46505853,n,features,n-4) and q(saved[512:520])==(features,),'closed supported nondynamic signal user-feature set')
         ends=[576]
         for feature in (2,5,6,7,9):
             if features>>feature&1:
                 row=hw[3+feature];need(row[:2]==(13,feature) or row[:2]==[13,feature],'actual CPUID subleaf identity')
                 size,offset=row[2:4];need(size>0 and offset>=576 and offset+size<=65532,'bounded standard component')
                 ends.append(offset+size)
-        need(n==max(ends)+4 and inner['fp_bytes']==n,'exact initialized-handler FP extent')
+        need(n==max(ends)+4 and inner['fp_bytes']==n,'exact independently observed nested FP extent')
         zero(saved[484:512],'full kernel FP software reserved bytes');zero(saved[520:576],'full standard header reserved bytes')
-        expected=bytearray(FP);struct.pack_into('<H',expected,0,0x37f)
-        mask=struct.unpack_from('<I',saved,28)[0];need(mask&0x1f80==0x1f80,'same-CPU actual MXCSR capability')
-        struct.pack_into('<II',expected,24,0x1f80,mask)
+        raw=self.f(self.b,'uho_wire','nested_fp');t='uho_nested_fp';h=q(self.f(raw,t,'h'))
+        lo,cap=self.h[12:14];sp=inner['greg'][15]
+        need(lo<sp and sp+16<=lo+cap and h==(1,1,1,lo,cap,sp,sp-lo,features,self.pid,self.pid,5,features,1,1,0,0),
+            'actual final assembly stack/RAW7 identity and completed independent XSAVE pair')
+        pre=self.f(raw,t,'stack');zero(pre[h[6]:],'uncopied upper-altstack capacity stays zero')
+        at=int.from_bytes(inner['uc'][224:232],'little')-lo
+        need(at>=0 and lo+at==((sp-128-n)&~63) and at+n<=h[6],
+            'exact nested redzone/alignment destination inside independent lower-altstack preimage')
+        z,o=(self.f(raw,t,k) for k in ('zero','ones'))
+        need(z[512:576]==o[512:576] and int.from_bytes(z[512:520],'little')&~features==0,
+            'two standard XSAVE headers have identical actual in-use bits')
+        zero(z[520:576],'independent XSAVE has no compaction or reserved header data')
+        zero(z[n-4:],'whole independent zero-initialized save tail')
+        need(o[n-4:]==b'\xff'*(FP-(n-4)),'whole independent ones-initialized save tail')
+        need(z[416:512]==bytes(96) and o[416:512]==b'\xff'*96,
+            'actual XSAVE leaves full legacy reserved/software region untouched')
+        mask=struct.unpack_from('<I',saved,28)[0]
+        need(mask&0x1f80==0x1f80 and struct.unpack_from('<I',z,28)[0]==mask,
+            'same-CPU independently observed MXCSR capability')
+        expected=bytearray(FP);expected[:n]=pre[at:at+n]
+        # Plain XSAVE64, never XSAVEOPT/XSAVEC: equal observations are actual
+        # writes; complementary seeds prove an untouched destination byte.
+        # Both headers were zero before the saves; no partial BV bits are inferred.
+        for i,(a,b) in enumerate(zip(z[:n-4],o[:n-4])):
+            if a==b:expected[i]=a
+            else:need((a,b)==(0,255),'independent XSAVE pair has only actual writes or untouched complementary seeds')
         struct.pack_into('<IIQI',expected,464,0x46505853,n,features,n-4)
-        struct.pack_into('<Q',expected,512,3|(features&0x200))
+        expected[484:512]=bytes(28)
+        struct.pack_into('<Q',expected,512,int.from_bytes(z[512:520],'little')|3|(features&0x200))
+        expected[520:576]=bytes(56)
         if features&0x200:
             need(c[18]<(1<<32) and c[19:21]==(0,1) and hw[2][4]&24==24 and hw[12][2]==8,'actual permitted RDPKRU/CPUID D9 geometry')
-            struct.pack_into('<I',expected,hw[12][3],c[18])
+            offset=hw[12][3]
+            need(z[offset:offset+4]==o[offset:offset+4]==struct.pack('<I',c[18]),
+                'independent standard saves equal actual pre-signal PKRU')
+            struct.pack_into('<I',expected,offset,c[18])
         else:need(c[18:21]==(0,0,0),'no unsupported PKRU instruction or invented result')
         struct.pack_into('<I',expected,n-4,0x46505845)
-        need(inner['fp']==expected,'entire initialized live-handler FP buffer including actual independently observed PKRU')
+        need(inner['fp']==expected,'entire nested FP equals independent live state, destination preimage and exact kernel writes')
 
     def header(self,exit_status):
         h=self.h;r=self.r;c=self.control_words;mode=self.app['header'][4]
@@ -620,6 +651,7 @@ class Check:
     def controls(self,current,result):
         c=self.control_words;kind=self.control;t='uh_record'
         before=self.f(self.b,'uho_wire','control_before');supplied=self.f(self.b,'uho_wire','supplied_before')
+        if kind!=1:zero(self.f(self.b,'uho_wire','nested_fp'),'unused independent nested observation is wholly zero')
         want=[0]*24;want[0]=kind
         if not kind:
             need(c==tuple(want),'no fabricated control progress');zero(before,'unused control owner');zero(supplied,'unused supplied signal');return
@@ -1037,16 +1069,52 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0):
             ('nested_coherent_mask',masks),('nested_coherent_oldmask',oldmasks),
             ('nested_actual_fs',[where(inner+[('fs',None,None)]) for inner in inners]),
             ('nested_actual_gs',[where(inner+[('gs',None,None)]) for inner in inners])])
+    nested=[('nested_fp',None,'uho_nested_fp')]
+    semantic=set()
+    if control==1:
+        for name,index in (('nested_snapshot_complete',2),('nested_snapshot_request',11),
+                           ('nested_snapshot_rsp',5),('nested_snapshot_copied',6)):
+            tests.append((name,[where(nested+[('h',index,None)])]))
+        tests.extend([
+            ('nested_snapshot_one_xmm',[where(nested+[('zero',None,None)])+160]),
+            ('nested_snapshot_coherent_xmm',[where(nested+[(key,None,None)])+160 for key in ('zero','ones')]),
+            ('nested_snapshot_bv',[where(nested+[(key,None,None)])+512 for key in ('zero','ones')]),
+            ('nested_snapshot_compacted',[where(nested+[(key,None,None)])+520 for key in ('zero','ones')]),
+            ('nested_snapshot_zero_tail',[where(nested+[('zero',None,None)])+FP-1]),
+            ('nested_snapshot_ones_tail',[where(nested+[('ones',None,None)])+FP-1])])
+        sp=int.from_bytes(data[where(nested+[('h',6,None)]):where(nested+[('h',6,None)])+8],'little')
+        lo=int.from_bytes(data[where(nested+[('h',3,None)]):where(nested+[('h',3,None)])+8],'little')
+        address=where(inners[0]+[('frame',None,'li2_step_frame'),('fp_address',None,None)])
+        fp=int.from_bytes(data[address:address+8],'little')
+        tests.extend([
+            ('nested_destination_reserved',[where(nested+[('stack',None,None)])+fp-lo+416]),
+            ('nested_actual_reserved',[where(inner+[('frame',None,'li2_step_frame'),('fp',None,None)])+416 for inner in inners]),
+            ('nested_actual_xmm',[where(inner+[('frame',None,'li2_step_frame'),('fp',None,None)])+160 for inner in inners]),
+            ('nested_actual_bv',[where(inner+[('frame',None,'li2_step_frame'),('fp',None,None)])+512 for inner in inners]),
+            ('nested_uncopied_capacity',[where(nested+[('stack',None,None)])+sp]),
+            ('nested_coherent_fp_pointer',[where(inner+[('uc',None,None)])+224 for inner in inners]+
+                [where(inner+[('frame',None,'li2_step_frame'),('fp_address',None,None)]) for inner in inners])])
+        semantic={'nested_snapshot_coherent_xmm','nested_snapshot_bv','nested_destination_reserved',
+                  'nested_actual_reserved','nested_actual_xmm','nested_actual_bv'}
+    else:tests.append(('unused_nested_observation',[where(nested+[('h',0,None)])]))
+    need(len(tests)==(29,48,28,29,28,28,21,29)[control],
+        'exact old controls plus independent-observation refusal population')
     need(len({name for name,_ in tests})==len(tests),'unique fixed supplied record controls')
     names=[]
     for name,offsets in tests:
         changed=bytearray(data);rejected=False
-        for offset in offsets:changed[offset]^=1
+        for offset in offsets:changed[offset]^=4 if name=='nested_snapshot_bv' else 64 if name=='nested_coherent_fp_pointer' else 1
         try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control)
         except ValueError as error:
             if name in ('nested_coherent_mask','nested_coherent_oldmask','nested_actual_fs','nested_actual_gs'):
                 need(str(error)=='nested SA_NODEFER mask/OLD_MASK and actual unchanged handler TLS',
                     'coherent nested control reaches its exact semantic refusal')
+            if name=='nested_coherent_fp_pointer':
+                need(str(error)=='exact nested redzone/alignment destination inside independent lower-altstack preimage',
+                    'coherent FP pointer control reaches exact kernel placement')
+            if name in semantic:
+                need(str(error)=='entire nested FP equals independent live state, destination preimage and exact kernel writes',
+                    'coherent nested state control reaches the whole-buffer comparator')
             rejected=True
         need(rejected,'whole owner reader refuses supplied '+name);names.append(name)
     need(hashlib.sha256(data).hexdigest()==original,'original actual record unchanged')
