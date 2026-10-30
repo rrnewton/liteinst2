@@ -1021,3 +1021,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 #include "linked_epoch_observe_memory.inc"
 #endif
+#ifdef LI2_LINKED_PREEDGE_CAPTURE
+#include "linked_preedge_observe_memory.inc"
+#endif
