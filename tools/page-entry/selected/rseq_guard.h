@@ -88,6 +88,13 @@ struct li2_region_plan;
    source nor executable authority and does not synthesize a run/unroll plan. */
 int li2_rseq_check_region(const struct li2_region_plan *,const ucontext_t *);
 #endif
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+#if LI2_SCALAR_REGION_REUSE_CERTIFICATE != 1 || !defined(LI2_SCALAR_REGION_REUSE) || \
+    LI2_SCALAR_REGION_REUSE != 1 || !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1
+#error "Reuse certificates require the exact completed-generation scalar profile"
+#endif
+#include "rseq_region_live.h"
+#endif
 
 #ifdef LI2_RSEQ_TCGETS_BTRFS
 #include "rseq_tcgets_btrfs.h"

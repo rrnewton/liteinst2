@@ -201,6 +201,22 @@ static void uho_fd_guard(long,const long[6]);
 #endif
 #endif
 
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+#if LI2_SCALAR_REGION_REUSE_CERTIFICATE != 1 || !defined(LI2_SCALAR_REGION_REUSE) || LI2_SCALAR_REGION_REUSE != 1 || \
+    !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1 || defined(LI2_SCALAR_REGION_CERTIFICATE)
+#error "distinct literal generation-bound certificate profile required"
+#endif
+#ifdef LI2_SCALAR_REGION_CAPTURE
+#if !defined(LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE) || LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE != 1
+#error "certificate/reuse capture requires its distinct complete v3 profile"
+#endif
+#endif
+#endif
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+#if LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE != 1 || !defined(LI2_SCALAR_REGION_REUSE_CERTIFICATE) || LI2_SCALAR_REGION_REUSE_CERTIFICATE != 1 || !defined(LI2_SCALAR_REGION_CAPTURE) || LI2_SCALAR_REGION_CAPTURE != 1
+#error "literal complete certificate capture feature dependencies required"
+#endif
+#endif
 #ifdef LI2_SCALAR_REGION_CAPTURE
 #if LI2_SCALAR_REGION_CAPTURE != 1 || !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1 || \
     defined(LI2_UNROLLED_HASH_CAPTURE) || defined(LI2_UNROLLED_HASH_OBSERVE_ONLY)

@@ -165,7 +165,15 @@ def region_builder(private,pin,binary,aliases,run,r,builders):
     return builder,builder.prepare()
 
 
-def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
+def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders,*,certificate=False):
+    lanes,order,names=LANES,ORDER,NAMES
+    active_build,active_reports=build_reuse,reports
+    if certificate:
+        import scalar_reuse_certificate_performance as selected_profile
+        import scalar_reuse_certificate_performance_reports as active_reports
+        from scalar_region_reuse_certificate_build import build_bridge as active_build
+        need(r['profile']=='scalar-reuse-certificate-performance-v1','explicit distinct certificate release profile')
+        lanes,order,names=selected_profile.LANES,selected_profile.ORDER,selected_profile.NAMES
     need(builder.extra_decoder_sources==()and builder.decoder_features==()and
          builder.record['decoder_features']==[],'old unrolled baseline uses the original default archive')
     retained={k:dict(fact(v),mode=v.stat().st_mode&0o777)for k,v in products.items()}
@@ -173,24 +181,34 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
     need({k:dict(fact(v),mode=v.stat().st_mode&0o777)for k,v in products.items()}==retained,
          'sequential region build leaves every retained default artifact byte/mode unchanged')
     r['region_archive']=fact(region_products['archive']);r['release_builds']={};bridges={};roots={}
-    for lane in LANES[:3]:
+    for lane in lanes[:3]:
         root=private/lane;root.mkdir();roots[lane]=root;state=r['release_builds'][lane]={}
         def labelled(name,argv,**kwargs):return run(lane+'-'+name,argv,**kwargs)
         if lane=='unrolled':bridges[lane]=build_unrolled(builder,products,root,pin,binary,aliases,labelled,state,())
-        else:bridges[lane]=build_reuse(selected,region_products,root,pin,binary,aliases,labelled,state,
+        else:bridges[lane]=active_build(selected,region_products,root,pin,binary,aliases,labelled,state,
                                       ('MAPS_DIFFERENTIAL',)if lane=='differential'else())
-    normal=r['release_builds']['scalar-reuse']['release_build']['argv']
+    normal=r['release_builds'][lanes[1]]['release_build']['argv']
     differential=r['release_builds']['differential']['release_build']['argv']
-    need([x.replace(str(roots['differential']),str(roots['scalar-reuse']))for x in differential
+    need([x.replace(str(roots['differential']),str(roots[lanes[1]]))for x in differential
          if x!='-DLI2_MAPS_DIFFERENTIAL=1']==normal,'scalar normal/DIFF differ only by declared diagnostic macro and output')
+    if certificate:
+        prerequisite=r['prerequisites']['certificate_owner']
+        for lane in lanes[1:3]:
+            built=r['release_builds'][lane]['release_build'];binding=built['certificate_binding']
+            need(digest({k:binding[k]for k in('version','archive','policy','header')})==digest(prerequisite['binding'])and
+                 digest(binding['policy_inputs'])==prerequisite['policy_inputs_sha256']and
+                 binding['archive']==r['region_archive']and 'capture_config'not in built and
+                 '-DLI2_MAPS_CURRENT_TF=1'not in built['argv']and
+                 '-DLI2_SCALAR_REGION_REUSE_CERTIFICATE=1'in built['argv'],
+                 'same qualified archive/policy/header; release certificate only, without current-TF or capture')
     spec=importlib.util.spec_from_file_location('reuse_performance_namespace',pin(SELECTED.parent/'namespace.py'))
     namespace=importlib.util.module_from_spec(spec);spec.loader.exec_module(namespace)
     (private/'external-inputs').mkdir();r['namespace_aliases']={};states={}
-    for lane in LANES[:3]:
+    for lane in lanes[:3]:
         for kind,path,args in [('ls','/bin/ls',['-d','.']),('true','/bin/true',[])]:
             states[kind,lane]=pair.prepare_workload(kind+'-'+lane,path,args,bridges[lane],builder,private,pin,binary,run,r,namespace)
     for kind in('ls','true'):
-        for lane in LANES[1:3]:
+        for lane in lanes[1:3]:
             need(all(r[key][kind+'-unrolled']==r[key][kind+'-'+lane]for key in
                  ('system_inputs','namespace_plans','external_inputs')),'whole original/interpreter/dependency inputs match across profiles')
     drrun,client,dr_env=build_dr(a.sdk,builder,private,pin,binary,run,r)
@@ -198,8 +216,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
     need(len(r['dr_diagnostics'])==3 and all(x['status']=='passed'for x in r['dr_diagnostics']),
          'all original actual DR exec/target/client/exit proofs before measured launches')
     r['terminal_reports']={};r['reader_controls']={}
-    for ordinal,(kind,repeat,lane)in enumerate(ORDER):
-        name=NAMES[ordinal];s=states[kind,lane if lane in LANES[:3]else'unrolled'];case=r['cases'][ordinal]
+    for ordinal,(kind,repeat,lane)in enumerate(order):
+        name=names[ordinal];s=states[kind,lane if lane in lanes[:3]else'unrolled'];case=r['cases'][ordinal]
         case['status']='failed';env=PROGRAM_ENV;ns=None
         if lane=='native':argv=s['argv']
         elif lane=='dynamorio':
@@ -220,8 +238,15 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
                     parsed,summary,view,owner,unused=unrolled_reports.check(out,err,args,kind,'unrolled')
                     controls=unrolled_reports.controls(out,err,args,kind,'unrolled');scalar=retirement=None
                 else:
-                    parsed,summary,view,owner,scalar,retirement=reports.check(out,err,args,kind,lane)
-                    controls=reports.controls(out,err,args,kind,lane)
+                    if certificate:
+                        parsed,summary,view,owner,scalar,retirement,proof=active_reports.check(out,err,args,kind,lane)
+                        case['certificate']=proof
+                        controls=active_reports.controls(out,err,args,kind,lane)
+                        need(len(controls['scalar_reuse_refusals'])==86 and len(controls['certificate_refusals'])==15,
+                             'all original86 scalar/reuse and additional15 certificate terminal refusals')
+                    else:
+                        parsed,summary,view,owner,scalar,retirement=reports.check(out,err,args,kind,lane)
+                        controls=reports.controls(out,err,args,kind,lane)
                 routes=[parsed[k][f]for k,fields in maps.ROUTES.items()for f in fields]
                 need(all(type(x)is int and 0<=x<1<<64 for x in routes),'actual unsigned overlapping route counters')
                 r['terminal_reports'][name]=parsed;r['reader_controls'][name]=controls
@@ -246,7 +271,11 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
          'all82 fixed attempts, including both differential runs; no retries or replacements')
 
 
-def publish(path,r,private):
+def publish(path,r,private,*,certificate=False):
+    lanes=LANES
+    if certificate:
+        from scalar_reuse_certificate_performance import LANES as lanes
+        from scalar_reuse_certificate_reports import CERTIFICATE_KEYS
     fields='ordinal workload repeat lane status exit process_ns timed_out reaped user_cpu_ns system_cpu_ns minor_faults major_faults voluntary_switches involuntary_switches'.split()
     uk=tuple(k for k in unrolled_reports.KEYS if k not in('current','signals'))
     sk=tuple(k for k in reports.reuse.old.KEYS if k not in('current','signals','refusals','exit_indices'))
@@ -265,7 +294,7 @@ def publish(path,r,private):
     statistics_rows={}
     for kind in('ls','true'):
         result=statistics_rows[kind]={}
-        for lane in LANES:
+        for lane in lanes:
             cases=[c for c in r['cases']if c['workload']==kind and c['lane']==lane]
             times=[c['process_ns']for c in cases if c['status']=='passed']
             row=result[lane]=dict(planned=1 if lane=='differential'else 10,passed=len(times),timing_credit=bool(complete and lane!='differential'))
@@ -273,14 +302,15 @@ def publish(path,r,private):
                 need(len(times)==10,'all ten actual samples for this complete lane');q=statistics.quantiles(times,n=4,method='inclusive')
                 row.update(median_ns=statistics.median(times),q1_ns=q[0],q3_ns=q[2],iqr_ns=q[2]-q[0])
         if complete:
-            scalar=result['scalar-reuse']['median_ns']
-            result['scalar_reuse_median_ratios']={lane:scalar/result[lane]['median_ns']for lane in('unrolled','native','dynamorio')}
+            scalar=result[lanes[1]]['median_ns']
+            result['certificate_reuse_median_ratios'if certificate else'scalar_reuse_median_ratios']={lane:scalar/result[lane]['median_ns']for lane in('unrolled','native','dynamorio')}
     controls={}
     for name,v in r.get('reader_controls',{}).items():
         scalar='scalar_reuse_refusals'in v;prior=v['original']if scalar else v
         controls[name]=dict(original=len(prior['original']['original']['refusals']),maps_view=len(prior['original']['maps_view_refusals']),
             unrolled=len(prior['unrolled_refusals']),scalar_reuse=len(v['scalar_reuse_refusals'])if scalar else 0,
             raw_stderr_sha256=v['original_stderr_sha256'])
+        if certificate:controls[name]['certificate']=len(v.get('certificate_refusals',[]))
     value={k:r.get(k)for k in('schema','profile','status','expected_revision','source','source_unchanged','cleanup_complete','hardware','cpu',
         'bounds','reproduce','archive','region_archive','carriers','system_inputs','prerequisites')}
     hw=dict(value['hardware']);flags=hw.pop('isa_flags');hw['isa_flags_sha256']=digest(flags);value['hardware']=hw
@@ -303,6 +333,15 @@ def publish(path,r,private):
         reader_controls=controls,captures={str(c['ordinal']):c.get('captures',{})for c in r['cases']},
         case_error_types={str(c['ordinal']):c['error'].split(':',1)[0]for c in r['cases']if c.get('error')},
         error_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']))
+    if certificate:
+        value['scope']='All82 required:40 ordinary unrolled-normal/certificate-reuse-normal, two certificate-reuse differential validations, then40 fresh native/DynamoRIO samples. Six same-revision/same-CPU qualifications (including all43 certificate owner cases and separate8 transaction cases) plus six actual-TU maps modes are prerequisites. Whole-profile comparison; no observer-only subtraction. CURRENT_TF is absent; its failed comparison remains failed.'
+        value['count_scope']+=' Certificate static plan proofs=publications+retirement_attempts, static rseq proofs=publications, certificate comparisons=2*entries and live rseq guards=3*entries. These are actual producer counts, not inferred speedups.'
+        value['certificate_rows']=dict(columns=['ordinal',*CERTIFICATE_KEYS],
+            rows=[[case['ordinal'],*[case['certificate'][key]for key in CERTIFICATE_KEYS]]
+                  for case in r['cases']if 'certificate'in case])
+        value['certificate_bindings']={lane:{k:state['release_build']['certificate_binding'][k]
+            for k in('version','archive','policy','header')}for lane,state in r.get('release_builds',{}).items()
+            if 'certificate_binding'in state.get('release_build',{})}
     text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(len(text.encode())<96<<10 and len(data)<32<<10 and not any(x and len(x)>1 and x in text for x in
          (str(ROOT),str(Path.home()),platform.node(),'/home/')),'unchanged bounded public numerical output without host paths/logs')
