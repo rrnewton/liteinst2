@@ -97,6 +97,10 @@ def truths(data):
 
 
 def geometry(table, caller, cpus):
+    return _geometry(table, caller, cpus, OPS)
+
+
+def _geometry(table, caller, cpus, allowed_operations):
     assert type(table) is tuple and 1 <= len(table) <= 4
     keys = {'function_id', 'operation', 'policy', 'elf_va', 'extent', 'returns'}
     ids, operations, prior_end = set(), set(), 0
@@ -105,7 +109,7 @@ def geometry(table, caller, cpus):
         function = integer(leaf['function_id'])
         assert function not in ids; ids.add(function)
         operation = leaf['operation']
-        assert type(operation) is str and operation in OPS and operation not in operations
+        assert type(operation) is str and operation in allowed_operations and operation not in operations
         operations.add(operation)
         assert type(leaf['policy']) is str and leaf['policy'] in ('certified', 'whole')
         extent = integer(leaf['extent'], 1 if leaf['policy'] == 'certified' else 5,
@@ -135,7 +139,17 @@ def framing(data, stderr, expected_stderr):
 
 
 def check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_error, cpus):
-    geometry(table, caller, cpus)
+    return _check(stdout, stderr, records=records, table=table, caller=caller, k=k,
+                  epochs=epochs, outcome=outcome, input_error=input_error, cpus=cpus,
+                  operations=OPS, version='leaf-set-session-v1', semantic_rows=None,
+                  command='normal-leaf-set-session', status='LEAF_SET_WIRE_PASS')
+
+
+def _check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_error, cpus,
+           operations, version, semantic_rows, command, status):
+    # Private semantic seam. The old public wrapper passes its original exact
+    # vocabulary and derives every value as before; wire/ownership logic is shared.
+    _geometry(table, caller, cpus, operations)
     n = len(table)
     limit = min(2048, 4096 // n)
     integer(k); assert k in (10, 1000)
@@ -143,19 +157,31 @@ def check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_e
     assert type(records) is tuple and len(records) <= limit
     expected = tuple(truths(payload) for payload in records)
     count = len(records)
+    if semantic_rows is not None:
+        assert type(semantic_rows) is tuple and len(semantic_rows) == count
+        keys = {'csv_fields', *operations}
+        for row, grammar in zip(semantic_rows, expected):
+            assert type(row) is dict and set(row) == keys
+            for value in row.values():
+                integer(value)
+            assert row['csv_fields'] == grammar['csv_fields']
+        expected = semantic_rows
     assert type(outcome) is str and outcome in ('eof', 'input_error', 'input_incomplete')
     assert type(input_error) is str and input_error in ERRORS
     assert (outcome == 'input_error') == (input_error != 'none')
     expected_stderr = b''
     if outcome == 'input_error':
         assert (count == limit) if input_error == 'record_limit' else (count < limit)
-        expected_stderr = ('normal-leaf-set-session INPUT_REFUSED: ' + input_error + '\n').encode('ascii')
+        expected_stderr = (command + ' INPUT_REFUSED: ' + input_error + '\n').encode('ascii')
     elif outcome == 'input_incomplete':
-        expected_stderr = b'normal-leaf-set-session INPUT_INCOMPLETE\n'
+        expected_stderr = (command + ' INPUT_INCOMPLETE\n').encode('ascii')
     fields = dict(FIELDS, RESULT='record_id length checksum ' +
                   ' '.join('value_' + str(i) for i in range(n)) + ' first_ordinal last_ordinal')
     caps = dict(READY=1, LEAF=n, RET=4*n, HISTORY=epochs+1, REPORT=epochs,
                 CALL=n*count, RESULT=count, SAMPLE=n*count, COVERAGE=n, IO=1, DONE=1)
+    words = dict(WORDS)
+    words['READY', 'version'] = (version,)
+    words['LEAF', 'operation'] = operations
     parsed, ordered = {tag: [] for tag in fields}, []
     for cells in framing(stdout, stderr, expected_stderr):
         tag, *cells = cells
@@ -164,7 +190,7 @@ def check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_e
         assert len(names) == len(cells)
         row = {}
         for name, cell in zip(names, cells):
-            choices = WORDS.get((tag, name))
+            choices = words.get((tag, name))
             if choices is None:
                 row[name] = uint(cell)
             else:
@@ -342,7 +368,7 @@ def check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_e
         assert done['eof_without_error'] == 0
         if input_error == 'unterminated':
             assert done['raw_eof'] == 1
-    return dict(status='LEAF_SET_WIRE_PASS', outcome=outcome, input_error=input_error,
+    return dict(status=status, outcome=outcome, input_error=input_error,
                 expected_exit=0 if outcome == 'eof' else 1, rows=parsed, ordered=ordered,
                 raw=stdout, stderr=stderr,
                 totals=dict(records=count, functions=n, calls=n*count, sampled=completed,
