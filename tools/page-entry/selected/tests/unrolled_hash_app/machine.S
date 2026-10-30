@@ -111,6 +111,16 @@ unrolled_app_capture_high:
     popfq
     ret
 .size unrolled_app_capture_high,.-unrolled_app_capture_high
+#ifdef LI2_CURRENT_TF_APP
+/* PAUSE is native-policy eligible but outside the generic TF inventory.
+   Existing fallback closes TF before genuine native entry; no state changes. */
+.globl unrolled_current_return_high
+.type unrolled_current_return_high,@function
+unrolled_current_return_high:
+    .byte 0xf3,0x90,0xff,0x25,0,0,0,0
+    .quad unrolled_app_head
+.size unrolled_current_return_high,8
+#endif
 .org 4096,0xcc
 unrolled_app_helper_end:
 .section .text.ua_hash,"ax",@progbits
@@ -150,7 +160,11 @@ ua_masks:
 .quad 0x0123456789abcdef,0xfedcba9876543210,0xaaaaaaaa55555555,0x0f0ff0f0a5a55a5a
 .quad 0x1111222233334444,0x8877665544332211,0xffff00000000ffff,0x5a5a5a5aa5a5a5a5
 .p2align 3
+#ifdef LI2_CURRENT_TF_APP
+unrolled_app_head_pointer:.quad unrolled_current_head
+#else
 unrolled_app_head_pointer:.quad unrolled_app_head
+#endif
 .section .li2_ua_state,"aw",@nobits
 .p2align 3
 .globl ua_host,ua_host_fcw
@@ -160,4 +174,16 @@ ua_host:.zero 64
 .type ua_host_fcw,@object
 ua_host_fcw:.zero 2
 .size ua_host_fcw,2
+#ifdef LI2_CURRENT_TF_APP
+.section .text.ua_current,"ax",@progbits
+.balign 4096
+.globl unrolled_current_head,unrolled_current_end
+.type unrolled_current_head,@function
+unrolled_current_head:
+    .byte 0x66,0x90,0x66,0x90,0x66,0x90,0xff,0x25,0,0,0,0
+    .quad unrolled_current_return_high
+.size unrolled_current_head,12
+.org 4096,0xcc
+unrolled_current_end:
+#endif
 .section .note.GNU-stack,"",@progbits

@@ -22,6 +22,9 @@ def main():
     p.add_argument('--namespace',type=Path)
     p.add_argument('--carrier',type=Path)
     p.add_argument('--record-fd',type=int)
+    p.add_argument('--current-custody',action='store_true')
+    p.add_argument('--current-control',type=int,choices=(0,1),default=0)
+    p.add_argument('--physical-fallback',action='store_true')
     a=p.parse_args()
     sys.path[:0]=[str(a.root/'evaluation/inprocess'),str(a.root/'tools/page-entry')]
     from page_selected_process import Action
@@ -29,6 +32,10 @@ def main():
     globals().update(FOOT=FOOT,META=META,PH=PH,MAX_FILE=MAX_FILE)
     if a.role=='native' and a.control or a.control and a.mode:
         raise ValueError('controls require gated mode0')
+    if (a.current_control or a.physical_fallback) and (not a.current_custody or a.role!='gated' or a.mode or a.control):
+        raise ValueError('additional current-custody cases require explicit gated mode0 without old owner injection')
+    if a.current_control and a.physical_fallback:
+        raise ValueError('one current-custody negative or fallback stimulus')
     original=a.original.resolve(strict=True)
     roots=[root.resolve(strict=True) for root in a.library_root]
     if not 1<=len(roots)<=8 or len(set(roots))!=len(roots) or any(not root.is_dir() or ':'in str(root) for root in roots):
@@ -62,15 +69,18 @@ def main():
         observations.append(dict(signal=number,before=int(before.handler or 0),after=int(after.handler or 0)))
     if libc.syscall(14,2,None,ctypes.byref(actual),8) or actual.value:raise OSError('actual empty signal mask')
     argv=[str(original),str(a.mode),a.role]
+    if a.physical_fallback:argv.append('physical-fallback')
     prep=dict(schema_version=1,status='prepared_not_executed',role=a.role,pid=os.getpid(),
               cpu=sorted(os.sched_getaffinity(0)),previous_mask=previous.value,reset_mask=actual.value,
               dispositions=observations,observer=observer,argv=argv,default_rseq=True,mode=a.mode,control=a.control)
+    if a.current_custody:
+        prep.update(current_custody=True,current_control=a.current_control,physical_fallback=a.physical_fallback)
     env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1')
     if a.role=='gated':
         prep.update(launch_mask=actual.value,late_sonames=[],environment_source=str(a.namespace.absolute()/'launch.json'))
         with a.preparation.open('x') as f:json.dump(prep,f,sort_keys=True)
         execute_unrolled_loader(a.carrier,original,roots,a.namespace,argv,
-                                capture_control=a.control)
+                                capture_control=a.control,current_control=a.current_control if a.current_custody else None)
         raise RuntimeError('exec returned')
     # Exact original native-reference launch policy. Gated starts reset/unblocked;
     # its runtime establishes the same selected application mask itself.
@@ -85,7 +95,9 @@ def main():
     raise RuntimeError('exec returned')
 
 
-def execute_unrolled_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=(), capture_control):
+def execute_unrolled_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=(), capture_control, current_control=None):
+    if current_control is not None and (type(current_control)is not int or current_control not in(0,1)):
+        raise ValueError('exact separately declared current-custody control')
     if type(capture_control)is not int or not 0<=capture_control<=7 or fork_fds is not None or child_failure or disable_rseq or provider_policy is not None or late_sonames:
         raise ValueError('exact unrolled qualification configuration')
     # This separate command intentionally supplies a private namespace and a
@@ -115,6 +127,7 @@ def execute_unrolled_loader(carrier, original, roots, directory, argv, fork_fds=
                "LD_LIBRARY_PATH": str(directory), "LD_BIND_NOW": "1",
                "LI2_DEPENDENCY_FDS": ",".join(str(item) for item in fds)}
         env['LI2_UNROLLED_CAPTURE_CONTROL']=str(capture_control)
+        if current_control is not None:env['LI2_CURRENT_TF_CONTROL']=str(current_control)
         if provider_policy is not None:
             env["LI2_SELECTED_PROVIDER"] = provider_policy
         if disable_rseq:

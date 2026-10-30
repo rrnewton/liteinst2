@@ -25,7 +25,14 @@
 __attribute__((section(".li2_ua_state"))) struct ua_live ua_input,ua_before,ua_after;
 __attribute__((section(".li2_ua_state"))) unsigned char ua_before_live[UA_LIVE],ua_after_live[UA_LIVE];
 static struct ua_prefix prefix;
+#ifdef LI2_CURRENT_TF_APP
+#include "../current_custody_app/types.h"
+static struct uct_output uct_output_record;
+#define suffix uct_output_record.original
+#define uct_record uct_output_record.current
+#else
 static struct ua_suffix suffix;
+#endif
 static unsigned mode,native,handling,started,ended,frame_count,fault_seen;
 static uint64_t steps,copies,first_error;
 static uintptr_t alt_area;
@@ -72,10 +79,16 @@ static void retain(int sig,const siginfo_t *si,const ucontext_t *uc,unsigned kin
  f->h[8]=(uintptr_t)p;f->h[9]=n;f->h[10]=alt_area+UA_PAGE;f->h[11]=UA_ALT_BYTES;
  copy(f->si,si,sizeof *si);copy(f->uc,uc,sizeof *uc);copy(f->fp,p,n);++frame_count;
 }
+#ifdef LI2_CURRENT_TF_APP
+#include "../current_custody_app/native.inc"
+#endif
 static void handler(int sig,siginfo_t *si,void *ptr){
  need(native&&!handling&&si&&ptr,30);handling=1;ucontext_t *uc=ptr;greg_t *g=uc->uc_mcontext.gregs;
  uintptr_t pc=(uintptr_t)g[REG_RIP],head=(uintptr_t)unrolled_app_head,stop=(uintptr_t)unrolled_app_stop;
  need(!ended&&!si->si_errno&&si->si_signo==sig,31);
+#ifdef LI2_CURRENT_TF_APP
+ if(uct_native_handler(sig,si,uc)){handling=0;return;}
+#endif
  if(!started){
   need(sig==SIGSEGV&&si->si_code==SEGV_ACCERR&&(uintptr_t)si->si_addr==head&&pc==head&&g[REG_ERR]==21&&g[REG_TRAPNO]==14&&(uintptr_t)g[REG_CR2]==head,32);
   need((uint64_t)g[REG_EFL]==(ua_input.flags|UA_RF),33);
@@ -152,7 +165,11 @@ static void cleanup(void){
  suffix.h[5]=1;
 }
 int main(int argc,char **argv){
+#ifdef LI2_CURRENT_TF_APP
+ if((argc!=3&&argc!=4)||strlen(argv[1])!=1||argv[1][0]<'0'||argv[1][0]>'8'||(strcmp(argv[2],"native")&&strcmp(argv[2],"gated")))return 2;
+#else
  if(argc!=3||strlen(argv[1])!=1||argv[1][0]<'0'||argv[1][0]>'8'||(strcmp(argv[2],"native")&&strcmp(argv[2],"gated")))return 2;
+#endif
  mode=(unsigned)(argv[1][0]-'0');native=!strcmp(argv[2],"native");
  need(((uintptr_t)unrolled_app_head&4095)==0&&unrolled_app_stop-unrolled_app_head==24&&unrolled_app_source_end-unrolled_app_head==UA_PAGE&&same(unrolled_app_head,body,sizeof body),80);
  copy(source_bytes,unrolled_app_head,UA_PAGE);
@@ -176,7 +193,14 @@ int main(int argc,char **argv){
  ua_stack_pattern(prefix.stack,UA_STACK);
  copy((void *)UA_DATA_BASE,prefix.data,UA_DATA);copy((void *)(ua_input.g[4]-128),prefix.stack,UA_STACK);
  copy(&prefix.seed,&ua_input,sizeof prefix.seed);copy(prefix.source,source_bytes,UA_PAGE);
+
+#ifdef LI2_CURRENT_TF_APP
+ uct_initialize((uintptr_t)&argc,argc,argv);
+#endif
  if(native)native_setup();
+#ifdef LI2_CURRENT_TF_APP
+ if(native)uct_native_setup();
+#endif
  need(output(&prefix,sizeof prefix),89);unrolled_app_enter();
  need(!handling&&same(&ua_before.g,&ua_input.g,sizeof ua_input.g)&&ua_before.flags==ua_input.flags&&same(ua_before.selectors,ua_after.selectors,sizeof ua_before.selectors),90);
  if(native)need(started&&ended&&frame_count==(mode==4?3U:2U)&&fault_seen==(mode>=7)&&copies==(mode>=7?fault_copy[mode]:nul_at[mode])&&steps==copies*8+(mode>=7?5:0),91);
@@ -188,5 +212,11 @@ int main(int argc,char **argv){
  need(same(prefix.source,suffix.source,UA_PAGE)&&same(prefix.stack,suffix.stack,UA_STACK)&&same(prefix.data,suffix.data,UA_DATA),94);
  uint64_t after_machine[8];copy(after_machine,machine_zero,sizeof after_machine);machine(after_machine);need(same(prefix.machine,after_machine,sizeof after_machine),95);
  unsigned after_cpu=0,after_node=0;need(!RAW(SYS_getcpu,&after_cpu,&after_node,0,0,0,0)&&after_cpu==cpu&&after_node==node,96);
- cleanup();need(!first_error&&output(&suffix,sizeof suffix),97);return mode>=7?125:0;
+ cleanup();
+#ifdef LI2_CURRENT_TF_APP
+ uct_finish();need(!first_error&&output(&uct_output_record,sizeof uct_output_record),97);
+#else
+ need(!first_error&&output(&suffix,sizeof suffix),97);
+#endif
+ return mode>=7?125:0;
 }

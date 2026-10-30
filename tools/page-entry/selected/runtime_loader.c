@@ -2,6 +2,12 @@
    The real ld.so runs against an explicit namespace of inherited sealed DSOs. */
 #include "bridge.h"
 #include "lifecycle_loader.h"
+#ifdef LI2_CURRENT_TF_CAPTURE
+#include "current_tf_observe.h"
+#endif
+#ifdef LI2_MAPS_CURRENT_TF
+#include "fetch_current_custody.h"
+#endif
 #ifdef LI2_INITIAL_CODE_PROTECTION
 #include "initial_code_protection.h"
 #endif
@@ -183,6 +189,13 @@ static void selected_unrolled_preentry(int,siginfo_t *,ucontext_t *);
 static _Noreturn void selected_unrolled_abort(unsigned,long);
 static _Noreturn void selected_unrolled_unexpected(int,siginfo_t *,ucontext_t *);
 static void selected_unrolled_report(unsigned,unsigned,long);
+#ifdef LI2_CURRENT_TF_CAPTURE
+static void cto_initialize(void);
+static void cto_begin(int,const siginfo_t *,const ucontext_t *);
+static void cto_end(int,const siginfo_t *,const ucontext_t *);
+static void cto_terminal_snapshot(unsigned,unsigned,long);
+static void cto_write(unsigned,unsigned);
+#endif
 #ifdef LI2_UNROLLED_HASH_CAPTURE
 static void uho_fd_guard(long,const long[6]);
 #endif
@@ -264,6 +277,19 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_MAPS_MAINTAINED
     struct li2_maps_view_stats view;li2_maps_view_snapshot(&view);
     struct writer view_writer={.used=0};
+#ifdef LI2_MAPS_CURRENT_TF
+    struct li2_current_custody_stats current;li2_current_custody_snapshot(&current);
+    text(&view_writer,"LI2_MAPS_CURRENT_TF {\"version\":1");
+    field(&view_writer,",\"status\":",status);field(&view_writer,",\"failure_code\":",code);
+#define CURRENT_FIELD(name) field(&view_writer,",\"" #name "\":",current.name)
+    CURRENT_FIELD(attempts);CURRENT_FIELD(current_stages);CURRENT_FIELD(current_seeds);
+    CURRENT_FIELD(physical_fallbacks);CURRENT_FIELD(retained_stages);CURRENT_FIELD(retained_checks);
+    CURRENT_FIELD(commits);CURRENT_FIELD(cancels);CURRENT_FIELD(first_error);
+#undef CURRENT_FIELD
+    field(&view_writer,",\"first_detail_abs\":",current.first_detail<0?0ULL-(uint64_t)current.first_detail:(uint64_t)current.first_detail);
+    field(&view_writer,",\"first_detail_negative\":",current.first_detail<0);
+    text(&view_writer,"}\n");
+#endif
     text(&view_writer,"LI2_MAPS_VIEW {\"version\":1");
 #define VIEW_FIELD(name) text(&view_writer,",\"" #name "\":");number(&view_writer,view.name)
     VIEW_FIELD(queries);VIEW_FIELD(hits);VIEW_FIELD(refreshes);VIEW_FIELD(updates);
@@ -736,6 +762,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_UNROLLED_HASH
 #include "selected_unrolled_hash.inc"
 #endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+#include "current_tf_observe.inc"
+#endif
 #ifdef LI2_SCALAR_REGION
 #include "selected_scalar_region.inc"
 #endif
@@ -853,6 +882,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_ENTRY_TIMING
     li2_entry_time_ingress(sig,si,ptr);
 #endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_begin(sig,si,ptr);
+#endif
 #ifdef LI2_SCALAR_REGION
     if(selected_pending_route==SELECTED_SCALAR_REGION) {
         selected_scalar_region_exit(sig,si,ptr);
@@ -901,6 +933,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_TF_HANDOFF
     li2_tf_chain_handler_end(&selected_chain);
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_end(sig,si,ptr);
 #endif
 #ifdef LI2_REPEAT_RX_LEASE
     selected_repeat_lease_end(ptr);
@@ -1018,6 +1053,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_UNROLLED_HASH
     selected_unrolled_initialize();
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+    cto_initialize();
 #endif
 #ifdef LI2_SCALAR_REGION
     selected_scalar_region_initialize();

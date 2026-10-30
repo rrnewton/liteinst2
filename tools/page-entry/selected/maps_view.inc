@@ -19,6 +19,12 @@ static uintptr_t mv_stack_anchor,mv_stack_first,mv_stack_end;
 static unsigned mv_stack_pending,mv_stack_retired,mv_depth,mv_saved;
 static long mv_call[7];
 static unsigned char mv_residency;
+#ifdef LI2_MAPS_CURRENT_TF
+#include "maps_current_ticket.h"
+static struct li2_fetch_map_progress mct_physical_receipt;
+static uint64_t mct_physical_id;
+static void mct_raw_boundary(void);
+#endif
 #ifdef LI2_RUN_TIMING
 static uintptr_t maps_clock_observer;
 #endif
@@ -254,6 +260,9 @@ static int mv_protect(uintptr_t first,size_t bytes,unsigned prot) {
     return mv_inc(&mv.updates);
 }
 void li2_maps_before_raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_MAPS_CURRENT_TF
+    mct_raw_boundary();
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
     if(!maps_nonmutating(n,a,b,c,d,e,f))li2_repeat_custody_invalidate(LI2_REP_CUSTODY_RAW);
 #endif
@@ -339,6 +348,12 @@ static int mv_fresh(struct check_error *e,struct li2_fetch_map_progress *p) {
         else {mv_stack_first=s->first;mv_stack_end=s->end;}
         row_count=mv_normalize(rows,row_count);p->rows=row_count;
     }
+#ifdef LI2_MAPS_CURRENT_TF
+    /* Preserve the actual physical baseline before mprotect can project rows
+       or change mv_receipt's epoch/count. This is never a new query receipt. */
+    MV_STORE(&mct_physical_id,0);mct_physical_receipt=*p;
+    MV_STORE(&mct_physical_id,p->observation.acquisition_id);
+#endif
     /* A complete physical snapshot remains a valid observation after cache
        retirement. Retirement disables reuse, not the old fresh-owner guards. */
     mv_receipt=*p;MV_STORE(&maps_stats.valid,MV_LOAD(&mv.enabled));
@@ -388,5 +403,8 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
     if(result){li2_maps_phase_fail();return result;}
     MV_STORE(&mv_stack_pending,0);return 0;
 }
+#ifdef LI2_MAPS_CURRENT_TF
+#include "maps_current_ticket.inc"
+#endif
 #undef MV_LOAD
 #undef MV_STORE

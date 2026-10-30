@@ -935,6 +935,10 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #undef li2_lifecycle_fetch_prepare
 #undef li2_lifecycle_fetch_interlock
 #endif
+#ifdef LI2_MAPS_CURRENT_TF
+#include "fetch_current_view.inc"
+#include "fetch_current_custody.inc"
+#endif
 
 #ifdef LI2_REPEAT_RX_LEASE
 #include "repeat_custody.inc"
@@ -975,4 +979,7 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #endif
 #ifdef LI2_SCALAR_REGION_CAPTURE
 #include "scalar_region_observe_memory.inc"
+#endif
+#ifdef LI2_CURRENT_TF_CAPTURE
+#include "current_tf_observe_lifecycle.inc"
 #endif
