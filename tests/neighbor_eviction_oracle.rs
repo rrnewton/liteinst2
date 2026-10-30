@@ -24,6 +24,19 @@ use oracle::{
     HookEvent, HookEventLog, HookExpectation, Mapping, NativeOracle, NativeTrace, SourceRelay,
     TraceMap,
 };
+use std::sync::{Mutex, MutexGuard};
+
+// Short and legacy neighbor fixtures share source-relative exact image windows.
+// Hold one crate-local guard before source allocation through image retirement
+// and teardown. Calibrations with jointly reserved images and other workspace
+// test crates remain parallel.
+static EXACT_ADDRESS_WINDOW: Mutex<()> = Mutex::new(());
+
+fn exact_address_window() -> MutexGuard<'static, ()> {
+    EXACT_ADDRESS_WINDOW
+        .lock()
+        .expect("neighbor exact-address window poisoned")
+}
 
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];
 const PROBE_ID: u64 = 0x703;
@@ -196,6 +209,7 @@ fn native_neighbor_endpoint_forward_l4_m15_all_123_heads() {
 }
 
 fn run_endpoint(layout_index: usize) {
+    let _address_window = exact_address_window();
     use std::sync::atomic::Ordering::SeqCst;
     let bit = 1 << layout_index;
     assert_eq!(
@@ -1295,6 +1309,7 @@ fn native_neighbor_moffs_fault_m15_all_33_heads() {
 }
 
 fn run_family(kind: Family, victim_len: usize, case_index: usize) {
+    let _address_window = exact_address_window();
     let fault_page = Mapping::new(4096);
     let puzzle = FamilyPuzzle::new(kind, victim_len, case_index, fault_page.address());
     let mut oracle = NativeOracle::new(&puzzle.code);

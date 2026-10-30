@@ -4,19 +4,6 @@ use super::*;
 use liteinst2::neighbor::plan_neighbor_short;
 use oracle::ShortSourceRelay;
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
-use std::sync::{Mutex, MutexGuard};
-
-// The suffix-derived exact image pages can overlap between these fixtures even
-// when their anonymous source pages differ. Hold this cohort-local lock from
-// before source allocation until all children and generated mappings are gone.
-// Other tests in this crate and other workspace crates remain parallel.
-static EXACT_ADDRESS_WINDOW: Mutex<()> = Mutex::new(());
-
-fn exact_address_window() -> MutexGuard<'static, ()> {
-    EXACT_ADDRESS_WINDOW
-        .lock()
-        .expect("short-neighbor exact-address window poisoned")
-}
 
 const ENDPOINTS: [(usize, usize, bool, usize); 8] = [
     (2, 6, true, 128),
