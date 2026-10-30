@@ -7,6 +7,10 @@
 extern crate self as liteinst2;
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+#[path = "../tests/support/isolated_native_test.rs"]
+mod isolated_native_test;
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod artifact_emission_tests;
 mod artifact_fixups;
 mod artifact_fragments;

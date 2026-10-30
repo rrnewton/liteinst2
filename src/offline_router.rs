@@ -58,8 +58,13 @@ static ATTEMPTED: AtomicBool = AtomicBool::new(false);
 /// Loader-injection environment and secure-exec/file capabilities are excluded
 /// BEFORE exec; constructor checks cannot undo execution of an injected loader.
 /// The whole main, generated images, this DSO/router and all dependencies remain
-/// mapped, unmodified and owned until process exit. No dlclose, fork, new threads,
-/// SIGILL masking/replacement or address reuse is allowed. This is install-once,
+/// mapped, unmodified and owned until process exit. From preflight through exit,
+/// no actor may rename, unlink, replace or redirect the main/DSO/dependency
+/// dentries, their ancestor directories or the mount namespace used to name them.
+/// Exact retained-fd and map-files paths plus before/after stat/content checks
+/// detect observed violations; they do not seal mutable pathnames or establish
+/// that lifetime premise. No dlclose, fork, new threads, SIGILL masking/replacement
+/// or address reuse is allowed. This is install-once,
 /// not an inferred lifetime or general live-publication capability.
 /// Kernel/app stack headroom and bounded application depth remain within the
 /// checked reserve for production SA_SIGINFO delivery and generated hook frames.
