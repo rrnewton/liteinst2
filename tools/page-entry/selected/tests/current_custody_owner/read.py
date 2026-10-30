@@ -34,12 +34,13 @@ def elf_image(data):
         n,info,other,section,address,size=struct.unpack('<IBBHQQ',take(at,24))
         need(n<len(names) and b'\0'in names[n:],'complete symbol name')
         name=names[n:names.index(b'\0',n)].decode()
-        if name in wire.NAMES or name in wire.REGISTERED:
+        if name in wire.NAMES or name in wire.REGISTERED or name=='mv_custody_io':
             need(name not in symbols and info==1 and other==0 and 0<section<len(sections) and
                  0<size<16<<20 and (name not in wire.NAMES or size<=1<<20),'unique local storage definition')
             s=sections[section];need(s[1]in(1,8) and s[2]==3 and s[3]<=address and address+size<=s[3]+s[5]<=U64,'complete nonexecuting storage section')
+            if name=='mv_custody_io':need(size==4 and address%4==0,'exact local four-byte aligned physical observer flag')
             symbols[name]=(address,size)
-    need(set(symbols)==set(wire.NAMES)|set(wire.REGISTERED),'all nine storage and ten registered actual object symbols')
+    need(set(symbols)==set(wire.NAMES)|set(wire.REGISTERED)|{'mv_custody_io'},'all nine storage, ten registered objects and separate physical observer flag')
     return h,ph,symbols
 
 
@@ -112,6 +113,18 @@ class Check(old.Check):
             rounded=(first&-PAGE,(end+PAGE-1)&-PAGE)
             exact=[j for j,x in enumerate(ranges[:count])if self.v(x,'li2_fork_range','first end')==rounded]
             need(exact==[indices[i]],'one exact whole rounded strict bridge row, not mere overlap')
+        # Additional private flag, not a tenth captured storage object or an
+        # eleventh exact-byte registration. Its actual ELF extent is protected
+        # by the same observed whole bridge load and strict rounded table row.
+        at,size=symbols['mv_custody_io'];a=self.bias+at
+        need(size==4 and a%4==0 and canonical(a,size),'whole actual physical observer flag')
+        owners=[j for j,p in enumerate(ph)if p[0]==1 and p[6] and self.bias+p[3]<a+size and a<self.bias+p[3]+p[6]]
+        need(len(owners)==1 and owners[0]in loads,'physical observer uses an actually observed current-state bridge load')
+        p=ph[owners[0]];first,end=self.bias+p[3],self.bias+p[3]+p[6]
+        need(p[1]==6 and p[5]<=p[6] and canonical(first,p[6]) and first<=a<a+size<=end<=U64-PAGE+1,
+             'complete physical observer in one actual RW/NX load')
+        need(actual_ranges.count((first&-PAGE,(end+PAGE-1)&-PAGE))==1,
+             'physical observer has exact whole rounded strict bridge protection')
         return count,ranges,image
 
     def view(self,b,retired):

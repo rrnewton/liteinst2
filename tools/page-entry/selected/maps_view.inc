@@ -44,12 +44,19 @@ static void mv_invalidate(void) {
     (void)mv_inc(&maps_stats.mutation_epoch);
     (void)mv_inc(&mv.invalidations);
 }
-#ifdef LI2_MAPS_DIFFERENTIAL
+#if defined(LI2_MAPS_DIFFERENTIAL) || defined(LI2_MAPS_CURRENT_TF)
 /* A differential hit observes private maps scratch only. Authenticate the
    complete open/read/close transaction so the extra observer does not discard
    a retained source-custody proof. Ordinary fresh acquisitions still use their
    old gateway effects, as do all unrelated RAW calls. */
 static unsigned mv_compare_io,mv_observer_active,mv_observer_phase;
+#ifdef LI2_MAPS_CURRENT_TF
+/* The only additional observer scope is the old physical cold commit while
+   the maintained stack view is retired. The predicate is defined after the
+   unchanged physical custody implementation and performs no RAW or mutation. */
+static unsigned mv_custody_io;
+static int cc_physical_refresh(void);
+#endif
 static long mv_observer_fd,mv_observer_call[7];
 static size_t mv_observer_offset;
 static int mv_observer_matches(long n,long a,long b,long c,long d,long e,long f) {
@@ -59,7 +66,11 @@ static int mv_observer_matches(long n,long a,long b,long c,long d,long e,long f)
     return 1;
 }
 static long mv_observer_raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_MAPS_CURRENT_TF
+    if(!MV_LOAD(&mv_compare_io) && !MV_LOAD(&mv_custody_io))return RAW(n,a,b,c,d,e,f);
+#else
     if(!MV_LOAD(&mv_compare_io))return RAW(n,a,b,c,d,e,f);
+#endif
     unsigned phase=MV_LOAD(&mv_observer_phase);int allowed=0;
     if(n==SYS_openat)allowed=!phase && a==AT_FDCWD && (uintptr_t)b==(uintptr_t)mv_maps_path &&
         c==(O_RDONLY|O_CLOEXEC) && !d && !e && !f;
@@ -73,7 +84,16 @@ static long mv_observer_raw(long n,long a,long b,long c,long d,long e,long f) {
     }
     const long call[7]={n,a,b,c,d,e,f};
     for(unsigned i=0;i<7;i++)mv_observer_call[i]=call[i];
+#ifdef LI2_MAPS_CURRENT_TF
+    /* Failed reads can revoke the owner before the reader closes its actual
+       observed descriptor. Permit only that exact cleanup close without an
+       exemption; every other stale call refuses, and no authority is restored. */
+    unsigned preserve=!MV_LOAD(&mv_custody_io) || cc_physical_refresh();
+    if(!preserve && n!=SYS_close){mv_poison();return -EINVAL;}
+    MV_STORE(&mv_observer_active,preserve);
+#else
     MV_STORE(&mv_observer_active,1);
+#endif
     long result=RAW(n,a,b,c,d,e,f);
     MV_STORE(&mv_observer_active,0);
     if(n==SYS_openat && result>=0) {
@@ -160,7 +180,7 @@ int li2_maps_clock_observer_register(const void *buffer,size_t bytes) {
    stack observer below. Other nonmapping syscalls can still write
    application/source/custody bytes. */
 static __attribute__((unused)) int maps_nonmutating(long n,long a,long b,long c,long d,long e,long f) {
-#ifdef LI2_MAPS_DIFFERENTIAL
+#if defined(LI2_MAPS_DIFFERENTIAL) || defined(LI2_MAPS_CURRENT_TF)
     if(mv_observer_matches(n,a,b,c,d,e,f))return 1;
 #endif
     /* Exact private write destination and current stack-boundary query. This
@@ -399,7 +419,30 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
         return 0;
     }
     if(!mv_inc(&mv.refreshes))return check_error(e,LI2_FETCH_STATE,0);
+#ifdef LI2_MAPS_CURRENT_TF
+    int result;
+    if(cc_physical_refresh()) {
+        /* This is a new physical acquisition, never a maintained hit or a
+           differential comparison. Only its exact private I/O tuple preserves
+           the already-staged physical source owner. Every original validator
+           still observes the new table, backing and complete source bytes. */
+        if(MV_LOAD(&mv_custody_io) || MV_LOAD(&mv_compare_io) ||
+           MV_LOAD(&mv_observer_active) || MV_LOAD(&mv_depth)) {
+            mv_poison();return check_error(e,LI2_FETCH_STATE,0);
+        }
+        mv_observer_fd=-1;mv_observer_offset=0;MV_STORE(&mv_observer_phase,0);
+        MV_STORE(&mv_custody_io,1);
+        result=mv_fresh(e,p);
+        MV_STORE(&mv_custody_io,0);
+        if(!result && (MV_LOAD(&mv_observer_active) || MV_LOAD(&mv_observer_phase)!=3 ||
+                      !cc_physical_refresh())) {
+            mv_poison();result=check_error(e,LI2_FETCH_STALE,0);
+        }
+    } else
+    result=mv_fresh(e,p);
+#else
     int result=mv_fresh(e,p);
+#endif
     if(result){li2_maps_phase_fail();return result;}
     MV_STORE(&mv_stack_pending,0);return 0;
 }

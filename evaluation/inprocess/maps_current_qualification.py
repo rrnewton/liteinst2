@@ -10,10 +10,13 @@ from maps_view import (ENV,fact,need,save,source,hardware,Build,BUILD_PROFILES,B
     SELECTED,PROGRAM_ENV,invoke,program_invoke,finalize,before_default,digest)
 import maps_current_build as bridge_build
 import maps_current_component as component
+import maps_current_fallback as fallback
 NAMES=()  # The unchanged command owner always selects direct invoke here.
 REQUIRED=('evaluation/inprocess/maps_current_qualification.py',
     'evaluation/inprocess/maps_current_build.py','evaluation/inprocess/maps_current_component.py',
     'evaluation/inprocess/maps_current_extents.py','tools/page-entry/selected/tests/current_custody/extents.py',
+    'evaluation/inprocess/maps_current_fallback.py',
+    *('tools/page-entry/selected/tests/maps_current_fallback/'+n for n in ('oracle.c','build.sh','check.py')),
     *('tools/page-entry/selected/tests/maps_current_custody/'+n for n in ('oracle.c','build.sh','check.py')),
     *('tools/page-entry/selected/'+n for n in bridge_build.CURRENT_HEADERS))
 
@@ -39,7 +42,7 @@ def publish(path,r,private):
     hardware=dict(r['hardware']);flags=hardware.pop('isa_flags',[])
     hardware.update(isa_flags_count=len(flags),isa_flags_sha256=digest(flags))
     pub={k:r.get(k)for k in('schema','profile','scope','status','expected_revision','started_utc','source','source_after','source_unchanged','cpu','bounds','reproduce','cleanup_complete')}
-    pub.update(totals=totals,cases=cases,hardware=hardware,command_count=len(r['commands']),
+    pub.update(totals=totals,cases=cases,fallback_component=fallback.project(r),hardware=hardware,command_count=len(r['commands']),
         commands_sha256=digest(r['commands']),private_receipt=fact(private/'receipt.json'),
         inputs_sha256=digest(r['inputs_before']),artifacts_sha256=digest(r['artifacts_before']),
         final_error_count=len(r['final_errors']),failure_type=(r['error']or'').split(':',1)[0]or None,
@@ -75,6 +78,7 @@ def main():
         status='failed',expected_revision=a.expect_revision,started_utc=stamp,source=None,source_unchanged=False,
         cpu=cpu,hardware=hardware(cpu),bounds=bounds,commands=commands,error=None,final_errors=[],
         component_cases=[dict(profile=p,mode=m,expected_exit=0 if m<3 else 125,status='not_run')for p,m in component.MODES],
+        fallback_cases=[dict(profile=p,mode=m,expected_exit=0 if m==0 else 125,status='not_run')for p,m in fallback.MODES],
         reproduce=['python3','evaluation/inprocess/maps_current_qualification.py','--expect-revision',a.expect_revision])
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
@@ -136,9 +140,19 @@ def main():
         products=builder.prepare();r['archive']=fact(products['archive'])
         need(builder.extra_decoder_sources==()and builder.decoder_features==()and r['build']['decoder_features']==[],
              'original eight-source decoder and no scalar feature')
-        component.fixture(builder,products,private,pin,binary,aliases,run,r)
+        try:
+            component.fixture(builder,products,private,pin,binary,aliases,run,r)
+        except Exception as error:
+            if r['error']is None:r['error']=type(error).__name__+': '+str(error)
+            last=r['commands'][-1]if r['commands']else{}
+            need(all(c.get('launched')is True for c in r['component_cases']) and
+                 last.get('name')=='current-verified-13' and last.get('reaped')is True and
+                 last.get('cleanup_errors')==[] and isinstance(last.get('descriptors'),list) and
+                 all(d.get('closed')is True for d in last['descriptors']),
+                 'companion continuation only after all28 attempted and exact final subject completely reaped')
+        fallback.fixture(builder,products,private,pin,binary,aliases,run,r)
         bridge_build.bridges(builder,products,private,pin,binary,aliases,run,r)
-        need(not r['final_errors'],'no retained command errors')
+        need(not r['error']and not r['final_errors'],'all original and additional subjects qualified; no retained command errors')
         r['status']='passed'
     except BaseException as error:
         if r['error']is None:r['error']=type(error).__name__+': '+str(error)

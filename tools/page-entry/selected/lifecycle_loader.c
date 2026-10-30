@@ -154,7 +154,7 @@ static void spaces(size_t *at,size_t end) {
 #define read_maps_fresh read_maps_event_body
 #endif
 #endif
-#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+#if defined(LI2_MAPS_MAINTAINED) && (defined(LI2_MAPS_DIFFERENTIAL) || defined(LI2_MAPS_CURRENT_TF))
 static const char mv_maps_path[]="/proc/self/maps";
 static long mv_observer_raw(long,long,long,long,long,long,long);
 #define MAPS_READ_RAW(n,a,b,c,d,e,f) mv_observer_raw((n),(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
@@ -163,7 +163,7 @@ static long mv_observer_raw(long,long,long,long,long,long,long);
 #endif
 static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress *p) {
     *p=(struct li2_fetch_map_progress){.fd=-1};
-#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+#if defined(LI2_MAPS_MAINTAINED) && (defined(LI2_MAPS_DIFFERENTIAL) || defined(LI2_MAPS_CURRENT_TF))
     const char *path=mv_maps_path;
 #else
     const char path[]="/proc/self/maps";

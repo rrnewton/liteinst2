@@ -10,6 +10,7 @@ from page_selected import ENV,fact,need
 from checks import source
 from current_custody_build import build_bridge
 import maps_current_extents as extents
+import maps_current_fallback as fallback
 import current_custody_reports as reports
 # This module is loaded only for the explicit current profile, before source closure.
 import scalar_region_owner as cases
@@ -31,6 +32,8 @@ REQUIRED={
     'evaluation/inprocess/maps_view.py',
     'evaluation/inprocess/maps_current_extents.py',
     'evaluation/inprocess/maps_current_qualification.py',
+    'evaluation/inprocess/maps_current_fallback.py',
+    *('tools/page-entry/selected/tests/maps_current_fallback/'+x for x in ('oracle.c','build.sh','check.py')),
     'evaluation/inprocess/scalar_region_owner.py',
     'evaluation/inprocess/scalar_case_strings.py',
     'tools/page-entry/selected/build-current-custody.sh',
@@ -149,9 +152,10 @@ def prerequisites(a,r,pin,binary):
         bridge=v['release_build']['bridge'],storage_sha256=digest(v['storage_proof'])if 'storage_proof'in v else None,
         symbols=v.get('storage_proof',{}).get('symbols',0))for k,v in bridges.items()},
         'all28 public outcomes and actual compiled-bridge identities match the private receipt')
+    fallback_totals=fallback.prerequisite(value,actual)
     r['current_prerequisites']=dict(component9=old,component28=dict(file=Path(a.current_component_receipt).name,
         **fact(pin(a.current_component_receipt)),private_receipt=value['private_receipt'],profile=actual['profile'],
-        status='passed',totals=totals))
+        status='passed',totals=totals,fallback_totals=fallback_totals))
 
 
 def observed_layout(builder,bridge,private,pin,binary,run,r,old):

@@ -20,6 +20,36 @@ static struct {
     int retained_fd;
     struct li2_current_custody_provenance proof;
 } cc;
+/* A physical cold commit must still read maps after maintained reuse was
+   retired. Authenticate that exact protected owner before allowing the maps
+   reader's private I/O transaction to preserve its epoch. No maps authority,
+   source validation, syscall or state transition is supplied by this predicate. */
+static int cc_physical_refresh(void) {
+    const struct li2_fetch_rx_view *v=&rx_view;
+    const struct li2_page_custody_receipt *r=&v->custody;
+    const struct li2_fetch_ref ref={&fetch,fetch.progress.sequence};
+    return mv_stack_retired && active && !tx.guard && CUSTODY_LOAD(&mv.enabled)==1 &&
+        !CUSTODY_LOAD(&mv.poisoned) && !CUSTODY_LOAD(&maps_stats.poisoned) &&
+        CUSTODY_LOAD(&maps_stats.active)==1 && !CUSTODY_LOAD(&cc.bound) &&
+        CUSTODY_LOAD(&custody_stats.phase)==LI2_CUSTODY_STAGED &&
+        CUSTODY_LOAD(&custody_stats.epoch)==custody.ticket &&
+        !custody_owner_live(&custody.owner,&ref,1) && custody_owner_same(&custody.owner) &&
+        custody_equal(&custody.owner.owner->request,&custody.previous,sizeof custody.previous) &&
+        !rx_binding(&ref,v) && ref.sequence==custody.sequence && v->serial==custody.serial &&
+        r->kind==LI2_CUSTODY_FRESH && r->provenance==LI2_CUSTODY_MANAGED_SEALED &&
+        r->epoch==custody.ticket && r->origin_sequence==custody.origin_sequence &&
+        r->chain==(uintptr_t)custody.owner.chain && r->owner==(uintptr_t)custody.owner.owner &&
+        r->session==(uintptr_t)custody.session_pointer && r->slot==custody.owner.slot &&
+        r->owner_generation==custody.owner.generation && r->event==custody.owner.event &&
+        custody_equal(&r->origin,&custody.origin,sizeof r->origin) &&
+        custody_equal(&v->maps,&custody.origin,sizeof v->maps) &&
+        custody.origin.opened==1 && custody.origin.close_started==1 && custody.origin.closed==1 &&
+        custody.origin.fd>=0 && !custody.origin.last_read && !custody.origin.close_result &&
+        custody.origin.bytes && custody.origin.rows &&
+        custody.origin.observation.kind==LI2_MAPS_FRESH &&
+        custody.origin.observation.io_performed==1 && custody.origin.observation.acquisition_id &&
+        custody.origin.observation.handler_id==CUSTODY_LOAD(&maps_stats.handler_id);
+}
 const struct li2_fetch_rx_view *li2_lifecycle_fetch_rx_current_progress(void) { return &rx_current.stage; }
 const struct li2_current_custody_provenance *li2_current_custody_provenance(void) { return &cc.proof; }
 void li2_current_custody_snapshot(struct li2_current_custody_stats *out) {
