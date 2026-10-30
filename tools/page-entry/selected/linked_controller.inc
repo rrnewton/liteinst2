@@ -25,6 +25,9 @@
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
 #include "linked_preedge_full_observe.h"
 #endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+#include "linked_preedge_failure_observe.h"
+#endif
 #include "linked_rseq.h"
 #include "linked_proof.h"
 #ifdef LI2_LINKED_PREEDGE
@@ -408,6 +411,9 @@ static _Noreturn void selected_linked_epoch_abort(unsigned code,long detail) {
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_abort_observe();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_abort_observe();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_abort_observe();
 #endif
@@ -532,6 +538,9 @@ static void selected_linked_epoch_initialize(void) {
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_initialize();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_initialize();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_initialize();
 #endif
@@ -601,6 +610,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
 #endif
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_source();
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_source();
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_source();
@@ -734,6 +746,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_held();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_held();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_held();
 #endif
@@ -761,6 +776,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
 #endif
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_redirected(sig,si,uc);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_redirected(sig,si,uc);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_redirected(sig,si,uc);
@@ -893,6 +911,9 @@ static int selected_linked_epoch_trace_try(int sig,siginfo_t *si,ucontext_t *uc)
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_begin();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_begin();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_begin();
 #endif
@@ -913,6 +934,9 @@ static int selected_linked_epoch_trace_try(int sig,siginfo_t *si,ucontext_t *uc)
 #endif
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_closed();
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_closed();
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_closed();
@@ -1040,6 +1064,9 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_before_close();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_before_close();
+#endif
 #ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
     lpero_before_close();
 #endif
@@ -1081,6 +1108,9 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_complete();
 #endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_complete();
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_complete();
 #endif
@@ -1095,6 +1125,9 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
 #endif
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
     lpef_finish(status,code,detail);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_finish(status,code,detail);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_finish(status,code,detail);
@@ -1204,6 +1237,9 @@ _Static_assert(114*21+1552<=sizeof(((struct writer *)0)->bytes),"bounded linked-
 #endif
 #ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
 #include "linked_preedge_full_observe.inc"
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+#include "linked_preedge_failure_observe.inc"
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
 #include "linked_preedge_observe.inc"

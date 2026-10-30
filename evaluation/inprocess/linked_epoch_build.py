@@ -37,6 +37,8 @@ PREEDGE_FULL_CAPTURE_HEADERS=('linked_preedge_full_observe.h','linked_preedge_fu
     'linked_preedge_full_observe_memory.h','linked_preedge_full_observe_memory.inc',
     'linked_preedge_full_refault_observe.h','linked_preedge_full_refault_observe.inc',
     'linked_preedge_full_hint_observe.h','linked_preedge_full_hint_observe.inc','unrolled_hash_nested_fp.h')
+PREEDGE_FAILURE_CAPTURE_HEADERS=('linked_preedge_failure_observe.h','linked_preedge_failure_observe.inc',
+    'linked_preedge_failure_observe_memory.h','linked_preedge_failure_observe_memory.inc')
 CAPTURE_HEADERS=('linked_epoch_observe.h','linked_epoch_observe.inc','linked_refault_observe.h','linked_refault_observe.inc',
     'linked_epoch_observe_memory.h','linked_epoch_observe_memory.inc','unrolled_hash_nested_fp.h')
 
@@ -201,15 +203,73 @@ def preedge_capture_config(path,output,pin,binary):
     return dict(image=fact(path),rvas=rvas,source_sha256=H(source),header=fact(header),path=str(header))
 
 
+def preedge_failure_capture_config(path,output,pin,binary):
+    """Bind both complete failure source pages to the actual finite ELF."""
+    path=pin(binary(path));data=path.read_bytes()
+    def take(at,n):
+        need(type(at)is int and type(n)is int and 0<=at<=len(data)and 0<=n<=len(data)-at,'bounded actual capture ELF range')
+        return data[at:at+n]
+    h=struct.unpack('<16sHHIQQQIHHHHHH',take(0,64))
+    need(h[0][:7]==b'\x7fELF\x02\x01\x01'and h[1:4]==(2,62,1)and h[8:10]==(64,56)and
+         0<h[10]<=32 and h[11]==64 and 0<h[12]<=256,'bounded actual x86-64 ET_EXEC capture image')
+    ph=[struct.unpack('<IIQQQQQQ',take(h[5]+56*i,56))for i in range(h[10])]
+    sections=[struct.unpack('<IIQQQQIIQQ',take(h[6]+64*i,64))for i in range(h[12])]
+    tables=[s for s in sections if s[1]==2]
+    need(len(tables)==1 and tables[0][9]==24 and tables[0][5]%24==0,'one whole actual capture symbol table')
+    t=tables[0];need(t[6]<len(sections),'actual capture string table index');table=sections[t[6]]
+    need(table[1]==3,'actual string table type');names=take(table[4],table[5]);symbols={}
+    geometry={
+        'page':(0,None),'head':(4063,30),'predecessor':(4061,None),'cut':(4093,3),
+        'fallthrough':(4096,6),'source_end':(4096,None),
+        'revoke_page':(8192,None),'revoke_head':(12252,30),'revoke_predecessor':(12250,None),
+        'revoke_cut':(12282,6),'revoke_target':(12160,6),'revoke_end':(12288,None)}
+    wanted={('region_app_'+n).encode()for n in geometry}|{b'region_app_capture_high'}
+    for at in range(t[4],t[4]+t[5],24):
+        n,info,other,section,pc,size=struct.unpack('<IBBHQQ',take(at,24))
+        need(n<len(names)and b'\0'in names[n:],'whole pre-edge symbol name')
+        name=names[n:names.index(b'\0',n)]
+        if name in wanted:
+            need(section and name not in symbols,'unique actual defined pre-edge symbol');symbols[name]=(pc,size)
+    need(set(symbols)==wanted,'complete actual pre-edge symbol set')
+    page=symbols[b'region_app_page'][0]
+    need(page%4096==0 and 4096<=page and page+16384<1<<31,'two low original failure pages and their immutable endpoints')
+    for name,(offset,size)in geometry.items():
+        observed=symbols[('region_app_'+name).encode()]
+        need(observed[0]==page+offset and(size is None or observed[1]==size),'exact whole pre-edge symbol geometry '+name)
+    owners=[s for s in ph if s[0]==1 and s[1]==5 and s[5]<=s[6]and s[3]<=page and page-s[3]+16384<=s[5]]
+    need(len(owners)==1,'whole four-page failure image in one actual RX file range');segment=owners[0]
+    source=take(segment[2]+page-segment[3],16384);expected=bytearray(b'\xcc'*16384)
+    high=symbols[b'region_app_capture_high'][0]
+    need(high>=1<<33 and symbols[b'region_app_capture_high'][1]>0 and
+         sum(s[0]==1 and s[1]==5 and s[3]<=high and high-s[3]+symbols[b'region_app_capture_high'][1]<=s[5]for s in ph)==1,
+         'whole actual high transparent capture target in one RX file load')
+    stub=b'\xff\x25\0\0\0\0'+struct.pack('<Q',high)
+    for offset in(4063,12252):
+        expected[offset-2:offset]=b'\x66\x90';expected[offset:offset+30]=bytes.fromhex('b807000000')*6
+    expected[4093:4096]=b'\x44\x8b\x07'
+    expected[12282:12288]=b'\x0f\x85'+struct.pack('<i',12160-12288)
+    for offset in(4096,12160):expected[offset:offset+14]=stub
+    need(source==expected,'whole four-page failure source, supported load cut, revoke cut and immutable targets')
+    names=('head','cut','revoke_head','revoke_cut','revoke_target')
+    rvas={name:symbols[('region_app_'+name).encode()][0]for name in names}
+    raw=''.join('#define LI2_PREEDGE_FAILURE_APP_'+name.upper()+'_RVA 0x%xULL\n'%rvas[name]for name in names).encode()
+    header=output/'linked_preedge_failure_capture_config.h'
+    with header.open('xb')as stream:stream.write(raw)
+    header=pin(binary(header))
+    need(header.read_bytes()==raw,'whole exact actual-image cut-failure configuration')
+    return dict(image=fact(path),rvas=rvas,source_sha256=H(source),header=fact(header),path=str(header))
+
+
 def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False,preedge=False):
     need(type(native_hint)is bool,'exact distinct native-hint build selector')
     preedge_capture=extra==('LINKED_PREEDGE_CAPTURE',)
     preedge_reuse=extra==('LINKED_PREEDGE_REUSE_CAPTURE',)
     preedge_full=extra==('LINKED_PREEDGE_FULL_CAPTURE',)
+    preedge_failure=extra==('LINKED_PREEDGE_FAILURE_CAPTURE',)
     need(type(preedge)is bool and (not preedge or native_hint and not graph_observe and
-         (extra==()and capture_image is None or (preedge_capture or preedge_reuse or preedge_full)and capture_image is not None)),
+         (extra==()and capture_image is None or (preedge_capture or preedge_reuse or preedge_full or preedge_failure)and capture_image is not None)),
          'explicit pre-edge v2 release or dedicated capture; all old capture profiles are rejected')
-    need(not (preedge_capture or preedge_reuse or preedge_full)or preedge,'dedicated pre-edge capture requires the typed v2 runtime')
+    need(not (preedge_capture or preedge_reuse or preedge_full or preedge_failure)or preedge,'dedicated pre-edge capture requires the typed v2 runtime')
     need(type(graph_observe)is bool and (not graph_observe or
          native_hint and extra==()and capture_image is None),'release-only native-hint graph observer')
     need(builder.linked_epoch is True and builder.scalar_span is True and builder.extra_decoder_sources==('region.rs',)and
@@ -219,17 +279,17 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     need(builder.record['status']=='passed'and builder.record['command_completed']is True and
          archive==builder.paths['archive']==builder.retained/'decoder.a'and str(archive)==retained['path']and
          digest(fact(archive))==digest({k:retained[k]for k in('bytes','sha256')}),'fresh completed Build owns actual linked archive')
-    need(extra in((),('MAPS_DIFFERENTIAL',),('LINKED_EPOCH_CAPTURE',),('LINKED_EPOCH_CAPTURE','LINKED_EPOCH_REUSE_CAPTURE'),('LINKED_PREEDGE_CAPTURE',),('LINKED_PREEDGE_REUSE_CAPTURE',),('LINKED_PREEDGE_FULL_CAPTURE',)),'exact normal, differential or distinct finite capture profile')
-    reuse=extra==('LINKED_EPOCH_CAPTURE','LINKED_EPOCH_REUSE_CAPTURE');capture='LINKED_EPOCH_CAPTURE'in extra or preedge_capture or preedge_reuse or preedge_full
+    need(extra in((),('MAPS_DIFFERENTIAL',),('LINKED_EPOCH_CAPTURE',),('LINKED_EPOCH_CAPTURE','LINKED_EPOCH_REUSE_CAPTURE'),('LINKED_PREEDGE_CAPTURE',),('LINKED_PREEDGE_REUSE_CAPTURE',),('LINKED_PREEDGE_FULL_CAPTURE',),('LINKED_PREEDGE_FAILURE_CAPTURE',)),'exact normal, differential or distinct finite capture profile')
+    reuse=extra==('LINKED_EPOCH_CAPTURE','LINKED_EPOCH_REUSE_CAPTURE');capture='LINKED_EPOCH_CAPTURE'in extra or preedge_capture or preedge_reuse or preedge_full or preedge_failure
     need((capture_image is not None)==capture,'fresh image iff explicit linked capture profile')
     output=private/'release';output.mkdir();binding=binding_config(builder,archive,output,pin,binary,run,native_hint=native_hint,preedge=preedge)
-    config=(preedge_capture_config(capture_image,output,pin,binary)if preedge_capture else capture_config(capture_image,output,pin,binary,reuse or preedge_reuse,preedge_reuse=preedge_reuse,preedge_full=preedge_full))if capture else None
-    script=pin(SELECTED/('build-linked-preedge-full-capture.sh'if preedge_full else'build-linked-preedge-reuse-capture.sh'if preedge_reuse else'build-linked-preedge-capture.sh'if preedge_capture else'build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-preedge.sh'if preedge else'build-linked-epoch-graph-observe.sh'if graph_observe else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
+    config=(preedge_failure_capture_config(capture_image,output,pin,binary)if preedge_failure else preedge_capture_config(capture_image,output,pin,binary)if preedge_capture else capture_config(capture_image,output,pin,binary,reuse or preedge_reuse,preedge_reuse=preedge_reuse,preedge_full=preedge_full))if capture else None
+    script=pin(SELECTED/('build-linked-preedge-failure-capture.sh'if preedge_failure else'build-linked-preedge-full-capture.sh'if preedge_full else'build-linked-preedge-reuse-capture.sh'if preedge_reuse else'build-linked-preedge-capture.sh'if preedge_capture else'build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-preedge.sh'if preedge else'build-linked-epoch-graph-observe.sh'if graph_observe else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
     rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one exact linked runtime compiler recipe')
     argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$selected_dir':SELECTED,'$parent_dir':SELECTED.parent,
         '$archive':archive,'$output':output})
     if not capture:argv[1:1]=['-DLI2_'+x+'=1'for x in extra]
-    elif native_hint and not (preedge_capture or preedge_reuse or preedge_full):argv.insert(argv.index('-DLI2_LINKED_EPOCH=1'),'-DLI2_LINKED_NATIVE_HINT=1')
+    elif native_hint and not (preedge_capture or preedge_reuse or preedge_full or preedge_failure):argv.insert(argv.index('-DLI2_LINKED_EPOCH=1'),'-DLI2_LINKED_NATIVE_HINT=1')
     units=[str(SELECTED.parent/x)for x in UNITS]+[str(SELECTED/x)for x in(('unrolled_hash_plan.c','region_plan.c','linked_plan.c','linked_preedge_plan.c')if preedge else('unrolled_hash_plan.c','region_plan.c','linked_plan.c'))]
     macros=(('LINKED_PREEDGE',)if preedge else())+(('LINK_GRAPH_OBSERVE',)if graph_observe else())+extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
         'SCALAR_REGION','SCALAR_REGION_REUSE','INITIAL_CODE_PROTECTION','UNROLLED_HASH','MAPS_MAINTAINED')+MACROS
@@ -243,14 +303,16 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
         linked_binding=binding,capture_config=config)
     if native_hint:state['native_hint']=True
     if preedge:
-        state['preedge']=dict(version=2,plan_bytes=40744,proof_payload_bytes=45288,capture=preedge_capture or preedge_reuse or preedge_full)
+        state['preedge']=dict(version=2,plan_bytes=40744,proof_payload_bytes=45288,capture=preedge_capture or preedge_reuse or preedge_full or preedge_failure)
         if preedge_reuse:state['preedge']['reuse_capture']=True
         if preedge_full:state['preedge']['full_capture']=True
+        if preedge_failure:state['preedge']['failure_capture']=True
         donor=pin(SELECTED/'build-linked-epoch-native-hint.sh')
         expected=donor.read_bytes().replace(b'# Distinct positive-native-receipt advisory; every actual NX admission remains mandatory.',b'# Distinct typed v2 pre-edge release profile; original NX cuts require separate qualification.',1)
         expected=expected.replace(b'\"$output\" native-hint',b'\"$output\" native-hint-preedge',1).replace(b'-DLI2_LINKED_NATIVE_HINT=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_NATIVE_HINT=1',1)
         expected=expected.replace(b'--undefined=li2_link_plan_validate ',b'--undefined=li2_link_plan_validate,--undefined=li2_preedge_plan_page,--undefined=li2_preedge_plan_validate ',1)
         expected=expected.replace(b'\"$selected_dir/linked_plan.c\" \"$archive\"',b'\"$selected_dir/linked_plan.c\" \"$selected_dir/linked_preedge_plan.c\" \"$archive\"',1)
+        if preedge_failure:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_FAILURE_CAPTURE=1',1)
         if preedge_full:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_FULL_CAPTURE=1',1)
         if preedge_reuse:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_REUSE_CAPTURE=1',1)
         if preedge_capture:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_CAPTURE=1',1)
@@ -284,11 +346,11 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
          ('selected_scalar_span.inc','selected_scalar_span_reuse.inc','scalar_region_observe.inc',
           'unrolled_hash_observe.inc','current_tf_observe.inc','span_trace_observe.inc')),
          'no substituted span owner or legacy capture adapter')
-    wanted_capture=set(PREEDGE_FULL_CAPTURE_HEADERS)if preedge_full else set(PREEDGE_REUSE_CAPTURE_HEADERS)if preedge_reuse else set(PREEDGE_CAPTURE_HEADERS)if preedge_capture else set(('linked_epoch_reuse_observe.h','linked_epoch_reuse_observe.inc',
+    wanted_capture=set(PREEDGE_FAILURE_CAPTURE_HEADERS)if preedge_failure else set(PREEDGE_FULL_CAPTURE_HEADERS)if preedge_full else set(PREEDGE_REUSE_CAPTURE_HEADERS)if preedge_reuse else set(PREEDGE_CAPTURE_HEADERS)if preedge_capture else set(('linked_epoch_reuse_observe.h','linked_epoch_reuse_observe.inc',
         'linked_epoch_observe_memory.h','linked_epoch_observe_memory.inc'))if reuse else set(CAPTURE_HEADERS)if capture else set()
     hint_capture={'linked_hint_observe.h','linked_hint_observe.inc'}
-    if capture and native_hint and not reuse and not (preedge_capture or preedge_reuse or preedge_full):wanted_capture|=hint_capture
-    all_capture=set(CAPTURE_HEADERS)|set(PREEDGE_CAPTURE_HEADERS)|set(PREEDGE_REUSE_CAPTURE_HEADERS)|set(PREEDGE_FULL_CAPTURE_HEADERS)|{'linked_epoch_reuse_observe.h','linked_epoch_reuse_observe.inc'}|hint_capture
+    if capture and native_hint and not reuse and not (preedge_capture or preedge_reuse or preedge_full or preedge_failure):wanted_capture|=hint_capture
+    all_capture=set(CAPTURE_HEADERS)|set(PREEDGE_CAPTURE_HEADERS)|set(PREEDGE_REUSE_CAPTURE_HEADERS)|set(PREEDGE_FULL_CAPTURE_HEADERS)|set(PREEDGE_FAILURE_CAPTURE_HEADERS)|{'linked_epoch_reuse_observe.h','linked_epoch_reuse_observe.inc'}|hint_capture
     need(all((str((SELECTED/name).resolve())in state['headers'])==(name in wanted_capture)for name in all_capture),
          'complete exact distinct finite/reuse capture seams iff selected')
     if capture:need(digest(state['headers'].get(config['path']))==digest(config['header']),'actual image-derived capture header')
@@ -304,7 +366,7 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
         found=[line.split()for line in symbols.splitlines()if line.split()[-1:]==[name.encode()]]
         need(len(found)==1 and len(found[0])==4 and found[0][2]in(b't',b'T')and int(found[0][1],16)>0,
              'whole retained linked proof provider in actual bridge')
-    if reuse or preedge_capture or preedge_reuse:need(not any(line.split()[-1:]==[b'uho_nested_raw']for line in symbols.splitlines()),'reuse bridge has no fictitious nested-control shim')
+    if reuse or preedge_capture or preedge_reuse or preedge_failure:need(not any(line.split()[-1:]==[b'uho_nested_raw']for line in symbols.splitlines()),'reuse bridge has no fictitious nested-control shim')
     _,assembly,err=run('release-bridge-memset',[objdump,'-d','-w','-M','att','--disassemble=memset',bridge],profile='inspect',env=builder.environment)
     need(not err,'actual reset disassembly');state['reset']=hidden_memset(bridge,body_check(bridge,symbols,assembly,'fast',symbol_name='memset'))
     fast_bytes(builder,output,pin,binary,aliases,run,state)
