@@ -143,3 +143,151 @@ Their prospective command is `cargo test --offline --locked -p liteinst-rewrite`
 source proposal authoring did not run it. Actual loader execution, output/ABI/
 full-state/unwind preservation, real hooks, heap writes, grouping, broader
 corpus fit and performance remain unqualified.
+
+
+## Explicit same-region short-only neighbor option
+
+The default command and version-one policy continue to use the long-only
+10–15-byte T3 victim family. The separate invocation is:
+
+```
+disassembly_sites --short-neighbors-only ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY
+```
+
+It has one leading flag and the same six positional arguments (eight argv
+entries including the program). The six-position legacy form remains unchanged,
+including positional path strings that start with `--`. No fallback or retry
+selects a family from a refusal. This option changes only the T3 stage to the
+same-region, whole-original 6–9-byte victim family; it does not try a union of
+short and long victims. The other four stages, their ranking, forced tactics,
+all allocation/search/aggregate limits and all-head obligations remain identical.
+The complete ten-byte relay fetch/edit, including the unchanged successor suffix,
+retains its source, entry and quiescent-publication requirements. This is not a
+hardware-atomic ten-byte store or executable-artifact admission.
+
+The new policy starts with `LI2DISASM-POLICY 2` and requires exactly
+`neighbor-victims short-only` immediately after the original and ledger digest
+rows. Its complete bytes must match the caller's supplied policy digest. Every
+other policy row, every original jump and every refusal remains mandatory; no
+successful subset may be published. `Disassembly::bind_short_neighbors` seals
+that family. `prepare_disassembly` uses the shared engine with this mode; the
+ordinary public selection parser/prepare path rejects the new projection.
+
+The projection still starts with `LI2TOOL 1`, followed by the original digest
+and then the exact family row. Only the sealed importer removes that one row
+privately for the unchanged parser, after checking the full one-MiB input cap.
+The original full projection bytes, including the family, remain the manifest
+and metadata identity. Missing, duplicate, reordered or wrong-family rows
+refuse even with a recomputed digest. Legacy consumers, including the existing
+selection comparator, do not accept the new row; downstream comparison/runner
+integration is a separate task and is not implied by a complete candidate.
+
+The profile is `elf-disassembly-null-jumps-short-only-v1`. Inventory, planning,
+program-failure and COMPLETE index files place `neighbor_victims` / `short-only`
+immediately after their profile row (tab separated). The stdout summary adds
+`neighbor_victims=short-only` immediately after the profile token. Mode selection
+precedes input binding, so failed ledger/policy attempts retain the same explicit
+profile. Legacy file and stdout bytes are unchanged. All candidate files remain
+unqualified until independently checked and admitted.
+
+Core callers opt in through `engine::plan_with_short_neighbors`,
+`plan_with_emission_and_short_neighbors`, or
+`plan_with_emission_after_and_short_neighbors`. `EnginePolicy` is unchanged. The
+last entrypoint authenticates the predecessor's original identity and current
+overlay; callers must still append every returned step transactionally to enforce
+inherited locks, physical sites and allocation ownership. Foreign-neighbor
+planning remains on its existing long-only route.
+
+
+## Explicit inherited admission for short T3
+
+`elf-disassembly-null-jumps-short-t3-ownership-v1` is a separate sealed mode:
+
+```text
+disassembly_sites --short-neighbors-owned ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY
+```
+
+Use `Disassembly::bind_short_t3_ownership` and
+`inventory_short_t3_ownership` for the equivalent library selection. The policy
+starts with these exact rows, followed by the existing target, domain, carrier,
+limits, null-hook, search and allocation records:
+
+```text
+LI2DISASM-POLICY 3
+original WHOLE_ORIGINAL_SHA256
+ledger TRUSTED_LEDGER_SHA256
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+```
+
+The complete policy digest binds both mode rows. The LI2TOOL projection retains
+both immediately after its original digest. Its full one-MiB limit is checked
+before a private sealed-parser call removes the two rows; the complete projection
+is restored as its manifest identity. The public legacy parser and older binders
+reject this projection. Every original head/jump and refusal remains required.
+
+Only complete short neighboring-instruction eviction pairs are preflighted by
+appending all steps to a fresh clone of the actual preceding composition. An
+inherited refusal consumes its existing pair slot and continues the same bounded
+search. Generalized pun, ordinary relocation, prefixed pun and successor eviction
+retain their first local success and possible later caller-append refusal. That
+refusal does not restart the engine. The importer still performs its real final
+append and all entry, dynamic-relocation, hook, aggregate, carrier and atomic
+whole-selection checks. No budget, long-family fallback or second attempt is added.
+
+Inventory, planning, failure and COMPLETE metadata place
+`neighbor_victims\tshort-only` and `neighbor_ownership\tinherited-t3` immediately
+after the new profile row. Stdout uses the corresponding `key=value` tokens in
+that order. Mode labels are selected before binding, including failure paths.
+The six-position legacy invocation and existing ShortOnly option retain their
+positional-path behavior and output bytes. In particular a seven-argv path that
+spells a flag stays positional; the existing ShortOnly invocation can still use
+`--short-neighbors-owned` as a positional filename. Only the new leading option
+rejects either repeated mode flag among its six remaining arguments.
+
+This same-region mode is distinct from the foreign-owner
+`prepare_with_owned_neighbors` API. It does not provide fully composition-aware
+planning, native admission or a comparator adapter. Existing modes remain separate.
+
+
+## Pending selected instruction ownership
+
+The separately sealed `elf-disassembly-null-jumps-short-t3-pending-v1` library
+profile protects every outstanding selected instruction's full original range.
+Use `Disassembly::inventory_short_t3_pending()` for the complete pre-bind inventory
+and `Disassembly::bind_short_t3_pending(policy, expected_policy)` to bind policy
+version four. Its exact records immediately after `ledger` are:
+
+```text
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+pending-selected full-instruction-ownership
+```
+
+The `LI2TOOL 1` projection retains all three records immediately after `original`.
+The complete policy and projection bytes, including mode records, count toward
+the existing 1 MiB bounds and digests. Older binders and selection readers refuse
+this profile. Inventory and planning metadata include `neighbor_victims`,
+`neighbor_ownership` and `pending_selected` in that order after the profile.
+These files remain present when complete preparation refuses.
+
+`prepare_disassembly` derives its outstanding ranges from the entire sealed
+original jump table. Planning retains descending address order. A failed site
+stays outstanding; only a fully committed site leaves the set. Each current site
+protects every other outstanding instruction, including unchanged bytes already
+owned by a candidate's preserved suffix. For short neighboring-instruction
+eviction, every complete pair appends to a fresh actual predecessor composition
+and must leave the protected ranges unclaimed within the existing victim, image
+and pair budgets.
+
+Generalized pun, ordinary relocation, prefixed pun and successor eviction retain
+their first local success. After the existing append, dependency, aggregate and
+hook checks, preparation checks pending ownership before committing. A conflict
+refuses that site without trying another tactic. Empty pending ranges for the
+last site do not disable inherited append checks. Every original selected jump,
+verified head, hook, carrier requirement and atomic whole-selection obligation
+remains mandatory; a partial plan cannot produce a candidate or sparse rewrite.
+
+This library profile supplies no live publication or native qualification
+contract. CLI/example, evaluation and comparator adapters require separate
+explicit integration; existing command-line profiles do not select this mode.

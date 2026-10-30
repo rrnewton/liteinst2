@@ -36,3 +36,4 @@ test = true
 [[example]]
 name = "disassembly_sites"
 path = "examples/disassembly_sites.rs"
+test = true

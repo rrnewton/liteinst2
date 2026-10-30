@@ -130,3 +130,127 @@ Use a fresh build capture at the current committed source. All existing capture,
 configuration and source-continuity checks still apply. Omitting the option
 retains the original fixed-page profile. The helper neither retries a failed
 profile nor executes rewritten candidates.
+
+## Explicit ShortOnly profile with unchanged broad placement
+
+`attempt(program, inputs, expected, profile=SHORT_PROFILE)` selects
+`offline-whole-authored-short-only-2g-v1`. Its placement is byte-identical to
+BROAD_PROFILE: the same fixed 2 GiB virtual-span limit, permits, preferred
+addresses, search rows and one-candidate allocation rows. Only these policy
+mode bytes differ:
+
+```text
+LI2DISASM-POLICY 2
+original ORIGINAL_SHA256
+ledger LEDGER_SHA256
+neighbor-victims short-only
+```
+
+All subsequent rows equal the broad policy. The digest covers the complete
+policy including the family row. Material production uses the same ownership,
+relocation, exact source and complete head joins; a refused input is neither
+subsetted nor retried. The three existing profiles retain their exact outputs.
+
+The reproducer's explicit placement choice adds the leading Rust importer
+flag `--short-neighbors-only` before the unchanged six positional arguments.
+It requires profile `elf-disassembly-null-jumps-short-only-v1` and the
+`neighbor_victims\tshort-only` row immediately after the profile in COMPLETE,
+verified inventory and any emitted planning/failure metadata. The stdout mode
+and candidate-complete value must also match the closed command's exit code.
+There is one importer invocation per ready program, with the existing release,
+custody, configuration, limits and complete-denominator gates.
+
+The generated selection retains `neighbor-victims short-only` after its
+original row. The ordinary selection parser rejects this new row. Neither this
+profile nor its runner adapts E9 or other comparators, removes the row for legacy
+replay, or grants comparator qualification. The additive supplied-input controls
+exercise the actual adapter and dispatch/inventory helpers.
+
+
+## Explicit short T3 inherited-ownership profile
+
+`attempt(program, inputs, expected, profile=SHORT_T3_OWNERSHIP_PROFILE)` selects
+`offline-whole-authored-short-t3-ownership-2g-v1`. It uses exactly the existing
+broad placement helper and limits. The policy starts with:
+
+```text
+LI2DISASM-POLICY 3
+original ORIGINAL_SHA256
+ledger LEDGER_SHA256
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+```
+
+All remaining bytes match the broad policy. Removing just the ownership row and
+restoring header version two reproduces the ShortOnly policy exactly. Every
+original source/head/relocation join, ledger and inventory row remains unchanged;
+there is no corpus subset, additional candidate, widened permit or retry.
+
+The reproducer selects `--short-neighbors-owned` and requires exact importer
+profile `elf-disassembly-null-jumps-short-t3-ownership-v1`. Both mode rows follow
+profile in inventory, planning, failure and COMPLETE, and their stdout tokens
+must match the exit code. Material refusal, exception retention, one invocation
+per ready program and all current-source release/custody/configuration checks
+remain unchanged. Old profiles keep their original bytes and behavior.
+
+Short T3 alone can continue after a complete pair conflicts with inherited locks,
+physical sites or allocation ownership, within the same existing counters. The
+other four tactics retain first local success and possible final append refusal.
+The importer still requires its actual append, complete selection and every hook,
+entry, aggregate and carrier guard. No native or E9 adapter is provided, and
+neither materials nor a structural candidate establishes execution qualification.
+
+
+## Explicit short T3 pending-selection profile
+
+`attempt(program, inputs, expected, profile=SHORT_T3_PENDING_PROFILE)` selects
+`offline-whole-authored-short-t3-pending-2g-v1`. It uses the same broad placement
+helper and all existing owned-profile limits, seeds, permits and allocation rows.
+The policy begins:
+
+```text
+LI2DISASM-POLICY 4
+original ORIGINAL_SHA256
+ledger LEDGER_SHA256
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+pending-selected full-instruction-ownership
+```
+
+Removing the final mode row and restoring header version three reproduces the
+owned policy exactly. Removing all three mode rows and restoring version one
+reproduces the broad policy. Every policy byte contributes to its frozen digest.
+The importer also bounds the full policy and full selection projection before
+its private parser view; the retained projection includes all three mode rows.
+No evaluation helper strips them for a legacy parser or comparator.
+
+Use `--placement-profile offline-whole-authored-short-t3-pending-2g-v1` with the
+existing reproduction command. It selects the importer's leading
+`--short-neighbors-pending` flag and exact profile
+`elf-disassembly-null-jumps-short-t3-pending-v1`. This explicit flag precedes the
+same six positional arguments. The new form rejects repeated or mixed mode flags
+in those operands. All older CLI forms keep their positional filename rules,
+including flag-looking filenames; seven arguments still mean six literal paths.
+Only the exact eight-argument leading pending form activates pending mode.
+
+The three ordered metadata rows are `neighbor_victims\tshort-only`,
+`neighbor_ownership\tinherited-t3` and
+`pending_selected\tfull-instruction-ownership`. They follow profile in verified
+inventory, planning, failure and COMPLETE, and matching stdout tokens are required.
+New material results retain these fields on refusal too. New reproduction reports
+bind `placement_profile`, `importer_profile` and all three fields alongside the
+existing capture identity, including in inputs.json and closed.json. Raw build
+captures and LI2AUTHORED-HEADS remain unchanged and mode-neutral; these labels grant
+no provenance beyond the existing source, release, configuration and custody checks.
+
+The complete original 187-head/42-jump population remains selected. The importer
+uses its full original instruction table, excludes only the current instruction
+from pending checks and discharges it only after the complete transaction commits.
+Failed instructions stay pending. Short neighboring-instruction eviction checks
+actual inherited append and pending ownership within the original search counters.
+Generalized pun, ordinary relocation, prefixed pun and successor eviction keep their
+local-success behavior; a later pending conflict refuses without fallback. Final
+append, original/current-overlay, entry, hook, dependency, aggregate, carrier and
+all-selected publication guards remain required. There is one importer invocation
+per ready program and no retry, cap change or corpus subset. This exposure adds
+no E9 adapter, live authority or native/performance qualification.

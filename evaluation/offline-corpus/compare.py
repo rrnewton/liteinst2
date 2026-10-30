@@ -23,7 +23,7 @@ from adapter import prepare, core_witness, core_refusal, e9_witness, read
 if sys.flags.optimize:
     raise SystemExit('assertions required')
 HELPER_SHA = 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'
-ADAPTER_SHA = '5904a13ec1fcb8b6801dcff12ac1fe5a1154b884555bbd9fbc24521f9bc6949f'
+ADAPTER_SHA = '1f9509c29444e057d8421ea04030bf175076ce3a3ffe3f937fafd5e80d12294c'
 REFERENCE = dict(reference_commit='0d5d36e4c4edcac37ca2499694d64302a391136f',
     reference_tree='b833c9dedd0aaaf8ed60ad1c041bd1535c55ccce',
     archive_sha256='b9d82420ee00a7240f574645c229d91fb993d1f24305258e3cdc294e6df44f0f',

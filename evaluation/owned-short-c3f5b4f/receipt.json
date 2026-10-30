@@ -1,0 +1,1473 @@
+{
+  "schema": 1,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "supports_claims": [
+    4
+  ],
+  "status": "TARGETED_PRODUCT_AND_INVENTORY_PASS_WORKSPACE_TIMEOUT_CORPUS_REFUSED",
+  "qualification_complete": false,
+  "performance_claim": false,
+  "core_revision": "ac9ea878f24e1d96c5d9c00714c8b41cc461e61f",
+  "corpus_revision": "c3f5b4f52871f2afd7f327fbf753fde2da736ad7",
+  "final_rust_revision": "b8a4aea14ec2d1ce56ce14a22626d4ea3d872cc6",
+  "initial_inventory_revision": "8dd9cc5040b6caf89435cc3edde66134ecb51983",
+  "inventory_revision": "8cfcbb750748c18cbbd5a8c2c088036f05e51a6b",
+  "main_ancestor": "e15152039864c59a5a81fe49a6d737153501ed6b",
+  "merge_source_comparison": {
+    "schema": 1,
+    "source_only": true,
+    "merge_revision": "9818d6e063aa89c6e68b441523ae39064e523791",
+    "main_parent": "e15152039864c59a5a81fe49a6d737153501ed6b",
+    "lane_parent": "8dd9cc5040b6caf89435cc3edde66134ecb51983",
+    "incoming_paths": [
+      "evaluation/inprocess/dynamorio-null/CMakeLists.txt",
+      "evaluation/inprocess/dynamorio-null/null.c",
+      "evaluation/inprocess/page_cost_compare.py",
+      "evaluation/inprocess/page_cost_counters.py",
+      "evaluation/inprocess/page_cost_kernel.py",
+      "evaluation/inprocess/page_cost_profile.py",
+      "evaluation/inprocess/page_cost_profile_read.py",
+      "evaluation/inprocess/page_cost_profile_run.py",
+      "evaluation/inprocess/page_cost_qualification.py",
+      "evaluation/inprocess/page_cost_reports.py",
+      "evaluation/inprocess/page_cost_routes.py",
+      "evaluation/inprocess/page_cost_summary.py",
+      "evaluation/inprocess/page_selected_repeat_lease_build.py",
+      "evaluation/inprocess/page_selected_repeat_zero.py",
+      "evaluation/inprocess/page_selected_rseq_inputs.json",
+      "evaluation/inprocess/results/2026-10-29-page-cost-qualification.json",
+      "evaluation/inprocess/results/2026-10-29-page-cost.md",
+      "evaluation/inprocess/results/20261029T223100.216801Z-page-cost-compare-64d17dab2ce0.csv",
+      "evaluation/inprocess/results/20261029T223100.216801Z-page-cost-compare-64d17dab2ce0.json",
+      "evaluation/inprocess/results/20261029T224041.992538Z-page-cost-compare-c97096fad229-routes.csv",
+      "evaluation/inprocess/results/20261029T224041.992538Z-page-cost-compare-c97096fad229-routes.json",
+      "evaluation/inprocess/results/20261029T224041.992538Z-page-cost-compare-c97096fad229.csv",
+      "evaluation/inprocess/results/20261029T224041.992538Z-page-cost-compare-c97096fad229.json",
+      "evaluation/inprocess/results/20261029T224841.044428Z-page-cost-profile-ls-d48769245bca-kernel.csv",
+      "evaluation/inprocess/results/20261029T224841.044428Z-page-cost-profile-ls-d48769245bca.csv",
+      "evaluation/inprocess/results/20261029T224841.044428Z-page-cost-profile-ls-d48769245bca.json",
+      "evaluation/inprocess/results/20261029T225341.298699Z-page-cost-profile-ls-4d712772d221-kernel.csv",
+      "evaluation/inprocess/results/20261029T225341.298699Z-page-cost-profile-ls-4d712772d221.csv",
+      "evaluation/inprocess/results/20261029T225341.298699Z-page-cost-profile-ls-4d712772d221.json",
+      "evaluation/inprocess/results/20261029T225646.427882Z-page-cost-profile-ls-4931c32c3b88-kernel.csv",
+      "evaluation/inprocess/results/20261029T225646.427882Z-page-cost-profile-ls-4931c32c3b88.csv",
+      "evaluation/inprocess/results/20261029T225646.427882Z-page-cost-profile-ls-4931c32c3b88.json",
+      "evaluation/inprocess/results/20261029T231437.366556Z-page-cost-profile-ls-60a4415c54fa-kernel.csv",
+      "evaluation/inprocess/results/20261029T231437.366556Z-page-cost-profile-ls-60a4415c54fa.csv",
+      "evaluation/inprocess/results/20261029T231437.366556Z-page-cost-profile-ls-60a4415c54fa.json",
+      "evaluation/inprocess/results/20261029T231527.423636Z-page-cost-profile-true-60a4415c54fa-kernel.csv",
+      "evaluation/inprocess/results/20261029T231527.423636Z-page-cost-profile-true-60a4415c54fa.csv",
+      "evaluation/inprocess/results/20261029T231527.423636Z-page-cost-profile-true-60a4415c54fa.json",
+      "evaluation/inprocess/results/20261029T231615.636586Z-page-cost-counters-3675540b8ada.csv",
+      "evaluation/inprocess/results/20261029T231615.636586Z-page-cost-counters-3675540b8ada.json",
+      "evaluation/inprocess/results/20261029T234233.369460Z-page-cost-compare-c14f3078a1b5-routes.csv",
+      "evaluation/inprocess/results/20261029T234233.369460Z-page-cost-compare-c14f3078a1b5-routes.json",
+      "evaluation/inprocess/results/20261029T234233.369460Z-page-cost-compare-c14f3078a1b5.csv",
+      "evaluation/inprocess/results/20261029T234233.369460Z-page-cost-compare-c14f3078a1b5.json",
+      "evaluation/inprocess/results/20261029T234819.052033Z-page-cost-profile-ls-c14f3078a1b5-kernel.csv",
+      "evaluation/inprocess/results/20261029T234819.052033Z-page-cost-profile-ls-c14f3078a1b5.csv",
+      "evaluation/inprocess/results/20261029T234819.052033Z-page-cost-profile-ls-c14f3078a1b5.json",
+      "evaluation/inprocess/results/20261029T234913.280920Z-page-cost-profile-true-c14f3078a1b5-kernel.csv",
+      "evaluation/inprocess/results/20261029T234913.280920Z-page-cost-profile-true-c14f3078a1b5.csv",
+      "evaluation/inprocess/results/20261029T234913.280920Z-page-cost-profile-true-c14f3078a1b5.json",
+      "tools/page-entry/selected/native_pair.h",
+      "tools/page-entry/selected/native_pair_lifecycle.inc",
+      "tools/page-entry/selected/native_pair_report.inc",
+      "tools/page-entry/selected/repeat_custody.inc",
+      "tools/page-entry/selected/repeat_lease.inc",
+      "tools/page-entry/selected/runtime_loader.c",
+      "tools/page-entry/selected/tests/native_pair/ADAPTERS.json",
+      "tools/page-entry/selected/tests/repeat_lease/ADAPTERS.json",
+      "tools/page-entry/selected/tests/repeat_lease/prepare.py",
+      "tools/page-entry/selected/tests/rseq_application/ADAPTERS.json"
+    ],
+    "rust_and_cargo_source_equal_to": "b8a4aea14ec2d1ce56ce14a22626d4ea3d872cc6",
+    "inventory_preimage_sha256": {
+      "evaluation/admission/inventory_syntax.py": "2c228e5db4d442e5a0f35a81a765015147d35744b440474ea3be6ac0f97691cc",
+      "evaluation/admission/core_813_inventory.py": "0ff2545b239f1c1fe5c5e8bbe1cfdbd2ac2426d0ed28137341b567ab5e35f30b",
+      "evaluation/admission/test_main813_inventory.py": "eee8fbbf37c2e10969279a06020579323f3f1345ff62a7f1d544da8c1fdcfae4"
+    },
+    "execution_credit": false
+  },
+  "source_sha256": {
+    "evaluation/admission/parsing.py": "e63bbcf6c644e4f6b8c17d98dc9494cd62e81049a825545eebbfd6331c74202d",
+    "evaluation/offline-corpus/WHOLE-PLACEMENT.md": "8f19798aff6a3dc9257c2d29cc24095645d0a856d4ea3ee1aeab11f4ad7e4d46",
+    "evaluation/offline-corpus/WHOLE_DISASSEMBLY.md": "edd9f74e5fd3db28b9da743d80ee60bea89ff5101163eade26c6e1f7f7e68896",
+    "evaluation/offline-corpus/disassembly.py": "e6db32a5a345c5b8423f17d39427f66e93b73636b3acd780bcc8d32d8c462f46",
+    "evaluation/offline-corpus/disassembly_controls.py": "b369d49735f3274cab5256836ff7b5e567fbe2a4ee3f9ce2c177e6b3d19b376a",
+    "evaluation/offline-corpus/head_capture.py": "ae10489d1ff6449a596d491f5732cc58c95040e7353d6815b4c00e0f49eb0d01",
+    "evaluation/offline-corpus/head_capture_controls.py": "afd2125686bb8c07fe630a8755c44397db359e2b5e4f3bc05cbefc52c1989883",
+    "evaluation/offline-corpus/reproduce_whole.py": "d9daa5018f2850bcca9199f48d7950aedb6d5c5e6c9fe8cab234ff2ecb0d62f0",
+    "evaluation/offline-corpus/reproduce_whole_controls.py": "8430d726254d0a901191d680db4253f9f2cb95b6b25aee186fe36643283db81f",
+    "src/engine.rs": "f2841f6ce27f260bd1dc102a9df4d57f14af183fefc0a9ec092a5a97a8adaea5",
+    "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+    "src/neighbor.rs": "10d7e052a6b88dfb0c9c147bf4f2a5cf989063f205ab47601c30d2f3d6ab82fd",
+    "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+    "src/neighbor_short/tests.rs": "cc09ed0ad300fdb9f664a5051d98040ca28bd20e1b4180fa050c710f2e6ed78a",
+    "src/trampoline.rs": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463",
+    "tools/elf-rewrite/Cargo.toml": "acd1736d8bdd0846ed0a7a2f17d1a33eba83fdc6940b643d9434730fde5637c4",
+    "tools/elf-rewrite/DISASSEMBLY.md": "b2a65d86ab18f5753ee4b8821e987e3a7ef5d0c41f90a73f5695ca7f68fa0b5e",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "7276600bafd1e7c9856468ec282b48e3d1098ac1665cf4e0a9902260b7729251",
+    "tools/elf-rewrite/src/disassembly.rs": "541483d8de256be41b907c2b9d05c54f6108489a2793da86a3f7511ff07afcfe",
+    "tools/elf-rewrite/src/disassembly/tests.rs": "bd886f1cb6b35717c3c485783614e6af73872514e69aa943763141715b668667",
+    "tools/elf-rewrite/src/lib.rs": "9812cb41f0a115c0c950975b9029c8334a8a4a07ba652cedb97f3ae9d9adc0f1",
+    "tools/elf-rewrite/src/selection.rs": "58889f49456db243bad9bd587eeefc34e7ef1b0037a6da26d14106c186587aa7"
+  },
+  "source_review_binding_sha256": {
+    "composition-aware-short-production-review-v1": "d785e60357d8f24888d60366985780a543d922f6c0cf0d62094e45e836ecaf16",
+    "composition-aware-short-controls-review-v1": "2061b07869afcd5963773c2e6a9aac9767bf6732f17bf4d3508ee0c9dda752f6",
+    "composition-aware-short-importer-review-v2": "a459586b297dd5a9a350017b4ac363ce4da0c5155db4e1b59422683ed89eab58",
+    "owned-short-array-review-v1": "326ed85f651261f1271a0c81a26c94f76dd0c6c6a08ba2ef09099b785be79a36",
+    "composition-aware-short-inventory-review-v2": "081110cd98c58e2a27c3b9d4f28f2a2f592611335faea29779000aa157476b0a",
+    "owned-short-syntax-cache-review-v2": "4b9d52572e8f8cd8b4acf6be8429bc06d11f713359e86f889e764b523fc387dd"
+  },
+  "checks_environment": {
+    "HOME": "${USER_HOME}",
+    "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+    "RUSTC": "${TOOLCHAIN}/bin/rustc",
+    "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+    "CARGO_HOME": "${CARGO_CACHE}",
+    "CARGO_TARGET_DIR": "${REPO}/target",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TERM_COLOR": "never",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LITEINST_EVALUATION": "1"
+  },
+  "checks_owner_source_sha256": "c76ea35891d8579cfc74d1ec65a30e5e39a2ae26e9956e1808f2ef7d6e120c61",
+  "checks_helper_source_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "records": [
+    {
+      "run": "owned-short-core-targeted-ac9ea87",
+      "revision": "ac9ea878f24e1d96c5d9c00714c8b41cc461e61f",
+      "cpus": [
+        1,
+        3,
+        119,
+        167
+      ],
+      "load_before": [
+        "50.01",
+        "59.69",
+        "74.55"
+      ],
+      "load_after": [
+        "42.84",
+        "56.98",
+        "73.17"
+      ],
+      "owner_receipt_sha256": "9c506ab192e7c84c82994f7f600ccf8db4801caa3b244f3812962d6aefa295f3",
+      "commands": [
+        {
+          "name": "core",
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--lib"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:22:58.728922+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 20.82491596788168,
+          "private_log_sha256": "64ef1d59393a9f5af8d7d4a32647359c278f0170884c613b89aadbc7ede232e7",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "outer_passed": 290,
+          "outer_ignored": 1
+        },
+        {
+          "name": "engine",
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--test",
+            "tactic_engine"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:23:19.554490+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 6.639066901989281,
+          "private_log_sha256": "d4fc09750af34cd939b0da724fc1d827e74d6da1c1b547ea97b458a1db8e6e51",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "outer_passed": 1,
+          "outer_ignored": 0
+        },
+        {
+          "name": "foreign-engine",
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--test",
+            "foreign_neighbor_engine"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:23:26.194060+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 0.24581044819206,
+          "private_log_sha256": "6e0800fdd8b5594600e3586a67ab013b0be96ed2c2e5874b6d15664cce9aef86",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "outer_passed": 9,
+          "outer_ignored": 0
+        },
+        {
+          "name": "prefixed-pun",
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst2",
+            "--test",
+            "prefixed_pun_oracle"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:23:26.440329+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 3.2335985340178013,
+          "private_log_sha256": "3faa8085943175c3996349cf2eb928de454b8fc42618970d498245d66ba679e6",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "outer_passed": 36,
+          "outer_ignored": 0
+        }
+      ]
+    },
+    {
+      "run": "owned-short-core-static-ac9ea87",
+      "revision": "ac9ea878f24e1d96c5d9c00714c8b41cc461e61f",
+      "cpus": [
+        50,
+        148,
+        170,
+        173
+      ],
+      "load_before": [
+        "45.73",
+        "56.57",
+        "72.61"
+      ],
+      "load_after": [
+        "62.46",
+        "58.26",
+        "71.80"
+      ],
+      "owner_receipt_sha256": "eda4ceda9cbd87b3109b2460a67c974d79b9ce4e1e7134940c1ae122900043ac",
+      "commands": [
+        {
+          "name": "fmt",
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:23:54.457113+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 8.088865153025836,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "clippy",
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:24:02.546674+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 38.272782259155065,
+          "private_log_sha256": "0fb06e995725518fbfebb60ff6ecd8b4de5d7ff9d67fc9619c9c1d04ffe47667",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "check",
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:24:40.819959+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 32.469958648085594,
+          "private_log_sha256": "a83c83bd7eb0727b32ba29f753e7e77c996631da52f40b402a1b4e4689201c6e",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        }
+      ]
+    },
+    {
+      "run": "owned-short-importer-targeted-c3f5b4f",
+      "revision": "c3f5b4f52871f2afd7f327fbf753fde2da736ad7",
+      "cpus": [
+        213,
+        226,
+        256,
+        272
+      ],
+      "load_before": [
+        "63.84",
+        "58.64",
+        "66.82"
+      ],
+      "load_after": [
+        "65.94",
+        "59.16",
+        "66.95"
+      ],
+      "owner_receipt_sha256": "27b27daabf417c286f272c3d8f5e28c91eac1ecd01bc1cb50b8781b5a318f235",
+      "commands": [
+        {
+          "name": "importer",
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-rewrite",
+            "--all-targets"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:32:24.474022+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 4.688261954812333,
+          "private_log_sha256": "44cd8669924027f3f6f25b696132f03d4edfa897eb3afd717487d65724074fa1",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "outer_passed": 170,
+          "outer_ignored": 0
+        },
+        {
+          "name": "material-controls",
+          "argv": [
+            "${PYTHON}",
+            "-I",
+            "-B",
+            "evaluation/offline-corpus/disassembly_controls.py"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:32:29.163190+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 1.5438084250781685,
+          "private_log_sha256": "186d7ea511973033459e16fd308c73aceeb169ded93784d34e79adcc2a158476",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "tests_passed": 17
+        },
+        {
+          "name": "head-controls",
+          "argv": [
+            "${PYTHON}",
+            "-I",
+            "-B",
+            "evaluation/offline-corpus/head_capture_controls.py"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:32:30.707688+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 0.31239989399909973,
+          "private_log_sha256": "acc85a36a70e993a351303fc128f1c311fe7e7859d63bf1e3615250b29c0d830",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "tests_passed": 6
+        },
+        {
+          "name": "reproducer-controls",
+          "argv": [
+            "${PYTHON}",
+            "-I",
+            "-B",
+            "evaluation/offline-corpus/reproduce_whole_controls.py"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:32:31.020806+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 0.21733988798223436,
+          "private_log_sha256": "956a0c36ba55bb397484b342828153465a6efc7aa26b941cbfc3ed4f89e9cc8a",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "tests_passed": 9
+        }
+      ]
+    },
+    {
+      "run": "owned-short-workspace-c3f5b4f",
+      "revision": "c3f5b4f52871f2afd7f327fbf753fde2da736ad7",
+      "cpus": [
+        30,
+        129,
+        189,
+        304
+      ],
+      "load_before": [
+        "115.92",
+        "81.99",
+        "73.22"
+      ],
+      "load_after": [
+        "62.24",
+        "103.48",
+        "92.91"
+      ],
+      "owner_receipt_sha256": "1d01fcc54ac7e60a9cbe08f4b1da22694a7323b8cda89f8b7c4e015b2a01aece",
+      "commands": [
+        {
+          "name": "fmt",
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:37:55.306744+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 9.863605458987877,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "clippy",
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "status": "FAILED",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:38:05.171323+00:00",
+          "exit_code": 101,
+          "termination": null,
+          "seconds": 4.213896902976558,
+          "private_log_sha256": "a3b45de235b0c8a740744e5195fca2bfba7657f18745d83435fa251bb3cb25e2",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "check",
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:38:09.386165+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 3.447263194946572,
+          "private_log_sha256": "7bf64b4a2d4ea2bb82d5af66268c3a1ec0bad9abe02f80487a8062ae6581e999",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "workspace",
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "status": "TIMEOUT",
+          "wall_limit_seconds": 360,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:38:12.834051+00:00",
+          "exit_code": -9,
+          "termination": "timeout",
+          "seconds": 360.47860121307895,
+          "private_log_sha256": "9e1df6f5448bec631652f5a055120ea229c11648e859971ac62e7e1b1e2209b7",
+          "cleanup_complete": true,
+          "reaped_descendants": 4,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "serial-launch",
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:44:13.316372+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 136.70601891889237,
+          "private_log_sha256": "2dfae5fda7beb85092828279265b09fbf73f4d8631a4f490ab6df54bb3927465",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        }
+      ]
+    },
+    {
+      "run": "owned-short-array-b8a4aea",
+      "revision": "b8a4aea14ec2d1ce56ce14a22626d4ea3d872cc6",
+      "cpus": [
+        16,
+        64,
+        82,
+        92
+      ],
+      "load_before": [
+        "50.70",
+        "87.11",
+        "88.13"
+      ],
+      "load_after": [
+        "48.52",
+        "84.85",
+        "87.38"
+      ],
+      "owner_receipt_sha256": "cbdcb9661f9366edb7c32f983e3a88694c03081aa3e7792fdc443d7640240bad",
+      "commands": [
+        {
+          "name": "fmt",
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:48:15.795386+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 8.191460357047617,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "clippy",
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:48:23.987464+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 1.643168486887589,
+          "private_log_sha256": "384f41869e4a03388f035d8bbecb8ebeac982102e076b7c734c4b31376f8dcca",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "check",
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:48:25.631133+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 1.2821476918179542,
+          "private_log_sha256": "a2c4a3fcbf65cb4450fd06626c60eb82b53950e4223301408aaceee73607e23d",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        {
+          "name": "importer",
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-rewrite",
+            "--all-targets"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:48:26.913762+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 3.1351003779564053,
+          "private_log_sha256": "a63e9d0b08040b65479af96a706bfcb095ba543a9cd929800bc4c55d77dfdd5e",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "outer_passed": 170,
+          "outer_ignored": 0
+        }
+      ]
+    },
+    {
+      "run": "owned-short-inventory-8dd9cc5",
+      "revision": "8dd9cc5040b6caf89435cc3edde66134ecb51983",
+      "cpus": [
+        43,
+        177,
+        183,
+        307
+      ],
+      "load_before": [
+        "50.27",
+        "76.35",
+        "84.15"
+      ],
+      "load_after": [
+        "53.21",
+        "66.58",
+        "78.99"
+      ],
+      "owner_receipt_sha256": "ca512b9ec22a0fa31e826deb81ee0aa624818350997c605048ec36fff195208f",
+      "commands": [
+        {
+          "name": "inventory",
+          "argv": [
+            "${PYTHON}",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "evaluation/admission",
+            "-p",
+            "test_main813_inventory.py",
+            "-v"
+          ],
+          "status": "TIMEOUT",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T00:50:01.476099+00:00",
+          "exit_code": -9,
+          "termination": "timeout",
+          "seconds": 180.06290277815424,
+          "private_log_sha256": "0ccd6cdd3f3622bb5710d223967371763051ee17980dd912aa747d65411a98f2",
+          "cleanup_complete": true,
+          "reaped_descendants": 1,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "tests_passed": null,
+          "completed_methods": [
+            "core_parser_rejects_field_type_scope_population_and_partial_changes (test_main813_inventory.Main813InventoryTests.test_core_parser_rejects_field_type_scope_population_and_partial_changes)"
+          ],
+          "declared_methods": 5
+        }
+      ]
+    },
+    {
+      "run": "owned-short-cache-8cfcbb7",
+      "revision": "8cfcbb750748c18cbbd5a8c2c088036f05e51a6b",
+      "cpus": [
+        128,
+        162,
+        205,
+        257
+      ],
+      "load_before": [
+        "71.43",
+        "50.71",
+        "60.75"
+      ],
+      "load_after": [
+        "107.26",
+        "72.70",
+        "67.58"
+      ],
+      "owner_receipt_sha256": "3cbcbdd6cd179c7007e7d21f410b638390aee214bb20cbf655b7c50b1929f0c1",
+      "commands": [
+        {
+          "name": "public-cache",
+          "argv": [
+            "${PYTHON}",
+            "-B",
+            "ignored/a3/owned-short-publication-v1/verify-cache.py"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T01:26:17.334220+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 0.2589405740145594,
+          "private_log_sha256": "41d3392a25f72170d7d990b93e3976701ed3d238c0c032d05cd2442ac72c3845",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "public_cache_diagnostic": {
+            "first": {
+              "entries": 3,
+              "hits": 0,
+              "misses": 3
+            },
+            "implementation_sha256": {
+              "evaluation/admission/core_813_inventory.py": "cac4bd1e2e03ac49091bb5ad697c0f45ce9e0917d1f13cf33fe1ce77f02d04c2",
+              "evaluation/admission/inventory_syntax.py": "e340d782578ae217908aa3ac9c92db3f50a79a65b99f87aeb878409760bf7d35",
+              "evaluation/admission/test_main813_inventory.py": "d5f05f5a48162a653b02148a04b977f47d38f4279378b8244c2351a9cdc6a651"
+            },
+            "inputs": {
+              "evaluation/offline-corpus/disassembly_controls.py": {
+                "bytes": 39513,
+                "methods": 17,
+                "sha256": "b369d49735f3274cab5256836ff7b5e567fbe2a4ee3f9ce2c177e6b3d19b376a"
+              },
+              "evaluation/offline-corpus/head_capture_controls.py": {
+                "bytes": 8492,
+                "methods": 6,
+                "sha256": "afd2125686bb8c07fe630a8755c44397db359e2b5e4f3bc05cbefc52c1989883"
+              },
+              "evaluation/offline-corpus/reproduce_whole_controls.py": {
+                "bytes": 22815,
+                "methods": 9,
+                "sha256": "8430d726254d0a901191d680db4253f9f2cb95b6b25aee186fe36643283db81f"
+              }
+            },
+            "performance_claim": false,
+            "public_guard_calls": 2,
+            "python_version": [
+              3,
+              12,
+              15
+            ],
+            "revision": "8cfcbb750748c18cbbd5a8c2c088036f05e51a6b",
+            "schema": 1,
+            "second": {
+              "entries": 3,
+              "hits": 3,
+              "misses": 3
+            },
+            "source_only": false,
+            "status": "PASS"
+          },
+          "probe_source_sha256": "b18604094d169e904aa9ce4e42e2f9fab38212f5ab35ed6ebf5dca8d39cce2f1"
+        },
+        {
+          "name": "inventory",
+          "argv": [
+            "${PYTHON}",
+            "-B",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "evaluation/admission",
+            "-p",
+            "test_main813_inventory.py",
+            "-v"
+          ],
+          "status": "PASS",
+          "wall_limit_seconds": 180,
+          "output_cap": 8388608,
+          "start_utc": "2026-10-30T01:26:17.596823+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 131.7756225350313,
+          "private_log_sha256": "79f1760a603677296fbc9e5df9f1e9a071ac2abbc6732b4a9457a422eecb482b",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "tests_passed": 5
+        }
+      ]
+    }
+  ],
+  "workspace": {
+    "status": "TIMEOUT",
+    "wall_limit_seconds": 360,
+    "complete_harnesses": 70,
+    "completed_outer_passes": 2015,
+    "completed_outer_ignores": 1,
+    "incomplete_neighbor_pass_observations": 9,
+    "reported_failed_tests": 0,
+    "neighbor_harness_complete": false,
+    "parse_errors": {
+      "precontext_native_parse_error": "missing_precontext_harness",
+      "parse_error": "missing_outer_summary"
+    }
+  },
+  "serial_launch": {
+    "status": "PASS",
+    "harnesses": 27,
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "protocol": "complete",
+    "field_counts": {
+      "native_cases": 50,
+      "dynamic_admission_fixtures": 15,
+      "dynamic_matrix_cases": 388,
+      "native_validation_fixtures": 110,
+      "backing_cleanup_harnesses": 1
+    }
+  },
+  "targeted": {
+    "core_outer_passed": 336,
+    "core_outer_ignored": 1,
+    "importer_outer_passed": 170,
+    "new_rust_controls_passed": 13,
+    "profile_controls_passed": 32,
+    "new_profile_controls_passed": 5,
+    "native_owned_selection_bridge": "NOT_RUN",
+    "inventory": "PASS_5_METHODS",
+    "earlier_inventory": "TIMEOUT_1_OF_5_METHODS_COMPLETED"
+  },
+  "corpus": {
+    "revision": "c3f5b4f52871f2afd7f327fbf753fde2da736ad7",
+    "programs": [
+      {
+        "program": "checksum",
+        "status": "FAILED",
+        "heads": 80,
+        "jumps": 16,
+        "tactics": {
+          "B1": 6,
+          "none": 1,
+          "B2": 3,
+          "T1": 2,
+          "T3": 2,
+          "T2": 2
+        },
+        "refused_site_ids": [
+          2
+        ],
+        "candidate_complete": false,
+        "original_sha256": "2acd8757505a13065f38c54b6785349f85c9974b50387adfb9d3ccbb511e0e37",
+        "prior_original_sha256": "e5369869d9d9810a112631465777eac9ec714dff8d6f55677d72d3441ec71928",
+        "prior_instruction_roster_identical": true,
+        "loaded_bytes_difference": "Only ELF e_shoff bytes 40..48 differ; every other PT_LOAD byte and all segment headers match",
+        "heads_sha256": "6e243b62a2394b899f53a0a05d620e01c79fb471e87afb9c39d2a28f7c11d48f",
+        "ledger_sha256": "8c2cf7d816c3de258f3711a8f2041b0c5755f6a089154f3a250e5b1488c16fed",
+        "policy_sha256": "5ec145f290bb37e40c5aa1c8356003b987216d01290d0d90da120eb0e3456248",
+        "selection_sha256": "e57f079685ce4582efa9650bbe2632a495a9ee9fce99a93b3fb7b5b75eaae3de",
+        "complete_sha256": "9cef9b98b7e703bdc8a19b8966d0343d8e59eeaf2c487b52ccb3beae17aeedaa",
+        "authenticated_files": 46,
+        "authenticated_bytes": 218007,
+        "report_sha256": "211ff5df0083180a061a8b32e0253d3330b2b30cdedb34372fbe50d6336e157c"
+      },
+      {
+        "program": "rle-roundtrip",
+        "status": "FAILED",
+        "heads": 107,
+        "jumps": 26,
+        "tactics": {
+          "B1": 16,
+          "none": 1,
+          "B2": 3,
+          "T1": 2,
+          "T3": 2,
+          "T2": 2
+        },
+        "refused_site_ids": [
+          2
+        ],
+        "candidate_complete": false,
+        "original_sha256": "58cb375361f5380d62c4b7b8854c748d83e1d1feab6da9dfe6b731b81c7cb320",
+        "prior_original_sha256": "c69142a5fd32cf02496e19272e6212d069f01886c7020424020fb217b0419add",
+        "prior_instruction_roster_identical": true,
+        "loaded_bytes_difference": "Only ELF e_shoff bytes 40..48 differ; every other PT_LOAD byte and all segment headers match",
+        "heads_sha256": "4727f581b0edcedd79e278e07875c7b60d00b8cb97cdb17ebba4ac3c872e7890",
+        "ledger_sha256": "bc9ab2b4924d8e4fbdb44b1a98a2e604191579dc3e0d7be08f056cb51a308c5b",
+        "policy_sha256": "cad34bc8f4268c896030d561c647f73558484d1120466c8262c603e7f84296b7",
+        "selection_sha256": "454d068b031b1f53756ffefddfa36fe81dd6a6a88d3d59b35ffb63d5b8b18321",
+        "complete_sha256": "281bf4d8dc2d7cd099dc7afe111d02078913fd40c1a7a500e339034fadbe638c",
+        "authenticated_files": 66,
+        "authenticated_bytes": 314106,
+        "report_sha256": "f5008e67e46f39977492667aafcb6b1f53815515c9282062c2ce423e468133bb"
+      }
+    ],
+    "commands": [
+      {
+        "argv": [
+          "${REPO}/target/release/examples/disassembly_sites",
+          "--short-neighbors-owned",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/checksum/original",
+          "${REPO}/ignored/a3/owned-short-attempt-c3f5b4f/attempt/checksum/ledger.txt",
+          "8c2cf7d816c3de258f3711a8f2041b0c5755f6a089154f3a250e5b1488c16fed",
+          "${REPO}/ignored/a3/owned-short-attempt-c3f5b4f/attempt/checksum/policy.txt",
+          "5ec145f290bb37e40c5aa1c8356003b987216d01290d0d90da120eb0e3456248",
+          "${REPO}/ignored/a3/owned-short-attempt-c3f5b4f/attempt/checksum/importer/product"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 2,
+        "seconds": 0.1687608859501779,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "6d8dcc57a237e203291c6781820e4380e13a7c8c306d551284642e0b5bfd9325",
+        "program": "checksum"
+      },
+      {
+        "argv": [
+          "${REPO}/target/release/examples/disassembly_sites",
+          "--short-neighbors-owned",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/rle-roundtrip/original",
+          "${REPO}/ignored/a3/owned-short-attempt-c3f5b4f/attempt/rle-roundtrip/ledger.txt",
+          "bc9ab2b4924d8e4fbdb44b1a98a2e604191579dc3e0d7be08f056cb51a308c5b",
+          "${REPO}/ignored/a3/owned-short-attempt-c3f5b4f/attempt/rle-roundtrip/policy.txt",
+          "cad34bc8f4268c896030d561c647f73558484d1120466c8262c603e7f84296b7",
+          "${REPO}/ignored/a3/owned-short-attempt-c3f5b4f/attempt/rle-roundtrip/importer/product"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 2,
+        "seconds": 0.1737727450672537,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "63bd259fc995ecb278d4b2996fa1e8c1c75ec14155b901962c0956c9bd78604f",
+        "program": "rle-roundtrip"
+      }
+    ],
+    "build_commands": [
+      {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "--release",
+          "--locked",
+          "--offline",
+          "--package",
+          "liteinst-rewrite",
+          "--example",
+          "disassembly_sites",
+          "--message-format=json"
+        ],
+        "limits": {
+          "cpu_seconds": 120,
+          "wall_seconds": 180,
+          "file_bytes": 134217728
+        },
+        "exit": 0,
+        "seconds": 9.601989205926657,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "ebd1afea0fc1f32cc5fbf0a03236b9561f4a02b828a950e09b02263e6d7ba38b",
+        "name": "build-disassembly_sites"
+      },
+      {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "--release",
+          "--locked",
+          "--offline",
+          "--package",
+          "liteinst2",
+          "--bin",
+          "elf-exec-oracle",
+          "--message-format=json"
+        ],
+        "limits": {
+          "cpu_seconds": 120,
+          "wall_seconds": 180,
+          "file_bytes": 134217728
+        },
+        "exit": 0,
+        "seconds": 7.28002913412638,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "69cedaad1fbf7e0a1009fd86f7245d8a222232ed849a1e78b9a6d88362b95500",
+        "name": "build-elf-exec-oracle"
+      },
+      {
+        "argv": [
+          "${REPO}/target/release/elf-exec-oracle",
+          "target"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 0,
+        "seconds": 0.1414445519912988,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "f2c530c145902fbff4077ffdd8d69be90b79058d071abfcf9a871c2c8bc43c75",
+        "name": "target"
+      },
+      {
+        "argv": [
+          "/usr/bin/as",
+          "--64",
+          "${REPO}/evaluation/offline-corpus/checksum.S",
+          "-o",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/checksum/subject.o"
+        ],
+        "limits": {
+          "cpu_seconds": 60,
+          "wall_seconds": 90,
+          "file_bytes": 134217728
+        },
+        "exit": 0,
+        "seconds": 0.17746677086688578,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "8333fb707c284056cc63ef1d547eceb1852489420c14f8cb27b346537d9cef79",
+        "name": "checksum-as"
+      },
+      {
+        "argv": [
+          "/usr/bin/ld.bfd",
+          "-static",
+          "-nostdlib",
+          "--build-id=none",
+          "-z",
+          "noexecstack",
+          "-T",
+          "${REPO}/evaluation/offline-corpus/layout.ld",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/checksum/subject.o",
+          "-o",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/checksum/original"
+        ],
+        "limits": {
+          "cpu_seconds": 60,
+          "wall_seconds": 90,
+          "file_bytes": 134217728
+        },
+        "exit": 0,
+        "seconds": 0.13773924601264298,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "6436e8a38d172ca381c2e4f3fb07c330c09628408f97568d239b52ddba6d5ce1",
+        "name": "checksum-ld"
+      },
+      {
+        "argv": [
+          "/usr/bin/objdump",
+          "-d",
+          "-w",
+          "--insn-width=16",
+          "--disassemble=_start",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/checksum/original"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 0,
+        "seconds": 0.14222599705681205,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "315434a6d3504a35de6570fc1c74492fa373f279f3275f367fb970401b43d804",
+        "name": "checksum-disassemble-_start"
+      },
+      {
+        "argv": [
+          "/usr/bin/objdump",
+          "-d",
+          "-w",
+          "--insn-width=16",
+          "--disassemble=kernel",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/checksum/original"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 0,
+        "seconds": 0.14140669512562454,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "f47379f174be4d8f0a633b12e9e30e29b91b9d89eb369a38d661aaf47823d04a",
+        "name": "checksum-disassemble-kernel"
+      },
+      {
+        "argv": [
+          "/usr/bin/objdump",
+          "-d",
+          "-w",
+          "--insn-width=16",
+          "--disassemble=null_hook",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/checksum/original"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 0,
+        "seconds": 0.1442197309806943,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "4de31335c4bc912ec4041a2e23d7c008b20d09a68b211c9aa80093f3a395ef28",
+        "name": "checksum-disassemble-null_hook"
+      },
+      {
+        "argv": [
+          "/usr/bin/as",
+          "--64",
+          "${REPO}/evaluation/offline-corpus/rle-roundtrip.S",
+          "-o",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/rle-roundtrip/subject.o"
+        ],
+        "limits": {
+          "cpu_seconds": 60,
+          "wall_seconds": 90,
+          "file_bytes": 134217728
+        },
+        "exit": 0,
+        "seconds": 0.14015442412346601,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "0af059cd46553f56fc4839a41417b0f1772206f9597f44dcae8bf99cec2abddf",
+        "name": "rle-roundtrip-as"
+      },
+      {
+        "argv": [
+          "/usr/bin/ld.bfd",
+          "-static",
+          "-nostdlib",
+          "--build-id=none",
+          "-z",
+          "noexecstack",
+          "-T",
+          "${REPO}/evaluation/offline-corpus/layout.ld",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/rle-roundtrip/subject.o",
+          "-o",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/rle-roundtrip/original"
+        ],
+        "limits": {
+          "cpu_seconds": 60,
+          "wall_seconds": 90,
+          "file_bytes": 134217728
+        },
+        "exit": 0,
+        "seconds": 0.1386271300725639,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "152772f9ed66da3550cfd2abbdf7f515bdcc61423df73fb4d32335fc046f3c33",
+        "name": "rle-roundtrip-ld"
+      },
+      {
+        "argv": [
+          "/usr/bin/objdump",
+          "-d",
+          "-w",
+          "--insn-width=16",
+          "--disassemble=_start",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/rle-roundtrip/original"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 0,
+        "seconds": 0.14359864802099764,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "0a94dd036203189f17ac49791b43bd4a9ed2e39c4a61faf7ef8f6d4c09ea527b",
+        "name": "rle-roundtrip-disassemble-_start"
+      },
+      {
+        "argv": [
+          "/usr/bin/objdump",
+          "-d",
+          "-w",
+          "--insn-width=16",
+          "--disassemble=kernel",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/rle-roundtrip/original"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 0,
+        "seconds": 0.1449704181868583,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "9ebd73df82388f45fb1f1e2f0ad18b8cb47bf9b5386b3d8dbf1a64e4aa000fd9",
+        "name": "rle-roundtrip-disassemble-kernel"
+      },
+      {
+        "argv": [
+          "/usr/bin/objdump",
+          "-d",
+          "-w",
+          "--insn-width=16",
+          "--disassemble=null_hook",
+          "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture/rle-roundtrip/original"
+        ],
+        "limits": {
+          "cpu_seconds": 20,
+          "wall_seconds": 30,
+          "file_bytes": 16777216
+        },
+        "exit": 0,
+        "seconds": 0.15851182001642883,
+        "absence_proof": "ECHILD",
+        "receipt_sha256": "c589a7f1f6685ace4fd82f8a6f96a2b36c5d61e21bb7f00697c64b1183a5160f",
+        "name": "rle-roundtrip-disassemble-null_hook"
+      }
+    ],
+    "build": {
+      "phases_passed": 13,
+      "exit_code": 2,
+      "configuration_complete": false,
+      "configuration_states": {
+        "ABSENT": 13,
+        "READ_DENIED": 2,
+        "READ": 1
+      },
+      "cpus": [
+        103,
+        191,
+        207,
+        278
+      ],
+      "load_before": [
+        "66.29",
+        "59.82",
+        "66.91"
+      ],
+      "load_after": [
+        "60.95",
+        "59.09",
+        "66.48"
+      ],
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_CACHE}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+        "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc"
+      },
+      "release_binary_sha256": "4cfaf028ddc69964e3a756e212ee2415f27acf036f0d9783453de053f3391389",
+      "closed_sha256": "c23ed8d71df556d35515bfe2ab8fce4146eba38aa9d00317c2209d2a9506af22",
+      "command": [
+        "${PYTHON}",
+        "-B",
+        "evaluation/offline-corpus/build_whole.py",
+        "--raw",
+        "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--cargo-home",
+        "${CARGO_CACHE}",
+        "--user-home",
+        "${USER_HOME}"
+      ],
+      "release_profile": {
+        "opt_level": 3,
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true
+      },
+      "tools": {
+        "as": {
+          "bytes": 727360,
+          "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+        },
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "helper": {
+          "bytes": 7710,
+          "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+        },
+        "ld": {
+          "bytes": 1791600,
+          "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+        },
+        "objdump": {
+          "bytes": 423000,
+          "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+        },
+        "python": {
+          "bytes": 13542408,
+          "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        },
+        "timeout": {
+          "bytes": 36848,
+          "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+        }
+      }
+    },
+    "attempt": {
+      "command": [
+        "${PYTHON}",
+        "-B",
+        "evaluation/offline-corpus/reproduce_whole.py",
+        "--capture",
+        "${REPO}/ignored/a3/owned-short-build-c3f5b4f/capture",
+        "--capture-sha256",
+        "c23ed8d71df556d35515bfe2ab8fce4146eba38aa9d00317c2209d2a9506af22",
+        "--output",
+        "${REPO}/ignored/a3/owned-short-attempt-c3f5b4f/attempt",
+        "--placement-profile",
+        "offline-whole-authored-short-t3-ownership-2g-v1"
+      ],
+      "profile": "offline-whole-authored-short-t3-ownership-2g-v1",
+      "closed_sha256": "13e1f3055378513a03ef16cf5210d0213e8ee6e868c6d487c0f477f5bdd27748",
+      "cpus": [
+        237,
+        271,
+        279,
+        282
+      ],
+      "load_before": [
+        "57.65",
+        "58.41",
+        "66.06"
+      ],
+      "load_after": [
+        "57.65",
+        "58.41",
+        "66.06"
+      ],
+      "exit_code": 1,
+      "attempts_per_program": 1,
+      "heads": 187,
+      "jumps": 42,
+      "complete_candidates": 0,
+      "candidate_executions": 0,
+      "e9_comparisons": 0,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_CACHE}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+        "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc"
+      }
+    }
+  },
+  "reproduction_scripts": [
+    "evaluation/admission/run.py",
+    "evaluation/offline-corpus/build_whole.py",
+    "evaluation/offline-corpus/reproduce_whole.py",
+    "evaluation/owned-short-c3f5b4f/verify-cache.py"
+  ],
+  "prior_results_retained": [
+    "evaluation/whole-authored-window-f59b215/receipt.json",
+    "evaluation/whole-authored-broad-f2aa721/receipt.json",
+    "evaluation/short-neighbor-c2696f8/receipt.json",
+    "evaluation/short-neighbor-merged-9adb451/receipt.json",
+    "evaluation/short-engine-11e2493/receipt.json"
+  ],
+  "limits": "A3 and A5 remain open. No new native qualification or performance claim. Earlier strict-clock failures and recorder timeout remain failures. Exact source declarations do not establish run completion."
+}
