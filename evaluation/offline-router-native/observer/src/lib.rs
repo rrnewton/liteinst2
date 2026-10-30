@@ -127,6 +127,49 @@ pub struct Object {
     pub file: FilePin,
     pub pages: Vec<Page>,
 }
+
+pub const KERNEL_BASIS_PROFILE: &str = "linux-x86_64-live-config-user-shstk-disabled-v1";
+const KERNEL_GZIP_CAP: usize = 65536;
+const KERNEL_DECODED_CAP: usize = 524288;
+const KERNEL_QUERY_SENTINEL: u64 = 0x55aa55aa55aa55aa;
+const KERNEL_CHECKS: u32 = 6;
+
+/// This capsule binds an additional explicitly accepted unsafe kernel premise.
+/// The hashes establish custody, never the authority of that premise.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct KernelBasis {
+    pub profile: String,
+    pub basis_sha256: [u8; 32],
+    pub release: String,
+    pub config_gzip_bytes: u32,
+    pub config_gzip_sha256: [u8; 32],
+    pub config_decoded_bytes: u32,
+    pub config_decoded_sha256: [u8; 32],
+}
+impl KernelBasis {
+    fn validate(&self) -> Result<()> {
+        if self.profile != KERNEL_BASIS_PROFILE
+            || self.release.is_empty()
+            || self.release.len() > 128
+            || !self.release.bytes().all(|b| (33..=126).contains(&b))
+            || self.config_gzip_bytes == 0
+            || self.config_gzip_bytes as usize > KERNEL_GZIP_CAP
+            || self.config_decoded_bytes == 0
+            || self.config_decoded_bytes as usize > KERNEL_DECODED_CAP
+        {
+            return Err(Error::Shape);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct KernelQuery {
+    pub result: libc::c_long,
+    pub errno: i32,
+    pub output: u64,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Request {
     pub main: Object,
@@ -140,6 +183,7 @@ pub struct Request {
     /// Captured by the independent resolver, never guessed from symbol text.
     pub completion_file_offset: Option<u64>,
     pub xstate_bytes: usize,
+    pub kernel_basis: Option<KernelBasis>,
 }
 
 /// Safe unknown-authority admission remains unavailable. Only the documented
@@ -165,6 +209,9 @@ pub fn admit(
 /// and after this call. A digest, status flag, memfd name or set of seals proves
 /// NONE of that authority. The standalone CLI is an unsafe caller boundary, not
 /// an authentication service. Rust still checks all file/page/stop facts below.
+/// If kernel_basis is present, the caller must additionally hold explicit unsafe
+/// acceptance of that exact basis and independently validate the live bounded
+/// gzip/decoded configuration. No legacy request can infer this authority.
 pub unsafe fn admit_from_checked_launcher(request: &Request) -> Result<AdmittedPackage> {
     Ok(AdmittedPackage {
         request: request.clone(),
@@ -811,22 +858,422 @@ fn controlled_signal_status(raw: &[u8]) -> Result<()> {
     }
     Ok(())
 }
-fn object_bias(object: &Object, maps: &[Mapping]) -> Result<u64> {
+
+// Only the separately accepted config-off mode calls these new guards. A
+// missing proc field or a failed syscall never selects this mode.
+fn seccomp_zero(raw: &[u8]) -> Result<()> {
+    if raw.len() > 65536 || !raw.is_ascii() || !raw.ends_with(b"\n") || raw.contains(&0) {
+        return Err(Error::Entry);
+    }
+    let text = std::str::from_utf8(raw).map_err(|_| Error::Shape)?;
+    let mut seen = false;
+    for line in text.lines() {
+        if let Some(value) = line.strip_prefix("Seccomp:") {
+            if seen || value.trim() != "0" {
+                return Err(Error::Entry);
+            }
+            seen = true;
+        } else if line.trim_start().starts_with("Seccomp:") {
+            return Err(Error::Entry);
+        }
+    }
+    if !seen {
+        return Err(Error::Entry);
+    }
+    Ok(())
+}
+fn absent_shstk(raw: &[u8]) -> Result<()> {
+    seccomp_zero(raw)?;
+    let text = std::str::from_utf8(raw).map_err(|_| Error::Shape)?;
+    if text
+        .lines()
+        .any(|line| line.trim_start().starts_with("x86_Thread_features"))
+    {
+        return Err(Error::Entry);
+    }
+    Ok(())
+}
+fn request_shstk(raw: &[u8], basis: Option<&KernelBasis>) -> Result<()> {
+    if basis.is_some() {
+        absent_shstk(raw)
+    } else {
+        disabled_shstk(raw)
+    }
+}
+fn kernel_query_matches(query: KernelQuery) -> Result<()> {
+    if query.result != -1 || query.errno != libc::EINVAL || query.output != KERNEL_QUERY_SENTINEL {
+        return Err(Error::Entry);
+    }
+    Ok(())
+}
+fn kernel_config_matches(
+    basis: &KernelBasis,
+    raw: &[u8],
+    procfs: bool,
+    regular: bool,
+    system: &str,
+    release: &str,
+    machine: &str,
+) -> Result<()> {
+    basis.validate()?;
+    if !procfs
+        || !regular
+        || raw.len() != basis.config_gzip_bytes as usize
+        || raw.len() > KERNEL_GZIP_CAP
+        || <[u8; 32]>::from(Sha256::digest(raw)) != basis.config_gzip_sha256
+        || system != "Linux"
+        || machine != "x86_64"
+        || release != basis.release
+    {
+        return Err(Error::Custody);
+    }
+    Ok(())
+}
+fn uname_field(raw: &[libc::c_char]) -> Result<String> {
+    let end = raw.iter().position(|&b| b == 0).ok_or(Error::Custody)?;
+    let bytes: Vec<_> = raw[..end].iter().map(|&b| b as u8).collect();
+    if bytes.is_empty() || !bytes.iter().all(|b| (33..=126).contains(b)) {
+        return Err(Error::Custody);
+    }
+    String::from_utf8(bytes).map_err(|_| Error::Custody)
+}
+fn live_kernel_config(basis: &KernelBasis) -> Result<()> {
+    basis.validate()?;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC)
+        .open("/proc/config.gz")
+        .map_err(io_error)?;
+    let before = file.metadata().map_err(io_error)?;
+    let mut fs = unsafe { core::mem::zeroed::<libc::statfs>() };
+    if unsafe { libc::fstatfs(file.as_raw_fd(), &mut fs) } != 0 {
+        return Err(Error::Io(errno()));
+    }
+    if fs.f_type != 0x9fa0 || !before.is_file() {
+        return Err(Error::Custody);
+    }
+    let mut raw = Vec::new();
+    (&mut file)
+        .take(u64::from(basis.config_gzip_bytes) + 1)
+        .read_to_end(&mut raw)
+        .map_err(io_error)?;
+    let after = file.metadata().map_err(io_error)?;
+    if (before.dev(), before.ino(), before.mode()) != (after.dev(), after.ino(), after.mode()) {
+        return Err(Error::Custody);
+    }
+    let mut uname = unsafe { core::mem::zeroed::<libc::utsname>() };
+    if unsafe { libc::uname(&mut uname) } != 0 {
+        return Err(Error::Io(errno()));
+    }
+    // The checked launcher independently bounds/decodes the one gzip member.
+    // This check binds the actual live compressed bytes to that accepted input;
+    // it does not claim those bytes prove the trusted kernel's implementation.
+    kernel_config_matches(
+        basis,
+        &raw,
+        fs.f_type == 0x9fa0,
+        after.is_file(),
+        &uname_field(&uname.sysname)?,
+        &uname_field(&uname.release)?,
+        &uname_field(&uname.machine)?,
+    )
+}
+fn query_kernel_status() -> KernelQuery {
+    let mut output = KERNEL_QUERY_SENTINEL;
+    // libc::syscall supplies the -1/errno convention. The opcode and output
+    // width are the literal Linux x86-64 ABI, not a libc SHSTK wrapper.
+    unsafe { *libc::__errno_location() = 0 };
+    let result =
+        unsafe { libc::syscall(libc::SYS_arch_prctl, 0x5005_u64, &mut output as *mut u64) };
+    let error = errno();
+    KernelQuery {
+        result,
+        errno: error,
+        output,
+    }
+}
+fn kernel_deadline(deadline: Instant) -> Result<()> {
+    if Instant::now() >= deadline {
+        Err(Error::Deadline)
+    } else {
+        Ok(())
+    }
+}
+fn kernel_checkpoint(
+    basis: Option<&KernelBasis>,
+    deadline: Instant,
+    evidence: &mut Evidence,
+) -> Result<()> {
+    let Some(basis) = basis else { return Ok(()) };
+    kernel_deadline(deadline)?;
+    if evidence.kernel_checks >= KERNEL_CHECKS {
+        return Err(Error::Shape);
+    }
+    live_kernel_config(basis)?;
+    // This observer query checks consistency of an explicitly trusted,
+    // kernel-global config-off premise. It is NOT a tracee-state query.
+    seccomp_zero(&read_proc(
+        std::process::id() as libc::pid_t,
+        "status",
+        65536,
+    )?)?;
+    let query = query_kernel_status();
+    evidence.kernel_query = Some(query);
+    kernel_query_matches(query)?;
+    kernel_deadline(deadline)?;
+    evidence.kernel_checks += 1;
+    Ok(())
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(C)]
+struct KernelSigaction {
+    handler: u64,
+    flags: u64,
+    restorer: u64,
+    mask: u64,
+}
+impl KernelSigaction {
+    const DEFAULT: Self = Self {
+        handler: 0,
+        flags: 0,
+        restorer: 0,
+        mask: 0,
+    };
+    const UNREAD: Self = Self {
+        handler: u64::MAX,
+        flags: u64::MAX,
+        restorer: u64::MAX,
+        mask: u64::MAX,
+    };
+}
+fn reset_reserved_signals_with(
+    mut call: impl FnMut(
+        libc::c_int,
+        Option<&KernelSigaction>,
+        Option<&mut KernelSigaction>,
+    ) -> libc::c_long,
+) -> bool {
+    for signal in [32, 33] {
+        if call(signal, Some(&KernelSigaction::DEFAULT), None) != 0 {
+            return false;
+        }
+        let mut actual = KernelSigaction::UNREAD;
+        if call(signal, None, Some(&mut actual)) != 0 || actual != KernelSigaction::DEFAULT {
+            return false;
+        }
+    }
+    true
+}
+/// # Safety
+/// Only the owned, single-threaded post-fork child may normalize NPTL-reserved
+/// dispositions. Never call this on the parent or a shared test process.
+unsafe fn reset_reserved_signals() -> bool {
+    reset_reserved_signals_with(|signal, action, old| {
+        let action = action.map_or(core::ptr::null(), |a| a as *const KernelSigaction);
+        let old = old.map_or(core::ptr::null_mut(), |a| a as *mut KernelSigaction);
+        unsafe { libc::syscall(libc::SYS_rt_sigaction, signal, action, old, 8_usize) }
+    })
+}
+
+// stat(2) and proc maps need not use the same device-number namespace (for
+// example, Btrfs subvolumes). Keep the full stat/hash pin and independently bind
+// the proc namespace through an owned mapping of the already retained fd.
+// Numeric proc identity alone is insufficient: subvolumes can reuse inodes.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct MappedFileIdentity {
+    pin: FilePin,
+    device: u64,
+}
+impl MappedFileIdentity {
+    fn check_pin(&self, pin: &FilePin) -> Result<()> {
+        if self.pin != *pin {
+            return Err(Error::Custody);
+        }
+        Ok(())
+    }
+    fn matches(&self, mapping: &Mapping) -> bool {
+        mapping.device == self.device && mapping.inode == self.pin.inode
+    }
+    fn check_target(&self, mapping: &Mapping, target: &[u8]) -> Result<()> {
+        if !self.matches(mapping) {
+            return Err(Error::Custody);
+        }
+        mapped_path_matches(target, &self.pin.path)
+    }
+}
+fn mapped_path_matches(raw: &[u8], expected: &std::path::Path) -> Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    // No deleted suffix stripping, aliases, basename matching or normalization.
+    if raw.is_empty() || raw.len() > 4095 || raw != expected.as_os_str().as_bytes() {
+        return Err(Error::Custody);
+    }
+    Ok(())
+}
+fn map_target_with(read: impl FnOnce(&mut [u8]) -> Result<usize>) -> Result<Vec<u8>> {
+    let mut bytes = [0_u8; 4096];
+    let size = read(&mut bytes)?;
+    if size == 0 || size >= bytes.len() {
+        return Err(Error::Custody);
+    }
+    Ok(bytes[..size].to_vec())
+}
+fn mapping_target(pid: libc::pid_t, mapping: &Mapping) -> Result<Vec<u8>> {
+    let name = CString::new(format!(
+        "/proc/{pid}/map_files/{:x}-{:x}",
+        mapping.start, mapping.end
+    ))
+    .map_err(|_| Error::Shape)?;
+    // readlink is unprivileged on the supported host; following this symlink
+    // requires privileges. Any unavailable/denied link refuses, with no fallback.
+    map_target_with(|bytes| {
+        let size = unsafe { libc::readlink(name.as_ptr(), bytes.as_mut_ptr().cast(), bytes.len()) };
+        if size < 0 {
+            Err(Error::Io(errno()))
+        } else {
+            Ok(size as usize)
+        }
+    })
+}
+fn calibrated_identity(
+    pin: &FilePin,
+    address: u64,
+    maps: &[Mapping],
+    target: &[u8],
+) -> Result<MappedFileIdentity> {
+    let end = address.checked_add(4096).ok_or(Error::Shape)?;
+    let rows: Vec<_> = maps
+        .iter()
+        .filter(|m| m.start <= address && end <= m.end)
+        .collect();
+    if rows.len() != 1 {
+        return Err(Error::Custody);
+    }
+    let row = rows[0];
+    if row.start != address
+        || row.end != end
+        || row.offset != 0
+        || row.permissions != *b"r--p"
+        || row.inode != pin.inode
+    {
+        return Err(Error::Custody);
+    }
+    mapped_path_matches(target, &pin.path)?;
+    Ok(MappedFileIdentity {
+        pin: pin.clone(),
+        device: row.device,
+    })
+}
+fn release_probe_with(
+    base: &mut Option<usize>,
+    mut unmap: impl FnMut(usize, usize) -> Result<()>,
+) -> Result<()> {
+    if let Some(address) = *base {
+        unmap(address, 3 * 4096)?;
+        *base = None;
+    }
+    Ok(())
+}
+struct ProbeReservation {
+    base: Option<usize>,
+}
+impl ProbeReservation {
+    fn close(&mut self) -> Result<()> {
+        release_probe_with(&mut self.base, |address, bytes| {
+            // This entire three-page range is still exclusively owned here.
+            if unsafe { libc::munmap(address as *mut libc::c_void, bytes) } != 0 {
+                return Err(Error::Cleanup);
+            }
+            Ok(())
+        })
+    }
+}
+impl Drop for ProbeReservation {
+    fn drop(&mut self) {
+        // Explicit close is checked before fork; this is an error/unwind backstop.
+        let _ = self.close();
+    }
+}
+fn calibrate_file(pin: &FilePin, held: &File, deadline: Instant) -> Result<MappedFileIdentity> {
+    kernel_deadline(deadline)?;
+    pin.check(held)?;
+    let base = unsafe {
+        libc::mmap(
+            core::ptr::null_mut(),
+            3 * 4096,
+            libc::PROT_NONE,
+            libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+            -1,
+            0,
+        )
+    };
+    if base == libc::MAP_FAILED {
+        return Err(Error::Io(errno()));
+    }
+    let mut reservation = ProbeReservation {
+        base: Some(base as usize),
+    };
+    let checked = (|| {
+        let address = (base as usize).checked_add(4096).ok_or(Error::Shape)?;
+        // MAP_FIXED replaces only the middle page of our own reservation. The
+        // two PROT_NONE guards prevent VMA merging with another file mapping.
+        let mapped = unsafe {
+            libc::mmap(
+                address as *mut libc::c_void,
+                4096,
+                libc::PROT_READ,
+                libc::MAP_PRIVATE | libc::MAP_FIXED,
+                held.as_raw_fd(),
+                0,
+            )
+        };
+        if mapped == libc::MAP_FAILED {
+            return Err(Error::Io(errno()));
+        }
+        if mapped as usize != address {
+            return Err(Error::Custody);
+        }
+        let maps = parse_maps(&read_proc(
+            std::process::id() as libc::pid_t,
+            "maps",
+            MAP_CAP,
+        )?)?;
+        let row = maps
+            .iter()
+            .find(|m| m.start == address as u64 && m.end == address as u64 + 4096)
+            .ok_or(Error::Custody)?;
+        let target = mapping_target(std::process::id() as libc::pid_t, row)?;
+        let identity = calibrated_identity(pin, address as u64, &maps, &target)?;
+        pin.check(held)?;
+        pin.check(&pin.open()?)?;
+        kernel_deadline(deadline)?;
+        Ok(identity)
+    })();
+    // No probe mapping survives into fork, even on an unsuccessful calibration.
+    reservation.close()?;
+    kernel_deadline(deadline)?;
+    checked
+}
+
+fn object_bias(
+    object: &Object,
+    maps: &[Mapping],
+    identity: &MappedFileIdentity,
+    mut target: impl FnMut(&Mapping) -> Result<Vec<u8>>,
+) -> Result<u64> {
+    identity.check_pin(&object.file)?;
     let first = object.pages.first().ok_or(Error::Shape)?;
     let possible: Vec<_> = maps
         .iter()
         .filter(|m| {
-            m.device == object.file.device
-                && m.inode == object.file.inode
-                && m.offset == first.file_offset
-                && m.start >= first.relative
+            identity.matches(m) && m.offset == first.file_offset && m.start >= first.relative
         })
-        .map(|m| m.start - first.relative)
         .collect();
     if !first.file_backed || possible.len() != 1 {
         return Err(Error::Custody);
     }
-    Ok(possible[0])
+    identity.check_target(possible[0], &target(possible[0])?)?;
+    Ok(possible[0].start - first.relative)
 }
 fn check_object(
     child: &Child,
@@ -834,7 +1281,13 @@ fn check_object(
     maps: &[Mapping],
     bias: u64,
     at_entry: bool,
+    identity: &MappedFileIdentity,
 ) -> Result<()> {
+    kernel_deadline(child.deadline)?;
+    identity.check_pin(&object.file)?;
+    let current = object.file.open()?;
+    object.file.contents(&current)?;
+    let mut verified_paths = Vec::new();
     if object.pages.is_empty() || object.pages.len() > 65536 {
         return Err(Error::Shape);
     }
@@ -852,9 +1305,7 @@ fn check_object(
                 m.start <= address
                     && end <= m.end
                     && (if p.file_backed {
-                        m.device == object.file.device
-                            && m.inode == object.file.inode
-                            && m.offset + address - m.start == p.file_offset
+                        identity.matches(m) && m.offset + address - m.start == p.file_offset
                     } else {
                         m.device == 0 && m.inode == 0
                     })
@@ -864,12 +1315,27 @@ fn check_object(
         if found.len() != 1 {
             return Err(Error::Custody);
         }
+        if p.file_backed {
+            let row = found[0];
+            let range = (row.start, row.end);
+            if !verified_paths.contains(&range) {
+                // The sole child is stopped. The accepted lifetime contract
+                // forbids path/input replacement; this is not pathname sealing.
+                kernel_deadline(child.deadline)?;
+                identity.check_target(row, &mapping_target(child.pid, row)?)?;
+                kernel_deadline(child.deadline)?;
+                verified_paths.push(range);
+            }
+        }
         if let Some(bytes) = &p.bytes {
             if bytes.len() != 4096 || child.memory(address, 4096)? != *bytes {
                 return Err(Error::Custody);
             }
         }
     }
+    object.file.contents(&current)?;
+    object.file.contents(&object.file.open()?)?;
+    kernel_deadline(child.deadline)?;
     Ok(())
 }
 fn stopped(status: i32, signal: i32, event: i32) -> bool {
@@ -905,6 +1371,9 @@ fn stack_args(child: &Child, rsp: u64, main: &CString, data: &CString) -> Result
 
 #[derive(Default)]
 pub struct Evidence {
+    pub kernel_basis: Option<KernelBasis>,
+    pub kernel_checks: u32,
+    pub kernel_query: Option<KernelQuery>,
     pub stops: Vec<StopEvidence>,
     pub exec_auxv: Vec<u8>,
     pub entry_auxv: Vec<u8>,
@@ -950,6 +1419,9 @@ pub fn observe_with_evidence(
     admitted: &AdmittedPackage,
     evidence: &mut Evidence,
 ) -> Result<Observation> {
+    evidence.kernel_basis = request.kernel_basis.clone();
+    evidence.kernel_checks = 0;
+    evidence.kernel_query = None;
     let result = observe_inner(request, admitted, evidence);
     if evidence.primary_error.is_none() {
         evidence.primary_error = result.as_ref().err().cloned();
@@ -977,6 +1449,9 @@ fn observe_inner(
         || request.dataset.bytes > 65536
     {
         return Err(Error::Shape);
+    }
+    if let Some(basis) = &request.kernel_basis {
+        basis.validate()?;
     }
     let objects: Vec<_> = [&request.main, &request.loader, &request.bootstrap]
         .into_iter()
@@ -1052,6 +1527,11 @@ fn observe_inner(
             return Err(Error::Deadline);
         }
     }
+    let mut mapping_identities = Vec::with_capacity(objects.len());
+    for (pin, held, _) in &owners[..objects.len()] {
+        mapping_identities.push(calibrate_file(pin, held, deadline)?);
+    }
+    kernel_checkpoint(request.kernel_basis.as_ref(), deadline, evidence)?;
     let pid = unsafe { libc::fork() };
     if pid < 0 {
         return Err(Error::Io(errno()));
@@ -1080,14 +1560,17 @@ fn observe_inner(
                 libc::_exit(126);
             }
             for signal in 1..=64 {
-                // glibc reserves32/33; their actual kernel mask/ignore bits are
-                // still required zero by controlled_signal_status at both stops.
+                // glibc hides32/33. Their separate raw reset and readback below
+                // use the exact kernel layout in this owned post-fork child.
                 if matches!(signal, libc::SIGKILL | libc::SIGSTOP | 32 | 33) {
                     continue;
                 }
                 if libc::sigaction(signal, &action, core::ptr::null_mut()) != 0 {
                     libc::_exit(126);
                 }
+            }
+            if !reset_reserved_signals() {
+                libc::_exit(126);
             }
             if libc::ptrace(libc::PTRACE_TRACEME, 0, 0_usize, 0_usize) != 0 {
                 libc::_exit(126);
@@ -1141,6 +1624,7 @@ fn observe_inner(
                 | libc::PTRACE_O_TRACEVFORK
                 | libc::PTRACE_O_TRACECLONE) as usize,
         )?;
+        kernel_checkpoint(request.kernel_basis.as_ref(), deadline, evidence)?;
         child.continue_child()?;
         let status = child.wait()?;
         evidence.stops.push(StopEvidence {
@@ -1167,15 +1651,30 @@ fn observe_inner(
         evidence.exec_auxv = read_proc(pid, "auxv", 4096)?;
         let (entry, loader_bias) = secure_auxv(&evidence.exec_auxv)?;
         evidence.exec_status = read_proc(pid, "status", 65536)?;
-        disabled_shstk(&evidence.exec_status)?;
+        kernel_checkpoint(request.kernel_basis.as_ref(), deadline, evidence)?;
+        request_shstk(&evidence.exec_status, request.kernel_basis.as_ref())?;
         controlled_signal_status(&evidence.exec_status)?;
         if entry != request.entry {
             return Err(Error::Entry);
         }
         evidence.exec_maps = read_proc(pid, "maps", MAP_CAP)?;
         let maps = parse_maps(&evidence.exec_maps)?;
-        check_object(&child, &request.main, &maps, 0, false)?;
-        check_object(&child, &request.loader, &maps, loader_bias, false)?;
+        check_object(
+            &child,
+            &request.main,
+            &maps,
+            0,
+            false,
+            &mapping_identities[0],
+        )?;
+        check_object(
+            &child,
+            &request.loader,
+            &maps,
+            loader_bias,
+            false,
+            &mapping_identities[1],
+        )?;
         if child.memory(entry, request.entry_bytes.len())? != request.entry_bytes {
             return Err(Error::Entry);
         }
@@ -1183,6 +1682,7 @@ fn observe_inner(
         let mut debug = DebugOwner::capture(&child)?;
         let observed = (|| {
             debug.arm(entry)?; // Before FIRST post-exec loader continuation.
+            kernel_checkpoint(request.kernel_basis.as_ref(), deadline, evidence)?;
             child.continue_child()?;
             let status = child.wait()?;
             evidence.stops.push(StopEvidence {
@@ -1215,7 +1715,8 @@ fn observe_inner(
             .to_vec();
             evidence.entry_xstate = child.xstate(request.xstate_bytes)?;
             evidence.entry_status = read_proc(pid, "status", 65536)?;
-            disabled_shstk(&evidence.entry_status)?;
+            kernel_checkpoint(request.kernel_basis.as_ref(), deadline, evidence)?;
+            request_shstk(&evidence.entry_status, request.kernel_basis.as_ref())?;
             controlled_signal_status(&evidence.entry_status)?;
             evidence.entry_auxv = read_proc(pid, "auxv", 4096)?;
             if secure_auxv(&evidence.entry_auxv)? != (entry, loader_bias) {
@@ -1230,12 +1731,46 @@ fn observe_inner(
             stack_args(&child, regs.rsp, &main, &dataset)?;
             evidence.entry_maps = read_proc(pid, "maps", MAP_CAP)?;
             let maps = parse_maps(&evidence.entry_maps)?;
-            check_object(&child, &request.main, &maps, 0, true)?;
-            check_object(&child, &request.loader, &maps, loader_bias, true)?;
-            let bootstrap_bias = object_bias(&request.bootstrap, &maps)?;
-            check_object(&child, &request.bootstrap, &maps, bootstrap_bias, true)?;
-            for object in &request.dependencies {
-                check_object(&child, object, &maps, object_bias(object, &maps)?, true)?;
+            check_object(
+                &child,
+                &request.main,
+                &maps,
+                0,
+                true,
+                &mapping_identities[0],
+            )?;
+            check_object(
+                &child,
+                &request.loader,
+                &maps,
+                loader_bias,
+                true,
+                &mapping_identities[1],
+            )?;
+            let bootstrap_bias =
+                object_bias(&request.bootstrap, &maps, &mapping_identities[2], |row| {
+                    mapping_target(child.pid, row)
+                })?;
+            check_object(
+                &child,
+                &request.bootstrap,
+                &maps,
+                bootstrap_bias,
+                true,
+                &mapping_identities[2],
+            )?;
+            for (index, object) in request.dependencies.iter().enumerate() {
+                let identity = &mapping_identities[index + 3];
+                check_object(
+                    &child,
+                    object,
+                    &maps,
+                    object_bias(object, &maps, identity, |row| {
+                        mapping_target(child.pid, row)
+                    })?,
+                    true,
+                    identity,
+                )?;
             }
             let status_address = bootstrap_bias
                 .checked_add(request.completion_relative)
@@ -1298,6 +1833,10 @@ fn observe_inner(
             if pin.contents(held)? != *bytes || pin.contents(&pin.open()?)? != *bytes {
                 return Err(Error::Custody);
             }
+        }
+        kernel_checkpoint(request.kernel_basis.as_ref(), deadline, evidence)?;
+        if request.kernel_basis.is_some() && evidence.kernel_checks != KERNEL_CHECKS {
+            return Err(Error::Entry);
         }
         Ok(Observation {
             registers,

@@ -220,19 +220,23 @@ def probe_measurement(sources,reference,captured,context):
     return report
 
 
-def final_profile(args, *, absolute_prerequisites=False):
+def final_profile(args, *, absolute_prerequisites=False, kernel_config_off=False):
     raw,_=read(args.inputs,MIB);need(sha(raw)==digest(args.inputs_sha256),'frozen final builder inputs')
     inputs=decode(raw)
-    need(set(inputs)=={'schema','root','native_revision','observer_plan','arguments','bootstrap','contract',
-                      'observer_build','xstate'} and inputs['schema']=='LI2NATIVE-FINAL-PROFILE-INPUTS-1',
-         'exact final builder input roster')
+    fields={'schema','root','native_revision','observer_plan','arguments','bootstrap','contract','observer_build','xstate'}
+    need(not kernel_config_off or absolute_prerequisites,'kernel mode retains complete absolute prerequisite proof')
+    if kernel_config_off:fields.add('kernel_basis')
+    need(set(inputs)==fields and inputs['schema']==('LI2NATIVE-FINAL-PROFILE-INPUTS-2' if kernel_config_off else
+         'LI2NATIVE-FINAL-PROFILE-INPUTS-1'),'exact final builder input roster')
     sources=Sources(inputs['root'],inputs['native_revision']);root=sources.root
     sources.reference(file_ref(args.inputs,args.inputs_sha256))
     launch=sources.load(NATIVE+'native_launch.py');admission=sources.load(NATIVE+'final_admission.py')
     platform=sources.load(NATIVE+'final_platform.py');reader=sources.load(NATIVE+'final_bootstrap.py')
     resolver=sources.load(NATIVE+'dependency_constructors.py')
+    kernel=sources.load(NATIVE+'kernel_basis.py') if kernel_config_off else None
     required=admission.REQUIRED_NATIVE|{NATIVE+n for n in ('dependency_constructors.py','dependency_constructor_controls.py','probe_xstate.py')}
     if absolute_prerequisites:required.add(NATIVE+'absolute_profile_controls.py')
+    if kernel_config_off:required|={NATIVE+'kernel_basis.py',NATIVE+'kernel_basis_controls.py'}
     need(required<=set(sources.pins) and sources.pins[NATIVE+'package.py']==admission.PACKAGE_SHA,'whole reviewed V2 source roster')
     package=sources.load(NATIVE+'package.py')
     plan=decode(sources.reference(inputs['observer_plan']))
@@ -251,6 +255,11 @@ def final_profile(args, *, absolute_prerequisites=False):
     output=private(root,args.output);need(not os.path.lexists(output),'new owned draft output directory')
     output.mkdir(mode=0o700)
     try:
+        kernel_capsule=None
+        if kernel_config_off:
+            basis_raw=sources.reference(inputs['kernel_basis'])
+            kernel_capsule=kernel.inspect(basis_raw,inputs['kernel_basis']['sha256'],held.retain)
+            kernel.check_live(kernel_capsule)
         saved=reader.authenticate(modules.ctx,modules.a,modules.legacy,modules.custody,modules.pins,
             modules.originals,startup,completed,modules.driver,bootstrap,dso,parsed,store,inputs['bootstrap'])
         contract_raw=sources.reference(inputs['contract'])
@@ -286,11 +295,14 @@ def final_profile(args, *, absolute_prerequisites=False):
              build_value['plan']['sha256']==inputs['observer_plan']['sha256'] and
              plan['output']==build['directory'] and plan['destination']==binary['path'],
              'same frozen observer plan, actual build directory and retained copy')
-        profile=dict(schema='LI2STARTUP-FINAL-PROFILE-3' if absolute_prerequisites else 'LI2STARTUP-FINAL-PROFILE-2',
+        profile=dict(schema='LI2STARTUP-FINAL-PROFILE-4' if kernel_config_off else
+            ('LI2STARTUP-FINAL-PROFILE-3' if absolute_prerequisites else 'LI2STARTUP-FINAL-PROFILE-2'),
             native_revision=inputs['native_revision'],native_sources=sources.pins,
             artifact_source_profile=common,arguments=values,bootstrap=inputs['bootstrap'],contract=inputs['contract'],
             reviewed=reviewed,observer=dict(binary=binary,build=build))
+        if kernel_config_off:profile['kernel_basis']=inputs['kernel_basis']
         def stable():
+            if kernel_capsule is not None:kernel.check_live(kernel_capsule)
             saved['stable']();sources.stable();store.verify();held.verify()
             if absolute_prerequisites:absolute_recheck()
             else:platform.contract(contract_raw,inputs['contract']['sha256'],package,held)
@@ -327,12 +339,13 @@ def main():
         plan.add_argument('--'+name,type=Path,required=True)
     for name in ('native-revision','source-profile-sha256','capture-sha256'):
         plan.add_argument('--'+name,required=True)
-    for name in ('final-profile','final-profile-absolute-prerequisites'):
+    for name in ('final-profile','final-profile-absolute-prerequisites','final-profile-kernel-config-off'):
         final=sub.add_parser(name)
         final.add_argument('--inputs',type=Path,required=True);final.add_argument('--inputs-sha256',required=True)
         final.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
     if args.mode=='observer-plan':observer_plan(args)
+    elif args.mode=='final-profile-kernel-config-off':final_profile(args,absolute_prerequisites=True,kernel_config_off=True)
     else:final_profile(args,absolute_prerequisites=args.mode=='final-profile-absolute-prerequisites')
 
 

@@ -1,9 +1,8 @@
 // Actual private production router, not a test handler or public live API.
 use super::*;
+use crate::isolated_native_test as isolated;
 // Shared support has intentionally unused legacy entry APIs in this test binary;
 // its complete bodies and assertions are retained.
-#[path = "../../../tests/support/isolated_native_test.rs"]
-mod isolated;
 #[allow(dead_code)]
 #[path = "../../../tests/support/quiescent_oracle.rs"]
 mod oracle;

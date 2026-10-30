@@ -1,0 +1,9 @@
+# Full-program E9 output comparison
+
+At `6ed5f2d24293d414169ff4e7688671b230a35775`, all **80 application rows passed** for checksum and RLE: ten datasets each, across native, LiteInst, stock PLDI2020 E9 and the separately disclosed bootstrap-ABI-patched E9 lane. Forty N01 results were reconstructed from their raw closures; forty fresh E9 executions ran once. Every complete output equals independent expected bytes and the successful original, with exit0, empty stderr and ECHILD cleanup.
+
+Both E9 lanes retain all **42 selected jumps / 187 original heads**. The 84 site/lane rows contain zero lost E9 trampoline sites and zero traps. Four products and all eight transport/producer requests passed. Stock E9 stays stock; the patched lane and common JSON transport frontend remain separately disclosed. See [native startup evidence](../runtime-6ed5f2d/README.md) for current LiteInst package admission and [prior E9 evidence](../e9-71c349f/README.md) for retained earlier outcomes.
+
+Reproduce with [full_startup_e9.py](../../offline-corpus/full_startup_e9.py), then the explicitly selected `produce` and `outputs` phases of [full_startup_e9_execute.py](../../offline-corpus/full_startup_e9_execute.py), using the exact argv/source/tool hashes in results.json and fresh outputs. `$ROOT`, `$RUN`, `$TOOLCHAIN`, `$CARGO_HOME` and `$USER_HOME` are local substitutions. The outputs phase requires the actual successful production and independently admitted N01 closure hashes. Raw command logs, ELF files and request records remain ignored. CSVs retain every output and structural row.
+
+This is full-output correctness and structural site-retention evidence for two authored programs. It does not establish dynamic route coverage, full architectural-state/ABI/unwind/CET equivalence, arbitrary compiled-program support or complete A3 qualification. Timings are bounded-command accounting, not performance results. All prior failures and unchanged20CPU/30wall16MiB limits remain.

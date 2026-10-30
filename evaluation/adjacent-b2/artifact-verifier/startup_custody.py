@@ -171,18 +171,27 @@ class Store:
         return dict(self.files[str(path)][0])
 
     def members(self, path, count=513):
-        fd = self.directory(path)
+        anchor = self.directory(path)
+        fd = None
         try:
-            before = stamp(os.fstat(fd))
+            before = stamp(os.fstat(anchor))
+            # A dup shares enumeration state with the retained directory. Use a
+            # fresh open description so additions since an earlier scan appear.
+            fd = os.open('.', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=anchor)
+            need(before == stamp(os.fstat(fd)), 'listing directory owner changed')
             names = []
             with os.scandir(fd) as entries:
                 for entry in entries:
                     need(len(names) < count and leaf(entry.name), 'flat publication member/name bound')
                     names.append(entry.name)
-            need(before == stamp(os.fstat(fd)), 'directory changed during listing')
+            need(before == stamp(os.fstat(fd)) == stamp(os.fstat(anchor)), 'directory changed during listing')
             return dict(stat=before, members=sorted(names))
         finally:
-            os.close(fd)
+            try:
+                if fd is not None:
+                    os.close(fd)
+            finally:
+                os.close(anchor)
 
     def verify(self):
         if self.root is not None:

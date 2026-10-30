@@ -1,0 +1,9 @@
+# Checksum/RLE startup and native outputs
+
+At `6ed5f2d24293d414169ff4e7688671b230a35775`, both authored programs reached original entry after the production bootstrap committed its catalog. Ordinary N01 passed **40/40 invocations and 20/20 pairs**, covering both programs and all ten datasets. Full outputs equal independent expected bytes and successful originals, with exit 0 and empty stderr. Maximum-expansion RLE retains 196,616 bytes.
+
+Both observer controls show genuine hardware SIGTRAP 1407 at `0x401000`, completion 1, six kernel checkpoints, full registers/xstate, restored debug registers, then SIGKILL/ECHILD cleanup. They never execute original entry; N01 is untraced. Raw state snapshots are not cross-execution state equivalence. All 187 heads, 42 jumps, 48 images and eight routes remain. Closure hashes bind the full publication and two five-object graphs.
+
+Explicit owner acceptance retains trusted loader/kernel semantics, exhaustive namespace, immutable paths/dentries/mount namespace and lifetime. EINVAL alone grants no authority. This covers two authored programs, **not full A3, qualification, route coverage, E9 comparison or performance**. Elapsed values are accounting, not benchmarks. Prior [kernel](../kernel-29807af/README.md), [exit-125](../mapped-cce4e7e/README.md), [absolute](../absolute-c712f70/README.md) and [cache](../results-559a845/README.md) failures remain; thirteen histories are retained.
+
+Reproduce with [reproduce_preparation.py](../reproduce_preparation.py) and [REPRODUCE.md](../REPRODUCE.md). JSON tables preserve eleven exact stage commands, CPU/load, environment, limits and raw hashes; substitute declared placeholders and regenerate private inputs. CSV retains every invocation. Observation and N01 are separate explicit actions after contract review. Raw logs, ELF/state and full stat pins stay ignored.

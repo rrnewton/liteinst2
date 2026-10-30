@@ -29,10 +29,14 @@ STAGES = {
     'verifier-build': [ARTIFACT + 'startup_verifier_build.py'],
     'saved': [ARTIFACT + 'verify_saved.py'],
     'bootstrap': [ARTIFACT + 'startup_bootstrap.py'],
+    'kernel-basis': [NATIVE + 'kernel_basis.py', 'capture'],
     'observer-plan': [NATIVE + 'prepare_profile.py', 'observer-plan'],
     'observer-build': [NATIVE + 'native_launch.py', 'build-observer'],
     'final-profile': [NATIVE + 'prepare_profile.py', 'final-profile'],
     'final-profile-absolute-prerequisites': [NATIVE + 'prepare_profile.py', 'final-profile-absolute-prerequisites'],
+    'final-profile-kernel-config-off': [NATIVE + 'prepare_profile.py', 'final-profile-kernel-config-off'],
+    'observe-kernel-config-off': [NATIVE + 'native_launch.py', 'observe'],
+    'n01-kernel-config-off': [NATIVE + 'native_launch.py', 'n01'],
     'probe': [NATIVE + 'probe_xstate.py'],
     'observe': [NATIVE + 'native_launch.py', 'observe'],
     'n01': [NATIVE + 'native_launch.py', 'n01'],
@@ -48,12 +52,16 @@ FLAGS = {
         'source-profile', 'host-inventory-sha256', 'contract-sha256', 'source-profile-sha256', 'original-profile'),
     'verifier-build': ('output', 'source-profile', 'source-profile-sha256', 'toolchain', 'cargo-home', 'user-home'),
     'saved': COMMON + ('output',), 'bootstrap': COMMON + ('output', 'main-joins', 'main-joins-sha256'),
+    'kernel-basis': ('root', 'release', 'headers', 'output'),
     'observer-plan': ('root', 'native-revision', 'source-profile', 'source-profile-sha256', 'capture',
         'capture-sha256', 'build-output', 'binary-output', 'output'),
     'observer-build': ('root', 'build-plan', 'build-plan-sha256'),
     'final-profile': ('inputs', 'inputs-sha256', 'output'),
     'final-profile-absolute-prerequisites': ('inputs', 'inputs-sha256', 'output'), 'probe': ('raw-output',),
     'observe': NATIVE_FLAGS, 'n01': NATIVE_FLAGS,
+    'final-profile-kernel-config-off': ('inputs', 'inputs-sha256', 'output'),
+    'observe-kernel-config-off': NATIVE_FLAGS + ('accept-kernel-basis-sha256',),
+    'n01-kernel-config-off': NATIVE_FLAGS + ('accept-kernel-basis-sha256',),
 }
 
 ABSOLUTE_STARTUP = 'elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
@@ -156,12 +164,19 @@ def command(root, python, plan):
     if stage == 'producer-absolute':
         need(tail[tail.index('--startup-profile') + 1] == ABSOLUTE_STARTUP,
              'exact absolute prerequisite startup profile')
-    if stage in ('observe', 'n01'):
+    if stage in ('observe', 'n01', 'observe-kernel-config-off', 'n01-kernel-config-off'):
         values = dict(zip(tail[::2], tail[1::2]))
         accepted = values['--accept-contract-sha256']
         need(len(accepted) == 64 and all(c in '0123456789abcdef' for c in accepted), 'explicit contract SHA256')
         profile = decode(read(values['--final-profile'], values['--final-profile-sha256']))
         need(profile['contract']['sha256'] == accepted, 'explicit acceptance matches exact profile contract')
+        if stage.endswith('-kernel-config-off'):
+            kernel = values['--accept-kernel-basis-sha256']
+            need(len(kernel) == 64 and all(c in '0123456789abcdef' for c in kernel) and
+                 profile['schema'] == 'LI2STARTUP-FINAL-PROFILE-4' and profile['kernel_basis']['sha256'] == kernel,
+                 'separate exact acceptance of explicit kernel-config profile')
+        else:
+            need(profile.get('schema') != 'LI2STARTUP-FINAL-PROFILE-4', 'kernel mode requires its named stage and separate acceptance')
     references = []
     for reference in history:
         need(type(reference) is dict and set(reference) == {'path', 'sha256'}, 'exact history reference')
@@ -241,7 +256,7 @@ def run(args):
             unchanged = snapshot(args.root, args.revision) == before and read(args.plan, args.plan_sha256) == raw
             for reference in plan['history']:
                 read(reference['path'], reference['sha256'])
-            if plan['stage'] in ('observe', 'n01'):
+            if plan['stage'] in ('observe', 'n01', 'observe-kernel-config-off', 'n01-kernel-config-off'):
                 values = dict(zip(tail[::2], tail[1::2]))
                 read(values['--final-profile'], values['--final-profile-sha256'])
         except BaseException as error:
@@ -260,7 +275,7 @@ def run(args):
     return 0 if complete else 1
 
 
-def final_inputs(args):
+def final_inputs(args, *, kernel_config_off=False):
     snapshot(args.root, args.revision)
     need(read(Path(__file__).resolve()) == git(args.root, 'show', args.revision + ':' + CORPUS + 'reproduce_preparation.py'),
          'actual committed assembler bytes')
@@ -271,9 +286,10 @@ def final_inputs(args):
         held[str(path)] = raw
         return raw
     value = decode(pin(args.plan, args.plan_sha256))
-    need(set(value) == {'schema', 'producer', 'verifier', 'joins', 'bootstrap', 'observer_plan',
-         'observer_build', 'contract', 'xstate'} and value['schema'] == 'LI2-PREPARATION-REFERENCES-1',
-         'complete explicit references; no prior input/receipt cloning')
+    fields = {'schema', 'producer', 'verifier', 'joins', 'bootstrap', 'observer_plan', 'observer_build', 'contract', 'xstate'}
+    if kernel_config_off: fields.add('kernel_basis')
+    need(set(value) == fields and value['schema'] == ('LI2-PREPARATION-REFERENCES-2' if kernel_config_off else
+         'LI2-PREPARATION-REFERENCES-1'), 'complete explicit references; no prior input/receipt cloning')
     def ref(path):
         return dict(path=str(path), sha256=sha(pin(Path(path))))
     def directory(path):
@@ -287,12 +303,16 @@ def final_inputs(args):
         arguments[key + '_sha256'] = sha(pin(path / leaf if leaf else path))
     arguments['verifier_lock_sha256'] = sha(pin(args.root / ARTIFACT / 'Cargo.lock'))
     need(set(value['xstate']) == {'owner_source', 'owner_receipt', 'log', 'raw'}, 'all four probe inputs')
-    for reference in [value['contract'], *value['xstate'].values()]:
+    references = [value['contract'], *value['xstate'].values()]
+    if kernel_config_off: references.append(value['kernel_basis'])
+    for reference in references:
         need(set(reference) == {'path', 'sha256'}, 'explicit externally pinned input')
         pin(reference['path'], reference['sha256'])
-    result = dict(schema='LI2NATIVE-FINAL-PROFILE-INPUTS-1', root=str(args.root), native_revision=args.revision,
+    result = dict(schema='LI2NATIVE-FINAL-PROFILE-INPUTS-2' if kernel_config_off else 'LI2NATIVE-FINAL-PROFILE-INPUTS-1',
+        root=str(args.root), native_revision=args.revision,
         observer_plan=ref(value['observer_plan']), arguments=arguments, bootstrap=directory(value['bootstrap']),
         contract=value['contract'], observer_build=directory(value['observer_build']), xstate=value['xstate'])
+    if kernel_config_off: result['kernel_basis'] = value['kernel_basis']
     snapshot(args.root, args.revision)
     for path, raw in held.items():
         need(read(path) == raw, 'input changed before prospective publication')
@@ -313,7 +333,7 @@ def main():
             exits.append(code)
         return int(any(exits))
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
-    parser.add_argument('mode', choices=('run', 'final-inputs'))
+    parser.add_argument('mode', choices=('run', 'final-inputs', 'final-inputs-kernel-config-off'))
     for name in ('root', 'plan', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     for name in ('revision', 'plan-sha256'):
@@ -324,6 +344,7 @@ def main():
     if args.mode == 'run':
         need(all(getattr(args, name) is not None for name in ('python', 'toolchain', 'cargo_home', 'user_home', 'temporary')),
              'explicit controlled environment')
+    if args.mode == 'final-inputs-kernel-config-off': return final_inputs(args, kernel_config_off=True)
     return run(args) if args.mode == 'run' else final_inputs(args)
 
 

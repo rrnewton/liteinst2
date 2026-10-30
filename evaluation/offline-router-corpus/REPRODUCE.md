@@ -65,3 +65,25 @@ Contract2's cache omission relies on the pinned GNU loader opening all three abs
 Preparation ends at a draft profile. Whole-fact review and unsafe caller acceptance remain separate. `observe` and `n01` require a separate command plan with exactly `--root`, `--final-profile`, `--final-profile-sha256`, `--accept-contract-sha256` and `--output`. The accepted digest must be explicitly supplied and match the exact supplied profile's contract. The existing launcher still performs final admission; the driver grants no authority. No preparation stage automatically dispatches either population, and no program/dataset subset flag exists.
 
 The read-only `profile_preflight.py` remains a separate diagnostic entry point documented in its header. Its instrumented output is not a runtime improvement or performance measurement. Post-refusal passive captures cannot establish who changed a global file. Raw histories remain immutable regardless of subsequent results.
+
+
+For the separately reviewed kernel-config-off profile, run the named
+`kernel-basis` stage with exactly `--root`, `--release`, `--headers`, and `--output`.
+Its committed `offline-router-native/kernel_basis.py capture` entrypoint captures
+the live compressed config plus three matching kernel headers into four bounded
+files and a draft basis record. Review that exact record and its explicit unsafe
+kernel premise; no capture or digest grants acceptance.
+
+Use reference schema `LI2-PREPARATION-REFERENCES-2`, preserving every existing
+reference and adding `"kernel_basis":{"path":"BASIS_FILE","sha256":"BASIS_SHA"}`.
+Invoke the assembler's `final-inputs-kernel-config-off` mode with the same exact
+root/revision/plan/hash/output flags, then the `final-profile-kernel-config-off`
+stage. The resulting profile4 draft retains both complete absolute-prerequisite
+namespace proofs and requires its own whole-fact review.
+
+The separate `observe-kernel-config-off` and `n01-kernel-config-off` stages use the
+original population flags plus exactly `--accept-kernel-basis-sha256 BASIS_SHA`.
+Both the platform-contract and kernel-basis acceptances must match their exact
+profile references. The original stage names and profiles do not accept this
+extension. Preparation still performs no native dispatch; neither stage offers a
+subset, retry or changed deadline. Prior failed attempts remain failed.

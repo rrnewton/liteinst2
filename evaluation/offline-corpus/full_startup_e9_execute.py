@@ -20,7 +20,7 @@ import types
 MIB = 1048576
 SOURCES = {
     'prepare': ('evaluation/offline-corpus/full_startup_e9.py', 'c3b4a4bb09bb428105e037d72733d76990bcaf524cfa25b029a7bb5b9e028666'),
-    'custody': ('evaluation/adjacent-b2/artifact-verifier/startup_custody.py', '6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5'),
+    'custody': ('evaluation/adjacent-b2/artifact-verifier/startup_custody.py', 'ad7950a206462cc6e32a70e9c246bf92b41026e9cb46c578fc984974e77f9f37'),
     'collector': ('evaluation/offline-corpus/adjacent_whole.py', 'b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3'),
     'n01': ('evaluation/offline-router-native/n01.py', '0f09b1ea2bb211f94d709d99c759abc90ed1fa51da567b6470220f731c87fe56'),
     'corpus': ('evaluation/offline-corpus/corpus.py', '007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07'),

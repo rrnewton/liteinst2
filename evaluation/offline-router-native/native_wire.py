@@ -5,6 +5,8 @@ import os
 import re
 
 MAGIC=b'LI2-OBSERVER-REQUEST\0\x01'
+MAGIC_V2=b'LI2-OBSERVER-REQUEST\0\x02'
+KERNEL_PROFILE='linux-x86_64-live-config-user-shstk-disabled-v1'
 CAP=260*1048576
 PAGE_CAP=65536
 SEALS=fcntl.F_SEAL_SEAL|fcntl.F_SEAL_SHRINK|fcntl.F_SEAL_GROW|fcntl.F_SEAL_WRITE
@@ -30,9 +32,11 @@ def raw_hex(value,maximum):
 
 
 def encode(request):
-    keys(request,('main','loader','bootstrap','dependencies','dataset','entry','entry_bytes',
-                  'completion_relative','completion_file_offset','xstate_bytes'))
-    out=bytearray(MAGIC);pages=0
+    fields=('main','loader','bootstrap','dependencies','dataset','entry','entry_bytes',
+            'completion_relative','completion_file_offset','xstate_bytes')
+    extended=type(request) is dict and 'kernel_basis' in request
+    keys(request,fields+(('kernel_basis',) if extended else ()))
+    out=bytearray(MAGIC_V2 if extended else MAGIC);pages=0
     def put(raw):
         need(len(raw)<=CAP-len(out),'bounded wire bytes');out.extend(raw)
     def integer(value,width):put(uint(value,(1<<(8*width))-1).to_bytes(width,'little'))
@@ -87,6 +91,22 @@ def encode(request):
     if offset is not None:integer(uint(offset,16*1048576-8),8)
     need(type(request['xstate_bytes']) is int and 576<=request['xstate_bytes']<=16384,'exact xstate bound')
     integer(request['xstate_bytes'],4)
+    if extended:
+        basis=request['kernel_basis']
+        keys(basis,('profile','basis_sha256','release','config_gzip_bytes','config_gzip_sha256',
+                    'config_decoded_bytes','config_decoded_sha256'))
+        need(basis['profile']==KERNEL_PROFILE,'explicit named kernel mode')
+        release=basis['release']
+        need(type(release) is str and 1<=len(release)<=128 and all(33<=ord(c)<=126 for c in release),
+             'bounded exact kernel release')
+        integer(1,1)
+        digest=raw_hex(basis['basis_sha256'],32);need(len(digest)==32,'whole kernel basis digest');put(digest)
+        integer(len(release),4);put(release.encode('ascii'))
+        for kind,cap in (('gzip',65536),('decoded',524288)):
+            size=uint(basis['config_'+kind+'_bytes'],cap);need(size>0,'nonempty kernel configuration')
+            integer(size,4)
+            digest=raw_hex(basis['config_'+kind+'_sha256'],32)
+            need(len(digest)==32,'whole kernel configuration digest');put(digest)
     return bytes(out)
 
 
@@ -96,7 +116,7 @@ def sealed(raw):
     The caller must already have reconstructed final package/platform authority.
     No token, digest, memfd name or seal authenticates that caller's semantics.
     """
-    need(type(raw) is bytes and len(MAGIC)<len(raw)<=CAP and raw.startswith(MAGIC),'bounded wire envelope')
+    need(type(raw) is bytes and len(MAGIC)<len(raw)<=CAP and raw[:len(MAGIC)] in (MAGIC,MAGIC_V2),'bounded wire envelope')
     fd=os.memfd_create('li2-observer-request-v1',os.MFD_ALLOW_SEALING|os.MFD_CLOEXEC)
     try:
         need(3<=fd<=1024,'bounded inherited request descriptor')

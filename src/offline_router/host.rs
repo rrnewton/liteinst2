@@ -153,10 +153,224 @@ fn maps(raw: &[u8]) -> Result<Vec<Map>, E> {
 fn hex(s: &str) -> Result<u64, E> {
     u64::from_str_radix(s, 16).map_err(|_| E::Ownership)
 }
-fn same_file(m: &Map, s: Stamp) -> bool {
-    m.inode == s.ino
-        && m.major == u64::from(libc::major(s.dev))
-        && m.minor == u64::from(libc::minor(s.dev))
+// stat(2) and proc maps can use different device namespaces (Btrfs subvolumes
+// are one example). This witness is derived only from an owned mapping of the
+// retained fd. Its full stat pin and exact dentry path remain part of identity;
+// a proc device/inode pair alone cannot distinguish subvolumes.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct MappedIdentity {
+    stamp: Stamp,
+    path: Vec<u8>,
+    major: u64,
+    minor: u64,
+}
+fn canonical_path(path: &[u8]) -> bool {
+    (2..=4095).contains(&path.len())
+        && path[0] == b'/'
+        && path.iter().all(|b| (0x21..=0x7e).contains(b))
+        && path[1..]
+            .split(|b| *b == b'/')
+            .all(|part| !part.is_empty() && part != b"." && part != b"..")
+}
+fn link_target_with(read: impl FnOnce(&mut [u8]) -> Result<usize, E>) -> Result<Vec<u8>, E> {
+    let mut raw = [0u8; 4096];
+    let n = read(&mut raw)?;
+    if n == 0 || n >= raw.len() || !canonical_path(&raw[..n]) {
+        return Err(E::Ownership);
+    }
+    Ok(raw[..n].to_vec())
+}
+fn link_target(path: &str) -> Result<Vec<u8>, E> {
+    let path = std::ffi::CString::new(path).map_err(|_| E::Ownership)?;
+    link_target_with(|raw| {
+        // SAFETY: the path is terminated and raw is bounded writable storage.
+        let n = unsafe { libc::readlink(path.as_ptr(), raw.as_mut_ptr().cast(), raw.len()) };
+        if n < 0 { Err(E::Io) } else { Ok(n as usize) }
+    })
+}
+fn fd_target(file: &File) -> Result<Vec<u8>, E> {
+    link_target(&format!("/proc/self/fd/{}", file.as_raw_fd()))
+}
+fn mapping_target(mapping: &Map) -> Result<Vec<u8>, E> {
+    // The link names the complete actual VMA, never an individual covered page.
+    // Following map_files needs privileges on some kernels; readlink suffices.
+    // An unavailable link refuses. There is no stat-device or pathname fallback.
+    link_target(&format!(
+        "/proc/self/map_files/{:x}-{:x}",
+        mapping.start, mapping.end
+    ))
+}
+fn same_file_with(
+    mapping: &Map,
+    identity: &MappedIdentity,
+    target: impl FnOnce(&Map) -> Result<Vec<u8>, E>,
+) -> Result<bool, E> {
+    if mapping.inode != identity.stamp.ino
+        || mapping.major != identity.major
+        || mapping.minor != identity.minor
+    {
+        return Ok(false);
+    }
+    let actual = target(mapping)?;
+    if !canonical_path(&actual) || actual != mapping.name {
+        return Err(E::Ownership);
+    }
+    // Equal proc device/inode numbers on different subvolumes do not grant
+    // ownership. A declared owner must additionally match this exact dentry.
+    Ok(actual == identity.path)
+}
+fn same_file(mapping: &Map, owner: &Pinned) -> Result<bool, E> {
+    same_file_with(mapping, &owner.identity, mapping_target)
+}
+fn file_maps<'a>(maps: &'a [Map], owner: &Pinned) -> Result<Vec<&'a Map>, E> {
+    let mut owned = Vec::new();
+    for mapping in maps {
+        if same_file(mapping, owner)? {
+            owned.push(mapping);
+        }
+    }
+    Ok(owned)
+}
+fn calibrated_identity(
+    pin: Stamp,
+    path: &[u8],
+    address: u64,
+    maps: &[Map],
+    target: &[u8],
+) -> Result<MappedIdentity, E> {
+    let end = address.checked_add(c::PAGE).ok_or(E::Ownership)?;
+    let rows = maps
+        .iter()
+        .filter(|m| m.start <= address && end <= m.end)
+        .collect::<Vec<_>>();
+    if rows.len() != 1 || !canonical_path(path) || target != path {
+        return Err(E::Ownership);
+    }
+    let row = rows[0];
+    if row.start != address
+        || row.end != end
+        || row.flags != 4
+        || row.offset != 0
+        || row.inode != pin.ino
+        || row.name != path
+    {
+        return Err(E::Ownership);
+    }
+    Ok(MappedIdentity {
+        stamp: pin,
+        path: path.to_vec(),
+        major: row.major,
+        minor: row.minor,
+    })
+}
+fn release_probe_with(
+    base: &mut Option<usize>,
+    unmap: impl FnOnce(usize, usize) -> Result<(), E>,
+) -> Result<(), E> {
+    if let Some(address) = *base {
+        unmap(address, 3 * c::PAGE as usize)?;
+        *base = None;
+    }
+    Ok(())
+}
+struct ProbeReservation {
+    base: Option<usize>,
+}
+impl ProbeReservation {
+    fn close(&mut self) -> Result<(), E> {
+        release_probe_with(&mut self.base, |address, length| {
+            // SAFETY: this whole reservation remains exclusively owned here.
+            if unsafe { libc::munmap(address as *mut libc::c_void, length) } != 0 {
+                return Err(E::Io);
+            }
+            Ok(())
+        })
+    }
+}
+impl Drop for ProbeReservation {
+    fn drop(&mut self) {
+        // Every ordinary path explicitly checks close; this is an error/unwind
+        // backstop. A failed explicit close can never become successful admission.
+        let _ = self.close();
+    }
+}
+fn open_file(path: &[u8]) -> Result<File, E> {
+    if !canonical_path(path) {
+        return Err(E::Ownership);
+    }
+    OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_CLOEXEC | libc::O_NOFOLLOW)
+        .open(Path::new(std::ffi::OsStr::from_bytes(path)))
+        .map_err(|_| E::Io)
+}
+fn check_file(file: &File, pin: Stamp, path: &[u8]) -> Result<(), E> {
+    no_capability(file)?;
+    if stamp(file)? != pin || fd_target(file)? != path {
+        return Err(E::Ownership);
+    }
+    // The retained fd remains authoritative. Reopening only checks that its
+    // exact canonical dentry still names the same complete stat identity.
+    let reopened = open_file(path)?;
+    no_capability(&reopened)?;
+    if stamp(&reopened)? != pin || fd_target(&reopened)? != path {
+        return Err(E::Ownership);
+    }
+    Ok(())
+}
+fn calibrate_file(file: &File, pin: Stamp, path: &[u8]) -> Result<MappedIdentity, E> {
+    check_file(file, pin, path)?;
+    // SAFETY: a kernel-chosen private non-executable reservation; no existing
+    // address is replaced by this initial allocation.
+    let base = unsafe {
+        libc::mmap(
+            core::ptr::null_mut(),
+            3 * c::PAGE as usize,
+            libc::PROT_NONE,
+            libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+            -1,
+            0,
+        )
+    };
+    if base == libc::MAP_FAILED {
+        return Err(E::Io);
+    }
+    let mut reservation = ProbeReservation {
+        base: Some(base as usize),
+    };
+    let checked = (|| {
+        let address = (base as usize)
+            .checked_add(c::PAGE as usize)
+            .ok_or(E::Ownership)?;
+        // SAFETY: only the middle page of our own three-page reservation is
+        // replaced. Guards prevent merging with any other file-backed VMA.
+        let mapped = unsafe {
+            libc::mmap(
+                address as *mut libc::c_void,
+                c::PAGE as usize,
+                libc::PROT_READ,
+                libc::MAP_PRIVATE | libc::MAP_FIXED,
+                file.as_raw_fd(),
+                0,
+            )
+        };
+        if mapped == libc::MAP_FAILED {
+            return Err(E::Io);
+        }
+        if mapped as usize != address {
+            return Err(E::Ownership);
+        }
+        let maps = maps(&observation("/proc/self/maps", OBSERVATION_BYTES)?)?;
+        let row = cover(&maps, address as u64, c::PAGE)?;
+        let identity =
+            calibrated_identity(pin, path, address as u64, &maps, &mapping_target(row)?)?;
+        check_file(file, pin, path)?;
+        Ok(identity)
+    })();
+    // Close before returning either success or failure. In particular, all such
+    // mappings are gone before the complete executable/file ownership snapshot.
+    reservation.close()?;
+    checked
 }
 fn cover(maps: &[Map], start: u64, len: u64) -> Result<&Map, E> {
     let end = start.checked_add(len).ok_or(E::Ownership)?;
@@ -249,47 +463,150 @@ fn state(catalog: &Catalog) -> Result<(), E> {
 }
 struct Pinned {
     file: File,
-    stamp: Stamp,
+    identity: MappedIdentity,
+    content: ContentId,
+}
+impl Pinned {
+    fn from_file(file: File, expected_path: Option<&[u8]>) -> Result<Self, E> {
+        no_capability(&file)?;
+        let pin = stamp(&file)?;
+        let path = fd_target(&file)?;
+        if expected_path.is_some_and(|expected| expected != path.as_slice()) {
+            return Err(E::Ownership);
+        }
+        let content = ContentId::of(&bytes(&file, c::MAX_FILE)?);
+        let identity = calibrate_file(&file, pin, &path)?;
+        Ok(Self {
+            file,
+            identity,
+            content,
+        })
+    }
+    fn check(&self) -> Result<(), E> {
+        check_file(&self.file, self.identity.stamp, &self.identity.path)
+    }
+    fn read(&self) -> Result<Vec<u8>, E> {
+        self.check()?;
+        let result = bytes(&self.file, c::MAX_FILE)?;
+        if ContentId::of(&result) != self.content {
+            return Err(E::Ownership);
+        }
+        self.check()?;
+        Ok(result)
+    }
 }
 pub(super) struct Owned {
     main: Pinned,
     dependencies: Vec<Pinned>,
     bootstrap: Pinned,
+    embedded: &'static [u8],
+    loader_base: u64,
 }
 impl Owned {
-    pub(super) fn recheck(&self, catalog: &Catalog) -> Result<(), E> {
-        single_thread()?;
-        state(catalog)?;
+    fn check_files(&self) -> Result<(), E> {
         for p in std::iter::once(&self.main)
             .chain(&self.dependencies)
             .chain(std::iter::once(&self.bootstrap))
         {
-            if stamp(&p.file)? != p.stamp {
-                return Err(E::Ownership);
-            }
+            p.check()?;
         }
-        if bytes(&self.main.file, c::MAX_FILE)? != catalog.input().main {
+        Ok(())
+    }
+    fn runtime_pages(
+        &self,
+        catalog: &Catalog,
+        mapped: &[Map],
+    ) -> Result<std::collections::BTreeSet<u64>, E> {
+        let policy = &catalog.input().policy;
+        if self.dependencies.len() != policy.dependencies.len()
+            || self.bootstrap.identity.path != policy.bootstrap_dso
+        {
             return Err(E::Ownership);
         }
-        check_main(
-            catalog,
-            &self.main,
-            &maps(&observation("/proc/self/maps", OBSERVATION_BYTES)?)?,
-        )
+        let here = observe as *const () as usize as u64;
+        let code = cover(mapped, here, 1)?;
+        let data = cover(
+            mapped,
+            self.embedded.as_ptr() as usize as u64,
+            self.embedded.len() as u64,
+        )?;
+        if code.flags != 5
+            || data.flags != 4
+            || !same_file(code, &self.bootstrap)?
+            || !same_file(data, &self.bootstrap)?
+        {
+            return Err(E::Ownership);
+        }
+        let mut total = 0usize;
+        let mut runtime_pages = std::collections::BTreeSet::new();
+        for (d, p) in policy.dependencies.iter().zip(&self.dependencies) {
+            let b = p.read()?;
+            total = total.checked_add(b.len()).ok_or(E::Ownership)?;
+            if total > DEPENDENCY_BYTES
+                || p.identity.path != d.path
+                || ContentId::of(&b) != d.identity
+                || file_maps(mapped, p)?.is_empty()
+            {
+                return Err(E::Ownership);
+            }
+            runtime_elf(&b, p, mapped, &mut runtime_pages)?;
+        }
+        let bootstrap_bytes = self.bootstrap.read()?;
+        total = total
+            .checked_add(bootstrap_bytes.len())
+            .ok_or(E::Ownership)?;
+        if total > DEPENDENCY_BYTES {
+            return Err(E::Ownership);
+        }
+        runtime_elf(
+            &bootstrap_bytes,
+            &self.bootstrap,
+            mapped,
+            &mut runtime_pages,
+        )?;
+        let loader = policy
+            .dependencies
+            .iter()
+            .position(|d| d.path == policy.interpreter)
+            .ok_or(E::Ownership)?;
+        if !same_file(
+            cover(mapped, self.loader_base, 1)?,
+            &self.dependencies[loader],
+        )? {
+            return Err(E::Ownership);
+        }
+        if runtime_pages.len() > 256 * 1024 * 1024 / 4096 {
+            return Err(E::Ownership);
+        }
+        Ok(runtime_pages)
+    }
+    pub(super) fn recheck(&self, catalog: &Catalog) -> Result<(), E> {
+        single_thread()?;
+        state(catalog)?;
+        self.check_files()?;
+        if self.main.read()? != catalog.input().main {
+            return Err(E::Ownership);
+        }
+        let mapped = maps(&observation("/proc/self/maps", OBSERVATION_BYTES)?)?;
+        check_main(catalog, &self.main, &mapped)?;
+        let runtime_pages = self.runtime_pages(catalog, &mapped)?;
+        // Revalidate every declared runtime owner after staging. Do not apply
+        // the initial anonymous-executable allowlist to staged router storage;
+        // that whole-process check belongs only to the pre-staging boundary.
+        for p in std::iter::once(&self.bootstrap).chain(&self.dependencies) {
+            for m in file_maps(&mapped, p)? {
+                for page in (m.start..m.end).step_by(4096) {
+                    if !runtime_pages.contains(&page) {
+                        return Err(E::Ownership);
+                    }
+                }
+            }
+        }
+        self.check_files()
     }
 }
 fn open_pin(path: &[u8]) -> Result<Pinned, E> {
-    let f = OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_CLOEXEC | libc::O_NOFOLLOW)
-        .open(Path::new(std::ffi::OsStr::from_bytes(path)))
-        .map_err(|_| E::Io)?;
-    no_capability(&f)?;
-    let s = stamp(&f)?;
-    if s.mode & libc::S_IFMT != libc::S_IFREG || s.mode & 0o6000 != 0 {
-        return Err(E::Ownership);
-    }
-    Ok(Pinned { file: f, stamp: s })
+    Pinned::from_file(open_file(path)?, Some(path))
 }
 pub(super) fn observe(catalog: &Catalog, embedded: &'static [u8]) -> Result<Owned, E> {
     single_thread()?;
@@ -302,12 +619,8 @@ pub(super) fn observe(catalog: &Catalog, embedded: &'static [u8]) -> Result<Owne
         .custom_flags(libc::O_CLOEXEC)
         .open("/proc/self/exe")
         .map_err(|_| E::Io)?;
-    no_capability(&f)?;
-    let main = Pinned {
-        stamp: stamp(&f)?,
-        file: f,
-    };
-    if bytes(&main.file, c::MAX_FILE)? != catalog.input().main {
+    let main = Pinned::from_file(f, None)?;
+    if main.read()? != catalog.input().main {
         return Err(E::Ownership);
     }
     let elf = c::parse(&catalog.input().main)?;
@@ -327,71 +640,56 @@ pub(super) fn observe(catalog: &Catalog, embedded: &'static [u8]) -> Result<Owne
     if get(11)? != get(12)? || get(13)? != get(14)? {
         return Err(E::Ownership);
     }
-    let mapped = maps(&observation("/proc/self/maps", OBSERVATION_BYTES)?)?;
-    check_main(catalog, &main, &mapped)?;
     let policy = &catalog.input().policy;
+    let mut dependencies = Vec::new();
+    let mut total = 0usize;
+    let mut identities = std::collections::BTreeSet::new();
+    identities.insert((main.identity.stamp.dev, main.identity.stamp.ino));
+    for d in &policy.dependencies {
+        let p = open_pin(&d.path)?;
+        total = total
+            .checked_add(p.identity.stamp.len as usize)
+            .ok_or(E::Ownership)?;
+        if total > DEPENDENCY_BYTES || p.content != d.identity {
+            return Err(E::Ownership);
+        }
+        if !identities.insert((p.identity.stamp.dev, p.identity.stamp.ino)) {
+            return Err(E::Ownership);
+        }
+        dependencies.push(p);
+    }
     let bootstrap = open_pin(&policy.bootstrap_dso)?;
-    let here = observe as *const () as usize as u64;
-    let code = cover(&mapped, here, 1)?;
-    let data = cover(
-        &mapped,
-        embedded.as_ptr() as usize as u64,
-        embedded.len() as u64,
-    )?;
-    if code.flags != 5
-        || data.flags != 4
-        || !same_file(code, bootstrap.stamp)
-        || !same_file(data, bootstrap.stamp)
+    total = total
+        .checked_add(bootstrap.identity.stamp.len as usize)
+        .ok_or(E::Ownership)?;
+    if total > DEPENDENCY_BYTES
+        || !identities.insert((bootstrap.identity.stamp.dev, bootstrap.identity.stamp.ino))
     {
         return Err(E::Ownership);
     }
-    let mut dependencies = Vec::new();
-    let mut total = 0usize;
-    let mut runtime_pages = std::collections::BTreeSet::new();
-    let mut identities = std::collections::BTreeSet::new();
-    identities.insert((main.stamp.dev, main.stamp.ino));
-    if !identities.insert((bootstrap.stamp.dev, bootstrap.stamp.ino)) {
-        return Err(E::Ownership);
-    }
-    for d in &policy.dependencies {
-        let p = open_pin(&d.path)?;
-        let b = bytes(&p.file, c::MAX_FILE)?;
-        total = total.checked_add(b.len()).ok_or(E::Ownership)?;
-        if total > DEPENDENCY_BYTES
-            || ContentId::of(&b) != d.identity
-            || !mapped.iter().any(|m| same_file(m, p.stamp))
-        {
-            return Err(E::Ownership);
-        }
-        if !identities.insert((p.stamp.dev, p.stamp.ino)) {
-            return Err(E::Ownership);
-        }
-        runtime_elf(&b, &p, &mapped, &mut runtime_pages)?;
-        dependencies.push(p);
-    }
-    let bootstrap_bytes = bytes(&bootstrap.file, c::MAX_FILE)?;
-    total = total
-        .checked_add(bootstrap_bytes.len())
-        .ok_or(E::Ownership)?;
-    if total > DEPENDENCY_BYTES {
-        return Err(E::Ownership);
-    }
-    runtime_elf(&bootstrap_bytes, &bootstrap, &mapped, &mut runtime_pages)?;
-    let loader = policy
-        .dependencies
-        .iter()
-        .position(|d| d.path == policy.interpreter)
-        .ok_or(E::Ownership)?;
-    if !same_file(cover(&mapped, get(7)?, 1)?, dependencies[loader].stamp) {
-        return Err(E::Ownership);
-    }
+    let owned = Owned {
+        main,
+        dependencies,
+        bootstrap,
+        embedded,
+        loader_base: get(7)?,
+    };
+    // Every retained fd has now been calibrated and every probe explicitly
+    // unmapped. No calibration VMA can contaminate the complete file roster.
+    owned.check_files()?;
+    let mapped = maps(&observation("/proc/self/maps", OBSERVATION_BYTES)?)?;
+    check_main(catalog, &owned.main, &mapped)?;
+    let runtime_pages = owned.runtime_pages(catalog, &mapped)?;
     for m in &mapped {
-        if same_file(m, main.stamp) {
+        if same_file(m, &owned.main)? {
             continue;
         }
         if m.inode != 0 {
-            if !same_file(m, bootstrap.stamp) && !dependencies.iter().any(|p| same_file(m, p.stamp))
-            {
+            let mut recognized = same_file(m, &owned.bootstrap)?;
+            for p in &owned.dependencies {
+                recognized |= same_file(m, p)?;
+            }
+            if !recognized {
                 return Err(E::Ownership);
             }
             for page in (m.start..m.end).step_by(4096) {
@@ -408,9 +706,6 @@ pub(super) fn observe(catalog: &Catalog, embedded: &'static [u8]) -> Result<Owne
         {
             return Err(E::Ownership);
         }
-    }
-    if runtime_pages.len() > 256 * 1024 * 1024 / 4096 {
-        return Err(E::Ownership);
     }
     let min_signal = get(51)?;
     let reserve = min_signal
@@ -429,11 +724,8 @@ pub(super) fn observe(catalog: &Catalog, embedded: &'static [u8]) -> Result<Owne
     {
         return Err(E::Platform);
     }
-    Ok(Owned {
-        main,
-        dependencies,
-        bootstrap,
-    })
+    owned.check_files()?;
+    Ok(owned)
 }
 fn runtime_elf(
     bytes: &[u8],
@@ -453,9 +745,9 @@ fn runtime_elf(
     {
         return Err(E::Ownership);
     }
-    let bases = maps
-        .iter()
-        .filter(|m| same_file(m, owner.stamp) && m.offset == 0)
+    let bases = file_maps(maps, owner)?
+        .into_iter()
+        .filter(|m| m.offset == 0)
         .collect::<Vec<_>>();
     let first = elf
         .segments(SegmentType::Load)
@@ -536,7 +828,7 @@ fn runtime_elf(
             }
             if p.file_size != 0 && page < file_end {
                 let offset = (p.offset.0 & !4095) + (page - start);
-                if !same_file(m, owner.stamp) || m.offset + page - m.start != offset {
+                if !same_file(m, owner)? || m.offset + page - m.start != offset {
                     return Err(E::Ownership);
                 }
             } else if m.inode != 0 || m.major != 0 || m.minor != 0 {
@@ -568,7 +860,7 @@ fn check_main(catalog: &Catalog, main: &Pinned, maps: &[Map]) -> Result<(), E> {
             let file_backed = p.file_size != 0 && page < rounded_file_end;
             if file_backed {
                 let offset = file_start + (page - start);
-                if !same_file(m, main.stamp) || m.offset + page - m.start != offset {
+                if !same_file(m, main)? || m.offset + page - m.start != offset {
                     return Err(E::Ownership);
                 }
                 expected_owners.insert(page);
@@ -593,7 +885,7 @@ fn check_main(catalog: &Catalog, main: &Pinned, maps: &[Map]) -> Result<(), E> {
             }
         }
     }
-    for m in maps.iter().filter(|m| same_file(m, main.stamp)) {
+    for m in file_maps(maps, main)? {
         for page in (m.start..m.end).step_by(4096) {
             if !expected_owners.remove(&page) {
                 return Err(E::Ownership);
@@ -633,3 +925,7 @@ mod tests {
         assert!(auxv(&trailing).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "host_identity_tests.rs"]
+mod identity_tests;
