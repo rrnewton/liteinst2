@@ -257,11 +257,20 @@ def observer_receipt(raw,request,expected_hash):
     value=decode(raw,16*MIB)
     required={'schema','request_sha256','transport_accepted','child_started','stops','exec_auxv','entry_auxv','exec_maps','entry_maps',
         'exec_status','entry_status','entry_registers','entry_xstate','debug_restored','primary_error','restore_error','cleanup_error',
-        'absence_echild','observation','route_coverage_complete','native_correctness_complete'}
-    need(set(value)==required and value['schema']=='LI2-OBSERVER-RECEIPT-1' and value['request_sha256']==expected_hash,'exact observer receipt schema/request')
+        'absence_echild','cleanup','observation','route_coverage_complete','native_correctness_complete'}
+    need(set(value)==required and value['schema']=='LI2-OBSERVER-RECEIPT-2' and value['request_sha256']==expected_hash,'exact observer receipt schema/request')
     need(all(value[k] is True for k in ('transport_accepted','child_started','debug_restored','absence_echild'))
          and all(value[k] is None for k in ('primary_error','restore_error','cleanup_error')),'complete observation/restoration/cleanup')
     need(value['route_coverage_complete'] is False and value['native_correctness_complete'] is False,'pre-entry is not route/native evidence')
+    cleanup=value['cleanup']
+    need(type(cleanup) is dict and set(cleanup)=={'direct_pid','terminal_statuses','unexpected_child'}
+         and type(cleanup['direct_pid']) is int and 0<cleanup['direct_pid']<1<<31
+         and cleanup['unexpected_child'] is False,'exact cleanup owner and no descendants')
+    terminal=cleanup['terminal_statuses']
+    need(type(terminal) is list and len(terminal)==1 and type(terminal[0]) is dict
+         and set(terminal[0])=={'pid','status'} and type(terminal[0]['pid']) is int
+         and terminal[0]['pid']==cleanup['direct_pid'] and type(terminal[0]['status']) is int
+         and terminal[0]['status']==9,'exact direct-child SIGKILL terminal status')
     stops=value['stops'];need(type(stops) is list and len(stops)==3,'exact stop population')
     for row,kind,status in zip(stops,('initial','exec','entry'),(0x137f,0x4057f,0x57f)):
         need(set(row)=={'kind','status','siginfo'} and row['kind']==kind and type(row['status']) is int

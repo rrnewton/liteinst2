@@ -217,3 +217,131 @@ fn event_address_and_control_are_owned_not_merely_b0() {
     assert_eq!(owned.event_at(0x401000), Err(Error::DebugOwner));
     owned.restore().unwrap();
 }
+
+#[test]
+fn child_free_requires_exact_echild_without_consuming_harness_children() {
+    assert_eq!(
+        child_wait_result(-1, libc::ECHILD, 0, 0).and_then(require_child_free),
+        Ok(())
+    );
+    for error in [0, libc::EINTR, libc::EINVAL, libc::ESRCH] {
+        assert_eq!(child_wait_result(-1, error, 0, 0), Err(Error::Io(error)));
+    }
+    assert_eq!(child_wait_result(1, libc::ECHILD, 0, 0), Err(Error::Child));
+}
+
+#[test]
+fn child_wait_no_event_is_pending_even_with_stale_echild_errno() {
+    for error in [0, libc::ECHILD] {
+        let wait = child_wait_result(0, error, 0, 0).unwrap();
+        assert_eq!(wait, ChildWait::Pending);
+        assert_eq!(require_child_free(wait), Err(Error::Child));
+    }
+    assert_eq!(
+        child_wait_result(0, 0, 0, libc::CLD_EXITED),
+        Err(Error::Child)
+    );
+}
+
+#[test]
+fn every_owned_event_stays_pending_for_preflight_and_retains_cleanup_identity() {
+    for code in [
+        libc::CLD_EXITED,
+        libc::CLD_KILLED,
+        libc::CLD_DUMPED,
+        libc::CLD_TRAPPED,
+        libc::CLD_STOPPED,
+        libc::CLD_CONTINUED,
+    ] {
+        let wait = child_wait_result(0, libc::ECHILD, 17, code).unwrap();
+        assert_eq!(wait, ChildWait::Event { pid: 17, code });
+        assert_eq!(require_child_free(wait), Err(Error::Child));
+    }
+    for (pid, code) in [(-1, libc::CLD_EXITED), (17, 0), (17, -1), (17, 999)] {
+        assert_eq!(child_wait_result(0, 0, pid, code), Err(Error::Child));
+    }
+}
+
+#[test]
+fn child_wait_flags_are_nonconsuming_nonblocking_and_include_all_child_kinds() {
+    assert_eq!(
+        CHILD_WAIT_FLAGS,
+        libc::WEXITED
+            | libc::WSTOPPED
+            | libc::WCONTINUED
+            | libc::WNOHANG
+            | libc::WNOWAIT
+            | libc::__WALL
+    );
+}
+
+#[test]
+fn cleanup_keeps_exact_terminal_status_and_requires_direct_reaping_before_deadline() {
+    let mut evidence = CleanupEvidence {
+        direct_pid: Some(17),
+        ..CleanupEvidence::default()
+    };
+    assert_eq!(evidence.finish(false, false), Err(Error::Cleanup));
+    assert_eq!(evidence.finish(true, false), Err(Error::Cleanup));
+    evidence.note_terminal(17, libc::SIGKILL).unwrap();
+    assert_eq!(evidence.terminal_statuses, [(17, libc::SIGKILL)]);
+    assert_eq!(evidence.finish(true, false), Ok(()));
+    assert_eq!(evidence.finish(false, false), Err(Error::Cleanup));
+    assert_eq!(evidence.finish(true, true), Err(Error::Cleanup));
+    assert_eq!(evidence.note_terminal(17, 0x137f), Err(Error::Cleanup));
+    assert_eq!(evidence.terminal_statuses, [(17, libc::SIGKILL)]);
+}
+
+#[test]
+fn unexpected_descendant_refuses_even_after_all_terminal_statuses_are_retained() {
+    let mut evidence = CleanupEvidence {
+        direct_pid: Some(17),
+        ..CleanupEvidence::default()
+    };
+    evidence.note_event(18);
+    assert!(evidence.unexpected_child);
+    evidence.note_terminal(17, libc::SIGKILL).unwrap();
+    assert_eq!(evidence.finish(true, false), Err(Error::Cleanup));
+    evidence.note_terminal(18, 7 << 8).unwrap();
+    assert_eq!(
+        evidence.terminal_statuses,
+        [(17, libc::SIGKILL), (18, 7 << 8)]
+    );
+    assert_eq!(evidence.finish(true, false), Err(Error::Cleanup));
+}
+
+#[test]
+fn unknown_owner_and_unbounded_terminal_population_never_complete_cleanup() {
+    let mut unknown = CleanupEvidence::default();
+    unknown.note_terminal(17, libc::SIGKILL).unwrap();
+    assert!(unknown.unexpected_child);
+    assert_eq!(unknown.finish(true, false), Err(Error::Cleanup));
+    let mut bounded = CleanupEvidence {
+        direct_pid: Some(17),
+        ..CleanupEvidence::default()
+    };
+    for _ in 0..4096 {
+        bounded.note_terminal(17, libc::SIGKILL).unwrap();
+    }
+    assert_eq!(
+        bounded.note_terminal(17, libc::SIGKILL),
+        Err(Error::Cleanup)
+    );
+    assert_eq!(bounded.terminal_statuses.len(), 4096);
+    assert_eq!(bounded.finish(true, false), Err(Error::Cleanup));
+}
+
+#[test]
+fn cleanup_and_drop_share_one_unchanged_five_second_deadline() {
+    let saved = Cell::new(None);
+    let began = Instant::now();
+    let end = cleanup_deadline(&saved, began);
+    assert_eq!(end.duration_since(began), Duration::from_secs(5));
+    assert_eq!(
+        cleanup_deadline(&saved, began + Duration::from_secs(2)),
+        end
+    );
+    let later = began + Duration::from_secs(7);
+    assert_eq!(cleanup_deadline(&saved, later), end);
+    assert!(later >= end);
+}

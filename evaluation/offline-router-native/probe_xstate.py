@@ -30,6 +30,19 @@ def deadline(end):
         raise TimeoutError('probe deadline')
 
 
+def require_child_free():
+    # WNOWAIT leaves every existing status owned by its caller. A zero/no-event
+    # return still means a live child exists; only exact ECHILD proves absence.
+    # __WALL includes children whose clone exit signal is not SIGCHLD.
+    try:
+        os.waitid(os.P_ALL, 0, os.WEXITED | os.WSTOPPED | os.WCONTINUED
+                  | os.WNOHANG | os.WNOWAIT | WALL)
+    except ChildProcessError as error:
+        need(error.errno == errno.ECHILD, 'exact child-free preflight errno')
+    else:
+        raise ValueError('dedicated child-free process')
+
+
 def wait_event(pid, end):
     while True:
         deadline(end)
@@ -119,8 +132,7 @@ def main():
              and ctypes.sizeof(ctypes.c_void_p) == 8, 'Linux x86-64 only')
         own = os.getpid()
         need(os.listdir('/proc/self/task') == [str(own)], 'dedicated single thread')
-        with open(f'/proc/self/task/{own}/children', 'rb') as stream:
-            need(stream.read(65537) == b'', 'dedicated child-free process')
+        require_child_free()
         need(signal.getsignal(signal.SIGCHLD) == signal.SIG_DFL, 'normal child wait ownership')
         for sig in (signal.SIGINT, signal.SIGTERM):
             handlers[sig] = signal.signal(sig, interruption)

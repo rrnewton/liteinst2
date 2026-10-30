@@ -4,7 +4,7 @@
 compile_error!("this control requires the Linux x86-64 user ABI");
 
 use sha2::{Digest, Sha256};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::ffi::CString;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read};
@@ -316,11 +316,127 @@ impl<'a, T: DebugIo> DebugOwner<'a, T> {
     }
 }
 
+const CHILD_WAIT_FLAGS: libc::c_int = libc::WEXITED
+    | libc::WSTOPPED
+    | libc::WCONTINUED
+    | libc::WNOHANG
+    | libc::WNOWAIT
+    | libc::__WALL;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ChildWait {
+    Absent,
+    Pending,
+    Event { pid: libc::pid_t, code: libc::c_int },
+}
+
+// Pure result classification also serves controls without waiting on any test
+// harness children. Successful no-event calls do NOT prove child absence.
+fn child_wait_result(
+    result: libc::c_int,
+    error: libc::c_int,
+    pid: libc::pid_t,
+    code: libc::c_int,
+) -> Result<ChildWait> {
+    if result == -1 {
+        return if error == libc::ECHILD {
+            Ok(ChildWait::Absent)
+        } else {
+            Err(Error::Io(error))
+        };
+    }
+    if result != 0 || pid < 0 {
+        return Err(Error::Child);
+    }
+    if pid == 0 {
+        return if code == 0 {
+            Ok(ChildWait::Pending)
+        } else {
+            Err(Error::Child)
+        };
+    }
+    if !matches!(
+        code,
+        libc::CLD_EXITED
+            | libc::CLD_KILLED
+            | libc::CLD_DUMPED
+            | libc::CLD_TRAPPED
+            | libc::CLD_STOPPED
+            | libc::CLD_CONTINUED
+    ) {
+        return Err(Error::Child);
+    }
+    Ok(ChildWait::Event { pid, code })
+}
+
+fn child_wait() -> Result<ChildWait> {
+    let mut info = unsafe { core::mem::zeroed::<libc::siginfo_t>() };
+    unsafe {
+        *libc::__errno_location() = 0;
+    }
+    let result = unsafe { libc::waitid(libc::P_ALL, 0, &mut info, CHILD_WAIT_FLAGS) };
+    let error = errno();
+    child_wait_result(result, error, unsafe { info.si_pid() }, info.si_code)
+}
+
+fn require_child_free(wait: ChildWait) -> Result<()> {
+    if wait == ChildWait::Absent {
+        Ok(())
+    } else {
+        Err(Error::Child)
+    }
+}
+
+fn cleanup_deadline(saved: &Cell<Option<Instant>>, now: Instant) -> Instant {
+    if let Some(end) = saved.get() {
+        return end;
+    }
+    let end = now + Duration::from_secs(5);
+    saved.set(Some(end));
+    end
+}
+
+#[derive(Clone, Default)]
+pub struct CleanupEvidence {
+    pub direct_pid: Option<libc::pid_t>,
+    pub terminal_statuses: Vec<(libc::pid_t, i32)>,
+    pub unexpected_child: bool,
+}
+impl CleanupEvidence {
+    fn note_event(&mut self, pid: libc::pid_t) {
+        self.unexpected_child |= self.direct_pid != Some(pid);
+    }
+    fn note_terminal(&mut self, pid: libc::pid_t, status: i32) -> Result<()> {
+        if pid <= 0
+            || !(libc::WIFEXITED(status) || libc::WIFSIGNALED(status))
+            || self.terminal_statuses.len() >= 4096
+        {
+            return Err(Error::Cleanup);
+        }
+        self.note_event(pid);
+        self.terminal_statuses.push((pid, status));
+        Ok(())
+    }
+    fn finish(&self, direct_reaped: bool, expired: bool) -> Result<()> {
+        if expired
+            || !direct_reaped
+            || self.unexpected_child
+            || self.terminal_statuses.len() != 1
+            || Some(self.terminal_statuses[0].0) != self.direct_pid
+        {
+            return Err(Error::Cleanup);
+        }
+        Ok(())
+    }
+}
+
 struct Child {
     pid: libc::pid_t,
     deadline: Instant,
     reaped: Cell<bool>,
     cleanup_complete: Cell<bool>,
+    cleanup_deadline: Cell<Option<Instant>>,
+    cleanup_evidence: RefCell<CleanupEvidence>,
 }
 impl Child {
     fn deadline(&self) -> Result<()> {
@@ -338,6 +454,9 @@ impl Child {
             if got == self.pid {
                 if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
                     self.reaped.set(true);
+                    self.cleanup_evidence
+                        .borrow_mut()
+                        .note_terminal(self.pid, status)?;
                 }
                 return Ok(status);
             }
@@ -425,52 +544,95 @@ impl Child {
     }
     fn cleanup(&self) -> Result<()> {
         if self.cleanup_complete.get() {
-            return Ok(());
+            return self
+                .cleanup_evidence
+                .borrow()
+                .finish(self.reaped.get(), false);
         }
-        // The executable is a dedicated single-threaded subreaper, checked
-        // child-free before fork. Kill every current owned/adopted child, then
-        // prove global ECHILD; direct-PID absence alone is insufficient.
-        let end = Instant::now() + Duration::from_secs(5);
+        // This dedicated single-threaded subreaper was child-free before fork.
+        // Kill our still-unreaped direct child first. TRACEFORK/VFORK/CLONE
+        // normally surface unexpected descendants as owned stop events. An
+        // eventless child (e.g. CLONE_UNTRACED) is never guessed: Pending expires
+        // with cleanup failure, leaving the outer owner responsible. Global
+        // WNOWAIT authenticates event PIDs without proc enumeration; only exact
+        // global ECHILD plus terminal direct-child evidence completes cleanup.
+        // Drop shares this same five-second budget; it cannot start a retry.
+        let end = cleanup_deadline(&self.cleanup_deadline, Instant::now());
+        if Instant::now() >= end {
+            return Err(Error::Cleanup);
+        }
+        if !self.reaped.get()
+            && unsafe { libc::kill(self.pid, libc::SIGKILL) } != 0
+            && errno() != libc::ESRCH
+        {
+            return Err(Error::Cleanup);
+        }
+        let mut seen = std::collections::BTreeSet::new();
         loop {
-            let raw = read_proc(
-                unsafe { libc::getpid() },
-                &format!("task/{}/children", unsafe { libc::getpid() }),
-                65536,
-            )?;
-            let text = std::str::from_utf8(&raw).map_err(|_| Error::Cleanup)?;
-            if text.split_whitespace().count() > 4096 {
-                return Err(Error::Cleanup);
-            }
-            for word in text.split_whitespace() {
-                let pid: libc::pid_t = word.parse().map_err(|_| Error::Cleanup)?;
-                if pid <= 0 {
-                    return Err(Error::Cleanup);
-                }
-                // Each PID is an unreaped owned child, so cannot recycle until
-                // this sole waiter reaps it. No unrelated process is signalled.
-                if unsafe { libc::kill(pid, libc::SIGKILL) } != 0 && errno() != libc::ESRCH {
-                    return Err(Error::Cleanup);
-                }
-            }
-            loop {
-                let mut status = 0;
-                let got = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG | libc::__WALL) };
-                if got == -1 && errno() == libc::ECHILD {
-                    self.cleanup_complete.set(true);
-                    return Ok(());
-                }
-                if got == -1 && errno() != libc::EINTR {
-                    return Err(Error::Cleanup);
-                }
-                if got == 0 || got == -1 {
-                    break;
-                }
-                if got == self.pid && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)) {
-                    self.reaped.set(true);
-                }
-            }
             if Instant::now() >= end {
                 return Err(Error::Cleanup);
+            }
+            let wait = child_wait().map_err(|_| Error::Cleanup)?;
+            if Instant::now() >= end {
+                return Err(Error::Cleanup);
+            }
+            match wait {
+                ChildWait::Absent => {
+                    if !self.reaped.get() {
+                        return Err(Error::Cleanup);
+                    }
+                    self.cleanup_complete.set(true);
+                    return self
+                        .cleanup_evidence
+                        .borrow()
+                        .finish(self.reaped.get(), Instant::now() >= end);
+                }
+                ChildWait::Pending => {}
+                ChildWait::Event { pid, code } => {
+                    self.cleanup_evidence.borrow_mut().note_event(pid);
+                    seen.insert(pid);
+                    // Retain the old 4096-child bound, conservatively over all
+                    // identities observed during this cleanup rather than one
+                    // instantaneous proc snapshot.
+                    if seen.len() > 4096 {
+                        return Err(Error::Cleanup);
+                    }
+                    let terminal =
+                        matches!(code, libc::CLD_EXITED | libc::CLD_KILLED | libc::CLD_DUMPED);
+                    // WNOWAIT and the sole waiter retain this owned identity
+                    // until the exact-PID wait below; no candidate PID is used.
+                    if !terminal
+                        && unsafe { libc::kill(pid, libc::SIGKILL) } != 0
+                        && errno() != libc::ESRCH
+                    {
+                        return Err(Error::Cleanup);
+                    }
+                    let mut status = 0;
+                    let got = unsafe {
+                        libc::waitpid(
+                            pid,
+                            &mut status,
+                            libc::WNOHANG | libc::WUNTRACED | libc::WCONTINUED | libc::__WALL,
+                        )
+                    };
+                    if got == -1 || (got != 0 && got != pid) {
+                        return Err(Error::Cleanup);
+                    }
+                    if got == pid {
+                        let reaped = libc::WIFEXITED(status) || libc::WIFSIGNALED(status);
+                        if terminal && !reaped {
+                            return Err(Error::Cleanup);
+                        }
+                        if reaped {
+                            if pid == self.pid {
+                                self.reaped.set(true);
+                            }
+                            self.cleanup_evidence
+                                .borrow_mut()
+                                .note_terminal(pid, status)?;
+                        }
+                    }
+                }
             }
             std::thread::sleep(Duration::from_millis(1));
         }
@@ -756,6 +918,7 @@ pub struct Evidence {
     pub restore_error: Option<Error>,
     pub primary_error: Option<Error>,
     pub cleanup_error: Option<Error>,
+    pub cleanup: CleanupEvidence,
     pub absence_echild: bool,
     pub child_started: bool,
 }
@@ -859,14 +1022,7 @@ fn observe_inner(
     if threads != 1 || Instant::now() >= deadline {
         return Err(Error::Shape);
     }
-    let children = read_proc(
-        unsafe { libc::getpid() },
-        &format!("task/{}/children", unsafe { libc::getpid() }),
-        65536,
-    )?;
-    if !children.iter().all(u8::is_ascii_whitespace) {
-        return Err(Error::Child);
-    }
+    require_child_free(child_wait()?)?;
     let mut action = unsafe { core::mem::zeroed::<libc::sigaction>() };
     if unsafe { libc::sigaction(libc::SIGCHLD, core::ptr::null(), &mut action) } != 0
         || action.sa_sigaction != libc::SIG_DFL
@@ -949,6 +1105,11 @@ fn observe_inner(
         deadline,
         reaped: Cell::new(false),
         cleanup_complete: Cell::new(false),
+        cleanup_deadline: Cell::new(None),
+        cleanup_evidence: RefCell::new(CleanupEvidence {
+            direct_pid: Some(pid),
+            ..CleanupEvidence::default()
+        }),
     };
     let result = (|| {
         let mut machine = Machine::new();
@@ -1154,10 +1315,15 @@ fn observe_inner(
         evidence.primary_error = result.as_ref().err().cloned();
     }
     let cleanup = child.cleanup();
-    evidence.absence_echild = cleanup.is_ok();
+    evidence.absence_echild = child.cleanup_complete.get();
+    evidence.cleanup = child.cleanup_evidence.borrow().clone();
     evidence.cleanup_error = cleanup.as_ref().err().cloned();
     cleanup?;
     let mut result = result?;
+    if evidence.cleanup.terminal_statuses != [(pid, libc::SIGKILL)] {
+        evidence.cleanup_error = Some(Error::Cleanup);
+        return Err(Error::Cleanup);
+    }
     result.absence_echild = true;
     Ok(result)
 }

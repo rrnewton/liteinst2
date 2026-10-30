@@ -32,15 +32,31 @@ fn receipt(
         })
         .collect::<Vec<_>>()
         .join(",");
+    let terminal_statuses = evidence
+        .cleanup
+        .terminal_statuses
+        .iter()
+        .map(|(pid, status)| format!("{{\"pid\":{pid},\"status\":{status}}}"))
+        .collect::<Vec<_>>()
+        .join(",");
+    let cleanup = format!(
+        "{{\"direct_pid\":{},\"terminal_statuses\":[{}],\"unexpected_child\":{}}}",
+        evidence
+            .cleanup
+            .direct_pid
+            .map_or_else(|| "null".into(), |pid| pid.to_string()),
+        terminal_statuses,
+        evidence.cleanup.unexpected_child,
+    );
     let observed = observation.map_or_else(|| "null".into(), |o| format!(
         "{{\"completion\":{},\"main_entry\":{},\"bootstrap_bias\":{},\"stopped_before_main_execution\":{},\"observer_killed_child\":{},\"absence_echild\":{},\"route_coverage_complete\":false}}",
         o.completion,o.main_entry,o.bootstrap_bias,o.stopped_before_main_execution,o.observer_killed_child,o.absence_echild));
     format!(
         concat!(
-            "{{\"schema\":\"LI2-OBSERVER-RECEIPT-1\",\"request_sha256\":{},\"transport_accepted\":{},",
+            "{{\"schema\":\"LI2-OBSERVER-RECEIPT-2\",\"request_sha256\":{},\"transport_accepted\":{},",
             "\"child_started\":{},\"stops\":[{}],\"exec_auxv\":\"{}\",\"entry_auxv\":\"{}\",\"exec_maps\":\"{}\",\"entry_maps\":\"{}\",",
             "\"exec_status\":\"{}\",\"entry_status\":\"{}\",\"entry_registers\":\"{}\",\"entry_xstate\":\"{}\",",
-            "\"debug_restored\":{},\"primary_error\":{},\"restore_error\":{},\"cleanup_error\":{},\"absence_echild\":{},",
+            "\"debug_restored\":{},\"primary_error\":{},\"restore_error\":{},\"cleanup_error\":{},\"absence_echild\":{},\"cleanup\":{},",
             "\"observation\":{},\"route_coverage_complete\":false,\"native_correctness_complete\":false}}"
         ),
         hash.map_or_else(|| "null".into(), |h| format!("\"{h}\"")),
@@ -60,6 +76,7 @@ fn receipt(
         error(evidence.restore_error.as_ref()),
         error(evidence.cleanup_error.as_ref()),
         evidence.absence_echild,
+        cleanup,
         observed
     )
 }

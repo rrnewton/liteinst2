@@ -34,12 +34,14 @@ def request():
 
 
 def receipt():
-    return dict(schema='LI2-OBSERVER-RECEIPT-1',request_sha256='11'*32,transport_accepted=True,child_started=True,
+    return dict(schema='LI2-OBSERVER-RECEIPT-2',request_sha256='11'*32,transport_accepted=True,child_started=True,
         stops=[dict(kind=kind,status=status,siginfo='' if kind=='exec' else '00'*128)
                for kind,status in zip(('initial','exec','entry'),(0x137f,0x4057f,0x57f))],
         exec_auxv='00',entry_auxv='00',exec_maps='00',entry_maps='00',exec_status='00',entry_status='00',
         entry_registers='00'*216,entry_xstate='00'*576,debug_restored=True,primary_error=None,restore_error=None,
-        cleanup_error=None,absence_echild=True,observation=dict(completion=1,main_entry=0x401000,
+        cleanup_error=None,absence_echild=True,
+        cleanup=dict(direct_pid=17,terminal_statuses=[dict(pid=17,status=9)],unexpected_child=False),
+        observation=dict(completion=1,main_entry=0x401000,
         bootstrap_bias=0x70000000,stopped_before_main_execution=True,observer_killed_child=True,absence_echild=True,
         route_coverage_complete=False),route_coverage_complete=False,native_correctness_complete=False)
 
@@ -113,6 +115,19 @@ class Receipts(unittest.TestCase):
         value=receipt();self.assertEqual(self.check(value),value)
         self.assertEqual(len(bytes.fromhex(value['entry_registers'])),216)
         self.assertFalse(value['route_coverage_complete']);self.assertFalse(value['native_correctness_complete'])
+
+    def test_cleanup_terminal_owner_status_and_exact_population_are_required(self):
+        for change in ('missing','extra','pid','status','bool-status','descendant','no-owner','wrong-schema'):
+            value=receipt();cleanup=value['cleanup']
+            if change=='missing':cleanup['terminal_statuses']=[]
+            elif change=='extra':cleanup['terminal_statuses'].append(dict(pid=18,status=9))
+            elif change=='pid':cleanup['terminal_statuses'][0]['pid']=18
+            elif change=='status':cleanup['terminal_statuses'][0]['status']=0
+            elif change=='bool-status':cleanup['terminal_statuses'][0]['status']=True
+            elif change=='descendant':cleanup['unexpected_child']=True
+            elif change=='no-owner':cleanup['direct_pid']=None
+            else:value['schema']='LI2-OBSERVER-RECEIPT-1'
+            with self.subTest(change=change),self.assertRaises(ValueError):self.check(value)
 
     def test_any_missing_stop_or_changed_raw_status_refuses(self):
         for index in range(3):
