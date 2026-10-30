@@ -244,6 +244,36 @@ def constructors(elf,tags,records,symbols):
     return result
 
 
+def _relro_file_zero_tail(elf, relro, page_owners):
+    """One whole RW LOAD: actual file prefix followed by its loader-zeroed tail.
+
+    Called only after load_pages has proved disjoint rounded LOAD ownership.
+    This named class does not infer storage from section names or zero-looking
+    file bytes: the exact LOAD filesz/memsz boundary determines the zero fill.
+    """
+    need(relro[1]==4 and 0<relro[5]<relro[6],
+         'RELRO file-zero-tail requires a nonempty file prefix and zero suffix')
+    owners=[(index,p) for index,p in enumerate(elf.loads)
+            if p[3]<=relro[3] and relro[3]+relro[6]<=p[3]+p[6]]
+    need(len(owners)==1,'RELRO file-zero-tail requires one whole memory owner')
+    index,owner=owners[0]
+    need(owner[1]==6,'RELRO file-zero-tail requires actual RW/non-executable LOAD')
+    need((relro[2],relro[3],relro[5],relro[6])==(owner[2],owner[3],owner[5],owner[6]),
+         'RELRO file-zero-tail must exactly match whole LOAD offset/file/memory extent')
+    prefix=elf.mapped_bytes(relro[3],relro[2],relro[5])
+    protected_start=relro[3]&~4095
+    protected_end=(relro[3]+relro[6])&~4095
+    pages=[p for p in page_owners if p['load_index']==index]
+    need(len(pages)==1 and pages[0]['flags']==6 and
+         pages[0]['start']<=protected_start<protected_end<=pages[0]['end'],
+         'RELRO file-zero-tail requires nonempty protected pages in that LOAD owner')
+    return dict(schema='LI2STARTUP-RELRO-LOAD-FILE-ZERO-TAIL-1',load_index=index,
+        load=list(owner),relro=list(relro),
+        file_prefix=dict(address=relro[3],file_offset=relro[2],bytes=len(prefix),sha256=sha(prefix)),
+        zero_fill=[owner[3]+owner[5],owner[3]+owner[6]],
+        protected=[protected_start,protected_end],page_owner=dict(pages[0]))
+
+
 def inspect(raw,catalog,package):
     """Inspect a concrete linked file; facts are inputs to later platform review."""
     need(type(catalog) is bytes and 0<len(catalog)<=16*MIB,'bounded frozen embedded catalog')
@@ -254,8 +284,15 @@ def inspect(raw,catalog,package):
     need(len(stack)==1 and stack[0][1]==6,'explicit RW/non-executable GNU stack')
     relro=[p for p in elf.ph if p[0]==0x6474e552]
     need(len(relro)==1 and relro[0][6]>0,'explicit nonempty GNU RELRO')
-    relro_owner,relro_offset=elf.file_owner(relro[0][3],relro[0][6],'completion-relocation')
-    need(relro_owner[1]==6 and relro_offset==relro[0][2],'actual writable file-backed RELRO owner')
+    relro_storage=None
+    full_file_owners=[p for p in elf.loads if p[3]<=relro[0][3]
+                      and relro[0][3]+relro[0][6]<=p[3]+p[5]]
+    if full_file_owners:
+        # Preserve the original all-file-backed class and its exact refusal.
+        relro_owner,relro_offset=elf.file_owner(relro[0][3],relro[0][6],'completion-relocation')
+        need(relro_owner[1]==6 and relro_offset==relro[0][2],'actual writable file-backed RELRO owner')
+    else:
+        relro_storage=_relro_file_zero_tail(elf,relro[0],page_owners)
     protected_start=relro[0][3]&~4095
     protected_end=(relro[0][3]+relro[0][6])&~4095
     need(protected_end>protected_start,'actual nonempty page-protected RELRO')
@@ -293,7 +330,7 @@ def inspect(raw,catalog,package):
     symbol_facts=[]
     for index,(name,sym) in enumerate(symbols):
         symbol_facts.append(dict(index=index,name=name.hex(),info=sym[1],visibility=sym[2],section=sym[3],value=sym[4],bytes=sym[5]))
-    return dict(schema='LI2STARTUP-LINKED-DSO-FACTS-1',bytes=len(raw),sha256=sha(raw),
+    result=dict(schema='LI2STARTUP-LINKED-DSO-FACTS-1',bytes=len(raw),sha256=sha(raw),
         completion=completion,catalog=dict(file_offset=at,address=address,bytes=len(catalog),sha256=sha(catalog)),
         loads=[list(p) for p in elf.loads],page_owners=page_owners,relro=[list(p) for p in relro],
         relro_protected=[protected_start,protected_end],stack=list(stack[0]),
@@ -303,3 +340,6 @@ def inspect(raw,catalog,package):
         dynamic_tags={str(k):v for k,v in sorted(tags.items())},symbols=symbol_facts,relocations=records,
         constructors=constructor_facts,artifact_inspected=True,
         platform_contract_accepted=False,execution_authorized=False,qualification_complete=False)
+    if relro_storage is not None:
+        result['relro_storage']=relro_storage
+    return result
