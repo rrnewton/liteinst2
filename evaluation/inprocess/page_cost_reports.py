@@ -76,7 +76,7 @@ def _retained_inputs(images, image_bytes, carrier, carrier_bytes):
 
 
 def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
-          carrier_bytes, *, workload, chain_closure=None):
+          carrier_bytes, *, workload, cache_completed=None, chain_closure=None):
     """Return actual parsed rows and closure only after exact application output."""
     need(workload in ('ls', 'true'), 'explicit whole-process ls or true subject')
     need(type(stdout) is bytes and stdout == (b'.\n' if workload == 'ls' else b''),
@@ -84,11 +84,11 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
     need(type(exit_code) is int and exit_code == 0, 'actual successful process required')
     if workload == 'ls':
         return original.check(stderr, pid, exit_code, parent, images, image_bytes,
-                              carrier, carrier_bytes, workload='ls',chain_closure=chain_closure)
+                              carrier, carrier_bytes, workload='ls',cache_completed=cache_completed,chain_closure=chain_closure)
 
     parsed = original.reports(stderr)
     original.extensions(parsed)
-    _, same, gate = original.gate(parsed, pid, exit_code, parent, 0,chain_closure=chain_closure)
+    _, same, gate = original.gate(parsed, pid, exit_code, parent, 0,cache_completed=cache_completed,chain_closure=chain_closure)
     need(same is parsed, 'original actual true report values retained')
     lease = original.lease.counters(parsed)
     original.effect_exit(parsed)
@@ -100,7 +100,7 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
         workload='true', application_completed=True,
         native_pair=original.pair_completed(parsed, pid),
         default_rseq_registered=parsed['rseq']['owner'][1] == 1,
-        cache_reuse=original.reuse_completed(parsed['run'], parsed['reuse']),
+        cache_reuse=(original.reuse_completed if cache_completed is None else cache_completed)(parsed['run'], parsed['reuse']),
         gate=gate, lease=lease, trace_run=trace, repeat_lease=retained,
         repeat_lease_source=None, legacy_repeat_source=None, input_authentication=inputs,
         selected=dict(attempts=effect['attempts'], completed=effect['completed'],
@@ -162,7 +162,7 @@ def _pair_controls(stderr, args, workload, *, read):
     return names
 
 
-def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes, *, workload, read):
+def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes, *, workload, read, cache_completed=None):
     """Run only after this exact genuine report passed; no additional subject."""
     accepted, _ = read(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes,workload=workload)
     actual_hash = hashlib.sha256(stderr).hexdigest()
@@ -172,8 +172,8 @@ def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carr
         ('handle_attempt', 'reuse', 'current', 3, 0),
         ('completed_generation', 'reuse', 'last_completed', 3, accepted['reuse']['last_completed'][3]+1),
         ('copied_count', 'reuse', 'last_completed', 1, accepted['reuse']['last_completed'][1]+1),
-        ('retired_completion', 'reuse', 'retirement', 1, 0),
-        ('revoke_query', 'reuse', 'revoked', 1, 0),
+        ('retired_completion', 'reuse', 'retirement', 1, 1 if cache_completed is not None and accepted['reuse']['retirement'][1]==0 else 0),
+        ('revoke_query', 'reuse', 'revoked', 1, 1 if cache_completed is not None and accepted['reuse']['revoked'][1]==0 else 0),
         ('nx_permission', 'reuse', 'writable', 7, 7),
         ('cleanup_prefix', 'reuse', 'retirement', 11, 1),
         ('pending_lease', 'reuse', 'state', 5, 1),
@@ -239,16 +239,16 @@ def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carr
 
 
 def supplied_controls(stdout, stderr, pid, exit_code, parent, images,
-                      image_bytes, carrier, carrier_bytes, *, workload, chain_closure=None):
+                      image_bytes, carrier, carrier_bytes, *, workload, cache_completed=None, chain_closure=None):
     """Supplied changes to accepted actual evidence; no additional native credit."""
     args = (pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes)
-    check(stdout, stderr, *args, workload=workload,chain_closure=chain_closure)
+    check(stdout, stderr, *args, workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
     actual_stdout, actual_stderr = H(stdout), H(stderr)
     if workload == 'ls':
-        result = original.supplied_controls(stderr, *args, workload='ls',chain_closure=chain_closure)
+        result = original.supplied_controls(stderr, *args, workload='ls',cache_completed=cache_completed,chain_closure=chain_closure)
     else:
-        result = _terminal_controls(stderr, *args, workload='true',
-                                    read=partial(check, stdout, chain_closure=chain_closure))
+        result = _terminal_controls(stderr, *args, workload='true', cache_completed=cache_completed,
+                                    read=partial(check, stdout, cache_completed=cache_completed,chain_closure=chain_closure))
     names = list(result['refusals'])
     for name, changed_stdout, changed_exit in (
             ('unexpected_stdout', stdout + b'!', exit_code),
@@ -256,7 +256,7 @@ def supplied_controls(stdout, stderr, pid, exit_code, parent, images,
         refused = False
         try:
             check(changed_stdout, stderr, pid, changed_exit, parent, images,
-                  image_bytes, carrier, carrier_bytes, workload=workload,chain_closure=chain_closure)
+                  image_bytes, carrier, carrier_bytes, workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:
             refused = True
         need(refused, 'same complete reader refuses supplied ' + name)

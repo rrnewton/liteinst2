@@ -1,4 +1,7 @@
 #define _GNU_SOURCE
+#ifdef LI2_LINKED_EPOCH
+#include "linked_source.h"
+#endif
 #include "lifecycle_loader.h"
 #ifdef LI2_NATIVE_PAIR
 #include "native_pair.h"
@@ -456,6 +459,9 @@ static void reserve_records(size_t pages) {
     if (pages>RECORDS-used) DIE(121,pages);
 }
 static void begin(long n,const long a[6],uintptr_t first,uintptr_t end) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,442);
+#endif
     tx.number=n; for (unsigned i=0;i<6;i++) tx.args[i]=a[i];
     tx.result=0; tx.first=first; tx.end=end; tx.generation_before=generation; tx.phase=PREPARED; tx.guard=0;
     ++counts.transactions;
@@ -595,6 +601,9 @@ int li2_lifecycle_known_code(uintptr_t first,size_t bytes) {
     return 1;
 }
 int li2_lifecycle_admit(uintptr_t pc,uintptr_t fault_address) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,440);
+#endif
 #ifdef LI2_NATIVE_PAIR
     if(!np_life_admission_guard(pc) || pc!=fault_address)DIE(LI2_NP_STATE,60);
 #endif
@@ -804,6 +813,9 @@ static long unmap_call(const long a[6]) {
     ++counts.reconciliations; tx.phase=REVOKED; finish(); return result;
 }
 int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,440);
+#endif
 #ifdef LI2_NATIVE_PAIR
     if(li2_native_pair_effect_guard())DIE(LI2_NP_STATE,61);
 #endif
@@ -821,6 +833,9 @@ int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
     return 1;
 }
 void li2_lifecycle_before_other(long n,const long a[6]) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,440);
+#endif
 #ifdef LI2_NATIVE_PAIR
     if(li2_native_pair_effect_guard())DIE(LI2_NP_STATE,61);
 #endif
@@ -872,6 +887,9 @@ static size_t fork_protected_used;
 static unsigned fork_protected_complete;
 
 void li2_lifecycle_fork_verify(void) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,440);
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
     li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
 #endif
@@ -905,6 +923,9 @@ void li2_lifecycle_fork_verify(void) {
 }
 
 void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,440);
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
     li2_repeat_custody_invalidate(LI2_REP_CUSTODY_LIFECYCLE);
 #endif
@@ -974,6 +995,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_SCALAR_SPAN_TRACE
 #include "span_fetch.inc"
 #include "span_source.inc"
+#ifdef LI2_LINKED_EPOCH
+#include "linked_source.inc"
+#endif
 #ifdef LI2_SCALAR_SPAN_CAPTURE
 #include "span_trace_observe_memory.inc"
 #endif
@@ -989,4 +1013,8 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
 #include "current_tf_observe_lifecycle.inc"
+#endif
+
+#ifdef LI2_LINKED_EPOCH_CAPTURE
+#include "linked_epoch_observe_memory.inc"
 #endif

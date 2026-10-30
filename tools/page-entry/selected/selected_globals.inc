@@ -57,7 +57,11 @@ enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENE
     , SELECTED_SCALAR_REGION
 #endif
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+    , SELECTED_LINKED_EPOCH
+#else
     , SELECTED_SCALAR_SPAN
+#endif
 #endif
 };
 static volatile sig_atomic_t selected_pending_route;

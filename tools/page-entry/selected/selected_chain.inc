@@ -13,7 +13,11 @@ static void selected_generic_begin(int sig,siginfo_t *si,ucontext_t *context,uin
 }
 static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+    if(selected_linked_epoch_trace_try(sig,si,context))return;
+#else
     if(selected_scalar_span_trace_try(sig,si,context))return;
+#endif
 #endif
     enum li2_chain_result result=li2_tf_chain_trace(&selected_chain,sig,si,context);
     const struct li2_tf_chain_slot *previous=&selected_chain.slots[selected_chain.active^1];

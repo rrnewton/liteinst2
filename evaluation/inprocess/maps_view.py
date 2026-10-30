@@ -28,7 +28,7 @@ ROUTES={'loader':('nx_faults','selected_steps','generic_tf_attempts','generic_tf
     'native':('attempts','admissions','closed','blocked')}
 # Immutable imported owner/reader/build and fixture inputs. Product inputs are bound to the
 # requested clean Git revision, actual compiler-M closure and before/after facts.
-DEPENDENCIES = {'evaluation/inprocess/page_cost_compare.py': {'bytes': 32256, 'sha256': 'ac8ea0af83b8b1c7a6d1571fdc6df2674dc39f504f85fd2320c4c6e807dd29fc'}, 'evaluation/inprocess/page_cost_reports.py': {'bytes': 16428, 'sha256': '8dd5adc32a2d0088045180c12fd698b5f133f331acf78dd0d8b3eafd30eed1d6'}, 'evaluation/inprocess/page_native_pair_performance.py': {'bytes': 48569, 'sha256': '072b17b41fc5818543e0cfb8547259fd7ecac24840431439d2293862eddeb056'}, 'evaluation/inprocess/page_native_pair_reports.py': {'bytes': 40036, 'sha256': '42182e6f2892a1b1d35c8cbe365ef36dc96dc8e5180dd8091ded823587012441'}, 'evaluation/inprocess/page_selected_generic_build.py': {'bytes': 16263, 'sha256': '6b630a9add422196f36618574d040d0dade8844e4a80185a41ab4e9ced0bff65'}, 'evaluation/inprocess/page_selected_process.py': {'bytes': 7089, 'sha256': '71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773'}, 'evaluation/inprocess/page_selected_register_time_build.py': {'bytes': 9738, 'sha256': 'c6354248d89f8622b328cb21c744a4e9c37221f0d152cd5c3fbed7f48e6fe84d'}, 'evaluation/inprocess/page_selected_oneshot_build.py': {'bytes': 4912, 'sha256': '2cb3555349feaf664ec9b3b08ec6ec30736740bfbf668b4e0e8b89871ab1a1de'}, 'evaluation/inprocess/page_default_ls_release_provenance.py': {'bytes': 1989, 'sha256': '1fe9f09c8f4628629dbb231fbce1049d0022e423dcaaf9458d359d5e2b2f7d88'}, 'evaluation/inprocess/page_selected_effect_ls.py': {'bytes': 28465, 'sha256': '7e9b42fc6862485b4e786d764818cf0afceab77756ced572de2a60648e092ae2'}, 'evaluation/inprocess/page_selected_maps_headers.py': {'bytes': 3508, 'sha256': 'a8123edbc80e2126b3aa0ddbca8b530111194cd03c066ad14a912c94c4ff47e4'}, 'tools/page-entry/selected/tests/maps_view/build.sh': {'bytes': 786, 'sha256': 'e2aa8751bd6dd7d313e93b85a93a679e138ce8df7a52ff6f6ef0c9714137e61f'}, 'tools/page-entry/selected/tests/maps_view/check.py': {'bytes': 2183, 'sha256': 'b8b9ae17ba31b93e825b683c5f212843a913cf3dbf2afee07551a4fccd2388d2'}, 'tools/page-entry/selected/tests/maps_view/oracle.c': {'bytes': 14279, 'sha256': 'c0f8d145b331a20359e94cd7c9ff55ae5c2583b79bf066a4a70d64269dbcc0c0'}}
+DEPENDENCIES = {'evaluation/inprocess/page_cost_compare.py': {'bytes': 32256, 'sha256': 'ac8ea0af83b8b1c7a6d1571fdc6df2674dc39f504f85fd2320c4c6e807dd29fc'}, 'evaluation/inprocess/page_cost_reports.py': {'bytes': 16926, 'sha256': 'ce31bb9f11fbf580749f5b135f644ced5b2795997599822138ed60171bf835d9'}, 'evaluation/inprocess/page_native_pair_performance.py': {'bytes': 48569, 'sha256': '072b17b41fc5818543e0cfb8547259fd7ecac24840431439d2293862eddeb056'}, 'evaluation/inprocess/page_native_pair_reports.py': {'bytes': 40779, 'sha256': 'f80dc474cb2f68541aaf6d405ce96602b26a27240f9856a53ae3bd8db0965eb4'}, 'evaluation/inprocess/page_selected_generic_build.py': {'bytes': 17431, 'sha256': '95a83a2648a8ad04b352003f4be1b0b7dee5c5d776d7606ce52c106398ae739b'}, 'evaluation/inprocess/page_selected_process.py': {'bytes': 7089, 'sha256': '71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773'}, 'evaluation/inprocess/page_selected_register_time_build.py': {'bytes': 9738, 'sha256': 'c6354248d89f8622b328cb21c744a4e9c37221f0d152cd5c3fbed7f48e6fe84d'}, 'evaluation/inprocess/page_selected_oneshot_build.py': {'bytes': 4912, 'sha256': '2cb3555349feaf664ec9b3b08ec6ec30736740bfbf668b4e0e8b89871ab1a1de'}, 'evaluation/inprocess/page_default_ls_release_provenance.py': {'bytes': 1989, 'sha256': '1fe9f09c8f4628629dbb231fbce1049d0022e423dcaaf9458d359d5e2b2f7d88'}, 'evaluation/inprocess/page_selected_effect_ls.py': {'bytes': 28465, 'sha256': '7e9b42fc6862485b4e786d764818cf0afceab77756ced572de2a60648e092ae2'}, 'evaluation/inprocess/page_selected_maps_headers.py': {'bytes': 3508, 'sha256': 'a8123edbc80e2126b3aa0ddbca8b530111194cd03c066ad14a912c94c4ff47e4'}, 'tools/page-entry/selected/tests/maps_view/build.sh': {'bytes': 786, 'sha256': 'e2aa8751bd6dd7d313e93b85a93a679e138ce8df7a52ff6f6ef0c9714137e61f'}, 'tools/page-entry/selected/tests/maps_view/check.py': {'bytes': 2183, 'sha256': 'b8b9ae17ba31b93e825b683c5f212843a913cf3dbf2afee07551a4fccd2388d2'}, 'tools/page-entry/selected/tests/maps_view/oracle.c': {'bytes': 14279, 'sha256': 'c0f8d145b331a20359e94cd7c9ff55ae5c2583b79bf066a4a70d64269dbcc0c0'}}
 
 
 def split_report(stderr,lane):
@@ -51,15 +51,15 @@ def split_report(stderr,lane):
     return v,b'\n'.join(rows[1:])+b'\n'
 
 
-def check(stdout,stderr,args,kind,lane, *, chain_closure=None):
+def check(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None):
     view,original=split_report(stderr,lane)
-    parsed,summary=cost_reports.check(stdout,original,*args,workload=kind,chain_closure=chain_closure)
+    parsed,summary=cost_reports.check(stdout,original,*args,workload=kind,cache_completed=cache_completed,chain_closure=chain_closure)
     return parsed,summary,view,original
 
 
-def controls(stdout,stderr,args,kind,lane, *, chain_closure=None):
-    _,_,view,original=check(stdout,stderr,args,kind,lane,chain_closure=chain_closure)
-    old=cost_reports.supplied_controls(stdout,original,*args,workload=kind,chain_closure=chain_closure)
+def controls(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None):
+    _,_,view,original=check(stdout,stderr,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure)
+    old=cost_reports.supplied_controls(stdout,original,*args,workload=kind,cache_completed=cache_completed,chain_closure=chain_closure)
     need(len(old['refusals'])==(60 if kind=='ls'else 218),'all original application and terminal controls')
     trials=[]
     if view is None:
@@ -84,7 +84,7 @@ def controls(stdout,stderr,args,kind,lane, *, chain_closure=None):
     refused=[]
     for name,changed in trials:
         caught=False
-        try:check(stdout,changed,args,kind,lane,chain_closure=chain_closure)
+        try:check(stdout,changed,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:caught=True
         need(caught,'complete reader refuses supplied maps-view '+name);refused.append(name)
     need(len(refused)==len(set(refused))==(1 if lane=='baseline'else 23),'complete supplied maps-view population')

@@ -61,18 +61,23 @@ def package_check(package):
 
 class Build:
     """Caller retains commands/first errors and checks source() before and after."""
-    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=(), *, scalar_span=False):
+    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=(), *, scalar_span=False, linked_epoch=False):
         need(type(extra_decoder_sources) is tuple and len(set(extra_decoder_sources)) == len(extra_decoder_sources) and
              all(type(n) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\.rs", n) for n in extra_decoder_sources),
              'exact unique local extra decoder source names')
         need(extra_decoder_sources in ((), ("region.rs",)), "closed decoder feature/source profiles")
         need(type(scalar_span) is bool and (not scalar_span or extra_decoder_sources == ("region.rs",)),
              "scalar-span requires its exact region source")
+        need(type(linked_epoch) is bool and (not linked_epoch or scalar_span),
+             "linked-epoch requires the exact scalar-span profile")
+        self.linked_epoch = linked_epoch
         self.scalar_span = scalar_span
         self.extra_decoder_sources = extra_decoder_sources
         self.decoder_features = ("scalar-region",) if extra_decoder_sources else ()
         if self.scalar_span:
             self.decoder_features = ("scalar-region", "scalar-span")
+        if self.linked_epoch:
+            self.decoder_features = ("scalar-region", "scalar-span", "linked-epoch")
         self.record = record.setdefault('build', {'status': 'failed', 'artifacts': {}, 'artifact_prefix': [],
             'output_before': {}, 'started': False, 'command_completed': False, 'final_errors': []})
         self.private, self.pin, self.binary, self.invoke = private, pin, binary, run
@@ -147,6 +152,9 @@ class Build:
         if self.scalar_span:
             self.environment["LI2_DECODER_FEATURES"] = "scalar-span"
             feature_argv = ["--features", "scalar-span"]
+        if self.linked_epoch:
+            self.environment["LI2_DECODER_FEATURES"] = "linked-epoch"
+            feature_argv = ["--features", "linked-epoch"]
         out, err = self.run('cargo-metadata', [self.tools['cargo'], 'metadata', '--manifest-path',
             decoder/'Cargo.toml', '--format-version', '1', '--locked', '--offline', *feature_argv])
         need(not err, 'metadata stderr')
@@ -155,8 +163,13 @@ class Build:
         local = [p for p in metadata['packages'] if p['source'] is None]
         need(len(local) == 1, 'one actual local decoder package')
         nodes = [n for n in metadata['resolve']['nodes'] if n['id'] == local[0]['id']]
-        need(len(nodes) == 1 and nodes[0]['features'] == ['default', *self.decoder_features],
-             'exact root decoder features, including empty default')
+        if self.linked_epoch:
+            need(len(nodes) == 1 and nodes[0]['features'] ==
+                 ['default', 'linked-epoch', 'scalar-region', 'scalar-span'],
+                 'exact resolved linked-epoch feature closure')
+        else:
+            need(len(nodes) == 1 and nodes[0]['features'] == ['default', *self.decoder_features],
+                 'exact root decoder features, including empty default')
         locked = tomllib.loads((decoder/'Cargo.lock').read_text())['package']
         expected = {(x['name'], x['version']): x for x in locked}
         need({(x['name'], x['version']) for x in metadata['packages']} == set(expected), 'exact locked package closure')
@@ -214,6 +227,12 @@ class Build:
             need(len(span_rows) == 1 and span_rows[0][-2:] == [b'T', b'li2_decoder_span_describe'],
                  'one actual scalar-span descriptor text definition')
             self.record['archive_text_exports']['li2_decoder_span_describe'] = 1
+        if self.linked_epoch:
+            linked_rows = [line.split() for line in out.splitlines()
+                           if line.split()[-1:] == [b'li2_decoder_link_none']]
+            need(len(linked_rows) == 1 and linked_rows[0][-2:] == [b'T', b'li2_decoder_link_none'],
+                 'one actual state-independent linked NONE text definition')
+            self.record['archive_text_exports']['li2_decoder_link_none'] = 1
         out, err = self.run('bridge-undefined', [self.tools['nm'], '-u', bridge], 'inspect')
         need(out == err == b'', 'no unresolved bridge imports')
         _, err = self.run('bridge-elf', [self.tools['readelf'], '-h', '-l', '-d', '-r', '-W', bridge], 'inspect')

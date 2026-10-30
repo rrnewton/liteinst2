@@ -10,6 +10,9 @@
 enum li2_span_transfer_phase {
     LI2_ST_IDLE,LI2_ST_CLOSING,LI2_ST_CLOSED,LI2_ST_CONSUMED,
     LI2_ST_RESUMING,LI2_ST_RESUMED
+#ifdef LI2_LINKED_EPOCH
+    ,LI2_ST_REFAULT
+#endif
 };
 enum li2_span_transfer_error {
     LI2_ST_ARGUMENT=3000,LI2_ST_STATE,LI2_ST_ORIGIN,LI2_ST_FRAME,
@@ -26,6 +29,9 @@ struct li2_span_transfer_progress {
     uintptr_t pc;
     uint64_t flags;
     struct li2_span_fetch_observation released,fresh;
+#ifdef LI2_LINKED_EPOCH
+    unsigned refault_attempted,refaulted;
+#endif
 };
 /* Chosen close: no descriptive fallback is returned once it starts. Old source
    cleanup and genuine TRACE validation remain the actual chain's operations. */
@@ -43,5 +49,15 @@ int li2_tf_chain_span_consume(const struct li2_tf_span_transfer *,
    failure owns the installed successor. Result is written only on success. */
 int li2_tf_chain_span_resume(const struct li2_tf_span_transfer *,int,siginfo_t *,
                            ucontext_t *,enum li2_chain_result *);
+#ifdef LI2_LINKED_EPOCH
+/* Consume the actual same-event CLOSED ticket after its complete newer15-byte
+   borrow has been released. No RAW, permission change, successor, or frame edit
+   occurs. serial must be retained from this close, not read back at use time.
+   Original PC remains NX; only a later hardware event can be an NX.
+   The caller must retain its busy/failure owner until this operation returns,
+   then return with no pending instruction owner and known logical flags. */
+int li2_tf_chain_span_refault(const struct li2_tf_span_transfer *,uint64_t serial,int,
+                             const siginfo_t *,const ucontext_t *);
+#endif
 const struct li2_span_transfer_progress *li2_tf_chain_span_progress(void);
 #endif

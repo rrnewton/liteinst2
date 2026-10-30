@@ -423,3 +423,39 @@ pair profiles. Release workload measurements use the separate
 `python3 evaluation/inprocess/page_native_pair_performance.py --expect-revision REVISION`
 command. Finite qualification does not establish application completion or
 throughput; results require their own closed receipts.
+
+## Experimental linked scalar execution
+
+`sh tools/page-entry/selected/build-linked-epoch.sh ARCHIVE OUTPUT` builds a
+separate opt-in bridge, `OUTPUT/bridge-linked-epoch.so`. Its decoder archive
+must include the scalar-span and linked-epoch features. It translates reachable
+same-page graphs of the 131 supported scalar no-write instruction forms.
+Internal graph edges execute directly in generated code without another signal
+or permission transition. The current graph contract allows at most 64 heads
+and eight unsupported frontiers; cycles, overlapping instructions and
+cross-page successors refuse. It does not establish arbitrary block coverage.
+
+Entry requires an actual completed TRACE predecessor, a fresh source borrow,
+the original full machine frame and current rseq checks. Cold graph proofs live
+in separate R/NX storage. Reuse checks current source identity, registers, TLS,
+rseq state and permissions; a remembered proof alone grants no execution.
+All generated execution is revoked before fallback or guest lifecycle effects.
+There are 64 logical cache slots, with verified retirement before replacement.
+
+After a relocation refusal at an address at or above 8 GiB, a distinct one-use
+transfer can return the closed TRACE frame while source remains R/NX. The next
+instruction fetch raises a real NX fault and runs the existing native-page
+policy, including backing, halo, identity, rseq and permission checks. This
+retry grants no native eligibility and fabricates no signal. Other graph
+refusals retain ordinary resumption.
+
+`evaluation/inprocess/linked_epoch.py --expect-revision REVISION` runs the
+metadata checks, native/gated full-state and fault comparisons, lifecycle and
+transfer refusal cases, and the separate 65-entry cache-replacement pair.
+`evaluation/inprocess/linked_epoch_performance.py --help` lists the nine
+same-revision prerequisites for the independent release comparison. It uses
+ten runs each of native, gated and DynamoRIO execution for both `ls -d .` and
+`true`, plus two maps-differential runs. Failed attempts stay in the results;
+aggregate timings require every planned case and final closure to pass.
+Finite correctness results do not establish the whole-process performance
+target of at most ten times DynamoRIO.

@@ -63,6 +63,9 @@ static int native_neighbor(uintptr_t address) {
     return 0;
 }
 int li2_lifecycle_native_admit(uintptr_t pc) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,441);
+#endif
     uint64_t started=native_clock();
     if(!active || tx.guard || li2_lifecycle_fetch_interlock() ||
        native_counts.admissions!=native_counts.closed)DIE(1426,0);

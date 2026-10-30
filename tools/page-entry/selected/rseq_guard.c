@@ -522,3 +522,7 @@ int li2_rseq_native_closed(void) {
 #ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
 #include "rseq_region_live.inc"
 #endif
+
+#ifdef LI2_LINKED_EPOCH
+#include "linked_rseq.inc"
+#endif

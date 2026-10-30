@@ -82,10 +82,10 @@
   {
     "source": "lifecycle_loader.c",
     "target": "lifecycle_loader.c",
-    "before_sha256": "00f1a47852e74ca76acb258d990489104b3a0e916b19513a86a7a863f59e387a",
-    "after_sha256": "00f1a47852e74ca76acb258d990489104b3a0e916b19513a86a7a863f59e387a",
-    "before_bytes": 47402,
-    "after_bytes": 47402,
+    "before_sha256": "0abd5d0d1145237c7b03aa9f3551ade0ab329cc172251f3aed42313d65b964d4",
+    "after_sha256": "0abd5d0d1145237c7b03aa9f3551ade0ab329cc172251f3aed42313d65b964d4",
+    "before_bytes": 48167,
+    "after_bytes": 48167,
     "edits": []
   }
 ]

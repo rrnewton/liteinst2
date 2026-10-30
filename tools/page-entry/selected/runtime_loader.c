@@ -250,6 +250,20 @@ static void selected_scalar_region_report(unsigned,unsigned,long);
 #error "distinct span TRACE profile requires old reuse and separately qualified capture"
 #endif
 #include "tf_span_transfer.h"
+#ifdef LI2_LINKED_EPOCH
+#if LI2_LINKED_EPOCH != 1 || defined(LI2_SCALAR_SPAN_CAPTURE)
+#error "linked epoch has distinct immutable proof and future capture contracts"
+#endif
+#include "linked_source.h"
+static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
+static void selected_linked_epoch_initialize(void);
+static int selected_linked_epoch_trace_try(int,siginfo_t *,ucontext_t *);
+static void selected_linked_epoch_exit(int,siginfo_t *,ucontext_t *);
+static void selected_linked_epoch_preentry(int,siginfo_t *,ucontext_t *);
+static _Noreturn void selected_linked_epoch_abort(unsigned,long);
+static _Noreturn void selected_linked_epoch_unexpected(int,siginfo_t *,ucontext_t *);
+static void selected_linked_epoch_report(unsigned,unsigned,long);
+#else
 static volatile sig_atomic_t selected_scalar_span_active,selected_scalar_span_busy;
 static void selected_scalar_span_initialize(void);
 #ifdef LI2_SCALAR_SPAN_CAPTURE
@@ -264,6 +278,7 @@ static void selected_scalar_span_preentry(int,siginfo_t *,ucontext_t *);
 static _Noreturn void selected_scalar_span_abort(unsigned,long);
 static _Noreturn void selected_scalar_span_unexpected(int,siginfo_t *,ucontext_t *);
 static void selected_scalar_span_report(unsigned,unsigned,long);
+#endif
 #endif
 
 #include "fork_profile.h"
@@ -490,7 +505,11 @@ static void report(unsigned status,unsigned code,long detail) {
     selected_scalar_region_report(status,code,detail);
 #endif
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+    selected_linked_epoch_report(status,code,detail);
+#else
     selected_scalar_span_report(status,code,detail);
+#endif
 #endif
 #ifdef LI2_EVENT_PROFILE
     event_report();
@@ -498,8 +517,13 @@ static void report(unsigned status,unsigned code,long detail) {
 }
 static void fail(unsigned code,long detail) {
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+    if(selected_linked_epoch_active || selected_linked_epoch_busy || selected_pending_route==SELECTED_LINKED_EPOCH)
+        selected_linked_epoch_abort(code,detail);
+#else
     if(selected_scalar_span_active || selected_scalar_span_busy || selected_pending_route==SELECTED_SCALAR_SPAN)
         selected_scalar_span_abort(code,detail);
+#endif
 #endif
 #ifdef LI2_SCALAR_REGION
     if(selected_scalar_region_active || selected_scalar_region_busy || selected_pending_route==SELECTED_SCALAR_REGION)
@@ -622,7 +646,14 @@ static int ordinary(long n) {
     default: return 0;
     }
 }
+#ifdef LI2_LINKED_EPOCH_CAPTURE
+static void leto_fd_guard(long,const long[6]);
+#endif
 static void dispatch_operation(long n,ucontext_t *context) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock() || selected_linked_epoch_active || selected_linked_epoch_busy)
+        selected_linked_epoch_abort(3100,440);
+#endif
 #ifdef LI2_TF_SEALED_CUSTODY
     li2_page_custody_discard(LI2_CUSTODY_SYSCALL);
 #endif
@@ -661,6 +692,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_SCALAR_SPAN_CAPTURE
     spto_fd_guard(n,a);
+#endif
+#ifdef LI2_LINKED_EPOCH_CAPTURE
+    leto_fd_guard(n,a);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
 #ifdef LI2_EFFECT_PROVIDER
@@ -822,7 +856,11 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "selected_scalar_region.inc"
 #endif
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+#include "linked_controller.inc"
+#else
 #include "selected_scalar_span.inc"
+#endif
 #endif
 
 #ifdef LI2_NATIVE_PAGES
@@ -835,6 +873,12 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "event_profile.inc"
 #endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_LINKED_EPOCH_CAPTURE
+    leto_ingress(sig);
+#ifndef LI2_LINKED_EPOCH_REUSE_CAPTURE
+    leto_refault_ingress(sig,si,ptr);
+#endif
+#endif
 #ifdef LI2_NATIVE_PAIR
     li2_native_pair_preentry();
 #endif
@@ -846,7 +890,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     li2_rseq_native_preentry();
 #endif
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+    selected_linked_epoch_preentry(sig,si,ptr);
+#else
     selected_scalar_span_preentry(sig,si,ptr);
+#endif
 #endif
 #ifdef LI2_SCALAR_REGION
     selected_scalar_region_preentry(sig,si,ptr);
@@ -945,9 +993,15 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     cto_begin(sig,si,ptr);
 #endif
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+    if(selected_pending_route==SELECTED_LINKED_EPOCH) {
+        selected_linked_epoch_exit(sig,si,ptr);
+    } else
+#else
     if(selected_pending_route==SELECTED_SCALAR_SPAN) {
         selected_scalar_span_exit(sig,si,ptr);
     } else
+#endif
 #endif
 #ifdef LI2_SCALAR_REGION
     if(selected_pending_route==SELECTED_SCALAR_REGION) {
@@ -986,7 +1040,13 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     } else if(sig==SIGSEGV) {
         checked(selected_pending_route==SELECTED_NO_STEP,658,0);
 #ifdef LI2_NATIVE_PAGES
+#if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
+        int native_admitted=selected_native_fetch(sig,si,ptr);
+        leto_refault_native();
+        if(!native_admitted)
+#else
         if(!selected_native_fetch(sig,si,ptr))
+#endif
 #endif
         selected_fetch(sig,si,ptr);
     }
@@ -997,6 +1057,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_TF_HANDOFF
     li2_tf_chain_handler_end(&selected_chain);
+#endif
+#if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
+    leto_refault_end(sig,si,ptr);
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
     cto_end(sig,si,ptr);
@@ -1125,7 +1188,11 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     selected_scalar_region_initialize();
 #endif
 #ifdef LI2_SCALAR_SPAN_TRACE
+#ifdef LI2_LINKED_EPOCH
+    selected_linked_epoch_initialize();
+#else
     selected_scalar_span_initialize();
+#endif
 #endif
 #ifdef LI2_MAPS_MAINTAINED
     checked(!li2_maps_view_enable(),770,1);

@@ -148,6 +148,9 @@ static int np_life_validate_live(void) {
     return 0;
 }
 int li2_lifecycle_pair_prepare(const struct li2_native_pair_owner *o,uintptr_t pc,int *eligible) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,441);
+#endif
 #ifdef LI2_EVENT_PROFILE
     LI2_EVENT_SCOPE(event_prepare,LI2_EV_PREPARE);
 #endif
@@ -203,6 +206,9 @@ int li2_lifecycle_pair_prepare(const struct li2_native_pair_owner *o,uintptr_t p
     np_original[np_life.live]=*p;s->prepared=1;np_life.candidate_eligible=1;*eligible=1;return 0;
 }
 int li2_lifecycle_pair_publish(const struct li2_native_pair_owner *o,uintptr_t pc) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,441);
+#endif
 #ifdef LI2_EVENT_PROFILE
     LI2_EVENT_SCOPE(event_publish,LI2_EV_PUBLISH);
 #endif
