@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "claim": 4,
+  "milestone": "A3 core increment; milestone incomplete",
+  "tested_revision": "f02e6a06d9a220d02bfa7e32758f6f3fba3a5d14",
+  "source_revision": "083a40a60ee74eed41ff513c3d4cb33c1ab08ec9",
+  "merged_main": "f7dd159db74f7ca1181a89bd48c11a329d7a49a5",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "python": "3.12.15",
+  "scope": "Artifact planning and parallel correctness; no native adjacent-pair, frontend, corpus or performance qualification.",
+  "profile": {
+    "opt_level": 0,
+    "debug": 0,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "incremental": false,
+    "cargo_build_jobs": 4,
+    "workspace_build_jobs": 16,
+    "workspace_test_threads": 316
+  },
+  "environment": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "LITEINST_EVALUATION": "1"
+  },
+  "merged_reservation": [
+    19,
+    91,
+    100,
+    159,
+    161,
+    170,
+    181,
+    183,
+    185,
+    201,
+    202,
+    206,
+    209,
+    239,
+    276,
+    306
+  ],
+  "merged_load_at_start": [
+    "57.02",
+    "68.99",
+    "78.21"
+  ],
+  "limits": [
+    [
+      "fmt",
+      [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      180
+    ],
+    [
+      "clippy",
+      [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      180
+    ],
+    [
+      "check",
+      [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      180
+    ],
+    [
+      "workspace",
+      [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      900
+    ],
+    [
+      "serial-launch",
+      [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      180
+    ]
+  ],
+  "totals": {
+    "083a40a60ee74eed41ff513c3d4cb33c1ab08ec9": {
+      "passed": 3623,
+      "failed": 0,
+      "ignored": 37,
+      "measured": 0,
+      "filtered_out": 0,
+      "outer_summaries": 105,
+      "nested_single_child_summaries_excluded": 5,
+      "custom_harnesses": [
+        "exec_backing_cleanup:5 controls,6 trajectories,physical_cleanup=true",
+        "precontext_native:PASS"
+      ]
+    },
+    "f02e6a06d9a220d02bfa7e32758f6f3fba3a5d14": {
+      "passed": 3623,
+      "failed": 0,
+      "ignored": 37,
+      "measured": 0,
+      "filtered_out": 0,
+      "outer_summaries": 105,
+      "nested_single_child_summaries_excluded": 5,
+      "custom_harnesses": [
+        "exec_backing_cleanup:5 controls,6 trajectories,physical_cleanup=true",
+        "precontext_native:PASS"
+      ]
+    },
+    "serial_launch": {
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered_out": 0,
+      "outer_summaries": 27,
+      "nested_single_child_summaries_excluded": 0,
+      "custom_harnesses": [
+        "exec_backing_cleanup:5 controls,6 trajectories,physical_cleanup=true"
+      ]
+    }
+  },
+  "new_control_groups": 10,
+  "prior_short_neighbor_tests_passed": 21,
+  "prior_allocation_regressions_passed": [
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+    "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+    "native_state_covers_every_prefixed_pun_and_original_successor"
+  ],
+  "source_sha256": {
+    "src/quiescent.rs": "1ab25c3243922fc354a011a5158fc3207e1690605f3a52a91aa6deb4fe79c2eb",
+    "src/quiescent/adjacent_b2.rs": "59fc8b512f7cba5121d4c1674701fac3457f683324e5bc8fb6e3e654af837bdf",
+    "src/quiescent/adjacent_b2/tests.rs": "11cd3ba61a6f7000db7a4fffe1f0473f0bedb01bd825aea9dea373e8f485843e",
+    "evaluation/short-neighbor-parallel/validate.py": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd",
+    "evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+  },
+  "review": {
+    "source_commit": "083a40a60ee74eed41ff513c3d4cb33c1ab08ec9",
+    "source_binding_sha256": "f08d24d70967de7a85a487d3489943817a719bdff5d0e9d3983f0cd387db66a2",
+    "merged_commit": "f02e6a06d9a220d02bfa7e32758f6f3fba3a5d14",
+    "merged_projection_binding_sha256": "a070c2354fe3ee3562d980ba080ad1256e9d456d7d6e1930c9e9e691407150fd",
+    "scope": "Three exact source blobs; no runtime outcomes supplied to reviewers."
+  },
+  "reproduction_script": "evaluation/short-neighbor-parallel/validate.py",
+  "raw_logs": "Private ignored storage only; content hashes in checks.csv",
+  "artifacts": {
+    "checks.csv": "9475992e269aee6a0c0a7373e7f5264e123a55df695193b00d130af21b4686e9",
+    "controls.csv": "aca4c5b97b48c218484c55e41c075c113e918ea7236bdb6a4beb64dbcea6cf35"
+  }
+}
