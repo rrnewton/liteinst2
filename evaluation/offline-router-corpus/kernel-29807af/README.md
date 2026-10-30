@@ -1,0 +1,11 @@
+# Startup observer: kernel configuration and mapping identity
+
+At `29807afad7906d182bef5ef75e48150eb1a92093`, the one fixed checksum observation passed its first three kernel-configuration checkpoints and the exact zero signal-mask/ignored-signal checks. It then **failed** the first main-page identity check: `stat` reports device 48 while `/proc/PID/maps` reports device 42. Inode, page range, offset and permissions agree. The loader independently has devices 33 versus 32. RLE remained UNRUN, as did all 40 ordinary N01 executions. No native correctness, route coverage or performance claim follows.
+
+The separately named profile trusts the captured live kernel configuration, which disables user SHSTK, plus the documented kernel semantics. Matching headers support that premise; they are not a source-to-running-binary proof. Missing proc fields and EINVAL alone are never authority. The previous strict-profile failure remains unchanged.
+
+A separate bounded read-only diagnostic mapped the retained candidate and loader files. It reproduced each stat/maps device difference. Reading each `map_files` symlink returned the exact canonical file path; stat and both forms of open through that symlink failed with EPERM. Both diagnostic mappings were released. This result motivates a complete mapped-file identity join; accepting arbitrary devices would be incorrect across subvolumes.
+
+`results.json` records the exact source and product revisions, commands, toolchain, fixed limits, all stage outcomes, CPU reservations, load, input hashes and raw-record hashes. Raw captures remain private. Run the named stages in [REPRODUCE.md](../REPRODUCE.md) in order; review the separate kernel basis and the complete two-program profile before the single observer attempt. `diagnose_mapping_identity.py` reproduces the read-only diagnostic against that campaign's retained candidate and the pinned loader. This diagnostic executes no candidate code.
+
+One setup invocation stopped before dispatch because its required owner-output parent did not exist. The setup refusal is retained separately; no stage child or native candidate started. All substantive outcomes above are the sole attempts at their frozen inputs.
