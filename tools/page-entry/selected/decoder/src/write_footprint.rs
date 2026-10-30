@@ -153,6 +153,7 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
         | Code::VEX_Kortestq_kr_kr
         | Code::VEX_Vmovdqu_xmm_xmmm128
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
+        | Code::EVEX_Vptestmb_kr_k1_ymm_ymmm256
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::VEX_Kmovd_r32_kr
         | Code::VEX_Kmovq_r64_kr

@@ -268,13 +268,17 @@ fn canonical_vpcmpb(instruction: &Instruction, bytes: &[u8]) -> bool {
                 && (*p2 & 0xf0) == 0x40 && (*m & 0xc0) == 0xc0 && *imm < 8)
 }
 
-// Canonical EVEX.512.W0 register VPTESTMB. Destination K extension bits,
-// zeroing/broadcast encodings, other widths, memory and added prefixes stay closed.
+// Canonical EVEX.W0 register VPTESTMB: exact256/512 Code-to-LL pairing.
+// Destination K extension, z/b, other widths, memory and added prefixes stay closed.
 fn canonical_vptestmb(instruction: &Instruction, bytes: &[u8]) -> bool {
-    instruction.code() == Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
-        && matches!(bytes, [0x62, p0, p1, p2, 0x26, m]
-            if (*p0 & 0x9f) == 0x92 && (*p1 & 0x87) == 0x05
-                && (*p2 & 0xf0) == 0x40 && (*m & 0xc0) == 0xc0)
+    let ll = match instruction.code() {
+        Code::EVEX_Vptestmb_kr_k1_ymm_ymmm256 => 0x20,
+        Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512 => 0x40,
+        _ => return false,
+    };
+    matches!(bytes, [0x62, p0, p1, p2, 0x26, m]
+        if (*p0 & 0x9f) == 0x92 && (*p1 & 0x87) == 0x05
+            && (*p2 & 0xf0) == ll && (*m & 0xc0) == 0xc0)
 }
 
 // Canonical EVEX.512.W0 register VPTESTNMB. The CPU computes AND-zero
@@ -412,7 +416,8 @@ fn classify(
             if (*p0 & 0x0f) == 0x01) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512 {
         if !canonical_vptestnmb(&instruction, &source[..instruction.len()]) { return Ok(out); }
-    } else if instruction.code() == Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512 {
+    } else if matches!(instruction.code(), Code::EVEX_Vptestmb_kr_k1_ymm_ymmm256
+        | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512) {
         if !canonical_vptestmb(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8 {
         if !canonical_vpcmpnequb256_memory(&instruction, &source[..instruction.len()]) { return Ok(out); }
@@ -733,6 +738,7 @@ fn classify(
         | Code::VEX_Vmovdqu_xmm_xmmm128
         | Code::VEX_Vmovdqu_xmmm128_xmm
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
+        | Code::EVEX_Vptestmb_kr_k1_ymm_ymmm256
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpub_kr_k1_ymm_ymmm256_imm8

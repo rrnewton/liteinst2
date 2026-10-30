@@ -35,13 +35,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 175,
+        "refusals": 174,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=175 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=174 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1
     },
     {
       "argv": [
@@ -62,13 +64,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 175,
+        "refusals": 174,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=175 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=174 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1
     },
     {
       "argv": [
@@ -89,13 +93,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 175,
+        "refusals": 174,
         "version": 1
       },
       "name": "group2",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=175 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=174 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1
     },
     {
       "argv": [
@@ -116,13 +122,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 175,
+        "refusals": 174,
         "version": 1
       },
       "name": "group3",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=175 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=174 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1
     },
     {
       "argv": [
@@ -143,13 +151,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 175,
+        "refusals": 174,
         "version": 1
       },
       "name": "group4",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=175 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPCMPEQB_REGISTER_TF_PASS pairs=19 equality_tests=18 selftest=1 refusal_bytes=174 prior_promoted_encoding_checks=1 prior_promoted_footprint_queries=1 vtn_promotions=11 vtn_supplied_none_queries=11 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1
     }
   ],
   "k_destination_and_writemask_roles": 8,
@@ -162,9 +172,9 @@
     19
   ],
   "native_source_roles": 32,
-  "negative_endpoint": "All prior110 neighbor bytes and47 common cases remain;30 explicit Code1720 width/prefix/memory/reserved/truncation refusals are additive. Original genuine fault suites remain mandatory.",
+  "negative_endpoint": "All prior110 neighbor bytes and47 common cases remain;30 explicit Code1720 width/prefix/memory/reserved/truncation refusals are additive. Original genuine fault suites remain mandatory. Original vpb_refused[90] bytes62b2752126c1 are retained as one mandatory exact Code2784/FALLTHROUGH/SIMD and NONE query; supplied evidence only.",
   "new_mask_pairs_total": 90,
-  "new_refusal_count": 128,
+  "new_refusal_count": 127,
   "old_refusal_count": 47,
   "prior_code2785_promotions_per_process": 1,
   "promoted_old_indices": [
@@ -181,7 +191,7 @@
     101
   ],
   "prospective_only": true,
-  "record_extent": "136 +22*sample_bytes +40 +5000 +9024 +3232; complete old storage and all actual CPUID/BV/actual-before/query/promotion trailers.",
+  "record_extent": "136 +22*sample_bytes +40 +5000 +9024 +3232; complete old storage and all actual CPUID/BV/actual-before/query/promotion trailers. Plus352 bytes of the separately retained Code2784 supplied promotion, within the original16MiB cap.",
   "record_header_fields": [
     "magic",
     "version",
@@ -204,5 +214,10 @@
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
   "schema_version": 1,
-  "scope": "Canonical EVEX512.W0 register-only Code1720 VPCMPEQB; existing RDI memory domain remains unchanged and separately qualified. No other width/prefix or application completion claim."
+  "scope": "Canonical EVEX512.W0 register-only Code1720 VPCMPEQB; existing RDI memory domain remains unchanged and separately qualified. No other width/prefix or application completion claim.",
+  "vtm256_promoted_indices": [
+    90
+  ],
+  "vtm256_supplied_none_queries_per_process": 1,
+  "vtm256_typed_promotions_per_process": 1
 }

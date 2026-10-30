@@ -1,0 +1,249 @@
+{
+  "added_refusal_count": 37,
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vptestmb256-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 181,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB256_TF_PASS pairs=19 mask_tests=18 selftest=1 inherited_refusals=144 added_refusals=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1,
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
+    },
+    {
+      "argv": [
+        "vptestmb256-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 181,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB256_TF_PASS pairs=19 mask_tests=18 selftest=1 inherited_refusals=144 added_refusals=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1,
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
+    },
+    {
+      "argv": [
+        "vptestmb256-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 181,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB256_TF_PASS pairs=19 mask_tests=18 selftest=1 inherited_refusals=144 added_refusals=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1,
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
+    },
+    {
+      "argv": [
+        "vptestmb256-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 181,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB256_TF_PASS pairs=19 mask_tests=18 selftest=1 inherited_refusals=144 added_refusals=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19 vtn_typed_promotions=11 vtn_supplied_none_queries=11 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1,
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
+    },
+    {
+      "argv": [
+        "vptestmb256-4"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 7,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 7,
+        "refusals": 181,
+        "version": 1
+      },
+      "name": "group4",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB256_TF_PASS pairs=7 mask_tests=6 selftest=1 inherited_refusals=144 added_refusals=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=12 full_state=7 full_memory=7 live_endpoints=7 vtn_typed_promotions=11 vtn_supplied_none_queries=11 vtm256_typed_promotions=1 vtm256_supplied_none_queries=1\n",
+      "vtm256_supplied_none_queries": 1,
+      "vtm256_typed_promotions": 1,
+      "vtn_supplied_none_queries": 11,
+      "vtn_typed_promotions": 11
+    }
+  ],
+  "inherited_refusal_count": 144,
+  "literal_effects": "DestinationK bits0..31 equal independent original source-byte AND-nonzero gated by original writemask (aaa0 unmasked). Bits32..63 clear even with high old destination/mask bits set. All source64-byte vectors and every otherK unchanged. Full original byte comparisons retained.",
+  "native_pairs_per_group": [
+    19,
+    19,
+    19,
+    19,
+    7
+  ],
+  "negative_endpoint": "Original110 literal neighbors remain. Row17 Code2785, elevenVTN rows, and row90 Code2784 require exact typed/NONE results; remaining97 plus47 common remain refusal. Separate37 unsupported256 neighbors add exact classifier/footprint controls; qualifiedLL512 is not a refusal. Existing genuine memory-fault cohorts remain separate.",
+  "new_mask_pairs_total": 78,
+  "promoted_encodings": [
+    {
+      "code": 2785,
+      "family": 6,
+      "flow": 1,
+      "footprint_policy": 1,
+      "hex": "62b2754026c1",
+      "length": 6,
+      "old_row": 17,
+      "per_command_checks": 1,
+      "policy": 1
+    },
+    {
+      "code": 2784,
+      "family": 6,
+      "flow": 1,
+      "footprint_policy": 1,
+      "hex": "62b2752126c1",
+      "length": 6,
+      "old_row": 90,
+      "per_command_checks": 1,
+      "policy": 1
+    }
+  ],
+  "prospective_only": true,
+  "record_extent": "header_bytes +22*sample_bytes +40 +5000 +9024 +3232 VTn +352 VTM256. Fixed21 positive sample slots: group0..3 leave2 unused, group4 leaves14 unused, negative sample zero. Observation19 slots leaves12 unused in group4; query20 rows leaves2/14 unused. All unused fullbytes zero.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Canonical EVEX256.W0 register-only VPTESTMB Code2784, with masks and aliases. All72 original role/fetch-tail cases plus six actual62b25d2026cc tails; five startup pairs. Exact low32 byte-AND/nonzero and upper32K zero; full all32ZMM/all8K/GPR/flags/kernelFP/liveXSAVE/memory conservation. No operand-memory/fault, app-completion, performance or fullB2 claim.",
+  "total_refusals_per_process": 181,
+  "unsupported_query_count_per_process": 134,
+  "vtm256_promoted_rows": [
+    90
+  ],
+  "vtm256_supplied_none_queries_per_process": 1,
+  "vtm256_typed_promotions_per_process": 1,
+  "vtn_promoted_rows": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    11,
+    12,
+    101
+  ],
+  "vtn_supplied_none_queries_per_process": 11,
+  "vtn_typed_promotions_per_process": 11
+}

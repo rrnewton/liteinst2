@@ -20,6 +20,7 @@ from page_selected_components import plain_executable
 from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
 from page_selected_vptestnmb_promotions import promotions as vtn_promotions
+from page_selected_vptestmb256_promotions import promotions as vtm256_promotions
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURE = REPO/'tools/page-entry/selected/tests/vptestmb'
@@ -119,7 +120,7 @@ def observations(data, group, header):
 
 def queries(data, group):
     need(len(data) == 9024, 'complete actual-before footprint trailer')
-    need(struct.unpack_from('<8Q',data) == (0x3151464d5456324c,1,9024,group,36,98,0,0),
+    need(struct.unpack_from('<8Q',data) == (0x3151464d5456324c,1,9024,group,36,97,0,0),
          'exact query header and unsupported encoding count')
     rows=[]
     for index in range(18):
@@ -137,7 +138,7 @@ def queries(data, group):
         rows.append(pair)
     need(not any(data[64+224*36:]), 'four unused actual-before rows remain zero')
     return dict(bytes=len(data),sha256=hashlib.sha256(data).hexdigest(),actual_before_queries=36,
-                unsupported_encoding_queries=98,rows_sha256=digest(rows),memory_write_ranges=0)
+                unsupported_encoding_queries=97,rows_sha256=digest(rows),memory_write_ranges=0)
 
 
 def publish(path, record, receipt):
@@ -170,7 +171,7 @@ def publish(path, record, receipt):
                 'actual_exit': c.get('actual_exit'), 'operation_completed': c.get('operation_completed'),
                 'verified_memory_fault': c.get('verified_memory_fault'),
                 'header': c.get('header'), 'record': c.get('record'),
-                'vtn_promotions': c.get('vtn_promotions'), 'observations': c.get('observations'), 'footprint': c.get('footprint')} for c in record['cases']],
+                'vtn_promotions': c.get('vtn_promotions'), 'vtm256_promotions': c.get('vtm256_promotions'), 'observations': c.get('observations'), 'footprint': c.get('footprint')} for c in record['cases']],
         command_recipe={
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
             'fixture_build': ['sh', 'tools/page-entry/selected/tests/vptestmb/build.sh',
@@ -201,7 +202,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-vptestmb-oracle-v1', 'status': 'failed',
-        'scope': 'Canonical EVEX512.W0 register-only VPTESTMB Code2785. Four19-pair cohorts:72 new plus4 startup; all vector/K indices and opmask zeroing/aliases, actual masked and explicitly promoted unmasked forms at all six fetch geometries. Complete unchanged native/TF/kernelFP/liveXSAVE/GPR/flags/memory comparisons; 144 actual-before NONE queries, 392 unsupported query controls and4 separately counted promoted typed/NONE checks. All47 generic+62 old+36 new supplied refusals and11 separately recorded Code2791/NONE promotions per cohort. No data-memory operand/fault, other EVEX authority, real-program completion, speedup or full-B2 claim.',
+        'scope': 'Canonical EVEX512.W0 register-only VPTESTMB Code2785. Four19-pair cohorts:72 new plus4 startup; all vector/K indices and opmask zeroing/aliases, actual masked and explicitly promoted unmasked forms at all six fetch geometries. Complete unchanged native/TF/kernelFP/liveXSAVE/GPR/flags/memory comparisons; 144 actual-before NONE queries, 388 unsupported query controls and4 separately counted promoted typed/NONE checks. All47 generic+62 old+35 new supplied refusals and11 separately recorded Code2791/NONE promotions per cohort. One exact supplied Code2784/NONE row90 promotion per cohort is mandatory. No data-memory operand/fault, other EVEX authority, real-program completion, speedup or full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -209,7 +210,7 @@ def main():
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
                    'new_refusal_encodings': 0, 'mask_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
-                   'executed_refusal_checks': 0, 'footprint_queries': 0, 'footprint_refusals': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0, 'vtn_typed_promotions': 0, 'vtn_supplied_none_queries': 0},
+                   'executed_refusal_checks': 0, 'footprint_queries': 0, 'footprint_refusals': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0, 'vtn_typed_promotions': 0, 'vtn_supplied_none_queries': 0, 'vtm256_typed_promotions': 0, 'vtm256_supplied_none_queries': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_vptestmb.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
@@ -283,7 +284,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact broadcast names, environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             '6ac27b65d3aa45fa21f36baa66f5f4280ecc5223bd947389c124a7a90953470b',
+             'f94b20cadfac09dfc98cb3cff89e3699221f73a32ee2d654f152dcacf24cdf02',
              'exact reviewed four-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -296,6 +297,8 @@ def main():
             result['actual_exit'] = row['exit']
             need(out == case['stdout'].encode() and err == case['stderr'].encode(), 'exact fixture output: '+name)
             data = (private/(name+'.record')).read_bytes()
+            need(352<len(data)<16<<20,'complete Code2784 promotion within original cap')
+            result['vtm256_promotions']=vtm256_promotions(data[-352:]);data=data[:-352]
             need(3232<len(data)<16<<20,'complete typed Code2791 promotions within unchanged cap')
             result['vtn_promotions']=vtn_promotions(data[-3232:], 'vptestmb');data=data[:-3232]
             need(len(data) >= 136, 'retained complete header')
@@ -322,19 +325,21 @@ def main():
             record['totals']['new_crossing_pairs'] += record['catalogue']['groups'][int(name[-1])]['crossing']
             record['totals']['executed_refusal_checks'] += header['refusals']
             record['totals']['footprint_queries'] += 36
-            record['totals']['footprint_refusals'] += 98
+            record['totals']['footprint_refusals'] += 97
             record['totals']['promoted_encoding_checks'] += 1
             record['totals']['promoted_footprint_queries'] += 1
-            record['totals'].update(supplied_refusal_encodings=145,
-                old_refusal_encodings=109, new_refusal_encodings=36)
+            record['totals'].update(supplied_refusal_encodings=144,
+                old_refusal_encodings=109, new_refusal_encodings=35)
             record['totals']['vtn_typed_promotions'] += 11
             record['totals']['vtn_supplied_none_queries'] += 11
+            record['totals']['vtm256_typed_promotions'] += result['vtm256_promotions']['typed_promotions']
+            record['totals']['vtm256_supplied_none_queries'] += result['vtm256_promotions']['supplied_none_queries']
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=76, generic_pairs=72, mask_pairs=72,
-                 positive_selftest_pairs=4, supplied_refusal_encodings=145, old_refusal_encodings=109,
-                 new_refusal_encodings=36, new_page_ending_pairs=11, new_crossing_pairs=61,
-                 executed_refusal_checks=580, footprint_queries=144, footprint_refusals=392,
-                 promoted_encoding_checks=4, promoted_footprint_queries=4, vtn_typed_promotions=44, vtn_supplied_none_queries=44) and len(record['cases']) == 4 and
+                 positive_selftest_pairs=4, supplied_refusal_encodings=144, old_refusal_encodings=109,
+                 new_refusal_encodings=35, new_page_ending_pairs=11, new_crossing_pairs=61,
+                 executed_refusal_checks=576, footprint_queries=144, footprint_refusals=388,
+                 promoted_encoding_checks=4, promoted_footprint_queries=4, vtn_typed_promotions=44, vtn_supplied_none_queries=44, vtm256_typed_promotions=4, vtm256_supplied_none_queries=4) and len(record['cases']) == 4 and
              all(c['accepted'] for c in record['cases']),
              'complete four19-pair mask-test cohorts; original fault suites remain separate')
         record['status'] = 'passed'
