@@ -1,5 +1,8 @@
 /* Separate runtime policy: genuine pair NX routing, never an old owner with
    relaxed page counts. All fallback instruction owners keep their old gates. */
+#ifdef LI2_LINKED_NATIVE_HINT
+#include "linked_native_hint.h"
+#endif
 static void selected_native_count(uintptr_t pc) {
     if(!first_target_pc)first_target_pc=pc;
     ++faults;if(pc==original_interpreter.entry)++first_interpreter;
@@ -13,8 +16,14 @@ static int selected_native_fetch(int sig,siginfo_t *si,ucontext_t *uc) {
             !li2_lifecycle_fetch_interlock(),1432,0);
     uint64_t before=li2_lifecycle_pair_progress()->published;
     int result=li2_native_pair_nx(sig,si,uc,selected_flags_known,&selected_logical_flags);
+#ifdef LI2_LINKED_NATIVE_HINT
+    int hint_result=li2_lifecycle_link_native_hint_outcome(result);
+#endif
     checked(result==LI2_NP_FALLBACK || result==LI2_NP_RESUME || result==LI2_NP_REFAULT,
             (unsigned)result,li2_native_pair_progress()->first_detail);
+#ifdef LI2_LINKED_NATIVE_HINT
+    checked(!hint_result,(unsigned)hint_result,0);
+#endif
     uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
     uint64_t after=li2_lifecycle_pair_progress()->published;
     checked(after>=before && after-before<=1,LI2_NP_STATE,70);

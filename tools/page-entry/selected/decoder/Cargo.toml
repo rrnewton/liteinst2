@@ -16,6 +16,7 @@ iced-x86 = { version = "=1.21.0", default-features = false, features = ["no_std"
 default = []
 scalar-region = ["iced-x86/instr_info"]
 scalar-span = ["scalar-region"]
+linked-epoch = ["scalar-span"]
 
 [profile.release]
 opt-level = 2

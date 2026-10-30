@@ -14,7 +14,7 @@ def build(builder,products,root,private,pin,binary,aliases,run,receipt,inputs):
     output=private/'finite';output.mkdir()
     state=receipt['finite_build']=dict(status='failed',archive=fact(products['archive']))
     adapter_path=pin(fixture/'ADAPTERS.json')
-    need(fact(adapter_path)==dict(bytes=3768,sha256='28c123c93014433880dd78673e5bcf4a348194a84aaa66b9083b70fbc759a95d'),'fixed exact instrumentation inverse catalogue')
+    need(fact(adapter_path)==dict(bytes=3768,sha256='e665f6bbf55102cdb5b5eda272a88e436a92e0f3f613c279442a07db77bb1653'),'fixed exact instrumentation inverse catalogue')
     adapters=decode(adapter_path.read_bytes());expected=[]
     for row in adapters:
         need(fact(pin(selected/row['source']))==dict(bytes=row['before_bytes'],sha256=row['before_sha256']),

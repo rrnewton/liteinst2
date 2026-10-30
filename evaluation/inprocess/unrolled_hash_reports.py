@@ -48,17 +48,17 @@ def completed(r,observe_only):
          c[24:]==[4096,4096,4096,0,1],
          'last actual owner completed, closed its full page and released source without cleanup/fault')
 
-def check(stdout,stderr,args,kind,lane, *, chain_closure=None):
+def check(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None):
     need(lane in('observe','unrolled','differential'),'explicit unrolled comparison lane')
     r,suffix=split(stderr);completed(r,lane=='observe')
-    parsed,summary,view,original=maps.check(stdout,suffix,args,kind,'differential'if lane=='differential'else'maintained',chain_closure=chain_closure)
+    parsed,summary,view,original=maps.check(stdout,suffix,args,kind,'differential'if lane=='differential'else'maintained',cache_completed=cache_completed,chain_closure=chain_closure)
     need(all(r[k]==parsed['loader'][k]for k in('status','failure_code','detail_abs','detail_negative')),
          'same actual original terminal outcome')
     return parsed,summary,view,r,suffix
 
-def controls(stdout,stderr,args,kind,lane, *, chain_closure=None):
-    _,_,_,r,suffix=check(stdout,stderr,args,kind,lane,chain_closure=chain_closure)
-    old=maps.controls(stdout,suffix,args,kind,'differential'if lane=='differential'else'maintained',chain_closure=chain_closure)
+def controls(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None):
+    _,_,_,r,suffix=check(stdout,stderr,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure)
+    old=maps.controls(stdout,suffix,args,kind,'differential'if lane=='differential'else'maintained',cache_completed=cache_completed,chain_closure=chain_closure)
     lines=stderr[:-1].split(b'\n');trials=[]
     def changed(name,record):
         trials.append((name,b'\n'.join(lines[:-1])+b'\n'+PREFIX+json.dumps(record,separators=(',',':')).encode()+b'\n'))
@@ -82,7 +82,7 @@ def controls(stdout,stderr,args,kind,lane, *, chain_closure=None):
     refused=[]
     for name,subject in trials:
         rejected=False
-        try:check(stdout,subject,args,kind,lane,chain_closure=chain_closure)
+        try:check(stdout,subject,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:rejected=True
         need(rejected,'whole reader refuses supplied unrolled '+name);refused.append(name)
     need(len(refused)==len(set(refused))==31,'complete fixed unrolled reader refusal population')

@@ -1182,4 +1182,50 @@ mod span {
             Err(error) => error,
         }
     }
+    /// A separate register-independent theorem for exactly the authenticated
+    /// scalar-span domain. It has NO register/TLS input and cannot calculate a
+    /// write range. The old actual footprint API remains a separate cold gate.
+    /// # Safety
+    /// Same aligned/disjoint owned output, sealed arena and source contract.
+    #[cfg(feature = "linked-epoch")]
+    #[unsafe(no_mangle)]
+    pub unsafe extern "C" fn li2_decoder_link_none(pc: u64, bytes: *const u8,
+                    length: usize, out: *mut crate::WriteFootprint) -> u32 {
+        if out.is_null() { return abi::BAD_ARGUMENT; }
+        // SAFETY: caller owns the full output on every return.
+        unsafe { out.write(crate::WriteFootprint::default()); }
+        if bytes.is_null() || !(1..=15).contains(&length)
+            || (bytes as usize).checked_add(length).is_none() { return abi::BAD_ARGUMENT; }
+        let call = match arena::enter() { Ok(call) => call, Err(error) => return error };
+        // SAFETY: bounded, retained immutable/disjoint source is caller-owned.
+        let source = unsafe { core::slice::from_raw_parts(bytes, length) };
+        let span = match one(pc, source, &call) { Ok(row) => row, Err(error) => return error };
+        let mut instruction = Instruction::default();
+        let tf = match crate::tf::one_with_instruction(pc, source, &mut instruction) {
+            Ok(row) => row, Err(error) => return error,
+        };
+        let mut result = crate::WriteFootprint { pc: span.decoded.pc,
+            next_pc: span.decoded.next_pc, abi_version: 1, code: span.decoded.code,
+            length: span.decoded.length, ..crate::WriteFootprint::default() };
+        if span.ready == 1 && span.refusal == 0 && tf.policy == 1
+            && tf.pc == result.pc && tf.next_pc == result.next_pc
+            && tf.code == result.code && tf.length == result.length
+            && !instruction.is_invalid() && instruction.code() as u32 == result.code
+            && instruction.len() as u32 == result.length && instruction.next_ip() == result.next_pc
+        {
+            use iced_x86::Mnemonic::*;
+            let independent = match instruction.mnemonic() {
+                Lea | Cmp | Test | Movzx | Jmp | Jo | Jno | Jb | Jae | Je | Jne
+                | Jbe | Ja | Js | Jns | Jp | Jnp | Jl | Jge | Jle | Jg => true,
+                Mov | Add | Sub | And | Or | Xor | Shl | Shr | Sar =>
+                    instruction.op0_kind() == OpKind::Register,
+                _ => false,
+            };
+            if independent { result.policy = 1; }
+        }
+        // SAFETY: output remains exclusive; unsupported has exact zero range.
+        unsafe { out.write(result); }
+        abi::OK
+    }
+
 }

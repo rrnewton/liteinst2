@@ -113,8 +113,8 @@ def pair_completed(parsed,pid):
         refaults=refault,refault_completed=retried,physical_pages=n['admissions'],
         rseq_entries=r[14],rseq_refreshes=r[15],last_registration_epoch=r[17])
 
-def pair_controls(stderr,args,workload, *, chain_closure=None):
-    accepted,_=check(stderr,*args,workload=workload,chain_closure=chain_closure);actual_hash=H(stderr)
+def pair_controls(stderr,args,workload, *, cache_completed=None, chain_closure=None):
+    accepted,_=check(stderr,*args,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure);actual_hash=H(stderr)
     p=accepted['native_pair']
     cases=[('pair_live','control',6,1),('pair_pending','control',7,1),
         ('pair_closed','counts',3,p['counts'][3]+1),('pair_two_closes','counts',5,p['counts'][5]+1),
@@ -141,7 +141,7 @@ def pair_controls(stderr,args,workload, *, chain_closure=None):
         need(len(places)==1,'one exact native-pair report')
         lines[places[0]]=prefix+json.dumps(changed,separators=(',',':'),allow_nan=False).encode()
         refused=False
-        try:check(b'\n'.join(lines)+b'\n',*args,workload=workload,chain_closure=chain_closure)
+        try:check(b'\n'.join(lines)+b'\n',*args,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:refused=True
         need(refused,'same complete reader refuses supplied '+name);names.append(name)
     original=stderr[:-1].split(b'\n');prefix=b'LI2_NATIVE_PAIR '
@@ -149,7 +149,7 @@ def pair_controls(stderr,args,workload, *, chain_closure=None):
     for name,changed in(('pair_missing_row',original[:index]+original[index+1:]),
                          ('pair_duplicate_row',original[:index]+[original[index]]+original[index:])):
         refused=False
-        try:check(b'\n'.join(changed)+b'\n',*args,workload=workload,chain_closure=chain_closure)
+        try:check(b'\n'.join(changed)+b'\n',*args,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:refused=True
         need(refused,'complete actual row order refuses supplied '+name);names.append(name)
     need(H(stderr)==actual_hash,'original complete pair stderr remains unchanged')
@@ -400,9 +400,9 @@ def gate(p,pid,exit_code,parent,scripted_syscalls, *, cache_completed=None, chai
         original_completed_rejected=not completed)
 
 
-def ls_gate(p,pid,exit_code,parent, *, chain_closure=None):
+def ls_gate(p,pid,exit_code,parent, *, cache_completed=None, chain_closure=None):
     # Preserve the original LS-specific Q/chain/rseq closure as well.
-    if exit_code==0:shared.rseq_completed(p['loader'],p['repeat'],p['run'],p['chain'],p['rseq'],pid,p['reuse'],chain_closure=chain_closure)
+    if exit_code==0:shared.rseq_completed(p['loader'],p['repeat'],p['run'],p['chain'],p['rseq'],pid,p['reuse'],cache_completed=cache_completed,chain_closure=chain_closure)
     o=p['tcgets']
     need(type(pid) is int and pid > 0 and type(exit_code) is int and exit_code in (0,125),
          'actual report-bearing terminal process')
@@ -435,7 +435,7 @@ def ls_gate(p,pid,exit_code,parent, *, chain_closure=None):
              'actual last completed command belongs to its nonempty counter')
     completed = False
     if exit_code == 0:
-        boundary_completed(p,pid,0,chain_closure=chain_closure)  # Same native/rseq/chain guards; explicit generation-aware cache closure.
+        boundary_completed(p,pid,0,cache_completed=cache_completed,chain_closure=chain_closure)  # Same native/rseq/chain guards; explicit generation-aware cache closure.
         need(o['failure_code'] == o['detail_abs'] == o['detail_negative'] == x[3] == x[4] == x[5] == 0 and
              x[2] in (2,7) and x[7] == x[8] == x[9] == x[10] == x[11],
              'no pending or failed gate at application completion')
@@ -448,7 +448,7 @@ def ls_gate(p,pid,exit_code,parent, *, chain_closure=None):
         completed = True
     else:
         refused = False
-        try: boundary_completed(p,pid,0,chain_closure=chain_closure)
+        try: boundary_completed(p,pid,0,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError: refused = True
         need(refused, 'unchanged completed rejects failed operation')
     return o,p,dict(application_completed=completed,gate_result_validations=x[11],
@@ -460,11 +460,11 @@ def ls_gate(p,pid,exit_code,parent, *, chain_closure=None):
         original_completed_rejected=not completed)
 
 
-def check(stderr,pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes,*,workload, chain_closure=None):
+def check(stderr,pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes,*,workload, cache_completed=None, chain_closure=None):
     need(workload in('ls','hot'),'exact explicit workload profile')
     need(type(exit_code)is int and exit_code==0,'actual successful process required')
     p=reports(stderr);extensions(p)
-    _,same,gate_summary=(ls_gate(p,pid,exit_code,parent,chain_closure=chain_closure)if workload=='ls'else gate(p,pid,exit_code,parent,0,chain_closure=chain_closure))
+    _,same,gate_summary=(ls_gate(p,pid,exit_code,parent,cache_completed=cache_completed,chain_closure=chain_closure)if workload=='ls'else gate(p,pid,exit_code,parent,0,cache_completed=cache_completed,chain_closure=chain_closure))
     need(same is p,'original actual report values retained')
     lease_summary=lease.counters(p);effect_exit(p)
     trace_summary=trace_completed(p)
@@ -472,16 +472,16 @@ def check(stderr,pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes,*
     retained=lease_completed(p,pid,binding,images,carrier)
     legacy=legacy_source(p,images,image_bytes)if workload=='hot'else None
     n=p['native'];e=p['effect'];o=p['oneshot']
-    return p,dict(native_pair=pair_completed(p,pid),application_completed=True,default_rseq_registered=True,cache_reuse=reuse_completed(p['run'],p['reuse']),gate=gate_summary,lease=lease_summary,trace_run=trace_summary,repeat_lease=retained,repeat_lease_source=binding,legacy_repeat_source=legacy,
+    return p,dict(native_pair=pair_completed(p,pid),application_completed=True,default_rseq_registered=True,cache_reuse=(reuse_completed if cache_completed is None else cache_completed)(p['run'],p['reuse']),gate=gate_summary,lease=lease_summary,trace_run=trace_summary,repeat_lease=retained,repeat_lease_source=binding,legacy_repeat_source=legacy,
         selected=dict(attempts=e['attempts'],completed=e['completed'],classes=e['classes'],unreturned_exit=1),
         publication={k:o[k]for k in('attempted','published','restored','completed','retired','refused','cpuid_patches','syscall_patches','rdtsc_patches','rseq_attempts','rseq_retired','retained_records','generations')},
         native={k:n[k]for k in('attempts','admissions','closed','blocked','epoch_exits','refaults','main_admissions','main_refaults')},
         admission_timing=dict(first_admission_ns=n['first_admission_ns'],first_source_offset=n['first_source_offset'],revisit_count=n['revisit_count'],revisit_ns=n['revisit_ns']))
 
 
-def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes,*,workload, chain_closure=None):
+def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes,*,workload, cache_completed=None, chain_closure=None):
     """Run only after this exact genuine report passed; no additional subject."""
-    accepted, _ = check(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes,workload=workload,chain_closure=chain_closure)
+    accepted, _ = check(stderr, pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
     actual_hash = hashlib.sha256(stderr).hexdigest()
     cases = (
         ('generation', 'reuse', 'state', 0, accepted['reuse']['state'][0]+1),
@@ -489,8 +489,8 @@ def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes, carri
         ('handle_attempt', 'reuse', 'current', 3, 0),
         ('completed_generation', 'reuse', 'last_completed', 3, accepted['reuse']['last_completed'][3]+1),
         ('copied_count', 'reuse', 'last_completed', 1, accepted['reuse']['last_completed'][1]+1),
-        ('retired_completion', 'reuse', 'retirement', 1, 0),
-        ('revoke_query', 'reuse', 'revoked', 1, 0),
+        ('retired_completion', 'reuse', 'retirement', 1, 1 if cache_completed is not None and accepted['reuse']['retirement'][1]==0 else 0),
+        ('revoke_query', 'reuse', 'revoked', 1, 1 if cache_completed is not None and accepted['reuse']['revoked'][1]==0 else 0),
         ('nx_permission', 'reuse', 'writable', 7, 7),
         ('cleanup_prefix', 'reuse', 'retirement', 11, 1),
         ('pending_lease', 'reuse', 'state', 5, 1),
@@ -540,7 +540,7 @@ def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes, carri
         need(len(places)==1, 'one exact original mutation target')
         lines[places[0]]=prefix+json.dumps(changed,sort_keys=key!='repeat_lease',separators=(',',':'),allow_nan=False).encode()
         refused=False
-        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes,workload=workload,chain_closure=chain_closure)
+        try:check(b'\n'.join(lines)+b'\n',pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:refused=True
         need(refused, 'same complete reader refuses supplied '+name)
         names.append(name)
@@ -556,11 +556,11 @@ def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes, carri
             altered_images.append(copy.deepcopy(images[binding['module']]))
             altered_bytes.append(image_bytes[binding['module']])
         refused=False
-        try:check(stderr,pid,exit_code,parent,altered_images,altered_bytes,carrier,carrier_bytes,workload=workload,chain_closure=chain_closure)
+        try:check(stderr,pid,exit_code,parent,altered_images,altered_bytes,carrier,carrier_bytes,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:refused=True
         need(refused,'same complete reader refuses supplied '+name);names.append(name)
     changed_carrier=dict(carrier,bytes=carrier['bytes']+1);refused=False
-    try:check(stderr,pid,exit_code,parent,images,image_bytes,changed_carrier,carrier_bytes,workload=workload,chain_closure=chain_closure)
+    try:check(stderr,pid,exit_code,parent,images,image_bytes,changed_carrier,carrier_bytes,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
     except ValueError:refused=True
     need(refused,'same complete reader refuses supplied mismatched carrier extent');names.append('carrier_extent')
     legacy=legacy_source(accepted,images,image_bytes)if workload=='hot'else None
@@ -569,11 +569,11 @@ def supplied_controls(stderr, pid, exit_code, parent, images, image_bytes, carri
         i=legacy['module'];data=bytearray(altered_bytes[i]);data[legacy['file_offset']]^=1
         altered_bytes[i]=bytes(data);altered_images[i]['sha256']=H(altered_bytes[i])
         refused=False
-        try:check(stderr,pid,exit_code,parent,altered_images,altered_bytes,carrier,carrier_bytes,workload=workload,chain_closure=chain_closure)
+        try:check(stderr,pid,exit_code,parent,altered_images,altered_bytes,carrier,carrier_bytes,workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
         except ValueError:refused=True
         need(refused,'same complete reader refuses supplied legacy external instruction byte')
         names.append('legacy_external_instruction_byte')
-    names.extend(pair_controls(stderr,(pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes),workload,chain_closure=chain_closure))
+    names.extend(pair_controls(stderr,(pid,exit_code,parent,images,image_bytes,carrier,carrier_bytes),workload,cache_completed=cache_completed,chain_closure=chain_closure))
     need(hashlib.sha256(stderr).hexdigest()==actual_hash, 'actual report bytes unchanged')
     return dict(scope='supplied-reader mutations after actual completion',actual_subjects=0,
         original_stderr_sha256=actual_hash,refusals=names,native_qualification_credit=False)

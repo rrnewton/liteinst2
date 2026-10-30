@@ -1,0 +1,7 @@
+name,status,exit,process_ns,timed_out,events,traps,offers,entries,refaults,graph_refaults,hint_hits,maps_queries,maps_hits,maps_refreshes,maps_comparisons,maps_updates,maps_invalidations,maps_unexplained,maps_fresh,hint_admitted,hint_refused,total_native_attempts,total_native_admissions,total_native_closed,application_invocations
+baseline-ls,observed_unqualified,0,14454594199,False,160495,115533,108957,35394,295,,,1987834,1977526,10308,0,345093,356000,46,10308,,,7893,4185,4185,
+hint-ls,observed_unqualified,0,12742205699,False,132299,90609,84557,31114,295,1016,1016,1637456,1625789,11667,0,284489,296755,46,11667,1016,0,8892,4705,4705,
+hint-true,observed_unqualified,0,4905472980,False,54291,38927,37049,12445,6,293,293,684529,681190,3339,0,120732,124454,28,3339,293,0,2292,1100,1100,
+baseline-true,observed_unqualified,0,5616455120,False,62350,46078,44036,13661,6,,,784529,781580,2949,0,137948,141280,28,2949,,,1987,942,942,
+native-reuse65,observed_unqualified,0,146705588,False,,,,,,,,,,,,,,,,,,,,,65
+hint-reuse65,observed_unqualified,0,7194649899,False,85137,60931,56451,16024,721,632,632,1009025,1007692,1333,0,178483,180206,28,1333,632,0,6370,2090,2090,65

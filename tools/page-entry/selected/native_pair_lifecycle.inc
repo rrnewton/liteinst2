@@ -1,6 +1,10 @@
 /* Explicit two-page owner; included after the unchanged native close core.
    Existing one-page admission and its counters are not used as pair permits. */
 #include "native_pair.h"
+#ifdef LI2_LINKED_NATIVE_HINT
+#include "linked_native_hint.h"
+static void link_native_hint_published(unsigned);
+#endif
 static struct li2_native_pair_lifecycle np_life;
 static struct owned_page np_original[LI2_NATIVE_PAIR_SLOTS];
 static unsigned char np_disk[LI2_NATIVE_PAIR_WINDOW];
@@ -148,6 +152,9 @@ static int np_life_validate_live(void) {
     return 0;
 }
 int li2_lifecycle_pair_prepare(const struct li2_native_pair_owner *o,uintptr_t pc,int *eligible) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,441);
+#endif
 #ifdef LI2_EVENT_PROFILE
     LI2_EVENT_SCOPE(event_prepare,LI2_EV_PREPARE);
 #endif
@@ -203,6 +210,9 @@ int li2_lifecycle_pair_prepare(const struct li2_native_pair_owner *o,uintptr_t p
     np_original[np_life.live]=*p;s->prepared=1;np_life.candidate_eligible=1;*eligible=1;return 0;
 }
 int li2_lifecycle_pair_publish(const struct li2_native_pair_owner *o,uintptr_t pc) {
+#ifdef LI2_LINKED_EPOCH
+    if(li2_lifecycle_link_interlock())DIE(LI2_FETCH_BUSY,441);
+#endif
 #ifdef LI2_EVENT_PROFILE
     LI2_EVENT_SCOPE(event_publish,LI2_EV_PUBLISH);
 #endif
@@ -238,7 +248,12 @@ int li2_lifecycle_pair_publish(const struct li2_native_pair_owner *o,uintptr_t p
     } else if(p->address==native_timed_page && p->allocation==native_timed_allocation &&
               p->generation==native_timed_generation && native_counts.revisit_count<16)
         native_counts.revisit_ns[native_counts.revisit_count++]=ended-np_started;
+#ifdef LI2_LINKED_NATIVE_HINT
+    np_life.post_verified=1;link_native_hint_published(index);
+    np_life.opening=0;np_life.busy=0;return 0;
+#else
     np_life.post_verified=1;np_life.opening=0;np_life.busy=0;return 0;
+#endif
 }
 int li2_lifecycle_pair_close(const struct li2_native_pair_owner *o) {
 #ifdef LI2_EVENT_PROFILE

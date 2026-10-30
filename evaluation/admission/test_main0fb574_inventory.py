@@ -15,7 +15,7 @@ import parsing
 
 class Main0fb574InventoryTests(unittest.TestCase):
     def test_exact_native_startup_sources_catalog_and_refusals(self):
-        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        actual = current.mainaf81.before_current(current.mainaf81.maindd75.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (106, 3861, 37))
@@ -29,11 +29,11 @@ class Main0fb574InventoryTests(unittest.TestCase):
         # Complete older proofs remain in their original recorder cases. This
         # new case authenticates the strict newest entry and source boundary.
         with patch.object(inventory, 'require_historical356') as earlier:
-            self.assertIsNone(inventory.require_current(actual))
+            self.assertIsNone(inventory.require_historical357(actual))
             earlier.assert_called_once_with(old)
         for wrong in (old, previous.before_current(old)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(wrong)
+                inventory.require_historical357(wrong)
         for value in (356, 358, True, 357.0):
             wrong = copy.deepcopy(actual); wrong['recorder_tests'] = value
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main0fb574_inventory_differs$'):
@@ -48,7 +48,7 @@ class Main0fb574InventoryTests(unittest.TestCase):
             wrong = dict(actual); wrong[key] = None
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main0fb574_inventory_differs$'):
                 current.before_current(wrong)
-        identities = historical.python_identities(Path(__file__).parent)
+        identities = current.mainaf81.before_python(current.mainaf81.maindd75.before_python(historical.python_identities(Path(__file__).parent)))
         self.assertEqual((len(identities), current.digest(identities)), (357, current.PYTHON_CURRENT))
         old_ids = current.before_python(identities)
         self.assertEqual((len(old_ids), current.digest(old_ids)), (356, previous.PYTHON_CURRENT))

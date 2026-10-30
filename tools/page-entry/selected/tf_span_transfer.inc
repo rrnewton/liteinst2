@@ -22,6 +22,21 @@ static void span_event_boundary(void) {
     __atomic_store_n(&span_transfer.valid,0,__ATOMIC_RELEASE);
 }
 static void span_handler_end(struct li2_tf_chain *c) {
+#ifdef LI2_LINKED_EPOCH
+    const struct li2_span_transfer_progress *p=&span_transfer.progress;
+    /* A later event can install another real owner. Check this consumed
+       terminal only in the handler that issued it, before guest execution. */
+    if(p->phase==LI2_ST_REFAULT && p->event==c->event_id)
+        chain_need(c,span_transfer.chain==c && p->issued==1 &&
+            p->refault_attempted==1 && p->refaulted==1 &&
+            !p->consume_attempted && !p->consumed &&
+            !p->resume_attempted && !p->resumed && !p->successor_installed &&
+            !p->first_error && !c->pending && !c->in_handler &&
+            !li2_lifecycle_fetch_interlock() &&
+            p->fresh.complete && !p->fresh.progress.held &&
+            p->fresh.ref.sequence==p->fresh_borrow &&
+            p->fresh_borrow>p->previous_borrow,LI2_ST_STATE,2);
+#endif
     chain_need(c,!__atomic_load_n(&span_transfer.valid,__ATOMIC_ACQUIRE) &&
         span_transfer.progress.phase!=LI2_ST_CLOSING &&
         span_transfer.progress.phase!=LI2_ST_CLOSED &&
@@ -54,6 +69,9 @@ static int span_origin(const struct li2_tf_span_transfer *t) {
        t->progress.consume_attempted || t->progress.consumed ||
        t->progress.resume_attempted || t->progress.resumed ||
        __atomic_load_n(&t->valid,__ATOMIC_ACQUIRE)!=1)return LI2_ST_ORIGIN;
+#ifdef LI2_LINKED_EPOCH
+    if(t->progress.refault_attempted || t->progress.refaulted)return LI2_ST_ORIGIN;
+#endif
     const struct li2_tf_chain *c=t->chain;
     const struct li2_span_transfer_progress *e=&t->progress;
     if(e->previous>=2 || c->active!=(sig_atomic_t)e->previous ||
@@ -81,7 +99,12 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
        !si || !uc || __atomic_load_n(&span_transfer.valid,__ATOMIC_ACQUIRE) ||
        (span_transfer.progress.phase!=LI2_ST_IDLE &&
         span_transfer.progress.phase!=LI2_ST_CONSUMED &&
+#ifdef LI2_LINKED_EPOCH
+        span_transfer.progress.phase!=LI2_ST_RESUMED &&
+        span_transfer.progress.phase!=LI2_ST_REFAULT))return LI2_ST_STATE;
+#else
         span_transfer.progress.phase!=LI2_ST_RESUMED))return LI2_ST_STATE;
+#endif
     if(span_transfer_serial==UINT64_MAX)return LI2_ST_OVERFLOW;
     struct li2_tf_chain_slot *p=chain_slot(c);
     if(p->phase!=LI2_CHAIN_EXECUTING || c->event_id<=p->event_id ||
@@ -227,3 +250,25 @@ int li2_tf_chain_span_resume(const struct li2_tf_span_transfer *ticket,int sig,s
     }
     t->progress.phase=LI2_ST_RESUMED;t->progress.resumed=1;return 0;
 }
+#ifdef LI2_LINKED_EPOCH
+int li2_tf_chain_span_refault(const struct li2_tf_span_transfer *ticket,uint64_t serial,int sig,
+                             const siginfo_t *si,const ucontext_t *uc) {
+    /* The singleton pointer alone cannot distinguish a retained old handle. */
+    if(ticket!=&span_transfer || !serial || serial!=span_transfer_serial ||
+       serial!=span_transfer.progress.serial)return span_error(LI2_ST_ORIGIN,5);
+    int error=span_origin(ticket);if(error)return span_error((unsigned)error,5);
+    struct li2_tf_span_transfer *t=&span_transfer;
+    /* Pure owner/frame/fetch checks only. The actual release already performed
+       identity/maps/backing/source validation with expected PROT_READ. This
+       snapshot rechecks its current lifecycle epochs and exact newer ref. */
+    if(!span_frame_equal(sig,si,uc))return span_error(LI2_ST_FRAME,3);
+    if(t->progress.successor_installed || li2_lifecycle_fetch_interlock())
+        return span_error(LI2_ST_STATE,3);
+    if((error=span_fresh(0,&t->progress.fresh)))return span_error((unsigned)error,5);
+    t->progress.refault_attempted=1;
+    if(__atomic_exchange_n(&t->valid,0,__ATOMIC_ACQ_REL)!=1)
+        return span_error(LI2_ST_ORIGIN,4);
+    t->progress.fresh_borrow=t->progress.fresh.ref.sequence;
+    t->progress.refaulted=1;t->progress.phase=LI2_ST_REFAULT;return 0;
+}
+#endif
