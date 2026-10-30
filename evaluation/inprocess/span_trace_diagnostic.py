@@ -502,7 +502,7 @@ def main():
                 (directory / name).mkdir()
                 private_env[key] = str(directory / name)
             perf_argv = ['/usr/bin/perf', 'record', '--no-buildid', '--no-buildid-cache',
-                '-e', 'cpu-clock', '-F', '99', '-o', str(directory / 'perf.data'), '-p', str(subject.p.pid)]
+                '-e', 'cpu-clock', '-F', '99', '-m', '16', '-o', str(directory / 'perf.data'), '-p', str(subject.p.pid)]
             profiler = Child('perf', perf_argv, TOOL, directory, cpu, commands, children, private_env)
             profiler.ready(5)
             clean_row = profiler.finish(interrupt=True)
@@ -510,7 +510,7 @@ def main():
             clean(profiler, (0, -signal.SIGINT))
             receipt['observations'] = perf_counts(directory / 'perf.data')
             receipt['observations'].update(requested_hz=99, attach_delay_ns=400000000,
-                                            requested_attach_ns=5000000000)
+                                            requested_attach_ns=5000000000, requested_mmap_pages=16)
             receipt['observations']['perf_data'] = fact(directory / 'perf.data')
             pin(directory / 'perf.data')
         subject.finish()
