@@ -1,0 +1,128 @@
+kind,aliases,samples,sampled_period_total
+core_text_symbol_interval,__htab_map_lookup_elem.llvm.13716168780864821143,57,575757570
+core_text_symbol_interval,perf_iterate_ctx,55,555555550
+core_text_symbol_interval,perf_event_mmap,35,353535350
+core_text_symbol_interval,membarrier_private_expedited,28,282828280
+core_text_symbol_interval,seq_path,22,222222220
+core_text_symbol_interval,strchr,19,191919190
+core_text_symbol_interval,copy_from_kernel_nofault,11,111111110
+core_text_symbol_interval,do_syscall_64,9,90909090
+core_text_symbol_interval,seq_put_hex_ll,9,90909090
+core_text_symbol_interval,trace_syscall_enter,9,90909090
+core_text_symbol_interval,htab_map_update_elem,8,80808080
+core_text_symbol_interval,copy_from_kernel_nofault_allowed,7,70707070
+core_text_symbol_interval,exc_debug_user,7,70707070
+core_text_symbol_interval,mas_find,6,60606060
+core_text_symbol_interval,__seccomp_filter,5,50505050
+core_text_symbol_interval,m_start,5,50505050
+core_text_symbol_interval,__mpol_put,4,40404040
+core_text_symbol_interval,lock_next_vma,3,30303030
+core_text_symbol_interval,__memcg_slab_post_alloc_hook,2,20202020
+core_text_symbol_interval,__task_pid_nr_ns,2,20202020
+core_text_symbol_interval,_copy_to_user,2,20202020
+core_text_symbol_interval,_raw_spin_unlock_irq,2,20202020
+core_text_symbol_interval,bcmp,2,20202020
+core_text_symbol_interval,bpf_for_each_hash_elem,2,20202020
+core_text_symbol_interval,d_path,2,20202020
+core_text_symbol_interval,fput_close_sync,2,20202020
+core_text_symbol_interval,get_vma_name,2,20202020
+core_text_symbol_interval,idr_find,2,20202020
+core_text_symbol_interval,m_stop,2,20202020
+core_text_symbol_interval,mutex_lock,2,20202020
+core_text_symbol_interval,on_each_cpu_cond_mask,2,20202020
+core_text_symbol_interval,path_openat,2,20202020
+core_text_symbol_interval,pcpu_freelist_push,2,20202020
+core_text_symbol_interval,prepend_path,2,20202020
+core_text_symbol_interval,proc_get_vma,2,20202020
+core_text_symbol_interval,seq_putc,2,20202020
+core_text_symbol_interval,seq_read,2,20202020
+core_text_symbol_interval,show_map_vma.llvm.8145710145425609692,2,20202020
+core_text_symbol_interval,strncpy_from_kernel_nofault,2,20202020
+core_text_symbol_interval,__bpf_prog_exit,1,10101010
+core_text_symbol_interval,__kmalloc_cache_noprof,1,10101010
+core_text_symbol_interval,__kmalloc_noprof,1,10101010
+core_text_symbol_interval,__kvmalloc_node_noprof,1,10101010
+core_text_symbol_interval,__memcg_slab_free_hook,1,10101010
+core_text_symbol_interval,__memset|__pi_memset|memset,1,10101010
+core_text_symbol_interval,__slab_free,1,10101010
+core_text_symbol_interval,__vma_start_write,1,10101010
+core_text_symbol_interval,_copy_to_iter,1,10101010
+core_text_symbol_interval,_find_next_bit,1,10101010
+core_text_symbol_interval,_raw_spin_lock,1,10101010
+core_text_symbol_interval,_raw_spin_unlock_irqrestore,1,10101010
+core_text_symbol_interval,anon_vma_name,1,10101010
+core_text_symbol_interval,bpf_probe_read_kernel,1,10101010
+core_text_symbol_interval,bpf_task_acquire,1,10101010
+core_text_symbol_interval,bpf_task_storage_get,1,10101010
+core_text_symbol_interval,copy_fpstate_to_sigframe,1,10101010
+core_text_symbol_interval,copy_page_to_iter,1,10101010
+core_text_symbol_interval,fpu__restore_sig,1,10101010
+core_text_symbol_interval,freader_get_folio,1,10101010
+core_text_symbol_interval,get_pid_task,1,10101010
+core_text_symbol_interval,get_task_policy,1,10101010
+core_text_symbol_interval,get_xsave_addr_user,1,10101010
+core_text_symbol_interval,htab_map_delete_elem,1,10101010
+core_text_symbol_interval,kfree,1,10101010
+core_text_symbol_interval,kmem_cache_alloc_noprof,1,10101010
+core_text_symbol_interval,locks_remove_file,1,10101010
+core_text_symbol_interval,m_next,1,10101010
+core_text_symbol_interval,mas_wr_store_entry,1,10101010
+core_text_symbol_interval,mm_access,1,10101010
+core_text_symbol_interval,mutex_unlock,1,10101010
+core_text_symbol_interval,num_to_str,1,10101010
+core_text_symbol_interval,put_task_struct_rcu_user,1,10101010
+core_text_symbol_interval,seq_put_decimal_ull,1,10101010
+core_text_symbol_interval,step_into_slowpath,1,10101010
+core_text_symbol_interval,uprobe_munmap,1,10101010
+core_text_symbol_interval,vfs_open,1,10101010
+core_text_symbol_interval,x64_setup_rt_frame,1,10101010
+outside_core_text,,91,
+callchain_disjoint,bpf_helper_named_path -> core_interval:__htab_map_lookup_elem.llvm.13716168780864821143 -> core_interval:security_file_open -> frames -> below_limit,57,575757570
+callchain_disjoint,other_known_kernel_path -> unknown:outside_core_text -> core_interval:security_file_open -> frames -> below_limit,55,555555550
+callchain_disjoint,perf_observer_named_path -> core_interval:perf_iterate_ctx -> core_interval:perf_iterate_sb -> frames -> below_limit,55,555555550
+callchain_disjoint,other_known_kernel_path -> unknown:outside_core_text -> core_interval:fput_close_sync -> frames -> below_limit,36,363636360
+callchain_disjoint,perf_observer_named_path -> core_interval:perf_event_mmap -> core_interval:mprotect_fixup -> frames -> below_limit,35,353535350
+callchain_disjoint,membarrier_named_path -> core_interval:membarrier_private_expedited -> core_interval:__se_sys_membarrier -> frames -> below_limit,28,282828280
+callchain_disjoint,proc_maps_named_path -> core_interval:seq_path -> core_interval:show_map_vma.llvm.8145710145425609692 -> frames -> below_limit,22,222222220
+callchain_disjoint,proc_maps_named_path -> core_interval:strchr -> core_interval:seq_path -> frames -> below_limit,19,191919190
+callchain_disjoint,other_known_kernel_path -> core_interval:copy_from_kernel_nofault -> core_interval:bpf_probe_read_kernel -> frames -> below_limit,10,101010100
+callchain_disjoint,other_known_kernel_path -> core_interval:do_syscall_64 -> core_interval:entry_SYSCALL_64_after_hwframe -> frames -> below_limit,9,90909090
+callchain_disjoint,other_known_kernel_path -> core_interval:trace_syscall_enter -> core_interval:do_syscall_64 -> frames -> below_limit,9,90909090
+callchain_disjoint,proc_maps_named_path -> core_interval:seq_put_hex_ll -> core_interval:show_vma_header_prefix -> frames -> below_limit,9,90909090
+callchain_disjoint_remaining,73 groups,126,1272727260
+callchain_inclusive,"{""frames"":2,""leafward"":""core_interval:do_syscall_64"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""a6ad2f65d392a74319b7915aa6d07af1b7d44c6423d554acc244b44eed1004ae""}",457,4616161570
+callchain_inclusive,"{""frames"":1,""leafward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""3297365c97a7512cf89c92655dcb94e2203d7974a3b17e5f384843b7a0cc9b10""}",457,4616161570
+callchain_inclusive,"{""frames"":3,""leafward"":""core_interval:__x64_sys_openat"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""b376b335825a0265197a08671e5bef82552fa7d764d94a0a747cd58d53c89874""}",155,1565656550
+callchain_inclusive,"{""frames"":4,""leafward"":""core_interval:do_file_open"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""f58092fe0b497c4ce556a8005175ec23b5c8c48523bd5acf7cd871e94185b88b""}",154,1555555540
+callchain_inclusive,"{""frames"":5,""leafward"":""core_interval:path_openat"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""122621d8ab8602017fcdeea45ec898e0f089c0b60cba89b00110bbd5c1923057""}",154,1555555540
+callchain_inclusive,"{""frames"":6,""leafward"":""core_interval:vfs_open"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""a1dea936b67ae4bd25b90e1cf721d7b03ae0f3fcba213fec2ded6ba9131ec703""}",151,1525252510
+callchain_inclusive,"{""frames"":7,""leafward"":""core_interval:security_file_open"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""4c57c713af2520e0253af8f87b55f74fa5089480be7e157e2992429191b09da9""}",146,1474747460
+callchain_inclusive,"{""frames"":8,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""b57c271346c08c36f66b250f6e0dee8fdf44174ea14f88565a0494f8c9151dcf""}",146,1474747460
+callchain_inclusive,"{""frames"":9,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""fde97b9b6a66ace5780cebec79c0eecc34ef5a79259788a1fcec5d6a12fab5c2""}",145,1464646450
+callchain_inclusive,"{""frames"":10,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""f3f695fe0bbeab445287d319953a5a2ac59a4b9e54c15690aa62b77b62882d70""}",141,1424242410
+callchain_inclusive,"{""frames"":11,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""9d049580416dca05b5281448f04032220502e830e861bf3a72463039907bd81a""}",128,1292929280
+callchain_inclusive,"{""frames"":12,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""8ea2278cc85afd9e08cf1783b6d995515aabef3d3b739c75ac6491f1d809a2b3""}",118,1191919180
+callchain_inclusive,"{""frames"":3,""leafward"":""core_interval:__x64_sys_mprotect"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""a72e609e347d9f194bd66703e6a6e98b3c18ffe527d695ce9a9cbee327f3f932""}",101,1020202010
+callchain_inclusive,"{""frames"":4,""leafward"":""core_interval:do_mprotect_pkey"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""df7a35f4ed6c62bb47f5505b901d89a60f880cc0313f5f49f8123448af079e6e""}",101,1020202010
+callchain_inclusive,"{""frames"":5,""leafward"":""core_interval:mprotect_fixup"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""d32d9084019a54b9e7769e0b77b73d55e1aa2daaf633de925b1183aa792e0def""}",100,1010101000
+callchain_inclusive,"{""frames"":6,""leafward"":""core_interval:perf_event_mmap"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""29512f7ee5c02ac3997c82b888c3c6d2ed1ed7e8a664a84258d1f76dc8f461e0""}",94,949494940
+callchain_inclusive,"{""frames"":3,""leafward"":""core_interval:__x64_sys_read"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""f36b2f342345c15b6ebeb6c38ea423fc258fcf45404f83286a1a8e52f3203c55""}",92,929292920
+callchain_inclusive,"{""frames"":4,""leafward"":""core_interval:seq_read"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""3ea021d676ca2ec699dec4c88453264b672cfb64bc33e1725552e2c83b492ea7""}",92,929292920
+callchain_inclusive,"{""frames"":13,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""68ed21623b0496261e5df4321773f7fd8575c1a99802b88782626a993ba1d1bf""}",90,909090900
+callchain_inclusive,"{""frames"":5,""leafward"":""core_interval:show_map.llvm.8145710145425609692"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""0535fae69b9c8b95c373918327b69182c3100170f5c5af463620eb76b0acdff5""}",64,646464640
+callchain_inclusive,"{""frames"":6,""leafward"":""core_interval:show_map_vma.llvm.8145710145425609692"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""cd65c106c8aec7bfaaab18e63e2743b9b4ddac96137c5f8636fd7281b6e98753""}",63,636363630
+callchain_inclusive,"{""frames"":8,""leafward"":""core_interval:perf_iterate_ctx"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""b78202d300739d17a315ebe0cb6d1978438de9b5df8db1254029a14b887db596""}",55,555555550
+callchain_inclusive,"{""frames"":7,""leafward"":""core_interval:perf_iterate_sb"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""3fae7948bf80c51553b0f2abfe342de7629afea697cde21f393cefedc5405d62""}",55,555555550
+callchain_inclusive,"{""frames"":3,""leafward"":""core_interval:__x64_sys_close"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""f3b7d71cf9f756766102600656b35b920c290d527b76c5a1fa15135a2fc9aed3""}",46,464646460
+callchain_inclusive,"{""frames"":7,""leafward"":""core_interval:seq_path"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""d797507ce40c8d84dbc75ac27c490f4082ef1f95a817093887c5dee3d0689dcd""}",46,464646460
+callchain_inclusive,"{""frames"":14,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""bd7b07db9d41b5842f704a7324478a0a7f0a18ca194428a90e04205f8572a106""}",46,464646460
+callchain_inclusive,"{""frames"":4,""leafward"":""core_interval:fput_close_sync"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""9cca0694c02490c4e79d849ed813f5c53710012ef6876bf3b7cccfc30ea15bfa""}",45,454545450
+callchain_inclusive,"{""frames"":5,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""42468096ca819149b8ce04508596bcbfcdf17cfae349d6ba91336f1cbe716aa6""}",42,424242420
+callchain_inclusive,"{""frames"":6,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""75503f5dea68ad4cec61d61c511d3fe8f63371eeb260d0de0333fdfc01b7093b""}",42,424242420
+callchain_inclusive,"{""frames"":7,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""45bdd4d245e90cb9ba73e3b8b999dde7c22c14b093f7b96cd8aa696f866eddd8""}",42,424242420
+callchain_inclusive,"{""frames"":8,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""1568cc98a7fed9c68ebac579b09b2de157934419b8fd6086594627faa4dad68c""}",41,414141410
+callchain_inclusive,"{""frames"":3,""leafward"":""core_interval:__se_sys_membarrier"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""377065f5894d226f947e057ab304ec6d647c58289bca6c83eb741d5e1f8df8d5""}",33,333333330
+callchain_inclusive,"{""frames"":4,""leafward"":""core_interval:membarrier_private_expedited"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""5d8dd4218ff06e79ba60efcaabb96a8a2e3aa9744871c10b6401c145c48a6053""}",33,333333330
+callchain_inclusive,"{""frames"":14,""leafward"":""core_interval:__htab_map_lookup_elem.llvm.13716168780864821143"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""da5db21752ac777d9c250d8d4fe9e2065e529ddebe18ba85917a356e726125f0""}",29,292929290
+callchain_inclusive,"{""frames"":9,""leafward"":""unknown:outside_core_text"",""rootward"":""core_interval:entry_SYSCALL_64_after_hwframe"",""sha256"":""6e785b0f5e97b1c5918e29b645625afe30c251cff4bfeb81181fb1824be78858""}",28,282828280
+callchain_inclusive_remaining,138 groups,363,3666666630
