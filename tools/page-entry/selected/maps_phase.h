@@ -1,13 +1,17 @@
 #ifndef LI2_MAPS_PHASE_H
 #define LI2_MAPS_PHASE_H
 #include <stdint.h>
+#ifdef LI2_MAPS_MAINTAINED
+#include "maps_view.h"
+#endif
 #ifdef LI2_TF_SEALED_CUSTODY
 #include "page_custody.h"
 #endif
 /* Private singleton-handler optimization; not mapping or source authority.
    The shared key is ONLY (handler_id, mutation_epoch). Every query retains its
    own current allocation/generation/record/transaction and byte predicates. */
-enum li2_maps_kind { LI2_MAPS_DIRECT=0, LI2_MAPS_FRESH=1, LI2_MAPS_REUSED=2 };
+enum li2_maps_kind { LI2_MAPS_DIRECT=0, LI2_MAPS_FRESH=1, LI2_MAPS_REUSED=2,
+    LI2_MAPS_VERIFIED=3, LI2_MAPS_PROJECTED=4 };
 struct li2_maps_observation {
     uint64_t acquisition_id,handler_id,mutation_epoch;
     uint32_t kind,io_performed;

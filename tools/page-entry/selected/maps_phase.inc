@@ -1,5 +1,8 @@
 /* Included after the unchanged read_maps_fresh body. No allocation, TLS, lock,
    decoder or callback. Only the already-owned rows/maps_bytes are shared. */
+#ifdef LI2_MAPS_MAINTAINED
+#include "maps_view.inc"
+#else
 #include <asm/prctl.h>
 #include <linux/prctl.h>
 _Static_assert(__atomic_always_lock_free(4,0),"signal-safe phase flags");
@@ -178,3 +181,4 @@ int li2_maps_test_saturate(unsigned which) {
 #endif
 #undef MAPS_LOAD
 #undef MAPS_STORE
+#endif

@@ -167,6 +167,9 @@ uintptr_t li2_boot(uintptr_t *stack) {
         }
     }
     require(found==127&&base&&phdr&&phnum&&phnum<=MAX_PHDR&&minsig,"startup auxiliary vector");relocate_self(base);
+#ifdef LI2_MAPS_MAINTAINED
+    li2_maps_view_stack((uintptr_t)stack);
+#endif
     initial_environment=(const char *const *)env;
     const Elf64_Ehdr *bridge=(const void *)base;
     bridge_image=(struct image){.bias=base,.entry=base+bridge->e_entry,

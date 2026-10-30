@@ -12,6 +12,9 @@ int li2_lifecycle_rseq_data(uintptr_t address,struct li2_rseq_data *out) {
     if(out->pid<=0 || out->pid!=out->tid)
         return (int)(out->error=LI2_RSEQ_IDENTITY);
     struct check_error e={0};
+#ifdef LI2_MAPS_MAINTAINED
+    li2_maps_view_require_fresh();
+#endif
     int error=read_maps_checked(&e,&out->maps);
     if(error){out->error=(unsigned)error;out->detail=e.detail;return error;}
     struct owned_page *p=current(out->page);const struct map_row *r=mapping(out->page);

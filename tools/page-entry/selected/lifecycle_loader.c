@@ -324,7 +324,7 @@ static int alias_segment_checked(const struct map_row *r,uintptr_t first,uintptr
          ((prot&PROT_WRITE) && (r->prot&PROT_EXEC)))) return check_error(e,119,0);
     return 0;
 }
-#ifdef LI2_MAPS_PHASE_REUSE
+#if defined(LI2_MAPS_PHASE_REUSE) && !defined(LI2_MAPS_MAINTAINED)
 #define alias_check_checked alias_check_direct
 #endif
 static int alias_check_checked(unsigned object,uint64_t offset,size_t bytes,unsigned prot,
@@ -353,7 +353,7 @@ static int alias_check_checked(unsigned object,uint64_t offset,size_t bytes,unsi
     }
     return 0;
 }
-#ifdef LI2_MAPS_PHASE_REUSE
+#if defined(LI2_MAPS_PHASE_REUSE) && !defined(LI2_MAPS_MAINTAINED)
 #undef alias_check_checked
 /* A memo of one pure, successful RX alias predicate over one complete maps
    acquisition. No VMA, owner, source-byte or backing observation is cached.
