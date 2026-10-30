@@ -20,16 +20,18 @@ H = lambda b: hashlib.sha256(b).hexdigest()
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--baseline',required=True);ap.add_argument('--expect-revision',required=True)
-    ap.add_argument('--workload',choices=('ls','true'),required=True);a=ap.parse_args()
+    ap.add_argument('--workload',choices=('ls','true'),required=True)
+    ap.add_argument('--kernel-callchains',action='store_true');a=ap.parse_args()
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',a.expect_revision)and len(os.sched_getaffinity(0))==1,
          'exact revision, assertions and one reserved CPU')
     cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-page-cost-profile-'+a.workload+'-'+a.expect_revision[:12]
+    stem=stamp+('-page-cost-kernel-callchains-'if a.kernel_callchains else'-page-cost-profile-')+a.workload+'-'+a.expect_revision[:12]
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(mode=0o700)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'fresh public result')
     pins={};aliases={};artifacts={};r=dict(schema=1,status='failed',scope='separate full-window profiling diagnostic',
         benchmark_credit=False,qualification=False,expected_revision=a.expect_revision,workload=a.workload,
         hardware=hardware(cpu),cpu=cpu,error=None,final_errors=[],namespace_aliases={})
+    if a.kernel_callchains:r['kernel_callchains']=True
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);v=fact(p)
         need(want is None or v=={k:want[k]for k in('bytes','sha256')},'exact retained input')
@@ -120,9 +122,24 @@ def main():
             p=getattr(m,'__file__',None)
             if p and Path(p).resolve().is_relative_to(ROOT):pin(p)
         r['kernel_snapshot']=kernel.capture(private/'kernel')
-        stable();out,err,diagnostic=profile(row,private/'capture',cpu,bridge,release['bridge']);r['diagnostic']=diagnostic
+        stable();out,err,diagnostic=profile(row,private/'capture',cpu,bridge,release['bridge'],
+            **({'kernel_callchains':True}if a.kernel_callchains else{}));r['diagnostic']=diagnostic
         resolver=kernel.load(private/'kernel',r['kernel_snapshot'])
         r['kernel_counts']=kernel.counts(json.loads((private/'capture/samples.json').read_bytes()),resolver,row['pid'])
+        if a.kernel_callchains:
+            from page_cost_profile_read import callchain_counts, callchain_public
+            need(diagnostic['sampling']['loss_free'],'no lost or throttled events for caller attribution')
+            chains=callchain_counts(json.loads((private/'capture/samples.json').read_bytes()),resolver,row['pid'])
+            need(chains['kernel_samples']==r['kernel_counts']['kernel_samples'] and
+                 chains['kernel_sampled_period_total']==r['kernel_counts']['kernel_sampled_period_total'],
+                 'full callchain totals equal the unchanged leaf kernel population')
+            preview=io.StringIO();callchain_public(chains,csv.writer(preview))
+            need(len(preview.getvalue().encode())<32<<10,'caller-path rows fit the existing kernel CSV cap')
+            encoded=(json.dumps(chains,sort_keys=True,separators=(',',':'))+'\n').encode()
+            need(len(encoded)<=16<<20,'bounded complete private callchain table')
+            with (private/'callchains.json').open('xb')as stream:stream.write(encoded)
+            r['callchains']=dict(fact(private/'callchains.json'),
+                kernel_samples=chains['kernel_samples'],kernel_sampled_period_total=chains['kernel_sampled_period_total'])
         pair.namespace_join(state,ns,binary,r,namespace);r['parsed'],r['terminal']=reports.check(out,err,row['pid'],row['exit'],
             row['stdout_provenance_before'],images,image_bytes,fact(carrier),carrier.read_bytes(),workload=a.workload)
         r['controls']=reports.supplied_controls(out,err,row['pid'],row['exit'],row['stdout_provenance_before'],
@@ -189,6 +206,15 @@ def publish(public,r,private):
     for item in kc.get('symbols',[]):
         kw.writerow(['core_text_symbol_interval','|'.join(item['aliases']),item['samples'],item['sampled_period_total']])
     for reason,n in kc.get('unknown_reasons',{}).items():kw.writerow([reason,'',n,''])
+    if r.get('kernel_callchains'):
+        from page_cost_profile_read import callchain_public
+        value['kernel_callchains']=True;value['reproduce'].append('--kernel-callchains')
+        value['perf_argv'][2:2]=['--call-graph','fp,64','--kernel-callchains']
+        if r.get('callchains'):
+            need(fact(private/'callchains.json')=={k:r['callchains'][k]for k in('bytes','sha256')},
+                 'exact complete private callchain table before public projection')
+            value['callchains']=callchain_public(json.loads((private/'callchains.json').read_bytes()),kw)
+            value['callchains']['private_table']={k:r['callchains'][k]for k in('bytes','sha256')}
     kernel_data=kernel_table.getvalue().encode();kernel_path=public.with_name(public.stem+'-kernel.csv')
     value['kernel']={k:v for k,v in kc.items()if k!='symbols'}
     value['kernel_build_ids']=r.get('kernel_snapshot',{}).get('kernel_build_ids')

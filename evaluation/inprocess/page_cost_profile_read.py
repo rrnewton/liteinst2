@@ -96,8 +96,145 @@ def elf(path):
         device=[os.major(st.st_dev),os.minor(st.st_dev)],mmap_device=provenance['mmap_device'],inode=st.st_ino,provenance=provenance,
         build_ids=ids,loads=ph,symbols=sorted(set(symbols)))
 
-def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_ns, *, bridge_identity=None):
+
+KERNEL_CALLCHAIN_ATTRIBUTES=(
+    bytes.fromhex('010000009000000000000000000000006300000000000000a70101000000000014000000000000000304440200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000'),
+    bytes.fromhex('010000009000000009000000000000006300000000000000870101000000000014000000000000006337946304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),
+)
+
+def kernel_callchain(payload, position, mode):
+    """Exact PERF_SAMPLE_CALLCHAIN; the one context word is not a stack frame."""
+    need(mode in(1,2), 'exact host kernel/user cpumode for the observed callchain profile')
+    need(position+8 <= len(payload), 'complete kernel callchain count')
+    count=struct.unpack_from('<Q',payload,position)[0];position+=8
+    need(count<=65 and position+8*count==len(payload), 'bounded complete kernel callchain payload')
+    words=struct.unpack_from('<'+'Q'*count,payload,position)
+    if not words:
+        return dict(pcs=[],context=None,depth=0,depth_limit_hit=False,
+                    state='empty',unwind_complete=False)
+    need(mode==1 and words[0]==(1<<64)-128, 'only one leading PERF_CONTEXT_KERNEL')
+    pcs=list(words[1:])
+    need(len(pcs)<=64 and all(0<ip<(1<<64)-4095 for ip in pcs),
+         'at most 64 actual PCs; no user/guest/unknown/repeated context marker')
+    return dict(pcs=pcs,context='kernel',depth=len(pcs),depth_limit_hit=len(pcs)==64,
+                state='frames'if pcs else'marker_only',unwind_complete=False)
+
+CALLER_ANCHORS=(
+    ('perf_observer_named_path',frozenset(('perf_event_mmap','perf_event_mmap_output','perf_iterate_ctx',
+        'perf_iterate_sb','perf_output_begin','perf_output_begin_forward','perf_output_sample',
+        'perf_event_output_forward','perf_trace_run_bpf_submit','perf_trace_sys_enter','perf_trace_sys_exit'))),
+    ('proc_maps_named_path',frozenset(('show_map_vma','show_map','proc_get_vma'))),
+    ('memory_permission_named_path',frozenset(('__x64_sys_mprotect','do_mprotect_pkey','mprotect_fixup'))),
+    ('membarrier_named_path',frozenset(('__x64_sys_membarrier','__se_sys_membarrier',
+        'membarrier_private_expedited','membarrier_global_expedited'))),
+    ('signal_exception_named_path',frozenset(('get_signal','handle_signal','force_sig_fault','force_sig_info',
+        '__x64_sys_rt_sigreturn','do_user_addr_fault','exc_debug','exc_debug_user','exc_page_fault'))),
+    ('bpf_helper_named_path',frozenset(('__htab_map_lookup_elem','htab_map_lookup_elem',
+        'bpf_trace_run1','bpf_trace_run2','bpf_trace_run3','bpf_trace_run4','bpf_trace_run5','bpf_trace_run6',
+        'bpf_trace_run7','bpf_trace_run8','bpf_trace_run9','bpf_trace_run10','bpf_trace_run11','bpf_trace_run12',
+        'bpf_trampoline_enter','bpf_trampoline_exit'))),
+)
+
+def callchain_counts(rows,resolver,target_pid):
+    """One exclusive leaf/caller bucket per kernel sample; inclusive paths overlap."""
+    need(resolver.identity is not None,'authenticated kernel interval resolver')
+    buckets=collections.Counter();periods=collections.Counter()
+    inclusive=collections.Counter();inclusive_periods=collections.Counter()
+    states=collections.Counter();depths=collections.Counter();total=weight=limit_hits=head_mismatches=0
+    unknown_samples=unknown_frames=frames=0
+    categories=collections.Counter();category_periods=collections.Counter();anchor_aliases=collections.defaultdict(set)
+    def label(ip):
+        item=resolver.lookup(ip)
+        if item['reason']=='core_text_symbol_interval':
+            return 'core_interval:'+ '|'.join(item['symbols'])
+        return 'unknown:'+item['reason']
+    for row in rows:
+        if row['pid']!=target_pid or row['cpumode']!=1 or not row['in_target_exec_window']:continue
+        chain=row['callchain'];pcs=chain['pcs'];period=row['period']
+        need(type(period)is int and period>0 and chain['depth']==len(pcs)<=64 and
+             chain['depth_limit_hit']==(len(pcs)==64) and chain['unwind_complete']is False,
+             'exact retained kernel callchain depth/period and honest completeness')
+        total+=1;weight+=period;states[chain['state']]+=1;depths[len(pcs)]+=1
+        limit_hits+=chain['depth_limit_hit']
+        labels=tuple(label(ip)for ip in pcs)
+        observed={name for ip in pcs for name in resolver.lookup(ip).get('symbols',[])}
+        matched=[]
+        for category,names in CALLER_ANCHORS:
+            aliases={name for name in observed if re.sub(r'\.(?:llvm|isra|constprop)\.[0-9]+$','',name)in names}
+            if aliases:matched.append(category);anchor_aliases[category].update(aliases)
+        unresolved=sum(name.startswith('unknown:')for name in labels)
+        unknown_samples+=unresolved>0;unknown_frames+=unresolved;frames+=len(labels)
+        # Raw unwind addresses are resolved without subtracting one or inventing
+        # function extents. Return-address boundary uncertainty remains explicit.
+        leaf=label(row['ip'])
+        head_matches=bool(pcs) and pcs[0]==row['ip']
+        head_mismatches+=bool(pcs) and not head_matches
+        caller=(next((name for name in labels[1:]if name.startswith('core_interval:')),
+                     'unknown:no_resolved_caller')if head_matches else'unknown:empty_or_different_chain_head')
+        category=('empty_or_marker_only'if not pcs else'unwind_head_mismatch'if not head_matches else
+                  matched[0]if matched else'other_known_kernel_path'if any(x.startswith('core_interval:')for x in labels)
+                  else'unknown_kernel_path')
+        categories[category]+=1;category_periods[category]+=period
+        key=(category,leaf,caller,chain['state'],'depth_limit'if chain['depth_limit_hit']else'below_limit')
+        buckets[key]+=1;periods[key]+=period
+        # Every suffix is an observed leafward-frame -> rootward-frame path.
+        # Deduplicate identical suffixes within one sample, not across samples.
+        for path in set(labels[i:]for i in range(len(labels))):
+            inclusive[path]+=1;inclusive_periods[path]+=period
+    need(sum(buckets.values())==sum(categories.values())==total and sum(periods.values())==sum(category_periods.values())==weight,
+         'disjoint kernel callchain buckets conserve all samples and sampled periods')
+    def rows_for(counts,weights):
+        return [dict(path=list(key),samples=n,sampled_period_total=weights[key])
+                for key,n in sorted(counts.items(),key=lambda item:(-item[1],item[0]))]
+    return dict(kernel_samples=total,kernel_sampled_period_total=weight,
+        states=dict(sorted(states.items())),depth_histogram=dict(sorted(depths.items())),
+        depth_limit_samples=limit_hits,nonempty_head_mismatch_samples=head_mismatches,
+        kernel_frames=frames,unknown_frame_samples=unknown_samples,unknown_frame_occurrences=unknown_frames,
+        categories=[dict(name=k,samples=n,sampled_period_total=category_periods[k])for k,n in sorted(categories.items())],
+        category_priority=[name for name,_ in CALLER_ANCHORS],
+        observed_anchor_aliases={k:sorted(v)for k,v in sorted(anchor_aliases.items())},
+        unwind_completeness='not established by the perf ABI',
+        disjoint=rows_for(buckets,periods),inclusive=rows_for(inclusive,inclusive_periods),
+        scope='Raw kernel unwind PCs resolved only by pinned core symbol intervals, which may include padding. '
+              'Disjoint categories select the first matching named anchor in the explicit priority, not causal ownership; '
+              'all observed anchor aliases remain visible. Generic seq formatting alone is not a proc-maps anchor. '
+              'Leaf/nearest-resolved-caller buckets count each kernel sample once. '
+              'Inclusive observed suffix paths overlap and must never be summed as CPU time. '
+              'Unknown frames and possible depth truncation remain explicit; no ptrace-stop or benchmark credit.')
+
+
+def callchain_public(full,writer):
+    """Bounded display, with exact remainder totals and complete private tables."""
+    result={k:v for k,v in full.items()if k not in('disjoint','inclusive')}
+    for kind in ('disjoint','inclusive'):
+        rows=full[kind]
+        selected=lambda i,x:i<12 or x['samples']*20>full['kernel_samples'] or x['sampled_period_total']*20>full['kernel_sampled_period_total']
+        shown=[x for i,x in enumerate(rows)if selected(i,x)]
+        rest=[x for i,x in enumerate(rows)if not selected(i,x)]
+        # Show every >5% path as well as the first twelve. The unchanged final
+        # 32 KiB kernel CSV gate fails if even this bounded representation is large.
+        need(all(x['samples']*20<=full['kernel_samples'] and
+                 x['sampled_period_total']*20<=full['kernel_sampled_period_total']for x in rest),
+             'no undisplayed caller path exceeds five percent of kernel samples')
+        for item in shown:
+            if kind=='disjoint':path=' -> '.join(item['path'])
+            else:
+                encoded=json.dumps(item['path'],ensure_ascii=True,separators=(',',':')).encode()
+                path=json.dumps(dict(sha256=hashlib.sha256(encoded).hexdigest(),frames=len(item['path']),
+                    leafward=item['path'][0],rootward=item['path'][-1]),sort_keys=True,separators=(',',':'))
+            need(len(path.encode())<=2048,'bounded public caller path; full private path retained')
+            writer.writerow(['callchain_'+kind,path,item['samples'],item['sampled_period_total']])
+        remaining=dict(groups=len(rest),samples=sum(x['samples']for x in rest),
+                       sampled_period_total=sum(x['sampled_period_total']for x in rest))
+        writer.writerow(['callchain_'+kind+'_remaining',str(remaining['groups'])+' groups',
+                         remaining['samples'],remaining['sampled_period_total']])
+        result[kind]=dict(groups=len(rows),shown=len(shown),remaining=remaining,
+                         additive=(kind=='disjoint'))
+    return result
+
+def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_ns, *, bridge_identity=None, kernel_callchains=False):
     """Whole exec-to-exit envelope; event loss or truncation never hidden."""
+    need(type(kernel_callchains)is bool,'explicit scalar or kernel-callchain sample layout')
     data=path.read_bytes(); need(104<=len(data)<=128<<20,'bounded retained perf file')
     need(data[:8]==b'PERFILE2','native little-endian perf.data header')
     header,entry,attrs,attr_bytes,start,size=struct.unpack_from('<6Q',data,8)
@@ -114,7 +251,10 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
              'bounded 99Hz software event with MONOTONIC and full sideband identity')
         need(config==(0 if index==0 else 9), 'exact CPU_CLOCK followed only by non-sampling DUMMY')
         if index==0:need(not flags&((1<<4)|(1<<5)), 'CPU_CLOCK includes both user and kernel samples')
-        if paired:
+        if kernel_callchains:
+            need(paired and entry==160 and attrsize==144 and data[at:at+144]==KERNEL_CALLCHAIN_ATTRIBUTES[index],
+                 'exact observed kernel-only 64-frame CPU_CLOCK and non-callchain DUMMY attributes')
+        elif paired:
             need(entry==160 and attrsize==144 and sample_type==0x1c7 and
                  flags==(0x2040403 if index==0 else 0x463943763) and
                  struct.unpack_from('<Q',data,at+32)[0]==20 and
@@ -128,7 +268,11 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
              'nonzero unique IDs within and across the exact event attributes')
         ids.update({v:index for v in values});id_positions.update({v:i for i,v in enumerate(values)});attributes.append(dict(config=config,sample_type=sample_type,ids=len(values)))
     sample_type=attributes[0]['sample_type']
-    need(all(a['sample_type']==sample_type for a in attributes), 'same explicit ID suffix layout for both events')
+    if kernel_callchains:
+        need([a['sample_type']for a in attributes]==[0x101a7,0x10187],
+             'exact distinct sample layouts with the same TID/TIME/CPU/IDENTIFIER sideband suffix')
+    else:
+        need(all(a['sample_type']==sample_type for a in attributes), 'same explicit ID suffix layout for both events')
     # Feature payloads are not attribution authority, but every declared extent
     # must be inside the retained file and outside the event/feature tables.
     flags=struct.unpack_from('<4Q',data,72);features=sum(x.bit_count()for x in flags)
@@ -141,6 +285,8 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
              all(off+n<=lo or hi<=off for lo,hi in extents), 'bounded disjoint feature payload')
         extents.append((off,off+n))
     allowed=1|2|4|8|64|128|256|512|65536
+    if kernel_callchains: allowed|=32
+    need(not kernel_callchains or sample_type==0x101a7,'kernel callchains require their exact sample layout')
     need(sample_type&~allowed==0 and sample_type&(1|2|4|128|256)==(1|2|4|128|256),
          'exact supported scalar IP/TID/time/CPU/period sample layout')
     side=[(bit,name)for bit,name in ((2,'tid'),(4,'time'),(64,'id'),(512,'stream'),(128,'cpu'),(65536,'identifier'))if sample_type&bit]
@@ -157,7 +303,12 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             need(initial and kind in(1,10,17,3) and not(kind==3 and misc&(1<<13)),
                  'zero identity is only initial synthetic mapping/comm/ksymbol metadata')
             initial_records+=1;return sid,end
-        if sample_type&64:
+        if kernel_callchains:
+            event_id=sid['identifier'][0]
+            need(event_id in ids,'callchain-mode sideband IDENTIFIER belongs to a declared event')
+            if kind in(1,3,4,7,10,17):need(ids[event_id]==1,'runtime sideband belongs only to exact non-callchain DUMMY')
+            if event_id in indexed:need(sid['cpu']==(indexed[event_id][1],0),'sideband CPU agrees with exact ID_INDEX')
+        elif sample_type&64:
             event_id=sid['id'][0]
             need(event_id in ids, 'actual sideband ID belongs to a declared event')
             if paired and kind in(1,3,4,7,10,17):
@@ -269,8 +420,18 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             for bit,name in ((65536,'identifier'),(1,'ip'),(2,'tid'),(4,'time'),(8,'addr'),(64,'id'),(512,'stream'),(128,'cpu'),(256,'period')):
                 if sample_type&bit:
                     need(pos+8<=len(b),'sample field extent');v[name]=struct.unpack_from('<II'if bit in(2,128)else'<Q',b,pos);pos+=8
+            chain=None
+            if kernel_callchains:
+                chain=kernel_callchain(b,pos,misc&7);pos=len(b)
             need(pos==len(b) and v['cpu']==(cpu,0),'complete sample on reserved CPU')
-            if sample_type&64:
+            if kernel_callchains:
+                ident=v['identifier'][0]
+                need(ident in ids and ids[ident]==0,'callchain sample IDENTIFIER belongs only to CPU_CLOCK')
+                need(ident in indexed and indexed[ident][1]==cpu and not initial,
+                     'callchain sample joins complete ID_INDEX and initial boundary')
+                need(v['tid']==(target_pid,target_pid) and indexed[ident][2]==target_pid,
+                     'callchain sample PID/TID equals the actual attached ID_INDEX thread')
+            elif sample_type&64:
                 ident=v['id'][0]
                 need(ident in ids and ids[ident]==0, 'CPU sample belongs only to CPU_CLOCK, never DUMMY or unknown ID')
                 if paired:need(ident in indexed and indexed[ident][1]==cpu and not initial,'CPU sample joins complete ID_INDEX and initial boundary')
@@ -298,6 +459,7 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
                         else:reason='bridge_symbol_unknown_or_ambiguous'
             rows.append(dict(pid=pid,tid=tid,time=stamp,ip=ip,cpumode=mode,reason=reason,symbol=symbol,
                 file_offset=fileoff,elf_address=value,bridge_path_candidate=candidate,candidate_file_offset=candidate_fileoff,period=v['period'][0]))
+            if kernel_callchains: rows[-1]['callchain']=chain
         else:need(False,'unsupported perf record type '+str(kind))
     need(not paired or (not initial and len(indexed)==len(ids)), 'complete exact two-event metadata')
     need(execs and len(exits)==1 and release_ns<=execs[0]<=execs[-1]<exits[0]<=exit_ready_ns and execs==sorted(execs),
@@ -309,7 +471,13 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
     with (directory/'samples.csv').open('x',newline='')as f:
         w=csv.writer(f);w.writerow(['in_exec_window','cpumode','reason','symbol','samples'])
         for key,n in sorted(grouped.items()):w.writerow([*key,n])
-    return dict(samples=len(rows),target_samples=sum(r['pid']==target_pid for r in rows),
+    extra={}
+    if kernel_callchains:
+        chains=[r['callchain']for r in rows if r['pid']==target_pid and r['cpumode']==1 and r['in_target_exec_window']]
+        extra=dict(kernel_callchains=dict(max_frames=64,kernel_samples=len(chains),
+            empty_samples=sum(c['state']=='empty'for c in chains),marker_only_samples=sum(c['state']=='marker_only'for c in chains),
+            depth_limit_samples=sum(c['depth_limit_hit']for c in chains),unwind_complete=False))
+    return dict(**extra,samples=len(rows),target_samples=sum(r['pid']==target_pid for r in rows),
         kernel_samples=sum(r['pid']==target_pid and r['cpumode']==1 for r in rows),
         user_samples=sum(r['pid']==target_pid and r['cpumode']==2 for r in rows),
         authenticated_bridge_samples=sum(r['reason']=='authenticated_bridge_symbol'for r in rows),
@@ -319,4 +487,5 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
         first_sample_ns=rows[0]['time']if rows else None,last_sample_ns=rows[-1]['time']if rows else None,
         full_exec_exit_envelope=True,loss_free=lost==0 and throttles==0,
         bridge={k:obj[k]for k in('sha256','bytes','build_ids','device','mmap_device','inode')},qualification=False,
-        scope='99Hz statistical user/kernel CPU samples across the actual exec-to-exit envelope. Pre-exec wrapper samples retained separately; unknown mapping identities remain unknown. No baseline timing, whole-time attribution, callgraph or performance credit.')
+        scope=('99Hz statistical user/kernel CPU samples with bounded kernel-only callchains. Raw unwind PCs, empty/depth-limited chains and unknown frames remain explicit; no unwind completeness, ptrace-stop, baseline timing or performance credit.'if kernel_callchains else
+               '99Hz statistical user/kernel CPU samples across the actual exec-to-exit envelope. Pre-exec wrapper samples retained separately; unknown mapping identities remain unknown. No baseline timing, whole-time attribution, callgraph or performance credit.'))
