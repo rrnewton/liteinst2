@@ -1,0 +1,1169 @@
+{
+  "added_default_methods": {},
+  "added_excluded_methods": {
+    "evaluation/offline-router-native/observer/src/tests.rs": [
+      "kernel_basis_requires_the_one_explicit_mode_and_exact_bounds",
+      "kernel_live_config_requires_whole_bytes_procfs_and_exact_uname",
+      "config_off_query_never_accepts_success_or_other_unsupported_errors",
+      "old_and_config_off_cet_guards_have_disjoint_acceptance",
+      "config_off_requires_one_canonical_seccomp_zero_observation",
+      "reserved_signal_kernel_layout_is_four_native_words",
+      "reserved_signal_reset_reads_back_each_exact_default_in_order",
+      "every_reserved_signal_reset_or_readback_syscall_failure_stops_immediately",
+      "every_reserved_signal_readback_field_and_unwritten_output_refuses",
+      "controlled_signals_still_reject_each_reserved_bit_and_malformed_population",
+      "calibrated_proc_device_does_not_overwrite_or_relax_the_stat_pin",
+      "calibration_requires_exact_owned_page_offset_inode_and_readonly_permissions",
+      "missing_or_ambiguous_calibration_mapping_refuses",
+      "calibration_and_child_mapping_reject_same_numeric_identity_on_other_paths",
+      "mapped_witness_binds_every_retained_pin_member",
+      "ordinary_equal_stat_and_maps_device_still_needs_the_exact_path_and_inode",
+      "bias_joins_the_actual_vma_path_before_returning_any_address",
+      "two_coherent_vmas_with_same_proc_identity_are_not_silently_selected",
+      "map_link_read_errors_empty_and_truncated_targets_remain_failures",
+      "exact_owned_reservation_release_consumes_only_its_own_token",
+      "failed_unmap_retains_the_exact_owner_and_cannot_grant_fork_success",
+      "real_retained_file_calibration_releases_its_own_mapping_identity"
+    ],
+    "evaluation/offline-router-native/observer/src/wire.rs": [
+      "v2_decodes_the_whole_explicit_kernel_basis_without_changing_v1",
+      "v2_every_truncation_trailing_byte_unknown_mode_and_cross_version_refuses",
+      "v2_release_and_both_config_length_bounds_are_exact",
+      "v2_admission_binds_every_kernel_basis_member"
+    ],
+    "src/offline_router/host_identity_tests.rs": [
+      "calibration_retains_full_stat_and_independent_proc_device",
+      "calibration_retains_each_stamp_member_without_numeric_normalization",
+      "calibration_requires_exact_owned_readonly_offset_zero_page",
+      "calibration_rejects_missing_ambiguous_and_overflowing_ranges",
+      "canonical_dentries_reject_deleted_alias_and_truncated_names",
+      "proc_inode_collision_needs_both_actual_dentry_and_maps_name",
+      "different_proc_identity_never_falls_back_to_stat_device_or_reads_a_link",
+      "equal_stat_and_proc_device_does_not_bypass_path_or_inode_checks",
+      "link_errors_empty_and_truncated_reads_remain_exact_failures",
+      "matching_proc_identity_propagates_denied_or_unavailable_actual_link",
+      "checked_release_consumes_only_its_exact_range_including_address_zero",
+      "failed_release_returns_error_and_preserves_the_owned_token",
+      "actual_owned_fd_calibrates_rechecks_and_releases_its_mapping_identity",
+      "actual_pin_rejects_every_stamp_path_and_full_content_drift",
+      "actual_same_content_path_replacement_and_deleted_fd_refuse"
+    ]
+  },
+  "base_revision": "c712f7008af281191783f6478508ce4cad9d6bcb",
+  "current_corpus_sha256": "d5fb9d5c1f8cd82ab1055bff5c4e9af710c55dcb7cb7a1348833e5830630cb0c",
+  "default_harness_changes": 0,
+  "default_ignore_changes": 0,
+  "evaluation_projections": {
+    "evaluation/admission/core_813_inventory.py": {
+      "current_sha256": "edb64b725e2f340a4d808ad692a47eeb243716a8b853612ff71b9e60381db4ca",
+      "edits": [
+        [
+          4806,
+          5188,
+          "              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091, main367.DATA, main367.mainc712.DATA)\n"
+        ]
+      ],
+      "previous_sha256": "017a527178dd8c183856b008c9c47079571023ea6a33815d53123897b9651318"
+    },
+    "evaluation/admission/core_c712_inventory.py": {
+      "current_sha256": "6e3e978d68d0d03fbc6876ce5043cbae4b54cd289a1d5d31f78bedd4a69450ff",
+      "edits": [
+        [
+          189,
+          232,
+          ""
+        ],
+        [
+          1616,
+          1669,
+          ""
+        ],
+        [
+          1777,
+          1841,
+          ""
+        ],
+        [
+          2143,
+          2291,
+          ""
+        ],
+        [
+          2971,
+          3072,
+          "        source_before(path, raw, error)\n        source_before_evaluation(path, raw, error)\n"
+        ],
+        [
+          3209,
+          3279,
+          ""
+        ],
+        [
+          3906,
+          3976,
+          ""
+        ],
+        [
+          4181,
+          4240,
+          ""
+        ],
+        [
+          4722,
+          4781,
+          ""
+        ]
+      ],
+      "previous_sha256": "7e6e16bd1b542df9feb5aed59d502db726afc294e6f7042a843368e5614ceadf"
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "current_sha256": "dc546f03b47470c32878ce800457ff2d802179cbafd65649c8e345cab768460e",
+      "edits": [
+        [
+          820,
+          940,
+          "RECORDER_TESTS = main367.mainc712.RECORDER_TESTS\nPYTHON_CURRENT = main367.mainc712.PYTHON_CURRENT\n"
+        ],
+        [
+          11289,
+          11326,
+          "def require_current(declared):\n"
+        ],
+        [
+          11595,
+          11914,
+          ""
+        ]
+      ],
+      "previous_sha256": "7482897b794157941150a58a7ac770608f285e3c5fd4d79fd304e05f65ec82da"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "current_sha256": "e932991d805f483bc3313a8ddbf21b249560d7020a3b3233ab35d155ef4f2596",
+      "edits": [
+        [
+          1392,
+          1469,
+          "    require(type(count) is int and count == 356 and len(identities) == count\n"
+        ],
+        [
+          2066,
+          2220,
+          ""
+        ],
+        [
+          2667,
+          2735,
+          "    # Actual workers authenticate all356 and allfour in discover().\n"
+        ]
+      ],
+      "previous_sha256": "c67bc1873b38c59d29d8ebb3749c4e6056a65afb3da27d1703d40418bb422065"
+    },
+    "evaluation/admission/test_mainc712_inventory.py": {
+      "current_sha256": "a2b1133af957b90cc33a03a2055a6766614a91c82c82ab313990bb7aba6ea13a",
+      "edits": [
+        [
+          486,
+          603,
+          "        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())\n"
+        ],
+        [
+          1849,
+          1920,
+          "            self.assertIsNone(inventory.require_current(actual))\n"
+        ],
+        [
+          2123,
+          2178,
+          "                inventory.require_current(wrong)\n"
+        ],
+        [
+          3070,
+          3177,
+          "        identities = historical.python_identities(Path(__file__).parent)\n"
+        ]
+      ],
+      "previous_sha256": "7b451236662b8b2a2072181d73c9ebfc7b811fcf183c1c41648592b17747a093"
+    }
+  },
+  "excluded_default": {
+    "observer_current": 56,
+    "observer_independent_workspace": true,
+    "observer_manifest": "evaluation/offline-router-native/observer/Cargo.toml",
+    "observer_previous": 30,
+    "offline_router_current": 22,
+    "offline_router_previous": 7,
+    "required_feature": "offline-router"
+  },
+  "main_revision": "0fb574bdf0e5c7c48700165535f5c2dd5da39ead",
+  "methods": {
+    "evaluation/offline-router-native/observer/src/lib.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "evaluation/offline-router-native/observer/src/main.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "evaluation/offline-router-native/observer/src/tests.rs": {
+      "all": [
+        "exact_initial_exec_entry_sequence",
+        "every_out_of_order_transition_refuses_without_advancing",
+        "typed_debug_offsets_are_only_0_6_7",
+        "debug_arms_one_execute_slot_and_restores_every_saved_bit",
+        "every_enabled_slot_and_global_debug_owner_refuses_before_writing",
+        "each_arm_write_failure_retains_restoration_duty",
+        "each_restore_failure_is_an_error_even_if_final_words_match",
+        "unrelated_dr6_cause_never_counts_as_owned_b0",
+        "exact_stop_signal_and_event_are_required",
+        "auxv_unique_required_entry_base_and_exact_terminator",
+        "maps_preserve_inode_and_permissions_and_refuse_overlap",
+        "event_address_and_control_are_owned_not_merely_b0",
+        "child_free_requires_exact_echild_without_consuming_harness_children",
+        "child_wait_no_event_is_pending_even_with_stale_echild_errno",
+        "every_owned_event_stays_pending_for_preflight_and_retains_cleanup_identity",
+        "child_wait_flags_are_nonconsuming_nonblocking_and_include_all_child_kinds",
+        "cleanup_keeps_exact_terminal_status_and_requires_direct_reaping_before_deadline",
+        "unexpected_descendant_refuses_even_after_all_terminal_statuses_are_retained",
+        "unknown_owner_and_unbounded_terminal_population_never_complete_cleanup",
+        "cleanup_and_drop_share_one_unchanged_five_second_deadline",
+        "kernel_basis_requires_the_one_explicit_mode_and_exact_bounds",
+        "kernel_live_config_requires_whole_bytes_procfs_and_exact_uname",
+        "config_off_query_never_accepts_success_or_other_unsupported_errors",
+        "old_and_config_off_cet_guards_have_disjoint_acceptance",
+        "config_off_requires_one_canonical_seccomp_zero_observation",
+        "reserved_signal_kernel_layout_is_four_native_words",
+        "reserved_signal_reset_reads_back_each_exact_default_in_order",
+        "every_reserved_signal_reset_or_readback_syscall_failure_stops_immediately",
+        "every_reserved_signal_readback_field_and_unwritten_output_refuses",
+        "controlled_signals_still_reject_each_reserved_bit_and_malformed_population",
+        "calibrated_proc_device_does_not_overwrite_or_relax_the_stat_pin",
+        "calibration_requires_exact_owned_page_offset_inode_and_readonly_permissions",
+        "missing_or_ambiguous_calibration_mapping_refuses",
+        "calibration_and_child_mapping_reject_same_numeric_identity_on_other_paths",
+        "mapped_witness_binds_every_retained_pin_member",
+        "ordinary_equal_stat_and_maps_device_still_needs_the_exact_path_and_inode",
+        "bias_joins_the_actual_vma_path_before_returning_any_address",
+        "two_coherent_vmas_with_same_proc_identity_are_not_silently_selected",
+        "map_link_read_errors_empty_and_truncated_targets_remain_failures",
+        "exact_owned_reservation_release_consumes_only_its_own_token",
+        "failed_unmap_retains_the_exact_owner_and_cannot_grant_fork_success",
+        "real_retained_file_calibration_releases_its_own_mapping_identity"
+      ],
+      "ignored": []
+    },
+    "evaluation/offline-router-native/observer/src/wire.rs": {
+      "all": [
+        "exact_closed_wire_decodes_all_request_facts",
+        "every_truncation_and_trailing_byte_refuses",
+        "wrong_version_nonboolean_flag_and_writable_executable_page_refuse",
+        "canonical_digest_is_exact_lowercase_32_bytes",
+        "sealed_fd_exact_digest_accepts_and_owns_descriptor",
+        "each_missing_seal_wrong_digest_and_wrong_memfd_name_refuse",
+        "safe_admission_does_not_accept_a_transport_digest",
+        "actual_auxv_requires_exactly_one_secure_zero",
+        "actual_kernel_shstk_status_requires_both_empty_unique_fields",
+        "actual_signal_mask_and_ignored_bits_must_be_zero_including_reserved_signals",
+        "v2_decodes_the_whole_explicit_kernel_basis_without_changing_v1",
+        "v2_every_truncation_trailing_byte_unknown_mode_and_cross_version_refuses",
+        "v2_release_and_both_config_length_bounds_are_exact",
+        "v2_admission_binds_every_kernel_basis_member"
+      ],
+      "ignored": []
+    },
+    "src/lib.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "src/offline_router.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "src/offline_router/compiler.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "src/offline_router/compiler/fixture.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "src/offline_router/compiler/tests.rs": {
+      "all": [
+        "actual_plan_families_preserve_both_complete_denominators_and_authored_stack_layout",
+        "accepted_pun_consumed_obligation_and_current_view_mutants_refuse",
+        "accepted_neighbor_chain_and_owner_mutants_refuse",
+        "file_backed_stack_preserves_full_original_owner_bytes_and_bounds",
+        "compiler_does_not_accept_caller_steps_images_omitted_or_aliased_plans",
+        "short_neighbor_accepts_selected_eb_in_current_victim_fetch_suffix"
+      ],
+      "ignored": []
+    },
+    "src/offline_router/host.rs": {
+      "all": [
+        "exact_maps_and_auxv_shapes"
+      ],
+      "ignored": []
+    },
+    "src/offline_router/host_identity_tests.rs": {
+      "all": [
+        "calibration_retains_full_stat_and_independent_proc_device",
+        "calibration_retains_each_stamp_member_without_numeric_normalization",
+        "calibration_requires_exact_owned_readonly_offset_zero_page",
+        "calibration_rejects_missing_ambiguous_and_overflowing_ranges",
+        "canonical_dentries_reject_deleted_alias_and_truncated_names",
+        "proc_inode_collision_needs_both_actual_dentry_and_maps_name",
+        "different_proc_identity_never_falls_back_to_stat_device_or_reads_a_link",
+        "equal_stat_and_proc_device_does_not_bypass_path_or_inode_checks",
+        "link_errors_empty_and_truncated_reads_remain_exact_failures",
+        "matching_proc_identity_propagates_denied_or_unavailable_actual_link",
+        "checked_release_consumes_only_its_exact_range_including_address_zero",
+        "failed_release_returns_error_and_preserves_the_owned_token",
+        "actual_owned_fd_calibrates_rechecks_and_releases_its_mapping_identity",
+        "actual_pin_rejects_every_stamp_path_and_full_content_drift",
+        "actual_same_content_path_replacement_and_deleted_fd_refuse"
+      ],
+      "ignored": []
+    },
+    "tests/support/bounded_proc_stat.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "tests/support/isolated_native_test.rs": {
+      "all": [],
+      "ignored": []
+    }
+  },
+  "module_chains": {
+    "Cargo.toml": [
+      "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]",
+      "offline-router = [\"dep:liteinst-artifact\"]"
+    ],
+    "evaluation/offline-router-native/observer/Cargo.toml": [
+      "[workspace]"
+    ],
+    "evaluation/offline-router-native/observer/src/lib.rs": [
+      "pub mod wire;",
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "evaluation/offline-router-native/observer/src/wire.rs": [
+      "#[cfg(test)]\nmod tests {"
+    ],
+    "src/entry_router/imp/routed_jmp_native_tests.rs": [
+      "use crate::isolated_native_test as isolated;",
+      "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\nmod oracle;"
+    ],
+    "src/lib.rs": [
+      "#[cfg(all(\n    feature = \"offline-router\",\n    target_os = \"linux\",\n    target_arch = \"x86_64\"\n))]\npub mod offline_router;",
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\n#[path = \"../tests/support/isolated_native_test.rs\"]\nmod isolated_native_test;"
+    ],
+    "src/offline_router.rs": [
+      "mod compiler;",
+      "mod host;"
+    ],
+    "src/offline_router/compiler.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "src/offline_router/host.rs": [
+      "#[cfg(test)]\n#[path = \"host_identity_tests.rs\"]\nmod identity_tests;",
+      "#[cfg(test)]\nmod tests {"
+    ],
+    "tests/support/isolated_native_test.rs": [
+      "#[path = \"bounded_proc_stat.rs\"]\nmod bounded_proc_stat;"
+    ]
+  },
+  "moved_helper": {
+    "child": "tests/support/bounded_proc_stat.rs",
+    "ignored": 0,
+    "new_parent": "src/lib.rs",
+    "old_parent": "src/entry_router/imp/routed_jmp_native_tests.rs",
+    "path": "tests/support/isolated_native_test.rs",
+    "tests": 0
+  },
+  "previous_corpus_sha256": "f668f9e08fb5550561283750ffebe8bcad2278b54ac4c42dab58b290f9484a82",
+  "projections": {
+    "evaluation/adjacent-b2/artifact-verifier/startup_custody.py": {
+      "current_sha256": "ad7950a206462cc6e32a70e9c246bf92b41026e9cb46c578fc984974e77f9f37",
+      "edits": [
+        [
+          7001,
+          7057,
+          "        fd = self.directory(path)\n"
+        ],
+        [
+          7070,
+          7449,
+          "            before = stamp(os.fstat(fd))\n"
+        ],
+        [
+          7703,
+          7814,
+          "            need(before == stamp(os.fstat(fd)), 'directory changed during listing')\n"
+        ],
+        [
+          7891,
+          8030,
+          "            os.close(fd)\n"
+        ]
+      ],
+      "previous_sha256": "6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5"
+    },
+    "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": {
+      "current_sha256": "fb2a53a1b5538f6ebb2e16da9039905e08951c33c6a2303d06a5a92bc398f17a",
+      "edits": [
+        [
+          2291,
+          2954,
+          "STARTUP_MODULES = {'startup_cargo_from_root.py': 'd9189f38057a1167f74de2c93ce22b361cdcd2ca10e6bf68862c8281f2c4aa89', 'startup_custody.py': '6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5', 'startup_originals.py': 'fe1c9bc33800a8216a9c3bc12a33be3579d92e07c5dbc1c10bd0ea75566bd03c', 'startup_pins.py': 'b11f1d05d80a604cb63e1f13288933b14ada1ec28f0d1034928901d4fa4ede3a', 'startup_produce.py': '42d97f0fe862ad43ac16531c854707db260960a66858ce28050e64a768009eb0', 'startup_saved.py': 'f9b888833e907af4bef59848ea94472f5d5f968134dd55686ff906baef5f9c0b', 'startup_target_from_root.py': '81ef52660559ee2f4088d02470eddbe64b981d16625392cbd0481123dd63312d'}\n"
+        ]
+      ],
+      "previous_sha256": "c66928731b11cb4a77652c421435084a54b78c701e34e1b689f7d1e402ead3ec"
+    },
+    "evaluation/offline-corpus/full_startup_e9_execute.py": {
+      "current_sha256": "08f0f81806dbf2933597a55dfa37f88836dfbcc48a079bcee1b4beae50caa13e",
+      "edits": [
+        [
+          707,
+          855,
+          "    'custody': ('evaluation/adjacent-b2/artifact-verifier/startup_custody.py', '6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5'),\n"
+        ]
+      ],
+      "previous_sha256": "4c5574329a8c6e81a7325f89a2bb034881c756292d0a0a553a582a27fb1d483b"
+    },
+    "evaluation/offline-router-corpus/REPRODUCE.md": {
+      "current_sha256": "876f76d6987bc4d6510d27fa2a430dcc8c1eba16b16926ebb055794d47981338",
+      "edits": [
+        [
+          10513,
+          11905,
+          ""
+        ]
+      ],
+      "previous_sha256": "c6c51b091c2479c0f13877fbcfbfec2949b110ffcd01b2cd0ed03641be04e86c"
+    },
+    "evaluation/offline-router-corpus/reproduce_preparation.py": {
+      "current_sha256": "506c7302ce74487a4598b428b342f6c17221ce6b36c8f245e87c09fd4cf34060",
+      "edits": [
+        [
+          1288,
+          1349,
+          ""
+        ],
+        [
+          1679,
+          1928,
+          ""
+        ],
+        [
+          2999,
+          3061,
+          ""
+        ],
+        [
+          3520,
+          3756,
+          ""
+        ],
+        [
+          8089,
+          8179,
+          "    if stage in ('observe', 'n01'):\n"
+        ],
+        [
+          8598,
+          9141,
+          ""
+        ],
+        [
+          13852,
+          13958,
+          "            if plan['stage'] in ('observe', 'n01'):\n"
+        ],
+        [
+          14943,
+          14995,
+          "def final_inputs(args):\n"
+        ],
+        [
+          15480,
+          15877,
+          "    need(set(value) == {'schema', 'producer', 'verifier', 'joins', 'bootstrap', 'observer_plan',\n         'observer_build', 'contract', 'xstate'} and value['schema'] == 'LI2-PREPARATION-REFERENCES-1',\n         'complete explicit references; no prior input/receipt cloning')\n"
+        ],
+        [
+          16787,
+          16951,
+          "    for reference in [value['contract'], *value['xstate'].values()]:\n"
+        ],
+        [
+          17090,
+          17272,
+          "    result = dict(schema='LI2NATIVE-FINAL-PROFILE-INPUTS-1', root=str(args.root), native_revision=args.revision,\n"
+        ],
+        [
+          17496,
+          17569,
+          ""
+        ],
+        [
+          18441,
+          18540,
+          "    parser.add_argument('mode', choices=('run', 'final-inputs'))\n"
+        ],
+        [
+          19118,
+          19222,
+          ""
+        ]
+      ],
+      "previous_sha256": "33567b28417a3d1e4f64537729ef57d364f6767872f2f17d8c81ec9fcdac2b6c"
+    },
+    "evaluation/offline-router-native/README.md": {
+      "current_sha256": "ba2c2a8b0a6d4f3cc1134af73c581ade9dc386cf83cd3ca7b06e0ebb4bc9636f",
+      "edits": [
+        [
+          9404,
+          12398,
+          ""
+        ]
+      ],
+      "previous_sha256": "1525188670906742f07b62b885b80c1e34b9e15a8198f4a6e38924571a7f6448"
+    },
+    "evaluation/offline-router-native/final_admission.py": {
+      "current_sha256": "f3b6b760dfbf37d7d781618b3e98c001d2aae3a5d803315b2c1688fca21bfca6",
+      "edits": [
+        [
+          8113,
+          8244,
+          ""
+        ],
+        [
+          8556,
+          8667,
+          "def open_session(root, profile_path, profile_sha256, accept_contract_sha256):\n"
+        ],
+        [
+          9574,
+          10730,
+          "    need(set(profile) == {'schema', 'native_revision', 'native_sources', 'artifact_source_profile', 'arguments', 'bootstrap',\n        'contract', 'reviewed', 'observer'} and profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-1', 'LI2STARTUP-FINAL-PROFILE-2', 'LI2STARTUP-FINAL-PROFILE-3'),\n         'explicit final profile shape')\n    absolute_profile = profile['schema'] == 'LI2STARTUP-FINAL-PROFILE-3'\n    namespace_profile = profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-2', 'LI2STARTUP-FINAL-PROFILE-3')\n"
+        ],
+        [
+          11477,
+          11664,
+          ""
+        ],
+        [
+          12719,
+          12838,
+          ""
+        ],
+        [
+          16787,
+          17177,
+          ""
+        ],
+        [
+          22960,
+          23037,
+          ""
+        ],
+        [
+          23930,
+          24035,
+          ""
+        ]
+      ],
+      "previous_sha256": "cd95a03b9733123dd4fe520c25cf4cf8b780595fecb15489c4b708949a624d31"
+    },
+    "evaluation/offline-router-native/native_launch.py": {
+      "current_sha256": "5ba184eeedb9513e5098b5f886ac09dc2c1cb99a6ba3c73f9e22f6f2f0b36762",
+      "edits": [
+        [
+          286,
+          300,
+          ""
+        ],
+        [
+          3504,
+          3611,
+          "def open_session(root,profile_path,profile_sha256,accept_contract_sha256):\n"
+        ],
+        [
+          3964,
+          4228,
+          "    session=final.open_session(root,profile_path,profile_sha256,accept_contract_sha256)\n"
+        ],
+        [
+          4255,
+          7256,
+          ""
+        ],
+        [
+          7277,
+          7460,
+          ""
+        ],
+        [
+          19128,
+          20197,
+          "    need(set(value)==required and value['schema']=='LI2-OBSERVER-RECEIPT-2' and value['request_sha256']==expected_hash,'exact observer receipt schema/request')\n"
+        ],
+        [
+          23225,
+          23417,
+          "def observer_child(root,profile_path,profile_hash,contract_hash,work_path,work_hash):\n    final,session=open_session(root,profile_path,profile_hash,contract_hash)\n"
+        ],
+        [
+          23503,
+          23538,
+          ""
+        ],
+        [
+          24750,
+          24852,
+          "def observe_population(root,output,profile_path,profile_hash,contract_hash,session):\n"
+        ],
+        [
+          26977,
+          27067,
+          ""
+        ],
+        [
+          30208,
+          30377,
+          "    for name in ('final-profile-sha256','accept-contract-sha256','build-plan-sha256','child-request-sha256'):parser.add_argument('--'+name)\n"
+        ],
+        [
+          31002,
+          31307,
+          "    need(supplied==roster[args.mode],'exact mode-specific launch argument roster')\n"
+        ],
+        [
+          31409,
+          31760,
+          "    if args.mode=='observer-child':return observer_child(root,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256,args.child_request,args.child_request_sha256)\n    _,session=open_session(root,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256)\n"
+        ],
+        [
+          31769,
+          31993,
+          "        if args.mode=='observe':return observe_population(root,args.output,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256,session)\n"
+        ]
+      ],
+      "previous_sha256": "8eedfe80d7adccd3b89efc845ecf43084ff6d280a10d4c665237b4360f910e39"
+    },
+    "evaluation/offline-router-native/native_wire.py": {
+      "current_sha256": "21dcb828ca35a0794058a9f2d2ae0bc80fef4670d05ade4461dce9a90f4242b1",
+      "edits": [
+        [
+          165,
+          269,
+          ""
+        ],
+        [
+          911,
+          1263,
+          "    keys(request,('main','loader','bootstrap','dependencies','dataset','entry','entry_bytes',\n                  'completion_relative','completion_file_offset','xstate_bytes'))\n    out=bytearray(MAGIC);pages=0\n"
+        ],
+        [
+          4659,
+          5666,
+          ""
+        ],
+        [
+          5955,
+          6078,
+          "    need(type(raw) is bytes and len(MAGIC)<len(raw)<=CAP and raw.startswith(MAGIC),'bounded wire envelope')\n"
+        ]
+      ],
+      "previous_sha256": "d6dcc4d283dab955bf2383b3d008badf05f2b12dbdc994f2684e8b4605876e7d"
+    },
+    "evaluation/offline-router-native/observer/src/lib.rs": {
+      "current_sha256": "61212120507e318ce69a8dfcdd65e26b47418a931211d0b6f917117b5cdb4193",
+      "edits": [
+        [
+          3721,
+          5129,
+          ""
+        ],
+        [
+          5559,
+          5602,
+          ""
+        ],
+        [
+          6644,
+          6881,
+          ""
+        ],
+        [
+          28232,
+          41227,
+          "fn object_bias(object: &Object, maps: &[Mapping]) -> Result<u64> {\n"
+        ],
+        [
+          41356,
+          41450,
+          "            m.device == object.file.device\n                && m.inode == object.file.inode\n                && m.offset == first.file_offset\n                && m.start >= first.relative\n"
+        ],
+        [
+          41461,
+          41461,
+          "        .map(|m| m.start - first.relative)\n"
+        ],
+        [
+          41574,
+          41681,
+          "    Ok(possible[0])\n"
+        ],
+        [
+          41797,
+          41832,
+          ""
+        ],
+        [
+          41850,
+          42044,
+          ""
+        ],
+        [
+          42645,
+          42738,
+          "                        m.device == object.file.device\n                            && m.inode == object.file.inode\n                            && m.offset + address - m.start == p.file_offset\n"
+        ],
+        [
+          43015,
+          43575,
+          ""
+        ],
+        [
+          43768,
+          43892,
+          ""
+        ],
+        [
+          45027,
+          45141,
+          ""
+        ],
+        [
+          46588,
+          46712,
+          ""
+        ],
+        [
+          47678,
+          47760,
+          ""
+        ],
+        [
+          50793,
+          51066,
+          ""
+        ],
+        [
+          52215,
+          52374,
+          "                // glibc reserves32/33; their actual kernel mask/ignore bits are\n                // still required zero by controlled_signal_status at both stops.\n"
+        ],
+        [
+          52639,
+          52730,
+          ""
+        ],
+        [
+          54498,
+          54577,
+          ""
+        ],
+        [
+          55570,
+          55727,
+          "        disabled_shstk(&evidence.exec_status)?;\n"
+        ],
+        [
+          55985,
+          56337,
+          "        check_object(&child, &request.main, &maps, 0, false)?;\n        check_object(&child, &request.loader, &maps, loader_bias, false)?;\n"
+        ],
+        [
+          56673,
+          56756,
+          ""
+        ],
+        [
+          58067,
+          58233,
+          "            disabled_shstk(&evidence.entry_status)?;\n"
+        ],
+        [
+          58919,
+          60218,
+          "            check_object(&child, &request.main, &maps, 0, true)?;\n            check_object(&child, &request.loader, &maps, loader_bias, true)?;\n            let bootstrap_bias = object_bias(&request.bootstrap, &maps)?;\n            check_object(&child, &request.bootstrap, &maps, bootstrap_bias, true)?;\n            for object in &request.dependencies {\n                check_object(&child, object, &maps, object_bias(object, &maps)?, true)?;\n"
+        ],
+        [
+          62757,
+          62971,
+          ""
+        ]
+      ],
+      "previous_sha256": "847cea97a622f32f72980eefc92f3e26488ffb04f9fb96e310e0057e42f82f59"
+    },
+    "evaluation/offline-router-native/observer/src/main.rs": {
+      "current_sha256": "f6cf25246b7dea7f35e2f59bcefd4aebb70b66c6530762030e4a68172cb88db0",
+      "edits": [
+        [
+          480,
+          1931,
+          ""
+        ],
+        [
+          3334,
+          3364,
+          "    format!(\n"
+        ],
+        [
+          4716,
+          4970,
+          "    )\n"
+        ],
+        [
+          5985,
+          6043,
+          ""
+        ]
+      ],
+      "previous_sha256": "c9d1bb88e67376b164f83ec1745d9c0eb0f9a9d891b4749ea66ea7747f1d1c24"
+    },
+    "evaluation/offline-router-native/observer/src/tests.rs": {
+      "current_sha256": "cc7e92b5bae8651039210139aaf0d2b93b76bb21de22f137a87868db50178478",
+      "edits": [
+        [
+          11657,
+          32508,
+          ""
+        ]
+      ],
+      "previous_sha256": "78379dfef57b9a8dd35c15a7aef3ed99dbf65090fa5315c7710a8bad4b2cce5c"
+    },
+    "evaluation/offline-router-native/observer/src/wire.rs": {
+      "current_sha256": "a361fc4ddccbb621254c04fb83faa50751922543d9d7d954f39a7512c8fb1d70",
+      "edits": [
+        [
+          213,
+          272,
+          ""
+        ],
+        [
+          1807,
+          2659,
+          ""
+        ],
+        [
+          5503,
+          5591,
+          "    if raw.len() > WIRE_CAP || !raw.starts_with(MAGIC) {\n"
+        ],
+        [
+          5631,
+          5677,
+          ""
+        ],
+        [
+          6311,
+          6413,
+          ""
+        ],
+        [
+          6978,
+          7000,
+          ""
+        ],
+        [
+          16872,
+          20911,
+          ""
+        ]
+      ],
+      "previous_sha256": "52bb284e16c2be0c22160ee1b80a38ccca2c9cc5cb709f70bfb50af6aa9a09ec"
+    },
+    "evaluation/offline-router-native/prepare_profile.py": {
+      "current_sha256": "48f43381a9fa787982b7f0aa092994448a7fc89112557c1c25ec16ab821cc0f6",
+      "edits": [
+        [
+          11857,
+          11940,
+          "def final_profile(args, *, absolute_prerequisites=False):\n"
+        ],
+        [
+          12068,
+          12555,
+          "    need(set(inputs)=={'schema','root','native_revision','observer_plan','arguments','bootstrap','contract',\n                      'observer_build','xstate'} and inputs['schema']=='LI2NATIVE-FINAL-PROFILE-INPUTS-1',\n         'exact final builder input roster')\n"
+        ],
+        [
+          12968,
+          13049,
+          ""
+        ],
+        [
+          13276,
+          13372,
+          ""
+        ],
+        [
+          14830,
+          15096,
+          ""
+        ],
+        [
+          17784,
+          17971,
+          "        profile=dict(schema='LI2STARTUP-FINAL-PROFILE-3' if absolute_prerequisites else 'LI2STARTUP-FINAL-PROFILE-2',\n"
+        ],
+        [
+          18245,
+          18321,
+          ""
+        ],
+        [
+          18343,
+          18419,
+          ""
+        ],
+        [
+          20438,
+          20546,
+          "    for name in ('final-profile','final-profile-absolute-prerequisites'):\n"
+        ],
+        [
+          20842,
+          20967,
+          ""
+        ]
+      ],
+      "previous_sha256": "35837aec8bdc0415a67aa136492c7032f6b470ebea94e10a58475e29c2a4949a"
+    },
+    "src/entry_router/imp/routed_jmp_native_tests.rs": {
+      "current_sha256": "5c6e939a964c0d4f64b062c31d8bed2f41fb8a0c20ccdc40dc46f0831bcc2bd9",
+      "edits": [
+        [
+          90,
+          135,
+          ""
+        ],
+        [
+          269,
+          269,
+          "#[path = \"../../../tests/support/isolated_native_test.rs\"]\nmod isolated;\n"
+        ]
+      ],
+      "previous_sha256": "a1a0c6aa6c666012451fcb9169255bcdd4c6701dc498bf0da1326761fc767fe0"
+    },
+    "src/lib.rs": {
+      "current_sha256": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a",
+      "edits": [
+        [
+          162,
+          305,
+          ""
+        ]
+      ],
+      "previous_sha256": "d05e417aa91c4b118f7e71289acbe4f9be6cd3e9f6017e6c63e6bb11fd56d955"
+    },
+    "src/offline_router.rs": {
+      "current_sha256": "fafa24fa5c5f1f901c62bcbb956d2934fbef393d8e96b1bbc5a3a57039e3160a",
+      "edits": [
+        [
+          3108,
+          3650,
+          "/// mapped, unmodified and owned until process exit. No dlclose, fork, new threads,\n/// SIGILL masking/replacement or address reuse is allowed. This is install-once,\n"
+        ]
+      ],
+      "previous_sha256": "8ed2c84fb9f5657cdedf13a3b9926d78c83682039debd497a014e02633d04193"
+    },
+    "src/offline_router/host.rs": {
+      "current_sha256": "1c98caba5667be108cfc849be0358bff3faeccbe32b56ad2ff9025139dec18a3",
+      "edits": [
+        [
+          4215,
+          11687,
+          "fn same_file(m: &Map, s: Stamp) -> bool {\n    m.inode == s.ino\n        && m.major == u64::from(libc::major(s.dev))\n        && m.minor == u64::from(libc::minor(s.dev))\n"
+        ],
+        [
+          14990,
+          15976,
+          "    stamp: Stamp,\n"
+        ],
+        [
+          16076,
+          16127,
+          ""
+        ],
+        [
+          16142,
+          16187,
+          "    pub(super) fn recheck(&self, catalog: &Catalog) -> Result<(), E> {\n        single_thread()?;\n        state(catalog)?;\n"
+        ],
+        [
+          16334,
+          17710,
+          "            if stamp(&p.file)? != p.stamp {\n"
+        ],
+        [
+          17766,
+          17827,
+          ""
+        ],
+        [
+          17837,
+          18034,
+          "        if bytes(&self.main.file, c::MAX_FILE)? != catalog.input().main {\n"
+        ],
+        [
+          18082,
+          19776,
+          "        check_main(\n            catalog,\n            &self.main,\n            &maps(&observation(\"/proc/self/maps\", OBSERVATION_BYTES)?)?,\n        )\n"
+        ],
+        [
+          19832,
+          19884,
+          "    let f = OpenOptions::new()\n        .read(true)\n        .custom_flags(libc::O_CLOEXEC | libc::O_NOFOLLOW)\n        .open(Path::new(std::ffi::OsStr::from_bytes(path)))\n        .map_err(|_| E::Io)?;\n    no_capability(&f)?;\n    let s = stamp(&f)?;\n    if s.mode & libc::S_IFMT != libc::S_IFREG || s.mode & 0o6000 != 0 {\n        return Err(E::Ownership);\n    }\n    Ok(Pinned { file: f, stamp: s })\n"
+        ],
+        [
+          20341,
+          20431,
+          "    no_capability(&f)?;\n    let main = Pinned {\n        stamp: stamp(&f)?,\n        file: f,\n    };\n    if bytes(&main.file, c::MAX_FILE)? != catalog.input().main {\n"
+        ],
+        [
+          21118,
+          21118,
+          "    let mapped = maps(&observation(\"/proc/self/maps\", OBSERVATION_BYTES)?)?;\n    check_main(catalog, &main, &mapped)?;\n"
+        ],
+        [
+          21160,
+          21822,
+          ""
+        ],
+        [
+          21876,
+          22109,
+          "    let here = observe as *const () as usize as u64;\n    let code = cover(&mapped, here, 1)?;\n    let data = cover(\n        &mapped,\n        embedded.as_ptr() as usize as u64,\n        embedded.len() as u64,\n    )?;\n    if code.flags != 5\n        || data.flags != 4\n        || !same_file(code, bootstrap.stamp)\n        || !same_file(data, bootstrap.stamp)\n"
+        ],
+        [
+          22155,
+          22658,
+          "    let mut dependencies = Vec::new();\n    let mut total = 0usize;\n    let mut runtime_pages = std::collections::BTreeSet::new();\n    let mut identities = std::collections::BTreeSet::new();\n    identities.insert((main.stamp.dev, main.stamp.ino));\n    if !identities.insert((bootstrap.stamp.dev, bootstrap.stamp.ino)) {\n        return Err(E::Ownership);\n    }\n    for d in &policy.dependencies {\n        let p = open_pin(&d.path)?;\n        let b = bytes(&p.file, c::MAX_FILE)?;\n        total = total.checked_add(b.len()).ok_or(E::Ownership)?;\n        if total > DEPENDENCY_BYTES\n            || ContentId::of(&b) != d.identity\n            || !mapped.iter().any(|m| same_file(m, p.stamp))\n        {\n            return Err(E::Ownership);\n        }\n        if !identities.insert((p.stamp.dev, p.stamp.ino)) {\n            return Err(E::Ownership);\n        }\n        runtime_elf(&b, &p, &mapped, &mut runtime_pages)?;\n        dependencies.push(p);\n    }\n    let bootstrap_bytes = bytes(&bootstrap.file, c::MAX_FILE)?;\n    total = total\n        .checked_add(bootstrap_bytes.len())\n        .ok_or(E::Ownership)?;\n    if total > DEPENDENCY_BYTES {\n        return Err(E::Ownership);\n    }\n    runtime_elf(&bootstrap_bytes, &bootstrap, &mapped, &mut runtime_pages)?;\n    let loader = policy\n        .dependencies\n        .iter()\n        .position(|d| d.path == policy.interpreter)\n        .ok_or(E::Ownership)?;\n    if !same_file(cover(&mapped, get(7)?, 1)?, dependencies[loader].stamp) {\n        return Err(E::Ownership);\n    }\n"
+        ],
+        [
+          22681,
+          22721,
+          "        if same_file(m, main.stamp) {\n"
+        ],
+        [
+          22779,
+          22979,
+          "            if !same_file(m, bootstrap.stamp) && !dependencies.iter().any(|p| same_file(m, p.stamp))\n            {\n"
+        ],
+        [
+          23538,
+          23538,
+          "    }\n    if runtime_pages.len() > 256 * 1024 * 1024 / 4096 {\n        return Err(E::Ownership);\n"
+        ],
+        [
+          24104,
+          24144,
+          "    Ok(Owned {\n        main,\n        dependencies,\n        bootstrap,\n    })\n"
+        ],
+        [
+          24731,
+          24827,
+          "    let bases = maps\n        .iter()\n        .filter(|m| same_file(m, owner.stamp) && m.offset == 0)\n"
+        ],
+        [
+          27364,
+          27446,
+          "                if !same_file(m, owner.stamp) || m.offset + page - m.start != offset {\n"
+        ],
+        [
+          28711,
+          28792,
+          "                if !same_file(m, main.stamp) || m.offset + page - m.start != offset {\n"
+        ],
+        [
+          29780,
+          29818,
+          "    for m in maps.iter().filter(|m| same_file(m, main.stamp)) {\n"
+        ],
+        [
+          31237,
+          31306,
+          ""
+        ]
+      ],
+      "previous_sha256": "0101c4d1c1dbeba816124f15d360c60f39128ca1541c8fe1b5ec205a65ce02ab"
+    }
+  },
+  "python_current_sha256": "b92e0d06aed4f61143a888cfc562e3133d10f872a4b2c95c3c5ba5045b23befd",
+  "python_previous_sha256": "54850e8ab8f5fb4119828db227a3808606a582e2e25c053ed8176c624c1f8719",
+  "schema": 1,
+  "sources": {
+    "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
+    "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+    "evaluation/adjacent-b2/artifact-verifier/startup_custody.py": "ad7950a206462cc6e32a70e9c246bf92b41026e9cb46c578fc984974e77f9f37",
+    "evaluation/adjacent-b2/artifact-verifier/startup_members_controls.py": "2bfa935de719ce972a2cd2d500c00176d4c13836f3eb78b469bc1812fbc8aa69",
+    "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": "fb2a53a1b5538f6ebb2e16da9039905e08951c33c6a2303d06a5a92bc398f17a",
+    "evaluation/admission/core_813_inventory.py": "edb64b725e2f340a4d808ad692a47eeb243716a8b853612ff71b9e60381db4ca",
+    "evaluation/admission/core_c712_inventory.py": "6e3e978d68d0d03fbc6876ce5043cbae4b54cd289a1d5d31f78bedd4a69450ff",
+    "evaluation/admission/core_cc846_inventory.py": "dc546f03b47470c32878ce800457ff2d802179cbafd65649c8e345cab768460e",
+    "evaluation/admission/recorder_parallel.py": "e932991d805f483bc3313a8ddbf21b249560d7020a3b3233ab35d155ef4f2596",
+    "evaluation/admission/test_main0fb574_inventory.py": "a6fe029b80f825353143f09bda0c20b95e834523081863aa7fed4a7d10ff2cbd",
+    "evaluation/admission/test_mainc712_inventory.py": "a2b1133af957b90cc33a03a2055a6766614a91c82c82ab313990bb7aba6ea13a",
+    "evaluation/offline-corpus/full_startup_e9_execute.py": "08f0f81806dbf2933597a55dfa37f88836dfbcc48a079bcee1b4beae50caa13e",
+    "evaluation/offline-router-corpus/REPRODUCE.md": "876f76d6987bc4d6510d27fa2a430dcc8c1eba16b16926ebb055794d47981338",
+    "evaluation/offline-router-corpus/absolute-c712f70/README.md": "b941e2d11f728638567e13138be9b508b6d372196d5615a0ec23408c30da3315",
+    "evaluation/offline-router-corpus/absolute-c712f70/diagnose_membership.py": "4541f52ac1b158067db6427a0b6f0fc8d14a1d6436946b51137b0e263f3b5a29",
+    "evaluation/offline-router-corpus/absolute-c712f70/diagnose_shstk.py": "ab77cebf914bea6dd71c273881c42d367b258545e41595acd4c451ec1e034f22",
+    "evaluation/offline-router-corpus/absolute-c712f70/results.json": "a7bfc4a2a1d8efb10175952943b11dc49e7582c53f9e6a009fe80e736c9bee7c",
+    "evaluation/offline-router-corpus/e9-6ed5f2d/README.md": "1b020d56ab701b2b9cc26a2d1540e9d1a39ea2ffcad3212d6ad222e4c31c287f",
+    "evaluation/offline-router-corpus/e9-6ed5f2d/cases.csv": "9db14362b1b148d6d8324a803af4822e1809d9a8131c506beba6fb95ca61f659",
+    "evaluation/offline-router-corpus/e9-6ed5f2d/results.json": "4ec3c3b52d3e39e37dc6e9607154dc78dc51350190981a64bcd13e7a7fdb81c8",
+    "evaluation/offline-router-corpus/e9-6ed5f2d/sites.csv": "d22bf92bc3b70c6c6ef1168d9fa1fbc04d42be08a1d9b89f8e8d8d4b3dd7c1d0",
+    "evaluation/offline-router-corpus/e9-71c349f/README.md": "db2871e761d0fdf95222209dbc893dc271845e32eeb8bf4c08578898754d5229",
+    "evaluation/offline-router-corpus/e9-71c349f/results.json": "813a09f329c7d4665a9dc22906ba20805042b4bcbc31157edb259507ba486a9c",
+    "evaluation/offline-router-corpus/e9-71c349f/sites.csv": "bef95bd5db535b2265a8ab4f9af254390b8928f978503ce2fc9c5a9482f035c8",
+    "evaluation/offline-router-corpus/kernel-29807af/README.md": "33649d1808515ed51806ab1de0a913c6f16ff07537076a92b15a422f0468313b",
+    "evaluation/offline-router-corpus/kernel-29807af/diagnose_mapping_identity.py": "acf9f067637fe7d11b1bf55082112af0445aa2400225da1af0d1ace88c6def62",
+    "evaluation/offline-router-corpus/kernel-29807af/results.json": "a4de9c33fee86a73cf5fecc1aab7e63269fc328d2951efbc202271a32582d50d",
+    "evaluation/offline-router-corpus/mapped-cce4e7e/README.md": "9481272c306b2aeb4d0c4defaded92b312dda6d9122e62aedd89e6632658e8e0",
+    "evaluation/offline-router-corpus/mapped-cce4e7e/results.json": "95889dc3651ac1466626dc0cc677a569e3c31cd562bd9f8bf5a23a6c21c354cc",
+    "evaluation/offline-router-corpus/membership-repair-controls.json": "cea3fde59c503a87588565ed06ab2f6cdae16c105462aaffcbe40a78b40a58be",
+    "evaluation/offline-router-corpus/reproduce_preparation.py": "506c7302ce74487a4598b428b342f6c17221ce6b36c8f245e87c09fd4cf34060",
+    "evaluation/offline-router-corpus/runtime-6ed5f2d/README.md": "c09f44e95a208f845c1cc68d0c42cbd4e107d84ef4c8a54172a58082fc6b4103",
+    "evaluation/offline-router-corpus/runtime-6ed5f2d/invocations.csv": "c0728464fcda1acdf0d5dc7467d95288e453e8037029cd352d0fcce7a02902d2",
+    "evaluation/offline-router-corpus/runtime-6ed5f2d/results.json": "62e61a4f3a74471cbfcb0b61de5d3861d477cff3b7e0db373be6da3e7e5f7f2e",
+    "evaluation/offline-router-corpus/runtime-mapping-controls.json": "276c068f640a755bd9a82283791616b672250bf38a66ae9c03965deeae563e28",
+    "evaluation/offline-router-corpus/validation-6ed5f2d/README.md": "af42959bd2269b248686baa1f746007f554585f63429aeb0d6129f4d1cad1098",
+    "evaluation/offline-router-corpus/validation-6ed5f2d/receipt.json": "da36501f3a938b37f6103fe28735dc92728d9669233210a739c3863bae32513d",
+    "evaluation/offline-router-native/README.md": "ba2c2a8b0a6d4f3cc1134af73c581ade9dc386cf83cd3ca7b06e0ebb4bc9636f",
+    "evaluation/offline-router-native/final_admission.py": "f3b6b760dfbf37d7d781618b3e98c001d2aae3a5d803315b2c1688fca21bfca6",
+    "evaluation/offline-router-native/kernel-state-controls.json": "2ee70ca258db10d81d61dc9014a44891580932aba6ef0269be5e2469389edb29",
+    "evaluation/offline-router-native/kernel_basis.py": "a77be5a99de5b810c1d40a7b110687640ba0289e67db9405131a4775bad6f926",
+    "evaluation/offline-router-native/kernel_basis_controls.py": "b965b980238f69a781371fddda9aa9f894dec78628027de1c5b1dd3a49f55056",
+    "evaluation/offline-router-native/mapped-file-controls.json": "a0bfe3b390b553038cca0def99f2d8550b4a8e9bd313cb7a16602481266a4865",
+    "evaluation/offline-router-native/native_launch.py": "5ba184eeedb9513e5098b5f886ac09dc2c1cb99a6ba3c73f9e22f6f2f0b36762",
+    "evaluation/offline-router-native/native_wire.py": "21dcb828ca35a0794058a9f2d2ae0bc80fef4670d05ade4461dce9a90f4242b1",
+    "evaluation/offline-router-native/observer/Cargo.toml": "41bda35aeeb6bde46b31ed5bca897c9d141e3b5db45cc978f0f3c29f6b2cbc2f",
+    "evaluation/offline-router-native/observer/src/lib.rs": "61212120507e318ce69a8dfcdd65e26b47418a931211d0b6f917117b5cdb4193",
+    "evaluation/offline-router-native/observer/src/main.rs": "f6cf25246b7dea7f35e2f59bcefd4aebb70b66c6530762030e4a68172cb88db0",
+    "evaluation/offline-router-native/observer/src/tests.rs": "cc7e92b5bae8651039210139aaf0d2b93b76bb21de22f137a87868db50178478",
+    "evaluation/offline-router-native/observer/src/wire.rs": "a361fc4ddccbb621254c04fb83faa50751922543d9d7d954f39a7512c8fb1d70",
+    "evaluation/offline-router-native/prepare_profile.py": "48f43381a9fa787982b7f0aa092994448a7fc89112557c1c25ec16ab821cc0f6",
+    "src/entry_router/imp/routed_jmp_native_tests.rs": "5c6e939a964c0d4f64b062c31d8bed2f41fb8a0c20ccdc40dc46f0831bcc2bd9",
+    "src/lib.rs": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a",
+    "src/offline_router.rs": "fafa24fa5c5f1f901c62bcbb956d2934fbef393d8e96b1bbc5a3a57039e3160a",
+    "src/offline_router/compiler.rs": "050d24f081c1b97952a42c361a1541b8984581313b511d23388f93aa764e7ee1",
+    "src/offline_router/compiler/fixture.rs": "91eba87e3c1a8f2ffe5d6a5208798c3b0808fcf9306d53b2cc3c45f490bc37e0",
+    "src/offline_router/compiler/tests.rs": "08ffeb301d0ae9a6dbcb6c85d540a3cb82668e7e99463f7ce37e9ef999dae7ab",
+    "src/offline_router/host.rs": "1c98caba5667be108cfc849be0358bff3faeccbe32b56ad2ff9025139dec18a3",
+    "src/offline_router/host_identity_tests.rs": "3ebe84de4bc1b0e248cfafea85bcfee5352e92353643ec5e7dc518a3fbce9d41",
+    "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
+    "tests/support/isolated_native_test.rs": "66ccab461fa755676a55fe6398bd9a1e3afa2dd7ed3208611350c371263406a6"
+  },
+  "workspace_changes": {}
+}
