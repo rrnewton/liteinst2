@@ -46,3 +46,13 @@ env CARGO_BUILD_JOBS=4 CARGO_INCREMENTAL=0 CARGO_NET_OFFLINE=true \
 The isolated control command in `checks.csv` is
 `cargo test -j 4 -p liteinst2 --lib quiescent::adjacent_b2::tests:: -- --nocapture`.
 The full workspace script executes those same ten groups as part of its suite.
+
+The separate native-campaign runner has six passing unit tests covering eleven
+fixed scenarios: one successful stub campaign and ten injected failures. They
+check retained outcomes, dependent stages left unrun, source/binary guards and
+mutually exclusive custody receipts. The tests use a stub command owner and
+execute no native stage; they supply no native-equivalence or real-cleanup claim.
+[The receipt](runner-controls-be41ea0/receipt.json) binds the exact added source
+hashes atop `be41ea072a0b7168c6f8833894194ecf811b8b09`, with all
+[control results](runner-controls-be41ea0/controls.csv). Reproduce them with
+`python3 -B evaluation/adjacent-b2/test_native_runner.py`.
