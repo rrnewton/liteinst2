@@ -1,0 +1,3 @@
+Ten closed owners on an **AMD EPYC Zen 5 dev host**. Controls v2 passed **118+166 Python/30 Rust** before canonical-main integration; v3 passed **118+176/30** afterward. Both Clippy/format checks passed.
+
+At `8552bf8`, producer/W01/bootstrap and observer plan/build completed their recorded commands. Final-profile preparation then **failed** at VERNEED auxiliary ownership; no profile was published. Observer/N01 and full parallel validation remain pending. This supplement retains all ten owners/20 commands and prior failures. Root-attested context is separate; no native/performance qualification.
