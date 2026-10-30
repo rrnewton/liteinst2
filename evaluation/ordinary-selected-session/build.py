@@ -225,6 +225,41 @@ def outer_source_inventory(driver,rev):
     return result
 
 
+ACCURACY_SOURCES = (
+    'evaluation/ordinary-accuracy/README.md',
+    'evaluation/ordinary-accuracy/READER.md',
+    'evaluation/ordinary-accuracy/output.py',
+    'evaluation/ordinary-accuracy/reader_controls.py',
+    'evaluation/ordinary-accuracy/test_truth.py',
+    'evaluation/ordinary-accuracy/truth.py',
+)
+
+
+def accuracy_source_additions(rev):
+    """A separate finite family; the old build/owner inventory stays unchanged."""
+    paths=subprocess.check_output(['/usr/bin/git','-C',ROOT,'ls-tree','-r','--name-only','-z',
+        rev,'--','evaluation/ordinary-accuracy'],timeout=15).decode().rstrip('\0').split('\0')
+    live=subprocess.check_output(['/usr/bin/git','-C',ROOT,'ls-files','-z','--',
+        'evaluation/ordinary-accuracy'],timeout=15).decode().rstrip('\0').split('\0')
+    assert sorted(paths)==sorted(live)==sorted(ACCURACY_SOURCES)
+    result={}
+    for name in ACCURACY_SOURCES:
+        path=ROOT/name
+        assert path.resolve(strict=True)==path and path.is_file() and not path.is_symlink() and path.stat().st_size<=MIB
+        raw=path.read_bytes()
+        assert raw==subprocess.check_output(['/usr/bin/git','-C',ROOT,'show',rev+':'+name],timeout=15)
+        result[name]=dict(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest())
+    return result
+
+
+def outer_accuracy_source_inventory(driver,rev):
+    result=outer_source_inventory(driver,rev)
+    extra=accuracy_source_additions(rev)
+    assert not set(result)&set(extra)
+    result.update(extra)
+    return result
+
+
 def main():
     started=time.monotonic()
     parser=argparse.ArgumentParser(description=__doc__)
