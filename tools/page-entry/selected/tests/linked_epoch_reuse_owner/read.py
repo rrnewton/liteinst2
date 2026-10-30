@@ -190,7 +190,7 @@ class Check(base.Check):
     def rseq65(self,e,before,after):
         st='li2_rseq_state';a,b,c=(self.f(e,'lero_entry',k)for k in('source_rseq','redirected_rseq','completed_rseq'))
         for v in(a,b,c):
-            self.eq(v,st,initialized=1,registered=0,held=1,first_error=0,first_detail=0,pid=self.pid,tid=self.pid,
+            self.eq(v,st,initialized=1,registered=0,held=0,phase=0,calls=0,epoch=0,first_error=0,first_detail=0,pid=self.pid,tid=self.pid,
                     registrations=0,unregistrations=0,kernel_errors=0,address=0,page=0,length=0,signature=0)
         self.r.change(a,b,st,observed=('last_first','last_end','last_pc','last_code','last_policy','last_footprint'))
         self.eq(b,st,last_first=0,last_end=0,last_pc=self.head+5,last_code=696,last_policy=1)
@@ -554,7 +554,7 @@ def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,nativ
     need(len(refused)==REFAULT_CONTROL_COUNTS[(6,0)],'all nine additive reuse refault refusals')
     return dict(refault_refusals=refused,native_operations=0,original_sha256=baseline['original_sha256'])
 
-HINT_CONTROL_COUNTS={(6,0):20}
+HINT_CONTROL_COUNTS={(6,0):24}
 def hint_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_hint=False):
     need(native_hint is True,'reuse advisory controls require explicit v3')
     baseline=read(data,layout,image,app,pid,cpu,exit_status,control,native_hint=True);c=baseline['_check'];types=layout['types'];tests=[]
@@ -580,7 +580,13 @@ def hint_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_h
     phase=c.i(c.f(c.b,'lero_wire','terminal_transfer'),'li2_span_transfer_progress','phase')
     if phase==6:changes.append(value([('terminal_transfer',None,'li2_span_transfer_progress'),('serial',None,None)],baseline['summary']['offers']+1))
     tests.append(('reuse_graph_retry_without_actual_segment',changes,'every actual reuse refault requires its own real NX chain segment'))
-    need(len(tests)==HINT_CONTROL_COUNTS[(6,0)]and len({x[0]for x in tests})==len(tests),'exact20 separate reuse hint refusals')
+    # Mutate all three captured stages coherently: whole-state transition
+    # equality cannot substitute for the exact unregistered constructor state.
+    for key,width in(('held',4),('phase',4),('calls',8),('epoch',8)):
+        changes=[value([('entries',0,'lero_entry'),(stage,None,'li2_rseq_state'),(key,None,None)],1,width)
+                 for stage in('source_rseq','redirected_rseq','completed_rseq')]
+        tests.append(('reuse_unregistered_'+key,changes,'exact li2_rseq_state.'+key))
+    need(len(tests)==HINT_CONTROL_COUNTS[(6,0)]and len({x[0]for x in tests})==len(tests),'exact24 separate reuse hint refusals')
     refused=[]
     for name,changes,error in tests:
         changed=bytearray(data)

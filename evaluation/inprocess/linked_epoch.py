@@ -39,9 +39,9 @@ REUSE_REFAULT_COUNTS={(6,0):9}
 TERMINAL_REFAULT_COUNTS={k:298 for k in(1,2,3,4)}
 PAIR_CONTROL_COUNT=4
 HINT_ORDER=tuple((*row,0)for row in ALL_ORDER[:-2])+tuple(('gated',0,0,0,k)for k in(1,2,3))+tuple((*row,0)for row in ALL_ORDER[-2:])
-HINT_COUNTS={(m,c,rc,0):(40 if(m,c,rc)==(5,0,0)else 16)for m,c,rc in REFAULT_COUNTS}
-HINT_COUNTS.update({(0,0,0,k):26 for k in(1,2,3)})
-REUSE_HINT_COUNTS={(6,0):20}
+HINT_COUNTS={(m,c,rc,0):(44 if(m,c,rc)==(5,0,0)else 16)for m,c,rc in REFAULT_COUNTS}
+HINT_COUNTS.update({(0,0,0,k):30 for k in(1,2,3)})
+REUSE_HINT_COUNTS={(6,0):24}
 HINT_TERMINAL_COUNT=41
 HINT_FAILURE_COUNTS={k:298 for k in(1,2,3)}
 HINT_CASE_FIELDS=('hint_control','hint_reference','hint_witness')
@@ -113,7 +113,7 @@ def prerequisite(path,r,pin,binary,*,native_hint=False):
         application_reader_refusals=234,terminal_reader_refusals=4570,owner_reader_refusals=477,
         required_refault_refusals=4,pair_reader_refusals=4,refault_reader_refusals=187,actual_refault_witnesses=1)
     if native_hint:expected.update(planned=26,hardware_planned=25,launched=26,qualified=26,terminal_reader_refusals=5464,
-        required_hint_rejections=3,hint_owner_reader_refusals=346,hint_terminal_reader_refusals=738,actual_hint_witnesses=1)
+        required_hint_rejections=3,hint_owner_reader_refusals=366,hint_terminal_reader_refusals=738,actual_hint_witnesses=1)
     need(actual.get('native_hint',False)is native_hint,'same exact explicit private profile')
     need(digest(actual['totals'])==digest(expected)and digest(public['totals'])==digest(expected)and
          digest(actual['bounds'])==digest(BOUNDS)and digest(public['bounds'])==digest(BOUNDS),

@@ -588,10 +588,10 @@ def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,refau
 
 # Separate profile/control population. Historical430 plus47 reuse and all
 # relocation-only mutations stay on their original cases and APIs.
-HINT_CONTROL_COUNTS={(0,0,0,0):16,(1,0,0,0):16,(2,0,0,0):16,(3,0,0,0):16,(4,0,0,0):16,(5,0,0,0):40,
+HINT_CONTROL_COUNTS={(0,0,0,0):16,(1,0,0,0):16,(2,0,0,0):16,(3,0,0,0):16,(4,0,0,0):16,(5,0,0,0):44,
     (0,1,0,0):16,(5,2,0,0):16,(0,3,0,0):16,(0,4,0,0):16,
     (0,0,1,0):16,(0,0,2,0):16,(0,0,3,0):16,(0,0,4,0):16,
-    (0,0,0,1):26,(0,0,0,2):26,(0,0,0,3):26}
+    (0,0,0,1):30,(0,0,0,2):30,(0,0,0,3):30}
 
 def hint_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,refault_control=0,native_hint=False,hint_control=0):
     need(native_hint is True,'advisory controls require the explicit v3 profile')
@@ -658,6 +658,13 @@ def hint_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,refault_
         frame('hint_negative_frame_unchanged','returned',13)
         add('hint_no_invented_next_NX',w+[('nx',None,'le_frame'),('frame',None,'li2_step_frame'),('greg',16,None)])
         add('hint_negative_before_registration',w+[('h',9,None)])
+    if hint_control or(app['mode']==5 and not control):
+        quiet=w+[('idle',None,'leto_hint_idle'),('rseq_pair',None,'li2_rseq_pair_progress')]
+        for field,error in(('owner','actual native/rseq quiet ownership'),
+            ('published','actual rseq page publications match lifecycle'),
+            ('attempts','actual rseq quiet completed epochs'),
+            ('preentries','actual rseq quiet completed entries')):
+            add('hint_idle_'+field,quiet+[(field,None,None)],error)
     key=(app['mode'],control,refault_control,hint_control)
     need(len(tests)==HINT_CONTROL_COUNTS[key]and len({x[0]for x in tests})==len(tests),'fixed complete distinct advisory mutation table')
     refusals=[]

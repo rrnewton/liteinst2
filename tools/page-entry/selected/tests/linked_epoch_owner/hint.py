@@ -122,7 +122,10 @@ def idle(c,b,before):
     l=c.f(b,I,'lifecycle');L='li2_native_pair_lifecycle';c.eq(l,L,initialized=1,busy=0,live=0,first_error=0,first_detail=0,opening=0,pid=c.pid,tid=c.pid)
     need(c.i(l,L,'published')==c.i(l,L,'closed_pages'),'actual prior native pages closed')
     q0=c.f(b,I,'rseq_pair');Q='li2_rseq_pair_progress';c.eq(q0,Q,initialized=1,active=0,checking=0,entry_checked=0,first_error=0,first_detail=0,unsafe_terminal=0,pid=c.pid,tid=c.pid,registered=0,address=0,page=0,length=0,signature=0)
-    need(c.i(q0,Q,'owner')==c.i(l,L,'owner')and c.i(q0,Q,'published')==c.i(q0,Q,'closed'),'actual native/rseq quiet ownership')
+    need(c.i(q0,Q,'owner')==c.i(l,L,'owner'),'actual native/rseq quiet ownership')
+    need(c.i(q0,Q,'published')==c.i(l,L,'published'),'actual rseq page publications match lifecycle')
+    need(c.i(q0,Q,'attempts')==c.i(q0,Q,'closed'),'actual rseq quiet completed epochs')
+    need(c.i(q0,Q,'preentries')==c.i(q0,Q,'entries'),'actual rseq quiet completed entries')
     return l
 
 def closed(c,w,before):
