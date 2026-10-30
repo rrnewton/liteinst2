@@ -15,13 +15,15 @@ def main():
     p.add_argument('--root',type=Path,required=True)
     p.add_argument('--role',choices=('native','gated'),required=True)
     p.add_argument('--mode',type=int,choices=range(13),required=True)
-    p.add_argument('--control',type=int,choices=range(15),required=True)
+    p.add_argument('--control',type=int,choices=range(18),required=True)
+    p.add_argument('--reuse',action='store_true')
     p.add_argument('--original',type=Path,required=True)
     p.add_argument('--library-root',type=Path,action='append',required=True)
     p.add_argument('--preparation',type=Path,required=True)
     p.add_argument('--namespace',type=Path)
     p.add_argument('--carrier',type=Path)
     p.add_argument('--record-fd',type=int)
+    p.add_argument('--protection-test',choices=('write','none','unmap','replace','write-only','rwx','vdso-read','vdso-exec'))
     a=p.parse_args()
     sys.path[:0]=[str(a.root/'evaluation/inprocess'),str(a.root/'tools/page-entry')]
     from page_selected_process import Action
@@ -29,6 +31,10 @@ def main():
     globals().update(FOOT=FOOT,META=META,PH=PH,MAX_FILE=MAX_FILE)
     if a.role=='native' and a.control or a.control and a.mode:
         raise ValueError('controls require gated mode0')
+    if a.control>14 and not a.reuse:
+        raise ValueError('reuse controls require explicit reuse profile')
+    if a.protection_test and (not a.reuse or a.role!='gated' or a.mode or a.control):
+        raise ValueError('mapping controls require separate gated mode0 without owner control')
     original=a.original.resolve(strict=True)
     roots=[root.resolve(strict=True) for root in a.library_root]
     if not 1<=len(roots)<=8 or len(set(roots))!=len(roots) or any(not root.is_dir() or ':'in str(root) for root in roots):
@@ -61,16 +67,18 @@ def main():
             raise OSError('signal action reset')
         observations.append(dict(signal=number,before=int(before.handler or 0),after=int(after.handler or 0)))
     if libc.syscall(14,2,None,ctypes.byref(actual),8) or actual.value:raise OSError('actual empty signal mask')
-    argv=[str(original),str(a.mode),a.role]
+    argv=[str(original),str(a.mode),a.role]+([a.protection_test]if a.protection_test else [])
     prep=dict(schema_version=1,status='prepared_not_executed',role=a.role,pid=os.getpid(),
               cpu=sorted(os.sched_getaffinity(0)),previous_mask=previous.value,reset_mask=actual.value,
               dispositions=observations,observer=observer,argv=argv,default_rseq=True,mode=a.mode,control=a.control)
+    if a.protection_test:prep['protection_test']=a.protection_test
+    if a.reuse:prep['reuse']=True
     env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1')
     if a.role=='gated':
         prep.update(launch_mask=actual.value,late_sonames=[],environment_source=str(a.namespace.absolute()/'launch.json'))
         with a.preparation.open('x') as f:json.dump(prep,f,sort_keys=True)
         execute_scalar_region_loader(a.carrier,original,roots,a.namespace,argv,
-                                capture_control=a.control)
+                                capture_control=a.control,reuse=a.reuse)
         raise RuntimeError('exec returned')
     # Exact original native-reference launch policy. Gated starts reset/unblocked;
     # its runtime establishes the same selected application mask itself.
@@ -85,8 +93,8 @@ def main():
     raise RuntimeError('exec returned')
 
 
-def execute_scalar_region_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=(), capture_control):
-    if type(capture_control)is not int or not 0<=capture_control<=14 or fork_fds is not None or child_failure or disable_rseq or provider_policy is not None or late_sonames:
+def execute_scalar_region_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=(), capture_control,reuse=False):
+    if type(reuse)is not bool or type(capture_control)is not int or not 0<=capture_control<=(17 if reuse else 14) or fork_fds is not None or child_failure or disable_rseq or provider_policy is not None or late_sonames:
         raise ValueError('exact scalar-region qualification configuration')
     # This separate command intentionally supplies a private namespace and a
     # closed environment. The original fixture's make/exec path is unchanged.
@@ -114,7 +122,7 @@ def execute_scalar_region_loader(carrier, original, roots, directory, argv, fork
         env = {"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C", "TZ": "UTC",
                "LD_LIBRARY_PATH": str(directory), "LD_BIND_NOW": "1",
                "LI2_DEPENDENCY_FDS": ",".join(str(item) for item in fds)}
-        env['LI2_SCALAR_REGION_CAPTURE_CONTROL']='0123456789abcde'[capture_control]
+        env['LI2_SCALAR_REGION_CAPTURE_CONTROL']=('0123456789abcdefgh'if reuse else '0123456789abcde')[capture_control]
         if provider_policy is not None:
             env["LI2_SELECTED_PROVIDER"] = provider_policy
         if disable_rseq:

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/auxv.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #define RA_MAGIC UINT64_C(0x315050415253494c)
@@ -180,10 +181,17 @@ static void collect(void){
  suffix.h[7]+=frames;suffix.h[8]+=steps;suffix.h[9]+=fault_seen;
 }
 int main(int argc,char **argv){
- if(argc!=3||(strcmp(argv[2],"native")&&strcmp(argv[2],"gated")))return 2;
+ if((argc!=3&&argc!=4)||(strcmp(argv[2],"native")&&strcmp(argv[2],"gated")))return 2;
  size_t n=strlen(argv[1]);if((n!=1&&n!=2)||argv[1][0]<'0'||argv[1][0]>'9')return 2;
  mode=(unsigned)(argv[1][0]-'0');if(n==2){if(argv[1][0]!='1'||argv[1][1]<'0'||argv[1][1]>'2')return 2;mode=10+(unsigned)(argv[1][1]-'0');}
  native=!strcmp(argv[2],"native");base_mode=mode>=11?4:mode;invocations=mode>=11?2:1;
+ unsigned protection_test=0;
+ if(argc==4){
+  if(native||mode)return 2;
+  const char *const names[]={"write","none","unmap","replace","write-only","rwx","vdso-read","vdso-exec"};
+  for(unsigned i=0;i<8;i++)if(!strcmp(argv[3],names[i]))protection_test=i+1;
+  if(!protection_test)return 2;
+ }
  need(((uintptr_t)region_app_page&4095)==0&&region_app_head-region_app_page==0x5f2&&region_app_source_end-region_app_page==UA_PAGE&&same(region_app_head,graph,sizeof graph),80);
  uint64_t *h=prefix.h;h[0]=RA_MAGIC;h[1]=1;h[2]=sizeof prefix;h[3]=sizeof suffix;h[4]=mode;h[5]=native;
  h[6]=(uint64_t)RAW(SYS_getpid,0,0,0,0,0,0);h[7]=(uint64_t)RAW(SYS_gettid,0,0,0,0,0,0);need(h[6]>0&&h[6]==h[7],81);
@@ -200,6 +208,27 @@ int main(int argc,char **argv){
  h[35]=stack_fault;h[36]=traces[base_mode];h[37]=sizeof(struct ra_observation);h[38]=2;h[39]=77;
  if(native)native_setup();
  need(output(&prefix,sizeof prefix),89);
+ if(protection_test){
+  /* Separate negative mapping controls. The original40 subjects never enter
+     this branch. The complete request precedes the actual intercepted call;
+     return from any request is failure, never a completed application. */
+  uintptr_t target=(uintptr_t)region_app_page;
+  if(protection_test>=7){
+   target=(uintptr_t)getauxval(AT_SYSINFO_EHDR);
+   need(target&&!(target&(UA_PAGE-1))&&target!=(uintptr_t)region_app_page&&
+        *(const uint32_t *)target==UINT32_C(0x464c457f),129);
+  }
+  const unsigned protections[8]={PROT_READ|PROT_WRITE,0,0,PROT_READ|PROT_WRITE,
+   PROT_WRITE,PROT_READ|PROT_WRITE|PROT_EXEC,PROT_READ,PROT_READ|PROT_EXEC};
+  uint64_t request[10]={UINT64_C(0x315044524155474c),1,protection_test,
+   protection_test==3?SYS_munmap:protection_test==4?SYS_mmap:SYS_mprotect,
+   target,UA_PAGE,protections[protection_test-1],
+   protection_test==4?MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED:0,
+   protection_test==4?UINT64_MAX:0,0};
+  need(output(request,sizeof request),127);
+  (void)RAW(request[3],request[4],request[5],request[6],request[7],request[8],request[9]);
+  die(128);
+ }
  /* The prefix includes every byte BEFORE the deliberate stack protection.
     The protected owner diagnostic alone observes gated failed-load readback. */
  if(stack_fault)need(!RAW(SYS_mprotect,stack_fault,UA_PAGE,PROT_NONE,0,0,0),87);
