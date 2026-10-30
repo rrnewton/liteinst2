@@ -87,16 +87,24 @@ def main():
         need(library.name in r['runtime_libraries'],'actual Rust planner DSO resolution')
         for c,(u,t,f) in zip(r['cases'],CASES):
             label='region-%d-%d-%d'%(u,t,f);c['status']='failed'
-            try:row,out,err=run(label,[exe,str(u),str(t),str(f)],125 if f else 0,env=dict(ENV,GLIBC_TUNABLES='glibc.pthread.rseq=0'))
-            finally:
-                if r['commands'][-1]['name']==label:c['exit']=r['commands'][-1].get('exit')
-            need(not err,'component stderr empty');capture=row['captures']['record'];path=binary(private/capture['file']);need(fact(path)=={k:capture[k]for k in('bytes','sha256')},'whole record capture binding')
-            c['result']=reader.read(path.read_bytes(),out,u,t,f,row['exit']);c['record']=fact(path);c['status']='qualified_required_failure'if f else 'qualified_component'
-            if not f:
-                c['hot_statistics_ns']=[dict(median=statistics.median(xs),q1=statistics.quantiles(xs,n=4,method='inclusive')[0],q3=statistics.quantiles(xs,n=4,method='inclusive')[2])for xs in c['result']['hot_ns']]
+            try:
+                try:row,out,err=run(label,[exe,str(u),str(t),str(f)],125 if f else 0,env=dict(ENV,GLIBC_TUNABLES='glibc.pthread.rseq=0'))
+                finally:
+                    if r['commands'][-1]['name']==label:c['exit']=r['commands'][-1].get('exit')
+                need(not err,'component stderr empty');capture=row['captures']['record'];path=binary(private/capture['file']);need(fact(path)=={k:capture[k]for k in('bytes','sha256')},'whole record capture binding')
+                c['result']=reader.read(path.read_bytes(),out,u,t,f,row['exit']);c['record']=fact(path);c['status']='qualified_required_failure'if f else 'qualified_component'
+                if not f:
+                    c['hot_statistics_ns']=[dict(median=statistics.median(xs),q1=statistics.quantiles(xs,n=4,method='inclusive')[0],q3=statistics.quantiles(xs,n=4,method='inclusive')[2])for xs in c['result']['hot_ns']]
+            except Exception as exc:
+                c['status']='failed';c['error_type']=type(exc).__name__;c['error']=type(exc).__name__+': '+str(exc)
+                if r['error'] is None:r['error']=c['error']
+                last=r['commands'][-1] if r['commands'] else {}
+                if not(last.get('name')==label and last.get('reaped') is True and last.get('cleanup_errors')==[] and isinstance(last.get('descriptors'),list) and all(d.get('closed') is True for d in last['descriptors'])):raise
         need(len(r['cases'])==11 and [c['status']for c in r['cases']]==['qualified_component']*9+['qualified_required_failure']*2,'complete fixed population')
+        need(not any(c.get('error') for c in r['cases']),'no case errors')
         r['status']='passed_component'
-    except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
+    except BaseException as exc:
+        if r['error'] is None:r['error']=type(exc).__name__+': '+str(exc)
     finally:
         try:r['final_errors']+=builder.finish()
         except BaseException as exc:r['final_errors'].append('build finalization: '+repr(exc))
@@ -114,6 +122,7 @@ def main():
         save(private/'receipt.json',r)
         hw=dict(r.get('hardware')or{});flags=hw.pop('isa_flags',[]);hw.update(isa_flags_count=len(flags),isa_flags_sha256=digest(flags))
         pub={k:r.get(k)for k in('schema','profile','status','source','source_unchanged','expected_revision','cpu','started_utc','bounds','reproduce','cleanup_complete','cases')}
+        pub['cases']=[{k:v for k,v in c.items() if k!='error'}for c in r['cases']]
         pub.update(hardware=hw,private_receipt=fact(private/'receipt.json'),command_count=len(r['commands']),commands_sha256=digest(r['commands']),inputs_sha256=digest(pins),artifacts_sha256=digest(artifacts),failure_type=(r['error']or'').split(':')[0]or None,final_error_count=len(r['final_errors']),
             lanes=['original_guarded_exit','sealed_region','actual_tf_owner'],whole_application_credit=False,
             scope='Finite singleton no-rseq closed read-only CFG component. Required inaccessible-load probes are outside successful core valid-pointer coverage; they revoke/terminate125 without fault resumption. Native original has one guarded-exit signal; cache has entry+exit signals; TF has one NX and TRACE per instruction plus final guard. Timings include actual machine capture and guards; preparation includes source construction, sealing, SHA, core planning and image publication, excludes process/setup. Ten hot samples at identical trip/graph sizes; no speed threshold or ls coverage inference.')
