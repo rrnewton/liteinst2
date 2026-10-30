@@ -4,6 +4,11 @@
    operands; the unchanged actual rseq registration-word checks remain. */
 #include "region_source.h"
 #include "private_code_query.h"
+#ifdef LI2_SCALAR_REGION_REUSE
+#if LI2_SCALAR_REGION_REUSE != 1
+#error "literal scalar reuse profile only"
+#endif
+#endif
 #if LI2_SCALAR_REGION != 1 || LI2_UNROLLED_HASH != 1 || LI2_NATIVE_PAIR != 1 || \
     LI2_MAPS_MAINTAINED != 1 || LI2_RUN_CACHE_REUSE != 1 || LI2_TF_HANDOFF != 1 || \
     LI2_REPEAT_RX_LEASE != 1 || LI2_RSEQ_INACTIVE != 1
@@ -55,6 +60,9 @@ struct sr_record {
     size_t idle_bytes,live_bytes,closed_bytes;
     struct sr_permission open,close,cleanup;
     struct li2_fetch_progress final_fetch;
+#ifdef LI2_SCALAR_REGION_REUSE
+    uint64_t publication_generation;
+#endif
 };
 static struct {
     unsigned initialized,first_error,metadata_registered,arena_registered,allocated;
@@ -86,6 +94,11 @@ static void sro_complete(void);
 static void sro_abort_observe(void);
 static void sro_abort_after_cleanup(void);
 static void sro_finish(unsigned,unsigned,long);
+#endif
+#ifdef LI2_SCALAR_REGION_REUSE
+static void srr_initialize(void);
+static void srr_abort(void);
+static int srr_claimed(void);
 #endif
 static _Noreturn void selected_scalar_region_abort(unsigned,long);
 static void sr_need(int yes,unsigned code,long detail) {
@@ -229,6 +242,9 @@ static int sr_map_actual(const struct sr_slot *s,uintptr_t pc,struct li2_region_
     if(!s->installed || !s->complete || s->plan.version!=LI2_REGION_PLAN_VERSION ||
        s->plan.ready!=1 || !s->plan.maps || s->plan.maps>LI2_REGION_MAPS)
         return LI2_REGION_PLAN_CORRUPT;
+#ifdef LI2_SCALAR_REGION_REUSE
+    if(!srr_claimed())return LI2_REGION_PLAN_CORRUPT;
+#endif
     for(size_t i=0;i<s->plan.maps;i++) {
         const struct li2_region_pc *m=&s->plan.map[i];
         if(m->generated_pc==pc) {copy(out,m,sizeof *out);return LI2_REGION_PLAN_OK;}
@@ -247,11 +263,15 @@ static _Noreturn void selected_scalar_region_abort(unsigned code,long detail) {
     sro_abort_observe();
 #endif
     struct sr_record *r=&selected_scalar_region.current;
+#ifdef LI2_SCALAR_REGION_REUSE
+    srr_abort();
+#else
     if(r->slot_present && r->slot<selected_scalar_region.used && !r->cleanup_started) {
         r->cleanup_started=1;__asm__ volatile("":::"memory");
         struct sr_slot *s=&selected_scalar_region.slots[r->slot];
         if(!sr_permission(s,PROT_READ,&r->cleanup))r->cleanup_complete=1;
     }
+#endif
 #ifdef LI2_SCALAR_REGION_CAPTURE
     sro_abort_after_cleanup();
 #endif
@@ -271,7 +291,13 @@ static _Noreturn void selected_scalar_region_unexpected(int sig,siginfo_t *si,uc
            r->open.complete && r->slot_present && r->slot<selected_scalar_region.used) {
             const struct sr_slot *s=&selected_scalar_region.slots[r->slot];
             const struct li2_fetch_progress *f=li2_lifecycle_fetch_progress();
-            if(s->identity==(uint64_t)r->slot+1 && s->publication.complete &&
+            if(
+#ifdef LI2_SCALAR_REGION_REUSE
+               srr_claimed() &&
+#else
+               s->identity==(uint64_t)r->slot+1 &&
+#endif
+               s->publication.complete &&
                s->filled==PAGE && s->verified==PAGE && r->source.ready==1 &&
                r->source.borrow.owner==selected_borrow.owner &&
                r->source.borrow.sequence==selected_borrow.sequence && f && f->held && f->complete &&
@@ -350,6 +376,9 @@ static void selected_scalar_region_initialize(void) {
     e=li2_lifecycle_private_code_query(low,SR_BYTES,PROT_READ|PROT_WRITE,&selected_scalar_region.low_initial);
     sr_need(!e && selected_scalar_region.low_initial.complete && selected_scalar_region.low_initial.pages_checked==SR_PAGES,
         SR_PUBLICATION,e);
+#ifdef LI2_SCALAR_REGION_REUSE
+    srr_initialize();
+#endif
     selected_scalar_region.initialized=1;selected_scalar_region_busy=0;
 #ifdef LI2_SCALAR_REGION_CAPTURE
     sro_initialize();
@@ -359,6 +388,9 @@ static uintptr_t sr_entry(uintptr_t pc,size_t slot) {
     uintptr_t arena=pc<(UINT64_C(1)<<31)?selected_scalar_region.low_arena:selected_scalar_region.arena;
     return arena+slot*PAGE;
 }
+#ifdef LI2_SCALAR_REGION_REUSE
+#include "selected_scalar_reuse.inc"
+#endif
 static int sr_refusal(int result) {
     return result==LI2_REGION_PLAN_MISS?0:result==LI2_REGION_PLAN_BOUNDARY?1:
         result==LI2_REGION_PLAN_GRAPH?2:result==LI2_REGION_PLAN_RELOCATION?3:-1;
@@ -382,6 +414,9 @@ static int selected_scalar_region_try(int sig,siginfo_t *si,ucontext_t *uc,uint6
         !selected_step_pending && selected_pending_route==SELECTED_NO_STEP && sr_quiet(&selected_borrow),SR_STATE,6);
     selected_scalar_region_busy=1;__asm__ volatile("":::"memory");sr_count(&selected_scalar_region.candidates);
     struct sr_record *r=&selected_scalar_region.current;sr_zero(r,sizeof *r);
+#ifdef LI2_SCALAR_REGION_REUSE
+    srr_begin();
+#endif
 #ifdef LI2_SCALAR_REGION_CAPTURE
     sro_entry_frame(sig,si,uc);
 #endif
@@ -402,7 +437,13 @@ static int selected_scalar_region_try(int sig,siginfo_t *si,ucontext_t *uc,uint6
     size_t slot=0;
     while(slot<selected_scalar_region.used &&
           !li2_region_source_key_equal(&selected_scalar_region.slots[slot].key,&r->source.key))++slot;
+#ifdef LI2_SCALAR_REGION_REUSE
+    int reuse_hit=slot<selected_scalar_region.used;
+    if(!reuse_hit) {
+        if(slot==SR_PAGES)slot=srr_choose();
+#else
     if(slot==selected_scalar_region.used) {
+#endif
         if(slot==SR_PAGES) {
             sr_count(&selected_scalar_region.capacity_misses);sr_need(sr_unchanged(&r->before,si,uc),SR_FRAME,3);
             selected_scalar_region_busy=0;return 0;
@@ -428,25 +469,46 @@ static int selected_scalar_region_try(int sig,siginfo_t *si,ucontext_t *uc,uint6
         sr_need(!li2_lifecycle_region_validate(&selected_borrow,&r->source,&selected_scalar_region.scratch) &&
             !sr_rseq(&selected_scalar_region.scratch,uc),SR_SOURCE,1);
         struct sr_slot *s=&selected_scalar_region.slots[slot];
+#ifdef LI2_SCALAR_REGION_REUSE
+        srr_prepare(slot,entry,si,uc);
+#endif
         sr_need(!s->installed && !s->complete && !s->identity &&
             (entry+PAGE<=r->source.key.page.address || entry>=r->source.key.page.address+PAGE),SR_PUBLICATION,1);
         copy(&s->key,&r->source.key,sizeof s->key);copy(&s->plan,&selected_scalar_region.scratch,sizeof s->plan);
+#ifdef LI2_SCALAR_REGION_REUSE
+        s->identity=r->publication_generation;
+        if(slot==selected_scalar_region.used)++selected_scalar_region.used;
+        r->slot=(unsigned)slot;r->slot_present=1;s->installed=1;
+#else
         s->identity=slot+1;r->slot=(unsigned)slot;r->slot_present=1;s->installed=1;++selected_scalar_region.used;
+#endif
         selected_pending_route=SELECTED_SCALAR_REGION;selected_step_pending=1;
         sr_need(!sr_query(entry,PROT_READ|PROT_WRITE,&s->writable),SR_PUBLICATION,2);
         volatile unsigned char *p=(void *)entry;
         for(size_t i=0;i<PAGE;i++){p[i]=s->plan.image[i];s->filled=i+1;}
         sr_need(!sr_permission(s,PROT_READ,&s->publication) && !sr_bytes(s,&s->verified),SR_PUBLICATION,3);
         s->complete=1;sr_count(&selected_scalar_region.publications);
+#ifdef LI2_SCALAR_REGION_REUSE
+        srr_published(slot);
+#endif
     } else {
         r->slot=(unsigned)slot;r->slot_present=1;
         selected_pending_route=SELECTED_SCALAR_REGION;selected_step_pending=1;sr_count(&selected_scalar_region.hits);
     }
     struct sr_slot *s=&selected_scalar_region.slots[slot];
+#ifdef LI2_SCALAR_REGION_REUSE
+    srr_claim(slot,reuse_hit);
+#endif
 #ifdef LI2_SCALAR_REGION_CAPTURE
     sro_slot(s);
 #endif
-    sr_need(s->installed && s->complete && s->identity==slot+1 && s->filled==PAGE && s->verified==PAGE &&
+    sr_need(s->installed && s->complete &&
+#ifdef LI2_SCALAR_REGION_REUSE
+        srr_claimed() &&
+#else
+        s->identity==slot+1 &&
+#endif
+        s->filled==PAGE && s->verified==PAGE &&
         s->publication.complete && s->plan.generated==sr_entry(r->source.key.entry,slot) &&
         li2_region_source_key_equal(&s->key,&r->source.key) && !sr_plan(&s->plan),SR_PUBLICATION,5);
     sr_effects(&s->plan,r);
@@ -473,6 +535,9 @@ static void selected_scalar_region_exit(int sig,siginfo_t *si,ucontext_t *uc) {
         selected_pending_route==SELECTED_SCALAR_REGION,SR_STATE,7);
     selected_scalar_region_busy=1;struct sr_record *r=&selected_scalar_region.current;
     sr_need(r->slot_present && r->slot<selected_scalar_region.used && r->redirected,SR_STATE,8);
+#ifdef LI2_SCALAR_REGION_REUSE
+    sr_need(srr_claimed(),SR_STATE,316);
+#endif
     struct sr_slot *s=&selected_scalar_region.slots[r->slot];
     sr_need(!sr_capture(&r->after,sig,si,uc),SR_FRAME,6);
     uintptr_t pc=(uintptr_t)r->after.frame.greg[REG_RIP];int exit=sr_exit_index(&s->plan,pc);
@@ -517,13 +582,21 @@ static void selected_scalar_region_exit(int sig,siginfo_t *si,ucontext_t *uc) {
        logical flag, including AF; no GPR, guest data or FP is predicted/reset. */
     selected_logical_flags=physical&~SELECTED_RF;selected_flags_known=1;
     selected_scalar_region_active=0;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
+#ifdef LI2_SCALAR_REGION_REUSE
+    srr_quiesce(sig,si,uc);
+#endif
     __asm__ volatile("":::"memory");selected_scalar_region_busy=0;selected_fetch(sig,si,uc);
 }
 static void selected_scalar_region_report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_SCALAR_REGION_CAPTURE
     sro_finish(status,code,detail);
 #endif
+#ifdef LI2_SCALAR_REGION_REUSE
+    srr_report(status,code,detail);
+    struct writer w={.used=0};text(&w,"LI2_SCALAR_REGION {\"version\":2");
+#else
     struct writer w={.used=0};text(&w,"LI2_SCALAR_REGION {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);

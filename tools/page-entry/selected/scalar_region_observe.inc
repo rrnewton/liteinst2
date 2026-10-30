@@ -21,6 +21,16 @@
 enum { SRO_NORMAL=0,SRO_NESTED=1,SRO_OPEN_ERROR=2,SRO_CLOSE_ERROR=3,
     SRO_SYNC_ERROR=4,SRO_SLOT_IDENTITY=5,SRO_ENTRY_INTERIOR=6,SRO_EXIT_INTERIOR=7,SRO_TICKET=8,SRO_GENERATION=9,SRO_SOURCE_BYTE=10,
     SRO_MAP=11,SRO_WRITE_ALIAS=12,SRO_SOURCE_RX=13,SRO_DECODER_PREFIX=14 };
+#ifdef LI2_SCALAR_REGION_REUSE
+enum { SRO_STALE_GENERATION=15,SRO_RETIRED_CODE=16,SRO_CONSUMED_PERMIT=17 };
+struct sro_reuse_control {
+    unsigned started,mutated;
+    uint64_t generation_before,generation_after;
+    size_t copied;
+    struct srr_permit permit_before,permit_after;
+    struct sr_permission writable,closed;
+};
+#endif
 struct sro_owners {
     unsigned captured,word_observed;
     uint64_t word;
@@ -39,6 +49,14 @@ struct sro_entry {
     struct sro_owners redirected_owners,completed_owners;
     unsigned char source_page[PAGE],generated_page[PAGE],terminal_source_page[PAGE];
     uint64_t terminal_source_bytes;
+#ifdef LI2_SCALAR_REGION_REUSE
+    /* Resident slots can later be retired. These actual focal facts are values,
+       never pointers into the mutable resident table. */
+    uint64_t reuse_generation;
+    struct srr_permit reuse_claim;
+    struct sr_slot reuse_slot;
+    struct srr_retirement reuse_retirement;
+#endif
 };
 struct sro_wire {
     uint64_t h[64],control[40],focal[5],focal_exits[LI2_REGION_EXITS];
@@ -56,6 +74,12 @@ struct sro_wire {
     unsigned char original_source[LI2_REGION_PAGE];
     unsigned char generated[SR_PAGES][PAGE];
     struct uho_nested_fp nested_fp;
+#ifdef LI2_SCALAR_REGION_REUSE
+    __typeof__(srr) reuse;
+    struct sro_reuse_control reuse_control;
+    unsigned char reuse_pending_page[PAGE];
+    uint64_t reuse_pending_bytes;
+#endif
 };
 static struct sro_wire sro_wire;
 static const uint64_t sro_nested_zero_alignment __attribute__((used))=
@@ -99,7 +123,13 @@ static void sro_initialize(void) {
     __asm__ volatile(""::"r"(&sro_step_frame_fp_alignment),
         "r"(&sro_nested_zero_alignment),"r"(&sro_nested_ones_alignment):"memory");
     sr_need(!sro_ready && !sro_finished,SR_STATE,101);
-    sro_wire.h[0]=SRO_MAGIC;sro_wire.h[1]=1;sro_wire.h[2]=sizeof sro_wire;
+    sro_wire.h[0]=SRO_MAGIC;
+#ifdef LI2_SCALAR_REGION_REUSE
+    sro_wire.h[1]=2;
+#else
+    sro_wire.h[1]=1;
+#endif
+    sro_wire.h[2]=sizeof sro_wire;
     sro_wire.h[3]=sizeof selected_scalar_region;sro_wire.h[4]=sizeof(struct sro_entry);
     sro_wire.h[5]=sizeof(struct sr_record);sro_wire.h[6]=sizeof(struct sr_frame);
     sro_wire.h[7]=sizeof(ucontext_t);sro_wire.h[8]=sizeof(siginfo_t);
@@ -116,7 +146,11 @@ static void sro_initialize(void) {
         sro_wire.sink_initial.st_nlink==1 && sro_wire.sink_initial.st_size==0,SR_STATE,103);
     sro_wire.h[18]=1;
     const char *control=fork_env("LI2_SCALAR_REGION_CAPTURE_CONTROL");
+#ifdef LI2_SCALAR_REGION_REUSE
+    sr_need(control && ((control[0]>='0' && control[0]<='9') || (control[0]>='a' && control[0]<='h')) && !control[1],SR_STATE,104);
+#else
     sr_need(control && ((control[0]>='0' && control[0]<='9') || (control[0]>='a' && control[0]<='e')) && !control[1],SR_STATE,104);
+#endif
     sro_wire.control[0]=(unsigned)(control[0]<='9'?control[0]-'0':10+control[0]-'a');
     sro_wire.main=original_main;sro_wire.interpreter=original_interpreter;
     sro_copy(&sro_wire.hardware,&selected_hardware,sizeof selected_hardware);
@@ -140,6 +174,9 @@ static void sro_initialize(void) {
     result=raw(SYS_fstat,original_main.backing_fd,(long)&sro_wire.main_backing,0,0,0,0);
     sro_wire.h[19]=(uint64_t)result;sr_need(!result && S_ISREG(sro_wire.main_backing.st_mode),SR_STATE,109);
     sro_wire.h[20]=sro_head;sro_wire.h[21]=offset;sro_wire.h[22]=dependency_count;
+#ifdef LI2_SCALAR_REGION_REUSE
+    sro_wire.h[56]=vdso_first;sro_wire.h[57]=vdso_end;
+#endif
     __asm__ volatile("":::"memory");sro_ready=1;sro_wire.h[23]=1;
 }
 /* Only the fixed diagnostic application profile is narrowed here. FD3 and
@@ -248,6 +285,45 @@ static void sro_source(void) {
         sr_need(!result,SR_STATE,128);sro_source_rx=1;sro_wire.control[3]=1;
     }
 }
+#ifdef LI2_SCALAR_REGION_REUSE
+static void sro_reuse_slot(struct sr_slot *s) {
+    struct sr_record *r=&selected_scalar_region.current;
+    struct sro_entry *e=&sro_wire.entries[sro_current];
+    struct srr_retirement *t=&srr.retirement;
+    unsigned kind=(unsigned)sro_wire.control[0];
+    if(kind>=SRO_STALE_GENERATION && kind<=SRO_CONSUMED_PERMIT && sro_start(kind,kind-2)) {
+        struct sro_reuse_control *c=&sro_wire.reuse_control;c->started=1;
+        /* Each negative supplies an actual retired/consumed authority. Missing
+           replacement history is an unqualified control, never a fake stale ID. */
+        sr_need(r->build_started && t->replaced==1 && t->slot==r->slot &&
+            t->new_generation==r->publication_generation && t->old_generation &&
+            t->old_generation<t->new_generation && srr_claimed() &&
+            srr.claimed.valid==1 && srr.claimed.generation==t->old_generation &&
+            srr.claimed.completion==t->completion,SR_STATE,317);
+        c->generation_before=r->publication_generation;
+        sro_copy(&c->permit_before,&srr.permits[r->slot],sizeof c->permit_before);
+        if(kind==SRO_STALE_GENERATION)r->publication_generation=t->old_generation;
+        else if(kind==SRO_CONSUMED_PERMIT)
+            sro_copy(&srr.permits[r->slot],&srr.claimed,sizeof srr.claimed);
+        else {
+            sr_need(!equal(s->plan.image,t->old_slot.plan.image,PAGE),SR_STATE,318);
+            sr_need(!srr_permission(srr.target,PROT_READ|PROT_WRITE,&c->writable),SR_PUBLICATION,304);
+            volatile unsigned char *p=(void *)srr.target;
+            for(size_t i=0;i<PAGE;i++){p[i]=t->old_slot.plan.image[i];c->copied=i+1;}
+            sr_need(!srr_permission(srr.target,PROT_READ,&c->closed),SR_PUBLICATION,305);
+        }
+        c->generation_after=r->publication_generation;
+        sro_copy(&c->permit_after,&srr.permits[r->slot],sizeof c->permit_after);
+        c->mutated=1;sro_wire.control[3]=1;
+    }
+    e->reuse_generation=srr.live[r->slot];
+    sro_copy(&e->reuse_claim,&srr.claimed,sizeof e->reuse_claim);
+    sro_copy(&e->reuse_slot,s,sizeof e->reuse_slot);
+    if(r->build_started && t->replaced==1 && t->slot==r->slot &&
+       t->new_generation==e->reuse_generation)
+        sro_copy(&e->reuse_retirement,t,sizeof e->reuse_retirement);
+}
+#endif
 static void sro_slot(struct sr_slot *s) {
     if(sro_focal()) {
         sr_need(sro_current<SRO_ROWS,SR_STATE,129);
@@ -264,6 +340,9 @@ static void sro_slot(struct sr_slot *s) {
         sro_wire.control[6]=s->identity;s->identity^=UINT64_C(0x8000000000000000);
         sro_wire.control[7]=s->identity;sro_wire.control[3]=1;
     }
+#ifdef LI2_SCALAR_REGION_REUSE
+    if(sro_focal())sro_reuse_slot(s);
+#endif
 }
 static void sro_filter(unsigned kind,uintptr_t entry) {
     /* Fixed exact address, length and protection; existing native seccomp
@@ -426,6 +505,13 @@ static void sro_finish(unsigned status,unsigned code,long detail) {
     sro_wire.h[35]=selected_step_pending;sro_wire.h[36]=selected_pending_route;
     sro_wire.h[37]=selected_flags_known;sro_wire.h[38]=selected_logical_flags;
     sro_copy(&sro_wire.owner,&selected_scalar_region,sizeof selected_scalar_region);
+#ifdef LI2_SCALAR_REGION_REUSE
+    sro_copy(&sro_wire.reuse,&srr,sizeof srr);
+    if(srr.pending && srr_address(srr.slot,srr.target)) {
+        sro_copy(sro_wire.reuse_pending_page,(void *)srr.target,PAGE);
+        sro_wire.reuse_pending_bytes=PAGE;
+    }
+#endif
     sro_owners(&sro_wire.terminal_owners,0);
     sro_wire.focal[4]=sro_wire.h[24];
     sro_wire.h[53]=selected_scalar_region_decoding;
@@ -444,7 +530,14 @@ static void sro_finish(unsigned status,unsigned code,long detail) {
        publication/open cleanup may leave RW/RX; all are still readable. */
     for(size_t i=0;i<selected_scalar_region.used;i++) {
         if(i>=SR_PAGES){if(!sro_wire.h[39])sro_wire.h[39]=1;break;}
+#ifdef LI2_SCALAR_REGION_REUSE
+        /* Stable protected addresses survive an interrupted slot replacement;
+           a partially copied plan is not a diagnostic read authority. */
+        if(!srr_address(i,srr.entry[i])){if(!sro_wire.h[39])sro_wire.h[39]=5;break;}
+        sro_copy(sro_wire.generated[i],(void *)srr.entry[i],PAGE);
+#else
         sro_copy(sro_wire.generated[i],(void *)selected_scalar_region.slots[i].plan.generated,PAGE);
+#endif
         ++sro_wire.h[40];
     }
     long flags=raw(SYS_fcntl,3,F_GETFL,0,0,0,0);
@@ -459,7 +552,11 @@ static void sro_finish(unsigned status,unsigned code,long detail) {
         at+=(size_t)result;
     }
     if(at!=sizeof sro_wire)return;
+#ifdef LI2_SCALAR_REGION_REUSE
+    const uint64_t footer[]={SRO_FOOTER,2,sizeof sro_wire,at,calls,(uint64_t)result,status,code};
+#else
     const uint64_t footer[]={SRO_FOOTER,1,sizeof sro_wire,at,calls,(uint64_t)result,status,code};
+#endif
     at=0;calls=0;
     while(at<sizeof footer && calls<64) {
         ++calls;result=raw(SYS_write,3,(long)((const unsigned char *)footer+at),sizeof footer-at,0,0,0);
