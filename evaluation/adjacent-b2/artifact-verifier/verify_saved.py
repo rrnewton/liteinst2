@@ -20,7 +20,7 @@ COUNTS = {'checksum': (80, 16), 'rle-roundtrip': (107, 26)}
 CRATE = 'evaluation/adjacent-b2/artifact-verifier'
 # Filled with the exact reviewed Rust/manifest bytes when this source packet closes.
 VERIFIER_SOURCES = {'Cargo.toml': '3c1d5a89b9779529772e080011bf480be89d68969047e207cebe5a87fae01f7b', 'src/main.rs': '874c885a0e6aac9e0274e1c55480803eb4e18400340db216a43a6a47357ce625', 'src/transport_tests.rs': 'd8f5c6b7998b0048ff5d4a426405ea8da71bfad0b56dffbd3e65465051ca6323', 'src/verify/association.rs': '4f5fa3b5a5d1dc8fc0c67a71e99117f8f7fa899c630467dc0ae37f8985bae169', 'src/verify/candidate.rs': '972062b7424f1b34dc02dba8f583455f2d2507af21c412e4f1f7ac12bac75636', 'src/verify/candidate_tests.rs': '0eff6d76b79454c1c5ef7f5e95c832e28d0cb5d58aef69ab0c4dcc987ad7f102', 'src/verify/ledger.rs': '28c30de28b386a700d8581c6bed8716b22d3056bb152662606a9e7f1c1e8bb1e', 'src/verify/tests.rs': '44dc385771365d824a786ccd5cec4d0a69e39c79364acc9eae5fdc2482c1da0f', 'src/verify.rs': '2dd4e91b6cb51c94cdf6765d5f6aa90e5f55cb256eb9fe27fa5755931566b8a8'}
-ROOTED_BUILD_SOURCES = {'cargo_from_root.py': '515060bdbff75aba566cd2778636772adf942a2277e6ef34d6bdfab094139a5c', 'rooted_build.py': '994b4bc53af0d9652257f1d062b865e8d610ddb9dde1f445e6983939c11a429e'}
+ROOTED_BUILD_SOURCES = {'cargo_from_root.py': '515060bdbff75aba566cd2778636772adf942a2277e6ef34d6bdfab094139a5c', 'rooted_build.py': '812fe73a6b31551d828177c4e7597f4367fab29a3eadc39f7a248b44e291a468'}
 sha = lambda b: hashlib.sha256(b).hexdigest()
 
 
@@ -160,18 +160,24 @@ def verifier_build(ctx, a, args, captured):
     raw = ctx.read(directory / 'closed.json', cap=MIB)
     need(sha(raw) == args.verifier_build_sha256, 'root-frozen verifier build')
     closed = a.json_value(raw)
-    rooted = closed.get('schema') == 'LI2W01-VERIFIER-BUILD-2'
+    commented = closed.get('schema') == 'LI2W01-VERIFIER-BUILD-3'
+    rooted = commented or closed.get('schema') == 'LI2W01-VERIFIER-BUILD-2'
     keys = {'schema', 'files', 'lock_sha256', 'configuration_complete'}
     if rooted:
         keys |= {'cargo_cwd', 'configurations'}
+    if commented:
+        keys.add('configuration_profile')
     need(set(closed) == keys and
-        closed['schema'] in ('LI2W01-VERIFIER-BUILD-1', 'LI2W01-VERIFIER-BUILD-2') and
+        closed['schema'] in ('LI2W01-VERIFIER-BUILD-1', 'LI2W01-VERIFIER-BUILD-2', 'LI2W01-VERIFIER-BUILD-3') and
         closed['configuration_complete'] is True and
         closed['lock_sha256'] == args.verifier_lock_sha256, 'separate build/lock declaration')
     module = rooted_module(ctx) if rooted else None
     if rooted:
+        if commented:
+            need(closed['configuration_profile'] == module.COMMENT_PROFILE, 'exact rooted comment profile')
+        configurations = module.configurations(ctx, captured, profile=module.COMMENT_PROFILE) if commented else module.configurations(ctx, captured)
         need(closed['cargo_cwd'] == '/' and
-            closed['configurations'] == module.configurations(ctx, captured),
+            closed['configurations'] == configurations,
             'exact complete rooted Cargo configuration')
     manifest = ctx.ROOT / CRATE / 'Cargo.toml'
     binary = ctx.ROOT / 'target/release/adjacent-b2-artifact-verifier'

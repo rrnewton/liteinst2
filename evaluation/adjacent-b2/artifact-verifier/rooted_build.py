@@ -13,6 +13,8 @@ from pathlib import Path
 import signal
 import subprocess
 
+COMMENT_PROFILE = 'rooted-offline-neutral-toml-comments-v1'
+
 
 def check_config(raw):
     """Strict TOML subset, excluding includes and build-affecting configuration."""
@@ -51,12 +53,41 @@ def check_config(raw):
             raise ValueError('Cargo config outside rooted verifier profile')
 
 
-def configurations(ctx, captured):
+def check_commented_config(raw):
+    """The same two settings, additionally admitting TOML line comments.
+
+    Strip comments only outside double-quoted strings. The original validator
+    still checks every remaining byte; this does not admit other TOML syntax,
+    include directives or build settings. Cargo reads the unchanged original.
+    """
+    if len(raw) > 1048576:
+        raise ValueError('Cargo configuration size')
+    lines = []
+    for line in raw.decode('utf-8').splitlines():
+        quoted = escaped = False
+        for index, char in enumerate(line):
+            if escaped:
+                escaped = False
+            elif quoted and char == '\\':
+                escaped = True
+            elif char == '"':
+                quoted = not quoted
+            elif char == '#' and not quoted:
+                line = line[:index]
+                break
+        lines.append(line)
+    check_config('\n'.join(lines).encode('utf-8'))
+
+
+def configurations(ctx, captured, *, profile=None):
+    if profile not in (None, COMMENT_PROFILE):
+        raise ValueError('unknown rooted configuration profile')
     rows = ctx.B.configuration(Path('/'), Path(captured['env']['CARGO_HOME']))
     for row in rows.values():
         if row['state'] == 'READ':
             pin = row['identity']
-            check_config(ctx.read(Path(pin['path']), pin, 1048576))
+            raw = ctx.read(Path(pin['path']), pin, 1048576)
+            (check_config if profile is None else check_commented_config)(raw)
         elif row['state'] not in ('ABSENT', 'TARGET_ABSENT'):
             raise ValueError('incomplete rooted Cargo configuration')
     return rows
@@ -116,7 +147,7 @@ def main():
            args.output.parent.resolve(strict=True) == args.output.parent and
            not os.path.lexists(args.output), 'new build directory')
     captured = a.authenticate_capture(ctx, args, {}, a.ROUTED)
-    before = configurations(ctx, captured)
+    before = configurations(ctx, captured, profile=COMMENT_PROFILE)
     args.output.mkdir(mode=0o700)
     source = {root/w.CRATE/name: pin for name,pin in
               dict(w.VERIFIER_SOURCES, **w.ROOTED_BUILD_SOURCES).items()}
@@ -124,7 +155,8 @@ def main():
     pins = {str(p): ctx.B.identity(p) for p in source}
     w.need(all(pins[str(p)]['sha256'] == h for p,h in source.items()), 'frozen verifier build source/lock')
     request, command = w.request_and_command(ctx, captured, args.output, invocation(ctx,captured), (120,180,128))
-    planned = dict(schema='LI2W01-ROOTED-VERIFIER-PLAN-1', cargo_cwd='/', configurations=before,
+    planned = dict(schema='LI2W01-ROOTED-VERIFIER-PLAN-2', cargo_cwd='/', configurations=before,
+        configuration_profile=COMMENT_PROFILE,
         files=pins, request=request, command=command, cpus=sorted(os.sched_getaffinity(0)),
         hardware='AMD EPYC Zen 5 dev host', load_average=Path('/proc/loadavg').read_text().split()[:3])
     ctx.B.write(args.output/'planned.json', planned)
@@ -132,7 +164,7 @@ def main():
     code, streams = ctx.closed(args.output, request)
     w.need(code == 0, 'closed verifier build failed')
     captured['stable']()
-    w.need(configurations(ctx,captured) == before and
+    w.need(configurations(ctx,captured,profile=COMMENT_PROFILE) == before and
            all(ctx.B.identity(p) == row for p,row in pins.items()), 'build inputs changed')
     binary = root/'target/release/adjacent-b2-artifact-verifier'
     builder = ctx.load(a.ROUTED.builder, a.ROUTED.builder_sha)
@@ -142,7 +174,8 @@ def main():
                 'stdout.txt','stderr.txt','helper.stdout','helper.stderr','planned.json')
     for p in [binary, *(args.output/name for name in controls)]:
         pins[str(p)] = ctx.B.identity(p)
-    closed = dict(schema='LI2W01-VERIFIER-BUILD-2', cargo_cwd='/', files=pins,
+    closed = dict(schema='LI2W01-VERIFIER-BUILD-3', cargo_cwd='/', files=pins,
+        configuration_profile=COMMENT_PROFILE,
         lock_sha256=args.verifier_lock_sha256, configuration_complete=True, configurations=before)
     ctx.B.write(args.output/'closed.json', closed)
     args.verifier_build = args.output

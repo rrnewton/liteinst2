@@ -45,6 +45,35 @@ class RootedBuildControls(unittest.TestCase):
         ctx.read.return_value = b'include=["outside"]\n'
         with self.assertRaises(ValueError): build.configurations(ctx,captured)
 
+    def test_comment_profile_preserves_values_and_old_strict_refusals(self):
+        for raw in (b'[net] # section\ngit-fetch-with-cli=true # transport only\n',
+                    b'[http]\nproxy="http://localhost:3128" # transport only\n',
+                    b'[http]\nproxy="http://localhost/#fragment" # outside\n',
+                    b'[http]\nproxy="quote\\\"#inside" # outside\n',
+                    b'[http]\nproxy="backslash\\\\" # outside\n'):
+            build.check_commented_config(raw)
+            with self.assertRaises(ValueError): build.check_config(raw)
+        normalized = b'[http]\nproxy="http://localhost/#fragment" '
+        with mock.patch.object(build,'check_config') as strict:
+            build.check_commented_config(normalized+b'#outside\n')
+            strict.assert_called_once_with(normalized)
+        for raw in (b'include=[] # forbidden\n', b'[build] # forbidden\nrustc="x"\n',
+                    b'[net]\ngit-fetch-with-cli=1 # not boolean\n',
+                    b'[http]\nproxy="x" include=[] # still invalid\n',
+                    b'[http]\nproxy="unterminated # still string\n',
+                    b'[http]\nproxy="x"\nproxy="y" # duplicate\n',
+                    b'[http]\nproxy="\\n" # control character\n',
+                    b'#' + b'x' * 1048576):
+            with self.subTest(raw=raw[:80]), self.assertRaises(ValueError):
+                build.check_commented_config(raw)
+        rows={'root':dict(state='ABSENT'), 'home':dict(state='READ',identity=dict(path='/config'))}
+        ctx=types.SimpleNamespace(B=types.SimpleNamespace(configuration=mock.Mock(return_value=rows)),
+                                 read=mock.Mock(return_value=b'[net]\ngit-fetch-with-cli=true # comment\n'))
+        captured=dict(env={'CARGO_HOME':'/cache'})
+        with self.assertRaises(ValueError): build.configurations(ctx,captured)
+        self.assertEqual(build.configurations(ctx,captured,profile=build.COMMENT_PROFILE),rows)
+        with self.assertRaises(ValueError): build.configurations(ctx,captured,profile='unknown')
+
     def test_launcher_exact_toolchain_manifest_target_and_exec_contract(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve(); manifest = root/w.CRATE/'Cargo.toml'
@@ -109,6 +138,15 @@ class RootedBuildControls(unittest.TestCase):
                 else:bad['unbound']='extra'
                 with self.subTest(mutate=mutate),self.assertRaises(ValueError):check(bad)
             with self.assertRaises(ValueError): check(closed,dict(command,cwd='/'))
+            commented=dict(closed,schema='LI2W01-VERIFIER-BUILD-3',configuration_profile=build.COMMENT_PROFILE)
+            self.assertEqual(check(commented),binary)
+            for mutate in ('missing-profile','wrong-profile','schema-two-with-profile','config-mismatch'):
+                bad=copy.deepcopy(commented)
+                if mutate=='missing-profile':bad.pop('configuration_profile')
+                elif mutate=='wrong-profile':bad['configuration_profile']='unknown'
+                elif mutate=='schema-two-with-profile':bad['schema']='LI2W01-VERIFIER-BUILD-2'
+                else:bad['configurations']={}
+                with self.subTest(mutate=mutate),self.assertRaises(ValueError):check(bad)
 
 
 if __name__ == '__main__':

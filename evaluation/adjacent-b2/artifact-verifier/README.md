@@ -15,7 +15,9 @@ It invokes the exact captured Cargo/compiler binaries with an absolute manifest
 and Cargo working directory `/`. It records and rechecks the actual root and
 Cargo-home configuration scope, admitting only absent configuration and the
 explicit `net.git-fetch-with-cli` / `http.proxy` subset. It refuses includes,
-wrappers and other settings. Build outputs and command logs belong under
+wrappers and other settings. Build schema 3 additionally admits ordinary TOML
+line comments, including after values; schema 2 retains its stricter grammar.
+Quoted `#` characters remain part of the value. Build outputs and command logs belong under
 `ignored/`; the build receipt binds sources, lockfile, launcher and binary.
 
 `verify_saved.py --help` describes the immutable capture, diagnostic and build
