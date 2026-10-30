@@ -7,7 +7,7 @@
 
 use crate::bundle::{BundleBudget, PlannedBundle};
 use crate::composition::Composition;
-use crate::contracts::{ExpectedBytes, Refusal};
+use crate::contracts::{AddressRange, ExpectedBytes, Refusal};
 use crate::emission::{ArtifactMetrics, ArtifactPlan, ArtifactRequest, PlanningRequest};
 use crate::eviction::{self, EvictionAttempt, EvictionMetrics};
 use crate::neighbor::{self, NeighborAttempt, NeighborGeometry, NeighborMetrics, NeighborSearch};
@@ -339,6 +339,57 @@ pub fn plan_with_emission_after_and_short_t3_ownership(
     .map(artifact_plan)
 }
 
+/// Artifact-only short T3 continuation preserving caller-supplied pending ranges.
+///
+/// The predecessor first authenticates the complete immutable original view,
+/// then validates canonical, covered and unclaimed pending ranges. The caller
+/// must supply every outstanding original instruction except the current site;
+/// this slice cannot itself prove a complete selected population. Empty is valid.
+/// Every complete short T3 pair must append all steps to a fresh predecessor
+/// clone and leave these ranges unclaimed before it can be selected. Rejection
+/// consumes the same existing pair; no victim filtering or second search occurs.
+///
+/// The first four tactics retain their first local success and do NOT apply the
+/// post-append pending check. The caller must append every returned step, check
+/// pending ownership and retain all hook, entry, lease, aggregate and publication
+/// obligations before committing. This operation does not mutate the predecessor
+/// or grant artifact plans live authority. An empty slice never disables the
+/// inherited T3 append checks.
+pub fn plan_with_emission_after_and_short_t3_pending(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    predecessor
+        .require_unclaimed_ranges(pending)
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family_with_pending(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        true,
+        Some(predecessor),
+        Some(pending),
+    )
+    .map(artifact_plan)
+}
+
 // Explicit artifact-only continuation; all existing engine entry points stay literal.
 #[path = "engine_foreign.rs"]
 mod foreign;
@@ -378,6 +429,24 @@ fn plan_core_family_with_inherited(
     policy: EnginePolicy,
     short_only: bool,
     inherited: Option<&Composition>,
+) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family_with_pending(
+        request,
+        victim_allocation,
+        policy,
+        short_only,
+        inherited,
+        None,
+    )
+}
+
+fn plan_core_family_with_pending(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    short_only: bool,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
 ) -> Result<EnginePlan, EngineFailure> {
     const ORDER: [Tactic; 5] = [
         Tactic::GeneralizedPun,
@@ -453,7 +522,18 @@ fn plan_core_family_with_inherited(
                     ),
                 }
             }
-            Tactic::NeighborEviction => match if short_only {
+            Tactic::NeighborEviction => match if let (true, Some(predecessor), Some(pending)) =
+                (short_only, inherited, pending)
+            {
+                neighbor::plan_neighbor_short_pending_core(
+                    request,
+                    predecessor,
+                    pending,
+                    victim_allocation,
+                    policy.neighbor,
+                    policy.bundle,
+                )
+            } else if short_only {
                 match inherited {
                     Some(predecessor) => neighbor::plan_neighbor_short_after_core(
                         request,

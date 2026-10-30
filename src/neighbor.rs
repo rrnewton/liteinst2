@@ -256,6 +256,25 @@ fn plan_neighbor_mode(
     )
 }
 
+pub(crate) fn plan_neighbor_short_pending_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        true,
+        Some(predecessor),
+        Some(pending),
+    )
+}
+
 fn plan_neighbor_mode_with_inherited(
     request: &PlanningRequest<'_>,
     victim_allocation: &AllocationPolicy,
@@ -263,6 +282,26 @@ fn plan_neighbor_mode_with_inherited(
     budget: BundleBudget,
     short_victims: bool,
     inherited: Option<&Composition>,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        short_victims,
+        inherited,
+        None,
+    )
+}
+
+fn plan_neighbor_mode_with_pending(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    short_victims: bool,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
 ) -> Result<PlannedNeighbor, NeighborFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
@@ -552,6 +591,9 @@ fn plan_neighbor_mode_with_inherited(
                             let mut current = predecessor.clone();
                             for step in bundle.plan().steps() {
                                 current.append(step)?;
+                            }
+                            if let Some(pending) = pending {
+                                current.require_unclaimed_ranges(pending)?;
                             }
                         }
                         Ok(bundle)

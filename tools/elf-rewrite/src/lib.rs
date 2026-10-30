@@ -175,6 +175,23 @@ fn prepare_selection_with_mode(
     let snapshots = original_snapshots(&elf, &s.sites)?;
     let mut composition =
         Composition::new(identity, snapshots).map_err(|e| Error::new("composition-original", e))?;
+    // Only the sealed pending mode supplies the complete original instruction set.
+    // Keep failed sites in this table; a successful commit alone discharges one.
+    let mut pending = if mode == disassembly::NeighborMode::ShortT3Pending {
+        s.sites
+            .iter()
+            .enumerate()
+            .map(|(index, site)| addr(site.pc, u64::from(site.length)).map(|r| (index, r)))
+            .collect::<Result<Vec<_>, Error>>()?
+    } else {
+        Vec::new()
+    };
+    pending.sort_by_key(|(_, range)| range.start());
+    if mode == disassembly::NeighborMode::ShortT3Pending {
+        composition
+            .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
+            .map_err(|e| Error::new("pending-selected", e))?;
+    }
     let mut reports: Vec<_> = s
         .sites
         .iter()
@@ -199,6 +216,10 @@ fn prepare_selection_with_mode(
     for index in ordered {
         let site = &s.sites[index];
         let report = &mut reports[index];
+        let pending_ranges: Vec<_> = pending
+            .iter()
+            .filter_map(|(other, range)| (*other != index).then_some(*range))
+            .collect();
         let prepared = (|| {
             validate_site(&elf, site)?;
             let code = elf
@@ -260,7 +281,15 @@ fn prepare_selection_with_mode(
                     max_virtual_span: s.limits.virtual_span,
                 },
             };
-            let result = if owned_neighbors {
+            let result = if mode == disassembly::NeighborMode::ShortT3Pending {
+                engine::plan_with_emission_after_and_short_t3_pending(
+                    &request,
+                    &composition,
+                    &pending_ranges,
+                    &site.victim_allocation,
+                    policy,
+                )
+            } else if owned_neighbors {
                 let owners = neighbor_catalogue::collect(&elf, s, identity, site)?;
                 let foreign: Vec<_> = owners.iter().map(|owner| owner.site(site)).collect();
                 engine::plan_with_emission_after_with_foreign(
@@ -373,6 +402,12 @@ fn prepare_selection_with_mode(
                     }
                 }
             }
+            // Preserve every existing append/dependency/resource/hook failure first.
+            // First-four local success may refuse here; this never restarts search.
+            if mode == disassembly::NeighborMode::ShortT3Pending {
+                next.require_unclaimed_ranges(&pending_ranges)
+                    .map_err(|e| Error::new("pending-selected", e))?;
+            }
             for step in plan.source_steps() {
                 occupied.extend(step.parts().allocations.iter().map(|a| a.range));
             }
@@ -384,7 +419,10 @@ fn prepare_selection_with_mode(
             Ok(plan)
         })();
         match prepared {
-            Ok(plan) => accepted.push((site.id, plan)),
+            Ok(plan) => {
+                accepted.push((site.id, plan));
+                pending.retain(|(other, _)| *other != index);
+            }
             Err(error) => {
                 report.refusal = Some(error);
                 if report.refusal_code.is_none() {

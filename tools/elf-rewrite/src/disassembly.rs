@@ -16,6 +16,9 @@ pub const PROFILE: &str = "elf-disassembly-null-jumps-v1";
 pub const SHORT_ONLY_PROFILE: &str = "elf-disassembly-null-jumps-short-only-v1";
 /// Explicit inherited admission for complete short-neighbor T3 pairs only.
 pub const SHORT_T3_OWNERSHIP_PROFILE: &str = "elf-disassembly-null-jumps-short-t3-ownership-v1";
+/// Explicit complete pending-instruction ownership during short T3 admission.
+pub const SHORT_T3_PENDING_PROFILE: &str = "elf-disassembly-null-jumps-short-t3-pending-v1";
+const SHORT_PENDING: &str = "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\n";
 const SHORT_FAMILY: &str = "neighbor_victims\tshort-only\n";
 const SHORT_OWNERSHIP: &str = "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\n";
 
@@ -24,6 +27,7 @@ pub(crate) enum NeighborMode {
     LongOnly,
     ShortOnly,
     ShortT3Ownership,
+    ShortT3Pending,
 }
 impl NeighborMode {
     fn profile(self) -> &'static str {
@@ -31,6 +35,7 @@ impl NeighborMode {
             Self::LongOnly => PROFILE,
             Self::ShortOnly => SHORT_ONLY_PROFILE,
             Self::ShortT3Ownership => SHORT_T3_OWNERSHIP_PROFILE,
+            Self::ShortT3Pending => SHORT_T3_PENDING_PROFILE,
         }
     }
     fn metadata(self) -> &'static str {
@@ -38,6 +43,7 @@ impl NeighborMode {
             Self::LongOnly => "",
             Self::ShortOnly => SHORT_FAMILY,
             Self::ShortT3Ownership => SHORT_OWNERSHIP,
+            Self::ShortT3Pending => SHORT_PENDING,
         }
     }
 }
@@ -85,6 +91,10 @@ impl Disassembly {
     /// Complete verified denominator, labeled for inherited short T3 admission.
     pub fn inventory_short_t3_ownership(&self) -> Vec<u8> {
         self.inventory_with_mode(NeighborMode::ShortT3Ownership)
+    }
+    /// Complete verified denominator, labeled before pending-mode binding.
+    pub fn inventory_short_t3_pending(&self) -> Vec<u8> {
+        self.inventory_with_mode(NeighborMode::ShortT3Pending)
     }
     fn inventory_mode(&self, short_only: bool) -> Vec<u8> {
         self.inventory_with_mode(if short_only {
@@ -155,6 +165,20 @@ impl Disassembly {
         self.bind_with_mode(policy, expected_policy, NeighborMode::ShortT3Ownership)
     }
 
+    /// Bind version four and the complete outstanding original instruction set.
+    /// Short neighboring-instruction eviction admits a complete pair only while
+    /// every other pending instruction remains unclaimed. Generalized pun,
+    /// ordinary relocation, prefixed pun and successor eviction retain local
+    /// success; their final pending conflict refuses without another tactic try.
+    /// Final append, hook, dependency, aggregate and carrier checks remain required.
+    pub fn bind_short_t3_pending(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+    ) -> Result<DisassemblySelection, Error> {
+        self.bind_with_mode(policy, expected_policy, NeighborMode::ShortT3Pending)
+    }
+
     fn bind_mode(
         self,
         policy: &[u8],
@@ -186,6 +210,7 @@ impl Disassembly {
             NeighborMode::LongOnly => (0, "LI2DISASM-POLICY 1"),
             NeighborMode::ShortOnly => (1, "LI2DISASM-POLICY 2"),
             NeighborMode::ShortT3Ownership => (2, "LI2DISASM-POLICY 3"),
+            NeighborMode::ShortT3Pending => (3, "LI2DISASM-POLICY 4"),
         };
         check(
             rows.len() >= 8 + shift && rows[0] == header,
@@ -198,6 +223,16 @@ impl Disassembly {
             check(
                 rows[4] == "neighbor-ownership inherited-t3",
                 "neighbor ownership",
+            )?;
+        }
+        if mode == NeighborMode::ShortT3Pending {
+            check(
+                rows[4] == "neighbor-ownership inherited-t3",
+                "neighbor ownership",
+            )?;
+            check(
+                rows[5] == "pending-selected full-instruction-ownership",
+                "pending selected ownership",
             )?;
         }
         check(
@@ -228,6 +263,9 @@ impl Disassembly {
             NeighborMode::ShortOnly => "neighbor-victims short-only\n",
             NeighborMode::ShortT3Ownership => {
                 "neighbor-victims short-only\nneighbor-ownership inherited-t3\n"
+            }
+            NeighborMode::ShortT3Pending => {
+                "neighbor-victims short-only\nneighbor-ownership inherited-t3\npending-selected full-instruction-ownership\n"
             }
         };
         let mut manifest = format!(
@@ -286,6 +324,9 @@ impl Disassembly {
             }
             NeighborMode::ShortT3Ownership => {
                 selection::parse_short_t3_ownership_projection(manifest.as_bytes())?
+            }
+            NeighborMode::ShortT3Pending => {
+                selection::parse_short_t3_pending_projection(manifest.as_bytes())?
             }
         };
         check(

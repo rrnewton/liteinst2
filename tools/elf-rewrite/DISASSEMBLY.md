@@ -248,3 +248,46 @@ rejects either repeated mode flag among its six remaining arguments.
 This same-region mode is distinct from the foreign-owner
 `prepare_with_owned_neighbors` API. It does not provide fully composition-aware
 planning, native admission or a comparator adapter. Existing modes remain separate.
+
+
+## Pending selected instruction ownership
+
+The separately sealed `elf-disassembly-null-jumps-short-t3-pending-v1` library
+profile protects every outstanding selected instruction's full original range.
+Use `Disassembly::inventory_short_t3_pending()` for the complete pre-bind inventory
+and `Disassembly::bind_short_t3_pending(policy, expected_policy)` to bind policy
+version four. Its exact records immediately after `ledger` are:
+
+```text
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+pending-selected full-instruction-ownership
+```
+
+The `LI2TOOL 1` projection retains all three records immediately after `original`.
+The complete policy and projection bytes, including mode records, count toward
+the existing 1 MiB bounds and digests. Older binders and selection readers refuse
+this profile. Inventory and planning metadata include `neighbor_victims`,
+`neighbor_ownership` and `pending_selected` in that order after the profile.
+These files remain present when complete preparation refuses.
+
+`prepare_disassembly` derives its outstanding ranges from the entire sealed
+original jump table. Planning retains descending address order. A failed site
+stays outstanding; only a fully committed site leaves the set. Each current site
+protects every other outstanding instruction, including unchanged bytes already
+owned by a candidate's preserved suffix. For short neighboring-instruction
+eviction, every complete pair appends to a fresh actual predecessor composition
+and must leave the protected ranges unclaimed within the existing victim, image
+and pair budgets.
+
+Generalized pun, ordinary relocation, prefixed pun and successor eviction retain
+their first local success. After the existing append, dependency, aggregate and
+hook checks, preparation checks pending ownership before committing. A conflict
+refuses that site without trying another tactic. Empty pending ranges for the
+last site do not disable inherited append checks. Every original selected jump,
+verified head, hook, carrier requirement and atomic whole-selection obligation
+remains mandatory; a partial plan cannot produce a candidate or sparse rewrite.
+
+This library profile supplies no live publication or native qualification
+contract. CLI/example, evaluation and comparator adapters require separate
+explicit integration; existing command-line profiles do not select this mode.
