@@ -39,7 +39,17 @@ long raw(long n,long a,long b,long c,long d,long e,long f) {
 #define RAW(n,a,b,c,d,e,f) raw(n,(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
 static void bytes(void *d,const void *s,size_t n){unsigned char *x=d;const unsigned char *y=s;for(size_t i=0;i<n;i++)x[i]=y[i];}
 static int same(const void *a,const void *b,size_t n){const unsigned char *x=a,*y=b;for(size_t i=0;i<n;i++)if(x[i]!=y[i])return 0;return 1;}
-static void zero(void *d,size_t n){unsigned char *p=d;for(size_t i=0;i<n;i++)p[i]=0;}
+static void zero(void *d,size_t n){
+#if defined(LI2_FAST_MEMSET) && LI2_FAST_MEMSET
+    /* Exact production bridge memset instruction/constraint body, with fill0.
+       Every requested byte is still reset; application flags remain saved. */
+    int c=0;
+    __asm__ volatile("cld; rep stosb" : "+D"(d), "+c"(n)
+                     : "a"((unsigned char)c) : "memory","cc");
+#else
+    unsigned char *p=d;for(size_t i=0;i<n;i++)p[i]=0;
+#endif
+}
 static int write_all(int fd,const void *p,size_t n){const unsigned char *s=p;while(n){long k=RAW(SYS_write,fd,s,n,0,0,0);if(k<=0||(size_t)k>n)return 0;s+=k;n-=(size_t)k;}return 1;}
 struct owned_mapping {uintptr_t at;size_t n;int fd;struct stat stat;unsigned char expected[8192];};
 static struct owned_mapping source,image;
