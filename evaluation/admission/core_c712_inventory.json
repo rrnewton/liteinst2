@@ -1,0 +1,822 @@
+{
+  "added_default_methods": {
+    "tools/software-preemption/inline_clock.rs": [
+      "valid_reply_cannot_produce_a_rejection_witness",
+      "actual_timeout_and_bad_tuple_produce_different_causes"
+    ],
+    "tools/software-preemption/inline_clock/rendezvous/tests.rs": [
+      "every_payload_word_and_reply_survive_all_4096_generations",
+      "concurrent_handoffs_preserve_every_payload_and_actual_reply",
+      "zero_stop_close_requires_no_synthetic_event",
+      "queued_stop_precedes_worker_close_but_reply_fails",
+      "queued_reply_precedes_controller_close",
+      "reply_is_the_actual_tuple_not_reconstructed_from_stop",
+      "dropping_controller_before_observation_never_acknowledges",
+      "dropping_event_latches_failure_without_resume",
+      "forgotten_event_cannot_be_replaced_by_a_new_receive",
+      "forgotten_event_without_another_receive_times_out",
+      "timed_out_reply_cannot_be_revived_by_late_resume",
+      "controller_timeout_is_terminal_and_prevents_publication",
+      "duplicate_publication_cannot_overwrite_the_queued_stop",
+      "stale_or_future_generation_is_not_a_current_stop",
+      "stale_or_future_acknowledgement_is_not_consumed",
+      "second_receive_after_reply_waits_for_worker_then_next_stop",
+      "worker_panic_preserves_queued_stop_and_is_a_join_failure",
+      "slot_is_retained_by_detached_peer_until_that_peer_drops",
+      "controller_unwind_drops_event_without_authorizing_progress",
+      "worker_drop_during_observation_makes_resume_fail",
+      "unresponsive_live_worker_does_not_turn_deadline_into_completion"
+    ],
+    "tools/software-preemption/main.rs": [
+      "joined_task_disappearance_accepts_only_main_without_a_pause",
+      "joined_task_disappearance_waits_for_only_its_owned_tid",
+      "joined_task_disappearance_refuses_unknown_missing_or_duplicate_tasks",
+      "joined_task_disappearance_requires_valid_joined_identity_before_reading",
+      "joined_task_disappearance_propagates_snapshot_failure_without_waiting",
+      "joined_task_disappearance_keeps_one_absolute_deadline",
+      "joined_task_disappearance_cannot_accept_a_late_main_only_snapshot"
+    ]
+  },
+  "base_revision": "367aaac201c461f9549ad54f65fa12f680999269",
+  "current_corpus_sha256": "f668f9e08fb5550561283750ffebe8bcad2278b54ac4c42dab58b290f9484a82",
+  "default_harness_changes": 0,
+  "default_ignore_changes": 0,
+  "evaluation_projections": {
+    "evaluation/admission/core_367_inventory.py": {
+      "current_sha256": "846a80ddd550766ea41c8c7d1e9f88347d8d746afdeb279d6e97d78dfc20588e",
+      "edits": [
+        [
+          181,
+          220,
+          ""
+        ],
+        [
+          1598,
+          1649,
+          ""
+        ],
+        [
+          1757,
+          1819,
+          ""
+        ],
+        [
+          2120,
+          2264,
+          ""
+        ],
+        [
+          2944,
+          3045,
+          "        source_before(path, raw, error)\n        source_before_evaluation(path, raw, error)\n"
+        ],
+        [
+          3180,
+          3248,
+          ""
+        ],
+        [
+          3875,
+          3943,
+          ""
+        ],
+        [
+          4147,
+          4204,
+          ""
+        ],
+        [
+          4685,
+          4742,
+          ""
+        ]
+      ],
+      "previous_sha256": "11e926ae81d3455c18624660c5283f85bcc8b4f4ff9d6d76348a18a345ba71fc"
+    },
+    "evaluation/admission/core_813_inventory.py": {
+      "current_sha256": "017a527178dd8c183856b008c9c47079571023ea6a33815d53123897b9651318",
+      "edits": [
+        [
+          4806,
+          5154,
+          "              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091, main367.DATA)\n"
+        ]
+      ],
+      "previous_sha256": "dfc18012e1c1983470e567961817682229b83bdc034df64b621611cbfd4fadf2"
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "current_sha256": "7482897b794157941150a58a7ac770608f285e3c5fd4d79fd304e05f65ec82da",
+      "edits": [
+        [
+          820,
+          918,
+          "RECORDER_TESTS = main367.RECORDER_TESTS\nPYTHON_CURRENT = main367.PYTHON_CURRENT\n"
+        ],
+        [
+          10870,
+          11095,
+          "def require_current(declared):\n    \"\"\"Only the exact absolute-startup355 corpus enters live qualification.\"\"\"\n"
+        ],
+        [
+          11265,
+          11567,
+          ""
+        ]
+      ],
+      "previous_sha256": "297eeb1a3fc55b2a75fd8495c65369b43b26e2b87288e7717d724c0b066337b2"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "current_sha256": "c67bc1873b38c59d29d8ebb3749c4e6056a65afb3da27d1703d40418bb422065",
+      "edits": [
+        [
+          1392,
+          1469,
+          "    require(type(count) is int and count == 355 and len(identities) == count\n"
+        ],
+        [
+          1899,
+          2066,
+          ""
+        ],
+        [
+          2513,
+          2581,
+          "    # Actual workers authenticate all355 and allfour in discover().\n"
+        ]
+      ],
+      "previous_sha256": "ad4a7e8ceb8ed8e07f701fe809e4d4d83dab35dd3c36e736ddb4c5b2c557b8bd"
+    },
+    "evaluation/admission/test_main367_inventory.py": {
+      "current_sha256": "c1142cf5d928e1935852f2f24f822be7c58f160a74bc2fa21cb52db85cbc468f",
+      "edits": [
+        [
+          494,
+          609,
+          "        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())\n"
+        ],
+        [
+          1462,
+          1529,
+          "        self.assertIsNone(inventory.require_current(actual))\n"
+        ],
+        [
+          1745,
+          1800,
+          "                inventory.require_current(wrong)\n"
+        ],
+        [
+          2207,
+          2266,
+          "                    inventory.require_current(wrong)\n"
+        ],
+        [
+          2752,
+          2857,
+          "        identities = historical.python_identities(Path(__file__).parent)\n"
+        ]
+      ],
+      "previous_sha256": "c99c0ad78ada090c4763e74f3da0e86fa9e3700fc9316b8d4b29bcbf82b4fcc2"
+    }
+  },
+  "main_revision": "c712f7008af281191783f6478508ce4cad9d6bcb",
+  "methods": {
+    "tools/software-preemption/counter.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "tools/software-preemption/inline_clock.rs": {
+      "all": [
+        "valid_reply_cannot_produce_a_rejection_witness",
+        "actual_timeout_and_bad_tuple_produce_different_causes"
+      ],
+      "ignored": []
+    },
+    "tools/software-preemption/inline_clock/rendezvous.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "tools/software-preemption/inline_clock/rendezvous/tests.rs": {
+      "all": [
+        "every_payload_word_and_reply_survive_all_4096_generations",
+        "concurrent_handoffs_preserve_every_payload_and_actual_reply",
+        "zero_stop_close_requires_no_synthetic_event",
+        "queued_stop_precedes_worker_close_but_reply_fails",
+        "queued_reply_precedes_controller_close",
+        "reply_is_the_actual_tuple_not_reconstructed_from_stop",
+        "dropping_controller_before_observation_never_acknowledges",
+        "dropping_event_latches_failure_without_resume",
+        "forgotten_event_cannot_be_replaced_by_a_new_receive",
+        "forgotten_event_without_another_receive_times_out",
+        "timed_out_reply_cannot_be_revived_by_late_resume",
+        "controller_timeout_is_terminal_and_prevents_publication",
+        "duplicate_publication_cannot_overwrite_the_queued_stop",
+        "stale_or_future_generation_is_not_a_current_stop",
+        "stale_or_future_acknowledgement_is_not_consumed",
+        "second_receive_after_reply_waits_for_worker_then_next_stop",
+        "worker_panic_preserves_queued_stop_and_is_a_join_failure",
+        "slot_is_retained_by_detached_peer_until_that_peer_drops",
+        "controller_unwind_drops_event_without_authorizing_progress",
+        "worker_drop_during_observation_makes_resume_fail",
+        "unresponsive_live_worker_does_not_turn_deadline_into_completion"
+      ],
+      "ignored": []
+    },
+    "tools/software-preemption/main.rs": {
+      "all": [
+        "whole_authored_corpus_has_one_exact_near_backward_site",
+        "unsupported_backedge_and_call_are_refused_before_publication",
+        "joined_task_disappearance_accepts_only_main_without_a_pause",
+        "joined_task_disappearance_waits_for_only_its_owned_tid",
+        "joined_task_disappearance_refuses_unknown_missing_or_duplicate_tasks",
+        "joined_task_disappearance_requires_valid_joined_identity_before_reading",
+        "joined_task_disappearance_propagates_snapshot_failure_without_waiting",
+        "joined_task_disappearance_keeps_one_absolute_deadline",
+        "joined_task_disappearance_cannot_accept_a_late_main_only_snapshot"
+      ],
+      "ignored": []
+    }
+  },
+  "module_chains": {
+    "Cargo.toml": [
+      "name = \"liteinst-preempt\"\npath = \"tools/software-preemption/main.rs\"\ntest = true\nbench = false\ndoc = false"
+    ],
+    "tools/software-preemption/inline_clock.rs": [
+      "mod rendezvous;",
+      "#[cfg(test)]\nmod refusal_tests {"
+    ],
+    "tools/software-preemption/inline_clock/rendezvous.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "tools/software-preemption/main.rs": [
+      "mod inline_clock;",
+      "#[cfg(test)]\nmod tests {"
+    ]
+  },
+  "previous_corpus_sha256": "72a8cacd5b8deb4da8271f92be3e2e765a6893582a14e65cd41d63a1664c5426",
+  "projections": {
+    "evaluation/adjacent-b2/artifact-verifier/startup_custody.py": {
+      "current_sha256": "6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5",
+      "edits": [
+        [
+          12150,
+          12227,
+          ""
+        ],
+        [
+          12235,
+          12295,
+          "    def __init__(self, expected):\n"
+        ],
+        [
+          12456,
+          13019,
+          ""
+        ],
+        [
+          14071,
+          14224,
+          ""
+        ],
+        [
+          15476,
+          15550,
+          "def source_batch(root, revision, ordered, env):\n"
+        ],
+        [
+          16281,
+          16381,
+          "    decoder = SourceBatch([expected for _, expected in ordered])\n"
+        ]
+      ],
+      "previous_sha256": "37cbe467c0734be1e74549553d04c2c2d0692f244ca93894e4a5fc7789d73425"
+    },
+    "evaluation/adjacent-b2/artifact-verifier/startup_source_controls.py": {
+      "current_sha256": "3467ef2c14329b14b7ffb7098781ff33d293dc77e5df9c8f38f7fe7de3b9738d",
+      "edits": [
+        [
+          15063,
+          20340,
+          ""
+        ]
+      ],
+      "previous_sha256": "4174d7489e2446ac84556a54fc579dd9380a1ce02e13fad9b6c8a5ba64fd1ca0"
+    },
+    "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": {
+      "current_sha256": "c66928731b11cb4a77652c421435084a54b78c701e34e1b689f7d1e402ead3ec",
+      "edits": [
+        [
+          2291,
+          2954,
+          "STARTUP_MODULES = {'startup_cargo_from_root.py': 'd9189f38057a1167f74de2c93ce22b361cdcd2ca10e6bf68862c8281f2c4aa89', 'startup_custody.py': '37cbe467c0734be1e74549553d04c2c2d0692f244ca93894e4a5fc7789d73425', 'startup_originals.py': 'fe1c9bc33800a8216a9c3bc12a33be3579d92e07c5dbc1c10bd0ea75566bd03c', 'startup_pins.py': 'b11f1d05d80a604cb63e1f13288933b14ada1ec28f0d1034928901d4fa4ede3a', 'startup_produce.py': '42d97f0fe862ad43ac16531c854707db260960a66858ce28050e64a768009eb0', 'startup_saved.py': 'f9b888833e907af4bef59848ea94472f5d5f968134dd55686ff906baef5f9c0b', 'startup_target_from_root.py': '81ef52660559ee2f4088d02470eddbe64b981d16625392cbd0481123dd63312d'}\n"
+        ]
+      ],
+      "previous_sha256": "f19f9f74caaeb72d8f242f2b2bd7ded482530cb2119226733b673eb567c6a2e2"
+    },
+    "evaluation/offline-router-native/absolute_profile_controls.py": {
+      "current_sha256": "dc5d7f7d19e4f61178f3bb1bdd19f6f2386bf03b9d72772bc7041df108525487",
+      "edits": [
+        [
+          338,
+          353,
+          ""
+        ],
+        [
+          18187,
+          18242,
+          "    def admission(self, mutate=None):\n"
+        ],
+        [
+          22318,
+          23380,
+          "            custody=types.SimpleNamespace(absolute=lambda path:Path(path),Store=lambda cap:store)\n"
+        ],
+        [
+          24052,
+          24176,
+          ""
+        ],
+        [
+          24412,
+          24662,
+          "                if command[0]=='ls-tree':return ('\\n'.join(sorted(source_map))+'\\n').encode()\n                relative=command[-1].split(':',1)[1]\n                if command[0]=='cat-file':return str(len(native_raw[relative])).encode()\n                self.assertEqual(command[0],'show');return native_raw[relative]\n"
+        ],
+        [
+          25397,
+          25561,
+          ""
+        ],
+        [
+          26794,
+          29618,
+          ""
+        ]
+      ],
+      "previous_sha256": "b4aeb4f1f8da5b7d49803a0934591bb16e202fec45d43fd5c8b5c35c30f17a7d"
+    },
+    "evaluation/offline-router-native/final_admission.py": {
+      "current_sha256": "cd95a03b9733123dd4fe520c25cf4cf8b780595fecb15489c4b708949a624d31",
+      "edits": [
+        [
+          17301,
+          17770,
+          "            for relative, expected in source_map.items():\n                length = git('cat-file', '-s', revision+':'+relative).decode('ascii').strip()\n                need(length == str(len(sources[relative])), 'exact committed native source size')\n                need(sha(git('show', revision+':'+relative)) == expected, 'actual committed native source bytes')\n"
+        ]
+      ],
+      "previous_sha256": "a79829d99ecbcc40218a1e2ae348a0cd08a050693bc61be8de10b6317466c37f"
+    },
+    "tools/elf-rewrite/e9-sites-controls.py": {
+      "current_sha256": "3a010c0271d8e7bf4c2c2d36d7c744666cc5237d49031f7c409418980cecbced",
+      "edits": [
+        [
+          52074,
+          60194,
+          ""
+        ]
+      ],
+      "previous_sha256": "78acfb343072ba435884d89303dbefbb29463fb489e387df9ae1a2d5873fe037"
+    },
+    "tools/elf-rewrite/e9-sites.py": {
+      "current_sha256": "c53543d226f89437c8dc8912c55f67b604486683a09eed923a25f723f83e8db9",
+      "edits": [
+        [
+          1936,
+          2037,
+          ""
+        ],
+        [
+          7310,
+          7446,
+          ""
+        ],
+        [
+          7508,
+          7648,
+          "    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'\n"
+        ],
+        [
+          8295,
+          9716,
+          "    if selection_profile == SHORT_T3_PENDING_PROFILE:\n"
+        ],
+        [
+          34805,
+          34928,
+          ""
+        ],
+        [
+          35251,
+          35391,
+          "    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'\n"
+        ],
+        [
+          35717,
+          35857,
+          "    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'\n"
+        ],
+        [
+          41248,
+          41402,
+          "    parser.add_argument('--selection-profile', choices=(SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), action='append')\n"
+        ]
+      ],
+      "previous_sha256": "1f9509c29444e057d8421ea04030bf175076ce3a3ffe3f937fafd5e80d12294c"
+    },
+    "tools/software-preemption/README.md": {
+      "current_sha256": "4a148e8473a4f520b3f5b4e7a13fd0d523c0ad351ca36b26744f45f9a075a908",
+      "edits": [
+        [
+          1416,
+          2459,
+          "The instance belongs to one worker's TLS and authenticates process/thread, exact managed control, and original logical PC. The enabled control has no remaining writer. Publication and retirement require the sole main thread and a lease over the complete original and generated dependencies; workers receive a callable address only after final RX permissions, byte checks and publication receipt. Every successful run joins its worker. No mapping becomes RWX. Failure retains executable/control owners until process exit; this is not a drain claim. The strict helper owns bounded abnormal-process cleanup. The callback's two-second wait is a failure backstop, not optional success or a scheduling threshold.\n"
+        ],
+        [
+          13278,
+          17564,
+          ""
+        ]
+      ],
+      "previous_sha256": "5d8e8d0e88cb149d70e13dc5c7c7c2ba0fd6f0f5d466a20b5be58299ef587910"
+    },
+    "tools/software-preemption/counter.rs": {
+      "current_sha256": "f2cc6dd01674562cf3e5cb47eb3ec3636b822d29fc9ef99575adbf9245ce7805",
+      "edits": [
+        [
+          6285,
+          6354,
+          ""
+        ],
+        [
+          6425,
+          6454,
+          "            tid: unsafe { libc::syscall(libc::SYS_gettid) },\n"
+        ],
+        [
+          7777,
+          7801,
+          ""
+        ],
+        [
+          9433,
+          9513,
+          "    let (elapsed_ns, checksum, counted, encounters, closed_stops) =\n"
+        ],
+        [
+          9717,
+          9763,
+          ""
+        ]
+      ],
+      "previous_sha256": "e78685e104b9e98e9ea68b6e6d108c36f4400571612e679a9f40fde3719eed59"
+    },
+    "tools/software-preemption/evaluate.py": {
+      "current_sha256": "7f4bdda29efeee6047e6aab248b74db91feb6d0f1dbeef0ab29916752e760a9f",
+      "edits": [
+        [
+          540,
+          704,
+          "    ap.add_argument('--profile', choices=('full-callback-v1', 'inline-clock-v1'), default='full-callback-v1')\n"
+        ],
+        [
+          8133,
+          8247,
+          "    if args.profile == 'inline-clock-v1':\n        binding['authority'] = 'ROOT_REVIEWED_INLINE_CLOCK_RELEASE_BINARY'\n"
+        ],
+        [
+          8548,
+          8858,
+          "    if args.profile == 'inline-clock-v1':\n        call += ['--profile', 'inline-clock-v1']\n"
+        ]
+      ],
+      "previous_sha256": "491ee99d437c8036b150c79a3249fe451b663ea3d7eacabda6939e9fb97e1571"
+    },
+    "tools/software-preemption/inline_clock.rs": {
+      "current_sha256": "3c9a9b13f1fe2451dc731e2c2c5e7bfca7e5e2641dcba6401f9d83821efdaebc",
+      "edits": [
+        [
+          256,
+          350,
+          "    BackedgeClock, BackedgeClockAction, CLOCK_CANARY, ClockGateLayout, ClockMode,\n"
+        ],
+        [
+          512,
+          532,
+          ""
+        ],
+        [
+          596,
+          3834,
+          ""
+        ],
+        [
+          4032,
+          4058,
+          ""
+        ],
+        [
+          5207,
+          5369,
+          ""
+        ],
+        [
+          11452,
+          11475,
+          ""
+        ],
+        [
+          11955,
+          12005,
+          "        run(self, n, rounds, quantum, hold)\n"
+        ],
+        [
+          12352,
+          12496,
+          "    events: mpsc::SyncSender<Stop>,\n    resumes: mpsc::Receiver<(u64, u64)>,\n"
+        ],
+        [
+          12644,
+          13874,
+          ""
+        ],
+        [
+          15738,
+          15780,
+          "    if state.events.send(event).is_err() {\n        fatal();\n    }\n    match state.resumes.recv_timeout(WAIT) {\n"
+        ],
+        [
+          15862,
+          17115,
+          "        _ => fatal(),\n"
+        ],
+        [
+          17478,
+          17629,
+          "fn run(program: &InlineProgram, n: u64, rounds: u64, quantum: u64, hold: bool) -> ResultRow {\n"
+        ],
+        [
+          18222,
+          18695,
+          "    let (events_tx, events_rx) = mpsc::sync_channel(1);\n    let (resume_tx, resume_rx) = mpsc::sync_channel(1);\n"
+        ],
+        [
+          18741,
+          18810,
+          ""
+        ],
+        [
+          19235,
+          19264,
+          "            tid: unsafe { libc::syscall(libc::SYS_gettid) },\n"
+        ],
+        [
+          19530,
+          19572,
+          "            events: events_tx,\n            resumes: resume_rx,\n"
+        ],
+        [
+          20398,
+          20454,
+          "        (elapsed_ns, checksum, state.stops)\n"
+        ],
+        [
+          20536,
+          20648,
+          "        match events_rx.recv_timeout(WAIT) {\n            Ok(event) => {\n"
+        ],
+        [
+          22052,
+          23361,
+          "                resume_tx.send((event.site, event.count)).unwrap();\n"
+        ],
+        [
+          23410,
+          23640,
+          "            Err(mpsc::RecvTimeoutError::Disconnected) => break,\n            Err(mpsc::RecvTimeoutError::Timeout) => panic!(\"bounded inline rendezvous expired\"),\n"
+        ],
+        [
+          23656,
+          23775,
+          "    let (elapsed_ns, checksum, closed_stops) = worker.join().expect(\"exact inline worker joined\");\n"
+        ],
+        [
+          23856,
+          23895,
+          ""
+        ],
+        [
+          24465,
+          26210,
+          ""
+        ]
+      ],
+      "previous_sha256": "38ccbdda849fa86d96c262782bcbbdf6bc409e16d6519b16bd7ce63546849f0e"
+    },
+    "tools/software-preemption/main.rs": {
+      "current_sha256": "9a780de167402524729da5e7c384ba2f7476c4d303b6248ee8723d7d06268a3a",
+      "edits": [
+        [
+          2807,
+          5866,
+          ""
+        ],
+        [
+          22276,
+          22347,
+          "fn inline_qualify(output: &Path) {\n"
+        ],
+        [
+          22759,
+          23128,
+          "        let mut counted_program =\n            inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Counter);\n        let mut program =\n            inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Stop);\n"
+        ],
+        [
+          25701,
+          26032,
+          "    std::fs::write(output.join(\"summary.json\"),format!(\"{{\\\"scope\\\":\\\"inline-clock-v1-before-taken-backedge\\\",\\\"stop_cells\\\":96,\\\"native_cells\\\":16,\\\"counter_cells\\\":16,\\\"condition_controls\\\":{conditions},\\\"parked_checks\\\":{parked},\\\"deterministic_repeats\\\":48,\\\"status\\\":\\\"PASS\\\"}}\\n\")).unwrap();\n"
+        ],
+        [
+          26046,
+          26176,
+          "        \"preemption:inline-qualify:96-stop-cells:16-native:16-counter:512-setcc:48-exact-repeats\"\n"
+        ],
+        [
+          26185,
+          26599,
+          "fn inline_benchmark(case: Case, output: &Path) {\n    let mut counted_program =\n        inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Counter);\n    let mut program =\n        inline_clock::InlineProgram::new(case, liteinst2::backedge_clock::ClockMode::Stop);\n"
+        ],
+        [
+          27835,
+          27949,
+          "        \"preemption:inline-benchmark:{}:27-rows:2-warmups:7-measured:equal-work\",\n"
+        ],
+        [
+          28572,
+          29286,
+          "        \"inline-qualify\" if args.len() == 3 => inline_qualify(&output),\n        \"inline-bench\" if args.len() == 4 => inline_benchmark(Case::parse(&args[2]), &output),\n"
+        ],
+        [
+          30163,
+          35271,
+          ""
+        ]
+      ],
+      "previous_sha256": "f3455aba09e0bebb1455bc8561bd0568f306949cc44671472a622d71623453ff"
+    },
+    "tools/software-preemption/run.py": {
+      "current_sha256": "4920e3899865bec2dc78299610d95159be6d41493cc18815dc7903dd6aee8346",
+      "edits": [
+        [
+          293,
+          307,
+          ""
+        ],
+        [
+          583,
+          1000,
+          ""
+        ],
+        [
+          2182,
+          2801,
+          ""
+        ],
+        [
+          3111,
+          3190,
+          "    ap.add_argument('--profile', choices=('full-callback-v1', 'inline-clock-v1'), default='full-callback-v1')\n"
+        ],
+        [
+          3342,
+          3529,
+          "    inline = a.profile == 'inline-clock-v1'\n"
+        ],
+        [
+          4044,
+          4107,
+          "        assert b['authority'] == 'ROOT_REVIEWED_INLINE_CLOCK_RELEASE_BINARY'\n"
+        ],
+        [
+          8197,
+          8355,
+          "    if inline:\n"
+        ],
+        [
+          8412,
+          8532,
+          ""
+        ],
+        [
+          9292,
+          9546,
+          ""
+        ],
+        [
+          9709,
+          9828,
+          "                    stderr=str(work/'stderr.txt'), cpu_seconds=60, wall_seconds=90, file_bytes=MIB)\n"
+        ],
+        [
+          9880,
+          10017,
+          "                outer = [tools['timeout']['path'], '--signal=TERM', '--kill-after=10s', '100s', tools['python']['path'],\n"
+        ],
+        [
+          10252,
+          10347,
+          "                    parent_timeout_seconds=115, parent_failure_cleanup_seconds=10))\n"
+        ],
+        [
+          10731,
+          10790,
+          "                        child.wait(timeout=115)\n"
+        ],
+        [
+          11761,
+          12130,
+          "                assert child.returncode == 0 and parent_error is None\n                assert type(receipt['exit']) is int and receipt['exit'] == 0\n"
+        ],
+        [
+          12566,
+          12683,
+          "                assert math.isfinite(receipt['elapsed_seconds']) and 0 <= receipt['elapsed_seconds'] <= 90\n"
+        ],
+        [
+          12914,
+          14124,
+          ""
+        ],
+        [
+          14734,
+          14884,
+          ""
+        ],
+        [
+          16753,
+          16867,
+          "                        assert summary['status']=='PASS' and summary['scope']=='inline-clock-v1-before-taken-backedge'\n"
+        ],
+        [
+          19111,
+          19341,
+          "            sources_unchanged=stable,metrics=metrics,scope='finite authored taken-backedge prototype; no general progress bound'))\n"
+        ]
+      ],
+      "previous_sha256": "51fb8e9bbefea458d81ac025553a370c483adcb3c98b3f9851123a667367ffc6"
+    }
+  },
+  "python_current_sha256": "54850e8ab8f5fb4119828db227a3808606a582e2e25c053ed8176c624c1f8719",
+  "python_previous_sha256": "ac9d8ab4f5e91e63bbab79af4d7cc46ef958801ff1cb2dcf5a459f64dc77b1af",
+  "schema": 1,
+  "sources": {
+    "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
+    "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+    "evaluation/adjacent-b2/artifact-verifier/startup_custody.py": "6c236204101fb5950f955eb0540a51756bcf27d0a09860a9feab5f041d51f8c5",
+    "evaluation/adjacent-b2/artifact-verifier/startup_source_controls.py": "3467ef2c14329b14b7ffb7098781ff33d293dc77e5df9c8f38f7fe7de3b9738d",
+    "evaluation/adjacent-b2/artifact-verifier/verify_saved.py": "c66928731b11cb4a77652c421435084a54b78c701e34e1b689f7d1e402ead3ec",
+    "evaluation/admission/core_367_inventory.py": "846a80ddd550766ea41c8c7d1e9f88347d8d746afdeb279d6e97d78dfc20588e",
+    "evaluation/admission/core_813_inventory.py": "017a527178dd8c183856b008c9c47079571023ea6a33815d53123897b9651318",
+    "evaluation/admission/core_cc846_inventory.py": "7482897b794157941150a58a7ac770608f285e3c5fd4d79fd304e05f65ec82da",
+    "evaluation/admission/recorder_parallel.py": "c67bc1873b38c59d29d8ebb3749c4e6056a65afb3da27d1703d40418bb422065",
+    "evaluation/admission/test_main367_inventory.py": "c1142cf5d928e1935852f2f24f822be7c58f160a74bc2fa21cb52db85cbc468f",
+    "evaluation/admission/test_mainc712_inventory.py": "7b451236662b8b2a2072181d73c9ebfc7b811fcf183c1c41648592b17747a093",
+    "evaluation/offline-corpus/full_startup_e9.py": "c3b4a4bb09bb428105e037d72733d76990bcaf524cfa25b029a7bb5b9e028666",
+    "evaluation/offline-corpus/full_startup_e9_controls.py": "85dde6cb811005a6dc6935d25301b79a4187465c7e41c30eb1d7e056fc6ea388",
+    "evaluation/offline-corpus/full_startup_e9_execute.py": "4c5574329a8c6e81a7325f89a2bb034881c756292d0a0a553a582a27fb1d483b",
+    "evaluation/offline-corpus/full_startup_e9_execute_controls.py": "564babf3e364e4720f301342661de15a800ad721b1c72014ff4939a8efe476b1",
+    "evaluation/offline-router-corpus/absolute-60495e5/README.md": "435e53466fe5cbb75ab4ec8043e962447453ddaf1ea3e9ac78c07b00cbc42c04",
+    "evaluation/offline-router-corpus/absolute-60495e5/results.json": "a4bd98eeff23b1e0189e0bcdd1014c87d911e9c68c0a88ace94e089fc691b30e",
+    "evaluation/offline-router-corpus/source-batch-controls/README.md": "77deb875ca785ba9022d4bc6595fcf6c0fb11f4a7349d544d3eb707bcc141f7a",
+    "evaluation/offline-router-corpus/source-batch-controls/results.json": "e85f39d95d0903a013432075625d52124f70bf1fe6571d9838b4866674c462f4",
+    "evaluation/offline-router-native/absolute_profile_controls.py": "dc5d7f7d19e4f61178f3bb1bdd19f6f2386bf03b9d72772bc7041df108525487",
+    "evaluation/offline-router-native/final_admission.py": "cd95a03b9733123dd4fe520c25cf4cf8b780595fecb15489c4b708949a624d31",
+    "evaluation/software-preemption-spsc/README.md": "82d738e78c522a91a730691895dc56035852a6165c10517573334e988355bba3",
+    "evaluation/software-preemption-spsc/b4bb411-controls.json": "20794256109d9f7cfe74d96a0a909cbb6a2c36c3c1529f87251d51fc56ddfcd6",
+    "evaluation/software-preemption-spsc/b4bb411-results.json": "8a3d4ff35cebe98d2c582cf094fadb63607a6dd40e303ac76be079cb2ef5f27c",
+    "evaluation/software-preemption-spsc/b4bb411-spsc-measurements.csv": "2a7a8a10701d94df92ea733b9d1cf906eba55d2189f99f9f801988465abd2d7a",
+    "evaluation/software-preemption-spsc/measurements-73d1830.csv": "0d66361e56caaa5c0cfe7664eeca1120de2d8b947b399d2e374b4a2253fea57b",
+    "evaluation/software-preemption-spsc/results-73d1830.json": "d870561633d09603bcb6e3b1f5fd9f303b0422b4a2d314a028db8a74760499f8",
+    "evaluation/software-preemption-spsc/validation-73d1830.json": "5913fce8fe7a9ccfa5f54b1038b3532ca9bb1299edbdcb4058b26b2be2e91298",
+    "tools/elf-rewrite/e9-sites-controls.py": "3a010c0271d8e7bf4c2c2d36d7c744666cc5237d49031f7c409418980cecbced",
+    "tools/elf-rewrite/e9-sites.py": "c53543d226f89437c8dc8912c55f67b604486683a09eed923a25f723f83e8db9",
+    "tools/software-preemption/README.md": "4a148e8473a4f520b3f5b4e7a13fd0d523c0ad351ca36b26744f45f9a075a908",
+    "tools/software-preemption/counter.rs": "f2cc6dd01674562cf3e5cb47eb3ec3636b822d29fc9ef99575adbf9245ce7805",
+    "tools/software-preemption/evaluate.py": "7f4bdda29efeee6047e6aab248b74db91feb6d0f1dbeef0ab29916752e760a9f",
+    "tools/software-preemption/inline_clock.rs": "3c9a9b13f1fe2451dc731e2c2c5e7bfca7e5e2641dcba6401f9d83821efdaebc",
+    "tools/software-preemption/inline_clock/rendezvous.rs": "5c705fe621f260fd8c649be0d6155742223cc9e89ff91f981c2eff5ba2674b16",
+    "tools/software-preemption/inline_clock/rendezvous/tests.rs": "5f68fa83cefb2f22885704deaef4c2893af8bcec6dcdb169c84e233cc61940f7",
+    "tools/software-preemption/main.rs": "9a780de167402524729da5e7c384ba2f7476c4d303b6248ee8723d7d06268a3a",
+    "tools/software-preemption/refusal_controls.py": "f5154e5a655c615c7412c5c76cdc1b321f774367b09ed33efd6cd8b07cbd739a",
+    "tools/software-preemption/run.py": "4920e3899865bec2dc78299610d95159be6d41493cc18815dc7903dd6aee8346"
+  },
+  "workspace_changes": {
+    "unit/liteinst_preempt/main": {
+      "current": {
+        "ignored": 0,
+        "tests": 32
+      },
+      "previous": {
+        "ignored": 0,
+        "tests": 2
+      }
+    }
+  }
+}

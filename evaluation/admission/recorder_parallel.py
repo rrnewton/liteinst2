@@ -48,13 +48,15 @@ def discover():
     from core_5cda_inventory import python_identities
     declared = python_identities(HERE)
     count = json.loads((HERE / 'corpus.json').read_bytes())['recorder_tests']
-    require(type(count) is int and count == 355 and len(identities) == count
+    require(type(count) is int and count == 356 and len(identities) == count
             and len(set(identities)) == count and sorted(identities) == sorted(declared),
             'changed_recorder_identity_population')
     from recorder_shards_inventory import ADDED
     require(all(name in identities for name in ADDED), 'missing_historical_shard')
     from core_367_inventory import ADDED as ABSOLUTE_STARTUP_CONTROL
     require(ABSOLUTE_STARTUP_CONTROL in identities, 'missing_absolute_startup_control')
+    from core_c712_inventory import ADDED as SOFTWARE_PREEMPTION_CONTROL
+    require(SOFTWARE_PREEMPTION_CONTROL in identities, 'missing_software_preemption_control')
     return cases, identities
 
 
@@ -64,7 +66,7 @@ def partition(identities, workers):
             and len(set(identities)) == len(identities), 'invalid_identity_population')
     from recorder_shards_inventory import ADDED
     # The pure helper also accepts synthetic/non-shard populations.
-    # Actual workers authenticate all355 and allfour in discover().
+    # Actual workers authenticate all356 and allfour in discover().
     if not all(name in identities for name in ADDED):
         modules = list(dict.fromkeys(name.split('.', 1)[0] for name in identities))
         groups = [[] for _ in range(workers)]

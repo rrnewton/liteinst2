@@ -22,8 +22,8 @@ CURRENT = DATA['current_corpus_sha256']
 AC0963 = DATA['ac0963']
 LIVE = AC0963['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
-RECORDER_TESTS = main367.RECORDER_TESTS
-PYTHON_CURRENT = main367.PYTHON_CURRENT
+RECORDER_TESTS = main367.mainc712.RECORDER_TESTS
+PYTHON_CURRENT = main367.mainc712.PYTHON_CURRENT
 PYTHON_PRE_5CDA = '462da94e73e635ac5c3b46192cba7b991de92b72ec871853204e45d529943b3f'
 PYTHON_PREVIOUS = 'fb8adb475b7ecbafb984dfa99c674f8a60fdb59fbb5adeb5754482e1136bb3bc'
 PYTHON_MODULE = 'test_main_query_inventory'
@@ -190,8 +190,16 @@ def require_historical354(declared):
     require_historical350(old)
 
 
-def require_current(declared):
-    """Only the exact absolute-startup355 corpus enters live qualification."""
+def require_historical355(declared):
+    """The exact absolute-startup355 predecessor remains independently required."""
+    require(type(declared) is dict and digest(declared) == main367.CURRENT, 'ac0963_inventory_differs')
     old = main367.before_current(declared, 'ac0963_inventory_differs',
                                  'ac0963_source_inventory_differs')
     require_historical354(old)
+
+
+def require_current(declared):
+    """Only the exact software-preemption356 corpus enters live qualification."""
+    old = main367.mainc712.before_current(declared, 'ac0963_inventory_differs',
+                                         'ac0963_source_inventory_differs')
+    require_historical355(old)

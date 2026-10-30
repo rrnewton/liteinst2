@@ -15,7 +15,7 @@ import recorder_shards_inventory as shards
 
 class Main367InventoryTests(unittest.TestCase):
     def test_exact_absolute_startup_sources_catalog_and_refusals(self):
-        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        actual = current.mainc712.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (106, 3831, 37))
@@ -27,17 +27,17 @@ class Main367InventoryTests(unittest.TestCase):
         self.assertEqual(old['recorder_tests'], 354)
         self.assertEqual(sum(x['tests'] for x in old['harness_test_counts']['workspace_tests'].values()), 3822)
         self.assertEqual(actual['harness_test_counts']['serial_launch'], old['harness_test_counts']['serial_launch'])
-        self.assertIsNone(inventory.require_current(actual))
+        self.assertIsNone(inventory.require_historical355(actual))
         self.assertIsNone(inventory.require_historical354(old))
         for wrong in (old, shards.before_current(old)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(wrong)
+                inventory.require_historical355(wrong)
         for name, number in (('unit/liteinst_artifact/lib', 50), ('unit/liteinst_rewrite/lib', 155)):
             for value in (number - 1, number + 1, True, float(number)):
                 wrong = copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests'][name]['tests'] = value
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                    inventory.require_current(wrong)
+                    inventory.require_historical355(wrong)
         for value in (354, 356, True, 355.0):
             wrong = copy.deepcopy(actual); wrong['recorder_tests'] = value
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main367_inventory_differs$'):
@@ -46,7 +46,7 @@ class Main367InventoryTests(unittest.TestCase):
             wrong = dict(actual); wrong[key] = None
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main367_inventory_differs$'):
                 current.before_current(wrong)
-        identities = historical.python_identities(Path(__file__).parent)
+        identities = current.mainc712.before_python(historical.python_identities(Path(__file__).parent))
         self.assertEqual(len(identities), 355)
         previous = current.before_python(identities)
         self.assertEqual((len(previous), current.digest(previous)), (354, shards.PYTHON_CURRENT))

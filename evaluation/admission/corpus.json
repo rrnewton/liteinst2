@@ -6495,7 +6495,7 @@
       },
       "unit/liteinst_preempt/main": {
         "ignored": 0,
-        "tests": 2
+        "tests": 32
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7590,6 +7590,6 @@
       }
     ]
   },
-  "recorder_tests": 355,
+  "recorder_tests": 356,
   "schema_version": 1
 }
