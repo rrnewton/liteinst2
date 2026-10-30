@@ -2,6 +2,25 @@
 #define LI2_LINKED_PLAN_H
 #include "region_plan.h"
 
+#ifdef LI2_LINK_GRAPH_OBSERVE
+#if LI2_LINK_GRAPH_OBSERVE != 1 || !defined(LI2_LINKED_EPOCH) || !defined(LI2_LINKED_NATIVE_HINT) || defined(LI2_LINKED_EPOCH_CAPTURE)
+#error "graph observation requires the distinct release-only native-hint profile"
+#endif
+enum li2_link_graph_reason {
+    LI2_LG_INITIAL, LI2_LG_PAGE, LI2_LG_QUEUE, LI2_LG_OVERLAP,
+    LI2_LG_EXITS, LI2_LG_HEADS, LI2_LG_EMPTY, LI2_LG_NO_FRONTIER,
+    LI2_LG_PRIMARY, LI2_LG_FALLTHROUGH, LI2_LG_KAHN_STALL,
+    LI2_LG_DISTANCE, LI2_LG_INCOMING, LI2_LG_REASON_COUNT
+};
+/* Diagnostic counts have no planning, source or execution authority. */
+struct li2_link_graph_observation {
+    uint64_t overflow,reasons[LI2_LG_REASON_COUNT];
+};
+const struct li2_link_graph_observation *li2_link_graph_observation(void);
+_Static_assert(LI2_LG_REASON_COUNT==13,"exact first-refusal categories");
+_Static_assert(sizeof(struct li2_link_graph_observation)==112,"bounded observation");
+#endif
+
 /* A new graph contract. No old contiguous span/region description is cast. */
 #define LI2_LINK_VERSION 1U
 #define LI2_LINK_HEADS 64U

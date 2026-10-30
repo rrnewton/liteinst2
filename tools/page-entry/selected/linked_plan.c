@@ -102,10 +102,27 @@ static int resolve(const struct link_node *q,unsigned count,uintptr_t pc,uint32_
     }
     return 0;
 }
+#ifdef LI2_LINK_GRAPH_OBSERVE
+static struct li2_link_graph_observation link_graph_counts;
+const struct li2_link_graph_observation *li2_link_graph_observation(void) {
+    return &link_graph_counts;
+}
+static void link_graph_refusal(unsigned reason) {
+    if(reason>=LI2_LG_REASON_COUNT || link_graph_counts.reasons[reason]==UINT64_MAX) {
+        link_graph_counts.overflow=1;return;
+    }
+    link_graph_counts.reasons[reason]++;
+}
+#define LG_GRAPH(reason) do { link_graph_refusal(reason); return LI2_REGION_PLAN_GRAPH; } while(0)
+#define LG_ENQUEUE(page,pc) ((pc)<(page) || (pc)-(page)>=LI2_REGION_PAGE?LI2_LG_PAGE:LI2_LG_QUEUE)
+#else
+#define LG_GRAPH(reason) return LI2_REGION_PLAN_GRAPH
+#endif
+
 static int graph(struct li2_link_plan *p) {
     struct link_node q[LI2_LINK_HEADS+LI2_LINK_EXITS]={0};unsigned count=0;
     unsigned char occupied[LI2_REGION_PAGE]={0};
-    if(enqueue(q,&count,p->page,p->entry)!=0)return LI2_REGION_PLAN_GRAPH;
+    if(enqueue(q,&count,p->page,p->entry)!=0)LG_GRAPH(LI2_LG_INITIAL);
     for(unsigned at=0;at<count;at++) {
         unsigned offset=(unsigned)(q[at].pc-p->page);
         size_t available=LI2_REGION_PAGE-offset;if(available>15)available=15;
@@ -113,38 +130,38 @@ static int graph(struct li2_link_plan *p) {
         int result=describe(p,q[at].pc,p->source+offset,available,&d);
         if(result)return result;
         for(unsigned j=0;j<d.decoded.length;j++) {
-            if(occupied[offset+j])return LI2_REGION_PLAN_GRAPH;
+            if(occupied[offset+j])LG_GRAPH(LI2_LG_OVERLAP);
             occupied[offset+j]=1;
         }
         q[at].decoded=1;
         if(!d.ready) {
             if(!at)return LI2_REGION_PLAN_MISS;
-            if(p->exits==LI2_LINK_EXITS)return LI2_REGION_PLAN_GRAPH;
+            if(p->exits==LI2_LINK_EXITS)LG_GRAPH(LI2_LG_EXITS);
             unsigned i=p->exits++;p->exit_pc[i]=q[at].pc;p->frontier[i]=d;
             q[at].token=LI2_LINK_HEADS+i;continue;
         }
-        if(p->heads==LI2_LINK_HEADS)return LI2_REGION_PLAN_GRAPH;
+        if(p->heads==LI2_LINK_HEADS)LG_GRAPH(LI2_LG_HEADS);
         unsigned i=p->heads++;q[at].token=i;p->original[i]=d;
         p->head[i].source_offset=offset;p->head[i].source_length=d.decoded.length;
         p->source_bytes+=d.decoded.length;
         if(d.flow==LI2_REGION_NEXT) {
-            if(enqueue(q,&count,p->page,d.decoded.next_pc)<0)return LI2_REGION_PLAN_GRAPH;
+            if(enqueue(q,&count,p->page,d.decoded.next_pc)<0)LG_GRAPH(LG_ENQUEUE(p->page,d.decoded.next_pc));
         } else if(d.flow==LI2_REGION_JCC || d.flow==LI2_REGION_JMP) {
-            if(enqueue(q,&count,p->page,d.target)<0)return LI2_REGION_PLAN_GRAPH;
+            if(enqueue(q,&count,p->page,d.target)<0)LG_GRAPH(LG_ENQUEUE(p->page,d.target));
             if(d.flow==LI2_REGION_JCC && enqueue(q,&count,p->page,d.decoded.next_pc)<0)
-                return LI2_REGION_PLAN_GRAPH;
+                LG_GRAPH(LG_ENQUEUE(p->page,d.decoded.next_pc));
         } else return LI2_REGION_PLAN_DECODER;
     }
-    if(!p->heads || !p->exits)return LI2_REGION_PLAN_GRAPH;
+    if(!p->heads || !p->exits)LG_GRAPH(!p->heads?LI2_LG_EMPTY:LI2_LG_NO_FRONTIER);
     unsigned incoming[LI2_LINK_HEADS]={0},done[LI2_LINK_HEADS]={0};
     unsigned distance[LI2_LINK_HEADS]={0};distance[0]=1;
     for(unsigned i=0;i<p->heads;i++) {
         struct li2_region_head *h=&p->head[i];const struct li2_span_decoded *d=&p->original[i];
         h->successor_count=d->flow==LI2_REGION_JCC?2:1;
         if(!resolve(q,count,d->flow==LI2_REGION_NEXT?d->decoded.next_pc:d->target,&h->successors[0]))
-            return LI2_REGION_PLAN_GRAPH;
+            LG_GRAPH(LI2_LG_PRIMARY);
         if(h->successor_count==2 && !resolve(q,count,d->decoded.next_pc,&h->successors[1]))
-            return LI2_REGION_PLAN_GRAPH;
+            LG_GRAPH(LI2_LG_FALLTHROUGH);
         /* block is the exact original-head identity, not an old contiguous
            eight-block claim. Every head is a legal emitted link destination. */
         h->block=i;
@@ -153,18 +170,22 @@ static int graph(struct li2_link_plan *p) {
     }
     for(unsigned pass=0;pass<p->heads;pass++) {
         unsigned i=0;while(i<p->heads && (done[i] || incoming[i]))i++;
-        if(i==p->heads || !distance[i])return LI2_REGION_PLAN_GRAPH;
+        if(i==p->heads || !distance[i])LG_GRAPH(i==p->heads?LI2_LG_KAHN_STALL:LI2_LG_DISTANCE);
         done[i]=1;if(distance[i]>p->longest_path)p->longest_path=distance[i];
         const struct li2_region_head *h=&p->head[i];
         for(unsigned j=0;j<h->successor_count;j++) {
             unsigned k=h->successors[j];if(k>=p->heads)continue;
-            if(!incoming[k])return LI2_REGION_PLAN_GRAPH;
+            if(!incoming[k])LG_GRAPH(LI2_LG_INCOMING);
             incoming[k]--;
             if(distance[k]<distance[i]+1)distance[k]=distance[i]+1;
         }
     }
     return LI2_REGION_PLAN_OK;
 }
+#undef LG_GRAPH
+#ifdef LI2_LINK_GRAPH_OBSERVE
+#undef LG_ENQUEUE
+#endif
 static uintptr_t destination(const struct li2_link_plan *p,unsigned k) {
     return k<p->heads?p->generated+p->head[k].generated_offset:p->exit_pc[k-LI2_LINK_HEADS];
 }

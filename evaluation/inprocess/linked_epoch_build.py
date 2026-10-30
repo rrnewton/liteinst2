@@ -123,8 +123,10 @@ def capture_config(path,output,pin,binary,reuse=False):
     return dict(image=fact(path),head_rva=pc,source_sha256=H(source),header=fact(header),path=str(header))
 
 
-def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False):
+def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False):
     need(type(native_hint)is bool,'exact distinct native-hint build selector')
+    need(type(graph_observe)is bool and (not graph_observe or
+         native_hint and extra==()and capture_image is None),'release-only native-hint graph observer')
     need(builder.linked_epoch is True and builder.scalar_span is True and builder.extra_decoder_sources==('region.rs',)and
          builder.decoder_features==FEATURES and builder.record.get('decoder_features')==list(FEATURES)and
          builder.environment.get('LI2_DECODER_FEATURES')=='linked-epoch','exact new linked-epoch Build/archive selection')
@@ -137,14 +139,14 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     need((capture_image is not None)==capture,'fresh image iff explicit linked capture profile')
     output=private/'release';output.mkdir();binding=binding_config(builder,archive,output,pin,binary,run,native_hint=native_hint)
     config=capture_config(capture_image,output,pin,binary,reuse)if capture else None
-    script=pin(SELECTED/('build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
+    script=pin(SELECTED/('build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-epoch-graph-observe.sh'if graph_observe else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
     rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one exact linked runtime compiler recipe')
     argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$selected_dir':SELECTED,'$parent_dir':SELECTED.parent,
         '$archive':archive,'$output':output})
     if not capture:argv[1:1]=['-DLI2_'+x+'=1'for x in extra]
     elif native_hint:argv.insert(argv.index('-DLI2_LINKED_EPOCH=1'),'-DLI2_LINKED_NATIVE_HINT=1')
     units=[str(SELECTED.parent/x)for x in UNITS]+[str(SELECTED/x)for x in('unrolled_hash_plan.c','region_plan.c','linked_plan.c')]
-    macros=extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
+    macros=(('LINK_GRAPH_OBSERVE',)if graph_observe else())+extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
         'SCALAR_REGION','SCALAR_REGION_REUSE','INITIAL_CODE_PROTECTION','UNROLLED_HASH','MAPS_MAINTAINED')+MACROS
     need(argv[-2:]==['-o',str(output/'bridge-linked-epoch.so')]and
          [x for x in argv if x.endswith(('.c','.S'))]==units and
@@ -155,6 +157,12 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     state=r['release_build']=dict(status='failed',recipe=fact(script),archive=fact(archive),argv=argv,
         linked_binding=binding,capture_config=config)
     if native_hint:state['native_hint']=True
+    if graph_observe:
+        donor=pin(SELECTED/'build-linked-epoch-native-hint.sh')
+        need(script.read_bytes()==donor.read_bytes().replace(b'-DLI2_LINKED_NATIVE_HINT=1',
+             b'-DLI2_LINK_GRAPH_OBSERVE=1 -DLI2_LINKED_NATIVE_HINT=1',1),
+             'whole source-owned hint recipe plus only the observer macro')
+        state['graph_observe']=True
     headers('release-bridge-headers',argv,units,archive,builder,pin,aliases,run,state)
     required=('maps_phase.inc','maps_view.inc','initial_code_protection.h','selected_unrolled_hash.inc','unrolled_hash.h',
         'unrolled_source.inc','unrolled_source.h','rseq_unrolled.inc','region_plan.h','region_source.h','region_source.inc',

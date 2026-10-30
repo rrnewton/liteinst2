@@ -921,7 +921,18 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
 #undef LNH_FIELD
     text(&q,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)q.bytes,q.used,0,0,0);
 #endif
+#ifdef LI2_LINK_GRAPH_OBSERVE
+    const struct li2_link_graph_observation *g=li2_link_graph_observation();
+    struct writer gw={.used=0};text(&gw,"LI2_LINKED_GRAPH_OBSERVE {\"version\":1");
+    field(&gw,",\"status\":",status);field(&gw,",\"failure_code\":",code);
+    field(&gw,",\"overflow\":",g->overflow);
+    selected_repeat_array(&gw,",\"reasons\":",g->reasons,LI2_LG_REASON_COUNT);
+    text(&gw,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)gw.bytes,gw.used,0,0,0);
+#endif
 }
+#ifdef LI2_LINK_GRAPH_OBSERVE
+_Static_assert(17*21+160<=sizeof(((struct writer *)0)->bytes),"bounded graph observation report");
+#endif
 #ifdef LI2_LINKED_NATIVE_HINT
 _Static_assert(115*21+1600<=sizeof(((struct writer *)0)->bytes),"bounded linked-epoch hint report");
 _Static_assert(26*21+700<=sizeof(((struct writer *)0)->bytes),"bounded native-hint report");
