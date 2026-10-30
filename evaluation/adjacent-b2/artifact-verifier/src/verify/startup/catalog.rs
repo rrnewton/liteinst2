@@ -53,6 +53,16 @@ impl Reader<'_> {
     }
 }
 pub(super) fn decode(bytes: &[u8]) -> Result<boot::Input> {
+    decode_mode(bytes, None)
+}
+pub(super) fn decode_absolute_prerequisites(bytes: &[u8], policy: &Policy) -> Result<boot::Input> {
+    require(
+        policy.absolute_prerequisites.is_some(),
+        "explicit absolute prerequisite catalog policy",
+    )?;
+    decode_mode(bytes, Some(policy))
+}
+fn decode_mode(bytes: &[u8], absolute: Option<&Policy>) -> Result<boot::Input> {
     // The existing W01 product-member bound remains 16 MiB, even though the
     // runtime codec also supports larger catalogs in other clients.
     require((56..=FILE).contains(&bytes.len()), "catalog W01 file cap")?;
@@ -67,10 +77,20 @@ pub(super) fn decode(bytes: &[u8]) -> Result<boot::Input> {
         records: RECORDS,
     };
     require(
-        r.take(8)? == b"LI2BOOT\0" && r.n()? == 2,
-        "catalog explicit v2 wire",
+        r.take(8)? == b"LI2BOOT\0" && r.n()? == (if absolute.is_some() { 3 } else { 2 }),
+        if absolute.is_some() {
+            "catalog explicit v3 wire"
+        } else {
+            "catalog explicit v2 wire"
+        },
     )?;
     let program = r.n()?;
+    let roles = if absolute.is_some() {
+        r.records = r.records.checked_sub(2).ok_or("catalog total records")?;
+        Some([host(r.n()?)?, host(r.n()?)?])
+    } else {
+        None
+    };
     let interpreter = r.bytes(4095)?;
     let bootstrap_dso = r.bytes(4095)?;
     let n = r.records(16)?;
@@ -80,6 +100,14 @@ pub(super) fn decode(bytes: &[u8]) -> Result<boot::Input> {
             path: r.bytes(4095)?,
             identity: ContentId(checked(r.take(32)?.try_into())?),
         });
+    }
+    if let (Some(policy), Some(indices)) = (absolute, roles) {
+        require(
+            indices[0] != indices[1]
+                && indices.iter().all(|&i| i < dependencies.len())
+                && Some(indices) == policy.absolute_prerequisites,
+            "catalog exact absolute prerequisite roster indices",
+        )?;
     }
     let app_stack = r.span()?;
     let hook_pc = r.n()?;

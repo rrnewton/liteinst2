@@ -11,7 +11,18 @@ pub(in crate::verify) struct Bytes {
 }
 pub(in crate::verify) fn bytes(start: u64, carrier_offset: u64, policy: &Policy) -> Result<Bytes> {
     let interpreter = Range::bytes(start, policy.runtime.interpreter.len() + 1)?;
-    let strings = Range::bytes(interpreter.end, policy.runtime.bootstrap_dso.len() + 2)?;
+    let needed = policy.needed()?;
+    let mut string_bytes = 1u64;
+    let mut offsets = Vec::new();
+    for name in &needed {
+        offsets.push(string_bytes);
+        string_bytes = add(string_bytes, name.len() as u64 + 1)?;
+    }
+    require(
+        string_bytes <= policy.caps[2] && string_bytes - 1 <= policy.caps[1],
+        "actual aggregate startup string charge",
+    )?;
+    let strings = Range::new(interpreter.end, add(interpreter.end, string_bytes)?)?;
     let symbols = Range::new(
         add(strings.end, 7)? & !7,
         add(add(strings.end, 7)? & !7, 24)?,
@@ -20,7 +31,10 @@ pub(in crate::verify) fn bytes(start: u64, carrier_offset: u64, policy: &Policy)
         add(symbols.end, 3)? & !3,
         add(add(symbols.end, 3)? & !3, 16)?,
     )?;
-    let dynamic = Range::new(add(hash.end, 7)? & !7, add(add(hash.end, 7)? & !7, 112)?)?;
+    let dynamic = Range::new(
+        add(hash.end, 7)? & !7,
+        add(add(hash.end, 7)? & !7, policy.mode().dynamic_bytes())?,
+    )?;
     require(
         dynamic.end - start <= policy.caps[4],
         "actual startup metadata charge",
@@ -35,19 +49,25 @@ pub(in crate::verify) fn bytes(start: u64, carrier_offset: u64, policy: &Policy)
     };
     let mut out = vec![0; host(dynamic.end - start)?];
     out[..policy.runtime.interpreter.len()].copy_from_slice(&policy.runtime.interpreter);
-    let at = host(strings.start - start + 1)?;
-    out[at..at + policy.runtime.bootstrap_dso.len()].copy_from_slice(&policy.runtime.bootstrap_dso);
+    for (name, offset) in needed.iter().zip(&offsets) {
+        let at = host(add(strings.start - start, *offset)?)?;
+        out[at..at + name.len()].copy_from_slice(name);
+    }
     let at = host(hash.start - start)?;
     out[at..at + 16].copy_from_slice(&[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    let records = [
-        (1, 1),
+    let mut records: Vec<(u64, u64)> = offsets.into_iter().map(|offset| (1, offset)).collect();
+    records.extend([
         (5, va(strings.start)?),
         (10, strings.len()),
         (6, va(symbols.start)?),
         (11, 24),
         (4, va(hash.start)?),
         (0, 0),
-    ];
+    ]);
+    require(
+        records.len() as u64 * 16 == dynamic.len(),
+        "exact selected startup dynamic grammar",
+    )?;
     for (index, (tag, value)) in records.into_iter().enumerate() {
         let at = host(dynamic.start - start)? + index * 16;
         out[at..at + 8].copy_from_slice(&u64::to_le_bytes(tag));

@@ -278,6 +278,15 @@ class Controls(unittest.TestCase):
         with mock.patch.object(reader,'git',side_effect=source_git):
             with self.assertRaises(TypeError): reader.probe_measurement(sources,refs,captured,context)
 
+    def test_absolute_final_profile_stage_is_explicit_and_has_exact_flags(self):
+        tail=['--inputs','/private/inputs','--inputs-sha256','1'*64,'--output','/private/new']
+        for stage in ('final-profile','final-profile-absolute-prerequisites'):
+            actual=D.command(self.root,self.python,self.plan(stage,tail))
+            self.assertEqual(actual,[str(self.python),'-B',D.NATIVE+'prepare_profile.py',stage,*tail])
+            self.assertNotIn('observe',actual);self.assertNotIn('n01',actual)
+            with self.assertRaises(ValueError):D.command(self.root,self.python,self.plan(stage,tail+['--accept-contract-sha256','2'*64]))
+            with self.assertRaises(ValueError):D.command(self.root,self.python,self.plan(stage,tail[:-2]))
+
     def test_preserved_profiler_methods_are_exact(self):
         new=(BASE/'profile_preflight_controls.py').read_text()
         before="Path(__file__).parent / 'after/evaluation/offline-router-corpus/profile_preflight.py'"

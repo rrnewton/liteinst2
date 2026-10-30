@@ -5,6 +5,9 @@ use formats::startup as boot;
 
 /// This producer always retains both authored program denominators.
 pub const PROFILE: &str = "elf-disassembly-null-jumps-static-exec-router-bootstrap-v1";
+/// Separate class with two ordered absolute runtime prerequisites before the bootstrap.
+pub const ABSOLUTE_PREREQUISITES_PROFILE: &str =
+    "elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1";
 /// A separate bounded policy freezes pathnames and runtime package identities.
 pub const POLICY_LIMIT: usize = 64 * 1024;
 
@@ -16,6 +19,7 @@ pub struct Bound {
     program: u64,
     runtime: boot::Policy,
     startup: carrier::StartupLimits,
+    startup_class: boot::StartupClass,
     policy: Vec<u8>,
 }
 impl Bound {
@@ -29,6 +33,46 @@ impl Bound {
         runtime: &[u8],
         runtime_id: ContentId,
     ) -> Result<Self, Error> {
+        Self::bind_mode(
+            original,
+            disassembly,
+            disassembly_id,
+            planning,
+            planning_id,
+            (runtime, runtime_id),
+            false,
+        )
+    }
+    /// Bind the separate fixed three-needed class, never fall back to the old parser.
+    pub fn bind_absolute_prerequisites(
+        original: &[u8],
+        disassembly: &[u8],
+        disassembly_id: ContentId,
+        planning: &[u8],
+        planning_id: ContentId,
+        runtime: &[u8],
+        runtime_id: ContentId,
+    ) -> Result<Self, Error> {
+        Self::bind_mode(
+            original,
+            disassembly,
+            disassembly_id,
+            planning,
+            planning_id,
+            (runtime, runtime_id),
+            true,
+        )
+    }
+    fn bind_mode(
+        original: &[u8],
+        disassembly: &[u8],
+        disassembly_id: ContentId,
+        planning: &[u8],
+        planning_id: ContentId,
+        runtime: (&[u8], ContentId),
+        absolute: bool,
+    ) -> Result<Self, Error> {
+        let (runtime, runtime_id) = runtime;
         check(
             original.len() <= boot::MAX_FILE,
             "runtime original file bound",
@@ -36,14 +80,32 @@ impl Bound {
         let imported = disassembly::import(original, disassembly, disassembly_id)?;
         let heads = imported.original_heads();
         let selected = imported.bind_adjacent_routed_jmp(planning, planning_id)?;
-        let (program, policy, startup) = parse_policy(
-            runtime,
-            runtime_id,
-            original,
-            disassembly_id,
-            planning_id,
-            &selected.base.selection,
-        )?;
+        let (program, policy, startup, startup_class) = if absolute {
+            parse_policy_class(
+                runtime,
+                runtime_id,
+                original,
+                disassembly_id,
+                planning_id,
+                &selected.base.selection,
+                true,
+            )?
+        } else {
+            let (program, policy, startup) = parse_policy(
+                runtime,
+                runtime_id,
+                original,
+                disassembly_id,
+                planning_id,
+                &selected.base.selection,
+            )?;
+            (
+                program,
+                policy,
+                startup,
+                boot::StartupClass::SingleBootstrap,
+            )
+        };
         let (nh, ns) = denominator(program)?;
         check(
             heads.len() == nh
@@ -57,8 +119,21 @@ impl Bound {
             program,
             runtime: policy,
             startup,
+            startup_class,
             policy: runtime.to_vec(),
         })
+    }
+    pub fn profile(&self) -> &'static str {
+        match self.startup_class {
+            boot::StartupClass::SingleBootstrap => PROFILE,
+            boot::StartupClass::AbsolutePrerequisites(_) => ABSOLUTE_PREREQUISITES_PROFILE,
+        }
+    }
+    fn runtime_profile(&self) -> &'static str {
+        match self.startup_class {
+            boot::StartupClass::SingleBootstrap => boot::PROFILE,
+            boot::StartupClass::AbsolutePrerequisites(_) => boot::ABSOLUTE_PREREQUISITES_PROFILE,
+        }
     }
     /// Exact existing v6 manifest; neither planning limits nor source records change.
     pub fn manifest(&self) -> &[u8] {
@@ -66,12 +141,13 @@ impl Bound {
     }
     /// Full immutable binding evidence, also retained if downstream construction refuses.
     pub fn binding_files(&self) -> BTreeMap<String, Vec<u8>> {
+        let profile = self.profile();
         let mut files = self.selected.base.files.clone();
         files.insert("selection.txt".into(), self.manifest().to_vec());
         files.insert("startup-policy.txt".into(), self.policy.clone());
         files.insert("startup-profile.tsv".into(),format!(
-            "LI2STARTUP-PRODUCER\t1\nprofile\t{PROFILE}\nruntime_profile\t{}\nplanning_profile\t{}\nprogram\t{}\noriginal_heads\t{}\nselected_sites\t{}\nruntime_policy_sha256\t{}\nqualification_complete\tfalse\nexecution_authority\tnone\n",
-            boot::PROFILE, self.selected.profile(), program_name(self.program), self.heads.len(), self.selected.base.selection.sites.len(), ledger::hex(&ContentId::of(&self.policy).0)).into_bytes());
+            "LI2STARTUP-PRODUCER\t1\nprofile\t{profile}\nruntime_profile\t{}\nplanning_profile\t{}\nprogram\t{}\noriginal_heads\t{}\nselected_sites\t{}\nruntime_policy_sha256\t{}\nqualification_complete\tfalse\nexecution_authority\tnone\n",
+            self.runtime_profile(), self.selected.profile(), program_name(self.program), self.heads.len(), self.selected.base.selection.sites.len(), ledger::hex(&ContentId::of(&self.policy).0)).into_bytes());
         files
     }
 }
@@ -130,6 +206,7 @@ fn id(s: &str) -> Result<ContentId, Error> {
     check(ledger::hex(&id.0) == s, "canonical identity")?;
     Ok(id)
 }
+// Preserve the original strict parser entry and its existing source controls.
 fn parse_policy(
     bytes: &[u8],
     expected: ContentId,
@@ -138,6 +215,34 @@ fn parse_policy(
     planning: ContentId,
     selected: &Selection,
 ) -> Result<(u64, boot::Policy, carrier::StartupLimits), Error> {
+    let (program, policy, limits, _) = parse_policy_class(
+        bytes,
+        expected,
+        original,
+        disassembly,
+        planning,
+        selected,
+        false,
+    )?;
+    Ok((program, policy, limits))
+}
+fn parse_policy_class(
+    bytes: &[u8],
+    expected: ContentId,
+    original: &[u8],
+    disassembly: ContentId,
+    planning: ContentId,
+    selected: &Selection,
+    absolute: bool,
+) -> Result<
+    (
+        u64,
+        boot::Policy,
+        carrier::StartupLimits,
+        boot::StartupClass,
+    ),
+    Error,
+> {
     check(
         bytes.len() <= POLICY_LIMIT && ContentId::of(bytes) == expected,
         "runtime policy identity/size",
@@ -150,7 +255,19 @@ fn parse_policy(
     let r = text.lines().collect::<Vec<_>>();
     check((12..=27).contains(&r.len()), "runtime policy cardinality")?;
     check(
-        r[0] == "LI2BOOTSTRAP-POLICY 1" && r[1] == format!("profile {}", boot::PROFILE),
+        r[0] == (if absolute {
+            "LI2BOOTSTRAP-POLICY 2"
+        } else {
+            "LI2BOOTSTRAP-POLICY 1"
+        }) && r[1]
+            == format!(
+                "profile {}",
+                if absolute {
+                    boot::ABSOLUTE_PREREQUISITES_PROFILE
+                } else {
+                    boot::PROFILE
+                }
+            ),
         "runtime profile",
     )?;
     let program = match fields(r[2], "program", 2)?[1] {
@@ -169,7 +286,26 @@ fn parse_policy(
         )?;
     }
     let interpreter = path(fields(r[6], "interpreter", 2)?[1])?;
-    let bootstrap_dso = path(fields(r[7], "bootstrap", 2)?[1])?;
+    let (bootstrap_dso, role_paths) = if absolute {
+        let row = fields(r[7], "absolute-prerequisites", 4)?;
+        let libgcc = path(row[1])?;
+        let libc = path(row[2])?;
+        let bootstrap = path(row[3])?;
+        check(
+            libgcc != libc
+                && libgcc != bootstrap
+                && libc != bootstrap
+                && libgcc != interpreter
+                && libc != interpreter
+                && [&interpreter, &libgcc, &libc, &bootstrap]
+                    .iter()
+                    .all(|p| !p.contains(&b'$')),
+            "literal distinct absolute prerequisite roles",
+        )?;
+        (bootstrap, Some([libgcc, libc]))
+    } else {
+        (path(fields(r[7], "bootstrap", 2)?[1])?, None)
+    };
     let a = fields(r[8], "app-stack", 3)?;
     let app_stack = boot::Span {
         start: number(a[1])?,
@@ -189,17 +325,24 @@ fn parse_policy(
         .iter()
         .map(|s| number(s))
         .collect::<Result<Vec<_>, _>>()?;
+    let dynamic_bytes = if absolute { 144 } else { 112 };
+    let mut needed_bytes = bootstrap_dso.len() as u64 + 1;
+    if let Some(paths) = &role_paths {
+        for p in paths {
+            needed_bytes += p.len() as u64 + 1;
+        }
+    }
     for (&n, cap) in caps
         .iter()
-        .zip([4096, 4096, 4097, 112, 16384, 4096, 65536, 1048576])
+        .zip([4096, 4096, 4097, dynamic_bytes, 16384, 4096, 65536, 1048576])
     {
         check(n <= cap, "startup ceiling")?;
     }
     check(
         caps[0] > interpreter.len() as u64
-            && caps[1] > bootstrap_dso.len() as u64
-            && caps[2] >= bootstrap_dso.len() as u64 + 2
-            && caps[3] == 112,
+            && caps[1] >= needed_bytes
+            && caps[2] > needed_bytes
+            && caps[3] == dynamic_bytes,
         "startup pathname/dynamic limits",
     )?;
     let startup = carrier::StartupLimits {
@@ -220,6 +363,7 @@ fn parse_policy(
         let identity = id(f[2])?;
         check(
             identity.0 != [0; 32]
+                && (!absolute || !p.contains(&b'$'))
                 && p != bootstrap_dso
                 && previous.as_ref().is_none_or(|last| last < &p),
             "canonical dependency roster",
@@ -241,6 +385,25 @@ fn parse_policy(
                 .all(|s| s.hook == selected.hooks[0].id),
         "one existing null hook",
     )?;
+    let startup_class = if let Some(paths) = role_paths {
+        let index = |p: &[u8]| -> Result<usize, Error> {
+            dependencies
+                .iter()
+                .position(|d| d.path == p)
+                .ok_or_else(|| {
+                    Error::new(
+                        "startup-policy",
+                        "absolute prerequisite missing from pinned roster",
+                    )
+                })
+        };
+        boot::StartupClass::AbsolutePrerequisites(boot::AbsolutePrerequisites {
+            libgcc_dependency: index(&paths[0])?,
+            libc_dependency: index(&paths[1])?,
+        })
+    } else {
+        boot::StartupClass::SingleBootstrap
+    };
     let state = selected.target;
     let runtime = boot::Policy {
         interpreter,
@@ -267,7 +430,7 @@ fn parse_policy(
         },
         qualification_contract,
     };
-    Ok((program, runtime, startup))
+    Ok((program, runtime, startup, startup_class))
 }
 
 /// Plan each full program exactly once, with no old-profile fallback or partial
@@ -287,6 +450,10 @@ fn prepare_programs_with_gate(
     check(
         selected[0].program == 1 && selected[1].program == 2,
         "fixed two-program order",
+    )?;
+    check(
+        selected[0].profile() == selected[1].profile(),
+        "same prospective startup class for both programs",
     )?;
     check(
         selected[0].runtime.bootstrap_dso != selected[1].runtime.bootstrap_dso,
@@ -368,6 +535,31 @@ impl CandidateAddon for Bound {
         edits: &[carrier::DeclaredEdit],
         policy: carrier::ImagePolicy,
     ) -> Result<carrier::CarrierOutput, carrier::Error> {
+        if let boot::StartupClass::AbsolutePrerequisites(roles) = self.startup_class {
+            let path = |index: usize| -> Result<&str, carrier::Error> {
+                let d = self
+                    .runtime
+                    .dependencies
+                    .get(index)
+                    .ok_or(carrier::Error::OutputInvariant)?;
+                std::str::from_utf8(&d.path).map_err(|_| carrier::Error::OutputInvariant)
+            };
+            return carrier::append_static_exec_with_router_absolute_prerequisites(
+                elf,
+                request,
+                edits,
+                policy,
+                carrier::StaticExecAbsolutePrerequisites {
+                    interpreter: std::str::from_utf8(&self.runtime.interpreter)
+                        .expect("bound ASCII path"),
+                    libgcc: path(roles.libgcc_dependency)?,
+                    libc: path(roles.libc_dependency)?,
+                    bootstrap_dso: std::str::from_utf8(&self.runtime.bootstrap_dso)
+                        .expect("bound ASCII path"),
+                    limits: self.startup,
+                },
+            );
+        }
         carrier::append_static_exec_with_router_startup(
             elf,
             request,
@@ -408,8 +600,17 @@ impl CandidateAddon for Bound {
             steps: Vec::new(),
             images: Vec::new(),
         };
-        let catalog = li2core::offline_router::catalog_from_plans(input, accepted)
-            .map_err(|e| Error::new("startup-catalog", e))?;
+        let catalog = match self.startup_class {
+            boot::StartupClass::SingleBootstrap => {
+                li2core::offline_router::catalog_from_plans(input, accepted)
+            }
+            boot::StartupClass::AbsolutePrerequisites(roles) => {
+                li2core::offline_router::catalog_from_plans_absolute_prerequisites(
+                    input, accepted, roles,
+                )
+            }
+        }
+        .map_err(|e| Error::new("startup-catalog", e))?;
         let bytes = catalog
             .encode()
             .map_err(|e| Error::new("startup-catalog-wire", e))?;

@@ -437,7 +437,15 @@ pub fn verify(
     expected: &Expected,
     product: &dyn Files,
 ) -> Result<Summary> {
-    verify_mode(program, original, expected, product, None).map(|(summary, _)| summary)
+    verify_mode(
+        program,
+        original,
+        expected,
+        product,
+        None,
+        startup::Mode::Bootstrap,
+    )
+    .map(|(summary, _)| summary)
 }
 fn verify_mode(
     program: &str,
@@ -445,6 +453,7 @@ fn verify_mode(
     expected: &Expected,
     product: &dyn Files,
     startup: Option<&startup::Inputs>,
+    startup_mode: startup::Mode,
 ) -> Result<(Summary, Option<startup::Summary>)> {
     require(program == expected.program, "program expectation")?;
     let facts = expected.facts(original, product)?;
@@ -493,6 +502,7 @@ fn verify_mode(
                 product,
             },
             input,
+            startup_mode,
         )?)
     } else {
         candidate::join(

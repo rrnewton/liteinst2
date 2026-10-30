@@ -14,6 +14,40 @@ mod tests;
 
 pub const PROFILE: &str = "elf-disassembly-null-jumps-static-exec-router-bootstrap-v1";
 const RUNTIME_PROFILE: &str = "linux-x86-64-static-exec-router-bootstrap-v1";
+pub const ABSOLUTE_PROFILE: &str =
+    "elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1";
+const ABSOLUTE_RUNTIME_PROFILE: &str = "linux-x86-64-static-exec-router-absolute-prerequisites-v1";
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mode {
+    Bootstrap,
+    AbsolutePrerequisites,
+}
+impl Mode {
+    pub fn profile(self) -> &'static str {
+        match self {
+            Self::Bootstrap => PROFILE,
+            Self::AbsolutePrerequisites => ABSOLUTE_PROFILE,
+        }
+    }
+    fn runtime_profile(self) -> &'static str {
+        match self {
+            Self::Bootstrap => RUNTIME_PROFILE,
+            Self::AbsolutePrerequisites => ABSOLUTE_RUNTIME_PROFILE,
+        }
+    }
+    fn policy_version(self) -> u64 {
+        match self {
+            Self::Bootstrap => 1,
+            Self::AbsolutePrerequisites => 2,
+        }
+    }
+    fn dynamic_bytes(self) -> u64 {
+        match self {
+            Self::Bootstrap => 112,
+            Self::AbsolutePrerequisites => 144,
+        }
+    }
+}
 pub const POLICY_BYTES: usize = 65_536;
 #[derive(Clone)]
 pub struct Inputs {
@@ -27,6 +61,33 @@ pub(super) struct Policy {
     pub program: u64,
     pub runtime: boot::Policy,
     pub caps: [u64; 8],
+    pub absolute_prerequisites: Option<[usize; 2]>,
+}
+impl Policy {
+    fn mode(&self) -> Mode {
+        if self.absolute_prerequisites.is_some() {
+            Mode::AbsolutePrerequisites
+        } else {
+            Mode::Bootstrap
+        }
+    }
+    fn needed(&self) -> Result<Vec<&[u8]>> {
+        let mut result = Vec::new();
+        if let Some([gcc, libc]) = self.absolute_prerequisites {
+            for index in [gcc, libc] {
+                result.push(
+                    self.runtime
+                        .dependencies
+                        .get(index)
+                        .ok_or("startup prerequisite roster index")?
+                        .path
+                        .as_slice(),
+                );
+            }
+        }
+        result.push(self.runtime.bootstrap_dso.as_slice());
+        Ok(result)
+    }
 }
 #[derive(Debug)]
 pub struct Summary {
@@ -42,7 +103,31 @@ pub fn verify(
     product: &dyn Files,
     input: &Inputs,
 ) -> Result<(super::Summary, Summary)> {
-    let (summary, startup) = super::verify_mode(program, original, expected, product, Some(input))?;
+    let (summary, startup) = super::verify_mode(
+        program,
+        original,
+        expected,
+        product,
+        Some(input),
+        Mode::Bootstrap,
+    )?;
+    Ok((summary, startup.ok_or("missing startup summary")?))
+}
+pub fn verify_absolute_prerequisites(
+    program: &str,
+    original: &[u8],
+    expected: &Expected,
+    product: &dyn Files,
+    input: &Inputs,
+) -> Result<(super::Summary, Summary)> {
+    let (summary, startup) = super::verify_mode(
+        program,
+        original,
+        expected,
+        product,
+        Some(input),
+        Mode::AbsolutePrerequisites,
+    )?;
     Ok((summary, startup.ok_or("missing startup summary")?))
 }
 fn words<'a>(line: &'a str, key: &str, count: usize) -> Result<Vec<&'a str>> {
@@ -77,6 +162,16 @@ fn policy(
     facts: &Facts,
     product: &dyn Files,
 ) -> Result<Policy> {
+    policy_mode(program, bytes, original, facts, product, Mode::Bootstrap)
+}
+fn policy_mode(
+    program: &str,
+    bytes: &[u8],
+    original: &[u8],
+    facts: &Facts,
+    product: &dyn Files,
+    mode: Mode,
+) -> Result<Policy> {
     require(
         bytes.len() <= POLICY_BYTES && !bytes.contains(&b'\t'),
         "startup policy text cap",
@@ -84,8 +179,8 @@ fn policy(
     let r = lines(bytes)?;
     require(
         (12..=27).contains(&r.len())
-            && r[0] == "LI2BOOTSTRAP-POLICY 1"
-            && r[1] == format!("profile {RUNTIME_PROFILE}")
+            && r[0] == format!("LI2BOOTSTRAP-POLICY {}", mode.policy_version())
+            && r[1] == format!("profile {}", mode.runtime_profile())
             && words(r[2], "program", 2)?[1] == program,
         "startup policy profile/program",
     )?;
@@ -108,7 +203,22 @@ fn policy(
         )?;
     }
     let interpreter = path(words(r[6], "interpreter", 2)?[1])?;
-    let bootstrap_dso = path(words(r[7], "bootstrap", 2)?[1])?;
+    let (bootstrap_dso, prerequisite_paths) = match mode {
+        Mode::Bootstrap => (path(words(r[7], "bootstrap", 2)?[1])?, None),
+        Mode::AbsolutePrerequisites => {
+            let f = words(r[7], "absolute-prerequisites", 4)?;
+            (path(f[3])?, Some([path(f[1])?, path(f[2])?]))
+        }
+    };
+    if let Some(paths) = &prerequisite_paths {
+        require(
+            paths[0] != paths[1]
+                && paths
+                    .iter()
+                    .all(|p| p != &interpreter && p != &bootstrap_dso),
+            "distinct absolute prerequisite roles",
+        )?;
+    }
     let stack = words(r[8], "app-stack", 3)?;
     let app_stack = boot::Span {
         start: number(stack[1])?,
@@ -135,17 +245,29 @@ fn policy(
             .collect::<Result<Vec<_>>>()?
             .try_into(),
     )?;
-    for (n, ceiling) in caps
-        .iter()
-        .zip([4096, 4096, 4097, 112, 16384, 4096, 65536, 1048576])
-    {
+    for (n, ceiling) in caps.iter().zip([
+        4096,
+        4096,
+        4097,
+        mode.dynamic_bytes(),
+        16384,
+        4096,
+        65536,
+        1048576,
+    ]) {
         require(*n <= ceiling, "unchanged startup ceiling")?;
+    }
+    let mut needed_bytes = bootstrap_dso.len() as u64 + 1;
+    if let Some(paths) = &prerequisite_paths {
+        for p in paths {
+            needed_bytes = add(needed_bytes, p.len() as u64 + 1)?;
+        }
     }
     require(
         caps[0] > interpreter.len() as u64
-            && caps[1] > bootstrap_dso.len() as u64
-            && caps[2] >= bootstrap_dso.len() as u64 + 2
-            && caps[3] == 112,
+            && caps[1] >= needed_bytes
+            && caps[2] >= add(needed_bytes, 1)?
+            && caps[3] == mode.dynamic_bytes(),
         "actual startup string/dynamic charge",
     )?;
     let mut dependencies = Vec::new();
@@ -168,6 +290,27 @@ fn policy(
             && dependencies.iter().any(|d| d.path == interpreter),
         "startup interpreter in bounded dependency roster",
     )?;
+    let absolute_prerequisites = if let Some(paths) = prerequisite_paths {
+        require(
+            std::iter::once(&interpreter)
+                .chain(std::iter::once(&bootstrap_dso))
+                .chain(dependencies.iter().map(|d| &d.path))
+                .all(|p| !p.contains(&b'$')),
+            "absolute prerequisite paths forbid loader tokens",
+        )?;
+        Some([
+            dependencies
+                .iter()
+                .position(|d| d.path == paths[0])
+                .ok_or("libgcc prerequisite missing from roster")?,
+            dependencies
+                .iter()
+                .position(|d| d.path == paths[1])
+                .ok_or("libc prerequisite missing from roster")?,
+        ])
+    } else {
+        None
+    };
     let selection = &facts.selection;
     let state = selection.target;
     require(
@@ -211,10 +354,16 @@ fn policy(
         },
         runtime,
         caps,
+        absolute_prerequisites,
     })
 }
 fn profile(program: &str, facts: &Facts, policy: &[u8]) -> Vec<u8> {
-    format!("LI2STARTUP-PRODUCER\t1\nprofile\t{PROFILE}\nruntime_profile\t{RUNTIME_PROFILE}\nplanning_profile\t{}\nprogram\t{program}\noriginal_heads\t{}\nselected_sites\t{}\nruntime_policy_sha256\t{}\nqualification_complete\tfalse\nexecution_authority\tnone\n",
+    profile_mode(program, facts, policy, Mode::Bootstrap)
+}
+fn profile_mode(program: &str, facts: &Facts, policy: &[u8], mode: Mode) -> Vec<u8> {
+    let producer_profile = mode.profile();
+    let runtime_profile = mode.runtime_profile();
+    format!("LI2STARTUP-PRODUCER\t1\nprofile\t{producer_profile}\nruntime_profile\t{runtime_profile}\nplanning_profile\t{}\nprogram\t{program}\noriginal_heads\t{}\nselected_sites\t{}\nruntime_policy_sha256\t{}\nqualification_complete\tfalse\nexecution_authority\tnone\n",
         super::PROFILE, facts.heads.len(), facts.selection.sites.len(), digest(policy)).into_bytes()
 }
 fn bundle(original: &[u8], product: &dyn Files) -> Result<()> {
@@ -275,7 +424,7 @@ pub(super) struct Artifact<'a> {
     pub ledger: &'a [u8],
     pub product: &'a dyn Files,
 }
-pub(super) fn join(artifact: Artifact<'_>, input: &Inputs) -> Result<Summary> {
+pub(super) fn join(artifact: Artifact<'_>, input: &Inputs, mode: Mode) -> Result<Summary> {
     let Artifact {
         program,
         original,
@@ -291,17 +440,31 @@ pub(super) fn join(artifact: Artifact<'_>, input: &Inputs) -> Result<Summary> {
         product.read("startup-policy.txt", POLICY_BYTES)? == input.policy,
         "full independent startup policy bytes",
     )?;
-    let policy = policy(program, &input.policy, original, facts, product)?;
+    let policy = match mode {
+        Mode::Bootstrap => policy(program, &input.policy, original, facts, product)?,
+        Mode::AbsolutePrerequisites => {
+            policy_mode(program, &input.policy, original, facts, product, mode)?
+        }
+    };
     reservation(&policy, facts, joined)?;
     require(
-        product.read("startup-profile.tsv", TEXT)? == profile(program, facts, &input.policy),
+        product.read("startup-profile.tsv", TEXT)?
+            == match mode {
+                Mode::Bootstrap => profile(program, facts, &input.policy),
+                Mode::AbsolutePrerequisites => profile_mode(program, facts, &input.policy, mode),
+            },
         "complete startup profile bytes",
     )?;
     bundle(original, product)?;
     candidate::join_startup(&artifact, &policy)?;
     let dependency_roster_sha256 = dependencies::join(&policy, &input.dependencies)?;
     let catalog_bytes = product.read("catalog.li2boot", FILE)?;
-    let catalog = catalog::decode(&catalog_bytes)?;
+    let catalog = match mode {
+        Mode::Bootstrap => catalog::decode(&catalog_bytes)?,
+        Mode::AbsolutePrerequisites => {
+            catalog::decode_absolute_prerequisites(&catalog_bytes, &policy)?
+        }
+    };
     catalog::join(
         &catalog,
         catalog::Expected {

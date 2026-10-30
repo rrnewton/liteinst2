@@ -301,3 +301,143 @@ def main_facts(item, contract_value, contract_sha, package, dso, *, dependency=N
     owner, offset = elf.file_owner(elf.entry, 15)
     need(owner[1] == 5, 'actual entry lies in executable nonwritable bytes')
     return dict(entry=elf.entry, entry_bytes=raw[offset:offset+15].hex())
+
+
+STARTUP_PROFILE = 'elf-disassembly-null-jumps-static-exec-router-bootstrap-v1'
+ABSOLUTE_STARTUP_PROFILE = 'elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
+ABSOLUTE_RUNTIME_PROFILE = 'linux-x86-64-static-exec-router-absolute-prerequisites-v1'
+ABSOLUTE_LOADER_BASIS = {
+    'profile': 'gnu-ordered-absolute-and-loaded-soname-v1',
+    'binary_sha256': '34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9',
+    'source_snapshot_sha256': 'ea58ee915132f069c91af5e53063555a9e09b45337a5f2015c645ccbf2ddb5fd',
+    'research_binding_sha256': '982f533d31a3df5a6dbc79704d01550a3da3a6bd041ddfe5ccc7f6ff963f0c7a'
+}
+ABSOLUTE_OBLIGATIONS = dict(OBLIGATIONS, absolute_prerequisite_resolution=
+    "I accept the pinned GNU loader's ordered immediate-dependency traversal, literal slash-name direct-open/fatal-failure branch, and already-loaded object/SONAME branch, including alias-allocation fatal failures. All three main dependencies are loaded before their child edges are traversed. Cache omission applies only after both complete actual main/bootstrap/loader/libc/libgcc graphs and symbol populations pass the named absolute-prerequisite checker. No preload, audit, extra user namespace, constructor dlopen or kernel competing symbol export is permitted; the existing kernel-object premise remains explicit. Future application/module loading is outside this finite proof. The retained preload, search/alias, lifetime, empty-environment and all other obligations still apply.")
+
+
+def selected_startup_profile(completed, *, absolute_prerequisites):
+    expected = ABSOLUTE_STARTUP_PROFILE if absolute_prerequisites else STARTUP_PROFILE
+    need(completed['plan']['profile'] == expected, 'final class matches exact authenticated producer plan')
+    return expected
+
+
+def _absolute_contract_inputs(raw, expected, package, held):
+    """Inputs only; callers cannot return admission before full graph checks."""
+    need(os.uname().sysname == 'Linux' and os.uname().machine == 'x86_64' and
+         os.sysconf('SC_PAGE_SIZE') == 4096, 'actual Linux x86-64 4096-byte page platform')
+    need(sha(raw) == digest(expected), 'externally frozen platform contract')
+    value = decode(raw)
+    keys(value, ('schema', 'authority', 'platform', 'files', 'sonames', 'loader_inputs',
+        'search_directories', 'aliases', 'obligations', 'review_basis', 'environment',
+        'programs', 'datasets_per_program', 'N01_program_dataset_pairs', 'N01_invocations', 'loader_basis'), 'exact platform contract shape')
+    need(value['schema'] == 'LI2STARTUP-PLATFORM-CONTRACT-2' and
+         value['authority'] == 'EXPLICIT_UNSAFE_GNU_ABSOLUTE_PREREQUISITES_V1' and
+         value['platform'] == 'linux-x86_64-gnu-4096', 'supported explicit unsafe authority')
+    need(exact(value['obligations'], ABSOLUTE_OBLIGATIONS) and type(value['review_basis']) is str and
+         128 <= len(value['review_basis']) <= 32768, 'whole explicit unsafe obligations and concrete review basis')
+    need(exact(value['environment'], {}) and exact(value['programs'], list(PROGRAMS)) and
+         exact([value['datasets_per_program'], value['N01_program_dataset_pairs'], value['N01_invocations']], [10, 20, 40]),
+         'empty environment and unchanged complete native population')
+    need(exact(value['sonames'], SONAMES), 'finite exact loader name graph')
+    keys(value['files'], ROLES, 'exact loader/libc/libgcc inventory')
+    files = {role: held.retain(value['files'][role], 16*MIB) for role in ROLES}
+    need(exact(value['loader_basis'], ABSOLUTE_LOADER_BASIS) and
+         value['files']['loader']['sha256'] == ABSOLUTE_LOADER_BASIS['binary_sha256'] and
+         sha(files['loader']) == ABSOLUTE_LOADER_BASIS['binary_sha256'],
+         'actual loader is the exact reviewed absolute/loaded-SONAME implementation')
+    need(len({pin['path'] for pin in value['files'].values()}) == 3 and
+         len({tuple(pin['stat'][:2]) for pin in value['files'].values()}) == 3, 'distinct platform objects')
+    for pin in value['files'].values():
+        need(pin['stat'][2] & 0o6000 == 0, 'no set-ID platform file')
+    inputs = value['loader_inputs']
+    keys(inputs, ('preload',), 'absolute contract has preload only; never an optional cache pin')
+    preload = inputs['preload']
+    keys(preload, ('path', 'state', 'file'), 'exact preload state')
+    need(preload['path'] == '/etc/ld.so.preload', 'actual GNU preload path')
+    if preload['state'] == 'ABSENT':
+        need(preload['file'] is None and not os.path.lexists(preload['path']), 'preload remains absent')
+    else:
+        need(preload['state'] == 'EMPTY_REGULAR' and preload['file']['path'] == preload['path'] and
+             held.retain(preload['file'], 0) == b'', 'preload is the exact empty regular file')
+    search, aliases = value['search_directories'], value['aliases']
+    need(type(search) is list and 1 <= len(search) <= 64 and type(aliases) is list and len(aliases) <= 64,
+         'bounded explicit search/alias population')
+    need(len({row['path'] for row in search}) == len(search) and len({row['path'] for row in aliases}) == len(aliases),
+         'unique search and alias paths')
+    for row in search:
+        need(exact(row, directory_observation(package, row['path'])), 'exact reviewed search directory state')
+    for row in aliases:
+        need(exact(row, alias_observation(package, row['path'])), 'exact reviewed path alias')
+    return value, files
+
+
+
+def main_facts_absolute(item, contract_value, contract_sha, package, dso, dependency):
+    """Join real three-name main metadata to policy, built DSO and system pins."""
+    need(contract_value['schema']=='LI2STARTUP-PLATFORM-CONTRACT-2', 'absolute main requires contract2')
+    main=item['main'];raw=main['product']['candidate.elf']
+    elf,original=package.Elf(raw),package.Elf(main['original'])
+    need(elf.kind==original.kind==2 and elf.entry==original.entry and
+         all(p[0] not in (2,3) for p in original.ph), 'unchanged original static ET_EXEC entry')
+    expected=tuple([contract_value['files'][role]['path'] for role in ('libgcc','libc')]+[item['bootstrap_pin']['path']])
+    tags,needed=dso.dynamic(elf)
+    metadata=dependency.main_namespace_absolute(elf,tags,needed,dso,expected)
+    interp=[p for p in elf.ph if p[0]==3][0]
+    need(elf.mapped_bytes(interp[3],interp[2],interp[5])==
+         contract_value['files']['loader']['path'].encode('ascii')+b'\0', 'exact canonical pinned main interpreter')
+    policy=main['policy']
+    need(policy.get('absolute_prerequisites')==list(expected[:2]) and
+         policy['bootstrap']==expected[2] and policy['interpreter']==contract_value['files']['loader']['path'] and
+         policy['contract']==contract_sha, 'actual absolute main/policy/roles/bootstrap/contract join')
+    rows=main['product']['startup-policy.txt'].splitlines()
+    need(rows[:2]==[b'LI2BOOTSTRAP-POLICY 2',('profile '+ABSOLUTE_RUNTIME_PROFILE).encode('ascii')] and
+         len(rows)>=12 and rows[7]==('absolute-prerequisites '+' '.join(expected)).encode('ascii'),
+         'actual policy2 bytes carry the exact selected ordered roles')
+    expected_deps=sorted((pin['path'],pin['sha256']) for pin in contract_value['files'].values())
+    need(policy['dependencies']==expected_deps, 'exact full policy dependency inventory')
+    no_cet(dso.notes(elf));no_cet(item['linked']['notes'])
+    need(item['linked']['needed']==['libgcc_s.so.1','libc.so.6','ld-linux-x86-64.so.2'] and
+         item['linked']['rpath'] is None and item['linked']['runpath'] is None,
+         'absolute prerequisite bootstrap exact outgoing edges/no search injection')
+    owner,offset=elf.file_owner(elf.entry,15)
+    need(owner[1]==5, 'actual entry lies in executable nonwritable bytes')
+    return dict(entry=elf.entry,entry_bytes=raw[offset:offset+15].hex()),expected,metadata
+
+
+def contract_absolute(raw, expected, package, held, programs, dso, dependency):
+    """Return only after both actual five-object closure proofs succeed.
+
+    The recheck closure retains all mutable inputs under this already-proved
+    graph. No cache receipt, ignored inode or stored success boolean is used.
+    The unsafe caller still supplies explicit acceptance of the exact contract.
+    """
+    value,files=_absolute_contract_inputs(raw,expected,package,held)
+    keys(programs,PROGRAMS,'both complete programs required for cache-independent closure')
+    proofs={}
+    for program in PROGRAMS:
+        item=programs[program]
+        entry,prerequisites,metadata=main_facts_absolute(item,value,expected,package,dso,dependency)
+        namespace=dependency.Namespace(dict(main=item['main']['product']['candidate.elf'],
+            bootstrap=item['bootstrap'],**files),package,dso,absolute_prerequisites=prerequisites)
+        need(exact(namespace.main_namespace,metadata) and namespace.absolute_resolution is not None,
+             'same actual main and full absolute dependency closure')
+        proofs[program]=dict(entry=entry,namespace=namespace)
+    # Returned review facts are mutable Python values. Stability closes over
+    # separate frozen bytes, never over those exported dictionaries/namespaces.
+    frozen_value=canonical(value)
+    frozen_files={role:bytes(contents) for role,contents in files.items()}
+    def recheck():
+        current,actual=_absolute_contract_inputs(raw,expected,package,held)
+        need(canonical(current)==frozen_value and actual==frozen_files,
+             'absolute platform inputs retain original identity/bytes')
+    return value,files,proofs,recheck
+
+
+def library_facts_absolute(raw, role, package, dso, namespace):
+    need(namespace.absolute_resolution is not None, 'complete absolute dependency namespace required')
+    facts=library_facts_v2(raw,role,package,dso,namespace)
+    facts.update(schema='LI2STARTUP-PLATFORM-LIBRARY-FACTS-3',
+        constructor_profile='gnu-five-object-absolute-prerequisites-constructor-v1',
+        absolute_resolution=namespace.absolute_resolution)
+    return facts

@@ -26,6 +26,23 @@ fn publish(
     files: &BTreeMap<String, Vec<u8>>,
     originals: [&[u8]; 2],
     complete: bool,
+    put: impl FnMut(&Path, &[u8]) -> Result<(), String>,
+) -> Result<(), String> {
+    publish_profile(
+        offline_router::PROFILE,
+        output,
+        files,
+        originals,
+        complete,
+        put,
+    )
+}
+fn publish_profile(
+    profile: &str,
+    output: &Path,
+    files: &BTreeMap<String, Vec<u8>>,
+    originals: [&[u8]; 2],
+    complete: bool,
     mut put: impl FnMut(&Path, &[u8]) -> Result<(), String>,
 ) -> Result<(), String> {
     if files.len() > 512
@@ -38,7 +55,7 @@ fn publish(
     }
     let mut marker = format!(
         "LI2BOOTSTRAP-DIRECTORY\t1\nprofile\t{}\nchecksum_original_sha256\t{}\nrle_original_sha256\t{}\nrequired_original_heads\t187\nrequired_selected_sites\t42\ncandidate_complete\t{complete}\nqualification_complete\tfalse\nexecution_authority\tnone\n",
-        offline_router::PROFILE,
+        profile,
         io::digest(originals[0]),
         io::digest(originals[1])
     );
@@ -62,8 +79,28 @@ fn run_with_read(
     args: &[String],
     mut read: impl FnMut(&Path, usize) -> Result<Vec<u8>, String>,
 ) -> Result<bool, String> {
+    let absolute = args
+        .get(1)
+        .is_some_and(|arg| arg == "--absolute-prerequisites");
+    let normalized;
+    let args = if absolute {
+        normalized = args
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i != 1)
+            .map(|(_, arg)| arg.clone())
+            .collect::<Vec<_>>();
+        normalized.as_slice()
+    } else {
+        args
+    };
+    let profile = if absolute {
+        offline_router::ABSOLUTE_PREREQUISITES_PROFILE
+    } else {
+        offline_router::PROFILE
+    };
     if args.len() != 16 {
-        return Err("offline_router_sites CHECKSUM_ORIGINAL LEDGER LEDGER_SHA POLICY POLICY_SHA STARTUP STARTUP_SHA RLE_ORIGINAL LEDGER LEDGER_SHA POLICY POLICY_SHA STARTUP STARTUP_SHA NEW_DIRECTORY".into());
+        return Err("offline_router_sites [--absolute-prerequisites] CHECKSUM_ORIGINAL LEDGER LEDGER_SHA POLICY POLICY_SHA STARTUP STARTUP_SHA RLE_ORIGINAL LEDGER LEDGER_SHA POLICY POLICY_SHA STARTUP STARTUP_SHA NEW_DIRECTORY".into());
     }
     let mut initial = Vec::new();
     let mut paths = Vec::new();
@@ -95,7 +132,13 @@ fn run_with_read(
     let bindings = initial
         .iter()
         .zip(&identities)
-        .map(|(x, id)| Bound::bind(&x[0], &x[1], id[0], &x[2], id[1], &x[3], id[2]))
+        .map(|(x, id)| {
+            if absolute {
+                Bound::bind_absolute_prerequisites(&x[0], &x[1], id[0], &x[2], id[1], &x[3], id[2])
+            } else {
+                Bound::bind(&x[0], &x[1], id[0], &x[2], id[1], &x[3], id[2])
+            }
+        })
         .collect::<Vec<_>>();
     let mut files = BTreeMap::new();
     for (i, name) in NAMES.iter().enumerate() {
@@ -152,7 +195,7 @@ fn run_with_read(
             true
         }
         Err(error) => {
-            files.insert("program-failure.tsv".into(),format!("LI2BOOTSTRAP-FAILURE\t1\nprofile\t{}\nrequired_programs\tchecksum,rle-roundtrip\nrequired_original_heads\t187\nrequired_selected_sites\t42\ncandidate_complete\tfalse\nqualification_complete\tfalse\ndetail_hex\t{}\n",offline_router::PROFILE,error.as_bytes().iter().map(|b|format!("{b:02x}")).collect::<String>()).into_bytes());
+            files.insert("program-failure.tsv".into(),format!("LI2BOOTSTRAP-FAILURE\t1\nprofile\t{}\nrequired_programs\tchecksum,rle-roundtrip\nrequired_original_heads\t187\nrequired_selected_sites\t42\ncandidate_complete\tfalse\nqualification_complete\tfalse\ndetail_hex\t{}\n",profile,error.as_bytes().iter().map(|b|format!("{b:02x}")).collect::<String>()).into_bytes());
             false
         }
     };
@@ -161,28 +204,45 @@ fn run_with_read(
         .mode(0o700)
         .create(output)
         .map_err(|e| e.to_string())?;
-    publish(
-        output,
-        &files,
-        [&initial[0][0], &initial[1][0]],
-        complete,
-        io::write,
-    )?;
+    if absolute {
+        publish_profile(
+            profile,
+            output,
+            &files,
+            [&initial[0][0], &initial[1][0]],
+            complete,
+            io::write,
+        )?;
+    } else {
+        publish(
+            output,
+            &files,
+            [&initial[0][0], &initial[1][0]],
+            complete,
+            io::write,
+        )?;
+    }
     std::fs::File::open(output)
         .and_then(|f| f.sync_all())
         .map_err(|e| e.to_string())?;
     println!(
         "profile={} candidate_complete={complete} qualification_complete=false required_programs=2 required_heads=187 required_selected=42",
-        offline_router::PROFILE
+        profile
     );
     Ok(complete)
 }
 fn main() {
-    match run_with_read(&std::env::args().collect::<Vec<_>>(), io::read) {
+    let args = std::env::args().collect::<Vec<_>>();
+    let profile = if args.get(1).is_some_and(|s| s == "--absolute-prerequisites") {
+        offline_router::ABSOLUTE_PREREQUISITES_PROFILE
+    } else {
+        offline_router::PROFILE
+    };
+    match run_with_read(&args, io::read) {
         Ok(true) => {}
         Ok(false) => std::process::exit(2),
         Err(e) => {
-            eprintln!("profile={} {e}", offline_router::PROFILE);
+            eprintln!("profile={profile} {e}");
             std::process::exit(1)
         }
     }
@@ -332,5 +392,87 @@ mod tests {
                 assert!((12..=16).contains(&reads));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod absolute_tests {
+    use super::*;
+    #[test]
+    fn absolute_cli_keeps_both_programs_all_rereads_and_the_exact_new_marker() {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let a = fixture::absolute_case(1);
+        let b = fixture::absolute_case(2);
+        let input = [
+            a.original, a.ledger, a.planning, a.runtime, b.original, b.ledger, b.planning,
+            b.runtime,
+        ];
+        for mutate in 0..=8 {
+            let out = std::env::temp_dir().join(format!(
+                "li2-absolute-publication-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
+            assert!(!out.exists());
+            let mut args = vec![
+                "offline_router_sites".into(),
+                "--absolute-prerequisites".into(),
+            ];
+            for (i, name) in NAMES.iter().enumerate() {
+                let at = i * 4;
+                args.extend([
+                    format!("{name}-original"),
+                    format!("{name}-ledger"),
+                    io::digest(&input[at + 1]),
+                    format!("{name}-planning"),
+                    io::digest(&input[at + 2]),
+                    format!("{name}-startup"),
+                    io::digest(&input[at + 3]),
+                ]);
+            }
+            args.push(out.to_str().unwrap().into());
+            let mut reads = 0;
+            let result = run_with_read(&args, |_, cap| {
+                let mut bytes = input[reads % 8].clone();
+                assert!(bytes.len() <= cap);
+                if reads == 8 + mutate && mutate < 8 {
+                    bytes.push(0);
+                }
+                reads += 1;
+                Ok(bytes)
+            });
+            if mutate < 8 {
+                assert!(result.is_err(), "required absolute reread mutant {mutate}");
+                assert!(!out.exists());
+                assert!((12..=16).contains(&reads));
+            } else {
+                assert_eq!(result, Ok(true));
+                assert_eq!(reads, 16);
+                let marker = std::fs::read_to_string(out.join("COMPLETE")).unwrap();
+                assert!(marker.contains(&format!(
+                    "profile\t{}\n",
+                    offline_router::ABSOLUTE_PREREQUISITES_PROFILE
+                )));
+                assert!(marker.contains("required_original_heads\t187\nrequired_selected_sites\t42\ncandidate_complete\ttrue\nqualification_complete\tfalse\nexecution_authority\tnone\n"));
+                for name in NAMES {
+                    let catalog =
+                        std::fs::read(out.join(format!("{name}-catalog.li2boot"))).unwrap();
+                    assert_eq!(&catalog[8..16], &3u64.to_le_bytes());
+                    assert!(out.join(format!("{name}-candidate.elf")).is_file());
+                }
+                std::fs::remove_dir_all(out).unwrap();
+            }
+        }
+        assert!(
+            run_with_read(
+                &[
+                    "offline_router_sites".into(),
+                    "--absolute-prerequisites".into()
+                ],
+                |_, _| panic!("new selector must still require the full pair before reading")
+            )
+            .is_err()
+        );
     }
 }

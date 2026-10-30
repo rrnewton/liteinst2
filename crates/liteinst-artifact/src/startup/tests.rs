@@ -518,3 +518,262 @@ fn geometry_wire_version_is_explicit_and_old_envelope_is_not_reinterpreted() {
     old.extend_from_slice(&id.0);
     assert_eq!(Catalog::decode(&old), Err(Error::Shape));
 }
+
+// Independent complete-ELF construction for the additional class. The original
+// bytes, full head/selected populations and route/image obligations are unchanged.
+fn absolute_input(program: u64) -> (Input, AbsolutePrerequisites) {
+    let mut x = fixture_program(program, false);
+    x.policy.dependencies.extend([
+        Dependency {
+            path: b"/pkg/libc.so".to_vec(),
+            identity: ContentId::of(b"libc control"),
+        },
+        Dependency {
+            path: b"/pkg/libgcc.so".to_vec(),
+            identity: ContentId::of(b"libgcc control"),
+        },
+    ]);
+    let roles = AbsolutePrerequisites {
+        libgcc_dependency: 2,
+        libc_dependency: 1,
+    };
+    let elf = parse(&x.main).unwrap();
+    let start = elf
+        .segments(SegmentType::Interpreter)
+        .next()
+        .unwrap()
+        .offset
+        .0 as usize;
+    let dyn_index = elf.segments(SegmentType::Dynamic).next().unwrap().index;
+    x.main[start..8192].fill(0);
+    let strings = [
+        b"\0/pkg/libgcc.so\0/pkg/libc.so\0".as_slice(),
+        x.policy.bootstrap_dso.as_slice(),
+        &[0],
+    ]
+    .concat();
+    let str_at = start + x.policy.interpreter.len() + 1;
+    let sym_at = (str_at + strings.len() + 7) & !7;
+    let hash_at = sym_at + 24;
+    let dyn_at = hash_at + 16;
+    let va = |at: usize| (0x500000 + at - 4096) as u64;
+    let interp_end = start + x.policy.interpreter.len();
+    x.main[start..interp_end].copy_from_slice(&x.policy.interpreter);
+    x.main[str_at..str_at + strings.len()].copy_from_slice(&strings);
+    for (i, value) in [1u32, 1, 0, 0].into_iter().enumerate() {
+        p32(&mut x.main, hash_at + i * 4, value);
+    }
+    for (i, (tag, value)) in [
+        (1, 1),
+        (1, 16),
+        (1, 29),
+        (5, va(str_at)),
+        (10, strings.len() as u64),
+        (6, va(sym_at)),
+        (11, 24),
+        (4, va(hash_at)),
+        (0, 0),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        p64(&mut x.main, dyn_at + i * 16, tag);
+        p64(&mut x.main, dyn_at + i * 16 + 8, value);
+    }
+    // Literal lengths above are checked against the independently assembled names.
+    assert_eq!(&strings[1..16], b"/pkg/libgcc.so\0");
+    assert_eq!(&strings[16..29], b"/pkg/libc.so\0");
+    for delta in [32, 40] {
+        p64(
+            &mut x.main,
+            4096 + 3 * 56 + delta,
+            (dyn_at + 144 - 4096) as u64,
+        );
+    }
+    record(
+        &mut x.main,
+        4096 + dyn_index * 56,
+        Ph {
+            kind: 2,
+            flags: 4,
+            off: dyn_at as u64,
+            va: va(dyn_at),
+            files: 144,
+            mem: 144,
+            align: 8,
+        },
+    );
+    (x, roles)
+}
+
+#[test]
+fn absolute_class_retains_both_complete_populations_and_wire_roles() {
+    for (program, heads, sites) in [(1, 80, 16), (2, 107, 26)] {
+        let (x, roles) = absolute_input(program);
+        let c = Catalog::new_absolute_prerequisites(x, roles).unwrap();
+        assert_eq!(
+            (
+                c.input().heads.len(),
+                c.input().steps.len(),
+                c.input().images.len(),
+                c.routes().len()
+            ),
+            (heads, sites, sites, sites)
+        );
+        assert_eq!(
+            c.startup_class(),
+            StartupClass::AbsolutePrerequisites(roles)
+        );
+        let encoded = c.encode().unwrap();
+        assert_eq!(&encoded[8..16], &3u64.to_le_bytes());
+        assert_eq!(&encoded[24..32], &2u64.to_le_bytes());
+        assert_eq!(&encoded[32..40], &1u64.to_le_bytes());
+        assert_eq!(Catalog::decode(&encoded).unwrap(), c);
+        assert_eq!(
+            Catalog::decode(&encoded).unwrap().encode().unwrap(),
+            encoded
+        );
+        let elf = parse(&c.input().main).unwrap();
+        assert_eq!(c.validate_startup(&elf), Ok(0x500000));
+        assert!(validate_startup(&elf, &c.input().policy).is_err());
+        assert!(Catalog::new(c.input().clone()).is_err());
+        assert!(
+            Catalog::new_absolute_prerequisites(fixture_program(program, false), roles).is_err()
+        );
+    }
+}
+
+#[test]
+fn absolute_roles_are_distinct_actual_sorted_roster_indices() {
+    let (x, roles) = absolute_input(1);
+    Catalog::new_absolute_prerequisites(x.clone(), roles).unwrap();
+    for changed in [
+        AbsolutePrerequisites {
+            libgcc_dependency: 1,
+            libc_dependency: 1,
+        },
+        AbsolutePrerequisites {
+            libgcc_dependency: 3,
+            libc_dependency: 1,
+        },
+        AbsolutePrerequisites {
+            libgcc_dependency: 0,
+            libc_dependency: 1,
+        },
+        AbsolutePrerequisites {
+            libgcc_dependency: 1,
+            libc_dependency: 2,
+        },
+    ] {
+        assert!(Catalog::new_absolute_prerequisites(x.clone(), changed).is_err());
+    }
+    let mut reordered = x.clone();
+    reordered.policy.dependencies.swap(1, 2);
+    assert!(
+        Catalog::new_absolute_prerequisites(
+            reordered,
+            AbsolutePrerequisites {
+                libgcc_dependency: 1,
+                libc_dependency: 2
+            }
+        )
+        .is_err()
+    );
+    let mut token = x.clone();
+    token.policy.dependencies[2].path = b"/pkg/$LIB.so".to_vec();
+    assert!(Catalog::new_absolute_prerequisites(token, roles).is_err());
+    let mut extra_token = x.clone();
+    extra_token.policy.dependencies.push(Dependency {
+        path: b"/zzz/$TOKEN.so".to_vec(),
+        identity: ContentId::of(b"extra pinned bytes"),
+    });
+    assert!(Catalog::new_absolute_prerequisites(extra_token, roles).is_err());
+    let mut excessive = x;
+    excessive.policy.bootstrap_dso = [b"/".as_slice(), vec![b'z'; 4094].as_slice()].concat();
+    assert_eq!(
+        Catalog::new_absolute_prerequisites(excessive, roles),
+        Err(Error::Limit)
+    );
+}
+
+#[test]
+fn absolute_metadata_every_byte_and_owner_are_exact() {
+    let (base, roles) = absolute_input(1);
+    Catalog::new_absolute_prerequisites(base.clone(), roles).unwrap();
+    let elf = parse(&base.main).unwrap();
+    let start = elf
+        .segments(SegmentType::Interpreter)
+        .next()
+        .unwrap()
+        .offset
+        .0 as usize;
+    let dynamic = elf.segments(SegmentType::Dynamic).next().unwrap();
+    let end = (dynamic.offset.0 + dynamic.file_size) as usize;
+    // Includes all strings/NULs/padding, the entire null symbol/hash and all nine rows.
+    for at in start..end {
+        let mut x = base.clone();
+        x.main[at] ^= 1;
+        assert!(
+            Catalog::new_absolute_prerequisites(x, roles).is_err(),
+            "metadata byte {at}"
+        );
+    }
+    for flags in [5, 6, 7] {
+        let mut x = base.clone();
+        p32(&mut x.main, 4096 + 3 * 56 + 4, flags);
+        assert!(Catalog::new_absolute_prerequisites(x, roles).is_err());
+    }
+    for size in [112, 143, 145, 160] {
+        let mut x = base.clone();
+        for delta in [32, 40] {
+            p64(&mut x.main, 4096 + dynamic.index * 56 + delta, size);
+        }
+        assert!(Catalog::new_absolute_prerequisites(x, roles).is_err());
+    }
+    let mutations: [fn(&mut Input); 4] = [
+        |x| {
+            x.heads.pop();
+        },
+        |x| {
+            x.steps.pop();
+        },
+        |x| {
+            x.images.pop();
+        },
+        |x| {
+            x.steps[0].obligations.clear();
+        },
+    ];
+    for mutate in mutations {
+        let mut x = base.clone();
+        mutate(&mut x);
+        assert!(Catalog::new_absolute_prerequisites(x, roles).is_err());
+    }
+}
+
+#[test]
+fn absolute_wire_cannot_relabel_roles_version_or_surplus_with_a_fresh_digest() {
+    let (x, roles) = absolute_input(1);
+    let encoded = Catalog::new_absolute_prerequisites(x, roles)
+        .unwrap()
+        .encode()
+        .unwrap();
+    for (at, value) in [(8, 2u64), (8, 4), (24, 0), (24, 1), (24, u64::MAX), (32, 2)] {
+        let mut body = encoded[..encoded.len() - 32].to_vec();
+        p64(&mut body, at, value);
+        let id = ContentId::of(&body);
+        body.extend_from_slice(&id.0);
+        assert!(Catalog::decode(&body).is_err(), "wire word {at}={value}");
+    }
+    for length in [24, 32, 40, encoded.len() - 33] {
+        let mut body = encoded[..length].to_vec();
+        let id = ContentId::of(&body);
+        body.extend_from_slice(&id.0);
+        assert!(Catalog::decode(&body).is_err());
+    }
+    let mut body = encoded[..encoded.len() - 32].to_vec();
+    body.push(0);
+    let id = ContentId::of(&body);
+    body.extend_from_slice(&id.0);
+    assert_eq!(Catalog::decode(&body), Err(Error::Shape));
+}

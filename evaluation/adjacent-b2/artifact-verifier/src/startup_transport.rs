@@ -80,11 +80,17 @@ impl Accounting {
 }
 pub type Decoded = (String, Vec<u8>, Expected, Memory, startup::Inputs);
 pub fn decode(input: &mut impl Read) -> Result<Decoded> {
+    decode_mode(input, startup::Mode::Bootstrap)
+}
+pub fn decode_absolute_prerequisites(input: &mut impl Read) -> Result<Decoded> {
+    decode_mode(input, startup::Mode::AbsolutePrerequisites)
+}
+fn decode_mode(input: &mut impl Read, mode: startup::Mode) -> Result<Decoded> {
     let mut accounting = Accounting::default();
     let header = accounting.line(input)?;
     let f = fields(&header, 5)?;
     require(
-        f[..3] == ["LI2W01-INPUT", "2", startup::PROFILE],
+        f[..3] == ["LI2W01-INPUT", "2", mode.profile()],
         "explicit startup transport schema/profile",
     )?;
     verify::denominator(f[3])?;

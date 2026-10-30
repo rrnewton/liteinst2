@@ -15,8 +15,9 @@ def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
-def transport(program, original, expected, product, dependencies, startup):
+def transport(program, original, expected, product, dependencies, startup, *, profile=None):
     """Reconstruct the complete bounded wire bytes, without creating any file."""
+    profile = startup.PROFILE if profile is None else startup.checked_profile(profile)
     body = startup.pack_sizes(program,len(original),{n:len(v) for n,v in expected.items()},
         {n:len(v) for n,v in product.items()},[len(v) for v in dependencies])
     files = {'input/original':original}
@@ -24,7 +25,7 @@ def transport(program, original, expected, product, dependencies, startup):
     files.update(('product/'+n,v) for n,v in product.items())
     files.update(('dependency/%04d'%i,v) for i,v in enumerate(dependencies))
     ordered = sorted(files.items())
-    header = ('LI2W01-INPUT\t2\t%s\t%s\t%d\n'%(startup.PROFILE,program,len(files))).encode('ascii')
+    header = ('LI2W01-INPUT\t2\t%s\t%s\t%d\n'%(profile,program,len(files))).encode('ascii')
     headers = [('%s\t%d\t%s\n'%(name,len(raw),sha(raw))).encode('ascii') for name,raw in ordered]
     framing = len(header)+sum(map(len,headers))+4
     need(all(len(row)<=256 for row in [header,*headers,b'END\n']) and framing<=startup.FRAMING_BYTES,
@@ -50,6 +51,7 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
     need(sha(closed_raw)==custody.digest(reference['sha256']),'externally frozen main closure')
     closed = custody.json_value(closed_raw)
     bound,plan,history = startup.load_binding(store,args,custody)
+    profile = plan['profile']
     need(bound['input_after']==plan['inputs'],'all eight input after-identities')
     copies = Path(bound['plan']['path']).parent/'inputs'
     need(all(Path(pin['path']).parent==copies for group in plan['inputs'].values() for pin in group.values()),
@@ -73,7 +75,7 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
     argv = custody.producer_argv(producer,plan)
     request,command = legacy.request_and_command(ctx,captured,args.diagnostic,argv,(20,30,16))
     code,streams = custody.closed(store,args.diagnostic,request,command,ctx.B.HELPER_SHA)
-    want = ('profile=%s candidate_complete=true qualification_complete=false required_programs=2 required_heads=187 required_selected=42\n'%startup.PROFILE).encode('ascii')
+    want = ('profile=%s candidate_complete=true qualification_complete=false required_programs=2 required_heads=187 required_selected=42\n'%profile).encode('ascii')
     need(code==0 and streams['stdout']==want and streams['stderr']==b'','exact successful full producer raw closure')
     need(bound['publication'] is not None and bound['publication']['path']==plan['output'],
          'only prospective producer publication')
@@ -88,7 +90,7 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
         originals[program]=inputs['original']
         expected[program]=legacy.expected_files(ctx,a,program,inputs,material)
         expected[program]['startup-policy.txt']=frozen[program]['startup']
-        policies[program]=startup.policy(frozen[program]['startup'],program,inputs['original'],material['ledger.txt'],material['policy.txt'],custody)
+        policies[program]=startup.policy(frozen[program]['startup'],program,inputs['original'],material['ledger.txt'],material['policy.txt'],custody,profile=profile)
     need(policies[PROGRAMS[0]]['bootstrap']!=policies[PROGRAMS[1]]['bootstrap'],'distinct frozen bootstrap destinations')
     roster = {}
     for policy in policies.values():
@@ -105,8 +107,8 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
                  and 0<=pin['bytes']<=16*MIB and pin['bytes']<=128*MIB-charged,'unchanged dependency identity/bound')
             charged+=pin['bytes'];rows.append(store.read(path,16*MIB,pin))
         dependencies[program]=rows
-    products = startup.publication(store,a,bound['publication'],originals,expected,policies)
-    need(closed['schema']=='LI2STARTUP-SAVED-1' and closed['profile']==startup.PROFILE
+    products = startup.publication(store,a,bound['publication'],originals,expected,policies,profile=profile)
+    need(closed['schema']=='LI2STARTUP-SAVED-1' and closed['profile']==profile
          and closed['source_revision']==pins.SOURCE_REVISION and closed['configuration_complete'] is True
          and closed['custody_complete'] is True and 'error' not in closed,'completed main capture shape')
     need(all(closed[key] is False for key in startup.FALSE_FLAGS) and closed['N01']=='UNRUN'
@@ -117,16 +119,16 @@ def authenticate(ctx,a,legacy,custody,pins,originals_module,startup,args,store,r
     joined={}
     for program in PROGRAMS:
         product=products[program]
-        wire=transport(program,originals[program],expected[program],product,dependencies[program],startup)
+        wire=transport(program,originals[program],expected[program],product,dependencies[program],startup,profile=profile)
         transport_path=directory/program/'transport.bin'
         need(store.read(transport_path,startup.TRANSPORT_BYTES)==wire,'actual full independent verifier transport bytes')
         wire_sha=sha(wire)
         attempt=directory/program/'verifier'
-        argv=[str(verifier),'--startup',str(transport_path),wire_sha]
+        argv=[str(verifier),startup.verifier_flag(profile),str(transport_path),wire_sha]
         request,command=legacy.request_and_command(ctx,captured,attempt,argv,(20,30,16))
         code,streams=custody.closed(store,attempt,request,command,ctx.B.HELPER_SHA)
         dependency_sha=sha(startup.dependency_roster(policies[program],dependencies[program]))
-        row=startup.result_row(program,streams['stdout'],streams['stderr'],code,product,dependency_sha)
+        row=startup.result_row(program,streams['stdout'],streams['stderr'],code,product,dependency_sha,profile=profile)
         handoff=legacy.runtime_handoff(a,product['plan-ledger.tsv'],expected[program]['selection.txt'])
         recorded=closed['programs'][program]
         need(all(recorded.get(k)==v for k,v in row.items()) and recorded['runtime_handoff']==handoff

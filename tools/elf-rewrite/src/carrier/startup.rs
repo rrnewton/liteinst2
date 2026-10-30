@@ -1,4 +1,4 @@
-//! Typed main-image startup metadata for one opt-in static ET_EXEC profile.
+//! Typed main-image startup metadata for separately named static ET_EXEC profiles.
 //!
 //! Paths come from an independently authenticated package policy. This writer
 //! performs no filesystem lookup and does not qualify the interpreter, DSO,
@@ -8,6 +8,7 @@ use super::elf64::{Elf64, ElfVaddr, FileOffset, FileRange, ObjectType, SegmentTy
 use super::{Error as CarrierError, add, align_up, budget, host_index};
 
 const DYNAMIC_BYTES: u64 = 7 * 16;
+const ABSOLUTE_DYNAMIC_BYTES: u64 = 9 * 16;
 
 /// Additional finite bounds; the existing image/layout limits still apply to
 /// every added header, carrier page, image, file byte and the complete VA hull.
@@ -16,9 +17,9 @@ const DYNAMIC_BYTES: u64 = 7 * 16;
 pub struct StartupLimits {
     /// Includes the final NUL.
     pub max_interpreter_bytes: u64,
-    /// Includes the final NUL of the single absolute DT_NEEDED pathname.
+    /// Aggregate DT_NEEDED pathname bytes, including each terminating NUL.
     pub max_needed_bytes: u64,
-    /// Includes the leading empty string and final pathname NUL.
+    /// Includes the leading empty string and all terminating pathname NULs.
     pub max_string_table_bytes: u64,
     pub max_dynamic_bytes: u64,
     /// Complete added metadata interval, including internal alignment padding.
@@ -36,6 +37,52 @@ pub struct StaticExecStartup<'a> {
     pub interpreter: &'a str,
     pub bootstrap_dso: &'a str,
     pub limits: StartupLimits,
+}
+
+/// Separate three-needed class; all three terminated names share the needed budget.
+#[derive(Clone, Copy, Debug)]
+pub struct StaticExecAbsolutePrerequisites<'a> {
+    pub interpreter: &'a str,
+    pub libgcc: &'a str,
+    pub libc: &'a str,
+    pub bootstrap_dso: &'a str,
+    pub limits: StartupLimits,
+}
+#[derive(Clone, Copy)]
+pub(super) enum Request<'a> {
+    Single(StaticExecStartup<'a>),
+    Absolute(StaticExecAbsolutePrerequisites<'a>),
+}
+impl<'a> Request<'a> {
+    fn interpreter(self) -> &'a str {
+        match self {
+            Self::Single(r) => r.interpreter,
+            Self::Absolute(r) => r.interpreter,
+        }
+    }
+    fn limits(self) -> StartupLimits {
+        match self {
+            Self::Single(r) => r.limits,
+            Self::Absolute(r) => r.limits,
+        }
+    }
+    fn needed(self) -> Vec<&'a str> {
+        match self {
+            Self::Single(r) => vec![r.bootstrap_dso],
+            Self::Absolute(r) => vec![r.libgcc, r.libc, r.bootstrap_dso],
+        }
+    }
+    fn strings(self) -> Result<u64, CarrierError> {
+        self.needed().into_iter().try_fold(1, |sum, name| {
+            add(sum, name.len() as u64 + 1, "startup strings")
+        })
+    }
+    fn dynamic_bytes(self) -> u64 {
+        match self {
+            Self::Single(_) => DYNAMIC_BYTES,
+            Self::Absolute(_) => ABSOLUTE_DYNAMIC_BYTES,
+        }
+    }
 }
 
 /// Exact new main-file metadata. Every range has the same unique R-only carrier
@@ -59,6 +106,7 @@ pub struct StartupLayout {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Error {
     InvalidPath { which: &'static str },
+    InvalidAbsolutePrerequisites,
     UnsupportedInputSegment { index: usize, kind: SegmentType },
     InvalidLoadPermissions { index: usize },
     InvalidStack { index: usize },
@@ -72,7 +120,7 @@ pub enum Error {
 }
 
 pub(super) struct Prepared<'a> {
-    pub request: StaticExecStartup<'a>,
+    pub request: Request<'a>,
     pub original_stack: Option<usize>,
     pub protected: Vec<FileRange>,
 }
@@ -87,7 +135,11 @@ pub(super) fn scan_budget(
     prepared: &Prepared<'_>,
     limits: super::dynamic::Limits,
 ) -> Result<(), CarrierError> {
-    budget("startup dynamic entries", 7, limits.dynamic_entries as u64)?;
+    budget(
+        "startup dynamic entries",
+        prepared.request.dynamic_bytes() / 16,
+        limits.dynamic_entries as u64,
+    )?;
     // The fixed grammar scans one bucket, one chain and one null symbol. Its
     // complete-metadata pass charges the hash header (8), full hash (16),
     // strings, and symbol (24). Check these before allocating output as well
@@ -97,11 +149,7 @@ pub(super) fn scan_budget(
         3,
         limits.metadata_records as u64,
     )?;
-    let strings = add(
-        prepared.request.bootstrap_dso.len() as u64,
-        2,
-        "startup strings",
-    )?;
+    let strings = prepared.request.strings()?;
     budget(
         "startup metadata scan bytes",
         add(48, strings, "startup metadata scan")?,
@@ -112,30 +160,74 @@ pub(super) fn scan_budget(
 
 pub(super) fn prepare<'a>(
     input: &Elf64<'_>,
-    request: StaticExecStartup<'a>,
+    request: Request<'a>,
 ) -> Result<Prepared<'a>, CarrierError> {
     if input.header().object_type != ObjectType::Executable {
         return Err(CarrierError::UnsupportedObjectType);
     }
+    let limits = request.limits();
+    if let Request::Absolute(r) = request {
+        if r.libgcc == r.libc
+            || r.libgcc == r.bootstrap_dso
+            || r.libc == r.bootstrap_dso
+            || r.libgcc == r.interpreter
+            || r.libc == r.interpreter
+            || r.bootstrap_dso == r.interpreter
+            || limits.max_dynamic_bytes != ABSOLUTE_DYNAMIC_BYTES
+        {
+            return Err(Error::InvalidAbsolutePrerequisites.into());
+        }
+        for value in [r.interpreter, r.libgcc, r.libc, r.bootstrap_dso] {
+            if !value.is_ascii()
+                || value
+                    .bytes()
+                    .any(|b| !(0x21..=0x7e).contains(&b) || b == b'$')
+                || value
+                    .split('/')
+                    .skip(1)
+                    .any(|p| p.is_empty() || p == "." || p == "..")
+            {
+                return Err(Error::InvalidPath {
+                    which: "absolute prerequisites",
+                }
+                .into());
+            }
+        }
+        for (required, ceiling) in [
+            (limits.max_interpreter_bytes, 4096),
+            (limits.max_needed_bytes, 4096),
+            (limits.max_string_table_bytes, 4097),
+            (limits.max_metadata_bytes, 16384),
+            (limits.max_input_sections as u64, 4096),
+            (limits.max_input_symbols as u64, 65536),
+            (limits.max_input_string_bytes, 1048576),
+        ] {
+            budget("absolute startup ceiling", required, ceiling)?;
+        }
+    }
     path(
-        request.interpreter,
+        request.interpreter(),
         "interpreter",
-        request.limits.max_interpreter_bytes,
+        limits.max_interpreter_bytes,
     )?;
-    let needed = path(
-        request.bootstrap_dso,
-        "needed",
-        request.limits.max_needed_bytes,
-    )?;
+    let mut needed = 0;
+    for name in request.needed() {
+        needed = add(
+            needed,
+            path(name, "needed", limits.max_needed_bytes)?,
+            "needed pathname aggregate",
+        )?;
+    }
+    budget("startup needed bytes", needed, limits.max_needed_bytes)?;
     budget(
         "startup string table bytes",
         add(needed, 1, "startup string table")?,
-        request.limits.max_string_table_bytes,
+        limits.max_string_table_bytes,
     )?;
     budget(
         "startup dynamic bytes",
-        DYNAMIC_BYTES,
-        request.limits.max_dynamic_bytes,
+        request.dynamic_bytes(),
+        limits.max_dynamic_bytes,
     )?;
     let mut original_stack = None;
     for item in input.program_headers() {
@@ -165,7 +257,7 @@ pub(super) fn prepare<'a>(
             }
         }
     }
-    let protected = sections(input, request.limits)?;
+    let protected = sections(input, limits)?;
     Ok(Prepared {
         request,
         original_stack,
@@ -198,20 +290,20 @@ pub(super) fn layout(
 ) -> Result<StartupLayout, CarrierError> {
     let interpreter = FileRange::checked(
         FileOffset(start),
-        prepared.request.interpreter.len() as u64 + 1,
+        prepared.request.interpreter().len() as u64 + 1,
     )?;
-    let string_table = FileRange::checked(
-        interpreter.end(),
-        prepared.request.bootstrap_dso.len() as u64 + 2,
-    )?;
+    let string_table = FileRange::checked(interpreter.end(), prepared.request.strings()?)?;
     let symbol_table = FileRange::checked(FileOffset(align_up(string_table.end().0, 8)?), 24)?;
     let hash_table = FileRange::checked(FileOffset(align_up(symbol_table.end().0, 4)?), 16)?;
-    let dynamic = FileRange::checked(FileOffset(align_up(hash_table.end().0, 8)?), DYNAMIC_BYTES)?;
+    let dynamic = FileRange::checked(
+        FileOffset(align_up(hash_table.end().0, 8)?),
+        prepared.request.dynamic_bytes(),
+    )?;
     let metadata = FileRange::checked(FileOffset(start), dynamic.end().0 - start)?;
     budget(
         "startup metadata bytes",
         metadata.len(),
-        prepared.request.limits.max_metadata_bytes,
+        prepared.request.limits().max_metadata_bytes,
     )?;
     Ok(StartupLayout {
         metadata,
@@ -299,19 +391,25 @@ pub(super) fn render(
     carrier_vaddr: ElfVaddr,
 ) -> Result<(), CarrierError> {
     let at = host_index(layout.interpreter.start().0)?;
-    let path = prepared.request.interpreter.as_bytes();
+    let path = prepared.request.interpreter().as_bytes();
     bytes[at..at + path.len()].copy_from_slice(path);
-    let at = host_index(layout.string_table.start().0)? + 1;
-    let path = prepared.request.bootstrap_dso.as_bytes();
-    bytes[at..at + path.len()].copy_from_slice(path);
-    // New backing was zero-initialized. This leaves both terminating NULs, the
+    let mut at = host_index(layout.string_table.start().0)? + 1;
+    let mut records = Vec::new();
+    for path in prepared.request.needed() {
+        records.push((
+            1_u64,
+            (at - host_index(layout.string_table.start().0)?) as u64,
+        ));
+        bytes[at..at + path.len()].copy_from_slice(path.as_bytes());
+        at += path.len() + 1;
+    }
+    // New backing was zero-initialized. This leaves all terminating NULs, the
     // leading empty string, the complete null symbol and all padding literal.
     let at = host_index(layout.hash_table.start().0)?;
     bytes[at..at + 4].copy_from_slice(&1_u32.to_le_bytes());
     bytes[at + 4..at + 8].copy_from_slice(&1_u32.to_le_bytes());
     // One bucket, one chain, both zero: the main exports no dynamic symbol.
-    let records = [
-        (1_u64, 1_u64), // DT_NEEDED: exact offset after the empty string.
+    records.extend([
         (
             5,
             address(layout.string_table, carrier_offset, carrier_vaddr)?.0,
@@ -327,7 +425,7 @@ pub(super) fn render(
             address(layout.hash_table, carrier_offset, carrier_vaddr)?.0,
         ),
         (0, 0),
-    ];
+    ]);
     let at = host_index(layout.dynamic.start().0)?;
     for (index, (tag, value)) in records.into_iter().enumerate() {
         bytes[at + index * 16..at + index * 16 + 8].copy_from_slice(&tag.to_le_bytes());
@@ -389,11 +487,15 @@ pub(super) fn verify(
     };
     let interpreter_bytes = file(layout.interpreter)?;
     let strings = file(layout.string_table)?;
-    if interpreter_bytes.strip_suffix(&[0]) != Some(prepared.request.interpreter.as_bytes())
-        || strings
-            .strip_prefix(&[0])
-            .and_then(|rest| rest.strip_suffix(&[0]))
-            != Some(prepared.request.bootstrap_dso.as_bytes())
+    let mut expected_strings = vec![0];
+    let mut records = Vec::new();
+    for name in prepared.request.needed() {
+        records.push((1_u64, expected_strings.len() as u64));
+        expected_strings.extend_from_slice(name.as_bytes());
+        expected_strings.push(0);
+    }
+    if interpreter_bytes.strip_suffix(&[0]) != Some(prepared.request.interpreter().as_bytes())
+        || strings != expected_strings
         || file(layout.symbol_table)? != [0; 24]
         || file(layout.hash_table)? != [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         || output.segments(SegmentType::Interpreter).count() != 1
@@ -425,17 +527,16 @@ pub(super) fn verify(
             .start()
             .0)
     };
-    let records = [
-        (1_u64, 1_u64),
+    records.extend([
         (5, va(layout.string_table)?),
         (10, layout.string_table.len()),
         (6, va(layout.symbol_table)?),
         (11, 24),
         (4, va(layout.hash_table)?),
         (0, 0),
-    ];
+    ]);
     let table = file(layout.dynamic)?;
-    if table.len() != DYNAMIC_BYTES as usize
+    if table.len() != prepared.request.dynamic_bytes() as usize
         || records.into_iter().enumerate().any(|(index, record)| {
             (u64_at(table, index * 16), u64_at(table, index * 16 + 8)) != record
         })
@@ -443,7 +544,7 @@ pub(super) fn verify(
         return Err(CarrierError::OutputInvariant);
     }
     let inventory = super::dynamic::inspect(output, limits)?;
-    if inventory.dynamic_entries != 7
+    if inventory.dynamic_entries != prepared.request.dynamic_bytes() as usize / 16
         || inventory.relocation_records != 0
         || !inventory.writes.is_empty()
         || !inventory.symbol_references.is_empty()

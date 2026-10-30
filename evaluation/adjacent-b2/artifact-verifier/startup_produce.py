@@ -21,6 +21,8 @@ MIB=1048576
 CRATE='evaluation/adjacent-b2/artifact-verifier'
 PROGRAMS=('checksum','rle-roundtrip')
 PROFILE='elf-disassembly-null-jumps-static-exec-router-bootstrap-v1'
+ABSOLUTE_PROFILE='elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
+STARTUP_PROFILES=(PROFILE,ABSOLUTE_PROFILE)
 ORIGINAL_PROFILES=('startup-original-facts-rooted-v1','startup-original-facts-readonly-headerpad-v1')
 CONTROL=('request.json','command.json','parent-closed.json','receipt.json',
          'stdout.txt','stderr.txt','helper.stdout','helper.stderr')
@@ -211,7 +213,7 @@ def producer_build(ctx,a,legacy,custody,pins,store,captured,directory,configurat
     return reference,binary
 
 
-def startup_policy(program,inputs,interpreter,bootstrap,dependencies,contract):
+def startup_policy(program,inputs,interpreter,bootstrap,dependencies,contract,*,profile=PROFILE,absolute_prerequisites=None):
     need(program in PROGRAMS and inputs['policy'].startswith(b'LI2DISASM-POLICY 6\n'),
          'full unchanged v6 planning inputs')
     for path in [interpreter,bootstrap,*dependencies]:
@@ -221,17 +223,35 @@ def startup_policy(program,inputs,interpreter,bootstrap,dependencies,contract):
     need(1<=len(dependencies)<=16 and list(dependencies)==sorted(dependencies)
          and interpreter in dependencies and bootstrap not in dependencies,'exact sorted dependency policy roster')
     custody_digest(contract);need(contract!='0'*64,'prospective contract identity')
-    lines=['LI2BOOTSTRAP-POLICY 1','profile linux-x86-64-static-exec-router-bootstrap-v1',
+    need(profile in STARTUP_PROFILES, 'explicit producer startup profile')
+    absolute = profile == ABSOLUTE_PROFILE
+    if absolute:
+        need(type(absolute_prerequisites) is dict and set(absolute_prerequisites)=={'libgcc','libc'},
+             'explicit inventory role association')
+        libgcc,libc = [absolute_prerequisites[role] for role in ('libgcc','libc')]
+        need(libgcc in dependencies and libc in dependencies and len({interpreter,bootstrap,libgcc,libc})==4,
+             'distinct actual prerequisite roster members')
+        need(all('$' not in path for path in [interpreter,bootstrap,*dependencies]), 'no loader token in absolute class')
+        needed_bytes=sum(len(path)+1 for path in (libgcc,libc,bootstrap))
+        need(needed_bytes<=4096 and needed_bytes+1<=4097, 'aggregate absolute needed/string bound')
+        startup_row='absolute-prerequisites '+libgcc+' '+libc+' '+bootstrap
+    else:
+        need(absolute_prerequisites is None, 'old startup has no prerequisite role selector')
+        startup_row='bootstrap '+bootstrap
+    version='2' if absolute else '1'
+    runtime='linux-x86-64-static-exec-router-absolute-prerequisites-v1' if absolute else 'linux-x86-64-static-exec-router-bootstrap-v1'
+    dynamic='144' if absolute else '112'
+    lines=['LI2BOOTSTRAP-POLICY '+version,'profile '+runtime,
         'program '+program,'original '+sha(inputs['original']),'disassembly '+sha(inputs['ledger']),
-        'planning-policy '+sha(inputs['policy']),'interpreter '+interpreter,'bootstrap '+bootstrap,
+        'planning-policy '+sha(inputs['policy']),'interpreter '+interpreter,startup_row,
         'app-stack 4481024 65536','qualification-contract '+contract,
-        'startup-limits 4096 4096 4097 112 16384 4096 65536 1048576']
+        'startup-limits 4096 4096 4097 '+dynamic+' 16384 4096 65536 1048576']
     for path,pin in dependencies.items():lines.append('dependency '+path+' '+custody_digest(pin['sha256']))
     raw=('\n'.join(lines)+'\n').encode('ascii');need(len(raw)<=65536,'startup policy bound')
     return raw
 
 
-def materials(ctx,a,legacy,custody,store,facts,directory,interpreter,bootstrap_paths,dependencies,contract):
+def materials(ctx,a,legacy,custody,store,facts,directory,interpreter,bootstrap_paths,dependencies,contract,*,profile=PROFILE,absolute_prerequisites=None):
     directory.mkdir(mode=0o700)
     sources={}
     for program in PROGRAMS:
@@ -244,7 +264,8 @@ def materials(ctx,a,legacy,custody,store,facts,directory,interpreter,bootstrap_p
         expected=legacy.expected_files(ctx,a,program,inputs,raw)
         need(len(expected)==5,'unchanged independent original expected-file roster')
         group=dict(original=inputs['original'],ledger=raw['ledger.txt'],policy=raw['policy.txt'])
-        group['startup']=startup_policy(program,group,interpreter,bootstrap_paths[program],dependencies,contract)
+        group['startup']=startup_policy(program,group,interpreter,bootstrap_paths[program],dependencies,contract,
+            profile=profile,absolute_prerequisites=absolute_prerequisites)
         sources[program]={}
         for key,value in group.items():
             path=directory/(program+'-'+key);write(path,value);sources[program][key]=path
@@ -277,6 +298,24 @@ def inventory(store,path,expected_sha):
     return interpreter,{path:dependencies[path] for path in sorted(dependencies)}
 
 
+def inventory_roles(store,path,expected_sha):
+    """Retain explicit observed input-role association; never infer by basename/order."""
+    interpreter,dependencies=inventory(store,path,expected_sha)
+    raw=store.read(path,MIB)
+    need(sha(raw)==custody_digest(expected_sha),'same passive role inventory')
+    value=json.loads(raw)
+    labels={'/lib64/ld-linux-x86-64.so.2':'interpreter','/lib64/libc.so.6':'libc','/lib64/libgcc_s.so.1':'libgcc'}
+    roles={}
+    for row in value['files']:
+        if row['input'] not in labels:continue
+        role=labels[row['input']]
+        need(role not in roles and row['canonical'] in dependencies,'unique explicit passive object role')
+        roles[role]=row['canonical']
+    need(set(roles)=={'interpreter','libgcc','libc'} and roles['interpreter']==interpreter
+         and len(set(roles.values()))==3,'complete distinct passive role identities')
+    return interpreter,dependencies,{role:roles[role] for role in ('libgcc','libc')}
+
+
 def main():
     # Only the root-owned exact integrated script is dispatched. Imported helper
     # modules are separately authenticated by the frozen startup module profile.
@@ -287,7 +326,9 @@ def main():
     for key in ('host-inventory-sha256','contract-sha256','source-profile-sha256'):parser.add_argument('--'+key,required=True)
     parser.add_argument('--failure-history',type=Path,action='append',default=[])
     parser.add_argument('--original-profile',choices=ORIGINAL_PROFILES,default=ORIGINAL_PROFILES[0])
+    parser.add_argument('--startup-profile',choices=STARTUP_PROFILES,default=PROFILE)
     args=parser.parse_args()
+    profile=args.startup_profile
     need(not sys.flags.optimize,'assertions required')
     root=Path(__file__).resolve().parents[3]
     ctx,a=legacy.context(root)
@@ -311,7 +352,7 @@ def main():
          and not os.path.lexists(out),'new ignored run directory')
     out.mkdir(mode=0o700)
     store=custody.Store(512*MIB)
-    report=dict(schema='LI2STARTUP-PRODUCTION-RUN-1',profile=PROFILE,revision=revision,source_revision=pins.SOURCE_REVISION,
+    report=dict(schema='LI2STARTUP-PRODUCTION-RUN-1',profile=profile,revision=revision,source_revision=pins.SOURCE_REVISION,
         source_profile=source_profile,original_profile=args.original_profile,original_capture=None,producer_build=None,plan=None,binding=None,producer_attempts=0,producer_dispatches=0,
         expected_programs=2,expected_heads=187,expected_selected=42,adjacent_upper=2,adjacent_lower=1,adjacent_joint=2,
         producer_status='UNRUN',candidate_complete=False,artifact_complete=False,qualification_complete=False,
@@ -321,7 +362,11 @@ def main():
         source=source_snapshot(ctx,pins,legacy,store)
         contract=store.read(custody.absolute(str(args.contract_record)),MIB)
         need(sha(contract)==custody_digest(args.contract_sha256),'prospective contract record identity')
-        interpreter,dependencies=inventory(store,custody.absolute(str(args.host_inventory)),args.host_inventory_sha256)
+        if profile == ABSOLUTE_PROFILE:
+            interpreter,dependencies,roles=inventory_roles(store,custody.absolute(str(args.host_inventory)),args.host_inventory_sha256)
+        else:
+            interpreter,dependencies=inventory(store,custody.absolute(str(args.host_inventory)),args.host_inventory_sha256)
+            roles=None
         need(len(args.failure_history)<=64 and len({str(p) for p in args.failure_history})==len(args.failure_history),
              'bounded unique retained failure history')
         history=[store.pin(custody.absolute(str(path)),MIB) for path in args.failure_history]
@@ -329,7 +374,7 @@ def main():
         package=out/'package';package.mkdir(mode=0o700)
         bootstrap={p:str(package/(p+'-bootstrap.so')) for p in PROGRAMS}
         need(len(set(bootstrap.values()))==2,'distinct per-program future DSO paths')
-        write(out/'run-planned.json',dict(schema='LI2STARTUP-PRODUCTION-PLAN-1',profile=PROFILE,
+        write(out/'run-planned.json',dict(schema='LI2STARTUP-PRODUCTION-PLAN-1',profile=profile,
             revision=revision,source_revision=pins.SOURCE_REVISION,source_profile=source_profile,
             original_profile=args.original_profile,env=env,tools=tool_pins,files=source,
             configuration_profile=rooted.COMMENT_PROFILE,cargo_cwd='/',configurations=configs,
@@ -349,9 +394,10 @@ def main():
         report['original_capture']=capture
         build,binary=producer_build(ctx,a,legacy,custody,pins,store,captured,out/'producer-build',configs,stable)
         report['producer_build']=build
-        originals_sources=materials(ctx,a,legacy,custody,store,facts,out/'materials',interpreter,bootstrap,dependencies,args.contract_sha256)
+        originals_sources=materials(ctx,a,legacy,custody,store,facts,out/'materials',interpreter,bootstrap,dependencies,args.contract_sha256,
+            profile=profile,absolute_prerequisites=roles)
         copies=custody.copy_inputs(originals_sources,out/'inputs')
-        plan=dict(schema='LI2STARTUP-SAVED-PLAN-1',profile=PROFILE,capture=capture,source_revision=pins.SOURCE_REVISION,
+        plan=dict(schema='LI2STARTUP-SAVED-PLAN-1',profile=profile,capture=capture,source_revision=pins.SOURCE_REVISION,
             source_profile=source_profile,
             env=env,tools=tool_pins,configuration_profile=rooted.COMMENT_PROFILE,configurations=configs,
             producer_build=build,inputs=copies,dependencies=dependencies,
@@ -367,7 +413,7 @@ def main():
             report['producer_exit']=code
             report['producer_dispatches']=1
             if code in (0,2):
-                expected=(f'profile={PROFILE} candidate_complete={str(code==0).lower()} qualification_complete=false '
+                expected=(f'profile={profile} candidate_complete={str(code==0).lower()} qualification_complete=false '
                           'required_programs=2 required_heads=187 required_selected=42\n').encode()
                 need(streams['stdout']==expected and streams['stderr']==b'','exact full-program producer response')
                 report.update(producer_status='PRODUCER_COMPLETE_UNVERIFIED' if code==0 else 'REFUSED',candidate_complete=code==0)

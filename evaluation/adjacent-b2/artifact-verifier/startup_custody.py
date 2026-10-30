@@ -14,6 +14,8 @@ import time
 MIB = 1048576
 PROGRAMS = ('checksum', 'rle-roundtrip')
 PROFILE = 'elf-disassembly-null-jumps-static-exec-router-bootstrap-v1'
+ABSOLUTE_PROFILE = 'elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
+PROFILES = (PROFILE, ABSOLUTE_PROFILE)
 CRATE = 'evaluation/adjacent-b2/artifact-verifier'
 CONTROL = ('request.json', 'command.json', 'parent-closed.json', 'receipt.json',
            'stdout.txt', 'stderr.txt', 'helper.stdout', 'helper.stderr')
@@ -509,7 +511,9 @@ def build(ctx, a, legacy, pins, store, role, reference, captured):
 
 def producer_argv(binary, plan):
     need(tuple(plan['inputs']) == PROGRAMS, 'both ordered producer input groups')
-    argv = [str(binary)]
+    profile = plan.get('profile', PROFILE)  # Preserve the old helper's positional-only caller API.
+    need(profile in PROFILES, 'explicit producer startup profile')
+    argv = [str(binary)] + (['--absolute-prerequisites'] if profile == ABSOLUTE_PROFILE else [])
     for program in PROGRAMS:
         group = plan['inputs'][program]
         need(tuple(group) == INPUTS, 'exact four input snapshots')
@@ -581,7 +585,7 @@ def close_binding(plan_path, plan_sha256, producer_directory, output, history, d
         raw = store.read(plan_path, MIB)
         need(sha(raw) == digest(plan_sha256), 'externally frozen prospective plan')
         plan = json_value(raw)
-        need(plan['schema'] == 'LI2STARTUP-SAVED-PLAN-1' and plan['profile'] == PROFILE, 'startup prospective plan only')
+        need(plan['schema'] == 'LI2STARTUP-SAVED-PLAN-1' and plan['profile'] in PROFILES, 'startup prospective plan only')
         # Observe actual after-identities even when an input changed. The
         # consumer refuses inequality without erasing the raw failed attempt.
         need(tuple(plan['inputs']) == PROGRAMS, 'closed input roster')
@@ -603,7 +607,7 @@ def close_binding(plan_path, plan_sha256, producer_directory, output, history, d
         store.verify()
         if publication is not None:
             need(store.members(output) == publication['directory'], 'publication changed at closure')
-        value = dict(schema='LI2STARTUP-SAVED-BINDING-1', profile=PROFILE,
+        value = dict(schema='LI2STARTUP-SAVED-BINDING-1', profile=plan['profile'],
             plan=store.pin(plan_path,MIB), producer_controls=files, publication=publication,
             failure_history=retained, input_after={p:{k:store.pin(v['path'],65536 if k=='startup' else MIB) for k,v in group.items()} for p,group in plan['inputs'].items()})
         path = absolute(str(destination))

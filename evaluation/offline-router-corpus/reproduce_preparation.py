@@ -25,12 +25,14 @@ STAGES = {
     'source-freeze': [ARTIFACT + 'freeze_startup_sources.py'],
     'platform': [CORPUS + 'platform_inputs.py'],
     'producer': [ARTIFACT + 'startup_produce.py'],
+    'producer-absolute': [ARTIFACT + 'startup_produce.py'],
     'verifier-build': [ARTIFACT + 'startup_verifier_build.py'],
     'saved': [ARTIFACT + 'verify_saved.py'],
     'bootstrap': [ARTIFACT + 'startup_bootstrap.py'],
     'observer-plan': [NATIVE + 'prepare_profile.py', 'observer-plan'],
     'observer-build': [NATIVE + 'native_launch.py', 'build-observer'],
     'final-profile': [NATIVE + 'prepare_profile.py', 'final-profile'],
+    'final-profile-absolute-prerequisites': [NATIVE + 'prepare_profile.py', 'final-profile-absolute-prerequisites'],
     'probe': [NATIVE + 'probe_xstate.py'],
     'observe': [NATIVE + 'native_launch.py', 'observe'],
     'n01': [NATIVE + 'native_launch.py', 'n01'],
@@ -49,9 +51,14 @@ FLAGS = {
     'observer-plan': ('root', 'native-revision', 'source-profile', 'source-profile-sha256', 'capture',
         'capture-sha256', 'build-output', 'binary-output', 'output'),
     'observer-build': ('root', 'build-plan', 'build-plan-sha256'),
-    'final-profile': ('inputs', 'inputs-sha256', 'output'), 'probe': ('raw-output',),
+    'final-profile': ('inputs', 'inputs-sha256', 'output'),
+    'final-profile-absolute-prerequisites': ('inputs', 'inputs-sha256', 'output'), 'probe': ('raw-output',),
     'observe': NATIVE_FLAGS, 'n01': NATIVE_FLAGS,
 }
+
+ABSOLUTE_STARTUP = 'elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
+FLAGS['producer-absolute'] = FLAGS['producer'] + ('startup-profile',)
+PRODUCER_STAGES = ('producer', 'producer-absolute')
 
 
 
@@ -138,14 +145,17 @@ def command(root, python, plan):
     need(len(tail) == 2*len(flags) and set(tail[::2]) == flags and
          all(not value.startswith('--') for value in tail[1::2]), 'exact unique flags; no aliases or overrides')
     history = plan['history']
-    need(type(history) is list and (len(history) <= 64 if stage == 'producer' else not history),
+    need(type(history) is list and (len(history) <= 64 if stage in PRODUCER_STAGES else not history),
          'explicit zero through 64 producer histories; no history for other stages')
     if stage in ('controls', 'profiler-controls', 'reproducer-controls'):
         need(tail == [], 'all control cases; no filtering')
-    if stage == 'producer':
+    if stage in PRODUCER_STAGES:
         need('--failure-history' not in tail and tail.count('--original-profile') == 1 and
              tail[tail.index('--original-profile') + 1] == 'startup-original-facts-readonly-headerpad-v1',
              'unchanged readonly original profile and explicit history')
+    if stage == 'producer-absolute':
+        need(tail[tail.index('--startup-profile') + 1] == ABSOLUTE_STARTUP,
+             'exact absolute prerequisite startup profile')
     if stage in ('observe', 'n01'):
         values = dict(zip(tail[::2], tail[1::2]))
         accepted = values['--accept-contract-sha256']
@@ -194,7 +204,7 @@ def run(args):
     for flag, expected in [('--root', args.root), ('--native-revision', args.revision)]:
         if flag in tail:
             need(tail.count(flag) == 1 and tail[tail.index(flag)+1] == str(expected), 'same declared root/revision')
-    if plan['stage'] in ('producer', 'verifier-build'):
+    if plan['stage'] in (*PRODUCER_STAGES, 'verifier-build'):
         for flag, value in [('--toolchain', args.toolchain), ('--cargo-home', args.cargo_home), ('--user-home', args.user_home)]:
             need(tail.count(flag) == 1 and tail[tail.index(flag)+1] == str(value), 'same controlled build environment')
     if plan['stage'] == 'probe':

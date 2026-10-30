@@ -341,8 +341,84 @@ def main_namespace(elf, tags, needed, dso):
         metadata=dict(file_offset=start,address=vstart,bytes=end-start,sha256=sha(elf.slice(start,end-start))))
 
 
+def literal_path(name):
+    return (type(name) is str and 2<=len(name)<=4095 and name.startswith('/') and '$' not in name and
+            all(0x21<=ord(c)<=0x7e for c in name) and
+            all(part and part not in ('.','..') for part in name.split('/')[1:]))
+
+
+def main_namespace_absolute(elf, tags, needed, dso, prerequisites):
+    """Exact new three-prerequisite class, selected before namespace parsing."""
+    need(elf.kind==2 and type(prerequisites) is tuple and len(prerequisites)==3,
+         'absolute prerequisite main/role class')
+    need(len(set(prerequisites))==3 and all(literal_path(name) for name in prerequisites),
+         'distinct canonical literal absolute prerequisite names')
+    offsets=[1,2+len(prerequisites[0]),3+len(prerequisites[0])+len(prerequisites[1])]
+    total=sum(len(name)+1 for name in prerequisites)
+    need(total<=4096, 'aggregate absolute prerequisite name bound')
+    need(set(tags)=={5,10,6,11,4}, 'main has no exported dynamic symbol namespace')
+    need(tags[11]==24 and needed==offsets and tags[10]==1+total and tags[10]<=4097,
+         'absolute prerequisite main symbol width/needed/string bound')
+    pages=dso.load_pages(elf)
+    dyn=[p for p in elf.ph if p[0]==2];interp=[p for p in elf.ph if p[0]==3]
+    need(len(dyn)==len(interp)==1, 'absolute prerequisite main dynamic/interpreter population')
+    dyn,interp=dyn[0],interp[0]
+    need(dyn[1]==4 and dyn[5]==dyn[6]==144 and dyn[7]==8 and
+         interp[1]==4 and 2<=interp[5]==interp[6]<=4096 and interp[7]==1,
+         'absolute prerequisite main metadata segment grammar')
+    ranges=[(interp[3],interp[5]),(tags[5],tags[10]),(tags[6],24),(tags[4],16),(dyn[3],144)]
+    owners=[elf.file_owner(address,size,'absolute-main') for address,size in ranges]
+    owner=owners[0][0]
+    need(owner[1]==4 and owner[5]==owner[6] and all(row[0]==owner for row in owners),
+         'absolute prerequisite main metadata has one readonly LOAD owner')
+    raw=[elf.mapped_bytes(address,offset,size) for (address,size),(_,offset) in zip(ranges,owners)]
+    need(owners[0][1]==interp[2] and owners[-1][1]==dyn[2],
+         'absolute prerequisite main segment file offsets match actual owner')
+    names=[dso.string(raw[1],at) for at in offsets]
+    need(tuple(names)==prerequisites and raw[1]==b'\0'+b''.join(name.encode('ascii')+b'\0' for name in names),
+         'absolute prerequisite main whole ordered string table')
+    need(raw[0].endswith(b'\0') and raw[0].count(b'\0')==1, 'absolute prerequisite interpreter termination')
+    interpreter=raw[0][:-1].decode('ascii')
+    need(literal_path(interpreter) and interpreter not in prerequisites, 'distinct literal absolute interpreter')
+    need(raw[2]==bytes(24), 'absolute prerequisite main entire null symbol')
+    need(raw[3]==struct.pack('<IIII',1,1,0,0), 'absolute prerequisite main entire SysV table')
+    align=lambda n,a:(n+a-1)&~(a-1)
+    need(tags[5]==interp[3]+interp[5] and tags[6]==align(tags[5]+tags[10],8) and
+         tags[4]==align(tags[6]+24,4) and dyn[3]==align(tags[4]+16,8),
+         'absolute prerequisite main ordered disjoint metadata layout')
+    records=[*( (1,at) for at in offsets ),(5,tags[5]),(10,tags[10]),(6,tags[6]),(11,24),(4,tags[4]),(0,0)]
+    need(raw[4]==b''.join(struct.pack('<QQ',*row) for row in records),
+         'absolute prerequisite main exact ordered dynamic records')
+    for (address,size),(following,_) in zip(ranges[1:],ranges[2:]):
+        need(elf.at(address+size,following-address-size)==bytes(following-address-size),
+             'absolute prerequisite main zero alignment padding')
+    start,end=owners[0][1],owners[-1][1]+144
+    vstart,vend=interp[3],dyn[3]+144
+    need(end==owner[2]+owner[5] and vend==owner[3]+owner[6],
+         'absolute prerequisite main metadata ends its readonly carrier')
+    overlaps=lambda a,n,b,m:n>0 and m>0 and a<b+m and b<a+n
+    owner_index=elf.loads.index(owner)
+    need(all(p['load_index']==owner_index or not overlaps(start,end-start,
+             p['file_offset'],p['file_end']-p['start']) for p in pages),
+         'absolute prerequisite main metadata has no other LOAD file alias')
+    need(elf.sh[0]==(0,)*10 and all(s[1] in (0,1,2,3,7,8) and not s[2]&0x400 for s in elf.sh),
+         'absolute prerequisite main preserves only static section classes')
+    for section in elf.sh:
+        need((section[1]==8 or not overlaps(start,end-start,section[4],section[5])) and
+             (not section[2]&2 or not overlaps(vstart,vend-vstart,section[3],section[5])),
+             'absolute prerequisite main metadata has no section alias')
+    for offset,size in ((0,64),(elf.unpack('<Q',32)[0],56*len(elf.ph)),
+                        (elf.unpack('<Q',40)[0],64*len(elf.sh))):
+        need(not overlaps(start,end-start,offset,size), 'absolute prerequisite main metadata has no ELF-table alias')
+    need(all(p[0] in (1,2,3) or not overlaps(start,end-start,p[2],p[5]) for p in elf.ph),
+         'absolute prerequisite main metadata has no other segment alias')
+    return dict(profile='canonical-null-sysv-absolute-prerequisites-main-v1',needed=names,symbols=1,
+        null_symbol_sha256=sha(raw[2]),sysv_sha256=sha(raw[3]),
+        metadata=dict(file_offset=start,address=vstart,bytes=end-start,sha256=sha(elf.slice(start,end-start))))
+
+
 class Namespace:
-    def __init__(self, raw_objects, package, dso):
+    def __init__(self, raw_objects, package, dso, *, absolute_prerequisites=None):
         need(type(raw_objects) is dict and set(raw_objects)==set(ROLES),'complete fixed five-object namespace')
         self.dso=dso;self.objects={};self.identities={}
         for role in ROLES:
@@ -353,9 +429,10 @@ class Namespace:
             need(16 not in tags and tags.get(30,0)&~0x18==0 and tags.get(0x6ffffffb,0)&~0x49==0,
                  'no symbolic/direct/group/interpose/audit/filter lookup mode')
             if role=='main':
-                self.main_namespace=main_namespace(elf,tags,needed,dso)
+                self.main_namespace=(main_namespace(elf,tags,needed,dso) if absolute_prerequisites is None else
+                    main_namespace_absolute(elf,tags,needed,dso,absolute_prerequisites))
                 needed_names=self.main_namespace['needed']
-                symbols=[];index=None  # Both classes prove no possible export.
+                symbols=[];index=None  # Every selected class proves no possible export.
             else:
                 need(elf.kind==3 and all(t in tags for t in (5,6,10,11)) and tags[11]==24 and tags[10]<=MIB,
                      'actual DSO dynamic namespace')
@@ -369,6 +446,9 @@ class Namespace:
                 need(len(symbols)<=65536,'bounded complete dynamic symbol population')
                 need(15 not in tags and 29 not in tags,'no namespace RPATH/RUNPATH injection')
                 if role=='bootstrap':
+                    if absolute_prerequisites is not None:
+                        need(needed_names==['libgcc_s.so.1','libc.so.6','ld-linux-x86-64.so.2'],
+                             'absolute prerequisite bootstrap exact ordered outgoing edges')
                     need({'libgcc_s.so.1','libc.so.6'}<=set(needed_names) and
                          set(needed_names)<={'libgcc_s.so.1','libc.so.6','ld-linux-x86-64.so.2'} and
                          len(set(needed_names))==len(needed_names),'complete finite bootstrap lookup graph')
@@ -380,6 +460,13 @@ class Namespace:
             self.objects[role]=dict(elf=elf,tags=tags,symbols=symbols,symbol_index=index,needed=needed_names)
             self.identities[role]=dict(bytes=len(raw),sha256=sha(raw))
         self.populations={role:complete_population(self.objects[role],dso) for role in ROLES if role!='main'}
+        self.absolute_resolution=None
+        if absolute_prerequisites is not None:
+            self.absolute_resolution=dict(profile='absolute-main-loaded-soname-closure-v1',
+                main=self.main_namespace, namespace=self.identities, populations=self.populations,
+                main_needed_roles=['libgcc','libc','bootstrap'], interpreter_preloaded='loader',
+                derived_breadth_first_lookup=['main','libgcc','libc','bootstrap','loader'],
+                edges={role:self.objects[role]['needed'] for role in ROLES})
 
     def global_target(self, role, record):
         need(role in ('loader','libc','libgcc'),'new resolver is only for dependencies')
@@ -412,8 +499,11 @@ class Namespace:
             name=name.decode('ascii'),symbol=record['symbol'],
             version=dict(index=index,nondefault=bool(number&0x8000),**version),lookup=lookup,
             target_object=role,target_relative=sym[4])
-        if self.main_namespace['profile']=='canonical-null-sysv-main-v1':
+        if self.main_namespace['profile'] in ('canonical-null-sysv-main-v1',
+                'canonical-null-sysv-absolute-prerequisites-main-v1'):
             proof['main_namespace']=self.main_namespace
+        if self.absolute_resolution is not None:
+            proof['absolute_resolution']=self.absolute_resolution
         return sym[4],proof
 
     def constructors(self, role, records):

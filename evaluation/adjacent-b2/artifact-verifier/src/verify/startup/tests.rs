@@ -142,6 +142,19 @@ fn encode(x: &boot::Input) -> Vec<u8> {
     w.0.extend_from_slice(&digest.0);
     w.0
 }
+fn encode_absolute(x: &boot::Input, roles: [u64; 2]) -> Vec<u8> {
+    let mut raw = encode(x);
+    raw.truncate(raw.len() - 32);
+    raw[8..16].copy_from_slice(&3u64.to_le_bytes());
+    let mut indices = Vec::new();
+    for index in roles {
+        indices.extend_from_slice(&index.to_le_bytes());
+    }
+    raw.splice(24..24, indices);
+    let digest = ContentId::of(&raw);
+    raw.extend_from_slice(&digest.0);
+    raw
+}
 fn dependency() -> Vec<u8> {
     let mut b = vec![0; 8192];
     b[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
@@ -192,6 +205,14 @@ fn fixture_mode(
     pair: u8,
     image: Option<u64>,
 ) -> (super::super::tests::Fixture, Inputs, boot::Input) {
+    fixture_class(program, pair, image, Mode::Bootstrap)
+}
+fn fixture_class(
+    program: &str,
+    pair: u8,
+    image: Option<u64>,
+    mode: Mode,
+) -> (super::super::tests::Fixture, Inputs, boot::Input) {
     let mut f = match image {
         Some(image) => super::super::tests::startup_fixture_with_image(program, image),
         None => super::super::tests::startup_fixture(program, pair),
@@ -201,55 +222,88 @@ fn fixture_mode(
     let plan = f.product.0["plan-ledger.tsv"].clone();
     let joined = ledger::join(&f.original, &facts, &records, &plan, &f.product).unwrap();
     let dependency = dependency();
-    let raw=format!("LI2BOOTSTRAP-POLICY 1\nprofile {RUNTIME_PROFILE}\nprogram {program}\noriginal {}\ndisassembly {}\nplanning-policy {}\ninterpreter /fixture/ld.so\nbootstrap /fixture/{program}.so\napp-stack 4481024 65536\nqualification-contract {}\nstartup-limits 4096 4096 4097 112 16384 4096 65536 1048576\ndependency /fixture/ld.so {}\n",digest(&f.original),digest(&f.expected.files["disassembly.txt"]),digest(&f.expected.files["disassembly-policy.txt"]),"01".repeat(32),digest(&dependency)).into_bytes();
+    let raw = match mode {
+        Mode::Bootstrap => {format!("LI2BOOTSTRAP-POLICY 1\nprofile {RUNTIME_PROFILE}\nprogram {program}\noriginal {}\ndisassembly {}\nplanning-policy {}\ninterpreter /fixture/ld.so\nbootstrap /fixture/{program}.so\napp-stack 4481024 65536\nqualification-contract {}\nstartup-limits 4096 4096 4097 112 16384 4096 65536 1048576\ndependency /fixture/ld.so {}\n",digest(&f.original),digest(&f.expected.files["disassembly.txt"]),digest(&f.expected.files["disassembly-policy.txt"]),"01".repeat(32),digest(&dependency)).into_bytes()},
+        Mode::AbsolutePrerequisites => format!("LI2BOOTSTRAP-POLICY 2\nprofile {ABSOLUTE_RUNTIME_PROFILE}\nprogram {program}\noriginal {}\ndisassembly {}\nplanning-policy {}\ninterpreter /fixture/ld.so\nabsolute-prerequisites /fixture/libgcc.so /fixture/libc.so /fixture/{program}.so\napp-stack 4481024 65536\nqualification-contract {}\nstartup-limits 4096 4096 4097 144 16384 4096 65536 1048576\ndependency /fixture/ld.so {}\ndependency /fixture/libc.so {}\ndependency /fixture/libgcc.so {}\n",
+            digest(&f.original),digest(&f.expected.files["disassembly.txt"]),digest(&f.expected.files["disassembly-policy.txt"]),"01".repeat(32),digest(&dependency),digest(&dependency),digest(&dependency)).into_bytes(),
+    };
     let inputs = Inputs {
         policy: raw,
-        dependencies: vec![dependency],
+        dependencies: vec![dependency; if mode == Mode::Bootstrap { 1 } else { 3 }],
     };
-    let policy = policy(program, &inputs.policy, &f.original, &facts, &f.product).unwrap();
+    let policy = policy_mode(
+        program,
+        &inputs.policy,
+        &f.original,
+        &facts,
+        &f.product,
+        mode,
+    )
+    .unwrap();
     let mut payload = b"LI2TOOL-CANDIDATE-UNREADY-V1\0".to_vec();
     payload.extend_from_slice(&ContentId::of(&f.product.0["metadata.li2meta"]).0);
     payload.extend_from_slice(&ContentId::of(&plan).0);
     let elf = Elf64::parse(&f.original, ParseLimits::default()).unwrap();
     // Fixture construction can use the writer. The acceptance path independently
     // recomputes every byte/layout and never consumes this output as evidence.
-    let output = carrier::append_static_exec_with_router_startup(
-        &elf,
-        carrier::ImageRequest {
-            carrier_vaddr: ElfVaddr(0x480000),
-            payload: &payload,
-            images: &joined.images,
-            source_dependencies: &joined.dependencies,
+    let request = carrier::ImageRequest {
+        carrier_vaddr: ElfVaddr(0x480000),
+        payload: &payload,
+        images: &joined.images,
+        source_dependencies: &joined.dependencies,
+    };
+    let image_policy = carrier::ImagePolicy {
+        layout: carrier::CarrierPolicy {
+            page_size: 4096,
+            user_address_limit: 1 << 47,
+            max_added_file_bytes: TEXT as u64,
+            max_output_file_bytes: OUTPUT as u64,
+            max_program_headers: 128,
+            max_virtual_span: 2147483648,
         },
-        &joined.edits,
-        carrier::ImagePolicy {
-            layout: carrier::CarrierPolicy {
-                page_size: 4096,
-                user_address_limit: 1 << 47,
-                max_added_file_bytes: TEXT as u64,
-                max_output_file_bytes: OUTPUT as u64,
-                max_program_headers: 128,
-                max_virtual_span: 2147483648,
+        dynamic: Default::default(),
+        max_images: 32,
+        max_new_load_pages: 128,
+    };
+    let limits = carrier::StartupLimits {
+        max_interpreter_bytes: 4096,
+        max_needed_bytes: 4096,
+        max_string_table_bytes: 4097,
+        max_dynamic_bytes: mode.dynamic_bytes(),
+        max_metadata_bytes: 16384,
+        max_input_sections: 4096,
+        max_input_symbols: 65536,
+        max_input_string_bytes: 1048576,
+    };
+    let bootstrap_dso = std::str::from_utf8(&policy.runtime.bootstrap_dso).unwrap();
+    let output = match mode {
+        Mode::Bootstrap => carrier::append_static_exec_with_router_startup(
+            &elf,
+            request,
+            &joined.edits,
+            image_policy,
+            carrier::StaticExecStartup {
+                interpreter: "/fixture/ld.so",
+                bootstrap_dso,
+                limits,
             },
-            dynamic: Default::default(),
-            max_images: 32,
-            max_new_load_pages: 128,
-        },
-        carrier::StaticExecStartup {
-            interpreter: "/fixture/ld.so",
-            bootstrap_dso: std::str::from_utf8(&policy.runtime.bootstrap_dso).unwrap(),
-            limits: carrier::StartupLimits {
-                max_interpreter_bytes: 4096,
-                max_needed_bytes: 4096,
-                max_string_table_bytes: 4097,
-                max_dynamic_bytes: 112,
-                max_metadata_bytes: 16384,
-                max_input_sections: 4096,
-                max_input_symbols: 65536,
-                max_input_string_bytes: 1048576,
-            },
-        },
-    )
+        ),
+        Mode::AbsolutePrerequisites => {
+            carrier::append_static_exec_with_router_absolute_prerequisites(
+                &elf,
+                request,
+                &joined.edits,
+                image_policy,
+                carrier::StaticExecAbsolutePrerequisites {
+                    interpreter: "/fixture/ld.so",
+                    libgcc: "/fixture/libgcc.so",
+                    libc: "/fixture/libc.so",
+                    bootstrap_dso,
+                    limits,
+                },
+            )
+        }
+    }
     .unwrap();
     let mut ledger = plan.clone();
     let mut suffix = format!(
@@ -287,10 +341,18 @@ fn fixture_mode(
     let runtime = boot::Policy {
         interpreter: b"/fixture/ld.so".to_vec(),
         bootstrap_dso: format!("/fixture/{program}.so").into_bytes(),
-        dependencies: vec![boot::Dependency {
-            path: b"/fixture/ld.so".to_vec(),
-            identity: ContentId::of(&inputs.dependencies[0]),
-        }],
+        dependencies: (if mode == Mode::Bootstrap {
+            vec!["/fixture/ld.so"]
+        } else {
+            vec!["/fixture/ld.so", "/fixture/libc.so", "/fixture/libgcc.so"]
+        })
+        .into_iter()
+        .zip(&inputs.dependencies)
+        .map(|(path, bytes)| boot::Dependency {
+            path: path.as_bytes().to_vec(),
+            identity: ContentId::of(bytes),
+        })
+        .collect(),
         app_stack: boot::Span {
             start: 0x446000,
             len: 65536,
@@ -324,16 +386,21 @@ fn fixture_mode(
         .0
         .insert("candidate.elf".into(), output.bytes().to_vec());
     f.product.0.insert("ledger.tsv".into(), ledger);
-    f.product
-        .0
-        .insert("catalog.li2boot".into(), encode(&catalog));
+    f.product.0.insert(
+        "catalog.li2boot".into(),
+        if mode == Mode::Bootstrap {
+            encode(&catalog)
+        } else {
+            encode_absolute(&catalog, [2, 1])
+        },
+    );
     f.product
         .0
         .insert("startup-policy.txt".into(), inputs.policy.clone());
     let facts = f.expected.facts(&f.original, &f.product).unwrap();
     f.product.0.insert(
         "startup-profile.tsv".into(),
-        profile(program, &facts, &inputs.policy),
+        profile_mode(program, &facts, &inputs.policy, mode),
     );
     seal(&f.original, &mut f.product);
     (f, inputs, catalog)
@@ -962,6 +1029,7 @@ fn r3_dependency_real_elf_load_pages_equal_cap_and_one_more() {
             program: 1,
             runtime: good.policy.clone(),
             caps: [4096, 4096, 4097, 112, 16384, 4096, 65536, 1048576],
+            absolute_prerequisites: None,
         };
         p.runtime.dependencies[0].identity = ContentId::of(&bytes);
         let outcome = dependencies::join(&p, &[bytes]);
@@ -1019,4 +1087,299 @@ fn r3_v2_missing_extra_reordered_duplicate_and_trailing_members() {
         verify(&name, &original, &expected, &product, &inputs).err(),
         Some("complete actual artifact membership".into())
     );
+}
+
+// The new class retains every old control above and every full family roster.
+#[test]
+fn a01_absolute_both_programs_all_seven_families_keep_full_denominators() {
+    let mut totals = [0, 0];
+    for program in ["checksum", "rle-roundtrip"] {
+        for family in 0..=6 {
+            let (f, input, x) = fixture_class(program, family, None, Mode::AbsolutePrerequisites);
+            let (summary, startup) = verify_absolute_prerequisites(
+                program,
+                &f.original,
+                &f.expected,
+                &f.product,
+                &input,
+            )
+            .unwrap();
+            assert_eq!(
+                (startup.original_heads, summary.selected),
+                denominator(program).unwrap()
+            );
+            assert_eq!(summary.images, x.images.len());
+            assert_eq!(startup.catalog_sha256, digest(&encode_absolute(&x, [2, 1])));
+            assert_eq!(x.policy.dependencies.len(), 3);
+            assert_eq!(
+                verify(program, &f.original, &f.expected, &f.product, &input).err(),
+                Some("startup policy profile/program".into())
+            );
+            let elf = Elf64::parse(&x.main, ParseLimits::default()).unwrap();
+            assert_eq!(
+                elf.segments(SegmentType::Dynamic).next().unwrap().file_size,
+                144
+            );
+            if family == 0 {
+                totals[0] += startup.original_heads;
+                totals[1] += summary.selected;
+            }
+        }
+    }
+    assert_eq!(totals, [187, 42]);
+}
+#[test]
+fn a02_old_products_never_promote_to_the_new_class() {
+    for program in ["checksum", "rle-roundtrip"] {
+        let (f, input, _) = fixture(program, 0);
+        assert_eq!(
+            verify_absolute_prerequisites(program, &f.original, &f.expected, &f.product, &input)
+                .err(),
+            Some("startup policy profile/program".into())
+        );
+        let raw = transport(&f, &input);
+        assert!(
+            crate::startup_transport::decode_absolute_prerequisites(&mut raw.as_slice()).is_err()
+        );
+    }
+}
+#[test]
+fn a03_absolute_catalog_indices_and_wire_class_are_independent() {
+    let (f, input, x) = fixture_class("checksum", 1, None, Mode::AbsolutePrerequisites);
+    let facts = f.expected.facts(&f.original, &f.product).unwrap();
+    let p = policy_mode(
+        "checksum",
+        &input.policy,
+        &f.original,
+        &facts,
+        &f.product,
+        Mode::AbsolutePrerequisites,
+    )
+    .unwrap();
+    assert_eq!(p.absolute_prerequisites, Some([2, 1]));
+    for roles in [[1, 2], [2, 2], [0, 1], [3, 1], [u64::MAX, 1]] {
+        let mut product = f.product.clone();
+        product
+            .0
+            .insert("catalog.li2boot".into(), encode_absolute(&x, roles));
+        seal(&f.original, &mut product);
+        bundle(&f.original, &product).unwrap();
+        assert_eq!(
+            verify_absolute_prerequisites("checksum", &f.original, &f.expected, &product, &input)
+                .err(),
+            Some("catalog exact absolute prerequisite roster indices".into()),
+            "roles {roles:?}"
+        );
+    }
+    assert_eq!(
+        catalog::decode(&encode_absolute(&x, [2, 1])).err(),
+        Some("catalog explicit v2 wire".into())
+    );
+    assert_eq!(
+        catalog::decode_absolute_prerequisites(&encode(&x), &p).err(),
+        Some("catalog explicit v3 wire".into())
+    );
+    let mut raw = encode_absolute(&x, [2, 1]);
+    raw.truncate(raw.len() - 32);
+    raw.push(0);
+    raw.extend_from_slice(&ContentId::of(&raw).0);
+    assert_eq!(
+        catalog::decode_absolute_prerequisites(&raw, &p).err(),
+        Some("catalog exact end".into())
+    );
+}
+#[test]
+fn a04_absolute_policy_semantic_mutants_rebind_every_outer_identity() {
+    let (f, input, x) = fixture_class("checksum", 0, None, Mode::AbsolutePrerequisites);
+    for (from, to, why) in [
+        (
+            "LI2BOOTSTRAP-POLICY 2",
+            "LI2BOOTSTRAP-POLICY 1",
+            "startup policy profile/program",
+        ),
+        (
+            ABSOLUTE_RUNTIME_PROFILE,
+            RUNTIME_PROFILE,
+            "startup policy profile/program",
+        ),
+        (
+            "/fixture/libgcc.so /fixture/libc.so",
+            "/fixture/libc.so /fixture/libc.so",
+            "distinct absolute prerequisite roles",
+        ),
+        (
+            "/fixture/libgcc.so /fixture/libc.so",
+            "/fixture/ld.so /fixture/libc.so",
+            "distinct absolute prerequisite roles",
+        ),
+        (
+            "/fixture/libgcc.so /fixture/libc.so",
+            "/fixture/missing.so /fixture/libc.so",
+            "libgcc prerequisite missing from roster",
+        ),
+        (
+            "/fixture/libgcc.so",
+            "/fixture/libgcc$.so",
+            "absolute prerequisite paths forbid loader tokens",
+        ),
+        (
+            "4097 144 16384",
+            "4097 112 16384",
+            "actual startup string/dynamic charge",
+        ),
+        (
+            "4097 144 16384",
+            "4097 145 16384",
+            "unchanged startup ceiling",
+        ),
+    ] {
+        let mut bad = input.clone();
+        bad.policy = String::from_utf8(bad.policy)
+            .unwrap()
+            .replace(from, to)
+            .into_bytes();
+        let mut product = f.product.clone();
+        product
+            .0
+            .insert("startup-policy.txt".into(), bad.policy.clone());
+        let facts = f.expected.facts(&f.original, &product).unwrap();
+        product.0.insert(
+            "startup-profile.tsv".into(),
+            profile_mode("checksum", &facts, &bad.policy, Mode::AbsolutePrerequisites),
+        );
+        product
+            .0
+            .insert("catalog.li2boot".into(), encode_absolute(&x, [2, 1]));
+        seal(&f.original, &mut product);
+        bundle(&f.original, &product).unwrap();
+        assert_eq!(
+            verify_absolute_prerequisites("checksum", &f.original, &f.expected, &product, &bad)
+                .err(),
+            Some(why.into()),
+            "{from} -> {to}"
+        );
+    }
+}
+#[test]
+fn a05_absolute_dynamic_names_null_table_and_padding_have_no_exemptions() {
+    let (f, input, good) = fixture_class("checksum", 1, None, Mode::AbsolutePrerequisites);
+    let elf = Elf64::parse(&good.main, ParseLimits::default()).unwrap();
+    let dynamic = elf.segments(SegmentType::Dynamic).next().unwrap().offset.0 as usize;
+    let interp = elf.segments(SegmentType::Interpreter).next().unwrap();
+    let strings = interp.offset.0 as usize + interp.file_size as usize;
+    // Three needed records, all tail tags/values, each name and its NUL, the
+    // padding/null symbol/hash preceding the dynamic table are all real bytes.
+    let mut offsets: Vec<usize> = (0..144).map(|n| dynamic + n).collect();
+    offsets.extend(strings..dynamic);
+    for offset in offsets {
+        let mut x = good.clone();
+        x.main[offset] ^= 1;
+        x.ledger = String::from_utf8(good.ledger.clone())
+            .unwrap()
+            .replace(&digest(&good.main), &digest(&x.main))
+            .into_bytes();
+        let mut product = f.product.clone();
+        product.0.insert("candidate.elf".into(), x.main.clone());
+        product.0.insert("ledger.tsv".into(), x.ledger.clone());
+        product
+            .0
+            .insert("catalog.li2boot".into(), encode_absolute(&x, [2, 1]));
+        seal(&f.original, &mut product);
+        bundle(&f.original, &product).unwrap();
+        assert_eq!(
+            verify_absolute_prerequisites("checksum", &f.original, &f.expected, &product, &input)
+                .err(),
+            Some("exact appended payload/image bytes".into()),
+            "offset {offset}"
+        );
+    }
+}
+#[test]
+fn a06_absolute_transport_both_programs_strict_mode_and_end() {
+    for program in ["checksum", "rle-roundtrip"] {
+        let (f, input, _) = fixture_class(program, 6, None, Mode::AbsolutePrerequisites);
+        let members = transport_members(&f, &input);
+        let mut raw = format!(
+            "LI2W01-INPUT\t2\t{ABSOLUTE_PROFILE}\t{program}\t{}\n",
+            members.len()
+        )
+        .into_bytes();
+        for (name, bytes) in members {
+            raw.extend_from_slice(
+                format!("{name}\t{}\t{}\n", bytes.len(), digest(&bytes)).as_bytes(),
+            );
+            raw.extend_from_slice(&bytes);
+        }
+        raw.extend_from_slice(b"END\n");
+        let (name, original, expected, product, inputs) =
+            crate::startup_transport::decode_absolute_prerequisites(&mut raw.as_slice()).unwrap();
+        assert_eq!(name, program);
+        assert_eq!(original, f.original);
+        assert_eq!(expected.files, f.expected.files);
+        assert_eq!(product.0, f.product.0);
+        assert_eq!(inputs.policy, input.policy);
+        assert_eq!(inputs.dependencies, input.dependencies);
+        let (summary, startup) =
+            verify_absolute_prerequisites(&name, &original, &expected, &product, &inputs).unwrap();
+        assert_eq!(
+            (startup.original_heads, summary.selected),
+            denominator(program).unwrap()
+        );
+        assert!(crate::startup_transport::decode(&mut raw.as_slice()).is_err());
+        assert!(crate::transport(&mut raw.as_slice()).is_err());
+        raw.push(0);
+        assert_eq!(
+            crate::startup_transport::decode_absolute_prerequisites(&mut raw.as_slice()).err(),
+            Some("startup transport trailing bytes".into())
+        );
+    }
+}
+#[test]
+fn a07_absolute_needed_sum_keeps_the_existing_4096_boundary() {
+    let (f, input, _) = fixture_class("checksum", 0, None, Mode::AbsolutePrerequisites);
+    let facts = f.expected.facts(&f.original, &f.product).unwrap();
+    let gcc = format!("/{}", "g".repeat(1350));
+    let libc = format!("/{}", "c".repeat(1350));
+    let bootstrap = format!("/{}", "b".repeat(1390));
+    assert_eq!(gcc.len() + libc.len() + bootstrap.len() + 3, 4096);
+    let original_rows = String::from_utf8(input.policy.clone()).unwrap();
+    for extra in ["", "b"] {
+        let bootstrap = format!("{bootstrap}{extra}");
+        let mut rows: Vec<String> = original_rows.lines().map(str::to_string).collect();
+        rows[7] = format!("absolute-prerequisites {gcc} {libc} {bootstrap}");
+        rows.truncate(11);
+        let mut paths = ["/fixture/ld.so".to_string(), gcc.clone(), libc.clone()];
+        paths.sort();
+        rows.extend(
+            paths
+                .iter()
+                .map(|path| format!("dependency {path} {}", digest(&input.dependencies[0]))),
+        );
+        let raw = (rows.join("\n") + "\n").into_bytes();
+        let outcome = policy_mode(
+            "checksum",
+            &raw,
+            &f.original,
+            &facts,
+            &f.product,
+            Mode::AbsolutePrerequisites,
+        );
+        if extra.is_empty() {
+            let p = outcome.unwrap();
+            assert_eq!(
+                p.needed()
+                    .unwrap()
+                    .iter()
+                    .map(|n| n.len() + 1)
+                    .sum::<usize>(),
+                4096
+            );
+            assert_eq!(p.caps, [4096, 4096, 4097, 144, 16384, 4096, 65536, 1048576]);
+        } else {
+            assert_eq!(
+                outcome.err(),
+                Some("actual startup string/dynamic charge".into())
+            );
+        }
+    }
 }

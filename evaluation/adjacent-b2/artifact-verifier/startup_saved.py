@@ -1,7 +1,7 @@
 """Explicit saved-startup main joins only. No producer, build, or native dispatch.
 
 The only possible child command is the independently authenticated verifier,
---startup, once per program. Package acceptance and execution remain separate.
+with the exact selected startup flag, once per program. Package acceptance and execution remain separate.
 """
 import hashlib
 import json
@@ -11,7 +11,10 @@ import re
 
 MIB = 1048576
 PROFILE = 'elf-disassembly-null-jumps-static-exec-router-bootstrap-v1'
+ABSOLUTE_PROFILE = 'elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
+PROFILES = (PROFILE, ABSOLUTE_PROFILE)
 RUNTIME_PROFILE = 'linux-x86-64-static-exec-router-bootstrap-v1'
+ABSOLUTE_RUNTIME_PROFILE = 'linux-x86-64-static-exec-router-absolute-prerequisites-v1'
 PROGRAMS = ('checksum', 'rle-roundtrip')
 COUNTS = {'checksum': (80, 16), 'rle-roundtrip': (107, 26)}
 EXPECTED = ('disassembly-inventory.tsv', 'disassembly-policy.txt', 'disassembly.txt',
@@ -55,26 +58,48 @@ def encode(rows):
     return ('\n'.join('\t'.join(row) for row in rows) + '\n').encode('ascii')
 
 
-def policy(raw, program, original, ledger, planning, custody):
+def checked_profile(profile):
+    need(profile in PROFILES, 'explicit supported startup profile')
+    return profile
+
+
+def runtime_profile(profile):
+    return RUNTIME_PROFILE if checked_profile(profile) == PROFILE else ABSOLUTE_RUNTIME_PROFILE
+
+
+def verifier_flag(profile):
+    return '--startup' if checked_profile(profile) == PROFILE else '--startup-absolute-prerequisites'
+
+
+def policy(raw, program, original, ledger, planning, custody, *, profile=PROFILE):
     rows = lines(raw, 65536)
     need(12 <= len(rows) <= 27 and all('\t' not in row for row in rows), 'startup policy cardinality/spacing')
     def fields(index, tag, count):
         result = rows[index].split(' ')
         need(len(result) == count and result[0] == tag and all(result), 'startup policy fields/order')
         return result[1:]
-    need(rows[:3] == ['LI2BOOTSTRAP-POLICY 1', 'profile '+RUNTIME_PROFILE, 'program '+program], 'startup policy profile/program')
+    absolute = checked_profile(profile) == ABSOLUTE_PROFILE
+    need(rows[:3] == ['LI2BOOTSTRAP-POLICY '+('2' if absolute else '1'), 'profile '+runtime_profile(profile), 'program '+program], 'startup policy profile/program')
     for index, tag, raw_input in ((3,'original',original),(4,'disassembly',ledger),(5,'planning-policy',planning)):
         need(fields(index,tag,2) == [sha(raw_input)], 'startup policy independent input identity')
     interpreter = str(custody.absolute(fields(6,'interpreter',2)[0]))
-    bootstrap = str(custody.absolute(fields(7,'bootstrap',2)[0]))
+    if absolute:
+        libgcc, libc, bootstrap = [str(custody.absolute(p)) for p in fields(7,'absolute-prerequisites',4)]
+        need(len({libgcc,libc,bootstrap,interpreter}) == 4, 'distinct absolute prerequisite roles')
+        needed = [libgcc,libc,bootstrap]
+    else:
+        bootstrap = str(custody.absolute(fields(7,'bootstrap',2)[0]))
+        needed = [bootstrap]
     need(tuple(map(uint,fields(8,'app-stack',3))) == (0x446000,65536), 'authored file-backed application stack')
     contract = custody.digest(fields(9,'qualification-contract',2)[0])
     need(contract != '0'*64, 'named external qualification contract')
     caps = tuple(map(uint,fields(10,'startup-limits',9)))
-    ceiling = (4096,4096,4097,112,16384,4096,65536,1048576)
+    dynamic_bytes = 144 if absolute else 112
+    ceiling = (4096,4096,4097,dynamic_bytes,16384,4096,65536,1048576)
+    needed_bytes = sum(len(p)+1 for p in needed)
     need(all(n <= limit for n,limit in zip(caps,ceiling)) and
-         caps[0] >= len(interpreter)+1 and caps[1] >= len(bootstrap)+1 and
-         caps[2] >= len(bootstrap)+2 and caps[3] == 112, 'unchanged startup resource ceilings')
+         caps[0] >= len(interpreter)+1 and caps[1] >= needed_bytes and
+         caps[2] >= needed_bytes+1 and caps[3] == dynamic_bytes, 'unchanged startup resource ceilings')
     dependencies = []
     for index in range(11,len(rows)):
         path, identity = fields(index,'dependency',3)
@@ -83,7 +108,13 @@ def policy(raw, program, original, ledger, planning, custody):
              (not dependencies or dependencies[-1][0] < path), 'sorted unique dependency roster')
         dependencies.append((path,identity))
     need(1 <= len(dependencies) <= 16 and interpreter in dict(dependencies), 'interpreter dependency required')
-    return dict(interpreter=interpreter,bootstrap=bootstrap,dependencies=dependencies,contract=contract,caps=caps)
+    result = dict(interpreter=interpreter,bootstrap=bootstrap,dependencies=dependencies,contract=contract,caps=caps)
+    if absolute:
+        need(libgcc in dict(dependencies) and libc in dict(dependencies), 'absolute prerequisite roles in pinned roster')
+        need(all('$' not in p and len(p)<=4095 and all(33<=ord(c)<=126 for c in p)
+                 for p in [interpreter,bootstrap,*dict(dependencies)]), 'absolute prerequisite paths forbid loader tokens')
+        result['absolute_prerequisites'] = [libgcc,libc]
+    return result
 
 
 def dependency_roster(policy_value, data):
@@ -111,7 +142,8 @@ def pack_sizes(program, original, expected, product, dependencies):
     return body
 
 
-def pack(path, program, original, expected, product, dependencies):
+def pack(path, program, original, expected, product, dependencies, *, profile=PROFILE):
+    checked_profile(profile)
     body = pack_sizes(program,len(original),{n:len(b) for n,b in expected.items()},
                       {n:len(b) for n,b in product.items()},list(map(len,dependencies)))
     files = {'input/original': original}
@@ -119,7 +151,7 @@ def pack(path, program, original, expected, product, dependencies):
     files.update(('product/'+n,b) for n,b in product.items())
     files.update(('dependency/%04d'%i,b) for i,b in enumerate(dependencies))
     ordered = sorted(files.items())
-    headers = [('LI2W01-INPUT\t2\t%s\t%s\t%d\n'%(PROFILE,program,len(files))).encode('ascii')]
+    headers = [('LI2W01-INPUT\t2\t%s\t%s\t%d\n'%(profile,program,len(files))).encode('ascii')]
     headers += [('%s\t%d\t%s\n'%(name,len(raw),sha(raw))).encode('ascii') for name,raw in ordered]
     headers.append(b'END\n')
     need(all(len(h) <= 256 for h in headers) and sum(map(len,headers)) <= FRAMING_BYTES and
@@ -137,11 +169,12 @@ def pack(path, program, original, expected, product, dependencies):
     return digest.hexdigest()
 
 
-def result_row(program, raw, stderr, code, product, dependency_hash):
+def result_row(program, raw, stderr, code, product, dependency_hash, *, profile=PROFILE):
+    checked_profile(profile)
     need(code == 0 and stderr == b'', 'startup verifier raw refusal/stderr')
     rows = table(raw)
     heads, selected = COUNTS[program]
-    need(len(rows) == 15 and rows[:5] == [['LI2W01-PROGRAM','2'],['profile',PROFILE],
+    need(len(rows) == 15 and rows[:5] == [['LI2W01-PROGRAM','2'],['profile',profile],
          ['program',program],['original_heads',str(heads)],['selected',str(selected)]] and
          len(rows[5]) == 2 and rows[5][0] == 'images' and 1 <= uint(rows[5][1]) <= 32 and
          rows[6:] == [['candidate_sha256',sha(product['candidate.elf'])],
@@ -157,7 +190,11 @@ def result_row(program, raw, stderr, code, product, dependency_hash):
         dependency_roster_sha256=dependency_hash,verifier_calls=1)
 
 
-def publication(store, a, frozen, originals, expected, policies):
+def publication(store, a, frozen, originals, expected, policies, *, profile=PROFILE):
+    checked_profile(profile)
+    need(profile != ABSOLUTE_PROFILE or set(policies) == set(PROGRAMS), 'both absolute startup policy programs')
+    need(all(('absolute_prerequisites' in p) == (profile == ABSOLUTE_PROFILE) for p in policies.values()),
+         'same selected startup class in both policies')
     need(frozen is not None and set(frozen) == {'path','directory','files'}, 'complete actual flat publication')
     root = Path(frozen['path'])
     need(store.members(root) == frozen['directory'] and
@@ -169,7 +206,7 @@ def publication(store, a, frozen, originals, expected, policies):
     for name,pin in frozen['files'].items():
         cap = MIB if name == 'COMPLETE' or name.endswith('-original.elf') else 65536 if name.endswith('-startup-policy.txt') else 16*MIB
         full[name] = store.read(root/name,cap,pin)
-    prefix = [['LI2BOOTSTRAP-DIRECTORY','1'],['profile',PROFILE],
+    prefix = [['LI2BOOTSTRAP-DIRECTORY','1'],['profile',profile],
         ['checksum_original_sha256',sha(originals['checksum'])],['rle_original_sha256',sha(originals['rle-roundtrip'])],
         ['required_original_heads','187'],['required_selected_sites','42'],['candidate_complete','true'],
         ['qualification_complete','false'],['execution_authority','none']]
@@ -191,7 +228,7 @@ def publication(store, a, frozen, originals, expected, policies):
         bundle += [['file',name,str(len(raw)),sha(raw)] for name,raw in sorted(product.items()) if name!='bundle-index.tsv']
         need(product['bundle-index.tsv'] == encode(bundle), 'actual nested bundle-index, no synthesized COMPLETE')
         need(all(product[name] == data for name,data in expected[program].items()), 'independent full expected bytes')
-        startup_profile = [['LI2STARTUP-PRODUCER','1'],['profile',PROFILE],['runtime_profile',RUNTIME_PROFILE],
+        startup_profile = [['LI2STARTUP-PRODUCER','1'],['profile',profile],['runtime_profile',runtime_profile(profile)],
             ['planning_profile',a.ROUTED.importer],['program',program],['original_heads',str(COUNTS[program][0])],
             ['selected_sites',str(COUNTS[program][1])],['runtime_policy_sha256',sha(product['startup-policy.txt'])],
             ['qualification_complete','false'],['execution_authority','none']]
@@ -221,12 +258,12 @@ def load_binding(store, args, custody):
     need(sha(raw) == custody.digest(args.startup_binding_sha256), 'frozen startup binding')
     bound = custody.json_value(raw)
     need(set(bound) == {'schema','profile','plan','producer_controls','publication','failure_history','input_after'} and
-         bound['schema'] == 'LI2STARTUP-SAVED-BINDING-1' and bound['profile'] == PROFILE, 'explicit new startup binding schema')
+         bound['schema'] == 'LI2STARTUP-SAVED-BINDING-1' and bound['profile'] in PROFILES, 'explicit new startup binding schema')
     plan_raw = store.read(bound['plan']['path'],MIB,bound['plan'])
     plan = custody.json_value(plan_raw)
     need(set(plan) == {'schema','profile','capture','source_revision','env','tools','configuration_profile',
         'configurations','producer_build','inputs','dependencies','producer_directory','output','source_profile'} and
-        plan['schema'] == 'LI2STARTUP-SAVED-PLAN-1' and plan['profile'] == PROFILE, 'explicit prospective startup plan')
+        plan['schema'] == 'LI2STARTUP-SAVED-PLAN-1' and plan['profile'] == bound['profile'], 'explicit prospective startup plan')
     need(plan['source_profile'] == dict(path=str(args.source_profile),sha256=args.source_profile_sha256), 'frozen source profile authority')
     need(plan['capture'] == dict(directory=str(args.capture),sha256=args.capture_sha256) and
          plan['producer_directory'] == str(args.diagnostic), 'frozen capture/attempt identities')
@@ -245,18 +282,18 @@ def load_binding(store, args, custody):
 
 
 def verify_program(ctx, a, legacy, custody, store, captured, verifier, output_root, program,
-                   original, expected, product, dependencies, dependency_hash, row, stable):
+                   original, expected, product, dependencies, dependency_hash, row, stable, *, profile=PROFILE):
     """Exactly one authenticated verifier attempt, with no producer capability."""
     need(program in PROGRAMS and row['verifier_calls'] == 0, 'one verifier call per program')
     directory = output_root/program; directory.mkdir(mode=0o700)
     transport = directory/'transport.bin'
-    transport_hash = pack(transport,program,original,expected,product,dependencies)
+    transport_hash = pack(transport,program,original,expected,product,dependencies,profile=profile)
     transport_pin = store.pin(transport,TRANSPORT_BYTES)
     need(transport_pin['sha256'] == transport_hash, 'observed transport write identity')
     attempt = directory/'verifier'; attempt.mkdir(mode=0o700)
     stable()
     row['verifier_calls'] = 1
-    argv = [str(verifier),'--startup',str(transport),transport_hash]
+    argv = [str(verifier),verifier_flag(profile),str(transport),transport_hash]
     try:
         ctx.invoke(attempt,argv,captured['env'],captured['tools'])
         request,command = legacy.request_and_command(ctx,captured,attempt,argv,(20,30,16))
@@ -265,7 +302,7 @@ def verify_program(ctx, a, legacy, custody, store, captured, verifier, output_ro
         raise a.CustodyFailure('startup-verifier-closure',str(error)) from error
     stable()
     try:
-        row.update(result_row(program,streams['stdout'],streams['stderr'],exit_code,product,dependency_hash))
+        row.update(result_row(program,streams['stdout'],streams['stderr'],exit_code,product,dependency_hash,profile=profile))
         row['runtime_handoff'] = legacy.runtime_handoff(a,product['plan-ledger.tsv'],expected['selection.txt'])
         row['transport_sha256'] = transport_hash
         row['expected_files'] = {n:dict(bytes=len(b),sha256=sha(b)) for n,b in expected.items()}
@@ -335,6 +372,7 @@ def run(args, ctx, a, legacy, custody, pins, originals_module):
              all(not args.output.is_relative_to(p) for p in (args.capture,args.diagnostic,args.verifier_build,args.startup_binding.parent)), 'new separate startup verifier output')
         output, output_identity = create_output(args.output, store)
         bound,plan,history = load_binding(store,args,custody)
+        profile = plan.get('profile', PROFILE); report['profile'] = profile
         report['retained_history'] = history
         report['original_producer_receipt'] = custody.json_value(store.read(args.diagnostic/'receipt.json',MIB))
         report['original_producer_parent'] = custody.json_value(store.read(args.diagnostic/'parent-closed.json',MIB))
@@ -388,7 +426,8 @@ def run(args, ctx, a, legacy, custody, pins, originals_module):
                     store.read(Path(plan['output'])/name,MIB if name=='COMPLETE' else 16*MIB,pin)
             stable(); report['custody_complete'] = True
             return 1
-        want = ('profile=%s candidate_complete=true qualification_complete=false required_programs=2 required_heads=187 required_selected=42\n'%PROFILE).encode('ascii')
+        profile = checked_profile(plan['profile'])
+        want = ('profile=%s candidate_complete=true qualification_complete=false required_programs=2 required_heads=187 required_selected=42\n'%profile).encode('ascii')
         need(streams['stdout'] == want and streams['stderr'] == b'', 'exact successful producer response')
         verifier, verifier_config = custody.build(ctx,a,legacy,pins,store,'verifier',
             dict(directory=str(args.verifier_build),sha256=args.verifier_build_sha256),captured)
@@ -406,7 +445,7 @@ def run(args, ctx, a, legacy, custody, pins, originals_module):
             originals[program] = inputs['original']
             expected[program] = legacy.expected_files(ctx,a,program,inputs,material)
             expected[program]['startup-policy.txt'] = frozen[program]['startup']
-            policies[program] = policy(frozen[program]['startup'],program,inputs['original'],material['ledger.txt'],material['policy.txt'],custody)
+            policies[program] = policy(frozen[program]['startup'],program,inputs['original'],material['ledger.txt'],material['policy.txt'],custody,profile=profile)
         need(policies[PROGRAMS[0]]['bootstrap'] != policies[PROGRAMS[1]]['bootstrap'], 'distinct pre-frozen bootstrap pathnames')
         roster = {}
         for p in PROGRAMS:
@@ -424,13 +463,13 @@ def run(args, ctx, a, legacy, custody, pins, originals_module):
                      0 <= pin['bytes'] <= 16*MIB and pin['bytes'] <= 128*MIB-charged, 'independent dependency cap/identity')
                 charged += pin['bytes']
                 dependencies[p].append(store.read(path,16*MIB,pin))
-        products = publication(store,a,bound['publication'],originals,expected,policies)
+        products = publication(store,a,bound['publication'],originals,expected,policies,profile=profile)
         for program in PROGRAMS:
             stable()
             row = report['programs'][program]
             verify_program(ctx,a,legacy,custody,store,captured,verifier,args.output,program,
                 originals[program],expected[program],products[program],dependencies[program],
-                sha(dependency_roster(policies[program],dependencies[program])),row,stable)
+                sha(dependency_roster(policies[program],dependencies[program])),row,stable,profile=profile)
         stable(); report['custody_complete'] = True
     except Exception as error:
         report['error'] = dict(type=type(error).__name__,detail=str(error))

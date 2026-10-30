@@ -217,9 +217,10 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     need(sha(raw) == digest(profile_sha256), 'externally frozen final checker profile')
     profile = decode(raw)
     need(set(profile) == {'schema', 'native_revision', 'native_sources', 'artifact_source_profile', 'arguments', 'bootstrap',
-        'contract', 'reviewed', 'observer'} and profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-1', 'LI2STARTUP-FINAL-PROFILE-2'),
+        'contract', 'reviewed', 'observer'} and profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-1', 'LI2STARTUP-FINAL-PROFILE-2', 'LI2STARTUP-FINAL-PROFILE-3'),
          'explicit final profile shape')
-    namespace_profile = profile['schema'] == 'LI2STARTUP-FINAL-PROFILE-2'
+    absolute_profile = profile['schema'] == 'LI2STARTUP-FINAL-PROFILE-3'
+    namespace_profile = profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-2', 'LI2STARTUP-FINAL-PROFILE-3')
     need(type(profile['native_revision']) is str and re.fullmatch('[0-9a-f]{40}', profile['native_revision']) is not None,
          'actual separately committed native source revision')
     source_map = profile['native_sources']
@@ -228,6 +229,8 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     if namespace_profile:
         need({NATIVE+'dependency_constructors.py', NATIVE+'dependency_constructor_controls.py'} <= set(source_map),
              'separately pinned complete-namespace resolver/control source')
+    if absolute_profile:
+        need(NATIVE+'absolute_profile_controls.py' in source_map, 'separately pinned absolute-profile controls')
     source_records = {str(profile_path): (raw, profile_pin)}
     sources = {}
     for relative, expected in source_map.items():
@@ -326,8 +329,13 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
                 need(length == str(len(sources[relative])), 'exact committed native source size')
                 need(sha(git('show', revision+':'+relative)) == expected, 'actual committed native source bytes')
         native_source_profile()
-        value, dependencies = platform.contract(contract_raw, accept_contract_sha256, package, held)
+        platform.selected_startup_profile(saved['completed'], absolute_prerequisites=absolute_profile)
         dso = modules['startup_dso']
+        if absolute_profile:
+            value, dependencies, absolute_proofs, absolute_recheck = platform.contract_absolute(
+                contract_raw, accept_contract_sha256, package, held, saved['programs'], dso, dependency)
+        else:
+            value, dependencies = platform.contract(contract_raw, accept_contract_sha256, package, held)
         facts, objects = {}, {}
         for role in platform.ROLES:
             if not namespace_profile:
@@ -341,14 +349,17 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
             need(sha(platform.canonical(item['linked'])) == reviewed['bootstraps'][program],
                  'whole actual bootstrap facts reviewed, including every constructor/finalizer')
             if namespace_profile:
-                namespace = dependency.Namespace(dict(main=item['main']['product']['candidate.elf'],
-                    bootstrap=item['bootstrap'], **dependencies), package, dso)
+                namespace = (absolute_proofs[program]['namespace'] if absolute_profile else
+                    dependency.Namespace(dict(main=item['main']['product']['candidate.elf'],
+                        bootstrap=item['bootstrap'], **dependencies), package, dso))
+                library_facts = platform.library_facts_absolute if absolute_profile else platform.library_facts_v2
                 for role in platform.ROLES:
-                    scoped = platform.library_facts_v2(dependencies[role], role, package, dso, namespace)
+                    scoped = library_facts(dependencies[role], role, package, dso, namespace)
                     need(sha(platform.canonical(scoped)) == reviewed['dependencies'][program][role],
                          'whole actual per-program dependency namespace facts reviewed')
-            entry = platform.main_facts(item, value, accept_contract_sha256, package, dso,
-                dependency=dependency if namespace_profile else None)
+            entry = (absolute_proofs[program]['entry'] if absolute_profile else
+                platform.main_facts(item, value, accept_contract_sha256, package, dso,
+                    dependency=dependency if namespace_profile else None))
             main = item['main']; main_pin = main['main_pin']; bootstrap_pin = item['bootstrap_pin']
             need(held.retain(main_pin, 16*MIB) == main['product']['candidate.elf'] and
                  held.retain(bootstrap_pin, 16*MIB) == item['bootstrap'], 'current whole joined main/bootstrap inputs')
@@ -369,8 +380,11 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
             for path, (contents, pin) in source_records.items():
                 actual, current = read_file(path, max(MIB, len(contents)))
                 need(actual == contents and platform.exact(current, pin), 'final checker/input source identity drift')
-            current, _ = platform.contract(contract_raw, accept_contract_sha256, package, held)
-            need(platform.exact(current, value), 'platform contract drift')
+            if absolute_profile:
+                absolute_recheck()
+            else:
+                current, _ = platform.contract(contract_raw, accept_contract_sha256, package, held)
+                need(platform.exact(current, value), 'platform contract drift')
             no_capabilities(profile['observer']['binary'])
             for pin in value['files'].values(): no_capabilities(pin)
             for item in programs.values(): no_capabilities(item['bootstrap_pin'])

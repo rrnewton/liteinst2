@@ -220,7 +220,7 @@ def probe_measurement(sources,reference,captured,context):
     return report
 
 
-def final_profile(args):
+def final_profile(args, *, absolute_prerequisites=False):
     raw,_=read(args.inputs,MIB);need(sha(raw)==digest(args.inputs_sha256),'frozen final builder inputs')
     inputs=decode(raw)
     need(set(inputs)=={'schema','root','native_revision','observer_plan','arguments','bootstrap','contract',
@@ -232,6 +232,7 @@ def final_profile(args):
     platform=sources.load(NATIVE+'final_platform.py');reader=sources.load(NATIVE+'final_bootstrap.py')
     resolver=sources.load(NATIVE+'dependency_constructors.py')
     required=admission.REQUIRED_NATIVE|{NATIVE+n for n in ('dependency_constructors.py','dependency_constructor_controls.py','probe_xstate.py')}
+    if absolute_prerequisites:required.add(NATIVE+'absolute_profile_controls.py')
     need(required<=set(sources.pins) and sources.pins[NATIVE+'package.py']==admission.PACKAGE_SHA,'whole reviewed V2 source roster')
     package=sources.load(NATIVE+'package.py')
     plan=decode(sources.reference(inputs['observer_plan']))
@@ -253,17 +254,26 @@ def final_profile(args):
         saved=reader.authenticate(modules.ctx,modules.a,modules.legacy,modules.custody,modules.pins,
             modules.originals,startup,completed,modules.driver,bootstrap,dso,parsed,store,inputs['bootstrap'])
         contract_raw=sources.reference(inputs['contract'])
-        contract,deps=platform.contract(contract_raw,inputs['contract']['sha256'],package,held)
+        platform.selected_startup_profile(saved['completed'], absolute_prerequisites=absolute_prerequisites)
+        if absolute_prerequisites:
+            contract,deps,absolute_proofs,absolute_recheck=platform.contract_absolute(
+                contract_raw,inputs['contract']['sha256'],package,held,saved['programs'],dso,resolver)
+        else:
+            contract,deps=platform.contract(contract_raw,inputs['contract']['sha256'],package,held)
         facts={};reviewed=dict(dependencies={},bootstraps={})
         for program in platform.PROGRAMS:
             item=saved['programs'][program]
-            platform.main_facts(item,contract,inputs['contract']['sha256'],package,dso,dependency=resolver)
-            namespace=resolver.Namespace(dict(main=item['main']['product']['candidate.elf'],bootstrap=item['bootstrap'],**deps),package,dso)
+            if absolute_prerequisites:
+                namespace=absolute_proofs[program]['namespace']
+            else:
+                platform.main_facts(item,contract,inputs['contract']['sha256'],package,dso,dependency=resolver)
+                namespace=resolver.Namespace(dict(main=item['main']['product']['candidate.elf'],bootstrap=item['bootstrap'],**deps),package,dso)
             facts[program]=dict(bootstrap=item['linked'],dependencies={})
             reviewed['bootstraps'][program]=sha(platform.canonical(item['linked']))
             reviewed['dependencies'][program]={}
             for role in platform.ROLES:
-                value=platform.library_facts_v2(deps[role],role,package,dso,namespace)
+                library_facts=platform.library_facts_absolute if absolute_prerequisites else platform.library_facts_v2
+                value=library_facts(deps[role],role,package,dso,namespace)
                 facts[program]['dependencies'][role]=value
                 reviewed['dependencies'][program][role]=sha(platform.canonical(value))
         probe=probe_measurement(sources,inputs['xstate'],saved['completed']['captured'],modules.ctx)
@@ -276,12 +286,14 @@ def final_profile(args):
              build_value['plan']['sha256']==inputs['observer_plan']['sha256'] and
              plan['output']==build['directory'] and plan['destination']==binary['path'],
              'same frozen observer plan, actual build directory and retained copy')
-        profile=dict(schema='LI2STARTUP-FINAL-PROFILE-2',native_revision=inputs['native_revision'],native_sources=sources.pins,
+        profile=dict(schema='LI2STARTUP-FINAL-PROFILE-3' if absolute_prerequisites else 'LI2STARTUP-FINAL-PROFILE-2',
+            native_revision=inputs['native_revision'],native_sources=sources.pins,
             artifact_source_profile=common,arguments=values,bootstrap=inputs['bootstrap'],contract=inputs['contract'],
             reviewed=reviewed,observer=dict(binary=binary,build=build))
         def stable():
             saved['stable']();sources.stable();store.verify();held.verify()
-            platform.contract(contract_raw,inputs['contract']['sha256'],package,held)
+            if absolute_prerequisites:absolute_recheck()
+            else:platform.contract(contract_raw,inputs['contract']['sha256'],package,held)
         # Read-only adapter for the existing raw build reader, never an admitted
         # Session or an execution capability. This reader does not dispatch.
         view=types.SimpleNamespace(profile=profile,stable=stable)
@@ -315,12 +327,13 @@ def main():
         plan.add_argument('--'+name,type=Path,required=True)
     for name in ('native-revision','source-profile-sha256','capture-sha256'):
         plan.add_argument('--'+name,required=True)
-    final=sub.add_parser('final-profile')
-    final.add_argument('--inputs',type=Path,required=True);final.add_argument('--inputs-sha256',required=True)
-    final.add_argument('--output',type=Path,required=True)
+    for name in ('final-profile','final-profile-absolute-prerequisites'):
+        final=sub.add_parser(name)
+        final.add_argument('--inputs',type=Path,required=True);final.add_argument('--inputs-sha256',required=True)
+        final.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
     if args.mode=='observer-plan':observer_plan(args)
-    else:final_profile(args)
+    else:final_profile(args,absolute_prerequisites=args.mode=='final-profile-absolute-prerequisites')
 
 
 if __name__=='__main__':main()

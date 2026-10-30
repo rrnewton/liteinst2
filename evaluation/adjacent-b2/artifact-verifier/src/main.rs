@@ -179,10 +179,11 @@ fn run() -> Result<()> {
         fs::{MetadataExt, OpenOptionsExt},
     };
     let args: Vec<_> = std::env::args_os().collect();
-    let startup_mode = args.len() == 4 && args[1] == "--startup";
+    let absolute_mode = args.len() == 4 && args[1] == "--startup-absolute-prerequisites";
+    let startup_mode = args.len() == 4 && (args[1] == "--startup" || absolute_mode);
     require(
         (args.len() == 3 || startup_mode) && cfg!(target_os = "linux"),
-        "usage: verifier [--startup] TRANSPORT SHA256 (Linux read-only transport)",
+        "usage: verifier [--startup | --startup-absolute-prerequisites] TRANSPORT SHA256 (Linux read-only transport)",
     )?;
     let transport_arg = if startup_mode { 2 } else { 1 };
     let expected_hash = checked(std::str::from_utf8(args[transport_arg + 1].as_bytes()))?;
@@ -234,13 +235,25 @@ fn run() -> Result<()> {
         "immutable transport custody",
     )?;
     if startup_mode {
-        let (program, original, expected, product, input) =
-            startup_transport::decode(&mut raw.as_slice())?;
-        let (result, startup) =
-            verify::startup::verify(&program, &original, &expected, &product, &input)?;
+        let (program, original, expected, product, input) = if absolute_mode {
+            startup_transport::decode_absolute_prerequisites(&mut raw.as_slice())?
+        } else {
+            startup_transport::decode(&mut raw.as_slice())?
+        };
+        let (result, startup) = if absolute_mode {
+            verify::startup::verify_absolute_prerequisites(
+                &program, &original, &expected, &product, &input,
+            )?
+        } else {
+            verify::startup::verify(&program, &original, &expected, &product, &input)?
+        };
         println!(
             "LI2W01-PROGRAM\t2\nprofile\t{}\nprogram\t{}\noriginal_heads\t{}\nselected\t{}\nimages\t{}\ncandidate_sha256\t{}\ncatalog_sha256\t{}\nstartup_policy_sha256\t{}\ndependency_roster_sha256\t{}\nstructural_joins_complete\ttrue\nqualification_complete\tfalse\nclassification_complete\tfalse\nnative_correctness_complete\tfalse\nperformance_eligible\tfalse",
-            verify::startup::PROFILE,
+            if absolute_mode {
+                verify::startup::ABSOLUTE_PROFILE
+            } else {
+                verify::startup::PROFILE
+            },
             result.program,
             startup.original_heads,
             result.selected,
