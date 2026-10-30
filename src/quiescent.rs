@@ -15,6 +15,13 @@ use crate::scanner::{InstructionScanner, ScanResult};
 use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
 use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, TrampolinePlan};
 
+mod adjacent_b2;
+pub use adjacent_b2::{
+    AdjacentB2ArtifactPlan, AdjacentB2Budget, AdjacentB2Failure, PairCounts, PairEligibility,
+    PairEvent, PairEvidence, PairOutcome, PairSchedule, PairStage, PairStop,
+    plan_adjacent_b2_with_emission_after,
+};
+
 mod whole_function;
 pub use whole_function::{
     WholeFunctionRequest, plan_whole_function_controlled_detailed,
