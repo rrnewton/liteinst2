@@ -506,5 +506,161 @@ class CompleteForeignPopulations(unittest.TestCase):
             ns.constructors('libgcc',records(ns))
 
 
+def canonical_main(*, populated=False):
+    """Actual emitter grammar, including sectionless dynamic metadata.
+
+    The original fixture/helper is unchanged. This complete ELF adds the
+    interpreter, writes exact adjacent carrier metadata, removes unused dynamic
+    section claims and ends the R-only LOAD at the dynamic terminator.
+    """
+    raw=image('main')
+    interpreter=b'/platform/loader0\0';strings=b'\0/private/bootstrap.so\0'
+    interp=STR;strtab=interp+len(interpreter);symtab=(strtab+len(strings)+7)&~7
+    count=2 if populated else 1
+    hash_at=symtab+24*count
+    hash_raw=struct.pack('<IIII',1,1,0,0) if not populated else struct.pack('<IIIII',1,2,1,0,0)
+    dynamic=(hash_at+len(hash_raw)+7)&~7
+    raw[interp:dynamic+112]=bytes(dynamic+112-interp)
+    raw[interp:interp+len(interpreter)]=interpreter;raw[strtab:strtab+len(strings)]=strings
+    if populated:struct.pack_into('<IBBHQQ',raw,symtab+24,1,0x12,0,7,CODE,32)
+    raw[hash_at:hash_at+len(hash_raw)]=hash_raw
+    rows=[(1,1),(5,strtab),(10,len(strings)),(6,symtab),(11,24),(4,hash_at),(0,0)]
+    for i,row in enumerate(rows):struct.pack_into('<QQ',raw,dynamic+16*i,*row)
+    struct.pack_into('<H',raw,56,6)
+    struct.pack_into('<IIQQQQQQ',raw,64+3*56,2,4,dynamic,dynamic,dynamic,112,112,8)
+    struct.pack_into('<IIQQQQQQ',raw,64+5*56,3,4,interp,interp,interp,len(interpreter),len(interpreter),1)
+    struct.pack_into('<QQ',raw,64+32,dynamic+112,dynamic+112)
+    raw[SECTIONS:SECTIONS+10*64]=bytes(10*64)
+    struct.pack_into('<IIQQQQIIQQ',raw,SECTIONS+7*64,0,1,6,CODE,CODE,0x1000,0,0,16,0)
+    return raw,dict(interp=interp,strtab=strtab,symtab=symtab,hash=hash_at,dynamic=dynamic,end=dynamic+112)
+
+
+def canonical_main_inputs(raw):
+    original=bytearray(raw)
+    for index in (3,5):struct.pack_into('<I',original,64+56*index,0)
+    files={role:dict(path='/platform/'+role,sha256='11'*32) for role in P.ROLES}
+    files['loader']['path']='/platform/loader0'
+    contract=dict(files=files);contract_sha='22'*32
+    policy=dict(bootstrap='/private/bootstrap.so',interpreter='/platform/loader0',contract=contract_sha,
+                dependencies=sorted((pin['path'],pin['sha256']) for pin in files.values()))
+    item=dict(main=dict(product={'candidate.elf':bytes(raw)},original=bytes(original),policy=policy),
+              bootstrap_pin=dict(path='/private/bootstrap.so'),linked=dict(notes=[],
+              needed=['libgcc_s.so.1','libc.so.6'],rpath=None,runpath=None))
+    return item,contract,contract_sha
+
+
+class CanonicalEmptyMain(unittest.TestCase):
+    def check(self, raw):
+        ns=namespace(main=raw)
+        return ns,ns.constructors('libgcc',records(ns))['init_array'][0]['binding_proof']
+
+    def test_canonical_null_symbol_sysv_actual_bytes_join_namespace(self):
+        raw,layout=canonical_main();ns,proof=self.check(raw)
+        self.assertEqual(ns.main_namespace['profile'],'canonical-null-sysv-main-v1')
+        self.assertEqual(ns.main_namespace['symbols'],1)
+        self.assertEqual(ns.main_namespace['needed'],['/private/bootstrap.so'])
+        self.assertEqual(ns.main_namespace['null_symbol_sha256'],C.sha(bytes(24)))
+        self.assertEqual(ns.main_namespace['sysv_sha256'],C.sha(struct.pack('<IIII',1,1,0,0)))
+        self.assertEqual(ns.objects['main']['symbols'],[])
+        self.assertEqual(proof['main_namespace'],ns.main_namespace)
+        self.assertEqual(proof['target_relative'],CODE)
+        self.assertEqual(ns.main_namespace['metadata'],dict(file_offset=STR,address=STR,
+            bytes=layout['end']-STR,sha256=C.sha(bytes(raw[STR:layout['end']]))))
+
+    def test_old_no_symbol_class_and_old_controls_keep_the_same_proof(self):
+        ns=namespace();proof=ns.constructors('libgcc',records(ns))['init_array'][0]['binding_proof']
+        self.assertEqual(ns.main_namespace,dict(profile='main-no-symbol-table-v1',
+            needed=['/private/bootstrap.so'],symbols=0))
+        self.assertNotIn('main_namespace',proof)
+
+    def test_actual_profile2_main_facts_rederive_new_class_and_default_stays_strict(self):
+        raw,_=canonical_main();item,contract,digest=canonical_main_inputs(raw)
+        self.check(raw)
+        with self.assertRaisesRegex(ValueError,'main carrier has only readonly strings'):
+            P.main_facts(item,contract,digest,R,D)
+        self.assertEqual(P.main_facts(item,contract,digest,R,D,dependency=C),
+            dict(entry=CODE,entry_bytes=bytes(raw[CODE:CODE+15]).hex()))
+        changed,layout=canonical_main();changed[layout['symtab']+23]=1
+        item,contract,digest=canonical_main_inputs(changed)
+        with self.assertRaisesRegex(ValueError,'entire null symbol'):
+            P.main_facts(item,contract,digest,R,D,dependency=C)
+
+    def test_every_nonzero_null_symbol_byte_refuses(self):
+        for offset in range(24):
+            raw,layout=canonical_main();raw[layout['symtab']+offset]=1
+            with self.subTest(offset=offset),self.assertRaisesRegex(ValueError,'entire null symbol'):
+                self.check(raw)
+
+    def test_sysv_header_bucket_chain_and_coherent_export_population_refuse(self):
+        for offset,value in ((0,0),(0,2),(4,0),(4,2),(8,1),(12,1)):
+            raw,layout=canonical_main();struct.pack_into('<I',raw,layout['hash']+offset,value)
+            with self.subTest(offset=offset,value=value),self.assertRaisesRegex(ValueError,'entire SysV table'):
+                self.check(raw)
+        raw,_=canonical_main(populated=True)
+        with self.assertRaisesRegex(ValueError,'entire SysV table'):self.check(raw)
+
+    def test_dynamic_order_terminator_width_extra_tag_and_padding_refuse(self):
+        for variant in ('order','width','extra','tail','needed','padding'):
+            raw,layout=canonical_main();dynamic=layout['dynamic']
+            if variant=='order':
+                a=bytes(raw[dynamic+16:dynamic+32]);raw[dynamic+16:dynamic+32]=raw[dynamic+32:dynamic+48];raw[dynamic+32:dynamic+48]=a
+            elif variant=='width':struct.pack_into('<Q',raw,dynamic+4*16+8,16)
+            elif variant=='extra':struct.pack_into('<Q',raw,dynamic+5*16,0x6ffffef5)
+            elif variant=='tail':
+                struct.pack_into('<QQ',raw,64+3*56+32,128,128)
+                struct.pack_into('<QQ',raw,64+32,layout['end']+16,layout['end']+16)
+                raw[layout['end']:layout['end']+16]=bytes(16)
+            elif variant=='needed':struct.pack_into('<Q',raw,dynamic+8,2)
+            else:
+                end=layout['strtab']+len(b'\0/private/bootstrap.so\0')
+                self.assertLess(end,layout['symtab']);raw[end]=1
+            with self.subTest(variant=variant),self.assertRaisesRegex(ValueError,
+                'canonical empty main|main has no exported'):
+                self.check(raw)
+
+    def test_whole_null_and_hash_extents_cannot_use_cross_owner_prefix(self):
+        for tag_index,size in ((3,24),(5,16)):
+            raw,layout=canonical_main()
+            struct.pack_into('<QQ',raw,64+32,CODE,CODE)
+            pointer=CODE-size//2
+            struct.pack_into('<Q',raw,layout['dynamic']+tag_index*16+8,pointer)
+            raw[pointer:CODE]=bytes(CODE-pointer)
+            with self.subTest(size=size),self.assertRaisesRegex(R.Refused,'one file-backed virtual owner'):
+                self.check(raw)
+
+    def test_readonly_carrier_and_no_other_load_file_alias_are_required(self):
+        for permissions in (5,6):
+            raw,_=canonical_main();struct.pack_into('<I',raw,64+4,permissions)
+            with self.subTest(permissions=permissions),self.assertRaisesRegex(ValueError,'one readonly LOAD owner'):
+                self.check(raw)
+        for filesize in (0x1000,0x100):
+            raw,_=canonical_main();struct.pack_into('<Q',raw,64+2*56+8,0)
+            struct.pack_into('<Q',raw,64+2*56+32,filesize)
+            # The shorter declared file prefix still maps its complete file
+            # page; it must not hide an alias to later metadata in that page.
+            with self.subTest(filesize=filesize),self.assertRaisesRegex(ValueError,'other LOAD file alias'):
+                self.check(raw)
+
+    def test_dynamic_section_claim_and_static_section_alias_cannot_hide_exports(self):
+        for kind in (5,6,11,0x6ffffff6):
+            raw,layout=canonical_main()
+            struct.pack_into('<IIQQQQIIQQ',raw,SECTIONS+2*64,0,kind,2,
+                layout['symtab'],layout['symtab'],24,0,0,8,24)
+            with self.subTest(kind=kind),self.assertRaisesRegex(ValueError,'only static section classes'):
+                self.check(raw)
+        raw,layout=canonical_main()
+        struct.pack_into('<IIQQQQIIQQ',raw,SECTIONS+2*64,0,1,2,
+            layout['symtab'],layout['symtab'],24,0,0,8,0)
+        with self.assertRaisesRegex(ValueError,'section alias'):self.check(raw)
+
+    def test_zero_copies_at_wrong_pointers_do_not_replace_canonical_layout(self):
+        raw,layout=canonical_main()
+        # The copied full null symbol is still genuinely RO/LOAD-backed; only
+        # its canonical adjacency/ordering has changed, so no prefix exemption.
+        struct.pack_into('<Q',raw,layout['dynamic']+3*16+8,0x700)
+        raw[0x700:0x718]=bytes(24)
+        with self.assertRaisesRegex(ValueError,'ordered disjoint metadata layout'):self.check(raw)
+
+
 if __name__ == '__main__':
     unittest.main()

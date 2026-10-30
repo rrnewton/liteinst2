@@ -347,7 +347,8 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
                     scoped = platform.library_facts_v2(dependencies[role], role, package, dso, namespace)
                     need(sha(platform.canonical(scoped)) == reviewed['dependencies'][program][role],
                          'whole actual per-program dependency namespace facts reviewed')
-            entry = platform.main_facts(item, value, accept_contract_sha256, package, dso)
+            entry = platform.main_facts(item, value, accept_contract_sha256, package, dso,
+                dependency=dependency if namespace_profile else None)
             main = item['main']; main_pin = main['main_pin']; bootstrap_pin = item['bootstrap_pin']
             need(held.retain(main_pin, 16*MIB) == main['product']['candidate.elf'] and
                  held.retain(bootstrap_pin, 16*MIB) == item['bootstrap'], 'current whole joined main/bootstrap inputs')

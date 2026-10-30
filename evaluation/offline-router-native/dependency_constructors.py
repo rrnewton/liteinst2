@@ -247,6 +247,80 @@ def complete_population(obj, dso):
                 selected_hash='gnu' if 'gnu' in counts else 'sysv',versioning=versioning)
 
 
+def main_namespace(elf, tags, needed, dso):
+    """Two explicit nonexporting main classes; never a permissive tag union.
+
+    The new class is the byte grammar emitted by carrier/startup.rs. It has no
+    dynamic section headers: the actual DT pointers and canonical SysV count
+    establish the entire null-only population, independently of section size.
+    """
+    need(elf.kind==2, 'main has no exported dynamic symbol namespace')
+    if set(tags)=={5,10}:
+        # Preserve the original no-symbol-table class and all of its checks.
+        need(len(needed)==1 and tags[10]<=MIB, 'one actual bounded main dependency')
+        names=[dso.string(elf.at(tags[5],tags[10]),needed[0])]
+        need(names[0].startswith('/'), 'main dependency is the actual absolute bootstrap')
+        return dict(profile='main-no-symbol-table-v1',needed=names,symbols=0)
+    need(set(tags)=={5,10,6,11,4}, 'main has no exported dynamic symbol namespace')
+    need(tags[11]==24 and needed==[1] and 3<=tags[10]<=4097,
+         'canonical empty main symbol width/needed/string bound')
+    pages=dso.load_pages(elf)
+    dyn=[p for p in elf.ph if p[0]==2];interp=[p for p in elf.ph if p[0]==3]
+    need(len(dyn)==len(interp)==1, 'canonical empty main dynamic/interpreter population')
+    dyn,interp=dyn[0],interp[0]
+    need(dyn[1]==4 and dyn[5]==dyn[6]==112 and dyn[7]==8 and
+         interp[1]==4 and 2<=interp[5]==interp[6]<=4096 and interp[7]==1,
+         'canonical empty main metadata segment grammar')
+    ranges=[(interp[3],interp[5]),(tags[5],tags[10]),(tags[6],24),(tags[4],16),(dyn[3],112)]
+    owners=[elf.file_owner(address,size,'empty-main') for address,size in ranges]
+    owner=owners[0][0]
+    need(owner[1]==4 and owner[5]==owner[6] and all(row[0]==owner for row in owners),
+         'canonical empty main metadata has one readonly LOAD owner')
+    raw=[elf.mapped_bytes(address,offset,size) for (address,size),(_,offset) in zip(ranges,owners)]
+    need(owners[0][1]==interp[2] and owners[-1][1]==dyn[2],
+         'canonical empty main segment file offsets match actual owner')
+    name=dso.string(raw[1],1)
+    need(name.startswith('/') and len(name)>=2 and raw[1]==b'\0'+name.encode('ascii')+b'\0',
+         'canonical empty main whole string table')
+    need(raw[0].endswith(b'\0') and raw[0].count(b'\0')==1 and
+         raw[0].startswith(b'/'), 'canonical empty main interpreter string')
+    need(raw[2]==bytes(24), 'canonical empty main entire null symbol')
+    need(raw[3]==struct.pack('<IIII',1,1,0,0), 'canonical empty main entire SysV table')
+    align=lambda n,a:(n+a-1)&~(a-1)
+    need(tags[5]==interp[3]+interp[5] and tags[6]==align(tags[5]+tags[10],8) and
+         tags[4]==align(tags[6]+24,4) and dyn[3]==align(tags[4]+16,8),
+         'canonical empty main ordered disjoint metadata layout')
+    records=[(1,1),(5,tags[5]),(10,tags[10]),(6,tags[6]),(11,24),(4,tags[4]),(0,0)]
+    need(raw[4]==b''.join(struct.pack('<QQ',*row) for row in records),
+         'canonical empty main exact ordered dynamic records')
+    for (address,size),(following,_) in zip(ranges[1:],ranges[2:]):
+        need(elf.at(address+size,following-address-size)==bytes(following-address-size),
+             'canonical empty main zero alignment padding')
+    start,end=owners[0][1],owners[-1][1]+112
+    vstart,vend=interp[3],dyn[3]+112
+    need(end==owner[2]+owner[5] and vend==owner[3]+owner[6],
+         'canonical empty main metadata ends its readonly carrier')
+    overlaps=lambda a,n,b,m:n>0 and m>0 and a<b+m and b<a+n
+    owner_index=elf.loads.index(owner)
+    need(all(p['load_index']==owner_index or not overlaps(start,end-start,
+             p['file_offset'],p['file_end']-p['start']) for p in pages),
+         'canonical empty main metadata has no other LOAD file alias')
+    need(elf.sh[0]==(0,)*10 and all(s[1] in (0,1,2,3,7,8) and not s[2]&0x400 for s in elf.sh),
+         'canonical empty main preserves only static section classes')
+    for section in elf.sh:
+        need((section[1]==8 or not overlaps(start,end-start,section[4],section[5])) and
+             (not section[2]&2 or not overlaps(vstart,vend-vstart,section[3],section[5])),
+             'canonical empty main metadata has no section alias')
+    for offset,size in ((0,64),(elf.unpack('<Q',32)[0],56*len(elf.ph)),
+                        (elf.unpack('<Q',40)[0],64*len(elf.sh))):
+        need(not overlaps(start,end-start,offset,size), 'canonical empty main metadata has no ELF-table alias')
+    need(all(p[0] in (1,2,3) or not overlaps(start,end-start,p[2],p[5]) for p in elf.ph),
+         'canonical empty main metadata has no other segment alias')
+    return dict(profile='canonical-null-sysv-main-v1',needed=[name],symbols=1,
+        null_symbol_sha256=sha(raw[2]),sysv_sha256=sha(raw[3]),
+        metadata=dict(file_offset=start,address=vstart,bytes=end-start,sha256=sha(elf.slice(start,end-start))))
+
+
 class Namespace:
     def __init__(self, raw_objects, package, dso):
         need(type(raw_objects) is dict and set(raw_objects)==set(ROLES),'complete fixed five-object namespace')
@@ -259,11 +333,9 @@ class Namespace:
             need(16 not in tags and tags.get(30,0)&~0x18==0 and tags.get(0x6ffffffb,0)&~0x49==0,
                  'no symbolic/direct/group/interpose/audit/filter lookup mode')
             if role=='main':
-                need(elf.kind==2 and set(tags)=={5,10},'main has no exported dynamic symbol namespace')
-                need(len(needed)==1 and tags[10]<=MIB, 'one actual bounded main dependency')
-                needed_names=[dso.string(elf.at(tags[5],tags[10]),needed[0])]
-                need(needed_names[0].startswith('/'), 'main dependency is the actual absolute bootstrap')
-                symbols=[];index=None
+                self.main_namespace=main_namespace(elf,tags,needed,dso)
+                needed_names=self.main_namespace['needed']
+                symbols=[];index=None  # Both classes prove no possible export.
             else:
                 need(elf.kind==3 and all(t in tags for t in (5,6,10,11)) and tags[11]==24 and tags[10]<=MIB,
                      'actual DSO dynamic namespace')
@@ -320,6 +392,8 @@ class Namespace:
             name=name.decode('ascii'),symbol=record['symbol'],
             version=dict(index=index,nondefault=bool(number&0x8000),**version),lookup=lookup,
             target_object=role,target_relative=sym[4])
+        if self.main_namespace['profile']=='canonical-null-sysv-main-v1':
+            proof['main_namespace']=self.main_namespace
         return sym[4],proof
 
     def constructors(self, role, records):

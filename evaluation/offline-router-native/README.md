@@ -28,7 +28,7 @@ The root-owned build sequence is concrete and acyclic:
    190-second timeout, 205-second parent and 10-second cleanup. The actual compiler
    artifact is copied to an owned mode0500 inode with before/after identity and
    complete byte equality. Failure stays failure; there is no retry.
-3. Freeze `LI2STARTUP-FINAL-PROFILE-1` after the actual build and final whole-facts
+3. Freeze `LI2STARTUP-FINAL-PROFILE-2` after the actual build and final whole-facts
    review. Its observer field is exactly `{binary: FILE_PIN,
    build: {directory: BUILD_OUTPUT, sha256: CLOSED_SHA}}`. The independent launch
    reader reconstructs every raw build request/command/helper/Cargo/copy join.
@@ -40,6 +40,43 @@ The root-owned build sequence is concrete and acyclic:
    Those are separate populations, with no automatic retries or performance
    qualification. The final platform contract's acceptance is explicit and
    unsafe; no ordinary receipt supplies that acceptance for the caller.
+
+`prepare_profile.py` reproduces the two preparation stages without dispatching
+a build or candidate. Run it from the committed native revision. Paths below
+are placeholders for actual absolute paths; all outputs must be fresh paths
+under `ROOT/ignored`, and their parents must already exist.
+
+```sh
+python3 -B evaluation/offline-router-native/prepare_profile.py observer-plan \
+  --root ROOT --native-revision REV \
+  --source-profile COMMON_PROFILE --source-profile-sha256 COMMON_SHA \
+  --capture ORIGINAL_CAPTURE --capture-sha256 CAPTURE_SHA \
+  --build-output OBSERVER_BUILD --binary-output OBSERVER_COPY --output PLAN
+python3 -B evaluation/offline-router-native/native_launch.py build-observer \
+  --root ROOT --build-plan PLAN --build-plan-sha256 PLAN_SHA
+python3 -B evaluation/offline-router-native/prepare_profile.py final-profile \
+  --inputs INPUTS --inputs-sha256 INPUTS_SHA --output NEW_DRAFT_DIRECTORY
+```
+
+The final input schema is `LI2NATIVE-FINAL-PROFILE-INPUTS-1`, with exactly
+`schema`, `root`, `native_revision`, `observer_plan`, `arguments`, `bootstrap`,
+`contract`, `observer_build`, and `xstate`. File references contain `path` and
+`sha256`; directory references contain `directory` and `sha256`, where the
+digest names the actual `closed.json`. `arguments` supplies every path/digest
+pair in `final_admission.ARGUMENTS`. `xstate` contains four file references:
+`owner_source`, `owner_receipt`, `log`, and `raw`. The measurement must use the
+exact canonical captured Python executable, retain the full returned bytes,
+and prove successful stopped/killed/reaped cleanup. The reviewed owner source
+is an explicit external input, not approval inferred from a hash.
+
+The preparer writes per-program facts, then publishes the draft profile only
+after all custody closes succeed. Failure may retain partial facts without a
+final profile. Review those facts, the actual observer build and the
+platform obligations separately before accepting the contract. Profile 2
+checks constructors against the complete five-object namespace and admits the
+emitter's canonical empty SysV main only by proving its full null symbol,
+empty hash table and read-only metadata ownership. Profile 1 retains its
+original strict grammar. Neither profile permits an unreviewed lookup graph.
 
 The observer population has exactly one pre-entry control per full program.
 Its bounded helper invokes the checked `observer-child` wrapper, which reopens
@@ -67,6 +104,12 @@ RIP or general-register repair is added. The receipt retains primary refusal,
 restoration and cleanup outcomes independently. Original entry is never
 continued; the observer kills/reaps its child and requires ECHILD. A successful
 pre-entry stop proves no route coverage or native semantics.
+
+Child ownership does not depend on proc children files. Preflight requires
+`waitid` to report `ECHILD`; cleanup signals only a retained direct-child or
+observed wait-event identity and consumes each exact PID. Observer receipt v2
+requires the direct child's exact raw SIGKILL status and final `ECHILD`.
+Unexpected children remain refusals even when cleanup reaps them.
 
 The N01 population preserves both programs, all ten fixed datasets per program,
 twenty pairs and forty ordinary original/candidate invocations. Each executes

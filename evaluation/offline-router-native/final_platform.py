@@ -267,7 +267,7 @@ def object_pages(raw, pin, package, dso):
     return dict(file=pin, pages=result)
 
 
-def main_facts(item, contract_value, contract_sha, package, dso):
+def main_facts(item, contract_value, contract_sha, package, dso, *, dependency=None):
     main = item['main']
     raw = main['product']['candidate.elf']
     elf, original = package.Elf(raw), package.Elf(main['original'])
@@ -279,8 +279,13 @@ def main_facts(item, contract_value, contract_sha, package, dso):
     interp = elf.mapped_bytes(p[3], p[2], p[5])
     need(interp == contract_value['files']['loader']['path'].encode('ascii') + b'\0', 'exact canonical pinned main interpreter')
     tags, needed = dso.dynamic(elf)
-    need(set(tags) == {5, 10} and len(needed) == 1 and tags[10] <= MIB,
-         'main carrier has only readonly strings and one dependency')
+    if dependency is None:
+        need(set(tags) == {5, 10} and len(needed) == 1 and tags[10] <= MIB,
+             'main carrier has only readonly strings and one dependency')
+    else:
+        # Profile2 passes the exact separately pinned checker module. Re-read
+        # actual ELF facts here; a stored profile label is not acceptance.
+        dependency.main_namespace(elf, tags, needed, dso)
     bootstrap = dso.string(elf.at(tags[5], tags[10]), needed[0])
     policy = main['policy']
     need(bootstrap == policy['bootstrap'] == item['bootstrap_pin']['path'] and
