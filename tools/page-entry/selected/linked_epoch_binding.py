@@ -23,14 +23,19 @@ LEAVES = (
 )
 
 
+HINT_LEAVES = ('linked_native_hint.h', 'linked_native_hint.inc',
+               'native_pair_controller.inc', 'build-linked-epoch-native-hint.sh')
+
+
 def main():
-    if len(sys.argv) != 4:
+    native_hint = len(sys.argv) == 5 and sys.argv[4] == 'native-hint'
+    if len(sys.argv) != 4 and not native_hint:
         raise ValueError('selected directory, actual archive, existing output directory')
-    selected, archive, output = (Path(x).resolve(strict=True) for x in sys.argv[1:])
+    selected, archive, output = (Path(x).resolve(strict=True) for x in sys.argv[1:4])
     if not selected.is_dir() or not archive.is_file() or not output.is_dir():
         raise ValueError('binding inputs')
     facts = []
-    for name in LEAVES:
+    for name in LEAVES + (HINT_LEAVES if native_hint else ()):
         source = selected / name
         if source.is_symlink() or not source.is_file():
             raise ValueError('exact regular source')

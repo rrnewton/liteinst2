@@ -459,3 +459,13 @@ ten runs each of native, gated and DynamoRIO execution for both `ls -d .` and
 aggregate timings require every planned case and final closure to pass.
 Finite correctness results do not establish the whole-process performance
 target of at most ten times DynamoRIO.
+
+`build-linked-epoch-native-hint.sh ARCHIVE OUTPUT` selects a separate
+experimental native-page hint. It remembers one actual successful native
+publication, including the full source page, policy window and lifecycle
+identities. After a graph refusal, a matching fresh source can consume that
+receipt and request the same closed-TRACE-to-NX route. Every admission check
+still runs at the next hardware fault. The hint grants no execute permission;
+stale or unknown receipts keep ordinary fallback. Relocation retries and graph
+retries have separate counters. The baseline profile and its results remain
+separate; this feature requires its own full-state qualification.

@@ -6,6 +6,9 @@
    publications; code follows W^X. No memfd seal is invented for anonymous
    memory. CPU load operands are never pre-read by this controller. */
 #include "linked_source.h"
+#ifdef LI2_LINKED_NATIVE_HINT
+#include "linked_native_hint.h"
+#endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 #ifdef LI2_LINKED_EPOCH_REUSE_CAPTURE
 #include "linked_epoch_reuse_observe.h"
@@ -74,6 +77,10 @@ struct le_record {
     int prepare_result,miss_release_result,resume_result;
     unsigned refault_started,refault_complete;
     int refault_result;
+#ifdef LI2_LINKED_NATIVE_HINT
+    unsigned hint_checked,hint_hit;
+    uint64_t hint_publication;
+#endif
     enum li2_chain_result resumed_route;
     struct li2_fetch_progress miss_fetch;
     struct li2_region_pc original;
@@ -94,6 +101,9 @@ static struct {
     uintptr_t arena,low_arena;
     size_t used;
     uint64_t offers,closed,resumed,hash_misses,refaults;
+#ifdef LI2_LINKED_NATIVE_HINT
+    uint64_t graph_refaults;
+#endif
     uint64_t candidates,source_misses,plan_misses,capacity_misses,publications,hits;
     uint64_t entries,completed,unexpected,events,signals[5],refusals[4],exit_counts[LI2_REGION_EXITS];
     uint64_t plan_checks,rseq_checks,live_checks,proof_checks;
@@ -634,8 +644,20 @@ static int le_trace_coarse(int sig,const siginfo_t *si,const ucontext_t *uc) {
 static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
     struct le_record *r=&selected_linked_epoch.current;
     if(!r->build_started || !r->build_returned ||
+#ifdef LI2_LINKED_NATIVE_HINT
+       (r->build_result!=LI2_REGION_PLAN_RELOCATION && r->build_result!=LI2_REGION_PLAN_GRAPH) ||
+#else
        r->build_result!=LI2_REGION_PLAN_RELOCATION ||
+#endif
        r->source.key.entry<UINT64_C(0x200000000))return 0;
+#ifdef LI2_LINKED_NATIVE_HINT
+    if(r->build_result==LI2_REGION_PLAN_GRAPH) {
+        r->hint_checked=1;
+        r->hint_hit=(unsigned)li2_lifecycle_link_native_hint_choose(
+            &r->source,r->transfer.serial,&r->hint_publication);
+        if(!r->hint_hit)return 0;
+    }
+#endif
     le_need(selected_linked_epoch_busy && !selected_linked_epoch_active &&
         !selected_linked_epoch_closing && !selected_linked_epoch_resuming &&
         !selected_linked_epoch_decoding && !selected_step_pending &&
@@ -661,7 +683,13 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
         !li2_lifecycle_fetch_interlock() && le_quiet(0) &&
         (uint64_t)uc->uc_mcontext.gregs[REG_EFL]==selected_logical_flags &&
         le_unchanged(&r->before,si,uc),LE_STATE,24);
+#ifdef LI2_LINKED_NATIVE_HINT
+    r->refault_complete=1;
+    if(r->build_result==LI2_REGION_PLAN_GRAPH)le_count(&selected_linked_epoch.graph_refaults);
+    else le_count(&selected_linked_epoch.refaults);
+#else
     r->refault_complete=1;le_count(&selected_linked_epoch.refaults);
+#endif
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
     leto_refault_after(sig,si,uc);
 #endif
@@ -832,7 +860,12 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
     field(&w,",\"detail_negative\":",detail<0);
 #define LE_FIELD(name) field(&w,",\"" #name "\":",selected_linked_epoch.name)
     LE_FIELD(initialized);LE_FIELD(first_error);LE_FIELD(used);LE_FIELD(offers);LE_FIELD(closed);
+#ifdef LI2_LINKED_NATIVE_HINT
+    LE_FIELD(resumed);LE_FIELD(refaults);LE_FIELD(graph_refaults);
+    LE_FIELD(hash_misses);LE_FIELD(candidates);LE_FIELD(source_misses);
+#else
     LE_FIELD(resumed);LE_FIELD(refaults);LE_FIELD(hash_misses);LE_FIELD(candidates);LE_FIELD(source_misses);
+#endif
     LE_FIELD(plan_misses);LE_FIELD(capacity_misses);LE_FIELD(publications);LE_FIELD(hits);LE_FIELD(entries);
     LE_FIELD(completed);LE_FIELD(unexpected);LE_FIELD(events);LE_FIELD(plan_checks);LE_FIELD(rseq_checks);LE_FIELD(live_checks);LE_FIELD(proof_checks);
 #undef LE_FIELD
@@ -861,8 +894,31 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
         r->refault_started,r->refault_complete,(unsigned)r->refault_result};
     selected_repeat_array(&w,",\"current\":",last,sizeof last/sizeof last[0]);
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+#ifdef LI2_LINKED_NATIVE_HINT
+    const struct li2_link_native_hint_progress *h=li2_lifecycle_link_native_hint_progress();
+    struct writer q={.used=0};text(&q,"LI2_LINKED_NATIVE_HINT {\"version\":1");
+    field(&q,",\"status\":",status);field(&q,",\"failure_code\":",code);
+#define LNH_FIELD(name) field(&q,",\"" #name "\":",h->name)
+    LNH_FIELD(ready);LNH_FIELD(pending);LNH_FIELD(outcome_complete);
+    LNH_FIELD(publications);LNH_FIELD(evictions);LNH_FIELD(lookups);LNH_FIELD(hits);LNH_FIELD(invalidations);
+    LNH_FIELD(next_nx);LNH_FIELD(admitted);LNH_FIELD(refused);LNH_FIELD(errors);
+    LNH_FIELD(receipt_sequence);LNH_FIELD(receipt_publication);
+    LNH_FIELD(selected_publication);LNH_FIELD(selected_serial);LNH_FIELD(selected_event);
+    LNH_FIELD(selected_pc);LNH_FIELD(selected_seeds);LNH_FIELD(selected_published);
+    field(&q,",\"outcome_result\":",(unsigned)h->outcome_result);
+    field(&q,",\"current_checked\":",r->hint_checked);
+    field(&q,",\"current_hit\":",r->hint_hit);
+    field(&q,",\"current_publication\":",r->hint_publication);
+#undef LNH_FIELD
+    text(&q,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)q.bytes,q.used,0,0,0);
+#endif
 }
+#ifdef LI2_LINKED_NATIVE_HINT
+_Static_assert(115*21+1600<=sizeof(((struct writer *)0)->bytes),"bounded linked-epoch hint report");
+_Static_assert(26*21+700<=sizeof(((struct writer *)0)->bytes),"bounded native-hint report");
+#else
 _Static_assert(114*21+1552<=sizeof(((struct writer *)0)->bytes),"bounded linked-epoch report");
+#endif
 
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 #ifdef LI2_LINKED_EPOCH_REUSE_CAPTURE

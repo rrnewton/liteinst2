@@ -997,6 +997,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #include "span_source.inc"
 #ifdef LI2_LINKED_EPOCH
 #include "linked_source.inc"
+#ifdef LI2_LINKED_NATIVE_HINT
+#include "linked_native_hint.inc"
+#endif
 #endif
 #ifdef LI2_SCALAR_SPAN_CAPTURE
 #include "span_trace_observe_memory.inc"
