@@ -2,6 +2,9 @@
    The real ld.so runs against an explicit namespace of inherited sealed DSOs. */
 #include "bridge.h"
 #include "lifecycle_loader.h"
+#ifdef LI2_INITIAL_CODE_PROTECTION
+#include "initial_code_protection.h"
+#endif
 #if defined(LI2_COST_PROFILE) && (!defined(LI2_NATIVE_PAIR) || LI2_COST_PROFILE != 1)
 #error "cost profile requires the explicit native-pair release profile"
 #endif
@@ -95,6 +98,11 @@ static void selected_cpuid_nx_report(unsigned,unsigned);
 #define ALT_BYTES (512UL*1024)
 struct action { void (*handler)(int,siginfo_t *,void *); unsigned long flags; void (*restorer)(void); uint64_t mask; };
 static struct li2_fork_range protected[RANGES];
+#ifdef LI2_INITIAL_CODE_PROTECTION
+/* Append-only range indices; zero is strict. Only protect_image below marks
+   initial guest executable mappings, before signals/application activation. */
+static unsigned char initial_code_range[RANGES];
+#endif
 static size_t protected_count,dependency_count;
 static struct image original_main,original_interpreter;
 static volatile sig_atomic_t handling,reported;
@@ -474,6 +482,16 @@ static int intersects(uintptr_t first,size_t bytes) {
 #endif
     return 0;
 }
+#ifdef LI2_INITIAL_CODE_PROTECTION
+static int intersects_mprotect(uintptr_t first,size_t bytes,unsigned prot) {
+    if(li2_initial_code_protection_intersects(protected,initial_code_range,
+                                             protected_count,first,bytes,prot)) return 1;
+#ifdef LI2_RSEQ_INACTIVE
+    if(li2_rseq_mapping_overlap(first,bytes)) return 1;
+#endif
+    return 0;
+}
+#endif
 static int image_code(const struct image *image,uintptr_t pc) {
     for(size_t i=0;i<image->n;i++) {
         const Elf64_Phdr *p=&image->ph[i];
@@ -487,6 +505,10 @@ static void protect_image(const struct image *image,int whole) {
         if(p->p_type!=PT_LOAD || !p->p_memsz || (!whole && !(p->p_flags&PF_X))) continue;
         uintptr_t a=(image->bias+p->p_vaddr)&~(PAGE-1),b=(image->bias+p->p_vaddr+p->p_memsz+PAGE-1)&~(PAGE-1);
         protect(a,b-a);
+#ifdef LI2_INITIAL_CODE_PROTECTION
+        if(!whole && (image->kind==IMAGE_MAIN || image->kind==IMAGE_INTERPRETER))
+            initial_code_range[protected_count-1]=1;
+#endif
     }
     if(image->source) protect((uintptr_t)image->source,(image->source_size+PAGE-1)&~(PAGE-1));
 }
@@ -930,7 +952,11 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     checked(!raw(SYS_mprotect,(long)area+PAGE,ALT_BYTES,PROT_READ|PROT_WRITE,0,0,0),232,0);
     stack_t stack={.ss_sp=(char *)area+PAGE,.ss_size=ALT_BYTES}; fork_gate_stack=stack;checked(!raw(SYS_sigaltstack,(long)&stack,0,0,0,0,0),233,0);
     int fds[32];dependency_count=parse_fds(fds);
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    const struct li2_lifecycle_hooks hooks={raw,fail,intersects,intersects_mprotect};li2_lifecycle_initialize(fds,dependency_count,&hooks);
+#else
     const struct li2_lifecycle_hooks hooks={raw,fail,intersects};li2_lifecycle_initialize(fds,dependency_count,&hooks);
+#endif
 #ifdef LI2_RSEQ_INACTIVE
     int rseq_error=li2_rseq_initialize(private_intersects);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);

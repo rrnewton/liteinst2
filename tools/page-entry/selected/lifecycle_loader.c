@@ -72,6 +72,10 @@ struct object {
 #endif
 };
 static struct object objects[OBJECTS];
+#ifdef LI2_INITIAL_CODE_PROTECTION
+/* Set only after complete initial-image registration, before application entry. */
+static unsigned char initial_sealed_object[OBJECTS];
+#endif
 static size_t object_count;
 static struct transaction tx;
 static struct li2_lifecycle_counts counts;
@@ -493,6 +497,9 @@ void li2_lifecycle_snapshot(struct li2_lifecycle_counts *out) {
 
 void li2_lifecycle_initialize(const int *fds,size_t n,const struct li2_lifecycle_hooks *supplied) {
     hooks=*supplied;
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    if (!hooks.protected_mprotect) DIE(183,-1);
+#endif
     if (active || !n || n>32) DIE(183,n);
     for (size_t index=0;index<n;index++) {
         struct object *o=&objects[index]; o->original_fd=fds[index];
@@ -573,6 +580,9 @@ void li2_lifecycle_register_initial(const struct image *image) {
         }
         if (!equal((const void *)(image->bias+p->p_vaddr),image->source+p->p_offset,p->p_filesz)) DIE(189,0);
     }
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    initial_sealed_object[object]=1;
+#endif
 }
 
 int li2_lifecycle_known_code(uintptr_t first,size_t bytes) {
@@ -748,10 +758,22 @@ static long protect_call(const long a[6]) {
        genuine error (or zero-length success), rather than synthesizing one. */
     if (((uintptr_t)a[0]&(PAGE-1)) || !a[1]) return no_effect_call(SYS_mprotect,a);
     size_t extent=rounded((size_t)a[1]); uintptr_t first=(uintptr_t)a[0];
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    if (extent/PAGE>RECORDS || first>UINTPTR_MAX-extent ||
+        hooks.protected_mprotect(first,extent,(unsigned)a[2])) DIE(155,0);
+#else
     if (extent/PAGE>RECORDS || first>UINTPTR_MAX-extent || hooks.protected_range(first,extent)) DIE(155,0);
+#endif
     uintptr_t end=first+extent; read_maps(); size_t owners=0;
     for (uintptr_t p=first;p<end;p+=PAGE) {
         struct owned_page *old=current(p); const struct map_row *r=mapping(p);
+#ifdef LI2_INITIAL_CODE_PROTECTION
+        /* A typed initial range is not an execution/source grant: require its
+           current live sealed initial-object owner before the original checks. */
+        if (hooks.protected_range(p,PAGE) &&
+            (!old || old->backing!=SEALED || old->object>=object_count ||
+             !initial_sealed_object[old->object])) DIE(155,1);
+#endif
         if (old) { verify_page(old,r); if (r->prot!=old->actual) DIE(156,0); ++owners; }
         /* Holes are accepted so genuine ENOMEM/partial-error semantics remain
            observable. Existing unknown mappings cannot acquire execution. */
