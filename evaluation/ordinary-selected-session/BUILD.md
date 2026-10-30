@@ -2,27 +2,27 @@ The public `owner.py` and `build.py` entrypoints prepare and run the fixed selec
 
 The new public build schema is separate from the historical private receipts. Both historical build-script digest checks remain intact. Fresh receipts bind the tracked public producer's exact Git blob, literal argv, complete source snapshots, compiler/subtool hashes, all actual requests, bounded receipts and outer closures. No private script is required for the fresh path. The public owner accepts only the four named phases and delegates process supervision to `evaluation/admission/processes.py`; it neither supplies unsafe permission nor implements another process supervisor. Its active capture log is created in a fresh directory under `target/evaluation`, as that existing API requires. Only after confirmed cleanup does the adapter read the bounded log, require the exact closed digest, copy it exclusively beside the ignored owner JSON, and reread the copy. Unknown closure retains its original target capture and failure header without any additional wrapper log read or copy; the existing process owner itself remains unchanged. Failed archival remains failure; neither the capture nor prior evidence is deleted.
 
-Set these variables to actual values before running any command: `SELECTED_REV` (full current commit), `SELECTED_CPUS` (the three reserved IDs), `SELECTED_TAG`, `SELECTED_HARDWARE`, `SELECTED_TOOLCHAIN`, `SELECTED_USER_HOME`, `SELECTED_CARGO_HOME`, and `SELECTED_RAW` (a new directory under this checkout's `ignored/`). All path values must be absolute canonical paths. Create only `SELECTED_RAW` itself; the phase output directories and owner files below must not exist. Run from the checkout root using the same resolved Python executable throughout. The option order shown is intentional: the owner validates its complete literal invocation before dispatch.
+Set these variables to actual values before running any command: `SELECTED_REV` (full current commit), `SELECTED_CPUS` (the three reserved IDs), `SELECTED_TAG`, `SELECTED_HARDWARE`, `SELECTED_TOOLCHAIN`, `SELECTED_USER_HOME`, `SELECTED_CARGO_HOME`, and `SELECTED_RAW` (a new directory under this checkout's `ignored/`). All path values must be absolute canonical paths. Create only `SELECTED_RAW` itself; the phase output directories and owner files below must not exist. Use a fresh `SELECTED_TAG` for each sequence: the existing shared run helper also reserves `target/evaluation/<phase-directory-basename>`, so a new parent alone does not make a reused phase basename fresh. Keep old captures intact. Run from the checkout root using the same resolved Python executable throughout. The option order shown is intentional: the owner validates its complete literal invocation before dispatch.
 
 ```
 taskset --cpu-list "$SELECTED_CPUS" python3 -B evaluation/ordinary-selected-session/owner.py \
   --phase products --revision "$SELECTED_REV" --reservation-tag "$SELECTED_TAG" \
-  --owner "$SELECTED_RAW/products-owner.json" --raw "$SELECTED_RAW/products" \
+  --owner "$SELECTED_RAW/products-owner.json" --raw "$SELECTED_RAW/${SELECTED_TAG}-products" \
   --toolchain "$SELECTED_TOOLCHAIN" --user-home "$SELECTED_USER_HOME" \
   --cargo-home "$SELECTED_CARGO_HOME" --hardware "$SELECTED_HARDWARE"
 ```
 
 This performs exactly four builds and eight read-only ELF/disassembly captures, once each. The existing GCC/strip flags are unchanged; Cargo uses `--release --locked --offline --jobs 4 --message-format=json-render-diagnostics`, optimization 3, debug information 0, and enabled assertions/overflow checks. Each build has the original 120 CPU-second/180 wall-second/128 MiB per-stream cap. Each capture has the original 20 CPU-second/30 wall-second/4 MiB per-stream cap. Each existing helper owner has the original child wall bound plus 25 seconds. No product or test binary is executed. The product phase has an internal 1200-second deadline.
 
-Require successful outer exit, `source_unchanged: true`, exit-zero/complete cleanup/no rescued descendants in the recorded owner, and `BUILD_AND_ELF_CAPTURE_PASS` in `products/result.json`. Record SHA256 of that result and `products-owner.json` as `SELECTED_BUILD_SHA` and `SELECTED_BUILD_OWNER_SHA`. Keep all failures and stop on failed or unknown ownership; do not retry until a separately reviewed new source/experiment is declared.
+Require successful outer exit, `source_unchanged: true`, exit-zero/complete cleanup/no rescued descendants in the recorded owner, and `BUILD_AND_ELF_CAPTURE_PASS` in `${SELECTED_TAG}-products/result.json`. Record SHA256 of that result and `products-owner.json` as `SELECTED_BUILD_SHA` and `SELECTED_BUILD_OWNER_SHA`. Keep all failures and stop on failed or unknown ownership; do not retry until a separately reviewed new source/experiment is declared.
 
 ```
 taskset --cpu-list "$SELECTED_CPUS" python3 -B evaluation/ordinary-selected-session/owner.py \
   --phase tests --revision "$SELECTED_REV" --reservation-tag "$SELECTED_TAG" \
-  --owner "$SELECTED_RAW/tests-owner.json" --raw "$SELECTED_RAW/tests" \
+  --owner "$SELECTED_RAW/tests-owner.json" --raw "$SELECTED_RAW/${SELECTED_TAG}-tests" \
   --toolchain "$SELECTED_TOOLCHAIN" --user-home "$SELECTED_USER_HOME" \
   --cargo-home "$SELECTED_CARGO_HOME" --hardware "$SELECTED_HARDWARE" \
-  --build "$SELECTED_RAW/products/result.json" --build-sha "$SELECTED_BUILD_SHA" \
+  --build "$SELECTED_RAW/${SELECTED_TAG}-products/result.json" --build-sha "$SELECTED_BUILD_SHA" \
   --build-owner "$SELECTED_RAW/products-owner.json" --build-owner-sha "$SELECTED_BUILD_OWNER_SHA"
 ```
 
@@ -31,12 +31,12 @@ This runs only the existing `cargo test --release -p rapid-profiler --bin ordina
 ```
 taskset --cpu-list "$SELECTED_CPUS" python3 -B evaluation/ordinary-selected-session/owner.py \
   --phase controls --revision "$SELECTED_REV" --reservation-tag "$SELECTED_TAG" \
-  --owner "$SELECTED_RAW/controls-owner.json" --raw "$SELECTED_RAW/controls" \
+  --owner "$SELECTED_RAW/controls-owner.json" --raw "$SELECTED_RAW/${SELECTED_TAG}-controls" \
   --toolchain "$SELECTED_TOOLCHAIN" --user-home "$SELECTED_USER_HOME" \
   --cargo-home "$SELECTED_CARGO_HOME" --hardware "$SELECTED_HARDWARE" \
-  --build "$SELECTED_RAW/products/result.json" --build-sha "$SELECTED_BUILD_SHA" \
+  --build "$SELECTED_RAW/${SELECTED_TAG}-products/result.json" --build-sha "$SELECTED_BUILD_SHA" \
   --build-owner "$SELECTED_RAW/products-owner.json" --build-owner-sha "$SELECTED_BUILD_OWNER_SHA" \
-  --test-product "$SELECTED_RAW/tests/result.json" --test-product-sha "$SELECTED_TEST_SHA" \
+  --test-product "$SELECTED_RAW/${SELECTED_TAG}-tests/result.json" --test-product-sha "$SELECTED_TEST_SHA" \
   --test-owner "$SELECTED_RAW/tests-owner.json" --test-owner-sha "$SELECTED_TEST_OWNER_SHA"
 ```
 
@@ -49,12 +49,12 @@ Freeze a separate acceptance JSON and its exact SHA256 as `SELECTED_GEOMETRY` an
 ```
 taskset --cpu-list "$SELECTED_CPUS" python3 -B evaluation/ordinary-selected-session/owner.py \
   --phase campaign --revision "$SELECTED_REV" --reservation-tag "$SELECTED_TAG" \
-  --owner "$SELECTED_RAW/campaign-owner.json" --raw "$SELECTED_RAW/campaign" \
+  --owner "$SELECTED_RAW/campaign-owner.json" --raw "$SELECTED_RAW/${SELECTED_TAG}-campaign" \
   --toolchain "$SELECTED_TOOLCHAIN" --user-home "$SELECTED_USER_HOME" \
   --cargo-home "$SELECTED_CARGO_HOME" --hardware "$SELECTED_HARDWARE" \
-  --build "$SELECTED_RAW/products/result.json" --build-sha "$SELECTED_BUILD_SHA" \
+  --build "$SELECTED_RAW/${SELECTED_TAG}-products/result.json" --build-sha "$SELECTED_BUILD_SHA" \
   --build-owner "$SELECTED_RAW/products-owner.json" --build-owner-sha "$SELECTED_BUILD_OWNER_SHA" \
-  --controls "$SELECTED_RAW/controls/result.json" --controls-sha "$SELECTED_CONTROLS_SHA" \
+  --controls "$SELECTED_RAW/${SELECTED_TAG}-controls/result.json" --controls-sha "$SELECTED_CONTROLS_SHA" \
   --controls-owner "$SELECTED_RAW/controls-owner.json" --controls-owner-sha "$SELECTED_CONTROLS_OWNER_SHA" \
   --geometry "$SELECTED_GEOMETRY" --geometry-sha "$SELECTED_GEOMETRY_SHA"
 ```

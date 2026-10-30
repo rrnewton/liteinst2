@@ -1,0 +1,7 @@
+The initial campaign FAILED. Four references passed 4052 calls; all four installed cells exited before READY/input with `EntryExit`. All eight cells had one attempt and normal reap; every owner completed cleanup. No installed success is claimed.
+
+Full validation passed 3848 workspace tests, zero failures, 37 ignored (107 unfiltered summaries). The raw 3851 includes three nested child passes, each with 35 filtered tests, excluded from that total. Serial launch passed 1039; release controls passed 92 Rust and 94 Python. The wrong-revision preflight remains FAILED with zero tests.
+
+receipt.json pins revisions, products, commands, tools, CPUs, loads and raw closures; cells.csv preserves all eight outcomes. Static review found ADC r8,0 at offset24 in uppercase_count: the existing CFG whitelist rejected it before loading. Generic stderr alone does not identify that guard. Later fixes cannot relabel this attempt. Full-state, arbitrary-ABI, performance and strict 2 ms claims remain unqualified; geometry and ABI/CET/signal/quiescence/lifetime premises were separate inputs.
+
+The [extractor](../summarize_initial.py) reads the pinned private archive: `--archive ROOT --output NEW_DIRECTORY`. Logs/inventories/binaries stay ignored. The [public build recipe](../../ordinary-selected-session/BUILD.md) describes fresh experiments, not these historical private builders. Commands use `$ROOT`, `$TOOLCHAIN`, `$USER_HOME`, `$CARGO_HOME`. Earlier focused MSRV/checker refusals remain separate, outside these totals.
