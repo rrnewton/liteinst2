@@ -153,7 +153,7 @@ fn plan(
                 end: range.end(),
                 displaced: range,
                 instructions: scan.instructions().iter().collect(),
-                whole_function: Some(&proof),
+                authority: RelocationAuthority::WholeFunction(&proof),
             },
             &mut search,
         );
