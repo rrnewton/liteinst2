@@ -257,7 +257,10 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 283, 1),
                                   # Eight inherited-ownership unit controls; the
                                   # complete pinned ptrace child is unchanged.
-                                  ("unit/liteinst2/lib", 291, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 291, 1),
+                                  # Eight pending-selected controls retain the
+                                  # same pinned ptrace child and exact stack.
+                                  ("unit/liteinst2/lib", 299, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

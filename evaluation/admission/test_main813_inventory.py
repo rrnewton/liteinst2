@@ -159,7 +159,8 @@ class Main813InventoryTests(unittest.TestCase):
         with patch.dict(main813.MAINSHORTOWNERSHIP,
                 {'sources': {name_path: hashlib.sha256(name_source).hexdigest()},
                  'methods': {}, 'python_methods': {name_path: name_expected},
-                 'module_chains': {}}):
+                 'module_chains': {}}), patch.dict(main813.MAINSHORTPENDING,
+                {'sources': {}, 'projections': {}}):
             with patch.object(Path, 'read_bytes', side_effect=[name_source, changed_names,
                     FileNotFoundError('missing syntax source')]) as name_reads:
                 self.assertIsNone(main813.require_short_ownership_sources(name_error))
@@ -2962,6 +2963,7 @@ class Main813InventoryTests(unittest.TestCase):
         # Current inherited ownership adds thirteen required Rust declarations.
         # These are supplied-source controls, never qualification from declarations.
         ownership = main813.MAINSHORTOWNERSHIP
+        ownership_current = main813.before_short_pending(actual)
         main813.require_short_ownership_sources()
         self.assertEqual(main813.before_short_ownership(actual), engine_current)
         self.assertEqual(main813.digest(engine_current), main813.CURRENTSHORTENGINE)
@@ -2969,7 +2971,7 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(main813.peel_short_ownership(actual, 'changed', 'changed'), engine_current)
         self.assertIs(main813.peel_short_ownership(engine_current, 'changed', 'changed'), engine_current)
         self.assertEqual(inventory.peel_ac0963(engine_current), inventory.before_ac0963(actual))
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = ownership_current['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (104, 3632, 37))
         self.assertEqual({name: current_rows[name] for name in ownership['workspace_changes']},
@@ -3013,7 +3015,7 @@ class Main813InventoryTests(unittest.TestCase):
             for field in ('tests', 'ignored'):
                 for value in (change['current'][field] - 1, change['current'][field] + 1,
                               True, float(change['current'][field]), None):
-                    changed = plain.deepcopy(actual)
+                    changed = plain.deepcopy(ownership_current)
                     changed['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.before_short_ownership(changed)
@@ -3025,12 +3027,12 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         main813.before_short_ownership(actual)
         for name in current_rows:
-            changed = plain.deepcopy(actual)
+            changed = plain.deepcopy(ownership_current)
             del changed['harness_test_counts']['workspace_tests'][name]
             with self.assertRaises(parsing.InvalidEvidence):
                 main813.before_short_ownership(changed)
         for key in actual:
-            changed = plain.deepcopy(actual); changed[key] = None
+            changed = plain.deepcopy(ownership_current); changed[key] = None
             with self.assertRaises(parsing.InvalidEvidence):
                 main813.before_short_ownership(changed)
         changed = plain.deepcopy(actual)
@@ -3044,7 +3046,8 @@ class Main813InventoryTests(unittest.TestCase):
             self.assertEqual([hashlib.sha256(call.args[1]).hexdigest() for call in blob_guard.call_args_list],
                              list(engine_layer['sources'].values()))
         for path, expected_hash in ownership['sources'].items():
-            raw = current_read_bytes(main813.ROOT / path)
+            current_raw = current_read_bytes(main813.ROOT / path)
+            raw = main813.source_before_short_pending(path, current_raw, 'changed')
             self.assertEqual(hashlib.sha256(raw).hexdigest(), expected_hash)
             main813._require_short_ownership_blob(path, raw, expected_hash, 'changed')
             for missing in (False, True):
@@ -3052,7 +3055,7 @@ class Main813InventoryTests(unittest.TestCase):
                     if candidate == main813.ROOT / path:
                         if missing:
                             raise FileNotFoundError(path)
-                        return raw + b'\n'
+                        return current_raw + b'\n'
                     return current_read_bytes(candidate)
                 with patch.object(Path, 'read_bytes', changed):
                     with self.assertRaises(parsing.InvalidEvidence):
@@ -3062,11 +3065,13 @@ class Main813InventoryTests(unittest.TestCase):
                     with self.assertRaises(parsing.InvalidEvidence):
                         inventory.require_current(actual)
         for path, row in ownership['projections'].items():
-            raw = current_read_bytes(main813.ROOT / path)
-            restored = main813.source_before_short_ownership(path, raw, 'changed')
+            current_raw = current_read_bytes(main813.ROOT / path)
+            raw = main813.source_before_short_pending(path, current_raw, 'changed')
+            restored = main813.source_before_short_ownership(path, current_raw, 'changed')
             self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
             self.assertEqual(hashlib.sha256(raw).hexdigest(), row['current_sha256'])
-            for bad in (raw + b'\n', raw[:-1], restored, bytearray(raw), raw.decode()):
+            for bad in (current_raw + b'\n', current_raw[:-1], restored,
+                        bytearray(current_raw), current_raw.decode()):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
                     main813.source_before_short_ownership(path, bad, 'changed')
             mutations = [dict(row, current_sha256='0' * 64),
@@ -3084,7 +3089,7 @@ class Main813InventoryTests(unittest.TestCase):
             for changed_row in mutations:
                 with patch.dict(ownership['projections'], {path: changed_row}):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
-                        main813.source_before_short_ownership(path, raw, 'changed')
+                        main813.source_before_short_ownership(path, current_raw, 'changed')
             def historical(candidate):
                 return restored if candidate == main813.ROOT / path else current_read_bytes(candidate)
             with patch.object(Path, 'read_bytes', historical), self.assertRaises(parsing.InvalidEvidence):
@@ -3096,7 +3101,8 @@ class Main813InventoryTests(unittest.TestCase):
             for identity, prefix in ownership['instances'][path].items():
                 self.assertEqual(ownership['listed_additions'][identity],
                                  [prefix + n for n in ownership['added_methods'][path]])
-            raw = current_read_bytes(main813.ROOT / path)
+            raw = main813.source_before_short_pending(
+                path, current_read_bytes(main813.ROOT / path), 'changed')
             main813._require_short_ownership_blob(path, raw, ownership['sources'][path], 'changed')
             for changed_row in ([dict(row, all=row['all'][:i] + row['all'][i+1:]) for i in range(len(row['all']))] +
                                 [dict(row, all=row['all'] + ['extra']), dict(row, ignored=[row['all'][0]]),
@@ -3110,7 +3116,8 @@ class Main813InventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
                     main813._require_short_ownership_blob(path, modified, hashlib.sha256(modified).hexdigest(), 'changed')
         for path, names in ownership['python_methods'].items():
-            raw = current_read_bytes(main813.ROOT / path)
+            raw = main813.source_before_short_pending(
+                path, current_read_bytes(main813.ROOT / path), 'changed')
             main813._require_short_ownership_blob(path, raw, ownership['sources'][path], 'changed')
             for changed_names in ([names[:i] + names[i+1:] for i in range(len(names))] +
                                   [names + ['test_extra'], list(reversed(names))]):
@@ -3121,7 +3128,8 @@ class Main813InventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
                     main813._require_short_ownership_blob(path, modified, hashlib.sha256(modified).hexdigest(), 'changed')
         for path, literals in ownership['module_chains'].items():
-            raw = current_read_bytes(main813.ROOT / path)
+            raw = main813.source_before_short_pending(
+                path, current_read_bytes(main813.ROOT / path), 'changed')
             main813._require_short_ownership_blob(path, raw, ownership['sources'][path], 'changed')
             for literal in literals:
                 for modified in (raw.replace(literal.encode(), b'// removed module route', 1),
@@ -3131,6 +3139,316 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(ownership['core_child'], dict(engine_layer['core_child'], outer_tests=291))
         self.assertEqual(ownership['sources']['src/trampoline.rs'], engine_layer['sources']['src/trampoline.rs'])
         self.assertEqual(ownership['example'], engine_layer['example'])
+
+
+        # Complete pending successor: exact current input must reach old history.
+        pending = main813.MAINSHORTPENDING
+        pending_actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        pending_saved = plain.deepcopy(pending_actual)
+        pending_prior = main813.before_short_pending(pending_actual)
+        self.assertEqual(pending_prior, ownership_current)
+        self.assertIsNot(pending_prior, pending_actual)
+        self.assertEqual(pending_actual, pending_saved)
+        self.assertEqual(main813.digest(pending_actual),
+                         '96a03dcdda96efdc9e371329ed47536c71a66949adcfb5b66e5d46be757860c8')
+        self.assertEqual(main813.digest(pending_prior),
+                         '1baa36deb8c94cdce16f785a4bf2f309f560c6e82b432666cf81aab5600fb906')
+        self.assertEqual(main813.CURRENTSHORTOWNERSHIP, ownership['current_corpus_sha256'])
+        self.assertEqual(main813.peel_short_pending(pending_actual, 'changed', 'changed'), pending_prior)
+        self.assertIs(main813.peel_short_pending(pending_prior, 'changed', 'changed'), pending_prior)
+        self.assertEqual(main813.before_short_ownership(pending_prior), engine_current)
+        self.assertEqual(main813.before_short_ownership(pending_actual), engine_current)
+        with patch.object(inventory, 'before_cc846', wraps=inventory.before_cc846) as history:
+            inventory.require_current(pending_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(pending_actual)])
+        with patch.object(inventory, 'before_cc846',
+                          side_effect=RuntimeError('pending original history reached')) as history:
+            with self.assertRaisesRegex(RuntimeError, '^pending original history reached$'):
+                inventory.require_current(pending_actual)
+            self.assertEqual(history.call_args_list, [unittest.mock.call(pending_actual)])
+        pending_rows = pending_actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(pending_rows), sum(x['tests'] for x in pending_rows.values()),
+                          sum(x['ignored'] for x in pending_rows.values())), (104, 3649, 37))
+        self.assertEqual({name: pending_rows[name] for name in pending['workspace_changes']},
+                         {'unit/liteinst2/lib': counts(299, 1),
+                          'unit/liteinst_rewrite/lib': counts(110),
+                          'unit/disassembly_sites/disassembly_sites': counts(3)})
+        self.assertEqual(pending_actual['harness_test_counts']['serial_launch'],
+                         pending_prior['harness_test_counts']['serial_launch'])
+        self.assertEqual({k: v for k, v in pending_actual.items() if k != 'harness_test_counts'},
+                         {k: v for k, v in pending_prior.items() if k != 'harness_test_counts'})
+        self.assertEqual(pending['declared_delta'], dict(rust_declarations=17, rust_tests=17,
+                         harnesses=0, ignored=0, doctests=0, profile_python_methods=5,
+                         admission_python_methods=0))
+        self.assertEqual((pending_actual['recorder_tests'], main813.RECORDER_TESTS), (350, 350))
+        self.assertEqual(main813.PYTHON_CURRENT,
+                         'af962c7203b5c1a5d250ca5767c1c67bca84c1638d1ca88f30be3ecd55b35aaa')
+        self.assertEqual({p: len(v) for p, v in pending['added_methods'].items()},
+                         {'src/neighbor_short/tests.rs': 8,
+                          'tools/elf-rewrite/src/disassembly/tests.rs': 8,
+                          'tools/elf-rewrite/examples/disassembly_sites.rs': 1})
+        self.assertEqual({p: len(v) for p, v in pending['python_added_methods'].items()},
+                         {'evaluation/offline-corpus/disassembly_controls.py': 2,
+                          'evaluation/offline-corpus/head_capture_controls.py': 0,
+                          'evaluation/offline-corpus/reproduce_whole_controls.py': 3})
+        self.assertEqual(set(pending['sources']), set(ownership['sources']) | {'src/composition.rs'})
+        self.assertEqual(set(pending['projections']), set(pending['sources']) - {
+            'src/lib.rs', 'src/neighbor_short.rs', 'src/trampoline.rs', 'tools/elf-rewrite/Cargo.toml'})
+        self.assertEqual((len(pending['sources']), len(pending['projections'])), (23, 19))
+        self.assertEqual(pending['module_chains'], ownership['module_chains'])
+        self.assertEqual(pending['core_child'], dict(ownership['core_child'], outer_tests=299))
+        self.assertEqual(pending['example'], ownership['example'])
+        self.assertEqual(pending['sources']['src/neighbor_short/tests.rs'],
+                         'bcb91531af069ee6733fddeafa05512dbec3cbafaee26e183bab6cab83792df3')
+        for pending_old in (pending_prior, engine_current, engine_previous, native_previous,
+                            previous_short, importer_current):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(pending_old)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^neighbor_short_pending_inventory_differs$'):
+                main813.before_short_pending(pending_old)
+        for name, change in pending['workspace_changes'].items():
+            self.assertEqual(pending_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (change['current'][field] - 1, change['current'][field] + 1,
+                              True, float(change['current'][field]), None):
+                    changed = plain.deepcopy(pending_actual)
+                    changed['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^neighbor_short_pending_inventory_differs$'):
+                        main813.before_short_pending(changed)
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                        inventory.require_current(changed)
+            for field in ('current', 'previous'):
+                with patch.dict(pending['workspace_changes'], {name: dict(change, **{field: counts(999)})}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_catalog_control$'):
+                        main813.before_short_pending(pending_actual, 'pending_catalog_control')
+            # A coherent new digest reaches the unchanged expected-current-row comparison.
+            changed = plain.deepcopy(pending_actual)
+            changed['harness_test_counts']['workspace_tests'][name]['tests'] += 1
+            with patch.object(main813, 'LATEST', main813.digest(changed)):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_catalog_control$'):
+                    main813.before_short_pending(changed, 'pending_catalog_control')
+        for name in pending_rows:
+            changed = plain.deepcopy(pending_actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(changed)
+        for key in pending_actual:
+            changed = plain.deepcopy(pending_actual); changed[key] = None
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^neighbor_short_pending_inventory_differs$'):
+                main813.before_short_pending(changed)
+        changed = plain.deepcopy(pending_actual)
+        changed['harness_test_counts']['workspace_tests']['test/extra_pending'] = counts(1)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+            inventory.require_current(changed)
+        with patch.object(main813, '_require_short_pending_blob',
+                          wraps=main813._require_short_pending_blob) as pending_guard:
+            self.assertIsNone(main813.require_short_pending_sources())
+            self.assertEqual([call.args[0] for call in pending_guard.call_args_list], list(pending['sources']))
+            self.assertEqual([hashlib.sha256(call.args[1]).hexdigest() for call in pending_guard.call_args_list],
+                             list(pending['sources'].values()))
+        # The original ownership consumer receives its exact whole old images.
+        with patch.object(main813, '_require_short_ownership_blob',
+                          wraps=main813._require_short_ownership_blob) as old_guard:
+            main813.require_short_ownership_sources()
+            self.assertEqual([call.args[0] for call in old_guard.call_args_list], list(ownership['sources']))
+            self.assertEqual([hashlib.sha256(call.args[1]).hexdigest() for call in old_guard.call_args_list],
+                             list(ownership['sources'].values()))
+        pending_read = Path.read_bytes
+        for path, wanted in pending['sources'].items():
+            pending_target = main813.ROOT / path
+            pending_raw = pending_read(pending_target)
+            self.assertEqual(hashlib.sha256(pending_raw).hexdigest(), wanted)
+            self.assertIsNone(main813._require_short_pending_blob(path, pending_raw, wanted, 'pending_source_control'))
+            for replacement in (pending_raw + b'\n', pending_raw[:-1], None):
+                def pending_changed(candidate):
+                    if candidate == pending_target:
+                        if replacement is None:
+                            raise FileNotFoundError(path)
+                        return replacement
+                    return pending_read(candidate)
+                with patch.object(Path, 'read_bytes', pending_changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_source_control$'):
+                        main813.require_short_pending_sources('pending_source_control')
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.require_current(pending_actual)
+        for path, pending_row in pending['projections'].items():
+            pending_raw = pending_read(main813.ROOT / path)
+            pending_restored = main813.source_before_short_pending(path, pending_raw, 'pending_inverse_control')
+            self.assertEqual(hashlib.sha256(pending_restored).hexdigest(), pending_row['previous_sha256'])
+            if path in ownership['sources']:
+                self.assertEqual(pending_row['previous_sha256'], ownership['sources'][path])
+                self.assertIsNone(main813._require_short_ownership_blob(
+                    path, pending_restored, ownership['sources'][path], 'pending_history_control'))
+            for bad in (pending_raw + b'\n', pending_raw[:-1], pending_restored,
+                        bytearray(pending_raw), pending_raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_inverse_control$'):
+                    main813.source_before_short_pending(path, bad, 'pending_inverse_control')
+            mutations = [dict(pending_row, current_sha256='0' * 64),
+                         dict(pending_row, previous_sha256='0' * 64),
+                         dict(pending_row, edits=[[len(pending_raw) + 1, len(pending_raw) + 1, '']]),
+                         dict(pending_row, edits=[[1, 0, '']]), dict(pending_row, edits=[[-1, 0, '']]),
+                         dict(pending_row, edits=[[0, len(pending_raw) + 1, '']])]
+            for i in range(len(pending_row['edits'])):
+                edits = plain.deepcopy(pending_row['edits']); edits[i][2] += 'changed inverse'
+                mutations.append(dict(pending_row, edits=edits))
+                edits = plain.deepcopy(pending_row['edits']); del edits[i]
+                mutations.append(dict(pending_row, edits=edits))
+                edits = plain.deepcopy(pending_row['edits']); edits.insert(i, list(edits[i]))
+                mutations.append(dict(pending_row, edits=edits))
+            if len(pending_row['edits']) > 1:
+                mutations.append(dict(pending_row, edits=list(reversed(pending_row['edits']))))
+            for changed_row in mutations:
+                with patch.dict(pending['projections'], {path: changed_row}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_inverse_control$'):
+                        main813.source_before_short_pending(path, pending_raw, 'pending_inverse_control')
+            coherent_raw = pending_raw + b'\n'
+            with patch.dict(pending['projections'], {path: dict(pending_row,
+                            current_sha256=hashlib.sha256(coherent_raw).hexdigest())}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_inverse_control$'):
+                    main813.source_before_short_pending(path, coherent_raw, 'pending_inverse_control')
+            def pending_historical(candidate):
+                return pending_restored if candidate == main813.ROOT / path else pending_read(candidate)
+            with patch.object(Path, 'read_bytes', pending_historical):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                    inventory.require_current(pending_actual)
+        pending_unchanged = pending_read(main813.ROOT / 'src/trampoline.rs')
+        self.assertIs(main813.source_before_short_pending('src/trampoline.rs', pending_unchanged, 'changed'),
+                      pending_unchanged)
+        # Bad old tables must fail after a valid pending source/inverse, not before it.
+        old_path = 'src/neighbor_short/tests.rs'
+        old_row = ownership['methods'][old_path]
+        with patch.dict(ownership['methods'], {old_path: dict(old_row, all=old_row['all'][1:])}):
+            with patch.object(main813, '_require_short_pending_blob',
+                              wraps=main813._require_short_pending_blob) as pending_guard:
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_history_control$'):
+                    main813.require_short_ownership_sources('pending_history_control')
+                self.assertEqual([call.args[0] for call in pending_guard.call_args_list], list(pending['sources']))
+        old_inverse = ownership['projections'][old_path]
+        pending_raw = pending_read(main813.ROOT / old_path)
+        self.assertEqual(hashlib.sha256(main813.source_before_short_pending(
+            old_path, pending_raw, 'changed')).hexdigest(), old_inverse['current_sha256'])
+        with patch.dict(ownership['projections'], {old_path: dict(old_inverse, previous_sha256='0' * 64)}):
+            with patch.object(main813, 'source_before_short_pending',
+                              wraps=main813.source_before_short_pending) as pending_inverse:
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_history_control$'):
+                    main813.source_before_short_ownership(old_path, pending_raw, 'pending_history_control')
+                self.assertEqual(pending_inverse.call_args_list,
+                                 [unittest.mock.call(old_path, pending_raw, 'pending_history_control')])
+        for path, row in pending['methods'].items():
+            self.assertEqual([name for name in row['all'] if name not in pending['added_methods'][path]],
+                             ownership['methods'][path]['all'])
+            self.assertEqual(row['ignored'], [])
+            for identity, prefix in pending['instances'][path].items():
+                self.assertEqual(pending['listed_additions'][identity],
+                                 [prefix + name for name in pending['added_methods'][path]])
+            pending_raw = pending_read(main813.ROOT / path)
+            self.assertIsNone(main813._require_short_pending_blob(path, pending_raw,
+                              pending['sources'][path], 'pending_methods_control'))
+            for changed_row in ([dict(row, all=row['all'][:i] + row['all'][i+1:]) for i in range(len(row['all']))] +
+                                [dict(row, all=row['all'] + ['extra']), dict(row, all=row['all'] + [row['all'][0]]),
+                                 dict(row, all=list(reversed(row['all']))), dict(row, ignored=[row['all'][0]])]):
+                with patch.dict(pending['methods'], {path: changed_row}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_methods_control$'):
+                        main813._require_short_pending_blob(path, pending_raw, pending['sources'][path], 'pending_methods_control')
+            for modified in (pending_raw.replace(('fn ' + row['all'][0] + '(').encode(), b'fn renamed_pending_control(', 1),
+                             pending_raw.replace(b'#[test]', b'#[test] #[ignore]', 1),
+                             pending_raw.replace(b'#[test]', b'', 1),
+                             pending_raw + b'\n#[test] fn extra_pending_control() {}\n',
+                             pending_raw + b'\n#[test] malformed_declaration\n'):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_methods_control$'):
+                    main813._require_short_pending_blob(path, modified, hashlib.sha256(modified).hexdigest(),
+                                                       'pending_methods_control')
+        for path, names in pending['python_methods'].items():
+            self.assertEqual([name for name in names if name not in pending['python_added_methods'][path]],
+                             ownership['python_methods'][path])
+            pending_raw = pending_read(main813.ROOT / path)
+            self.assertIsNone(main813._require_short_pending_blob(path, pending_raw,
+                              pending['sources'][path], 'pending_python_control'))
+            for changed_names in ([names[:i] + names[i+1:] for i in range(len(names))] +
+                                  [names + ['test_extra'], names + [names[0]], list(reversed(names))]):
+                with patch.dict(pending['python_methods'], {path: changed_names}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_python_control$'):
+                        main813._require_short_pending_blob(path, pending_raw, pending['sources'][path], 'pending_python_control')
+            for modified in (pending_raw.replace(('def ' + names[0] + '(').encode(), b'def test_renamed_pending(', 1),
+                             pending_raw.replace(('def ' + names[0] + '(').encode(), b'def helper_removed_pending(', 1),
+                             pending_raw + b'\ndef test_extra_pending():\n    pass\n',
+                             pending_raw + b'\nasync def test_extra_pending_async():\n    pass\n'):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_python_control$'):
+                    main813._require_short_pending_blob(path, modified, hashlib.sha256(modified).hexdigest(),
+                                                       'pending_python_control')
+            broken = pending_raw + b'\nbroken ('
+            with self.assertRaises(SyntaxError):
+                main813._require_short_pending_blob(path, broken, hashlib.sha256(broken).hexdigest(), 'changed')
+        for path, literals in pending['module_chains'].items():
+            pending_raw = pending_read(main813.ROOT / path)
+            self.assertIsNone(main813._require_short_pending_blob(path, pending_raw,
+                              pending['sources'][path], 'pending_route_control'))
+            for literal in literals:
+                for modified in (pending_raw.replace(literal.encode(), b'// removed route', 1),
+                                 pending_raw + b'\n' + literal.encode() + b'\n'):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_route_control$'):
+                        main813._require_short_pending_blob(path, modified, hashlib.sha256(modified).hexdigest(),
+                                                           'pending_route_control')
+        # New syntax call site keeps its own live fallback and mutable expectations.
+        pending_name_path = 'pending_syntax_control.py'
+        pending_name_raw = b'def test_pending_cache(): pass\n'
+        pending_name_hash = hashlib.sha256(pending_name_raw).hexdigest()
+        pending_context = main813._SHORT_PENDING_SYNTAX_CONTEXT
+        self.assertIs(pending_context[0], main813._require_short_pending_blob.__globals__)
+        self.assertIs(pending_context[1], main813._require_short_pending_blob.__builtins__)
+        with patch.dict(pending, {'sources': {pending_name_path: pending_name_hash}, 'methods': {},
+                'python_methods': {pending_name_path: ['test_pending_cache']}, 'module_chains': {}}):
+            for _ in range(2):
+                self.assertIsNone(main813._require_short_pending_blob(
+                    pending_name_path, pending_name_raw, pending_name_hash, 'pending_syntax_control'))
+            with patch.dict(pending['python_methods'], {pending_name_path: []}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_syntax_control$'):
+                    main813._require_short_pending_blob(pending_name_path, pending_name_raw,
+                                                       pending_name_hash, 'pending_syntax_control')
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_syntax_control$'):
+                main813._require_short_pending_blob(pending_name_path, pending_name_raw, '0' * 64, 'pending_syntax_control')
+            with patch.dict(pending['module_chains'], {pending_name_path: ['missing pending route']}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_syntax_control$'):
+                    main813._require_short_pending_blob(pending_name_path, pending_name_raw,
+                                                       pending_name_hash, 'pending_syntax_control')
+            pending_parse = ast.parse
+            for fallback in ('none', 'unsupported'):
+                context = (patch.object(syntax, 'cached_test_names', return_value=None) if fallback == 'none'
+                           else patch.object(syntax, '_TEST_NAMES_AUTHORITY', ()))
+                with context, patch.object(ast, 'parse', wraps=pending_parse) as live_parse:
+                    for _ in range(2):
+                        self.assertIsNone(main813._require_short_pending_blob(
+                            pending_name_path, pending_name_raw, pending_name_hash, 'pending_syntax_control'))
+                    self.assertEqual(live_parse.call_args_list,
+                                     [unittest.mock.call(pending_name_raw), unittest.mock.call(pending_name_raw)])
+            pending_walk = ast.walk
+            pending_walk_events = []
+            def changed_pending_walk(tree):
+                pending_walk_events.append(tree)
+                return pending_walk(tree)
+            with patch.object(ast, 'walk', changed_pending_walk):
+                self.assertIsNone(syntax.cached_test_names(pending_name_raw, ast, pending_context))
+                for _ in range(2):
+                    self.assertIsNone(main813._require_short_pending_blob(
+                        pending_name_path, pending_name_raw, pending_name_hash, 'pending_syntax_control'))
+            self.assertEqual(len(pending_walk_events), 2)
+            changed_names = pending_name_raw.replace(b'test_pending_cache', b'test_pending_changed')
+            with patch.object(Path, 'read_bytes', side_effect=[pending_name_raw, changed_names,
+                             FileNotFoundError('missing pending syntax')]) as pending_reads:
+                self.assertIsNone(main813.require_short_pending_sources('pending_syntax_control'))
+                for _ in range(2):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^pending_syntax_control$'):
+                        main813.require_short_pending_sources('pending_syntax_control')
+                self.assertEqual(pending_reads.call_count, 3)
+            oversized_names = b'#' + b'x' * 65535 + b'\n'
+            self.assertEqual(len(oversized_names), 65537)
+            self.assertIsNone(syntax.cached_test_names(oversized_names, ast, pending_context))
+            with patch.dict(pending['python_methods'], {pending_name_path: []}):
+                with patch.object(ast, 'parse', wraps=pending_parse) as live_parse:
+                    self.assertIsNone(main813._require_short_pending_blob(pending_name_path, oversized_names,
+                                      hashlib.sha256(oversized_names).hexdigest(), 'pending_syntax_control'))
+                    self.assertEqual(live_parse.call_args_list, [unittest.mock.call(oversized_names)])
+        self.assertEqual(pending_actual, pending_saved)
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -3682,3 +4000,82 @@ class Main813InventoryTests(unittest.TestCase):
             row = parsing.parse_harnesses(failed, expected, 1)[0]
             self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
                              ('FAILED', total - 1, 1))
+
+
+        # Pending-selected299 keeps all historical tuples and the exact child shape.
+        pending_raw = '\n'.join((header('liteinst2'), 'running 299 tests',
+                                 'running 1 test', summary(1, filtered=298),
+                                 'running 1 test', summary(1, filtered=298),
+                                 'running 1 test',
+                                 'test trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack ... ok',
+                                 summary(298, ignored=1)))
+        pending_expected = {'unit/liteinst2/lib': counts(299, 1)}
+        pending_row = parsing.parse_harnesses(pending_raw, pending_expected, 0)[0]
+        self.assertEqual(pending_row['outer'], dict(passed=298, failed=0, ignored=1,
+                                                  measured=0, filtered=0, result='ok'))
+        self.assertEqual(pending_row['declared_outer_tests'], 299)
+        self.assertEqual([child['passed'] for child in pending_row['nested']], [1, 1])
+        self.assertEqual([child['filtered'] for child in pending_row['nested']], [298, 298])
+        self.assertEqual((pending_row['nested_starts'], pending_row['unmatched_nested_starts']), (3, 1))
+        for total, ignored, nested in ((298, 1, 1), (300, 1, 1), (299, 0, 1),
+                                       (299, 2, 1), (299, 1, 2)):
+            bad = '\n'.join((header('liteinst2'), f'running {total} tests',
+                             f'running {nested} tests', summary(total - ignored, ignored=ignored)))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^summary_start_count_mismatch$'):
+                parsing.parse_harnesses(bad, {'unit/liteinst2/lib': counts(total, ignored)}, 0)
+        pending_changes = [
+            (pending_raw.replace('liteinst2', 'other'), 'unexpected_or_duplicate_harness'),
+            (pending_raw.replace('running 299 tests', 'running 300 tests'), 'changed_outer_cohort'),
+            (pending_raw.replace(summary(1, filtered=298), summary(1, filtered=297), 1),
+             'nested_summary_cohort_mismatch'),
+            (pending_raw.replace(summary(298, ignored=1), summary(298, ignored=1, filtered=1)),
+             'summary_start_count_mismatch'),
+            (pending_raw.replace(summary(298, ignored=1), summary(297, ignored=1, measured=1)),
+             'unexpected_measured_tests'),
+            (pending_raw.replace(summary(298, ignored=1), summary(297, ignored=1, failed=1)),
+             'successful_exit_with_failed_summary'),
+            (pending_raw.replace(summary(298, ignored=1), summary(298, ignored=1, result='FAILED')),
+             'contradictory_summary_result'),
+            (pending_raw.replace('test trampoline::tests::live::ptrace',
+                                 'running 1 test\ntest trampoline::tests::live::ptrace'),
+             'summary_start_count_mismatch'),
+            (pending_raw.replace(summary(298, ignored=1), ''), 'missing_outer_summary'),
+            (pending_raw + '\n' + summary(298, ignored=1), 'summary_without_start')]
+        for bad, code in pending_changes:
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^' + code + '$'):
+                parsing.parse_harnesses(bad, pending_expected, 0)
+        failed = pending_raw.replace(summary(298, ignored=1), summary(297, ignored=1, failed=1))
+        pending_row = parsing.parse_harnesses(failed, pending_expected, 1)[0]
+        self.assertEqual((pending_row['outer']['result'], pending_row['outer']['passed'],
+                          pending_row['outer']['failed'], pending_row['outer']['ignored']), ('FAILED', 297, 1, 1))
+        # New importer and CLI counts stay on the unchanged generic parser.
+        for identity, source_header, total in (
+                ('unit/liteinst_rewrite/lib', header('liteinst_rewrite'), 110),
+                ('unit/disassembly_sites/disassembly_sites',
+                 '     Running unittests examples/disassembly_sites.rs '
+                 '(target/debug/examples/disassembly_sites-0123456789abcdef)', 3)):
+            pending_raw = '\n'.join((source_header, f'running {total} tests', summary(total)))
+            pending_expected = {identity: counts(total)}
+            pending_row = parsing.parse_harnesses(pending_raw, pending_expected, 0)[0]
+            self.assertEqual(pending_row['outer'], dict(passed=total, failed=0, ignored=0,
+                                                       measured=0, filtered=0, result='ok'))
+            self.assertEqual((pending_row['nested_starts'], pending_row['unmatched_nested_starts']), (0, 0))
+            for other in (total - 1, total + 1):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^changed_outer_cohort$'):
+                    parsing.parse_harnesses(pending_raw, {identity: counts(other)}, 0)
+            for bad, code in (
+                    (pending_raw.replace(summary(total), summary(total - 1, ignored=1)), 'changed_ignore_cohort'),
+                    (pending_raw.replace(summary(total), summary(total, filtered=1)), 'filtered_outer_summary'),
+                    (pending_raw.replace(summary(total), summary(total - 1, measured=1)), 'unexpected_measured_tests'),
+                    (pending_raw.replace(summary(total), summary(total - 1, failed=1)), 'successful_exit_with_failed_summary'),
+                    (pending_raw.replace(summary(total), summary(total, result='FAILED')), 'contradictory_summary_result'),
+                    (pending_raw.replace(summary(total), ''), 'missing_outer_summary'),
+                    (pending_raw + '\n' + summary(total), 'summary_without_start'),
+                    (pending_raw.replace(summary(total), 'running 1 test\n' + summary(total)), 'summary_start_count_mismatch'),
+                    (pending_raw + '\n' + pending_raw, 'unexpected_or_duplicate_harness')):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^' + code + '$'):
+                    parsing.parse_harnesses(bad, pending_expected, 0)
+            failed = pending_raw.replace(summary(total), summary(total - 1, failed=1))
+            pending_row = parsing.parse_harnesses(failed, pending_expected, 1)[0]
+            self.assertEqual((pending_row['outer']['result'], pending_row['outer']['passed'],
+                              pending_row['outer']['failed']), ('FAILED', total - 1, 1))
