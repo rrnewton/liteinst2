@@ -649,6 +649,9 @@ static int ordinary(long n) {
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
 static void lpeo_fd_guard(long,const long[6]);
 #endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+static void lpero_fd_guard(long,const long[6]);
+#endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 static void leto_fd_guard(long,const long[6]);
 #endif
@@ -701,6 +704,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_fd_guard(n,a);
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_fd_guard(n,a);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
 #ifdef LI2_EFFECT_PROVIDER
@@ -881,6 +887,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_ingress(sig);
 #endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_ingress(sig);

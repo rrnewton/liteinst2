@@ -2,7 +2,9 @@
    byte-for-byte by removing its single guarded include. No mapping changes,
    guessed bytes, PKRU writes or application-data eligibility authority. */
 #include "linked_preedge_observe_memory.h"
-#if LI2_LINKED_PREEDGE_CAPTURE != 1 || LI2_SCALAR_SPAN_TRACE != 1 || LI2_MAPS_MAINTAINED != 1
+#if !((defined(LI2_LINKED_PREEDGE_CAPTURE) && LI2_LINKED_PREEDGE_CAPTURE == 1 && !defined(LI2_LINKED_PREEDGE_REUSE_CAPTURE)) || \
+      (defined(LI2_LINKED_PREEDGE_REUSE_CAPTURE) && LI2_LINKED_PREEDGE_REUSE_CAPTURE == 1 && !defined(LI2_LINKED_PREEDGE_CAPTURE))) || \
+    LI2_SCALAR_SPAN_TRACE != 1 || LI2_MAPS_MAINTAINED != 1
 #error "fixed owner-memory observation requires the qualification profile"
 #endif
 static int lpeo_memory_error(struct li2_lpeo_memory *out,int code,long detail) {

@@ -1,3 +1,6 @@
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+#include "linked_preedge_reuse_observe.h"
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
 #include "linked_preedge_observe.h"
 #endif
@@ -402,6 +405,9 @@ static _Noreturn void selected_linked_epoch_abort(unsigned code,long detail) {
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_abort_observe();
 #endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_abort_observe();
+#endif
     report(125,selected_linked_epoch.first_error,selected_linked_epoch.first_detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
@@ -520,6 +526,9 @@ static void selected_linked_epoch_initialize(void) {
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_initialize();
 #endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_initialize();
+#endif
 }
 static uintptr_t le_entry(uintptr_t pc,size_t slot) {
     uintptr_t arena=pc<(UINT64_C(1)<<31)?selected_linked_epoch.low_arena:selected_linked_epoch.arena;
@@ -583,6 +592,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_source();
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_source();
 #endif
     /* Preserve the larger existing bounded-hash opportunity. This exact literal
        is only a descriptive decline; the old route still owns its own proof. */
@@ -710,6 +722,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_held();
 #endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_held();
+#endif
     le_need(!le_permission(s,PROT_READ|PROT_EXEC,&r->open),LE_PUBLICATION,7);
     le_need(!le_query(le_plan(s)->generated,PROT_READ|PROT_EXEC,&r->live) && !le_bytes(s,&r->live_bytes),LE_PUBLICATION,8);
 #ifdef LI2_LINKED_PREEDGE
@@ -731,6 +746,9 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_redirected(sig,si,uc);
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_redirected(sig,si,uc);
 #endif
     selected_linked_epoch_busy=0;return 1;
 }
@@ -842,6 +860,9 @@ static int selected_linked_epoch_trace_try(int sig,siginfo_t *si,ucontext_t *uc)
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_begin();
 #endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_begin();
+#endif
     r->close_started=1;
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&selected_linked_epoch_ticket);
     le_need(!e && selected_linked_epoch_ticket,LE_EVENT,e);
@@ -856,6 +877,9 @@ static int selected_linked_epoch_trace_try(int sig,siginfo_t *si,ucontext_t *uc)
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_closed();
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_closed();
 #endif
     selected_linked_epoch_closing=0;
     selected_logical_flags=r->transfer.flags;selected_flags_known=1;
@@ -971,6 +995,9 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_before_close();
 #endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_before_close();
+#endif
     le_need(!le_permission(s,PROT_READ,&r->close) && !le_bytes(s,&r->closed_bytes),LE_PUBLICATION,9);
 #ifdef LI2_LINKED_PREEDGE
     le_need(!li2_lifecycle_preedge_validate(&selected_borrow,&r->source,le_plan(s)) &&
@@ -1009,6 +1036,9 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_complete();
 #endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_complete();
+#endif
     __asm__ volatile("":::"memory");selected_linked_epoch_busy=0;selected_fetch(sig,si,uc);
 }
 static void selected_linked_epoch_report(unsigned status,unsigned code,long detail) {
@@ -1017,6 +1047,9 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_finish(status,code,detail);
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_finish(status,code,detail);
 #endif
     ler_report(status,code,detail);
 #ifdef LI2_LINKED_PREEDGE
@@ -1120,4 +1153,7 @@ _Static_assert(114*21+1552<=sizeof(((struct writer *)0)->bytes),"bounded linked-
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
 #include "linked_preedge_observe.inc"
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+#include "linked_preedge_reuse_observe.inc"
 #endif
