@@ -28,6 +28,12 @@ pub mod frame_trace;
 pub mod generated_unwind;
 pub mod grouping;
 pub mod neighbor;
+#[cfg(all(
+    feature = "offline-router",
+    target_os = "linux",
+    target_arch = "x86_64"
+))]
+pub mod offline_router;
 pub mod patcher;
 pub mod planner;
 pub mod precontext;

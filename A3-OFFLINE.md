@@ -92,6 +92,39 @@ entry routes, PC mappings, limits and outstanding requirements. The symbolic
 emitter uses target coordinates and a same-module hook; it does not serialize
 build-process callback pointers or copy a live trampoline into the file.
 
+## Static executable startup profile
+
+The optional `offline-router` feature adds a bounded producer for the authored
+checksum and RLE programs. `liteinst_rewrite::offline_router::prepare_programs`
+requires both complete inputs, with 80/16 and 107/26 original heads/selected
+instructions respectively. It retains the existing planning limits, prepares
+each program once, and withholds both products if either preparation fails.
+The `offline_router_sites` example publishes the pair with a complete directory
+marker only after all bounded input rereads and member writes succeed.
+
+The startup carrier retains the original entry and LOAD layout while adding a
+checked interpreter and absolute bootstrap DSO dependency. Each product includes
+`catalog.li2boot`, compiled from the accepted opaque plans and final ELF bytes.
+It retains consumed-successor obligations for generalized/prefixed puns,
+selected/victim neighbor relays, image ownership and unresolved requirements.
+The catalog does not grant execution authority.
+
+`crates/liteinst-bootstrap` is a separate per-product build, outside the default
+workspace. Its normal build script requires a complete canonical catalog through
+`LITEINST_BOOTSTRAP_CATALOG`; the main's final bytes precede the DSO build, avoiding
+a content-hash cycle. The constructor uses the production router and sync-core
+implementation, checks current file/map/target ownership, and exits with status
+125 on error or panic without writing diagnostics. Its hidden completion object
+and exported status function indicate constructor completion only.
+
+The core activation API is explicitly unsafe. Its contract requires independent
+artifact qualification and an admitted loader/dependency/constructor history,
+unreachable main code before initialization, supported signal/stack/ISA behavior,
+and unchanged mapping ownership through process exit. Current observations
+cannot prove those historical or future conditions. Package verification must
+check the actual linked DSO and dependency graph before native execution; these
+source interfaces alone do not qualify that package or a whole-program run.
+
 ## Execution contract and remaining qualification
 
 Every emitted image currently records `qualification_complete=false`. A target

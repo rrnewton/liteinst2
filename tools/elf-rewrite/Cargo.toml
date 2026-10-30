@@ -57,3 +57,14 @@ name = "adjacent_routed_jmp_disassembly_sites"
 path = "examples/adjacent_routed_jmp_disassembly_sites.rs"
 test = true
 bench = false
+
+# New named startup product; ordinary producer builds retain their feature set.
+[features]
+offline-router = ["li2core/offline-router"]
+
+[[example]]
+name = "offline_router_sites"
+path = "examples/offline_router_sites.rs"
+required-features = ["offline-router"]
+test = true
+bench = false

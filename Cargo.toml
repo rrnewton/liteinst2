@@ -69,6 +69,7 @@ members = ["tools/rapid-profiler", "tools/exception-oracle", "crates/liteinst-ad
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm", "instr_info"] }
 libc = "0.2.186"
 memmap2 = "0.9.11"
+liteinst-artifact = { path = "crates/liteinst-artifact", optional = true }
 nix = { version = "0.31.3", features = ["mman", "process", "signal"] }
 
 [[bin]]
@@ -78,6 +79,8 @@ path = "tests/support/arena_fork_fixture.rs"
 # Explicit host-only physical evidence; no runtime activation or default code.
 [features]
 saved-pkru-probe = []
+# Explicit offline startup authority; absent from default core builds.
+offline-router = ["dep:liteinst-artifact"]
 
 [[example]]
 name = "saved_pkru_probe"

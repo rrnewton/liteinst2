@@ -1,0 +1,23 @@
+[package]
+name = "liteinst-bootstrap"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+license = "BSD-2-Clause"
+description = "Opt-in per-product static ET_EXEC production router bootstrap"
+build = "build.rs"
+
+# Per-product catalog build, isolated from default workspace builds. Use only the
+# existing root target directory. Root freezes/checks this manifest's lock first.
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+liteinst2 = { path = "../..", features = ["offline-router"] }
+libc = "0.2.186"
+
+[build-dependencies]
+liteinst-artifact = { path = "../liteinst-artifact" }
