@@ -36,6 +36,30 @@ no executable mapping, live callback conversion, host probing, router
 registration, or publication. It depends on the workspace's shared core and
 [liteinst-artifact](../../crates/liteinst-artifact/README.md).
 
+## Adjacent short branches
+
+The explicit `elf-disassembly-null-jumps-adjacent-b2-short-t3-pending-v1`
+profile can search two adjacent two-byte forward conditional branches together.
+It tries each site's existing baseline once, then can try one bounded pair search
+from the state before either baseline. Upper, lower and continuation budgets are
+separate from the baseline allocation caps. The pair commits both members
+transactionally, retaining every selected site and its full pending interval.
+
+```sh
+cargo run --offline --locked -p liteinst-rewrite \
+  --example adjacent_b2_disassembly_sites -- \
+  ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY
+```
+
+This entrypoint requires the version-5 disassembly policy with inherited T3
+ownership, full pending ownership, `adjacent-b2 fallback-two-site-v1`, and explicit
+`adjacent-b2-budgets U L J` (each 0–256, with J no greater than U). The library
+uses `Disassembly::bind_adjacent_b2` and
+`prepare_disassembly_adjacent_b2`. It rereads all three inputs before publication
+and retains baseline and pair evidence in `adjacent-b2-evidence.txt`. An incomplete
+selection emits no candidate ELF or generated image files. Qualification remains
+false; source restoration and live retirement are separate obligations.
+
 ## Output records
 
 `selection.txt` retains the exact selection bytes. `report.tsv` retains every
@@ -61,8 +85,9 @@ program-header table and separate RX image LOADs. The kernel or dynamic loader
 can map these before entry without a new manual file mapper. ET_EXEC and
 ET_DYN layouts are structurally supported; load-bias, early IFUNC/hook readiness,
 CPU/XCR0, unwind/router integration, code-as-data assumptions, and actual
-execution remain separate obligations. Artifact grouping and coalesced contexts
-are not implemented by this frontend. Cross-site planning uses authenticated
+execution remain separate obligations. Hook-context coalescing is not implemented.
+The explicit adjacent profile supports transactional two-site planning.
+Cross-site planning uses authenticated
 original snapshots and refuses incompatible composition; it does not invent
 new original decoding from already patched bytes.
 

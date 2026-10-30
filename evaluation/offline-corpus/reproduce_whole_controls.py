@@ -14,7 +14,7 @@ if sys.flags.optimize:
 path = Path(__file__).resolve().with_name('reproduce_whole.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
-assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == '0e16f2416fef8668c913f5661a96b59d99bbae13cc0e6f70020abdb4acf11ca0'
+assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == '0ce68a9845cda218f67778bd1b41af0c9c227f963e535968f4c861078b89c3aa'
 R = types.ModuleType('authenticated_whole_reproducer')
 R.__file__ = str(path)
 exec(compile(raw, str(path), 'exec'), R.__dict__)

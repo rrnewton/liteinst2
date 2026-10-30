@@ -1196,3 +1196,7 @@ pub fn main() {
         "PASS kernel-exec MOV5/RET: 8 original + 16 rewritten traces; 72 full-state comparisons; 24 subject CALL/RETs; 8 hook CALL/RETs; 4 journal rows"
     );
 }
+
+// Additive adjacent-pair adapter; existing comparator and shape checks remain literal.
+#[path = "adjacent_b2_native.rs"]
+pub mod adjacent_b2;

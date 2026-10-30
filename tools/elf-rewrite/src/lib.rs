@@ -1,8 +1,10 @@
 //! Offline ELF candidate construction. Runtime qualification remains separate.
 //! No live callback pointer, executable mapping, publication receipt, or admission.
 #![forbid(unsafe_code)]
+mod adjacent_b2_frontend;
 pub mod carrier;
 pub mod disassembly;
+pub use adjacent_b2_frontend::prepare_disassembly_adjacent_b2;
 mod ledger;
 pub mod model;
 mod neighbor_catalogue;
@@ -108,6 +110,36 @@ fn prepare_selection_with_mode(
     owned_neighbors: bool,
     mode: disassembly::NeighborMode,
 ) -> Result<Product, Error> {
+    prepare_selection_with_adjacent(original, selection, owned_neighbors, mode, None)
+}
+
+fn prepare_selection_with_adjacent(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+    adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
+) -> Result<Product, Error> {
+    prepare_selection_with_adjacent_gate(
+        original,
+        selection,
+        owned_neighbors,
+        mode,
+        adjacent,
+        |_| Ok(()),
+    )
+}
+
+// Private fault seam observes only complete construction boundaries. Production
+// supplies an infallible callback; it cannot supply plans or relax any guard.
+fn prepare_selection_with_adjacent_gate(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+    adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
+    mut gate: impl FnMut(&'static str) -> Result<(), Error>,
+) -> Result<Product, Error> {
     if owned_neighbors && mode != disassembly::NeighborMode::LongOnly {
         return Err(Error::new(
             "neighbor-mode",
@@ -173,7 +205,7 @@ fn prepare_selection_with_mode(
         dependencies.push(file);
     }
     let snapshots = original_snapshots(&elf, &s.sites)?;
-    let mut composition =
+    let composition =
         Composition::new(identity, snapshots).map_err(|e| Error::new("composition-original", e))?;
     // Only the sealed pending mode supplies the complete original instruction set.
     // Keep failed sites in this table; a successful commit alone discharges one.
@@ -192,7 +224,7 @@ fn prepare_selection_with_mode(
             .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
             .map_err(|e| Error::new("pending-selected", e))?;
     }
-    let mut reports: Vec<_> = s
+    let reports: Vec<_> = s
         .sites
         .iter()
         .map(|site| SiteReport {
@@ -209,228 +241,77 @@ fn prepare_selection_with_mode(
         .collect();
     let mut ordered: Vec<_> = (0..s.sites.len()).collect();
     ordered.sort_by_key(|&i| std::cmp::Reverse(s.sites[i].pc));
-    let mut accepted = Vec::<(u64, ArtifactPlan)>::new();
-    let mut image_count = 0_usize;
-    let mut image_bytes = 0_usize;
-    let mut allocation_pages = 0_u64;
-    for index in ordered {
-        let site = &s.sites[index];
-        let report = &mut reports[index];
-        let pending_ranges: Vec<_> = pending
-            .iter()
-            .filter_map(|(other, range)| (*other != index).then_some(*range))
-            .collect();
-        let prepared = (|| {
-            validate_site(&elf, site)?;
-            let code = elf
-                .executable_bytes(ElfVaddr(site.snapshot.start()), site.snapshot.len())
-                .map_err(|e| Error::new("snapshot", e))?;
-            let entries = LegalEntrySet {
-                identity,
-                scope: site.function,
-                provenance: EntryProvenance::Declared(format!(
-                    "selection provenance SHA-256 {}",
-                    ledger::hex(&site.provenance.0)
-                )),
-                completeness: site.completeness,
-                entries: site.heads.clone(),
-                resumes: site.resumes.clone(),
-            };
-            let hook = s
-                .hooks
-                .iter()
-                .find(|h| h.id == site.hook)
-                .ok_or_else(|| Error::new("hook", "missing"))?;
-            let emission = ArtifactEmission::new(
-                TargetProfile::linux_x86_64_legacy_evex(s.target, s.bias_domain)
-                    .map_err(|e| Error::new("target", e))?,
-                SymbolicHook {
-                    identity: hook.id,
-                    address: Some(hook.pc),
-                },
-                occupied.clone(),
-            );
-            let request = ArtifactRequest {
-                site: PlanningSite {
+    let accepted = Vec::<(u64, ArtifactPlan)>::new();
+    let image_count = 0_usize;
+    let image_bytes = 0_usize;
+    let allocation_pages = 0_u64;
+    let mut draft = adjacent_b2_frontend::SelectionDraft {
+        composition,
+        pending,
+        reports,
+        accepted,
+        occupied,
+        dependencies,
+        image_count,
+        image_bytes,
+        allocation_pages,
+        baseline: Vec::new(),
+        work: Vec::new(),
+        edges: Vec::new(),
+        totals: Default::default(),
+        blocked_groups: Vec::new(),
+    };
+    if let Some(limits) = adjacent {
+        adjacent_b2_frontend::plan(&elf, &dynamic, s, identity, limits, &ordered, &mut draft)?;
+    } else {
+        for index in ordered {
+            attempt_singleton(
+                SingletonContext {
+                    elf: &elf,
+                    dynamic: &dynamic,
+                    s,
                     identity,
-                    code,
-                    base_address: site.snapshot.start(),
-                    function: site.function,
-                    block: site.block,
-                    logical_pc: site.pc,
-                    entries: &entries,
-                    semantics: site.semantics,
-                    allocation: &site.selected_allocation,
-                    search: site.search,
+                    owned_neighbors,
+                    mode,
+                    record_baseline: false,
                 },
-                emission: &emission,
-            };
-            let policy = EnginePolicy {
-                forced: site.forced,
-                successor_puns: TacticPolicy::PreferGeneralizedPun,
-                neighbor: NeighborSearch {
-                    forced_victim: site.forced_victim,
-                    max_victims: site.max_victims,
-                    max_pairs: site.max_pairs,
-                },
-                bundle: li2core::bundle::BundleBudget {
-                    max_steps: 2,
-                    max_mappings: s.limits.images,
-                    max_virtual_bytes: s.limits.new_load_pages.saturating_mul(4096),
-                    max_backing_bytes: s.limits.new_load_pages.saturating_mul(4096),
-                    max_virtual_span: s.limits.virtual_span,
-                },
-            };
-            let result = if mode == disassembly::NeighborMode::ShortT3Pending {
-                engine::plan_with_emission_after_and_short_t3_pending(
-                    &request,
-                    &composition,
-                    &pending_ranges,
-                    &site.victim_allocation,
-                    policy,
-                )
-            } else if owned_neighbors {
-                let owners = neighbor_catalogue::collect(&elf, s, identity, site)?;
-                let foreign: Vec<_> = owners.iter().map(|owner| owner.site(site)).collect();
-                engine::plan_with_emission_after_with_foreign(
-                    &request,
-                    &composition,
-                    &site.victim_allocation,
-                    policy,
-                    &foreign,
-                )
-            } else if mode == disassembly::NeighborMode::ShortT3Ownership {
-                engine::plan_with_emission_after_and_short_t3_ownership(
-                    &request,
-                    &composition,
-                    &site.victim_allocation,
-                    policy,
-                )
-            } else if mode == disassembly::NeighborMode::ShortOnly {
-                engine::plan_with_emission_after_and_short_neighbors(
-                    &request,
-                    &composition,
-                    &site.victim_allocation,
-                    policy,
-                )
-            } else {
-                engine::plan_with_emission_after(
-                    &request,
-                    &composition,
-                    &site.victim_allocation,
-                    policy,
-                )
-            };
-            let plan = match result {
-                Ok(plan) => plan,
-                Err(failure) => {
-                    report.refusal_code = Some(model::core_code(&failure.reason));
-                    report.diagnostics = format!("{failure:#?}");
-                    return Err(Error::new("core", failure.reason));
-                }
-            };
-            report.diagnostics = format!("{:#?}", plan.metrics());
-            let ArtifactMetrics::Engine(tactic, _, _) = plan.metrics() else {
-                return Err(Error::new("core-invariant", "engine metric missing"));
-            };
-            report.core_tactic = Some(*tactic);
-            if plan.qualification_complete() {
-                return Err(Error::new(
-                    "readiness-invariant",
-                    "unexpected qualification",
-                ));
-            }
-            let new_images = plan.images().count();
-            let new_bytes = plan
-                .images()
-                .try_fold(0_usize, |n, i| n.checked_add(i.bytes().len()))
-                .ok_or_else(|| Error::new("image-budget", "overflow"))?;
-            let mut new_pages = 0_u64;
-            let mut new_dependencies = Vec::new();
-            let mut next = composition.clone();
-            for step in plan.source_steps() {
-                // T2/T3 steps intentionally read their preceding internal overlay.
-                next.append(step)
-                    .map_err(|e| Error::new("composition", e))?;
-                for dependency in &step.parts().dependencies {
-                    let file = translate(&elf, dependency.start(), dependency.len())?;
-                    dynamic
-                        .check_source_ranges(&[file])
-                        .map_err(|e| Error::new("source-relocation", e))?;
-                    new_dependencies.push(file);
-                }
-                for allocation in &step.parts().allocations {
-                    new_pages = new_pages
-                        .checked_add(allocation.range.len() / 4096)
-                        .ok_or_else(|| Error::new("allocation-budget", "overflow"))?;
-                }
-            }
-            if image_count
-                .checked_add(new_images)
-                .is_none_or(|v| v > s.limits.images)
-                || image_bytes
-                    .checked_add(new_bytes)
-                    .is_none_or(|v| v > s.limits.image_bytes)
-                || allocation_pages
-                    .checked_add(new_pages)
-                    .is_none_or(|v| v > s.limits.new_load_pages)
-            {
-                return Err(Error::new(
-                    "aggregate-budget",
-                    "complete selected set exceeds declared resources",
-                ));
-            }
-            // Same-module hook contents are immutable dependencies too.
-            for hook in &s.hooks {
-                for bytes in next.final_bytes() {
-                    let left = bytes.address.max(hook.pc);
-                    let right = (bytes.address + bytes.bytes.len() as u64)
-                        .min(hook.pc + hook.length as u64);
-                    if left < right {
-                        let actual = &bytes.bytes
-                            [(left - bytes.address) as usize..(right - bytes.address) as usize];
-                        if actual
-                            != elf
-                                .executable_bytes(ElfVaddr(left), right - left)
-                                .map_err(|e| Error::new("hook-owner", e))?
-                        {
-                            return Err(Error::new(
-                                "hook-ownership",
-                                "source transformation changes hook",
-                            ));
-                        }
-                    }
-                }
-            }
-            // Preserve every existing append/dependency/resource/hook failure first.
-            // First-four local success may refuse here; this never restarts search.
-            if mode == disassembly::NeighborMode::ShortT3Pending {
-                next.require_unclaimed_ranges(&pending_ranges)
-                    .map_err(|e| Error::new("pending-selected", e))?;
-            }
-            for step in plan.source_steps() {
-                occupied.extend(step.parts().allocations.iter().map(|a| a.range));
-            }
-            dependencies.extend(new_dependencies);
-            image_count += new_images;
-            image_bytes += new_bytes;
-            allocation_pages += new_pages;
-            composition = next;
-            Ok(plan)
-        })();
-        match prepared {
-            Ok(plan) => {
-                accepted.push((site.id, plan));
-                pending.retain(|(other, _)| *other != index);
-            }
-            Err(error) => {
-                report.refusal = Some(error);
-                if report.refusal_code.is_none() {
-                    report.refusal_code = Some(10_001);
-                }
+                &mut draft,
+                index,
+            );
+        }
+    }
+    let adjacent_evidence = if adjacent.is_some() {
+        gate("evidence-serialization")?;
+        Some(adjacent_b2_frontend::evidence(s, &draft)?)
+    } else {
+        None
+    };
+    // Local legacy successes stay untouched in saved evidence. A separately
+    // refused new-profile whole group cannot authorize a complete candidate.
+    if let Some(error) = draft.blocked_groups.first() {
+        for report in &mut draft.reports {
+            if report.refusal.is_none() {
+                report.refusal = Some(Error::new("adjacent-group-admission", error));
+                report.refusal_code = Some(10_001);
             }
         }
     }
+    let adjacent_b2_frontend::SelectionDraft {
+        composition,
+        pending: _,
+        mut reports,
+        accepted,
+        occupied: _,
+        dependencies,
+        image_count: _,
+        image_bytes: _,
+        allocation_pages: _,
+        baseline: _,
+        work: _,
+        edges: _,
+        totals: _,
+        blocked_groups: _,
+    } = draft;
     let mut files = BTreeMap::new();
     if owned_neighbors {
         files.insert(
@@ -467,13 +348,16 @@ fn prepare_selection_with_mode(
                 bytes: i.bytes().to_vec(),
             })
             .collect();
-        let write_carrier = if owned_neighbors
+        let write_carrier = if (owned_neighbors || adjacent.is_some())
             && elf.header().object_type == carrier::elf64::ObjectType::Executable
         {
             carrier::append_exec_carrier_with_interleaved_images
         } else {
             carrier::append_carrier_with_images
         };
+        if adjacent.is_some() {
+            gate("carrier-construction")?;
+        }
         let result = write_carrier(
             &elf,
             carrier::ImageRequest {
@@ -499,6 +383,9 @@ fn prepare_selection_with_mode(
         );
         match result {
             Ok(output) => {
+                if adjacent.is_some() {
+                    gate("sparse-serialization")?;
+                }
                 // Same authenticated original-relative edits back the sparse output;
                 // ELF header/appended bytes stay carrier-only, explicitly recorded.
                 let pages = formats::sparse::SparsePages::build(
@@ -550,6 +437,18 @@ fn prepare_selection_with_mode(
             }
         }
     }
+    if adjacent.is_some() && !complete {
+        // A failed whole selection has evidence, never orphan candidate plans.
+        files.retain(|name, _| !name.starts_with("image-") && name != "plan-ledger.tsv");
+        ledger = format!(
+            "LI2ADJACENT-NO-CANDIDATE\t1\nselection_sha256\t{}\nqualification_complete\tfalse\n",
+            ledger::hex(&ContentId::of(&s.manifest).0)
+        )
+        .into_bytes();
+    }
+    if let Some(bytes) = adjacent_evidence {
+        files.insert("adjacent-b2-evidence.txt".into(), bytes);
+    }
     let metadata = make_metadata(original, s, &reports, false, &profile)?;
     files.insert(
         "metadata.li2meta".into(),
@@ -571,12 +470,270 @@ fn prepare_selection_with_mode(
     if let Some(bytes) = sparse {
         files.insert("source.li2sparse".into(), bytes);
     }
+    if adjacent.is_some() {
+        gate("complete-output-serialization")?;
+    }
     files.insert("bundle-index.tsv".into(), ledger::index(s.original, &files));
     Ok(Product {
         files,
         reports,
         complete,
     })
+}
+
+struct SingletonContext<'a, 'code> {
+    elf: &'a Elf64<'code>,
+    dynamic: &'a carrier::dynamic::Inventory,
+    s: &'a Selection,
+    identity: CodeIdentity,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+    record_baseline: bool,
+}
+fn attempt_singleton(
+    context: SingletonContext<'_, '_>,
+    draft: &mut adjacent_b2_frontend::SelectionDraft,
+    index: usize,
+) {
+    let SingletonContext {
+        elf,
+        dynamic,
+        s,
+        identity,
+        owned_neighbors,
+        mode,
+        record_baseline,
+    } = context;
+    let adjacent_b2_frontend::SelectionDraft {
+        composition,
+        pending,
+        reports,
+        accepted,
+        occupied,
+        dependencies,
+        image_count,
+        image_bytes,
+        allocation_pages,
+        baseline,
+        ..
+    } = draft;
+    let site = &s.sites[index];
+    let report = &mut reports[index];
+    let pending_ranges: Vec<_> = pending
+        .iter()
+        .filter_map(|(other, range)| (*other != index).then_some(*range))
+        .collect();
+    let prepared = (|| {
+        validate_site(elf, site)?;
+        let code = elf
+            .executable_bytes(ElfVaddr(site.snapshot.start()), site.snapshot.len())
+            .map_err(|e| Error::new("snapshot", e))?;
+        let entries = LegalEntrySet {
+            identity,
+            scope: site.function,
+            provenance: EntryProvenance::Declared(format!(
+                "selection provenance SHA-256 {}",
+                ledger::hex(&site.provenance.0)
+            )),
+            completeness: site.completeness,
+            entries: site.heads.clone(),
+            resumes: site.resumes.clone(),
+        };
+        let hook = s
+            .hooks
+            .iter()
+            .find(|h| h.id == site.hook)
+            .ok_or_else(|| Error::new("hook", "missing"))?;
+        let emission = ArtifactEmission::new(
+            TargetProfile::linux_x86_64_legacy_evex(s.target, s.bias_domain)
+                .map_err(|e| Error::new("target", e))?,
+            SymbolicHook {
+                identity: hook.id,
+                address: Some(hook.pc),
+            },
+            occupied.clone(),
+        );
+        let request = ArtifactRequest {
+            site: PlanningSite {
+                identity,
+                code,
+                base_address: site.snapshot.start(),
+                function: site.function,
+                block: site.block,
+                logical_pc: site.pc,
+                entries: &entries,
+                semantics: site.semantics,
+                allocation: &site.selected_allocation,
+                search: site.search,
+            },
+            emission: &emission,
+        };
+        let policy = EnginePolicy {
+            forced: site.forced,
+            successor_puns: TacticPolicy::PreferGeneralizedPun,
+            neighbor: NeighborSearch {
+                forced_victim: site.forced_victim,
+                max_victims: site.max_victims,
+                max_pairs: site.max_pairs,
+            },
+            bundle: li2core::bundle::BundleBudget {
+                max_steps: 2,
+                max_mappings: s.limits.images,
+                max_virtual_bytes: s.limits.new_load_pages.saturating_mul(4096),
+                max_backing_bytes: s.limits.new_load_pages.saturating_mul(4096),
+                max_virtual_span: s.limits.virtual_span,
+            },
+        };
+        let result = if mode == disassembly::NeighborMode::ShortT3Pending {
+            engine::plan_with_emission_after_and_short_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if owned_neighbors {
+            let owners = neighbor_catalogue::collect(elf, s, identity, site)?;
+            let foreign: Vec<_> = owners.iter().map(|owner| owner.site(site)).collect();
+            engine::plan_with_emission_after_with_foreign(
+                &request,
+                composition,
+                &site.victim_allocation,
+                policy,
+                &foreign,
+            )
+        } else if mode == disassembly::NeighborMode::ShortT3Ownership {
+            engine::plan_with_emission_after_and_short_t3_ownership(
+                &request,
+                composition,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::ShortOnly {
+            engine::plan_with_emission_after_and_short_neighbors(
+                &request,
+                composition,
+                &site.victim_allocation,
+                policy,
+            )
+        } else {
+            engine::plan_with_emission_after(&request, composition, &site.victim_allocation, policy)
+        };
+        if record_baseline {
+            baseline.push(adjacent_b2_frontend::Baseline {
+                id: site.id,
+                result: result.clone(),
+            });
+        }
+        let plan = match result {
+            Ok(plan) => plan,
+            Err(failure) => {
+                report.refusal_code = Some(model::core_code(&failure.reason));
+                report.diagnostics = format!("{failure:#?}");
+                return Err(Error::new("core", failure.reason));
+            }
+        };
+        report.diagnostics = format!("{:#?}", plan.metrics());
+        let ArtifactMetrics::Engine(tactic, _, _) = plan.metrics() else {
+            return Err(Error::new("core-invariant", "engine metric missing"));
+        };
+        report.core_tactic = Some(*tactic);
+        if plan.qualification_complete() {
+            return Err(Error::new(
+                "readiness-invariant",
+                "unexpected qualification",
+            ));
+        }
+        let new_images = plan.images().count();
+        let new_bytes = plan
+            .images()
+            .try_fold(0_usize, |n, i| n.checked_add(i.bytes().len()))
+            .ok_or_else(|| Error::new("image-budget", "overflow"))?;
+        let mut new_pages = 0_u64;
+        let mut new_dependencies = Vec::new();
+        let mut next = composition.clone();
+        for step in plan.source_steps() {
+            // T2/T3 steps intentionally read their preceding internal overlay.
+            next.append(step)
+                .map_err(|e| Error::new("composition", e))?;
+            for dependency in &step.parts().dependencies {
+                let file = translate(elf, dependency.start(), dependency.len())?;
+                dynamic
+                    .check_source_ranges(&[file])
+                    .map_err(|e| Error::new("source-relocation", e))?;
+                new_dependencies.push(file);
+            }
+            for allocation in &step.parts().allocations {
+                new_pages = new_pages
+                    .checked_add(allocation.range.len() / 4096)
+                    .ok_or_else(|| Error::new("allocation-budget", "overflow"))?;
+            }
+        }
+        if image_count
+            .checked_add(new_images)
+            .is_none_or(|v| v > s.limits.images)
+            || image_bytes
+                .checked_add(new_bytes)
+                .is_none_or(|v| v > s.limits.image_bytes)
+            || allocation_pages
+                .checked_add(new_pages)
+                .is_none_or(|v| v > s.limits.new_load_pages)
+        {
+            return Err(Error::new(
+                "aggregate-budget",
+                "complete selected set exceeds declared resources",
+            ));
+        }
+        // Same-module hook contents are immutable dependencies too.
+        for hook in &s.hooks {
+            for bytes in next.final_bytes() {
+                let left = bytes.address.max(hook.pc);
+                let right =
+                    (bytes.address + bytes.bytes.len() as u64).min(hook.pc + hook.length as u64);
+                if left < right {
+                    let actual = &bytes.bytes
+                        [(left - bytes.address) as usize..(right - bytes.address) as usize];
+                    if actual
+                        != elf
+                            .executable_bytes(ElfVaddr(left), right - left)
+                            .map_err(|e| Error::new("hook-owner", e))?
+                    {
+                        return Err(Error::new(
+                            "hook-ownership",
+                            "source transformation changes hook",
+                        ));
+                    }
+                }
+            }
+        }
+        // Preserve every existing append/dependency/resource/hook failure first.
+        // First-four local success may refuse here; this never restarts search.
+        if mode == disassembly::NeighborMode::ShortT3Pending {
+            next.require_unclaimed_ranges(&pending_ranges)
+                .map_err(|e| Error::new("pending-selected", e))?;
+        }
+        for step in plan.source_steps() {
+            occupied.extend(step.parts().allocations.iter().map(|a| a.range));
+        }
+        dependencies.extend(new_dependencies);
+        *image_count += new_images;
+        *image_bytes += new_bytes;
+        *allocation_pages += new_pages;
+        *composition = next;
+        Ok(plan)
+    })();
+    match prepared {
+        Ok(plan) => {
+            accepted.push((site.id, plan));
+            pending.retain(|(other, _)| *other != index);
+        }
+        Err(error) => {
+            report.refusal = Some(error);
+            if report.refusal_code.is_none() {
+                report.refusal_code = Some(10_001);
+            }
+        }
+    }
 }
 
 fn validate_site(elf: &Elf64<'_>, s: &SelectedSite) -> Result<(), Error> {

@@ -30,7 +30,7 @@ def load(name, digest):
 
 assert not sys.flags.optimize, 'assertions required'
 B = load('build_whole.py', '2731a71ee7848098be194111baf240b498dbbaf18c82252877d1a95345d1d3d2')
-H = load('head_capture.py', 'dd8a4c5db6ae7c1f4e3a7aaf7c3336e62e62ae3301670738a0cadf10923f3e31')
+H = load('head_capture.py', 'd805c5da621637946e8d103787a3390073e87d83267e10231e0d38cbc8467373')
 D = H.D
 
 
