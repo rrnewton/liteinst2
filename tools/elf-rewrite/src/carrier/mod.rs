@@ -5,6 +5,8 @@
 //! inventories dynamic writes and adds RX images in one module-relative domain.
 
 pub mod dynamic;
+pub mod startup;
+pub use startup::{StartupLayout, StartupLimits, StaticExecStartup};
 #[path = "elf64.rs"]
 pub mod elf64;
 
@@ -117,6 +119,8 @@ pub struct CarrierOutput {
     pub new_load_pages: u64,
     /// Original dynamic ownership; never includes new image bytes or mappings.
     pub dynamic: dynamic::Inventory,
+    /// Present only for the explicit static ET_EXEC startup-bearing profile.
+    pub startup: Option<StartupLayout>,
 }
 
 impl CarrierOutput {
@@ -141,6 +145,8 @@ pub enum Error {
     UnsupportedSegment { index: usize, kind: SegmentType },
     /// Original dynamic tables or loader write ownership are not qualified.
     Dynamic(dynamic::Error),
+    /// Static-input or typed startup metadata requirements were not met.
+    Startup(startup::Error),
     /// Interpreter record is duplicated, empty, late, or lacks a final path NUL.
     InvalidInterpreter,
     /// Image bytes are empty or image pages overlap original/new mappings.
@@ -204,6 +210,12 @@ impl From<dynamic::Error> for Error {
     }
 }
 
+impl From<startup::Error> for Error {
+    fn from(error: startup::Error) -> Self {
+        Self::Startup(error)
+    }
+}
+
 /// Append payload plus a relocated program table in a new R-only PT_LOAD.
 ///
 /// Input bytes, e_entry, old PT_LOAD records, dynamic hooks and PT_NOTE records
@@ -235,6 +247,7 @@ pub fn append_read_only_carrier(
         },
         false,
         Placement::Append,
+        None,
     )
 }
 
@@ -252,7 +265,7 @@ pub fn append_carrier_with_images(
     edits: &[DeclaredEdit],
     policy: ImagePolicy,
 ) -> Result<CarrierOutput, Error> {
-    append_internal(input, request, edits, policy, true, Placement::Append)
+    append_internal(input, request, edits, policy, true, Placement::Append, None)
 }
 
 /// Explicit ET_EXEC profile for independently backed RX images below or between
@@ -270,7 +283,7 @@ pub fn append_exec_carrier_with_interleaved_images(
     if input.header().object_type != ObjectType::Executable {
         return Err(Error::UnsupportedObjectType);
     }
-    append_internal(input, request, edits, policy, true, Placement::Images)
+    append_internal(input, request, edits, policy, true, Placement::Images, None)
 }
 
 /// Explicit ET_EXEC profile placing both the R-only carrier and immutable RX
@@ -288,7 +301,41 @@ pub fn append_exec_carrier_with_interleaved_loads(
     if input.header().object_type != ObjectType::Executable {
         return Err(Error::UnsupportedObjectType);
     }
-    append_internal(input, request, edits, policy, true, Placement::AllLoads)
+    append_internal(
+        input,
+        request,
+        edits,
+        policy,
+        true,
+        Placement::AllLoads,
+        None,
+    )
+}
+
+/// Add the exact startup metadata for a separately qualified static ET_EXEC
+/// package. The main has one absolute interpreter and one absolute bootstrap
+/// DSO dependency, a null-only dynamic symbol table, and no main relocations or
+/// startup callbacks. Both metadata and RX images may occupy disjoint gaps.
+///
+/// The original e_entry, LOAD records, code addresses and source-edit rules are
+/// unchanged. This does not authenticate files named by the supplied paths or
+/// establish loader/DSO/router readiness. Those are package/runtime obligations.
+pub fn append_static_exec_with_router_startup(
+    input: &Elf64<'_>,
+    request: ImageRequest<'_>,
+    edits: &[DeclaredEdit],
+    policy: ImagePolicy,
+    startup: StaticExecStartup<'_>,
+) -> Result<CarrierOutput, Error> {
+    append_internal(
+        input,
+        request,
+        edits,
+        policy,
+        true,
+        Placement::AllLoads,
+        Some(startup),
+    )
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -305,8 +352,18 @@ fn append_internal(
     image_policy: ImagePolicy,
     extended: bool,
     placement: Placement,
+    startup_request: Option<StaticExecStartup<'_>>,
 ) -> Result<CarrierOutput, Error> {
     let interleaved = placement != Placement::Append;
+    let startup = startup_request
+        .map(|request| startup::prepare(input, request))
+        .transpose()?;
+    if let Some(prepared) = &startup {
+        if !extended || !interleaved {
+            return Err(Error::OutputInvariant);
+        }
+        startup::scan_budget(prepared, image_policy.dynamic)?;
+    }
     let ImageRequest {
         carrier_vaddr,
         payload,
@@ -432,6 +489,9 @@ fn append_internal(
             protected.push(item.file_range()?);
         }
     }
+    if let Some(startup) = &startup {
+        protected.extend_from_slice(&startup.protected);
+    }
     for (index, range) in source_dependencies.iter().enumerate() {
         if range.is_empty() {
             return Err(Error::InvalidDependency { index });
@@ -492,6 +552,7 @@ fn append_internal(
     let new_count = old_count
         .checked_add(1 + usize::from(insert_phdr))
         .and_then(|count| count.checked_add(images.len()))
+        .and_then(|count| count.checked_add(startup.as_ref().map_or(0, |s| s.extra_headers())))
         .ok_or(Error::Arithmetic {
             operation: "program-header count",
         })?;
@@ -511,6 +572,13 @@ fn append_internal(
     let payload_offset = align_up(table_range.end().0, 8)?;
     let payload_range = FileRange::checked(FileOffset(payload_offset), payload.len() as u64)?;
     let mut output_len = payload_range.end().0;
+    let mut startup_layout = startup
+        .as_ref()
+        .map(|prepared| startup::layout(output_len, carrier_offset, carrier_vaddr, prepared))
+        .transpose()?;
+    if let Some(layout) = &startup_layout {
+        output_len = layout.metadata.end().0;
+    }
     let carrier_size = output_len - carrier_offset;
     let carrier_end = add(carrier_vaddr.0, carrier_size, "carrier virtual extent")?;
     let carrier_page_end = align_up(carrier_end, policy.page_size)?;
@@ -658,7 +726,7 @@ fn append_internal(
     bytes.resize(output_len, 0);
     let mut original_to_output_header = Vec::with_capacity(old_count);
     if interleaved {
-        let order = interleaved_header_order(input, &added, insert_phdr);
+        let order = interleaved_header_order(input, &added, insert_phdr, startup.as_ref());
         if order.len() != new_count {
             return Err(Error::OutputInvariant);
         }
@@ -666,6 +734,10 @@ fn append_internal(
         for (index, header) in order.into_iter().enumerate() {
             let to = add(carrier_offset, index as u64 * 56, "interleaved header")?;
             match header {
+                HeaderSource::Startup(kind) => {
+                    let layout = startup_layout.as_mut().ok_or(Error::OutputInvariant)?;
+                    encode_phdr(&mut bytes, to, startup::header(layout, kind, index))?;
+                }
                 HeaderSource::InsertedPhdr => {
                     phdr_index = index;
                     encode_phdr(
@@ -777,6 +849,12 @@ fn append_internal(
             }
         }
     }
+    if let (Some(prepared), Some(layout)) = (&startup, &mut startup_layout) {
+        if let Some(old_stack) = prepared.original_stack {
+            layout.stack_index = original_to_output_header[old_stack];
+        }
+        startup::render(&mut bytes, layout, prepared, carrier_offset, carrier_vaddr)?;
+    }
     bytes[host_index(payload_offset)?..host_index(payload_range.end().0)?].copy_from_slice(payload);
     for (image, placement) in images.iter().zip(&image_placements) {
         bytes[host_index(placement.file.start().0)?..host_index(placement.file.end().0)?]
@@ -848,6 +926,15 @@ fn append_internal(
             return Err(Error::OutputInvariant);
         }
     }
+    if let (Some(layout), Some(prepared)) = (&startup_layout, &startup) {
+        startup::verify(
+            &reparsed,
+            layout,
+            prepared,
+            carrier_index,
+            image_policy.dynamic,
+        )?;
+    }
     Ok(CarrierOutput {
         bytes,
         changes,
@@ -861,10 +948,12 @@ fn append_internal(
         images: image_placements,
         new_load_pages,
         dynamic,
+        startup: startup_layout,
     })
 }
 
 enum HeaderSource {
+    Startup(startup::Header),
     InsertedPhdr,
     Original(usize),
     Added(usize),
@@ -874,11 +963,19 @@ fn interleaved_header_order(
     input: &Elf64<'_>,
     added: &[AddedLoad],
     insert_phdr: bool,
+    startup: Option<&startup::Prepared<'_>>,
 ) -> Vec<HeaderSource> {
-    let mut order =
-        Vec::with_capacity(input.program_headers().len() + added.len() + usize::from(insert_phdr));
+    let mut order = Vec::with_capacity(
+        input.program_headers().len()
+            + added.len()
+            + usize::from(insert_phdr)
+            + startup.map_or(0, |s| s.extra_headers()),
+    );
     if insert_phdr {
         order.push(HeaderSource::InsertedPhdr);
+        if startup.is_some() {
+            order.push(HeaderSource::Startup(startup::Header::Interpreter));
+        }
     }
     let mut next = 0;
     for old in input.program_headers() {
@@ -891,10 +988,19 @@ fn interleaved_header_order(
             }
         }
         order.push(HeaderSource::Original(old.index));
+        if startup.is_some() && old.kind == SegmentType::ProgramHeaders {
+            order.push(HeaderSource::Startup(startup::Header::Interpreter));
+        }
     }
     while next < added.len() {
         order.push(HeaderSource::Added(next));
         next += 1;
+    }
+    if let Some(startup) = startup {
+        order.push(HeaderSource::Startup(startup::Header::Dynamic));
+        if startup.original_stack.is_none() {
+            order.push(HeaderSource::Startup(startup::Header::Stack));
+        }
     }
     order
 }
@@ -1130,3 +1236,7 @@ mod fixtures;
 #[cfg(test)]
 #[path = "image_fixtures.rs"]
 mod image_fixtures;
+
+#[cfg(test)]
+#[path = "startup_fixtures.rs"]
+mod startup_fixtures;
