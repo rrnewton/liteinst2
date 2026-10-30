@@ -701,3 +701,485 @@ pub(crate) fn one(pc: u64, source: &[u8], _call: &arena::Call) -> Result<Descrip
     row.ready = 1;
     Ok(row)
 }
+
+// Additive API; the entire old47 implementation above stays byte-exact.
+#[cfg(feature = "scalar-span")]
+mod span {
+    use super::*;
+    const ADDRESS_OPERAND: u32 = 5;
+    const NO_MEM_ACCESS: u32 = 7;
+    const RIP_DISP32: u32 = 1;
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Default)]
+    pub struct Description {
+        decoded: abi::Decoded,
+        target: u64,
+        operands: [Operand; 2],
+        registers: [UsedRegister; 4],
+        address: Memory,
+        rip_target: u64,
+        version: u32,
+        ready: u32,
+        refusal: u32,
+        flow: u32,
+        condition: u32,
+        operand_count: u32,
+        register_count: u32,
+        memory_count: u32,
+        address_count: u32,
+        flags_read: u32,
+        flags_written: u32,
+        flags_set: u32,
+        flags_cleared: u32,
+        flags_undefined: u32,
+        gpr_read: u32,
+        gpr_write: u32,
+        relocation: u32,
+        displacement_offset: u32,
+        displacement_bytes: u32,
+        reserved: u32,
+    }
+    const _: () = {
+        assert!(core::mem::size_of::<Description>() == 336);
+        assert!(core::mem::align_of::<Description>() == 8);
+        assert!(core::mem::offset_of!(Description, target) == 72);
+        assert!(core::mem::offset_of!(Description, operands) == 80);
+        assert!(core::mem::offset_of!(Description, registers) == 144);
+        assert!(core::mem::offset_of!(Description, address) == 208);
+        assert!(core::mem::offset_of!(Description, rip_target) == 248);
+        assert!(core::mem::offset_of!(Description, version) == 256);
+        assert!(core::mem::offset_of!(Description, operand_count) == 276);
+        assert!(core::mem::offset_of!(Description, flags_read) == 292);
+        assert!(core::mem::offset_of!(Description, gpr_read) == 312);
+        assert!(core::mem::offset_of!(Description, relocation) == 320);
+        assert!(core::mem::offset_of!(Description, reserved) == 332);
+    };
+
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Family { Mov, Movzx, Lea, Add, Sub, And, Or, Xor, Cmp, Test, Shl, Shr, Sar }
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Encoding { RmReg, RegRm, RegImm, AccImm, Group32, Group8, One, Count8, Cl }
+    #[derive(Clone, Copy)]
+    struct Spec { family: Family, encoding: Encoding, width: u32, opcode: u8, group: u8 }
+
+    // These96 explicit Codes plus the unchanged34 branch Codes and CMP AL
+    // are exactly131. A Code alone never bypasses raw-form/operand checks.
+    fn domain(code: Code) -> Option<Spec> {
+        use Code::*;
+        use Encoding::*;
+        use Family::*;
+        let (family, encoding, width, opcode, group) = match code {
+            Mov_rm32_r32 => (Mov, RmReg, 32, 0x89, 0),
+            Mov_r32_rm32 => (Mov, RegRm, 32, 0x8b, 0),
+            Movzx_r32_rm8 => (Movzx, RegRm, 32, 0xb6, 0),
+            Mov_r32_imm32 => (Mov, RegImm, 32, 0xb8, 0),
+            Mov_rm32_imm32 => (Mov, Group32, 32, 0xc7, 0),
+            Lea_r32_m => (Lea, RegRm, 32, 0x8d, 0),
+            Mov_rm64_r64 => (Mov, RmReg, 64, 0x89, 0),
+            Mov_r64_rm64 => (Mov, RegRm, 64, 0x8b, 0),
+            Movzx_r64_rm8 => (Movzx, RegRm, 64, 0xb6, 0),
+            Mov_r64_imm64 => (Mov, RegImm, 64, 0xb8, 0),
+            Mov_rm64_imm32 => (Mov, Group32, 64, 0xc7, 0),
+            Lea_r64_m => (Lea, RegRm, 64, 0x8d, 0),
+            Add_rm32_r32 => (Add, RmReg, 32, 0x01, 0),
+            Add_r32_rm32 => (Add, RegRm, 32, 0x03, 0),
+            Add_EAX_imm32 => (Add, AccImm, 32, 0x05, 0),
+            Add_rm32_imm32 => (Add, Group32, 32, 0x81, 0),
+            Add_rm32_imm8 => (Add, Group8, 32, 0x83, 0),
+            Add_rm64_r64 => (Add, RmReg, 64, 0x01, 0),
+            Add_r64_rm64 => (Add, RegRm, 64, 0x03, 0),
+            Add_RAX_imm32 => (Add, AccImm, 64, 0x05, 0),
+            Add_rm64_imm32 => (Add, Group32, 64, 0x81, 0),
+            Add_rm64_imm8 => (Add, Group8, 64, 0x83, 0),
+            Or_rm32_r32 => (Or, RmReg, 32, 0x09, 0),
+            Or_r32_rm32 => (Or, RegRm, 32, 0x0b, 0),
+            Or_EAX_imm32 => (Or, AccImm, 32, 0x0d, 0),
+            Or_rm32_imm32 => (Or, Group32, 32, 0x81, 1),
+            Or_rm32_imm8 => (Or, Group8, 32, 0x83, 1),
+            Or_rm64_r64 => (Or, RmReg, 64, 0x09, 0),
+            Or_r64_rm64 => (Or, RegRm, 64, 0x0b, 0),
+            Or_RAX_imm32 => (Or, AccImm, 64, 0x0d, 0),
+            Or_rm64_imm32 => (Or, Group32, 64, 0x81, 1),
+            Or_rm64_imm8 => (Or, Group8, 64, 0x83, 1),
+            And_rm32_r32 => (And, RmReg, 32, 0x21, 0),
+            And_r32_rm32 => (And, RegRm, 32, 0x23, 0),
+            And_EAX_imm32 => (And, AccImm, 32, 0x25, 0),
+            And_rm32_imm32 => (And, Group32, 32, 0x81, 4),
+            And_rm32_imm8 => (And, Group8, 32, 0x83, 4),
+            And_rm64_r64 => (And, RmReg, 64, 0x21, 0),
+            And_r64_rm64 => (And, RegRm, 64, 0x23, 0),
+            And_RAX_imm32 => (And, AccImm, 64, 0x25, 0),
+            And_rm64_imm32 => (And, Group32, 64, 0x81, 4),
+            And_rm64_imm8 => (And, Group8, 64, 0x83, 4),
+            Sub_rm32_r32 => (Sub, RmReg, 32, 0x29, 0),
+            Sub_r32_rm32 => (Sub, RegRm, 32, 0x2b, 0),
+            Sub_EAX_imm32 => (Sub, AccImm, 32, 0x2d, 0),
+            Sub_rm32_imm32 => (Sub, Group32, 32, 0x81, 5),
+            Sub_rm32_imm8 => (Sub, Group8, 32, 0x83, 5),
+            Sub_rm64_r64 => (Sub, RmReg, 64, 0x29, 0),
+            Sub_r64_rm64 => (Sub, RegRm, 64, 0x2b, 0),
+            Sub_RAX_imm32 => (Sub, AccImm, 64, 0x2d, 0),
+            Sub_rm64_imm32 => (Sub, Group32, 64, 0x81, 5),
+            Sub_rm64_imm8 => (Sub, Group8, 64, 0x83, 5),
+            Xor_rm32_r32 => (Xor, RmReg, 32, 0x31, 0),
+            Xor_r32_rm32 => (Xor, RegRm, 32, 0x33, 0),
+            Xor_EAX_imm32 => (Xor, AccImm, 32, 0x35, 0),
+            Xor_rm32_imm32 => (Xor, Group32, 32, 0x81, 6),
+            Xor_rm32_imm8 => (Xor, Group8, 32, 0x83, 6),
+            Xor_rm64_r64 => (Xor, RmReg, 64, 0x31, 0),
+            Xor_r64_rm64 => (Xor, RegRm, 64, 0x33, 0),
+            Xor_RAX_imm32 => (Xor, AccImm, 64, 0x35, 0),
+            Xor_rm64_imm32 => (Xor, Group32, 64, 0x81, 6),
+            Xor_rm64_imm8 => (Xor, Group8, 64, 0x83, 6),
+            Cmp_rm32_r32 => (Cmp, RmReg, 32, 0x39, 0),
+            Cmp_r32_rm32 => (Cmp, RegRm, 32, 0x3b, 0),
+            Cmp_EAX_imm32 => (Cmp, AccImm, 32, 0x3d, 0),
+            Cmp_rm32_imm32 => (Cmp, Group32, 32, 0x81, 7),
+            Cmp_rm32_imm8 => (Cmp, Group8, 32, 0x83, 7),
+            Cmp_rm64_r64 => (Cmp, RmReg, 64, 0x39, 0),
+            Cmp_r64_rm64 => (Cmp, RegRm, 64, 0x3b, 0),
+            Cmp_RAX_imm32 => (Cmp, AccImm, 64, 0x3d, 0),
+            Cmp_rm64_imm32 => (Cmp, Group32, 64, 0x81, 7),
+            Cmp_rm64_imm8 => (Cmp, Group8, 64, 0x83, 7),
+            Test_rm32_r32 => (Test, RmReg, 32, 0x85, 0),
+            Test_EAX_imm32 => (Test, AccImm, 32, 0xa9, 0),
+            Test_rm32_imm32 => (Test, Group32, 32, 0xf7, 0),
+            Test_rm64_r64 => (Test, RmReg, 64, 0x85, 0),
+            Test_RAX_imm32 => (Test, AccImm, 64, 0xa9, 0),
+            Test_rm64_imm32 => (Test, Group32, 64, 0xf7, 0),
+            Shl_rm32_1 => (Shl, One, 32, 0xd1, 4),
+            Shl_rm32_imm8 => (Shl, Count8, 32, 0xc1, 4),
+            Shl_rm32_CL => (Shl, Cl, 32, 0xd3, 4),
+            Shl_rm64_1 => (Shl, One, 64, 0xd1, 4),
+            Shl_rm64_imm8 => (Shl, Count8, 64, 0xc1, 4),
+            Shl_rm64_CL => (Shl, Cl, 64, 0xd3, 4),
+            Shr_rm32_1 => (Shr, One, 32, 0xd1, 5),
+            Shr_rm32_imm8 => (Shr, Count8, 32, 0xc1, 5),
+            Shr_rm32_CL => (Shr, Cl, 32, 0xd3, 5),
+            Shr_rm64_1 => (Shr, One, 64, 0xd1, 5),
+            Shr_rm64_imm8 => (Shr, Count8, 64, 0xc1, 5),
+            Shr_rm64_CL => (Shr, Cl, 64, 0xd3, 5),
+            Sar_rm32_1 => (Sar, One, 32, 0xd1, 7),
+            Sar_rm32_imm8 => (Sar, Count8, 32, 0xc1, 7),
+            Sar_rm32_CL => (Sar, Cl, 32, 0xd3, 7),
+            Sar_rm64_1 => (Sar, One, 64, 0xd1, 7),
+            Sar_rm64_imm8 => (Sar, Count8, 64, 0xc1, 7),
+            Sar_rm64_CL => (Sar, Cl, 64, 0xd3, 7),
+            _ => return None,
+        };
+        Some(Spec { family, encoding, width, opcode, group })
+    }
+
+    fn old_row(a: super::Description) -> Description {
+        let mut row = Description {
+            decoded: a.decoded, target: a.target, operands: a.operands,
+            address: a.memory, version: a.version, ready: a.ready, refusal: a.refusal,
+            flow: a.flow, condition: a.condition, operand_count: a.operand_count,
+            register_count: a.register_count, memory_count: a.memory_count,
+            address_count: a.memory_count, flags_read: a.flags_read,
+            flags_written: a.flags_written, flags_set: a.flags_set,
+            flags_cleared: a.flags_cleared, flags_undefined: a.flags_undefined,
+            gpr_read: a.gpr_read, gpr_write: a.gpr_write, ..Description::default()
+        };
+        row.registers[..3].copy_from_slice(&a.registers);
+        row
+    }
+    fn raw_form(spec: Spec, bytes: &[u8]) -> bool {
+        let (at, rex) = match bytes.first() {
+            Some(value @ 0x40..=0x4f) => (1, *value),
+            _ => (0, 0),
+        };
+        if (rex & 8 != 0) != (spec.width == 64) { return false; }
+        let tail = &bytes[at..];
+        if spec.family == Family::Movzx {
+            return tail.len() >= 3 && tail[..2] == [0x0f, 0xb6];
+        }
+        if spec.encoding == Encoding::RegImm {
+            return tail.len() == 1 + (spec.width / 8) as usize && tail[0] & 0xf8 == 0xb8;
+        }
+        if spec.encoding == Encoding::AccImm {
+            return tail.len() == 5 && tail[0] == spec.opcode;
+        }
+        if tail.len() < 2 || tail[0] != spec.opcode { return false; }
+        !matches!(spec.encoding, Encoding::Group32 | Encoding::Group8 |
+                  Encoding::One | Encoding::Count8 | Encoding::Cl)
+            || (tail[1] >> 3) & 7 == spec.group
+    }
+    fn register(reg: Register) -> Option<(u32, u32)> {
+        if reg == Register::CL { Some((1, 8)) } else { super::register(reg) }
+    }
+    fn access(value: OpAccess) -> Option<u32> {
+        if value == OpAccess::NoMemAccess { Some(NO_MEM_ACCESS) } else { super::access(value) }
+    }
+    fn reg_operand(ins: &Instruction, index: u32, width: u32, role: u32) -> Result<Operand, u32> {
+        if ins.op_kind(index) != OpKind::Register { return Err(OPERANDS); }
+        let (reg, actual_width) = register(ins.op_register(index)).ok_or(OPERANDS)?;
+        if actual_width != width || (reg == 4 && role & WRITE != 0) { return Err(OPERANDS); }
+        Ok(Operand { kind: REGISTER, reg, width_bits: width, access: role, ..Operand::default() })
+    }
+    fn address_operand(ins: &Instruction, constants: &iced_x86::ConstantOffsets,
+                       bytes: &[u8], spec: Spec, row: &mut Description) -> Result<Operand, u32> {
+        if row.address_count != 0 || ins.is_vsib() { return Err(OPERANDS); }
+        let lea = spec.family == Family::Lea;
+        let width = if lea { 0 } else if spec.family == Family::Movzx { 1 } else { spec.width / 8 };
+        if !lea && memory_width(ins.memory_size()) != Some(width) { return Err(OPERANDS); }
+        let segment = if lea { 0 } else {
+            match ins.memory_segment() { Register::DS => 1, Register::SS => 2, _ => return Err(ADDRESS) }
+        };
+        let scale = ins.memory_index_scale();
+        if !matches!(scale, 1 | 2 | 4 | 8) { return Err(ADDRESS); }
+        let (base, index, displacement) = if ins.is_ip_rel_memory_operand() {
+            if ins.memory_base() != Register::RIP || ins.memory_index() != Register::None || scale != 1 {
+                return Err(ADDRESS);
+            }
+            let at = constants.displacement_offset();
+            if constants.displacement_size() != 4 || at > bytes.len() || bytes.len() - at < 4 {
+                return Err(ADDRESS);
+            }
+            let delta = i32::from_le_bytes(bytes[at..at+4].try_into().map_err(|_| ADDRESS)?);
+            let target = (row.decoded.next_pc as i128) + (delta as i128);
+            if target < 0 || target > u64::MAX as i128 || !canonical(target as u64) {
+                return Err(ADDRESS);
+            }
+            let target = target as u64;
+            if ins.ip_rel_memory_address() != target || ins.memory_displacement64() != target {
+                return Err(ADDRESS);
+            }
+            row.rip_target = target; row.relocation = RIP_DISP32;
+            row.displacement_offset = at as u32; row.displacement_bytes = 4;
+            (NO_REGISTER, NO_REGISTER, target)
+        } else {
+            (address_register(ins.memory_base()).ok_or(ADDRESS)?,
+             address_register(ins.memory_index()).ok_or(ADDRESS)?, ins.memory_displacement64())
+        };
+        row.address = Memory { displacement, base, index, scale, width_bytes: width,
+            address_bits: 64, segment, access: if lea { NO_MEM_ACCESS } else { READ }, reserved: 0 };
+        row.address_count = 1; row.memory_count = u32::from(!lea);
+        Ok(Operand { kind: if lea { ADDRESS_OPERAND } else { MEMORY },
+            width_bits: if lea { 64 } else { width * 8 },
+            access: if lea { NO_MEM_ACCESS } else { READ }, ..Operand::default() })
+    }
+    fn value_operand(ins: &Instruction, index: u32, role: u32, constants: &iced_x86::ConstantOffsets,
+                     bytes: &[u8], spec: Spec, row: &mut Description) -> Result<Operand, u32> {
+        if ins.op_kind(index) == OpKind::Memory {
+            if role != READ || spec.family == Family::Movzx && index != 1 { return Err(OPERANDS); }
+            address_operand(ins, constants, bytes, spec, row)
+        } else { reg_operand(ins, index, spec.width, role) }
+    }
+    fn immediate(ins: &Instruction, constants: &iced_x86::ConstantOffsets,
+                 bytes: &[u8], spec: Spec) -> Result<Operand, u32> {
+        let implicit = spec.encoding == Encoding::One;
+        let bits = match spec.encoding {
+            Encoding::Group8 | Encoding::Count8 => 8,
+            Encoding::RegImm => spec.width,
+            Encoding::One => 0,
+            Encoding::AccImm | Encoding::Group32 => 32,
+            _ => return Err(OPERANDS),
+        };
+        let at = constants.immediate_offset();
+        let n = constants.immediate_size();
+        if n != (bits / 8) as usize || at > bytes.len() || n > bytes.len() - at {
+            return Err(OPERANDS);
+        }
+        let raw = if implicit { 1 } else {
+            let mut value = 0_u64;
+            for (i, byte) in bytes[at..at+n].iter().enumerate() { value |= (*byte as u64) << (8*i); }
+            value
+        };
+        let count = matches!(spec.encoding, Encoding::One | Encoding::Count8);
+        let expected_kind = if count { OpKind::Immediate8 } else {
+            match (bits, spec.width) {
+                (8, 32) => OpKind::Immediate8to32,
+                (8, 64) => OpKind::Immediate8to64,
+                (32, 32) => OpKind::Immediate32,
+                (32, 64) => OpKind::Immediate32to64,
+                (64, 64) => OpKind::Immediate64,
+                _ => return Err(OPERANDS),
+            }
+        };
+        if ins.op1_kind() != expected_kind { return Err(OPERANDS); }
+        let (value, actual) = match expected_kind {
+            OpKind::Immediate8 => (raw, ins.immediate8() as u64),
+            OpKind::Immediate8to32 => (raw as u8 as i8 as i32 as u32 as u64, ins.immediate8to32() as u32 as u64),
+            OpKind::Immediate8to64 => (raw as u8 as i8 as i64 as u64, ins.immediate8to64() as u64),
+            OpKind::Immediate32 => (raw, ins.immediate32() as u64),
+            OpKind::Immediate32to64 => (raw as u32 as i32 as i64 as u64, ins.immediate32to64() as u64),
+            OpKind::Immediate64 => (raw, ins.immediate64()),
+            _ => return Err(OPERANDS),
+        };
+        if value != actual { return Err(OPERANDS); }
+        Ok(Operand { immediate: value, kind: IMMEDIATE, width_bits: if count { 8 } else { spec.width },
+            access: READ, encoding_bits: bits, ..Operand::default() })
+    }
+    fn equal_clear(ins: &Instruction, spec: Spec) -> bool {
+        matches!(spec.family, Family::Sub | Family::Xor) && ins.op0_kind() == OpKind::Register
+            && ins.op1_kind() == OpKind::Register && ins.op0_register() == ins.op1_register()
+    }
+    fn operands(ins: &Instruction, constants: &iced_x86::ConstantOffsets,
+                bytes: &[u8], spec: Spec, row: &mut Description) -> Result<(), u32> {
+        if ins.op_count() != 2 { return Err(OPERANDS); }
+        let clear = equal_clear(ins, spec);
+        let first = match spec.family {
+            Family::Mov | Family::Movzx | Family::Lea => WRITE,
+            Family::Cmp | Family::Test => READ,
+            _ if clear => WRITE,
+            _ => READ_WRITE,
+        };
+        row.operands[0] = value_operand(ins, 0, first, constants, bytes, spec, row)?;
+        row.operands[1] = match spec.encoding {
+            Encoding::RmReg => reg_operand(ins, 1, spec.width, if clear { NONE } else { READ })?,
+            Encoding::RegRm if spec.family == Family::Lea => {
+                if ins.op1_kind() != OpKind::Memory { return Err(OPERANDS); }
+                address_operand(ins, constants, bytes, spec, row)?
+            }
+            Encoding::RegRm if spec.family == Family::Movzx => {
+                if ins.op1_kind() != OpKind::Memory { return Err(OPERANDS); }
+                address_operand(ins, constants, bytes, spec, row)?
+            }
+            Encoding::RegRm => value_operand(ins, 1, if clear { NONE } else { READ }, constants, bytes, spec, row)?,
+            Encoding::Cl => {
+                if ins.op1_register() != Register::CL { return Err(OPERANDS); }
+                reg_operand(ins, 1, 8, READ)?
+            }
+            _ => immediate(ins, constants, bytes, spec)?,
+        };
+        if spec.encoding == Encoding::AccImm && row.operands[0].reg != 0 { return Err(OPERANDS); }
+        row.operand_count = 2; row.flow = NEXT; row.condition = NO_CONDITION;
+        Ok(())
+    }
+    fn flag_effects(ins: &Instruction, spec: Spec, row: &mut Description) -> Result<(), u32> {
+        let actual = [flags(ins.rflags_read()).ok_or(EFFECTS)?, flags(ins.rflags_written()).ok_or(EFFECTS)?,
+            flags(ins.rflags_set()).ok_or(EFFECTS)?, flags(ins.rflags_cleared()).ok_or(EFFECTS)?,
+            flags(ins.rflags_undefined()).ok_or(EFFECTS)?];
+        let expected = match spec.family {
+            Family::Mov | Family::Movzx | Family::Lea => [0; 5],
+            Family::Sub if equal_clear(ins, spec) => [0, 0, PF | ZF, CF | AF | SF | OF, 0],
+            Family::Xor if equal_clear(ins, spec) => [0, 0, PF | ZF, CF | SF | OF, AF],
+            Family::Add | Family::Sub | Family::Cmp => [0, CF | PF | AF | ZF | SF | OF, 0, 0, 0],
+            Family::And | Family::Or | Family::Xor | Family::Test => [0, SF | ZF | PF, 0, CF | OF, AF],
+            Family::Shl | Family::Shr | Family::Sar => {
+                if spec.encoding == Encoding::Cl { [0, CF | PF | ZF | SF, 0, 0, AF | OF] }
+                else {
+                    match row.operands[1].immediate & (spec.width as u64 - 1) {
+                        0 => [0; 5],
+                        1 => [0, CF | PF | ZF | SF | OF, 0, 0, AF],
+                        _ => [0, CF | PF | ZF | SF, 0, 0, AF | OF],
+                    }
+                }
+            }
+        };
+        if actual != expected { return Err(EFFECTS); }
+        [row.flags_read, row.flags_written, row.flags_set, row.flags_cleared, row.flags_undefined] = actual;
+        Ok(())
+    }
+    fn push(rows: &mut [UsedRegister; 4], count: &mut usize, reg: u32, width: u32, role: u32) -> Result<(), u32> {
+        if *count == rows.len() || reg >= 16 { return Err(EFFECTS); }
+        rows[*count] = UsedRegister { reg, width_bits: width, access: role, reserved: 0 };
+        *count += 1; Ok(())
+    }
+    fn expected_registers(row: &Description, spec: Spec) -> Result<([UsedRegister; 4], usize), u32> {
+        let mut rows = [UsedRegister::default(); 4]; let mut count = 0;
+        for operand in &row.operands[..row.operand_count as usize] {
+            if operand.kind == REGISTER && operand.access != NONE {
+                if operand.width_bits == 32 && operand.access == READ_WRITE {
+                    push(&mut rows, &mut count, operand.reg, 32, READ)?;
+                    push(&mut rows, &mut count, operand.reg, 64, WRITE)?;
+                } else {
+                    let width = if operand.width_bits == 32 && operand.access == WRITE { 64 } else { operand.width_bits };
+                    push(&mut rows, &mut count, operand.reg, width, operand.access)?;
+                }
+            } else if matches!(operand.kind, MEMORY | ADDRESS_OPERAND) {
+                for reg in [row.address.base, row.address.index] {
+                    if reg != NO_REGISTER {
+                        let width = if spec.family == Family::Lea { spec.width } else { 64 };
+                        push(&mut rows, &mut count, reg, width, READ)?;
+                    }
+                }
+            }
+        }
+        Ok((rows, count))
+    }
+    fn information(ins: &Instruction, info: &InstructionInfo, spec: Spec, row: &mut Description) -> Result<(), u32> {
+        for i in 0..5 {
+            let want = if i < row.operand_count { row.operands[i as usize].access } else { NONE };
+            if access(info.op_access(i)) != Some(want) { return Err(EFFECTS); }
+        }
+        let (expected, count) = expected_registers(row, spec)?;
+        if info.used_registers().len() != count || info.used_memory().len() != row.memory_count as usize { return Err(EFFECTS); }
+        for (i, value) in info.used_registers().iter().enumerate() {
+            let (reg, width_bits) = register(value.register()).ok_or(EFFECTS)?;
+            let role = access(value.access()).ok_or(EFFECTS)?;
+            let actual = UsedRegister { reg, width_bits, access: role, reserved: 0 };
+            if actual != expected[i] { return Err(EFFECTS); }
+            row.registers[i] = actual;
+            if role & READ != 0 { row.gpr_read |= 1 << reg; }
+            if role & WRITE != 0 { row.gpr_write |= 1 << reg; }
+        }
+        row.register_count = count as u32;
+        if row.gpr_write & (1 << 4) != 0 { return Err(EFFECTS); }
+        if row.memory_count == 1 {
+            let memory = &info.used_memory()[0];
+            let actual = Memory {
+                displacement: memory.displacement(), base: address_register(memory.base()).ok_or(EFFECTS)?,
+                index: address_register(memory.index()).ok_or(EFFECTS)?, scale: memory.scale(),
+                width_bytes: memory_width(memory.memory_size()).ok_or(EFFECTS)?, address_bits: 64,
+                segment: match memory.segment() { Register::DS => 1, Register::SS => 2, _ => return Err(EFFECTS) },
+                access: access(memory.access()).ok_or(EFFECTS)?, reserved: 0,
+            };
+            if memory.address_size() != CodeSize::Code64 || memory.vsib_size() != 0 || actual != row.address { return Err(EFFECTS); }
+        }
+        if ins.code_size() != CodeSize::Code64 || ins.has_op_mask() || ins.is_save_restore_instruction() { return Err(EFFECTS); }
+        Ok(())
+    }
+    fn one(pc: u64, source: &[u8], call: &arena::Call) -> Result<Description, u32> {
+        // Reuse an actual old result only as descriptive facts, not authority.
+        // In particular the35 old branch/CMP-AL forms are never reinterpreted.
+        let old = super::one(pc, source, call)?;
+        if old.ready == 1 { return Ok(old_row(old)); }
+        let decoded = old.decoded;
+        let refused = |reason| Description { decoded, version: VERSION, refusal: reason, ..Description::default() };
+        if decoded.decode_status != abi::VALID { return Ok(refused(old.refusal)); }
+        if !canonical(pc) || !canonical(decoded.next_pc) { return Ok(refused(ADDRESS)); }
+        let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+        let ins = decoder.decode();
+        if ins.is_invalid() || ins.code() as u32 != decoded.code || ins.len() as u32 != decoded.length
+            || ins.next_ip() != decoded.next_pc || decoded.kind != abi::NONE { return Ok(refused(EFFECTS)); }
+        let Some(spec) = domain(ins.code()) else { return Ok(refused(old.refusal)); };
+        let bytes = &source[..ins.len()];
+        if !raw_form(spec, bytes) { return Ok(refused(PREFIX)); }
+        let constants = decoder.get_constant_offsets(&ins);
+        let mut row = Description { decoded, version: VERSION, ..Description::default() };
+        if let Err(reason) = operands(&ins, &constants, bytes, spec, &mut row)
+            .and_then(|_| flag_effects(&ins, spec, &mut row)) { return Ok(refused(reason)); }
+        // All96 forms have <=4 registers/1 memory BEFORE factory entry; only
+        // LEA adjustment, bounded shifts and XOR/SUB clearing are implied.
+        // Clearing's transient vector has <=3 entries before its clear/write.
+        if expected_registers(&row, spec).is_err() || row.memory_count > 1 { return Ok(refused(EFFECTS)); }
+        // SAFETY: the original pre-seal factory and exclusive Call are reused.
+        // Capacities10/8 dominate the source-proved transient4/1 bound.
+        let info = unsafe { (&mut *FACTORY.0.get()).assume_init_mut().info(&ins) };
+        if let Err(reason) = information(&ins, info, spec, &mut row) { return Ok(refused(reason)); }
+        row.ready = 1; Ok(row)
+    }
+
+    /// # Safety
+    /// Same unique aligned writable/disjoint output and owned immutable1..15
+    /// source, initialized sealed arena and single-caller contract as old API.
+    #[unsafe(no_mangle)]
+    pub unsafe extern "C" fn li2_decoder_span_describe(pc: u64, bytes: *const u8,
+                                                       length: usize, out: *mut Description) -> u32 {
+        if out.is_null() { return abi::BAD_ARGUMENT; }
+        // SAFETY: caller owns the complete output even on refusal.
+        unsafe { out.write(Description::default()); }
+        if bytes.is_null() || !(1..=15).contains(&length)
+            || (bytes as usize).checked_add(length).is_none() { return abi::BAD_ARGUMENT; }
+        let call = match arena::enter() { Ok(call) => call, Err(error) => return error };
+        // SAFETY: caller owns the bounded disjoint source storage.
+        let source = unsafe { core::slice::from_raw_parts(bytes, length) };
+        match one(pc, source, &call) {
+            Ok(row) => { unsafe { out.write(row); } abi::OK }
+            Err(error) => error,
+        }
+    }
+}

@@ -61,13 +61,18 @@ def package_check(package):
 
 class Build:
     """Caller retains commands/first errors and checks source() before and after."""
-    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=()):
+    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=(), *, scalar_span=False):
         need(type(extra_decoder_sources) is tuple and len(set(extra_decoder_sources)) == len(extra_decoder_sources) and
              all(type(n) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\.rs", n) for n in extra_decoder_sources),
              'exact unique local extra decoder source names')
         need(extra_decoder_sources in ((), ("region.rs",)), "closed decoder feature/source profiles")
+        need(type(scalar_span) is bool and (not scalar_span or extra_decoder_sources == ("region.rs",)),
+             "scalar-span requires its exact region source")
+        self.scalar_span = scalar_span
         self.extra_decoder_sources = extra_decoder_sources
         self.decoder_features = ("scalar-region",) if extra_decoder_sources else ()
+        if self.scalar_span:
+            self.decoder_features = ("scalar-region", "scalar-span")
         self.record = record.setdefault('build', {'status': 'failed', 'artifacts': {}, 'artifact_prefix': [],
             'output_before': {}, 'started': False, 'command_completed': False, 'final_errors': []})
         self.private, self.pin, self.binary, self.invoke = private, pin, binary, run
@@ -139,6 +144,9 @@ class Build:
         if self.decoder_features:
             self.environment["LI2_DECODER_FEATURES"] = "scalar-region"
         feature_argv = ["--features", "scalar-region"] if self.decoder_features else []
+        if self.scalar_span:
+            self.environment["LI2_DECODER_FEATURES"] = "scalar-span"
+            feature_argv = ["--features", "scalar-span"]
         out, err = self.run('cargo-metadata', [self.tools['cargo'], 'metadata', '--manifest-path',
             decoder/'Cargo.toml', '--format-version', '1', '--locked', '--offline', *feature_argv])
         need(not err, 'metadata stderr')
@@ -200,6 +208,12 @@ class Build:
              'region descriptor export exactly matches selected feature')
         if self.decoder_features:
             self.record['archive_text_exports']['li2_decoder_region_describe'] = 1
+        if self.scalar_span:
+            span_rows = [line.split() for line in out.splitlines()
+                         if line.split()[-1:] == [b'li2_decoder_span_describe']]
+            need(len(span_rows) == 1 and span_rows[0][-2:] == [b'T', b'li2_decoder_span_describe'],
+                 'one actual scalar-span descriptor text definition')
+            self.record['archive_text_exports']['li2_decoder_span_describe'] = 1
         out, err = self.run('bridge-undefined', [self.tools['nm'], '-u', bridge], 'inspect')
         need(out == err == b'', 'no unresolved bridge imports')
         _, err = self.run('bridge-elf', [self.tools['readelf'], '-h', '-l', '-d', '-r', '-W', bridge], 'inspect')

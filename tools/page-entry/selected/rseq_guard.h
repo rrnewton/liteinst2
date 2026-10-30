@@ -88,6 +88,17 @@ struct li2_region_plan;
    source nor executable authority and does not synthesize a run/unroll plan. */
 int li2_rseq_check_region(const struct li2_region_plan *,const ucontext_t *);
 #endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+#if LI2_SCALAR_SPAN_TRACE != 1 || !defined(LI2_SCALAR_SPAN) || LI2_SCALAR_SPAN != 1 || \
+    !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1
+#error "typed span NONE proof requires the actual old region session guards"
+#endif
+struct li2_span_plan;
+/* Caller authenticates genuine closed TRACE or actual generated-exit frame,
+   validates the complete57184-byte immutable plan and current held source, and
+   serializes decoder use. Every head calls the unchanged actual NONE guard. */
+int li2_rseq_check_span(const struct li2_span_plan *,const ucontext_t *);
+#endif
 #ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
 #if LI2_SCALAR_REGION_REUSE_CERTIFICATE != 1 || !defined(LI2_SCALAR_REGION_REUSE) || \
     LI2_SCALAR_REGION_REUSE != 1 || !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1

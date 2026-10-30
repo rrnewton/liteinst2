@@ -6,10 +6,10 @@ from maps_view import (need,fact,SELECTED,UNITS,MACROS,recipe,expand,headers,bri
     ENV,hidden_memset,body_check)
 
 FIXED_DOMAIN = {
-    'decoder/src/region.rs': (22485, 'aa01305ee7f65a045efb114b94062c8199e2c0bd18ba925df8af750b376c3d23'),
+    'decoder/src/region.rs': (48896, '238884489e8b82a27040f785a5dde1b446a9b3ae5c29e640a95cd110a5e68cb5'),
     'decoder/src/write_footprint.rs': (10124, '754fbc625a52f27dfe20ce3353f761586a4eb1640c64fe846634c8d14501dfe7'),
     'decoder/src/tf.rs': (45018, 'e09a1c170f50c59f8faa34ecdc69ddfe9e651158f0f00a668ed7ef2c82059e38'),
-    'region_decode.h': (4531, '21f4f141a420672d365ee26c05063916012fdd31356834c094fdf3da1a6a67e9'),
+    'region_decode.h': (7150, 'd9ccb59abd39bff378ecb30460e6d5c45142c2f77636b2c25068db9446a6e529'),
 }
 POLICY_INPUTS = tuple(FIXED_DOMAIN) + (
     'region_plan.c','region_plan.h','region_source.h','region_source.inc',
