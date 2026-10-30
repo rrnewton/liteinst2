@@ -217,12 +217,17 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     need(sha(raw) == digest(profile_sha256), 'externally frozen final checker profile')
     profile = decode(raw)
     need(set(profile) == {'schema', 'native_revision', 'native_sources', 'artifact_source_profile', 'arguments', 'bootstrap',
-        'contract', 'reviewed', 'observer'} and profile['schema'] == 'LI2STARTUP-FINAL-PROFILE-1', 'explicit final profile shape')
+        'contract', 'reviewed', 'observer'} and profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-1', 'LI2STARTUP-FINAL-PROFILE-2'),
+         'explicit final profile shape')
+    namespace_profile = profile['schema'] == 'LI2STARTUP-FINAL-PROFILE-2'
     need(type(profile['native_revision']) is str and re.fullmatch('[0-9a-f]{40}', profile['native_revision']) is not None,
          'actual separately committed native source revision')
     source_map = profile['native_sources']
     need(type(source_map) is dict and REQUIRED_NATIVE <= set(source_map) and len(source_map) <= 128,
          'complete separately pinned native source roster')
+    if namespace_profile:
+        need({NATIVE+'dependency_constructors.py', NATIVE+'dependency_constructor_controls.py'} <= set(source_map),
+             'separately pinned complete-namespace resolver/control source')
     source_records = {str(profile_path): (raw, profile_pin)}
     sources = {}
     for relative, expected in source_map.items():
@@ -235,6 +240,7 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     need(source_map[NATIVE+'package.py'] == PACKAGE_SHA, 'unchanged package resolver v2')
     platform = load_source(sources[NATIVE+'final_platform.py'], root/NATIVE/'final_platform.py')
     reader = load_source(sources[NATIVE+'final_bootstrap.py'], root/NATIVE/'final_bootstrap.py')
+    dependency = load_source(sources[NATIVE+'dependency_constructors.py'], root/NATIVE/'dependency_constructors.py') if namespace_profile else None
     package = load_source(sources[NATIVE+'package.py'], root/NATIVE/'package.py')
     # The running entrypoint is included, but no caller can turn arbitrary new
     # source into authority merely by changing a map: the externally supplied
@@ -280,9 +286,15 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     source_records[str(contract_path)] = (contract_raw, contract_pin)
     reviewed = profile['reviewed']
     platform.keys(reviewed, ('dependencies', 'bootstraps', 'xstate_bytes'), 'whole actual-facts review roster')
-    platform.keys(reviewed['dependencies'], platform.ROLES, 'all platform objects reviewed')
+    if namespace_profile:
+        platform.keys(reviewed['dependencies'], PROGRAMS, 'both complete dependency namespaces reviewed')
+        for program in PROGRAMS:
+            platform.keys(reviewed['dependencies'][program], platform.ROLES, 'all per-program platform objects reviewed')
+    else:
+        platform.keys(reviewed['dependencies'], platform.ROLES, 'all platform objects reviewed')
     platform.keys(reviewed['bootstraps'], PROGRAMS, 'both whole bootstrap rosters reviewed')
-    for h in [*reviewed['dependencies'].values(), *reviewed['bootstraps'].values()]: digest(h)
+    dependency_hashes = [h for program in PROGRAMS for h in reviewed['dependencies'][program].values()] if namespace_profile else list(reviewed['dependencies'].values())
+    for h in [*dependency_hashes, *reviewed['bootstraps'].values()]: digest(h)
     need(type(reviewed['xstate_bytes']) is int and 576 <= reviewed['xstate_bytes'] <= 16384, 'unchanged observer xstate bound')
     platform.keys(profile['observer'], ('binary', 'build'), 'actual observer binary/build reference')
     reference(profile['observer']['build'], directory=True)
@@ -318,8 +330,9 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
         dso = modules['startup_dso']
         facts, objects = {}, {}
         for role in platform.ROLES:
-            facts[role] = platform.library_facts(dependencies[role], role, package, dso)
-            need(sha(platform.canonical(facts[role])) == reviewed['dependencies'][role], 'whole actual platform facts reviewed')
+            if not namespace_profile:
+                facts[role] = platform.library_facts(dependencies[role], role, package, dso)
+                need(sha(platform.canonical(facts[role])) == reviewed['dependencies'][role], 'whole actual platform facts reviewed')
             objects[role] = platform.object_pages(dependencies[role], value['files'][role], package, dso)
             no_capabilities(value['files'][role])
         programs = {}
@@ -327,6 +340,13 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
             item = saved['programs'][program]
             need(sha(platform.canonical(item['linked'])) == reviewed['bootstraps'][program],
                  'whole actual bootstrap facts reviewed, including every constructor/finalizer')
+            if namespace_profile:
+                namespace = dependency.Namespace(dict(main=item['main']['product']['candidate.elf'],
+                    bootstrap=item['bootstrap'], **dependencies), package, dso)
+                for role in platform.ROLES:
+                    scoped = platform.library_facts_v2(dependencies[role], role, package, dso, namespace)
+                    need(sha(platform.canonical(scoped)) == reviewed['dependencies'][program][role],
+                         'whole actual per-program dependency namespace facts reviewed')
             entry = platform.main_facts(item, value, accept_contract_sha256, package, dso)
             main = item['main']; main_pin = main['main_pin']; bootstrap_pin = item['bootstrap_pin']
             need(held.retain(main_pin, 16*MIB) == main['product']['candidate.elf'] and

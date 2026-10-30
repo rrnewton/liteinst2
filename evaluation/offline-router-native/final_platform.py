@@ -195,6 +195,43 @@ def library_facts(raw, role, package, dso):
         relro=[list(p) for p in elf.ph if p[0] == 0x6474e552])
 
 
+def library_facts_v2(raw, role, package, dso, namespace):
+    """Named whole-namespace dependency profile; the v1 function is unchanged."""
+    need(namespace.objects[role]['elf'].raw == raw, 'actual namespace dependency bytes')
+    elf = package.Elf(raw)
+    need(elf.kind == 3, 'platform library ET_DYN')
+    pages = dso.load_pages(elf)
+    tags, offsets = dso.dynamic(elf)
+    need(all(k in tags for k in (5, 6, 10, 11)) and tags[11] == 24 and tags[10] <= MIB,
+         'platform dynamic string/symbol tables')
+    strings = elf.at(tags[5], tags[10])
+    tables = {i: elf.symbols(i) for i, s in enumerate(elf.sh) if s[1] in (2, 11)}
+    symbols = tables[elf.dynamic_symbols(tags, tables)]
+    needed = [dso.string(strings, at) for at in offsets]
+    expected = {'loader': [], 'libc': ['ld-linux-x86-64.so.2'], 'libgcc': ['libc.so.6']}[role]
+    need(needed == expected and 15 not in tags and 29 not in tags, 'exact platform dependency edges/no search injection')
+    soname = dso.string(strings, tags[14]) if 14 in tags else None
+    need(soname == next(name for name, r in SONAMES.items() if r == role), 'actual platform SONAME')
+    need(22 not in tags and not tags.get(30, 0) & 4, 'no platform text relocations')
+    records = dso.relocations(elf, tags)
+    need(all(r['symbol'] < len(symbols) for r in records), 'platform relocation symbol ownership')
+    stack = [p for p in elf.ph if p[0] == 0x6474e551]
+    need(len(stack) == 1 and stack[0][1] == 6, 'platform GNU stack remains RW/non-X')
+    notes = dso.notes(elf)
+    # Platform code may contain ENDBR/IBT notes. The reviewed loader contract
+    # covers its behavior with an unmarked main and non-CET bootstrap. Do not
+    # silently strip those facts or infer current kernel SHSTK from ELF notes.
+    return dict(schema='LI2STARTUP-PLATFORM-LIBRARY-FACTS-2',
+        constructor_profile='gnu-five-object-unique-versioned-constructor-v1', namespace=namespace.identities, role=role, bytes=len(raw), sha256=sha(raw),
+        entry=elf.entry, loads=[list(p) for p in elf.loads], page_owners=pages,
+        needed=needed, soname=soname, dynamic_tags={str(k): v for k, v in sorted(tags.items())},
+        symbols=[dict(index=i, name=n.hex(), info=s[1], visibility=s[2], section=s[3], value=s[4], bytes=s[5])
+                 for i, (n, s) in enumerate(symbols)], relocations=records,
+        constructors=namespace.constructors(role, records), notes=notes,
+        tls=[list(p) for p in elf.ph if p[0] == 7], stack=list(stack[0]),
+        relro=[list(p) for p in elf.ph if p[0] == 0x6474e552])
+
+
 def object_pages(raw, pin, package, dso):
     """Actual initial/relocated page owners; only immutable bytes are compared."""
     elf = package.Elf(raw)
