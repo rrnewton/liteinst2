@@ -170,6 +170,32 @@ class Controls(unittest.TestCase):
         for prefix in {n.split('::tests::')[0] for n in runner.SDK_CONTROLS}:
             self.refuses(lambda prefix=prefix:runner.sdk_inventory(list(runner.SDK_CONTROLS)+[prefix+'::tests::extra']))
 
+        self.assertEqual(len(runner.APP_CONTROLS), 27)
+        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),79)
+        self.assertEqual(len(runner.SDK_CONTROLS),45)
+        self.assertEqual(len(runner.ACCURACY_CONTROLS),11)
+        self.assertEqual(len(runner.SDK_ACCURACY_CONTROLS),27)
+        self.assertEqual(runner.APP_CONTROLS[16:],runner.ACCURACY_CONTROLS)
+        self.assertEqual(runner.SDK_CONTROLS[18:],runner.SDK_ACCURACY_CONTROLS)
+        self.assertEqual(runner.SDK_LEGACY_PREFIXES,tuple(sorted({n.split('::tests::')[0]+'::' for n in runner.SDK_CONTROLS[:18]})))
+        for name in old+runner.APP_CONTROLS:
+            self.refuses(lambda name=name:runner.ordinary_inventory(inventory+[name],recipe,single,module))
+        self.refuses(lambda:runner.ordinary_inventory(list(old+runner.APP_CONTROLS[:16]),recipe,single,module))
+        for prefix in ('normal::leaf_set::accuracy_tests::','normal::leaf_set::selected::accuracy_tests::',
+                       'normal::leaf_set::counter::tests::','normal::session::io::accuracy_tests::'):
+            self.refuses(lambda prefix=prefix:runner.ordinary_inventory(inventory+[prefix+'unregistered'],recipe,single,module))
+        for name in runner.SDK_CONTROLS:
+            self.refuses(lambda name=name:runner.sdk_inventory(list(runner.SDK_CONTROLS)+[name]))
+        self.refuses(lambda:runner.sdk_inventory(list(runner.SDK_CONTROLS[:18])))
+        for prefix in ('frontend_native::always_on::normal::accuracy::tests::',
+                       'frontend_native::always_on::normal::leaf_set::accuracy_tests::',
+                       'frontend_native::backoff::accuracy_tests::',
+                       'frontend_native::backoff::driver::schedule::accuracy_tests::'):
+            self.refuses(lambda prefix=prefix:runner.sdk_inventory(list(runner.SDK_CONTROLS)+[prefix+'unregistered']))
+        for name in runner.SDK_ACCURACY_CONTROLS:
+            changed=[n if n!=name else name.rsplit('::',1)[0]+'::unregistered' for n in runner.SDK_CONTROLS]
+            self.refuses(lambda changed=changed:runner.sdk_inventory(changed))
+
     def test_failures_keep_all_attempts_and_stop_uncertain_custody(self):
         _,rows=runner.initial_rows(catalog)
         def closed(row):row.update(status='FAILED' if row['index']==1 else 'PASS',attempts=1)

@@ -16,7 +16,7 @@ import types
 
 PUBLIC = 'evaluation/ordinary-call-pair-session/'
 NATIVE_PUBLIC = 'evaluation/ordinary-call-pair-native/'
-LAUNCHER_SHA = '18047da7378fd6e295f800a50667b20c3b53b2038c49552090fdb455c9291d12'
+LAUNCHER_SHA = 'd66a8efa39a6bd246d2193fad1f92a948bb1330e6a4a5a3f73f5d76539f4ac16'
 NATIVE_LAUNCHER_SHA = '5665c1dd0b98ff0884fd3132ed807b33e814463d226158f532ea4605ea90b7e5'
 NATIVE_FREEZER_SHA = 'd5988152be6b826d368f43723afd16b411e36cb1d02e3e11530349405390484f'
 OWNER = 'evaluation/admission/processes.py'

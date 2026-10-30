@@ -38,7 +38,69 @@ APP_CONTROLS += (
     'normal::leaf_set::preparation_diagnostic::tests::planning_metadata_uses_only_retained_lengths_and_flags',
     'normal::leaf_set::preparation_diagnostic::tests::maximum_counters_and_overflow_keep_one_bounded_failure_line',
 )
+# Complete new accuracy modules are required, never ignored by a prefix exception.
+ACCURACY_PREFIXES = (
+    'normal::leaf_set::accuracy_tests::',
+    'normal::leaf_set::selected::accuracy_tests::',
+    'normal::leaf_set::counter::tests::',
+    'normal::session::io::accuracy_tests::',
+)
+ACCURACY_CONTROLS = (
+    'normal::leaf_set::accuracy_tests::accuracy_ready_binds_actual_period_and_old_headers_remain_literal',
+    'normal::leaf_set::accuracy_tests::consumer_refuses_legacy_substitution_wrong_k_epochs_calls_or_transport_options',
+    'normal::leaf_set::accuracy_tests::arm_wire_keeps_actual_observations_and_late_completed_arms',
+    'normal::leaf_set::selected::accuracy_tests::full_matrix_preserves_every_selected_function_and_full_input_denominator',
+    'normal::leaf_set::selected::accuracy_tests::invalid_accuracy_profile_and_selection_refuse_before_table_loading',
+    'normal::leaf_set::selected::accuracy_tests::table_refusal_remains_terminal_and_old_parser_does_not_accept_new_k_or_grammar',
+    'normal::leaf_set::counter::tests::failed_acquisition_and_close_keep_all_raw_attribute_bytes_and_absences',
+    'normal::leaf_set::counter::tests::short_and_failed_reads_preserve_return_errno_length_buffer_and_both_clocks',
+    'normal::leaf_set::counter::tests::numeric_extremes_fit_350_without_scaling_id_loss_or_debug_fields',
+    'normal::session::io::accuracy_tests::complete_rosters_fit_only_the_explicit_accuracy_output_capacity',
+    'normal::session::io::accuracy_tests::both_caps_refuse_one_byte_over_without_discarding_pending_output',
+)
+APP_CONTROLS += ACCURACY_CONTROLS
+
 SDK_CONTROLS = ('frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_selection_count_order_and_source_are_exact', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_page_union_refuses_conflicts_gaps_and_third_page', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_overlay_retains_every_unselected_byte', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_last_selection_refuses_before_loader', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_roles_and_policies_cover_all_members', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_budget_refuses_aggregate_overflow', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_identity_and_complete_union_are_required', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_control_lookup_keeps_exact_function', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_profile_requires_exact_count_k_history_and_mode', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_banks_prepare_once_and_preserve_refused_identity', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_runtime_keeps_saved_function_and_closed_receipt', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_validates_every_row_and_journal_word', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_refusals_leave_receipt_and_cursors_unchanged', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_output_captures_complete_identity_before_consumption', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_reclaim_preserves_shared_owners_and_fresh_generation', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_handles_refuse_all_old_profiles', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_full_identity_and_replay_are_exact', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_streams_do_not_retain_epochs')
+# Derive the old broad ownership prefixes from the unchanged eighteen names
+# before appending modules whose registration is accuracy_tests, not tests.
+SDK_LEGACY_PREFIXES = tuple(sorted({name.split('::tests::')[0] + '::' for name in SDK_CONTROLS}))
+SDK_ACCURACY_PREFIXES = (
+    'frontend_native::always_on::normal::accuracy::tests::',
+    'frontend_native::always_on::normal::leaf_set::accuracy_tests::',
+    'frontend_native::backoff::accuracy_tests::',
+    'frontend_native::backoff::driver::schedule::accuracy_tests::',
+)
+SDK_ACCURACY_CONTROLS = (
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_attributes_are_exact_current_thread_pinned_non_inherited_instructions',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_open_failure_retains_both_attr_images_and_errno_without_ioctl_or_read',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_each_partial_read_and_error_retains_exact_raw_buffer_and_result',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_id_enable_and_read_identity_failures_never_discard_words',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_pid_or_tid_mismatch_cannot_read_disable_or_close_foreign_owner',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_disable_and_close_failures_are_retained_and_close_is_never_retried',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_drop_has_one_owned_close_even_during_unwind',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_32_real_normal_calls_keep_sampled_unsampled_and_exact_acknowledgments',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_all_pmu_open_failures_preserve_all_normal_work_and_missing_endpoints',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_short_or_error_endpoints_survive_real_normal_checkpoint',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_pre_ret_endpoint_does_not_acknowledge_receipt_and_missing_ret_refuses',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_legacy_export_and_allocation_refusals_cannot_drop_or_ack_sidecars',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_33rd_call_refuses_capacity_without_an_extra_endpoint_or_reset',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_sidecar_key_end_presence_and_owner_drift_refuse_without_consumption',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_facade_checkpoint_and_empty_detach_return_all_counter_custody',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_dropped_or_forgotten_handle_keeps_normal_receipt_and_counter_owner',
+    'frontend_native::always_on::normal::accuracy::tests::accuracy_state_owner_drift_refuses_export_without_consumption',
+    'frontend_native::always_on::normal::leaf_set::accuracy_tests::accuracy_bindings_require_explicit_policy_exact_config_and_original_limits',
+    'frontend_native::always_on::normal::leaf_set::accuracy_tests::old_and_accuracy_banks_cannot_substitute_even_at_identical_k_and_period',
+    'frontend_native::always_on::normal::leaf_set::accuracy_tests::matrix_uses_real_k_closure_receipt_acknowledgement_recycled_banks_and_history',
+    'frontend_native::backoff::accuracy_tests::accuracy_matrix_is_explicit_and_keeps_finite_and_deadline_bounds',
+    'frontend_native::backoff::accuracy_tests::legacy_constructor_is_not_an_accuracy_policy_even_at_identical_numbers',
+    'frontend_native::backoff::accuracy_tests::old_driver_boundary_refuses_accuracy_before_any_activation',
+    'frontend_native::backoff::driver::schedule::accuracy_tests::matrix_has_exact_original_dues_520_acknowledged_arms_and_exclusive_shutdown',
+    'frontend_native::backoff::driver::schedule::accuracy_tests::overlapping_one_ms_windows_keep_original_dues_without_renewing_lateness',
+    'frontend_native::backoff::driver::schedule::accuracy_tests::every_period_keeps_two_ms_edges_sticky_failure_and_actual_completed_count',
+    'frontend_native::backoff::driver::schedule::accuracy_tests::one_ms_end_and_requested_stop_do_not_get_a_fresh_arm_or_shutdown_budget',
+)
+SDK_CONTROLS += SDK_ACCURACY_CONTROLS
+
 CHECKER_CONTROLS = ('test_all_cardinalities_empty_and_complete_populations', 'test_input_grammar_and_four_operation_results_are_independent', 'test_selected_table_and_runtime_geometry_require_complete_exact_identity', 'test_each_wire_family_missing_duplicate_reordered_or_extra_refuses', 'test_history_starts_at_one_and_keeps_multi_action_chunks_and_empty_reports', 'test_global_slots_local_ranks_and_mixed_generation_record', 'test_full_budget_call_sample_boundary_and_function_closed', 'test_three_call_records_checkpoint_without_six_call_batches', 'test_stack_continuation_return_and_acknowledgement_domains', 'test_report_sample_bijection_copy_order_and_payload_observation', 'test_zero_maximum_and_unavailable_precedence_are_lossless', 'test_coverage_and_terminal_conserve_all_rows', 'test_exact_stderr_expected_outcomes_and_hard_failures_remain_distinct', 'test_framing_numeric_caps_and_optimization_refusal')
 RUNNER_CONTROLS = ('test_fixed_catalog_and_literal_accepted_bytes', 'test_reference_gate_requires_exact_source_table_and_all_results', 'test_immutable_commands_source_and_first_pins', 'test_complete_closure_pid_stderr_exit_and_scalar_joins', 'test_exact_control_censuses_reject_missing_extra_and_keep_t2', 'test_failures_keep_all_attempts_and_stop_uncertain_custody', 'test_geometry_keeps_symbols_operation_identity_and_continuation', 'test_aggregate_budget_and_public_projection_preserve_all_rows', 'test_producer_plan_and_ready_domains')
 
@@ -64,21 +126,27 @@ def initial_rows(catalog):
 
 
 def ordinary_inventory(inventory, recipe, single, module):
+    assert len(inventory) == len(set(inventory))
+    assert len(ACCURACY_CONTROLS) == len(set(ACCURACY_CONTROLS)) == 11
+    assert set(n for n in inventory if n.startswith(ACCURACY_PREFIXES)) == set(ACCURACY_CONTROLS)
     prefixes = ('normal::leaf_set::', 'normal::module::session::input::leaf_set_tests::',
-                'normal::session::worker::leaf_set_tests::')
+                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES
     assert set(n for n in inventory if n.startswith(prefixes)) == set(APP_CONTROLS)
     prior = recipe.ordinary_inventory([n for n in inventory if n not in APP_CONTROLS],
                                      single, module, recipe.OWNER_CONTROLS)
-    assert len(prior) == 52 and len(APP_CONTROLS) == 16
+    assert len(prior) == 52 and len(APP_CONTROLS) == 27
     wanted = tuple(prior) + APP_CONTROLS
-    assert len(wanted) == len(set(wanted)) == 68
+    assert len(wanted) == len(set(wanted)) == 79
     return wanted
 
 
 def sdk_inventory(inventory):
-    prefixes = tuple(sorted({name.split('::tests::')[0] + '::' for name in SDK_CONTROLS}))
+    assert len(inventory) == len(set(inventory))
+    assert len(SDK_ACCURACY_CONTROLS) == len(set(SDK_ACCURACY_CONTROLS)) == 27
+    assert set(n for n in inventory if n.startswith(SDK_ACCURACY_PREFIXES)) == set(SDK_ACCURACY_CONTROLS)
+    prefixes = SDK_LEGACY_PREFIXES + SDK_ACCURACY_PREFIXES
     assert set(name for name in inventory if name.startswith(prefixes)) == set(SDK_CONTROLS)
-    assert len(SDK_CONTROLS) == len(set(SDK_CONTROLS)) == 18
+    assert len(SDK_CONTROLS) == len(set(SDK_CONTROLS)) == 45
     return SDK_CONTROLS
 
 
