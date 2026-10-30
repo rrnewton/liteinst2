@@ -22,8 +22,8 @@ def load(name, expected):
     return module
 
 
-H = load('head_capture.py', 'ae10489d1ff6449a596d491f5732cc58c95040e7353d6815b4c00e0f49eb0d01')
-F = load('disassembly_controls.py', 'b369d49735f3274cab5256836ff7b5e567fbe2a4ee3f9ce2c177e6b3d19b376a')
+H = load('head_capture.py', 'dd8a4c5db6ae7c1f4e3a7aaf7c3336e62e62ae3301670738a0cadf10923f3e31')
+F = load('disassembly_controls.py', '6f023794a0c71e36afdc480278bf17bb7aa18692ece35e8732d598184f2c5a46')
 
 
 def displays(inputs):

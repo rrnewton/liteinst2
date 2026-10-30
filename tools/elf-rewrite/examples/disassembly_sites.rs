@@ -67,6 +67,7 @@ enum Mode {
     LongOnly,
     ShortOnly,
     ShortT3Ownership,
+    ShortT3Pending,
 }
 
 fn arguments_with_ownership(args: &[String]) -> Result<(&[String], Mode), String> {
@@ -94,10 +95,32 @@ fn arguments_with_ownership(args: &[String]) -> Result<(&[String], Mode), String
     }
 }
 
+// Recognize only this new leading form; every legacy positional form delegates.
+fn arguments_with_pending(args: &[String]) -> Result<(&[String], Mode), String> {
+    if args.len() == 8 && args[1] == "--short-neighbors-pending" {
+        if args[2..].iter().any(|s| {
+            matches!(
+                s.as_str(),
+                "--short-neighbors-only" | "--short-neighbors-owned" | "--short-neighbors-pending"
+            )
+        }) {
+            return Err("disassembly_sites --short-neighbors-pending ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY".into());
+        }
+        Ok((&args[2..], Mode::ShortT3Pending))
+    } else {
+        arguments_with_ownership(args)
+    }
+}
+
 fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static str) {
     match mode {
         Mode::LongOnly => labels(false),
         Mode::ShortOnly => labels(true),
+        Mode::ShortT3Pending => (
+            disassembly::SHORT_T3_PENDING_PROFILE,
+            "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\n",
+            " neighbor_victims=short-only neighbor_ownership=inherited-t3 pending_selected=full-instruction-ownership",
+        ),
         Mode::ShortT3Ownership => (
             disassembly::SHORT_T3_OWNERSHIP_PROFILE,
             "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\n",
@@ -108,7 +131,7 @@ fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static st
 
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, mode) = arguments_with_ownership(&raw_args)?;
+    let (args, mode) = arguments_with_pending(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_ownership(mode);
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;
@@ -128,12 +151,14 @@ fn run() -> Result<bool, String> {
                 Mode::LongOnly => imported.inventory(),
                 Mode::ShortOnly => imported.inventory_short_neighbors(),
                 Mode::ShortT3Ownership => imported.inventory_short_t3_ownership(),
+                Mode::ShortT3Pending => imported.inventory_short_t3_pending(),
             },
         );
         let selected = match mode {
             Mode::LongOnly => imported.bind(&policy, expected_policy)?,
             Mode::ShortOnly => imported.bind_short_neighbors(&policy, expected_policy)?,
             Mode::ShortT3Ownership => imported.bind_short_t3_ownership(&policy, expected_policy)?,
+            Mode::ShortT3Pending => imported.bind_short_t3_pending(&policy, expected_policy)?,
         };
         assert_eq!(selected.profile(), profile);
         files.insert("selection.txt".into(), selected.manifest().to_vec());
@@ -321,5 +346,96 @@ mod tests {
         let mut extra = owned;
         extra.push("extra".into());
         assert!(arguments_with_ownership(&extra).is_err());
+    }
+
+    #[test]
+    fn pending_short_cli_preserves_legacy_paths_and_exact_prebind_labels() {
+        let base: Vec<String> = [
+            "program",
+            "original",
+            "ledger",
+            "ledger-sha",
+            "policy",
+            "policy-sha",
+            "out",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+        let flags = [
+            "--short-neighbors-only",
+            "--short-neighbors-owned",
+            "--short-neighbors-pending",
+        ];
+        for path in flags {
+            let mut old = base.clone();
+            old[1] = path.into();
+            assert_eq!(arguments_with_pending(&old), arguments_with_ownership(&old));
+            let (positional, mode) = arguments_with_pending(&old).unwrap();
+            assert_eq!(positional, &old[1..]);
+            assert_eq!(mode, Mode::LongOnly);
+            assert_eq!(labels_with_ownership(mode), labels(false));
+        }
+        for path in ["--short-neighbors-owned", "--short-neighbors-pending"] {
+            let mut old_short = base.clone();
+            old_short[1] = path.into();
+            old_short.insert(1, "--short-neighbors-only".into());
+            assert_eq!(
+                arguments_with_pending(&old_short),
+                arguments_with_ownership(&old_short)
+            );
+            let (positional, mode) = arguments_with_pending(&old_short).unwrap();
+            assert_eq!(positional, &old_short[2..]);
+            assert_eq!(mode, Mode::ShortOnly);
+            assert_eq!(labels_with_ownership(mode), labels(true));
+        }
+        let mut pending = base.clone();
+        pending.insert(1, "--short-neighbors-pending".into());
+        let (positional, mode) = arguments_with_pending(&pending).unwrap();
+        assert_eq!(positional, &base[1..]);
+        assert_eq!(mode, Mode::ShortT3Pending);
+        let expected = (
+            disassembly::SHORT_T3_PENDING_PROFILE,
+            "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\n",
+            " neighbor_victims=short-only neighbor_ownership=inherited-t3 pending_selected=full-instruction-ownership",
+        );
+        assert_eq!(labels_with_ownership(mode), expected);
+        assert!(disassembly::import(&[], &[], ContentId::of(&[])).is_err());
+        assert_eq!(labels_with_ownership(mode), expected);
+        for position in 2..8 {
+            for flag in flags {
+                let mut bad = pending.clone();
+                bad[position] = flag.into();
+                assert!(arguments_with_pending(&bad).is_err());
+            }
+        }
+        // Seven arguments are still six literal paths, even if this resembles
+        // a truncated pending invocation. It must never activate pending mode.
+        let (positional, mode) = arguments_with_pending(&pending[..7]).unwrap();
+        assert_eq!(positional, &pending[1..7]);
+        assert_eq!(mode, Mode::LongOnly);
+        assert_eq!(
+            arguments_with_pending(&pending[..7]),
+            arguments_with_ownership(&pending[..7])
+        );
+        for flag in flags {
+            let mut mixed = pending.clone();
+            mixed.insert(2, flag.into());
+            assert!(arguments_with_pending(&mixed).is_err());
+        }
+        let mut unknown = pending.clone();
+        unknown[1] = "--unknown".into();
+        assert_eq!(
+            arguments_with_pending(&unknown),
+            arguments_with_ownership(&unknown)
+        );
+        assert!(arguments_with_pending(&unknown).is_err());
+        let mut misplaced = pending.clone();
+        misplaced.swap(1, 2);
+        assert!(arguments_with_pending(&misplaced).is_err());
+        assert!(arguments_with_pending(&pending[..6]).is_err());
+        let mut extra = pending;
+        extra.push("extra".into());
+        assert!(arguments_with_pending(&extra).is_err());
     }
 }

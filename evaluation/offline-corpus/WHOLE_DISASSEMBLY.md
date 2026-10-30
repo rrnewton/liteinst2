@@ -199,3 +199,58 @@ other four tactics retain first local success and possible final append refusal.
 The importer still requires its actual append, complete selection and every hook,
 entry, aggregate and carrier guard. No native or E9 adapter is provided, and
 neither materials nor a structural candidate establishes execution qualification.
+
+
+## Explicit short T3 pending-selection profile
+
+`attempt(program, inputs, expected, profile=SHORT_T3_PENDING_PROFILE)` selects
+`offline-whole-authored-short-t3-pending-2g-v1`. It uses the same broad placement
+helper and all existing owned-profile limits, seeds, permits and allocation rows.
+The policy begins:
+
+```text
+LI2DISASM-POLICY 4
+original ORIGINAL_SHA256
+ledger LEDGER_SHA256
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+pending-selected full-instruction-ownership
+```
+
+Removing the final mode row and restoring header version three reproduces the
+owned policy exactly. Removing all three mode rows and restoring version one
+reproduces the broad policy. Every policy byte contributes to its frozen digest.
+The importer also bounds the full policy and full selection projection before
+its private parser view; the retained projection includes all three mode rows.
+No evaluation helper strips them for a legacy parser or comparator.
+
+Use `--placement-profile offline-whole-authored-short-t3-pending-2g-v1` with the
+existing reproduction command. It selects the importer's leading
+`--short-neighbors-pending` flag and exact profile
+`elf-disassembly-null-jumps-short-t3-pending-v1`. This explicit flag precedes the
+same six positional arguments. The new form rejects repeated or mixed mode flags
+in those operands. All older CLI forms keep their positional filename rules,
+including flag-looking filenames; seven arguments still mean six literal paths.
+Only the exact eight-argument leading pending form activates pending mode.
+
+The three ordered metadata rows are `neighbor_victims\tshort-only`,
+`neighbor_ownership\tinherited-t3` and
+`pending_selected\tfull-instruction-ownership`. They follow profile in verified
+inventory, planning, failure and COMPLETE, and matching stdout tokens are required.
+New material results retain these fields on refusal too. New reproduction reports
+bind `placement_profile`, `importer_profile` and all three fields alongside the
+existing capture identity, including in inputs.json and closed.json. Raw build
+captures and LI2AUTHORED-HEADS remain unchanged and mode-neutral; these labels grant
+no provenance beyond the existing source, release, configuration and custody checks.
+
+The complete original 187-head/42-jump population remains selected. The importer
+uses its full original instruction table, excludes only the current instruction
+from pending checks and discharges it only after the complete transaction commits.
+Failed instructions stay pending. Short neighboring-instruction eviction checks
+actual inherited append and pending ownership within the original search counters.
+Generalized pun, ordinary relocation, prefixed pun and successor eviction keep their
+local-success behavior; a later pending conflict refuses without fallback. Final
+append, original/current-overlay, entry, hook, dependency, aggregate, carrier and
+all-selected publication guards remain required. There is one importer invocation
+per ready program and no retry, cap change or corpus subset. This exposure adds
+no E9 adapter, live authority or native/performance qualification.

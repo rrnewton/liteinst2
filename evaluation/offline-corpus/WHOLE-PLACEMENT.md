@@ -99,3 +99,38 @@ Final caller append, hook/entry/aggregate/carrier checks and whole-program refus
 remain. The projection retains both mode rows and has no legacy comparator/E9
 replay adapter. This profile adds no native, loader, performance or qualification
 claim and does not promise that a whole-program candidate exists.
+
+
+The separate `offline-whole-authored-short-t3-pending-2g-v1` profile preserves
+all placement bytes of the owned profile: the same 2 GiB hull, permits, preferred
+addresses, search bounds, one candidate and 4096 mapped bytes per role. Select it
+with `--placement-profile offline-whole-authored-short-t3-pending-2g-v1` after
+the same current-source release capture. The single importer invocation for each
+ready program uses the leading `--short-neighbors-pending` flag.
+
+Policy version four retains `neighbor-victims short-only` and
+`neighbor-ownership inherited-t3`, then adds
+`pending-selected full-instruction-ownership`. The importer profile is
+`elf-disassembly-null-jumps-short-t3-pending-v1`. Its inventory, planning,
+failure and COMPLETE metadata bind `neighbor_victims`, `neighbor_ownership`
+and `pending_selected`, in that order immediately after profile; stdout binds
+the same values and the candidate-complete value to the exit code. Full policy
+and projection hashes include all three rows, and the full text size is checked
+before any private parser view is formed.
+
+The importer keeps every selected original instruction pending until its full
+transaction commits. Short neighboring-instruction eviction checks inherited
+composition ownership and every other pending instruction before accepting a
+complete pair, within the same existing counters. Generalized pun, ordinary
+relocation, prefixed pun and successor eviction retain local success; a final
+pending conflict refuses without another tactic attempt. Final append and every
+entry, hook, dependency, aggregate and carrier check remain mandatory.
+
+The complete 187-head/42-jump population and whole-program publication rule stay
+unchanged. Failures retain pending obligations; no subset or second attempt is
+allowed. New reproduction reports bind the chosen mode to the original capture
+hash/revision and first pins. Raw build/head captures remain mode-neutral; their
+schemas, custody and source/configuration/release checks do not change. All prior
+profiles, including both 16 MiB profiles and their recorded results, retain their
+original meaning. This profile does not provide an E9 adapter, a live API, native
+execution qualification or a promise that a complete candidate exists.

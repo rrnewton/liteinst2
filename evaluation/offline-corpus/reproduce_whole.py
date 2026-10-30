@@ -30,7 +30,7 @@ def load(name, digest):
 
 assert not sys.flags.optimize, 'assertions required'
 B = load('build_whole.py', '2731a71ee7848098be194111baf240b498dbbaf18c82252877d1a95345d1d3d2')
-H = load('head_capture.py', 'ae10489d1ff6449a596d491f5732cc58c95040e7353d6815b4c00e0f49eb0d01')
+H = load('head_capture.py', 'dd8a4c5db6ae7c1f4e3a7aaf7c3336e62e62ae3301670738a0cadf10923f3e31')
 D = H.D
 
 
@@ -92,7 +92,11 @@ def invoke(directory, argv, env, tools):
 
 
 def importer_metadata(profile):
-    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE), 'explicit placement profile'
+    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE), 'explicit placement profile'
+    if profile == D.SHORT_T3_PENDING_PROFILE:
+        return [['profile', 'elf-disassembly-null-jumps-short-t3-pending-v1'],
+                ['neighbor_victims', 'short-only'], ['neighbor_ownership', 'inherited-t3'],
+                ['pending_selected', 'full-instruction-ownership']]
     if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
         return [['profile', 'elf-disassembly-null-jumps-short-t3-ownership-v1'],
                 ['neighbor_victims', 'short-only'], ['neighbor_ownership', 'inherited-t3']]
@@ -107,12 +111,21 @@ def importer_arguments(binary, original, ledger, policy, output, material, profi
     mode = ['--short-neighbors-only'] if profile == D.SHORT_PROFILE else []
     if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
         mode = ['--short-neighbors-owned']
+    if profile == D.SHORT_T3_PENDING_PROFILE:
+        mode = ['--short-neighbors-pending']
     return [str(binary), *mode, str(original), str(ledger), sha(material['ledger.txt']),
             str(policy), sha(material['policy.txt']), str(output)]
 
 
 def importer_stdout(raw, profile, exit_code):
     importer_metadata(profile)
+    if profile == D.SHORT_T3_PENDING_PROFILE:
+        assert exit_code in (0, 2)
+        complete = 'true' if exit_code == 0 else 'false'
+        assert raw == (f'profile=elf-disassembly-null-jumps-short-t3-pending-v1 '
+                       f'neighbor_victims=short-only neighbor_ownership=inherited-t3 '
+                       f'pending_selected=full-instruction-ownership '
+                       f'candidate_complete={complete} qualification_complete=false\n').encode('ascii')
     if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
         assert exit_code in (0, 2)
         complete = 'true' if exit_code == 0 else 'false'
@@ -169,24 +182,46 @@ def inventory(directory, original, material, exit_code, *, profile=D.PROFILE):
                 assert sum(r[:1] == ['profile'] for r in rows) == 1
                 assert sum(r[:1] == ['neighbor_victims'] for r in rows) == 1
                 assert sum(r[:1] == ['neighbor_ownership'] for r in rows) == 1
+    if profile == D.SHORT_T3_PENDING_PROFILE:
+        assert 'planning-profile.tsv' in names or 'program-failure.tsv' in names
+        assert exit_code == 2 or 'program-failure.tsv' not in names
+        for name, tag in (('planning-profile.tsv', 'LI2PLANNING'),
+                          ('program-failure.tsv', 'LI2DISASSEMBLY-FAILURE')):
+            if name in names:
+                rows = table(read(directory / name, cap=1048576))
+                assert rows[:1 + len(mode)] == [[tag, '1'], *mode]
+                assert sum(r[:1] == ['profile'] for r in rows) == 1
+                assert sum(r[:1] == ['neighbor_victims'] for r in rows) == 1
+                assert sum(r[:1] == ['neighbor_ownership'] for r in rows) == 1
+                assert sum(r[:1] == ['pending_selected'] for r in rows) == 1
     return exit_code == 0
+
+
+def pending_capture_metadata(profile):
+    """Mode identity for this reproduction, without relabeling raw captures."""
+    assert profile == D.SHORT_T3_PENDING_PROFILE, 'explicit pending profile'
+    return dict(importer_profile='elf-disassembly-null-jumps-short-t3-pending-v1',
+                neighbor_victims='short-only', neighbor_ownership='inherited-t3',
+                pending_selected='full-instruction-ownership')
 
 
 def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', type=Path, required=True); parser.add_argument('--capture-sha256', required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE), default=D.PROFILE,
+    parser.add_argument('--placement-profile', choices=(D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE), default=D.PROFILE,
                         help='fixed placement policy for both programs; default preserves fixed-page placement')
     return parser.parse_args(argv)
 
 
 def material_attempt(program, inputs, expected, profile):
-    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE), 'explicit placement profile'
+    assert profile in (D.PROFILE, D.WINDOW_PROFILE, D.BROAD_PROFILE, D.SHORT_PROFILE, D.SHORT_T3_OWNERSHIP_PROFILE, D.SHORT_T3_PENDING_PROFILE), 'explicit placement profile'
     if profile == D.PROFILE:
         return D.attempt(program, inputs, expected)
     if profile == D.BROAD_PROFILE:
         return D.attempt(program, inputs, expected, profile=D.BROAD_PROFILE)
+    if profile == D.SHORT_T3_PENDING_PROFILE:
+        return D.attempt(program, inputs, expected, profile=D.SHORT_T3_PENDING_PROFILE)
     if profile == D.SHORT_T3_OWNERSHIP_PROFILE:
         return D.attempt(program, inputs, expected, profile=D.SHORT_T3_OWNERSHIP_PROFILE)
     if profile == D.SHORT_PROFILE:
@@ -206,6 +241,8 @@ def main():
                   programs={p: dict(status='UNRUN') for p in B.PROGRAMS})
     if args.placement_profile != D.PROFILE:
         report['placement_profile'] = args.placement_profile
+    if args.placement_profile == D.SHORT_T3_PENDING_PROFILE:
+        report.update(pending_capture_metadata(args.placement_profile))
     try:
         raw = read(capture / 'closed.json', cap=1048576); assert sha(raw) == args.capture_sha256
         captured, plan = json.loads(raw), jread(capture / 'planned.json'); env, tools = plan['env'], plan['tools']
