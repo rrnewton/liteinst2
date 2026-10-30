@@ -49,6 +49,50 @@ def section_bytes(elf, address, kind, link, name):
     return elf.mapped_bytes(section[3], section[4], section[5]), section
 
 
+def version_records(raw, count, kind):
+    """Traverse actual offsets with disjoint, complete whole-section ownership.
+
+    vn_next/vd_next links headers, not the end of their auxiliary storage. GNU
+    linkers may put all headers first, then the separate auxiliary chains.
+    Reserve ALL header bytes before visiting auxiliaries, so a later header or
+    another chain cannot be silently reinterpreted as an auxiliary record.
+    """
+    need(kind in ('VERDEF','VERNEED') and 0<len(raw)<=MIB and 1<=count<=4096,
+         'complete bounded version record section')
+    definition=kind=='VERDEF'
+    header_layout='<HHHHIII' if definition else '<HHIII'
+    auxiliary_layout='<II' if definition else '<IHHII'
+    header_bytes=20 if definition else 16
+    auxiliary_bytes=8 if definition else 16
+    owned=bytearray(len(raw))
+    def claim(at, size, reason):
+        need(0<=at<=len(raw)-size and at%4==0 and not any(owned[at:at+size]),reason)
+        owned[at:at+size]=b'\1'*size
+    headers=[];at=0
+    for n in range(count):
+        claim(at,header_bytes,kind+' header extent/ownership')
+        header=struct.unpack_from(header_layout,raw,at)
+        children=header[3] if definition else header[1]
+        aux,nxt=header[-2:]
+        need(1<=children<=128 and aux>=header_bytes,
+             'canonical bounded VERDEF header' if definition else 'VERNEED actual dependency and bounds')
+        need((nxt>0)==(n+1<count) and (not nxt or nxt>=header_bytes) and
+             at+(nxt if nxt else header_bytes)<=len(raw),kind+' forward exact count')
+        headers.append((at,header,children));at+=nxt
+    result=[]
+    for at,header,children in headers:
+        cursor=at+header[-2];auxiliaries=[]
+        for j in range(children):
+            claim(cursor,auxiliary_bytes,'unique bounded '+kind+' auxiliary ownership')
+            row=struct.unpack_from(auxiliary_layout,raw,cursor);onward=row[-1]
+            need((onward>0)==(j+1<children) and (not onward or onward>=auxiliary_bytes),
+                 kind+' auxiliary chain')
+            auxiliaries.append(row);cursor+=onward
+        result.append((header,auxiliaries))
+    need(all(owned),'whole '+kind+' record coverage')
+    return result
+
+
 def versions(obj, dso):
     """Parse actual version chains, not readelf labels or numeric coincidence."""
     elf, tags, symbols, index = obj['elf'], obj['tags'], obj['symbols'], obj['symbol_index']
@@ -65,53 +109,29 @@ def versions(obj, dso):
              'complete bounded version definitions')
         raw, section = section_bytes(elf, tags[0x6ffffffc], 0x6ffffffd, str_index, 'VERDEF')
         need(section[7] == tags[0x6ffffffd], 'VERDEF section and dynamic count agree')
-        at = 0; owned_until = 0
-        for n in range(tags[0x6ffffffd]):
-            need(owned_until <= at and at+20 <= len(raw), 'VERDEF header extent/ownership')
-            version, flags, ndx, count, hash_value, aux, nxt = struct.unpack_from('<HHHHIII', raw, at)
+        for header,auxiliaries in version_records(raw,tags[0x6ffffffd],'VERDEF'):
+            version,flags,ndx,count,hash_value,aux,nxt=header
             need(version == 1 and flags in (0,1,2) and 1 <= ndx < 0x7f00 and ndx not in definitions and
                  1 <= count <= 128 and aux >= 20, 'canonical bounded VERDEF header')
-            limit = at+nxt if nxt else len(raw)
-            need((nxt > 0) == (n+1 < tags[0x6ffffffd]) and at+20 <= limit <= len(raw), 'VERDEF forward exact count')
-            owned_until=at+20; cursor=at+aux; names=[]
-            for j in range(count):
-                need(owned_until <= cursor and cursor+8 <= limit,
-                     'unique bounded VERDEF auxiliary ownership')
-                name_index, onward = struct.unpack_from('<II',raw,cursor)
-                names.append(name(name_index));owned_until=cursor+8
-                need((onward > 0) == (j+1 < count) and (not onward or onward >= 8), 'VERDEF auxiliary chain')
-                cursor += onward
+            names=[name(name_index) for name_index,_ in auxiliaries]
             need(elf_hash(names[0].encode('ascii')) == hash_value, 'actual version-name ELF hash')
             need((ndx == 1) == (flags == 1), 'base version index/flag')
             definitions[ndx] = dict(name=names[0],hash=hash_value,flags=flags,parents=names[1:])
-            at = limit
     if any(t in tags for t in (0x6ffffffe,0x6fffffff)):
         need(all(t in tags for t in (0x6ffffffe,0x6fffffff)) and 1 <= tags[0x6fffffff] <= 4096,
              'complete bounded version requirements')
         raw, section = section_bytes(elf,tags[0x6ffffffe],0x6ffffffe,str_index,'VERNEED')
         need(section[7] == tags[0x6fffffff], 'VERNEED section and dynamic count agree')
-        at=0;owned_until=0
-        for n in range(tags[0x6fffffff]):
-            need(owned_until <= at and at+16 <= len(raw), 'VERNEED header extent/ownership')
-            version,count,file_index,aux,nxt = struct.unpack_from('<HHIII',raw,at)
+        for header,auxiliaries in version_records(raw,tags[0x6fffffff],'VERNEED'):
+            version,count,file_index,aux,nxt=header
             needed_file=name(file_index)
             need(version == 1 and 1 <= count <= 128 and aux >= 16 and needed_file in obj['needed'],
                  'VERNEED actual dependency and bounds')
-            limit=at+nxt if nxt else len(raw)
-            need((nxt > 0) == (n+1 < tags[0x6fffffff]) and at+16 <= limit <= len(raw), 'VERNEED forward exact count')
-            owned_until=at+16;cursor=at+aux
-            for j in range(count):
-                need(owned_until <= cursor and cursor+16 <= limit,
-                     'unique bounded VERNEED auxiliary ownership')
-                hash_value,flags,other,name_index,onward=struct.unpack_from('<IHHII',raw,cursor)
+            for hash_value,flags,other,name_index,onward in auxiliaries:
                 label=name(name_index)
                 need(flags in (0,2) and 2 <= other < 0x7f00 and other not in requirements and other not in definitions and
                      elf_hash(label.encode('ascii')) == hash_value, 'unique actual version requirement identity')
                 requirements[other]=dict(name=label,hash=hash_value,flags=flags,file=needed_file)
-                owned_until=cursor+16
-                need((onward > 0) == (j+1 < count) and (not onward or onward >= 16), 'VERNEED auxiliary chain')
-                cursor += onward
-            at=limit
     need(all((v & 0x7fff) <= 1 or (v & 0x7fff) in definitions or (v & 0x7fff) in requirements for v in versym),
          'every symbol version has an actual definition or requirement')
     return versym, definitions, requirements

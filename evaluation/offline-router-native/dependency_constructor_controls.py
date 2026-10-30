@@ -662,5 +662,200 @@ class CanonicalEmptyMain(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'ordered disjoint metadata layout'):self.check(raw)
 
 
+def version_aux_fixture(kind, *, layout='headers-first'):
+    """Whole ELF with actual offset-linked version records, never mocked facts."""
+    if kind=='VERDEF':
+        raw=image('libgcc')
+        if layout=='headers-first':
+            first=list(struct.unpack_from('<HHHHIII',raw,VERDEF))
+            second=list(struct.unpack_from('<HHHHIII',raw,VERDEF+28))
+            names=[bytes(raw[VERDEF+20:VERDEF+28]),bytes(raw[VERDEF+48:VERDEF+56])]
+            first[-2:]=[40,20];second[-2:]=[28,0]
+            struct.pack_into('<HHHHIII',raw,VERDEF,*first)
+            struct.pack_into('<HHHHIII',raw,VERDEF+20,*second)
+            raw[VERDEF+40:VERDEF+48]=names[0];raw[VERDEF+48:VERDEF+56]=names[1]
+            headers=[0,20];auxiliaries=[[40],[48]]
+        else:
+            assert layout=='interleaved'
+            headers=[0,28];auxiliaries=[[20],[48]]
+        return raw,dict(role='libgcc',start=VERDEF,size=56,section=5,
+            headers=headers,auxiliaries=auxiliaries,header_bytes=20,auxiliary_bytes=8)
+    assert kind=='VERNEED' and layout in ('headers-first','interleaved')
+    dependencies=['libgcc_s.so.1','libc.so.6','ld-linux-x86-64.so.2']
+    raw=image('bootstrap',edges=dependencies)
+    # This is the exact header/chain cardinality in BOTH actual bootstrap DSOs.
+    groups=[[(3,'GCC_3.0'),(10,'GCC_3.3'),(15,'GCC_4.2.0')],
+        [(2,'GLIBC_2.2.5'),(5,'GLIBC_2.3'),(14,'GLIBC_2.3.4'),(4,'GLIBC_2.14'),
+         (12,'GLIBC_2.18'),(11,'GLIBC_2.28'),(8,'GLIBC_2.30'),(6,'GLIBC_2.32'),
+         (9,'GLIBC_2.33'),(13,'GLIBC_2.34')],[(7,'GLIBC_2.3')]]
+    size=struct.unpack_from('<Q',raw,tag_offset(raw,10)+8)[0]
+    strings=bytearray(raw[STR:STR+size])
+    def text(value):
+        token=value.encode()+b'\0';at=strings.find(token)
+        if at<0:at=len(strings);strings.extend(token)
+        return at
+    names=[text(name) for name in dependencies]
+    for group in groups:
+        for _,name in group:text(name)
+    assert STR+len(strings)<SYM
+    raw[STR:STR+len(strings)]=strings
+    struct.pack_into('<Q',raw,SECTIONS+64+32,len(strings))
+    old=[];at=DYNAMIC
+    while True:
+        tag,value=struct.unpack_from('<qQ',raw,at);at+=16
+        if tag==0:break
+        if tag not in (0x6ffffffc,0x6ffffffd):old.append((tag,len(strings) if tag==10 else value))
+    rows=old+[(0x6ffffffe,VERNEED),(0x6fffffff,3),(0,0)]
+    for i,row in enumerate(rows):struct.pack_into('<qQ',raw,DYNAMIC+16*i,*row)
+    struct.pack_into('<QQ',raw,64+3*56+32,16*len(rows),16*len(rows))
+    struct.pack_into('<H',raw,VERSYM+2,1)
+    raw[SECTIONS+5*64:SECTIONS+6*64]=bytes(64)
+    struct.pack_into('<IIQQQQIIQQ',raw,SECTIONS+6*64,0,0x6ffffffe,2,VERNEED,VERNEED,272,1,3,4,0)
+    raw[VERNEED:VERNEED+272]=bytes(272)
+    headers=[0,16,32] if layout=='headers-first' else [0,64,240]
+    auxiliaries=[[48,64,80],list(range(96,256,16)),[256]] if layout=='headers-first' else [list(range(16,64,16)),list(range(80,240,16)),[256]]
+    for i,(header,group,slots) in enumerate(zip(headers,groups,auxiliaries)):
+        nxt=headers[i+1]-header if i+1<len(headers) else 0
+        struct.pack_into('<HHIII',raw,VERNEED+header,1,len(group),names[i],slots[0]-header,nxt)
+        for j,((number,name),slot) in enumerate(zip(group,slots)):
+            nxt=slots[j+1]-slot if j+1<len(slots) else 0
+            struct.pack_into('<IHHII',raw,VERNEED+slot,C.elf_hash(name.encode()),0,number,text(name),nxt)
+    return raw,dict(role='bootstrap',start=VERNEED,size=272,section=6,
+        headers=headers,auxiliaries=auxiliaries,header_bytes=16,auxiliary_bytes=16)
+
+
+class WholeVersionOwnership(unittest.TestCase):
+    def check(self, raw, layout):
+        ns=namespace(**{layout['role']:raw})
+        return ns,C.versions(ns.objects[layout['role']],D)
+
+    def test_actual_bootstrap_header_first_cardinality_and_complete_requirements(self):
+        raw,layout=version_aux_fixture('VERNEED');ns,(numbers,definitions,requirements)=self.check(raw,layout)
+        self.assertEqual(layout['headers'],[0,16,32])
+        self.assertEqual(layout['auxiliaries'],[[48,64,80],list(range(96,256,16)),[256]])
+        self.assertEqual(numbers,[0,1]);self.assertEqual(definitions,{})
+        self.assertEqual(set(requirements),set(range(2,16)))
+        self.assertEqual(requirements[3],dict(name='GCC_3.0',hash=C.elf_hash(b'GCC_3.0'),flags=0,file='libgcc_s.so.1'))
+        self.assertEqual(requirements[13]['name'],'GLIBC_2.34')
+        self.assertEqual(requirements[7]['file'],'ld-linux-x86-64.so.2')
+        self.assertEqual(ns.populations['bootstrap']['versioning'],dict(present=True,entries=2,definitions=0,requirements=14))
+        self.assertEqual(ns.constructors('libgcc',records(ns))['init_array'][0]['resolved_relative'],CODE)
+
+    def test_both_table_layouts_preserve_the_same_semantic_version_facts(self):
+        for kind in ('VERDEF','VERNEED'):
+            first,a=version_aux_fixture(kind);legacy,b=version_aux_fixture(kind,layout='interleaved')
+            with self.subTest(kind=kind):
+                self.assertEqual(self.check(first,a)[1],self.check(legacy,b)[1])
+
+    def test_header_first_definition_still_proves_exact_global_constructor(self):
+        raw,layout=version_aux_fixture('VERDEF');ns,(_,defs,reqs)=self.check(raw,layout)
+        proof=ns.constructors('libgcc',records(ns))['init_array'][0]['binding_proof']
+        self.assertEqual(defs[12]['name'],'GCC_4.8.0');self.assertEqual(reqs,{})
+        self.assertEqual(proof['version']['index'],12);self.assertTrue(proof['version']['nondefault'])
+        self.assertEqual(proof['target_relative'],CODE)
+
+    def test_auxiliary_may_not_claim_a_later_reserved_header(self):
+        for kind in ('VERDEF','VERNEED'):
+            raw,l=version_aux_fixture(kind)
+            struct.pack_into('<I',raw,l['start']+l['header_bytes']-8,l['headers'][1])
+            with self.subTest(kind=kind),self.assertRaisesRegex(ValueError,'unique bounded '+kind+' auxiliary ownership'):
+                self.check(raw,l)
+
+    def test_shared_and_partially_overlapping_auxiliary_chains_refuse(self):
+        for kind in ('VERDEF','VERNEED'):
+            for overlap in (0,4):
+                raw,l=version_aux_fixture(kind);header=l['headers'][1]
+                # All headers remain valid and distinct. The second group is
+                # rebound to complete/partial bytes already owned by group0.
+                target=l['auxiliaries'][0][0]+overlap
+                struct.pack_into('<I',raw,l['start']+header+l['header_bytes']-8,target-header)
+                with self.subTest(kind=kind,overlap=overlap),self.assertRaisesRegex(ValueError,'unique bounded '+kind+' auxiliary ownership'):
+                    self.check(raw,l)
+
+    def test_whole_last_record_must_fit_actual_section(self):
+        for kind in ('VERDEF','VERNEED'):
+            raw,l=version_aux_fixture(kind)
+            struct.pack_into('<Q',raw,SECTIONS+l['section']*64+32,l['size']-4)
+            with self.subTest(kind=kind),self.assertRaisesRegex(ValueError,'unique bounded '+kind+' auxiliary ownership'):
+                self.check(raw,l)
+
+    def test_unclaimed_trailing_bytes_refuse_even_when_zero(self):
+        for kind in ('VERDEF','VERNEED'):
+            for byte in (0,1):
+                raw,l=version_aux_fixture(kind)
+                struct.pack_into('<Q',raw,SECTIONS+l['section']*64+32,l['size']+4)
+                raw[l['start']+l['size']:l['start']+l['size']+4]=bytes([byte])*4
+                with self.subTest(kind=kind,byte=byte),self.assertRaisesRegex(ValueError,'whole '+kind+' record coverage'):
+                    self.check(raw,l)
+
+    def test_coherent_hole_between_complete_records_still_refuses(self):
+        for kind in ('VERDEF','VERNEED'):
+            raw,l=version_aux_fixture(kind);start=l['start'];header=l['headers'][-1]
+            slot=l['auxiliaries'][-1][-1];width=l['auxiliary_bytes']
+            old=bytes(raw[start+slot:start+slot+width])
+            raw[start+slot+4:start+slot+4+width]=old;raw[start+slot:start+slot+4]=bytes(4)
+            struct.pack_into('<I',raw,start+header+l['header_bytes']-8,slot+4-header)
+            struct.pack_into('<Q',raw,SECTIONS+l['section']*64+32,l['size']+4)
+            with self.subTest(kind=kind),self.assertRaisesRegex(ValueError,'whole '+kind+' record coverage'):
+                self.check(raw,l)
+
+    def test_header_and_auxiliary_alignment_and_count_terminators_remain_strict(self):
+        for kind in ('VERDEF','VERNEED'):
+            for variant in ('header-align','aux-align','early-header-end','late-header-end','late-aux-end'):
+                raw,l=version_aux_fixture(kind);start=l['start'];width=l['header_bytes']
+                if variant=='header-align':struct.pack_into('<I',raw,start+width-4,width+1)
+                elif variant=='aux-align':struct.pack_into('<I',raw,start+width-8,l['auxiliaries'][0][0]+1)
+                elif variant=='early-header-end':struct.pack_into('<I',raw,start+width-4,0)
+                elif variant=='late-header-end':struct.pack_into('<I',raw,start+l['headers'][-1]+width-4,width)
+                else:struct.pack_into('<I',raw,start+l['auxiliaries'][-1][-1]+l['auxiliary_bytes']-4,l['auxiliary_bytes'])
+                with self.subTest(kind=kind,variant=variant),self.assertRaisesRegex(ValueError,
+                    'header extent/ownership|auxiliary ownership|forward exact count|auxiliary chain'):
+                    self.check(raw,l)
+
+    def test_duplicate_version_indices_hashes_and_dependency_names_still_refuse(self):
+        for variant in ('index','hash','dependency'):
+            raw,l=version_aux_fixture('VERNEED');start=l['start'];slot=l['auxiliaries'][1][0]
+            if variant=='index':struct.pack_into('<H',raw,start+slot+6,3)
+            elif variant=='hash':struct.pack_into('<I',raw,start+slot,0)
+            else:
+                offset=struct.unpack_from('<I',raw,SYM+24)[0]
+                struct.pack_into('<I',raw,start+l['headers'][1]+4,offset)
+            with self.subTest(variant=variant),self.assertRaisesRegex(ValueError,
+                'unique actual version requirement identity|VERNEED actual dependency'):
+                self.check(raw,l)
+
+    def test_complete_section_still_joins_actual_readonly_load_and_strings(self):
+        for kind in ('VERDEF','VERNEED'):
+            for variant in ('file-alias','section-link','writable'):
+                raw,l=version_aux_fixture(kind);section=SECTIONS+l['section']*64
+                if variant=='file-alias':
+                    source=bytes(raw[l['start']:l['start']+l['size']]);raw[0x2400:0x2400+l['size']]=source
+                    struct.pack_into('<Q',raw,section+24,0x2400)
+                elif variant=='section-link':struct.pack_into('<I',raw,section+40,2)
+                else:struct.pack_into('<I',raw,64+4,6)
+                message={'file-alias':'table file offset/LOAD owner',
+                    'section-link':'allocated immutable bounded linked section',
+                    'writable':'immutable actual LOAD owner'}[variant]
+                error=R.Refused if variant=='file-alias' else ValueError
+                with self.subTest(kind=kind,variant=variant),self.assertRaisesRegex(error,message):
+                    self.check(raw,l)
+
+    def test_header_auxiliary_count_caps_and_early_chain_end_stay_exact(self):
+        for kind in ('VERDEF','VERNEED'):
+            for count in (0,129):
+                raw,l=version_aux_fixture(kind)
+                struct.pack_into('<H',raw,l['start']+(6 if kind=='VERDEF' else 2),count)
+                with self.subTest(kind=kind,count=count),self.assertRaisesRegex(ValueError,
+                    'canonical bounded VERDEF header|VERNEED actual dependency and bounds'):
+                    self.check(raw,l)
+            raw,l=version_aux_fixture(kind)
+            struct.pack_into('<Q',raw,tag_offset(raw,0x6ffffffd if kind=='VERDEF' else 0x6fffffff)+8,4097)
+            with self.subTest(kind=kind),self.assertRaisesRegex(ValueError,'complete bounded version'):
+                self.check(raw,l)
+        raw,l=version_aux_fixture('VERNEED')
+        struct.pack_into('<I',raw,l['start']+l['auxiliaries'][0][0]+12,0)
+        with self.assertRaisesRegex(ValueError,'VERNEED auxiliary chain'):self.check(raw,l)
+
+
 if __name__ == '__main__':
     unittest.main()
