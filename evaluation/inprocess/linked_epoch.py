@@ -547,7 +547,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,*,reuse=False,seed_
              'exact separate finite/reuse hardware, pair and supplied-refusal populations')
         if native_hint:
             need(sum(c.get('hint_reference',{}).get('qualified_hint_control',0)for c in cases)==(0 if reuse else 3)and
-                 sum(len(c.get('hint_reader_controls',{}).get('hint_refusals',[]))for c in cases)==(20 if reuse else 326)and
+                 sum(len(c.get('hint_reader_controls',{}).get('hint_refusals',[]))for c in cases)==(24 if reuse else 342)and
                  sum(len(c.get('hint_terminal_controls',{}).get('hint_refusals',[]))for c in cases)==(41 if reuse else 697),
                  'all separate advisory rejection/reference/record/report outcomes remain mandatory')
     return seed_reference
