@@ -156,6 +156,8 @@ mov$0xffffffffffffffea,%rax|ret'''.replace('\n','|').split('|')
                 'exact conditional or direct branch opcode/extent')
             width=1 if len(chunk)==2 else 4;target=pc+len(chunk)+int.from_bytes(chunk[-width:],'little',signed=True)
             need(target==(gateway[0]if want=='jmp'else bad),'actual error branches and direct unchanged-gateway tail target')
+        elif want=='ret':
+            need(chunk==b'\xc3','exact one-byte near return, independent of ret/retq display spelling')
         else:need(text==want,'exact emitted scalar snapshot instruction '+want)
     need(sum(x=='xsave640x80(%r10)'for x in expected)==1 and sum(x=='xsave640x10080(%r10)'for x in expected)==1,
         'two exact standard64-bit saves, no compacted or optimized variant')
