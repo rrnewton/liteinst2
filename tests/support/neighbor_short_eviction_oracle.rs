@@ -4,6 +4,19 @@ use super::*;
 use liteinst2::neighbor::plan_neighbor_short;
 use oracle::ShortSourceRelay;
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+use std::sync::{Mutex, MutexGuard};
+
+// The suffix-derived exact image pages can overlap between these fixtures even
+// when their anonymous source pages differ. Hold this cohort-local lock from
+// before source allocation until all children and generated mappings are gone.
+// Other tests in this crate and other workspace crates remain parallel.
+static EXACT_ADDRESS_WINDOW: Mutex<()> = Mutex::new(());
+
+fn exact_address_window() -> MutexGuard<'static, ()> {
+    EXACT_ADDRESS_WINDOW
+        .lock()
+        .expect("short-neighbor exact-address window poisoned")
+}
 
 const ENDPOINTS: [(usize, usize, bool, usize); 8] = [
     (2, 6, true, 128),
@@ -231,6 +244,7 @@ fn short_conditional_fallthrough_and_taken() {
 }
 
 fn run(layout_index: usize, puzzle: ShortPuzzle, expected_heads: usize) {
+    let _address_window = exact_address_window();
     let bit = 1 << layout_index;
     assert_eq!(
         STARTED.fetch_or(bit, SeqCst) & bit,
@@ -755,6 +769,7 @@ fn refused(reason: &str, action: impl FnOnce()) {
 
 #[test]
 fn short_independent_native_calibration() {
+    let _address_window = exact_address_window();
     for seed in SEEDS {
         let f = Calibration::new(seed);
         f.positive();
@@ -773,6 +788,7 @@ fn short_independent_native_calibration() {
 
 #[test]
 fn short_reject_foreign_or_wrong_grammar() {
+    let _address_window = exact_address_window();
     let f = Calibration::new(SEEDS[0]);
     f.positive();
     let foreign = Calibration::new(SEEDS[0]);
@@ -862,6 +878,7 @@ fn short_reject_foreign_or_wrong_grammar() {
 
 #[test]
 fn short_reject_suffix_overlay_corruption() {
+    let _address_window = exact_address_window();
     for offset in 6..10 {
         let f = Calibration::new(SEEDS[0]);
         f.positive();
@@ -889,6 +906,7 @@ fn short_reject_suffix_overlay_corruption() {
 
 #[test]
 fn short_reject_head_gateway_image_mismatch() {
+    let _address_window = exact_address_window();
     let mut f = Calibration::new(SEEDS[0]);
     f.positive();
     f.map.boundaries.retain(|&(pc, _)| pc != f.victim + 6);
@@ -967,6 +985,7 @@ fn short_reject_head_gateway_image_mismatch() {
 
 #[test]
 fn short_reject_displacement_or_visit_corruption() {
+    let _address_window = exact_address_window();
     for (offset, value, reason) in [
         (32, 0x90, "short selected EB mismatch"),
         (33, 0, "short selected EB mismatch"),
@@ -1011,6 +1030,7 @@ fn short_reject_displacement_or_visit_corruption() {
 
 #[test]
 fn short_reject_full_state_or_hook_corruption() {
+    let _address_window = exact_address_window();
     for (code, reason) in [
         (&[0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0][..], "rax mismatch"),
         (&[0xf8][..], "defined RFLAGS mismatch"),
@@ -1083,6 +1103,7 @@ fn short_reject_full_state_or_hook_corruption() {
 
 #[test]
 fn short_reject_fetch_or_bound_violation() {
+    let _address_window = exact_address_window();
     let f = Calibration::new(SEEDS[0]);
     f.positive();
     for (logical, relay, reason) in [
@@ -1134,6 +1155,7 @@ fn short_reject_fetch_or_bound_violation() {
 // Engine dispatch bridge; the direct planner and NativeOracle remain unchanged.
 #[test]
 fn short_engine_overlap_bundle_matches_direct_and_native() {
+    let _address_window = exact_address_window();
     use liteinst2::engine::{self, CandidateEvidence, EnginePolicy, SelectedMetrics, Tactic};
     // Independent five-head bridge; do not enroll in the old 1102-head census.
     let puzzle = ShortPuzzle::overlap();
