@@ -24,10 +24,38 @@ TEST=('test-product','test-product-sha','test-owner','test-owner-sha')
 CONTROLS=('controls','controls-sha','controls-owner','controls-owner-sha','geometry','geometry-sha')
 EXTRAS={'products':(),'tests':BUILD,'controls':BUILD+TEST,'campaign':BUILD+CONTROLS}
 PROFILES=('selected-session-functional-v1','selected-session-whole-functional-v1')
+SDK_BUILD=('sdk-build','sdk-build-sha','sdk-build-owner','sdk-build-owner-sha')
+SDK_CONTROLS=('sdk-controls','sdk-controls-sha','sdk-controls-owner','sdk-controls-owner-sha')
+SDK_OLD_CONTROLS=('controls','controls-sha','controls-owner','controls-owner-sha')
+SDK_GEOMETRY=('geometry','geometry-sha')
+SDK_EXTRAS={'sdk-build':BUILD,'sdk-controls':BUILD+SDK_BUILD+SDK_OLD_CONTROLS,
+    'sdk-cohort':BUILD+SDK_BUILD+SDK_CONTROLS+SDK_GEOMETRY+('cohort',),
+    'sdk-collect':BUILD+SDK_BUILD+SDK_CONTROLS+SDK_GEOMETRY+('cohorts','cohorts-sha')}
+COHORTS=('unstripped-k10','unstripped-k1000','stripped-k10','stripped-k1000')
+
+
+def sdk_commands(options,python,script):
+    phase=options['phase'];assert phase in SDK_EXTRAS
+    keys=COMMON+SDK_EXTRAS[phase]
+    assert set(options)==set(keys) and all(type(v) is str and v for v in options.values())
+    assert re.fullmatch('[0-9a-f]{40}',options['revision'])
+    assert re.fullmatch('[A-Za-z0-9_.-]{1,128}',options['reservation-tag'])
+    assert 1<=len(options['hardware'])<=160 and options['hardware'].isascii() and all(32<=ord(c)<127 for c in options['hardware'])
+    assert script in ('evaluation/ordinary-selected-session/owner.py',str(HERE/'owner.py'))
+    for key in keys:
+        if key.endswith('-sha'): assert re.fullmatch('[0-9a-f]{64}',options[key])
+        elif key not in ('phase','revision','reservation-tag','hardware','cohort'): assert Path(options[key]).is_absolute()
+    if phase=='sdk-cohort': assert options['cohort'] in COHORTS
+    invocation=[python,'-B',script]+[word for key in keys for word in ('--'+key,options[key])]
+    child_keys=('phase','revision','reservation-tag','raw','toolchain','user-home','cargo-home','hardware')+SDK_EXTRAS[phase]
+    child=[python,'-B',str(HERE/'sdk_state.py')]+[word for key in child_keys for word in ('--'+key,options[key])]
+    return invocation,child
 
 
 def commands(options,python,script):
     """A finite argv grammar; no arbitrary executable or shell command input."""
+    if options['phase'] in SDK_EXTRAS:
+        return sdk_commands(options,python,script)
     phase=options['phase'];assert phase in EXTRAS
     selected=('profile',) if 'profile' in options else ()
     if selected:
@@ -108,22 +136,24 @@ def own_command(process_owner,recipe,command,env,capture,archive):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase',choices=tuple(EXTRAS),required=True)
+    parser.add_argument('--phase',choices=tuple(EXTRAS)+tuple(SDK_EXTRAS),required=True)
     parser.add_argument('--profile',choices=PROFILES)
     for name in COMMON[1:]: parser.add_argument('--'+name,required=True)
-    for name in dict.fromkeys(BUILD+TEST+CONTROLS): parser.add_argument('--'+name)
+    for name in dict.fromkeys(BUILD+TEST+CONTROLS+tuple(x for row in SDK_EXTRAS.values() for x in row)): parser.add_argument('--'+name)
     args=parser.parse_args();phase=args.phase
-    permitted=COMMON+EXTRAS[phase]
+    extras=SDK_EXTRAS[phase] if phase in SDK_EXTRAS else EXTRAS[phase]
+    permitted=COMMON+extras
     if args.profile is not None:
         assert phase in ('controls','campaign')
         permitted+=('profile',)
-    assert all(getattr(args,key.replace('-','_')) is None for key in set(BUILD+TEST+CONTROLS)-set(EXTRAS[phase]))
+    assert all(getattr(args,key.replace('-','_')) is None for key in set(BUILD+TEST+CONTROLS+tuple(x for row in SDK_EXTRAS.values() for x in row))-set(extras))
     options={key:getattr(args,key.replace('-','_')) for key in permitted}
     python=str(Path(sys.executable).resolve(strict=True))
     invocation,command=commands(options,python,sys.argv[0])
     assert invocation==[python,'-B',sys.argv[0],*sys.argv[1:]]
     os.chdir(ROOT)
-    for name in ('owner.py','build.py','reproduce.py'):
+    checked=('owner.py','build.py','reproduce.py')+(('sdk_state.py','sdk_state_controls.py') if phase in SDK_EXTRAS else ())
+    for name in checked:
         path=HERE/name
         assert path.is_file() and not path.is_symlink() and path.stat().st_size<=MIB
         expected=subprocess.check_output(['/usr/bin/git','-C',ROOT,'show',args.revision+':'+str(path.relative_to(ROOT))],timeout=15)
