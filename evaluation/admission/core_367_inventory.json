@@ -1,0 +1,1006 @@
+{
+  "version": 1,
+  "upstream_revision": "367aaac201c461f9549ad54f65fa12f680999269",
+  "previous_upstream_revision": "091b0cfebbc696a683e03f338ef01e0fa3c8f938",
+  "admission_base_revision": "1bf1874920384e517927f060cff926b2f43022d9",
+  "current_corpus_sha256": "72a8cacd5b8deb4da8271f92be3e2e765a6893582a14e65cd41d63a1664c5426",
+  "previous_corpus_sha256": "1c10c051e9b6518a7e63ea841b5b2f8db2dafdc5c508966793dfc71a9db04782",
+  "python_current_sha256": "ac9d8ab4f5e91e63bbab79af4d7cc46ef958801ff1cb2dcf5a459f64dc77b1af",
+  "python_previous_sha256": "83441a7e7d0dc225dc9b161d442607393696c156e326e41e721830a3a42b939c",
+  "recorder_tests": 355,
+  "workspace": {
+    "harnesses": 106,
+    "tests": 3831,
+    "ignored": 37
+  },
+  "workspace_changes": {
+    "unit/liteinst_artifact/lib": {
+      "previous": {
+        "ignored": 0,
+        "tests": 46
+      },
+      "current": {
+        "ignored": 0,
+        "tests": 50
+      }
+    },
+    "unit/liteinst_rewrite/lib": {
+      "previous": {
+        "ignored": 0,
+        "tests": 150
+      },
+      "current": {
+        "ignored": 0,
+        "tests": 155
+      }
+    }
+  },
+  "added": [
+    "test_main367_inventory.Main367InventoryTests.test_exact_absolute_startup_sources_catalog_and_refusals"
+  ],
+  "added_default_methods": {
+    "crates/liteinst-artifact/src/startup/tests.rs": [
+      "absolute_class_retains_both_complete_populations_and_wire_roles",
+      "absolute_roles_are_distinct_actual_sorted_roster_indices",
+      "absolute_metadata_every_byte_and_owner_are_exact",
+      "absolute_wire_cannot_relabel_roles_version_or_surplus_with_a_fresh_digest"
+    ],
+    "tools/elf-rewrite/src/carrier/startup_fixtures.rs": [
+      "absolute_startup_has_exact_nine_rows_and_original_preservation",
+      "absolute_startup_path_roles_are_literal_and_distinct",
+      "absolute_startup_charges_all_names_and_exact_new_table_to_old_aggregate_caps",
+      "absolute_startup_output_recheck_rejects_all_metadata_bytes_and_writable_owner",
+      "absolute_startup_still_checks_original_sections_and_carrier_aliases"
+    ]
+  },
+  "excluded_default": {
+    "core_feature_tests": 7,
+    "rewrite_feature_tests": 12,
+    "example_feature_tests": 5,
+    "bootstrap_standalone_tests": 5,
+    "required_feature": "offline-router",
+    "standalone_manifest": "crates/liteinst-bootstrap/Cargo.toml"
+  },
+  "sources": {
+    "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+    "crates/liteinst-artifact/src/elf64.rs": "241f3ba99d6874f38ae6d6242be56e2b5b15c7ef05ce644302ddaafcc3b91b56",
+    "crates/liteinst-artifact/src/lib.rs": "8732f98cfe9bd721998cd09a01ffd939b4b033159e1e62697b12a80403532d1d",
+    "crates/liteinst-artifact/src/startup.rs": "dde3b6372d14df76968807bba4ec0e5bac4de329933de11b1c5ae928fc52d3a4",
+    "crates/liteinst-artifact/src/startup/tests.rs": "66b3188a808b04d34b74d2fc063fec0a8e02c01e80da10663e72a91c2f350081",
+    "crates/liteinst-artifact/src/startup/wire.rs": "6da24a5a8679f7e32d281f5463c3805d7d4cc57ad7c8d1eaa9cf7ae324f0302b",
+    "crates/liteinst-bootstrap/Cargo.toml": "c0c4218ca378f523289be68da62aff3dbddb837f7a7e926107b29024bb7c717c",
+    "crates/liteinst-bootstrap/src/lib.rs": "d6b0dd35db56c566b59a87502793af40152842b36d4eec94fc79bc1b0d4f1366",
+    "evaluation/admission/core_813_inventory.py": "dfc18012e1c1983470e567961817682229b83bdc034df64b621611cbfd4fadf2",
+    "evaluation/admission/core_cc846_inventory.py": "297eeb1a3fc55b2a75fd8495c65369b43b26e2b87288e7717d724c0b066337b2",
+    "evaluation/admission/recorder_parallel.py": "ad4a7e8ceb8ed8e07f701fe809e4d4d83dab35dd3c36e736ddb4c5b2c557b8bd",
+    "evaluation/admission/recorder_shards_inventory.py": "d90dca81509cdc6ee4fa874213a2a4337ba060c001508109fc04ecb19eb8c233",
+    "evaluation/admission/test_main367_inventory.py": "c99c0ad78ada090c4763e74f3da0e86fa9e3700fc9316b8d4b29bcbf82b4fcc2",
+    "evaluation/admission/test_main813_inventory.py": "ac944c656868035da09109db6823cd4b6fac3edf61f23842edb54d5ec703101f",
+    "src/lib.rs": "d05e417aa91c4b118f7e71289acbe4f9be6cd3e9f6017e6c63e6bb11fd56d955",
+    "src/offline_router.rs": "8ed2c84fb9f5657cdedf13a3b9926d78c83682039debd497a014e02633d04193",
+    "src/offline_router/compiler.rs": "050d24f081c1b97952a42c361a1541b8984581313b511d23388f93aa764e7ee1",
+    "src/offline_router/host.rs": "0101c4d1c1dbeba816124f15d360c60f39128ca1541c8fe1b5ec205a65ce02ab",
+    "tools/elf-rewrite/Cargo.toml": "a196c50c210e0b4b33e497dbd0bd8147c01a5cc6707ecf9e4dddad62daaab9cf",
+    "tools/elf-rewrite/examples/fixtures/offline_router.rs": "210461586f46ecd3a84127d778d376860d9e3eb0baea23b1f328e1019c74b0ec",
+    "tools/elf-rewrite/examples/offline_router_sites.rs": "9d0abb4aca13d06fa1d49105314f629e0ec6fae9414302079456cfd942047260",
+    "tools/elf-rewrite/src/carrier/elf64.rs": "ae6b786e70d1c857b735b212f896d36461d2ca77dd657efb9e947745d6a84e67",
+    "tools/elf-rewrite/src/carrier/mod.rs": "9b84b35fe2c03885074ba01b9fc4feb3da8f3bef4abc2bb5d01e7a0459da6f34",
+    "tools/elf-rewrite/src/carrier/startup.rs": "84e76f0379e65203f5f28d1ffa5be89e2d6044b1a2e43bb802b6a595a2312dd3",
+    "tools/elf-rewrite/src/carrier/startup_fixtures.rs": "0846c2cb4a15fc164a60787607088de369591604d2bfc7b862f18297db66ab77",
+    "tools/elf-rewrite/src/lib.rs": "2320f63f707dd2f0ec51a2a10e12525926737043c0c0829c2e23c6ae62678ed7",
+    "tools/elf-rewrite/src/offline_router.rs": "cd5cd8afdd14fc0713fc34b409b1377db26b65b873484749b061332e57b42334",
+    "tools/elf-rewrite/src/offline_router/tests.rs": "8b8df4214c8eecfd0dabc41a295bd72bdac28be5766e1b7ce641b7da6f439589"
+  },
+  "methods": {
+    "crates/liteinst-artifact/src/startup.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "crates/liteinst-artifact/src/startup/tests.rs": {
+      "all": [
+        "exact_complete_catalog_round_trip",
+        "rejects_omissions_extras_and_wrong_owners_before_activation",
+        "rejects_exact_byte_and_startup_tampering",
+        "closed_wire_refuses_corruption_truncation_and_surplus",
+        "exact_marker_and_full_fetch_rules",
+        "complete_auxiliary_image_retains_exact_role_and_router_requirement",
+        "exact_complete_rle_catalog_retains_107_heads_and_26_selected",
+        "geometry_wire_version_is_explicit_and_old_envelope_is_not_reinterpreted",
+        "absolute_class_retains_both_complete_populations_and_wire_roles",
+        "absolute_roles_are_distinct_actual_sorted_roster_indices",
+        "absolute_metadata_every_byte_and_owner_are_exact",
+        "absolute_wire_cannot_relabel_roles_version_or_surplus_with_a_fresh_digest"
+      ],
+      "ignored": []
+    },
+    "crates/liteinst-artifact/src/startup/wire.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "crates/liteinst-bootstrap/src/lib.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "src/offline_router.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "src/offline_router/compiler.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "src/offline_router/host.rs": {
+      "all": [
+        "exact_maps_and_auxv_shapes"
+      ],
+      "ignored": []
+    },
+    "tools/elf-rewrite/examples/fixtures/offline_router.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "tools/elf-rewrite/examples/offline_router_sites.rs": {
+      "all": [
+        "all_eight_snapshots_are_exact",
+        "every_member_failure_is_terminal_and_complete_is_last",
+        "cli_requires_the_fixed_two_program_interface",
+        "unchanged_valid_bundle_publishes_and_actual_reread_mutants_leave_no_directory",
+        "absolute_cli_keeps_both_programs_all_rereads_and_the_exact_new_marker"
+      ],
+      "ignored": []
+    },
+    "tools/elf-rewrite/src/carrier/mod.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "tools/elf-rewrite/src/carrier/startup.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "tools/elf-rewrite/src/carrier/startup_fixtures.rs": {
+      "all": [
+        "startup_minimal_static_exec_has_exact_loader_grammar_and_preservation",
+        "startup_existing_phdr_and_stack_keep_literal_records_and_prefix_order",
+        "startup_empty_image_set_has_a_trigger_and_existing_apis_remain_plain",
+        "startup_path_and_metadata_limits_have_exact_boundaries",
+        "startup_all_main_resources_include_added_headers_pages_and_original_high_hull",
+        "startup_refuses_existing_dynamic_tls_unsafe_permissions_and_wrong_object",
+        "startup_keeps_complete_bss_pages_metadata_and_source_ownership_guards",
+        "startup_preserves_static_symbols_and_refuses_dynamic_resolver_startup_sections",
+        "startup_input_metadata_is_bounded_checked_and_protected_from_source_edits",
+        "absolute_startup_has_exact_nine_rows_and_original_preservation",
+        "absolute_startup_path_roles_are_literal_and_distinct",
+        "absolute_startup_charges_all_names_and_exact_new_table_to_old_aggregate_caps",
+        "absolute_startup_output_recheck_rejects_all_metadata_bytes_and_writable_owner",
+        "absolute_startup_still_checks_original_sections_and_carrier_aliases"
+      ],
+      "ignored": []
+    },
+    "tools/elf-rewrite/src/offline_router.rs": {
+      "all": [],
+      "ignored": []
+    },
+    "tools/elf-rewrite/src/offline_router/tests.rs": {
+      "all": [
+        "complete_two_program_transaction_uses_real_plans_and_exact_catalog_bytes",
+        "every_final_boundary_error_keeps_both_attempts_and_no_product_escape",
+        "immutable_denominator_and_distinct_dso_paths_refuse_before_planning",
+        "runtime_policy_is_canonical_and_fully_bound_before_planning",
+        "old_profile_outputs_remain_separate_and_keep_original_limits",
+        "existing_page_cap_refusal_withholds_whole_bundle_without_retry",
+        "coherently_rebound_head_count_only_refuses_exact_full_denominator",
+        "coherently_rebound_selected_count_only_refuses_exact_full_denominator",
+        "absolute_pair_uses_all_real_plans_and_the_same_original_planning_contract",
+        "absolute_binding_is_explicit_and_mixed_pairs_refuse_before_any_planning",
+        "absolute_policy_charges_the_complete_name_roster_and_rejects_unbound_roles",
+        "absolute_pair_final_refusals_still_attempt_both_and_release_no_product"
+      ],
+      "ignored": []
+    }
+  },
+  "module_chains": {
+    "Cargo.toml": [
+      "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]",
+      "offline-router = [\"dep:liteinst-artifact\"]"
+    ],
+    "crates/liteinst-artifact/src/elf64.rs": [
+      "#[cfg(test)]\n#[path = \"fixtures.rs\"]\nmod fixtures;"
+    ],
+    "crates/liteinst-artifact/src/lib.rs": [
+      "pub mod elf64;",
+      "pub mod startup;"
+    ],
+    "crates/liteinst-artifact/src/startup.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "crates/liteinst-bootstrap/Cargo.toml": [
+      "[workspace]\n\n[lib]"
+    ],
+    "src/lib.rs": [
+      "#[cfg(all(\n    feature = \"offline-router\",\n    target_os = \"linux\",\n    target_arch = \"x86_64\"\n))]\npub mod offline_router;"
+    ],
+    "tools/elf-rewrite/Cargo.toml": [
+      "offline-router = [\"li2core/offline-router\"]",
+      "name = \"offline_router_sites\"\npath = \"examples/offline_router_sites.rs\"\nrequired-features = [\"offline-router\"]\ntest = true\nbench = false"
+    ],
+    "tools/elf-rewrite/src/carrier/elf64.rs": [
+      "pub use formats::elf64::*;"
+    ],
+    "tools/elf-rewrite/src/carrier/mod.rs": [
+      "#[path = \"elf64.rs\"]\npub mod elf64;",
+      "pub mod startup;",
+      "#[cfg(test)]\n#[path = \"startup_fixtures.rs\"]\nmod startup_fixtures;"
+    ],
+    "tools/elf-rewrite/src/lib.rs": [
+      "#[cfg(feature = \"offline-router\")]\npub mod offline_router;"
+    ]
+  },
+  "projections": {
+    "crates/liteinst-artifact/src/startup.rs": {
+      "current_sha256": "dde3b6372d14df76968807bba4ec0e5bac4de329933de11b1c5ae928fc52d3a4",
+      "previous_sha256": "466ce272367f3b864e195ebe41f084dd8c017ab9bb7e04254250cf9f7956ccd8",
+      "edits": [
+        [
+          599,
+          713,
+          ""
+        ],
+        [
+          4375,
+          4826,
+          ""
+        ],
+        [
+          4950,
+          4991,
+          "pub struct Catalog(Input);\n"
+        ],
+        [
+          5138,
+          5895,
+          "        validate(&input)?;\n        Ok(Self(input))\n"
+        ],
+        [
+          6005,
+          6043,
+          "        wire::encode(&self.0)\n"
+        ],
+        [
+          6181,
+          6270,
+          "        Self::new(wire::decode(bytes)?)\n"
+        ],
+        [
+          8825,
+          10775,
+          ""
+        ],
+        [
+          11806,
+          11900,
+          "        || dynamic.file_size != 112\n        || dynamic.memory_size != 112\n"
+        ],
+        [
+          12435,
+          12651,
+          "    let str_bytes = [&[0][..], policy.bootstrap_dso.as_slice(), &[0]].concat();\n"
+        ],
+        [
+          13244,
+          13390,
+          "    let all = file_range(elf, interp.vaddr.0, (dyn_start + 112 - ir.start) as u64, 4)?;\n"
+        ],
+        [
+          13419,
+          13476,
+          "        || all.end != dyn_start + 112\n"
+        ],
+        [
+          14010,
+          14055,
+          "    let tags = [\n        (1, 1),\n"
+        ],
+        [
+          14215,
+          14223,
+          "    ];\n"
+        ],
+        [
+          14389,
+          14469,
+          "    if elf.bytes()[dyn_start..dyn_start + 112] != expected {\n"
+        ],
+        [
+          14784,
+          14917,
+          "        .virtual_to_storage(interp.vaddr, (dyn_start + 112 - ir.start) as u64)\n"
+        ],
+        [
+          15231,
+          15349,
+          "        || load.offset.0.checked_add(load.file_size) != Some((dyn_start + 112) as u64)\n"
+        ],
+        [
+          15419,
+          15509,
+          "fn validate(x: &Input) -> Result<()> {\n    bounded_shape(x)?;\n"
+        ],
+        [
+          20042,
+          20096,
+          "    validate_startup(&main, &x.policy)?;\n"
+        ],
+        [
+          32839,
+          32904,
+          "fn bounded_shape(x: &Input) -> Result<()> {\n"
+        ],
+        [
+          33308,
+          33460,
+          ""
+        ]
+      ]
+    },
+    "crates/liteinst-artifact/src/startup/tests.rs": {
+      "current_sha256": "66b3188a808b04d34b74d2fc063fec0a8e02c01e80da10663e72a91c2f350081",
+      "previous_sha256": "581ed79f450f699390c0ba73d2e1a4bc22c0c72bdf99406b9bd6a7747b093f42",
+      "edits": [
+        [
+          15331,
+          23906,
+          ""
+        ]
+      ]
+    },
+    "crates/liteinst-artifact/src/startup/wire.rs": {
+      "current_sha256": "6da24a5a8679f7e32d281f5463c3805d7d4cc57ad7c8d1eaa9cf7ae324f0302b",
+      "previous_sha256": "2ecec021a987b5a8e12ef98d34366b3cb7a9c07141cc4fb9825eb55fe4448c87",
+      "edits": [
+        [
+          722,
+          821,
+          "pub(super) fn encode(x: &Input) -> Result<Vec<u8>> {\n    validate(x)?;\n"
+        ],
+        [
+          861,
+          988,
+          "    w.n(2);\n"
+        ],
+        [
+          1008,
+          1166,
+          ""
+        ],
+        [
+          5712,
+          5778,
+          "pub(super) fn decode(b: &[u8]) -> Result<Input> {\n"
+        ],
+        [
+          6097,
+          6230,
+          "    if r.take(8)? != MAGIC || r.n()? != 2 {\n"
+        ],
+        [
+          6296,
+          6698,
+          ""
+        ],
+        [
+          10764,
+          11267,
+          "    Ok(Input {\n        program,\n        policy: Policy {\n            interpreter,\n            bootstrap_dso,\n            dependencies,\n            app_stack,\n            hook_pc,\n            hook_id,\n            state,\n            qualification_contract,\n"
+        ],
+        [
+          11278,
+          11300,
+          "        original,\n        main,\n        selection,\n        metadata,\n        target,\n        ledger,\n        heads,\n        steps,\n        images,\n    })\n"
+        ]
+      ]
+    },
+    "crates/liteinst-bootstrap/src/lib.rs": {
+      "current_sha256": "d6b0dd35db56c566b59a87502793af40152842b36d4eec94fc79bc1b0d4f1366",
+      "previous_sha256": "8c25f348370f8cdcccf0c1281778c595dc581f14556dd4b512965fc21c3620ee",
+      "edits": [
+        [
+          2919,
+          3163,
+          "    // SAFETY: this artifact is admitted only as the sole constructor in the\n    // explicitly reviewed static-exec package/loader contract, including the\n    // exclusive process-global panic-hook lease stated above. Integration must\n"
+        ]
+      ]
+    },
+    "src/offline_router.rs": {
+      "current_sha256": "8ed2c84fb9f5657cdedf13a3b9926d78c83682039debd497a014e02633d04193",
+      "previous_sha256": "4b78328a2dde6605106a8a9ec3b11de1ee413e747bfcb1fdcd70d384d7e933fd",
+      "edits": [
+        [
+          389,
+          472,
+          "pub use compiler::catalog_from_plans;\n"
+        ]
+      ]
+    },
+    "src/offline_router/compiler.rs": {
+      "current_sha256": "050d24f081c1b97952a42c361a1541b8984581313b511d23388f93aa764e7ee1",
+      "previous_sha256": "3e1d441e0d30bbb4a32537c63f6b6c1f95493e863183897eb7dcbff1741b7d5b",
+      "edits": [
+        [
+          865,
+          1524,
+          "pub fn catalog_from_plans(mut input: Input, plans: &[(u64, ArtifactPlan)]) -> c::Result<Catalog> {\n"
+        ],
+        [
+          9119,
+          9339,
+          "    Catalog::new(input)\n"
+        ]
+      ]
+    },
+    "src/offline_router/host.rs": {
+      "current_sha256": "0101c4d1c1dbeba816124f15d360c60f39128ca1541c8fe1b5ec205a65ce02ab",
+      "previous_sha256": "be555ec6e61f201e675d12f807df32ca365ed838d1e536d1e9e787f0800b0fda",
+      "edits": [
+        [
+          9745,
+          9795,
+          "    if get(3)? != c::validate_startup(&elf, &catalog.input().policy)?\n"
+        ]
+      ]
+    },
+    "tools/elf-rewrite/examples/fixtures/offline_router.rs": {
+      "current_sha256": "210461586f46ecd3a84127d778d376860d9e3eb0baea23b1f328e1019c74b0ec",
+      "previous_sha256": "057a70e47acda47eba2e39ada7c31d606a877dd6ff48ecfb3c5b0f9e60a7635f",
+      "edits": [
+        [
+          4332,
+          5423,
+          ""
+        ]
+      ]
+    },
+    "tools/elf-rewrite/examples/offline_router_sites.rs": {
+      "current_sha256": "9d0abb4aca13d06fa1d49105314f629e0ec6fae9414302079456cfd942047260",
+      "previous_sha256": "0efec45f63d6320c0cced59bdbfc42e5ed64d5d3b6f2f7a226dbfc1c4237b030",
+      "edits": [
+        [
+          917,
+          1287,
+          ""
+        ],
+        [
+          1896,
+          1913,
+          "        offline_router::PROFILE,\n"
+        ],
+        [
+          2758,
+          3296,
+          ""
+        ],
+        [
+          3322,
+          3557,
+          "        return Err(\"offline_router_sites CHECKSUM_ORIGINAL LEDGER LEDGER_SHA POLICY POLICY_SHA STARTUP STARTUP_SHA RLE_ORIGINAL LEDGER LEDGER_SHA POLICY POLICY_SHA STARTUP STARTUP_SHA NEW_DIRECTORY\".into());\n"
+        ],
+        [
+          4555,
+          4829,
+          "        .map(|(x, id)| Bound::bind(&x[0], &x[1], id[0], &x[2], id[1], &x[3], id[2]))\n"
+        ],
+        [
+          6814,
+          7188,
+          "            files.insert(\"program-failure.tsv\".into(),format!(\"LI2BOOTSTRAP-FAILURE\\t1\\nprofile\\t{}\\nrequired_programs\\tchecksum,rle-roundtrip\\nrequired_original_heads\\t187\\nrequired_selected_sites\\t42\\ncandidate_complete\\tfalse\\nqualification_complete\\tfalse\\ndetail_hex\\t{}\\n\",offline_router::PROFILE,error.as_bytes().iter().map(|b|format!(\"{b:02x}\")).collect::<String>()).into_bytes());\n"
+        ],
+        [
+          7376,
+          7762,
+          "    publish(\n        output,\n        &files,\n        [&initial[0][0], &initial[1][0]],\n        complete,\n        io::write,\n    )?;\n"
+        ],
+        [
+          8023,
+          8039,
+          "        offline_router::PROFILE\n"
+        ],
+        [
+          8077,
+          8364,
+          "    match run_with_read(&std::env::args().collect::<Vec<_>>(), io::read) {\n"
+        ],
+        [
+          8451,
+          8499,
+          "            eprintln!(\"profile={} {e}\", offline_router::PROFILE);\n"
+        ],
+        [
+          13846,
+          17172,
+          ""
+        ]
+      ]
+    },
+    "tools/elf-rewrite/src/carrier/mod.rs": {
+      "current_sha256": "9b84b35fe2c03885074ba01b9fc4feb3da8f3bef4abc2bb5d01e7a0459da6f34",
+      "previous_sha256": "9ddc5dafa7e7f85604a51526f9bf06e94c1553c24b2f60ac62444e9021fc3b20",
+      "edits": [
+        [
+          360,
+          468,
+          "pub use startup::{StartupLayout, StartupLimits, StaticExecStartup};\n"
+        ],
+        [
+          13411,
+          14056,
+          "        Some(startup),\n"
+        ],
+        [
+          14340,
+          14391,
+          "    startup_request: Option<StaticExecStartup<'_>>,\n"
+        ]
+      ]
+    },
+    "tools/elf-rewrite/src/carrier/startup.rs": {
+      "current_sha256": "84e76f0379e65203f5f28d1ffa5be89e2d6044b1a2e43bb802b6a595a2312dd3",
+      "previous_sha256": "0691706c78fd58e53a66dfa998772b3f40e259854a7146881a5335a429b393ab",
+      "edits": [
+        [
+          0,
+          84,
+          "//! Typed main-image startup metadata for one opt-in static ET_EXEC profile.\n"
+        ],
+        [
+          519,
+          563,
+          ""
+        ],
+        [
+          919,
+          995,
+          "    /// Includes the final NUL of the single absolute DT_NEEDED pathname.\n"
+        ],
+        [
+          1026,
+          1103,
+          "    /// Includes the leading empty string and final pathname NUL.\n"
+        ],
+        [
+          1787,
+          3161,
+          ""
+        ],
+        [
+          3917,
+          3951,
+          ""
+        ],
+        [
+          4435,
+          4465,
+          "    pub request: StaticExecStartup<'a>,\n"
+        ],
+        [
+          4793,
+          4934,
+          "    budget(\"startup dynamic entries\", 7, limits.dynamic_entries as u64)?;\n"
+        ],
+        [
+          5345,
+          5392,
+          "    let strings = add(\n        prepared.request.bootstrap_dso.len() as u64,\n        2,\n        \"startup strings\",\n    )?;\n"
+        ],
+        [
+          5605,
+          5631,
+          "    request: StaticExecStartup<'a>,\n"
+        ],
+        [
+          5798,
+          7331,
+          ""
+        ],
+        [
+          7341,
+          7372,
+          "        request.interpreter,\n"
+        ],
+        [
+          7395,
+          7433,
+          "        request.limits.max_interpreter_bytes,\n"
+        ],
+        [
+          7441,
+          7731,
+          "    let needed = path(\n        request.bootstrap_dso,\n        \"needed\",\n        request.limits.max_needed_bytes,\n    )?;\n"
+        ],
+        [
+          7830,
+          7869,
+          "        request.limits.max_string_table_bytes,\n"
+        ],
+        [
+          7922,
+          7989,
+          "        DYNAMIC_BYTES,\n        request.limits.max_dynamic_bytes,\n"
+        ],
+        [
+          9050,
+          9096,
+          "    let protected = sections(input, request.limits)?;\n"
+        ],
+        [
+          9924,
+          9981,
+          "        prepared.request.interpreter.len() as u64 + 1,\n"
+        ],
+        [
+          9989,
+          10081,
+          "    let string_table = FileRange::checked(\n        interpreter.end(),\n        prepared.request.bootstrap_dso.len() as u64 + 2,\n    )?;\n"
+        ],
+        [
+          10271,
+          10413,
+          "    let dynamic = FileRange::checked(FileOffset(align_up(hash_table.end().0, 8)?), DYNAMIC_BYTES)?;\n"
+        ],
+        [
+          10567,
+          10621,
+          "        prepared.request.limits.max_metadata_bytes,\n"
+        ],
+        [
+          12756,
+          12814,
+          "    let path = prepared.request.interpreter.as_bytes();\n"
+        ],
+        [
+          12868,
+          13319,
+          "    let at = host_index(layout.string_table.start().0)? + 1;\n    let path = prepared.request.bootstrap_dso.as_bytes();\n    bytes[at..at + path.len()].copy_from_slice(path);\n    // New backing was zero-initialized. This leaves both terminating NULs, the\n"
+        ],
+        [
+          13656,
+          13677,
+          "    let records = [\n        (1_u64, 1_u64), // DT_NEEDED: exact offset after the empty string.\n"
+        ],
+        [
+          14086,
+          14094,
+          "    ];\n"
+        ],
+        [
+          16574,
+          16989,
+          "    if interpreter_bytes.strip_suffix(&[0]) != Some(prepared.request.interpreter.as_bytes())\n        || strings\n            .strip_prefix(&[0])\n            .and_then(|rest| rest.strip_suffix(&[0]))\n            != Some(prepared.request.bootstrap_dso.as_bytes())\n"
+        ],
+        [
+          18129,
+          18150,
+          "    let records = [\n        (1_u64, 1_u64),\n"
+        ],
+        [
+          18340,
+          18348,
+          "    ];\n"
+        ],
+        [
+          18387,
+          18451,
+          "    if table.len() != DYNAMIC_BYTES as usize\n"
+        ],
+        [
+          18735,
+          18818,
+          "    if inventory.dynamic_entries != 7\n"
+        ]
+      ]
+    },
+    "tools/elf-rewrite/src/carrier/startup_fixtures.rs": {
+      "current_sha256": "0846c2cb4a15fc164a60787607088de369591604d2bfc7b862f18297db66ab77",
+      "previous_sha256": "78f1029151c39a413711307a8dca8923c0a47b5e7aa6d7fd7cf9368ee41e3157",
+      "edits": [
+        [
+          25856,
+          37504,
+          ""
+        ]
+      ]
+    },
+    "tools/elf-rewrite/src/offline_router.rs": {
+      "current_sha256": "cd5cd8afdd14fc0713fc34b409b1377db26b65b873484749b061332e57b42334",
+      "previous_sha256": "18ec01bced9079db99ecaaf0e3c6c5eb149e8025860af28064113c074f01b5e2",
+      "edits": [
+        [
+          368,
+          585,
+          ""
+        ],
+        [
+          990,
+          1029,
+          ""
+        ],
+        [
+          1394,
+          2485,
+          ""
+        ],
+        [
+          2814,
+          3575,
+          "        let (program, policy, startup) = parse_policy(\n            runtime,\n            runtime_id,\n            original,\n            disassembly_id,\n            planning_id,\n            &selected.base.selection,\n        )?;\n"
+        ],
+        [
+          3968,
+          3995,
+          ""
+        ],
+        [
+          4044,
+          4554,
+          ""
+        ],
+        [
+          4878,
+          4916,
+          ""
+        ],
+        [
+          5177,
+          5627,
+          "            \"LI2STARTUP-PRODUCER\\t1\\nprofile\\t{PROFILE}\\nruntime_profile\\t{}\\nplanning_profile\\t{}\\nprogram\\t{}\\noriginal_heads\\t{}\\nselected_sites\\t{}\\nruntime_policy_sha256\\t{}\\nqualification_complete\\tfalse\\nexecution_authority\\tnone\\n\",\n            boot::PROFILE, self.selected.profile(), program_name(self.program), self.heads.len(), self.selected.base.selection.sites.len(), ledger::hex(&ContentId::of(&self.policy).0)).into_bytes());\n"
+        ],
+        [
+          7234,
+          7313,
+          ""
+        ],
+        [
+          7539,
+          8087,
+          ""
+        ],
+        [
+          8567,
+          8939,
+          "        r[0] == \"LI2BOOTSTRAP-POLICY 1\" && r[1] == format!(\"profile {}\", boot::PROFILE),\n"
+        ],
+        [
+          9530,
+          10281,
+          "    let bootstrap_dso = path(fields(r[7], \"bootstrap\", 2)?[1])?;\n"
+        ],
+        [
+          10916,
+          11161,
+          ""
+        ],
+        [
+          11203,
+          11280,
+          "        .zip([4096, 4096, 4097, 112, 16384, 4096, 65536, 1048576])\n"
+        ],
+        [
+          11391,
+          11509,
+          "            && caps[1] > bootstrap_dso.len() as u64\n            && caps[2] >= bootstrap_dso.len() as u64 + 2\n            && caps[3] == 112,\n"
+        ],
+        [
+          12201,
+          12254,
+          ""
+        ],
+        [
+          12974,
+          13669,
+          ""
+        ],
+        [
+          14472,
+          14523,
+          "    Ok((program, runtime, startup))\n"
+        ],
+        [
+          15246,
+          15381,
+          ""
+        ],
+        [
+          18249,
+          19406,
+          ""
+        ],
+        [
+          20780,
+          21266,
+          "        let catalog = li2core::offline_router::catalog_from_plans(input, accepted)\n            .map_err(|e| Error::new(\"startup-catalog\", e))?;\n"
+        ]
+      ]
+    },
+    "tools/elf-rewrite/src/offline_router/tests.rs": {
+      "current_sha256": "8b8df4214c8eecfd0dabc41a295bd72bdac28be5766e1b7ce641b7da6f439589",
+      "previous_sha256": "da74e5f4f0a9bbe43f0d4c65ff05ad093691c09bae49e4476da5fb7156765fc8",
+      "edits": [
+        [
+          16716,
+          24004,
+          ""
+        ]
+      ]
+    }
+  },
+  "evaluation_projections": {
+    "evaluation/admission/core_813_inventory.py": {
+      "current_sha256": "dfc18012e1c1983470e567961817682229b83bdc034df64b621611cbfd4fadf2",
+      "previous_sha256": "86443c76dda887dd8127a8effa713efab57229ff407274f709b6596de699e7b0",
+      "edits": [
+        [
+          345,
+          382,
+          ""
+        ],
+        [
+          4806,
+          5131,
+          "              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091)\n"
+        ],
+        [
+          6085,
+          6137,
+          ""
+        ],
+        [
+          6880,
+          6957,
+          ""
+        ],
+        [
+          7625,
+          7674,
+          "        source_before_091(path, raw, error)\n"
+        ]
+      ]
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "current_sha256": "297eeb1a3fc55b2a75fd8495c65369b43b26e2b87288e7717d724c0b066337b2",
+      "previous_sha256": "bd0fead5d6aad50a735a403e06a8bf258a05f973e8d9581c48300c9a4ecde6fb",
+      "edits": [
+        [
+          347,
+          384,
+          ""
+        ],
+        [
+          820,
+          900,
+          "RECORDER_TESTS = recorder_shards.RECORDER_TESTS\nPYTHON_CURRENT = recorder_shards.PYTHON_CURRENT\n"
+        ],
+        [
+          4837,
+          4946,
+          ""
+        ],
+        [
+          10543,
+          10580,
+          "def require_current(declared):\n"
+        ],
+        [
+          10850,
+          11132,
+          ""
+        ]
+      ]
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "current_sha256": "ad4a7e8ceb8ed8e07f701fe809e4d4d83dab35dd3c36e736ddb4c5b2c557b8bd",
+      "previous_sha256": "d20fea3fb28325b72e9c7612f2590c23ef5dcf1a395086361d111e11e583bb46",
+      "edits": [
+        [
+          1392,
+          1469,
+          "    require(type(count) is int and count == 354 and len(identities) == count\n"
+        ],
+        [
+          1742,
+          1899,
+          ""
+        ],
+        [
+          2346,
+          2414,
+          "    # Actual workers authenticate all354 and allfour in discover().\n"
+        ]
+      ]
+    },
+    "evaluation/admission/recorder_shards_inventory.py": {
+      "current_sha256": "d90dca81509cdc6ee4fa874213a2a4337ba060c001508109fc04ecb19eb8c233",
+      "previous_sha256": "8c61fbf4a646605cc0c5a323999689301a7c0082fcd425f5cb3aa7869b9174a6",
+      "edits": [
+        [
+          164,
+          201,
+          ""
+        ],
+        [
+          1573,
+          1638,
+          ""
+        ],
+        [
+          1797,
+          1864,
+          ""
+        ],
+        [
+          2237,
+          2304,
+          ""
+        ],
+        [
+          2506,
+          2562,
+          ""
+        ],
+        [
+          3028,
+          3077,
+          ""
+        ]
+      ]
+    },
+    "evaluation/admission/test_main813_inventory.py": {
+      "current_sha256": "ac944c656868035da09109db6823cd4b6fac3edf61f23842edb54d5ec703101f",
+      "previous_sha256": "25adc14510727287a6a0b1e064f78c0439f56060f361043273139b78b4f24a64",
+      "edits": [
+        [
+          351,
+          388,
+          ""
+        ],
+        [
+          55408,
+          55706,
+          "        recorder_live = json.loads(Path(__file__).with_name('corpus.json').read_bytes())\n        recorder_ids = main5c.python_identities(Path(__file__).parent)\n"
+        ],
+        [
+          55797,
+          55850,
+          "        self.assertEqual(inventory.RECORDER_TESTS, 354)\n"
+        ],
+        [
+          56364,
+          56438,
+          "        self.assertIsNone(inventory.require_current(recorder_live))\n"
+        ],
+        [
+          56530,
+          56588,
+          "            inventory.require_current(recorder_old)\n"
+        ],
+        [
+          56860,
+          56922,
+          "                inventory.require_current(recorder_bad)\n"
+        ],
+        [
+          57946,
+          58080,
+          "            recorder_raw = recorder_read(recorder_target)\n"
+        ],
+        [
+          59316,
+          59387,
+          "                        inventory.require_current(recorder_live)\n"
+        ],
+        [
+          60428,
+          60499,
+          ""
+        ]
+      ]
+    }
+  }
+}

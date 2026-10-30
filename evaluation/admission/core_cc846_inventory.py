@@ -11,6 +11,7 @@ import inventory_syntax
 import core_5cda_inventory as main5c
 import core_813_inventory as main813
 import recorder_shards_inventory as recorder_shards
+import core_367_inventory as main367
 
 DATA_SHA256 = 'bdea03e1f24150ab46dfa196782fb4866378d8cf00f8291745d89de21593cf14'
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,8 +22,8 @@ CURRENT = DATA['current_corpus_sha256']
 AC0963 = DATA['ac0963']
 LIVE = AC0963['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
-RECORDER_TESTS = recorder_shards.RECORDER_TESTS
-PYTHON_CURRENT = recorder_shards.PYTHON_CURRENT
+RECORDER_TESTS = main367.RECORDER_TESTS
+PYTHON_CURRENT = main367.PYTHON_CURRENT
 PYTHON_PRE_5CDA = '462da94e73e635ac5c3b46192cba7b991de92b72ec871853204e45d529943b3f'
 PYTHON_PREVIOUS = 'fb8adb475b7ecbafb984dfa99c674f8a60fdb59fbb5adeb5754482e1136bb3bc'
 PYTHON_MODULE = 'test_main_query_inventory'
@@ -81,6 +82,7 @@ def before_ac0963(declared):
 
 
 def peel_ac0963(declared):
+    declared = main367.peel_current(declared, 'ac0963_inventory_differs', 'ac0963_source_inventory_differs')
     return before_ac0963(declared) if type(declared) is dict and digest(declared) in (recorder_shards.CURRENT, LIVE, main5c.CURRENT, main813.CURRENT, main813.CURRENT690, main813.CURRENTC0, main813.CURRENTC1, main813.CURRENTE797, main813.CURRENTF0EF, main813.CURRENT7CDC, main813.CURRENT43D7, main813.CURRENT0DF8, main813.CURRENT0A8, main813.CURRENT09FE, main813.CURRENT727, main813.CURRENTABAB, main813.CURRENT83B, main813.CURRENT850, main813.CURRENT5A0, main813.CURRENT9950, main813.CURRENT2754, main813.CURRENT9C70, main813.CURRENT0A088, main813.CURRENTE11, main813.CURRENT469, main813.CURRENTB66, main813.CURRENT12E, main813.CURRENTC6F, main813.CURRENTSHORT, main813.CURRENTSHORTNATIVE, main813.CURRENTSHORTENGINE, main813.CURRENTSHORTPENDING, main813.CURRENTADJACENT, main813.CURRENTFRONTEND, main813.CURRENTROUTED, main813.CURRENTROUTEDNATIVE, main813.CURRENTSTARTUP, main813.LATEST) else declared
 
 
@@ -181,8 +183,15 @@ def require_historical350(declared):
             'cc846_python_inventory_differs')
 
 
-def require_current(declared):
+def require_historical354(declared):
     """The only live recorder corpus is exact354; old350 is a typed predecessor."""
     old = recorder_shards.before_current(declared, 'ac0963_inventory_differs',
                                          'ac0963_source_inventory_differs')
     require_historical350(old)
+
+
+def require_current(declared):
+    """Only the exact absolute-startup355 corpus enters live qualification."""
+    old = main367.before_current(declared, 'ac0963_inventory_differs',
+                                 'ac0963_source_inventory_differs')
+    require_historical354(old)
