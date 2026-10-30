@@ -12,6 +12,10 @@ crate-type = ["staticlib"]
 [dependencies]
 iced-x86 = { version = "=1.21.0", default-features = false, features = ["no_std", "decoder"] }
 
+[features]
+default = []
+scalar-region = ["iced-x86/instr_info"]
+
 [profile.release]
 opt-level = 2
 debug = 1
