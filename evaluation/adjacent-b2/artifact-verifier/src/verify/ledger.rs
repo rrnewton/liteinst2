@@ -8,41 +8,42 @@ type SourceEdit = (u64, Vec<u8>);
 type StepEdits = (Vec<Range>, Vec<SourceEdit>);
 
 #[derive(Clone, Debug)]
-struct Step {
-    owner: u64,
-    local: usize,
-    kind: String,
-    logical: u64,
-    physical: u64,
-    displaced: Range,
-    read: Option<(u64, Vec<u8>)>,
-    write: Option<(u64, Vec<u8>)>,
-    store: Option<(u64, Vec<u8>)>,
-    entries: Vec<(u64, Option<u64>)>,
-    allocation: Option<Range>,
-    prerequisites: Option<[bool; 3]>,
-    rank: u8,
+pub(super) struct Step {
+    pub(super) owner: u64,
+    pub(super) local: usize,
+    pub(super) kind: String,
+    pub(super) logical: u64,
+    pub(super) physical: u64,
+    pub(super) displaced: Range,
+    pub(super) read: Option<(u64, Vec<u8>)>,
+    pub(super) write: Option<(u64, Vec<u8>)>,
+    pub(super) store: Option<(u64, Vec<u8>)>,
+    pub(super) entries: Vec<(u64, Option<u64>)>,
+    pub(super) allocation: Option<Range>,
+    pub(super) prerequisites: Option<[bool; 3]>,
+    pub(super) rank: u8,
 }
 #[derive(Clone, Debug)]
-struct Image {
-    id: usize,
-    owner: u64,
-    entry: u64,
-    bytes: Vec<u8>,
-    routes: BTreeMap<u64, u64>,
-    boundaries: BTreeMap<u64, u64>,
-    maps: Vec<(Range, u64)>,
-    fields: Vec<EncodedField>,
-    requirements: Vec<(u64, u64)>,
-    rank: u8,
+pub(super) struct Image {
+    pub(super) id: usize,
+    pub(super) owner: u64,
+    pub(super) entry: u64,
+    pub(super) bytes: Vec<u8>,
+    pub(super) routes: BTreeMap<u64, u64>,
+    pub(super) boundaries: BTreeMap<u64, u64>,
+    pub(super) maps: Vec<(Range, u64)>,
+    pub(super) fields: Vec<EncodedField>,
+    pub(super) requirements: Vec<(u64, u64)>,
+    pub(super) rank: u8,
 }
-struct Plan {
-    owner: u64,
-    steps: Vec<Step>,
-    images: Vec<Image>,
-    relay: bool,
+pub(super) struct Plan {
+    pub(super) owner: u64,
+    pub(super) steps: Vec<Step>,
+    pub(super) images: Vec<Image>,
+    pub(super) relay: bool,
 }
 pub struct Joined {
+    pub(super) plans: Vec<Plan>,
     pub associations: Associations,
     pub images: Vec<carrier::RxImage>,
     pub edits: Vec<carrier::DeclaredEdit>,
@@ -418,7 +419,7 @@ pub fn join(
     let mut image_bytes = 0usize;
     let mut steps = 0usize;
     let mut previous_owner_pc = u64::MAX;
-    for plan in plans {
+    for plan in &plans {
         let site = &f.selection.sites[host(plan.owner - 1)?];
         require(
             site.pc < previous_owner_pc,
@@ -474,7 +475,7 @@ pub fn join(
                     &site.victim_allocation
                 },
             )?;
-            let image = associated(&plan, step, site.pc, site.hook)?;
+            let image = associated(plan, step, site.pc, site.hook)?;
             require(matched.insert(image.id), "duplicate associated image")?;
             shape(
                 step,
@@ -629,6 +630,7 @@ pub fn join(
     }
     edits.sort_by_key(|e| e.offset);
     Ok(Joined {
+        plans,
         associations,
         images: all_images,
         edits,
@@ -1442,5 +1444,31 @@ mod tests {
         .unwrap();
         image_joins(&plan.images[0], &plan.steps[0], &heads).unwrap();
         associated(&plan, &plan.steps[0], 0x401000, 1).unwrap();
+    }
+    #[test]
+    fn r2_long_neighbor_stays_outside_frozen_short_only_profile() {
+        let selected = 0x401000;
+        let victim = 0x401002;
+        let (mut auxiliary, _) = member(1, 0, victim, 10, 0x500000, false);
+        let (mut chosen, _) = member(1, 1, selected, 2, 0x700000, true);
+        auxiliary.kind = "relocation".into();
+        chosen.kind = "relocation".into();
+        let steps = vec![auxiliary, chosen];
+        let heads = BTreeMap::from([
+            (selected, vec![0x75, 0]),
+            (victim, vec![0x66, 0x66, 0x66, 0x66, 0x69, 0xc0, 1, 0, 0, 0]),
+        ]);
+        assert_eq!(
+            shape(
+                &steps[0],
+                &steps,
+                Tactic::NeighborEviction,
+                selected,
+                2,
+                &heads
+            )
+            .err(),
+            Some("T3 short-only typed selected/auxiliary shape".into())
+        );
     }
 }

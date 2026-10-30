@@ -81,6 +81,7 @@ fn layout_case(entry: u64, span: u64) -> (Vec<u8>, ledger::Joined, Vec<u8>) {
     let original = original();
     let elf = Elf64::parse(&original, ParseLimits::default()).unwrap();
     let joined = ledger::Joined {
+        plans: Vec::new(),
         associations: Default::default(),
         images: vec![carrier::RxImage {
             entry: ElfVaddr(entry),

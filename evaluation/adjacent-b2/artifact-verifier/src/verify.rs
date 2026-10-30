@@ -14,6 +14,8 @@ use std::fmt::Write as _;
 mod candidate;
 #[path = "verify/ledger.rs"]
 mod ledger;
+#[path = "verify/startup.rs"]
+pub mod startup;
 pub const PROFILE: &str = "elf-disassembly-null-jumps-adjacent-routed-jmp-short-t3-pending-v1";
 pub const TEXT: usize = 1_048_576;
 pub const FILE: usize = 16 * TEXT;
@@ -435,6 +437,15 @@ pub fn verify(
     expected: &Expected,
     product: &dyn Files,
 ) -> Result<Summary> {
+    verify_mode(program, original, expected, product, None).map(|(summary, _)| summary)
+}
+fn verify_mode(
+    program: &str,
+    original: &[u8],
+    expected: &Expected,
+    product: &dyn Files,
+    startup: Option<&startup::Inputs>,
+) -> Result<(Summary, Option<startup::Summary>)> {
     require(program == expected.program, "program expectation")?;
     let facts = expected.facts(original, product)?;
     let report = product.read("report.tsv", TEXT)?;
@@ -445,7 +456,17 @@ pub fn verify(
     let plan = product.read("plan-ledger.tsv", FILE)?;
     let joined = ledger::join(original, &facts, &records, &plan, product)?;
     let mut names: BTreeSet<String> = STATIC.iter().map(|s| s.to_string()).collect();
-    names.insert("COMPLETE".into());
+    if startup.is_some() {
+        for name in [
+            "catalog.li2boot",
+            "startup-policy.txt",
+            "startup-profile.tsv",
+        ] {
+            names.insert(name.into());
+        }
+    } else {
+        names.insert("COMPLETE".into());
+    }
     for id in ids {
         names.insert(format!("site-{id}.diagnostics.txt"));
     }
@@ -457,15 +478,34 @@ pub fn verify(
         "complete actual artifact membership",
     )?;
     let candidate = product.read("candidate.elf", OUTPUT)?;
-    candidate::join(
-        original,
-        &facts,
-        &joined,
-        &meta_bytes,
-        &plan,
-        &candidate,
-        &product.read("ledger.tsv", FILE)?,
-    )?;
+    let full_ledger = product.read("ledger.tsv", FILE)?;
+    let startup_summary = if let Some(input) = startup {
+        Some(startup::join(
+            startup::Artifact {
+                program,
+                original,
+                facts: &facts,
+                joined: &joined,
+                metadata: &meta_bytes,
+                plan: &plan,
+                candidate: &candidate,
+                ledger: &full_ledger,
+                product,
+            },
+            input,
+        )?)
+    } else {
+        candidate::join(
+            original,
+            &facts,
+            &joined,
+            &meta_bytes,
+            &plan,
+            &candidate,
+            &product.read("ledger.tsv", FILE)?,
+        )?;
+        None
+    };
     let content = formats::sparse::Limits {
         edits: TEXT,
         edited_bytes: TEXT,
@@ -505,12 +545,15 @@ pub fn verify(
         &facts,
         &joined.associations,
     )?;
-    Ok(Summary {
-        program: program.into(),
-        selected: records.len(),
-        images: joined.images.len(),
-        candidate_sha256: digest(&candidate),
-    })
+    Ok((
+        Summary {
+            program: program.into(),
+            selected: records.len(),
+            images: joined.images.len(),
+            candidate_sha256: digest(&candidate),
+        },
+        startup_summary,
+    ))
 }
 fn metadata_join(original: &[u8], f: &Facts, records: &[Site], meta_bytes: &[u8]) -> Result<()> {
     let compatibility = Compatibility {

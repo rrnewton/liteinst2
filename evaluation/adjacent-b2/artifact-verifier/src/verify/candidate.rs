@@ -48,6 +48,7 @@ struct Added {
 }
 #[derive(Debug)]
 struct Layout {
+    startup: Option<super::startup::layout::Bytes>,
     table: FileRange,
     payload: FileRange,
     images: Vec<carrier::ImagePlacement>,
@@ -65,6 +66,15 @@ fn direct(
     joined: &ledger::Joined,
     payload: &[u8],
     candidate: &[u8],
+) -> Result<Layout> {
+    direct_mode(original, joined, payload, candidate, None)
+}
+fn direct_mode(
+    original: &[u8],
+    joined: &ledger::Joined,
+    payload: &[u8],
+    candidate: &[u8],
+    startup_policy: Option<&super::startup::Policy>,
 ) -> Result<Layout> {
     require(
         original.len() <= TEXT
@@ -89,7 +99,10 @@ fn direct(
         },
     ))?;
     checked(output.check_load_page_congruence(4096))?;
-    let count = old.program_headers().len() + joined.images.len() + 1;
+    let count = old.program_headers().len()
+        + joined.images.len()
+        + 1
+        + if startup_policy.is_some() { 2 } else { 0 };
     let c = page(original.len() as u64)?;
     let table = checked(FileRange::checked(FileOffset(c), count as u64 * 56))?;
     let payload_start = add(table.end().0, 7)? & !7;
@@ -97,7 +110,11 @@ fn direct(
         FileOffset(payload_start),
         payload.len() as u64,
     ))?;
-    let mut cursor = payload_range.end().0;
+    let startup = startup_policy
+        .map(|policy| super::startup::layout::bytes(payload_range.end().0, c, policy))
+        .transpose()?;
+    let mut cursor = startup.as_ref().map_or(payload_range.end().0, |s| s.end);
+
     let mut added = vec![Added {
         address: 0x480000,
         offset: c,
@@ -154,17 +171,45 @@ fn direct(
             }
         }
         order.push((true, p.index));
+        if p.index == 0 && startup.is_some() {
+            // Distinct sentinel slots are only consumed in this explicit mode.
+            order.push((true, usize::MAX));
+        }
     }
     while next < added.len() {
         order.push((false, next));
         next += 1;
+    }
+    if startup.is_some() {
+        order.push((true, usize::MAX - 1));
     }
     require(order.len() == count, "complete header order")?;
     let mut carrier_index = None;
     let mut original_indices = vec![usize::MAX; 6];
     for (index, (is_old, source)) in order.into_iter().enumerate() {
         let p = &output.program_headers()[index];
-        if is_old && source != 0 {
+        if is_old && source >= usize::MAX - 1 {
+            let startup = startup.as_ref().ok_or("startup PHDR mode")?;
+            let (kind, offset, size, align) = if source == usize::MAX {
+                (3, startup.interpreter.start, startup.interpreter.len(), 1)
+            } else {
+                (2, startup.dynamic.start, startup.dynamic.len(), 8)
+            };
+            let address = add(0x480000, offset - c)?;
+            require(
+                (
+                    p.raw_type,
+                    p.flags.0,
+                    p.offset.0,
+                    p.vaddr.0,
+                    p.physical_address,
+                    p.file_size,
+                    p.memory_size,
+                    p.alignment,
+                ) == (kind, 4, offset, address, address, size, size, align),
+                "all independent startup PHDR fields",
+            )?;
+        } else if is_old && source != 0 {
             original_indices[source] = index;
             require(
                 slice(candidate, add(c, index as u64 * 56)?, 56)?
@@ -227,6 +272,37 @@ fn direct(
         pages <= 128 && occupied.last().ok_or("LOAD hull")?.end - occupied[0].start <= 2147483648,
         "full original/carrier/image hull and new page cap",
     )?;
+    if let Some(startup) = &startup {
+        let first = output
+            .segments(SegmentType::Load)
+            .next()
+            .ok_or("startup LOAD")?
+            .index;
+        let last = output
+            .segments(SegmentType::Load)
+            .last()
+            .ok_or("startup LOAD")?
+            .index;
+        let interp: Vec<_> = output.segments(SegmentType::Interpreter).collect();
+        let dynamic: Vec<_> = output.segments(SegmentType::Dynamic).collect();
+        let stacks: Vec<_> = output.segments(SegmentType::GnuStack).collect();
+        require(
+            interp.len() == 1
+                && dynamic.len() == 1
+                && stacks.len() == 1
+                && original_indices[0] < interp[0].index
+                && interp[0].index < first
+                && last < dynamic[0].index
+                && stacks[0].flags.0 == 6,
+            "startup interpreter precedes LOADs and dynamic follows all LOADs",
+        )?;
+        require(
+            output.program_headers()[carrier_index].offset.0
+                + output.program_headers()[carrier_index].file_size
+                == startup.end,
+            "dynamic ends complete RO carrier",
+        )?;
+    }
     let mapping = checked(output.file_to_virtual(table.start(), table.len()))?;
     require(
         mapping.program_header == carrier_index
@@ -262,6 +338,22 @@ fn direct(
     };
     cover(table, None)?;
     cover(payload_range, Some(payload))?;
+    if let Some(startup) = &startup {
+        cover(
+            checked(FileRange::checked(
+                FileOffset(startup.start),
+                startup.end - startup.start,
+            ))?,
+            Some(&startup.bytes),
+        )?;
+        let owner = checked(
+            output.file_to_virtual(FileOffset(startup.start), startup.end - startup.start),
+        )?;
+        require(
+            owner.program_header == carrier_index && owner.flags.0 == 4,
+            "complete startup metadata unique RO owner",
+        )?;
+    }
     for (image, p) in joined.images.iter().zip(&placements) {
         cover(p.file, Some(&image.bytes))?;
         let m = checked(output.file_to_virtual(p.file.start(), p.file.len()))?;
@@ -329,6 +421,7 @@ fn direct(
         "all original bytes including old PHDRs, headers, padding, notes, data, and tail",
     )?;
     Ok(Layout {
+        startup,
         table,
         payload: payload_range,
         images: placements,
@@ -428,6 +521,33 @@ pub fn join(
             && reconstructed.original_to_output_header == layout.original_indices
             && reconstructed.dynamic.writes.is_empty(),
         "checked carrier reconstruction agrees with every direct invariant",
+    )
+}
+
+/// New-profile direct proof; no writer, planner or runtime catalog validator is
+/// an acceptance oracle. Legacy direct() and all old tests keep their mode.
+pub(super) fn join_startup(
+    artifact: &super::startup::Artifact<'_>,
+    policy: &super::startup::Policy,
+) -> Result<()> {
+    let super::startup::Artifact {
+        original,
+        joined,
+        metadata,
+        plan,
+        candidate,
+        ledger,
+        ..
+    } = *artifact;
+    super::startup::layout::original_sections(original, policy, &joined.edits)?;
+    let payload = payload(metadata, plan);
+    let layout = direct_mode(original, joined, &payload, candidate, Some(policy))?;
+    require(layout.startup.is_some(), "explicit startup layout")?;
+    let mut expected = plan.to_vec();
+    expected.extend_from_slice(&extension(&layout, candidate));
+    require(
+        ledger == expected,
+        "complete independent startup carrier extension",
     )
 }
 

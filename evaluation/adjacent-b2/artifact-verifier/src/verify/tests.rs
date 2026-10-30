@@ -2,6 +2,7 @@
 //! planner, decoder, prepare call, or producer binary supplies expected facts.
 use super::*;
 use crate::Memory;
+use formats::startup as boot;
 pub(super) fn sparse_limits() -> formats::sparse::Limits {
     formats::sparse::Limits {
         edits: TEXT,
@@ -63,6 +64,11 @@ fn rel(address: u64, target: u64) -> Vec<u8> {
     b
 }
 pub(crate) struct Fixture {
+    // Actual fixture records are written alongside the manually authored plan,
+    // before independent ledger joins. They never call expected_records.
+    pub startup_steps: Vec<boot::Step>,
+    pub startup_images: Vec<boot::Image>,
+    pub startup_heads: Vec<u64>,
     pub original: Vec<u8>,
     pub expected: Expected,
     pub product: Memory,
@@ -80,10 +86,42 @@ fn upstream_fixture(program: &str) -> Fixture {
     make_fixture(program, false, 0, true)
 }
 fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
+    make_fixture_mode(program, t2, pair, upstream, false)
+}
+pub(super) fn startup_fixture(program: &str, pair: u8) -> Fixture {
+    match pair {
+        3 => make_fixture_mode(program, true, 0, false, true),
+        4 => make_fixture_mode(program, false, 0, true, true),
+        5 | 6 => make_fixture_options(program, false, 0, false, true, (pair, None)),
+        _ => make_fixture_mode(program, false, pair, false, true),
+    }
+}
+pub(super) fn startup_fixture_with_image(program: &str, image: u64) -> Fixture {
+    make_fixture_options(program, false, 0, false, true, (0, Some(image)))
+}
+fn make_fixture_mode(program: &str, t2: bool, pair: u8, upstream: bool, startup: bool) -> Fixture {
+    make_fixture_options(program, t2, pair, upstream, startup, (0, None))
+}
+fn make_fixture_options(
+    program: &str,
+    t2: bool,
+    pair: u8,
+    upstream: bool,
+    startup: bool,
+    extra: (u8, Option<u64>),
+) -> Fixture {
+    let (extra_family, image_override) = extra;
+    let t1 = extra_family == 5;
+    let t3 = extra_family == 6;
+    let mut startup_steps = Vec::new();
+    let mut startup_images = Vec::new();
     let routed = pair == 1;
     let forward = pair == 2;
     let (count, n) = denominator(program).unwrap();
     let mut original = original();
+    if startup {
+        original[0x46000..0x56000].fill(0x5a);
+    }
     let mut heads = BTreeMap::new();
     let mut selected = Vec::new();
     let mut regions = Vec::new();
@@ -98,6 +136,18 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
         while index < population {
             let bytes = if base == 0x403000 {
                 vec![0xc3]
+            } else if t1 && base == 0x401000 && index == 0 {
+                selected.push(pc);
+                chosen += 1;
+                vec![0x66, 0x75, 0]
+            } else if t3 && base == 0x401000 && index == 0 {
+                selected.push(pc);
+                chosen += 1;
+                vec![0x75, 6]
+            } else if t3 && base == 0x401000 && index == 1 {
+                vec![0x69, 0xc0, 1, 0, 0, 0]
+            } else if t3 && base == 0x401000 && index == 2 {
+                vec![0x0f, 0x1f, 0x40, 0]
             } else if upstream && base == 0x401000 && index == 0 {
                 vec![0x90]
             } else if upstream && base == 0x401000 && index == 1 {
@@ -264,7 +314,11 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
     let mut deps = vec![(0x3000, 0x3001)];
     let mut image_id = 0;
     for s in &selection.sites {
-        let tactic = if t2 && s.id == 1 {
+        let tactic = if t1 && s.id == 1 {
+            "T1"
+        } else if t3 && s.id == 1 {
+            "T3"
+        } else if t2 && s.id == 1 {
             "T2"
         } else if (routed && s.id == 1) || (forward && s.id <= 2) {
             "B2"
@@ -284,7 +338,16 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
     }
     for s in selection.sites.iter().rev() {
         let mut image_rows = String::new();
-        let members = if upstream && s.id == 1 {
+        let members = if t1 && s.id == 1 {
+            vec![(s.pc, 3, "prefixed-pun", s.pc + 6 + 0x5000e920, true)]
+        } else if t1 && s.id == 2 {
+            vec![(s.pc, 5, "relocation", s.pc + 5 + 0x00305000, true)]
+        } else if t3 && s.id == 1 {
+            vec![
+                (s.pc + 2, 6, "relocation", 0x500000, false),
+                (s.pc, 2, "relocation", s.pc + 12 + 0x00401f0f, true),
+            ]
+        } else if upstream && s.id == 1 {
             vec![(s.pc - 1, 5, "relocation", s.pc - 1 + 5 + 0x00300006, true)]
         } else if forward && s.id <= 2 {
             vec![(
@@ -308,7 +371,11 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
                 s.pc,
                 usize::from(s.length),
                 "relocation",
-                0x600000 + image_id as u64 * 4096,
+                if image_id == 0 {
+                    image_override.unwrap_or(0x600000)
+                } else {
+                    0x600000 + image_id as u64 * 4096
+                },
                 true,
             )]
         };
@@ -320,24 +387,51 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
             let router = (routed && s.id == 2) || is_upstream;
             let route_offset = if is_upstream { 1 } else { 2 };
             let body_offset = if is_upstream { 1 } else { 5 };
-            let write = if kind == "generalized-pun" {
+            let is_neighbor = t3 && s.id == 1;
+            let write = if kind == "prefixed-pun" {
+                vec![0x2e, 0xe9, 0x20]
+            } else if kind == "generalized-pun" {
                 vec![0xe9, 0x20]
+            } else if is_neighbor && hook {
+                vec![0xeb, 5]
+            } else if is_neighbor {
+                let mut b = rel(pc, entry);
+                b.extend_from_slice(&rel(pc + 5, s.pc + 12 + 0x00401f0f));
+                b
             } else {
                 rel(pc, entry)
             };
+            let observed = current[(start - 0x400000) as usize..(end - 0x400000) as usize].to_vec();
+            let pun = kind != "relocation";
+            let prefixes = usize::from(kind == "prefixed-pun");
+            let store = if pun {
+                let width = len.next_power_of_two();
+                let mut b =
+                    current[(pc - 0x400000) as usize..(pc - 0x400000) as usize + width].to_vec();
+                b[..len].copy_from_slice(&write);
+                Some(b)
+            } else {
+                None
+            };
             writeln!(&mut plan,"step\t{}\t{local}\t{kind}\t{logical}\t{pc}\t{pc}\t{}\nlive-prerequisites-not-receipts\t{}\t{local}\ttrue\ttrue\t{router}\nstep-read\t{}\t{local}\t{start}\t{}\nsemantic-write\t{}\t{local}\t{pc}\t{}",s.id,pc+len as u64,s.id,s.id,hex(&current[(start-0x400000) as usize..(end-0x400000) as usize]),s.id,hex(&write)).unwrap();
-            if kind == "generalized-pun" {
+            if let Some(store) = &store {
                 writeln!(
                     &mut plan,
                     "live-store-span\t{}\t{local}\t{pc}\t{}",
                     s.id,
-                    hex(&write)
+                    hex(store)
                 )
                 .unwrap();
             }
             writeln!(&mut plan, "entry-preserved\t{}\t{local}\t{pc}", s.id).unwrap();
-            if kind == "generalized-pun" {
-                writeln!(&mut plan, "entry-preserved\t{}\t{local}\t{}", s.id, pc + 2).unwrap();
+            if pun {
+                writeln!(
+                    &mut plan,
+                    "entry-preserved\t{}\t{local}\t{}",
+                    s.id,
+                    pc + len as u64
+                )
+                .unwrap();
             }
             if router {
                 writeln!(
@@ -375,13 +469,11 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
                 .copy_from_slice(&write);
             locks.push(Range {
                 start: pc,
-                end: pc
-                    + if kind == "generalized-pun" {
-                        5
-                    } else {
-                        len as u64
-                    },
+                end: pc + if pun { 5 + prefixes as u64 } else { len as u64 },
             });
+            if is_neighbor {
+                locks.push(Range::bytes(pc, write.len()).unwrap());
+            }
             deps.push((start - 0x400000, end - 0x400000));
             let mut data = if is_upstream {
                 let mut b = vec![0x90, 0x66, 0x66, 0x75, 0];
@@ -460,14 +552,151 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
             if pair != 0 && (s.id == 1 || s.id == 2) {
                 product.0.insert(format!("site-{}.diagnostics.txt",s.id),format!("pair_family={}\nadjacent_attempt=0 member={} role={} selected_id={} image_start={image_id} image_count=1 step_start={image_id} step_count=1\nopaque\n",if routed {"jbe-routed-jmp-mov-r12-rdi-v1"}else{"forward-jcc-b2-v1"},if s.id==2 {0}else{1},if s.id==2 {"upper"}else{"lower"},s.id).into_bytes());
             }
-            for (code, identity) in ledger::requirements(hook, 1, router) {
+            let mut fixture_requirements = vec![(1, 0), (2, 0), (3, 0), (4, 0), (7, 0), (8, 0)];
+            if hook {
+                fixture_requirements.push((5, 1));
+            }
+            if router {
+                fixture_requirements.push((6, 0));
+            }
+            for &(code, identity) in &fixture_requirements {
                 writeln!(
                     &mut image_rows,
                     "unmet-requirement\t{image_id}\t{code}\t{identity}"
                 )
                 .unwrap();
             }
+            if startup {
+                let mut obligations = vec![boot::Obligation {
+                    original: pc,
+                    generated: None,
+                }];
+                if pun {
+                    obligations.push(boot::Obligation {
+                        original: pc + len as u64,
+                        generated: None,
+                    });
+                }
+                if router {
+                    obligations.push(boot::Obligation {
+                        original: pc + route_offset,
+                        generated: Some(entry + body_offset),
+                    });
+                }
+                if pair != 0 && s.id == 1 {
+                    obligations.push(boot::Obligation {
+                        original: pc + 4,
+                        generated: None,
+                    });
+                }
+                if forward && s.id == 2 {
+                    for extra in [3, 4] {
+                        obligations.push(boot::Obligation {
+                            original: pc + extra,
+                            generated: None,
+                        });
+                    }
+                }
+                let kind = if pun {
+                    let free = len - prefixes - 1;
+                    let displacement = u32::try_from(entry - (pc + 5 + prefixes as u64)).unwrap();
+                    let low_mask = (1u32 << (free * 8)) - 1;
+                    let p = boot::Pun {
+                        instruction_len: len as u64,
+                        prefixes: prefixes as u64,
+                        consumed: boot::Span {
+                            start: pc,
+                            len: 5 + prefixes as u64,
+                        },
+                        target_window: boot::Span {
+                            start: entry - u64::from(displacement & low_mask),
+                            len: 1u64 << (free * 8),
+                        },
+                        store: boot::Span {
+                            start: pc,
+                            len: len.next_power_of_two() as u64,
+                        },
+                    };
+                    if prefixes == 0 {
+                        boot::Kind::GeneralizedPun(p)
+                    } else {
+                        boot::Kind::PrefixedPun(p)
+                    }
+                } else {
+                    boot::Kind::Relocation
+                };
+                let mut writes = vec![boot::Blob {
+                    address: pc,
+                    bytes: write.clone(),
+                }];
+                if let Some(store) = store {
+                    writes.push(boot::Blob {
+                        address: pc,
+                        bytes: store,
+                    });
+                }
+                startup_steps.push(boot::Step {
+                    selected_id: s.id,
+                    logical,
+                    physical: pc,
+                    displaced: boot::Span {
+                        start: pc,
+                        len: len as u64,
+                    },
+                    kind,
+                    neighbor: if is_neighbor {
+                        Some(boot::Neighbor {
+                            selected: s.pc,
+                            selected_len: 2,
+                            victim: s.pc + 2,
+                            victim_len: 6,
+                            relay: s.pc + 7,
+                            rel8: 5,
+                            selected_target: s.pc + 12 + 0x00401f0f,
+                            victim_target: 0x500000,
+                        })
+                    } else {
+                        None
+                    },
+                    reads: vec![boot::Blob {
+                        address: start,
+                        bytes: observed,
+                    }],
+                    writes,
+                    dependencies: vec![boot::Span {
+                        start,
+                        len: end - start,
+                    }],
+                    allocation: boot::Span {
+                        start: entry & !4095,
+                        len: 4096,
+                    },
+                    image: entry,
+                    obligations,
+                });
+                let mut entries = vec![(pc, entry)];
+                if router {
+                    entries.push((pc + route_offset, entry + body_offset));
+                }
+                startup_images.push(boot::Image {
+                    body: boot::Blob {
+                        address: entry,
+                        bytes: data.clone(),
+                    },
+                    entries,
+                    requirements: fixture_requirements,
+                });
+            }
             image_id += 1;
+        }
+        if t3 && s.id == 1 {
+            writeln!(
+                &mut plan,
+                "source-relay-geometry-hex\t{}\t{}",
+                s.id,
+                hex(b"independently authored short neighbor fixture")
+            )
+            .unwrap();
         }
         plan.push_str(&image_rows);
     }
@@ -600,6 +829,13 @@ fn make_fixture(program: &str, t2: bool, pair: u8, upstream: bool) -> Fixture {
     }
     reseal(&original, &mut product);
     Fixture {
+        startup_steps,
+        startup_images,
+        startup_heads: if startup {
+            heads.keys().copied().collect()
+        } else {
+            Vec::new()
+        },
         original,
         expected,
         product,
