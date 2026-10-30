@@ -1,0 +1,133 @@
+phase,harness,segment,outcome,passed,failed,ignored,measured,filtered_out,seconds
+workspace,Running unittests src/lib.rs (target/debug/deps/liteinst_admission-a8147fd0858b284a),0,ok,2,0,0,0,0,0.0
+workspace,Running tests/core_bridge.rs (target/debug/deps/core_bridge-74e13bc82a0725a6),0,ok,3,0,0,0,0,0.0
+workspace,Running tests/model.rs (target/debug/deps/model-0d85eff4eabfd555),0,ok,15,0,0,0,0,0.0
+workspace,Running tests/oracle.rs (target/debug/deps/oracle-abdfc2345c435c39),0,ok,12,0,0,0,0,0.02
+workspace,Running tests/oracle_chain.rs (target/debug/deps/oracle_chain-4e612aa30f244304),0,ok,21,0,0,0,0,0.01
+workspace,Running tests/return_obligations.rs (target/debug/deps/return_obligations-c818d45497bac5eb),0,ok,15,0,0,0,0,0.0
+workspace,Running unittests src/lib.rs (target/debug/deps/liteinst_artifact-2bf9d4801025c3be),0,ok,20,0,0,0,0,0.41
+workspace,Running unittests src/lib.rs (target/debug/deps/liteinst_inprocess-f4167b20a7825fba),0,ok,10,0,0,0,0,0.54
+workspace,Running unittests src/lib.rs (target/debug/deps/liteinst_launch-51a9221507e67eea),0,ok,745,0,0,0,0,38.87
+workspace,Running tests/b2_mode_reference.rs (target/debug/deps/b2_mode_reference-e921fe68cd0dc515),0,ok,6,0,0,0,0,0.82
+workspace,Running tests/b3_exec_admission.rs (target/debug/deps/b3_exec_admission-bc3bb019a07dedf4),0,ok,7,0,0,0,0,3.16
+workspace,Running tests/b3_mapping_admission.rs (target/debug/deps/b3_mapping_admission-6e26049ac7655813),0,ok,5,0,0,0,0,3.29
+workspace,Running tests/b3_signal_admission.rs (target/debug/deps/b3_signal_admission-7fc118d71cf0f673),0,ok,5,0,0,0,0,0.94
+workspace,Running tests/checkpoint.rs (target/debug/deps/checkpoint-b0f28a8a03efea36),0,ok,23,0,0,0,0,0.15
+workspace,Running tests/concurrent_control.rs (target/debug/deps/concurrent_control-6a7f1c9046e344cb),0,ok,3,0,0,0,0,0.12
+workspace,Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate-4fa78a0a7f751b86),0,ok,10,0,0,0,0,0.3
+workspace,Running tests/dynamic_admission.rs (target/debug/deps/dynamic_admission-5daa6653de2ae508),0,ok,15,0,0,0,0,21.14
+workspace,Running tests/dynamic_control.rs (target/debug/deps/dynamic_control-27f9f9d3baf972cf),0,ok,8,0,0,0,0,0.24
+workspace,Running tests/dynamic_exec.rs (target/debug/deps/dynamic_exec-4c991e260fd635bb),0,ok,8,0,0,0,0,0.25
+workspace,Running tests/dynamic_fork.rs (target/debug/deps/dynamic_fork-e1787976dfd0eb1b),0,ok,7,0,0,0,0,0.21
+workspace,Running tests/dynamic_signals.rs (target/debug/deps/dynamic_signals-4e8f4087279fc55c),0,ok,4,0,0,0,0,0.16
+workspace,Running tests/dynamic_thread.rs (target/debug/deps/dynamic_thread-40e85db71b887577),0,ok,12,0,0,0,0,0.5
+workspace,Running tests/lifecycle.rs (target/debug/deps/lifecycle-173e1842c1b8fcd7),0,ok,16,0,0,0,0,0.0
+workspace,Running tests/lifecycle_exec_event.rs (target/debug/deps/lifecycle_exec_event-47553953311e118c),0,ok,6,0,0,0,0,0.0
+workspace,Running tests/lifecycle_exec_exit.rs (target/debug/deps/lifecycle_exec_exit-6191af35effaa7f2),0,ok,11,0,0,0,0,0.0
+workspace,Running tests/lifecycle_exiting.rs (target/debug/deps/lifecycle_exiting-22c69a153014f2ad),0,ok,3,0,0,0,0,0.0
+workspace,Running tests/lifecycle_thread.rs (target/debug/deps/lifecycle_thread-055e9248e337a088),0,ok,5,0,0,0,0,0.0
+workspace,Running tests/native_int80.rs (target/debug/deps/native_int80-638b4f21c17a1888),0,ok,6,0,0,0,0,0.25
+workspace,Running tests/native_selected.rs (target/debug/deps/native_selected-c773353622ed7f9c),0,ok,50,0,0,0,0,0.62
+workspace,Running tests/native_syscall.rs (target/debug/deps/native_syscall-1e5086b05a0811a6),0,ok,7,0,0,0,0,0.19
+workspace,Running tests/oracle_gate.rs (target/debug/deps/oracle_gate-e083d0d97069e88b),0,ok,3,0,0,0,0,0.0
+workspace,Running tests/page_gate.rs (target/debug/deps/page_gate-4b37d686f679b722),0,ok,17,0,0,0,0,0.29
+workspace,Running tests/selected_gate.rs (target/debug/deps/selected_gate-1371f93d7c7eb7d2),0,ok,24,0,0,0,0,2.38
+workspace,Running tests/selected_semantics.rs (target/debug/deps/selected_semantics-0ef79bf0ebc34d42),0,ok,17,0,0,0,0,0.0
+workspace,Running tests/trap_coverage.rs (target/debug/deps/trap_coverage-c88a13809678ee38),0,ok,16,0,0,0,0,0.0
+workspace,Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite-53a9f2e8b426d806),0,ok,110,0,0,0,0,0.33
+workspace,Running unittests src/main.rs (target/debug/deps/liteinst_rewrite-1c154d105bee6088),0,ok,0,0,0,0,0,0.0
+workspace,Running tests/integration.rs (target/debug/deps/integration-c2f0b798cc8fcb63),0,ok,19,0,0,0,0,0.04
+workspace,Running unittests examples/common_sites.rs (target/debug/examples/common_sites-4e82533d51e69bb2),0,ok,24,0,0,0,0,0.25
+workspace,Running unittests examples/disassembly_sites.rs (target/debug/examples/disassembly_sites-a97c8beadaa1206d),0,ok,3,0,0,0,0,0.0
+workspace,Running unittests examples/verify_common_core.rs (target/debug/examples/verify_common_core-be5c4555a2f8f768),0,ok,23,0,0,0,0,0.54
+workspace,Running unittests src/lib.rs (target/debug/deps/liteinst2-83d4a5a71495ab5e),0,ok,298,0,1,0,0,16.04
+workspace,Running unittests tools/software-preemption/main.rs (target/debug/deps/liteinst_preempt-581bec7fa26c5cb3),0,ok,2,0,0,0,0,0.0
+workspace,Running unittests tests/support/arena_fork_fixture.rs (target/debug/deps/liteinst2_arena_fork_fixture-40d6e8de96e90502),0,ok,0,0,0,0,0,0.0
+workspace,Running tests/a2_oracle.rs (target/debug/deps/a2_oracle-0988d29ee97c1f9a),0,ok,49,0,0,0,0,5.22
+workspace,Running tests/arena_fork.rs (target/debug/deps/arena_fork-189a6571a0c6e768),0,ok,6,0,0,0,0,0.02
+workspace,Running tests/boundary_signal_oracle.rs (target/debug/deps/boundary_signal_oracle-f3a07ffcb1bf1e85),0,ok,36,0,0,0,0,0.98
+workspace,Running tests/bounded_proc_stat.rs (target/debug/deps/bounded_proc_stat-4366c142cf1f6e2e),0,ok,7,0,0,0,0,0.0
+workspace,Running tests/bundle_contract.rs (target/debug/deps/bundle_contract-47cbc55bf8119ae8),0,ok,1,0,0,0,0,0.91
+workspace,Running tests/call_return_oracle.rs (target/debug/deps/call_return_oracle-b43660e60cec9305),0,ok,36,0,0,0,0,1.05
+workspace,Running tests/call_tree_truth.rs (target/debug/deps/call_tree_truth-7f0a8aabe3157223),0,ok,13,0,0,0,0,0.0
+workspace,Running tests/coalesced_composition.rs (target/debug/deps/coalesced_composition-43bdaeb3128d6364),0,ok,3,0,0,0,0,0.0
+workspace,Running tests/concurrent_overlap.rs (target/debug/deps/concurrent_overlap-a188982ca073eb06),0,ok,11,0,0,0,0,0.03
+workspace,Running tests/controlled_coalescing_contract.rs (target/debug/deps/controlled_coalescing_contract-a4134f6c0fc137de),0,ok,1,0,0,0,0,0.25
+workspace,Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-7dedb04ff1de5526),0,ok,36,0,0,0,0,106.69
+workspace,Running tests/cross_function_neighbor.rs (target/debug/deps/cross_function_neighbor-361ebfcd92f6cf92),0,ok,9,0,0,0,0,0.0
+workspace,Running tests/e9_common_core_pages_contract.rs (target/debug/deps/e9_common_core_pages_contract-c914f925d765294e),0,ok,12,0,0,0,0,0.01
+workspace,Running tests/e9_common_seed_contract.rs (target/debug/deps/e9_common_seed_contract-6da113568da92370),0,ok,3,0,0,0,0,0.16
+workspace,Running tests/elf_exec_provider_contract.rs (target/debug/deps/elf_exec_provider_contract-a402ffa340b8f170),0,ok,8,0,0,0,0,0.0
+workspace,Running tests/entry_backedge.rs (target/debug/deps/entry_backedge-dcbd160f66ba6169),0,ok,1,0,0,0,0,0.01
+workspace,Running tests/entry_paths_oracle.rs (target/debug/deps/entry_paths_oracle-a6483555b1191df3),0,ok,36,0,0,0,0,3.76
+workspace,Running tests/eviction_chain_contract.rs (target/debug/deps/eviction_chain_contract-ce018d6b8cb04a20),0,ok,13,0,0,0,0,0.01
+workspace,Running tests/eviction_chain_extensions.rs (target/debug/deps/eviction_chain_extensions-f73f943f1aa7e3c5),0,ok,37,0,0,0,0,5.11
+workspace,Running tests/eviction_chain_grouping_contract.rs (target/debug/deps/eviction_chain_grouping_contract-10e7326faf3753fd),0,ok,5,0,0,0,0,0.0
+workspace,Running tests/eviction_chain_oracle.rs (target/debug/deps/eviction_chain_oracle-8dc56af7d57253f0),0,ok,38,0,0,0,0,0.92
+workspace,Running tests/exact_syscall.rs (target/debug/deps/exact_syscall-a5f269583e85ab79),0,ok,7,0,0,0,0,0.01
+workspace,Running tests/foreign_neighbor_engine.rs (target/debug/deps/foreign_neighbor_engine-c573f365bb2c809a),0,ok,9,0,0,0,0,0.01
+workspace,Running tests/generalized_pun_contract.rs (target/debug/deps/generalized_pun_contract-ba229e802380698d),0,ok,1,0,0,0,0,0.32
+workspace,Running tests/mandatory_prefix_oracle.rs (target/debug/deps/mandatory_prefix_oracle-e97bf6dcb99a1d12),0,ok,37,0,0,0,0,5.51
+workspace,Running tests/neighbor_eviction_contract.rs (target/debug/deps/neighbor_eviction_contract-7a892b07867301c6),0,ok,1,0,0,0,0,0.99
+workspace,Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-889e085f261653eb),0,ok,101,0,0,0,0,569.12
+workspace,Running tests/overlap_concurrency.rs (target/debug/deps/overlap_concurrency-5a24a2da87407117),0,ok,1,0,0,0,0,0.02
+workspace,Running tests/parked_context_oracle.rs (target/debug/deps/parked_context_oracle-9625edd3ae68df8c),0,ok,36,0,0,0,0,0.92
+workspace,Running tests/pc_relative.rs (target/debug/deps/pc_relative-3f0f5bc9353d186c),0,ok,1,0,0,0,0,0.01
+workspace,Running tests/precontext_planning.rs (target/debug/deps/precontext_planning-8c305b8c78a5df20),0,ok,8,0,0,0,0,0.0
+workspace,Running tests/prefixed_pun_contract.rs (target/debug/deps/prefixed_pun_contract-abc477b820d365a9),0,ok,1,0,0,0,0,0.41
+workspace,Running tests/prefixed_pun_oracle.rs (target/debug/deps/prefixed_pun_oracle-093516fc230e532c),0,ok,36,0,0,0,0,1.34
+workspace,Running tests/quiescent_contract.rs (target/debug/deps/quiescent_contract-12e4d82ae82238ac),0,ok,1,0,0,0,0,0.25
+workspace,Running tests/quiescent_oracle.rs (target/debug/deps/quiescent_oracle-64c2e1953a7a97c9),0,ok,39,0,0,0,0,6.45
+workspace,Running tests/rel32_endpoint_oracle.rs (target/debug/deps/rel32_endpoint_oracle-568a15d65105304d),0,ok,36,0,0,0,0,0.14
+workspace,Running tests/replace_first_cet.rs (target/debug/deps/replace_first_cet-ebc5508c320138e5),0,ok,2,0,0,0,0,0.01
+workspace,Running tests/search_eviction_evidence.rs (target/debug/deps/search_eviction_evidence-852369c24c41314c),0,ok,4,0,0,0,0,0.0
+workspace,Running tests/search_evidence.rs (target/debug/deps/search_evidence-ec8e45dd459b9100),0,ok,8,0,0,0,0,0.0
+workspace,Running tests/sigtrap_origin.rs (target/debug/deps/sigtrap_origin-a7b51f49f3c07c2f),0,ok,2,0,0,0,0,0.89
+workspace,Running tests/stack_profile_planning.rs (target/debug/deps/stack_profile_planning-79a2d2eb337ce71e),0,ok,4,0,0,0,0,0.0
+workspace,Running tests/stress.rs (target/debug/deps/stress-599289bcc8df29fd),0,ok,4,0,3,0,0,0.16
+workspace,Running tests/successor_eviction_contract.rs (target/debug/deps/successor_eviction_contract-42a403c4ed5d171b),0,ok,1,0,0,0,0,1.41
+workspace,Running tests/successor_eviction_oracle.rs (target/debug/deps/successor_eviction_oracle-63bf2fdeee0215b9),0,ok,40,0,0,0,0,4.74
+workspace,Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability-bced8ffd7f71840d),0,ok,1,0,0,0,0,0.19
+workspace,Running tests/tactic_engine.rs (target/debug/deps/tactic_engine-ff9e31f08651c060),0,ok,1,0,0,0,0,0.15
+workspace,Running tests/trampoline_tail.rs (target/debug/deps/trampoline_tail-0089490ee7836caf),0,ok,12,0,0,0,0,0.01
+workspace,Running tests/exception_landing.rs (target/debug/deps/exception_landing-60998a77a2f38bcc),0,ok,36,0,0,0,0,0.24
+workspace,Running unittests src/lib.rs (target/debug/deps/rapid_profiler-a8680daafdc0fcaa),0,ok,498,0,31,0,0,0.26
+workspace,Running unittests ordinary-interval/main.rs (target/debug/deps/ordinary_interval-9584332826e550f3),0,ok,432,0,1,0,0,1.18
+workspace,Running unittests src/main.rs (target/debug/deps/rapid_profiler-2bac38c2ec8f1328),0,ok,3,0,0,0,0,0.0
+workspace,Running tests/e2e.rs (target/debug/deps/e2e-80a46f8335322b19),0,ok,2,0,0,0,0,0.09
+workspace,Running native-interval/calibrations.rs (target/debug/deps/frontend_native_calibrations-8e6a363ad5743eeb),0,ok,216,0,1,0,0,0.92
+workspace,Doc-tests liteinst_admission,0,ok,0,0,0,0,0,0.0
+workspace,Doc-tests liteinst_artifact,0,ok,0,0,0,0,0,0.0
+workspace,Doc-tests liteinst_inprocess,0,ok,0,0,0,0,0,0.0
+workspace,Doc-tests liteinst_launch,0,ok,0,0,0,0,0,0.0
+workspace,Doc-tests liteinst_rewrite,0,ok,0,0,0,0,0,0.0
+workspace,Doc-tests liteinst2,0,ok,8,0,0,0,0,0.04
+workspace,Doc-tests rapid_profiler,0,ok,2,0,0,0,0,0.0
+workspace,Doc-tests rapid_profiler,1,ok,45,0,0,0,0,0.19
+serial-launch,Running unittests src/lib.rs (target/debug/deps/liteinst_launch-51a9221507e67eea),0,ok,745,0,0,0,0,58.68
+serial-launch,Running tests/b2_mode_reference.rs (target/debug/deps/b2_mode_reference-e921fe68cd0dc515),0,ok,6,0,0,0,0,3.0
+serial-launch,Running tests/b3_exec_admission.rs (target/debug/deps/b3_exec_admission-bc3bb019a07dedf4),0,ok,7,0,0,0,0,6.2
+serial-launch,Running tests/b3_mapping_admission.rs (target/debug/deps/b3_mapping_admission-6e26049ac7655813),0,ok,5,0,0,0,0,6.19
+serial-launch,Running tests/b3_signal_admission.rs (target/debug/deps/b3_signal_admission-7fc118d71cf0f673),0,ok,5,0,0,0,0,3.86
+serial-launch,Running tests/checkpoint.rs (target/debug/deps/checkpoint-b0f28a8a03efea36),0,ok,23,0,0,0,0,0.56
+serial-launch,Running tests/concurrent_control.rs (target/debug/deps/concurrent_control-6a7f1c9046e344cb),0,ok,3,0,0,0,0,0.2
+serial-launch,Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate-4fa78a0a7f751b86),0,ok,10,0,0,0,0,0.94
+serial-launch,Running tests/dynamic_admission.rs (target/debug/deps/dynamic_admission-5daa6653de2ae508),0,ok,15,0,0,0,0,53.7
+serial-launch,Running tests/dynamic_control.rs (target/debug/deps/dynamic_control-27f9f9d3baf972cf),0,ok,8,0,0,0,0,0.25
+serial-launch,Running tests/dynamic_exec.rs (target/debug/deps/dynamic_exec-4c991e260fd635bb),0,ok,8,0,0,0,0,0.27
+serial-launch,Running tests/dynamic_fork.rs (target/debug/deps/dynamic_fork-e1787976dfd0eb1b),0,ok,7,0,0,0,0,0.24
+serial-launch,Running tests/dynamic_signals.rs (target/debug/deps/dynamic_signals-4e8f4087279fc55c),0,ok,4,0,0,0,0,0.17
+serial-launch,Running tests/dynamic_thread.rs (target/debug/deps/dynamic_thread-40e85db71b887577),0,ok,12,0,0,0,0,0.53
+serial-launch,Running tests/lifecycle.rs (target/debug/deps/lifecycle-173e1842c1b8fcd7),0,ok,16,0,0,0,0,0.0
+serial-launch,Running tests/lifecycle_exec_event.rs (target/debug/deps/lifecycle_exec_event-47553953311e118c),0,ok,6,0,0,0,0,0.0
+serial-launch,Running tests/lifecycle_exec_exit.rs (target/debug/deps/lifecycle_exec_exit-6191af35effaa7f2),0,ok,11,0,0,0,0,0.0
+serial-launch,Running tests/lifecycle_exiting.rs (target/debug/deps/lifecycle_exiting-22c69a153014f2ad),0,ok,3,0,0,0,0,0.0
+serial-launch,Running tests/lifecycle_thread.rs (target/debug/deps/lifecycle_thread-055e9248e337a088),0,ok,5,0,0,0,0,0.0
+serial-launch,Running tests/native_int80.rs (target/debug/deps/native_int80-638b4f21c17a1888),0,ok,6,0,0,0,0,0.75
+serial-launch,Running tests/native_selected.rs (target/debug/deps/native_selected-c773353622ed7f9c),0,ok,50,0,0,0,0,3.04
+serial-launch,Running tests/native_syscall.rs (target/debug/deps/native_syscall-1e5086b05a0811a6),0,ok,7,0,0,0,0,0.49
+serial-launch,Running tests/oracle_gate.rs (target/debug/deps/oracle_gate-e083d0d97069e88b),0,ok,3,0,0,0,0,0.0
+serial-launch,Running tests/page_gate.rs (target/debug/deps/page_gate-4b37d686f679b722),0,ok,17,0,0,0,0,0.88
+serial-launch,Running tests/selected_gate.rs (target/debug/deps/selected_gate-1371f93d7c7eb7d2),0,ok,24,0,0,0,0,4.82
+serial-launch,Running tests/selected_semantics.rs (target/debug/deps/selected_semantics-0ef79bf0ebc34d42),0,ok,17,0,0,0,0,0.0
+serial-launch,Running tests/trap_coverage.rs (target/debug/deps/trap_coverage-c88a13809678ee38),0,ok,16,0,0,0,0,0.01
