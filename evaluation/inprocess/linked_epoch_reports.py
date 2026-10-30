@@ -35,6 +35,8 @@ NATIVE_ROW_REFUSALS=20
 CONTROL_COUNTS={(m,0):(298 if m in(2,3)else 318)for m in range(6)}
 CONTROL_COUNTS.update({(0,1):298,(5,2):298,(0,3):298,(0,4):298,(6,0):318})
 REFAULT_CONTROL_COUNTS={k:298 for k in(1,2,3,4)}
+HINT_FAILURE_CONTROL_COUNTS={k:298 for k in(1,2,3)}
+HINT_TERMINAL_CONTROL_COUNT=41
 
 
 def split(stderr):
@@ -93,15 +95,16 @@ def prior_scalar(row,retirement):
     scalar_current.current(row)
 
 
-def chain_quiet(loader,c,linked,control,refault_control=0):
+def chain_quiet(loader,c,linked,control,refault_control=0,hint_control=0):
     # nx_entries counts the ordinary segment's NX start, before its TRACE close.
     # A successful retry's later hardware NX is proved by the raw mode5 witness.
-    held=int(control in(2,3))+int(refault_control in(1,3,4))
+    held=int(control in(2,3))+int(refault_control in(1,3,4))+int(bool(hint_control))
+    graph=linked.get('graph_refaults',0)
     need(c['pending']==c['error']==c['unexpected']==c['proof_valid']==0 and
          c['attempts']==c['steps']==c['nx_entries']+c['trace_entries']>0 and
          c['sequence']==c['trace_entries']>0 and
-         linked['offers']==linked['closed']==linked['entries']+linked['resumed']+linked['refaults']+held and
-         c['nx_entries']==c['fallbacks']+linked['entries']+linked['refaults']+held and
+         linked['offers']==linked['closed']==linked['entries']+linked['resumed']+linked['refaults']+graph+held and
+         c['nx_entries']==c['fallbacks']+linked['entries']+linked['refaults']+graph+held and
          c['trace_entries']+c['fallbacks']<=c['preparations']<=2*(c['trace_entries']+c['fallbacks']) and
          c['releases']==c['preparations']+c['nx_entries'] and c['nx_entries']<=loader['nx_faults'],
          'exact finite linked closed, consumed, resumed and held segment partition')
@@ -147,17 +150,27 @@ def completed_tls(parsed):
 
 
 def check(stderr,pid,exit_status,parent,images,image_bytes,carrier,carrier_bytes,owner,owner_reader,mode):
+    native_hint=owner.get('native_hint',False);hint_control=owner.get('hint_control',0)
+    need(type(native_hint)is bool and type(hint_control)is int and hint_control in range(4)and
+         (not hint_control or(native_hint and mode==0 and owner['control']==owner.get('refault_control',0)==0)),
+         'exact distinct native-hint finite profile and advisory selector')
     refault_control=owner.get('refault_control',0)
     need(type(refault_control)is int and refault_control in range(5)and
          (not refault_control or(mode==0 and owner['control']==0)),
          'distinct required-refault selector only on the completed mode0 focal graph')
     need(type(mode)is int and mode in range(7)and type(owner['control'])is int and
-         (mode,owner['control'])in CONTROL_COUNTS and exit_status==(125 if mode in(2,3)or owner['control']or refault_control else 0),
+         (mode,owner['control'])in CONTROL_COUNTS and exit_status==(125 if mode in(2,3)or owner['control']or refault_control or hint_control else 0),
          'exact original six modes, reuse65, four owner and four distinct helper failures')
-    span,retirement,suffix=split(stderr)
-    terminal.refault_count(span)
-    if exit_status==0:terminal.refault_completed(span)
-    elif refault_control:terminal.refault_required(span,refault_control)
+    if native_hint:
+        span,retirement,hint,suffix=terminal.split_hint(stderr);terminal.hint_counts(span,hint)
+        if exit_status==0:terminal.hint_refault_completed(span,hint)
+        elif hint_control:terminal.hint_required(span,hint,hint_control)
+        elif refault_control:terminal.refault_required(span,refault_control)
+    else:
+        span,retirement,suffix=split(stderr)
+        terminal.refault_count(span)
+        if exit_status==0:terminal.refault_completed(span)
+        elif refault_control:terminal.refault_required(span,refault_control)
     scalar,scalar_retirement,suffix=reuse.split(suffix)
     row,suffix=unrolled.split(suffix);current_row,suffix=current.split_current(suffix)
     view,original=maps_view.split_report(suffix,'maintained')
@@ -171,14 +184,17 @@ def check(stderr,pid,exit_status,parent,images,image_bytes,carrier,carrier_bytes
          'every complete terminal row preserves the actual outcome')
     parsed.update(linked_epoch=span,linked_epoch_reuse=retirement,current_tf=current_row,
                   scalar_region=scalar,scalar_reuse=scalar_retirement,unrolled=row)
-    joined=owner_reader.terminal(parsed,owner)
-    chain_quiet(parsed['loader'],parsed['chain'],span,owner['control'],refault_control)
+    if native_hint:
+        parsed['native_hint']=hint;terminal.hint_native(span,hint,parsed,finite=True)
+        joined=owner_reader.terminal(parsed,owner,native_hint=True)
+    else:joined=owner_reader.terminal(parsed,owner)
+    chain_quiet(parsed['loader'],parsed['chain'],span,owner['control'],refault_control,hint_control)
     reuse.prior_unrolled(row);prior_scalar(scalar,scalar_retirement)
     # Span preentry precedes both old observers. A required fault/nested event
     # terminates there, so exactly that final event never reaches either old
     # counter. Successful exits return from preentry and reach all observers.
     expected_signals=list(row['signals'])
-    interrupted=int(exit_status==125 and not refault_control and(owner['control']==1 or not owner['control']))
+    interrupted=int(exit_status==125 and not refault_control and not hint_control and(owner['control']==1 or not owner['control']))
     if interrupted:expected_signals[int(owner['control']==1)]+=1
     need(scalar['events']==row['events'] and scalar['signals']==row['signals']and
          span['events']==row['events']+interrupted and span['signals']==expected_signals,
@@ -216,7 +232,9 @@ def chain_mutations(loader,c):
 
 def controls(stderr,*args):
     """Original65/67 report mutations plus fixed59 span and26 current rows."""
-    parsed,_=check(stderr,*args);span,retirement,suffix=split(stderr)
+    parsed,_=check(stderr,*args);native_hint=args[-3].get('native_hint',False)
+    if native_hint:span,retirement,hint,suffix=terminal.split_hint(stderr)
+    else:span,retirement,suffix=split(stderr)
     scalar,scalar_retirement,suffix=reuse.split(suffix);row,suffix=unrolled.split(suffix)
     current_row,suffix=current.split_current(suffix);view,original=maps_view.split_report(suffix,'maintained')
     lines=stderr[:-1].split(b'\n');trials=[];specific=set();new=[];current_trials=[]
@@ -269,9 +287,11 @@ def controls(stderr,*args):
         changed('linked_'+key,PREFIX,value,new)
     for key in reuse.KEYS:
         value=dict(retirement);value[key]^=1;changed('linked_reuse_'+key,REUSE_PREFIX,value,new)
-    for prefix,label,line in ((PREFIX,'span',lines[-1]),(REUSE_PREFIX,'span_reuse',lines[-2])):
+    tail=3 if native_hint else 2
+    for prefix,label,line in ((PREFIX,'span',lines[-tail+1]),(REUSE_PREFIX,'span_reuse',lines[-tail])):
         new.extend([(label+'_missing_row',removed(prefix)),(label+'_duplicate_row',stderr+line+b'\n')])
-    new.append(('span_row_order',b'\n'.join(lines[:-2]+[lines[-1],lines[-2]])+b'\n'))
+    order=list(lines);order[-tail],order[-tail+1]=order[-tail+1],order[-tail]
+    new.append(('span_row_order',b'\n'.join(order)+b'\n'))
     for name,value in (('bool',True),('float',0.5),('negative',-1),('overflow',1<<64)):
         v=dict(span);v['offers']=value;changed('span_type_'+name,PREFIX,v,new)
     v=dict(span);del v['first_error'];changed('span_missing_key',PREFIX,v,new)
@@ -309,7 +329,7 @@ def controls(stderr,*args):
     # even if its raw report mutation is rejected earlier by a schema gate.
     def protected_refusal(key,value):
         v=dict(parsed);v[key]=value;caught=False
-        try:args[-2].terminal(v,args[-3])
+        try:args[-2].terminal(v,args[-3],**(dict(native_hint=True)if native_hint else{}))
         except ValueError as error:caught=str(error)=='entire actual protected terminal row '+key
         need(caught,'every supplied '+key+' field reaches its full protected equality')
     for _,data in native_trials:
@@ -377,7 +397,7 @@ def controls(stderr,*args):
             refault_errors[name]=error
         changed(name,PREFIX,value,refault_trials)
     value=terminal.refault_chain_mutation(span);caught=False
-    try:chain_quiet(parsed['loader'],parsed['chain'],value,args[-3]['control'],args[-3].get('refault_control',0))
+    try:chain_quiet(parsed['loader'],parsed['chain'],value,args[-3]['control'],args[-3].get('refault_control',0),args[-3].get('hint_control',0))
     except ValueError as exc:
         caught=str(exc)=='exact finite linked closed, consumed, resumed and held segment partition'
     need(caught,'an extra completed refault requires its already-started ordinary NX chain segment')
@@ -388,7 +408,7 @@ def controls(stderr,*args):
     for name,value in prior_repeat.mutations(parsed):changed(name,b'LI2_REPEAT_LEASE ',value,repeat_trials)
     need(len(repeat_trials)==29,'all29 prior completed REP controls')
     all_trials=trials+new+current_trials+native_trials+cache_trials+chain_trials+structural_trials+tls_trials+refault_trials+repeat_trials
-    need(len(all_trials)==len({n for n,_ in all_trials})==(REFAULT_CONTROL_COUNTS[args[-3]['refault_control']]if args[-3].get('refault_control',0)else CONTROL_COUNTS[(args[-1],args[-3]['control'])]),
+    need(len(all_trials)==len({n for n,_ in all_trials})==(HINT_FAILURE_CONTROL_COUNTS[args[-3]['hint_control']]if args[-3].get('hint_control',0)else REFAULT_CONTROL_COUNTS[args[-3]['refault_control']]if args[-3].get('refault_control',0)else CONTROL_COUNTS[(args[-1],args[-3]['control'])]),
          'complete exact finite terminal-control population')
     names=[]
     for name,data in all_trials:
@@ -409,3 +429,56 @@ def controls(stderr,*args):
         finite_tls_refusals=[name for name,_ in tls_trials],
         refault_refusals=[name for name,_ in refault_trials],
         prior_repeat_refusals=names[-29:],native_operations=0,original_stderr_sha256=H(stderr))
+
+
+def hint_controls(stderr,*args):
+    """Additional actual hint report/typed schema/causal partition refusals."""
+    parsed,_=check(stderr,*args);need(args[-3].get('native_hint')is True,'explicit hint terminal controls')
+    linked,retirement,hint,suffix=terminal.split_hint(stderr);lines=stderr[:-1].split(b'\n');trials=[]
+    def change(name,rows):
+        changed=list(lines)
+        for prefix,value in rows:
+            at=[i for i,x in enumerate(changed)if x.startswith(prefix)];need(len(at)==1,'one actual hint mutation row')
+            changed[at[0]]=prefix+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
+        trials.append((name,b'\n'.join(changed)+b'\n'))
+    for key in terminal.HINT_KEYS:
+        value=dict(hint);value[key]^=1
+        p=dict(parsed,native_hint=value);caught=False
+        try:args[-2].terminal(p,args[-3],native_hint=True)
+        except ValueError as exc:caught=str(exc)=='entire actual protected terminal row native_hint'
+        need(caught,'every actual hint field reaches its complete protected equality')
+        change('hint_field_'+key,[(terminal.HINT_PREFIX,value)])
+    value=copy.deepcopy(linked);value['graph_refaults']+=1;change('graph_refaults_field',[(PREFIX,value)])
+    for name,value in(('bool',True),('float',0.5),('negative',-1),('overflow',1<<64)):
+        row=dict(hint);row['lookups']=value;change('hint_type_'+name,[(terminal.HINT_PREFIX,row)])
+    row=dict(hint);del row['ready'];change('hint_missing_key',[(terminal.HINT_PREFIX,row)])
+    row=dict(hint);row['extra']=0;change('hint_extra_key',[(terminal.HINT_PREFIX,row)])
+    change('hint_key_order',[(terminal.HINT_PREFIX,dict(reversed(list(hint.items()))))])
+    trials.extend([('hint_missing_row',b'\n'.join(lines[:-1])+b'\n'),
+                   ('hint_duplicate_row',stderr+lines[-1]+b'\n'),
+                   ('hint_row_order',b'\n'.join(lines[:-2]+[lines[-1],lines[-2]])+b'\n')])
+    row=copy.deepcopy(linked);row['graph_refaults']=row['refusals'][2]+1;caught=False
+    try:terminal.hint_counts(row,hint)
+    except ValueError as exc:caught=str(exc)==terminal.HINT_CLASS_ERROR
+    need(caught,'source-causal GRAPH count refusal');change('hint_above_graph',[(PREFIX,row)])
+    value=dict(hint);value['publications']+=1;caught=False
+    try:terminal.hint_counts(linked,value)
+    except ValueError as exc:caught=str(exc)==terminal.HINT_LIFETIME_ERROR
+    need(caught,'source-causal one-use receipt conservation');change('hint_unaccounted_publication',[(terminal.HINT_PREFIX,value)])
+    row=copy.deepcopy(linked);value=dict(hint)
+    for key in('offers','closed','candidates','graph_refaults','plan_misses'):row[key]+=1
+    row['refusals'][2]+=1
+    for key in('lookups','hits','next_nx','admitted','publications','receipt_publication'):value[key]+=1
+    terminal.hint_counts(row,value);caught=False
+    try:chain_quiet(parsed['loader'],parsed['chain'],row,args[-3]['control'],args[-3].get('refault_control',0),args[-3].get('hint_control',0))
+    except ValueError as exc:caught=str(exc)=='exact finite linked closed, consumed, resumed and held segment partition'
+    need(caught,'additional GRAPH completion requires its already-started ordinary NX segment')
+    change('hint_missing_segment',[(PREFIX,row),(terminal.HINT_PREFIX,value)])
+    need(len(trials)==len({name for name,_ in trials})==HINT_TERMINAL_CONTROL_COUNT,'fixed41 actual hint report refusals')
+    names=[]
+    for name,data in trials:
+        rejected=False
+        try:check(data,*args)
+        except ValueError:rejected=True
+        need(rejected,'complete hinted finite reader refuses '+name);names.append(name)
+    return dict(hint_refusals=names,native_operations=0,original_stderr_sha256=H(stderr))
