@@ -1,0 +1,1225 @@
+{
+  "artifacts": {
+    "frontend-native-calibrations": {
+      "bytes": 5880240,
+      "sha256": "fc26cd04aac8ef8ede78fb8361ee6fb6a7e903952ca44cda3f93b02f044852a6"
+    },
+    "frontend-native-oracle": {
+      "bytes": 8184168,
+      "sha256": "4d4f05c8e2e2beb693d670f1cf77aa1e33bd0f4d7cb2da4a653f2e2ff610ccd2"
+    },
+    "leaves-stripped.so": {
+      "bytes": 12984,
+      "sha256": "cc97222d7a0957001269ec15ffd3feb7ae9a3b1b870e32c5b46628bf54c2c504"
+    },
+    "leaves.so": {
+      "bytes": 13488,
+      "sha256": "3d6eed6fecbfeeeb227cd9ee5b4c5ae92938d9bdd88f454a80a73f1c211d0980"
+    },
+    "ordinary-interval": {
+      "bytes": 9563736,
+      "sha256": "078a46c9d44c6f251660824db58ec3fc81b622d81247566fa543f306bf064721"
+    },
+    "ordinary-interval-tests": {
+      "bytes": 8178312,
+      "sha256": "bcd00ba55aab76c231df9e6bc72ca9e8a338a96b91662c60d7ab21acb5f324f7"
+    },
+    "reference": {
+      "bytes": 17992,
+      "sha256": "a0508b9a20bd3413b518090e24cbdb34db3b6c9393c6ef25dc1ce10522589827"
+    }
+  },
+  "claim_limits": [
+    "Finite copied-machine-caller/leaf state evidence using actual SDK lifecycle.",
+    "No original-address application callsite or surrounding Rust ABI qualification.",
+    "No full-SDK instruction-state or executable retirement/reclamation qualification.",
+    "No bank rotation, K exhaustion, concurrent clock, arbitrary DSO/input/ABI/xstate qualification.",
+    "No strict 2 ms or performance/CPU-cost claim; prior strict 2 ms campaign remains 1 PASS / 4 FAIL.",
+    "Prior certified-profile failures and focused-v1 metadata failure remain unchanged; historical UNRUN statements retain their historical meaning."
+  ],
+  "closure": {
+    "all_cleanup_complete": true,
+    "all_final_custody_and_retention_closed": true,
+    "all_logs_archived": true,
+    "all_owner_exits": 0,
+    "all_pair_helper_and_child_exits": 0,
+    "all_source_unchanged": true,
+    "normal_tracee_reaps": 384,
+    "owners": 10,
+    "pair_helper_absence_proof": "ECHILD",
+    "pair_stderr_bytes": 0,
+    "pair_timeouts": 0,
+    "rescued_descendants": 0,
+    "terminations": 0
+  },
+  "commands": {
+    "build_and_pair_environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_RELEASE_DEBUG": "0",
+      "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+      "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_TERM_COLOR": "never",
+      "CC": "/usr/bin/gcc",
+      "CLANG": "/usr/bin/clang-22",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "LITEINST_EVALUATION": "1",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "TMPDIR": "${RUN}/sdk-v1-products/tmp"
+    },
+    "cwd": "${ROOT}",
+    "invocations": "Each phase below records the exact public-owner argv with path placeholders only. Apply taskset --cpu-list 92,118,126 to the public-owner invocation, after reserving those CPUs; taskset does not reserve.",
+    "new_run": "Use fresh phase basenames and actual newly closed hashes. Independently review fresh geometry before the four cohorts; collect all four once. No historical digest grants new execution authority.",
+    "owner_environment": {
+      "CARGO_HOME": "${CARGO_HOME}",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1"
+    },
+    "pair_argv_template": [
+      "${RUN}/sdk-v1-sdk-build/frontend-native-oracle",
+      "selected-leaf-set-copied-state-v1",
+      "${COHORT_RAW}/dso_candidate.so",
+      "${COHORT_RAW}/dso_trusted.so",
+      "${COHORT_RAW}/app_candidate.elf",
+      "${COHORT_RAW}/app_trusted.elf",
+      "${COHORT_RAW}/pair-${PAIR_INDEX_2DIGITS}-io/output",
+      "${FORM}",
+      "${K}",
+      "${SEED}",
+      "${FUNCTION_ID}",
+      "${INPUT_INDEX}",
+      "4096",
+      "41",
+      "4144",
+      "55"
+    ],
+    "pair_template_definition": "One actual request per frozen key, in the recorded cohort order. PAIR_INDEX_2DIGITS is 00..47; COHORT_RAW is RUN/sdk-v1-<cohort>. Values use canonical unsigned decimal.",
+    "recipe": "../../ordinary-selected-session/BUILD.md",
+    "variables": {
+      "CARGO_HOME": "offline Cargo home",
+      "ROOT": "checkout at executed_revision",
+      "RUN": "fresh canonical directory under ROOT/ignored; this capture used phase basename prefix sdk-v1-",
+      "TOOLCHAIN": "canonical stable Rust toolchain",
+      "USER_HOME": "canonical home"
+    }
+  },
+  "comparison": {
+    "caller": {
+      "body_sha256": "732eb5cbc05ef8024c072c75ca3df69d08214cec8dc92beec456b1a5a3ff3046",
+      "call": 13,
+      "heads": [
+        0,
+        1,
+        4,
+        7,
+        10,
+        13,
+        15,
+        18,
+        19
+      ],
+      "outer_ret": 19,
+      "stack_bytes": 152,
+      "subject_rsp_delta": 16
+    },
+    "functions": [
+      {
+        "elf_va": 4096,
+        "extent": 41,
+        "function_id": 101,
+        "operation": "first_equal",
+        "policy": "whole",
+        "returns": [
+          34,
+          40
+        ]
+      },
+      {
+        "elf_va": 4144,
+        "extent": 55,
+        "function_id": 202,
+        "operation": "uppercase_count",
+        "policy": "whole",
+        "returns": [
+          40,
+          54
+        ]
+      }
+    ],
+    "lifecycle": "Actual LoadedNormalLeafSet, both WholeFunction plans on one shared source page, six managed entry/RET identities, controller/attachment/journal, checkpoint/detach/disarm/report/history and used interval-bank reclaim.",
+    "lifetime": "Executable owners remain process-lived. Interval-bank reclaim is not executable unpatching or reclamation.",
+    "region": "All visited complete copied caller/leaf instruction boundaries through the actual outer RET, before harness restoration; independent literal itineraries/reads/scalar answers/ADC progression.",
+    "state": "Unchanged ordered GPR/RFLAGS comparator with existing debugger TF/RF mask; canonical kernel-exposed xstate; owned 4096-byte data page and derived 152-byte stack/red-zone window."
+  },
+  "executed_revision": "778bd9831d7609750b9a383704fdf493b487caf0",
+  "geometry": {
+    "acceptance_sha256": "5e43621186972187889d82752b8b46c3d7b3e922d1853561f723fd57a0fc8acc",
+    "fact_pins_digest": "9f73b1973b0ed8b21c05218615b9eb2aaf38489ea83cee0e2e5ffe49593e12e2",
+    "independent_review_binding_sha256": "934bf56868d95cc82282e17b3340ddf81f3af26ab8eae3642e510dc6cb9daf40",
+    "nine_accepted_premises": [
+      "complete_symbol_extents",
+      "complete_cfg_and_all_returns",
+      "complete_elf_and_source_pages",
+      "strip_preserves_selected_bytes_and_pages",
+      "ordinary_rust_and_reference_callers",
+      "immutable_path_and_object_lifetime",
+      "scalar_sysv_abi_and_readable_inputs",
+      "termination_no_hidden_calls_exits_or_concurrency",
+      "cet_and_signal_preconditions"
+    ],
+    "premise_scope": "Fixed scalar machine ABI; immutable owned paths/objects/input/stack/generated code through postflight/reap; complete reviewed ELF/CFG/callers; no concurrent/reentrant entry, asynchronous handler into selected code, hidden calls/exits/unwind, active CET or kernel/config replacement. Trusted platform premises remain explicit, not inferred from test success."
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "historical_receipts": {
+    "focused.json": {
+      "bytes": 6610,
+      "sha256": "7aff442d6cb602ff6efbfde0253ee463d90e01e66944ef329a266facdc53a35a"
+    },
+    "producer-controls.json": {
+      "bytes": 4725,
+      "sha256": "c4dbc18a8e085bb3d6455edff1505720b8bf9e28df8cb2ad8f6dd866b9dac5aa"
+    },
+    "validation.json": {
+      "bytes": 6927,
+      "sha256": "4b42620c7b00179737c2c31f4db840a9230057f79681de0a70f0829d3fb13838"
+    }
+  },
+  "limits": {
+    "build_cpu_seconds": 120,
+    "build_stream_bytes": 134217728,
+    "build_wall_seconds": 180,
+    "evidence_bytes": 2147483648,
+    "evidence_final_allowance_bytes": 67108864,
+    "outer_log_bytes": 8388608,
+    "outer_wall_seconds": 1200,
+    "pair_cpu_seconds": 20,
+    "pair_csv_bytes": 1048576,
+    "pair_helper_seconds": 55,
+    "pair_internal_seconds": 15,
+    "pair_stream_bytes": 4194304,
+    "pair_wall_seconds": 30,
+    "steps_per_child": 20000
+  },
+  "native_csv": {
+    "bytes": 74983,
+    "columns": 39,
+    "encoding": "Exact actual header and CSV row bytes concatenated in frozen form/K/seed/function/input order; LF, no cell rewriting.",
+    "rows": 192,
+    "sha256": "01e3209b2896a3a65d045317508ee510762412085401d033770314b84b7c4390"
+  },
+  "observed": {
+    "all_group_reachable_heads_edges_returns_observed": true,
+    "attempts_per_key": 1,
+    "children": 384,
+    "cohorts": [
+      {
+        "cohort": "unstripped-k10",
+        "comparisons": 6890,
+        "pairs": 48,
+        "plan_sha256": "42f40a2479feca70d3e4dcb06c543e8f55b852615e01d8a861a07f0f4202a5f2"
+      },
+      {
+        "cohort": "unstripped-k1000",
+        "comparisons": 6890,
+        "pairs": 48,
+        "plan_sha256": "b582e8e92b92610fbbc8198dcf6aeb0481249854be912248bb685a09896dad49"
+      },
+      {
+        "cohort": "stripped-k10",
+        "comparisons": 6890,
+        "pairs": 48,
+        "plan_sha256": "5494d3572ff26d31a0acbbe023a254e234a1ee84bb567c08476648775cc845a2"
+      },
+      {
+        "cohort": "stripped-k1000",
+        "comparisons": 6890,
+        "pairs": 48,
+        "plan_sha256": "86125b298a25a000c589645ff8e6b1d18b6e33f1da3dc7e610e579966c09725d"
+      }
+    ],
+    "coverage_groups": 16,
+    "decoded_leaf_heads": 33,
+    "inputs_per_group": 12,
+    "leaf_return_instructions": 4,
+    "ordered_state_comparisons": 27560,
+    "pairs_failed": 0,
+    "pairs_pass": 192,
+    "pairs_required": 192,
+    "pairs_unrun": 0,
+    "reachable_leaf_heads": 30
+  },
+  "phases": [
+    {
+      "bounded_stage_count": 12,
+      "inner_load_after": [
+        71.35,
+        66.18,
+        65.53
+      ],
+      "inner_load_before": [
+        63.09,
+        64.23,
+        64.91
+      ],
+      "inner_load_note": null,
+      "label": "products",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "products",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/products-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-products",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host"
+      ],
+      "owner_load_after": [
+        71.35,
+        66.18,
+        65.53
+      ],
+      "owner_load_before": [
+        65.77,
+        64.77,
+        65.09
+      ],
+      "owner_log_sha256": "2bc584137e2c15d03b6bd6db41544f28a98c0c44a6356494e36431c69d1d0fa2",
+      "owner_seconds": 75.46691755997017,
+      "owner_sha256": "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+      "phase": "products",
+      "raw_result_sha256": "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+      "start_utc": "2026-10-30T19:39:15.446667+00:00",
+      "status": "BUILD_AND_ELF_CAPTURE_PASS"
+    },
+    {
+      "bounded_stage_count": 1,
+      "inner_load_after": [
+        91.01,
+        74.72,
+        68.66
+      ],
+      "inner_load_before": null,
+      "inner_load_note": "Not recorded by this historical tests result.",
+      "label": "tests",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "tests",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/tests-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-tests",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130"
+      ],
+      "owner_load_after": [
+        91.01,
+        74.72,
+        68.66
+      ],
+      "owner_load_before": [
+        69.43,
+        66.07,
+        65.5
+      ],
+      "owner_log_sha256": "22fb38d31eee3b600a224abc3c21d90b284ab58d9f7fa641f3d86bfabd3c8bc1",
+      "owner_seconds": 92.77777248085476,
+      "owner_sha256": "2746b5fd1a2f112d859817561d542fac3ac600bf55c09fca09309e30f6a84817",
+      "phase": "tests",
+      "raw_result_sha256": "d3c6e2364d7bb114c6c3f173823e4e79d1ce833151815d47074fd0d96e647487",
+      "start_utc": "2026-10-30T19:40:54.150344+00:00",
+      "status": "RELEASE_TEST_BUILD_PASS"
+    },
+    {
+      "bounded_stage_count": 13,
+      "inner_load_after": [
+        127.98,
+        89.91,
+        74.55
+      ],
+      "inner_load_before": [
+        94.33,
+        77.39,
+        69.79
+      ],
+      "inner_load_note": null,
+      "label": "controls",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "controls",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/controls-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-controls",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+        "--test-product",
+        "${RUN}/sdk-v1-tests/result.json",
+        "--test-product-sha",
+        "d3c6e2364d7bb114c6c3f173823e4e79d1ce833151815d47074fd0d96e647487",
+        "--test-owner",
+        "${RUN}/tests-owner.json",
+        "--test-owner-sha",
+        "2746b5fd1a2f112d859817561d542fac3ac600bf55c09fca09309e30f6a84817",
+        "--profile",
+        "selected-session-whole-functional-v1"
+      ],
+      "owner_load_after": [
+        130.47,
+        91.06,
+        75.01
+      ],
+      "owner_load_before": [
+        92.73,
+        76.52,
+        69.42
+      ],
+      "owner_log_sha256": "22957afbdd1d64f98c715a06b491dee9059eb93b988154684677085e45176689",
+      "owner_seconds": 74.38162795314565,
+      "owner_sha256": "c82087db4c6d96048dc64862128ed8537ed1ff8d388134a3f753d70d84f94d55",
+      "phase": "controls",
+      "raw_result_sha256": "5ad1c09194cebf522480a014bb5a9108100c525dd9f49aba40a00600871b03be",
+      "start_utc": "2026-10-30T19:42:52.462355+00:00",
+      "status": "SELECTED_CONTROLS_PASS"
+    },
+    {
+      "bounded_stage_count": 2,
+      "inner_load_after": [
+        108.32,
+        97.47,
+        79.54
+      ],
+      "inner_load_before": [
+        134.31,
+        98.32,
+        78.33
+      ],
+      "inner_load_note": null,
+      "label": "sdk-build",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "sdk-build",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/sdk-build-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-sdk-build",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130"
+      ],
+      "owner_load_after": [
+        108.32,
+        97.47,
+        79.54
+      ],
+      "owner_load_before": [
+        135.63,
+        96.68,
+        77.48
+      ],
+      "owner_log_sha256": "5374b09f1b4740ff029a5cd49ffc1e0674c0af040cf9adcd48bca0237fb582aa",
+      "owner_seconds": 90.13151362119243,
+      "owner_sha256": "fefcf8979fa89b15639780eb4f0094d0c2f658ecb3ee703cd31604b6f28a2824",
+      "phase": "sdk-build",
+      "raw_result_sha256": "4971a8ef1dbbfee0faa6a38f24c8c543d4fa2f12ae82535d5019f2df15d1bd0e",
+      "start_utc": "2026-10-30T19:44:42.600873+00:00",
+      "status": "SDK_BUILD_PASS"
+    },
+    {
+      "bounded_stage_count": 3,
+      "inner_load_after": [
+        123.96,
+        106.2,
+        84.52
+      ],
+      "inner_load_before": [
+        122.37,
+        103.38,
+        82.69
+      ],
+      "inner_load_note": null,
+      "label": "sdk-controls",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "sdk-controls",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/sdk-controls-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-sdk-controls",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+        "--sdk-build",
+        "${RUN}/sdk-v1-sdk-build/result.json",
+        "--sdk-build-sha",
+        "4971a8ef1dbbfee0faa6a38f24c8c543d4fa2f12ae82535d5019f2df15d1bd0e",
+        "--sdk-build-owner",
+        "${RUN}/sdk-build-owner.json",
+        "--sdk-build-owner-sha",
+        "fefcf8979fa89b15639780eb4f0094d0c2f658ecb3ee703cd31604b6f28a2824",
+        "--controls",
+        "${RUN}/sdk-v1-controls/result.json",
+        "--controls-sha",
+        "5ad1c09194cebf522480a014bb5a9108100c525dd9f49aba40a00600871b03be",
+        "--controls-owner",
+        "${RUN}/controls-owner.json",
+        "--controls-owner-sha",
+        "c82087db4c6d96048dc64862128ed8537ed1ff8d388134a3f753d70d84f94d55"
+      ],
+      "owner_load_after": [
+        123.96,
+        106.2,
+        84.52
+      ],
+      "owner_load_before": [
+        119.07,
+        101.52,
+        81.66
+      ],
+      "owner_log_sha256": "181bb4520684a6490f123d3c2000d94413b4487c1cac0e374f1e0702197b0261",
+      "owner_seconds": 62.54812061297707,
+      "owner_sha256": "a7bbd8b5ec110db17e66c32d02906d10c03c47d3aeb3149c27fed2dc3c02737c",
+      "phase": "sdk-controls",
+      "raw_result_sha256": "3bbdb7b5a2cff0e0ed6a07f27bf3a4f74d92f85d7d5c3a5921c61a072f690765",
+      "start_utc": "2026-10-30T19:46:52.604823+00:00",
+      "status": "SDK_CONTROLS_PASS"
+    },
+    {
+      "bounded_stage_count": 48,
+      "inner_load_after": [
+        73.33,
+        106.52,
+        95.06
+      ],
+      "inner_load_before": [
+        111.03,
+        125.24,
+        97.67
+      ],
+      "inner_load_note": null,
+      "label": "unstripped-k10",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "sdk-cohort",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/unstripped-k10-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-unstripped-k10",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+        "--sdk-build",
+        "${RUN}/sdk-v1-sdk-build/result.json",
+        "--sdk-build-sha",
+        "4971a8ef1dbbfee0faa6a38f24c8c543d4fa2f12ae82535d5019f2df15d1bd0e",
+        "--sdk-build-owner",
+        "${RUN}/sdk-build-owner.json",
+        "--sdk-build-owner-sha",
+        "fefcf8979fa89b15639780eb4f0094d0c2f658ecb3ee703cd31604b6f28a2824",
+        "--sdk-controls",
+        "${RUN}/sdk-v1-sdk-controls/result.json",
+        "--sdk-controls-sha",
+        "3bbdb7b5a2cff0e0ed6a07f27bf3a4f74d92f85d7d5c3a5921c61a072f690765",
+        "--sdk-controls-owner",
+        "${RUN}/sdk-controls-owner.json",
+        "--sdk-controls-owner-sha",
+        "a7bbd8b5ec110db17e66c32d02906d10c03c47d3aeb3149c27fed2dc3c02737c",
+        "--geometry",
+        "${RUN}/geometry/acceptance.json",
+        "--geometry-sha",
+        "5e43621186972187889d82752b8b46c3d7b3e922d1853561f723fd57a0fc8acc",
+        "--cohort",
+        "unstripped-k10"
+      ],
+      "owner_load_after": [
+        73.33,
+        106.52,
+        95.06
+      ],
+      "owner_load_before": [
+        120.52,
+        127.53,
+        98.1
+      ],
+      "owner_log_sha256": "9d736607a94ba050b79a9440bdaede87bf8a3381ceff71c47b341cbc901a9ae2",
+      "owner_seconds": 163.43415920296684,
+      "owner_sha256": "e6d877f93f4adc8269738653caecf913ac14f5fc5cb8e7c8cd4a3ff38cfb0440",
+      "phase": "sdk-cohort",
+      "raw_result_sha256": "486c303803370c17fa632b3b726748e4747856437becae22a930c560d7cdf31d",
+      "start_utc": "2026-10-30T19:51:16.159092+00:00",
+      "status": "SDK_COHORT_PASS"
+    },
+    {
+      "bounded_stage_count": 48,
+      "inner_load_after": [
+        48.22,
+        81.05,
+        87.25
+      ],
+      "inner_load_before": [
+        63.14,
+        100.33,
+        93.42
+      ],
+      "inner_load_note": null,
+      "label": "unstripped-k1000",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "sdk-cohort",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/unstripped-k1000-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-unstripped-k1000",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+        "--sdk-build",
+        "${RUN}/sdk-v1-sdk-build/result.json",
+        "--sdk-build-sha",
+        "4971a8ef1dbbfee0faa6a38f24c8c543d4fa2f12ae82535d5019f2df15d1bd0e",
+        "--sdk-build-owner",
+        "${RUN}/sdk-build-owner.json",
+        "--sdk-build-owner-sha",
+        "fefcf8979fa89b15639780eb4f0094d0c2f658ecb3ee703cd31604b6f28a2824",
+        "--sdk-controls",
+        "${RUN}/sdk-v1-sdk-controls/result.json",
+        "--sdk-controls-sha",
+        "3bbdb7b5a2cff0e0ed6a07f27bf3a4f74d92f85d7d5c3a5921c61a072f690765",
+        "--sdk-controls-owner",
+        "${RUN}/sdk-controls-owner.json",
+        "--sdk-controls-owner-sha",
+        "a7bbd8b5ec110db17e66c32d02906d10c03c47d3aeb3149c27fed2dc3c02737c",
+        "--geometry",
+        "${RUN}/geometry/acceptance.json",
+        "--geometry-sha",
+        "5e43621186972187889d82752b8b46c3d7b3e922d1853561f723fd57a0fc8acc",
+        "--cohort",
+        "unstripped-k1000"
+      ],
+      "owner_load_after": [
+        48.22,
+        81.05,
+        87.25
+      ],
+      "owner_load_before": [
+        65.1,
+        101.99,
+        93.87
+      ],
+      "owner_log_sha256": "9d736607a94ba050b79a9440bdaede87bf8a3381ceff71c47b341cbc901a9ae2",
+      "owner_seconds": 155.88182519795373,
+      "owner_sha256": "d48f44ecc2405ffa79f4a40199b9fe5c79c6f5def6b4ce6a3b98750b080b0dd9",
+      "phase": "sdk-cohort",
+      "raw_result_sha256": "9005a46c59bbd961785af363e86a631d06bb314a1a06e82129196ec85f1e6b8e",
+      "start_utc": "2026-10-30T19:54:22.272799+00:00",
+      "status": "SDK_COHORT_PASS"
+    },
+    {
+      "bounded_stage_count": 48,
+      "inner_load_after": [
+        46.52,
+        66.27,
+        80.44
+      ],
+      "inner_load_before": [
+        45.2,
+        77.18,
+        85.76
+      ],
+      "inner_load_note": null,
+      "label": "stripped-k10",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "sdk-cohort",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/stripped-k10-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-stripped-k10",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+        "--sdk-build",
+        "${RUN}/sdk-v1-sdk-build/result.json",
+        "--sdk-build-sha",
+        "4971a8ef1dbbfee0faa6a38f24c8c543d4fa2f12ae82535d5019f2df15d1bd0e",
+        "--sdk-build-owner",
+        "${RUN}/sdk-build-owner.json",
+        "--sdk-build-owner-sha",
+        "fefcf8979fa89b15639780eb4f0094d0c2f658ecb3ee703cd31604b6f28a2824",
+        "--sdk-controls",
+        "${RUN}/sdk-v1-sdk-controls/result.json",
+        "--sdk-controls-sha",
+        "3bbdb7b5a2cff0e0ed6a07f27bf3a4f74d92f85d7d5c3a5921c61a072f690765",
+        "--sdk-controls-owner",
+        "${RUN}/sdk-controls-owner.json",
+        "--sdk-controls-owner-sha",
+        "a7bbd8b5ec110db17e66c32d02906d10c03c47d3aeb3149c27fed2dc3c02737c",
+        "--geometry",
+        "${RUN}/geometry/acceptance.json",
+        "--geometry-sha",
+        "5e43621186972187889d82752b8b46c3d7b3e922d1853561f723fd57a0fc8acc",
+        "--cohort",
+        "stripped-k10"
+      ],
+      "owner_load_after": [
+        46.52,
+        66.27,
+        80.44
+      ],
+      "owner_load_before": [
+        46.22,
+        78.45,
+        86.26
+      ],
+      "owner_log_sha256": "9d736607a94ba050b79a9440bdaede87bf8a3381ceff71c47b341cbc901a9ae2",
+      "owner_seconds": 155.14639647002332,
+      "owner_sha256": "1fbc0de24a549dc9eef4593536ab9b46bcb13f51e4404e99533b86db682bc9a7",
+      "phase": "sdk-cohort",
+      "raw_result_sha256": "6d3125d7605171a0172bf926069fd0d676cb2b7667889f5af585678abd513bf8",
+      "start_utc": "2026-10-30T19:57:17.089892+00:00",
+      "status": "SDK_COHORT_PASS"
+    },
+    {
+      "bounded_stage_count": 48,
+      "inner_load_after": [
+        49.13,
+        57.0,
+        74.13
+      ],
+      "inner_load_before": [
+        41.5,
+        63.51,
+        79.16
+      ],
+      "inner_load_note": null,
+      "label": "stripped-k1000",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "sdk-cohort",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/stripped-k1000-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-stripped-k1000",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+        "--sdk-build",
+        "${RUN}/sdk-v1-sdk-build/result.json",
+        "--sdk-build-sha",
+        "4971a8ef1dbbfee0faa6a38f24c8c543d4fa2f12ae82535d5019f2df15d1bd0e",
+        "--sdk-build-owner",
+        "${RUN}/sdk-build-owner.json",
+        "--sdk-build-owner-sha",
+        "fefcf8979fa89b15639780eb4f0094d0c2f658ecb3ee703cd31604b6f28a2824",
+        "--sdk-controls",
+        "${RUN}/sdk-v1-sdk-controls/result.json",
+        "--sdk-controls-sha",
+        "3bbdb7b5a2cff0e0ed6a07f27bf3a4f74d92f85d7d5c3a5921c61a072f690765",
+        "--sdk-controls-owner",
+        "${RUN}/sdk-controls-owner.json",
+        "--sdk-controls-owner-sha",
+        "a7bbd8b5ec110db17e66c32d02906d10c03c47d3aeb3149c27fed2dc3c02737c",
+        "--geometry",
+        "${RUN}/geometry/acceptance.json",
+        "--geometry-sha",
+        "5e43621186972187889d82752b8b46c3d7b3e922d1853561f723fd57a0fc8acc",
+        "--cohort",
+        "stripped-k1000"
+      ],
+      "owner_load_after": [
+        49.13,
+        57.0,
+        74.13
+      ],
+      "owner_load_before": [
+        43.89,
+        64.7,
+        79.7
+      ],
+      "owner_log_sha256": "9d736607a94ba050b79a9440bdaede87bf8a3381ceff71c47b341cbc901a9ae2",
+      "owner_seconds": 167.63270179112442,
+      "owner_sha256": "1dae1a7a3c323a7abb7f39f97b7c795571e9f25a8d4eb468b25b9e29f9391370",
+      "phase": "sdk-cohort",
+      "raw_result_sha256": "09d4f3052e332a1aefddeceb6ec8f2996b164f1a1605919c0834b8acc3c98171",
+      "start_utc": "2026-10-30T20:00:11.214472+00:00",
+      "status": "SDK_COHORT_PASS"
+    },
+    {
+      "bounded_stage_count": 0,
+      "inner_load_after": [
+        77.42,
+        63.66,
+        75.33
+      ],
+      "inner_load_before": [
+        79.17,
+        62.97,
+        75.37
+      ],
+      "inner_load_note": null,
+      "label": "sdk-collect",
+      "owner_command_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "sdk-collect",
+        "--revision",
+        "778bd9831d7609750b9a383704fdf493b487caf0",
+        "--reservation-tag",
+        "li2core-selected-sdk-v1",
+        "--owner",
+        "${RUN}/sdk-collect-owner.json",
+        "--raw",
+        "${RUN}/sdk-v1-sdk-collect",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/sdk-v1-products/result.json",
+        "--build-sha",
+        "8902964fcefdb0dbc9a581bb1da8cf6df60ba589297f05a2f401c6803ffef56a",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "bcc11154a8ea91a2550933b7eefc0dc2a6f560d07f79e6724bd579f62ff54130",
+        "--sdk-build",
+        "${RUN}/sdk-v1-sdk-build/result.json",
+        "--sdk-build-sha",
+        "4971a8ef1dbbfee0faa6a38f24c8c543d4fa2f12ae82535d5019f2df15d1bd0e",
+        "--sdk-build-owner",
+        "${RUN}/sdk-build-owner.json",
+        "--sdk-build-owner-sha",
+        "fefcf8979fa89b15639780eb4f0094d0c2f658ecb3ee703cd31604b6f28a2824",
+        "--sdk-controls",
+        "${RUN}/sdk-v1-sdk-controls/result.json",
+        "--sdk-controls-sha",
+        "3bbdb7b5a2cff0e0ed6a07f27bf3a4f74d92f85d7d5c3a5921c61a072f690765",
+        "--sdk-controls-owner",
+        "${RUN}/sdk-controls-owner.json",
+        "--sdk-controls-owner-sha",
+        "a7bbd8b5ec110db17e66c32d02906d10c03c47d3aeb3149c27fed2dc3c02737c",
+        "--geometry",
+        "${RUN}/geometry/acceptance.json",
+        "--geometry-sha",
+        "5e43621186972187889d82752b8b46c3d7b3e922d1853561f723fd57a0fc8acc",
+        "--cohorts",
+        "${RUN}/cohorts.json",
+        "--cohorts-sha",
+        "c7341851288c5aa149229b270a3a6fc8a18a0bcf39f5329db373d09ebb25abac"
+      ],
+      "owner_load_after": [
+        77.42,
+        63.66,
+        75.33
+      ],
+      "owner_load_before": [
+        52.03,
+        57.14,
+        73.81
+      ],
+      "owner_log_sha256": "7e06b70ff01737d4ff2256721b18463ccbd99693a88ed312a476dfd5385b73d2",
+      "owner_seconds": 40.044256592867896,
+      "owner_sha256": "b6639b6e515a2efe8850560e81551ac4d584a628b9a2f838cd2b16152a7cc9d2",
+      "phase": "sdk-collect",
+      "raw_result_sha256": "ea71d06599fa055fa1b653cc252594442e386e49d423e5e8231bd4935bd5203c",
+      "start_utc": "2026-10-30T20:03:21.041488+00:00",
+      "status": "SDK_192_STATE_PASS"
+    }
+  ],
+  "population": {
+    "forms": [
+      "unstripped",
+      "stripped"
+    ],
+    "function_ids": [
+      101,
+      202
+    ],
+    "input_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "k": [
+      10,
+      1000
+    ],
+    "seeds": [
+      1311768467139281696,
+      18364758542526924135
+    ]
+  },
+  "preparation_controls": {
+    "new_sdk_python_passed": 13,
+    "new_sdk_rust_passed": 8,
+    "old_rust_passed": 92,
+    "sdk_filtered_uncredited": 217,
+    "sdk_inventory_listed": 225,
+    "whole_python_passed": 104
+  },
+  "profile": "selected-leaf-set-copied-state-v1",
+  "raw_bindings": {
+    "cohorts_sha256": "c7341851288c5aa149229b270a3a6fc8a18a0bcf39f5329db373d09ebb25abac",
+    "dispatch_sha256": "df858ed56c7a255857a39102a7ef1effffacce56e907380a3e2a3d348e6613f6",
+    "preparation_review_binding_sha256": "671c9440469530afcffded7856021394fb488ddfeed22b0d3b79aeae4557fda4",
+    "protocol_snapshot_sha256": "b477f9416c3d5e401c2c1fb98894867b64d823861db3d88299b149f6ef2db453",
+    "raw_pair_members_canonical_sha256": "4f84190f2226ede01788b4cdd6a1a27f34c6d02500e9587364955c58fc0af35d",
+    "raw_pair_members_definition": "Ordered cohort/pair records, each with bytes/SHA256 of request, receipt, closed, stdout, stderr and actual two-line CSV; canonical JSON sort_keys with comma/colon separators."
+  },
+  "release_profile": {
+    "build_jobs": 4,
+    "cargo_locked": true,
+    "cargo_offline": true,
+    "debug_assertions": true,
+    "debug_information": 0,
+    "mode": "release",
+    "optimization": 3,
+    "overflow_checks": true
+  },
+  "reservation": {
+    "cpus": [
+      92,
+      118,
+      126
+    ],
+    "scope": "One retained disjoint reservation through all ten phases.",
+    "tag": "li2core-selected-sdk-v1"
+  },
+  "schema": "selected-sdk-native-summary-v1",
+  "sdk_source_revision": "87c5c085b89eb6b0ffd2bc7d7d0273ac38bcef7c",
+  "source_attribution": "All ten preparation/native/collection owners executed the clean 778bd983 revision. Full Rust validation executed 87c. The only 87c-to-778 changes are five Python/BUILD.md producer files; Rust sources and Cargo manifests/lock are byte-identical. No native result is attributed to a later merge.",
+  "source_recipe_pins": {
+    "evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "evaluation/ordinary-selected-session/BUILD.md": {
+      "bytes": 21664,
+      "sha256": "4d12da3cac995d024fa482c6ee5f35c1831ddb90c8f8b9bc119888b263224dbc"
+    },
+    "evaluation/ordinary-selected-session/STATE.md": {
+      "bytes": 7472,
+      "sha256": "6a24647e8060408e7b094c22e9d9dadb41ff3747b40172db4fe2755a5ee3ed15"
+    },
+    "evaluation/ordinary-selected-session/build.py": {
+      "bytes": 14480,
+      "sha256": "864f03a50dc8cbb87c2b9e94badfc41ef6e6fb4453f55d7c790356065762d1ce"
+    },
+    "evaluation/ordinary-selected-session/leaves.c": {
+      "bytes": 605,
+      "sha256": "3fd21a4ea2f8f98f4cb41d8991ee238bd7f4e6620aad7c158b8a9e75f9cc089d"
+    },
+    "evaluation/ordinary-selected-session/oracle.py": {
+      "bytes": 4683,
+      "sha256": "4c2c9bfaf1bd08cc3a96fdbab4e64a075aa658a9bb1338aa68117f8892021aa7"
+    },
+    "evaluation/ordinary-selected-session/owner.py": {
+      "bytes": 11711,
+      "sha256": "a6b69b27985fab57cdda74e494ed41cc07c35f4a9774fdfc610bfc9ad7aa2e6d"
+    },
+    "evaluation/ordinary-selected-session/reproduce.py": {
+      "bytes": 55931,
+      "sha256": "0027663f0448261e529acc6f6f713375f3bb19de30b3482d1ad3b83ae102fc66"
+    },
+    "evaluation/ordinary-selected-session/sdk_state.py": {
+      "bytes": 37984,
+      "sha256": "3125bed6927ee10886a7cce0544430d563b2028d295eeab3b2205bc6e51eba27"
+    },
+    "evaluation/ordinary-selected-session/sdk_state_controls.py": {
+      "bytes": 18245,
+      "sha256": "f49ad88cd94ac12e9a4d68bfeb79bff16635c7008fc04eaf1c4a649ce823e268"
+    },
+    "tools/unwind-oracle/bounded_command.py": {
+      "bytes": 7710,
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  },
+  "source_snapshots": {
+    "all_ten_before_after_identical": true,
+    "bytes": 558758,
+    "compiled_inputs": 2425,
+    "files": 2612,
+    "sha256": "cca17f2be470ff33488492a7f3a264d0e5151e50356bedaa163295caa35825d1"
+  },
+  "status": "SDK_192_STATE_PASS",
+  "tool_pins": {
+    "${TOOLCHAIN}/bin/cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "${TOOLCHAIN}/bin/rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "${TOOLCHAIN}/bin/rustdoc": {
+      "bytes": 13680928,
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "/usr/bin/as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "/usr/bin/bash": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    },
+    "/usr/bin/clang-22": {
+      "bytes": 130792,
+      "sha256": "953ea1ca38bec62e4b2b9c916db4d76d5a48edb91e0cce0d5c4d7efe62e34b97"
+    },
+    "/usr/bin/gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "/usr/bin/git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "/usr/bin/ld.bfd": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "/usr/bin/objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "/usr/bin/python3.9": {
+      "bytes": 15448,
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "/usr/bin/readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "/usr/bin/rg": {
+      "bytes": 4746600,
+      "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+    },
+    "/usr/bin/strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    },
+    "/usr/bin/taskset": {
+      "bytes": 23784,
+      "sha256": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741"
+    },
+    "/usr/libexec/gcc/x86_64-redhat-linux/11/cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "/usr/libexec/gcc/x86_64-redhat-linux/11/collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    }
+  },
+  "tool_versions_first_lines": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "clang": "clang version 22.1.3 (CentOS 22.1.3-1.el9)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "objdump": "GNU objdump version 2.35.2-72.el9",
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "strip": "GNU strip version 2.35.2-72.el9"
+  }
+}

@@ -53,10 +53,12 @@ loader lifetime, concurrent mutation, CET, arbitrary inputs, or asynchronous
 preemption. It makes no performance or strict 2 ms deadline claim. The existing
 372 generic ADC and 372 whole ADC comparisons are unchanged, separate populations.
 
-## Prospective finite SDK campaign — UNRUN
+## Fixed finite SDK campaign
 
-The separate `selected-leaf-set-copied-state-v1` profile is **UNRUN** until a
-closed campaign receipt records its outcomes. Its fixed population is **192
+The first closed [SDK campaign](../ordinary-selected-results/sdk-87c/README.md)
+passed all **192 pairs and 27,560 ordered comparisons** at
+`778bd9831d7609750b9a383704fdf493b487caf0`. The separate
+`selected-leaf-set-copied-state-v1` profile has a fixed population of **192
 original/installed pairs**, with **27,560 expected ordered state comparisons**:
 two authenticated DSO forms (`unstripped`, `stripped`) × K in {10, 1000} × the
 existing SDK seeds `0x1234567887654320` and `0xfedcba9801234567` × both functions
