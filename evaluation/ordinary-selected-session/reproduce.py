@@ -137,6 +137,70 @@ def source_build_join(build, current, git):
     assert set(before.split(b'\0')) == set(after.split(b'\0'))
 
 
+PUBLIC_BUILD_RECIPE = 'evaluation/ordinary-selected-session/build.py'
+PUBLIC_BUILD_SCHEMA = 'selected-session-public-build-v1'
+PUBLIC_BUILD_OPTIONS = ('phase','revision','reservation-tag','raw','toolchain','user-home','cargo-home','hardware')
+PUBLIC_TEST_OPTIONS = ('build','build-sha','build-owner','build-owner-sha')
+
+
+def public_build_invocation(producer, phase, rev, directory, python, hardware, previous=None):
+    """Exact fresh schema, never a fallback for either historical builder."""
+    assert set(producer) == {'schema','phase','revision','recipe','recipe_sha256','invocation','options',
+                             'source_before','source_after'}
+    assert producer['schema'] == PUBLIC_BUILD_SCHEMA and producer['recipe'] == PUBLIC_BUILD_RECIPE
+    assert phase in ('products','tests') and producer['phase'] == phase and producer['revision'] == revision(rev)
+    assert type(producer['recipe_sha256']) is str and re.fullmatch('[0-9a-f]{64}',producer['recipe_sha256'])
+    options=producer['options']; keys=PUBLIC_BUILD_OPTIONS+(PUBLIC_TEST_OPTIONS if phase=='tests' else ())
+    assert set(options)==set(keys) and all(type(v) is str and v for v in options.values())
+    assert options['phase']==phase and options['revision']==rev and options['raw']==str(directory)
+    assert options['hardware']==hardware and 1<=len(hardware)<=160 and hardware.isascii() and all(32<=ord(c)<127 for c in hardware)
+    assert re.fullmatch('[A-Za-z0-9_.-]{1,128}',options['reservation-tag'])
+    for key in ('raw','toolchain','user-home','cargo-home'):
+        assert Path(options[key]).is_absolute()
+    if phase=='tests':
+        assert previous is not None and options['build']==previous['path'] and options['build-sha']==previous['sha256']
+        assert Path(options['build']).is_absolute() and Path(options['build-owner']).is_absolute()
+        assert re.fullmatch('[0-9a-f]{64}',options['build-owner-sha'])
+    else: assert previous is None
+    argv=producer['invocation']
+    assert type(argv) is list and len(argv)==3+2*len(keys)
+    assert argv[:2]==[python,'-B'] and argv[2] in (PUBLIC_BUILD_RECIPE,str(ROOT/PUBLIC_BUILD_RECIPE))
+    expected=argv[:3]+[word for key in keys for word in ('--'+key,options[key])]
+    assert argv==expected
+    for label,name in (('source_before','sources-before.json'),('source_after','sources-after.json')):
+        pin=producer[label]
+        assert set(pin)=={'path','bytes','sha256'} and pin['path']==str(directory/name)
+        assert type(pin['bytes']) is int and 0<pin['bytes']<=16*MIB
+        assert type(pin['sha256']) is str and re.fullmatch('[0-9a-f]{64}',pin['sha256'])
+    return argv
+
+
+def fresh_build_producer(run,recipe,record,owner,directory,phase,git,previous_build=None):
+    producer=record['producer']; rev=revision(record['revision'])
+    tools=record['tools'] if phase=='products' else previous_build['tools']
+    hardware=record['hardware'] if phase=='products' else previous_build['hardware']
+    previous=record['original_build_receipt'] if phase=='tests' else None
+    expected=public_build_invocation(producer,phase,rev,directory,tools['python']['path'],hardware,previous)
+    assert owner['command']==expected and len(owner['reserved_cpus'])==3
+    p=ROOT/PUBLIC_BUILD_RECIPE
+    raw=raw_pin(run,recipe,p,cap=MIB)
+    assert sha(raw)==producer['recipe_sha256']==sha(git('show',rev+':'+PUBLIC_BUILD_RECIPE))
+    assert run.sources[str(p)]==recipe.pin(raw)
+    for label in ('source_before','source_after'):
+        pin=producer[label]; path=Path(pin['path'])
+        raw_pin(run,recipe,path,{key:pin[key] for key in ('bytes','sha256')},16*MIB)
+        assert read_json(run,recipe,path,cap=16*MIB)==run.sources
+    options=producer['options']
+    for key in ('toolchain','user-home','cargo-home'):
+        path=Path(options[key]);assert path.resolve(strict=True)==path and path.is_dir()
+    env=record['environment'] if phase=='products' else previous_build['environment']
+    assert env['HOME']==options['user-home'] and env['CARGO_HOME']==options['cargo-home']
+    for key in ('cargo','rustc','rustdoc'):
+        assert str((Path(options['toolchain'])/'bin'/key).resolve(strict=True))==tools[key]['path']
+    if phase=='tests':
+        assert run.retained[options['build-owner']]['sha256']==options['build-owner-sha']
+
+
 def accept_build(run, recipe, path, digest, owner_path, owner_digest, git):
     build = read_json(run, recipe, path, digest)
     directory = Path(path).parent
@@ -147,7 +211,8 @@ def accept_build(run, recipe, path, digest, owner_path, owner_digest, git):
     source_build_join(build, run.sources, git)
     frozen = read_json(run, recipe, directory/'frozen.json')
     assert frozen == {key: ([] if key == 'stages' else build[key]) for key in frozen}
-    assert set(frozen) == {'revision','hardware','sources','tools','versions','environment','cpus','load_before','build_plan_sha256','stages'}
+    frozen_keys = {'revision','hardware','sources','tools','versions','environment','cpus','load_before','build_plan_sha256','stages'}
+    assert set(frozen) == frozen_keys | ({'producer'} if 'producer' in build else set())
     assert read_json(run, recipe, directory/'closed-stages.json') == build['stages']
     raw_pin(run, recipe, directory/'consumed-build-plan.json', cap=MIB)
     assert run.retained[str(directory/'consumed-build-plan.json')]['sha256'] == build['build_plan_sha256']
@@ -167,9 +232,12 @@ def accept_build(run, recipe, path, digest, owner_path, owner_digest, git):
     assert owner['closed']['exit_code'] == 0 and owner['base'] == build['revision']
     assert owner['working_source_sha256'] == {} and owner['source_unchanged'] is True
     assert owner['reserved_cpus'] == build['cpus'] and owner['attempts'] == 1
-    assert owner['command'] == [build['tools']['python']['path'], '-B', str((directory/'build.py').relative_to(ROOT))]
-    raw_pin(run, recipe, directory/'build.py', cap=MIB)
-    assert run.retained[str(directory/'build.py')]['sha256']=='56a63bb5c7bf2b9450a67234a4fcbd861b7b46e2e2aac51f9cf5bfe83e7c6d60'
+    if 'producer' in build:
+        fresh_build_producer(run, recipe, build, owner, directory, 'products', git)
+    else:
+        assert owner['command'] == [build['tools']['python']['path'], '-B', str((directory/'build.py').relative_to(ROOT))]
+        raw_pin(run, recipe, directory/'build.py', cap=MIB)
+        assert run.retained[str(directory/'build.py')]['sha256']=='56a63bb5c7bf2b9450a67234a4fcbd861b7b46e2e2aac51f9cf5bfe83e7c6d60'
     owner_log = Path(owner_path).with_suffix('.log')
     outer_log=raw_pin(run, recipe, owner_log, {'bytes':owner_log.stat().st_size,'sha256':owner['closed']['private_log_sha256']}, 8*MIB)
     assert json.loads(outer_log)==dict(status=build['status'],revision=build['revision'],products=build['products'],native_dispatches=0)
@@ -531,9 +599,12 @@ def accept_test_product(run,recipe,path,digest,owner_path,owner_digest,build,bui
     owner=read_json(run,recipe,owner_path,owner_digest);recipe.normal_closed(owner['closed'])
     assert owner['closed']['exit_code']==0 and owner['base']==rev and owner['source_unchanged'] is True
     assert owner['working_source_sha256']=={} and owner['reserved_cpus']==accepted['cpu_affinity'] and owner['attempts']==1
-    assert owner['command']==[build['tools']['python']['path'],'-B',str((directory/'build.py').relative_to(ROOT))]
-    raw_pin(run,recipe,directory/'build.py',cap=MIB)
-    assert run.retained[str(directory/'build.py')]['sha256']=='bf695dae34cf7fa9390de9152e0d91d822a3678cd707010b9a31a381f1fdaee5'
+    if 'producer' in accepted:
+        fresh_build_producer(run, recipe, accepted, owner, directory, 'tests', git, build)
+    else:
+        assert owner['command']==[build['tools']['python']['path'],'-B',str((directory/'build.py').relative_to(ROOT))]
+        raw_pin(run,recipe,directory/'build.py',cap=MIB)
+        assert run.retained[str(directory/'build.py')]['sha256']=='bf695dae34cf7fa9390de9152e0d91d822a3678cd707010b9a31a381f1fdaee5'
     parent=raw_pin(run,recipe,Path(owner_path).with_suffix('.log'),cap=8*MIB)
     assert sha(parent)==owner['closed']['private_log_sha256'] and json.loads(parent)==accepted
     run.result['test_build_revision']=rev
@@ -648,7 +719,7 @@ def bootstrap(a,started):
     selected_required={str((HERE/name).relative_to(ROOT)) for name in (
         'README.md','leaves.c','reference.c','oracle.py','controls.py','output.py','wire_controls.py',
         'produce.py','closure.py','runner_controls.py','geometry.py','geometry_controls.py',
-        'reproduce.py','driver_controls.py')}
+        'reproduce.py','driver_controls.py','build.py','build_controls.py','owner.py','BUILD.md')}
     # Exact inherited requirements stay mandatory even if an untracked file with
     # the same name happens to exist after a tracked source was removed.
     inherited_required={'evaluation/ordinary-leaf-set-session/reproduce.py',
