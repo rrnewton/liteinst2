@@ -134,12 +134,22 @@ def _require_short_ownership_blob(path, raw, expected, error):
                 [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
                 raw.count(b'#[test]') == len(found), error)
     if path in MAINSHORTOWNERSHIP['python_methods']:
-        tree = ast.parse(raw)
-        found = [node.name for node in ast.walk(tree)
-                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith('test_')]
+        cached = inventory_syntax.cached_test_names(raw, ast, _SHORT_OWNERSHIP_SYNTAX_CONTEXT)
+        if cached is None:
+            tree = ast.parse(raw)
+            found = [node.name for node in ast.walk(tree)
+                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith('test_')]
+        else:
+            found = [name for name in cached]
         require(found == MAINSHORTOWNERSHIP['python_methods'][path], error)
     if path in MAINSHORTOWNERSHIP['module_chains']:
         require(all(raw.decode().count(literal) == 1 for literal in MAINSHORTOWNERSHIP['module_chains'][path]), error)
+
+
+_SHORT_OWNERSHIP_SYNTAX_CONTEXT = (
+    _require_short_ownership_blob.__globals__,
+    _require_short_ownership_blob.__builtins__,
+)
 
 
 def require_short_ownership_sources(error='neighbor_short_ownership_source_inventory_differs'):

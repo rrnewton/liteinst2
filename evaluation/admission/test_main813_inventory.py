@@ -46,6 +46,484 @@ class Main813InventoryTests(unittest.TestCase):
         return protocol.separate(raw, [protocol.specification()], succeeded)
 
     def test_exact_inventory_sources_docs_and_historical_denominators(self):
+        # Optional syntax reuse: public eligibility and the pure kernel are
+        # separate obligations. Unsupported stdlib builds still run every
+        # live-fallback control; they receive no public-cache coverage credit.
+        import ast
+        import builtins
+        import importlib.util
+        import sys
+        from types import FunctionType, ModuleType, SimpleNamespace
+        syntax = main813.inventory_syntax
+        name_cache = syntax._test_names
+        caller = main813._SHORT_OWNERSHIP_SYNTAX_CONTEXT
+        original_parse, original_walk = ast.parse, ast.walk
+        name_source = (
+            b'def test_top():\n'
+            b'    def test_duplicate():\n        pass\n'
+            b'    class Inner:\n        async def test_deep(self):\n            pass\n'
+            b'async def test_async():\n    pass\n'
+            b'class Container:\n    def test_method(self):\n        pass\n'
+            b'    class Nested:\n        def test_nested_method(self):\n            pass\n'
+            b'def helper():\n    def test_hidden():\n        pass\n'
+            b'def test_duplicate():\n    pass\n')
+        name_expected = ['test_top', 'test_async', 'test_duplicate', 'test_duplicate',
+                         'test_method', 'test_hidden', 'test_deep', 'test_nested_method']
+        name_path = 'syntax_cache_control.py'
+        name_error = 'syntax_cache_control'
+
+        def names_guard(raw=name_source, expected=name_expected, digest=None, chains=None):
+            wanted = hashlib.sha256(raw).hexdigest() if digest is None else digest
+            with patch.dict(main813.MAINSHORTOWNERSHIP,
+                    {'methods': {}, 'python_methods': {name_path: expected},
+                     'module_chains': {} if chains is None else {name_path: chains}}):
+                return main813._require_short_ownership_blob(name_path, raw, wanted, name_error)
+
+        name_cache.cache_clear()
+        supported_names = bool(syntax._TEST_NAMES_AUTHORITY)
+        if supported_names:
+            self.assertTrue(syntax._test_names_eligible(name_source, ast, caller))
+            self.assertEqual(syntax.cached_test_names(name_source, ast, caller), tuple(name_expected))
+            self.assertEqual(syntax.cached_test_names(name_source, ast, caller), tuple(name_expected))
+            self.assertEqual((name_cache.cache_info().misses, name_cache.cache_info().hits), (1, 1))
+            self.assertIsNone(names_guard())
+            self.assertEqual(name_cache.cache_info().hits, 2)
+        else:
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            self.assertIsNone(names_guard())
+            self.assertEqual((name_cache.cache_info().currsize, name_cache.cache_info().hits), (0, 0))
+        # Kernel coverage is mandatory on every build and is not evidence that
+        # the optional public eligibility boundary recognized that build.
+        name_cache.cache_clear()
+        self.assertEqual(name_cache(name_source), tuple(name_expected))
+        self.assertEqual(name_cache(name_source), tuple(name_expected))
+        self.assertEqual((name_cache.cache_info().misses, name_cache.cache_info().hits), (1, 1))
+        self.assertEqual(name_cache(b''), ())
+        self.assertEqual(name_cache.cache_parameters(), {'maxsize': 8, 'typed': True})
+        for _ in range(2):
+            with self.assertRaises(SyntaxError):
+                name_cache(name_source + b'broken (')
+        self.assertEqual(name_cache.cache_info().currsize, 2)
+        name_cache.cache_clear()
+        for i in range(9):
+            self.assertEqual(name_cache(('def test_n%d(): pass\n' % i).encode()),
+                             ('test_n%d' % i,))
+        self.assertEqual(name_cache.cache_info().currsize, 8)
+        old_misses = name_cache.cache_info().misses
+        self.assertEqual(name_cache(b'def test_n0(): pass\n'), ('test_n0',))
+        self.assertEqual(name_cache.cache_info().misses, old_misses + 1)
+        name_cache.cache_clear()
+        at_name_bound = b'#' + b'x' * 65534 + b'\n'
+        self.assertEqual(len(at_name_bound), 65536)
+        self.assertIsNone(names_guard(at_name_bound, []))
+        self.assertIsNone(names_guard(at_name_bound + b'\n', []))
+        self.assertIsNone(syntax.cached_test_names(at_name_bound + b'\n', ast, caller))
+        self.assertEqual(name_cache.cache_info().currsize, 1 if supported_names else 0)
+        for _ in range(2):
+            with self.assertRaises(SyntaxError):
+                names_guard(name_source + b'broken (')
+        self.assertEqual(name_cache.cache_info().currsize, 1 if supported_names else 0)
+        class NameBytes(bytes):
+            pass
+        for value in (bytearray(name_source), memoryview(name_source), NameBytes(name_source),
+                      name_source.decode(), None, 1, [1]):
+            self.assertIsNone(syntax.cached_test_names(value, ast, caller))
+        mutable_names = bytearray(b'def test_first(): pass\n')
+        self.assertIsNone(names_guard(mutable_names, ['test_first']))
+        mutable_names[:] = b'def test_other(): pass\n'
+        self.assertIsNone(names_guard(mutable_names, ['test_other']))
+        for value in (memoryview(mutable_names), NameBytes(bytes(mutable_names))):
+            self.assertIsNone(names_guard(value, ['test_other']))
+        for value in (None, 1, 'source', [1]):
+            with self.assertRaises(TypeError):
+                names_guard(value)
+        self.assertEqual(name_cache.cache_info().currsize, 1 if supported_names else 0)
+
+        # Warm names never make expectations or complete guard outcomes sticky.
+        self.assertIsNone(names_guard())
+        for changed in (name_expected[:-1], name_expected + ['test_extra'],
+                        list(reversed(name_expected)), name_expected + [name_expected[0]]):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+                names_guard(expected=changed)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+            names_guard(digest='0' * 64)
+        self.assertIsNone(names_guard(chains=['async def test_async']))
+        for chain in (['absent syntax route'], ['test_duplicate']):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+                names_guard(chains=chain)
+        changed_names = name_source.replace(b'test_top', b'test_new')
+        changed_expected = ['test_new'] + name_expected[1:]
+        self.assertIsNone(names_guard(changed_names, changed_expected))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+            names_guard(changed_names, name_expected)
+        with patch.dict(main813.MAINSHORTOWNERSHIP,
+                {'sources': {name_path: hashlib.sha256(name_source).hexdigest()},
+                 'methods': {}, 'python_methods': {name_path: name_expected},
+                 'module_chains': {}}):
+            with patch.object(Path, 'read_bytes', side_effect=[name_source, changed_names,
+                    FileNotFoundError('missing syntax source')]) as name_reads:
+                self.assertIsNone(main813.require_short_ownership_sources(name_error))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+                    main813.require_short_ownership_sources(name_error)
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+                    main813.require_short_ownership_sources(name_error)
+                self.assertEqual(name_reads.call_count, 3)
+        # Mutation of a list supplied to equality cannot corrupt the stored tuple.
+        class MutatingNames:
+            def __eq__(self, found):
+                found.clear()
+                return True
+        self.assertIsNone(names_guard(expected=MutatingNames()))
+        self.assertIsNone(names_guard())
+
+        first_tree = original_parse(b'def test_first(): pass\n')
+        second_tree = original_parse(b'def test_second(): pass\n')
+        class LiveNames:
+            def __init__(self, kind):
+                self.kind, self.events = kind, []
+            def __call__(self, value):
+                self.events.append(value)
+                if len(self.events) == 3:
+                    raise ValueError('live syntax replacement')
+                tree = first_tree if len(self.events) == 1 else second_tree
+                return tree if self.kind == 'parse' else iter(tree.body)
+            def __eq__(self, other):
+                raise AssertionError('syntax callable equality')
+        class UnhashableNames(LiveNames):
+            __hash__ = None
+        class HashTrapNames(LiveNames):
+            def __hash__(self):
+                raise AssertionError('syntax callable hash')
+        class CollidingNames(LiveNames):
+            def __hash__(self):
+                return 0
+        for kind in ('parse', 'walk'):
+            for replacement_type in (UnhashableNames, HashTrapNames, CollidingNames):
+                for before_import in (False, True):
+                    self.assertIsNone(names_guard())
+                    spec = importlib.util.spec_from_file_location('_inventory_syntax_names_control',
+                        syntax.__file__)
+                    fresh_names = importlib.util.module_from_spec(spec)
+                    if not before_import:
+                        spec.loader.exec_module(fresh_names)
+                    replacement = replacement_type(kind)
+                    with patch.object(ast, kind, replacement):
+                        if before_import:
+                            spec.loader.exec_module(fresh_names)
+                        self.assertEqual(len(replacement.events), 0)
+                        with patch.object(main813, 'inventory_syntax', fresh_names):
+                            self.assertIsNone(names_guard(expected=['test_first']))
+                            self.assertIsNone(names_guard(expected=['test_second']))
+                            with self.assertRaisesRegex(ValueError, '^live syntax replacement$'):
+                                names_guard()
+                        self.assertEqual(len(replacement.events), 3)
+                        self.assertEqual(fresh_names._test_names.cache_info().currsize, 0)
+                    self.assertIsNone(names_guard())
+
+        order = []
+        def walk_installed_by_parse(tree):
+            order.append('walk')
+            return iter(first_tree.body)
+        def parse_installs_walk(raw):
+            order.append('parse')
+            ast.walk = walk_installed_by_parse
+            return second_tree
+        with patch.object(ast, 'walk', original_walk), patch.object(ast, 'parse', parse_installs_walk):
+            self.assertIsNone(names_guard(expected=['test_first']))
+        self.assertEqual(order, ['parse', 'walk'])
+        alternate_ast = SimpleNamespace(parse=lambda raw: first_tree,
+            walk=original_walk, FunctionDef=ast.FunctionDef, AsyncFunctionDef=ast.AsyncFunctionDef)
+        with patch.object(main813, 'ast', alternate_ast):
+            self.assertIsNone(names_guard(expected=['test_first']))
+
+        # Caller classifier lookup and parse-before-missing-name ordering.
+        self.assertIsNone(names_guard())
+        classifier_events = []
+        def caller_classifier(*args):
+            classifier_events.append(args)
+            raise ValueError('live caller classifier')
+        with patch.object(main813, 'isinstance', caller_classifier, create=True):
+            with self.assertRaisesRegex(ValueError, '^live caller classifier$'):
+                names_guard()
+        self.assertEqual(len(classifier_events), 1)
+        malformed_names = b'def test_unclosed(:\n'
+        malformed_hash = hashlib.sha256(malformed_names).hexdigest()
+        isolated_globals = dict(main813.__dict__)
+        isolated_builtins = dict(main813._require_short_ownership_blob.__builtins__)
+        isolated_builtins.pop('isinstance')
+        isolated_globals.pop('isinstance', None)
+        isolated_globals['__builtins__'] = isolated_builtins
+        isolated_guard = FunctionType(main813._require_short_ownership_blob.__code__,
+            isolated_globals, '_require_short_ownership_blob')
+        isolated_globals['_SHORT_OWNERSHIP_SYNTAX_CONTEXT'] = (
+            isolated_guard.__globals__, isolated_guard.__builtins__)
+        self.assertIs(original_parse.__builtins__['isinstance'], builtins.isinstance)
+        with patch.dict(main813.MAINSHORTOWNERSHIP,
+                {'methods': {}, 'python_methods': {name_path: []}, 'module_chains': {}}):
+            missing_error = None
+            try:
+                isolated_guard(name_path, malformed_names, malformed_hash, name_error)
+            except BaseException as caught:
+                missing_error = caught
+        self.assertIs(type(missing_error), SyntaxError)
+        def missing_classifier_parse(raw):
+            raise ValueError('parse before missing classifier')
+        source_hash = hashlib.sha256(name_source).hexdigest()
+        with patch.dict(main813.MAINSHORTOWNERSHIP,
+                {'methods': {}, 'python_methods': {name_path: name_expected}, 'module_chains': {}}):
+            missing_error = None
+            with patch.object(ast, 'parse', missing_classifier_parse):
+                try:
+                    isolated_guard(name_path, name_source, source_hash, name_error)
+                except BaseException as caught:
+                    missing_error = caught
+            with self.assertRaises(NameError):
+                isolated_guard(name_path, name_source, source_hash, name_error)
+        self.assertIs(type(missing_error), ValueError)
+        self.assertEqual(str(missing_error), 'parse before missing classifier')
+
+        # Plain module lookup is required before capture and every public hit.
+        self.assertIsNone(names_guard())
+        module_events = []
+        class OverrideAst(ModuleType):
+            def __getattribute__(self, name):
+                if name == 'parse':
+                    module_events.append(name)
+                    raise ValueError('live AST module lookup')
+                return ModuleType.__getattribute__(self, name)
+        spec = importlib.util.spec_from_file_location('_inventory_syntax_module_control',
+            syntax.__file__)
+        module_helper = importlib.util.module_from_spec(spec)
+        old_ast_class = type(ast)
+        before_names = name_cache.cache_info()
+        try:
+            ast.__class__ = OverrideAst
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            self.assertEqual(module_events, [])
+            with self.assertRaisesRegex(ValueError, '^live AST module lookup$'):
+                names_guard()
+            self.assertEqual(module_events, ['parse'])
+            spec.loader.exec_module(module_helper)
+            self.assertEqual(module_helper._TEST_NAMES_AUTHORITY, ())
+            self.assertEqual(module_events, ['parse'])
+            with patch.object(main813, 'inventory_syntax', module_helper):
+                with self.assertRaisesRegex(ValueError, '^live AST module lookup$'):
+                    names_guard()
+            self.assertEqual(module_events, ['parse', 'parse'])
+            self.assertEqual(module_helper._test_names.cache_info().currsize, 0)
+        finally:
+            ast.__class__ = old_ast_class
+        self.assertEqual(name_cache.cache_info(), before_names)
+
+        # Eligibility must not hash/equal a colliding non-string key.
+        probe_events = []
+        class ProbeKey:
+            def __init__(self, target):
+                self.target = target
+            def __hash__(self):
+                return hash(self.target)
+            def __eq__(self, other):
+                probe_events.append(other)
+                raise ValueError('nonplain syntax probe equality')
+        caller_probe = ProbeKey('isinstance')
+        main813.__dict__[caller_probe] = None
+        before_names = name_cache.cache_info()
+        try:
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            with self.assertRaises(SyntaxError):
+                names_guard(malformed_names, [])
+            self.assertEqual(probe_events, [])
+            self.assertEqual(name_cache.cache_info(), before_names)
+        finally:
+            del main813.__dict__[caller_probe]
+        keyword_probe = ProbeKey('type_comments')
+        old_keywords = original_parse.__kwdefaults__
+        try:
+            original_parse.__kwdefaults__ = {keyword_probe: False, 'feature_version': None}
+            self.assertFalse(syntax._test_names_defaults('parse', original_parse))
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            self.assertEqual(syntax._test_names_authority(), ())
+            self.assertEqual(probe_events, [])
+        finally:
+            original_parse.__kwdefaults__ = old_keywords
+        # Each directly probed mapping independently rejects nonplain keys.
+        for namespace in (syntax._TEST_NAMES_AST_DICT, syntax._TEST_NAMES_GLOBALS,
+                          syntax._TEST_NAMES_BUILTINS_DICT, syntax._TEST_NAMES_MODULES,
+                          syntax._TEST_NAMES_COLLECTIONS.__dict__, syntax.sys.__dict__,
+                          syntax._ast.__dict__):
+            namespace_probe = ProbeKey('absent_syntax_probe_key')
+            namespace[namespace_probe] = None
+            before_names = name_cache.cache_info()
+            try:
+                self.assertFalse(syntax._test_names_plain_keys(namespace))
+                self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+                self.assertEqual(syntax._test_names_authority(), ())
+                self.assertEqual(probe_events, [])
+                self.assertEqual(name_cache.cache_info(), before_names)
+            finally:
+                del namespace[namespace_probe]
+        # Hostile field kinds and flag values never receive equality probes.
+        class ProbeMeta(type):
+            def __eq__(cls, other):
+                probe_events.append(other)
+                raise ValueError('nonplain syntax metaclass equality')
+        class ProbeField(metaclass=ProbeMeta):
+            pass
+        with patch.object(ast.FunctionDef, 'name', ProbeField(), create=True):
+            self.assertEqual(syntax._test_names_authority(), ())
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            self.assertEqual(probe_events, [])
+        class ProbeFlag:
+            def __eq__(self, other):
+                probe_events.append(other)
+                raise ValueError('nonplain syntax flag equality')
+        with patch.object(ast, 'PyCF_ONLY_AST', ProbeFlag()):
+            self.assertEqual(syntax._test_names_authority(), ())
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            self.assertEqual(probe_events, [])
+        self.assertIsNone(names_guard())
+
+        # All traversal dependencies stay live after the tuple has been warm.
+        for dependency in ('iter_child_nodes', 'iter_fields'):
+            self.assertIsNone(names_guard())
+            calls = []
+            def failing_traversal(node):
+                calls.append(node)
+                raise ValueError('live traversal dependency')
+            with patch.object(ast, dependency, failing_traversal):
+                with self.assertRaisesRegex(ValueError, '^live traversal dependency$'):
+                    names_guard()
+            self.assertEqual(len(calls), 1)
+        for dependency in ('parse', 'walk', 'iter_child_nodes', 'iter_fields'):
+            self.assertIsNone(names_guard())
+            fn = getattr(ast, dependency)
+            old_code = fn.__code__
+            def replaced_code(value):
+                raise ValueError('live syntax code')
+            try:
+                fn.__code__ = replaced_code.__code__
+                with self.assertRaisesRegex(ValueError, '^live syntax code$'):
+                    names_guard()
+            finally:
+                fn.__code__ = old_code
+        self.assertIsNone(names_guard())
+        old_defaults = original_parse.__defaults__
+        try:
+            original_parse.__defaults__ = ('<unknown>', 'eval')
+            with self.assertRaises(SyntaxError):
+                names_guard()
+        finally:
+            original_parse.__defaults__ = old_defaults
+        for mutate_in_place in (False, True):
+            old_keywords = original_parse.__kwdefaults__
+            copied_keywords = dict(old_keywords)
+            try:
+                if mutate_in_place:
+                    old_keywords['feature_version'] = (2, 0)
+                else:
+                    original_parse.__kwdefaults__ = dict(old_keywords, feature_version=(2, 0))
+                with self.assertRaises(ValueError):
+                    names_guard()
+            finally:
+                original_parse.__kwdefaults__ = old_keywords
+                old_keywords.clear()
+                old_keywords.update(copied_keywords)
+        with patch.object(ast, 'FunctionDef', ast.AsyncFunctionDef):
+            self.assertIsNone(names_guard(expected=['test_async', 'test_deep']))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+                names_guard()
+        with patch.object(ast.FunctionDef, '_fields', ()):
+            self.assertIsNone(names_guard(expected=[
+                'test_top', 'test_async', 'test_duplicate', 'test_method', 'test_nested_method']))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^syntax_cache_control$'):
+                names_guard()
+        class NameDescriptor:
+            def __get__(self, instance, owner):
+                raise ValueError('live AST field descriptor')
+            def __set__(self, instance, value):
+                instance.__dict__['name'] = value
+        with patch.object(ast.FunctionDef, 'name', NameDescriptor(), create=True):
+            with self.assertRaisesRegex(ValueError, '^live AST field descriptor$'):
+                names_guard()
+
+        # A captured module is insufficient: walk imports this name afresh.
+        self.assertIsNone(names_guard())
+        deque_events = []
+        def imported_deque(values):
+            deque_events.append(values)
+            raise ValueError('live imported deque')
+        replacement_collections = ModuleType('collections')
+        replacement_collections.deque = imported_deque
+        with patch.dict(sys.modules, {'collections': replacement_collections}):
+            with self.assertRaisesRegex(ValueError, '^live imported deque$'):
+                names_guard()
+        self.assertEqual(len(deque_events), 1)
+        with patch.object(syntax._TEST_NAMES_COLLECTIONS, 'deque', imported_deque):
+            with self.assertRaisesRegex(ValueError, '^live imported deque$'):
+                names_guard()
+        self.assertEqual(len(deque_events), 2)
+
+        # Function builtins are distinct from the module's current binding.
+        foreign_events = []
+        def foreign_compile(*args, **kwargs):
+            foreign_events.append(args)
+            raise ValueError('live function builtins')
+        ast_builtins = ast.__dict__['__builtins__']
+        foreign_builtins = dict(ast_builtins, compile=foreign_compile)
+        try:
+            ast.__dict__['__builtins__'] = foreign_builtins
+            foreign_parse = FunctionType(original_parse.__code__, vars(ast),
+                'parse', original_parse.__defaults__)
+            foreign_parse.__kwdefaults__ = dict(original_parse.__kwdefaults__)
+        finally:
+            ast.__dict__['__builtins__'] = ast_builtins
+        spec = importlib.util.spec_from_file_location('_inventory_syntax_names_builtins',
+            syntax.__file__)
+        foreign_helper = importlib.util.module_from_spec(spec)
+        with patch.object(ast, 'parse', foreign_parse):
+            spec.loader.exec_module(foreign_helper)
+            self.assertEqual(foreign_helper._TEST_NAMES_AUTHORITY, ())
+            with patch.object(main813, 'inventory_syntax', foreign_helper):
+                with self.assertRaisesRegex(ValueError, '^live function builtins$'):
+                    names_guard()
+        self.assertEqual(len(foreign_events), 1)
+
+        # Referenced builtin shadows are ineligible even when the particular
+        # source does not use that branch of the original implementation.
+        for builtin_name in ('compile', 'isinstance', 'tuple', 'list', 'getattr',
+                             'AttributeError', '__import__'):
+            self.assertIsNone(names_guard())
+            with patch.object(ast, builtin_name, builtins.__dict__[builtin_name], create=True):
+                self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+                before_names = name_cache.cache_info()
+                self.assertIsNone(names_guard())
+                self.assertEqual(name_cache.cache_info(), before_names)
+        self.assertIsNone(names_guard())
+        with patch.object(ast, 'compile', foreign_compile, create=True):
+            with self.assertRaisesRegex(ValueError, '^live function builtins$'):
+                names_guard()
+        self.assertEqual(len(foreign_events), 2)
+        with patch.object(ast, 'PyCF_ONLY_AST', 0):
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            with self.assertRaises(AttributeError):
+                names_guard()
+        with patch.object(ast, 'PyCF_TYPE_COMMENTS', ast.PyCF_TYPE_COMMENTS + 1):
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            before_names = name_cache.cache_info()
+            self.assertIsNone(names_guard())
+            self.assertEqual(name_cache.cache_info(), before_names)
+        with patch.object(syntax, '_TEST_NAMES_AUTHORITY', ()):
+            before_names = name_cache.cache_info()
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+            self.assertIsNone(names_guard())
+            self.assertEqual(name_cache.cache_info(), before_names)
+        self.assertIsNone(names_guard())
+        if supported_names:
+            self.assertIsNotNone(syntax.cached_test_names(name_source, ast, caller))
+        else:
+            self.assertIsNone(syntax.cached_test_names(name_source, ast, caller))
+        name_cache.cache_clear()
+
         # Cache only pure bytes-to-digest work; expectations and reads stay live.
         digest = main813.inventory_digest.hexdigest
         cache = main813.inventory_digest._hexdigest
