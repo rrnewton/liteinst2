@@ -49,6 +49,48 @@ class Main813InventoryTests(unittest.TestCase):
         # Optional syntax reuse: public eligibility and the pure kernel are
         # separate obligations. Unsupported stdlib builds still run every
         # live-fallback control; they receive no public-cache coverage credit.
+        # Impossible null fields are rejected before historical dispatch; every
+        # non-null declaration still executes the complete original body.
+        null_actual = json.loads((main813.ROOT / 'evaluation/admission/corpus.json').read_bytes())
+        self.assertEqual(len(null_actual), 10)
+        self.assertTrue(all(value is not None for value in null_actual.values()))
+        with patch.object(main813, 'digest', side_effect=AssertionError('extra serialization')):
+            self.assertIsNone(main813.precheck_null_corpus(null_actual, 'null_control'))
+            for null_key in null_actual:
+                null_changed = dict(null_actual); null_changed[null_key] = None
+                with self.subTest(null_field=null_key), self.assertRaisesRegex(
+                        parsing.InvalidEvidence, '^null_control$'):
+                    main813.precheck_null_corpus(null_changed, 'null_control')
+            self.assertIsNone(main813.precheck_null_corpus({'nested': [None]}, 'null_control'))
+            class NullRoot(dict):
+                def __iter__(self):
+                    raise AssertionError('foreign root callback')
+                def values(self):
+                    raise AssertionError('foreign values callback')
+            class NullKey(str):
+                pass
+            for null_foreign in (None, [], 1, NullRoot(a=None), {NullKey('a'): None}):
+                self.assertIsNone(main813.precheck_null_corpus(null_foreign, 'null_control'))
+        class NullReached(BaseException):
+            pass
+        for null_before, null_next in (
+                ('before_current', 'peel_690'), ('before_0a8', 'peel_09fe'),
+                ('before_startup', 'peel_091')):
+            with patch.object(main813, null_next, side_effect=NullReached) as null_dispatch:
+                with self.assertRaises(NullReached):
+                    getattr(main813, null_before)(null_actual)
+                self.assertEqual(null_dispatch.call_count, 1)
+                for null_key in null_actual:
+                    null_changed = dict(null_actual); null_changed[null_key] = None
+                    with self.subTest(null_before=null_before, null_field=null_key), self.assertRaisesRegex(
+                            parsing.InvalidEvidence, '^null_body_control$'):
+                        getattr(main813, null_before)(null_changed, 'null_body_control')
+                self.assertEqual(null_dispatch.call_count, 1)
+        with patch.object(main813, 'require_091_sources', side_effect=NullReached) as null_source:
+            with self.assertRaises(NullReached):
+                main813.before_091(null_actual)
+            self.assertEqual(null_source.call_count, 1)
+
         import ast
         import builtins
         import importlib.util
