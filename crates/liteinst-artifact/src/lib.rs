@@ -7,8 +7,10 @@
 
 use sha2::{Digest as _, Sha256};
 
+pub mod elf64;
 pub mod sparse;
 pub mod sparse_wire;
+pub mod startup;
 
 const MAGIC: &[u8; 8] = b"LI2META\0";
 const FORMAT: u32 = 1;
