@@ -1093,6 +1093,286 @@
       }
     }
   },
+  "adjacent_routed_jmp": {
+    "base_revision": "b6030cbd303754a7acfe4a6c7159d1681629b38f",
+    "core_child": {
+      "identity": "unit/liteinst2/lib",
+      "ignored": 1,
+      "outer_tests": 330,
+      "protocol_unchanged": true,
+      "unmatched_child_tests": 1
+    },
+    "current_corpus_sha256": "b5f5fd7a3c5922cc9a3d195edc6ab50be666f1d9c347f56d7dcf850166430a3d",
+    "declared_delta": {
+      "doctests": 0,
+      "harnesses": 0,
+      "ignored": 0,
+      "recorder_tests": 0,
+      "rust_declarations": 21,
+      "rust_tests": 21,
+      "serial_tests": 0
+    },
+    "instances": {
+      "src/quiescent/adjacent_routed_jmp/tests.rs": {
+        "unit/liteinst2/lib": "quiescent::adjacent_routed_jmp::tests::"
+      }
+    },
+    "methods": {
+      "src/quiescent.rs": {
+        "all": [
+          "unmappable_last_cache_line_refuses_without_address_overflow",
+          "indexed_endpoint_preserves_invalid_prefix_and_eager_default",
+          "invalid_choice_is_not_permanent_end_and_unproved_tail_stays_unknown",
+          "all_masks_keep_their_original_slots_and_prove_permanent_upper_end",
+          "pun_duplicate_preference_ranges_and_both_caps_have_exact_evidence",
+          "exact_five_mandatory_prefix_forms_require_admission",
+          "nearby_simd_string_address_and_extra_prefix_forms_stay_refused",
+          "exact_codes_do_not_bypass_register_or_memory_operand_checks",
+          "existing_gpr_and_refused_special_forms_keep_their_outcomes"
+        ],
+        "ignored": []
+      },
+      "src/quiescent/adjacent_routed_jmp/tests.rs": {
+        "all": [
+          "frozen_low_address_pair_is_real_and_exact",
+          "actual_predecessor_is_preserved_and_never_bypassed",
+          "old_adjacent_domain_and_mid_transfer_guards_stay_closed",
+          "original_targets_suffix_and_forced_search_refuse_before_images",
+          "all_head_resume_identity_and_original_mutants_refuse",
+          "selected_suffix_and_pending_shape_are_not_exempted",
+          "upper_and_lower_ownership_fail_without_mutating_predecessor",
+          "budgets_zero_relation_and_overflow_are_explicit",
+          "empty_lower_scope_charges_j_and_keeps_original_second_upper_slot",
+          "lower_image_budget_is_cumulative_and_does_not_retry",
+          "actual_pair_resource_refusals_retain_both_local_successes",
+          "exact_upper_kernel_rejects_favorable_forged_target",
+          "real_upper_image_route_and_byte_mutants_are_rejected",
+          "expected_metadata_targets_are_independent_of_candidate_fields",
+          "suffix_canonical_alternative_is_semantic_not_register_mnemonic_guess",
+          "one_page_and_fetch_store_boundaries_do_not_relax",
+          "denied_upper_page_debits_each_original_image_slot_without_lower_work",
+          "resolved_out_of_range_hook_debits_upper_images_without_lower_work",
+          "real_predecessor_allocation_collision_follows_upper_acceptance_and_rolls_back",
+          "real_upper_image_missing_and_extra_suffix_entries_are_rejected",
+          "real_upper_missing_wrong_routes_and_source_illegal_marker_are_rejected"
+        ],
+        "ignored": []
+      },
+      "src/trampoline.rs": {
+        "all": [
+          "open_result_reports_numeric_errno_without_reading",
+          "read_error_reports_numeric_errno",
+          "read_error_retains_kind_without_display_or_debug_of_its_payload",
+          "open_result_delegates_success_to_the_bounded_reader",
+          "process_maps_reader_accepts_the_exact_cap_and_rejects_one_extra_byte",
+          "arena_seals_preserve_existing_writer_and_close_external_mutation_paths",
+          "exhausted_arena_reservation_cannot_wrap_and_reuse_storage",
+          "failed_emission_consumes_its_slot_without_overwriting_published_bytes",
+          "reachable_mapping_order_preserves_upward_heap_growth",
+          "total_length_includes_every_section",
+          "total_length_rejects_overflow",
+          "relocates_multiple_short_instructions_as_one_patch_window",
+          "short_instruction_constructor_rejects_nonheads_and_long_instructions",
+          "short_instruction_emission_maps_exact_entry_and_original_end",
+          "short_instruction_native_observe_and_replace_resume_at_original_successor",
+          "validates_exact_instruction_and_ordered_action_boundaries",
+          "callback_free_lengths_and_far_branch_maps_are_exact",
+          "native_instructions_actions_and_backedges",
+          "window_emission_separates_entry_routes_from_architectural_boundaries",
+          "window_constructor_requires_complete_physical_logical_and_end_boundaries",
+          "same_site_window_emits_identical_legacy_bytes_and_layout",
+          "staged_image_rejects_wrong_address_without_mapping",
+          "upstream_entries_execute_the_required_prefix_hook_and_suffix",
+          "dropping_staged_image_releases_its_exact_mapping",
+          "rejects_a_short_region_without_five_complete_bytes",
+          "out_of_range_return_uses_cet_notrack_indirect_jump",
+          "replace_first_omits_a_two_byte_syscall_but_relocates_its_tail",
+          "ptrace_stops_restore_saved_state_but_leave_rsp_at_owned_top",
+          "emits_checked_layouts_for_five_seven_and_ten_byte_instructions",
+          "preserves_memory_targets_for_all_operand_classes",
+          "preserves_eip_wrap_and_high_ip_external_targets",
+          "keeps_entry_branches_and_memory_at_application_address",
+          "retained_interior_branches_still_follow_their_relocated_instruction",
+          "observing_entry_targets_stay_external_for_direct_control_flow",
+          "maps_consecutive_far_entry_backedges_to_their_original_pcs",
+          "far_entry_relay_preserves_all_direct_transfer_kinds_and_fallthrough",
+          "far_external_direct_branch_uses_cet_relay",
+          "far_external_relays_cover_all_direct_forms_and_plan_modes",
+          "branch_relay_grouping_is_deterministic_for_shared_and_mixed_targets",
+          "mixed_short_jcc_and_call_get_distinct_relays_in_public_plans",
+          "near_entry_backedges_do_not_add_relay_or_change_encoding",
+          "near_external_branches_keep_iced_bytes_and_offsets_in_all_plan_modes",
+          "relay_selection_uses_relocations_not_equal_immediates_or_continuation_identity",
+          "far_branch_relays_preserve_entry_and_external_destinations",
+          "preserves_replace_first_omitted_and_retained_targets",
+          "preserves_memory_and_pc_mappings_with_far_branch_literals",
+          "refuses_unreachable_original_memory_instead_of_rebinding_it",
+          "normalization_preserves_direct_branch_operand_widths",
+          "reencodes_rip_relative_memory_for_the_trampoline_address",
+          "relocates_relative_calls_and_expands_out_of_range_branches",
+          "maps_each_consecutive_expanded_branch_to_its_original_pc",
+          "far_tail_code_and_data_have_distinct_pc_mappings",
+          "terminal_instruction_does_not_capture_low_application_targets",
+          "branch_relay_rejects_malformed_final_offset64_slots",
+          "branch_relay_layout_refuses_length_address_and_rel32_overflow",
+          "hook_fires_preserves_result_and_toggles_idempotently",
+          "arena_hook_replaces_a_short_first_instruction_and_runs_the_tail",
+          "ptrace_stopped_hook_leaves_global_pc_publication_explicit",
+          "ptrace_stopped_hook_executes_on_owned_stack",
+          "quiescent_arena_hook_patches_a_cache_line_straddler",
+          "relocates_rip_relative_load_and_returns_to_original_code",
+          "relocates_relative_call_and_resumes_after_its_return",
+          "preserves_live_flags_and_the_system_v_red_zone",
+          "preserves_xmm_argument_across_a_clobbering_callback",
+          "preserves_avx_upper_lane_across_a_clobbering_callback",
+          "concurrent_execution_survives_rapid_hook_toggling",
+          "observing_control_plans_and_images_release_unused_references",
+          "observing_control_refusals_leave_no_hidden_control_owner",
+          "observing_control_changes_leave_all_emitted_bytes_and_maps_identical",
+          "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+          "observing_control_grouped_rollback_releases_its_clones",
+          "observing_control_executable_drop_keeps_code_dependencies_alive",
+          "observing_control_arena_refusal_preserves_slots_bytes_and_static_support",
+          "observing_control_native_subsets_and_retained_dispatch_after_handle_drop"
+        ],
+        "ignored": []
+      }
+    },
+    "module_chains": {
+      "src/lib.rs": [
+        "pub mod quiescent;"
+      ],
+      "src/quiescent.rs": [
+        "pub(crate) mod adjacent_routed_jmp;"
+      ],
+      "src/quiescent/adjacent_routed_jmp.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      ],
+      "src/quiescent/adjacent_routed_jmp/tests.rs": [
+        "include_str!(\"fixture.hex\")"
+      ]
+    },
+    "previous_corpus_sha256": "cbe0bb22584ebf2c0cd64d8c55ee90cea11b87fa7db176596deac8b8a6d5da93",
+    "projections": {
+      "evaluation/admission/parsing.py": {
+        "current_sha256": "9d6d4ad54442f7c648bb2bf2253358ab2477e19ec2d92692029feaf29b678469",
+        "edits": [
+          [
+            15421,
+            15731,
+            "                                  (\"unit/liteinst2/lib\", 309, 1), (\"test/stress\", 7, 3))\n"
+          ]
+        ],
+        "previous_sha256": "3cd5e6c80a1dc1c9fedcdf576ddc307a57732b5ee004b3cfe8ac64ea78d9133d"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d",
+        "edits": [
+          [
+            986,
+            1235,
+            ""
+          ],
+          [
+            51964,
+            52018,
+            "            whole_function: None,\n"
+          ],
+          [
+            52063,
+            52467,
+            "// Only whole_function::Verified can authorize a closed multi-block window.\n// Legacy callers reach this seam after their unchanged same-block checks.\n"
+          ],
+          [
+            52622,
+            52662,
+            "    whole_function: Option<&'a whole_function::Verified>,\n"
+          ],
+          [
+            53152,
+            53171,
+            "        whole_function,\n"
+          ],
+          [
+            53187,
+            54240,
+            ""
+          ],
+          [
+            55976,
+            57572,
+            "    let trampoline = match (clock, controls) {\n        (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {\n            return Err(Refusal::InvalidPlan);\n"
+          ],
+          [
+            57582,
+            57582,
+            "        (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),\n        (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),\n        (None, Some(CoalescedActions::Controlled(actions))) => {\n            TrampolinePlan::from_controlled_actions(scan, physical, end, actions)\n        }\n        (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {\n            TrampolinePlan::from_controlled_actions_with_stack_profile(\n                scan, physical, end, actions, profile,\n            )\n        }\n        (None, Some(CoalescedActions::PreContext(actions))) => {\n            // SAFETY: this private variant comes only from the unsafe typed\n            // wrappers, which retain the entire leaf/frame/callback contract.\n            // Original scan/current-read/whole-window guards above are unchanged.\n            unsafe { TrampolinePlan::from_precontext_actions(scan, physical, end, actions) }\n        }\n        (None, None) => request.emission.window(\n            scan,\n            physical,\n            request.logical_pc,\n            end,\n            request.semantics == HookSemantics::ReplaceFirst,\n        ),\n"
+          ],
+          [
+            58380,
+            58508,
+            "    for attempt in 0..policy.max_candidates {\n"
+          ],
+          [
+            58553,
+            59097,
+            "        let Some(target) = candidate_target(physical, mask, policy.preferred_address, attempt)\n        else {\n"
+          ],
+          [
+            64892,
+            65277,
+            "        candidate_target_proof(\n            physical,\n            mask,\n            policy.preferred_address,\n            policy.max_candidates,\n        ),\n"
+          ]
+        ],
+        "previous_sha256": "1ab25c3243922fc354a011a5158fc3207e1690605f3a52a91aa6deb4fe79c2eb"
+      },
+      "src/quiescent/whole_function.rs": {
+        "current_sha256": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
+        "edits": [
+          [
+            7223,
+            7294,
+            "                whole_function: Some(&proof),\n"
+          ]
+        ],
+        "previous_sha256": "9601853fc3c6f6ad0f61706dc1806ea67f1d099933c07881cb5f62c3f2494c1f"
+      },
+      "src/trampoline.rs": {
+        "current_sha256": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b",
+        "edits": [
+          [
+            54525,
+            55071,
+            ""
+          ]
+        ],
+        "previous_sha256": "51503144f0cf7717637eadc0fd14b7bbee6ecc0c8592ffe7af4e619d5c386463"
+      }
+    },
+    "sources": {
+      "evaluation/admission/parsing.py": "9d6d4ad54442f7c648bb2bf2253358ab2477e19ec2d92692029feaf29b678469",
+      "src/lib.rs": "0e68a9461de727279aabf652a725406f2a70d9d7f3ca803a4b230f310e2961cb",
+      "src/quiescent.rs": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d",
+      "src/quiescent/adjacent_routed_jmp.rs": "eda4961a6e8cd1abc349971830f5f5324c66877d2a5a451f061aa0298243012f",
+      "src/quiescent/adjacent_routed_jmp/fixture.hex": "fe2e9439bbfb7203e586b0aafcfb278d99d04ae1f38c7cb50370f5a0396b37a3",
+      "src/quiescent/adjacent_routed_jmp/tests.rs": "a0513abd4c96b21a022b88f547cd9dadbfd0c691ba46cd94b974a464ef1f39ef",
+      "src/quiescent/whole_function.rs": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
+      "src/trampoline.rs": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b"
+    },
+    "upstream_revision": "3155b2d3db716b167fae807eae5f9d2e2b835296",
+    "workspace_changes": {
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 330
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 309
+        }
+      }
+    }
+  },
   "current_corpus_sha256": "884864b391332b735ebe3a3c72a935132ed95910cdc16d1793c4befdc01edc31",
   "doctests": {
     "src/backedge_clock.rs": [

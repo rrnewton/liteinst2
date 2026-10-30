@@ -271,7 +271,10 @@ def parse_harnesses(output, expected, exit_code):
                                   ("unit/liteinst2/lib", 299, 1),
                                   # Ten adjacent-B2 tests; the entire old ptrace
                                   # child source and nested stack stay exact.
-                                  ("unit/liteinst2/lib", 309, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 309, 1),
+                                  # Twenty-one mixed-pair controls retain the
+                                  # complete original ptrace child protocol.
+                                  ("unit/liteinst2/lib", 330, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

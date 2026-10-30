@@ -6467,7 +6467,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 309
+        "tests": 330
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
