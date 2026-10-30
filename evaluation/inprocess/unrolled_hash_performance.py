@@ -179,6 +179,9 @@ def publish(path,r,private):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--expect-revision',required=True);ap.add_argument('--component-receipt',type=Path,required=True);ap.add_argument('--owner-receipt',type=Path,required=True)
     ap.add_argument('--scalar-reuse',action='store_true')
+    ap.add_argument('--scalar-span-trace',action='store_true')
+    ap.add_argument('--span-component-receipt',type=Path)
+    ap.add_argument('--span-trace-receipt',type=Path)
     ap.add_argument('--reuse-certificate',action='store_true')
     ap.add_argument('--certificate-owner-receipt',type=Path)
     ap.add_argument('--current-custody',action='store_true')
@@ -186,11 +189,16 @@ def main():
     ap.add_argument('--current-owner-receipt',type=Path)
     for option in ('region-decoder-receipt','region-component-receipt','reuse-owner-receipt','sdk'):ap.add_argument('--'+option,type=Path)
     a=ap.parse_args();extension=None;extra_builders=[]
-    need(sum((a.scalar_reuse,a.current_custody,a.reuse_certificate))<=1,'one explicit performance profile')
-    need(a.reuse_certificate or a.certificate_owner_receipt is None,'certificate receipt requires explicit certificate profile')
-    need(a.current_custody or(a.current_component_receipt is None and a.current_owner_receipt is None),
+    need(sum((a.scalar_reuse,a.current_custody,a.reuse_certificate,a.scalar_span_trace))<=1,'one explicit performance profile')
+    need(a.scalar_span_trace or(a.span_component_receipt is None and a.span_trace_receipt is None),
+         'span receipts require the explicit finite TRACE profile')
+    need(a.reuse_certificate or a.scalar_span_trace or a.certificate_owner_receipt is None,'certificate receipt requires explicit certificate or finite TRACE profile')
+    need(a.current_custody or a.scalar_span_trace or(a.current_component_receipt is None and a.current_owner_receipt is None),
          'current receipts require explicit current-custody profile')
-    if a.reuse_certificate:
+    if a.scalar_span_trace:
+        import scalar_span_trace_performance as extension
+        extension.arguments(a)
+    elif a.reuse_certificate:
         import scalar_reuse_certificate_performance as extension
         extension.arguments(a)
     elif a.current_custody:
@@ -207,7 +215,7 @@ def main():
     a.component_receipt=a.component_receipt.resolve().relative_to(ROOT);a.owner_receipt=a.owner_receipt.resolve().relative_to(ROOT)
     need(all(p.parent==Path('evaluation/inprocess/results')and p.suffix=='.json'for p in(a.component_receipt,a.owner_receipt)),'public qualification receipts inside evaluation results')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+('-scalar-reuse-certificate-performance-'if a.reuse_certificate else '-current-custody-performance-'if a.current_custody else '-scalar-reuse-performance-'if extension else'-unrolled-hash-performance-')+a.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem
+    stem=stamp+('-scalar-span-trace-performance-'if a.scalar_span_trace else '-scalar-reuse-certificate-performance-'if a.reuse_certificate else '-current-custody-performance-'if a.current_custody else '-scalar-reuse-performance-'if extension else'-unrolled-hash-performance-')+a.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem
     private.mkdir(parents=True,mode=0o700);public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
     bounds=dict(BUILD_PROFILES,**BOUNDS,finite=[5,512<<20,16<<20,15])
     if extension:bounds['program_dr']=[30,16<<30,16<<20,60]
@@ -217,7 +225,7 @@ def main():
         cpu=cpu,hardware=hardware(cpu),bounds=bounds,commands=commands,cases=[dict(ordinal=i,workload=k,repeat=n,lane=l,status='not_run') for i,(k,n,l) in enumerate(order)],error=None,final_errors=[],
         finite_cases=[dict(mode=i,expected_exit=exit,status='not_run',qualified_case=0,supplied_return_control=(i==4),performance_credit=False)for i,exit in enumerate((0,125,125,125,125,0))],
         reproduce=['python3','evaluation/inprocess/unrolled_hash_performance.py','--expect-revision',a.expect_revision,'--component-receipt',str(a.component_receipt),'--owner-receipt',str(a.owner_receipt)])
-    if extension:r.update(profile='scalar-reuse-certificate-performance-v1'if a.reuse_certificate else 'current-custody-performance-v1'if a.current_custody else'scalar-reuse-performance-v1',scope='All82 fixed launches after six same-revision prerequisites; no aggregate credit unless complete'if a.reuse_certificate else 'All82 fixed launches after four same-revision prerequisites; no aggregate credit unless complete'if a.current_custody else'All82 fixed launches after five same-revision prerequisites; no aggregate credit unless complete',reproduce=r['reproduce']+extension.reproduce(a))
+    if extension:r.update(profile='scalar-span-trace-performance-v1'if a.scalar_span_trace else 'scalar-reuse-certificate-performance-v1'if a.reuse_certificate else 'current-custody-performance-v1'if a.current_custody else'scalar-reuse-performance-v1',scope='Finite82 experiment after ten same-revision/CPU prerequisites; no complete new-owner qualification'if a.scalar_span_trace else 'All82 fixed launches after six same-revision prerequisites; no aggregate credit unless complete'if a.reuse_certificate else 'All82 fixed launches after four same-revision prerequisites; no aggregate credit unless complete'if a.current_custody else'All82 fixed launches after five same-revision prerequisites; no aggregate credit unless complete',reproduce=r['reproduce']+extension.reproduce(a))
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
         need(want is None or f=={k:want[k]for k in('bytes','sha256')},'exact requested input bytes')
