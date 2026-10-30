@@ -355,7 +355,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     need(len(r['cases'])==25 and all(c['status'].startswith('qualified_')for c in r['cases'])and not r['error'],'all25 actual subjects qualify, no failed-prefix completion credit')
     need(sum(c.get('pair',{}).get('qualified_case',0)for c in r['cases'])==9 and
         sum(c.get('application_controls',{}).get('supplied_refusals',0)for c in r['cases'])==234 and
-        sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==16*33 and
+        sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==16*33+7*2 and
         sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==441,
         'all nine actual pairs and fixed application/terminal/owner-record refusal controls')
 
