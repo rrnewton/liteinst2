@@ -15,7 +15,7 @@ import parsing
 
 class MainC712InventoryTests(unittest.TestCase):
     def test_exact_software_preemption_sources_catalog_and_refusals(self):
-        actual = current.main0fb574.before_current(current.main0fb574.mainaf81.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))
+        actual = current.main0fb574.before_current(current.main0fb574.mainaf81.before_current(current.main0fb574.mainaf81.maindd75.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (106, 3861, 37))
@@ -51,7 +51,7 @@ class MainC712InventoryTests(unittest.TestCase):
             wrong = dict(actual); wrong[key] = None
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainc712_inventory_differs$'):
                 current.before_current(wrong)
-        identities = current.main0fb574.before_python(current.main0fb574.mainaf81.before_python(historical.python_identities(Path(__file__).parent)))
+        identities = current.main0fb574.before_python(current.main0fb574.mainaf81.before_python(current.main0fb574.mainaf81.maindd75.before_python(historical.python_identities(Path(__file__).parent))))
         self.assertEqual((len(identities), current.digest(identities)), (356, current.PYTHON_CURRENT))
         old_ids = current.before_python(identities)
         self.assertEqual((len(old_ids), current.digest(old_ids)), (355, previous.PYTHON_CURRENT))

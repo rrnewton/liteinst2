@@ -15,7 +15,7 @@ import parsing
 
 class MainAf81InventoryTests(unittest.TestCase):
     def test_exact_adc_compiled_sources_catalog_and_refusals(self):
-        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        actual = current.maindd75.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (109, 4033, 37))
@@ -29,11 +29,11 @@ class MainAf81InventoryTests(unittest.TestCase):
         self.assertEqual((len(actual['harness_test_counts']['serial_launch']),
                           sum(x['tests'] for x in actual['harness_test_counts']['serial_launch'].values())), (27, 1039))
         with patch.object(inventory, 'require_historical357') as earlier:
-            self.assertIsNone(inventory.require_current(actual))
+            self.assertIsNone(inventory.require_historical358(actual))
             earlier.assert_called_once_with(old)
         for wrong in (old, previous.before_current(old)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(wrong)
+                inventory.require_historical358(wrong)
         # Strict historical entry must reject the valid successor. Compatibility
         # is explicit in peel_current and in the old tests' input setup only.
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main0fb574_inventory_differs$'):
@@ -57,7 +57,7 @@ class MainAf81InventoryTests(unittest.TestCase):
             wrong = dict(actual); wrong[key] = None
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_inventory_differs$'):
                 current.before_current(wrong)
-        identities = historical.python_identities(Path(__file__).parent)
+        identities = current.maindd75.before_python(historical.python_identities(Path(__file__).parent))
         self.assertEqual((len(identities), current.digest(identities)), (358, current.PYTHON_CURRENT))
         old_ids = current.before_python(identities)
         self.assertEqual((len(old_ids), current.digest(old_ids)), (357, previous.PYTHON_CURRENT))
