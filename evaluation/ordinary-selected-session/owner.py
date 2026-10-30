@@ -151,8 +151,16 @@ def main():
     python=str(Path(sys.executable).resolve(strict=True))
     invocation,command=commands(options,python,sys.argv[0])
     assert invocation==[python,'-B',sys.argv[0],*sys.argv[1:]]
-    os.chdir(ROOT)
     checked=('owner.py','build.py','reproduce.py')+(('sdk_state.py','sdk_state_controls.py') if phase in SDK_EXTRAS else ())
+    return _run_owner(args,options,invocation,command,checked,'owner.py','selected-session-public-owner-v1')
+
+
+def _run_owner(args,options,invocation,command,checked,owner_name,owner_schema):
+    # Only fixed entrypoint wrappers call this; process supervision remains unchanged.
+    assert (owner_name,owner_schema) in (('owner.py','selected-session-public-owner-v1'),
+        ('accuracy_owner.py','selected-sdk-accuracy-public-owner-v1'))
+    phase=args.phase
+    os.chdir(ROOT)
     for name in checked:
         path=HERE/name
         assert path.is_file() and not path.is_symlink() and path.stat().st_size<=MIB
@@ -181,9 +189,9 @@ def main():
     result=dict(base=args.revision,working_source_sha256={},command=command,env=env,
         wall_limit_seconds=WALL_SECONDS,output_limit_bytes=OUTPUT_BYTES,reserved_cpus=cpus,
         load_before=list(os.getloadavg()),hardware=args.hardware,attempts=1,source_unchanged=False,
-        public_owner=dict(schema='selected-session-public-owner-v1',phase=phase,revision=args.revision,
-            recipe='evaluation/ordinary-selected-session/owner.py',
-            recipe_sha256=before['evaluation/ordinary-selected-session/owner.py']['sha256'],invocation=invocation))
+        public_owner=dict(schema=owner_schema,phase=phase,revision=args.revision,
+            recipe='evaluation/ordinary-selected-session/'+owner_name,
+            recipe_sha256=before['evaluation/ordinary-selected-session/'+owner_name]['sha256'],invocation=invocation))
     assert prepare_log(output)==(capture,log)
     result.update(own_command(process_owner,recipe,command,env,capture,log))
     result.update(capture_log=str(capture),load_after=list(os.getloadavg()))
