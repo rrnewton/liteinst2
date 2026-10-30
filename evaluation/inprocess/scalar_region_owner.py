@@ -8,7 +8,10 @@ ROOT=Path(__file__).resolve().parents[2];HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected';FIXTURE=SELECTED/'tests/scalar_region_app'
 OWNER=SELECTED/'tests/scalar_region_owner'
 REUSE_OWNER=SELECTED/'tests/scalar_region_reuse_owner'
-def owner_directory(r):return REUSE_OWNER if r['reuse'] else OWNER
+CERTIFICATE_OWNER=SELECTED/'tests/scalar_region_reuse_certificate_owner'
+def owner_directory(r):
+    if r.get('certificate',False):return CERTIFICATE_OWNER
+    return REUSE_OWNER if r['reuse'] else OWNER
 sys.path[:0]=[str(HERE),str(SELECTED.parent)]
 from checks import source
 from run import hardware
@@ -187,7 +190,7 @@ def build_boundary_probe(builder,products,private,pin,binary,aliases,run,r):
          builder.record['status']=='passed' and builder.record['command_completed']is True and
          archive==builder.paths['archive']==builder.retained/'decoder.a' and str(archive)==retained['path'] and
          fact(archive)=={k:retained[k]for k in ('bytes','sha256')},'same retained production region decoder archive')
-    sources=[str(pin(owner_directory(r)/'boundary_probe.c')),str(pin(SELECTED/'tests/decoder/support.c'))]
+    sources=[str(pin((REUSE_OWNER if r.get('certificate',False)else owner_directory(r))/'boundary_probe.c')),str(pin(SELECTED/'tests/decoder/support.c'))]
     executable=private/'boundary-probe'
     flags=['-std=c11','-O2','-Wall','-Wextra','-Werror','-fno-builtin',
            '-fno-tree-loop-distribute-patterns','-mgeneral-regs-only']
@@ -346,7 +349,7 @@ def observed_layout(builder,bridge,private,pin,binary,run,r):
         '-iex','set index-cache enabled off','-iex','maintenance set worker-threads 1','--readnow','--se='+str(bridge),'-x',script],
         profile='inspect',env=dict(builder.environment,MALLOC_ARENA_MAX='1'))
     need(not err and out.endswith(b'\n')and out.count(b'\n')==1,'one actual bounded DWARF observation; no inferior execution')
-    layout=json.loads(out);need(layout['record']=='sro_wire'and 0<layout['types']['sro_wire']['bytes']<8<<20,'actual retained owner wire')
+    layout=json.loads(out);need(layout['record']=='sro_wire'and 0<layout['types']['sro_wire']['bytes']<(16 if r.get('certificate',False)else 8)<<20,'actual retained owner wire')
     path=private/'owner-dwarf-layout.json'
     with path.open('xb')as f:f.write(out)
     r['owner_layout']=dict(artifact=fact(binary(path)),bridge=fact(bridge),reader=fact(script));return layout
@@ -494,6 +497,13 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
         active_reports=load('scalar_reuse_terminal',HERE/'scalar_reuse_reports.py',pin)
         bridge_builder=load('scalar_reuse_builder',HERE/'scalar_region_reuse_build.py',pin).build_bridge
         reuse_application=load('scalar_reuse_app_controls',REUSE_OWNER/'application.py',pin)
+    certificate_profile=None
+    if r.get('certificate',False):
+        certificate_profile=load('certificate_owner_profile',HERE/'scalar_reuse_certificate_profile.py',pin)
+        active_reports=load('certificate_owner_terminal',HERE/'scalar_reuse_certificate_reports.py',pin)
+        bridge_builder=load('certificate_owner_builder',HERE/'scalar_region_reuse_certificate_build.py',pin).build_bridge
+        certificate_profile.require_controls(owner_reader,r)
+        certificate_profile.component(builder,products,private,pin,binary,aliases,run,r,load)
     required_counts=REUSE_CONTROL_COUNTS if r['reuse']else OWNER_CONTROL_COUNTS
     expected_keys={(mode,0)for mode in range(13)}|{(0,control)for control in range(1,18 if r['reuse']else 15)}
     need(type(owner_reader.CONTROL_COUNTS)is dict and owner_reader.CONTROL_COUNTS==required_counts and
@@ -506,7 +516,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     original=compile_subject(builder,private,pin,binary,run,r);app_layout=reader.elf(original.read_bytes(),native_policy)
     r['application_layout']={k:v for k,v in app_layout.items()if k!='source'}
     seed_reference=seed_prerequisite(builder,private,pin,binary,run,r)
-    bridge=bridge_builder(builder,products,private,pin,binary,aliases,run,r,('SCALAR_REGION_CAPTURE',),capture_image=original)
+    bridge_extra=('SCALAR_REGION_CAPTURE','SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE')if r.get('certificate',False)else ('SCALAR_REGION_CAPTURE',)
+    bridge=bridge_builder(builder,products,private,pin,binary,aliases,run,r,bridge_extra,capture_image=original)
     nested_emission(builder,bridge,pin,run,r)
     layout=observed_layout(builder,bridge,private,pin,binary,run,r)
     interp,roots,objects,description,images,raws,carrier=prepare_inputs(original,bridge,builder,private,pin,binary,run,r)
@@ -537,6 +548,10 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 capture=row['captures']['record'];record_path=binary(private/capture['file'])
                 need(fact(record_path)=={k:capture[k]for k in('bytes','sha256')},'whole actual protected owner record')
                 record=record_path.read_bytes();image=image_inventory(original,interp,carrier,objects,manifest)
+                if r.get('certificate',False):
+                    image['certificate_bridge']=bridge.read_bytes()
+                    image['certificate_binding']=r['release_build']['certificate_binding']
+                    image['certificate_headers']=r['release_build']['headers']
                 prefix_reader=reuse_application if r['reuse']and control>=15 else reader
                 parsed=(prefix_reader.control_prefix(out,control,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)if control else
                         reader.read(out,mode,False,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference))
@@ -588,6 +603,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 want=required_counts[mode,control]
                 need(len(c['owner_reader_controls']['refusals'])==want and c['owner_reader_controls']['native_operations']==0 and
                      c['owner_reader_controls']['original_sha256']==H(record),'complete fixed actual owner-record refusal controls')
+                if r.get('certificate',False):certificate_profile.case_controls(c,mode,control,record,err)
         except Exception as error:
             c['status']='failed';c['error_type']=type(error).__name__;c['error']=type(error).__name__+': '+str(error)
             if r['error']is None:r['error']=c['error']
@@ -596,7 +612,14 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 all(type(x.get('exit'))is int and x.get('reaped')is True and not x.get('error') and x.get('cleanup_errors')==[] and
                     isinstance(x.get('descriptors'),list)and all(d.get('closed')is True for d in x['descriptors'])for x in actual_commands)):
                 raise
-    if r['reuse']:
+    if r.get('certificate',False):
+        certificate_mapping=load('certificate_mapping_controls',HERE/'scalar_reuse_certificate_mapping.py',pin)
+        certificate_mapping.run_controls(builder=builder,private=private,pin=pin,binary=binary,run=run,r=r,reader=reader,
+            app_layout=app_layout,seed_reference=seed_reference,original=original,roots=roots,objects=objects,
+            description=description,carrier=carrier,preparation=preparation,launcher=launcher,
+            boundary_probe=boundary_probe,owner_reader=owner_reader,owner_layout=layout,
+            image_inventory=image_inventory,interp=interp,bridge=bridge)
+    elif r['reuse']:
         mapping_controls.run_controls(builder=builder,private=private,pin=pin,binary=binary,run=run,r=r,reader=reader,
             app_layout=app_layout,seed_reference=seed_reference,original=original,roots=roots,objects=objects,
             description=description,carrier=carrier,preparation=preparation,launcher=launcher)
@@ -606,12 +629,15 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
         sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==(1964 if r['reuse']else 27*49+7*2)and
         sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==(4102 if r['reuse']else 2219),
         'all13 actual pairs and fixed application/terminal/owner-record refusal controls')
-    need(sum(x['profile']=='boundary'for x in r['commands'])==(30 if r['reuse']else 27)and r['boundary_probe_build']['status']=='passed',
+    need(sum(x['profile']=='boundary'for x in r['commands'])==(38 if r.get('certificate',False)else 30 if r['reuse']else 27)and r['boundary_probe_build']['status']=='passed',
          'every gated record has one separately bounded metadata observation, without execution authority')
+    if r.get('certificate',False):certificate_profile.complete(r)
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expect-revision',required=True);parser.add_argument('--decoder-receipt',type=Path,required=True);parser.add_argument('--component-receipt',type=Path,required=True);parser.add_argument('--reuse',action='store_true',help='explicit bounded completed-generation reuse; original40 plus3 required owner refusals');args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expect-revision',required=True);parser.add_argument('--decoder-receipt',type=Path,required=True);parser.add_argument('--component-receipt',type=Path,required=True);parser.add_argument('--reuse',action='store_true',help='explicit bounded completed-generation reuse; original40 plus3 required owner refusals');parser.add_argument('--certificate',action='store_true',help='distinct generation-bound certificate; requires --reuse and all8 transaction components plus43 owner subjects');args=parser.parse_args()
+    need(not args.certificate or args.reuse,'certificate profile explicitly requires completed-generation reuse')
+    if args.certificate:BOUNDS['certificate_component']=[3,256<<20,1<<20,10]
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision)and len(os.sched_getaffinity(0))==1,'exact revision/assertions and one reserved CPU')
     os.chdir(ROOT)
     args.decoder_receipt=args.decoder_receipt.resolve(strict=True).relative_to(ROOT)
@@ -619,7 +645,7 @@ def main():
     need(all(p.parent==Path('evaluation/inprocess/results')and p.suffix=='.json'for p in
          (args.decoder_receipt,args.component_receipt)),'exact retained public prerequisite locations')
     cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+('-scalar-region-reuse-owner-'if args.reuse else '-scalar-region-owner-')+args.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(mode=0o700)
+    stem=stamp+('-scalar-region-reuse-certificate-owner-'if args.certificate else '-scalar-region-reuse-owner-'if args.reuse else '-scalar-region-owner-')+args.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(mode=0o700)
     pins,aliases,artifacts,presence={},{},{},{}
     r=dict(schema=1,reuse=args.reuse,profile='scalar-region-reuse-owner-v1'if args.reuse else 'scalar-region-owner-v1',status='failed',expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,
         hardware=hardware(cpu),commands=[],cases=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control),lane=lane,mode=mode,control=control,
@@ -627,6 +653,9 @@ def main():
         namespace_aliases={},terminal_reports={},bounds=BOUNDS,error=None,final_errors=[],
         seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
             bounds=BOUNDS['seed'],owner_subjects=0,completed_applications=0,performance_credit=False))
+    certificate_profile=None
+    if args.certificate:
+        r['certificate']=True;r['profile']='scalar-region-reuse-certificate-owner-v1'
     def pin(path):
         alias = Path(os.path.abspath(path))
         p = alias.resolve(strict=True)
@@ -656,7 +685,7 @@ def main():
         stable()
         need(not any(c['name'] == name for c in r['commands']), 'unique command/capture name')
         row = dict(name=name, argv=list(map(str, argv)), environment=dict(ENV if env is None else env),
-                   profile=profile, bounds=BOUNDS[profile], capture_limit=1 << 20 if profile in ('boundary','mapping_guard')else 16 << 20, expected_exit=expected)
+                   profile=profile, bounds=BOUNDS[profile], capture_limit=1 << 20 if profile in ('boundary','mapping_guard')or r.get('certificate',False)and profile=='certificate_component'else 16 << 20, expected_exit=expected)
         r['commands'].append(row)
         try:
             out, err = (program_invoke if name.startswith('subject-') else invoke)(row, private, cpu, record=record)
@@ -697,9 +726,19 @@ def main():
             required|={str(p.relative_to(ROOT))for p in (HERE/'scalar_reuse_reports.py',HERE/'scalar_region_reuse_build.py',
                 SELECTED/'build-scalar-region-reuse.sh',SELECTED/'selected_scalar_reuse.inc')}
             required|={str((REUSE_OWNER/n).relative_to(ROOT))for n in ('read.py','wire.py','layout.py','boundaries.py','boundary_probe.c','application.py')}
+        if r.get('certificate',False):
+            required|={str((HERE/name).relative_to(ROOT))for name in ('scalar_reuse_certificate_reports.py',
+                'scalar_reuse_certificate_mapping.py','scalar_reuse_certificate_profile.py',
+                'scalar_region_reuse_certificate_build.py')}
+            required|={str((CERTIFICATE_OWNER/name).relative_to(ROOT))for name in ('read.py','wire.py','layout.py','certificate.py')}
+            required|={str((SELECTED/name).relative_to(ROOT))for name in ('build-scalar-region-reuse-certificate.sh',
+                'region_reuse_certificate.h','selected_scalar_reuse_certificate.inc','rseq_region_live.h','rseq_region_live.inc',
+                'scalar_reuse_certificate_observe.h','scalar_reuse_certificate_observe.inc',
+                'tests/reuse_certificate/oracle.c','tests/reuse_certificate/build.sh','tests/reuse_certificate/check.py')}
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)
+        if r.get('certificate',False):certificate_profile=load('certificate_public_profile',HERE/'scalar_reuse_certificate_profile.py',pin)
         for name in('/etc/ld.so.cache','/etc/ld.so.preload'):
             presence[name]=os.path.lexists(name)
             if presence[name]:pin(name)
@@ -774,6 +813,10 @@ def main():
             terminal_reader_refusals=sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases']),
             owner_reader_refusals=sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases']),
             boundary_metadata_commands=sum(c['profile']=='boundary'for c in r['commands']))
+        if r.get('certificate',False):
+            r['totals'].update(certificate_owner_reader_refusals=sum(len(c.get('owner_reader_controls',{}).get('certificate_refusals',[]))for c in r['cases']),
+                certificate_terminal_reader_refusals=sum(len(c.get('terminal_controls',{}).get('certificate_refusals',[]))for c in r['cases']),
+                certificate_mapping_reader_refusals=sum(len(c.get('certificate_controls',{}).get('certificate_refusals',[]))for c in r.get('mapping_controls',{}).get('cases',[])))
         save(private/'receipt.json',r)
         hw=dict(r['hardware']);flags=hw.pop('isa_flags');hw.update(isa_flags_count=len(flags),isa_flags_sha256=digest(flags))
         public={k:r.get(k)for k in('schema','profile','status','expected_revision','started_utc','cpu','source','source_unchanged','cleanup_complete','bounds','totals','namespace_controls','prerequisites')}
@@ -788,18 +831,22 @@ def main():
             value['owner_control_count']=len(c.get('owner_reader_controls',{}).get('refusals',[]));value['owner_controls_sha256']=digest(c.get('owner_reader_controls',{}))
             case_rows.append(value)
         public.update(case_projection(case_rows))
+        if r.get('certificate',False)and certificate_profile is not None:
+            public['certificate_component']=certificate_profile.component_summary(r.get('certificate_component'))
         if r['reuse']:
             public['mapping_controls']=mapping_controls.public_summary(r.get('mapping_controls'))
             public['mapping_guard_oracle']=r.get('mapping_guard_summary',{'status':'unqualified'})
         public.update(hardware=hw,private_receipt=fact(private/'receipt.json'),
             reproduce=['python3','-B','evaluation/inprocess/scalar_region_owner.py','--expect-revision',args.expect_revision,
-                '--decoder-receipt',str(args.decoder_receipt),'--component-receipt',str(args.component_receipt)]+(['--reuse']if r['reuse']else []),
+                '--decoder-receipt',str(args.decoder_receipt),'--component-receipt',str(args.component_receipt)]+(['--reuse']if r['reuse']else [])+(['--certificate']if r.get('certificate',False)else []),
             input_manifest_sha256=digest(pins),artifact_manifest_sha256=digest(artifacts),command_count=len(r['commands']),commands_sha256=digest(r['commands']),
             failure_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
             performance_credit=False,whole_ls_eligibility_credit=False,
             scope='Required40 subjects:13 actual native references,13 actual generated-owner pairs including six real read faults, and14 required owner refusals. Repeat and generation cases bind actual immutable keys and fresh tickets. One separate unchanged seed prerequisite qualifies exact zero FIP/FDP on the same CPU and actual format. Each gated record has a separate bounded production-decoder metadata observation: full unsupported boundary descriptors are compared exactly; accepted forms/CFG/image are independently reconstructed. Neither metadata nor seed gives owner/application/performance credit. Whole native/gated GPR, actual AF, FP, stack and data comparisons are mandatory. Failed operations never count as completed applications. No general function/data-pointer authority or throughput claim.')
         if r['reuse']:
             public['scope']='Required43 owner subjects: unchanged13 native references,13 generated-owner pairs including six real read faults, and original14 plus3 actual completed-generation reuse refusals. All original40 remain mandatory. Full GPR/AF/FP/224stack/data and fresh source/rseq/cleanup joins remain exact. Thirty separately bounded production metadata observations cover at most70 current/historical windows each; no metadata execution authority. Eight mapping refusals and754 supplied range-predicate cases are separately counted with no graph-owner credit. No performance or whole-application coverage claim.'
+        if r.get('certificate',False):
+            public['scope']='Certificate profile: all43 owner subjects and original4102/1964/348 controls remain mandatory. Adds999 record,450 terminal and184 mapping controls; separate8 transaction cases/256 controls use supplied boundaries. Mapping8/152, predicate754 and38 metadata children remain required. Full GPR/AF/FP/224stack/data checks; no performance credit.'
         columns=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count')
         stream=io.StringIO(newline='');writer=csv.writer(stream,lineterminator='\n');writer.writerow(columns)
         for c in case_rows:writer.writerow([c.get(k,'')for k in columns])

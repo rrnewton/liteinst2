@@ -12,6 +12,9 @@ static void selected_generic_begin(int sig,siginfo_t *si,ucontext_t *context,uin
     selected_initialized();
 }
 static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
+#ifdef LI2_SCALAR_SPAN_TRACE
+    if(selected_scalar_span_trace_try(sig,si,context))return;
+#endif
     enum li2_chain_result result=li2_tf_chain_trace(&selected_chain,sig,si,context);
     const struct li2_tf_chain_slot *previous=&selected_chain.slots[selected_chain.active^1];
 #ifdef LI2_TF_SAME_PAGE_LEASE

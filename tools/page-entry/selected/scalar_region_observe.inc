@@ -18,6 +18,9 @@
 #define SRO_ROWS 2U
 #define SRO_MAGIC UINT64_C(0x31524f534c49324c)
 #define SRO_FOOTER UINT64_C(0x314652534c49324c)
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+#include "scalar_reuse_certificate_observe.h"
+#endif
 enum { SRO_NORMAL=0,SRO_NESTED=1,SRO_OPEN_ERROR=2,SRO_CLOSE_ERROR=3,
     SRO_SYNC_ERROR=4,SRO_SLOT_IDENTITY=5,SRO_ENTRY_INTERIOR=6,SRO_EXIT_INTERIOR=7,SRO_TICKET=8,SRO_GENERATION=9,SRO_SOURCE_BYTE=10,
     SRO_MAP=11,SRO_WRITE_ALIAS=12,SRO_SOURCE_RX=13,SRO_DECODER_PREFIX=14 };
@@ -80,6 +83,9 @@ struct sro_wire {
     unsigned char reuse_pending_page[PAGE];
     uint64_t reuse_pending_bytes;
 #endif
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    struct srco_wire certificate;
+#endif
 };
 static struct sro_wire sro_wire;
 static const uint64_t sro_nested_zero_alignment __attribute__((used))=
@@ -91,11 +97,18 @@ static uintptr_t sro_head,sro_alias;
 static unsigned sro_source_rx;
 static const uint64_t sro_step_frame_fp_alignment __attribute__((used))=
     __alignof__(((struct li2_step_frame *)0)->fp);
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+_Static_assert(sizeof(struct sro_wire)+64<16*1024*1024,"whole certificate record and footer below original16MiB cap");
+#else
 _Static_assert(sizeof(struct sro_wire)<8*1024*1024,"fixed private owner record below unchanged16MiB ceiling");
+#endif
 static void sro_copy(void *to,const void *from,size_t n) {
     unsigned char *d=to;const volatile unsigned char *s=from;
     for(size_t i=0;i<n;i++)d[i]=s[i];
 }
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+#include "scalar_reuse_certificate_observe.inc"
+#endif
 static void sro_owners(struct sro_owners *out,unsigned just_checked) {
     const struct li2_rseq_state *r=li2_rseq_snapshot();
     const struct li2_rseq_native_state *n=li2_rseq_native_snapshot();
@@ -124,7 +137,9 @@ static void sro_initialize(void) {
         "r"(&sro_nested_zero_alignment),"r"(&sro_nested_ones_alignment):"memory");
     sr_need(!sro_ready && !sro_finished,SR_STATE,101);
     sro_wire.h[0]=SRO_MAGIC;
-#ifdef LI2_SCALAR_REGION_REUSE
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    sro_wire.h[1]=3;
+#elif defined(LI2_SCALAR_REGION_REUSE)
     sro_wire.h[1]=2;
 #else
     sro_wire.h[1]=1;
@@ -176,6 +191,9 @@ static void sro_initialize(void) {
     sro_wire.h[20]=sro_head;sro_wire.h[21]=offset;sro_wire.h[22]=dependency_count;
 #ifdef LI2_SCALAR_REGION_REUSE
     sro_wire.h[56]=vdso_first;sro_wire.h[57]=vdso_end;
+#endif
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    srco_initialize();
 #endif
     __asm__ volatile("":::"memory");sro_ready=1;sro_wire.h[23]=1;
 }
@@ -258,6 +276,9 @@ static void sro_source(void) {
     e->global_before[2]=selected_scalar_region.entries;e->global_before[3]=selected_scalar_region.completed;
     e->global_before[4]=selected_scalar_region.used;
     sro_copy(e->source_page,(void *)r->source.key.page.address,PAGE);e->source_bytes=PAGE;
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    srco_source(sro_current);
+#endif
     int error=li2_lifecycle_scalar_region_observe_memory((uintptr_t)r->before.frame.greg[REG_RSP],
         SRO_MEMORY_LIVE,&r->source.key,0,&e->before_memory);
     sr_need(!error && e->before_memory.complete,SR_STATE,122);
@@ -342,6 +363,9 @@ static void sro_slot(struct sr_slot *s) {
     }
 #ifdef LI2_SCALAR_REGION_REUSE
     if(sro_focal())sro_reuse_slot(s);
+#endif
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    if(sro_focal())srco_slot(sro_current);
 #endif
 }
 static void sro_filter(unsigned kind,uintptr_t entry) {
@@ -442,6 +466,9 @@ static void sro_complete(void) {
     e->global_after[0]=selected_scalar_region.publications;e->global_after[1]=selected_scalar_region.hits;
     e->global_after[2]=selected_scalar_region.entries;e->global_after[3]=selected_scalar_region.completed;
     e->global_after[4]=selected_scalar_region.used;
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    srco_complete(sro_current);
+#endif
 }
 static void sro_abort_observe(void) {
     if(!sro_ready)return;
@@ -540,6 +567,10 @@ static void sro_finish(unsigned status,unsigned code,long detail) {
 #endif
         ++sro_wire.h[40];
     }
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    srco_finish();
+    if(sro_wire.certificate.h[9] && !sro_wire.h[39])sro_wire.h[39]=6;
+#endif
     long flags=raw(SYS_fcntl,3,F_GETFL,0,0,0,0);
     long result=raw(SYS_fstat,3,(long)&sro_wire.sink_terminal,0,0,0,0);
     sro_wire.h[41]=(uint64_t)flags;sro_wire.h[42]=(uint64_t)result;
@@ -552,7 +583,9 @@ static void sro_finish(unsigned status,unsigned code,long detail) {
         at+=(size_t)result;
     }
     if(at!=sizeof sro_wire)return;
-#ifdef LI2_SCALAR_REGION_REUSE
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+    const uint64_t footer[]={SRO_FOOTER,3,sizeof sro_wire,at,calls,(uint64_t)result,status,code};
+#elif defined(LI2_SCALAR_REGION_REUSE)
     const uint64_t footer[]={SRO_FOOTER,2,sizeof sro_wire,at,calls,(uint64_t)result,status,code};
 #else
     const uint64_t footer[]={SRO_FOOTER,1,sizeof sro_wire,at,calls,(uint64_t)result,status,code};

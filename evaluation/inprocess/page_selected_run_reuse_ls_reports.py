@@ -317,10 +317,12 @@ def run_completed(loader, repeat, run, reuse):
     reuse_completed(run, reuse)
 
 
-def chain_completed(loader,repeat,run,c,reuse):
+def chain_completed(loader,repeat,run,c,reuse, *, chain_closure=None):
     # This call retains every prior cache/publication/private-brk and generic
     # close/query/flags/error assertion. No reconstruction of an owner is used.
     run_completed(loader,repeat,run,reuse)
+    if chain_closure is not None:
+        return chain_closure(loader,c)
     need(all(c[k]==0 for k in real.ZERO) and c['pending']==c['error']==c['unexpected']==c['proof_valid']==0 and
          c['attempts']==c['steps']==c['nx_entries']+c['trace_entries']>0 and
          c['nx_entries']==c['fallbacks']>0 and c['sequence']==c['trace_entries']>0 and
@@ -349,9 +351,9 @@ def chain_completed(loader,repeat,run,c,reuse):
          'rich unchanged LOADER completion evidence binds the actual retained predecessor')
 
 
-def rseq_completed(loader, repeat, run, c, r, pid, reuse):
+def rseq_completed(loader, repeat, run, c, r, pid, reuse, *, chain_closure=None):
     # Preserve all existing cache, chain, source, release and frame predicates.
-    chain_completed(loader, repeat, run, c, reuse)
+    chain_completed(loader, repeat, run, c, reuse,chain_closure=chain_closure)
     owner, counts, t, args = r['owner'], r['counts'], r['transaction'], r['args']
     initialized, registered, held, phase = owner[:4]
     need(initialized == 1 and registered in (0,1) and held == registered and

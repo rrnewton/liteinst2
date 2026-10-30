@@ -24,6 +24,7 @@ export RUSTFLAGS='-C relocation-model=pic -C panic=abort -C force-unwind-tables=
 case "${LI2_DECODER_FEATURES-}" in
   "") set -- ;;
   scalar-region) set -- --features scalar-region ;;
+  scalar-span) set -- --features scalar-span ;;
   *) echo "unsupported decoder feature profile" >&2; exit 2 ;;
 esac
 "$cargo_bin" rustc --manifest-path "$source_dir/decoder/Cargo.toml" \

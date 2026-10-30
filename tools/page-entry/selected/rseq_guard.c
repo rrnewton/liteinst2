@@ -516,3 +516,9 @@ int li2_rseq_native_closed(void) {
 #ifdef LI2_SCALAR_REGION
 #include "rseq_region.inc"
 #endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+#include "rseq_span.inc"
+#endif
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+#include "rseq_region_live.inc"
+#endif

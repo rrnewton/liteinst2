@@ -1,0 +1,9 @@
+row,label,artifact_scope,status,expected_exit,exit,duration_ns,reader_control_count
+0,original112,production,qualified,0,0,8948665,12
+1,original-fatal102,production,qualified_required_failure,125,125,3607355,4
+2,original-fatal106,production,qualified_required_failure,125,125,3852374,4
+3,original-freestanding,production,qualified,0,0,6905527,14
+4,descriptor-matrix,production,qualified,0,0,16158799,22
+5,guarded-source,production,qualified,0,0,6045396,22
+6,test-busy,test_exports,qualified,0,0,4310311,22
+7,test-alloc101,test_exports,qualified_required_failure,125,125,4361077,4

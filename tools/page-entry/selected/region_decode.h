@@ -80,4 +80,45 @@ _Static_assert(offsetof(struct li2_region_decoded,version)==232,"region version"
 _Static_assert(offsetof(struct li2_region_decoded,flags_read)==264,"region flags");
 _Static_assert(offsetof(struct li2_region_decoded,gpr_read)==284,"region GPR masks");
 _Static_assert(offsetof(struct li2_region_decoded,reserved)==292,"region reserved");
+
+/* Distinct scalar-span ABI. The old descriptor/API above is unchanged.
+   This API is exported only by the explicit scalar-span decoder feature.
+   Address rows describe syntax separately from actual CPU memory reads:
+   LEA has ADDRESS/NoMemAccess, address_count=1 and memory_count=0.
+   RIP rows retain the exact absolute target; no data is read by the decoder. */
+enum { LI2_SPAN_ADDRESS=5, LI2_SPAN_NO_MEM_ACCESS=7 };
+enum li2_span_relocation { LI2_SPAN_NO_RELOCATION=0, LI2_SPAN_RIP_DISP32=1 };
+struct li2_span_decoded {
+    struct li2_decoded decoded;
+    uint64_t target;
+    struct li2_region_operand operands[2];
+    struct li2_region_register registers[4];
+    struct li2_region_memory address;
+    uint64_t rip_target;
+    uint32_t version,ready,refusal,flow,condition;
+    uint32_t operand_count,register_count,memory_count,address_count;
+    uint32_t flags_read,flags_written,flags_set,flags_cleared,flags_undefined;
+    uint32_t gpr_read,gpr_write;
+    uint32_t relocation,displacement_offset,displacement_bytes,reserved;
+};
+/* Same owned/disjoint/serialized/sealed-source API contract as the old call.
+   Non-OK leaves all336 bytes zero. OK refusal has only decoded/version/refusal.
+   Undefined flags are possible modifications, never expected bit values.
+   Exact info rows retain E32-read/R64-write and LEA-r32 address-read narrowing.
+   No write, RSP change, indirect transfer, execution or entry authority. */
+uint32_t li2_decoder_span_describe(uint64_t,const unsigned char *,size_t,
+                                 struct li2_span_decoded *);
+_Static_assert(sizeof(struct li2_span_decoded)==336,"span descriptor ABI");
+_Static_assert(_Alignof(struct li2_span_decoded)==8,"span descriptor alignment");
+_Static_assert(offsetof(struct li2_span_decoded,target)==72,"span target");
+_Static_assert(offsetof(struct li2_span_decoded,operands)==80,"span operands");
+_Static_assert(offsetof(struct li2_span_decoded,registers)==144,"span registers");
+_Static_assert(offsetof(struct li2_span_decoded,address)==208,"span address");
+_Static_assert(offsetof(struct li2_span_decoded,rip_target)==248,"span RIP target");
+_Static_assert(offsetof(struct li2_span_decoded,version)==256,"span version");
+_Static_assert(offsetof(struct li2_span_decoded,operand_count)==276,"span counts");
+_Static_assert(offsetof(struct li2_span_decoded,flags_read)==292,"span flags");
+_Static_assert(offsetof(struct li2_span_decoded,gpr_read)==312,"span GPR masks");
+_Static_assert(offsetof(struct li2_span_decoded,relocation)==320,"span relocation");
+_Static_assert(offsetof(struct li2_span_decoded,reserved)==332,"span reserved");
 #endif
