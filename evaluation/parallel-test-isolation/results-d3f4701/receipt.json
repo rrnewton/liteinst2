@@ -1,0 +1,178 @@
+{
+  "schema": "quiescent-native-isolation-v1",
+  "source_revision": "d3f47010282d93e5d91ad4a4014998a224bed514",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "toolchain": "stable Rust 1.97.1",
+  "scope": "Test-only fresh-exec isolation; native bodies and all error/state assertions unchanged.",
+  "source_sha256": {
+    "tests/support/isolated_native_test.rs": "66ccab461fa755676a55fe6398bd9a1e3afa2dd7ed3208611350c371263406a6",
+    "tests/prefixed_pun_oracle.rs": "d9b2fd9b992685dedf336e019fde36c939f1bbcd8b34c31fc068e1a48e42bd7f",
+    "tests/quiescent_oracle.rs": "a6bac6403624e53bf561be4a0aa3737f929b941296ea3737b560c8ed0eb36d2d"
+  },
+  "source_review_binding_sha256": "5b44c4683f764bcd709e0e757d2b9a6f1f1876dda726f6c9a09376af0a0625ac",
+  "native_body_identity": [
+    {
+      "test": "native_no_op_oracle_covers_same_site_upstream_and_every_entry",
+      "body_bytes_including_closing_brace_and_separator": 13296,
+      "sha256": "aa67347042eeca507d59012a2161dadb935776d3c5c017aa7cecb6569646502b",
+      "result": "IDENTICAL"
+    },
+    {
+      "test": "native_no_op_oracle_covers_generalized_puns_and_unchanged_successors",
+      "body_bytes_including_closing_brace_and_separator": 9542,
+      "sha256": "a90113d9112e2ed5de54936a3b1b3a8e981b778ba43c25979d212bebee0270b4",
+      "result": "IDENTICAL"
+    },
+    {
+      "test": "native_no_op_oracle_preserves_synchronous_fault_state",
+      "body_bytes_including_closing_brace_and_separator": 4233,
+      "sha256": "3bc54c6349ca9f0cfea54088988230344c6a8c783d73aef0443369b0fbdd561e",
+      "result": "IDENTICAL"
+    },
+    {
+      "test": "native_no_op_oracle_preserves_generalized_pun_fault_state",
+      "body_bytes_including_closing_brace_and_separator": 5305,
+      "sha256": "7514a45299cb72a647078b57e59c15dd22e1d2c008fb6c1c0240cd7f74239833",
+      "result": "IDENTICAL"
+    },
+    {
+      "test": "native_state_covers_every_prefixed_pun_and_original_successor",
+      "full_existing_body_function_bytes": 13953,
+      "sha256": "89dc28b1d70874e6012748ff1192ecb58c741df53602b6c1529d8c25e8692273",
+      "result": "IDENTICAL"
+    }
+  ],
+  "targeted_source": {
+    "base": "2eedfe41efdbeee11fc2e3f748a2ea4634da9b2e",
+    "working_source_sha256": {
+      "tests/support/isolated_native_test.rs": "66ccab461fa755676a55fe6398bd9a1e3afa2dd7ed3208611350c371263406a6",
+      "tests/prefixed_pun_oracle.rs": "d9b2fd9b992685dedf336e019fde36c939f1bbcd8b34c31fc068e1a48e42bd7f",
+      "tests/quiescent_oracle.rs": "a6bac6403624e53bf561be4a0aa3737f929b941296ea3737b560c8ed0eb36d2d"
+    },
+    "byte_identical_to_committed_source": true
+  },
+  "environment": {
+    "HOME": "$USER_HOME",
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_TARGET_DIR": "$REPO/target",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TERM_COLOR": "never",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LITEINST_EVALUATION": "1",
+    "TMPDIR": "$REPO/ignored/a3/adjacent-d01-temporary",
+    "TEMP": "$REPO/ignored/a3/adjacent-d01-temporary",
+    "TMP": "$REPO/ignored/a3/adjacent-d01-temporary"
+  },
+  "test_threads": 316,
+  "attempts_per_command": 1,
+  "counts": {
+    "targeted-oracles": {
+      "completed_outer_harnesses": 2,
+      "passed": 75,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    },
+    "fmt": {
+      "completed_outer_harnesses": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    },
+    "clippy": {
+      "completed_outer_harnesses": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    },
+    "check": {
+      "completed_outer_harnesses": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    },
+    "workspace": {
+      "completed_outer_harnesses": 106,
+      "passed": 3649,
+      "failed": 0,
+      "ignored": 37,
+      "excluded_nested_summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          308
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          308
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          35
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          35
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          35
+        ]
+      ]
+    },
+    "serial-launch": {
+      "completed_outer_harnesses": 27,
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    }
+  },
+  "regression_outcomes": {
+    "short_neighbor_passes": 21,
+    "rapid::tests::live::install_rejects_each_mutated_window_byte": 1,
+    "rapid::tests::live::tail_overlap_failure_discards_non_page_aligned_trampoline": 1,
+    "trampoline::tests::dropping_staged_image_releases_its_exact_mapping": 1,
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners": 1,
+    "native_state_covers_every_prefixed_pun_and_original_successor": 1,
+    "native_no_op_oracle_covers_same_site_upstream_and_every_entry": 1,
+    "native_no_op_oracle_covers_generalized_puns_and_unchanged_successors": 1,
+    "native_no_op_oracle_preserves_synchronous_fault_state": 1,
+    "native_no_op_oracle_preserves_generalized_pun_fault_state": 1
+  },
+  "raw_closed_sha256": "1ec9599e9d8d3e3f43730bd661c5ff475cd64e210c03ec95077a3f44b064e4ba",
+  "fixed_workspace_limit_seconds": 900,
+  "qualification": "Correctness only; elapsed times are operational receipts, not performance evidence."
+}

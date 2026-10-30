@@ -1,0 +1,594 @@
+{
+  "schema": 1,
+  "claim": 4,
+  "milestone": "A3 native and frontend increment; milestone incomplete",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "source_revision": "5f6299e945c31ab6fb445aaf5f865a5d7154751b",
+  "merged_revision": "5f6299e945c31ab6fb445aaf5f865a5d7154751b",
+  "merged_main": "6b10dbd0ac6b251d508d16e8c7e3fad19d767944",
+  "source_and_merged_trees_equal": true,
+  "profile": "debug",
+  "binary_sha256": "7c1ab8c5774492c30cd81a1ae91a4858d558e8564cf8f7090d69603f932ab25c",
+  "runner_sha256": "445240f92538059adc1d43217e64d0f47f8dd684a5244d6a81420882986d4919",
+  "owner_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "attempts": 1,
+  "stages": [
+    [
+      "target",
+      30
+    ],
+    [
+      "produce",
+      120
+    ],
+    [
+      "verify",
+      30
+    ],
+    [
+      "controls",
+      120
+    ],
+    [
+      "run",
+      900
+    ]
+  ],
+  "source_guards_passed": 12,
+  "reserved_cpus": [
+    1,
+    13,
+    17,
+    111
+  ],
+  "load_at_start": [
+    "46.28",
+    "56.35",
+    "63.76"
+  ],
+  "target": "LI2ADJTARGET\t2\nos\tlinux\nisa\tx86-64-legacy-evex\ncet\tunqualified\npage_bytes\t4096\nbias_domain\t7\nformat\t2\nallocation\t2496\nimage\t2440\nmask\t743\ncomponent\t4\t576\t256\ncomponent\t32\t832\t64\ncomponent\t64\t896\t512\ncomponent\t128\t1408\t1024\ncomponent\t512\t2432\t8\nqualification_complete\tfalse\nEND\n",
+  "stage_binding_sha256": {
+    "target": "c271af73bdfc828d525c6eb4544a1acf4e290ecf54863906824a8b8f5dd9dc74",
+    "produce": "e0ac37ef5a6eff915600ed75e474a0c90ca2d1c7abe80273fc94c8e5e3a39c1c",
+    "verify": "84b1e7fda44441eec3792d0903d83a14357319ca3f39eea4ee934d0459280bd0",
+    "controls": "071e83e7655d74e7ff6cf5f294885ed126ebed60d20ebf3e626630d80491d31a",
+    "run": "83807d5139e176f84a04b3b7f258829be7b7ad1c2c227bf1a27e6c3420b667e1"
+  },
+  "native_results": {
+    "requests": 4,
+    "scenarios": 64,
+    "child_traces": 192,
+    "hook_call_ret_pairs": 40,
+    "recorded_events": 20,
+    "state_mutants_rejected": 368,
+    "immutable_page_mutants_rejected": 24,
+    "journal_mutants_rejected": 22,
+    "structural_mutants_rejected": 150,
+    "planner_refusals": 36,
+    "filesystem_positives": 7,
+    "mismatches": 0
+  },
+  "qualification_complete": false,
+  "live_retirement": "NOT_COVERED",
+  "scope": "Two authored JNE layouts, null/recording hooks, two seeds, both ZF values, all four original heads; pristine, installed, and source-restored ELF artifacts. XSAVE64 standard native fixture. No live publication/retirement, general ELF corpus, CET or performance qualification.",
+  "raw_receipt_sha256": "0a812dbf05192ba2924e6fbfd65f1ae1508fd64117ffa17006af4787754e222e",
+  "raw_logs": "Private ignored storage; hashes in checks.csv",
+  "development_failures": [
+    {
+      "phase": "native-build",
+      "reason": "temporary source array borrowed beyond statement; unused import"
+    },
+    {
+      "phase": "clippy-1",
+      "reason": "unused import, derived-only evidence-field reads, range spelling and redundant borrows"
+    },
+    {
+      "phase": "clippy-2",
+      "reason": "register-mutation tuple complexity and indexed phase iteration"
+    },
+    {
+      "phase": "frontend-controls-1",
+      "reason": "fourth branch in positive fixture crossed cache line; corrected positive base by one byte and retained original as strict exclusion control"
+    },
+    {
+      "phase": "merged-clippy-5eca8ef",
+      "reason": "manual_is_multiple_of in shared fixture; bitwise parity spelling preserves the acceptance set"
+    },
+    {
+      "phase": "clippy-first-correction",
+      "reason": "is_multiple_of requires Rust 1.87 while the example declares Rust 1.85; rejected before commit and replaced by equivalent bitwise parity"
+    }
+  ],
+  "frontend_tests": {
+    "library": 133,
+    "publication": 3,
+    "new_library": 23,
+    "required_contract_groups": 28,
+    "material": 25,
+    "head_capture": 6,
+    "reproducer": 12,
+    "new_material_methods": 6,
+    "new_material_cases": 204
+  },
+  "full_validation": "TIMEOUT",
+  "campaigns": [
+    {
+      "revision": "d182376bb02df00407d7c823eca034072dfa1389",
+      "binary_sha256": "325f67b329388b1c09ebe0dab6062b0e06190e7950b24be1b7c818a58442c7ed",
+      "attempts": 1,
+      "status": "PASS",
+      "source_guards": 12,
+      "source_guard_total_seconds": 0.10420734598301351,
+      "reserved_cpus": [
+        103,
+        151,
+        195,
+        197
+      ],
+      "load_at_start": [
+        "60.65",
+        "55.60",
+        "64.92"
+      ],
+      "stage_binding_sha256": {
+        "target": "c271af73bdfc828d525c6eb4544a1acf4e290ecf54863906824a8b8f5dd9dc74",
+        "produce": "e0ac37ef5a6eff915600ed75e474a0c90ca2d1c7abe80273fc94c8e5e3a39c1c",
+        "verify": "84b1e7fda44441eec3792d0903d83a14357319ca3f39eea4ee934d0459280bd0",
+        "controls": "071e83e7655d74e7ff6cf5f294885ed126ebed60d20ebf3e626630d80491d31a",
+        "run": "cecbe0678fd4b31ce53062b87e6f4e4dae5cb74bd169dccbe341fe121f73cd2c"
+      },
+      "raw_receipt_sha256": "cf58d4364555ca54dea90d9014ed1cacf1757041838984e53b82eab09dea437f",
+      "outer_command": [
+        "python3",
+        "-B",
+        "evaluation/adjacent-b2/native.py",
+        "--revision",
+        "d182376bb02df00407d7c823eca034072dfa1389",
+        "--profile",
+        "debug",
+        "--output",
+        "ignored/a3/adjacent-b2-native-d182376"
+      ],
+      "outer_result": {
+        "start_utc": "2026-10-30T05:02:05.043185+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 17.96194112417288,
+        "private_log_sha256": "b2ae3af384eb14caa77ff2ea0986cbbc7b319e5a034e4239685f490966437620",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "results_csv": "native-scenarios.csv",
+      "controls_csv": "native-controls.csv"
+    },
+    {
+      "revision": "5f6299e945c31ab6fb445aaf5f865a5d7154751b",
+      "binary_sha256": "7c1ab8c5774492c30cd81a1ae91a4858d558e8564cf8f7090d69603f932ab25c",
+      "attempts": 1,
+      "status": "PASS",
+      "source_guards": 12,
+      "source_guard_total_seconds": 0.08144843904301524,
+      "reserved_cpus": [
+        1,
+        13,
+        17,
+        111
+      ],
+      "load_at_start": [
+        "46.28",
+        "56.35",
+        "63.76"
+      ],
+      "stage_binding_sha256": {
+        "target": "c271af73bdfc828d525c6eb4544a1acf4e290ecf54863906824a8b8f5dd9dc74",
+        "produce": "e0ac37ef5a6eff915600ed75e474a0c90ca2d1c7abe80273fc94c8e5e3a39c1c",
+        "verify": "84b1e7fda44441eec3792d0903d83a14357319ca3f39eea4ee934d0459280bd0",
+        "controls": "071e83e7655d74e7ff6cf5f294885ed126ebed60d20ebf3e626630d80491d31a",
+        "run": "83807d5139e176f84a04b3b7f258829be7b7ad1c2c227bf1a27e6c3420b667e1"
+      },
+      "raw_receipt_sha256": "0a812dbf05192ba2924e6fbfd65f1ae1508fd64117ffa17006af4787754e222e",
+      "outer_command": [
+        "python3",
+        "-B",
+        "evaluation/adjacent-b2/native.py",
+        "--revision",
+        "5f6299e945c31ab6fb445aaf5f865a5d7154751b",
+        "--profile",
+        "debug",
+        "--output",
+        "ignored/a3/adjacent-b2-native-5f6299e"
+      ],
+      "outer_result": {
+        "start_utc": "2026-10-30T05:25:07.261344+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 15.713001662865281,
+        "private_log_sha256": "2ad18c51cd1ea307814e6894d09469f50f62942df420022d62fbe722b23ed05d",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "results_csv": "native-scenarios.csv",
+      "controls_csv": "native-controls.csv"
+    }
+  ],
+  "validation_rounds": [
+    {
+      "revision": "5eca8efcbf0b1af3f5f57834944e67b691a5dedd",
+      "status": "FAIL",
+      "reason": "manual_is_multiple_of lint in shared fixture",
+      "totals": {
+        "workspace": {
+          "passed": 3649,
+          "failed": 0,
+          "ignored": 37,
+          "measured": 0,
+          "filtered_out": 0,
+          "outer_summaries": 106,
+          "nested_summaries_excluded": 5,
+          "custom_harnesses": [
+            {
+              "harness": "exec_backing_cleanup",
+              "completion": {
+                "schema_version": 1,
+                "kind": "complete",
+                "controls": 5,
+                "trajectories": 6,
+                "physical_cleanup": true
+              }
+            },
+            {
+              "harness": "precontext_native",
+              "profile": "precontext-v1",
+              "status": "PASS"
+            }
+          ],
+          "incomplete_harnesses": []
+        },
+        "serial-launch": {
+          "passed": 1039,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered_out": 0,
+          "outer_summaries": 27,
+          "nested_summaries_excluded": 0,
+          "custom_harnesses": [
+            {
+              "harness": "exec_backing_cleanup",
+              "completion": {
+                "schema_version": 1,
+                "kind": "complete",
+                "controls": 5,
+                "trajectories": 6,
+                "physical_cleanup": true
+              }
+            }
+          ],
+          "incomplete_harnesses": []
+        }
+      },
+      "parallel_regressions": {
+        "short_neighbor_passed": 21,
+        "allocation_tests": [
+          "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+          "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+          "native_state_covers_every_prefixed_pun_and_original_successor"
+        ]
+      },
+      "reserved_cpus": [
+        74,
+        82,
+        85,
+        100,
+        123,
+        170,
+        183,
+        203,
+        214,
+        247,
+        252,
+        273,
+        287,
+        298,
+        303,
+        310
+      ],
+      "test_threads": 316,
+      "load_at_start": [
+        "65.81",
+        "57.75",
+        "65.17"
+      ],
+      "command_limits": [
+        [
+          "fmt",
+          [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          180
+        ],
+        [
+          "clippy",
+          [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          180
+        ],
+        [
+          "check",
+          [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          180
+        ],
+        [
+          "workspace",
+          [
+            "cargo",
+            "test",
+            "-j",
+            "16",
+            "--workspace",
+            "--no-fail-fast"
+          ],
+          900
+        ],
+        [
+          "serial-launch",
+          [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          180
+        ]
+      ],
+      "raw_receipt_sha256": "0538c866fe9478d35e79d30f9fb4a1e5ea3f6d9422855296ea09a10ad7b50112",
+      "outer_command": [
+        "python3",
+        "-B",
+        "evaluation/short-neighbor-parallel/validate.py",
+        "--revision",
+        "5eca8efcbf0b1af3f5f57834944e67b691a5dedd",
+        "--output",
+        "ignored/a3/adjacent-b2-full-5eca8ef"
+      ],
+      "outer_result": {
+        "start_utc": "2026-10-30T05:02:51.675696+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 1024.2098925011232,
+        "private_log_sha256": "8be20259a1e75209bb08af5caecdb36e2a134c6c0043e89c30d85be7c59cfaaf",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    },
+    {
+      "revision": "5f6299e945c31ab6fb445aaf5f865a5d7154751b",
+      "status": "TIMEOUT",
+      "reason": "Fixed 900-second workspace bound expired during sync_core_capability after 89 complete harness summaries. Neighbor oracle completed in 647.56 seconds versus 576.86 seconds in the preceding complete run. No reported test failure; later harnesses remain unrun. No identical rerun or deadline widening.",
+      "totals": {
+        "workspace": {
+          "passed": 2393,
+          "failed": 0,
+          "ignored": 4,
+          "measured": 0,
+          "filtered_out": 0,
+          "outer_summaries": 89,
+          "nested_summaries_excluded": 5,
+          "custom_harnesses": [
+            {
+              "harness": "exec_backing_cleanup",
+              "completion": {
+                "schema_version": 1,
+                "kind": "complete",
+                "controls": 5,
+                "trajectories": 6,
+                "physical_cleanup": true
+              }
+            },
+            {
+              "harness": "precontext_native",
+              "profile": "precontext-v1",
+              "status": "PASS"
+            }
+          ],
+          "incomplete_harnesses": [
+            {
+              "harness": "Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability-bced8ffd7f71840d)",
+              "declared_tests": 1,
+              "observed_passes": 0
+            }
+          ]
+        },
+        "serial-launch": {
+          "passed": 1039,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered_out": 0,
+          "outer_summaries": 27,
+          "nested_summaries_excluded": 0,
+          "custom_harnesses": [
+            {
+              "harness": "exec_backing_cleanup",
+              "completion": {
+                "schema_version": 1,
+                "kind": "complete",
+                "controls": 5,
+                "trajectories": 6,
+                "physical_cleanup": true
+              }
+            }
+          ],
+          "incomplete_harnesses": []
+        }
+      },
+      "parallel_regressions": {
+        "short_neighbor_passed": 21,
+        "allocation_tests": [
+          "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+          "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+          "native_state_covers_every_prefixed_pun_and_original_successor"
+        ]
+      },
+      "reserved_cpus": [
+        15,
+        54,
+        80,
+        112,
+        130,
+        147,
+        148,
+        183,
+        209,
+        217,
+        220,
+        235,
+        261,
+        271,
+        272,
+        292
+      ],
+      "test_threads": 316,
+      "load_at_start": [
+        "55.62",
+        "57.41",
+        "63.90"
+      ],
+      "command_limits": [
+        [
+          "fmt",
+          [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          180
+        ],
+        [
+          "clippy",
+          [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          180
+        ],
+        [
+          "check",
+          [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          180
+        ],
+        [
+          "workspace",
+          [
+            "cargo",
+            "test",
+            "-j",
+            "16",
+            "--workspace",
+            "--no-fail-fast"
+          ],
+          900
+        ],
+        [
+          "serial-launch",
+          [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          180
+        ]
+      ],
+      "raw_receipt_sha256": "74a4344b7f1955458b9ec4dd6c5aa53bfcee0f70a4dd7bda50ed1125a591bdce",
+      "outer_command": [
+        "python3",
+        "-B",
+        "evaluation/short-neighbor-parallel/validate.py",
+        "--revision",
+        "5f6299e945c31ab6fb445aaf5f865a5d7154751b",
+        "--output",
+        "ignored/a3/adjacent-b2-full-5f6299e"
+      ],
+      "outer_result": {
+        "start_utc": "2026-10-30T05:25:31.676746+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 1054.420401697047,
+        "private_log_sha256": "29e43a0f86bdba41165714b4245908a6fcb0dfc27d69ee9abb04ecfe6c6e44f4",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      }
+    }
+  ],
+  "source_tree": "b83847d366f08978ef5baeb245c899d3f867a088",
+  "source_review_binding_sha256": "167b72dc5ac8f27dc22dc6150820278fd1eb285e7fa0efd7e3bdc999da8efe69",
+  "equivalent_predicate_review_binding_sha256": "f6dd27ad70a21b61bec13cdbdbc2a6029e0fdc8e25809cd596ddf7bbf11ce985",
+  "coverage_counting": "Both revision runs cover the same 64 scenarios; repetition adds no unique coverage.",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "python": "3.12.15",
+  "environment": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "CARGO_BUILD_JOBS": "4",
+    "LITEINST_EVALUATION": "1"
+  },
+  "reproduction_scripts": [
+    "evaluation/adjacent-b2/native.py",
+    "evaluation/short-neighbor-parallel/validate.py"
+  ],
+  "artifacts": {
+    "checks.csv": "3cb03764ad569d7f538dce079440f19dd615599a24b1731347eac938c1fdb01f",
+    "native-scenarios.csv": "b33c9bf0a591b9872bea4aba6661ebcc22c5a6d1fcf745078bd794f491b02007",
+    "native-controls.csv": "4561a588f2497c8bd324ad25bbe61e3ea6db5bba6cfd07d20a4651079c821b60",
+    "development-source-sets.json": "1cdb1321e3970126d50b2c01d4184b977b815d389fa22c9a080cbe129b0a72a3"
+  }
+}

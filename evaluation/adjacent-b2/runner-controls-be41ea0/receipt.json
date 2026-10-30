@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "claim": "claim4-validation-infrastructure-only",
+  "scope": "Unit fault injection with stub command owner; no Git/native/planner/tracee or real cleanup execution by the test subject",
+  "revision": "be41ea072a0b7168c6f8833894194ecf811b8b09",
+  "source_state": "two added source files, bound by exact SHA256",
+  "working_source_sha256": {
+    "evaluation/adjacent-b2/native.py": "445240f92538059adc1d43217e64d0f47f8dd684a5244d6a81420882986d4919",
+    "evaluation/adjacent-b2/test_native_runner.py": "168de3957b0a62aaf7a1d043c1d97fbf9fb98f06a6262ff30d91b353b7524c72"
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "python": "3.12.15+meta",
+  "cpu_reservation": [
+    112
+  ],
+  "command": [
+    "python3",
+    "-B",
+    "evaluation/adjacent-b2/test_native_runner.py"
+  ],
+  "command_normalization": "Executable name normalized; all arguments retained",
+  "attempts": 1,
+  "test_methods_passed": 6,
+  "test_methods_failed": 0,
+  "fixed_scenarios": 11,
+  "closed": {
+    "start_utc": "2026-10-30T04:34:15.707284+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 0.8179813690949231,
+    "private_log_sha256": "eef4e98fcc0859b94e3048e09596d4c855eb9b9aa6629609fc8e6bfb18c279aa",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "elapsed_time_scope": "Operational correctness receipt, not performance",
+  "qualification_complete": false,
+  "native_scenarios_executed": 0,
+  "process_owner_source_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "reviewed_runner_sha256": "445240f92538059adc1d43217e64d0f47f8dd684a5244d6a81420882986d4919",
+  "reviewed_test_sha256": "168de3957b0a62aaf7a1d043c1d97fbf9fb98f06a6262ff30d91b353b7524c72"
+}

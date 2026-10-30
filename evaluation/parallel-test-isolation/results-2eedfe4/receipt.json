@@ -1,0 +1,136 @@
+{
+  "schema": "rapid-rejection-reservation-v1",
+  "source_revision": "2eedfe41efdbeee11fc2e3f748a2ea4634da9b2e",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "toolchain": "stable Rust 1.97.1",
+  "scope": "Test-only ownership fix; no production code or error assertions changed.",
+  "src_rapid_sha256": "9287665d69a3b5a053de7147fd91b67adc5a79d95407d4671b0aedf4779d2316",
+  "source_review_binding_sha256": "83120c45ad9462ca008303203ea9d747bf1b3b2c238a5c564b00dd71a7682abc",
+  "targeted_source": {
+    "base": "21728d7aea329f36e34bb456d4ad90bfcf9c15c1",
+    "working_source_sha256": {
+      "src/rapid.rs": "9287665d69a3b5a053de7147fd91b67adc5a79d95407d4671b0aedf4779d2316"
+    },
+    "byte_identical_to_committed_source": true
+  },
+  "environment": {
+    "HOME": "$USER_HOME",
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_TARGET_DIR": "$REPO/target",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TERM_COLOR": "never",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LITEINST_EVALUATION": "1",
+    "TMPDIR": "$REPO/ignored/a3/adjacent-d01-temporary",
+    "TEMP": "$REPO/ignored/a3/adjacent-d01-temporary",
+    "TMP": "$REPO/ignored/a3/adjacent-d01-temporary"
+  },
+  "test_threads": 316,
+  "attempts_per_command": 1,
+  "counts": {
+    "targeted-live-rapid": {
+      "completed_outer_harnesses": 1,
+      "passed": 9,
+      "failed": 0,
+      "ignored": 1,
+      "excluded_nested_summaries": []
+    },
+    "fmt": {
+      "completed_outer_harnesses": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    },
+    "clippy": {
+      "completed_outer_harnesses": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    },
+    "check": {
+      "completed_outer_harnesses": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    },
+    "workspace": {
+      "completed_outer_harnesses": 106,
+      "passed": 3647,
+      "failed": 2,
+      "ignored": 37,
+      "excluded_nested_summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          308
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          308
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          35
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          35
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          35
+        ]
+      ]
+    },
+    "serial-launch": {
+      "completed_outer_harnesses": 27,
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "excluded_nested_summaries": []
+    }
+  },
+  "regression_outcomes": {
+    "short_neighbor_passes": 21,
+    "rapid::tests::live::install_rejects_each_mutated_window_byte": 1,
+    "rapid::tests::live::tail_overlap_failure_discards_non_page_aligned_trampoline": 1,
+    "trampoline::tests::dropping_staged_image_releases_its_exact_mapping": 1,
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners": 1,
+    "native_state_covers_every_prefixed_pun_and_original_successor": 1
+  },
+  "raw_closed_sha256": "82d61938c21bd68fe9156f47cddd47218f530c1075599eebf5376f7754561bd5",
+  "fixed_workspace_limit_seconds": 900,
+  "qualification": "Correctness only; elapsed times are operational receipts, not performance evidence."
+}

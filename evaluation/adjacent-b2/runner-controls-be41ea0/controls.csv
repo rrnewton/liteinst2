@@ -1,0 +1,12 @@
+scenario,expected_campaign_status,test_result,scope
+nominal,passed,passed,stub-owner unit control
+bad-transcript,failed,passed,stub-owner unit control
+binding-mismatch,failed,passed,stub-owner unit control
+load-after-return,failed,passed,stub-owner unit control
+uncertain,failed,passed,stub-owner unit control
+uncertain-and-load,failed,passed,stub-owner unit control
+owner-exception,failed,passed,stub-owner unit control
+stage-exit,failed,passed,stub-owner unit control
+binary-change,failed,passed,stub-owner unit control
+revision-change,failed,passed,stub-owner unit control
+final-guard,failed,passed,stub-owner unit control

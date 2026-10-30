@@ -47,18 +47,25 @@ This artifact-only API accepts the original sites in lower/upper order and
 returns two opaque members in upper/lower append order. Callers must commit both
 members together, supply every external pending instruction, and check resources
 for the complete predecessor plus pair. The returned memory and bundle budget
-cover only the two new members. Existing frontend profiles do not yet call it.
-[The control receipt](evaluation/adjacent-b2/README.md) records its current
-structural validation; native execution and frontend integration remain separate.
+cover only the two new members. The explicit
+`elf-disassembly-null-jumps-adjacent-b2-short-t3-pending-v1` frontend supplies
+that transaction, pending ownership and whole-composition resource checking.
+It tries each baseline once and publishes only a complete selection. Existing
+frontend profiles remain available with their original limits.
+[The validation receipt](evaluation/adjacent-b2/README.md) records frontend
+controls and native state comparisons for two authored adjacent-Jcc layouts;
+whole-program adjacent coverage remains unqualified.
 
 ## Three outputs from one plan
 
 `candidate.elf` preserves the original entry and LOAD mappings, applies the
 planned source edits, and adds a read-only program-header carrier and executable
 trampoline LOADs. These file-backed images are mapped by the normal ELF loader.
-The current carrier supports ET_EXEC and common-bias ET_DYN geometry and places
-new pages above all original LOAD pages. It uses separate backing for each
-image; grouped aliases and signed or absolute placement bridges remain open.
+The current carrier supports ET_EXEC and common-bias ET_DYN geometry. The
+default places new pages above all original LOAD pages; explicit owned-neighbor
+and adjacent-pun ET_EXEC profiles also admit images in unoccupied gaps. It uses
+separate backing for each image; grouped aliases and signed or absolute
+placement bridges remain open.
 
 The dynamic inventory bounds relocation destinations and loader metadata before
 source edits. Its COPY profile accepts ET_EXEC `DT_RELA` records with a named,
