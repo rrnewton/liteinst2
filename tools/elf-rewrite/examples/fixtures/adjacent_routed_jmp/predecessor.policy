@@ -1,0 +1,22 @@
+LI2DISASM-POLICY 6
+original bece24c9f11867e9620873697f7f9e8940dac22459d37e448395e92e0ae3d283
+ledger a182cf137c565184921b61c1ab9d4ea8c1fb4f01963e088e5db224b1c6ef1f91
+neighbor-victims short-only
+neighbor-ownership inherited-t3
+pending-selected full-instruction-ownership
+adjacent-pairs original-geometry-jcc-or-routed-jmp-v1
+adjacent-pair-budgets 2 1 2
+target fxsave64
+domain 1
+carrier 4718592
+limits 1048576 32 32 131072 128 2097152 1048576 128 2147483648
+null-hook 4202240
+search 1 B2 0 2 1 none 0 0
+allocation 1 selected 121374208 1 4096 121372672:4096
+allocation 1 victim 9441280 1 4096 9441280:4096
+search 2 B1 0 5 1 none 0 0
+allocation 2 selected 6291456 1 4096 6234112:4096
+allocation 2 victim 9445376 1 4096 9445376:4096
+search 3 B1 0 5 1 none 0 0
+allocation 3 selected 5242880 1 4096 5242880:4096
+allocation 3 victim 9449472 1 4096 9449472:4096

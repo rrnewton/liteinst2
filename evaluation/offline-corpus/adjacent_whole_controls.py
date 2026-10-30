@@ -14,11 +14,11 @@ assert not sys.flags.optimize, 'assertions required'
 path = Path(__file__).resolve().with_name('reproduce_whole.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
-assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c'
+assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cd01ee97b046a382fcb2881a4b642836d9c6b0d2dd60273ba27b1432536c9c2f'
 R = types.ModuleType('authenticated_d01_reproducer'); R.__file__ = str(path)
 exec(compile(raw, str(path), 'exec'), R.__dict__)
-A = R.load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
-B = R.load('build_adjacent_whole.py', '0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592')
+A = R.load('adjacent_whole.py', 'b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3')
+B = R.load('build_adjacent_whole.py', '4c0552f2f523edc56d96237c4739ad589f439d7ced0d65ef898fff2c4e34b051')
 COUNTS = {'checksum': (80, 16), 'rle-roundtrip': (107, 26)}
 IMPORTER = 'elf-disassembly-null-jumps-adjacent-b2-short-t3-pending-v1'
 MATERIAL = 'offline-whole-authored-adjacent-b2-short-t3-pending-2g-v1'
@@ -528,7 +528,7 @@ class DiagnosticControls(unittest.TestCase):
             for raw in (b'raise RuntimeError("must not execute")\n', b'x' * (1048576 + 1)):
                 path.write_bytes(raw)
                 with mock.patch.object(R, 'compile', create=True) as compile_source, self.assertRaises(AssertionError):
-                    R.load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
+                    R.load('adjacent_whole.py', 'b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3')
                 compile_source.assert_not_called()
 
     def test_d01_c04_complete_input_roster_population(self):
@@ -825,7 +825,7 @@ class DiagnosticControls(unittest.TestCase):
         frame = capture_frame(); report = A.summary()
         with mock.patch.object(A.subprocess, 'check_output', side_effect=frame.git) as git:
             captured = A.authenticate_capture(frame.ctx, frame.args, report)
-        frame.ctx.load.assert_called_once_with('build_adjacent_whole.py', '0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592')
+        frame.ctx.load.assert_called_once_with('build_adjacent_whole.py', '4c0552f2f523edc56d96237c4739ad589f439d7ced0d65ef898fff2c4e34b051')
         self.assertEqual(frame.ctx.closed.call_count, 13)
         self.assertEqual(captured['binary'], Path('/fixture-repo/target/release/examples/adjacent_b2_disassembly_sites'))
         self.assertTrue(report['configuration_complete'])

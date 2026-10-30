@@ -312,6 +312,7 @@ impl Fixture {
                 edges: Vec::new(),
                 totals: Resources::default(),
                 blocked_groups: Vec::new(),
+                routed: Default::default(),
             },
         )
     }
@@ -2402,3 +2403,6 @@ fn f20_real_loader_dependency_refusal_after_core_pair_success() {
     assert_eq!(d.pending.len(), 2);
     no_candidate(&f.run(), &[1, 2]);
 }
+
+#[path = "routed_jmp.rs"]
+mod routed_tests;

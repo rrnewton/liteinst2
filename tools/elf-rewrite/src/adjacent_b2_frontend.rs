@@ -9,6 +9,28 @@ use li2core::quiescent::{
     SearchPolicy, plan_adjacent_b2_with_emission_after,
 };
 
+#[path = "adjacent_routed_jmp_frontend.rs"]
+pub(crate) mod routed_jmp;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum PairProfile {
+    ForwardJcc,
+    RoutedJmpUnion,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum PairKind {
+    ForwardJcc,
+    RoutedJmp,
+}
+impl PairKind {
+    fn name(self) -> &'static str {
+        match self {
+            Self::ForwardJcc => "forward-jcc-b2-v1",
+            Self::RoutedJmp => "jbe-routed-jmp-mov-r12-rdi-v1",
+        }
+    }
+}
+
 /// Same immutable bytes and full selected roster as the sealed importer.
 pub fn prepare_disassembly_adjacent_b2(
     original: &[u8],
@@ -220,6 +242,7 @@ pub(crate) struct SelectionDraft {
     pub edges: Vec<Edge>,
     pub totals: Resources,
     pub blocked_groups: Vec<Error>,
+    pub routed: routed_jmp::State,
 }
 
 fn entries(s: &SelectedSite, identity: CodeIdentity) -> LegalEntrySet {
@@ -346,6 +369,57 @@ fn call_pair(
     lower: usize,
     upper: usize,
 ) -> Result<Result<AdjacentB2ArtifactPlan, AdjacentB2Failure>, Error> {
+    call_with_sites(
+        PairRequest {
+            elf,
+            s,
+            identity,
+            limits,
+            draft,
+            lower,
+            upper,
+        },
+        TacticPolicy::GeneralizedPunOnly,
+        2,
+        |sites, emission, pending, bundle| {
+            plan_adjacent_b2_with_emission_after(
+                sites,
+                emission,
+                &draft.composition,
+                pending,
+                AdjacentB2Budget {
+                    max_continuations: limits.joint,
+                    bundle,
+                },
+            )
+        },
+    )
+}
+
+struct PairRequest<'a, 'elf> {
+    elf: &'a Elf64<'elf>,
+    s: &'a Selection,
+    identity: CodeIdentity,
+    limits: AdjacentB2Limits,
+    draft: &'a SelectionDraft,
+    lower: usize,
+    upper: usize,
+}
+fn call_with_sites<R>(
+    request: PairRequest<'_, '_>,
+    upper_tactics: TacticPolicy,
+    upper_displaced: usize,
+    invoke: impl FnOnce([PlanningSite<'_>; 2], &ArtifactEmission, &[AddressRange], BundleBudget) -> R,
+) -> Result<R, Error> {
+    let PairRequest {
+        elf,
+        s,
+        identity,
+        limits,
+        draft,
+        lower,
+        upper,
+    } = request;
     let a = &s.sites[lower];
     let b = &s.sites[upper];
     validate_site(elf, a)?;
@@ -394,6 +468,12 @@ fn call_pair(
         logical_pc: b.pc,
         semantics: b.semantics,
         allocation: &upper_allocation,
+        search: SearchPolicy {
+            tactics: upper_tactics,
+            max_upstream_bytes: 0,
+            max_displaced_bytes: upper_displaced,
+            max_sites: 1,
+        },
         ..lower_site
     };
     let pending: Vec<_> = draft
@@ -404,12 +484,11 @@ fn call_pair(
     let budget = draft
         .totals
         .pair_budget(Capacities::from_selection(s)?, limits.joint)?;
-    Ok(plan_adjacent_b2_with_emission_after(
+    Ok(invoke(
         [lower_site, upper_site],
         &emission,
-        &draft.composition,
         &pending,
-        budget,
+        budget.bundle,
     ))
 }
 
@@ -420,6 +499,26 @@ struct PairAssociation {
     upper: usize,
     attempt: usize,
 }
+struct PairView<'a> {
+    pcs: [u64; 2],
+    members: &'a [ArtifactPlan; 2],
+    accepted: bool,
+    qualified: bool,
+    tactics: [Tactic; 2],
+    family: Option<&'static str>,
+}
+impl<'a> PairView<'a> {
+    fn jcc(pair: &'a AdjacentB2ArtifactPlan, family: Option<&'static str>) -> Self {
+        Self {
+            pcs: pair.logical_pcs(),
+            members: pair.members(),
+            accepted: pair.evidence().accepted,
+            qualified: pair.qualification_complete(),
+            tactics: [Tactic::GeneralizedPun; 2],
+            family,
+        }
+    }
+}
 fn stage_pair(
     elf: &Elf64<'_>,
     dynamic: &carrier::dynamic::Inventory,
@@ -427,6 +526,25 @@ fn stage_pair(
     before: &SelectionDraft,
     association: PairAssociation,
     pair: &AdjacentB2ArtifactPlan,
+    checkpoint: impl FnMut(&'static str, &SelectionDraft) -> Result<(), Error>,
+) -> Result<SelectionDraft, Error> {
+    stage_members(
+        elf,
+        dynamic,
+        s,
+        before,
+        association,
+        PairView::jcc(pair, None),
+        checkpoint,
+    )
+}
+fn stage_members(
+    elf: &Elf64<'_>,
+    dynamic: &carrier::dynamic::Inventory,
+    s: &Selection,
+    before: &SelectionDraft,
+    association: PairAssociation,
+    pair: PairView<'_>,
     mut checkpoint: impl FnMut(&'static str, &SelectionDraft) -> Result<(), Error>,
 ) -> Result<SelectionDraft, Error> {
     let PairAssociation {
@@ -434,10 +552,7 @@ fn stage_pair(
         upper,
         attempt,
     } = association;
-    if pair.logical_pcs() != [s.sites[upper].pc, s.sites[lower].pc]
-        || pair.qualification_complete()
-        || !pair.evidence().accepted
-    {
+    if pair.pcs != [s.sites[upper].pc, s.sites[lower].pc] || pair.qualified || !pair.accepted {
         return Err(Error::new("pair-invariant", "member binding"));
     }
     let mut next = before.clone();
@@ -446,11 +561,25 @@ fn stage_pair(
         .iter()
         .filter_map(|(i, r)| (*i != lower && *i != upper).then_some(*r))
         .collect();
-    for (ordinal, (index, member)) in [upper, lower].into_iter().zip(pair.members()).enumerate() {
+    for (ordinal, (index, member)) in [upper, lower].into_iter().zip(pair.members).enumerate() {
         if !matches!(member.metrics(), ArtifactMetrics::Single(_))
             || member.qualification_complete()
         {
             return Err(Error::new("pair-invariant", "member authority or metrics"));
+        }
+        if pair.family.is_some() {
+            let valid = member.source_steps().len() == 1
+                && matches!(
+                    (
+                        pair.tactics[ordinal],
+                        &member.source_steps()[0].parts().kind,
+                    ),
+                    (Tactic::Relocation, PlanKind::Relocation)
+                        | (Tactic::GeneralizedPun, PlanKind::GeneralizedPun(_))
+                );
+            if !valid {
+                return Err(Error::new("pair-invariant", "member tactic attribution"));
+            }
         }
         for step in member.source_steps() {
             next.composition
@@ -537,7 +666,7 @@ fn stage_pair(
             .sum::<usize>();
         next.accepted.push((s.sites[index].id, member.clone()));
         next.pending.retain(|(i, _)| *i != index);
-        next.reports[index].core_tactic = Some(Tactic::GeneralizedPun);
+        next.reports[index].core_tactic = Some(pair.tactics[ordinal]);
         next.reports[index].refusal = None;
         next.reports[index].refusal_code = None;
         next.reports[index].candidate_emitted = false;
@@ -549,6 +678,11 @@ fn stage_pair(
             member.source_steps().len(),
             member.metrics()
         );
+        if let Some(family) = pair.family {
+            next.reports[index]
+                .diagnostics
+                .insert_str(0, &format!("pair_family={family}\n"));
+        }
     }
     next.totals = Resources::collect(&next.accepted)?;
     next.totals.check(Capacities::from_selection(s)?)?;
@@ -574,16 +708,61 @@ pub(crate) fn plan(
     ordered: &[usize],
     draft: &mut SelectionDraft,
 ) -> Result<(), Error> {
+    plan_profile(
+        elf,
+        dynamic,
+        s,
+        identity,
+        PairPolicy {
+            limits,
+            profile: PairProfile::ForwardJcc,
+        },
+        ordered,
+        draft,
+    )
+}
+
+pub(crate) struct PairPolicy {
+    pub limits: AdjacentB2Limits,
+    pub profile: PairProfile,
+}
+pub(crate) fn plan_profile(
+    elf: &Elf64<'_>,
+    dynamic: &carrier::dynamic::Inventory,
+    s: &Selection,
+    identity: CodeIdentity,
+    policy: PairPolicy,
+    ordered: &[usize],
+    draft: &mut SelectionDraft,
+) -> Result<(), Error> {
+    let PairPolicy { limits, profile } = policy;
     // Freeze every original edge and greedy group before any planning outcome.
+    let classify = |a: &SelectedSite, b: &SelectedSite| {
+        if exclusion(elf, a, b).is_none() {
+            Ok(PairKind::ForwardJcc)
+        } else if profile == PairProfile::RoutedJmpUnion {
+            routed_jmp::eligibility(elf, s, a, b).map(|()| PairKind::RoutedJmp)
+        } else {
+            Err(exclusion(elf, a, b).unwrap())
+        }
+    };
     for w in ordered.windows(2) {
         let (a, b) = (&s.sites[w[1]], &s.sites[w[0]]);
         if a.pc.checked_add(u64::from(a.length)) == Some(b.pc) {
             draft.edges.push(Edge {
                 lower: a.id,
                 upper: b.id,
-                exclusion: exclusion(elf, a, b),
+                exclusion: classify(a, b).err(),
                 visited_group: false,
             });
+            if profile == PairProfile::RoutedJmpUnion {
+                draft.routed.edges.push(routed_jmp::Edge {
+                    lower: a.id,
+                    upper: b.id,
+                    family: classify(a, b).ok(),
+                    exclusion: classify(a, b).err(),
+                });
+            }
         }
     }
     let mut groups = Vec::new();
@@ -593,11 +772,12 @@ pub(crate) fn plan(
         let lower = ordered
             .get(at + 1)
             .copied()
-            .filter(|&i| exclusion(elf, &s.sites[i], &s.sites[upper]).is_none());
-        groups.push((upper, lower));
+            .filter(|&i| classify(&s.sites[i], &s.sites[upper]).is_ok());
+        let kind = lower.map(|i| classify(&s.sites[i], &s.sites[upper]).unwrap());
+        groups.push((upper, lower, kind));
         at += if lower.is_some() { 2 } else { 1 };
     }
-    for (upper, lower) in groups {
+    for (upper, lower, kind) in groups {
         let Some(lower) = lower else {
             baseline(elf, dynamic, s, identity, draft, upper)?;
             if let Err(error) = draft.totals.check(Capacities::from_selection(s)?) {
@@ -631,6 +811,23 @@ pub(crate) fn plan(
             *draft = trial;
             continue;
         }
+        if kind == Some(PairKind::RoutedJmp) {
+            *draft = routed_jmp::recover(
+                routed_jmp::Recovery {
+                    elf,
+                    dynamic,
+                    s,
+                    identity,
+                    limits,
+                    lower,
+                    upper,
+                },
+                before,
+                trial,
+                group_admission_refusal,
+            )?;
+            continue;
+        }
         let baseline_reports = vec![trial.reports[upper].clone(), trial.reports[lower].clone()];
         let result = call_pair(elf, s, identity, limits, &before, lower, upper)?;
         if let Err(failure) = &result {
@@ -646,21 +843,37 @@ pub(crate) fn plan(
                 return Err(Error::new("pair-invariant", failure));
             }
         }
-        let attempt = before.work.len();
+        let attempt = before.work.len() + before.routed.work.len();
         let staged = match &result {
-            Ok(pair) => Some(stage_pair(
-                elf,
-                dynamic,
-                s,
-                &before,
-                PairAssociation {
-                    lower,
-                    upper,
-                    attempt,
-                },
-                pair,
-                |_, _| Ok(()),
-            )),
+            Ok(pair) => Some(if profile == PairProfile::ForwardJcc {
+                stage_pair(
+                    elf,
+                    dynamic,
+                    s,
+                    &before,
+                    PairAssociation {
+                        lower,
+                        upper,
+                        attempt,
+                    },
+                    pair,
+                    |_, _| Ok(()),
+                )
+            } else {
+                stage_members(
+                    elf,
+                    dynamic,
+                    s,
+                    &before,
+                    PairAssociation {
+                        lower,
+                        upper,
+                        attempt,
+                    },
+                    PairView::jcc(pair, Some(PairKind::ForwardJcc.name())),
+                    |_, _| Ok(()),
+                )
+            }),
             Err(_) => None,
         };
         let frontend_refusal = staged.as_ref().and_then(|r| r.as_ref().err()).cloned();
@@ -682,6 +895,14 @@ pub(crate) fn plan(
             if let Some(error) = &group_admission_refusal {
                 chosen.blocked_groups.push(error.clone());
             }
+        }
+        if profile == PairProfile::RoutedJmpUnion {
+            chosen.routed.calls.push(routed_jmp::Dispatch {
+                attempt,
+                lower: s.sites[lower].id,
+                upper: s.sites[upper].id,
+                family: PairKind::ForwardJcc,
+            });
         }
         chosen.work.push(Work {
             lower: s.sites[lower].id,

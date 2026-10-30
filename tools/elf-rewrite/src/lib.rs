@@ -5,6 +5,7 @@ mod adjacent_b2_frontend;
 pub mod carrier;
 pub mod disassembly;
 pub use adjacent_b2_frontend::prepare_disassembly_adjacent_b2;
+pub use adjacent_b2_frontend::routed_jmp::prepare_disassembly_adjacent_routed_jmp;
 mod ledger;
 pub mod model;
 mod neighbor_catalogue;
@@ -138,6 +139,26 @@ fn prepare_selection_with_adjacent_gate(
     owned_neighbors: bool,
     mode: disassembly::NeighborMode,
     adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
+    gate: impl FnMut(&'static str) -> Result<(), Error>,
+) -> Result<Product, Error> {
+    prepare_selection_with_pair_gate(
+        original,
+        selection,
+        owned_neighbors,
+        mode,
+        adjacent,
+        adjacent_b2_frontend::PairProfile::ForwardJcc,
+        gate,
+    )
+}
+
+fn prepare_selection_with_pair_gate(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+    adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
+    pair_profile: adjacent_b2_frontend::PairProfile,
     mut gate: impl FnMut(&'static str) -> Result<(), Error>,
 ) -> Result<Product, Error> {
     if owned_neighbors && mode != disassembly::NeighborMode::LongOnly {
@@ -260,9 +281,28 @@ fn prepare_selection_with_adjacent_gate(
         edges: Vec::new(),
         totals: Default::default(),
         blocked_groups: Vec::new(),
+        routed: Default::default(),
     };
     if let Some(limits) = adjacent {
-        adjacent_b2_frontend::plan(&elf, &dynamic, s, identity, limits, &ordered, &mut draft)?;
+        match pair_profile {
+            adjacent_b2_frontend::PairProfile::ForwardJcc => adjacent_b2_frontend::plan(
+                &elf, &dynamic, s, identity, limits, &ordered, &mut draft,
+            )?,
+            adjacent_b2_frontend::PairProfile::RoutedJmpUnion => {
+                adjacent_b2_frontend::plan_profile(
+                    &elf,
+                    &dynamic,
+                    s,
+                    identity,
+                    adjacent_b2_frontend::PairPolicy {
+                        limits,
+                        profile: pair_profile,
+                    },
+                    &ordered,
+                    &mut draft,
+                )?
+            }
+        }
     } else {
         for index in ordered {
             attempt_singleton(
@@ -282,7 +322,14 @@ fn prepare_selection_with_adjacent_gate(
     }
     let adjacent_evidence = if adjacent.is_some() {
         gate("evidence-serialization")?;
-        Some(adjacent_b2_frontend::evidence(s, &draft)?)
+        Some(match pair_profile {
+            adjacent_b2_frontend::PairProfile::ForwardJcc => {
+                adjacent_b2_frontend::evidence(s, &draft)?
+            }
+            adjacent_b2_frontend::PairProfile::RoutedJmpUnion => {
+                adjacent_b2_frontend::routed_jmp::evidence(s, &draft)?
+            }
+        })
     } else {
         None
     };
@@ -311,6 +358,7 @@ fn prepare_selection_with_adjacent_gate(
         edges: _,
         totals: _,
         blocked_groups: _,
+        routed: _,
     } = draft;
     let mut files = BTreeMap::new();
     if owned_neighbors {
@@ -351,7 +399,11 @@ fn prepare_selection_with_adjacent_gate(
         let write_carrier = if (owned_neighbors || adjacent.is_some())
             && elf.header().object_type == carrier::elf64::ObjectType::Executable
         {
-            carrier::append_exec_carrier_with_interleaved_images
+            if pair_profile == adjacent_b2_frontend::PairProfile::RoutedJmpUnion {
+                carrier::append_exec_carrier_with_interleaved_loads
+            } else {
+                carrier::append_exec_carrier_with_interleaved_images
+            }
         } else {
             carrier::append_carrier_with_images
         };
@@ -447,7 +499,11 @@ fn prepare_selection_with_adjacent_gate(
         .into_bytes();
     }
     if let Some(bytes) = adjacent_evidence {
-        files.insert("adjacent-b2-evidence.txt".into(), bytes);
+        let name = match pair_profile {
+            adjacent_b2_frontend::PairProfile::ForwardJcc => "adjacent-b2-evidence.txt",
+            adjacent_b2_frontend::PairProfile::RoutedJmpUnion => "adjacent-routed-jmp-evidence.txt",
+        };
+        files.insert(name.into(), bytes);
     }
     let metadata = make_metadata(original, s, &reports, false, &profile)?;
     files.insert(

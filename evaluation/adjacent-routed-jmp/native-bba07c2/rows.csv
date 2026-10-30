@@ -1,0 +1,32 @@
+row,case,entry,CF,ZF,r13,saved_F_resume,installed_hooks,installed_SIGILL_entries,visits_per_phase,traces_per_complete_run,seed_children_per_complete_run,v1,v2,corelib316
+row_00,L_flags_00,0x401bfe,0,0,65536,0,L U,-,5,12,4,FAIL,PASS,PASS
+row_01,L_flags_01,0x401bfe,0,1,65536,0,L B L U,-,9,12,4,FAIL,PASS,PASS
+row_02,L_flags_10,0x401bfe,1,0,65536,0,L B L U,-,9,12,4,FAIL,PASS,PASS
+row_03,L_flags_11,0x401bfe,1,1,65536,0,L B L U,-,9,12,4,FAIL,PASS,PASS
+row_04,direct_U,0x401c00,0,0,65536,0,U,-,4,12,4,FAIL,PASS,PASS
+row_05,direct_F,0x401c02,0,0,65536,0,-,F,4,12,4,PASS,PASS,PASS
+row_06,earlier_JE_taken,0x401bf5,0,1,65536,0,-,F,5,12,4,PASS,PASS,PASS
+row_07,earlier_JE_untaken,0x401bf5,0,0,65536,0,L B L U,-,11,12,4,FAIL,PASS,PASS
+row_08,C_0_backward_iterations,0x401bf7,0,0,65537,0,L U,-,6,12,4,FAIL,PASS,PASS
+row_09,C_1_backward_iterations,0x401bf7,0,0,65536,0,L B L U,-,10,12,4,FAIL,PASS,PASS
+row_10,C_2_backward_iterations,0x401bf7,0,0,65535,0,L B L B L U,-,14,12,4,FAIL,PASS,PASS
+row_11,direct_B,0x401bbe,0,0,65536,0,B L U,-,8,12,4,FAIL,PASS,PASS
+row_12,direct_E,0x401c05,0,0,65536,0,-,-,3,12,4,PASS,PASS,PASS
+row_13,direct_T,0x401c45,0,0,65536,0,-,-,3,12,4,PASS,PASS,PASS
+row_14,saved_resume_F,0x401c02,0,0,65536,1,-,F,4,12,4,PASS,PASS,PASS
+row_15,additional_head_401bc2,0x401bc2,0,0,65537,0,L U,B+4,7,12,4,FAIL,PASS,PASS
+row_16,additional_head_401bc4,0x401bc4,0,0,65537,0,L U,-,13,12,4,FAIL,PASS,PASS
+row_17,additional_head_401bcd,0x401bcd,0,0,65537,0,L U,-,12,12,4,FAIL,PASS,PASS
+row_18,additional_head_401bd6,0x401bd6,0,0,65537,0,L U,-,11,12,4,FAIL,PASS,PASS
+row_19,additional_head_401bdf,0x401bdf,0,0,65537,0,L U,-,10,12,4,FAIL,PASS,PASS
+row_20,additional_head_401be8,0x401be8,0,0,65537,0,L U,-,9,12,4,FAIL,PASS,PASS
+row_21,additional_head_401bf1,0x401bf1,0,0,65537,0,L U,-,8,12,4,FAIL,PASS,PASS
+row_22,additional_head_401c0b,0x401c0b,0,0,65537,0,-,-,2,12,4,PASS,PASS,PASS
+row_23,additional_head_401c0c,0x401c0c,0,0,65537,0,-,-,10,12,4,PASS,PASS,PASS
+row_24,additional_head_401c15,0x401c15,0,0,65537,0,-,-,9,12,4,PASS,PASS,PASS
+row_25,additional_head_401c1e,0x401c1e,0,0,65537,0,-,-,8,12,4,PASS,PASS,PASS
+row_26,additional_head_401c27,0x401c27,0,0,65537,0,-,-,7,12,4,PASS,PASS,PASS
+row_27,additional_head_401c30,0x401c30,0,0,65537,0,-,-,6,12,4,PASS,PASS,PASS
+row_28,additional_head_401c39,0x401c39,0,0,65537,0,-,-,5,12,4,PASS,PASS,PASS
+row_29,additional_head_401c42,0x401c42,0,0,65537,0,-,-,4,12,4,PASS,PASS,PASS
+row_30,additional_head_401c4b,0x401c4b,0,0,65537,0,-,-,2,12,4,PASS,PASS,PASS

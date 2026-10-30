@@ -14,7 +14,7 @@ if sys.flags.optimize:
 path = Path(__file__).resolve().with_name('reproduce_whole.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
-assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c'
+assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cd01ee97b046a382fcb2881a4b642836d9c6b0d2dd60273ba27b1432536c9c2f'
 R = types.ModuleType('authenticated_whole_reproducer')
 R.__file__ = str(path)
 exec(compile(raw, str(path), 'exec'), R.__dict__)
@@ -576,7 +576,7 @@ class WholeReproducerControls(unittest.TestCase):
         helper = types.SimpleNamespace(run=mock.Mock(return_value=1))
         with mock.patch.object(R, 'load', return_value=helper) as load:
             self.assertEqual(R.adjacent_diagnostic(args), 1)
-        load.assert_called_once_with('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
+        load.assert_called_once_with('adjacent_whole.py', 'b8e61360056220b1e2a60f93f32844b36e483d08a354bccbf6b03f1a8288c4a3')
         helper.run.assert_called_once()
         actual_args, context = helper.run.call_args.args
         self.assertIs(actual_args, args)
@@ -589,6 +589,44 @@ class WholeReproducerControls(unittest.TestCase):
             with mock.patch.object(R, 'load') as load, self.assertRaises(AssertionError):
                 R.adjacent_diagnostic(types.SimpleNamespace(placement_profile=profile))
             load.assert_not_called()
+
+
+    def test_rj18_routed_cli_is_separate_fixed_and_has_no_fallthrough(self):
+        argv = ['--capture', '/synthetic-closed', '--capture-sha256', 'a' * 64,
+                '--output', '/synthetic-new']
+        args = R.arguments(argv + ['--placement-profile', R.ROUTED_PROFILE])
+        self.assertEqual(R.ROUTED_PROFILE, 'offline-whole-authored-adjacent-routed-jmp-short-t3-pending-2g-v1')
+        self.assertEqual(args.placement_profile, R.ROUTED_PROFILE)
+        self.assertEqual(R.arguments(argv).placement_profile, R.D.PROFILE)
+        for extra in (['--upper','3'], ['--lower','0'], ['--joint','1'], ['--program','checksum'],
+                      ['--binary','/other'], ['--subset']):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                R.arguments(argv + ['--placement-profile', R.ROUTED_PROFILE] + extra)
+            self.assertEqual(error.exception.code, 2)
+        with mock.patch.object(R,'arguments',return_value=args), \
+             mock.patch.object(R,'routed_jmp_diagnostic',return_value=2) as routed, \
+             mock.patch.object(R,'adjacent_diagnostic',side_effect=AssertionError('old route')), \
+             mock.patch.object(R,'read',side_effect=AssertionError('old fallthrough')):
+            self.assertEqual(R.main(),2)
+        routed.assert_called_once_with(args)
+
+    def test_rj18_routed_authenticated_helper_once_preserves_every_result(self):
+        for code in (0,1,2):
+            args=types.SimpleNamespace(placement_profile=R.ROUTED_PROFILE)
+            helper=types.SimpleNamespace(run=mock.Mock(return_value=code))
+            with mock.patch.object(R,'load',return_value=helper) as loader:
+                self.assertEqual(R.routed_jmp_diagnostic(args),code)
+            loader.assert_called_once_with('adjacent_routed_jmp_whole.py','e89c8adadc413111a7ca2a2dc7aac753826f2659616e83e38ded9c3c3f079206')
+            helper.run.assert_called_once()
+            actual,ctx=helper.run.call_args.args
+            self.assertIs(actual,args)
+            for key in ('B','H','D','ROOT','HERE','PINS','read','closed'):
+                self.assertIs(getattr(ctx,key),getattr(R,key))
+            self.assertIs(ctx.load,loader)
+        for profile in (R.D.PROFILE,R.D.BROAD_PROFILE,R.D.SHORT_T3_PENDING_PROFILE,R.D.ADJACENT_B2_PROFILE):
+            with mock.patch.object(R,'load') as loader,self.assertRaises(AssertionError):
+                R.routed_jmp_diagnostic(types.SimpleNamespace(placement_profile=profile))
+            loader.assert_not_called()
 
 
 if __name__ == '__main__':

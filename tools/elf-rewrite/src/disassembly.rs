@@ -628,5 +628,8 @@ fn check(ok: bool, why: &'static str) -> Result<(), Error> {
 pub mod adjacent_b2;
 pub use adjacent_b2::{AdjacentB2DisassemblySelection, AdjacentB2Limits};
 
+pub mod adjacent_routed_jmp;
+pub use adjacent_routed_jmp::{AdjacentRoutedJmpDisassemblySelection, AdjacentRoutedJmpLimits};
+
 #[cfg(test)]
 mod tests;

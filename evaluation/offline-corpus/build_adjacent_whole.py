@@ -25,9 +25,24 @@ MATERIAL_PROFILE = 'offline-whole-authored-adjacent-b2-short-t3-pending-2g-v1'
 IMPORTER_PROFILE = 'elf-disassembly-null-jumps-adjacent-b2-short-t3-pending-v1'
 
 
-def labels():
-    return dict(capture_profile=CAPTURE_PROFILE, material_profile=MATERIAL_PROFILE,
-                importer_profile=IMPORTER_PROFILE, adjacent_upper=2, adjacent_lower=1,
+# Private immutable descriptors; CLI inputs cannot supply another profile.
+LEGACY = (CAPTURE_PROFILE, MATERIAL_PROFILE, IMPORTER_PROFILE,
+          'adjacent_b2_disassembly_sites', 'build_adjacent_whole.py')
+ROUTED = ('offline-whole-capture-adjacent-routed-jmp-u2-l1-j2-v1',
+          'offline-whole-authored-adjacent-routed-jmp-short-t3-pending-2g-v1',
+          'elf-disassembly-null-jumps-adjacent-routed-jmp-short-t3-pending-v1',
+          'adjacent_routed_jmp_disassembly_sites', 'build_adjacent_routed_jmp_whole.py')
+
+
+def descriptor(profile):
+    assert profile is LEGACY or profile is ROUTED, 'fixed capture descriptor'
+    return profile
+
+
+def labels(profile=LEGACY):
+    capture, material, importer, _, _ = descriptor(profile)
+    return dict(capture_profile=capture, material_profile=material,
+                importer_profile=importer, adjacent_upper=2, adjacent_lower=1,
                 adjacent_joint=2, expected_programs=2, expected_heads=187, expected_selected=42,
                 milestone='D01_FULL_ROSTER_PRODUCER_DIAGNOSTIC',
                 artifact_complete=False, independent_artifact_verified=False,
@@ -54,9 +69,10 @@ def check_artifact(raw, phase):
     assert finished == [dict(reason='build-finished', success=True)] and finished[0]['success'] is True
 
 
-def phase_plan(repo, raw, tools, source):
+def phase_plan(repo, raw, tools, source, profile=LEGACY):
+    _, _, _, producer, _ = descriptor(profile)
     phases = []
-    for package, kind, name in (('liteinst-rewrite', 'example', 'adjacent_b2_disassembly_sites'),
+    for package, kind, name in (('liteinst-rewrite', 'example', producer),
                                  ('liteinst2', 'bin', 'elf-exec-oracle')):
         phases.append(dict(name='build-' + name, dependencies=[], limits=[120, 180, 128],
             argv=[tools['cargo']['path'], 'build', '--release', '--locked', '--offline',
@@ -82,7 +98,8 @@ def phase_plan(repo, raw, tools, source):
     return phases
 
 
-def main():
+def main(profile=LEGACY):
+    _, _, _, _, entry_name = descriptor(profile)
     assert not sys.flags.optimize, 'assertions required'
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('raw', 'toolchain', 'cargo-home', 'user-home'):
@@ -122,7 +139,7 @@ def main():
     assert tools['helper']['sha256'] == HELPER_SHA
     source = repo / 'evaluation/offline-corpus'
     inputs = {str(path): identity(path) for path in
-              [Path(__file__), Path(B.__file__), source / 'layout.ld',
+              [source / entry_name, Path(__file__), Path(B.__file__), source / 'layout.ld',
                repo / 'Cargo.toml', repo / 'Cargo.lock',
                *(source / (p + '.S') for p in PROGRAMS)]}
     configs = configuration(repo, args.cargo_home)
@@ -131,8 +148,8 @@ def main():
     # leave a phase UNRUN, but no phase is retried or replaced after its result.
     for program in PROGRAMS:
         (raw / program).mkdir()
-    phases = phase_plan(repo, raw, tools, source)
-    before = dict(**labels(), revision=revision, hardware='AMD EPYC Zen 5 dev host', env=env,
+    phases = phase_plan(repo, raw, tools, source, profile)
+    before = dict(**labels(profile), revision=revision, hardware='AMD EPYC Zen 5 dev host', env=env,
                   tools=tools, inputs=inputs, configurations=configs, phases=phases,
                   configuration_complete=configuration_complete,
                   affinity=sorted(os.sched_getaffinity(0)),
@@ -215,7 +232,7 @@ def main():
             stable()
             row['status'] = 'PASS'
     finally:
-        write(raw / 'closed.json', dict(**labels(), revision=revision, results=results,
+        write(raw / 'closed.json', dict(**labels(profile), revision=revision, results=results,
             files=watched, load_average=Path('/proc/loadavg').read_text().split()[:3],
             configuration_complete=configuration_complete,
             configuration_scope='READ_DENIED records an observation, never inaccessible contents or proof Cargo ignored them',

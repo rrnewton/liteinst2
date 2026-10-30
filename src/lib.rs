@@ -3,6 +3,9 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 
+#[cfg(test)]
+extern crate self as liteinst2;
+
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod artifact_emission_tests;
 mod artifact_fixups;

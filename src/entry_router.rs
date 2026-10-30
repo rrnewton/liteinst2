@@ -355,6 +355,9 @@ mod imp {
     }
 
     #[cfg(test)]
+    mod routed_jmp_native_tests;
+
+    #[cfg(test)]
     mod tests {
         use super::*;
         use std::io::Write;
