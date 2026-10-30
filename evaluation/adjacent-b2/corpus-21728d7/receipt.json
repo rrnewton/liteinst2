@@ -1,0 +1,158 @@
+{
+  "schema": "adjacent-b2-corpus-diagnostic-summary-v1",
+  "source_revision": "21728d7aea329f36e34bb456d4ad90bfcf9c15c1",
+  "capture_revision": "6cf74f9241ffb9f6ff75786b3819d189d2acd57c",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "toolchain": "stable Rust 1.97.1",
+  "placement_profile": "offline-whole-authored-adjacent-b2-short-t3-pending-2g-v1",
+  "capture_profile": "offline-whole-capture-adjacent-b2-u2-l1-j2-v1",
+  "importer_profile": "elf-disassembly-null-jumps-adjacent-b2-short-t3-pending-v1",
+  "fixed_attempts_per_program_per_revision": 1,
+  "budgets": {
+    "upper": 2,
+    "lower": 1,
+    "joint": 2
+  },
+  "expected_programs": 2,
+  "expected_heads": 187,
+  "expected_selected": 42,
+  "configuration_complete": false,
+  "configuration_observations": {
+    "READ": 1,
+    "ABSENT": 13,
+    "READ_DENIED": 2
+  },
+  "capture_closed_sha256": "2200c77ccde6e81b06369d131a649d98295bca5fb60ea27b26534048abb36381",
+  "capture_environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_RELEASE_DEBUG": "0",
+    "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+    "CARGO_TARGET_DIR": "$REPO/target",
+    "CARGO_TERM_COLOR": "never",
+    "HOME": "$USER_HOME",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc"
+  },
+  "capture_reserved_cpus": [
+    102,
+    118,
+    172,
+    238
+  ],
+  "producer_binary": {
+    "bytes": 4132544,
+    "sha256": "e84522e688d85be27c141caff899a29a7267b7ba51214c50c18a5793d8d37f6b"
+  },
+  "source_states": {
+    "58145b257f3e0d8fd1ae6042c4681982e160905de1495f260795f7b1bd6bef7c": {
+      "base": "10b6b2ed6cc645a410c4e3a05c55c5bc52849adc",
+      "working_source_sha256": {
+        "evaluation/offline-corpus/adjacent_whole.py": "931401eebf4e5069c31835fc91a06a481018c9d95ba3e3318ca22c98278ccf34",
+        "evaluation/offline-corpus/adjacent_whole_controls.py": "8198b7005aa89904adb5393948730abca7ecb369e1aad5168a5b5db3d222e7f7",
+        "evaluation/offline-corpus/build_adjacent_whole.py": "0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592",
+        "evaluation/offline-corpus/reproduce_whole.py": "9ef01af7eb8f942727a0222bda264b267d4a83569549c6bd977486ff9bcd1d87",
+        "evaluation/offline-corpus/reproduce_whole_controls.py": "a90233aa8e9986abb0c62e68442279a33b470e3abbab89a09e2131d9b879e059"
+      }
+    },
+    "8c68653268235a88c0098beee04958db0b37dc3eec04e48b10bef9a8bc72a576": {
+      "base": "10b6b2ed6cc645a410c4e3a05c55c5bc52849adc",
+      "working_source_sha256": {
+        "evaluation/offline-corpus/adjacent_whole.py": "931401eebf4e5069c31835fc91a06a481018c9d95ba3e3318ca22c98278ccf34",
+        "evaluation/offline-corpus/adjacent_whole_controls.py": "b13721c3a2ef992502e989cfce092af6253d80c1c554bd1bfcec5594e7b9ee4e",
+        "evaluation/offline-corpus/build_adjacent_whole.py": "0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592",
+        "evaluation/offline-corpus/reproduce_whole.py": "9ef01af7eb8f942727a0222bda264b267d4a83569549c6bd977486ff9bcd1d87",
+        "evaluation/offline-corpus/reproduce_whole_controls.py": "a90233aa8e9986abb0c62e68442279a33b470e3abbab89a09e2131d9b879e059"
+      }
+    },
+    "a2bc84770ba289b6d69b8ab017b0ce0bd5dd4c6a89555adb4e92e46e91af07cb": {
+      "base": "10b6b2ed6cc645a410c4e3a05c55c5bc52849adc",
+      "working_source_sha256": {
+        "evaluation/offline-corpus/adjacent_whole.py": "b2621c7a796c7dde74c6fa1ae299d8a886c34c61d106d2a95c6f393c92634c95",
+        "evaluation/offline-corpus/adjacent_whole_controls.py": "d3d03ef3a2995d73d16e3158fc3d3dcf44fe0bcb908f6d1cb6eca33a45b29cbe",
+        "evaluation/offline-corpus/build_adjacent_whole.py": "0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592",
+        "evaluation/offline-corpus/reproduce_whole.py": "68ad7eaf3ac2a4febe8232d2de13a822ef8b293ebbb04e793051c3232d315dfc",
+        "evaluation/offline-corpus/reproduce_whole_controls.py": "908968f3c065bbdca4c9dff95096f5de08d7aa7c2c6a5dd7af37fd3769df0a2b"
+      }
+    },
+    "a70b2c6c411abb3466f01b68fc4a3040d0992948d6e6835c24e90323226225ca": {
+      "base": "6cf74f9241ffb9f6ff75786b3819d189d2acd57c",
+      "working_source_sha256": {}
+    },
+    "1f70dc4e00c1226c6f7cf030d415128a644770e9ad08dbf12ae8cb5b9f25bed7": {
+      "base": "6cf74f9241ffb9f6ff75786b3819d189d2acd57c",
+      "working_source_sha256": {
+        "evaluation/offline-corpus/adjacent_whole.py": "a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e",
+        "evaluation/offline-corpus/adjacent_whole_controls.py": "bb3fc51f74aed6f8f8280e47b5cc388406318f2334760fd0d057253790c768ef",
+        "evaluation/offline-corpus/reproduce_whole.py": "cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c",
+        "evaluation/offline-corpus/reproduce_whole_controls.py": "85c01ed2db0384813156bec6fdcdeb3dbe38d3c73aa8af327fcde37112c55b18"
+      }
+    },
+    "9c6f5a060b8369517daaac2b74db75066aa2b9bb4b35592440542392045fed29": {
+      "base": "21728d7aea329f36e34bb456d4ad90bfcf9c15c1",
+      "working_source_sha256": {}
+    }
+  },
+  "development_environments": {
+    "9dbbb9855aa5d0d7fba4dd9b310303c3d5fec1ad6170f0893e30ebfed496c267": {
+      "HOME": "$USER_HOME",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "RUSTC": "$TOOLCHAIN/bin/rustc",
+      "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+      "CARGO_HOME": "$CARGO_HOME",
+      "CARGO_TARGET_DIR": "$REPO/target",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TERM_COLOR": "never",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "LITEINST_EVALUATION": "1",
+      "TMPDIR": "$REPO/ignored/a3/adjacent-d01-temporary",
+      "TEMP": "$REPO/ignored/a3/adjacent-d01-temporary",
+      "TMP": "$REPO/ignored/a3/adjacent-d01-temporary"
+    }
+  },
+  "attempts": [
+    {
+      "revision": "6cf74f9241ffb9f6ff75786b3819d189d2acd57c",
+      "closed_sha256": "5980b3f55b9e2a5f58b209f72520898d0ddc1a1d1b7b552b357932c03728ec26",
+      "diagnostic_capture_complete": false,
+      "retained_output_stability_complete": true,
+      "diagnostic_status": "FAILED_OR_INCOMPLETE"
+    },
+    {
+      "revision": "21728d7aea329f36e34bb456d4ad90bfcf9c15c1",
+      "closed_sha256": "750266c8c9cf8a42750f0498fc872a82e8c8cdafc6b8c2b7f6997afa0f34d581",
+      "diagnostic_capture_complete": true,
+      "retained_output_stability_complete": true,
+      "diagnostic_status": "FAILED_OR_INCOMPLETE"
+    }
+  ],
+  "validation_complete": true,
+  "qualification_complete": false,
+  "artifact_complete": false,
+  "independent_artifact_verified": false,
+  "classification_complete": false,
+  "native_correctness_complete": false,
+  "corpus_success_claimed": false,
+  "performance_eligible": false,
+  "interpretation": "Producer refusal in both programs. Elapsed times are operational receipts, not performance measurements."
+}

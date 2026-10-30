@@ -140,3 +140,10 @@ The frontend controls run with
 `cargo test -j 4 -p liteinst-rewrite --lib --example adjacent_b2_disassembly_sites -- --nocapture`.
 Run `disassembly_controls.py`, `head_capture_controls.py`, and
 `reproduce_whole_controls.py` in `evaluation/offline-corpus/` with `python3 -B`.
+
+The [full-roster corpus diagnostic at 21728d7](corpus-21728d7/README.md)
+retains all 187 instruction heads and 42 selected branches across checksum and
+RLE. Both producers refuse without a candidate; mixed backward-JBE/forward-JMP
+support remains missing. Its compact records preserve the earlier driver
+failure, configuration-incomplete capture, controls and full workspace pass.
+No artifact, native, corpus or performance qualification is claimed.
