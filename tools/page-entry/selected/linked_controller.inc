@@ -18,6 +18,12 @@
 #endif
 #include "linked_rseq.h"
 #include "linked_proof.h"
+#ifdef LI2_LINKED_PREEDGE
+#include "linked_preedge_proof.h"
+#if LI2_LINKED_PREEDGE != 1 || defined(LI2_LINKED_EPOCH_CAPTURE) || defined(LI2_LINK_GRAPH_OBSERVE)
+#error "pre-edge v2 requires its own capture/observer adapter; old wire is rejected"
+#endif
+#endif
 #include "tf_span_transfer.h"
 #include "private_code_query.h"
 #if !defined(LI2_LINKED_EPOCH) || LI2_LINKED_EPOCH != 1 || LI2_SCALAR_SPAN_TRACE != 1
@@ -89,8 +95,16 @@ struct le_record {
     struct le_permission open,close,cleanup;
     struct li2_fetch_progress final_fetch;
     uint64_t publication_generation,cold_plan_proof,cold_none_proof;
+#ifdef LI2_LINKED_PREEDGE
+    struct li2_preedge_epoch_token epoch;
+#else
     struct li2_link_epoch_token epoch;
+#endif
+#ifdef LI2_LINKED_PREEDGE
+    struct li2_preedge_epoch_progress epoch_final;
+#else
     struct li2_link_epoch_progress epoch_final;
+#endif
     struct li2_link_rseq_live live_rseq[4];
     struct li2_private_code_query proof_before,proof_enter,proof_exit;
 };
@@ -107,9 +121,16 @@ static struct {
     uint64_t candidates,source_misses,plan_misses,capacity_misses,publications,hits;
     uint64_t entries,completed,unexpected,events,signals[5],refusals[4],exit_counts[LI2_REGION_EXITS];
     uint64_t plan_checks,rseq_checks,live_checks,proof_checks;
+#ifdef LI2_LINKED_PREEDGE
+    uint64_t cut_exits; /* Completed original in-page NX, before cut effects. */
+#endif
     struct li2_step_session session;
     struct li2_private_code_query initial,low_initial;
+#ifdef LI2_LINKED_PREEDGE
+    struct li2_preedge_plan scratch; /* Reusable unpublished description only. */
+#else
     struct li2_link_plan scratch; /* Reusable unpublished description only. */
+#endif
     struct le_slot slots[LE_PAGES];
     struct le_record current,last;
 } selected_linked_epoch;
@@ -120,7 +141,11 @@ static const struct li2_tf_span_transfer *selected_linked_epoch_ticket;
 struct le_proof_publication {
     unsigned started,complete;
     size_t zeroed,copied,verified;
+#ifdef LI2_LINKED_PREEDGE
+    struct li2_preedge_proof_header header;
+#else
     struct li2_link_proof_header header;
+#endif
     struct li2_private_code_query writable;
     struct le_permission sealed;
 };
@@ -133,7 +158,11 @@ static struct {
     struct le_proof_publication slot_publication[LE_PAGES];
     struct li2_private_code_query initial[16];
     struct le_permission close,writable,cleanup;
+#ifdef LI2_LINKED_PREEDGE
+    struct li2_preedge_proof scratch;
+#else
     struct li2_link_proof scratch;
+#endif
 } lep;
 static void le_proof_initialize(void);
 static int le_proof_ready(const struct le_slot *);
@@ -149,10 +178,18 @@ static void le_need(int yes,unsigned code,long detail) {
     if(!yes)selected_linked_epoch_abort(code,detail);
 }
 
+#ifdef LI2_LINKED_PREEDGE
+static const struct li2_preedge_proof *le_payload(const struct le_slot *s) {
+#else
 static const struct li2_link_proof *le_payload(const struct le_slot *s) {
+#endif
     return (const void *)s->proof;
 }
+#ifdef LI2_LINKED_PREEDGE
+static const struct li2_preedge_plan *le_plan(const struct le_slot *s) {return &le_payload(s)->plan;}
+#else
 static const struct li2_link_plan *le_plan(const struct le_slot *s) {return &le_payload(s)->plan;}
+#endif
 static const struct li2_span_source_key *le_key(const struct le_slot *s) {return &le_payload(s)->key;}
 
 static void le_count(uint64_t *p) {le_need(*p!=UINT64_MAX,LE_OVERFLOW,0);++*p;}
@@ -281,17 +318,33 @@ static int le_bytes(const struct le_slot *s,size_t *observed) {
     }
     return 0;
 }
+#ifdef LI2_LINKED_PREEDGE
+static int le_rebuild(const struct li2_preedge_plan *p) {
+#else
 static int le_rebuild(const struct li2_link_plan *p) {
+#endif
     le_need(!selected_linked_epoch_decoding,LE_REENTRY,1);
     selected_linked_epoch_decoding=1;__asm__ volatile("":::"memory");
+#ifdef LI2_LINKED_PREEDGE
+    int e=li2_preedge_plan_validate(p);
+#else
     int e=li2_link_plan_validate(p);
+#endif
     __asm__ volatile("":::"memory");selected_linked_epoch_decoding=0;
     selected_initialized();le_count(&selected_linked_epoch.plan_checks);return e;
 }
+#ifdef LI2_LINKED_PREEDGE
+static int le_rseq(const struct li2_preedge_plan *p,const ucontext_t *uc) {
+#else
 static int le_rseq(const struct li2_link_plan *p,const ucontext_t *uc) {
+#endif
     le_need(!selected_linked_epoch_decoding,LE_REENTRY,2);
     selected_linked_epoch_decoding=1;__asm__ volatile("":::"memory");
+#ifdef LI2_LINKED_PREEDGE
+    int e=li2_rseq_check_preedge_cold(p,uc);
+#else
     int e=li2_rseq_check_link_cold(p,uc);
+#endif
     __asm__ volatile("":::"memory");selected_linked_epoch_decoding=0;
     selected_initialized();le_count(&selected_linked_epoch.rseq_checks);return e;
 }
@@ -302,8 +355,16 @@ static int le_live(const ucontext_t *uc,struct li2_link_rseq_live *out) {
    These are the exact rows of the fully validated protected immutable plan.
    Interior/tail PCs remain MISS; no association grants resume/completion. */
 static int le_map_actual(const struct le_slot *s,uintptr_t pc,struct li2_region_pc *out) {
+#ifdef LI2_LINKED_PREEDGE
+    if(!s->installed || !s->complete || !le_proof_ready(s) || le_plan(s)->version!=LI2_PREEDGE_VERSION ||
+#else
     if(!s->installed || !s->complete || !le_proof_ready(s) || le_plan(s)->version!=LI2_LINK_VERSION ||
+#endif
+#ifdef LI2_LINKED_PREEDGE
+       le_plan(s)->ready!=1 || !le_plan(s)->maps || le_plan(s)->maps>LI2_PREEDGE_MAPS)
+#else
        le_plan(s)->ready!=1 || !le_plan(s)->maps || le_plan(s)->maps>LI2_LINK_MAPS)
+#endif
         return LI2_REGION_PLAN_CORRUPT;
     if(!ler_claimed())return LI2_REGION_PLAN_CORRUPT;
     for(size_t i=0;i<le_plan(s)->maps;i++) {
@@ -371,7 +432,11 @@ static _Noreturn void selected_linked_epoch_unexpected(int sig,siginfo_t *si,uco
     }
     selected_linked_epoch_abort(LE_EVENT,sig);
 }
+#ifdef LI2_LINKED_PREEDGE
+static int le_exit_index(const struct li2_preedge_plan *p,uintptr_t pc) {
+#else
 static int le_exit_index(const struct li2_link_plan *p,uintptr_t pc) {
+#endif
     if(p->ready!=1 || !p->exits || p->exits>LI2_REGION_EXITS)return -1;
     for(unsigned i=0;i<p->exits;i++)if(p->exit_pc[i]==pc)return (int)i;
     return -1;
@@ -437,7 +502,11 @@ static void selected_linked_epoch_initialize(void) {
     le_need(!e && selected_linked_epoch.low_initial.complete && selected_linked_epoch.low_initial.pages_checked==LE_PAGES,
         LE_PUBLICATION,e);
     ler_initialize();le_proof_initialize();
+#ifdef LI2_LINKED_PREEDGE
+    le_need(!li2_lifecycle_preedge_initialize(),LE_SOURCE,414);
+#else
     le_need(!li2_lifecycle_link_initialize(),LE_SOURCE,414);
+#endif
     selected_linked_epoch.initialized=1;selected_linked_epoch_busy=0;
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_initialize();
@@ -455,7 +524,11 @@ static int le_refusal(int result) {
 }
 /* Union only: these are definitely-unchanged masks, not an executed-path
    reconstruction. All affected outputs/undefined flags remain actual. */
+#ifdef LI2_LINKED_PREEDGE
+static void le_effects(const struct li2_preedge_plan *p,struct le_record *r) {
+#else
 static void le_effects(const struct li2_link_plan *p,struct le_record *r) {
+#endif
     le_need(p->heads && p->heads<=LI2_REGION_HEADS,LE_PLAN,1);
     for(size_t i=0;i<p->heads;i++) {
         const struct li2_span_decoded *d=&p->original[i];
@@ -526,7 +599,11 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
         uintptr_t entry=le_entry(r->source.key.entry,slot);
         le_need(!selected_linked_epoch_decoding,LE_REENTRY,3);
         r->build_started=1;selected_linked_epoch_decoding=1;__asm__ volatile("":::"memory");
+#ifdef LI2_LINKED_PREEDGE
+        e=li2_preedge_plan_page(r->source.key.page.address,r->source.key.bytes,r->source.key.entry,
+#else
         e=li2_link_plan_page(r->source.key.page.address,r->source.key.bytes,r->source.key.entry,
+#endif
             entry,&selected_linked_epoch.scratch);
         r->build_result=e;r->build_returned=1;__asm__ volatile("":::"memory");selected_linked_epoch_decoding=0;
         selected_initialized();int refusal=le_refusal(e);
@@ -539,7 +616,11 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
         }
         le_need(!e && !le_rebuild(&selected_linked_epoch.scratch),LE_PLAN,e);
         r->cold_plan_proof=selected_linked_epoch.plan_checks;
+#ifdef LI2_LINKED_PREEDGE
+        le_need(!li2_lifecycle_preedge_validate(&selected_borrow,&r->source,&selected_linked_epoch.scratch) &&
+#else
         le_need(!li2_lifecycle_link_validate(&selected_borrow,&r->source,&selected_linked_epoch.scratch) &&
+#endif
             !le_rseq(&selected_linked_epoch.scratch,uc),LE_SOURCE,1);
         r->cold_none_proof=selected_linked_epoch.rseq_checks;
         struct le_slot *s=&selected_linked_epoch.slots[slot];
@@ -577,7 +658,11 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
         const struct le_slot *cached=&selected_linked_epoch.slots[slot];
         le_need(cached->installed==1 && cached->complete==1 &&
             li2_span_source_key_equal(le_key(cached),&r->source.key) && !le_proof_check(cached,&r->proof_before) &&
+#ifdef LI2_LINKED_PREEDGE
+            !li2_lifecycle_preedge_validate(&selected_borrow,&r->source,le_plan(cached)) &&
+#else
             !li2_lifecycle_link_validate(&selected_borrow,&r->source,le_plan(cached)) &&
+#endif
             !le_live(uc,&r->live_rseq[0]),LE_SOURCE,7);
         le_need(!li2_tf_chain_span_consume(selected_linked_epoch_ticket,&selected_session,
             &selected_borrow,selected_view.pc,sig,si,uc),LE_EVENT,2);
@@ -595,18 +680,34 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
         !le_proof_check(s,&r->proof_enter),LE_PUBLICATION,5);
     le_effects(le_plan(s),r);
     le_need(!le_query(le_plan(s)->generated,PROT_READ,&r->idle) && !le_bytes(s,&r->idle_bytes),LE_PUBLICATION,6);
+#ifdef LI2_LINKED_PREEDGE
+    le_need(!li2_lifecycle_preedge_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#else
     le_need(!li2_lifecycle_link_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#endif
         !le_live(uc,&r->live_rseq[1]) && le_quiet(&selected_borrow),LE_SOURCE,3);
+#ifdef LI2_LINKED_PREEDGE
+    le_need(!li2_lifecycle_preedge_begin(&selected_borrow,&r->source,le_plan(s),
+#else
     le_need(!li2_lifecycle_link_begin(&selected_borrow,&r->source,le_plan(s),
+#endif
         r->publication_generation,&r->epoch),LE_SOURCE,412);
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_held();
 #endif
     le_need(!le_permission(s,PROT_READ|PROT_EXEC,&r->open),LE_PUBLICATION,7);
     le_need(!le_query(le_plan(s)->generated,PROT_READ|PROT_EXEC,&r->live) && !le_bytes(s,&r->live_bytes),LE_PUBLICATION,8);
+#ifdef LI2_LINKED_PREEDGE
+    le_need(!li2_lifecycle_preedge_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#else
     le_need(!li2_lifecycle_link_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#endif
         !le_live(uc,&r->live_rseq[2]),LE_SOURCE,4);
+#ifdef LI2_LINKED_PREEDGE
+    le_need(!li2_lifecycle_preedge_opened(&r->epoch,&r->source,le_plan(s)),LE_SOURCE,413);
+#else
     le_need(!li2_lifecycle_link_opened(&r->epoch,&r->source,le_plan(s)),LE_SOURCE,413);
+#endif
     selected_initialized();le_need(le_unchanged(&r->before,si,uc),LE_FRAME,5);
     le_count(&selected_linked_epoch.entries);selected_linked_epoch_active=1;r->redirected=1;
     __asm__ volatile("":::"memory");uc->uc_mcontext.gregs[REG_RIP]=(greg_t)le_plan(s)->generated;
@@ -807,6 +908,12 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     uintptr_t pc=(uintptr_t)r->after.frame.greg[REG_RIP];int exit=le_exit_index(le_plan(s),pc);
     if(exit<0)selected_linked_epoch_unexpected(sig,si,uc);
     le_nx(&r->after,pc);r->exit_seen=1;r->exit_index=(unsigned)exit;
+#ifdef LI2_LINKED_PREEDGE
+    unsigned frontier_kind=le_plan(s)->frontier_kind[exit];
+    le_need(frontier_kind==LI2_PREEDGE_UNSUPPORTED || frontier_kind==LI2_PREEDGE_PAGE_CUT,LE_PLAN,440);
+    le_need(li2_preedge_frontier_kind(le_plan(s)->page,&le_plan(s)->frontier[exit])==frontier_kind,
+        LE_PLAN,441); /* Authenticated original NX precedes the whole cut instruction. */
+#endif
     le_need(le_identity() && le_protected() && le_quiet(&selected_borrow),LE_STATE,9);le_tls(&r->after);
     le_need(r->before.fs==r->after.fs && r->before.gs==r->after.gs,LE_TLS,1);
     const greg_t *a=r->before.frame.greg,*b=r->after.frame.greg;
@@ -831,22 +938,41 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
         r->before.uc.uc_flags==r->after.uc.uc_flags && r->before.uc.uc_link==r->after.uc.uc_link &&
         r->before.frame.fp_bytes==r->after.frame.fp_bytes &&
         equal(r->before.frame.fp,r->after.frame.fp,LI2_STEP_FP_BYTES),LE_RESULT,41);
+#ifdef LI2_LINKED_PREEDGE
+    le_need(!le_proof_check(s,&r->proof_exit) && !li2_lifecycle_preedge_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#else
     le_need(!le_proof_check(s,&r->proof_exit) && !li2_lifecycle_link_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#endif
         !le_live(uc,&r->live_rseq[3]),LE_SOURCE,5);
     #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_before_close();
 #endif
     le_need(!le_permission(s,PROT_READ,&r->close) && !le_bytes(s,&r->closed_bytes),LE_PUBLICATION,9);
+#ifdef LI2_LINKED_PREEDGE
+    le_need(!li2_lifecycle_preedge_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#else
     le_need(!li2_lifecycle_link_validate(&selected_borrow,&r->source,le_plan(s)) &&
+#endif
         le_unchanged(&r->after,si,uc),LE_SOURCE,6);
+#ifdef LI2_LINKED_PREEDGE
+    r->release_started=1;r->release_result=li2_lifecycle_preedge_release(&r->epoch,&r->source,le_plan(s));
+#else
     r->release_started=1;r->release_result=li2_lifecycle_link_release(&r->epoch,&r->source,le_plan(s));
+#endif
+#ifdef LI2_LINKED_PREEDGE
+    copy(&r->epoch_final,li2_lifecycle_preedge_progress(),sizeof r->epoch_final);
+#else
     copy(&r->epoch_final,li2_lifecycle_link_progress(),sizeof r->epoch_final);
+#endif
     const struct li2_fetch_progress *p=li2_lifecycle_fetch_progress();
     if(p)copy(&r->final_fetch,p,sizeof r->final_fetch);
     le_need(!r->release_result && p && !p->held && p->complete && !p->first_error &&
         p->sequence==r->source.borrow.sequence,LE_RELEASE,r->release_result);r->release_complete=1;
     le_need(le_unchanged(&r->after,si,uc),LE_FRAME,7);
     r->completed=1;le_count(&selected_linked_epoch.completed);le_count(&selected_linked_epoch.exit_counts[exit]);
+#ifdef LI2_LINKED_PREEDGE
+    if(frontier_kind==LI2_PREEDGE_PAGE_CUT)le_count(&selected_linked_epoch.cut_exits);
+#endif
     copy(&selected_linked_epoch.last,r,sizeof *r);
     /* Only the original exit RIP is already present. Import every actual
        logical flag, including AF; no GPR, guest data or FP is predicted/reset. */
@@ -863,7 +989,11 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
     leto_finish(status,code,detail);
 #endif
     ler_report(status,code,detail);
+#ifdef LI2_LINKED_PREEDGE
+    struct writer w={.used=0};text(&w,"LI2_LINKED_PREEDGE {\"version\":2");
+#else
     struct writer w={.used=0};text(&w,"LI2_LINKED_EPOCH {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);
@@ -877,6 +1007,9 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
 #endif
     LE_FIELD(plan_misses);LE_FIELD(capacity_misses);LE_FIELD(publications);LE_FIELD(hits);LE_FIELD(entries);
     LE_FIELD(completed);LE_FIELD(unexpected);LE_FIELD(events);LE_FIELD(plan_checks);LE_FIELD(rseq_checks);LE_FIELD(live_checks);LE_FIELD(proof_checks);
+#ifdef LI2_LINKED_PREEDGE
+    LE_FIELD(cut_exits);
+#endif
 #undef LE_FIELD
     field(&w,",\"active\":",selected_linked_epoch_active);field(&w,",\"busy\":",selected_linked_epoch_busy);
     field(&w,",\"decoding\":",selected_linked_epoch_decoding);
@@ -934,10 +1067,18 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
 _Static_assert(17*21+160<=sizeof(((struct writer *)0)->bytes),"bounded graph observation report");
 #endif
 #ifdef LI2_LINKED_NATIVE_HINT
+#ifdef LI2_LINKED_PREEDGE
+_Static_assert(116*21+1620<=sizeof(((struct writer *)0)->bytes),"bounded pre-edge hint report");
+#else
 _Static_assert(115*21+1600<=sizeof(((struct writer *)0)->bytes),"bounded linked-epoch hint report");
+#endif
 _Static_assert(26*21+700<=sizeof(((struct writer *)0)->bytes),"bounded native-hint report");
 #else
+#ifdef LI2_LINKED_PREEDGE
+_Static_assert(115*21+1572<=sizeof(((struct writer *)0)->bytes),"bounded pre-edge report");
+#else
 _Static_assert(114*21+1552<=sizeof(((struct writer *)0)->bytes),"bounded linked-epoch report");
+#endif
 #endif
 
 #ifdef LI2_LINKED_EPOCH_CAPTURE

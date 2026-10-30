@@ -114,7 +114,11 @@ static void ler_prepare(size_t slot,uintptr_t target,const siginfo_t *si,const u
            when it is virgin RW; no retained opposite-arena page stays RX. */
         le_need(!ler_permission(target,PROT_READ,&t->target_closed),LE_PUBLICATION,302);
         le_need(!ler_permission(target,PROT_READ|PROT_WRITE,&t->writable),LE_PUBLICATION,303);
+#ifdef LI2_LINKED_PREEDGE
+        le_need(!li2_lifecycle_preedge_validate(&selected_borrow,&r->source,&selected_linked_epoch.scratch) &&
+#else
         le_need(!li2_lifecycle_link_validate(&selected_borrow,&r->source,&selected_linked_epoch.scratch) &&
+#endif
             le_quiet(&selected_borrow) && le_unchanged(&r->before,si,uc),LE_SOURCE,300);
         t->target_ready=1;ler.predecessor[slot]=t->old_generation;
         le_proof_writable(slot);le_zero(s,sizeof *s);
@@ -162,7 +166,11 @@ static void ler_quiesce(int sig,const siginfo_t *si,const ucontext_t *uc) {
         selected_pending_route==SELECTED_NO_STEP && !li2_lifecycle_fetch_interlock() &&
         selected_linked_epoch.entries==selected_linked_epoch.completed && r->completed==1 &&
         r->release_complete==1 && !r->release_result && r->close.complete==1 &&
+#ifdef LI2_LINKED_PREEDGE
+        r->closed_bytes==PAGE && r->epoch_final.phase==LI2_PREEDGE_RELEASED &&
+#else
         r->closed_bytes==PAGE && r->epoch_final.phase==LI2_LINK_RELEASED &&
+#endif
         r->epoch_final.release_complete==1 && !li2_lifecycle_link_interlock() && f && !f->held && f->complete && !f->first_error &&
         equal(f,&r->final_fetch,sizeof *f) && equal(r,&selected_linked_epoch.last,sizeof *r) &&
         sig==r->after.sig && le_identity() && le_quiet(0) && le_unchanged(&r->after,si,uc),LE_STATE,314);
@@ -188,7 +196,11 @@ static void ler_abort(void) {
        receive a completion permit or be dispatched/recycled. */
 }
 static void ler_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_LINKED_PREEDGE
+    struct writer w={.used=0};text(&w,"LI2_LINKED_PREEDGE_REUSE {\"version\":2");
+#else
     struct writer w={.used=0};text(&w,"LI2_LINKED_EPOCH_REUSE {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);
