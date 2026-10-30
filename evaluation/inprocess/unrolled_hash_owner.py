@@ -109,8 +109,9 @@ def compile_subject(builder,private,pin,binary,run,r):
 def observed_layout(builder,bridge,private,pin,binary,run,r):
     gdb=pin(shutil.which('gdb',path=ENV['PATH']));script=pin(OWNER/'layout.py')
     _,out,err=run('layout-gdb-version',[gdb,'--version'],env=builder.environment);need(out and not err,'actual GDB identity')
-    _,out,err=run('owner-layout',[gdb,'-nx','-nh','-batch','-ex','set auto-load off','-ex','set debuginfod enabled off',
-        '-ex','file '+str(bridge),'-ex','source '+str(script)],profile='inspect',env=builder.environment)
+    _,out,err=run('owner-layout',[gdb,'-q','-nx','-nh','-batch','-iex','set auto-load off','-iex','set debuginfod enabled off',
+        '-iex','set index-cache enabled off','-iex','maintenance set worker-threads 1','--readnow','--se='+str(bridge),'-x',script],
+        profile='inspect',env=dict(builder.environment,MALLOC_ARENA_MAX='1'))
     need(not err and out.endswith(b'\n')and out.count(b'\n')==1,'one actual bounded DWARF observation; no inferior execution')
     layout=json.loads(out);need(layout['record']=='uho_wire'and 0<layout['types']['uho_wire']['bytes']<4<<20,'actual retained owner wire')
     path=private/'owner-layout.json'
