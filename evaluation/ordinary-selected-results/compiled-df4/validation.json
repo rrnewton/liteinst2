@@ -1,0 +1,222 @@
+{
+  "schema": "selected-compiled-workspace-validation-v1",
+  "revision": "df4a9a5ec738105ccd305b0eacd49200a9e0c1e2",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "driver": "evaluation/short-neighbor-parallel/validate.py",
+  "driver_sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd",
+  "command": [
+    "/usr/bin/python3.9",
+    "-B",
+    "evaluation/short-neighbor-parallel/validate.py",
+    "--revision",
+    "df4a9a5ec738105ccd305b0eacd49200a9e0c1e2",
+    "--output",
+    "ignored/a3/selected-compiled-full-df4-v1"
+  ],
+  "environment": {
+    "HOME": "${USER_HOME}",
+    "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+    "RUSTC": "${TOOLCHAIN}/bin/rustc",
+    "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+    "CARGO_HOME": "${CARGO_HOME}",
+    "CARGO_TARGET_DIR": "${ROOT}/target",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TERM_COLOR": "never",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LITEINST_EVALUATION": "1",
+    "TMPDIR": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TEMP": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TMP": "${ROOT}/ignored/a3/adjacent-d01-temporary"
+  },
+  "test_threads": 316,
+  "build_jobs": 16,
+  "other_cargo_jobs": 4,
+  "reserved_cpus": [
+    10,
+    25,
+    33,
+    112,
+    126,
+    189,
+    197,
+    198,
+    239,
+    243,
+    245,
+    246,
+    251,
+    270,
+    298,
+    304
+  ],
+  "owner_wall_limit_seconds": 1200,
+  "workspace_wall_limit_seconds": 900,
+  "all_log_caps_bytes": 8388608,
+  "owner_wall_seconds": 1054.6399156269617,
+  "owner_receipt_sha256": "fb3929b2d85e60067d7782c68fae6498e318a5f715f17c106b870fe4d4fc1916",
+  "closed_stages_sha256": "75aaffaed4a70cd13187580144d9e1a68d03f0bc0faebb64a281e2dbafa51412",
+  "source_unchanged": true,
+  "all_process_closures": "exit 0, no termination, cleanup complete, zero rescued descendants",
+  "stages": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "start_utc": "2026-10-30T18:49:12.851905+00:00",
+      "wall_seconds": 9.551669568987563,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit": 0,
+      "load_before": [
+        47.9,
+        50.29,
+        51.27
+      ],
+      "load_after": [
+        49.34,
+        50.51,
+        51.33
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "start_utc": "2026-10-30T18:49:22.404535+00:00",
+      "wall_seconds": 3.4837409399915487,
+      "log_sha256": "e0f30f214e71715ba0044bbd7eba1e84fd5f7f7d6a7ec9638690c76ec6fa27af",
+      "exit": 0,
+      "load_before": [
+        49.34,
+        50.51,
+        51.33
+      ],
+      "load_after": [
+        49.08,
+        50.44,
+        51.3
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "start_utc": "2026-10-30T18:49:25.889154+00:00",
+      "wall_seconds": 18.09996240120381,
+      "log_sha256": "10839cea23cfba195f99fee642ef37c79edfc234d72617a5d35809f8d24cb3ee",
+      "exit": 0,
+      "load_before": [
+        49.08,
+        50.44,
+        51.3
+      ],
+      "load_after": [
+        51.29,
+        50.87,
+        51.43
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "start_utc": "2026-10-30T18:49:43.989796+00:00",
+      "wall_seconds": 895.8877332140692,
+      "log_sha256": "c505998a871ef8b8dbc21fb56298f721948722e3720b486f5ccb44c7945351ff",
+      "exit": 0,
+      "load_before": [
+        51.29,
+        50.87,
+        51.43
+      ],
+      "load_after": [
+        44.42,
+        70.55,
+        69.81
+      ],
+      "passed": 3996,
+      "failed": 0,
+      "ignored": 37,
+      "unfiltered_summaries": 110,
+      "nested_filtered_summaries_excluded": 3
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "start_utc": "2026-10-30T19:04:39.879635+00:00",
+      "wall_seconds": 127.53702801303007,
+      "log_sha256": "37739aec007c50b94d25286cc7022591a607841447872f64b67b50ec7e10c5d6",
+      "exit": 0,
+      "load_before": [
+        44.42,
+        70.55,
+        69.81
+      ],
+      "load_after": [
+        35.44,
+        58.01,
+        65.28
+      ],
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "unfiltered_summaries": 27,
+      "nested_filtered_summaries_excluded": 0
+    }
+  ],
+  "selected_regressions_passed": {
+    "short_neighbor": 21,
+    "observing_control": 8,
+    "rapid_mutated_window": 1,
+    "prefixed_pun_native": 1,
+    "whole_adc_native": 4,
+    "reported_exec_source_identity": 5,
+    "compiled_selected_native": 16,
+    "staged_drop_identity": 2
+  },
+  "counting": "Sum only the 110 unfiltered workspace summaries; exclude three filtered nested child summaries already covered by their parent tests. Serial launch has 27 unfiltered summaries. All 37 ignored test identities are unchanged from d696.",
+  "scope": "Correctness only; wall durations describe bounded validation, not performance. This receipt executed the exact revision above; later summary-only files are not a new executable revision.",
+  "owner_log_sha256": "9271b2651b9cd5a188efab6f8ed2a4d74aae7037ac8871b9ab99b7abba538365"
+}

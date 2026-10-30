@@ -1,0 +1,280 @@
+{
+  "schema": "selected-compiled-core-state-summary-v1",
+  "status": "FINITE_COMPILED_CORE_STATE_PASS",
+  "claim": 4,
+  "source": {
+    "executed_base": "8f78a0f877a2a313a4c20bb9f0547fbafd9287a7",
+    "executed_overlay_files": 6,
+    "exact_overlay_committed_as": "df4a9a5ec738105ccd305b0eacd49200a9e0c1e2",
+    "overlay_identity": "All and only six changed blobs match the executed overlay; this is not a claim that the run occurred after commit.",
+    "overlay_sha256": {
+      "evaluation/ordinary-selected-session/README.md": "a2d599743e91844043d798bb12e4d09a9e073e2db34e560a91832a00a0d93012",
+      "evaluation/ordinary-selected-session/STATE.md": "2d974ce1ef0c701f5671e00df135b6e45aa61e27c54a1ab715340da52da71c27",
+      "tests/compiled_selected_state_oracle.rs": "d37f4c237c1dde37e3bf3fa809f0eca9958cd9d3bdbe58cff2bb7dc7b007a513",
+      "tests/support/compiled_selected_fixtures.rs": "38fcc521c9f1ad553c1ad588292357c975321e0b0291bbcd55b54ad71c7a23ba",
+      "tests/support/compiled_selected_state.rs": "3451cc5f88607a83adc8b4f95aaeab59661ae9a295c70e5482f3db25581d5691",
+      "tests/support/quiescent_oracle.rs": "fe0396c4f94a1efdab3b66771edcc20702590c2c31fdc74bc0310ae60c2a15c4"
+    },
+    "source_unchanged": true
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "owner": {
+    "start_utc": "2026-10-30T18:47:47.662628+00:00",
+    "wall_seconds": 53.56080714100972,
+    "reserved_cpus": [
+      63,
+      85,
+      138,
+      147
+    ],
+    "load_before": [
+      "50.50",
+      "51.10",
+      "51.58"
+    ],
+    "load_after": [
+      "47.51",
+      "50.49",
+      "51.37"
+    ],
+    "attempts": 1,
+    "exit_code": 0,
+    "termination": null,
+    "cleanup_complete": true,
+    "rescued_descendants": 0,
+    "wall_limit_seconds": 1200,
+    "output_limit_bytes": 8388608,
+    "receipt_sha256": "2801706c976630a2145fd0cb36920edc6ed5c19faa175b5a71e738dc8f3b8778",
+    "raw_log_sha256": "e91141131b8bb37d147698ca55ea535f217fb856674ce9d8c2ebcc9dc4ec3e4d"
+  },
+  "execution": {
+    "cwd": "${ROOT}",
+    "historical_wrapper_argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "ignored/a3/selected-compiled-focused-v1/run.py"
+    ],
+    "historical_wrapper_sha256": "00f9bc6eff744f1e7e4df60b15410a274982871afa9f09b5b539d8b94a354b5a",
+    "phase_helper": "evaluation/admission/processes.py",
+    "phase_helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "environment": {
+      "HOME": "${USER_HOME}",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TERM_COLOR": "never",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "LITEINST_EVALUATION": "1",
+      "TMPDIR": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+      "TEMP": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+      "TMP": "${ROOT}/ignored/a3/adjacent-d01-temporary"
+    },
+    "phase_environment_additions": {
+      "RUST_TEST_THREADS": "316"
+    },
+    "phase_wall_limit_seconds": 300,
+    "phase_output_limit_bytes": 4194304,
+    "phases": [
+      {
+        "name": "compiled-native",
+        "status": "PASS",
+        "argv": [
+          "cargo",
+          "test",
+          "--test",
+          "compiled_selected_state_oracle",
+          "--",
+          "--nocapture"
+        ],
+        "environment_overrides": {},
+        "start_utc": "2026-10-30T18:47:47.713293+00:00",
+        "wall_seconds": 10.070998187176883,
+        "raw_log_sha256": "94c3675df6b8ee0e61b7423a829a73499effb47ce892bd88ae70cc197af638d8"
+      },
+      {
+        "name": "fmt",
+        "status": "PASS",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--check"
+        ],
+        "environment_overrides": {},
+        "start_utc": "2026-10-30T18:47:57.785481+00:00",
+        "wall_seconds": 9.590436111902818,
+        "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "clippy",
+        "status": "PASS",
+        "argv": [
+          "cargo",
+          "clippy",
+          "-p",
+          "liteinst2",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "environment_overrides": {},
+        "start_utc": "2026-10-30T18:48:07.376924+00:00",
+        "wall_seconds": 20.520010105799884,
+        "raw_log_sha256": "0b6a5e9254bd049afd852d4265fd1132b047fc721aad02b2d06322c551467a30"
+      },
+      {
+        "name": "msrv",
+        "status": "PASS",
+        "argv": [
+          "${MSRV_TOOLCHAIN}/bin/cargo",
+          "check",
+          "-p",
+          "liteinst2",
+          "--all-targets",
+          "--all-features"
+        ],
+        "environment_overrides": {
+          "RUSTC": "${MSRV_TOOLCHAIN}/bin/rustc",
+          "RUSTDOC": "${MSRV_TOOLCHAIN}/bin/rustdoc"
+        },
+        "start_utc": "2026-10-30T18:48:27.897682+00:00",
+        "wall_seconds": 13.316983907017857,
+        "raw_log_sha256": "583667a36854f51daef4e24a6a9c19f5ebb44278d62bfaf4c87b4babf64c7b6c"
+      }
+    ],
+    "all_phase_closures": {
+      "exit_code": 0,
+      "termination": null,
+      "cleanup_complete": true,
+      "rescued_descendants": 0
+    },
+    "closed_phases_sha256": "62fc549e24602bf21aa7085bfc4442afa7905fdd24ca3736a7cb9776e90a80cb",
+    "configuration": "Unoptimized test/dev profile, debug assertions and overflow checks enabled; no performance result. Exact Cargo argv and environment are recorded above."
+  },
+  "population": {
+    "unfiltered_tests_passed": 54,
+    "failed": 0,
+    "ignored": 0,
+    "filtered": 0,
+    "inherited_controls": 35,
+    "new_pure_controls": 3,
+    "new_isolated_native_cells": 16,
+    "functions": 2,
+    "masks_per_function": 8,
+    "input_literals": 12,
+    "fixed_state_seeds": [
+      "0x1234567887650000",
+      "0x1234567887650cd5"
+    ],
+    "comparisons_per_cell": 24,
+    "state_comparisons": 384,
+    "ordered_boundaries": 58576,
+    "mismatches": 0,
+    "decoded_heads": 33,
+    "reachable_heads": 30,
+    "unvisited_padding_heads": 3,
+    "return_sites": 4,
+    "attempts_per_cell": 1,
+    "retries": 0,
+    "nested_child_summary_credit": 0,
+    "contradictory_baseline_expectations_rejected": 8,
+    "cell_boundary_counts": {
+      "first_equal": 2712,
+      "uppercase_count": 4610
+    },
+    "population_receipt_sha256": "0bdbbb921658c66625ea5b0f667e7e2ecf6021d0391ad29d7161ed532ff69aae",
+    "cells_csv_sha256": "9a6cc028e812d2ab74f1d97588bb7e13eeddc27b1b419fc596ce92f0ce9ba6e2"
+  },
+  "unchanged_limits": {
+    "isolated_cpu_seconds": 20,
+    "isolated_wall_seconds": 30,
+    "oracle_child_wall_seconds": 15,
+    "oracle_max_steps": 20000,
+    "whole_extent_bytes": [
+      5,
+      80
+    ],
+    "allocation_candidates": 256,
+    "mappings_per_function": 1,
+    "mapped_bytes_per_function": 8192
+  },
+  "body_provenance": {
+    "release_source": "d6968c1a3a31428f332fc14577116362ccb9e281",
+    "public_build_recipe": "../../ordinary-selected-session/BUILD.md",
+    "products_receipt_sha256": "8a5c6b3c0f6ac6f8d0284e4f09379118438a88f90eec4caeff0b3c9c538f9788",
+    "leaves_so_sha256": "3d6eed6fecbfeeeb227cd9ee5b4c5ae92938d9bdd88f454a80a73f1c211d0980",
+    "stripped_so_sha256": "cc97222d7a0957001269ec15ffd3feb7ae9a3b1b870e32c5b46628bf54c2c504",
+    "shared_file_page_sha256": "627da7459f5220e69f01d57b56d0130d51f32c572969e1419e338ebfea01230c",
+    "prefix_103_bytes_sha256": "ecad7e7e9fba6729184c640dd733f2d6638b2720acde183e98ca611115bf58bc",
+    "bodies": [
+      {
+        "function": "first_equal",
+        "bytes": 41,
+        "relative_offset": 0,
+        "returns": [
+          34,
+          40
+        ],
+        "sha256": "2c4f7f6e7b02df081199d7f36200f7c0bdc5ed2b2d6b56e12cfd077cdaf24336"
+      },
+      {
+        "function": "uppercase_count",
+        "bytes": 55,
+        "relative_offset": 48,
+        "returns": [
+          40,
+          54
+        ],
+        "sha256": "f18223721c4efb789d62c2c1854e1a72b0f2f8737d5488f3b5f76cf475183a72"
+      }
+    ]
+  },
+  "scope": "Exact copied complete compiler bodies on one private source page shared by both functions, both whole-function plans published as one bundle. Six managed callback identities, complementary masks, exact callback order, full GPR/RFLAGS/xstate/data/stack/red-zone and code checks. MOV-only setup lies outside the leaves; no ordinary application caller or loaded DSO page is qualified.",
+  "not_claimed": [
+    "full selected-session SDK architectural state",
+    "actual loader/page lifetime",
+    "concurrent publication or asynchronous preemption",
+    "performance or CPU cost",
+    "general strict 2 ms timing qualification",
+    "arbitrary inputs, ABI, CET or compiler output"
+  ],
+  "separate_prior_evidence": {
+    "generic_adc_comparisons": 372,
+    "whole_adc_comparisons": 372,
+    "rerun_or_combined_with_this_population": false,
+    "source": "../whole-d696/receipt.json",
+    "certified_failures": [
+      "../initial-50e9/README.md",
+      "../adc-certified-43c9/README.md"
+    ],
+    "strict_2ms_history": "../../software-preemption-spsc/README.md: 1 PASS / 4 FAIL retained"
+  },
+  "review": {
+    "source_binding_sha256": "ac44723e6b58dc61c36daa173aee16b9542bb2b70f5845ced10d7f1748cf1582",
+    "focused_audit_binding_sha256": "4b122db09a829c1d12a0c503aaddc104693b4b59f89d4c6fd529d3331ff51777"
+  },
+  "full_workspace_validation": "Separate receipt; no result asserted here.",
+  "comparator_scope": "The unchanged oracle excludes debugger TF/RF flags and compares kernel-normalized canonical exposed xstate; all its other register, memory, stack and code guards remain exact.",
+  "toolchains": {
+    "stable": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "msrv": "1.85.0",
+    "compiler_bodies": "GCC 11.5.0, release flags recorded by the linked public build recipe"
+  }
+}
