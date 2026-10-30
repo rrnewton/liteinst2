@@ -403,8 +403,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 actual_owner=owner_reader.read(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'],control=control)
                 if current:adapter.case_summary(c,actual_owner)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader)
-                terminal,c['terminal']=reports.check(err,*terminal_args);r['terminal_reports'][label]=terminal
-                c['terminal_controls']=reports.controls(err,*terminal_args)
+                terminal,c['terminal']=(adapter.reports.check_current if current else reports.check)(err,*terminal_args);r['terminal_reports'][label]=terminal
+                c['terminal_controls']=(adapter.reports.controls_current if current else reports.controls)(err,*terminal_args)
                 c['owner_summary']=actual_owner['summary']
                 need(type(c['owner_summary'])is dict and c['owner_summary']and
                      all(type(k)is str and type(v)is int and 0<=v<1<<64 for k,v in c['owner_summary'].items()),

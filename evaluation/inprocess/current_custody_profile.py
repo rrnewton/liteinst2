@@ -20,8 +20,8 @@ SELECTED=ROOT/'tools/page-entry/selected'
 H=lambda b:hashlib.sha256(b).hexdigest()
 MASK=((1<<64)-1)^sum(1<<(s-1)for s in(4,5,9,11,19,31))
 EXTRAS=(('stale',1,False,125),('physical-fallback',0,True,0))
-CURRENT_CONTROL_COUNTS={(control,0,False):58 for control in range(8)}
-CURRENT_CONTROL_COUNTS.update({(0,1,False):50,(0,0,True):59})
+CURRENT_CONTROL_COUNTS={(control,0,False):60 for control in range(8)}
+CURRENT_CONTROL_COUNTS.update({(0,1,False):52,(0,0,True):61})
 REQUIRED={
     'evaluation/inprocess/current_custody_profile.py',
     'evaluation/inprocess/current_custody_reports.py',
@@ -254,8 +254,8 @@ def extras(driver,builder,private,pin,binary,run,r,reader,owner_reader,original,
             owner=owner_reader.read(record,layout,image,parsed,row['pid'],r['cpu'],expected,
                 control=0,current_control=control,fallback=fallback)
             args=(row['pid'],expected,row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,owner,owner_reader)
-            terminal,c['terminal']=reports.check(err,*args);r['terminal_reports'][label]=terminal
-            c['terminal_controls']=reports.controls(err,*args)
+            terminal,c['terminal']=reports.check_current(err,*args);r['terminal_reports'][label]=terminal
+            c['terminal_controls']=reports.controls_current(err,*args)
             need(len(c['terminal_controls']['refusals'])==(35 if fallback else 33),
                  'all fixed additional terminal refusals')
             need(0 in native_records,'independent original mode0 reference required for both additional cases')
@@ -304,6 +304,10 @@ def complete(r,owner_reader):
     need(len(cases)==18 and set(CURRENT_CONTROL_COUNTS)=={key(c)for c in cases},
          'exact eighteen protected-record control populations')
     for c in cases:
+        terminal=c['terminal_controls'];names=terminal['current_row_refusals']
+        need(len(names)==len(set(names))==reports.CURRENT_ROW_REFUSALS==26 and terminal['native_operations']==0 and
+             terminal['original_stderr_sha256']==c['captures']['stderr']['sha256'],
+             'all26 current-row refusals bind each whole actual stderr stream')
         controls=c['owner_reader_controls'];expected=CURRENT_CONTROL_COUNTS[key(c)]
         need(len(controls['current_refusals'])==len(set(controls['current_refusals']))==expected and
              controls['native_operations']==0,
@@ -313,8 +317,10 @@ def complete(r,owner_reader):
              'all29 unchanged old-record refusals remain separate on the additional physical fallback')
         if c.get('current_control',0)or c.get('physical_fallback',False):
             need(controls['refusals']==[],'additional subjects do not inflate the original472 control population')
-    need(sum(len(c['owner_reader_controls']['current_refusals'])for c in cases)==1037,
-         'all1037 separately counted appendix refusals')
+    need(sum(len(c['terminal_controls']['current_row_refusals'])for c in cases)==468,
+         'all468 current-row refusals in addition to original542 and extra68')
+    need(sum(len(c['owner_reader_controls']['current_refusals'])for c in cases)==1073,
+         'all1073 separately counted appendix refusals')
     need(sum(c['current_prefix']['native_frames']for c in r['cases']if c['lane']=='native')==36 and
          sum(c['current_prefix']['runtime_frames']for c in cases)==70 and
          all(c['launched']is True for c in r['current_cases']),
@@ -322,7 +328,7 @@ def complete(r,owner_reader):
     r['current_qualification']=dict(status='passed',planned=27,launched=27,native=9,original_gated=16,
         extra_gated=2,native_prefix_frames=36,protected_prefix_frames=70,stale_refusals=1,physical_fallbacks=1,
         prefix_application_refusals=150,extra_application_refusals=26,extra_terminal_refusals=68,
-        appendix_refusals=1037,extra_legacy_owner_refusals=29,compiled_storage_objects=9,compiled_storage_refusals=44,
+        appendix_refusals=1073,current_terminal_refusals=468,extra_legacy_owner_refusals=29,compiled_storage_objects=9,compiled_storage_refusals=44,
         performance_credit=False)
 
 
@@ -335,6 +341,7 @@ def project(public,r):
             'status','launched','exit','whole_process_ns','timed_out','error_type','current_prefix','current_summary')if k in c}
         row.update(application_control_count=c.get('application_controls',{}).get('supplied_refusals',0),
             terminal_control_count=len(c.get('terminal_controls',{}).get('refusals',[])),
+            current_terminal_control_count=len(c.get('terminal_controls',{}).get('current_row_refusals',[])),
             owner_control_count=len(c.get('owner_reader_controls',{}).get('current_refusals',[])))
         rows.append(row)
     public['current_custody']=dict(qualification=r['current_qualification'],cases=rows,

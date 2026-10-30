@@ -132,11 +132,38 @@ def extent(name):
                 source=symbol.symtab.fullname(), fields=fields)
 
 
+# Exact byte registrations selected by this profile's unchanged initialization.
+# These witnesses are distinct from the nine maps/current storage observations.
+REGISTERED={
+    'selected_run_owner':('selected_globals.inc','li2_run_owner'),
+    'selected_run_history':('selected_globals.inc','li2_run_completion_history'),
+    'cache':('register_run_publish.c','li2_run_cache'),
+    'selected_repeat_lease':('selected_globals.inc','li2_repeat_lease_owner'),
+    'selected_session':('selected_globals.inc','li2_step_session'),
+    'rep_custody':('repeat_custody.inc',None),
+    'rep_custody_stats':('repeat_custody.inc','li2_repeat_custody_observation'),
+    'selected_unrolled':('selected_unrolled_hash.inc',None),
+    'uho_wire':('unrolled_hash_observe.inc','uho_wire'),
+    'cto_wire':('current_tf_observe.inc','cto_wire'),
+}
+
+def registered_extent(name):
+    s=symbol(name);t=s.type.strip_typedefs()
+    need(s.is_variable and s.symtab is not None and t.code==gdb.TYPE_CODE_STRUCT,
+         'actual registered structure and declaring source')
+    address,size,alignment=int(s.value().address),int(t.sizeof),align(t)
+    need(0<address and 0<size<16<<20 and alignment<=4096 and address%alignment==0,
+         'complete actual registered byte extent')
+    return dict(address=address,bytes=size,alignment=alignment,tag=t.tag,
+                source=s.symtab.fullname())
+
+
 symbols = {s: offset(s) for s in ('cto_wire', 'uho_wire', 'selected_chain', 'selected_unrolled',
     'selected_session', 'protected', 'li2_raw6', 'li2_gateway_start', 'li2_gateway_end')}
 print(json.dumps(dict(record='cto_wire', types=types, edges=edges, member_witnesses=witnesses,
     old_bytes=int(old_record.type.sizeof), symbols=symbols,
     storage=dict(version=1, symbols={name: extent(name) for name in NAMES}),
+    registrations={name:registered_extent(name) for name in REGISTERED},
     uc_bytes=int(gdb.lookup_type('ucontext_t').sizeof),
     uc=dict(offsets={k:offset(v) for k,v in uc.items()}, widths={k:width(v) for k,v in uc.items()}),
     si=dict(bytes=int(gdb.lookup_type('siginfo_t').sizeof),

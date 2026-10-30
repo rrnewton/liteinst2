@@ -8,12 +8,24 @@ old=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(old)
 need,zero,q=old.need,old.zero,old.q
 PAGE=4096
 NAMES=('maps_current','mct_physical_receipt','mct_physical_id','rx_current','rx_current_busy','cc','cc_candidate','cc_serial','cc_stats')
+REGISTERED={
+    'selected_run_owner':('selected_globals.inc','li2_run_owner'),
+    'selected_run_history':('selected_globals.inc','li2_run_completion_history'),
+    'cache':('register_run_publish.c','li2_run_cache'),
+    'selected_repeat_lease':('selected_globals.inc','li2_repeat_lease_owner'),
+    'selected_session':('selected_globals.inc','li2_step_session'),
+    'rep_custody':('repeat_custody.inc',None),
+    'rep_custody_stats':('repeat_custody.inc','li2_repeat_custody_observation'),
+    'selected_unrolled':('selected_unrolled_hash.inc',None),
+    'uho_wire':('unrolled_hash_observe.inc','uho_wire'),
+    'cto_wire':('current_tf_observe.inc','cto_wire'),
+}
 
 
 class Reader(old.Reader):
     def __init__(self,data,layout,legacy):
         self.data,self.layout,self.types=data,layout,layout['types'];self.padding={}
-        need(set(layout)=={'record','types','edges','member_witnesses','old_bytes','symbols','storage','uc_bytes','uc','si'} and layout['record']=='cto_wire','exact actual appendix metadata')
+        need(set(layout)=={'record','types','edges','member_witnesses','old_bytes','symbols','storage','registrations','uc_bytes','uc','si'} and layout['record']=='cto_wire','exact actual appendix metadata')
         need(layout['old_bytes']==legacy.types['uho_wire']['bytes'] and all(layout[k]==legacy.layout[k] for k in ('uc','uc_bytes','si')),'same compiled old extent and complete signal ABI')
         need(layout['member_witnesses']=={'li2_step_frame.fp':legacy.layout['member_witnesses']['li2_step_frame.fp']},'actual reachable aligned FP witness')
         need(set(layout['symbols'])=={'cto_wire','uho_wire','selected_chain','selected_unrolled','selected_session','protected','li2_raw6','li2_gateway_start','li2_gateway_end'} and all(type(v)is int and v>0 for v in layout['symbols'].values()),'complete actual emitted symbols')

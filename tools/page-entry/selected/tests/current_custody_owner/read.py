@@ -34,11 +34,12 @@ def elf_image(data):
         n,info,other,section,address,size=struct.unpack('<IBBHQQ',take(at,24))
         need(n<len(names) and b'\0'in names[n:],'complete symbol name')
         name=names[n:names.index(b'\0',n)].decode()
-        if name in wire.NAMES:
-            need(name not in symbols and info==1 and other==0 and 0<section<len(sections) and 0<size<=1<<20,'unique local storage definition')
+        if name in wire.NAMES or name in wire.REGISTERED:
+            need(name not in symbols and info==1 and other==0 and 0<section<len(sections) and
+                 0<size<16<<20 and (name not in wire.NAMES or size<=1<<20),'unique local storage definition')
             s=sections[section];need(s[1]in(1,8) and s[2]==3 and s[3]<=address and address+size<=s[3]+s[5]<=U64,'complete nonexecuting storage section')
             symbols[name]=(address,size)
-    need(set(symbols)==set(wire.NAMES),'all nine actual object symbols')
+    need(set(symbols)==set(wire.NAMES)|set(wire.REGISTERED),'all nine storage and ten registered actual object symbols')
     return h,ph,symbols
 
 
@@ -64,12 +65,39 @@ class Check(old.Check):
         ranges=self.r.items(b,t,'ranges','li2_fork_range');kinds=self.f(b,t,'initial_code');zero(kinds,'this distinct build has no initial-code exception')
         for value in ranges[count:]:zero(value,'whole unused protected row')
         for value in ranges[:count]:
-            a,z=self.v(value,'li2_fork_range','first end');need(canonical(a,z-a) and a%PAGE==z%PAGE==0,'whole actual protected range')
+            a,z=self.v(value,'li2_fork_range','first end');need(canonical(a,z-a),'whole actual protected byte interval')
         image=self.f(b,t,'bridge');eh,ph,symbols=elf_image(self.image['current_bridge'])
         self.eq(image,'image',bias=self.bias,entry=self.bias+eh[4],n=len(ph),source=0,source_size=0,backing_fd=(1<<32)-1,kind=3)
         zero(self.f(image,'image','source_hash'),'runtime bridge has no invented original-file hash')
         need(canonical(self.i(image,'image','ph'),len(ph)*56),'actual runtime program header pointer')
         need(self.f(b,t,'ph')==b''.join(struct.pack('<IIQQQQQQ',*p)for p in ph)+bytes((32-len(ph))*56),'every actual program header and complete unused tail')
+        # protect()/selected_run_protect_add() record exact byte intervals for
+        # these ten source-selected objects; only image/arena rows are rounded.
+        declarations=self.r.layout['registrations']
+        need(type(declarations)is dict and set(declarations)==set(wire.REGISTERED),'all and only actual registered object witnesses')
+        object_ranges=[]
+        actual_ranges=[self.v(x,'li2_fork_range','first end')for x in ranges[:count]]
+        for name,(source,tag)in wire.REGISTERED.items():
+            d=declarations[name];at,size=symbols[name]
+            need(type(d)is dict and set(d)=={'address','bytes','alignment','tag','source'} and
+                 all(type(d[k])is int for k in ('address','bytes','alignment')) and
+                 (d['tag']is None if tag is None else type(d['tag'])is str and d['tag']==tag) and
+                 type(d['source'])is str and d['source'].endswith('/tools/page-entry/selected/'+source),
+                 'actual source-selected registration declaration '+name)
+            alignment=d['alignment'];first,end=self.bias+at,self.bias+at+size
+            need(d['address']==at and d['bytes']==size and 0<alignment<=PAGE and
+                 not alignment&(alignment-1) and at%alignment==0 and first%alignment==0 and canonical(first,size),
+                 'actual registered ELF and DWARF byte extent '+name)
+            owners=[p for p in ph if p[0]==1 and p[6] and self.bias+p[3]<end and first<self.bias+p[3]+p[6]]
+            need(len(owners)==1 and owners[0][1]==6 and owners[0][5]<=owners[0][6] and
+                 canonical(self.bias+owners[0][3],owners[0][6]) and
+                 self.bias+owners[0][3]<=first<end<=self.bias+owners[0][3]+owners[0][6],
+                 'whole registered object inside one actual RW/NX load')
+            need(actual_ranges.count((first,end))==1,'whole registered object equals actual symbol/DWARF extent')
+            object_ranges.append((first,end))
+        need(len(set(object_ranges))==len(wire.REGISTERED),'distinct actual registered objects')
+        need(all(a%PAGE==z%PAGE==0 or (a,z)in object_ranges for a,z in actual_ranges),
+             'every non-page protected row is one exact source-selected object')
         storage=self.r.items(b,t,'storage','li2_cto_storage');loads=integers(self.f(b,t,'load_indices'));indices=integers(self.f(b,t,'range_indices'))
         need(integers(self.f(b,t,'intersects'))==(1,)*9,'all actual private-intersects observations')
         metadata=self.r.layout['storage'];need(set(metadata)=={'version','symbols'} and type(metadata['version'])is int and metadata['version']==1 and set(metadata['symbols'])==set(wire.NAMES),'exact compiled storage metadata')
@@ -457,6 +485,11 @@ class Check(old.Check):
             need(self.v(self.f(self.cto,'cto_wire','joined_counts'),'li2_current_custody_stats',' '.join(COUNTERS))==self.v(self.f(latest['raw'],'cto_snapshot','counts'),'li2_current_custody_stats',' '.join(COUNTERS)),'no hidden current-custody stages between prefix and hash')
         result=dict(rows=self.samples,tls_origin=self.tls_origin,fallback=self.fallback,current_control=self.current_control,summary=dict(ingresses=h[8],completed_handlers=h[9],stale_injected=h[10],joined_hash=h[15],runtime_storage_objects=9,initial_protected_ranges=a[0],terminal_protected_ranges=b[0],current_stages=0 if self.fallback else 1,retained_stages=0 if self.fallback or stale else 2,physical_fallbacks=int(self.fallback),completed_prefix=int(not stale)),terminal_chain=terminal)
         result['terminal_chain_expected']=chain_report(self.r,terminal,expected)
+        counts=self.f(self.cto,'cto_wire','terminal_counts');ct='li2_current_custody_stats'
+        detail=self.i(counts,ct,'first_detail');negative=int(detail>>63)
+        result['terminal_current_expected']=dict(version=1,status=h[12],failure_code=h[13],
+            **{k:self.i(counts,ct,k)for k in COUNTERS},first_error=self.i(counts,ct,'first_error'),
+            first_detail_abs=(-detail)&U64 if negative else detail,first_detail_negative=negative)
         return result
 
 
@@ -520,8 +553,8 @@ def chain_report(r,b,outcome):
 
 # Sixteen original gated records (nine control0 plus controls1..7), then two
 # distinct additions. The old472 mutations still run on the original old slices.
-CURRENT_CONTROL_COUNTS={(k,0,False):58 for k in range(8)}
-CURRENT_CONTROL_COUNTS.update({(0,1,False):50,(0,0,True):59})
+CURRENT_CONTROL_COUNTS={(k,0,False):60 for k in range(8)}
+CURRENT_CONTROL_COUNTS.update({(0,1,False):52,(0,0,True):61})
 
 
 def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,current_control=0,fallback=False):
@@ -546,6 +579,20 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,current_contr
     add('actual_bridge_program_header',[('initial_registry',None,'cto_registry'),('ph',0,'Elf64_Phdr'),('p_flags',None,None)])
     add('actual_strict_range',[('initial_registry',None,'cto_registry'),('ranges',0,'li2_fork_range'),('end',None,None)])
     add('actual_terminal_range_count',[('terminal_registry',None,'cto_registry'),('count',None,None)])
+    # Both captured copies change coherently: append-only equality remains true,
+    # so each refusal exercises the exact symbol/DWARF registration boundary.
+    registry=layout['current']['registrations']['uho_wire']
+    old_bias=q(lr.field(lr.data[:-64],'uho_wire','h'))[9]-layout['old']['symbols']['li2_raw6']
+    registered_first=old_bias+registry['address'];registered_end=registered_first+registry['bytes']
+    registered_indices=[]
+    for field in ('initial_registry','terminal_registry'):
+        r_at=where([(field,None,'cto_registry')]);r_type=types['cto_registry']['fields']
+        count=int.from_bytes(appendix[r_at+r_type['count']['offset']:r_at+r_type['count']['offset']+4],'little')
+        matches=[i for i in range(count)if struct.unpack_from('<QQ',appendix,r_at+r_type['ranges']['offset']+i*16)==(registered_first,registered_end)]
+        need(len(matches)==1,'actual registered control witness');registered_indices.append((field,matches[0]))
+    for member in ('first','end'):
+        tests.append(('coherent_registered_'+member,[where([(field,None,'cto_registry'),('ranges',index,'li2_fork_range'),(member,None,None)])for field,index in registered_indices],1))
+
     add('initial_actual_memory',[('initial_memory',None,'li2_uho_memory'),('data',None,None)])
     add('initial_actual_tls',[('tls_origin',None,'uh_frame'),('fs',None,None)])
     tests.extend([('footer_status',[len(appendix)-16],1),('footer_extent',[len(appendix)-48],1)])
@@ -593,6 +640,7 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,current_contr
         except ValueError as error:
             if name.endswith('_coherent_AF'):need(str(error)=='complete prefix signal-origin envelope','coherent UC/GREG mutation reaches exact full-flags predicate')
             if name=='coherent_return_AF':need(str(error)=='whole same-event frame exact except prescribed TF/RF','coherent returned flags reach exact same-event comparator')
+            if name.startswith('coherent_registered_'):need(str(error)=='whole registered object equals actual symbol/DWARF extent','coherent range mutation reaches exact registration-boundary predicate')
             rejected=True
         need(rejected,'complete appended reader refuses supplied '+name);names.append(name)
     if fallback:
