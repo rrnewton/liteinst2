@@ -43,8 +43,8 @@ def prerequisites(a,r,pin,binary):
     reuse.prerequisites(a,r,pin,binary)
     custody.prerequisites(a,r,pin,binary)
     r['prerequisites']['span_component']=span.span_component(a,r,pin,binary)
-    r['prerequisites']['linked_epoch']=qualification.prerequisite(a.linked_epoch_receipt,r,pin,binary)
-    need(r['prerequisites']['linked_epoch']['profile']=='linked-epoch-finite-v2',
+    r['prerequisites']['linked_epoch']=qualification.prerequisite(a.linked_epoch_receipt,r,pin,binary,**(dict(native_hint=True)if a.native_hint else{}))
+    need(r['prerequisites']['linked_epoch']['profile']==('linked-epoch-native-hint-v3'if a.native_hint else'linked-epoch-finite-v2'),
          'only complete23 including actual retry witness and all four required helper failures')
     need(set(r['prerequisites'])=={'component','owner','region_decoder','region_component',
         'reuse_owner','current_component','current_owner','span_component','linked_epoch'},
@@ -68,7 +68,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
         root=private/lane;root.mkdir();roots[lane]=root;state=r['release_builds'][lane]={}
         def labelled(name,argv,**kwargs):return run(lane+'-'+name,argv,**kwargs)
         bridges[lane]=build_bridge(selected,linked_products,root,pin,binary,aliases,labelled,state,
-                                  ('MAPS_DIFFERENTIAL',)if lane=='differential'else())
+                                  ('MAPS_DIFFERENTIAL',)if lane=='differential'else(),**(dict(native_hint=True)if a.native_hint else{}))
         built=state['release_build'];qualified=r['prerequisites']['linked_epoch']
         need(built['archive']==qualified['archive']==r['linked_archive']and built['capture_config']is None,
              'same actual qualified linked archive, without protected capture instrumentation')
@@ -111,8 +111,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,a,builders):
             else:
                 pair.namespace_join(s,ns,binary,r,namespace)
                 args=(row['pid'],row['exit'],row['stdout_provenance_before'],s['images'],s['image_bytes'],fact(s['carrier']),s['carrier_bytes'])
-                observed=reports.check(out,err,args,kind,lane)
-                controls=reports.controls(out,err,args,kind,lane)
+                observed=reports.check(out,err,args,kind,lane,**(dict(native_hint=True)if a.native_hint else{}))
+                controls=reports.controls(out,err,args,kind,lane,**(dict(native_hint=True)if a.native_hint else{}))
                 r['terminal_reports'][name]=observed;r['reader_controls'][name]=controls
                 case.update(observed=observed)
             case['status']='passed'
@@ -142,6 +142,7 @@ def publish(path,r,private):
         'signals.'+k for k in('SEGV','TRAP','ILL','SYS','other')]+['physical_fresh_maps']+['native.'+k for k in native_fields]+[
         'linked_refused.'+k for k in('unsupported','boundary','graph','relocation')]+[
         'first_admission_ns','admission_revisit_samples','admission_revisit_sum_ns']
+    if r.get('native_hint',False):columns+=['linked.graph_refaults']+['hint.'+k for k in reports.fixture.HINT_KEYS]
     rows=[]
     for c in r['cases']:
         observed=c.get('observed',{});view=observed.get('maps_view',{});linked=observed.get('linked',{})
@@ -150,6 +151,7 @@ def publish(path,r,private):
             linked.get('signals',[None]*5)+[view['refreshes']+view['comparisons']if view else None]+[native.get(k)for k in native_fields]+
             linked.get('refusals',[None]*4)+[timing.get('first_admission_ns'),timing.get('revisit_count'),
                 sum(timing['revisit_ns'])if timing else None])
+        if r.get('native_hint',False):rows[-1]+=[linked.get('graph_refaults')]+[observed.get('native_hint',{}).get(k)for k in reports.fixture.HINT_KEYS]
     stream=io.StringIO(newline='');writer=csv.writer(stream,lineterminator='\n');writer.writerow(columns);writer.writerows(rows)
     data=stream.getvalue().encode();complete=r['status']=='passed'and r['source_unchanged']and r['cleanup_complete']and not r['final_errors']and len(r['cases'])==62 and all(c['status']=='passed'for c in r['cases'])
     stats={}
@@ -181,6 +183,7 @@ def publish(path,r,private):
         timing_scope='Actual pre-Popen through reap, including startup and reports. Ten samples per ordinary lane/workload; medians and inclusive IQR only after all62 and final closure pass. DIFF and DR identity diagnostics have no timing credit.',
         count_scope='Actual terminal counters; physical fresh maps=refreshes+comparisons. Native/DR have no invented event counts. Entries are not inferred instruction counts or saved traps.',
         tool_versions={k:v.get('numeric_versions')for k,v in(('default',r.get('build',{})),('linked',r.get('linked_build',{}).get('build',{})))})
+    if r.get('native_hint',False):value['qualification_scope']='Distinct native-hint linked release profile after all26 protected finite subjects and the other eight same-source/CPU mechanism prerequisites. Hints select a fresh actual NX retry only; all old native checks remain. Failed baseline23/62/82 results remain failed. This is not unrestricted application support.'
     text=json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
     need(len(text.encode())<=96<<10 and len(data)<=32<<10 and not any(x and len(x)>1 and(x in text or x in stream.getvalue())for x in
         (str(ROOT),str(Path.home()),platform.node(),'/home/')),'bounded public numeric summary, no private paths or logs')
@@ -193,6 +196,7 @@ def main():
     ap.add_argument('--expect-revision',required=True)
     for key in RECEIPTS:ap.add_argument('--'+key.replace('_','-'),type=Path,required=True)
     ap.add_argument('--sdk',type=Path,required=True)
+    ap.add_argument('--native-hint',action='store_true',help='distinct hint profile; requires complete finite26')
     a=ap.parse_args();extra_builders=[];order=ORDER;names=NAMES
     for key in RECEIPTS:
         path=getattr(a,key).resolve(strict=True).relative_to(ROOT)
@@ -205,7 +209,7 @@ def main():
     a.component_receipt=a.component_receipt.resolve().relative_to(ROOT);a.owner_receipt=a.owner_receipt.resolve().relative_to(ROOT)
     need(all(p.parent==Path('evaluation/inprocess/results')and p.suffix=='.json'for p in(a.component_receipt,a.owner_receipt)),'public qualification receipts inside evaluation results')
     os.chdir(ROOT);cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-linked-epoch-performance-'+a.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem
+    stem=stamp+('-linked-epoch-native-hint-performance-'if a.native_hint else'-linked-epoch-performance-')+a.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem
     private.mkdir(parents=True,mode=0o700);public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique public receipt')
     bounds=dict(BUILD_PROFILES,**BOUNDS,finite=[5,512<<20,16<<20,15])
     bounds['program_dr']=[30,16<<30,16<<20,60]
@@ -216,6 +220,9 @@ def main():
         finite_cases=[dict(mode=i,expected_exit=exit,status='not_run',qualified_case=0,supplied_return_control=(i==4),performance_credit=False)for i,exit in enumerate((0,125,125,125,125,0))],
         reproduce=['python3','evaluation/inprocess/linked_epoch_performance.py','--expect-revision',a.expect_revision,'--component-receipt',str(a.component_receipt),'--owner-receipt',str(a.owner_receipt)])
     r['reproduce']+=reproduce(a)
+    if a.native_hint:
+        r.update(native_hint=True,profile='linked-epoch-native-hint-performance-v1')
+        r['reproduce'].append('--native-hint')
     def pin(path,want=None):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);f=fact(p)
         need(want is None or f=={k:want[k]for k in('bytes','sha256')},'exact requested input bytes')
@@ -284,6 +291,7 @@ def main():
         prerequisites(a,r,pin,binary)
         r['reproduce']=['python3','evaluation/inprocess/linked_epoch_performance.py','--expect-revision',a.expect_revision,'--component-receipt',str(a.component_receipt.resolve().relative_to(ROOT)),'--owner-receipt',str(a.owner_receipt.resolve().relative_to(ROOT))]
         r['reproduce']+=reproduce(a)
+        if a.native_hint:r['reproduce'].append('--native-hint')
         products=builder.prepare();r['archive']=fact(products['archive'])
         maps.finite(builder,private,pin,binary,aliases,run,r)
         cohort(builder,products,private,pin,binary,aliases,run,r,a,extra_builders)

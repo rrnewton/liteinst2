@@ -20,20 +20,23 @@ LINKED_CONTROL_COUNT=121
 REFAULT_CONTROL_COUNT=3
 CACHE_CONTROL_COUNT=10
 CONTROL_COUNTS=dict(ls=371,true=529)
+HINT_CONTROL_COUNT=41
+HINT_CONTROL_COUNTS=dict(ls=412,true=570)
 CURRENT_CONTROL_COUNT=26
 CHAIN_CONTROL_COUNT=11
 SUPPLIED_LEASE_CONTROL_COUNT=2
 
 
 def chain_completed(loader,c,span):
+    graph=span.get('graph_refaults',0)
     need(all(c[k]==span[k]==loader[k]==0 for k in
          ('status','failure_code','detail_abs','detail_negative'))and
          c['pending']==c['error']==c['unexpected']==c['proof_valid']==0 and
          c['attempts']==c['steps']==c['nx_entries']+c['trace_entries']>0 and
          c['sequence']==c['trace_entries']>0 and
-         span['offers']==span['closed']==span['entries']+span['resumed']+span['refaults'] and
+         span['offers']==span['closed']==span['entries']+span['resumed']+span['refaults']+graph and
          span['entries']==span['completed']>0 and
-         c['nx_entries']==c['fallbacks']+span['entries']+span['refaults'] and
+         c['nx_entries']==c['fallbacks']+span['entries']+span['refaults']+graph and
          c['nx_entries']<=loader['nx_faults'],
          'release TRACE exact consumed-span segment partition')
     need(c['trace_entries']+c['fallbacks']<=c['preparations']<=2*(c['trace_entries']+c['fallbacks']),
@@ -134,8 +137,10 @@ def current_linked(row):
         need(c==expected,'entire final linked non-entry prefix is canonical and owns no generated execution')
 
 
-def completed(row,retirement):
-    fixture.refault_completed(row)
+def completed(row,retirement,*,hint=None):
+    graph=row["graph_refaults"]if hint is not None else 0
+    if hint is None:fixture.refault_completed(row)
+    else:fixture.hint_refault_completed(row,hint)
     need(row['status']==row['failure_code']==row['detail_abs']==row['detail_negative']==row['first_error']==
          row['active']==row['busy']==row['decoding']==row['closing']==row['resuming']==row['unexpected']==0 and
          row['initialized']==1 and retirement['status']==retirement['failure_code']==retirement['detail_abs']==
@@ -144,8 +149,8 @@ def completed(row,retirement):
     need(row['events']==sum(row['signals'])>0 and all(row['signals'][i]>0 for i in (0,1,2))and
          row['signals'][3:]==[0,0],'complete actual linked handler population')
     need(0<row['used']==min(row['publications'],64) and
-         row['offers']==row['closed']==row['candidates']==row['entries']+row['resumed']+row['refaults'] and
-         row['resumed']+row['refaults']==row['hash_misses']+row['source_misses']+row['plan_misses']+row['capacity_misses'] and
+         row['offers']==row['closed']==row['candidates']==row['entries']+row['resumed']+row['refaults']+graph and
+         row['resumed']+row['refaults']+graph==row['hash_misses']+row['source_misses']+row['plan_misses']+row['capacity_misses'] and
          row['plan_misses']==sum(row['refusals']) and
          row['entries']==row['publications']+row['hits']==row['completed']==sum(row['exit_indices']) and
          row['plan_checks']==row['publications']+retirement['retirement_attempts'] and
@@ -169,11 +174,13 @@ def completed(row,retirement):
          'actual final one-use TRACE transfer has a newer borrow and exactly consumed, resumed or refaulted terminal state')
 
 
-def check(stdout,stderr,args,kind,lane):
+def check(stdout,stderr,args,kind,lane,*,native_hint=False):
     need(lane in('linked','differential'),'explicit genuine-TRACE linked release profile')
-    linked,retirement,suffix=fixture.split(stderr)
+    need(type(native_hint)is bool,'literal release advisory profile')
+    if native_hint:linked,retirement,hint,suffix=fixture.split_hint(stderr)
+    else:linked,retirement,suffix=fixture.split(stderr)
     current_row,scalar_suffix=current.split_current(suffix)
-    current_completed(current_row);completed(linked,retirement)
+    current_completed(current_row);completed(linked,retirement,**(dict(hint=hint)if native_hint else{}))
     parsed,summary,view,unrolled,prior,prior_retirement=scalar.check(
         stdout,scalar_suffix,args,kind,'differential'if lane=='differential'else'scalar-reuse',
         cache_completed=cache_reports.completed,
@@ -185,16 +192,20 @@ def check(stdout,stderr,args,kind,lane):
     need(linked['events']==prior['events']==unrolled['events']and
          linked['signals']==prior['signals']==unrolled['signals'],
          'all successful linked and old preentry observers saw the same complete handler population')
-    return dict(parsed=parsed,summary=summary,maps_view=view,unrolled=unrolled,
+    if native_hint:fixture.hint_native(linked,hint,parsed)
+    result=dict(parsed=parsed,summary=summary,maps_view=view,unrolled=unrolled,
         scalar=prior,scalar_reuse=prior_retirement,current_tf=current_row,
         linked=linked,linked_reuse=retirement)
+    if native_hint:result['native_hint']=hint
+    return result
 
 
-def controls(stdout,stderr,args,kind,lane):
-    observed=check(stdout,stderr,args,kind,lane)
+def controls(stdout,stderr,args,kind,lane,*,native_hint=False):
+    observed=check(stdout,stderr,args,kind,lane,native_hint=native_hint)
     parsed,unrolled,prior,current_row,linked,retirement=(observed[k]for k in
         ('parsed','unrolled','scalar','current_tf','linked','linked_reuse'))
-    _,_,without_linked=fixture.split(stderr)
+    if native_hint:_,_,_,without_linked=fixture.split_hint(stderr)
+    else:_,_,without_linked=fixture.split(stderr)
     _,without_current=current.split_current(without_linked)
     inherited=scalar.controls(stdout,without_current,args,kind,
         'differential'if lane=='differential'else'scalar-reuse',
@@ -231,11 +242,14 @@ def controls(stdout,stderr,args,kind,lane):
     row=dict(linked);del row['first_error'];changed('linked_missing_key',fixture.PREFIX,row)
     row=dict(linked);row['extra']=0;changed('linked_extra_key',fixture.PREFIX,row)
     changed('linked_key_order',fixture.PREFIX,dict(reversed(list(linked.items()))))
-    trials.append(('linked_duplicate_key',b'\n'.join(lines[:-1])+b'\n'+lines[-1][:-1]+b',"version":1}\n'))
-    for prefix,name,line in ((fixture.PREFIX,'linked',lines[-1]),(fixture.REUSE_PREFIX,'linked_reuse',lines[-2])):
+    tail=3 if native_hint else 2;linked_at=len(lines)-tail+1
+    duplicate=list(lines);duplicate[linked_at]=duplicate[linked_at][:-1]+b',"version":1}'
+    trials.append(('linked_duplicate_key',b'\n'.join(duplicate)+b'\n'))
+    for prefix,name,line in ((fixture.PREFIX,'linked',lines[-tail+1]),(fixture.REUSE_PREFIX,'linked_reuse',lines[-tail])):
         trials.extend([(name+'_missing_row',b'\n'.join(x for x in lines if not x.startswith(prefix))+b'\n'),
                        (name+'_duplicate_row',stderr+line+b'\n')])
-    trials.extend([('linked_row_order',b'\n'.join(lines[:-2]+[lines[-1],lines[-2]])+b'\n'),
+    order=list(lines);order[-tail],order[-tail+1]=order[-tail+1],order[-tail]
+    trials.extend([('linked_row_order',b'\n'.join(order)+b'\n'),
                    ('linked_truncated',stderr[:-1])])
     coherent=list(lines)
     for prefix,record in ((reuse.old.PREFIX,prior),(reuse.unrolled.PREFIX,unrolled)):
@@ -248,7 +262,7 @@ def controls(stdout,stderr,args,kind,lane):
     refused=[]
     for name,value in trials:
         caught=False
-        try:check(stdout,value,args,kind,lane)
+        try:check(stdout,value,args,kind,lane,native_hint=native_hint)
         except ValueError as error:
             caught=name!='linked_coherent_old_population'or str(error)==\
                 'all successful linked and old preentry observers saw the same complete handler population'
@@ -276,7 +290,7 @@ def controls(stdout,stderr,args,kind,lane):
     current_refused=[]
     for name,value in trials:
         caught=False
-        try:check(stdout,value,args,kind,lane)
+        try:check(stdout,value,args,kind,lane,native_hint=native_hint)
         except ValueError:caught=True
         need(caught,'complete TRACE release reader refuses '+name);current_refused.append(name)
     # The pure source-derived predicate must reject for its exact new reason;
@@ -294,7 +308,7 @@ def controls(stdout,stderr,args,kind,lane):
             rows[places[0]]=prefix+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
         changed=b'\n'.join(rows)+b'\n';need(changed!=stderr,'actual release TRACE mutation changes bytes')
         caught=False
-        try:check(stdout,changed,args,kind,lane)
+        try:check(stdout,changed,args,kind,lane,native_hint=native_hint)
         except ValueError:caught=True
         need(caught,'complete release TRACE reader refuses '+name);chain_refused.append(name)
     need(len(chain_refused)==len(set(chain_refused))==CHAIN_CONTROL_COUNT==chain_reports.CONTROL_COUNT,
@@ -305,18 +319,18 @@ def controls(stdout,stderr,args,kind,lane):
         try:fixture.refault_completed(value)
         except ValueError as exc:caught=str(exc)==error
         need(caught,'exact release refault cause '+name)
-        rows=list(lines);rows[-1]=fixture.PREFIX+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
+        rows=list(lines);rows[linked_at]=fixture.PREFIX+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
         caught=False
-        try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane)
+        try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane,native_hint=native_hint)
         except ValueError as exc:caught=str(exc)==error
         need(caught,'complete release reader reaches refault cause '+name);refault_refused.append(name)
     value=fixture.refault_chain_mutation(linked);caught=False
     try:chain_completed(parsed['loader'],parsed['chain'],value)
     except ValueError as exc:caught=str(exc)=='release TRACE exact consumed-span segment partition'
     need(caught,'a completed refault requires its already-started ordinary NX segment')
-    rows=list(lines);rows[-1]=fixture.PREFIX+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
+    rows=list(lines);rows[linked_at]=fixture.PREFIX+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
     caught=False
-    try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane)
+    try:check(stdout,b'\n'.join(rows)+b'\n',args,kind,lane,native_hint=native_hint)
     except ValueError:caught=True
     need(caught,'complete release reader rejects missing already-started ordinary NX segment');refault_refused.append('refault_missing_nx')
     need(len(refault_refused)==REFAULT_CONTROL_COUNT,'three additional causal refault refusals')
@@ -338,7 +352,7 @@ def controls(stdout,stderr,args,kind,lane):
         data=b'\n'.join(rows)+b'\n'
         need(data!=stderr,'actual linked prior-cache mutation changes bytes')
         caught=False
-        try:check(stdout,data,args,kind,lane)
+        try:check(stdout,data,args,kind,lane,native_hint=native_hint)
         except ValueError:caught=True
         need(caught,'whole linked release reader refuses '+name);cache_refused.append(name)
     need(len(cache_refused)==len(set(cache_refused))==CACHE_CONTROL_COUNT==cache_reports.CONTROL_COUNT,
@@ -352,6 +366,71 @@ def controls(stdout,stderr,args,kind,lane):
     need({k:len(v)for k,v in populations.items()}==expected,'every inherited and new linked release population retained')
     names=[group+'.'+name for group,items in populations.items()for name in items]
     need(len(names)==len(set(names))==CONTROL_COUNTS[kind],'complete unique linked release refusal population')
+    if native_hint:
+        addition=hint_controls(stdout,stderr,args,kind,lane,observed)
+        populations['native_hint']=addition
+        names+=['native_hint.'+name for name in addition]
+        need(len(names)==len(set(names))==HINT_CONTROL_COUNTS[kind],'all old plus separate advisory release controls')
     return dict(refusals=names,populations=populations,native_operations=0,
         supplied_lease_controls=supplied_lease,original_stdout_sha256=reuse.H(stdout),
         original_stderr_sha256=reuse.H(stderr))
+
+
+def hint_controls(stdout,stderr,args,kind,lane,observed):
+    """Separate source-derived terminal controls; no protected-record credit."""
+    linked,hint,parsed=(observed[k]for k in('linked','native_hint','parsed'))
+    lines=stderr[:-1].split(b'\n');trials=[]
+    def change(name,rows):
+        changed=list(lines)
+        for prefix,value in rows:
+            places=[i for i,line in enumerate(changed)if line.startswith(prefix)]
+            need(len(places)==1,'one complete actual advisory report target')
+            changed[places[0]]=prefix+json.dumps(value,separators=(',',':'),allow_nan=False).encode()
+        trials.append((name,b'\n'.join(changed)+b'\n'))
+    replacements=dict(version=2,status=125,failure_code=1,ready=hint['ready']^1,pending=1,
+        outcome_complete=hint['outcome_complete']^1,publications=hint['publications']+1,
+        evictions=hint['evictions']+1,lookups=hint['hits']+hint['invalidations']-1,hits=hint['hits']+1,
+        invalidations=hint['invalidations']+1,next_nx=hint['next_nx']+1,admitted=hint['admitted']+1,
+        refused=hint['refused']+1,errors=1,receipt_sequence=0 if hint['publications']else 1,
+        receipt_publication=hint['receipt_publication']+1,selected_publication=0 if hint['hits']else 1,
+        selected_serial=0 if hint['hits']else 1,selected_event=parsed['native_pair']['counts'][0]if hint['hits']else 1,
+        selected_pc=0 if hint['hits']else 1,selected_seeds=parsed['native_pair']['counts'][1]+1 if hint['hits']else 1,
+        selected_published=hint['receipt_publication']+1 if hint['hits']else 1,outcome_result=2,
+        current_checked=2,current_hit=2,current_publication=hint['selected_publication']+1 if hint['current_hit']else 1)
+    need(list(replacements)==fixture.HINT_KEYS,'every actual advisory report field has a source-required refusal')
+    for key,value in replacements.items():
+        row=dict(hint);row[key]=value;need(row!=hint,'actual advisory field changes')
+        change('field_'+key,[(fixture.HINT_PREFIX,row)])
+    row=copy.deepcopy(linked);row['graph_refaults']+=1;change('graph_refaults',[(fixture.PREFIX,row)])
+    for name,value in(('bool',True),('float',0.5),('negative',-1),('overflow',1<<64)):
+        row=dict(hint);row['lookups']=value;change('type_'+name,[(fixture.HINT_PREFIX,row)])
+    row=dict(hint);del row['ready'];change('missing_key',[(fixture.HINT_PREFIX,row)])
+    row=dict(hint);row['extra']=0;change('extra_key',[(fixture.HINT_PREFIX,row)])
+    change('key_order',[(fixture.HINT_PREFIX,dict(reversed(list(hint.items()))))])
+    trials.extend([('missing_row',b'\n'.join(lines[:-1])+b'\n'),('duplicate_row',stderr+lines[-1]+b'\n'),
+        ('row_order',b'\n'.join(lines[:-2]+[lines[-1],lines[-2]])+b'\n')])
+    row=copy.deepcopy(linked);row['graph_refaults']=row['refusals'][2]+1;caught=False
+    try:fixture.hint_counts(row,hint)
+    except ValueError as exc:caught=str(exc)==fixture.HINT_CLASS_ERROR
+    need(caught,'exact source GRAPH-class refusal');change('above_graph_class',[(fixture.PREFIX,row)])
+    value=dict(hint);value['publications']+=1;caught=False
+    try:fixture.hint_counts(linked,value)
+    except ValueError as exc:caught=str(exc)==fixture.HINT_LIFETIME_ERROR
+    need(caught,'exact one-use publication conservation');change('unaccounted_publication',[(fixture.HINT_PREFIX,value)])
+    row=copy.deepcopy(linked);value=dict(hint)
+    for key in('offers','closed','candidates','graph_refaults','plan_misses'):row[key]+=1
+    row['refusals'][2]+=1
+    for key in('lookups','hits','next_nx','admitted','publications','receipt_publication'):value[key]+=1
+    fixture.hint_counts(row,value);caught=False
+    try:chain_completed(parsed['loader'],parsed['chain'],row)
+    except ValueError as exc:caught=str(exc)=='release TRACE exact consumed-span segment partition'
+    need(caught,'one additional GRAPH retry requires its already-started ordinary NX segment')
+    change('missing_ordinary_segment',[(fixture.PREFIX,row),(fixture.HINT_PREFIX,value)])
+    need(len(trials)==len({name for name,_ in trials})==HINT_CONTROL_COUNT,'all41 separate source-causal advisory controls')
+    names=[]
+    for name,data in trials:
+        caught=False
+        try:check(stdout,data,args,kind,lane,native_hint=True)
+        except ValueError:caught=True
+        need(caught,'complete hinted release reader refuses '+name);names.append(name)
+    return names
