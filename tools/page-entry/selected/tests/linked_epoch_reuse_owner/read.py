@@ -419,7 +419,9 @@ class Check(base.Check):
             fetch=self.f(slot,'li2_tf_chain_slot','fetch');ref=self.f(fetch,'li2_chain_fetch','ref');sequence=self.i(ref,'li2_fetch_ref','sequence');need(sequence>0,'actual terminal old released borrow')
             self.eq(self.f(fetch,'li2_chain_fetch','progress'),'li2_fetch_progress',held=0,complete=1,first_error=0,first_detail=0,sequence=sequence)
         if self.native_hint:self.hint_state()
-        return dict(control=0,mode=6,entries=entries,first_predecessor_before=first,replacement=replacement,outcome=outcome,summary=c,events=events,raw_ingress=raw,original_sha256=hashlib.sha256(self.r.data).hexdigest(),_check=self)
+        result=dict(control=0,mode=6,entries=entries,first_predecessor_before=first,replacement=replacement,outcome=outcome,summary=c,events=events,raw_ingress=raw,original_sha256=hashlib.sha256(self.r.data).hexdigest(),_check=self)
+        if self.native_hint:result['native_hint']=True
+        return result
 
 
 def read(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_hint=False):
