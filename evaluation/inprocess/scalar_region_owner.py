@@ -7,6 +7,8 @@ sys.dont_write_bytecode=True
 ROOT=Path(__file__).resolve().parents[2];HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected';FIXTURE=SELECTED/'tests/scalar_region_app'
 OWNER=SELECTED/'tests/scalar_region_owner'
+REUSE_OWNER=SELECTED/'tests/scalar_region_reuse_owner'
+def owner_directory(r):return REUSE_OWNER if r['reuse'] else OWNER
 sys.path[:0]=[str(HERE),str(SELECTED.parent)]
 from checks import source
 from run import hardware
@@ -19,13 +21,16 @@ from page_selected_register_time_build import expand,recipe,headers
 from scalar_region_build import build_bridge
 import namespace
 import scalar_region_app_reports as reports
-BOUNDS=dict(PROFILES,release_build=[30,512<<20,16<<20,60],program=[30,512<<20,16<<20,60],seed=[5,512<<20,16<<20,15],boundary=[3,256<<20,1<<20,10])
+import scalar_region_mapping_controls as mapping_controls
+BOUNDS=dict(PROFILES,release_build=[30,512<<20,16<<20,60],program=[30,512<<20,16<<20,60],seed=[5,512<<20,16<<20,15],boundary=[3,256<<20,1<<20,10],mapping_guard=[3,256<<20,1<<20,10])
 MASK=((1<<64)-1)^sum(1<<(s-1)for s in(4,5,9,11,19,31))
 H=lambda b:hashlib.sha256(b).hexdigest()
 ORDER=tuple((lane,mode,0)for lane in('native','gated')for mode in range(13))+tuple(('gated',0,c)for c in range(1,15))
 OWNER_CONTROL_COUNTS={(mode,0):86 if mode<5 else 88 if mode<11 else 96 for mode in range(13)}
 OWNER_CONTROL_COUNTS.update({(0,control):count for control,count in enumerate(
     (102,82,86,82,82,49,83,68,68,68,82,68,68,81),1)})
+REUSE_ORDER=ORDER+tuple(('gated',0,c)for c in (15,16,17))
+REUSE_CONTROL_COUNTS={(0, 0): 140, (1, 0): 140, (2, 0): 140, (3, 0): 140, (4, 0): 140, (5, 0): 142, (6, 0): 142, (7, 0): 142, (8, 0): 142, (9, 0): 142, (10, 0): 142, (11, 0): 157, (12, 0): 157, (0, 1): 156, (0, 2): 136, (0, 3): 140, (0, 4): 136, (0, 5): 136, (0, 6): 103, (0, 7): 137, (0, 8): 122, (0, 9): 122, (0, 10): 122, (0, 11): 136, (0, 12): 122, (0, 13): 122, (0, 14): 135, (0, 15): 136, (0, 16): 136, (0, 17): 136}
 
 
 def digest(value):return H(json.dumps(value,sort_keys=True,separators=(',',':')).encode())
@@ -159,7 +164,7 @@ def load(name,path,pin):
 
 def reader_support(builder,private,pin,binary,run,r):
     reader=load('scalar_app_read',FIXTURE/'read.py',pin)
-    owner=load('scalar_owner_read',OWNER/'read.py',pin)
+    owner=load('scalar_owner_read',owner_directory(r)/'read.py',pin)
     policy=private/'native-policy.so';unit=pin(SELECTED/'native_policy.c')
     flags=['-std=gnu11','-O2','-g','-Wall','-Wextra','-Werror','-fPIC','-shared']
     _,out,err=run('policy-headers',[builder.tools['cc'],*flags,'-M','-MT','li2_policy',unit],env=builder.environment)
@@ -180,7 +185,7 @@ def build_boundary_probe(builder,products,private,pin,binary,aliases,run,r):
          builder.record['status']=='passed' and builder.record['command_completed']is True and
          archive==builder.paths['archive']==builder.retained/'decoder.a' and str(archive)==retained['path'] and
          fact(archive)=={k:retained[k]for k in ('bytes','sha256')},'same retained production region decoder archive')
-    sources=[str(pin(OWNER/'boundary_probe.c')),str(pin(SELECTED/'tests/decoder/support.c'))]
+    sources=[str(pin(owner_directory(r)/'boundary_probe.c')),str(pin(SELECTED/'tests/decoder/support.c'))]
     executable=private/'boundary-probe'
     flags=['-std=c11','-O2','-Wall','-Wextra','-Werror','-fno-builtin',
            '-fno-tree-loop-distribute-patterns','-mgeneral-regs-only']
@@ -333,7 +338,7 @@ mov$0xffffffffffffffea,%rax|ret'''.replace('\n','|').split('|')
 
 
 def observed_layout(builder,bridge,private,pin,binary,run,r):
-    gdb=pin(shutil.which('gdb',path=ENV['PATH']));script=pin(OWNER/'layout.py')
+    gdb=pin(shutil.which('gdb',path=ENV['PATH']));script=pin(owner_directory(r)/'layout.py')
     _,out,err=run('layout-gdb-version',[gdb,'--version'],env=builder.environment);need(out and not err,'actual GDB identity')
     _,out,err=run('owner-layout',[gdb,'-q','-nx','-nh','-batch','-iex','set auto-load off','-iex','set debuginfod enabled off',
         '-iex','set index-cache enabled off','-iex','maintenance set worker-threads 1','--readnow','--se='+str(bridge),'-x',script],
@@ -436,7 +441,7 @@ def preparation(case,row,directory,original,roots,objects,description,carrier,pr
     lane,mode,control=case['lane'],case['mode'],case['control'];prep=json.loads(binary(directory/'preparation.json').read_bytes())
     need(prep['schema_version']==1 and prep['status']=='prepared_not_executed'and prep['role']==lane and
         prep['pid']==row['pid']and prep['cpu']==[r['cpu']]and prep['reset_mask']==0 and prep['launch_mask']==(MASK if lane=='native'else 0)and
-        prep['argv']==[str(original),str(mode),lane]and prep['default_rseq']is True and prep['mode']==mode and prep['control']==control and
+        prep['argv']==[str(original),str(mode),lane]+([case['protection_test']]if case.get('protection_test')else [])and prep['default_rseq']is True and prep['mode']==mode and prep['control']==control and prep.get('reuse',False)==r['reuse'] and
         [x['signal']for x in prep['dispositions']]==[n for n in range(1,65)if n not in(9,19)]and all(x['after']==0 for x in prep['dispositions']),
         'actual exact launch signal/mode/environment preparation')
     if lane=='native':
@@ -458,7 +463,7 @@ def preparation(case,row,directory,original,roots,objects,description,carrier,pr
             p=ns/name;value='/proc/self/fd/'+str(observed['fd']);need(p.is_symlink()and os.readlink(p)==value,'actual sealed dependency alias');r['namespace_aliases'][str(p)]=value
     need(launch==dict(schema_version=1,scope='first_entry_loader_candidate',status='prepared_not_executed',argv=prep['argv'],dependency_fds=fds,
         carrier_sha256=fact(carrier)['sha256'],carrier_size=fact(carrier)['bytes'],environment=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',
-        LD_BIND_NOW='1',LD_LIBRARY_PATH=str(ns),LI2_DEPENDENCY_FDS=','.join(map(str,fds)),LI2_SCALAR_REGION_CAPTURE_CONTROL='0123456789abcde'[control]))and
+        LD_BIND_NOW='1',LD_LIBRARY_PATH=str(ns),LI2_DEPENDENCY_FDS=','.join(map(str,fds)),LI2_SCALAR_REGION_CAPTURE_CONTROL=('0123456789abcdefgh'if r['reuse']else '0123456789abcde')[control]))and
         prep['late_sonames']==[]and prep['environment_source']==str(ns/'launch.json'),'actual exact gated capture-control exec environment')
     record=private/row['captures']['record']['file'];st=record.stat()
     need(prep['observer']==dict(fd=3,device=st.st_dev,inode=st.st_ino)and st.st_nlink==1 and st.st_mode&0o7777==0o600,'same exclusive owner record descriptor')
@@ -481,18 +486,25 @@ def control_reference(reader,native,gated,owner,control):
 
 def cohort(builder,products,private,pin,binary,aliases,run,r):
     reader,owner_reader,native_policy=reader_support(builder,private,pin,binary,run,r)
-    expected_keys={(mode,0)for mode in range(13)}|{(0,control)for control in range(1,15)}
-    need(type(owner_reader.CONTROL_COUNTS)is dict and owner_reader.CONTROL_COUNTS==OWNER_CONTROL_COUNTS and
-         set(OWNER_CONTROL_COUNTS)==expected_keys and sum(OWNER_CONTROL_COUNTS.values())==2219 and
+    if r['reuse']:r['mapping_guard_summary']=mapping_controls.guard_oracle(builder,private,pin,binary,run,r)
+    active_reports,bridge_builder,reuse_application=reports,build_bridge,None
+    if r['reuse']:
+        active_reports=load('scalar_reuse_terminal',HERE/'scalar_reuse_reports.py',pin)
+        bridge_builder=load('scalar_reuse_builder',HERE/'scalar_region_reuse_build.py',pin).build_bridge
+        reuse_application=load('scalar_reuse_app_controls',REUSE_OWNER/'application.py',pin)
+    required_counts=REUSE_CONTROL_COUNTS if r['reuse']else OWNER_CONTROL_COUNTS
+    expected_keys={(mode,0)for mode in range(13)}|{(0,control)for control in range(1,18 if r['reuse']else 15)}
+    need(type(owner_reader.CONTROL_COUNTS)is dict and owner_reader.CONTROL_COUNTS==required_counts and
+         set(required_counts)==expected_keys and sum(required_counts.values())==(4099 if r['reuse']else 2219) and
          all(type(k)is tuple and len(k)==2 and all(type(x)is int for x in k)for k in owner_reader.CONTROL_COUNTS) and
-         all(type(n)is int and 0<n<=128 for n in owner_reader.CONTROL_COUNTS.values()),
+         all(type(n)is int and 0<n<=(157 if r['reuse']else 128)for n in owner_reader.CONTROL_COUNTS.values()),
          'complete source-fixed supplied owner-control population for every gated case')
     r['required_owner_reader_controls']={str(mode)+':'+str(control):count for (mode,control),count in sorted(owner_reader.CONTROL_COUNTS.items())}
     boundary_probe=build_boundary_probe(builder,products,private,pin,binary,aliases,run,r)
     original=compile_subject(builder,private,pin,binary,run,r);app_layout=reader.elf(original.read_bytes(),native_policy)
     r['application_layout']={k:v for k,v in app_layout.items()if k!='source'}
     seed_reference=seed_prerequisite(builder,private,pin,binary,run,r)
-    bridge=build_bridge(builder,products,private,pin,binary,aliases,run,r,('SCALAR_REGION_CAPTURE',),capture_image=original)
+    bridge=bridge_builder(builder,products,private,pin,binary,aliases,run,r,('SCALAR_REGION_CAPTURE',),capture_image=original)
     nested_emission(builder,bridge,pin,run,r)
     layout=observed_layout(builder,bridge,private,pin,binary,run,r)
     interp,roots,objects,description,images,raws,carrier=prepare_inputs(original,bridge,builder,private,pin,binary,run,r)
@@ -505,6 +517,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
         command_start=len(r['commands']);expected_commands=[label]
         argv=[builder.tools['python'],'-B',launcher,'--root',ROOT,'--role',lane,'--mode',str(mode),'--control',str(control),
             '--original',original,'--preparation',directory/'preparation.json']
+        if r['reuse']:argv+=['--reuse']
         for p in roots:argv+=['--library-root',p]
         if lane=='gated':argv+=['--carrier',carrier,'--namespace',directory/'namespace','--record-fd','{record_fd}']
         try:
@@ -522,12 +535,13 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 capture=row['captures']['record'];record_path=binary(private/capture['file'])
                 need(fact(record_path)=={k:capture[k]for k in('bytes','sha256')},'whole actual protected owner record')
                 record=record_path.read_bytes();image=image_inventory(original,interp,carrier,objects,manifest)
-                parsed=(reader.control_prefix(out,control,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)if control else
+                prefix_reader=reuse_application if r['reuse']and control>=15 else reader
+                parsed=(prefix_reader.control_prefix(out,control,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference)if control else
                         reader.read(out,mode,False,row['exit'],app_layout,row['pid'],r['cpu'],seed_reference))
                 request=owner_reader.boundary_requests(record,layout)
-                need(type(request)is bytes and 32<=len(request)<=2112,'bounded actual boundary metadata request')
+                need(type(request)is bytes and 32<=len(request)<=(2272 if r['reuse']else 2112),'bounded actual boundary metadata request')
                 magic,version,count,width=struct.unpack_from('<4Q',request)
-                need((magic,version,width)==(0x315152534c49324c,1,32) and count<=65 and len(request)==32+32*count,
+                need((magic,version,width)==(0x315152534c49324c,1,32) and count<=(70 if r['reuse']else 65)and len(request)==32+32*count,
                      'complete exact request header and source-window rows')
                 request_path=private/(label+'-boundary-request.bin')
                 with request_path.open('xb')as stream:stream.write(request)
@@ -540,13 +554,13 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                         actual=r['commands'][-1];observation['exit']=actual.get('exit')
                         cap=actual.get('captures',{}).get('stdout')
                         if cap:observation.update(response_bytes=cap['bytes'],response_sha256=cap['sha256'])
-                need(not metadata_err and 128<=len(boundaries)<=22488 and
+                need(not metadata_err and 128<=len(boundaries)<=(24208 if r['reuse']else 22488) and
                      struct.unpack_from('<4Q',boundaries)==(0x315352534c49324c,1,count,344) and
                      len(boundaries)==128+344*count,'complete actual bounded metadata response and empty stderr')
                 actual_owner=owner_reader.read(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'],control=control,boundaries=boundaries)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader,mode)
-                terminal,c['terminal']=reports.check(err,*terminal_args);r['terminal_reports'][label]=terminal
-                c['terminal_controls']=reports.controls(err,*terminal_args)
+                terminal,c['terminal']=active_reports.check(err,*terminal_args);r['terminal_reports'][label]=terminal
+                c['terminal_controls']=active_reports.controls(err,*terminal_args)
                 c['owner_summary']=actual_owner['summary']
                 need(type(c['owner_summary'])is dict and c['owner_summary']and
                      all(type(k)is str and type(v)is int and 0<=v<1<<64 for k,v in c['owner_summary'].items()),
@@ -555,7 +569,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                     need(0 in native_records,'actual mode0 native reference required for every control')
                     nout,npid=native_records[0]
                     native=reader.read(nout,0,True,0,app_layout,npid,r['cpu'],seed_reference)
-                    c['control_reference']=control_reference(reader,native,parsed,actual_owner,control)
+                    c['control_reference']=control_reference(prefix_reader,native,parsed,actual_owner,control)
                     c['status']='qualified_required_owner_refusal'
                 else:
                     need(mode in native_records,'same-mode complete native reference required')
@@ -569,7 +583,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                     need(c['application_controls']==dict(supplied_refusals=31 if mode>=11 else 26,native_operations=0),'all fixed app rejection controls')
                     c['status']='qualified_required_read_failure'if 5<=mode<=10 else 'qualified_application'
                 c['owner_reader_controls']=owner_reader.controls(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'],control=control,boundaries=boundaries)
-                want=OWNER_CONTROL_COUNTS[mode,control]
+                want=required_counts[mode,control]
                 need(len(c['owner_reader_controls']['refusals'])==want and c['owner_reader_controls']['native_operations']==0 and
                      c['owner_reader_controls']['original_sha256']==H(record),'complete fixed actual owner-record refusal controls')
         except Exception as error:
@@ -580,18 +594,22 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 all(type(x.get('exit'))is int and x.get('reaped')is True and not x.get('error') and x.get('cleanup_errors')==[] and
                     isinstance(x.get('descriptors'),list)and all(d.get('closed')is True for d in x['descriptors'])for x in actual_commands)):
                 raise
-    need(len(r['cases'])==40 and all(c['status'].startswith('qualified_')for c in r['cases'])and not r['error'],'all40 actual subjects qualify, no failed-prefix completion credit')
+    if r['reuse']:
+        mapping_controls.run_controls(builder=builder,private=private,pin=pin,binary=binary,run=run,r=r,reader=reader,
+            app_layout=app_layout,seed_reference=seed_reference,original=original,roots=roots,objects=objects,
+            description=description,carrier=carrier,preparation=preparation,launcher=launcher)
+    need(len(r['cases'])==(43 if r['reuse']else 40)and all(c['status'].startswith('qualified_')for c in r['cases'])and not r['error'],'every required actual subject qualifies, no failed-prefix completion credit')
     need(sum(c.get('pair',{}).get('qualified_case',0)for c in r['cases'])==13 and
         sum(c.get('application_controls',{}).get('supplied_refusals',0)for c in r['cases'])==348 and
-        sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==27*49+7*2 and
-        sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==2219,
+        sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==(1964 if r['reuse']else 27*49+7*2)and
+        sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==(4099 if r['reuse']else 2219),
         'all13 actual pairs and fixed application/terminal/owner-record refusal controls')
-    need(sum(x['profile']=='boundary'for x in r['commands'])==27 and r['boundary_probe_build']['status']=='passed',
-         'all27 separately bounded actual metadata observations, without execution authority')
+    need(sum(x['profile']=='boundary'for x in r['commands'])==(30 if r['reuse']else 27)and r['boundary_probe_build']['status']=='passed',
+         'every gated record has one separately bounded metadata observation, without execution authority')
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expect-revision',required=True);parser.add_argument('--decoder-receipt',type=Path,required=True);parser.add_argument('--component-receipt',type=Path,required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expect-revision',required=True);parser.add_argument('--decoder-receipt',type=Path,required=True);parser.add_argument('--component-receipt',type=Path,required=True);parser.add_argument('--reuse',action='store_true',help='explicit bounded completed-generation reuse; original40 plus3 required owner refusals');args=parser.parse_args()
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}',args.expect_revision)and len(os.sched_getaffinity(0))==1,'exact revision/assertions and one reserved CPU')
     os.chdir(ROOT)
     args.decoder_receipt=args.decoder_receipt.resolve(strict=True).relative_to(ROOT)
@@ -599,11 +617,11 @@ def main():
     need(all(p.parent==Path('evaluation/inprocess/results')and p.suffix=='.json'for p in
          (args.decoder_receipt,args.component_receipt)),'exact retained public prerequisite locations')
     cpu=next(iter(os.sched_getaffinity(0)));stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem=stamp+'-scalar-region-owner-'+args.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(mode=0o700)
+    stem=stamp+('-scalar-region-reuse-owner-'if args.reuse else '-scalar-region-owner-')+args.expect_revision[:12];private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(mode=0o700)
     pins,aliases,artifacts,presence={},{},{},{}
-    r=dict(schema=1,profile='scalar-region-owner-v1',status='failed',expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,
+    r=dict(schema=1,reuse=args.reuse,profile='scalar-region-reuse-owner-v1'if args.reuse else 'scalar-region-owner-v1',status='failed',expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,
         hardware=hardware(cpu),commands=[],cases=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control),lane=lane,mode=mode,control=control,
-        expected_exit=125 if control or 5<=mode<=10 else 0,status='unexecuted',launched=False)for lane,mode,control in ORDER],
+        expected_exit=125 if control or 5<=mode<=10 else 0,status='unexecuted',launched=False)for lane,mode,control in (REUSE_ORDER if args.reuse else ORDER)],
         namespace_aliases={},terminal_reports={},bounds=BOUNDS,error=None,final_errors=[],
         seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
             bounds=BOUNDS['seed'],owner_subjects=0,completed_applications=0,performance_credit=False))
@@ -636,7 +654,7 @@ def main():
         stable()
         need(not any(c['name'] == name for c in r['commands']), 'unique command/capture name')
         row = dict(name=name, argv=list(map(str, argv)), environment=dict(ENV if env is None else env),
-                   profile=profile, bounds=BOUNDS[profile], capture_limit=1 << 20 if profile=='boundary'else 16 << 20, expected_exit=expected)
+                   profile=profile, bounds=BOUNDS[profile], capture_limit=1 << 20 if profile in ('boundary','mapping_guard')else 16 << 20, expected_exit=expected)
         r['commands'].append(row)
         try:
             out, err = (program_invoke if name.startswith('subject-') else invoke)(row, private, cpu, record=record)
@@ -666,11 +684,17 @@ def main():
         git=pin(shutil.which('git',path=ENV['PATH']))
         _,names,err=run('source-paths',[git,'-C',ROOT,'ls-files','-z','tools/page-entry','evaluation/inprocess']);need(not err,'source enumeration stderr')
         tracked={os.fsdecode(name)for name in names.split(b'\0')if name}
-        required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'scalar_region_app_reports.py',HERE/'scalar_region_build.py',
+        required={str(p.relative_to(ROOT))for p in (Path(__file__),HERE/'scalar_region_app_reports.py',HERE/'scalar_region_build.py',HERE/'scalar_region_mapping_controls.py',
             FIXTURE/'main.c',FIXTURE/'pure.c',FIXTURE/'pure.ld',FIXTURE/'machine.S',FIXTURE/'app.h',FIXTURE/'read.py',FIXTURE/'build.sh',FIXTURE/'launch.py',
             OWNER/'read.py',OWNER/'layout.py',OWNER/'wire.py',OWNER/'plan.py',OWNER/'boundaries.py',OWNER/'boundary_probe.c')}
         required|={str((SELECTED/'tests/provider_app/seed_probe'/n).relative_to(ROOT))for n in('probe.c','record.h','read.py','build.sh')}
         required.add(str((SELECTED/'tests/b2_reference/xstate.py').relative_to(ROOT)))
+        required|={str((SELECTED/p).relative_to(ROOT))for p in('initial_code_protection.h',
+            'tests/initial_code_protection/oracle.c','tests/initial_code_protection/build.sh')}
+        if r['reuse']:
+            required|={str(p.relative_to(ROOT))for p in (HERE/'scalar_reuse_reports.py',HERE/'scalar_region_reuse_build.py',
+                SELECTED/'build-scalar-region-reuse.sh',SELECTED/'selected_scalar_reuse.inc')}
+            required|={str((REUSE_OWNER/n).relative_to(ROOT))for n in ('read.py','wire.py','layout.py','boundaries.py','boundary_probe.c','application.py')}
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)
@@ -690,7 +714,7 @@ def main():
             path=getattr(module,'__file__',None)
             if path and Path(path).is_file():pin(path)
         cohort(builder,products,private,pin,binary,aliases,run,r)
-        need(len(r['cases'])==40 and all(c['status'].startswith('qualified_')for c in r['cases']),'all40 native/application/control attempts required')
+        need(len(r['cases'])==(43 if r['reuse']else 40)and all(c['status'].startswith('qualified_')for c in r['cases']),'all native/application/control attempts required')
         need(r['seed_prerequisite']['status']=='passed','independent seed prerequisite remains separately mandatory')
         r['status']='passed'
     except BaseException as error:
@@ -735,7 +759,7 @@ def main():
             for c in r['commands'])
         if r['error'] or r['final_errors'] or not r['source_unchanged'] or r['artifacts_before']!=r['artifacts_after'] or not r['cleanup_complete']:
             r['status'] = 'failed'
-        r['totals']=dict(planned=40,launched=sum(c['launched']for c in r['cases']),qualified=sum(c['status'].startswith('qualified_')for c in r['cases']),
+        r['totals']=dict(planned=43 if r['reuse']else 40,launched=sum(c['launched']for c in r['cases']),qualified=sum(c['status'].startswith('qualified_')for c in r['cases']),
             native=sum(c['lane']=='native'and c['status'].startswith('qualified_')for c in r['cases']),
             gated=sum(c['lane']=='gated'and not c['control']and c['status'].startswith('qualified_')for c in r['cases']),
             owner_controls=sum(c['status']=='qualified_required_owner_refusal'for c in r['cases']),
@@ -762,13 +786,18 @@ def main():
             value['owner_control_count']=len(c.get('owner_reader_controls',{}).get('refusals',[]));value['owner_controls_sha256']=digest(c.get('owner_reader_controls',{}))
             case_rows.append(value)
         public.update(case_projection(case_rows))
+        if r['reuse']:
+            public['mapping_controls']=mapping_controls.public_summary(r.get('mapping_controls'))
+            public['mapping_guard_oracle']=r.get('mapping_guard_summary',{'status':'unqualified'})
         public.update(hardware=hw,private_receipt=fact(private/'receipt.json'),
             reproduce=['python3','-B','evaluation/inprocess/scalar_region_owner.py','--expect-revision',args.expect_revision,
-                '--decoder-receipt',str(args.decoder_receipt),'--component-receipt',str(args.component_receipt)],
+                '--decoder-receipt',str(args.decoder_receipt),'--component-receipt',str(args.component_receipt)]+(['--reuse']if r['reuse']else []),
             input_manifest_sha256=digest(pins),artifact_manifest_sha256=digest(artifacts),command_count=len(r['commands']),commands_sha256=digest(r['commands']),
             failure_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
             performance_credit=False,whole_ls_eligibility_credit=False,
             scope='Required40 subjects:13 actual native references,13 actual generated-owner pairs including six real read faults, and14 required owner refusals. Repeat and generation cases bind actual immutable keys and fresh tickets. One separate unchanged seed prerequisite qualifies exact zero FIP/FDP on the same CPU and actual format. Each gated record has a separate bounded production-decoder metadata observation: full unsupported boundary descriptors are compared exactly; accepted forms/CFG/image are independently reconstructed. Neither metadata nor seed gives owner/application/performance credit. Whole native/gated GPR, actual AF, FP, stack and data comparisons are mandatory. Failed operations never count as completed applications. No general function/data-pointer authority or throughput claim.')
+        if r['reuse']:
+            public['scope']='Required43 owner subjects: unchanged13 native references,13 generated-owner pairs including six real read faults, and original14 plus3 actual completed-generation reuse refusals. All original40 remain mandatory. Full GPR/AF/FP/224stack/data and fresh source/rseq/cleanup joins remain exact. Thirty separately bounded production metadata observations cover at most70 current/historical windows each; no metadata execution authority. Eight mapping refusals and754 supplied range-predicate cases are separately counted with no graph-owner credit. No performance or whole-application coverage claim.'
         columns=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count')
         stream=io.StringIO(newline='');writer=csv.writer(stream,lineterminator='\n');writer.writerow(columns)
         for c in case_rows:writer.writerow([c.get(k,'')for k in columns])
