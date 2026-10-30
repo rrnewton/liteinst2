@@ -1,0 +1,267 @@
+{
+  "all_log_caps_bytes": 8388608,
+  "all_process_closures": "exit 0, no termination, cleanup complete, zero rescued descendants",
+  "closed_stages_sha256": "fc2e8392d6f9b7312fb4c33c6068d689e4de0d3adbaf31706f6f91f595808757",
+  "command": [
+    "/usr/bin/python3.9",
+    "-B",
+    "evaluation/short-neighbor-parallel/validate.py",
+    "--revision",
+    "f1428066cc624066642ca20cc8e8c154212a87ca",
+    "--output",
+    "ignored/a3/selected-sdk-merged-f142-v1"
+  ],
+  "counting": "Sum all 110 unfiltered workspace summaries without deduplication. Three nested 1-pass/35-filtered child summaries are retained separately and excluded from totals; the raw pass sum is 4013, not 4010. Serial launch has 27 unfiltered summaries. Failed filtered summaries would still prevent PASS.",
+  "driver": "evaluation/short-neighbor-parallel/validate.py",
+  "driver_sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd",
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "${CARGO_HOME}",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "CARGO_TARGET_DIR": "${ROOT}/target",
+    "CARGO_TERM_COLOR": "never",
+    "HOME": "${USER_HOME}",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "LITEINST_EVALUATION": "1",
+    "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC": "${TOOLCHAIN}/bin/rustc",
+    "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+    "TEMP": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TMP": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TMPDIR": "${ROOT}/ignored/a3/adjacent-d01-temporary"
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "ignored_census": {
+    "name_reason_multiplicity_sha256": "57c184f4d35e03c84a4dc65fab5fab775b8dabf8d9dbc72d6ea832e5ca09c7c0",
+    "total": 37,
+    "unchanged_from": [
+      "87c5c085b89eb6b0ffd2bc7d7d0273ac38bcef7c",
+      "df4a9a5ec738105ccd305b0eacd49200a9e0c1e2"
+    ]
+  },
+  "other_cargo_jobs": 4,
+  "owner_load_after": [
+    "55.50",
+    "57.02",
+    "63.60"
+  ],
+  "owner_load_before": [
+    "50.82",
+    "59.44",
+    "72.59"
+  ],
+  "owner_log_sha256": "efbf3ff40d4bc3300d0e3d796a2edb81d0e6b0a323d50b9e1d4f158fc57053ca",
+  "owner_receipt_sha256": "df38679f72f2afd8bd7af604dbb702874c48ad905e9cc0bafaef08383aa8817c",
+  "owner_start_utc": "2026-10-30T20:05:51.001928+00:00",
+  "owner_wall_limit_seconds": 1200,
+  "owner_wall_seconds": 966.6296694730408,
+  "parents": {
+    "merged_main": "af81a7e678e75ea2535b1b25e43053f1d8186d2d",
+    "selected_sdk_producer": "778bd9831d7609750b9a383704fdf493b487caf0"
+  },
+  "phase_environment_addition": {
+    "RUST_TEST_THREADS": "316"
+  },
+  "planned_sha256": "70d008ef38e2f44c68bf50d5825592e713b07262634d9dda69e849debab577b7",
+  "required_regressions": {
+    "absent_or_nonpassing": 0,
+    "additional_reported_exec_source_and_B3": 5,
+    "all_passed": true,
+    "frozen_roster_sha256": "90789d65d2b47e0867829915f3381967caea334be9e5fca1e46cb28b4a23244d",
+    "groups": {
+      "gap_carrier": 9,
+      "observing_control": 8,
+      "prefixed_pun": 1,
+      "quiescent_oracle": 4,
+      "rapid_rejection": 2,
+      "routed_jmp_frontend": 17,
+      "routed_jmp_native": 34,
+      "routed_jmp_publication": 3,
+      "short_neighbor": 21,
+      "staged_image_drop": 1,
+      "startup_carrier": 9,
+      "startup_catalog": 8
+    },
+    "staged_drop_identity_cases": 2,
+    "total": 117
+  },
+  "reserved_cpus": [
+    3,
+    54,
+    70,
+    110,
+    111,
+    118,
+    119,
+    160,
+    195,
+    223,
+    233,
+    256,
+    268,
+    274,
+    282,
+    300
+  ],
+  "revision": "f1428066cc624066642ca20cc8e8c154212a87ca",
+  "schema": "selected-sdk-merged-validation-v1",
+  "scope": "Debug correctness validation at this exact merged revision only. Native SDK192 executed separately at 778bd983; historical full Rust checks executed at 87c. No native execution at this merge, performance or strict 2 ms qualification is inferred. Earlier failures and ignored reasons remain unchanged.",
+  "serial_test_threads": 1,
+  "source_unchanged": true,
+  "stages": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "load_after": [
+        "50.72",
+        "59.15",
+        "72.36"
+      ],
+      "load_before": [
+        "50.82",
+        "59.44",
+        "72.59"
+      ],
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "fmt",
+      "start_utc": "2026-10-30T20:05:51.077686+00:00",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 9.829692745115608
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "load_after": [
+        "50.72",
+        "59.15",
+        "72.36"
+      ],
+      "load_before": [
+        "50.72",
+        "59.15",
+        "72.36"
+      ],
+      "log_sha256": "3fe980a0f9709b0a2d093ea2a65202e1e589d4893ac71be4272c165923b9e527",
+      "name": "clippy",
+      "start_utc": "2026-10-30T20:06:00.908078+00:00",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 0.1749583010096103
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "load_after": [
+        "50.72",
+        "59.15",
+        "72.36"
+      ],
+      "load_before": [
+        "50.72",
+        "59.15",
+        "72.36"
+      ],
+      "log_sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+      "name": "check",
+      "start_utc": "2026-10-30T20:06:01.083792+00:00",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 0.13615927402861416
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "exit": 0,
+      "failed": 0,
+      "ignored": 37,
+      "load_after": [
+        "61.25",
+        "57.31",
+        "64.63"
+      ],
+      "load_before": [
+        "50.72",
+        "59.15",
+        "72.36"
+      ],
+      "log_sha256": "7d8adc1c738d9f9b028a0fe4637c199f2c7f03a4fa5c643d29400da3a285c698",
+      "name": "workspace",
+      "nested_filtered_summaries_excluded": 3,
+      "passed": 4010,
+      "start_utc": "2026-10-30T20:06:01.220534+00:00",
+      "unfiltered_summaries": 110,
+      "wall_limit_seconds": 900,
+      "wall_seconds": 826.6042328239419
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit": 0,
+      "failed": 0,
+      "ignored": 0,
+      "load_after": [
+        "55.50",
+        "57.02",
+        "63.60"
+      ],
+      "load_before": [
+        "61.25",
+        "57.31",
+        "64.63"
+      ],
+      "log_sha256": "6a485b1727d8a6a1efdc5890118a9ef61b23030f5943a40975ca70ea49b81029",
+      "name": "serial-launch",
+      "nested_filtered_summaries_excluded": 0,
+      "passed": 1039,
+      "start_utc": "2026-10-30T20:19:47.827075+00:00",
+      "unfiltered_summaries": 27,
+      "wall_limit_seconds": 180,
+      "wall_seconds": 129.78519703890197
+    }
+  ],
+  "status": "PASS",
+  "test_threads": 316,
+  "workspace_build_jobs": 16
+}

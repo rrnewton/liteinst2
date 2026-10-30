@@ -727,7 +727,7 @@ def replay_controls(run,recipe,leaf,owners,path,digest,owner_path,owner_digest,b
     return actual
 
 
-def bootstrap(a,started):
+def bootstrap_context(a,started):
     assert HERE==ROOT/'evaluation/ordinary-selected-session'
     revision(a.revision)
     assert re.fullmatch('[A-Za-z0-9_.-]{1,128}',a.reservation_tag)
@@ -799,6 +799,12 @@ def bootstrap(a,started):
     pins={str(path):recipe.pin(recipe.read(path,512*MIB)) for path in tools.values()}
     a.raw.mkdir(mode=0o700);(a.raw/'tmp').mkdir()
     run=recipe.Run(a,a.raw,tools,env,sources,modules,started,pins)
+    return run,recipe,new,leaf,owners,git
+
+
+def bootstrap(a,started):
+    run,recipe,new,leaf,owners,git=bootstrap_context(a,started)
+    env=run.env;sources=run.sources;tools=run.tools
     run.result.update(profile=selected_profile(a),phase=a.phase,execution_revision=a.revision,build_revision=None,
         status='FAILED',cells=initial_rows(),population_counts_are_expected=True,scope=SCOPE,native_state='UNRUN_SEPARATE_REQUIRED',performance='UNRUN',
         environment=env,controls=None,invocation=[str(tools['python']),'-B',sys.argv[0],*sys.argv[1:]])

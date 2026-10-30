@@ -1001,6 +1001,35 @@ fn main() {
         }
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("selected-leaf-set-copied-state-v1") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            16,
+            "selected-leaf-set-copied-state-v1 DSO_CANDIDATE DSO_TRUSTED APP_CANDIDATE APP_TRUSTED OUTPUT FORM K SEED FUNCTION_ID INPUT_INDEX FIRST_VA FIRST_EXTENT UPPER_VA UPPER_EXTENT"
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let app = PathBuf::from(&args[4]).canonicalize().unwrap();
+        let app_expected = PathBuf::from(&args[5]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[6]);
+        let words: Vec<_> = args[7..].iter().map(|a| a.to_str().unwrap()).collect();
+        let case = oracle::native_ordinary::normal_caller::selected_leaf_set::Case::parse(&words);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::selected_leaf_set::run(
+            &subject,
+            &expected,
+            &app,
+            &app_expected,
+            &output,
+            case,
+            deadline,
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-leaf-set-rust-state") {
         let deadline = oracle::native_ordinary::strnlen::Deadline::start();
         assert_eq!(

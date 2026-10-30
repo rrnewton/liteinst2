@@ -1,0 +1,244 @@
+{
+  "all_log_caps_bytes": 8388608,
+  "all_process_closures": "exit 0, no termination, cleanup complete, zero rescued descendants",
+  "closed_stages_sha256": "80f8b6c60be617d8bb0949d2302baae675b1f456bac62f7c4cbcdf95e1c762d6",
+  "command": [
+    "/usr/bin/python3.9",
+    "-B",
+    "evaluation/short-neighbor-parallel/validate.py",
+    "--revision",
+    "87c5c085b89eb6b0ffd2bc7d7d0273ac38bcef7c",
+    "--output",
+    "ignored/a3/selected-sdk-full-87c-v1"
+  ],
+  "counting": "Sum the110 unfiltered workspace summaries, without deduplication. Exclude three nested1-pass/35-filtered child summaries already included by parent tests. Serial launch has27 unfiltered summaries. Raw workspace pass sum including children is4013, not the reported4010.",
+  "driver": "evaluation/short-neighbor-parallel/validate.py",
+  "driver_sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd",
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "${CARGO_HOME}",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "CARGO_TARGET_DIR": "${ROOT}/target",
+    "CARGO_TERM_COLOR": "never",
+    "HOME": "${USER_HOME}",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "LITEINST_EVALUATION": "1",
+    "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC": "${TOOLCHAIN}/bin/rustc",
+    "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+    "TEMP": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TMP": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TMPDIR": "${ROOT}/ignored/a3/adjacent-d01-temporary"
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "ignored_census": {
+    "name_reason_multiplicity_sha256": "57c184f4d35e03c84a4dc65fab5fab775b8dabf8d9dbc72d6ea832e5ca09c7c0",
+    "total": 37,
+    "unchanged_from": "df4a9a5ec738105ccd305b0eacd49200a9e0c1e2"
+  },
+  "other_cargo_jobs": 4,
+  "owner_log_sha256": "9cdba4d6ca4ada998b91a8588bbc69b9f8d54d49695a6c0d7390970dd18fa87c",
+  "owner_receipt_sha256": "1b17c0e4b32ed6bd96d6448eee9c2ac92c074576f5564f103c21001ed1d98b03",
+  "owner_wall_limit_seconds": 1200,
+  "owner_wall_seconds": 1051.2809340199456,
+  "planned_sha256": "7d77c14f5305a33d794e0350ffd948e0a1d97ffced167906b51ce6087c9c0d5a",
+  "required_regressions": {
+    "absent_or_nonpassing": 0,
+    "additional_reported_exec_source_and_B3": 5,
+    "all_passed": true,
+    "groups": {
+      "gap_carrier": 9,
+      "observing_control": 8,
+      "prefixed_pun": 1,
+      "quiescent_oracle": 4,
+      "rapid_rejection": 2,
+      "routed_jmp_frontend": 17,
+      "routed_jmp_native": 34,
+      "routed_jmp_publication": 3,
+      "short_neighbor": 21,
+      "staged_image_drop": 1,
+      "startup_carrier": 9,
+      "startup_catalog": 8
+    },
+    "staged_drop_identity_cases": 2,
+    "total": 117
+  },
+  "reserved_cpus": [
+    60,
+    100,
+    101,
+    111,
+    141,
+    177,
+    196,
+    200,
+    208,
+    210,
+    214,
+    219,
+    221,
+    242,
+    275,
+    287
+  ],
+  "revision": "87c5c085b89eb6b0ffd2bc7d7d0273ac38bcef7c",
+  "schema": "selected-sdk-workspace-validation-v1",
+  "scope": "Debug correctness validation only. No SDK192 native execution, copied-caller state, performance or strict2ms qualification is established by this receipt. Earlier failure records and ignored reasons remain unchanged.",
+  "serial_test_threads": 1,
+  "source_unchanged": true,
+  "stages": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "load_after": [
+        "80.04",
+        "65.54",
+        "63.72"
+      ],
+      "load_before": [
+        "76.34",
+        "64.41",
+        "63.34"
+      ],
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "fmt",
+      "start_utc": "2026-10-30T19:19:23.283106+00:00",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 10.02967328298837
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "load_after": [
+        "79.68",
+        "66.20",
+        "63.96"
+      ],
+      "load_before": [
+        "80.04",
+        "65.54",
+        "63.72"
+      ],
+      "log_sha256": "83342214c3d5139c4ef32be5841367bc583453fc314e5b3dab3b817a2e614517",
+      "name": "clippy",
+      "start_utc": "2026-10-30T19:19:33.313439+00:00",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 14.13011907110922
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "load_after": [
+        "77.30",
+        "65.93",
+        "63.89"
+      ],
+      "load_before": [
+        "79.68",
+        "66.20",
+        "63.96"
+      ],
+      "log_sha256": "50ad43b3573748f83c3c6a17903b3d6f4f0fd2f495bed2fb8b6ac15d32030082",
+      "name": "check",
+      "start_utc": "2026-10-30T19:19:47.444282+00:00",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 7.711855108849704
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "exit": 0,
+      "failed": 0,
+      "ignored": 37,
+      "load_after": [
+        "45.45",
+        "62.32",
+        "64.79"
+      ],
+      "load_before": [
+        "77.30",
+        "65.93",
+        "63.89"
+      ],
+      "log_sha256": "761947eac4250599ba7e3cdee3b9eb1259364b3c9fd144b096f8e3c55709885f",
+      "name": "workspace",
+      "nested_filtered_summaries_excluded": 3,
+      "passed": 4010,
+      "start_utc": "2026-10-30T19:19:55.156872+00:00",
+      "unfiltered_summaries": 110,
+      "wall_limit_seconds": 900,
+      "wall_seconds": 877.9097995879129
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit": 0,
+      "failed": 0,
+      "ignored": 0,
+      "load_after": [
+        "84.64",
+        "65.98",
+        "65.45"
+      ],
+      "load_before": [
+        "45.45",
+        "62.32",
+        "64.79"
+      ],
+      "log_sha256": "95c8f937a598c0ff453bb3642149b91cf8983e0f8147989ea65a4030f63a55d2",
+      "name": "serial-launch",
+      "nested_filtered_summaries_excluded": 0,
+      "passed": 1039,
+      "start_utc": "2026-10-30T19:34:33.068912+00:00",
+      "unfiltered_summaries": 27,
+      "wall_limit_seconds": 180,
+      "wall_seconds": 141.40247935103253
+    }
+  ],
+  "test_threads": 316,
+  "workspace_build_jobs": 16
+}

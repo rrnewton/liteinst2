@@ -52,3 +52,65 @@ mapping. It does not qualify the complete selected-session SDK/controller,
 loader lifetime, concurrent mutation, CET, arbitrary inputs, or asynchronous
 preemption. It makes no performance or strict 2 ms deadline claim. The existing
 372 generic ADC and 372 whole ADC comparisons are unchanged, separate populations.
+
+## Fixed finite SDK campaign
+
+The first closed [SDK campaign](../ordinary-selected-results/sdk-87c/README.md)
+passed all **192 pairs and 27,560 ordered comparisons** at
+`778bd9831d7609750b9a383704fdf493b487caf0`. The separate
+`selected-leaf-set-copied-state-v1` profile has a fixed population of **192
+original/installed pairs**, with **27,560 expected ordered state comparisons**:
+two authenticated DSO forms (`unstripped`, `stripped`) × K in {10, 1000} × the
+existing SDK seeds `0x1234567887654320` and `0xfedcba9801234567` × both functions
+× the same twelve literals. These SDK seeds differ from the core seeds above.
+There are four form/K cohorts of 48 pairs and sixteen form/K/seed/function
+coverage groups of twelve inputs. Every key has one attempt; failures and UNRUN
+cells remain in the denominator. No result from the core oracle substitutes for
+an SDK pair.
+
+The strict one-pair command has sixteen arguments including the executable:
+
+```text
+frontend-native-oracle selected-leaf-set-copied-state-v1 DSO_CANDIDATE DSO_TRUSTED APP_CANDIDATE APP_TRUSTED OUTPUT FORM K SEED FUNCTION_ID INPUT_INDEX FIRST_VA FIRST_EXTENT UPPER_VA UPPER_EXTENT
+```
+
+All numeric arguments use canonical unsigned decimal, including SEED. IDs are
+101 (`first_equal`) and 202 (`uppercase_count`); input indices are 0–11. Both
+selections are always present in that order: extents 41/55, nonzero page-aligned
+FIRST_VA and UPPER_VA = FIRST_VA + 48. FORM is a campaign identity joined to the
+actual authenticated DSO, not authority inferred from its spelling. Fresh build
+artifacts, complete caller/function geometry and the existing unsafe lifetime,
+ABI and platform premises require independent acceptance before dispatch.
+A successful command writes exactly one `selected-leaf-set-pair.csv`, with its
+39-column header and one row, and the versioned `native-selected-leaf-set`
+completion line. The collector must join the raw key, scalar/coverage counts,
+terminal and normal process closure for all 192 pairs; a PASS label is insufficient.
+
+Each pair uses the real loader, both WholeFunction plans on their one shared
+source page, six entry/RET roles, the session controller, managed callbacks,
+attachment and journal. The unchanged oracle compares the complete copied
+machine caller and visited leaf instructions, including actual CALL, leaf RET,
+result store and outer RET, with its exact GPR/RFLAGS (except debugger TF/RF),
+canonical exposed xstate, data and derived stack/red-zone checks. Independent
+itineraries, scalar answers and bounded reads retain all 33 decoded heads,
+30 reachable heads and four returns in the full coverage accounting. Each pair
+retains the existing 20,000-step/15-second oracle limits and external
+20 CPU/30 wall-second bounds.
+
+Postflight checks actual checkpoint, detach, disarm, report/history and
+`reclaim_storage`: the used interval bank returns to its owner, restoring three
+owned banks. **This is interval-bank reclamation, not executable unpatching or
+executable-storage reclamation.** Sealing retains the executable owners for the
+process lifetime; successful child exit does not establish a separate executable
+retirement protocol. One sampled call for each K configuration does not exercise
+counter exhaustion or rotation through all three banks.
+
+The caller is the complete authenticated compiled machine body at a copied
+address. This does not qualify the application's original address/callsite or
+surrounding Rust ABI. Architectural comparisons cover the call region, not all
+loader, attachment, publication, checkpoint or cleanup internals. The campaign
+does not qualify the concurrent clock schedule, asynchronous preemption, strict
+2 ms deadline, performance/CPU cost, arbitrary memory/signals/CET/unwind/reentry,
+or other programs, inputs, compilers or xstate configurations. It leaves the
+existing core populations, certified-profile failures and prior timing results
+unchanged.
