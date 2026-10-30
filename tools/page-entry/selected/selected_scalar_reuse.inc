@@ -40,6 +40,9 @@ static int srr_identity(size_t slot,uint64_t generation) {
     const struct sr_slot *s=&selected_scalar_region.slots[slot];
     return s->installed==1 && s->complete==1 && s->identity==generation &&
         s->filled==PAGE && s->verified==PAGE && s->publication.complete==1 &&
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+        srcg_ready(slot,generation) &&
+#endif
         s->plan.generated==srr.entry[slot] && srr.entry[slot]==sr_entry(s->key.entry,slot);
 }
 static void srr_initialize(void) {
@@ -53,6 +56,9 @@ static void srr_begin(void) {
         !selected_scalar_region_active && selected_scalar_region_busy &&
         !selected_step_pending && selected_pending_route==SELECTED_NO_STEP,SR_STATE,303);
     sr_zero(&srr.claimed,sizeof srr.claimed);
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+    srcg_begin();
+#endif
 }
 static int srr_permitted(size_t slot) {
     const struct srr_permit *p=&srr.permits[slot];
@@ -96,6 +102,9 @@ static void srr_prepare(size_t slot,uintptr_t target,const siginfo_t *si,const u
        mutable slot bytes. A nested event never closes a partially copied plan. */
     srr.pending=1;srr.slot=slot;srr.target=target;r->slot=(unsigned)slot;r->slot_present=1;
     selected_pending_route=SELECTED_SCALAR_REGION;selected_step_pending=1;__asm__ volatile("":::"memory");
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+    srcg_prepare(slot,target);
+#endif
     if(slot<selected_scalar_region.used) {
         sr_need(srr_permitted(slot),SR_STATE,307);
         struct srr_retirement *t=&srr.retirement;
@@ -105,15 +114,24 @@ static void srr_prepare(size_t slot,uintptr_t target,const siginfo_t *si,const u
         t->ordinal=srr.retirement_attempts;copy(&t->old_slot,s,sizeof *s);
         copy(&srr.claimed,&srr.permits[slot],sizeof srr.claimed);
         srr.permits[slot].valid=0;t->consumed=1;srr.retiring=1;__asm__ volatile("":::"memory");
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+        srcg_retire_verify(slot);
+#endif
         /* A fresh full reconstruction detects stale/corrupted metadata before
            it is retired; every byte of its actual closed image still matches. */
         sr_need(!sr_plan(&s->plan) && !sr_query(t->old_entry,PROT_READ,&t->old_idle) &&
             !sr_bytes(s,&t->verified_bytes),SR_PUBLICATION,300);t->old_verified=1;
         srr.live[slot]=0;
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+        srcg_revoke(slot);
+#endif
         sr_need(!srr_permission(t->old_entry,PROT_READ,&t->revoked),SR_PUBLICATION,301);
         /* Low/high placement can switch. Revoke the actual target too, even
            when it is virgin RW; no retained opposite-arena page stays RX. */
         sr_need(!srr_permission(target,PROT_READ,&t->target_closed),SR_PUBLICATION,302);
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+        srcg_writable(slot);
+#endif
         sr_need(!srr_permission(target,PROT_READ|PROT_WRITE,&t->writable),SR_PUBLICATION,303);
         sr_need(!li2_lifecycle_region_validate(&selected_borrow,&r->source,&selected_scalar_region.scratch) &&
             sr_quiet(&selected_borrow) && sr_unchanged(&r->before,si,uc),SR_SOURCE,300);
@@ -127,6 +145,9 @@ static void srr_prepare(size_t slot,uintptr_t target,const siginfo_t *si,const u
     r->publication_generation=srr.generation;
 }
 static void srr_published(size_t slot) {
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+    srcg_commit(slot);
+#endif
     sr_need(srr.pending && srr.slot==slot && srr_identity(slot,srr.generation),SR_STATE,309);
     if(srr.retiring) {
         struct srr_retirement *t=&srr.retirement;
@@ -142,6 +163,9 @@ static void srr_claim(size_t slot,int hit) {
         sr_need(!srr.pending && srr_address(slot,srr.entry[slot]),SR_STATE,312);
         srr.pending=1;srr.slot=slot;srr.target=srr.entry[slot];
         r->publication_generation=srr.live[slot];
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+        srcg_hit(slot);
+#endif
         sr_need(srr_permitted(slot),SR_STATE,312);
         copy(&srr.claimed,&srr.permits[slot],sizeof srr.claimed);srr.permits[slot].valid=0;
     } else sr_need(srr.pending && srr.slot==slot && r->publication_generation==srr.live[slot],SR_STATE,313);
@@ -165,9 +189,15 @@ static void srr_quiesce(int sig,const siginfo_t *si,const ucontext_t *uc) {
         r->closed_bytes==PAGE && f && !f->held && f->complete && !f->first_error &&
         equal(f,&r->final_fetch,sizeof *f) && equal(r,&selected_scalar_region.last,sizeof *r) &&
         sig==r->after.sig && sr_identity() && sr_quiet(0) && sr_unchanged(&r->after,si,uc),SR_STATE,314);
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+    srcg_quiesce();
+#endif
     struct srr_permit *p=&srr.permits[r->slot];sr_need(!p->valid,SR_STATE,315);
     p->generation=r->publication_generation;p->completion=selected_scalar_region.completed;
     p->valid=1;sr_count(&srr.permits_issued);srr.pending=0;
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+    srcg_released();
+#endif
 }
 static void srr_abort(void) {
     struct sr_record *r=&selected_scalar_region.current;

@@ -106,4 +106,30 @@ _Static_assert(sizeof(struct li2_region_head)==32,"region head layout");
 _Static_assert(sizeof(struct li2_region_pc)==48,"region map layout");
 _Static_assert(sizeof(struct li2_region_plan)==53024,"region plan layout");
 _Static_assert(sizeof(struct li2_region_plan)<65536,"bounded plan workspace");
+
+/* Additive scalar-span plan: exact same bounded graph/source-page geometry,
+   distinct descriptor and API. No cast or old validator acceptance. */
+#define LI2_SPAN_PLAN_VERSION 1U
+enum { LI2_SPAN_PC_RIP_RELOCATED=4 };
+struct li2_span_plan {
+    uint32_t version,ready,heads,blocks,exits,maps,longest_path,stop_reason;
+    uint32_t source_bytes,image_bytes,decoder_calls,decoder_result;
+    uintptr_t page,entry,generated,boundary_pc;
+    unsigned char source[LI2_REGION_PAGE],image[LI2_REGION_PAGE];
+    struct li2_span_decoded original[LI2_REGION_HEADS],boundary;
+    struct li2_span_decoded emitted[LI2_REGION_MAPS];
+    struct li2_region_head head[LI2_REGION_HEADS];
+    uintptr_t exit_pc[LI2_REGION_EXITS];
+    struct li2_region_pc map[LI2_REGION_MAPS];
+};
+/* CPU-read/LEA RIP displacement is the only additional NEXT-byte rewrite.
+   Actual emitted decode must retain the exact original absolute target and
+   every other effect. Unreachable signed disp32 refuses; no scratch/literal.
+   All old pure-planning and future-owner obligations above remain required. */
+int li2_span_plan_page(uintptr_t,const unsigned char *,uintptr_t,uintptr_t,
+                       struct li2_span_plan *);
+int li2_span_plan_validate(const struct li2_span_plan *);
+int li2_span_map_pc(const struct li2_span_plan *,uintptr_t,struct li2_region_pc *);
+_Static_assert(sizeof(struct li2_span_plan)==57184,"span plan layout");
+_Static_assert(sizeof(struct li2_span_plan)<65536,"bounded span plan workspace");
 #endif

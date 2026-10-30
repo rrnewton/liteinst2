@@ -1,5 +1,8 @@
 #define _GNU_SOURCE
 #include "step_owner.h"
+#ifdef LI2_SPAN_FAST_BYTES
+#include "span_fast_bytes.h"
+#endif
 #ifdef LI2_REPEAT_RX_LEASE
 #include "repeat_lease.h"
 #endif
@@ -15,10 +18,14 @@ long li2_step_raw(long n,long a,long b,long c,long d,long e,long f) {
     return raw(n,a,b,c,d,e,f);
 }
 #define RAW(n,a,b,c,d,e,f) li2_step_raw(n,(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
+#ifdef LI2_SPAN_FAST_BYTES
+static void copy(void *d,const void *s,size_t n) { li2_span_bytes_copy(d,s,n); }
+#else
 static void copy(void *d,const void *s,size_t n) {
     unsigned char *out=d; const unsigned char *in=s;
     for(size_t i=0;i<n;i++)out[i]=in[i];
 }
+#endif
 static int equal(const void *a,const void *b,size_t n) {
     const unsigned char *x=a,*y=b;
 #ifdef LI2_FAST_EQUAL

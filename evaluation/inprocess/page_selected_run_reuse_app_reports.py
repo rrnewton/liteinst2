@@ -252,7 +252,7 @@ rseq=shared.rseq
 registered=shared.registered
 boundary=shared.boundary
 
-def run_completed(loader, repeat, run, reuse, scripted_syscalls):
+def run_completed(loader, repeat, run, reuse, scripted_syscalls, *, cache_completed=None):
     """General last-owner closure; finite loop count predicates are unchanged elsewhere."""
     need(all(loader[k] == run[k] == 0 for k in ZERO) and run['pending'] == run['route'] == 0 and
          loader['source_syscalls'] == loader['syscalls'] == loader['forwarded']+scripted_syscalls, 'actual successful whole process')
@@ -297,13 +297,16 @@ def run_completed(loader, repeat, run, reuse, scripted_syscalls):
              'actual completed protected brk preflight')
         need(b[4:6] == ([(b[2]+4095)&~4095, (b[3]+4095)&~4095] if b[2] < b[3] else [0, 0]),
              'exact observed shrink interval or no shrink')
-    reuse_completed(run, reuse)
+    (reuse_completed if cache_completed is None else cache_completed)(run, reuse)
 
 
-def chain_completed(loader,repeat,run,c,reuse,scripted_syscalls):
+def chain_completed(loader,repeat,run,c,reuse,scripted_syscalls, *, cache_completed=None, chain_closure=None):
     # This call retains every prior cache/publication/private-brk and generic
     # close/query/flags/error assertion. No reconstruction of an owner is used.
-    run_completed(loader,repeat,run,reuse,scripted_syscalls)
+    run_completed(loader,repeat,run,reuse,scripted_syscalls,cache_completed=cache_completed)
+    if chain_closure is not None:
+        chain_closure(loader,c)
+        return
     need(all(c[k]==0 for k in real.ZERO) and c['pending']==c['error']==c['unexpected']==c['proof_valid']==0 and
          c['attempts']==c['steps']==c['nx_entries']+c['trace_entries']>0 and
          c['nx_entries']==c['fallbacks']>0 and c['sequence']==c['trace_entries']>0 and
@@ -332,9 +335,9 @@ def chain_completed(loader,repeat,run,c,reuse,scripted_syscalls):
          'rich unchanged LOADER completion evidence binds the actual retained predecessor')
 
 
-def rseq_completed(loader, repeat, run, c, r, pid, reuse, scripted_syscalls):
+def rseq_completed(loader, repeat, run, c, r, pid, reuse, scripted_syscalls, *, cache_completed=None, chain_closure=None):
     # Preserve all existing cache, chain, source, release and frame predicates.
-    chain_completed(loader, repeat, run, c, reuse, scripted_syscalls)
+    chain_completed(loader, repeat, run, c, reuse, scripted_syscalls,cache_completed=cache_completed,chain_closure=chain_closure)
     owner, counts, t, args = r['owner'], r['counts'], r['transaction'], r['args']
     initialized, registered, held, phase = owner[:4]
     need(initialized == 1 and registered in (0,1) and held == registered and

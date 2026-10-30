@@ -201,6 +201,22 @@ static void uho_fd_guard(long,const long[6]);
 #endif
 #endif
 
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE
+#if LI2_SCALAR_REGION_REUSE_CERTIFICATE != 1 || !defined(LI2_SCALAR_REGION_REUSE) || LI2_SCALAR_REGION_REUSE != 1 || \
+    !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1 || defined(LI2_SCALAR_REGION_CERTIFICATE)
+#error "distinct literal generation-bound certificate profile required"
+#endif
+#ifdef LI2_SCALAR_REGION_CAPTURE
+#if !defined(LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE) || LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE != 1
+#error "certificate/reuse capture requires its distinct complete v3 profile"
+#endif
+#endif
+#endif
+#ifdef LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE
+#if LI2_SCALAR_REGION_REUSE_CERTIFICATE_CAPTURE != 1 || !defined(LI2_SCALAR_REGION_REUSE_CERTIFICATE) || LI2_SCALAR_REGION_REUSE_CERTIFICATE != 1 || !defined(LI2_SCALAR_REGION_CAPTURE) || LI2_SCALAR_REGION_CAPTURE != 1
+#error "literal complete certificate capture feature dependencies required"
+#endif
+#endif
 #ifdef LI2_SCALAR_REGION_CAPTURE
 #if LI2_SCALAR_REGION_CAPTURE != 1 || !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1 || \
     defined(LI2_UNROLLED_HASH_CAPTURE) || defined(LI2_UNROLLED_HASH_OBSERVE_ONLY)
@@ -221,6 +237,33 @@ static void selected_scalar_region_preentry(int,siginfo_t *,ucontext_t *);
 static _Noreturn void selected_scalar_region_abort(unsigned,long);
 static _Noreturn void selected_scalar_region_unexpected(int,siginfo_t *,ucontext_t *);
 static void selected_scalar_region_report(unsigned,unsigned,long);
+#endif
+
+#ifdef LI2_SCALAR_SPAN_TRACE
+#if LI2_SCALAR_SPAN_TRACE != 1 || !defined(LI2_SCALAR_SPAN) || LI2_SCALAR_SPAN != 1 || \
+    !defined(LI2_SCALAR_REGION_REUSE) || LI2_SCALAR_REGION_REUSE != 1 || \
+    !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1 || \
+    !defined(LI2_TF_HANDOFF) || LI2_TF_HANDOFF != 1 || \
+    defined(LI2_SCALAR_REGION_CAPTURE) || defined(LI2_UNROLLED_HASH_CAPTURE) || \
+    defined(LI2_CURRENT_TF_CAPTURE) || defined(LI2_UNROLLED_HASH_OBSERVE_ONLY) || \
+    defined(LI2_SCALAR_REGION_REUSE_CERTIFICATE) || defined(LI2_SCALAR_REGION_CERTIFICATE)
+#error "distinct span TRACE profile requires old reuse and separately qualified capture"
+#endif
+#include "tf_span_transfer.h"
+static volatile sig_atomic_t selected_scalar_span_active,selected_scalar_span_busy;
+static void selected_scalar_span_initialize(void);
+#ifdef LI2_SCALAR_SPAN_CAPTURE
+#if LI2_SCALAR_SPAN_CAPTURE != 1 || !defined(LI2_INITIAL_CODE_PROTECTION) || LI2_INITIAL_CODE_PROTECTION != 1
+#error "literal distinct TRACE capture and original initial protection profile"
+#endif
+static void spto_fd_guard(long,const long[6]);
+#endif
+static int selected_scalar_span_trace_try(int,siginfo_t *,ucontext_t *);
+static void selected_scalar_span_exit(int,siginfo_t *,ucontext_t *);
+static void selected_scalar_span_preentry(int,siginfo_t *,ucontext_t *);
+static _Noreturn void selected_scalar_span_abort(unsigned,long);
+static _Noreturn void selected_scalar_span_unexpected(int,siginfo_t *,ucontext_t *);
+static void selected_scalar_span_report(unsigned,unsigned,long);
 #endif
 
 #include "fork_profile.h"
@@ -446,11 +489,18 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_SCALAR_REGION
     selected_scalar_region_report(status,code,detail);
 #endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+    selected_scalar_span_report(status,code,detail);
+#endif
 #ifdef LI2_EVENT_PROFILE
     event_report();
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_SCALAR_SPAN_TRACE
+    if(selected_scalar_span_active || selected_scalar_span_busy || selected_pending_route==SELECTED_SCALAR_SPAN)
+        selected_scalar_span_abort(code,detail);
+#endif
 #ifdef LI2_SCALAR_REGION
     if(selected_scalar_region_active || selected_scalar_region_busy || selected_pending_route==SELECTED_SCALAR_REGION)
         selected_scalar_region_abort(code,detail);
@@ -608,6 +658,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_SCALAR_REGION_CAPTURE
     sro_fd_guard(n,a);
+#endif
+#ifdef LI2_SCALAR_SPAN_CAPTURE
+    spto_fd_guard(n,a);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
 #ifdef LI2_EFFECT_PROVIDER
@@ -768,6 +821,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_SCALAR_REGION
 #include "selected_scalar_region.inc"
 #endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+#include "selected_scalar_span.inc"
+#endif
 
 #ifdef LI2_NATIVE_PAGES
 #include "native_controller.inc"
@@ -788,6 +844,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_RSEQ_NATIVE
     /* Must precede every old checked/fail and returning cleanup path. */
     li2_rseq_native_preentry();
+#endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+    selected_scalar_span_preentry(sig,si,ptr);
 #endif
 #ifdef LI2_SCALAR_REGION
     selected_scalar_region_preentry(sig,si,ptr);
@@ -884,6 +943,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
     cto_begin(sig,si,ptr);
+#endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+    if(selected_pending_route==SELECTED_SCALAR_SPAN) {
+        selected_scalar_span_exit(sig,si,ptr);
+    } else
 #endif
 #ifdef LI2_SCALAR_REGION
     if(selected_pending_route==SELECTED_SCALAR_REGION) {
@@ -1059,6 +1123,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_SCALAR_REGION
     selected_scalar_region_initialize();
+#endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+    selected_scalar_span_initialize();
 #endif
 #ifdef LI2_MAPS_MAINTAINED
     checked(!li2_maps_view_enable(),770,1);

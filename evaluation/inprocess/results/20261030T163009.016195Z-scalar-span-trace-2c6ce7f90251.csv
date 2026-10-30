@@ -1,0 +1,10 @@
+lane,mode,control,status,expected_exit,exit,whole_process_ns,application_control_count,terminal_control_count,owner_control_count
+native,0,0,qualified_native_reference,0,0,185095623,0,0,0
+native,1,0,qualified_native_reference,0,0,410336296,0,0,0
+native,2,0,qualified_native_reference,0,0,236085152,0,0,0
+native,3,0,qualified_native_reference,125,125,164296411,0,0,0
+gated,0,0,qualified_generated_transfer,0,0,17790121814,28,305,32
+gated,1,0,qualified_generated_transfer,0,0,17937491994,28,305,32
+gated,2,0,qualified_ordinary_resume,0,0,17694887225,28,305,32
+gated,3,0,qualified_required_read_failure,125,125,10904020696,28,287,33
+gated,0,1,qualified_required_nested_refusal,125,125,11487346262,0,287,35

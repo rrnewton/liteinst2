@@ -971,6 +971,13 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_SCALAR_REGION
 #include "region_source.inc"
 #endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+#include "span_fetch.inc"
+#include "span_source.inc"
+#ifdef LI2_SCALAR_SPAN_CAPTURE
+#include "span_trace_observe_memory.inc"
+#endif
+#endif
 #ifdef LI2_UNROLLED_HASH
 #include "unrolled_source.inc"
 #endif

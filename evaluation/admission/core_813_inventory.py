@@ -12,6 +12,7 @@ import inventory_digest
 import inventory_copy
 import inventory_splice
 import recorder_shards_inventory as recorder_shards
+import core_367_inventory as main367
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
@@ -117,7 +118,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091, main367.DATA, main367.mainc712.DATA, main367.mainc712.main0fb574.DATA)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -141,6 +142,7 @@ def precheck_current_sources(error):
 
 def source_before_091(path, data, error):
     """Whole current source, exact sparse inverse, then whole historical source."""
+    data = main367.source_before(path, data, error)
     if path not in MAIN091['projections']:
         return data
     row = MAIN091['projections'][path]
@@ -160,6 +162,8 @@ def require_091_sources(error='main091_source_inventory_differs'):
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        observed = raw
+        raw = main367.source_before(path, raw, error)
         require(inventory_digest.hexdigest(raw) == expected, error)
         if path in MAIN091['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -169,7 +173,7 @@ def require_091_sources(error='main091_source_inventory_differs'):
                     raw.count(b'#[test]') == len(found), error)
         if path in MAIN091['module_chains']:
             require(all(raw.decode().count(literal) == 1 for literal in MAIN091['module_chains'][path]), error)
-        source_before_091(path, raw, error)
+        source_before_091(path, observed, error)
     for previous, row in MAIN091['relocations'].items():
         require(MAIN091['sources'][row['current_path']] == row['sha256'], error)
         if row['old_path_absent']:

@@ -10,6 +10,7 @@ import core_813_inventory as main813
 import core_5cda_inventory as main5c
 import core_cc846_inventory as inventory
 import recorder_shards_inventory as shards
+import core_367_inventory as main367
 import precontext_native as protocol
 import parsing
 import run
@@ -971,10 +972,11 @@ class Main813InventoryTests(unittest.TestCase):
         # The new live recorder has exactly four additional independent cases.
         # Historical350 is accepted only by the named historical API, never by
         # the live entry point. Every source read and historical guard stays live.
-        recorder_live = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
-        recorder_ids = main5c.python_identities(Path(__file__).parent)
+        # Authenticate the newest source/catalog before testing the unchanged354 boundary.
+        recorder_live = main367.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
+        recorder_ids = main367.before_python(main5c.python_identities(Path(__file__).parent))
         self.assertEqual((recorder_live['recorder_tests'], len(recorder_ids)), (354, 354))
-        self.assertEqual(inventory.RECORDER_TESTS, 354)
+        self.assertEqual(shards.RECORDER_TESTS, 354)
         self.assertEqual(shards.digest(recorder_live), shards.CURRENT)
         recorder_old = shards.before_current(recorder_live)
         self.assertEqual(recorder_old['recorder_tests'], 350)
@@ -982,14 +984,14 @@ class Main813InventoryTests(unittest.TestCase):
         self.assertEqual(dict(recorder_live, recorder_tests=350), recorder_old)
         self.assertEqual(len(shards.before_python(recorder_ids)), 350)
         self.assertEqual(shards.digest(shards.before_python(recorder_ids)), main813.PYTHON_CURRENT)
-        self.assertIsNone(inventory.require_current(recorder_live))
+        self.assertIsNone(inventory.require_historical354(recorder_live))
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-            inventory.require_current(recorder_old)
+            inventory.require_historical354(recorder_old)
         for recorder_count in (350, 353, 355, True, 354.0):
             recorder_bad = copy.deepcopy(recorder_live)
             recorder_bad['recorder_tests'] = recorder_count
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(recorder_bad)
+                inventory.require_historical354(recorder_bad)
         for recorder_key in recorder_live:
             recorder_bad = copy.deepcopy(recorder_live)
             recorder_bad[recorder_key] = None
@@ -1005,7 +1007,7 @@ class Main813InventoryTests(unittest.TestCase):
         recorder_read = Path.read_bytes
         for recorder_path, recorder_row in shards.DATA['sources'].items():
             recorder_target = shards.ROOT / recorder_path
-            recorder_raw = recorder_read(recorder_target)
+            recorder_raw = main367.source_before_evaluation(recorder_path, recorder_read(recorder_target), 'recorder_source_control')
             self.assertEqual(hashlib.sha256(recorder_raw).hexdigest(), recorder_row['current_sha256'])
             recorder_prior = shards.source_before(recorder_path, recorder_raw, 'recorder_source_control')
             self.assertEqual(hashlib.sha256(recorder_prior).hexdigest(), recorder_row['previous_sha256'])
@@ -1022,7 +1024,7 @@ class Main813InventoryTests(unittest.TestCase):
                     return recorder_read(candidate)
                 with patch.object(Path, 'read_bytes', recorder_changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
-                        inventory.require_current(recorder_live)
+                        inventory.require_historical354(recorder_live)
         import recorder_parallel
         for recorder_workers in (1, 2, 3, 4):
             recorder_groups = recorder_parallel.partition(recorder_ids, recorder_workers)
@@ -1038,6 +1040,7 @@ class Main813InventoryTests(unittest.TestCase):
         # Discovery, rather than the generic partition helper, owns the complete
         # runtime population. Renaming one shard keeps count and declared/runtime
         # identity equality exact, isolating the required-shard membership gate.
+        recorder_ids = main5c.python_identities(Path(__file__).parent)
         class RecorderCase:
             def __init__(self, identity):
                 self.identity = identity

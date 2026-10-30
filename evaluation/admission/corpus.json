@@ -6483,7 +6483,7 @@
       },
       "unit/liteinst_artifact/lib": {
         "ignored": 0,
-        "tests": 46
+        "tests": 50
       },
       "unit/liteinst_inprocess/lib": {
         "ignored": 0,
@@ -6495,11 +6495,11 @@
       },
       "unit/liteinst_preempt/main": {
         "ignored": 0,
-        "tests": 2
+        "tests": 32
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 150
+        "tests": 155
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
@@ -7590,6 +7590,6 @@
       }
     ]
   },
-  "recorder_tests": 354,
+  "recorder_tests": 357,
   "schema_version": 1
 }

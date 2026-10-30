@@ -10,6 +10,10 @@
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_guard.h"
 #endif
+#ifdef LI2_SCALAR_SPAN_TRACE
+static void span_event_boundary(void);
+static void span_handler_end(struct li2_tf_chain *);
+#endif
 static struct li2_tf_chain *chain_registered;
 #if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
 struct li2_tf_run_entry {
@@ -387,11 +391,17 @@ int li2_tf_chain_init(struct li2_tf_chain *c,struct li2_step_session *session,
 }
 void li2_tf_chain_event_boundary(struct li2_tf_chain *c) {
     if(!c || !c->initialized)return;
+#ifdef LI2_SCALAR_SPAN_TRACE
+    span_event_boundary();
+#endif
     chain_invalidate(c);chain_need(c,chain_registered_ok(c),LI2_CHAIN_ARGUMENT,0);
     chain_count(c,&c->event_id);
 }
 void li2_tf_chain_handler_end(struct li2_tf_chain *c) {
     if(!c || !c->initialized)return;
+#ifdef LI2_SCALAR_SPAN_TRACE
+    span_handler_end(c);
+#endif
     chain_invalidate(c);chain_need(c,!c->in_handler,LI2_CHAIN_STATE,2);
 #ifdef LI2_TF_SEALED_CUSTODY
 #ifdef LI2_MAPS_CURRENT_TF
@@ -562,3 +572,6 @@ _Noreturn void li2_tf_chain_unexpected(struct li2_tf_chain *c,int sig,siginfo_t 
     if(uc){frame(o,&s->unexpected,uc);s->unexpected_frame_observed=1;}
     li2_tf_chain_abort(c,LI2_STEP_FOREIGN_EVENT,sig);
 }
+#ifdef LI2_SCALAR_SPAN_TRACE
+#include "tf_span_transfer.inc"
+#endif

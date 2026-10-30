@@ -1,4 +1,7 @@
 #include "bridge.h"
+#ifdef LI2_SPAN_FAST_BYTES
+#include "selected/span_fast_bytes.h"
+#endif
 #include "sha256.h"
 #ifdef LI2_EVENT_PROFILE
 #include "selected/event_profile.h"
@@ -35,7 +38,11 @@ long raw(long n,long a,long b,long c,long d,long e,long f) {
 long raw(long n,long a,long b,long c,long d,long e,long f) { return li2_raw6(n,a,b,c,d,e,f); }
 #endif
 static int failed(long r) { return (unsigned long)r >= (unsigned long)-4095; }
+#ifdef LI2_SPAN_FAST_BYTES
+void copy(void *v,const void *w,size_t n) { li2_span_bytes_copy(v,w,n); }
+#else
 void copy(void *v,const void *w,size_t n) { unsigned char *d=v;const unsigned char *s=w;while(n--)*d++=*s++; }
+#endif
 void *memcpy(void *d,const void *s,size_t n) { copy(d,s,n);return d; }
 #if defined(LI2_FAST_MEMSET) && LI2_FAST_MEMSET
 /* Runtime C entries have DF clear. This also establishes forward direction
@@ -49,7 +56,11 @@ void *memset(void *d,int c,size_t n) {
 #else
 void *memset(void *d,int c,size_t n) { unsigned char *p=d;while(n--)*p++=(unsigned char)c;return d; }
 #endif
+#ifdef LI2_SPAN_FAST_BYTES
+int equal(const void *v,const void *w,size_t n) { return li2_span_bytes_equal(v,w,n); }
+#else
 int equal(const void *v,const void *w,size_t n) { const unsigned char *a=v,*b=w;while(n--)if(*a++!=*b++)return 0;return 1; }
+#endif
 void li2_fail(const char *why) {
     const char prefix[]="LI2_FIRST_ENTRY refused: ";size_t n=0;while(why[n]&&n<160)++n;
     (void)raw(SYS_write,2,(long)prefix,sizeof(prefix)-1,0,0,0);
