@@ -106,7 +106,7 @@ static void spto_initialize(void) {
     __asm__ volatile(""::"r"(&spto_step_frame_fp_alignment),"r"(&spto_nested_zero_alignment),"r"(&spto_nested_ones_alignment):"memory");
     sp_need(!spto_ready && !spto_finished,SP_STATE,102);
     uint64_t *h=spto_wire.h;
-    h[0]=SPTO_MAGIC;h[1]=1;h[2]=sizeof spto_wire;h[3]=sizeof(struct spto_entry);
+    h[0]=SPTO_MAGIC;h[1]=2;h[2]=sizeof spto_wire;h[3]=sizeof(struct spto_entry);
     h[4]=sizeof(struct sp_record);h[5]=sizeof(struct sp_slot);h[6]=sizeof(struct sp_frame);
     h[7]=sizeof(ucontext_t);h[8]=sizeof(siginfo_t);h[9]=(uintptr_t)li2_raw6;
     h[10]=(uintptr_t)li2_gateway_start;h[11]=(uintptr_t)li2_gateway_end;
@@ -345,6 +345,11 @@ static void spto_finish(unsigned status,unsigned code,long detail) {
     if(f){spto_copy(&spto_wire.terminal_fetch,f,sizeof *f);h[50]=1;}
     if(g){spto_copy(&spto_wire.terminal_global_close,g,sizeof *g);h[51]=1;}
     if(n){spto_copy(&spto_wire.terminal_native_counts,n,sizeof *n);h[57]=1;}
+    /* Wire v2 captures every remaining LI2_NATIVE operand, independently of
+       its text report. These five words were required-zero in wire v1. */
+    const struct li2_native_epoch *ne=li2_native_epoch_progress();
+    h[58]=native_main_admissions;h[59]=native_main_refaults;
+    h[60]=ne->ready;h[61]=ne->retries;h[62]=ne->first_error;
     spto_registry(&spto_wire.terminal_registry);
     long flags=raw(SYS_fcntl,3,F_GETFL,0,0,0,0);
     long result=raw(SYS_fstat,3,(long)&spto_wire.sink_terminal,0,0,0,0);
@@ -357,7 +362,7 @@ static void spto_finish(unsigned status,unsigned code,long detail) {
         at+=(size_t)result;
     }
     if(at!=sizeof spto_wire)return;
-    const uint64_t footer[]={SPTO_FOOTER,1,sizeof spto_wire,at,calls,(uint64_t)result,status,code};
+    const uint64_t footer[]={SPTO_FOOTER,2,sizeof spto_wire,at,calls,(uint64_t)result,status,code};
     at=0;calls=0;
     while(at<sizeof footer && calls<64) {
         ++calls;result=raw(SYS_write,3,(long)((const unsigned char *)footer+at),sizeof footer-at,0,0,0);

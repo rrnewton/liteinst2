@@ -55,12 +55,12 @@ class Check(old.Check):
 
     def header(self,status):
         h=self.h;r=self.r;t='spto_wire';code=3104 if status else 0;detail=5 if self.control else 11 if status else 0
-        need(h[:9]==(0x314f54535049324c,1,r.types[t]['bytes'],r.types['spto_entry']['bytes'],r.types['sp_record']['bytes'],r.types['sp_slot']['bytes'],r.types['sp_frame']['bytes'],968,128),'whole actual TRACE capture version and extent')
+        need(h[:9]==(0x314f54535049324c,2,r.types[t]['bytes'],r.types['spto_entry']['bytes'],r.types['sp_record']['bytes'],r.types['sp_slot']['bytes'],r.types['sp_frame']['bytes'],968,128),'whole actual TRACE capture version and extent')
         need(canonical(self.bias) and self.bias%PAGE==0 and h[9:12]==tuple(self.symbol(k)for k in ('li2_raw6','li2_gateway_start','li2_gateway_end'))and h[10]<=h[9]<h[11],'actual bridge bias and gateway')
         need(canonical(h[12],h[13])and h[12]%PAGE==0 and h[13]==524288,'whole actual altstack')
         need(h[14:16]==(1,0)and h[16]&(3|0x400|0x800)==1 and h[17:20]==(0,1,0),'actual exclusive FD3 sink')
         need(h[20]==self.head and h[22]==self.image['main_object']and h[23:26]==(1,self.app['mode'],0)and h[26:30]==(1,status,code,detail),'exact focal source, fixed mode and actual outcome')
-        need(h[39:43]==(0,0,h[16],0)and h[45]<=h[44]<=h[43]and h[46]<=h[43]and h[47:50]==(0,0,0)and h[50:52]==(1,1)and h[57]==1 and not any(h[58:]),'all sink/diagnostic and terminal markers')
+        need(h[39:43]==(0,0,h[16],0)and h[45]<=h[44]<=h[43]and h[46]<=h[43]and h[47:50]==(0,0,0)and h[50:52]==(1,1)and h[57]==1 and h[63]==0,'all sink/diagnostic and terminal markers')
         need(h[52:57]==tuple(self.symbol(k)for k in ('selected_scalar_span','span_progress','spr','selected_chain','spto_wire')),'actual protected owner/capability/collector addresses')
         need(type(self.control)is int and self.control in(0,1)and(not self.control or self.app['mode']==0)and self.control_words[0]==self.control,'exact requested nested case')
         if not self.control:
@@ -70,7 +70,7 @@ class Check(old.Check):
         for key in ('sink_initial','sink_terminal'):
             a=self.f(self.b,t,key);st=self.stat(a);need(st['mode']&0xffff==0x8180 and st['size']==0,'actual empty0600 sink');self.eq(a,'stat',st_nlink=1,st_uid=self.image['uid'])
         self.r.change(self.f(self.b,t,'sink_initial'),self.f(self.b,t,'sink_terminal'),'stat',observed=('st_atim','st_mtim','st_ctim'))
-        footer=q(r.data[-64:]);need(footer[:4]==(0x314654535049324c,1,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'whole actual wire/footer/write completion')
+        footer=q(r.data[-64:]);need(footer[:4]==(0x314654535049324c,2,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'whole actual wire/footer/write completion')
         if footer[4]==1:need(footer[5]==len(self.b),'single complete actual write')
         for key,objid in (('main',self.image['main_object']),('interpreter',self.image['interpreter_object'])):self.image_header(self.f(self.b,t,key),objid)
         obj,_,loads=self.objects[self.image['main_object']];bias=self.bases[self.image['main_object']]
@@ -398,9 +398,12 @@ class Check(old.Check):
             values=list(q(native.field('revisit_ns')));need(all(v>0 for v in values[:revisit]) and not any(values[revisit:]),'actual positive revisit prefix and entire zero tail')
             need(native.integer('first_source_offset')%PAGE==0 and (native.integer('first_admission_ns')>0 if native.integer('admissions') else native.integer('first_admission_ns')==0),'actual first native timing/offset observation')
             physical={k:native.integer(k) for k in ('attempts','admissions','closed','blocked','low_address_refusals','first_admission_ns','first_source_offset','revisit_count')}
-            physical.update(status=outcome['status'],failure_code=outcome['failure_code'],revisit_ns=values[:revisit],
+            need(self.h[58]<=native.integer('admissions') and not any(self.h[59:63]),
+                'actual main admissions subset and entire unused native epoch state')
+            physical.update(version=1,status=outcome['status'],failure_code=outcome['failure_code'],revisit_ns=values[:revisit],
+                main_admissions=self.h[58],main_refaults=self.h[59],
                 close_error=close.integer('first_error'),close_complete=close.integer('complete'),close_busy=close.integer('busy'),
-                epoch_exits=0,refaults=0,epoch_error=0)
+                epoch_exits=self.h[60],refaults=self.h[61],epoch_error=self.h[62])
             return dict(native_pair=old.pair_row(pair,life,rp,close,outcome),rseq=old.rseq_row(state,outcome),native=physical)
 
 
