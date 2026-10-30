@@ -1,48 +1,69 @@
-# Adjacent backward branch and routed successor
+# Adjacent branches with a routed successor
 
-Claim 4 / A3 core increment: the explicit artifact planner now handles a
-backward two-byte JBE immediately before a forward two-byte JMP and an unselected
-three-byte MOV R12→RDI. It relocates the JMP/MOV, retains a separate routed MOV
-entry, then places the JBE generalized pun against the resulting source bytes.
-The ordinary planner and existing forward-Jcc pair profile retain their guards.
+The explicit artifact planner and ELF frontend now handle a backward two-byte
+JBE immediately before a forward two-byte JMP and an unselected MOV R12→RDI.
+The upper relocation retains a separately routed MOV entry; the lower JBE uses
+a generalized pun against the resulting source bytes. Original geometry selects
+this family or the existing forward-Jcc pair before either outcome is known.
+The full selected roster, transactional composition, pending ownership and
+independent cumulative upper/lower/continuation limits remain mandatory.
 
-The API is `plan_adjacent_routed_jmp_with_emission_after`. Its opaque result
-contains upper Relocation and lower GeneralizedPun members. Original byte and
-entry authentication, pending ownership, transactional composition and separate
-cumulative upper/lower/continuation budgets remain mandatory. Pair accounting
-covers its two new members; callers must also enforce predecessor and whole-file
-limits. Native/router/frontend/artifact qualification remains false.
+The frontend can place its read-only program-header carrier in a verified gap
+between original ET_EXEC LOADs. It checks complete rounded memory ownership,
+including BSS, preserves original header order and bytes, and charges the full
+original-plus-new address span. Existing carrier APIs retain their restrictions.
+All frozen fixtures, old profiles (including 16 MiB), caps and earlier failures
+remain intact.
 
-At merged revision `7bbc027f91ab271c27f47a4893b53a7e61e71606`, **21 new controls
-pass**. They exercise actual emitted images and both entry paths, original-byte
-and entry mutations, prior compositions, pending suffix ownership, rollback,
-page permits, hook reachability and independent budget exhaustion.
+The native fixed-fixture campaign validates 31 rows, two seeds, two hook modes
+and three phases: **372 subject traces**, with real production SIGILL routing,
+16 routed deliveries, 12 saved-successor signal returns and 192 hardware
+CALL/RET pairs per complete campaign. It compares GPRs, defined flags, canonical
+native XSAVE, memory, stack, pages and exact logs. These results cover the private
+fixture; they do not establish general ELF installation or retirement.
+[Native evidence](native-bba07c2/README.md) retains the initial 17 failing rows
+and the observer-step correction without changing any comparator or bound.
 
-The required parallel workspace passes **3,670 tests, 0 failures, 37 ignored**
-in 868.41 seconds; serial launch passes **1,039 tests, 0 failures** in 127.62
-seconds. Formatting, strict workspace Clippy and all-target checking pass.
-The run retains 316 test threads on 16 reserved CPUs. All 21 short-neighbor
-tests, both previously flaky staged-drop tests, the prefixed-pun native campaign
-and both Rapid rejection regressions pass. Five nested child summaries are
-excluded; two custom harnesses complete separately.
+[Frontend evidence](frontend-ccd88c3/README.md) records **250 passing Rust tests**
+and **91 passing Python controls**, with every initial failure retained.
+The strengthened combined fixture independently inspects its actual ELF output,
+including the high original LOAD, BSS, carrier/table, full hull and four images.
+Independent source reviews found no weakened assertion, fixture, cap or gate.
 
-[receipt.json](core-7bbc027/receipt.json) records exact source revisions/hashes,
-commands, CPU reservations, load, hardware and raw-log hashes.
-[controls.csv](core-7bbc027/controls.csv) lists all 21 controls. It retains two
-initial compile failures on identical source, including the accidental repeat
-after an edit precondition failed, and two subsequent lint failures. Six
-verifier calls were inlined to fix temporary-borrow lifetimes; `inspect_err`,
-direct Copy and formatting preserve their predicates. No fixture, assertion,
-budget or comparator was relaxed. Raw logs stay in ignored storage.
+The release [two-program diagnostic](corpus-ccd88c3/README.md) now produces both
+complete candidate files: checksum has 80 heads / 16 selected jumps / 19 images;
+RLE has 107 / 26 / 29. All **187 heads and 42 selected sites** remain represented.
+Each program uses one routed-JMP pair. Both outer commands retain **exit 2** and
+`FAILED_OR_INCOMPLETE`: two ancestor Cargo configuration lookups were unreadable.
+Independent whole-artifact verification (W01) and native execution (N01) remain
+pending. Producer success does not qualify either gate or establish performance.
 
-These are debug-build correctness checks on an AMD EPYC Zen 5 dev host.
-Elapsed times are command receipts, not performance measurements. Native
-execution of this mixed pair, routed fault delivery, frontend integration and
-full-program corpus success remain pending. Existing corpus refusals remain
-recorded in [the earlier diagnostic](../adjacent-b2/corpus-21728d7/README.md).
+At source `ccd88c3`, the required full parallel workspace passes **3,768 tests,
+0 failures, 37 ignored** in 880.16 seconds. Serial launch passes **1,039 tests**
+in 133.39 seconds. Formatting, strict all-feature/all-target workspace Clippy
+and checking pass. The workspace uses 316 test threads on 16 reserved CPUs.
+Both Rapid rejection tests, all 21 short-neighbor cases, observing-control and
+prefixed-pun regressions, and the new native/frontend/gap controls pass.
+[Validation receipt](validation-ccd88c3/receipt.json) and
+[99 exact control results](validation-ccd88c3/controls.csv) record these checks.
+Five nested child summaries are excluded from the workspace total; both custom
+harnesses complete separately. All command cleanup completes with no adopted
+descendants.
 
-To reproduce, use Rust 1.97.1 and Python 3.12 at the tested revision, reserve
-16 disjoint CPUs, and run the existing bounded driver with a fresh output path:
+This is claim 4 / A3 progress; A3 remains incomplete. Tests use debug builds on
+an **AMD EPYC Zen 5 dev host**. Reported elapsed times are command receipts, not
+performance measurements. Only the corpus capture/producer uses release builds;
+no performance result is asserted. Raw logs and captures remain ignored.
+
+The earlier [core receipt](core-7bbc027/receipt.json) and
+[21 controls](core-7bbc027/controls.csv) remain unchanged: 3,670 workspace tests
+passed at 7bbc027, with 37 ignored and no failures. That historical result
+predates this native/frontend increment.
+
+To reproduce the full validation at source revision
+`ccd88c3aa96e7e9a590838d5d8c01cccebbca139`, use Rust 1.97.1 and Python 3.12,
+reserve 16 disjoint CPUs, and run from the repository root with a fresh output
+path. The driver retains 316 test threads and the recorded command bounds:
 
 ```sh
 env CARGO_BUILD_JOBS=4 CARGO_INCREMENTAL=0 CARGO_NET_OFFLINE=true \
@@ -52,10 +73,11 @@ env CARGO_BUILD_JOBS=4 CARGO_INCREMENTAL=0 CARGO_NET_OFFLINE=true \
   CARGO_PROFILE_DEV_OVERFLOW_CHECKS=true CARGO_PROFILE_TEST_OVERFLOW_CHECKS=true \
   LITEINST_EVALUATION=1 \
   python3 -B evaluation/short-neighbor-parallel/validate.py \
-    --revision 7bbc027f91ab271c27f47a4893b53a7e61e71606 \
-    --output ignored/adjacent-routed-jmp-core-reproduction
+    --revision ccd88c3aa96e7e9a590838d5d8c01cccebbca139 \
+    --output ignored/adjacent-routed-jmp-reproduction
 ```
 
-The focused command is
-`cargo test -j 4 -p liteinst2 --lib quiescent::adjacent_routed_jmp::tests:: -- --test-threads=4`.
-The full driver runs the same controls within its 316-thread workspace run.
+Focused native, Rust/Python frontend and release producer commands are recorded
+in the linked receipts. The Python control/producer commands used Python 3.9.25;
+the outer process owner used Python 3.12.15. These versions are distinguished in
+the evidence.
