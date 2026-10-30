@@ -130,7 +130,11 @@ def main():
         need((testcrate/'src/lib.rs').read_bytes()[:-len(extra)]==(SELECTED/'decoder/src/lib.rs').read_bytes(),'whole production lib restored by one appended-tail inverse')
         test_state['registry_before']=[package_check(p)for p in builder.packages]
         need(test_state['registry_before']==r['build']['registry_before'],'same locked registry before test artifact')
-        run('test-decoder-build',[builder.tools['cargo'],'rustc','--manifest-path',testcrate/'Cargo.toml','--release','--locked','--offline','--features','scalar-region','-j','1','--','-C','metadata=li2_region_decoder_control_exports_v1'],profile='build',env=builder.environment)
+        # A copied crate is a distinct retained compiler-input identity. Keep
+        # Cargo from reusing an archive whose dep-info names an earlier copy.
+        test_state['rustc_metadata']='li2_region_decoder_control_exports_v1_'+digest(
+            dict(crate=str(testcrate),sources=test_state['source_copies']))
+        run('test-decoder-build',[builder.tools['cargo'],'rustc','--manifest-path',testcrate/'Cargo.toml','--release','--locked','--offline','--features','scalar-region','-j','1','--','-C','metadata='+test_state['rustc_metadata']],profile='build',env=builder.environment)
         generated_archive=ROOT/'target/release/libli2_page_selected_decoder.a';generated_dep=generated_archive.with_suffix('.d')
         test_archive=retain(generated_archive,output/'test-decoder.a');test_dep=retain(generated_dep,output/'test-decoder.d')
         dep=test_dep.read_text().strip();target=str(generated_archive)+': '
