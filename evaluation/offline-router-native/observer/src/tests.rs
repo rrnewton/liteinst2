@@ -345,3 +345,326 @@ fn cleanup_and_drop_share_one_unchanged_five_second_deadline() {
     assert_eq!(cleanup_deadline(&saved, later), end);
     assert!(later >= end);
 }
+
+fn kernel_basis_fixture() -> KernelBasis {
+    KernelBasis {
+        profile: KERNEL_BASIS_PROFILE.to_owned(),
+        basis_sha256: [1; 32],
+        release: "kernel-release".to_owned(),
+        config_gzip_bytes: 3,
+        config_gzip_sha256: Sha256::digest(b"cfg").into(),
+        config_decoded_bytes: 12,
+        config_decoded_sha256: [2; 32],
+    }
+}
+#[test]
+fn kernel_basis_requires_the_one_explicit_mode_and_exact_bounds() {
+    let good = kernel_basis_fixture();
+    assert_eq!(good.validate(), Ok(()));
+    for n in [0, KERNEL_GZIP_CAP as u32 + 1] {
+        let mut bad = good.clone();
+        bad.config_gzip_bytes = n;
+        assert_eq!(bad.validate(), Err(Error::Shape));
+    }
+    for n in [0, KERNEL_DECODED_CAP as u32 + 1] {
+        let mut bad = good.clone();
+        bad.config_decoded_bytes = n;
+        assert_eq!(bad.validate(), Err(Error::Shape));
+    }
+    for release in [
+        "".to_owned(),
+        "x".repeat(129),
+        "kernel\nrelease".to_owned(),
+        "kernel\0release".to_owned(),
+        "kérnel".to_owned(),
+    ] {
+        let mut bad = good.clone();
+        bad.release = release;
+        assert_eq!(bad.validate(), Err(Error::Shape));
+    }
+    let mut bad = good.clone();
+    bad.profile.push_str("-fallback");
+    assert_eq!(bad.validate(), Err(Error::Shape));
+    let mut edge = good;
+    edge.release = "x".repeat(128);
+    edge.config_gzip_bytes = KERNEL_GZIP_CAP as u32;
+    edge.config_decoded_bytes = KERNEL_DECODED_CAP as u32;
+    assert_eq!(edge.validate(), Ok(()));
+}
+#[test]
+fn kernel_live_config_requires_whole_bytes_procfs_and_exact_uname() {
+    let good = kernel_basis_fixture();
+    assert_eq!(
+        kernel_config_matches(
+            &good,
+            b"cfg",
+            true,
+            true,
+            "Linux",
+            "kernel-release",
+            "x86_64"
+        ),
+        Ok(())
+    );
+    for (raw, procfs, regular, system, release, machine) in [
+        (
+            b"cf".as_slice(),
+            true,
+            true,
+            "Linux",
+            "kernel-release",
+            "x86_64",
+        ),
+        (
+            b"cfgx".as_slice(),
+            true,
+            true,
+            "Linux",
+            "kernel-release",
+            "x86_64",
+        ),
+        (
+            b"cFg".as_slice(),
+            true,
+            true,
+            "Linux",
+            "kernel-release",
+            "x86_64",
+        ),
+        (
+            b"cfg".as_slice(),
+            false,
+            true,
+            "Linux",
+            "kernel-release",
+            "x86_64",
+        ),
+        (
+            b"cfg".as_slice(),
+            true,
+            false,
+            "Linux",
+            "kernel-release",
+            "x86_64",
+        ),
+        (
+            b"cfg".as_slice(),
+            true,
+            true,
+            "Other",
+            "kernel-release",
+            "x86_64",
+        ),
+        (
+            b"cfg".as_slice(),
+            true,
+            true,
+            "Linux",
+            "other-release",
+            "x86_64",
+        ),
+        (
+            b"cfg".as_slice(),
+            true,
+            true,
+            "Linux",
+            "kernel-release",
+            "i686",
+        ),
+    ] {
+        assert_eq!(
+            kernel_config_matches(&good, raw, procfs, regular, system, release, machine),
+            Err(Error::Custody)
+        );
+    }
+    let mut bad = good;
+    bad.config_gzip_sha256[0] ^= 1;
+    assert_eq!(
+        kernel_config_matches(
+            &bad,
+            b"cfg",
+            true,
+            true,
+            "Linux",
+            "kernel-release",
+            "x86_64"
+        ),
+        Err(Error::Custody)
+    );
+}
+#[test]
+fn config_off_query_never_accepts_success_or_other_unsupported_errors() {
+    let good = KernelQuery {
+        result: -1,
+        errno: libc::EINVAL,
+        output: KERNEL_QUERY_SENTINEL,
+    };
+    assert_eq!(kernel_query_matches(good), Ok(()));
+    for mask in [0, 1, 2, 3, 4, u64::MAX] {
+        assert_eq!(
+            kernel_query_matches(KernelQuery {
+                result: 0,
+                errno: 0,
+                output: mask
+            }),
+            Err(Error::Entry)
+        );
+    }
+    for error in [0, libc::EFAULT, libc::ENOSYS, libc::EOPNOTSUPP, libc::EPERM] {
+        assert_eq!(
+            kernel_query_matches(KernelQuery {
+                errno: error,
+                ..good
+            }),
+            Err(Error::Entry)
+        );
+    }
+    assert_eq!(
+        kernel_query_matches(KernelQuery { output: 0, ..good }),
+        Err(Error::Entry)
+    );
+    assert_eq!(
+        kernel_query_matches(KernelQuery {
+            result: -22,
+            ..good
+        }),
+        Err(Error::Entry)
+    );
+}
+#[test]
+fn old_and_config_off_cet_guards_have_disjoint_acceptance() {
+    let absent = b"Name:\tmain\nSeccomp:\t0\n";
+    let present =
+        b"Name:\tmain\nSeccomp:\t0\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n";
+    let basis = kernel_basis_fixture();
+    assert_eq!(request_shstk(absent, None), Err(Error::Entry));
+    assert_eq!(request_shstk(present, None), Ok(()));
+    assert_eq!(request_shstk(absent, Some(&basis)), Ok(()));
+    assert_eq!(request_shstk(present, Some(&basis)), Err(Error::Entry));
+    for raw in [
+        b"Seccomp:\t0\nx86_Thread_features:\t\n".as_slice(),
+        b"Seccomp:\t0\nx86_Thread_features_locked:\t\n",
+        b"Seccomp:\t0\nx86_Thread_features:\tshstk\n",
+        b"Seccomp:\t0\nx86_Thread_features:\t\nx86_Thread_features:\t\n",
+        b"Seccomp:\t0\n x86_Thread_features:\t\n",
+        b"Seccomp:\t0\nx86_Thread_features\n",
+    ] {
+        assert_eq!(absent_shstk(raw), Err(Error::Entry));
+    }
+}
+#[test]
+fn config_off_requires_one_canonical_seccomp_zero_observation() {
+    assert_eq!(seccomp_zero(b"Seccomp:\t0\n"), Ok(()));
+    for raw in [
+        b"Name:\tmain\n".as_slice(),
+        b"Seccomp:\t1\n",
+        b"Seccomp:\t2\n",
+        b"Seccomp:\t00\n",
+        b"Seccomp:\t0\nSeccomp:\t0\n",
+        b"Seccomp:\t0\n Seccomp:\t0\n",
+        b"Seccomp:\t0",
+        b"Seccomp:\t0\0\n",
+        b"Seccomp:\t0\xff\n",
+    ] {
+        assert_eq!(seccomp_zero(raw), Err(Error::Entry));
+    }
+}
+#[test]
+fn reserved_signal_kernel_layout_is_four_native_words() {
+    assert_eq!(core::mem::size_of::<KernelSigaction>(), 32);
+    assert_eq!(core::mem::offset_of!(KernelSigaction, handler), 0);
+    assert_eq!(core::mem::offset_of!(KernelSigaction, flags), 8);
+    assert_eq!(core::mem::offset_of!(KernelSigaction, restorer), 16);
+    assert_eq!(core::mem::offset_of!(KernelSigaction, mask), 24);
+}
+#[test]
+fn reserved_signal_reset_reads_back_each_exact_default_in_order() {
+    let mut calls = Vec::new();
+    assert!(reset_reserved_signals_with(|signal, action, old| {
+        calls.push((signal, action.is_some(), old.is_some()));
+        if let Some(action) = action {
+            assert_eq!(*action, KernelSigaction::DEFAULT);
+        }
+        if let Some(old) = old {
+            assert_eq!(*old, KernelSigaction::UNREAD);
+            *old = KernelSigaction::DEFAULT;
+        }
+        0
+    }));
+    assert_eq!(
+        calls,
+        [
+            (32, true, false),
+            (32, false, true),
+            (33, true, false),
+            (33, false, true)
+        ]
+    );
+}
+#[test]
+fn every_reserved_signal_reset_or_readback_syscall_failure_stops_immediately() {
+    for failed in 0..4 {
+        let mut calls = 0;
+        assert!(!reset_reserved_signals_with(|_, _, old| {
+            let index = calls;
+            calls += 1;
+            if index == failed {
+                return -1;
+            }
+            if let Some(old) = old {
+                *old = KernelSigaction::DEFAULT;
+            }
+            0
+        }));
+        assert_eq!(calls, failed + 1);
+    }
+}
+#[test]
+fn every_reserved_signal_readback_field_and_unwritten_output_refuses() {
+    for signal in [32, 33] {
+        for field in 0..5 {
+            let mut calls = 0;
+            assert!(!reset_reserved_signals_with(|actual_signal, _, old| {
+                calls += 1;
+                if let Some(old) = old {
+                    if actual_signal != signal {
+                        *old = KernelSigaction::DEFAULT;
+                    } else if field != 4 {
+                        *old = KernelSigaction::DEFAULT;
+                        match field {
+                            0 => old.handler = 1,
+                            1 => old.flags = 1,
+                            2 => old.restorer = 1,
+                            3 => old.mask = 1,
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+                0
+            }));
+            assert_eq!(calls, if signal == 32 { 2 } else { 4 });
+        }
+    }
+}
+#[test]
+fn controlled_signals_still_reject_each_reserved_bit_and_malformed_population() {
+    for value in [1_u64 << 31, 1_u64 << 32, (1_u64 << 31) | (1_u64 << 32)] {
+        for field in ["SigBlk", "SigIgn"] {
+            let raw = if field == "SigBlk" {
+                format!("SigBlk:\t{value:016x}\nSigIgn:\t0000000000000000\n")
+            } else {
+                format!("SigBlk:\t0000000000000000\nSigIgn:\t{value:016x}\n")
+            };
+            assert_eq!(controlled_signal_status(raw.as_bytes()), Err(Error::Entry));
+        }
+    }
+    for raw in [
+        b"SigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigIgn:\t0000000000000000\n"
+            .as_slice(),
+        b"SigBlk:\t0000000000000000\n",
+        b"SigBlk:\t0000000000000000\nSigIgn:\t00000000000000000\n",
+        b"SigBlk:\t0000000000000000\nSigIgn:\tgggggggggggggggg\n",
+    ] {
+        assert_eq!(controlled_signal_status(raw), Err(Error::Entry));
+    }
+}

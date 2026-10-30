@@ -13,6 +13,50 @@ fn boolean(value: Option<bool>) -> &'static str {
         Some(false) => "false",
     }
 }
+
+fn json_ascii(text: &str) -> String {
+    let mut result = String::from("\"");
+    for byte in text.bytes() {
+        match byte {
+            b'"' => result.push_str("\\\""),
+            b'\\' => result.push_str("\\\\"),
+            0..=31 | 127..=255 => result.push_str(&format!("\\u{byte:04x}")),
+            _ => result.push(char::from(byte)),
+        }
+    }
+    result.push('"');
+    result
+}
+fn kernel_receipt(evidence: &Evidence) -> Option<String> {
+    let basis = evidence.kernel_basis.as_ref()?;
+    let query = evidence.kernel_query.map_or_else(
+        || "null".to_owned(),
+        |q| {
+            format!(
+                "{{\"result\":{},\"errno\":{},\"output_hex\":\"{:016x}\"}}",
+                q.result, q.errno, q.output
+            )
+        },
+    );
+    Some(format!(
+        concat!(
+            ",\"kernel_basis\":{{\"profile\":{},\"basis_sha256\":\"{}\",\"release\":{},",
+            "\"config_gzip_bytes\":{},\"config_gzip_sha256\":\"{}\",",
+            "\"config_decoded_bytes\":{},\"config_decoded_sha256\":\"{}\"}},",
+            "\"kernel_checks\":{},\"kernel_query\":{}"
+        ),
+        json_ascii(&basis.profile),
+        wire::hex(&basis.basis_sha256),
+        json_ascii(&basis.release),
+        basis.config_gzip_bytes,
+        wire::hex(&basis.config_gzip_sha256),
+        basis.config_decoded_bytes,
+        wire::hex(&basis.config_decoded_sha256),
+        evidence.kernel_checks,
+        query,
+    ))
+}
+
 fn receipt(
     hash: Option<&str>,
     transport: bool,
@@ -51,7 +95,7 @@ fn receipt(
     let observed = observation.map_or_else(|| "null".into(), |o| format!(
         "{{\"completion\":{},\"main_entry\":{},\"bootstrap_bias\":{},\"stopped_before_main_execution\":{},\"observer_killed_child\":{},\"absence_echild\":{},\"route_coverage_complete\":false}}",
         o.completion,o.main_entry,o.bootstrap_bias,o.stopped_before_main_execution,o.observer_killed_child,o.absence_echild));
-    format!(
+    let mut result = format!(
         concat!(
             "{{\"schema\":\"LI2-OBSERVER-RECEIPT-2\",\"request_sha256\":{},\"transport_accepted\":{},",
             "\"child_started\":{},\"stops\":[{}],\"exec_auxv\":\"{}\",\"entry_auxv\":\"{}\",\"exec_maps\":\"{}\",\"entry_maps\":\"{}\",",
@@ -78,7 +122,14 @@ fn receipt(
         evidence.absence_echild,
         cleanup,
         observed
-    )
+    );
+    if let Some(extra) = kernel_receipt(evidence) {
+        result = result.replacen("LI2-OBSERVER-RECEIPT-2", "LI2-OBSERVER-RECEIPT-3", 1);
+        let _ = result.pop();
+        result.push_str(&extra);
+        result.push('}');
+    }
+    result
 }
 
 fn run(
@@ -110,6 +161,7 @@ fn run(
     // Dedicated process, sole inherited request owner; read_owned_fd closes it.
     let request = unsafe { wire::read_owned_fd(fd, expected) }?;
     *transport = true;
+    evidence.kernel_basis = request.kernel_basis.clone();
     // SAFETY: this binary is called only through the pinned checked launcher
     // specified by the explicitly accepted final profile. This is a documented
     // unsafe API/CLI boundary, not a claim that the fd/digest authenticates it.

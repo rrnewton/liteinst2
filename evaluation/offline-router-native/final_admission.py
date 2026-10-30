@@ -184,6 +184,8 @@ class Session:
             entry=item['entry'], entry_bytes=item['entry_bytes'],
             completion_relative=item['completion_relative'], completion_file_offset=item['completion_file_offset'],
             xstate_bytes=self._profile['reviewed']['xstate_bytes'])
+        if '_kernel_capsule' in self._profile:
+            value['kernel_basis'] = copy.deepcopy(self._profile['_kernel_capsule'])
         self.stable()
         return value
 
@@ -200,7 +202,7 @@ class Session:
 _CONSTRUCTION = object()
 
 
-def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
+def open_session(root, profile_path, profile_sha256, accept_contract_sha256, accept_kernel_basis_sha256=None):
     """UNSAFE API: caller explicitly accepts the exact platform obligations.
 
     The separate profile is frozen only after source integration and actual DSO
@@ -216,11 +218,19 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     raw, profile_pin = read_file(profile_path)
     need(sha(raw) == digest(profile_sha256), 'externally frozen final checker profile')
     profile = decode(raw)
-    need(set(profile) == {'schema', 'native_revision', 'native_sources', 'artifact_source_profile', 'arguments', 'bootstrap',
-        'contract', 'reviewed', 'observer'} and profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-1', 'LI2STARTUP-FINAL-PROFILE-2', 'LI2STARTUP-FINAL-PROFILE-3'),
-         'explicit final profile shape')
-    absolute_profile = profile['schema'] == 'LI2STARTUP-FINAL-PROFILE-3'
-    namespace_profile = profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-2', 'LI2STARTUP-FINAL-PROFILE-3')
+    kernel_profile = profile.get('schema') == 'LI2STARTUP-FINAL-PROFILE-4'
+    fields = {'schema', 'native_revision', 'native_sources', 'artifact_source_profile', 'arguments', 'bootstrap',
+        'contract', 'reviewed', 'observer'} | ({'kernel_basis'} if kernel_profile else set())
+    need(set(profile) == fields and profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-1', 'LI2STARTUP-FINAL-PROFILE-2',
+         'LI2STARTUP-FINAL-PROFILE-3', 'LI2STARTUP-FINAL-PROFILE-4'), 'explicit final profile shape')
+    need(kernel_profile or accept_kernel_basis_sha256 is None, 'old profile cannot accept a kernel-mode override')
+    if kernel_profile:
+        basis_path = reference(profile['kernel_basis'])
+        need(basis_path.is_relative_to(root/'ignored') and
+             profile['kernel_basis']['sha256'] == digest(accept_kernel_basis_sha256),
+             'caller separately accepts this exact unsafe kernel basis')
+    absolute_profile = profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-3', 'LI2STARTUP-FINAL-PROFILE-4')
+    namespace_profile = profile['schema'] in ('LI2STARTUP-FINAL-PROFILE-2', 'LI2STARTUP-FINAL-PROFILE-3', 'LI2STARTUP-FINAL-PROFILE-4')
     need(type(profile['native_revision']) is str and re.fullmatch('[0-9a-f]{40}', profile['native_revision']) is not None,
          'actual separately committed native source revision')
     source_map = profile['native_sources']
@@ -231,6 +241,9 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
              'separately pinned complete-namespace resolver/control source')
     if absolute_profile:
         need(NATIVE+'absolute_profile_controls.py' in source_map, 'separately pinned absolute-profile controls')
+    if kernel_profile:
+        need({NATIVE+'kernel_basis.py', NATIVE+'kernel_basis_controls.py'} <= set(source_map),
+             'separately pinned kernel basis and negative controls')
     source_records = {str(profile_path): (raw, profile_pin)}
     sources = {}
     for relative, expected in source_map.items():
@@ -245,6 +258,7 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     reader = load_source(sources[NATIVE+'final_bootstrap.py'], root/NATIVE/'final_bootstrap.py')
     dependency = load_source(sources[NATIVE+'dependency_constructors.py'], root/NATIVE/'dependency_constructors.py') if namespace_profile else None
     package = load_source(sources[NATIVE+'package.py'], root/NATIVE/'package.py')
+    kernel = load_source(sources[NATIVE+'kernel_basis.py'], root/NATIVE/'kernel_basis.py') if kernel_profile else None
     # The running entrypoint is included, but no caller can turn arbitrary new
     # source into authority merely by changing a map: the externally supplied
     # profile SHA is the reviewed code authority accepted by this unsafe caller.
@@ -304,6 +318,13 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
     store = custody.Store(2*1024*MIB)
     held = package.Custody()
     try:
+        kernel_capsule = None
+        if kernel_profile:
+            basis_raw, basis_pin = read_file(basis_path)
+            need(sha(basis_raw) == accept_kernel_basis_sha256, 'accepted kernel basis bytes')
+            held.retain(basis_pin, MIB)
+            kernel_capsule = kernel.inspect(basis_raw, accept_kernel_basis_sha256, held.retain)
+            kernel.check_live(kernel_capsule)
         observer_directory = custody.absolute(str(reference(profile['observer']['build'], directory=True)))
         need(observer_directory.is_relative_to(root/'ignored'), 'private actual observer build closure')
         observer_raw = store.read(observer_directory/'closed.json', MIB)
@@ -377,6 +398,7 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
                 linked_facts=item['linked'], observer_objects=observer_objects,
                 completion_relative=completion['address'], completion_file_offset=completion['file_offset'], **entry)
         def stable():
+            if kernel_capsule is not None: kernel.check_live(kernel_capsule)
             saved['stable']()
             native_source_profile()
             for path, (contents, pin) in source_records.items():
@@ -392,6 +414,7 @@ def open_session(root, profile_path, profile_sha256, accept_contract_sha256):
             for item in programs.values(): no_capabilities(item['bootstrap_pin'])
         result_profile = copy.deepcopy(profile)
         result_profile['_root'] = str(root)
+        if kernel_capsule is not None: result_profile['_kernel_capsule'] = copy.deepcopy(kernel_capsule)
         execution = dict(saved['completed']['captured'], configurations=saved['completed']['configurations'],
             configuration_profile=saved['completed']['plan']['configuration_profile'])
         session = Session(_CONSTRUCTION, result_profile, programs, execution, package, held, store, stable)

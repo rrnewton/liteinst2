@@ -4,6 +4,7 @@ use std::os::fd::FromRawFd;
 use std::os::unix::fs::FileExt;
 
 pub const MAGIC: &[u8] = b"LI2-OBSERVER-REQUEST\0\x01";
+pub const MAGIC_V2: &[u8] = b"LI2-OBSERVER-REQUEST\0\x02";
 pub const WIRE_CAP: usize = 260 * 1024 * 1024;
 const SEALS: i32 = libc::F_SEAL_SEAL | libc::F_SEAL_SHRINK | libc::F_SEAL_GROW | libc::F_SEAL_WRITE;
 fn sealed(fd: i32) -> bool {
@@ -54,6 +55,29 @@ impl<'a> Reader<'a> {
         }
         Ok(value)
     }
+
+    fn kernel_basis(&mut self) -> Result<KernelBasis> {
+        if self.take(1)?[0] != 1 {
+            return Err(Error::Shape);
+        }
+        let basis_sha256 = self.take(32)?.try_into().map_err(|_| Error::Shape)?;
+        let length = self.length(128)?;
+        let release = std::str::from_utf8(self.take(length)?)
+            .map_err(|_| Error::Shape)?
+            .to_owned();
+        let basis = KernelBasis {
+            profile: KERNEL_BASIS_PROFILE.to_owned(),
+            basis_sha256,
+            release,
+            config_gzip_bytes: self.u32()?,
+            config_gzip_sha256: self.take(32)?.try_into().map_err(|_| Error::Shape)?,
+            config_decoded_bytes: self.u32()?,
+            config_decoded_sha256: self.take(32)?.try_into().map_err(|_| Error::Shape)?,
+        };
+        basis.validate()?;
+        Ok(basis)
+    }
+
     fn pin(&mut self) -> Result<FilePin> {
         let length = self.length(4095)?;
         let raw = self.take(length)?;
@@ -138,9 +162,10 @@ impl<'a> Reader<'a> {
 }
 
 pub fn decode(raw: &[u8]) -> Result<Request> {
-    if raw.len() > WIRE_CAP || !raw.starts_with(MAGIC) {
+    if raw.len() > WIRE_CAP || !(raw.starts_with(MAGIC) || raw.starts_with(MAGIC_V2)) {
         return Err(Error::Shape);
     }
+    let version2 = raw.starts_with(MAGIC_V2);
     let mut r = Reader {
         raw,
         at: MAGIC.len(),
@@ -161,6 +186,11 @@ pub fn decode(raw: &[u8]) -> Result<Request> {
     let completion_relative = r.u64()?;
     let completion_file_offset = if r.flag()? { Some(r.u64()?) } else { None };
     let xstate_bytes = r.length(XSTATE_CAP)?;
+    let kernel_basis = if version2 {
+        Some(r.kernel_basis()?)
+    } else {
+        None
+    };
     if r.at != raw.len()
         || dataset.bytes > 65536
         || entry >= 1 << 47
@@ -183,6 +213,7 @@ pub fn decode(raw: &[u8]) -> Result<Request> {
         completion_relative,
         completion_file_offset,
         xstate_bytes,
+        kernel_basis,
     })
 }
 
@@ -449,6 +480,112 @@ mod tests {
             b"SigBlk:\t0\nSigIgn:\t0\n",
         ] {
             assert_eq!(controlled_signal_status(raw), Err(Error::Entry));
+        }
+    }
+
+    fn fixture_v2() -> (Vec<u8>, usize) {
+        let (mut raw, _) = fixture();
+        raw[MAGIC.len() - 1] = 2;
+        let capsule = raw.len();
+        raw.push(1);
+        raw.extend([11; 32]);
+        raw.extend(7_u32.to_le_bytes());
+        raw.extend(b"release");
+        raw.extend(43059_u32.to_le_bytes());
+        raw.extend([12; 32]);
+        raw.extend(193926_u32.to_le_bytes());
+        raw.extend([13; 32]);
+        (raw, capsule)
+    }
+    #[test]
+    fn v2_decodes_the_whole_explicit_kernel_basis_without_changing_v1() {
+        let (old, _) = fixture();
+        assert_eq!(decode(&old).unwrap().kernel_basis, None);
+        let (raw, _) = fixture_v2();
+        let request = decode(&raw).unwrap();
+        assert_eq!(
+            request.kernel_basis,
+            Some(KernelBasis {
+                profile: KERNEL_BASIS_PROFILE.to_owned(),
+                basis_sha256: [11; 32],
+                release: "release".to_owned(),
+                config_gzip_bytes: 43059,
+                config_gzip_sha256: [12; 32],
+                config_decoded_bytes: 193926,
+                config_decoded_sha256: [13; 32],
+            })
+        );
+        let mut without_basis = request;
+        without_basis.kernel_basis = None;
+        assert_eq!(without_basis, decode(&old).unwrap());
+    }
+    #[test]
+    fn v2_every_truncation_trailing_byte_unknown_mode_and_cross_version_refuses() {
+        let (raw, at) = fixture_v2();
+        for n in 0..raw.len() {
+            assert_eq!(decode(&raw[..n]), Err(Error::Shape));
+        }
+        for mode in [0, 2, 255] {
+            let mut bad = raw.clone();
+            bad[at] = mode;
+            assert_eq!(decode(&bad), Err(Error::Shape));
+        }
+        for version in [0, 3, 255] {
+            let mut bad = raw.clone();
+            bad[MAGIC.len() - 1] = version;
+            assert_eq!(decode(&bad), Err(Error::Shape));
+        }
+        let mut old_with_capsule = raw.clone();
+        old_with_capsule[MAGIC.len() - 1] = 1;
+        assert_eq!(decode(&old_with_capsule), Err(Error::Shape));
+        let mut extra = raw;
+        extra.push(0);
+        assert_eq!(decode(&extra), Err(Error::Shape));
+    }
+    #[test]
+    fn v2_release_and_both_config_length_bounds_are_exact() {
+        let (raw, at) = fixture_v2();
+        for value in [0_u32, 129] {
+            let mut bad = raw.clone();
+            bad[at + 33..at + 37].copy_from_slice(&value.to_le_bytes());
+            assert_eq!(decode(&bad), Err(Error::Shape));
+        }
+        for (offset, limit) in [(at + 44, 65536_u32), (at + 80, 524288)] {
+            for value in [0, limit + 1] {
+                let mut bad = raw.clone();
+                bad[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+                assert_eq!(decode(&bad), Err(Error::Shape));
+            }
+        }
+        for byte in [0, b'\n', b' ', 0xff] {
+            let mut bad = raw.clone();
+            bad[at + 37] = byte;
+            assert_eq!(decode(&bad), Err(Error::Shape));
+        }
+    }
+    #[test]
+    fn v2_admission_binds_every_kernel_basis_member() {
+        let (raw, _) = fixture_v2();
+        let original = decode(&raw).unwrap();
+        let admitted = unsafe { admit_from_checked_launcher(&original) }.unwrap();
+        for field in 0..8 {
+            let mut changed = original.clone();
+            let basis = changed.kernel_basis.as_mut().unwrap();
+            match field {
+                0 => basis.profile.push_str("-changed"),
+                1 => basis.basis_sha256[0] ^= 1,
+                2 => basis.release.push('x'),
+                3 => basis.config_gzip_bytes += 1,
+                4 => basis.config_gzip_sha256[0] ^= 1,
+                5 => basis.config_decoded_bytes += 1,
+                6 => basis.config_decoded_sha256[0] ^= 1,
+                7 => changed.kernel_basis = None,
+                _ => unreachable!(),
+            }
+            assert!(matches!(
+                observe(&changed, &admitted),
+                Err(Error::AdmissionUnavailable)
+            ));
         }
     }
 }

@@ -5,6 +5,7 @@ No import dispatches. The external final profile SHA and explicitly accepted
 contract select reviewed code/obligations; a sealed memfd authenticates neither.
 """
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -85,16 +86,92 @@ def source(root,relative,wanted):
     return module
 
 
-def open_session(root,profile_path,profile_sha256,accept_contract_sha256):
+def open_session(root,profile_path,profile_sha256,accept_contract_sha256,accept_kernel_basis_sha256=None):
     raw,_=read(profile_path);need(sha(raw)==profile_sha256,'external final profile digest')
     profile=decode(raw);pins=profile['native_sources']
     need(sha(read(root/NATIVE/'native_launch.py')[0])==pins[NATIVE+'native_launch.py'],'actual checked launcher source')
     final=source(root,NATIVE+'final_admission.py',pins[NATIVE+'final_admission.py'])
-    session=final.open_session(root,profile_path,profile_sha256,accept_contract_sha256)
+    if accept_kernel_basis_sha256 is None:
+        session=final.open_session(root,profile_path,profile_sha256,accept_contract_sha256)
+    else:
+        session=final.open_session(root,profile_path,profile_sha256,accept_contract_sha256,accept_kernel_basis_sha256)
     return final,session
 
 
+class KernelSigaction(ctypes.Structure):
+    # Linux x86-64 kernel ABI, NOT glibc's larger sigaction/sigset_t layout.
+    _fields_=[(name,ctypes.c_uint64) for name in ('handler','flags','restorer','mask')]
+
+
+def raw_syscall(number,*arguments):
+    libc=ctypes.CDLL(None,use_errno=True);libc.syscall.restype=ctypes.c_long
+    ctypes.set_errno(0)
+    result=libc.syscall(ctypes.c_long(number),*arguments)
+    need(result>=0,'successful checked raw Linux syscall')
+    return result
+
+
+def kernel_action(number,reset=False):
+    need(number in (32,33),'only owned launch hidden signals')
+    old=KernelSigaction(*([2**64-1]*4));default=KernelSigaction()
+    need(raw_syscall(13,ctypes.c_long(number),ctypes.byref(default) if reset else ctypes.c_void_p(),
+                    ctypes.byref(old),ctypes.c_size_t(8))==0,'exact rt_sigaction result')
+    return tuple(getattr(old,name) for name,_ in KernelSigaction._fields_)
+
+
+def kernel_mask():
+    mask=ctypes.c_uint64(2**64-1)
+    need(raw_syscall(14,ctypes.c_long(0),ctypes.c_void_p(),ctypes.byref(mask),ctypes.c_size_t(8))==0,
+         'exact rt_sigprocmask result')
+    return mask.value
+
+
+def launch_task_ids():
+    flags=os.O_RDONLY|os.O_CLOEXEC|os.O_NOFOLLOW|os.O_DIRECTORY
+    proc=os.open('/proc',flags)
+    try:
+        libc=ctypes.CDLL(None,use_errno=True);buffer=ctypes.create_string_buffer(256)
+        need(libc.fstatfs(ctypes.c_int(proc),ctypes.byref(buffer))==0 and
+             ctypes.c_long.from_buffer(buffer).value==0x9fa0,'actual procfs task inventory')
+        process=os.open(str(os.getpid()),flags,dir_fd=proc)
+        try:
+            tasks=os.open('task',flags,dir_fd=process)
+            try:
+                names=[]
+                with os.scandir(tasks) as entries:
+                    for entry in entries:
+                        need(len(names)<2 and entry.name.isascii() and entry.name.isdecimal() and
+                             str(int(entry.name))==entry.name,'bounded canonical task inventory')
+                        names.append(int(entry.name))
+                return names
+            finally:os.close(tasks)
+        finally:os.close(process)
+    finally:os.close(proc)
+
+
+def single_launch_main():
+    need(os.uname().sysname=='Linux' and os.uname().machine=='x86_64','raw signal ABI platform')
+    pid=os.getpid()
+    need(raw_syscall(186)==pid and launch_task_ids()==[pid],
+         'dedicated single-main launcher; no NPTL peer may own signals32/33')
+
+
+def normalize_launch_signals():
+    # Only main() or the dedicated observer-child process calls this. No helper
+    # exists yet, and an unknown task refuses before any signal disposition changes.
+    single_launch_main()
+    need(kernel_mask()==0,'whole actual kernel signal mask is empty')
+    for number in (32,33):
+        kernel_action(number,reset=True)
+        need(kernel_action(number)==(0,0,0,0),'exact raw default hidden-signal readback')
+    single_launch_main()
+    need(kernel_mask()==0,'normalization preserves the whole empty kernel mask')
+
+
 def child_signals():
+    single_launch_main()
+    need(kernel_mask()==0 and all(kernel_action(n)==(0,0,0,0) for n in (32,33)),
+         'actual kernel hidden signals default and whole signal mask empty')
     need(not signal.pthread_sigmask(signal.SIG_BLOCK,[]),'empty inherited signal mask')
     restored={getattr(signal,n) for n in ('SIGPIPE','SIGXFZ','SIGXFSZ') if hasattr(signal,n)}
     for sig in signal.valid_signals():
@@ -262,7 +339,20 @@ def observer_receipt(raw,request,expected_hash):
     required={'schema','request_sha256','transport_accepted','child_started','stops','exec_auxv','entry_auxv','exec_maps','entry_maps',
         'exec_status','entry_status','entry_registers','entry_xstate','debug_restored','primary_error','restore_error','cleanup_error',
         'absence_echild','cleanup','observation','route_coverage_complete','native_correctness_complete'}
-    need(set(value)==required and value['schema']=='LI2-OBSERVER-RECEIPT-2' and value['request_sha256']==expected_hash,'exact observer receipt schema/request')
+    extended='kernel_basis' in request
+    if extended:required|={'kernel_basis','kernel_checks','kernel_query'}
+    need(set(value)==required and value['schema']==('LI2-OBSERVER-RECEIPT-3' if extended else 'LI2-OBSERVER-RECEIPT-2')
+         and value['request_sha256']==expected_hash,'exact observer receipt schema/request')
+    if extended:
+        # Canonical JSON comparison also rejects bool-for-int substitutions.
+        need(json.dumps(value['kernel_basis'],sort_keys=True)==json.dumps(request['kernel_basis'],sort_keys=True),
+             'exact requested kernel basis, never an inferred fallback')
+        query=value['kernel_query']
+        need(type(value['kernel_checks']) is int and value['kernel_checks']==6 and
+             type(query) is dict and set(query)=={'result','errno','output_hex'} and
+             type(query['result']) is int and query['result']==-1 and
+             type(query['errno']) is int and query['errno']==22 and query['output_hex']=='55aa55aa55aa55aa',
+             'all six actual kernel checks and exact last consistency query')
     need(all(value[k] is True for k in ('transport_accepted','child_started','debug_restored','absence_echild'))
          and all(value[k] is None for k in ('primary_error','restore_error','cleanup_error')),'complete observation/restoration/cleanup')
     need(value['route_coverage_complete'] is False and value['native_correctness_complete'] is False,'pre-entry is not route/native evidence')
@@ -298,11 +388,12 @@ def observer_receipt(raw,request,expected_hash):
     return value
 
 
-def observer_child(root,profile_path,profile_hash,contract_hash,work_path,work_hash):
-    final,session=open_session(root,profile_path,profile_hash,contract_hash)
+def observer_child(root,profile_path,profile_hash,contract_hash,work_path,work_hash,kernel_hash=None):
+    final,session=open_session(root,profile_path,profile_hash,contract_hash,kernel_hash)
     build_store=None
     try:
         session.check_source(NATIVE+'native_launch.py')
+        normalize_launch_signals()
         wire=source(root,NATIVE+'native_wire.py',session.check_source(NATIVE+'native_wire.py'))
         raw,_=read(work_path);need(sha(raw)==work_hash,'exact prospective child request capsule')
         work=decode(raw)
@@ -325,7 +416,7 @@ def observer_child(root,profile_path,profile_hash,contract_hash,work_path,work_h
         session.close()
 
 
-def observe_population(root,output,profile_path,profile_hash,contract_hash,session):
+def observe_population(root,output,profile_path,profile_hash,contract_hash,session,kernel_hash=None):
     output=new_output(root,output)
     n01=source(root,NATIVE+'n01.py',session.check_source(NATIVE+'n01.py'))
     wire=source(root,NATIVE+'native_wire.py',session.check_source(NATIVE+'native_wire.py'))
@@ -354,6 +445,7 @@ def observe_population(root,output,profile_path,profile_hash,contract_hash,sessi
             argv=[tools['python']['path'],'-B',str(root/NATIVE/'native_launch.py'),'observer-child','--root',str(root),
                 '--final-profile',str(profile_path),'--final-profile-sha256',profile_hash,'--accept-contract-sha256',contract_hash,
                 '--child-request',work['path'],'--child-request-sha256',work['sha256']]
+            if kernel_hash is not None:argv+=['--accept-kernel-basis-sha256',kernel_hash]
             plans[program]=dict(argv=argv,request=request,wire_sha256=sha(raw))
         write(output/'planned.json',dict(programs=list(PROGRAMS),attempts_per_program=1,observer_deadline_seconds=15,
               observer_cleanup_seconds=5,ordinary_n01_invocations=0,requests={p:plans[p]['wire_sha256'] for p in PROGRAMS}))
@@ -406,7 +498,7 @@ def main():
     parser.add_argument('mode',choices=('build-observer','observe','n01','observer-child'))
     parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[2])
     for name in ('final-profile','output','build-plan','child-request'):parser.add_argument('--'+name,type=Path)
-    for name in ('final-profile-sha256','accept-contract-sha256','build-plan-sha256','child-request-sha256'):parser.add_argument('--'+name)
+    for name in ('final-profile-sha256','accept-contract-sha256','accept-kernel-basis-sha256','build-plan-sha256','child-request-sha256'):parser.add_argument('--'+name)
     args=parser.parse_args();root=args.root
     need(root.is_absolute() and root.resolve(strict=True)==root,'canonical checkout root')
     roster={'build-observer':{'build_plan','build_plan_sha256'},
@@ -414,12 +506,17 @@ def main():
         'n01':{'final_profile','final_profile_sha256','accept_contract_sha256','output'},
         'observer-child':{'final_profile','final_profile_sha256','accept_contract_sha256','child_request','child_request_sha256'}}
     supplied={name for name,value in vars(args).items() if name not in ('mode','root') and value is not None}
-    need(supplied==roster[args.mode],'exact mode-specific launch argument roster')
+    expected=roster[args.mode]
+    if args.accept_kernel_basis_sha256 is not None:
+        need(args.mode!='build-observer','kernel acceptance belongs only to final launch')
+        expected=expected|{'accept_kernel_basis_sha256'}
+    need(supplied==expected,'exact mode-specific launch argument roster')
     if args.mode=='build-observer':return build_observer(root,args.build_plan,args.build_plan_sha256)
-    if args.mode=='observer-child':return observer_child(root,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256,args.child_request,args.child_request_sha256)
-    _,session=open_session(root,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256)
+    if args.mode=='observer-child':return observer_child(root,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256,args.child_request,args.child_request_sha256,args.accept_kernel_basis_sha256)
+    _,session=open_session(root,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256,args.accept_kernel_basis_sha256)
     try:
-        if args.mode=='observe':return observe_population(root,args.output,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256,session)
+        normalize_launch_signals()
+        if args.mode=='observe':return observe_population(root,args.output,args.final_profile,args.final_profile_sha256,args.accept_contract_sha256,session,args.accept_kernel_basis_sha256)
         n01=source(root,NATIVE+'n01.py',session.check_source(NATIVE+'n01.py'))
         return n01.run_final(root,args.output,session,dict(path=str(args.final_profile),sha256=args.final_profile_sha256))
     finally:session.close()

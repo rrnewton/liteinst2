@@ -139,3 +139,38 @@ tracer remains separate work and is not implied by this executable path.
 
 Final Session stability and all owned cleanup run before either population writes
 its terminal result. A close failure keeps every row and prevents completion.
+
+
+The separate `LI2STARTUP-FINAL-PROFILE-4` mode keeps the absolute-prerequisite
+class and all existing artifact, graph, population, output and deadline checks.
+It additionally requires explicit acceptance of an exact kernel-basis SHA.
+Profiles1–3 keep their original requirement that both CET status fields are
+present and empty. Neither absent fields nor `EINVAL` selects the new mode.
+
+Capture the four bounded evidence files with the committed entrypoint:
+
+```sh
+PYTHON -B evaluation/offline-router-native/kernel_basis.py capture --root ROOT --release RELEASE --headers MATCHING_KERNEL_HEADER_DIRECTORY --output NEW_BASIS_DIRECTORY
+```
+
+This reads the actual live procfs configuration and exactly `shstk.h`,
+`processor.h` and UAPI `prctl.h` under the named matching-release header root.
+It retains four complete copies, checks the single gzip member and both exact
+configuration clauses, and writes only a draft `basis.json`. The required unsafe
+premise trusts the running kernel's live configuration and absence of alternate
+user SHSTK/WRSS enable/lock paths; the header copies are not a compiler or
+source-to-running-binary proof. The command grants no execution authority.
+
+A profile4 caller must supply `--accept-kernel-basis-sha256` separately from
+`--accept-contract-sha256`. Live configuration/release checks remain fresh at
+admission boundaries. Wire2/receipt3 bind the exact capsule; the observer requires
+six kernel checks and the exact unsuccessful STATUS query with unchanged output,
+plus absent CET fields and Seccomp0 at both stops. This observer query is a
+consistency check of the accepted global premise, not a tracee-state query.
+
+Both observer and ordinary N01 launch paths establish raw kernel dispositions
+32/33. The Python launcher first requires its sole task to be its main TID; any
+unknown task, syscall error, nonempty mask or failed readback refuses. The owned
+post-fork Rust child also resets and reads back those two dispositions. Existing
+exact signal-state guards, normal exec argv/env and all runtime bounds remain.
+No new profile or source-only control result implies native qualification.
