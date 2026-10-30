@@ -6440,7 +6440,7 @@ mod tests {
             let mut child = std::process::Command::new(std::env::current_exe().unwrap())
                 .args(["--exact", "trampoline::tests::a2_emitter_foundation::native_instructions_actions_and_backedges",
                     "--nocapture", "--test-threads=1"])
-                .env(CHILD, "1").spawn().unwrap();
+                .env(CHILD, "1").stdout(std::process::Stdio::null()).spawn().unwrap();
             let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
             loop {
                 if let Some(status) = child.try_wait().unwrap() {
@@ -9259,6 +9259,7 @@ mod tests {
                     "--test-threads=1",
                 ])
                 .env(PTRACE_CHILD_ENV, pipe[1].to_string())
+                .stdout(std::process::Stdio::null())
                 .spawn()
                 .unwrap();
             let mut child = PtraceChild::new(child);
@@ -9933,7 +9934,7 @@ mod observing_control_tests {
                 "trampoline::observing_control_tests::observing_control_native_subsets_and_retained_dispatch_after_handle_drop",
                 "--test-threads=1",
                 "--nocapture",
-            ]).env(CHILD, "1");
+            ]).env(CHILD, "1").stdout(std::process::Stdio::null());
             // SAFETY: only async-signal-safe resource calls run before exec.
             unsafe {
                 command.pre_exec(|| {

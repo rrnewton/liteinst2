@@ -1338,11 +1338,26 @@
         "previous_sha256": "9601853fc3c6f6ad0f61706dc1806ea67f1d099933c07881cb5f62c3f2494c1f"
       },
       "src/trampoline.rs": {
-        "current_sha256": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b",
+        "current_sha256": "a375982a56a6b54e94b6392377f82a675d4b1082ffdfc043d865ba037d656996",
         "edits": [
           [
             54525,
             55071,
+            ""
+          ],
+          [
+            261271,
+            261307,
+            ""
+          ],
+          [
+            389387,
+            389440,
+            ""
+          ],
+          [
+            418621,
+            418657,
             ""
           ]
         ],
@@ -1357,7 +1372,7 @@
       "src/quiescent/adjacent_routed_jmp/fixture.hex": "fe2e9439bbfb7203e586b0aafcfb278d99d04ae1f38c7cb50370f5a0396b37a3",
       "src/quiescent/adjacent_routed_jmp/tests.rs": "a0513abd4c96b21a022b88f547cd9dadbfd0c691ba46cd94b974a464ef1f39ef",
       "src/quiescent/whole_function.rs": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408",
-      "src/trampoline.rs": "eface01934f017f05ab22e40a576cfa139b759860afe60029a91d92d61c1201b"
+      "src/trampoline.rs": "a375982a56a6b54e94b6392377f82a675d4b1082ffdfc043d865ba037d656996"
     },
     "upstream_revision": "3155b2d3db716b167fae807eae5f9d2e2b835296",
     "workspace_changes": {
