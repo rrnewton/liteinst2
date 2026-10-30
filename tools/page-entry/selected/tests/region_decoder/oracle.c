@@ -211,12 +211,13 @@ static const struct negative negatives[]={
     {{0x40,0x40,0x89,0xcb},4,LI2_REGION_PREFIX,0},{{0x2e,0x75,0},3,LI2_REGION_PREFIX,0},
     {{0x40,0x3c,1},3,LI2_REGION_PREFIX,0},{{0xf0,0x89,0xcb},3,LI2_REGION_INVALID,0},
     {{0xe8,0,0,0,0},5,LI2_REGION_UNSUPPORTED,0},{{0xc3},1,LI2_REGION_UNSUPPORTED,0},
-    {{0xff,0xe0},2,LI2_REGION_UNSUPPORTED,0},{{0x06},1,LI2_REGION_INVALID,0},
+    {{0xff,0xe0},2,LI2_REGION_UNSUPPORTED,0},{{0x06},15,LI2_REGION_INVALID,0},
     {{0x0f},1,LI2_REGION_TRUNCATED,0},{{0x0f,0xa2},2,LI2_REGION_EFFECTS,0},
     {{0x89,0xcb},2,LI2_REGION_ADDRESS,UINT64_C(0x800000000000)},
     {{0xeb,0x7f},2,LI2_REGION_ADDRESS,UINT64_C(0x7ffffffffff0)},
     {{0xeb,0x80},2,LI2_REGION_ADDRESS,1},
-    {{0xeb,0x80},2,LI2_REGION_ADDRESS,UINT64_C(0xffff800000000000)}
+    {{0xeb,0x80},2,LI2_REGION_ADDRESS,UINT64_C(0xffff800000000000)},
+    {{0x06},1,LI2_REGION_TRUNCATED,0}
 };
 enum { NEGATIVES=sizeof negatives/sizeof negatives[0] };
 static void negative_tests(void) {
@@ -231,7 +232,7 @@ static void negative_tests(void) {
         if(memcmp(&actual,&expected,sizeof actual))fprintf(stderr,"REGION_REFUSAL row=%u actual=%u expected=%u\n",i,actual.refusal,n->refusal);
         assert(!memcmp(&actual,&expected,sizeof actual));refusals++;
     }
-    assert(refusals==33);stats();
+    assert(refusals==34);stats();
 }
 static void api(void) {
     struct li2_region_decoded d,zero={0};const unsigned char b[]={0x89,0xcb};

@@ -30,9 +30,11 @@ decoder API; fixed Code IDs bind the locked iced-x861.21 enum. The model keeps
 E32 reads/R64 writes separate, duplicate operand aliases, XOR-self clearing,
 all flag categories including undefined AF, memory segment/base/index/scale
 and displacement, exact branch condition/target, and all zero/reserved bytes.
-It then requires33 exact literal refusals,124 proper-prefix truncations and
-six argument-refusal checks. These are actual describe calls, not changed
-expected answers or cached decoder results.
+It then requires34 exact literal refusals,124 proper-prefix truncations and
+six argument-refusal checks. Opcode06 is supplied with15 initialized available
+bytes for INVALID and with one available byte for TRUNCATED, preserving iced
+1.21's input-exhaustion precedence. Both require the same full304-byte comparison.
+These are actual describe calls, not cached decoder results.
 
 The second process places all47 base forms and their124 proper prefixes at
 the last readable bytes before a real inaccessible page. Every171 call must

@@ -41,7 +41,7 @@ def check(stdout, stderr, status, row):
     else:
         expected = {
             4: dict(version=1, mode=0, forms=47, accepted_rows=3898, accepted_calls=7796,
-                    refusals=33, truncations=124, api_checks=6, guard_checks=0, busy=0, stats_equal=1),
+                    refusals=34, truncations=124, api_checks=6, guard_checks=0, busy=0, stats_equal=1),
             5: dict(version=1, mode=1, forms=47, accepted_rows=0, accepted_calls=47,
                     refusals=0, truncations=124, api_checks=0, guard_checks=171, busy=0, stats_equal=1),
             6: dict(version=1, mode=2, forms=0, accepted_rows=0, accepted_calls=0,
