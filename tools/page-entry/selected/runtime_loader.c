@@ -180,6 +180,28 @@ static void uho_fd_guard(long,const long[6]);
 #endif
 #endif
 
+#ifdef LI2_SCALAR_REGION_CAPTURE
+#if LI2_SCALAR_REGION_CAPTURE != 1 || !defined(LI2_SCALAR_REGION) || LI2_SCALAR_REGION != 1 || \
+    defined(LI2_UNROLLED_HASH_CAPTURE) || defined(LI2_UNROLLED_HASH_OBSERVE_ONLY)
+#error "scalar capture requires its distinct complete qualification profile"
+#endif
+static void sro_fd_guard(long,const long[6]);
+#endif
+#ifdef LI2_SCALAR_REGION
+#if LI2_SCALAR_REGION != 1 || !defined(LI2_UNROLLED_HASH) || LI2_UNROLLED_HASH != 1
+#error "scalar region requires the literal complete unrolled profile"
+#endif
+#include "region_source.h"
+static volatile sig_atomic_t selected_scalar_region_active,selected_scalar_region_busy;
+static void selected_scalar_region_initialize(void);
+static int selected_scalar_region_try(int,siginfo_t *,ucontext_t *,uint64_t);
+static void selected_scalar_region_exit(int,siginfo_t *,ucontext_t *);
+static void selected_scalar_region_preentry(int,siginfo_t *,ucontext_t *);
+static _Noreturn void selected_scalar_region_abort(unsigned,long);
+static _Noreturn void selected_scalar_region_unexpected(int,siginfo_t *,ucontext_t *);
+static void selected_scalar_region_report(unsigned,unsigned,long);
+#endif
+
 #include "fork_profile.h"
 #ifdef LI2_NATIVE_PAIR
 static void selected_native_pair_report(unsigned,unsigned,long);
@@ -387,11 +409,18 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_UNROLLED_HASH
     selected_unrolled_report(status,code,detail);
 #endif
+#ifdef LI2_SCALAR_REGION
+    selected_scalar_region_report(status,code,detail);
+#endif
 #ifdef LI2_EVENT_PROFILE
     event_report();
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_SCALAR_REGION
+    if(selected_scalar_region_active || selected_scalar_region_busy || selected_pending_route==SELECTED_SCALAR_REGION)
+        selected_scalar_region_abort(code,detail);
+#endif
 #ifdef LI2_UNROLLED_HASH
     if(selected_unrolled_active || selected_unrolled_busy || selected_pending_route==SELECTED_UNROLLED_HASH)
         selected_unrolled_abort(code,detail);
@@ -528,6 +557,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_UNROLLED_HASH_CAPTURE
     uho_fd_guard(n,a);
+#endif
+#ifdef LI2_SCALAR_REGION_CAPTURE
+    sro_fd_guard(n,a);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
 #ifdef LI2_EFFECT_PROVIDER
@@ -682,6 +714,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_UNROLLED_HASH
 #include "selected_unrolled_hash.inc"
 #endif
+#ifdef LI2_SCALAR_REGION
+#include "selected_scalar_region.inc"
+#endif
 
 #ifdef LI2_NATIVE_PAGES
 #include "native_controller.inc"
@@ -702,6 +737,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_RSEQ_NATIVE
     /* Must precede every old checked/fail and returning cleanup path. */
     li2_rseq_native_preentry();
+#endif
+#ifdef LI2_SCALAR_REGION
+    selected_scalar_region_preentry(sig,si,ptr);
 #endif
 #ifdef LI2_UNROLLED_HASH
     selected_unrolled_preentry(sig,si,ptr);
@@ -792,6 +830,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_ENTRY_TIMING
     li2_entry_time_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_SCALAR_REGION
+    if(selected_pending_route==SELECTED_SCALAR_REGION) {
+        selected_scalar_region_exit(sig,si,ptr);
+    } else
 #endif
 #ifdef LI2_UNROLLED_HASH
     if(selected_pending_route==SELECTED_UNROLLED_HASH) {
@@ -949,6 +992,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_UNROLLED_HASH
     selected_unrolled_initialize();
+#endif
+#ifdef LI2_SCALAR_REGION
+    selected_scalar_region_initialize();
 #endif
 #ifdef LI2_MAPS_MAINTAINED
     checked(!li2_maps_view_enable(),770,1);

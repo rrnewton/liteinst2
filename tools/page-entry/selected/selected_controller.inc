@@ -548,11 +548,18 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
 #endif
         selected_repeat_begin(sig,si,context,flags);return;
     }
+#ifdef LI2_SCALAR_REGION
+    /* Preserve the qualified larger hash chunk before a supported prefix DAG. */
+    if(!selected_selftesting && selected_unrolled_try(sig,si,context,flags))return;
+    if(!selected_selftesting && selected_scalar_region_try(sig,si,context,flags))return;
+#endif
 #ifdef LI2_REGISTER_RUN
     if(!selected_selftesting && selected_run_try(sig,si,context,flags))return;
 #endif
 #ifdef LI2_UNROLLED_HASH
+#ifndef LI2_SCALAR_REGION
     if(!selected_selftesting && selected_unrolled_try(sig,si,context,flags))return;
+#endif
 #endif
     /* The descriptive Nopw candidate also includes canonical 66 90. The
        initial owner only qualifies single-byte 90; use the already-qualified

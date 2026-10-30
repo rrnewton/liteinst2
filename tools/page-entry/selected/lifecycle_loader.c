@@ -942,9 +942,15 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_RUN_CACHE_REUSE
 #include "run_reuse_lifecycle.inc"
 #endif
+#ifdef LI2_SCALAR_REGION
+#include "region_source.inc"
+#endif
 #ifdef LI2_UNROLLED_HASH
 #include "unrolled_source.inc"
 #endif
 #ifdef LI2_UNROLLED_HASH_CAPTURE
 #include "unrolled_hash_observe_memory.inc"
+#endif
+#ifdef LI2_SCALAR_REGION_CAPTURE
+#include "scalar_region_observe_memory.inc"
 #endif
