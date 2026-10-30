@@ -2742,7 +2742,7 @@ fn short_t3_pending_caps_and_all_conflicts_retain_exact_evidence() {
     p.neighbor.max_pairs = 1;
     let error = pending_next(&f, &empty, &protected, p).unwrap_err();
     let (rows, search) = ownership_failure(&error, Refusal::OwnershipConflict);
-    assert_eq!(rows, &[expected.clone()]);
+    assert_eq!(rows, std::slice::from_ref(&expected));
     assert_eq!(
         search
             .runs
@@ -2779,7 +2779,7 @@ fn short_t3_pending_caps_and_all_conflicts_retain_exact_evidence() {
     p.neighbor.max_victims = 1;
     let error = pending_next(&f, &empty, &protected, p).unwrap_err();
     let (rows, search) = ownership_failure(&error, Refusal::OwnershipConflict);
-    assert_eq!(rows, &[expected.clone()]);
+    assert_eq!(rows, std::slice::from_ref(&expected));
     assert_eq!(
         search.runs[0].stop,
         SearchStop::BudgetLimited {
@@ -2791,7 +2791,7 @@ fn short_t3_pending_caps_and_all_conflicts_retain_exact_evidence() {
     let error = pending_next(&f, &empty, &protected, p).unwrap_err();
     assert_eq!(
         ownership_failure(&error, Refusal::OwnershipConflict).0,
-        &[expected.clone()]
+        std::slice::from_ref(&expected)
     );
     p.neighbor.forced_victim = Some(f.base);
     let forced = pending_next(&f, &empty, &protected, p).unwrap();
