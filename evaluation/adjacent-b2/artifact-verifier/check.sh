@@ -13,3 +13,4 @@ cargo fmt --manifest-path "$manifest" -- --check
 cargo clippy -j 4 --manifest-path "$manifest" --locked --offline --all-targets -- -D warnings
 cargo test -j 4 --manifest-path "$manifest" --locked --offline
 python3 -B -m unittest discover -s evaluation/adjacent-b2/artifact-verifier -p '*controls.py' -v
+python3 -B evaluation/offline-router-native/package_controls.py
