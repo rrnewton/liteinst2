@@ -1,0 +1,7 @@
+The observer attempt at `559a8450c78105af681bf7d6f371f15e374b16a6` **failed before candidate dispatch**: custody reported “path replaced” during predispatch stability and again during close. Checksum and RLE remain **UNRUN**, with no child receipt and zero ordinary N01 invocations. Cleanup completed; source bytes stayed unchanged. Root’s separately bound prelaunch acceptance is not an execution result.
+
+All twelve earlier owners remain: **140 artifact, 188 native and 10 profiler controls passed**, then ten preparation phases produced a final-profile draft. Controls used `f55dc30` plus exact overlays matching the ten committed files; later owners used `559a845` without overlays. Review v1 remains **CHANGES_REQUESTED** for F01/F02; v2 restored terminal source/shared-input checks and received **APPROVE_SOURCE_ONLY**. The profiler also received source-only approval.
+
+Root’s immediate message and later sealed cache observation show distinct replacement inodes, with unchanged cache bytes and all three library pins. The sealed observation is posthoc, not child/owner evidence. Writer and cause are unconfirmed; no identical native rerun is recorded.
+
+`receipt.json` binds 13 owners and exact provenance; `commands.csv` retains 13 owner and two nested commands. Hardware: **AMD EPYC Zen 5 dev host**. Prior failures and limits remain. Durations/load are accounting only: **no runtime improvement, native qualification or performance claim**. `evaluation/offline-router-corpus/profile_preflight.py` is diagnostic only.
