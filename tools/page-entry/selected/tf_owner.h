@@ -24,6 +24,10 @@ enum li2_tf_error { LI2_TF_CLASSIFICATION=100, LI2_TF_CONTINUATION, LI2_TF_FRAME
     LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX, LI2_TF_SHSTK_QUERY, LI2_TF_SHSTK_ENABLED, LI2_TF_SHSTK_OBSERVATION, LI2_TF_MPX_ENABLED };
 uint32_t li2_decoder_tf_classify(uint64_t,const unsigned char *,size_t,
                                struct li2_tf_classification *);
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.h"
+#define li2_decoder_tf_classify(...) LI2_EVENT_VALUE(LI2_EV_CLASSIFY,(li2_decoder_tf_classify)(__VA_ARGS__))
+#endif
 
 struct li2_tf_hooks {
     struct li2_step_hooks step;

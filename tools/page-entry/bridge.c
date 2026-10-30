@@ -1,5 +1,8 @@
 #include "bridge.h"
 #include "sha256.h"
+#ifdef LI2_EVENT_PROFILE
+#include "selected/event_profile.h"
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
 #include "selected/maps_phase.h"
 #endif
@@ -20,7 +23,13 @@ const struct image *bridge_runtime_image(void) { return &bridge_image; }
 
 #ifdef LI2_MAPS_PHASE_REUSE
 long raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_EVENT_PROFILE
+    li2_event_raw_enter(n);
+    long result=li2_maps_raw(li2_raw6,n,a,b,c,d,e,f);
+    li2_event_raw_return(n,result);return result;
+#else
     return li2_maps_raw(li2_raw6,n,a,b,c,d,e,f);
+#endif
 }
 #else
 long raw(long n,long a,long b,long c,long d,long e,long f) { return li2_raw6(n,a,b,c,d,e,f); }

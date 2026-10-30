@@ -25,6 +25,11 @@
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.h"
+static void event_seal(void);
+static void event_report(void);
+#endif
 #ifdef LI2_ENTRY_TIMING
 #include "entry_timing.h"
 #endif
@@ -197,6 +202,9 @@ static void selected_repeat_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
+#ifdef LI2_EVENT_PROFILE
+    event_seal();
+#endif
 #ifdef LI2_COST_PROFILE
     struct li2_native_pair_cost cost;struct li2_maps_stats cost_maps;
     li2_lifecycle_pair_cost_snapshot(&cost);li2_maps_stats_read(&cost_maps);
@@ -327,6 +335,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_COST_PROFILE
     selected_cost_report(status,code,detail,&cost,&cost_maps);
+#endif
+#ifdef LI2_EVENT_PROFILE
+    event_report();
 #endif
 }
 static void fail(unsigned code,long detail) {
@@ -617,6 +628,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_ENTRY_TIMING
 #include "entry_timing.inc"
 #endif
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.inc"
+#endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_NATIVE_PAIR
     li2_native_pair_preentry();
@@ -693,6 +707,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
     }
     checked(!handling && si && ptr,218,sig); handling=1;
+#ifdef LI2_EVENT_PROFILE
+    event_handler_begin(sig,(unsigned)selected_pending_route);
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     /* This scopes routing only. The route still authenticates its actual frame,
        session and query ownership before using any observations. */
@@ -749,6 +766,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_end(); /* Before sigreturn, hence before generated/app execution. */
+#endif
+#ifdef LI2_EVENT_PROFILE
+    event_handler_end(0);
 #endif
     handling=0;
 }
@@ -847,5 +867,8 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     native_error=li2_native_pair_initialize(&selected_session);
     checked(!native_error,(unsigned)native_error,1);
 #endif
+#endif
+#ifdef LI2_EVENT_PROFILE
+    event_initialize();
 #endif
 }

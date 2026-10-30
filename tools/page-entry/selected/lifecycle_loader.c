@@ -8,6 +8,9 @@ static int np_life_admission_guard(uintptr_t);
 #include "repeat_custody.h"
 #endif
 #include "bridge.h"
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.h"
+#endif
 #include <errno.h>
 #include <elf.h>
 #include <fcntl.h>
@@ -143,27 +146,45 @@ static void spaces(size_t *at,size_t end) {
 }
 #ifdef LI2_MAPS_PHASE_REUSE
 #define read_maps_checked read_maps_fresh
+#ifdef LI2_EVENT_PROFILE
+#define read_maps_fresh read_maps_event_body
+#endif
 #endif
 static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress *p) {
     *p=(struct li2_fetch_map_progress){.fd=-1};
     const char path[]="/proc/self/maps";
+#ifdef LI2_EVENT_PROFILE
+    long fd=LI2_EVENT_MAPS_VALUE(LI2_EV_OPEN,RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0));
+#else
     long fd=RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0);
+#endif
     if (fd<0) return check_error(e,104,fd);
     p->fd=fd; p->opened=1;
     size_t length=0;
     for (;;) {
         if (length==MAP_BYTES) { check_error(e,105,0); break; }
+#ifdef LI2_EVENT_PROFILE
+        long got=LI2_EVENT_MAPS_VALUE(LI2_EV_READ,RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0));
+#else
         long got=RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0);
+#endif
         p->last_read=got;
         if (got<0) { check_error(e,106,got); break; }
         if (!got) break;
         length+=(size_t)got; p->bytes=length;
     }
     p->close_started=1;
+#ifdef LI2_EVENT_PROFILE
+    p->close_result=LI2_EVENT_MAPS_VALUE(LI2_EV_CLOSE,RAW(SYS_close,fd,0,0,0,0,0));
+#else
     p->close_result=RAW(SYS_close,fd,0,0,0,0,0);
+#endif
     if (!p->close_result) p->closed=1;
     else check_error(e,107,p->close_result);
     if (e->code) return (int)e->code;
+#ifdef LI2_EVENT_PROFILE
+    LI2_EVENT_SCOPE(event_parse,LI2_EV_PARSE);
+#endif
     row_count=0; size_t at=0;
     while (at<length) {
         size_t end=at;
@@ -200,6 +221,14 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
     return 0;
 }
 #ifdef LI2_MAPS_PHASE_REUSE
+#ifdef LI2_EVENT_PROFILE
+#undef read_maps_fresh
+static int read_maps_fresh(struct check_error *e,struct li2_fetch_map_progress *p) {
+    LI2_EVENT_SCOPE(event_maps,LI2_EV_MAPS);
+    int result=read_maps_event_body(e,p);
+    li2_event_maps_result(result,p->bytes,p->rows);return result;
+}
+#endif
 #undef read_maps_checked
 #include "maps_phase.inc"
 #endif

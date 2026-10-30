@@ -44,6 +44,11 @@ uint32_t li2_decoder_stats(struct li2_decoder_stats *);
 uint32_t li2_decoder_decode(uint64_t,const unsigned char *,size_t,struct li2_decoded *);
 uint32_t li2_decoder_scan_page(uint64_t,const unsigned char *,size_t,uint64_t,
                              uint32_t,uint32_t,struct li2_decoded *,size_t,struct li2_scan *);
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.h"
+#define li2_decoder_decode(...) LI2_EVENT_VALUE(LI2_EV_DECODE,(li2_decoder_decode)(__VA_ARGS__))
+#define li2_decoder_scan_page(...) LI2_EVENT_VALUE(LI2_EV_SCAN,(li2_decoder_scan_page)(__VA_ARGS__))
+#endif
 
 /* Initialization exhaustion, post-seal allocator use, or Rust panic calls this
    linked nonreturning raw hook. The supplied example writes reason then exits.

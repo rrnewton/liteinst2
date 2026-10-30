@@ -119,6 +119,26 @@ li2_restorer:
 .global li2_gateway_end
 .hidden li2_gateway_end
 li2_gateway_end:
+#ifdef LI2_EVENT_PROFILE
+/* No new syscall site: exact fixed observer arguments call the old gateway.
+   No-argument SysV entry, seventh raw argument at the ordinary caller slot. */
+.global li2_event_clock_raw
+.hidden li2_event_clock_raw
+.hidden li2_event_clock_buffer
+.type li2_event_clock_raw,@function
+li2_event_clock_raw:
+    mov $228,%edi
+    mov $1,%esi
+    lea li2_event_clock_buffer(%rip),%rdx
+    xor %ecx,%ecx
+    xor %r8d,%r8d
+    xor %r9d,%r9d
+    pushq $0
+    call li2_raw6
+    addq $8,%rsp
+    ret
+.size li2_event_clock_raw,.-li2_event_clock_raw
+#endif
 
 .bss
 .p2align 6

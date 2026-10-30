@@ -22,6 +22,10 @@ struct li2_write_footprint {
    buffers, and obey the decoder's sealed-arena/single-caller contract. */
 uint32_t li2_decoder_write_footprint(uint64_t,const unsigned char *,size_t,
     const struct li2_write_registers *,struct li2_write_footprint *);
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.h"
+#define li2_decoder_write_footprint(...) LI2_EVENT_VALUE(LI2_EV_FOOTPRINT,(li2_decoder_write_footprint)(__VA_ARGS__))
+#endif
 _Static_assert(sizeof(struct li2_write_registers)==144,"write registers ABI");
 _Static_assert(sizeof(struct li2_write_footprint)==48,"write footprint ABI");
 #endif
