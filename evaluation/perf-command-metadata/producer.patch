@@ -1,0 +1,57 @@
+--- a/tools/perf/builtin-record.c
++++ b/tools/perf/builtin-record.c
+@@ -162,6 +162,8 @@
+ 	struct auxtrace_record	*itr;
+ 	struct evlist	*evlist;
+ 	struct perf_session	*session;
++	int			cmdline_argc;
++	const char		**cmdline_argv;
+ 	struct evlist		*sb_evlist;
+ 	pthread_t		thread_id;
+ 	int			realtime_prio;
+@@ -2495,6 +2497,11 @@
+ 		return PTR_ERR(session);
+ 	}
+ 	env = perf_session__env(session);
++	err = perf_env__set_cmdline(env, rec->cmdline_argc, rec->cmdline_argv);
++	if (err) {
++		perf_session__delete(session);
++		return err;
++	}
+ 	if (record__threads_enabled(rec)) {
+ 		if (perf_data__is_pipe(&rec->data)) {
+ 			pr_err("Parallel trace streaming is not available in pipe mode.\n");
+@@ -4107,6 +4114,15 @@
+ 	if (err)
+ 		return err;
+ 
++	/* Preserve the complete record command before option parsing moves argv. */
++	rec->cmdline_argv = calloc(argc, sizeof(*rec->cmdline_argv));
++	if (!rec->cmdline_argv) {
++		err = -ENOMEM;
++		goto out_opts;
++	}
++	memcpy(rec->cmdline_argv, argv, argc * sizeof(*rec->cmdline_argv));
++	rec->cmdline_argc = argc;
++
+ 	argc = parse_options(argc, argv, record_options, record_usage,
+ 			    PARSE_OPT_STOP_AT_NON_OPTION);
+ 	if (quiet)
+@@ -4114,7 +4130,7 @@
+ 
+ 	err = symbol__validate_sym_arguments();
+ 	if (err)
+-		return err;
++		goto out_opts;
+ 
+ 	perf_debuginfod_setup(&record.debuginfod);
+ 
+@@ -4418,6 +4434,8 @@
+ out_opts:
+ 	evlist__close_control(rec->opts.ctl_fd, rec->opts.ctl_fd_ack, &rec->opts.ctl_fd_close);
+ 	evlist__put(rec->evlist);
++	zfree(&rec->cmdline_argv);
++	rec->cmdline_argc = 0;
+ 	return err;
+ }
+ 
