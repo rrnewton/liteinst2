@@ -46,3 +46,38 @@ at `38736fcdda54f04b1cca5fd41b51327c3680524a` passed all 354 tests in
 were unchanged and cleanup completed. The 180-second deadline, four-worker
 limit and 8 MiB output cap remain unchanged. This qualifies the recorder only;
 the other five required checks remain pending.
+
+At revision `a60c96fcc007d039a2ba83a4878e6c96ecb41009`, fresh release
+qualification ran unprivileged on reserved CPU 74, AMD EPYC 9D85, Linux 7.1.3
+(microcode `0xb101066`). The component and original owner prerequisites passed;
+the new current-custody owner **failed**.
+
+| Cohort | Actual outcome | Evidence |
+| --- | --- | --- |
+| Original unrolled component | 9 qualified; 2 required read faults; 373 reader refusals | [JSON](20261030T123804.577436Z-unrolled-hash-component-a60c96fcc007.json), [CSV](20261030T123804.577436Z-unrolled-hash-component-a60c96fcc007.csv) |
+| Current-view component and fallback companion | Original 28 plus 6 companion cases qualified; 700 + 192 reader refusals; 88 compiled-storage controls | [JSON](20261030T123847.340940Z-maps-current-component-a60c96fcc007.json), [CSV](20261030T123847.340940Z-maps-current-component-a60c96fcc007.csv) |
+| Original unrolled owner | 25 qualified; 9 native/gated pairs and 7 required owner refusals; 234 application, 472 owner and 542 terminal reader refusals | [JSON](20261030T124100.792208Z-unrolled-hash-owner-a60c96fcc007.json), [CSV](20261030T124100.792208Z-unrolled-hash-owner-a60c96fcc007.csv) |
+| Current-view native owner | All 27 launched with expected process exits; 9 native references qualified, all 18 gated records rejected | [JSON](20261030T124442.273065Z-current-custody-owner-a60c96fcc007.json), [CSV](20261030T124442.273065Z-current-custody-owner-a60c96fcc007.csv) |
+
+The current-owner reader incorrectly required positive `initial_extent` on the
+fixed main-image source. All 18 records instead contain allocation 1,
+generation 7 and `initial_extent=0`. The lifecycle constructor and unchanged
+original main-image reader require that exact zero annotation. A correction
+must retain positive allocation/generation and require exactly zero here;
+it cannot accept an arbitrary extent or retroactively qualify this cohort.
+
+The physical-fallback process now exits 0. Its retained bytes show the real
+stack protection request, a fresh physical query at commit without losing the
+staged epoch, and subsequent retained continuation without new physical I/O.
+The stale subject exits 125 as required. These are descriptive observations:
+none of the 18 gated records reached the mandatory reader/control completion.
+The original 25 cases and the separate stale/fallback cases remain required.
+
+Independent closed-data audits authenticated source, artifacts, captures and
+cleanup; all 78 current-owner commands closed without final closure errors.
+The original component 5 CPU/15 wall-second and owner 30 CPU/60 wall-second
+limits, 512 MiB address-space and 16 MiB file limits remain unchanged. No
+performance cohort launched from this failed prerequisite, no diagnostic replay
+can supply qualification credit, and the whole current-custody qualification
+and 10-times-DynamoRIO target remain unmet. The component CSV retains its
+original 28-case scope; the six added companion outcomes are in its JSON.
