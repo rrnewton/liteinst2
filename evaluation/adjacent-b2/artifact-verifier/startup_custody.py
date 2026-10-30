@@ -4,9 +4,11 @@ import json
 import os
 from pathlib import Path
 import re
+import select
 import stat
 import subprocess
 import sys
+import time
 
 MIB = 1048576
 PROGRAMS = ('checksum', 'rle-roundtrip')
@@ -19,6 +21,11 @@ SOURCE_ROOTS = ('Cargo.toml','Cargo.lock','build.rs','.cargo','src','crates',
     'tools/elf-rewrite','tests','examples',CRATE,
     'evaluation/offline-corpus/checksum.S','evaluation/offline-corpus/rle-roundtrip.S',
     'evaluation/offline-corpus/layout.ld','tools/unwind-oracle/bounded_command.py')
+SOURCE_FILE_BYTES = 16 * MIB
+SOURCE_BYTES = 512 * MIB  # The existing outer source-custody budget, not per blob.
+SOURCE_REQUEST_BYTES = MIB  # The externally frozen source-profile JSON has this cap.
+GIT_SECONDS = 15
+GIT_CLEANUP_SECONDS = 5
 
 
 def need(value, detail):
@@ -205,6 +212,133 @@ def environment(ctx, env, tools):
          ctx.B.identity(sys.executable) == tools['python'], 'exact helper and Python')
 
 
+class SourceBatch:
+    """Strict ordered cat-file records; retain hashes and at most one header.
+
+    Expected content digests come from the external source profile. Git's object
+    ID is checked separately against the full blob framing and contents. A batch
+    is a fresh read on every call, never a cache or a substitute for live reads.
+    """
+    def __init__(self, expected):
+        self.expected = tuple(expected)
+        need(bool(self.expected), 'nonempty source batch')
+        for value in self.expected:
+            digest(value)
+        self.index = 0
+        self.total = 0
+        self.header = bytearray()
+        self.state = 'header'
+        self.remaining = 0
+
+    def feed(self, raw):
+        need(type(raw) is bytes, 'source batch bytes')
+        at = 0
+        while at < len(raw):
+            need(self.index < len(self.expected), 'source batch trailing output')
+            if self.state == 'header':
+                end = raw.find(b'\n', at)
+                stop = len(raw) if end < 0 else end
+                need(len(self.header) + stop - at <= 96, 'source batch header bound')
+                self.header.extend(raw[at:stop]); at = stop
+                if end < 0:
+                    return
+                at += 1
+                match = re.fullmatch(rb'([0-9a-f]{40}) blob (0|[1-9][0-9]{0,7})', self.header)
+                need(match is not None, 'source batch exact blob header')
+                size = int(match[2])
+                need(size <= SOURCE_FILE_BYTES and size <= SOURCE_BYTES - self.total,
+                     'source batch file/aggregate bound')
+                self.total += size
+                self.oid = match[1].decode('ascii')
+                self.content_hash = hashlib.sha256()
+                self.object_hash = hashlib.sha1(b'blob ' + str(size).encode('ascii') + b'\0')
+                self.remaining = size
+                self.header.clear()
+                self.state = 'body' if size else 'newline'
+            elif self.state == 'body':
+                take = min(self.remaining, len(raw) - at)
+                block = memoryview(raw)[at:at + take]
+                self.content_hash.update(block); self.object_hash.update(block)
+                self.remaining -= take; at += take
+                if not self.remaining:
+                    self.state = 'newline'
+            else:
+                need(raw[at:at + 1] == b'\n', 'source batch exact blob terminator')
+                need(self.content_hash.hexdigest() == self.expected[self.index]
+                     and self.object_hash.hexdigest() == self.oid, 'reviewed committed source bytes')
+                at += 1; self.index += 1; self.state = 'header'
+
+    def finish(self):
+        need(self.index == len(self.expected) and self.state == 'header' and not self.header,
+             'source batch missing/truncated record')
+
+
+def source_batch(root, revision, ordered, env):
+    """One bounded Git process and one strict 15-second command deadline."""
+    need(type(revision) is str and re.fullmatch('[0-9a-f]{40}', revision) is not None,
+         'source batch exact revision')
+    request = bytearray()
+    for relative, expected in ordered:
+        need(type(relative) is str and bool(relative) and not relative.startswith('/')
+             and all(part not in ('', '.', '..') for part in relative.split('/'))
+             and not any(c in relative for c in '\0\r\n'), 'reviewed source path')
+        digest(expected)
+        row = (revision + ':' + relative + '\n').encode('utf-8')
+        need(len(row) <= SOURCE_REQUEST_BYTES - len(request), 'source batch request bound')
+        request.extend(row)
+    decoder = SourceBatch([expected for _, expected in ordered])
+    argv = ['/usr/bin/git', '-C', str(root), 'cat-file', '--batch']
+    deadline = time.monotonic() + GIT_SECONDS
+    child = subprocess.Popen(argv, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, bufsize=0)
+    try:
+        input_fd = child.stdin.fileno()
+        output_fd = child.stdout.fileno()
+        error_fd = child.stderr.fileno()
+        for fd in (input_fd, output_fd, error_fd):
+            os.set_blocking(fd, False)
+        reading = {output_fd, error_fd}; sent = 0
+        while reading or sent < len(request):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(argv, GIT_SECONDS)
+            ready, writable, _ = select.select(list(reading),
+                [input_fd] if sent < len(request) else [], [], remaining)
+            if not ready and not writable:
+                raise subprocess.TimeoutExpired(argv, GIT_SECONDS)
+            if writable:
+                count = os.write(input_fd, memoryview(request)[sent:sent + 65536])
+                need(count > 0, 'source batch short request write')
+                sent += count
+                if sent == len(request):
+                    child.stdin.close()
+            for fd in ready:
+                block = os.read(fd, 65536)
+                if not block:
+                    reading.remove(fd)
+                elif fd == error_fd:
+                    raise ValueError('source batch Git stderr')
+                else:
+                    decoder.feed(block)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(argv, GIT_SECONDS)
+        need(child.wait(timeout=remaining) == 0, 'source batch Git exit')
+        decoder.finish()
+        if time.monotonic() > deadline:
+            raise subprocess.TimeoutExpired(argv, GIT_SECONDS)
+    finally:
+        # Cleanup cannot turn a deadline or parser failure into acceptance. Its
+        # separate finite wait is only for reaping the killed read-only child.
+        try:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=GIT_CLEANUP_SECONDS)
+        finally:
+            for stream in (child.stdin, child.stdout, child.stderr):
+                stream.close()
+
+
 def source_profile(ctx, pins, env):
     revision = pins.SOURCE_REVISION
     need(type(revision) is str and re.fullmatch('[0-9a-f]{40}', revision) is not None and
@@ -216,11 +350,17 @@ def source_profile(ctx, pins, env):
     need(set(pins.SOURCE_PINS) == set(names), 'complete reviewed startup source inventory')
     # The pinned map is reviewed independently, never accepted from a build's
     # self-reported files. Exact Git and live bytes must both match every pin.
-    for relative, expected in pins.SOURCE_PINS.items():
+    ordered = sorted(pins.SOURCE_PINS.items())
+    source_batch(ctx.ROOT, revision, ordered, env)
+    total = 0
+    for relative, expected in ordered:
         need(not relative.startswith('/') and '..' not in relative.split('/'), 'reviewed source path')
         digest(expected)
-        need(sha(git('show', revision + ':' + relative)) == expected and
-             sha(ctx.read(ctx.ROOT / relative, cap=16*MIB)) == expected, 'reviewed startup source bytes')
+        raw = ctx.read(ctx.ROOT / relative, cap=SOURCE_FILE_BYTES)
+        need(len(raw) <= SOURCE_FILE_BYTES and len(raw) <= SOURCE_BYTES - total,
+             'live source file/aggregate bound')
+        total += len(raw)
+        need(sha(raw) == expected, 'reviewed startup source bytes')
     return current
 
 
