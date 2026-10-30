@@ -6,20 +6,22 @@ use std::fmt::Write as _;
 pub(super) struct Ledger<const N: usize> {
     pub population: Population<N>,
     stream: NormalLeafSetHistoryStream,
-    leaves: [Leaf; N],
+    leaves: [Selection; N],
+    pub(super) expectations: Expectations<N>,
     calls: Vec<worker::Call>,
     journals: Vec<[u64; 512]>,
 }
 impl<const N: usize> Ledger<N> {
     pub(super) fn new(
         stream: NormalLeafSetHistoryStream,
-        leaves: [Leaf; N],
+        selection: ([Selection; N], Expectations<N>),
         entries: [u64; N],
         ends: [u64; N],
         returns: [Vec<u64>; N],
         k: usize,
         epochs: usize,
     ) -> Self {
+        let (leaves, expectations) = selection;
         assert!((1..=4).contains(&N) && matches!(k, 10 | 1000) && (1..=520).contains(&epochs));
         assert_eq!(stream.functions(), &leaves.map(|l| l.function));
         assert_eq!(stream.entries(), &entries);
@@ -42,6 +44,7 @@ impl<const N: usize> Ledger<N> {
             },
             stream,
             leaves,
+            expectations,
             calls: Vec::with_capacity(record_cap(N) * N),
             journals: Vec::with_capacity(record_cap(N)),
         }
@@ -50,8 +53,11 @@ impl<const N: usize> Ledger<N> {
         assert_eq!(id.pid, self.stream.pid());
         self.population.ready(id);
     }
-    pub(super) fn accept(&mut self, record: &Arc<input::Record>) {
+    pub(super) fn accept(&mut self, record: &Arc<input::Record>) -> Result<(), String> {
+        // This runs in the controller before the accepted owner can be sent.
+        self.expectations.record(record)?;
         self.population.accept_with_limit(record, record_cap(N));
+        Ok(())
     }
     pub(super) fn batch(
         &mut self,
@@ -107,7 +113,7 @@ impl<const N: usize> Ledger<N> {
             assert!(Arc::ptr_eq(&call.inner.record, accepted));
             assert_eq!(
                 call.value(),
-                self.leaves[ordinal % N].operation.value(accepted)
+                self.expectations.record(accepted)?[ordinal % N].value(accepted, ordinal % N, N)
             );
         }
         let start = self.population.rows.len();
@@ -135,13 +141,19 @@ impl<const N: usize> Ledger<N> {
         let values: [u64; N] = std::array::from_fn(|i| self.calls[call_start + i].value());
         emit(
             io,
-            result_line(
+            self.result_line(
                 a,
                 &values,
                 seen.row.record.raw.ordinal + 1 - N as u64,
                 seen.row.record.raw.ordinal,
             ),
         )
+    }
+    fn result_line(&self, a: &input::Record, values: &[u64; N], first: u64, last: u64) -> String {
+        match &self.expectations {
+            Expectations::Builtin(_) => result_line(a, values, first, last),
+            Expectations::Frozen(_) => selected_result_line(a, values, first, last),
+        }
     }
     fn index(&self, function: FunctionId) -> usize {
         self.leaves
@@ -312,6 +324,16 @@ fn result_line<const N: usize>(
     assert!((1..=4).contains(&N));
     assert_eq!(last.checked_sub(first).unwrap() + 1, N as u64);
     assert!(values.iter().all(|&v| v <= 65));
+    selected_result_line(a, values, first, last)
+}
+fn selected_result_line<const N: usize>(
+    a: &input::Record,
+    values: &[u64; N],
+    first: u64,
+    last: u64,
+) -> String {
+    assert!((1..=4).contains(&N));
+    assert_eq!(last.checked_sub(first).unwrap() + 1, N as u64);
     a.check();
     let mut line = format!("RESULT,{},{},{}", a.id, a.length, a.checksum());
     for value in values {
@@ -823,5 +845,47 @@ mod tests {
         refuse(|| {
             result_line(&a, &[65, 64, 0, 0], 4092, 4096);
         });
+    }
+}
+
+#[cfg(test)]
+pub(in crate::normal) mod selected_controls {
+    use super::*;
+    fn refuse(f: impl FnOnce()) {
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err());
+    }
+    pub(in crate::normal) fn selected_full_u64_wire_keeps_old_bounds_and_old_refusal() {
+        let record = input::Record::new(1024, &[b'A'; 64]).unwrap();
+        let values = [u64::MAX; 4];
+        let line = selected_result_line(&record, &values, 4093, 4096);
+        assert_eq!(
+            line,
+            format!(
+                "RESULT,1024,64,{},18446744073709551615,18446744073709551615,18446744073709551615,18446744073709551615,4093,4096\n",
+                record.checksum()
+            )
+        );
+        validate_line(&line);
+        refuse(|| {
+            result_line(&record, &values, 4093, 4096);
+        });
+        refuse(|| {
+            selected_result_line(&record, &values, 4092, 4096);
+        });
+        refuse(|| {
+            selected_result_line(&record, &[], 4093, 4096);
+        });
+        refuse(|| {
+            selected_result_line(&record, &[0; 5], 4092, 4096);
+        });
+        assert_eq!(
+            result_line(&record, &[65; 4], 4093, 4096),
+            selected_result_line(&record, &[65; 4], 4093, 4096)
+        );
+        for n in 1..=4 {
+            let records = record_cap(n);
+            let lines = 2 * n * records + records + 2 * 520 + 6 * n + 4;
+            assert!(lines * 350 < 4 * 1024 * 1024);
+        }
     }
 }

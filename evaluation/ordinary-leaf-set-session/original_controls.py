@@ -13,7 +13,7 @@ if not __debug__:
     raise SystemExit('assertions required')
 sys.dont_write_bytecode = True
 SOURCE = Path(__file__).resolve().with_name('original_output.py')
-assert hashlib.sha256(SOURCE.read_bytes()).hexdigest() == '303946e4122ca625cf0a2a3d14a38eaedcb62b0ed1d2cc36aab8d44030cd4ea4'
+assert hashlib.sha256(SOURCE.read_bytes()).hexdigest() == 'daeed0309f62ac4fadc69afdd2c26ba758063d5c5599a148a831bf37972fa8aa'
 _spec = importlib.util.spec_from_file_location('_original_controls_checked', SOURCE)
 C = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(C)

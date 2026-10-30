@@ -1,0 +1,219 @@
+{
+  "schema": "selected-whole-workspace-validation-v1",
+  "revision": "d6968c1a3a31428f332fc14577116362ccb9e281",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "driver": "evaluation/short-neighbor-parallel/validate.py",
+  "driver_sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd",
+  "command": [
+    "/usr/bin/python3.9",
+    "-B",
+    "evaluation/short-neighbor-parallel/validate.py",
+    "--revision",
+    "d6968c1a3a31428f332fc14577116362ccb9e281",
+    "--output",
+    "ignored/a3/selected-full-d696-v1"
+  ],
+  "environment": {
+    "HOME": "${USER_HOME}",
+    "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+    "RUSTC": "${TOOLCHAIN}/bin/rustc",
+    "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+    "CARGO_HOME": "${CARGO_HOME}",
+    "CARGO_TARGET_DIR": "${ROOT}/target",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TERM_COLOR": "never",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "LITEINST_EVALUATION": "1",
+    "TMPDIR": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TEMP": "${ROOT}/ignored/a3/adjacent-d01-temporary",
+    "TMP": "${ROOT}/ignored/a3/adjacent-d01-temporary"
+  },
+  "test_threads": 316,
+  "build_jobs": 16,
+  "other_cargo_jobs": 4,
+  "reserved_cpus": [
+    15,
+    19,
+    54,
+    80,
+    110,
+    146,
+    174,
+    176,
+    197,
+    200,
+    216,
+    223,
+    224,
+    237,
+    246,
+    274
+  ],
+  "owner_wall_limit_seconds": 1200,
+  "workspace_wall_limit_seconds": 900,
+  "all_log_caps_bytes": 8388608,
+  "owner_wall_seconds": 1057.9747331088874,
+  "owner_receipt_sha256": "f642f6cc352d9ac36d7ca5ce8da1ef2ebf024a0fcc6277fef64b903db5f18d57",
+  "closed_stages_sha256": "9c3ab3f463a2dbc44c1d255791102ed21b63923a655ec36fdba4f232fcb6f35d",
+  "source_unchanged": true,
+  "all_process_closures": "exit 0, no termination, cleanup complete, zero rescued descendants",
+  "stages": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "start_utc": "2026-10-30T18:08:38.065708+00:00",
+      "wall_seconds": 9.443715536035597,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit": 0,
+      "load_before": [
+        62.65,
+        60.91,
+        63.36
+      ],
+      "load_after": [
+        60.14,
+        60.42,
+        63.17
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "start_utc": "2026-10-30T18:08:47.510166+00:00",
+      "wall_seconds": 33.090624359901994,
+      "log_sha256": "eef2a6d256101a16933d960a54f375bb466ca53c9e308933c859bdf978fecc9e",
+      "exit": 0,
+      "load_before": [
+        60.14,
+        60.42,
+        63.17
+      ],
+      "load_after": [
+        58.47,
+        60.2,
+        63.01
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "start_utc": "2026-10-30T18:09:20.601499+00:00",
+      "wall_seconds": 29.878451067954302,
+      "log_sha256": "0902fa4ca5ae27890eb1360f28b8385208e2e1e83fa70c93b2c0e665b90dd303",
+      "exit": 0,
+      "load_before": [
+        58.47,
+        60.2,
+        63.01
+      ],
+      "load_after": [
+        51.46,
+        58.38,
+        62.32
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "start_utc": "2026-10-30T18:09:50.480714+00:00",
+      "wall_seconds": 854.9344926490448,
+      "log_sha256": "581bb904067920d8503221b07f73f3f186554cc73c3fc8e847fe2866a1c5ba09",
+      "exit": 0,
+      "load_before": [
+        51.46,
+        58.38,
+        62.32
+      ],
+      "load_after": [
+        62.0,
+        59.84,
+        58.72
+      ],
+      "passed": 3942,
+      "failed": 0,
+      "ignored": 37,
+      "unfiltered_summaries": 109,
+      "nested_filtered_summaries_excluded": 3
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "start_utc": "2026-10-30T18:24:05.417027+00:00",
+      "wall_seconds": 130.539601507131,
+      "log_sha256": "ce66df31a8c71e390203479dcc26c4893614ff368f8b536d157705b688f09cdb",
+      "exit": 0,
+      "load_before": [
+        62.0,
+        59.84,
+        58.72
+      ],
+      "load_after": [
+        56.77,
+        58.89,
+        58.54
+      ],
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "unfiltered_summaries": 27,
+      "nested_filtered_summaries_excluded": 0
+    }
+  ],
+  "selected_regressions_passed": {
+    "short_neighbor": 21,
+    "observing_control": 8,
+    "rapid_mutated_window": 1,
+    "prefixed_pun_native": 1,
+    "whole_adc_native": 4,
+    "reported_exec_source_identity": 5
+  },
+  "counting": "Sum only the 109 unfiltered workspace summaries; exclude three filtered nested child summaries already covered by their parent tests. Serial launch has 27 unfiltered summaries.",
+  "scope": "Correctness only; wall durations describe bounded validation, not performance. This receipt executed the exact revision above; later summary-only files are not a new executable revision."
+}

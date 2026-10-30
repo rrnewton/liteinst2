@@ -221,6 +221,7 @@ fn scalar(i: &Instruction) -> bool {
             | Mnemonic::Lea
             | Mnemonic::Xor
             | Mnemonic::Add
+            | Mnemonic::Adc
             | Mnemonic::Sub
             | Mnemonic::And
             | Mnemonic::Or

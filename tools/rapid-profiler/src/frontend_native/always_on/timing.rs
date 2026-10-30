@@ -74,9 +74,13 @@ pub(super) fn owner(summary: IntervalEntrySummary) -> RawIntervalOwner {
     }
 }
 
+#[allow(unused_unsafe)] // CPUID is unsafe on the minimum supported Rust.
 pub(super) fn supported() -> bool {
-    std::arch::x86_64::__cpuid(0x8000_0000).eax >= 0x8000_0001
-        && std::arch::x86_64::__cpuid(0x8000_0001).edx & (1 << 27) != 0
+    // SAFETY: CPUID is available on the supported x86-64 target.
+    unsafe {
+        std::arch::x86_64::__cpuid(0x8000_0000).eax >= 0x8000_0001
+            && std::arch::x86_64::__cpuid(0x8000_0001).edx & (1 << 27) != 0
+    }
 }
 /// # Safety
 /// The separate ordinary factory checked RDTSCP before any publication.

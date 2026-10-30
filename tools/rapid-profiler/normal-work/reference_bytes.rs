@@ -700,8 +700,9 @@ impl ReferenceCell {
         let p = self.pre_call_rsp;
         let enclosure = self.enclosure(sequence, external_id, p, value)?;
         // S=P+40; subject entry=P-8; full subject red zone starts P-136.
-        let start = p.checked_sub(136).ok_or(Error::Range)?;
-        let end = p.checked_add(48).ok_or(Error::Range)?;
+        let below = PROTECTED_STACK_BELOW_CALLER - (SUBJECT_RSP_DELTA - 8);
+        let start = p.checked_sub(below).ok_or(Error::Range)?;
+        let end = p.checked_add(SUBJECT_RSP_DELTA).ok_or(Error::Range)?;
         require(
             stack_bounds.0 < stack_bounds.1 && stack_bounds.0 <= start && end <= stack_bounds.1,
             Error::Range,

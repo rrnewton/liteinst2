@@ -1,0 +1,17 @@
+function,selected_mask,other_mask,inputs,seeds,state_comparisons,ordered_boundaries,status,attempts
+first_equal,0,7,12,2,24,2712,PASS,1
+first_equal,1,6,12,2,24,2712,PASS,1
+first_equal,2,5,12,2,24,2712,PASS,1
+first_equal,3,4,12,2,24,2712,PASS,1
+first_equal,4,3,12,2,24,2712,PASS,1
+first_equal,5,2,12,2,24,2712,PASS,1
+first_equal,6,1,12,2,24,2712,PASS,1
+first_equal,7,0,12,2,24,2712,PASS,1
+uppercase_count,0,7,12,2,24,4610,PASS,1
+uppercase_count,1,6,12,2,24,4610,PASS,1
+uppercase_count,2,5,12,2,24,4610,PASS,1
+uppercase_count,3,4,12,2,24,4610,PASS,1
+uppercase_count,4,3,12,2,24,4610,PASS,1
+uppercase_count,5,2,12,2,24,4610,PASS,1
+uppercase_count,6,1,12,2,24,4610,PASS,1
+uppercase_count,7,0,12,2,24,4610,PASS,1
