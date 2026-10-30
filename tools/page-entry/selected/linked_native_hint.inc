@@ -105,6 +105,35 @@ int li2_lifecycle_link_native_hint_choose(const struct li2_span_source *s,uint64
     lnh.outcome_complete=0;lnh.outcome_result=0;*publication=lnh.selected_publication;
     __asm__ volatile("":::"memory");lnh.pending=1;return 1;
 }
+#if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
+/* Deliberate qualification-only corruption of the actual advisory receipt.
+   A nonmatching candidate is untouched. Once the complete unmodified pure
+   predicates hold, the caller must terminate after the real lookup; it may
+   never restore the receipt or return this negative stimulus to the guest. */
+int li2_lifecycle_link_native_hint_probe(const struct li2_span_source *s,uint64_t serial,
+    unsigned control,unsigned *attempted,size_t *at,uint64_t *publication,
+    struct li2_link_native_hint_progress *before,
+    struct li2_link_native_hint_progress *changed,
+    struct li2_link_native_hint_progress *after) {
+    if(control<1 || control>3 || !attempted || *attempted || !at || *at ||
+       !publication || *publication || !before || !changed || !after || !serial)
+        DIE(LI2_NP_STATE,82);
+    if(!lnh.ready || lnh.pending || !lnh_current(s) || !lnh_matches(s))return 0;
+    if(control==3 && !lnh.neighbors[0] && !lnh.neighbors[1])return 0;
+    *before=lnh;*attempted=1;
+    if(control==1) {
+        /* Outside the complete actual first15, inside the retained page. */
+        *at=(s->key.entry-s->key.page.address+15)%PAGE;
+        lnh.receipt.window[lnh.receipt.window_before+*at]^=1;
+    } else {
+        *at=control==2?0U:(lnh.neighbors[0]?1U:2U);
+        lnh.identity[*at].generation^=1;
+    }
+    *changed=lnh;
+    int result=li2_lifecycle_link_native_hint_choose(s,serial,publication);
+    *after=lnh;return result;
+}
+#endif
 int li2_lifecycle_link_native_hint_outcome(int result) {
     if(!lnh.pending)return 0;
     const struct li2_native_pair_progress *p=li2_native_pair_progress();

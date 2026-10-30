@@ -30,6 +30,9 @@ struct leto_owners {
     struct li2_rseq_pair_progress rseq_pair;
 };
 #include "linked_refault_observe.h"
+#ifdef LI2_LINKED_NATIVE_HINT
+#include "linked_hint_observe.h"
+#endif
 struct leto_entry {
     uint64_t present,closed,source_ready,redirected,completed,terminal;
     uint64_t source_bytes,generated_bytes,terminal_source_bytes,proof_bytes,proof_final_bytes;
@@ -49,7 +52,11 @@ struct leto_entry {
     unsigned char proof_final_tail[LI2_LINK_PROOF_BYTES-sizeof(struct li2_link_proof)];
 };
 struct leto_wire {
+    #ifdef LI2_LINKED_NATIVE_HINT
+    uint64_t h[64],control[24],counts[38],events[18],raw_ingress[6],storage[8];
+#else
     uint64_t h[64],control[24],counts[37],events[18],raw_ingress[6],storage[8];
+#endif
     struct li2_private_code_query initial_code[2],initial_proof[16];
     struct stat sink_initial,sink_terminal,main_backing;
     struct image main,interpreter;
@@ -71,6 +78,10 @@ struct leto_wire {
     struct uho_nested_fp nested_fp;
     unsigned char original_source[PAGE];
     struct leto_refault refault;
+#ifdef LI2_LINKED_NATIVE_HINT
+    struct leto_hint hint;
+    struct li2_link_native_hint_progress terminal_hint;
+#endif
 };
 static struct leto_wire leto_wire;
 static unsigned leto_ready,leto_finished,leto_active,leto_frontier,leto_index;
@@ -112,6 +123,9 @@ static void leto_owners(struct leto_owners *out,unsigned just_checked) {
 }
 
 #include "linked_refault_observe.inc"
+#ifdef LI2_LINKED_NATIVE_HINT
+#include "linked_hint_observe.inc"
+#endif
 
 static int leto_same_sink(const struct stat *s) {
     const struct stat *a=&leto_wire.sink_initial;
@@ -123,7 +137,11 @@ static void leto_initialize(void) {
     __asm__ volatile(""::"r"(&leto_step_frame_fp_alignment),"r"(&leto_nested_zero_alignment),"r"(&leto_nested_ones_alignment):"memory");
     le_need(!leto_ready && !leto_finished,LE_STATE,102);
     uint64_t *h=leto_wire.h;
+    #ifdef LI2_LINKED_NATIVE_HINT
+    h[0]=LETO_MAGIC;h[1]=3;h[2]=sizeof leto_wire;h[3]=sizeof(struct leto_entry);
+#else
     h[0]=LETO_MAGIC;h[1]=2;h[2]=sizeof leto_wire;h[3]=sizeof(struct leto_entry);
+#endif
     h[4]=sizeof(struct le_record);h[5]=sizeof(struct le_slot);h[6]=sizeof(struct le_frame);
     h[7]=sizeof(ucontext_t);h[8]=sizeof(siginfo_t);h[9]=(uintptr_t)li2_raw6;
     h[10]=(uintptr_t)li2_gateway_start;h[11]=(uintptr_t)li2_gateway_end;
@@ -142,6 +160,12 @@ static void leto_initialize(void) {
     const char *retry=fork_env("LI2_LINKED_REFAULT_CONTROL");
     le_need(retry && retry[0]>='0' && retry[0]<='4' && !retry[1],LE_STATE,152);
     leto_wire.refault.h[0]=(unsigned)(retry[0]-'0');
+#ifdef LI2_LINKED_NATIVE_HINT
+    const char *hint=fork_env("LI2_LINKED_NATIVE_HINT_CONTROL");
+    le_need(hint && hint[0]>='0' && hint[0]<='3' && !hint[1],LE_STATE,160);
+    leto_wire.hint.h[0]=(unsigned)(hint[0]-'0');
+    le_need(!leto_wire.hint.h[0] || (!leto_wire.control[0] && !leto_wire.refault.h[0] && !h[24]),LE_STATE,161);
+#endif
     le_need(!leto_wire.refault.h[0] || (!leto_wire.control[0] && !h[24]),LE_STATE,153);
     le_need(!leto_wire.control[0] || h[24]==(leto_wire.control[0]==2?5U:0U),LE_STATE,106);
     leto_copy(&leto_wire.main,&original_main,sizeof original_main);
@@ -385,6 +409,9 @@ static void leto_complete(void) {
 }
 static void leto_abort_observe(void) {
     leto_refault_abort();
+#ifdef LI2_LINKED_NATIVE_HINT
+    leto_hint_abort();
+#endif
     if(!leto_focal())return;
     struct le_frame *f=&selected_linked_epoch.current.unexpected;
     if(f->complete) {
@@ -416,8 +443,15 @@ static void leto_finish(unsigned status,unsigned code,long detail) {
         ler.pending,ler.retiring,ler.cursor,selected_linked_epoch.first_error,
         (uint64_t)selected_linked_epoch.first_detail,selected_linked_epoch_decoding,
         selected_linked_epoch_closing,selected_linked_epoch_resuming,selected_linked_epoch.live_checks,selected_linked_epoch.proof_checks,
-        lep.pending,lep.arena,LE_PROOF_TOTAL,(uintptr_t)&lep,selected_linked_epoch.refaults};
+        lep.pending,lep.arena,LE_PROOF_TOTAL,(uintptr_t)&lep,selected_linked_epoch.refaults
+#ifdef LI2_LINKED_NATIVE_HINT
+        ,selected_linked_epoch.graph_refaults
+#endif
+    };
     leto_copy(leto_wire.counts,counts,sizeof counts);
+#ifdef LI2_LINKED_NATIVE_HINT
+    leto_copy(&leto_wire.terminal_hint,li2_lifecycle_link_native_hint_progress(),sizeof leto_wire.terminal_hint);
+#endif
     leto_wire.events[0]=selected_linked_epoch.events;
     leto_copy(leto_wire.events+1,selected_linked_epoch.signals,sizeof selected_linked_epoch.signals);
     leto_copy(leto_wire.events+6,selected_linked_epoch.refusals,sizeof selected_linked_epoch.refusals);
@@ -451,7 +485,11 @@ static void leto_finish(unsigned status,unsigned code,long detail) {
         at+=(size_t)result;
     }
     if(at!=sizeof leto_wire)return;
+#ifdef LI2_LINKED_NATIVE_HINT
+    const uint64_t footer[]={LETO_FOOTER,3,sizeof leto_wire,at,calls,(uint64_t)result,status,code};
+#else
     const uint64_t footer[]={LETO_FOOTER,2,sizeof leto_wire,at,calls,(uint64_t)result,status,code};
+#endif
     at=0;calls=0;
     while(at<sizeof footer && calls<64) {
         ++calls;result=raw(SYS_write,3,(long)((const unsigned char *)footer+at),sizeof footer-at,0,0,0);

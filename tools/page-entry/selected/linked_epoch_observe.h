@@ -20,4 +20,13 @@ static void leto_refault_after(int,siginfo_t *,ucontext_t *);
 static void leto_refault_ingress(int,siginfo_t *,ucontext_t *);
 static void leto_refault_end(int,siginfo_t *,ucontext_t *);
 static void leto_refault_native(void);
+#ifdef LI2_LINKED_NATIVE_HINT
+static void leto_hint_before(int,siginfo_t *,ucontext_t *);
+static void leto_hint_chosen(void);
+static void leto_hint_after(void);
+static void leto_hint_ingress(int,siginfo_t *,ucontext_t *);
+static void leto_hint_end(int,siginfo_t *,ucontext_t *);
+static void leto_hint_native(void);
+static void leto_hint_abort(void);
+#endif
 #endif

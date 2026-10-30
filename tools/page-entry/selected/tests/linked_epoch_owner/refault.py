@@ -92,6 +92,7 @@ def check(c):
         c.trace(ingress,pc,before['greg'][17]|256);c.same_event(ingress,before,before['greg'][17])
         need(not before['greg'][17]&(256|65536),'retry returns logical flags without TF/RF invention')
         c.eq(r,R,slot_present=0,redirected=0,exit_seen=0,completed=0,build_started=1,build_returned=1,build_result=2404,close_started=1,close_complete=1,prepare_started=1,prepare_complete=1,prepare_result=0,resume_started=0,resume_complete=0,resume_result=0)
+        if c.native_hint:c.eq(r,R,hint_checked=0,hint_hit=0,hint_publication=0)
         bt=c.f(w,W,'before_transfer');c.eq(bt,T,phase=2,issued=1,consume_attempted=0,consumed=0,resume_attempted=0,resumed=0,successor_installed=0,first_error=0,first_detail=0,pc=pc,flags=before['greg'][17],refault_attempted=0,refaulted=0)
         need(c.i(bt,T,'serial')==h[11]>0 and c.i(bt,T,'previous_borrow')<s['borrow'],'current retained serial and strictly newer real source borrow')
         zero(c.f(bt,T,'fresh'),'fresh observation is obtained only inside actual retry API')

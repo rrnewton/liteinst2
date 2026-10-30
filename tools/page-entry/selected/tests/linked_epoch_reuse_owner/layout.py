@@ -111,6 +111,11 @@ REGISTERED={'selected_run_owner': ('selected_globals.inc', 'li2_run_owner'),
  'linked_epoch': ('linked_source.inc', 'li2_link_epoch'),
  'linked_registered': ('linked_source.inc', None)}
 
+# Actual emitted symbol controls extraction; reader profile stays explicit.
+if gdb.lookup_static_symbol('lnh')is not None:
+    REGISTERED['lnh']=('linked_native_hint.inc','li2_link_native_hint_progress')
+
+
 def registration(name):
     s=symbol(name);t=s.type.strip_typedefs()
     if not s.is_variable or s.symtab is None or int(t.sizeof)<=0:

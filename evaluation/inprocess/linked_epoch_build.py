@@ -176,7 +176,9 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
          'no substituted span owner or legacy capture adapter')
     wanted_capture=set(('linked_epoch_reuse_observe.h','linked_epoch_reuse_observe.inc',
         'linked_epoch_observe_memory.h','linked_epoch_observe_memory.inc'))if reuse else set(CAPTURE_HEADERS)if capture else set()
-    all_capture=set(CAPTURE_HEADERS)|{'linked_epoch_reuse_observe.h','linked_epoch_reuse_observe.inc'}
+    hint_capture={'linked_hint_observe.h','linked_hint_observe.inc'}
+    if capture and native_hint and not reuse:wanted_capture|=hint_capture
+    all_capture=set(CAPTURE_HEADERS)|{'linked_epoch_reuse_observe.h','linked_epoch_reuse_observe.inc'}|hint_capture
     need(all((str((SELECTED/name).resolve())in state['headers'])==(name in wanted_capture)for name in all_capture),
          'complete exact distinct finite/reuse capture seams iff selected')
     if capture:need(digest(state['headers'].get(config['path']))==digest(config['header']),'actual image-derived capture header')

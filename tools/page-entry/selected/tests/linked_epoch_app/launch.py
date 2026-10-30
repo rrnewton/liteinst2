@@ -17,6 +17,8 @@ def main():
     p.add_argument('--mode',type=int,choices=range(7),required=True)
     p.add_argument('--control',type=int,choices=range(5),required=True)
     p.add_argument('--refault-control',type=int,choices=range(5),default=0)
+    p.add_argument('--native-hint',action='store_true')
+    p.add_argument('--hint-control',type=int,choices=range(4),default=0)
     p.add_argument('--original',type=Path,required=True)
     p.add_argument('--library-root',type=Path,action='append',required=True)
     p.add_argument('--preparation',type=Path,required=True)
@@ -32,6 +34,8 @@ def main():
         raise ValueError('controls require the exact gated source-causal mode')
     if a.refault_control and(a.role!='gated' or a.mode!=0 or a.control):
         raise ValueError('additional retry controls require gated mode0 and oldcontrol0')
+    if a.hint_control and(not a.native_hint or a.role!='gated' or a.mode!=0 or a.control or a.refault_control):
+        raise ValueError('advisory controls require distinct hinted gated mode0 only')
     original=a.original.resolve(strict=True)
     roots=[root.resolve(strict=True) for root in a.library_root]
     if not 1<=len(roots)<=8 or len(set(roots))!=len(roots) or any(not root.is_dir() or ':'in str(root) for root in roots):
@@ -69,11 +73,12 @@ def main():
               cpu=sorted(os.sched_getaffinity(0)),previous_mask=previous.value,reset_mask=actual.value,
               dispositions=observations,observer=observer,argv=argv,default_rseq=False,mode=a.mode,control=a.control)
     prep['refault_control']=a.refault_control
+    if a.native_hint:prep.update(native_hint=True,hint_control=a.hint_control)
     env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1',GLIBC_TUNABLES='glibc.pthread.rseq=0')
     if a.role=='gated':
         prep.update(launch_mask=actual.value,late_sonames=[],environment_source=str(a.namespace.absolute()/'launch.json'))
         with a.preparation.open('x') as f:json.dump(prep,f,sort_keys=True)
-        execute_linked_loader(a.carrier,original,roots,a.namespace,argv,capture_control=a.control,mode=a.mode,refault_control=a.refault_control)
+        execute_linked_loader(a.carrier,original,roots,a.namespace,argv,capture_control=a.control,mode=a.mode,refault_control=a.refault_control,native_hint=a.native_hint,hint_control=a.hint_control)
         raise RuntimeError('exec returned')
     # Exact original native-reference launch policy. Gated starts reset/unblocked;
     # its runtime establishes the same selected application mask itself.
@@ -88,7 +93,9 @@ def main():
     raise RuntimeError('exec returned')
 
 
-def execute_linked_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=True, provider_policy=None, *, late_sonames=(), capture_control, mode, refault_control=0):
+def execute_linked_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=True, provider_policy=None, *, late_sonames=(), capture_control, mode, refault_control=0, native_hint=False, hint_control=0):
+    if type(native_hint)is not bool or type(hint_control)is not int or hint_control not in range(4)or(hint_control and(not native_hint or mode!=0 or capture_control or refault_control)):
+        raise ValueError('exact native-hint profile and advisory control')
     if type(refault_control)is not int or refault_control not in range(5)or(refault_control and(mode!=0 or capture_control)):
         raise ValueError('exact additional retry configuration')
     if type(mode)is not int or mode not in range(7)or type(capture_control)is not int or capture_control not in range(5)or(capture_control and mode!=(5 if capture_control==2 else 0))or fork_fds is not None or child_failure or disable_rseq is not True or provider_policy is not None or late_sonames:
@@ -121,6 +128,7 @@ def execute_linked_loader(carrier, original, roots, directory, argv, fork_fds=No
                "LI2_DEPENDENCY_FDS": ",".join(str(item) for item in fds)}
         env['LI2_LINKED_EPOCH_CAPTURE_CONTROL']=str(capture_control)
         env['LI2_LINKED_REFAULT_CONTROL']=str(refault_control)
+        if native_hint:env['LI2_LINKED_NATIVE_HINT_CONTROL']=str(hint_control)
         env['LI2_LINKED_EPOCH_APP_MODE']=str(mode)
         if provider_policy is not None:
             env["LI2_SELECTED_PROVIDER"] = provider_policy

@@ -877,6 +877,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     leto_ingress(sig);
 #ifndef LI2_LINKED_EPOCH_REUSE_CAPTURE
     leto_refault_ingress(sig,si,ptr);
+#ifdef LI2_LINKED_NATIVE_HINT
+    leto_hint_ingress(sig,si,ptr);
+#endif
 #endif
 #endif
 #ifdef LI2_NATIVE_PAIR
@@ -1043,6 +1046,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
         int native_admitted=selected_native_fetch(sig,si,ptr);
         leto_refault_native();
+#ifdef LI2_LINKED_NATIVE_HINT
+        leto_hint_native();
+#endif
         if(!native_admitted)
 #else
         if(!selected_native_fetch(sig,si,ptr))
@@ -1060,6 +1066,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
     leto_refault_end(sig,si,ptr);
+#ifdef LI2_LINKED_NATIVE_HINT
+    leto_hint_end(sig,si,ptr);
+#endif
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
     cto_end(sig,si,ptr);

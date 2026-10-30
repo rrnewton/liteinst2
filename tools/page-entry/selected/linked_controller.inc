@@ -652,9 +652,15 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
        r->source.key.entry<UINT64_C(0x200000000))return 0;
 #ifdef LI2_LINKED_NATIVE_HINT
     if(r->build_result==LI2_REGION_PLAN_GRAPH) {
+#if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
+        leto_hint_before(sig,si,uc);
+#endif
         r->hint_checked=1;
         r->hint_hit=(unsigned)li2_lifecycle_link_native_hint_choose(
             &r->source,r->transfer.serial,&r->hint_publication);
+#if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
+        leto_hint_chosen();
+#endif
         if(!r->hint_hit)return 0;
     }
 #endif
@@ -692,6 +698,9 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
     leto_refault_after(sig,si,uc);
+#ifdef LI2_LINKED_NATIVE_HINT
+    leto_hint_after();
+#endif
 #endif
     selected_linked_epoch_ticket=0;selected_initialized();
     /* No page is executable and no event metadata is manufactured. Returning

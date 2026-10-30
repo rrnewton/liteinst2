@@ -40,6 +40,10 @@ struct lero_record {
     unsigned close_started,close_complete,prepare_started,prepare_complete;
     unsigned miss_release_started,miss_release_complete,resume_started,resume_complete;
     int prepare_result,miss_release_result,resume_result;
+#ifdef LI2_LINKED_NATIVE_HINT
+    unsigned hint_checked,hint_hit;
+    uint64_t hint_publication;
+#endif
     enum li2_chain_result resumed_route;
     struct li2_fetch_progress miss_fetch;
     struct li2_region_pc original;
@@ -79,7 +83,11 @@ struct lero_retirement {
     unsigned char new_payload[LI2_LINK_PROOF_BYTES],generated_page[PAGE];
 };
 struct lero_wire {
+#ifdef LI2_LINKED_NATIVE_HINT
+    uint64_t h[64],control[24],counts[38],events[18],raw_ingress[6],storage[8];
+#else
     uint64_t h[64],control[24],counts[37],events[18],raw_ingress[6],storage[8];
+#endif
     struct li2_private_code_query initial_code[2],initial_proof[16];
     struct stat sink_initial,sink_terminal,main_backing;
     struct image main,interpreter;
@@ -99,6 +107,10 @@ struct lero_wire {
     struct li2_tf_chain_slot first_closed;
     struct lero_retirement retirement;
     uint64_t terminal_current_fields[37];
+#ifdef LI2_LINKED_NATIVE_HINT
+    struct li2_link_native_hint_progress terminal_hint;
+    uint64_t terminal_hint_fields[3];
+#endif
 };
 static struct lero_wire lero_wire;
 static unsigned leto_ready,leto_finished,leto_active,leto_index;
@@ -146,7 +158,11 @@ static void leto_initialize(void) {
     __asm__ volatile(""::"r"(&leto_step_frame_fp_alignment):"memory");
     le_need(!leto_ready && !leto_finished,LE_STATE,102);
     uint64_t *h=lero_wire.h;
+#ifdef LI2_LINKED_NATIVE_HINT
+    h[0]=LETO_MAGIC;h[1]=3;h[2]=sizeof lero_wire;h[3]=sizeof(struct lero_entry);
+#else
     h[0]=LETO_MAGIC;h[1]=2;h[2]=sizeof lero_wire;h[3]=sizeof(struct lero_entry);
+#endif
     h[4]=sizeof(struct lero_record);h[5]=sizeof(struct le_slot);h[6]=sizeof(struct le_frame);
     h[7]=sizeof(ucontext_t);h[8]=sizeof(siginfo_t);h[9]=(uintptr_t)li2_raw6;
     h[10]=(uintptr_t)li2_gateway_start;h[11]=(uintptr_t)li2_gateway_end;
@@ -286,6 +302,11 @@ static void lero_record(struct lero_record *d,const struct le_record *s) {
     leto_copy(&d->prepare_result,&s->prepare_result,sizeof d->prepare_result);
     leto_copy(&d->miss_release_result,&s->miss_release_result,sizeof d->miss_release_result);
     leto_copy(&d->resume_result,&s->resume_result,sizeof d->resume_result);
+#ifdef LI2_LINKED_NATIVE_HINT
+    leto_copy(&d->hint_checked,&s->hint_checked,sizeof d->hint_checked);
+    leto_copy(&d->hint_hit,&s->hint_hit,sizeof d->hint_hit);
+    leto_copy(&d->hint_publication,&s->hint_publication,sizeof d->hint_publication);
+#endif
     leto_copy(&d->resumed_route,&s->resumed_route,sizeof d->resumed_route);
     leto_copy(&d->miss_fetch,&s->miss_fetch,sizeof d->miss_fetch);
     leto_copy(&d->original,&s->original,sizeof d->original);
@@ -434,7 +455,11 @@ static void leto_finish(unsigned status,unsigned code,long detail) {
         ler.pending,ler.retiring,ler.cursor,selected_linked_epoch.first_error,
         (uint64_t)selected_linked_epoch.first_detail,selected_linked_epoch_decoding,
         selected_linked_epoch_closing,selected_linked_epoch_resuming,selected_linked_epoch.live_checks,selected_linked_epoch.proof_checks,
-        lep.pending,lep.arena,LE_PROOF_TOTAL,(uintptr_t)&lep,selected_linked_epoch.refaults};
+        lep.pending,lep.arena,LE_PROOF_TOTAL,(uintptr_t)&lep,selected_linked_epoch.refaults
+#ifdef LI2_LINKED_NATIVE_HINT
+        ,selected_linked_epoch.graph_refaults
+#endif
+    };
     leto_copy(lero_wire.counts,counts,sizeof counts);
     lero_wire.events[0]=selected_linked_epoch.events;
     leto_copy(lero_wire.events+1,selected_linked_epoch.signals,sizeof selected_linked_epoch.signals);
@@ -449,6 +474,12 @@ static void leto_finish(unsigned status,unsigned code,long detail) {
         r->build_started,r->build_returned,(uint64_t)(unsigned)r->build_result,r->gpr_written,r->flags_written,
         r->refault_started,r->refault_complete,(uint64_t)(unsigned)r->refault_result};
     leto_copy(lero_wire.terminal_current_fields,current,sizeof current);
+#ifdef LI2_LINKED_NATIVE_HINT
+    leto_copy(&lero_wire.terminal_hint,li2_lifecycle_link_native_hint_progress(),sizeof lero_wire.terminal_hint);
+    lero_wire.terminal_hint_fields[0]=r->hint_checked;
+    lero_wire.terminal_hint_fields[1]=r->hint_hit;
+    lero_wire.terminal_hint_fields[2]=r->hint_publication;
+#endif
     leto_copy(&lero_wire.terminal_transfer,li2_tf_chain_span_progress(),sizeof lero_wire.terminal_transfer);
     leto_owners(&lero_wire.terminal_owners,0);
     li2_current_custody_snapshot(&lero_wire.terminal_current);
@@ -477,7 +508,11 @@ static void leto_finish(unsigned status,unsigned code,long detail) {
         at+=(size_t)result;
     }
     if(at!=sizeof lero_wire)return;
+#ifdef LI2_LINKED_NATIVE_HINT
+    const uint64_t footer[]={LETO_FOOTER,3,sizeof lero_wire,at,calls,(uint64_t)result,status,code};
+#else
     const uint64_t footer[]={LETO_FOOTER,2,sizeof lero_wire,at,calls,(uint64_t)result,status,code};
+#endif
     at=0;calls=0;
     while(at<sizeof footer && calls<64) {
         ++calls;result=raw(SYS_write,3,(long)((const unsigned char *)footer+at),sizeof footer-at,0,0,0);

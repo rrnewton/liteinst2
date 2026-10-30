@@ -416,3 +416,25 @@ def refault_control_reference(native,gated,owner):
     need(entry['source']==entry['terminal_source']==native['source'],'whole source remains exact before retry refusal')
     for key in('before_memory','after_memory'):need(entry[key]['data']==native['data']and entry[key]['stack']==native['stack'],'whole actual completed-prefix data/stack before retry refusal')
     return dict(qualified_retry_control=1,refault_control=owner['refault_control'],completed_prefix=1,native_operations=0)
+
+
+def hint_read(data,mode,native,exit_status,layout,pid,cpu,seed_reference,*,hint_control):
+    """Separate actual terminal prefix after a completed focal graph."""
+    need(type(hint_control)is int and hint_control in range(1,4)and mode==0 and native is False and type(exit_status)is int and exit_status==125 and type(data)is bytes and len(data)==PREFIX,'exact additional advisory-control process/prefix')
+    return _prefix(data,mode,native,layout,pid,cpu,seed_reference)
+
+
+def hint_control_reference(native,gated,owner):
+    need(owner['hint_control']in range(1,4)and owner['control']==0 and native['mode']==gated['mode']==0 and native['header'][5]==1 and gated['header'][5]==0,'exact additional advisory-control native context')
+    need(gated['suffix']is None and native['header'][8:19]==gated['header'][8:19]and native['hardware']==gated['hardware']and all(native[k]==gated[k]for k in('seed','source','stack','data','rsp','predecessor')),'advisory-control whole original native inputs and no returned suffix')
+    need(len(owner['entries'])==len(native['observations'])==1,'one actually completed graph before helper advisory failure')
+    entry=owner['entries'][0];ref=native['observations'][0];machine=gated['machine']
+    need(entry['disposition']=='completed','actual focal graph completed before additional advisory refusal')
+    for key,index,event in(('ingress',1,'trace'),('before',1,'closed'),('predecessor_before',0,'trace'),('after',2,'nx')):
+        actual=entry[key];reference=ref['frames'][index];want=list(reference['greg'])
+        if event=='closed':want[17]&=~TF
+        elif event=='nx':want[17]=(want[17]&~TF)|RF;want[19],want[20],want[22]=21,14,want[16]
+        need(actual['greg']==tuple(want)and actual['fp']==reference['fp']and actual['fp_bytes']==reference['header'][9]and actual['mask']==MASK and(actual['fs'],actual['gs'])==tuple(machine[1:3]),'all23 GREG/65536FP/AF/TLS at actual completed prefix before advisory refusal')
+    need(entry['source']==entry['terminal_source']==native['source'],'whole source remains exact before advisory refusal')
+    for key in('before_memory','after_memory'):need(entry[key]['data']==native['data']and entry[key]['stack']==native['stack'],'whole actual completed-prefix data/stack before advisory refusal')
+    return dict(qualified_hint_control=1,hint_control=owner['hint_control'],completed_prefix=1,native_operations=0)

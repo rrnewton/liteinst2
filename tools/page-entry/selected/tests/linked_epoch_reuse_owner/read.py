@@ -16,7 +16,8 @@ U64,PAGE,FP,TF,RF,MASK=old.U64,old.PAGE,old.FP,old.TF,old.RF,old.MASK
 DATA,STACK,RSP=old.DATA,old.STACK,old.RSP
 COUNTS='initialized used offers closed resumed hash_misses candidates source_misses plan_misses capacity_misses publications hits entries completed unexpected plan_checks rseq_checks generation retirement_attempts retirements claims permits_issued pending retiring cursor first_error first_detail decoding closing resuming live_checks proof_checks proof_pending proof_arena proof_bytes proof_registry refaults'.split()
 GREG=base.GREG
-def elf_symbols(data):
+def elf_symbols(data,native_hint=False):
+    _,registered,_=wire.profile(native_hint)
     h,loads=old.elf(data)
     need(h[11]==64 and h[12]>0 and h[6]+h[12]*64<=len(data),'whole actual bridge section table')
     sections=[struct.unpack_from('<IIQQQQIIQQ',data,h[6]+64*i)for i in range(h[12])]
@@ -30,15 +31,17 @@ def elf_symbols(data):
             if not section or not name:continue
             end=strings.find(b'\0',name);need(0<=name<end<len(strings),'bounded symbol name')
             name=strings[name:end].decode('ascii')
-            if name in wire.REGISTERED or name in ('li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'):
+            if name in registered or name in ('li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'):
                 need(name not in symbols,'unique actual bridge symbol');symbols[name]=(address,size)
-    need(set(symbols)==set(wire.REGISTERED)|{'li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'},'whole required compiled object inventory')
+    need(set(symbols)==set(registered)|{'li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'},'whole required compiled object inventory')
     ph=[struct.unpack_from('<IIQQQQQQ',data,h[5]+56*i)for i in range(h[10])]
     return h,ph,symbols
 
 
 class Check(base.Check):
-    def __init__(self,reader,image,app,pid,cpu,control):
+    def __init__(self,reader,image,app,pid,cpu,control,native_hint=False):
+        self.native_hint=native_hint
+        if native_hint:base.hint_module()
         self.r,self.image,self.app,self.pid,self.cpu,self.control=reader,image,app,pid,cpu,control
         self.b=reader.data[:-64];self.h=q(self.f(self.b,'lero_wire','h'));self.control_words=q(self.f(self.b,'lero_wire','control'))
         self.bias=self.h[9]-reader.layout['symbols']['li2_raw6'];self.head=app['head'];self.page=self.head&-PAGE
@@ -47,9 +50,9 @@ class Check(base.Check):
             need(type(key)is int and key>=0 and type(obj)is dict,'actual explicit object inventory')
             h,loads=old.elf(obj['data']);self.objects[key]=(obj,h,loads)
         need(image['main_object']in self.objects and image['interpreter_object']in self.objects,'actual original object identities')
-        self.eh,self.ph,self.symbols=elf_symbols(image['bridge'])
+        self.eh,self.ph,self.symbols=elf_symbols(image['bridge'],native_hint)
         need(set(reader.layout['symbols'])==set(self.symbols)|{'span_progress'}and all(reader.layout['symbols'][k]==v[0]for k,v in self.symbols.items()),'actual same emitted bridge and DWARF symbols')
-        self.storage=q(self.f(self.b,'lero_wire','storage'));self.counts=dict(zip(COUNTS,q(self.f(self.b,'lero_wire','counts')),strict=True))
+        self.storage=q(self.f(self.b,'lero_wire','storage'));self.counts=dict(zip(COUNTS+(['graph_refaults']if native_hint else[]),q(self.f(self.b,'lero_wire','counts')),strict=True))
         self.entries=self.r.items(self.b,'lero_wire','entries','lero_entry')
         self.entry=self.entries[0];self.record=self.f(self.entry,'lero_entry','owner')
 
@@ -57,7 +60,7 @@ class Check(base.Check):
         h=self.h;r=self.r;t='lero_wire';mode=self.app['mode'];c=self.control
         expected=(0,0)if not status else (3104,11)if not c else {1:(3104,5),2:(3102,302),3:(301,440),4:(3103,9)}[c]
         code,detail=expected
-        need(h[:9]==(0x3152554c4549324c,2,r.types[t]['bytes'],r.types['lero_entry']['bytes'],r.types['lero_record']['bytes'],r.types['le_slot']['bytes'],r.types['le_frame']['bytes'],968,128),'whole actual linked capture version/type extents')
+        need(h[:9]==(0x3152554c4549324c,3 if self.native_hint else 2,r.types[t]['bytes'],r.types['lero_entry']['bytes'],r.types['lero_record']['bytes'],r.types['le_slot']['bytes'],r.types['le_frame']['bytes'],968,128),'whole actual linked capture version/type extents')
         need(canonical(self.bias)and self.bias%PAGE==0 and h[9:12]==tuple(self.symbol(k)for k in('li2_raw6','li2_gateway_start','li2_gateway_end'))and h[10]<=h[9]<h[11],'actual emitted bridge bias and gateway')
         need(canonical(h[12],h[13])and h[12]%PAGE==0 and h[13]==524288,'whole actual altstack')
         need(h[14:16]==(1,0)and h[16]&(3|0x400|0x800)==1 and h[17:20]==(0,1,0),'actual exclusive regular0600 FD3 sink')
@@ -69,7 +72,7 @@ class Check(base.Check):
         for key in('sink_initial','sink_terminal'):
             b=self.f(self.b,t,key);st=self.stat(b);need(st['mode']&0xffff==0x8180 and st['size']==0,'actual empty0600 sink');self.eq(b,'stat',st_nlink=1,st_uid=self.image['uid'])
         self.r.change(self.f(self.b,t,'sink_initial'),self.f(self.b,t,'sink_terminal'),'stat',observed=('st_atim','st_mtim','st_ctim'))
-        footer=q(r.data[-64:]);need(footer[:4]==(0x3146554c4549324c,2,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'whole actual record/footer/write completion')
+        footer=q(r.data[-64:]);need(footer[:4]==(0x3146554c4549324c,3 if self.native_hint else 2,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'whole actual record/footer/write completion')
         if footer[4]==1:need(footer[5]==len(self.b),'single complete actual write')
         for key,objid in(('main',self.image['main_object']),('interpreter',self.image['interpreter_object'])):self.image_header(self.f(self.b,t,key),objid)
         obj,_,loads=self.objects[self.image['main_object']];bias=self.bases[self.image['main_object']]
@@ -88,13 +91,13 @@ class Check(base.Check):
         im=self.f(b,t,'bridge');self.eq(im,'image',bias=self.bias,entry=self.bias+self.eh[4],n=len(self.ph),source=0,source_size=0,backing_fd=(1<<32)-1,kind=3)
         zero(self.f(im,'image','source_hash'),'no invented original bridge hash');need(canonical(self.i(im,'image','ph'),56*len(self.ph)),'actual program header pointer')
         need(self.f(b,t,'ph')==b''.join(struct.pack('<IIQQQQQQ',*p)for p in self.ph)+bytes((32-len(self.ph))*56),'all actual bridge program headers')
-        objects=[];decl=self.r.layout['registrations'];need(set(decl)==set(wire.REGISTERED),'all exact byte-registration source witnesses')
+        objects=[];decl=self.r.layout['registrations'];need(set(decl)==set(self.r.registered),'all exact byte-registration source witnesses')
         headers=self.image['headers'];need(type(headers)is dict and headers,'actual complete compiler-M header closure')
-        for name,(source,tag)in wire.REGISTERED.items():
+        for name,(source,tag)in self.r.registered.items():
             d=decl[name];at,n=self.symbols[name];a,z=self.bias+at,self.bias+at+n
             need(set(d)=={'address','bytes','alignment','tag','source'}and(d['address'],d['bytes'],d['tag'])==(at,n,tag)and type(d['alignment'])is int and 0<d['alignment']<=PAGE and not d['alignment']&(d['alignment']-1)and a%d['alignment']==0 and d['source'].endswith('/tools/page-entry/selected/'+source),'actual symbol/DWARF/source-selected registration '+name)
             need(d['source']in headers and type(headers[d['source']])is dict and set(headers[d['source']])=={'bytes','sha256'},'every actual DWARF origin belongs to the complete compiler-M closure')
-            if name not in wire.LIFETIME:need(ranges.count((a,z))==1 and kinds[ranges.index((a,z))]==0,'whole strict registered object extent')
+            if name not in self.r.lifetime:need(ranges.count((a,z))==1 and kinds[ranges.index((a,z))]==0,'whole strict registered object extent')
             loads=[p for p in self.ph if p[0]==1 and p[6]and self.bias+p[3]<z and a<self.bias+p[3]+p[6]]
             need(len(loads)==1 and loads[0][1]==6 and self.bias+loads[0][3]<=a<z<=self.bias+loads[0][3]+loads[0][6],'whole registered object in one RW/NX load')
             p=loads[0];rounded=((self.bias+p[3])&-PAGE,(self.bias+p[3]+p[6]+PAGE-1)&-PAGE)
@@ -200,6 +203,7 @@ class Check(base.Check):
     def invocation65(self,e,index):
         self.head=self.app['head']+index*32;self.entry=e;self.record=r=self.f(e,'lero_entry','owner');t='lero_record';et='lero_entry'
         self.eq(e,et,present=1,closed=1,source_ready=1,redirected=1,completed=1,terminal=1,generated_bytes=PAGE,terminal_source_bytes=PAGE,proof_bytes=65536)
+        if self.native_hint:self.eq(r,t,hint_checked=0,hint_hit=0,hint_publication=0)
         need(self.f(e,et,'terminal_source_page')==self.app['source'],'whole actual source after every epoch')
         before=self.frame(self.f(r,t,'before'));self.trace(before,self.head,self.app['seed'][1])
         need((before['fs'],before['gs'])==self.app['machine'][1:3],'actual per-lane entry TLS')
@@ -311,6 +315,7 @@ class Check(base.Check):
         need(completion<self.i(permit,'ler_permit','completion')<=self.counts['completed'],'new permit exists only after genuine later completion')
         return dict(matched_prior_entry=1,old_focal=i,old_generation=old_generation,new_generation=new_generation,ordinal=ordinal,slot=index,completed=1)
     def refault_state(self):
+        if self.native_hint:return self.hint_refault_state()
         c=self.counts;events=q(self.f(self.b,'lero_wire','events'))
         need(c['refaults']<=events[9],'actual reuse refault count is bounded by relocation refusals')
         b=self.f(self.b,'lero_wire','terminal_transfer');t='li2_span_transfer_progress'
@@ -332,8 +337,48 @@ class Check(base.Check):
         self.eq(self.f(fresh_b,'li2_span_fetch_observation','ref'),'li2_fetch_ref',sequence=fresh)
         self.progress(self.f(fresh_b,'li2_span_fetch_observation','progress'),fresh,False)
 
+    def hint_refault_state(self):
+        c=self.counts;events=q(self.f(self.b,'lero_wire','events'))
+        need(c['refaults']<=events[9],'actual reuse refault count is bounded by relocation refusals')
+        need(c['graph_refaults']<=events[8],'every graph retry is an actual counted GRAPH refusal')
+        b=self.f(self.b,'lero_wire','terminal_transfer');t='li2_span_transfer_progress';refault=self.i(b,t,'phase')==6
+        current=q(self.f(self.b,'lero_wire','terminal_current_fields'));advisory=q(self.f(self.b,'lero_wire','terminal_hint_fields'))
+        need(self.v(b,t,'refault_attempted refaulted')==((1,1)if refault else(0,0))and current[34:]==((1,1,0)if refault else(0,0,0)),
+             'actual reuse terminal refault phase and completion fields')
+        if not refault:return
+        self.eq(b,t,issued=1,consume_attempted=0,consumed=0,resume_attempted=0,resumed=0,next=0,successor_installed=0,first_error=0,first_detail=0,serial=c['offers'])
+        pc=self.i(b,t,'pc');oldborrow,fresh=self.v(b,t,'previous_borrow fresh_borrow');result=current[31]
+        need(result in(2403,2404),'distinct actual reuse GRAPH or relocation retry')
+        need(c['graph_refaults'if result==2403 else'refaults']>0 and self.i(b,t,'previous')<2 and self.i(b,t,'event')>0 and self.i(b,t,'previous_generation')>0 and 0<oldborrow<fresh and canonical(pc)and pc>=0x200000000 and pc%PAGE<=PAGE-15 and not self.i(b,t,'flags')&0x30100,
+             'actual reuse closed retry has high PC and a newer released borrow without successor')
+        expected=[0]*37;expected[16]=1;expected[29:32]=[1,1,result];expected[34:36]=[1,1]
+        need(current==tuple(expected),'actual reuse retry current has exactly its returned refusal without execution')
+        need(advisory[:2]==(1,1)and advisory[2]>0 if result==2403 else advisory==(0,0,0),'actual reuse retry class has exact advisory provenance')
+        fresh_b=self.f(b,t,'fresh');self.eq(fresh_b,'li2_span_fetch_observation',complete=1,pc=pc,length=15,page_count=1,pid=self.pid,tid=self.pid)
+        self.eq(self.f(fresh_b,'li2_span_fetch_observation','ref'),'li2_fetch_ref',sequence=fresh)
+        self.progress(self.f(fresh_b,'li2_span_fetch_observation','progress'),fresh,False)
+
+    def hint_state(self):
+        hint=base.hint;T=hint.T;b=self.f(self.b,'lero_wire','terminal_hint');p=hint.receipt(self,b)
+        need(all(p[k]in(0,1)for k in('ready','pending','outcome_complete')),'literal actual hint state flags')
+        need(p['ready']+p['evictions']+p['hits']+p['invalidations']==p['publications']and p['hits']+p['invalidations']<=p['lookups'],'one-use positive hint conservation')
+        need(p['lookups']<=q(self.f(self.b,'lero_wire','events'))[8],'every advisory lookup follows an actual GRAPH refusal')
+        need(p['pending']==p['errors']==p['refused']==0 and p['hits']==self.counts['graph_refaults']==p['next_nx']==p['admitted']and p['hits']>0,'all65 complete with actual admitted graph retries and no fabricated native refusal')
+        owners=self.f(self.b,'lero_wire','terminal_owners');life=self.f(owners,'leto_owners','lifecycle');pair=self.f(owners,'leto_owners','pair')
+        need(p['publications']==p['receipt_publication']==self.i(life,'li2_native_pair_lifecycle','published')and 0<p['receipt_sequence']<=self.i(life,'li2_native_pair_lifecycle','sequence'),'all actual native publications feed the bounded advisory receipt')
+        need(p['outcome_complete']==1 and p['outcome_result']==1 and 0<p['selected_publication']<=p['selected_published']<p['receipt_publication']and 0<p['selected_serial']<=self.counts['offers']and p['selected_event']<self.i(pair,'li2_native_pair_progress','events')and p['selected_seeds']<self.i(pair,'li2_native_pair_progress','seeds')and canonical(p['selected_pc'])and p['selected_pc']>=0x200000000 and p['selected_pc']%PAGE<=PAGE-15,'actual completed reuse hint outcome and older selected receipt')
+        checked,hit,pub=q(self.f(self.b,'lero_wire','terminal_hint_fields'));current=q(self.f(self.b,'lero_wire','terminal_current_fields'));transfer=self.f(self.b,'lero_wire','terminal_transfer');t='li2_span_transfer_progress'
+        need(checked in(0,1)and hit in(0,1)and hit<=checked and bool(pub)==bool(hit),'exact actual reuse current hint flags/publication')
+        if checked:need(current[29:32]==(1,1,2403)and self.i(transfer,t,'pc')>=0x200000000,'actual high reuse GRAPH advisory source')
+        if hit:need(pub==p['selected_publication']and self.i(transfer,t,'serial')==p['selected_serial']and self.i(transfer,t,'pc')==p['selected_pc'],'reuse current hit binds actual publication serial and PC')
+        return p
+
+    def hint_row(self,outcome):
+        p=base.hint.values(self,self.f(self.b,'lero_wire','terminal_hint'));checked,hit,pub=q(self.f(self.b,'lero_wire','terminal_hint_fields'))
+        return dict(version=1,status=outcome['status'],failure_code=outcome['failure_code'],**p,current_checked=checked,current_hit=hit,current_publication=pub)
+
     def finish(self,status):
-        outcome=self.header(status);c=self.counts;self.refault_state()
+        outcome=self.header(status);c=self.counts;self.refault_state();extra=c['graph_refaults']if self.native_hint else 0
         session=self.f(self.b,'lero_wire','session');self.eq(session,'li2_step_session',pid=self.pid,tid=self.pid,sync_register=0,application_mask=MASK,initialized=1,self_test_complete=1)
         sync=self.i(session,'li2_step_session','sync_query');need(sync<1<<63 and sync&96==96,'actual sync-core registration')
         initial,terminal=(self.registry(self.f(self.b,'lero_wire',k))for k in('initial_registry','terminal_registry'))
@@ -345,8 +390,8 @@ class Check(base.Check):
             need(a['proof']['generation']<b['proof']['generation']and a['epoch']['serial']<b['epoch']['serial'],'actual ordered distinct root publication/epoch identities')
         self.head=self.app['head'];first=self.closed_first(entries[0]);replacement=self.replacement(entries)
         self.owners(self.f(self.b,'lero_wire','terminal_owners'));self.physical_rows(outcome)
-        need(c['initialized']==1 and c['used']==64 and c['publications']>=65 and c['retirements']>0 and c['offers']==c['closed']==c['candidates']==c['entries']+c['resumed']+c['refaults'],'actual64-slot saturation and all accepted/chosen offer accounting')
-        need(c['resumed']+c['refaults']==sum(c[k]for k in('hash_misses','source_misses','plan_misses','capacity_misses'))and c['entries']==c['publications']+c['hits']==c['claims'],'all actual misses/claims, no omitted runtime activity')
+        need(c['initialized']==1 and c['used']==64 and c['publications']>=65 and c['retirements']>0 and c['offers']==c['closed']==c['candidates']==c['entries']+c['resumed']+c['refaults']+extra,'actual64-slot saturation and all accepted/chosen offer accounting')
+        need(c['resumed']+c['refaults']+extra==sum(c[k]for k in('hash_misses','source_misses','plan_misses','capacity_misses'))and c['entries']==c['publications']+c['hits']==c['claims'],'all actual misses/claims, no omitted runtime activity')
         need(c['generation']==c['publications']==64+c['retirements']and c['retirement_attempts']==c['retirements']and c['cursor']<64,'exact actual64-slot replacement population')
         need(c['completed']==c['permits_issued']==c['entries']and not any(c[k]for k in('unexpected','pending','retiring','first_error','first_detail','decoding','closing','resuming','proof_pending')),'all real completions/permits and no live or failed owner')
         need(c['plan_checks']==c['publications']+c['retirement_attempts']and c['rseq_checks']==c['publications']and c['live_checks']==3*c['publications']+4*c['hits']and c['proof_checks']==2*c['publications']+3*c['hits'],'whole actual cold/retirement/live/immutable proof accounting')
@@ -358,7 +403,7 @@ class Check(base.Check):
         self.eq(self.f(self.b,'lero_wire','terminal_epoch'),'li2_link_epoch_progress',phase=4,first_error=0,first_detail=0,release_started=1,release_complete=1)
         chain=self.f(self.b,'lero_wire','terminal_chain');self.eq(chain,'li2_tf_chain',initialized=1,first_error=0,first_detail=0,pending=0,in_handler=0)
         chain_counts=span.chain_report(self.r,chain,outcome)
-        need(chain_counts['nx_entries']==chain_counts['fallbacks']+c['entries']+c['refaults'],
+        need(chain_counts['nx_entries']==chain_counts['fallbacks']+c['entries']+c['refaults']+extra,
              'every actual reuse refault requires its own real NX chain segment')
         need(self.i(self.f(chain,'li2_tf_chain','entry'),'li2_tf_trace_entry','valid')==0 and not self.i(self.f(chain,'li2_tf_chain','lease'),'li2_tf_same_page','origin_active'),'no retained ordinary executable authority')
         for slot in self.r.items(chain,'li2_tf_chain','slots','li2_tf_chain_slot'):
@@ -373,16 +418,19 @@ class Check(base.Check):
             self.eq(self.f(slot,'li2_tf_chain_slot','release'),'li2_chain_release',started=1,complete=1,result=0)
             fetch=self.f(slot,'li2_tf_chain_slot','fetch');ref=self.f(fetch,'li2_chain_fetch','ref');sequence=self.i(ref,'li2_fetch_ref','sequence');need(sequence>0,'actual terminal old released borrow')
             self.eq(self.f(fetch,'li2_chain_fetch','progress'),'li2_fetch_progress',held=0,complete=1,first_error=0,first_detail=0,sequence=sequence)
+        if self.native_hint:self.hint_state()
         return dict(control=0,mode=6,entries=entries,first_predecessor_before=first,replacement=replacement,outcome=outcome,summary=c,events=events,raw_ingress=raw,original_sha256=hashlib.sha256(self.r.data).hexdigest(),_check=self)
 
 
-def read(data,layout,image,app,pid,cpu,exit_status,control=0):
+def read(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_hint=False):
+    need(type(native_hint)is bool,'literal distinct reuse hint profile')
     need(type(control)is int and control==0 and type(app['mode'])is int and app['mode']==6 and type(exit_status)is int and exit_status==0,'actual65-entry pair only; failure cannot earn replacement credit')
-    return Check(wire.Reader(data,layout),image,app,pid,cpu,control).finish(exit_status)
+    return Check(wire.Reader(data,layout,native_hint=native_hint),image,app,pid,cpu,control,native_hint).finish(exit_status)
 
 
-def terminal(parsed,owner):
+def terminal(parsed,owner,*,native_hint=False):
     check=owner['_check'];c=owner['summary'];h=check.h;outcome=owner['outcome'];events=owner['events']
+    need(type(native_hint)is bool and native_hint==check.native_hint,'exact reuse protected hint profile')
     fields='initialized first_error used offers closed resumed refaults hash_misses candidates source_misses plan_misses capacity_misses publications hits entries completed unexpected plan_checks rseq_checks live_checks proof_checks'.split()
     linked=dict(version=1,**outcome,**{k:c[k]for k in fields},events=events[0],active=h[31],busy=h[32],decoding=c['decoding'],closing=c['closing'],resuming=c['resuming'])
     f=old.Fields(check.r,check.f(check.b,'lero_wire','terminal_transfer'),'li2_span_transfer_progress')
@@ -393,14 +441,16 @@ def terminal(parsed,owner):
     current_row=dict(version=1,status=0,failure_code=0,**{k:current.integer(k)for k in'attempts current_stages current_seeds physical_fallbacks retained_stages retained_checks commits cancels first_error'.split()},first_detail_abs=abs(current.signed('first_detail')),first_detail_negative=int(current.signed('first_detail')<0))
     chain=span.chain_report(check.r,check.f(check.b,'lero_wire','terminal_chain'),outcome)
     expected=dict(linked_epoch=linked,linked_epoch_reuse=reuse,current_tf=current_row,chain=chain,lease={k:v for k,v in chain.items()if k.startswith('lease_')},**check.physical_rows(outcome))
+    if native_hint:
+        linked['graph_refaults']=c['graph_refaults'];expected['native_hint']=check.hint_row(outcome)
     typed=lambda value:json.dumps(value,sort_keys=True,separators=(',',':'))
     for key,value in expected.items():need(key in parsed and typed(parsed[key])==typed(value),'entire actual protected reuse terminal row '+key)
     return dict(actual_terminal_rows=len(expected),native_operations=0)
 
 
 CONTROL_COUNTS={(6,0):47}
-def controls(data,layout,image,app,pid,cpu,exit_status,control=0):
-    baseline=read(data,layout,image,app,pid,cpu,exit_status,control);types=layout['types'];tests=[]
+def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_hint=False):
+    baseline=read(data,layout,image,app,pid,cpu,exit_status,control,native_hint=native_hint);types=layout['types'];tests=[]
     def at(path):
         t='lero_wire';offset=0
         for field,index,child in path:
@@ -457,7 +507,7 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0):
         for offset,value in changes:
             if type(value)is int:changed[offset]^=value
             else:changed[offset:offset+len(value)]=value
-        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control)
+        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,native_hint=native_hint)
         except ValueError as exc:
             if error is not None:need(str(exc)==error,'coherent stale generation reaches exact causal refusal')
             refused.append(name)
@@ -466,9 +516,9 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0):
 
 
 REFAULT_CONTROL_COUNTS={(6,0):9}
-def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0):
+def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_hint=False):
     """Nine new supplied refusals; the original47 controls remain separate."""
-    baseline=read(data,layout,image,app,pid,cpu,exit_status,control);types=layout['types'];check=baseline['_check']
+    baseline=read(data,layout,image,app,pid,cpu,exit_status,control,native_hint=native_hint);types=layout['types'];check=baseline['_check']
     def at(field):return types['lero_wire']['fields'][field]['offset']
     transfer=at('terminal_transfer');tf=types['li2_span_transfer_progress']['fields'];tests=[]
     flags='actual reuse terminal refault phase and completion fields'
@@ -496,8 +546,49 @@ def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0):
             else:
                 width=4 if offset==transfer+tf['phase']['offset']else 8
                 changed[offset:offset+width]=value.to_bytes(width,'little')
-        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control)
+        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,native_hint=native_hint)
         except ValueError as exc:need(str(exc)==error,'exact new refault refusal '+name);refused.append(name)
         else:raise ValueError('supplied reuse refault accepted '+name)
     need(len(refused)==REFAULT_CONTROL_COUNTS[(6,0)],'all nine additive reuse refault refusals')
     return dict(refault_refusals=refused,native_operations=0,original_sha256=baseline['original_sha256'])
+
+HINT_CONTROL_COUNTS={(6,0):20}
+def hint_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_hint=False):
+    need(native_hint is True,'reuse advisory controls require explicit v3')
+    baseline=read(data,layout,image,app,pid,cpu,exit_status,control,native_hint=True);c=baseline['_check'];types=layout['types'];tests=[]
+    def at(path):
+        offset=0;t='lero_wire'
+        for key,index,child in path:
+            offset+=types[t]['fields'][key]['offset']
+            if index is not None:offset+=index*(types[child]['bytes']if child else 8)
+            if child:t=child
+        return offset
+    def value(path,n,width=8):return at(path),n.to_bytes(width,'little')
+    terminal=[('terminal_hint',None,base.hint.T)];p=base.hint.values(c,c.f(c.b,'lero_wire','terminal_hint'))
+    for key,n,width in(('ready',2,4),('pending',1,4),('outcome_complete',0,4),('publications',p['publications']+1,8),
+        ('evictions',p['evictions']+1,8),('invalidations',p['invalidations']+1,8),('hits',p['hits']+1,8),
+        ('lookups',baseline['events'][8]+1,8),('next_nx',p['next_nx']+1,8),('admitted',p['admitted']+1,8),
+        ('refused',1,8),('errors',1,8),('receipt_sequence',0,8),('receipt_publication',0,8),('selected_serial',0,8),('selected_pc',0,8)):
+        tests.append(('reuse_hint_terminal_'+key,[value(terminal+[(key,None,None)],n,width)],None))
+    entry=[('entries',0,'lero_entry'),('owner',None,'lero_record')]
+    for key in('hint_checked','hint_hit','hint_publication'):
+        tests.append(('reuse_focal_'+key,[(at(entry+[(key,None,None)]),None)],'exact lero_record.'+key))
+    changes=[value([('counts',i,None)],baseline['summary'][COUNTS[i]]+1)for i in(2,3,6,8)]
+    changes += [value([('counts',37,None)],baseline['summary']['graph_refaults']+1),value([('events',8,None)],baseline['events'][8]+1)]
+    phase=c.i(c.f(c.b,'lero_wire','terminal_transfer'),'li2_span_transfer_progress','phase')
+    if phase==6:changes.append(value([('terminal_transfer',None,'li2_span_transfer_progress'),('serial',None,None)],baseline['summary']['offers']+1))
+    tests.append(('reuse_graph_retry_without_actual_segment',changes,'every actual reuse refault requires its own real NX chain segment'))
+    need(len(tests)==HINT_CONTROL_COUNTS[(6,0)]and len({x[0]for x in tests})==len(tests),'exact20 separate reuse hint refusals')
+    refused=[]
+    for name,changes,error in tests:
+        changed=bytearray(data)
+        for offset,payload in changes:
+            if payload is None:changed[offset]^=1
+            else:changed[offset:offset+len(payload)]=payload
+        need(bytes(changed)!=data,'actual reuse supplied mutation')
+        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,native_hint=True)
+        except ValueError as exc:
+            if error is not None:need(str(exc)==error,'reuse advisory mutation reaches exact semantic gate '+name)
+            refused.append(name)
+        else:raise ValueError('supplied reuse advisory accepted '+name)
+    return dict(hint_refusals=refused,native_operations=0,original_sha256=baseline['original_sha256'])

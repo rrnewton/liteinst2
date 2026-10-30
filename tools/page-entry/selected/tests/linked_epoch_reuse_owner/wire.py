@@ -533,19 +533,55 @@ GROUPS={'timespec': ((('tv_sec tv_nsec', 8, 8),), 8),
                 ('retirement', 'lero_retirement', 8),
                 ('terminal_current_fields', 296, 8)),
                64)}
+
+HINT_GROUPS={'li2_link_native_hint_identity': ((('address allocation generation offset initial_extent', 8, 8),
+                                    ('backing object logical', 4, 4)),
+                                   8),
+ 'li2_link_native_hint_progress': ((('ready pending outcome_complete outcome_result', 4, 4),
+                                    ('publications evictions lookups hits invalidations next_nx admitted '
+                                     'refused errors receipt_sequence receipt_publication allocation_epoch '
+                                     'generation_epoch records_epoch',
+                                     8,
+                                     8),
+                                    ('receipt', 'li2_native_pair_slot', 8),
+                                    ('identity', ('li2_link_native_hint_identity', 3), 8),
+                                    ('neighbors', 8, 4),
+                                    ('selected_publication selected_serial selected_event selected_seeds '
+                                     'selected_published selected_pc',
+                                     8,
+                                     8)),
+                                   8)}
+
+def profile(native_hint):
+    need(type(native_hint)is bool,'literal reuse native-hint profile')
+    if not native_hint:return GROUPS,REGISTERED,LIFETIME
+    groups=dict(GROUPS);groups.update(HINT_GROUPS)
+    fields,alignment=groups['lero_record'];changed=[]
+    for names,t,a in fields:
+        if names.endswith('resume_result resumed_route'):
+            changed.extend(((names.removesuffix(' resumed_route'),t,a),
+                ('hint_checked hint_hit',4,4),('hint_publication',8,8),('resumed_route',4,4)))
+        else:changed.append((names,t,a))
+    groups['lero_record']=(tuple(changed),alignment)
+    fields,alignment=groups['lero_wire']
+    groups['lero_wire']=(tuple((name,304 if name=='counts'else t,a)for name,t,a in fields)+
+        (('terminal_hint','li2_link_native_hint_progress',8),('terminal_hint_fields',24,8)),alignment)
+    return groups,dict(REGISTERED,lnh=('linked_native_hint.inc','li2_link_native_hint_progress')),LIFETIME+('lnh',)
+
 class Reader(old.Reader):
-    def __init__(self,data,layout):
+    def __init__(self,data,layout,*,native_hint=False):
+        groups,self.registered,self.lifetime=profile(native_hint)
         self.data,self.layout,self.types=data,layout,dict(layout['types']);self.padding={}
         need(set(layout)=={'record','types','edges','member_witnesses','symbols','registrations','uc_bytes','uc','si'} and layout['record']=='lero_wire','exact emitted TRACE record layout')
         need(layout['member_witnesses']=={k:dict(symbol=v,bytes=8,alignment=64)for k,v in (
             ('li2_step_frame.fp','leto_step_frame_fp_alignment'),)},'actual aligned-member witnesses')
         need(layout['uc_bytes']==968 and layout['uc']==dict(offsets=dict(flags=0,link=8,greg=40,fp_pointer=224,mask=296,stack_sp=16,stack_flags=24,stack_size=32),widths=dict(flags=8,link=8,greg=184,fp_pointer=8,mask=128,stack_sp=8,stack_flags=4,stack_size=8)),'complete actual x86-64 UC ABI')
         need(layout['si']==dict(bytes=128,offsets=dict(signo=0,errno=4,code=8,addr=16,pid=16,uid=20),widths=dict(signo=4,errno=4,code=4,addr=8,pid=4,uid=4)),'complete actual SI ABI')
-        need(set(self.types)==set(GROUPS)==set(layout['edges']),'all and only source-declared reachable types')
+        need(set(self.types)==set(groups)==set(layout['edges']),'all and only source-declared reachable types')
         expected={}
-        for t,(groups,alignment)in GROUPS.items():
+        for t,(fields_declared,alignment)in groups.items():
             fields={};edges={}
-            for keys,size,a in groups:
+            for keys,size,a in fields_declared:
                 child=size if type(size)is str else size[0] if type(size)is tuple else None
                 n=self.types[child]['bytes']*(size[1] if type(size)is tuple else 1)if child else size
                 for key in keys.split():

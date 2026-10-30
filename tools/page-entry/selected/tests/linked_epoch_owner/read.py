@@ -11,6 +11,11 @@ def load(name,path):
 HERE=Path(__file__).resolve().parent
 wire=load('linked_epoch_wire',HERE/'wire.py');plan=load('linked_epoch_plan',HERE/'plan.py')
 refault=load('linked_epoch_refault',HERE/'refault.py')
+hint=None
+def hint_module():
+    global hint
+    if hint is None:hint=load('linked_epoch_hint',HERE/'hint.py')
+    return hint
 span=load('linked_epoch_trace_helpers',HERE.parent/'scalar_span_trace_owner/read.py')
 old=wire.old
 need,zero,q,canonical=old.need,old.zero,old.q,old.canonical
@@ -20,7 +25,8 @@ P,L,R=old.P,old.L,old.R
 COUNTS='initialized used offers closed resumed hash_misses candidates source_misses plan_misses capacity_misses publications hits entries completed unexpected plan_checks rseq_checks generation retirement_attempts retirements claims permits_issued pending retiring cursor first_error first_detail decoding closing resuming live_checks proof_checks proof_pending proof_arena proof_bytes proof_registry refaults'.split()
 GREG=(13,14,12,11,15,10,9,8,0,1,2,3,4,5,6,7)
 
-def elf_symbols(data):
+def elf_symbols(data,native_hint=False):
+    _,registered,_=wire.profile(native_hint)
     h,loads=old.elf(data)
     need(h[11]==64 and h[12]>0 and h[6]+h[12]*64<=len(data),'whole actual bridge section table')
     sections=[struct.unpack_from('<IIQQQQIIQQ',data,h[6]+64*i)for i in range(h[12])]
@@ -34,15 +40,17 @@ def elf_symbols(data):
             if not section or not name:continue
             end=strings.find(b'\0',name);need(0<=name<end<len(strings),'bounded symbol name')
             name=strings[name:end].decode('ascii')
-            if name in wire.REGISTERED or name in ('li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'):
+            if name in registered or name in ('li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'):
                 need(name not in symbols,'unique actual bridge symbol');symbols[name]=(address,size)
-    need(set(symbols)==set(wire.REGISTERED)|{'li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'},'whole required compiled object inventory')
+    need(set(symbols)==set(registered)|{'li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected'},'whole required compiled object inventory')
     ph=[struct.unpack_from('<IIQQQQQQ',data,h[5]+56*i)for i in range(h[10])]
     return h,ph,symbols
 
 
 class Check(span.Check):
-    def __init__(self,reader,image,app,pid,cpu,control,refault_control=0):
+    def __init__(self,reader,image,app,pid,cpu,control,refault_control=0,native_hint=False,hint_control=0):
+        if native_hint:hint_module()
+        self.native_hint,self.hint_control=native_hint,hint_control
         self.refault_control=refault_control
         self.r,self.image,self.app,self.pid,self.cpu,self.control=reader,image,app,pid,cpu,control
         self.b=reader.data[:-64];self.h=q(self.f(self.b,'leto_wire','h'));self.control_words=q(self.f(self.b,'leto_wire','control'))
@@ -52,17 +60,17 @@ class Check(span.Check):
             need(type(key)is int and key>=0 and type(obj)is dict,'actual explicit object inventory')
             h,loads=old.elf(obj['data']);self.objects[key]=(obj,h,loads)
         need(image['main_object']in self.objects and image['interpreter_object']in self.objects,'actual original object identities')
-        self.eh,self.ph,self.symbols=elf_symbols(image['bridge'])
+        self.eh,self.ph,self.symbols=elf_symbols(image['bridge'],native_hint)
         need(set(reader.layout['symbols'])==set(self.symbols)|{'span_progress'}and all(reader.layout['symbols'][k]==v[0]for k,v in self.symbols.items()),'actual same emitted bridge and DWARF symbols')
-        self.storage=q(self.f(self.b,'leto_wire','storage'));self.counts=dict(zip(COUNTS,q(self.f(self.b,'leto_wire','counts')),strict=True))
+        self.storage=q(self.f(self.b,'leto_wire','storage'));self.counts=dict(zip(COUNTS+(['graph_refaults']if native_hint else[]),q(self.f(self.b,'leto_wire','counts')),strict=True))
         self.entries=self.r.items(self.b,'leto_wire','entries','leto_entry')
         self.entry=self.entries[0];self.record=self.f(self.entry,'leto_entry','owner')
 
     def header(self,status):
         h=self.h;r=self.r;t='leto_wire';mode=self.app['mode'];c=self.control
-        expected=(3104,{1:3002,2:3002,3:3001,4:3003}[self.refault_control])if self.refault_control else (0,0)if not status else (3104,11)if not c else {1:(3104,5),2:(3102,302),3:(301,440),4:(3103,9)}[c]
+        expected=(3104,0)if self.hint_control else (3104,{1:3002,2:3002,3:3001,4:3003}[self.refault_control])if self.refault_control else (0,0)if not status else (3104,11)if not c else {1:(3104,5),2:(3102,302),3:(301,440),4:(3103,9)}[c]
         code,detail=expected
-        need(h[:9]==(0x314f54454c49324c,2,r.types[t]['bytes'],r.types['leto_entry']['bytes'],r.types['le_record']['bytes'],r.types['le_slot']['bytes'],r.types['le_frame']['bytes'],968,128),'whole actual linked capture version/type extents')
+        need(h[:9]==(0x314f54454c49324c,3 if self.native_hint else 2,r.types[t]['bytes'],r.types['leto_entry']['bytes'],r.types['le_record']['bytes'],r.types['le_slot']['bytes'],r.types['le_frame']['bytes'],968,128),'whole actual linked capture version/type extents')
         need(canonical(self.bias)and self.bias%PAGE==0 and h[9:12]==tuple(self.symbol(k)for k in('li2_raw6','li2_gateway_start','li2_gateway_end'))and h[10]<=h[9]<h[11],'actual emitted bridge bias and gateway')
         need(canonical(h[12],h[13])and h[12]%PAGE==0 and h[13]==524288,'whole actual altstack')
         need(h[14:16]==(1,0)and h[16]&(3|0x400|0x800)==1 and h[17:20]==(0,1,0),'actual exclusive regular0600 FD3 sink')
@@ -80,7 +88,7 @@ class Check(span.Check):
         for key in('sink_initial','sink_terminal'):
             b=self.f(self.b,t,key);st=self.stat(b);need(st['mode']&0xffff==0x8180 and st['size']==0,'actual empty0600 sink');self.eq(b,'stat',st_nlink=1,st_uid=self.image['uid'])
         self.r.change(self.f(self.b,t,'sink_initial'),self.f(self.b,t,'sink_terminal'),'stat',observed=('st_atim','st_mtim','st_ctim'))
-        footer=q(r.data[-64:]);need(footer[:4]==(0x314654454c49324c,2,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'whole actual record/footer/write completion')
+        footer=q(r.data[-64:]);need(footer[:4]==(0x314654454c49324c,3 if self.native_hint else 2,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'whole actual record/footer/write completion')
         if footer[4]==1:need(footer[5]==len(self.b),'single complete actual write')
         for key,objid in(('main',self.image['main_object']),('interpreter',self.image['interpreter_object'])):self.image_header(self.f(self.b,t,key),objid)
         obj,_,loads=self.objects[self.image['main_object']];bias=self.bases[self.image['main_object']]
@@ -99,13 +107,13 @@ class Check(span.Check):
         im=self.f(b,t,'bridge');self.eq(im,'image',bias=self.bias,entry=self.bias+self.eh[4],n=len(self.ph),source=0,source_size=0,backing_fd=(1<<32)-1,kind=3)
         zero(self.f(im,'image','source_hash'),'no invented original bridge hash');need(canonical(self.i(im,'image','ph'),56*len(self.ph)),'actual program header pointer')
         need(self.f(b,t,'ph')==b''.join(struct.pack('<IIQQQQQQ',*p)for p in self.ph)+bytes((32-len(self.ph))*56),'all actual bridge program headers')
-        objects=[];decl=self.r.layout['registrations'];need(set(decl)==set(wire.REGISTERED),'all exact byte-registration source witnesses')
+        objects=[];decl=self.r.layout['registrations'];need(set(decl)==set(self.r.registered),'all exact byte-registration source witnesses')
         headers=self.image['headers'];need(type(headers)is dict and headers,'actual complete compiler-M header closure')
-        for name,(source,tag)in wire.REGISTERED.items():
+        for name,(source,tag)in self.r.registered.items():
             d=decl[name];at,n=self.symbols[name];a,z=self.bias+at,self.bias+at+n
             need(set(d)=={'address','bytes','alignment','tag','source'}and(d['address'],d['bytes'],d['tag'])==(at,n,tag)and type(d['alignment'])is int and 0<d['alignment']<=PAGE and not d['alignment']&(d['alignment']-1)and a%d['alignment']==0 and d['source'].endswith('/tools/page-entry/selected/'+source),'actual symbol/DWARF/source-selected registration '+name)
             need(d['source']in headers and type(headers[d['source']])is dict and set(headers[d['source']])=={'bytes','sha256'},'every actual DWARF origin belongs to the complete compiler-M closure')
-            if name not in wire.LIFETIME:need(ranges.count((a,z))==1 and kinds[ranges.index((a,z))]==0,'whole strict registered object extent')
+            if name not in self.r.lifetime:need(ranges.count((a,z))==1 and kinds[ranges.index((a,z))]==0,'whole strict registered object extent')
             loads=[p for p in self.ph if p[0]==1 and p[6]and self.bias+p[3]<z and a<self.bias+p[3]+p[6]]
             need(len(loads)==1 and loads[0][1]==6 and self.bias+loads[0][3]<=a<z<=self.bias+loads[0][3]+loads[0][6],'whole registered object in one RW/NX load')
             p=loads[0];rounded=((self.bias+p[3])&-PAGE,(self.bias+p[3]+p[6]+PAGE-1)&-PAGE)
@@ -221,6 +229,7 @@ class Check(span.Check):
         source=self.source(self.f(r,t,'source'));self.transfer(self.f(r,t,'transfer'),source,closed_slot,pi,False)
         self.eq(self.f(r,t,'transfer'),'li2_span_transfer_progress',refault_attempted=0,refaulted=0)
         self.eq(r,t,refault_started=0,refault_complete=0,refault_result=0)
+        if self.native_hint:self.eq(r,t,hint_checked=0,hint_hit=0,hint_publication=0)
         self.eq(r,t,slot_present=1,redirected=int(entered),completed=int(completed),release_started=int(completed),release_complete=int(completed),release_result=0,close_started=1,close_complete=1,prepare_started=1,prepare_complete=1,prepare_result=0,miss_release_started=0,miss_release_complete=0,miss_release_result=0,resume_started=0,resume_complete=0,resume_result=0,resumed_route=0,flags=self.app['seed'][1])
         zero(self.f(r,t,'miss_fetch'),'no fictional descriptive fallback for this accepted graph')
         p=self.proof(e,source,r);generated=p['generated'];cold=bool(self.i(r,t,'build_started'))
@@ -302,8 +311,11 @@ class Check(span.Check):
         else:self.eq(e,et,frontier_closed=0)
         self.app=previous_app;return result
     def finish(self,status):
-        outcome=self.header(status);failed=bool(status)and not self.refault_control;c=self.counts
-        refault.terminal_state(self)
+        outcome=self.header(status);failed=bool(status)and not self.refault_control and not self.hint_control;c=self.counts
+        extra=c['graph_refaults']if self.native_hint else 0
+        extra+=int(bool(self.hint_control))
+        if self.native_hint:hint.terminal_transfer(self)
+        else:refault.terminal_state(self)
         session=self.f(self.b,'leto_wire','session');self.eq(session,'li2_step_session',pid=self.pid,tid=self.pid,sync_register=0,application_mask=MASK,initialized=1,self_test_complete=1)
         sync=self.i(session,'li2_step_session','sync_query');need(sync<1<<63 and sync&96==96,'actual sync-core registration')
         initial,terminal=(self.registry(self.f(self.b,'leto_wire',k))for k in('initial_registry','terminal_registry'))
@@ -325,8 +337,8 @@ class Check(span.Check):
                 need([self.i(self.f(e,'leto_entry','owner'),'le_record','build_started')for e in self.entries]==[1,1,0,0,0,0],'actual cold source replacement then four warm live-checked entries')
         self.owners(self.f(self.b,'leto_wire','terminal_owners'));self.physical_rows(outcome)
         held=int(self.control in(2,3));unexpected=int(failed and(self.control==1 or not self.control))
-        need(c['initialized']==1 and 1<=c['used']<=64 and c['offers']==c['closed']==c['candidates']==c['entries']+c['resumed']+c['refaults']+held+int(bool(self.refault_control)and self.refault_control!=2),'actual chosen offers/closed predecessor/entry partition')
-        need(c['resumed']+c['refaults']+int(bool(self.refault_control)and self.refault_control!=2)==sum(c[k]for k in('hash_misses','source_misses','plan_misses','capacity_misses'))and c['entries']+held==c['publications']+c['hits']==c['claims'],'all actual misses and claimed generations')
+        need(c['initialized']==1 and 1<=c['used']<=64 and c['offers']==c['closed']==c['candidates']==c['entries']+c['resumed']+c['refaults']+extra+held+int(bool(self.refault_control)and self.refault_control!=2),'actual chosen offers/closed predecessor/entry partition')
+        need(c['resumed']+c['refaults']+extra+int(bool(self.refault_control)and self.refault_control!=2)==sum(c[k]for k in('hash_misses','source_misses','plan_misses','capacity_misses'))and c['entries']+held==c['publications']+c['hits']==c['claims'],'all actual misses and claimed generations')
         need(c['generation']==c['publications']==c['used']+c['retirements']and c['retirement_attempts']==c['retirements']and c['cursor']<64,'monotonic publications and completed generation retirement')
         need(c['completed']==c['permits_issued']==c['entries']-int(failed and not held)and c['unexpected']==unexpected and c['pending']==int(failed)and not c['retiring'],'actual completion permits; no failed completion')
         need(c['plan_checks']==c['publications']+c['retirement_attempts']and c['rseq_checks']==c['publications'],'every cold and retirement full proof, no warm decoder reconstruction')
@@ -339,7 +351,7 @@ class Check(span.Check):
             need(self.h[31:34]==(int(not held),1,1)and self.h[35:37]==(1,9),'actual terminal active/busy/route prefix')
             need(self.f(self.b,'leto_wire','terminal_record')==self.f(self.entries[self.h[25]-1],'leto_entry','owner'),'whole retained failed current is actual focal prefix')
             need(self.f(self.b,'leto_wire','terminal_epoch')==result[-1]['epoch']['raw'],'whole actual unreleased failure epoch')
-        elif self.refault_control:
+        elif self.refault_control or self.hint_control:
             need(self.h[31:37]==(0,1,1,1,0,0),'actual retry refusal has no generated or ordinary execution owner')
             self.eq(self.f(self.b,'leto_wire','terminal_fetch'),'li2_fetch_progress',held=int(self.refault_control==3),complete=1,first_error=0,first_detail=0)
             self.eq(self.f(self.b,'leto_wire','terminal_epoch'),'li2_link_epoch_progress',phase=4,first_error=0,first_detail=0,release_started=1,release_complete=1)
@@ -349,7 +361,7 @@ class Check(span.Check):
             self.eq(self.f(self.b,'leto_wire','terminal_epoch'),'li2_link_epoch_progress',phase=4,first_error=0,first_detail=0,release_started=1,release_complete=1)
         chain=self.f(self.b,'leto_wire','terminal_chain');self.eq(chain,'li2_tf_chain',initialized=1,first_error=0,first_detail=0,pending=0,in_handler=0)
         row=span.chain_report(self.r,chain,outcome)
-        need(row['nx_entries']==row['fallbacks']+c['entries']+c['refaults']+held+int(bool(self.refault_control)and self.refault_control!=2),'all actual closed segments partition into fallback, graph, retry and required terminal prefix')
+        need(row['nx_entries']==row['fallbacks']+c['entries']+c['refaults']+extra+held+int(bool(self.refault_control)and self.refault_control!=2),'all actual closed segments partition into fallback, graph, retry and required terminal prefix')
         need(self.i(self.f(chain,'li2_tf_chain','entry'),'li2_tf_trace_entry','valid')==0 and not self.i(self.f(chain,'li2_tf_chain','lease'),'li2_tf_same_page','origin_active'),'no ordinary executable or one-use authority survives terminal state')
         # This finite original-image exit is explicitly two fully closed owners;
         # no unrelated whole-program cache saturation assumption is imposed.
@@ -366,20 +378,25 @@ class Check(span.Check):
             fetch=self.f(slot,'li2_tf_chain_slot','fetch');ref=self.f(fetch,'li2_chain_fetch','ref');sequence=self.i(ref,'li2_fetch_ref','sequence');need(sequence>0,'actual old released borrow')
             self.eq(self.f(fetch,'li2_chain_fetch','progress'),'li2_fetch_progress',held=0,complete=1,first_error=0,first_detail=0,sequence=sequence)
         retry=refault.check(self)
-        return dict(refault_control=self.refault_control,refault=retry,control=self.control,mode=self.app['mode'],entries=result,outcome=outcome,summary=c,events=events,raw_ingress=raw,original_sha256=hashlib.sha256(self.r.data).hexdigest(),_check=self)
+        advisory=hint.check(self)if self.native_hint else None
+        result=dict(refault_control=self.refault_control,refault=retry,control=self.control,mode=self.app['mode'],entries=result,outcome=outcome,summary=c,events=events,raw_ingress=raw,original_sha256=hashlib.sha256(self.r.data).hexdigest(),_check=self)
+        if self.native_hint:result.update(native_hint=True,hint_control=self.hint_control,hint=advisory)
+        return result
 
 
-def read(data,layout,image,app,pid,cpu,exit_status,control=0,*,refault_control=0):
+def read(data,layout,image,app,pid,cpu,exit_status,control=0,*,refault_control=0,native_hint=False,hint_control=0):
+    need(type(native_hint)is bool and type(hint_control)is int and hint_control in range(4)and(not hint_control or(native_hint and app['mode']==0 and not control and not refault_control)),'exact distinct native-hint profile and advisory selector')
     need(type(refault_control)is int and refault_control in range(5)and(not refault_control or(control==0 and app['mode']==0)),'exact additional retry control selector')
     need(type(pid)is int and 0<pid<1<<31 and type(cpu)is int and cpu>=0 and type(control)is int and control in range(5),'actual process, CPU and fixed control')
     need(type(app['mode'])is int and app['mode']in range(6)and(not control or app['mode']==(5 if control==2 else 0)),'six modes and exact source-causal control application')
-    need(type(exit_status)is int and exit_status==(125 if app['mode']in(2,3)or control or refault_control else 0),'fixed actual outcome; no failure relabel')
-    return Check(wire.Reader(data,layout),image,app,pid,cpu,control,refault_control).finish(exit_status)
+    need(type(exit_status)is int and exit_status==(125 if app['mode']in(2,3)or control or refault_control or hint_control else 0),'fixed actual outcome; no failure relabel')
+    return Check(wire.Reader(data,layout,native_hint=native_hint),image,app,pid,cpu,control,refault_control,native_hint,hint_control).finish(exit_status)
 
 
-def terminal(parsed,owner):
+def terminal(parsed,owner,*,native_hint=False):
     """Full typed report-to-actual capture joins; these never synthesize frames."""
     check=owner['_check'];c=owner['summary'];h=check.h;outcome=owner['outcome'];events=owner['events']
+    need(type(native_hint)is bool and native_hint==check.native_hint,'exact protected terminal native-hint profile')
     fields='initialized first_error used offers closed resumed hash_misses candidates source_misses plan_misses capacity_misses publications hits entries completed unexpected plan_checks rseq_checks live_checks proof_checks refaults'.split()
     linked=dict(version=1,**outcome,**{k:c[k]for k in fields},events=events[0],active=h[31],busy=h[32],decoding=c['decoding'],closing=c['closing'],resuming=c['resuming'])
     f=old.Fields(check.r,check.f(check.b,'leto_wire','terminal_transfer'),'li2_span_transfer_progress')
@@ -392,6 +409,8 @@ def terminal(parsed,owner):
     current_row=dict(version=1,status=outcome['status'],failure_code=outcome['failure_code'],**{k:current.integer(k)for k in'attempts current_stages current_seeds physical_fallbacks retained_stages retained_checks commits cancels first_error'.split()},first_detail_abs=abs(current.signed('first_detail')),first_detail_negative=int(current.signed('first_detail')<0))
     chain=span.chain_report(check.r,check.f(check.b,'leto_wire','terminal_chain'),outcome)
     expected=dict(linked_epoch=linked,linked_epoch_reuse=reuse,current_tf=current_row,chain=chain,lease={k:v for k,v in chain.items()if k.startswith('lease_')},**check.physical_rows(outcome))
+    if native_hint:
+        linked['graph_refaults']=c['graph_refaults'];expected['native_hint']=hint.terminal_row(check,outcome)
     import json
     def typed(value):return json.dumps(value,sort_keys=True,separators=(',',':'))
     for key,value in expected.items():need(key in parsed and typed(parsed[key])==typed(value),'entire actual protected terminal row '+key)
@@ -403,8 +422,8 @@ CONTROL_BASE=41
 CONTROL_COUNTS={(m,0):41+(2 if m in(2,3,4)else 4 if m==5 else 0)for m in range(6)}
 CONTROL_COUNTS.update({(0,1):43,(5,2):45,(0,3):43,(0,4):43})
 
-def controls(data,layout,image,app,pid,cpu,exit_status,control=0):
-    baseline=read(data,layout,image,app,pid,cpu,exit_status,control);types=layout['types'];tests=[]
+def controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,native_hint=False):
+    baseline=read(data,layout,image,app,pid,cpu,exit_status,control,native_hint=native_hint);types=layout['types'];tests=[]
     def where(path):
         at=0;t='leto_wire'
         for key,index,child in path:
@@ -452,8 +471,8 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0):
     serials=[e+[(key,None,'li2_link_epoch_progress'),('serial',None,None)]
              for key in ('epoch_held','epoch_terminal')]
     serials.append(r+[('epoch',None,'li2_link_epoch_token'),('serial',None,None)])
-    first=wire.Reader(data,layout).items(data[:-64],'leto_wire','entries','leto_entry')[0]
-    fields=old.Fields(wire.Reader(data,layout),first,'leto_entry')
+    first=wire.Reader(data,layout,native_hint=native_hint).items(data[:-64],'leto_wire','entries','leto_entry')[0]
+    fields=old.Fields(wire.Reader(data,layout,native_hint=native_hint),first,'leto_entry')
     if fields.integer('redirected'):serials.append(e+[('epoch_opened',None,'li2_link_epoch_progress'),('serial',None,None)])
     if fields.integer('completed'):serials.append(r+[('epoch_final',None,'li2_link_epoch_progress'),('serial',None,None)])
     coherent('stale_serial_all_focal_aliases',serials,'actual source lifetime epochs and serial')
@@ -479,7 +498,7 @@ def controls(data,layout,image,app,pid,cpu,exit_status,control=0):
     for name,changes,error in tests:
         changed=bytearray(data)
         for at,mask in changes:changed[at]^=mask
-        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control)
+        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,native_hint=native_hint)
         except ValueError as exc:
             if error is not None:need(str(exc)==error,'mutation reached exact intended semantic gate')
             refused.append(name)
@@ -493,9 +512,9 @@ REFAULT_CONTROL_COUNTS={(0,0,0):9,(1,0,0):9,(2,0,0):9,(3,0,0):9,(4,0,0):9,(5,0,0
                         (0,1,0):9,(5,2,0):9,(0,3,0):9,(0,4,0):9,
                         (0,0,1):17,(0,0,2):17,(0,0,3):17,(0,0,4):17}
 
-def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,refault_control=0):
+def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,refault_control=0,native_hint=False):
     """Exact additional copy-only refusals; every mutation runs the full reader."""
-    baseline=read(data,layout,image,app,pid,cpu,exit_status,control,refault_control=refault_control)
+    baseline=read(data,layout,image,app,pid,cpu,exit_status,control,refault_control=refault_control,native_hint=native_hint)
     types=layout['types'];check=baseline['_check'];tests=[]
     def at(path):
         offset=0;t='leto_wire'
@@ -562,7 +581,95 @@ def refault_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,refau
         for offset,value in changes:
             if value is None:changed[offset]^=1
             else:changed[offset:offset+len(value)]=value
-        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,refault_control=refault_control)
+        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,refault_control=refault_control,native_hint=native_hint)
         except ValueError as exc:need(str(exc)==error,'exact retry mutation causal refusal '+name);refused.append(name)
         else:raise ValueError('supplied retry witness accepted '+name)
     return dict(refault_refusals=refused,native_operations=0,original_sha256=baseline['original_sha256'])
+
+# Separate profile/control population. Historical430 plus47 reuse and all
+# relocation-only mutations stay on their original cases and APIs.
+HINT_CONTROL_COUNTS={(0,0,0,0):16,(1,0,0,0):16,(2,0,0,0):16,(3,0,0,0):16,(4,0,0,0):16,(5,0,0,0):40,
+    (0,1,0,0):16,(5,2,0,0):16,(0,3,0,0):16,(0,4,0,0):16,
+    (0,0,1,0):16,(0,0,2,0):16,(0,0,3,0):16,(0,0,4,0):16,
+    (0,0,0,1):26,(0,0,0,2):26,(0,0,0,3):26}
+
+def hint_controls(data,layout,image,app,pid,cpu,exit_status,control=0,*,refault_control=0,native_hint=False,hint_control=0):
+    need(native_hint is True,'advisory controls require the explicit v3 profile')
+    baseline=read(data,layout,image,app,pid,cpu,exit_status,control,refault_control=refault_control,native_hint=True,hint_control=hint_control)
+    c=baseline['_check'];types=layout['types'];tests=[]
+    def at(path):
+        offset=0;t='leto_wire'
+        for key,index,child in path:
+            f=types[t]['fields'][key];offset+=f['offset']
+            if index is not None:offset+=index*(types[child]['bytes']if child else 8)
+            if child:t=child
+        return offset
+    def setv(path,value,width=8):return at(path),value.to_bytes(width,'little')
+    def add(name,path,error=None):tests.append((name,[(at(path),None)],error))
+    terminal=[('terminal_hint',None,hint.T)];p=hint.values(c,c.f(c.b,'leto_wire','terminal_hint'))
+    for field,value,width in(('ready',2,4),('pending',1,4),('outcome_complete',p['outcome_complete']^1,4),
+        ('publications',p['publications']+1,8),('evictions',p['evictions']+1,8),('invalidations',p['invalidations']+1,8),
+        ('hits',p['hits']+1,8),('lookups',baseline['events'][8]+1,8),('next_nx',p['next_nx']+1,8),
+        ('admitted',p['admitted']+1,8),('refused',1,8),('errors',1,8),('receipt_sequence',0,8),('receipt_publication',0,8),
+        ('selected_serial',0 if p['hits']else 1,8),('selected_pc',0 if p['hits']else 1,8)):
+        tests.append(('hint_terminal_'+field,[setv(terminal+[(field,None,None)],value,width)],None))
+    need(len(tests)==16,'all sixteen distinct advisory terminal refusals')
+    w=[('hint',None,'leto_hint')]
+    def frame(name,field,index,mask=1):
+        a=w+[(field,None,'le_frame')]
+        offsets=(at(a+[('uc',None,None)])+40+8*index,at(a+[('frame',None,'li2_step_frame'),('greg',index,None)]))
+        tests.append((name,[(offset,bytes((data[offset]^mask,)))for offset in offsets],None))
+    if app['mode']==5 and not control:
+        for index in(3,4,5,6):add('hint_actual_ordinal_'+str(index),w+[('h',index,None)])
+        for field in('before','nx'):
+            frame('hint_'+field+'_RAX',field,13);frame('hint_'+field+'_AF',field,17,16)
+            add('hint_'+field+'_FP',w+[(field,None,'le_frame'),('frame',None,'li2_step_frame'),('fp',None,None)])
+        for name,tail in(
+            ('hint_source_page',[('source',None,'li2_span_source'),('key',None,'li2_span_source_key'),('bytes',None,None)]),
+            ('hint_predecessor_release',[('closed',None,'li2_tf_chain_slot'),('release',None,'li2_chain_release'),('complete',None,None)]),
+            ('hint_released_borrow',[('fresh',None,'li2_fetch_progress'),('held',None,None)]),
+            ('hint_original_receipt_bytes',[('before_hint',None,hint.T),('receipt',None,'li2_native_pair_slot'),('window',None,None)]),
+            ('hint_original_receipt_generation',[('before_hint',None,hint.T),('identity',0,'li2_link_native_hint_identity'),('generation',None,None)]),
+            ('hint_retained_selected_serial',[('after_hint',None,hint.T),('selected_serial',None,None)]),
+            ('hint_actual_pending_outcome',[('after_hint',None,hint.T),('pending',None,None)]),
+            ('hint_consumed_fresh_borrow',[('after_transfer',None,'li2_span_transfer_progress'),('fresh_borrow',None,None)]),
+            ('hint_native_post_verified',[('admitted',None,'leto_owners'),('lifecycle',None,'li2_native_pair_lifecycle'),('post_verified',None,None)]),
+            ('hint_native_actual_TLS',[('admitted',None,'leto_owners'),('rseq_pair',None,'li2_rseq_pair_progress'),('fs_before',None,None)]),
+            ('hint_real_complete_close',[('closed_native',None,'leto_owners'),('lifecycle',None,'li2_native_pair_lifecycle'),('close',None,'li2_native_close'),('complete',None,None)]),
+            ('hint_actual_outcome_admission',[('outcome_hint',None,hint.T),('admitted',None,None)]),
+            ('hint_no_positive_mutation',[('changed_hint',None,hint.T),('ready',None,None)]),
+            ('hint_before_lifecycle_registration',[('h',9,None)])):
+            add(name,w+tail)
+    elif hint_control:
+        for i in(20,21,22):add('hint_actual_probe_'+str(i),w+[('h',i,None)])
+        # Restore the actually corrupted field while retaining an asserted
+        # invalidation. The complete before/changed join must reject this.
+        record=c.f(c.b,'leto_wire','hint');h=q(c.f(record,'leto_hint','h'))
+        mutation=w+[('changed_hint',None,hint.T)]
+        if hint_control==1:
+            prior=c.f(record,'leto_hint','before_hint');slot=c.f(prior,hint.T,'receipt')
+            offset=at(mutation+[('receipt',None,'li2_native_pair_slot'),('window',None,None)])+c.i(slot,'li2_native_pair_slot','window_before')+h[21]
+        else:offset=at(mutation+[('identity',h[21],'li2_link_native_hint_identity'),('generation',None,None)])
+        tests.append(('hint_forged_rejection_without_mutation',[(offset,None)],'exact one-field actual advisory receipt mutation'))
+        changes=[(at(path+[('invalidations',None,None)]),None)for path in(terminal,w+[('after_hint',None,hint.T)])]
+        tests.append(('hint_forged_double_invalidation',changes,None))
+        add('hint_negative_released_borrow',w+[('fresh',None,'li2_fetch_progress'),('held',None,None)])
+        add('hint_negative_real_source',w+[('source',None,'li2_span_source'),('key',None,'li2_span_source_key'),('bytes',None,None)])
+        frame('hint_negative_frame_unchanged','returned',13)
+        add('hint_no_invented_next_NX',w+[('nx',None,'le_frame'),('frame',None,'li2_step_frame'),('greg',16,None)])
+        add('hint_negative_before_registration',w+[('h',9,None)])
+    key=(app['mode'],control,refault_control,hint_control)
+    need(len(tests)==HINT_CONTROL_COUNTS[key]and len({x[0]for x in tests})==len(tests),'fixed complete distinct advisory mutation table')
+    refusals=[]
+    for name,changes,error in tests:
+        changed=bytearray(data)
+        for offset,value in changes:
+            if value is None:changed[offset]^=1
+            else:changed[offset:offset+len(value)]=value
+        need(bytes(changed)!=data,'actual supplied advisory mutation')
+        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status,control,refault_control=refault_control,native_hint=True,hint_control=hint_control)
+        except ValueError as exc:
+            if error is not None:need(str(exc)==error,'advisory mutation reaches exact causal refusal '+name)
+            refusals.append(name)
+        else:raise ValueError('supplied advisory capture accepted '+name)
+    return dict(hint_refusals=refusals,native_operations=0,original_sha256=baseline['original_sha256'])
