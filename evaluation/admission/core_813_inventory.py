@@ -11,6 +11,7 @@ import inventory_syntax
 import inventory_digest
 import inventory_copy
 import inventory_splice
+import recorder_shards_inventory as recorder_shards
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
@@ -129,6 +130,7 @@ def precheck_current_sources(error):
                     for path, value in sources.items())):
             return
         expected.update(sources)
+    recorder_shards.require_sources(error)
     for path, value in expected.items():
         try:
             raw = (ROOT / path).read_bytes()
@@ -178,6 +180,7 @@ def require_091_sources(error='091_source_inventory_differs'):
 
 def before_091(declared, error='091_inventory_differs', source_error='091_source_inventory_differs'):
     precheck_null_corpus(declared, error)
+    declared = recorder_shards.peel_current(declared, error, source_error)
     require(type(declared) is dict and digest(declared) == LATEST, error)
     require_091_sources(source_error)
     old = inventory_copy.deepcopy(declared)
@@ -193,6 +196,7 @@ def before_091(declared, error='091_inventory_differs', source_error='091_source
 
 
 def peel_091(declared, error, source_error):
+    declared = recorder_shards.peel_current(declared, error, source_error)
     return before_091(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
 
 
@@ -2404,6 +2408,7 @@ def peel_current(declared, error='main813_inventory_differs', source_error='main
 
 
 def peel_python(identities):
+    identities = recorder_shards.peel_python(identities)
     if type(identities) is list and digest(identities) == PYTHON_CURRENT:
         require(len(identities) == len(set(identities)) == RECORDER_TESTS, 'main813_python_inventory_differs')
         new = [x for x in identities if x.startswith('test_main813_inventory.')]
