@@ -59,6 +59,24 @@ static int ler_permitted(size_t slot) {
         ler_identity(slot,p->generation),LE_STATE,304);
     return 1;
 }
+#ifdef LI2_LINKED_PREEDGE
+static size_t ler_choose(void) {
+    le_need(selected_linked_epoch.used==LE_PAGES && !ler.pending && !ler.retiring &&
+        le_quiet(&selected_borrow),LE_STATE,305);
+    size_t chosen=LE_PAGES;unsigned smallest=0;
+    for(size_t n=0;n<LE_PAGES;n++) {
+        size_t slot=(ler.cursor+n)%LE_PAGES;
+        if(ler_permitted(slot)) {
+            /* Weight is advisory only, read from the immutable primary plan
+               after the unchanged completed-permit/identity check. Strictly
+               smaller wins; equal weights retain the original FIFO order. */
+            unsigned heads=le_plan(&selected_linked_epoch.slots[slot])->heads;
+            if(chosen==LE_PAGES || heads<smallest) {chosen=slot;smallest=heads;}
+        }
+    }
+    return chosen; /* No completed generation: original clean capacity MISS. */
+}
+#else
 static size_t ler_choose(void) {
     le_need(selected_linked_epoch.used==LE_PAGES && !ler.pending && !ler.retiring &&
         le_quiet(&selected_borrow),LE_STATE,305);
@@ -68,6 +86,7 @@ static size_t ler_choose(void) {
     }
     return LE_PAGES; /* No completed generation: original clean capacity MISS. */
 }
+#endif
 static int ler_permission(uintptr_t entry,int prot,struct le_permission *p) {
     if(p->started)return LE_STATE;
     p->prot=prot;p->started=1;__asm__ volatile("":::"memory");
