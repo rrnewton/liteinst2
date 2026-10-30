@@ -1,0 +1,13 @@
+group,required,passed,failed
+rapid_rejection,2,2,0
+prefixed_pun,1,1,0
+quiescent_oracle,4,4,0
+observing_control,8,8,0
+short_neighbor,21,21,0
+routed_jmp_native,34,34,0
+routed_jmp_frontend,17,17,0
+gap_carrier,9,9,0
+routed_jmp_publication,3,3,0
+startup_carrier,9,9,0
+staged_image_drop,1,1,0
+startup_catalog,8,8,0
