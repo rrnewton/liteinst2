@@ -174,3 +174,15 @@ unknown task, syscall error, nonempty mask or failed readback refuses. The owned
 post-fork Rust child also resets and reads back those two dispositions. Existing
 exact signal-state guards, normal exec argv/env and all runtime bounds remain.
 No new profile or source-only control result implies native qualification.
+
+Mapped-file identity keeps the full `stat`/SHA256 pin and separately measures the
+proc-maps device namespace through a read-only mapping of that retained fd.
+The three-page reservation is explicitly released before fork. Both load-bias
+discovery and file-backed page checks require the measured device, exact inode,
+offset and permissions, plus the actual VMA's `map_files` link matching the
+canonical pinned path. Wrong, deleted, truncated or unavailable links refuse.
+This distinguishes files in different Btrfs subvolumes whose maps device/inode
+could otherwise collide. Whole-file checks bracket page validation; immutable
+page bytes and `/proc/PID/exe` stat identity remain exact. The accepted lifetime
+premise still forbids input/path replacement: readlink is not pathname sealing,
+and privileged map_files stat/open access is neither requested nor assumed.

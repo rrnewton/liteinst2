@@ -1076,22 +1076,204 @@ unsafe fn reset_reserved_signals() -> bool {
     })
 }
 
-fn object_bias(object: &Object, maps: &[Mapping]) -> Result<u64> {
+// stat(2) and proc maps need not use the same device-number namespace (for
+// example, Btrfs subvolumes). Keep the full stat/hash pin and independently bind
+// the proc namespace through an owned mapping of the already retained fd.
+// Numeric proc identity alone is insufficient: subvolumes can reuse inodes.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct MappedFileIdentity {
+    pin: FilePin,
+    device: u64,
+}
+impl MappedFileIdentity {
+    fn check_pin(&self, pin: &FilePin) -> Result<()> {
+        if self.pin != *pin {
+            return Err(Error::Custody);
+        }
+        Ok(())
+    }
+    fn matches(&self, mapping: &Mapping) -> bool {
+        mapping.device == self.device && mapping.inode == self.pin.inode
+    }
+    fn check_target(&self, mapping: &Mapping, target: &[u8]) -> Result<()> {
+        if !self.matches(mapping) {
+            return Err(Error::Custody);
+        }
+        mapped_path_matches(target, &self.pin.path)
+    }
+}
+fn mapped_path_matches(raw: &[u8], expected: &std::path::Path) -> Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    // No deleted suffix stripping, aliases, basename matching or normalization.
+    if raw.is_empty() || raw.len() > 4095 || raw != expected.as_os_str().as_bytes() {
+        return Err(Error::Custody);
+    }
+    Ok(())
+}
+fn map_target_with(read: impl FnOnce(&mut [u8]) -> Result<usize>) -> Result<Vec<u8>> {
+    let mut bytes = [0_u8; 4096];
+    let size = read(&mut bytes)?;
+    if size == 0 || size >= bytes.len() {
+        return Err(Error::Custody);
+    }
+    Ok(bytes[..size].to_vec())
+}
+fn mapping_target(pid: libc::pid_t, mapping: &Mapping) -> Result<Vec<u8>> {
+    let name = CString::new(format!(
+        "/proc/{pid}/map_files/{:x}-{:x}",
+        mapping.start, mapping.end
+    ))
+    .map_err(|_| Error::Shape)?;
+    // readlink is unprivileged on the supported host; following this symlink
+    // requires privileges. Any unavailable/denied link refuses, with no fallback.
+    map_target_with(|bytes| {
+        let size = unsafe { libc::readlink(name.as_ptr(), bytes.as_mut_ptr().cast(), bytes.len()) };
+        if size < 0 {
+            Err(Error::Io(errno()))
+        } else {
+            Ok(size as usize)
+        }
+    })
+}
+fn calibrated_identity(
+    pin: &FilePin,
+    address: u64,
+    maps: &[Mapping],
+    target: &[u8],
+) -> Result<MappedFileIdentity> {
+    let end = address.checked_add(4096).ok_or(Error::Shape)?;
+    let rows: Vec<_> = maps
+        .iter()
+        .filter(|m| m.start <= address && end <= m.end)
+        .collect();
+    if rows.len() != 1 {
+        return Err(Error::Custody);
+    }
+    let row = rows[0];
+    if row.start != address
+        || row.end != end
+        || row.offset != 0
+        || row.permissions != *b"r--p"
+        || row.inode != pin.inode
+    {
+        return Err(Error::Custody);
+    }
+    mapped_path_matches(target, &pin.path)?;
+    Ok(MappedFileIdentity {
+        pin: pin.clone(),
+        device: row.device,
+    })
+}
+fn release_probe_with(
+    base: &mut Option<usize>,
+    mut unmap: impl FnMut(usize, usize) -> Result<()>,
+) -> Result<()> {
+    if let Some(address) = *base {
+        unmap(address, 3 * 4096)?;
+        *base = None;
+    }
+    Ok(())
+}
+struct ProbeReservation {
+    base: Option<usize>,
+}
+impl ProbeReservation {
+    fn close(&mut self) -> Result<()> {
+        release_probe_with(&mut self.base, |address, bytes| {
+            // This entire three-page range is still exclusively owned here.
+            if unsafe { libc::munmap(address as *mut libc::c_void, bytes) } != 0 {
+                return Err(Error::Cleanup);
+            }
+            Ok(())
+        })
+    }
+}
+impl Drop for ProbeReservation {
+    fn drop(&mut self) {
+        // Explicit close is checked before fork; this is an error/unwind backstop.
+        let _ = self.close();
+    }
+}
+fn calibrate_file(pin: &FilePin, held: &File, deadline: Instant) -> Result<MappedFileIdentity> {
+    kernel_deadline(deadline)?;
+    pin.check(held)?;
+    let base = unsafe {
+        libc::mmap(
+            core::ptr::null_mut(),
+            3 * 4096,
+            libc::PROT_NONE,
+            libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+            -1,
+            0,
+        )
+    };
+    if base == libc::MAP_FAILED {
+        return Err(Error::Io(errno()));
+    }
+    let mut reservation = ProbeReservation {
+        base: Some(base as usize),
+    };
+    let checked = (|| {
+        let address = (base as usize).checked_add(4096).ok_or(Error::Shape)?;
+        // MAP_FIXED replaces only the middle page of our own reservation. The
+        // two PROT_NONE guards prevent VMA merging with another file mapping.
+        let mapped = unsafe {
+            libc::mmap(
+                address as *mut libc::c_void,
+                4096,
+                libc::PROT_READ,
+                libc::MAP_PRIVATE | libc::MAP_FIXED,
+                held.as_raw_fd(),
+                0,
+            )
+        };
+        if mapped == libc::MAP_FAILED {
+            return Err(Error::Io(errno()));
+        }
+        if mapped as usize != address {
+            return Err(Error::Custody);
+        }
+        let maps = parse_maps(&read_proc(
+            std::process::id() as libc::pid_t,
+            "maps",
+            MAP_CAP,
+        )?)?;
+        let row = maps
+            .iter()
+            .find(|m| m.start == address as u64 && m.end == address as u64 + 4096)
+            .ok_or(Error::Custody)?;
+        let target = mapping_target(std::process::id() as libc::pid_t, row)?;
+        let identity = calibrated_identity(pin, address as u64, &maps, &target)?;
+        pin.check(held)?;
+        pin.check(&pin.open()?)?;
+        kernel_deadline(deadline)?;
+        Ok(identity)
+    })();
+    // No probe mapping survives into fork, even on an unsuccessful calibration.
+    reservation.close()?;
+    kernel_deadline(deadline)?;
+    checked
+}
+
+fn object_bias(
+    object: &Object,
+    maps: &[Mapping],
+    identity: &MappedFileIdentity,
+    mut target: impl FnMut(&Mapping) -> Result<Vec<u8>>,
+) -> Result<u64> {
+    identity.check_pin(&object.file)?;
     let first = object.pages.first().ok_or(Error::Shape)?;
     let possible: Vec<_> = maps
         .iter()
         .filter(|m| {
-            m.device == object.file.device
-                && m.inode == object.file.inode
-                && m.offset == first.file_offset
-                && m.start >= first.relative
+            identity.matches(m) && m.offset == first.file_offset && m.start >= first.relative
         })
-        .map(|m| m.start - first.relative)
         .collect();
     if !first.file_backed || possible.len() != 1 {
         return Err(Error::Custody);
     }
-    Ok(possible[0])
+    identity.check_target(possible[0], &target(possible[0])?)?;
+    Ok(possible[0].start - first.relative)
 }
 fn check_object(
     child: &Child,
@@ -1099,7 +1281,13 @@ fn check_object(
     maps: &[Mapping],
     bias: u64,
     at_entry: bool,
+    identity: &MappedFileIdentity,
 ) -> Result<()> {
+    kernel_deadline(child.deadline)?;
+    identity.check_pin(&object.file)?;
+    let current = object.file.open()?;
+    object.file.contents(&current)?;
+    let mut verified_paths = Vec::new();
     if object.pages.is_empty() || object.pages.len() > 65536 {
         return Err(Error::Shape);
     }
@@ -1117,9 +1305,7 @@ fn check_object(
                 m.start <= address
                     && end <= m.end
                     && (if p.file_backed {
-                        m.device == object.file.device
-                            && m.inode == object.file.inode
-                            && m.offset + address - m.start == p.file_offset
+                        identity.matches(m) && m.offset + address - m.start == p.file_offset
                     } else {
                         m.device == 0 && m.inode == 0
                     })
@@ -1129,12 +1315,27 @@ fn check_object(
         if found.len() != 1 {
             return Err(Error::Custody);
         }
+        if p.file_backed {
+            let row = found[0];
+            let range = (row.start, row.end);
+            if !verified_paths.contains(&range) {
+                // The sole child is stopped. The accepted lifetime contract
+                // forbids path/input replacement; this is not pathname sealing.
+                kernel_deadline(child.deadline)?;
+                identity.check_target(row, &mapping_target(child.pid, row)?)?;
+                kernel_deadline(child.deadline)?;
+                verified_paths.push(range);
+            }
+        }
         if let Some(bytes) = &p.bytes {
             if bytes.len() != 4096 || child.memory(address, 4096)? != *bytes {
                 return Err(Error::Custody);
             }
         }
     }
+    object.file.contents(&current)?;
+    object.file.contents(&object.file.open()?)?;
+    kernel_deadline(child.deadline)?;
     Ok(())
 }
 fn stopped(status: i32, signal: i32, event: i32) -> bool {
@@ -1326,6 +1527,10 @@ fn observe_inner(
             return Err(Error::Deadline);
         }
     }
+    let mut mapping_identities = Vec::with_capacity(objects.len());
+    for (pin, held, _) in &owners[..objects.len()] {
+        mapping_identities.push(calibrate_file(pin, held, deadline)?);
+    }
     kernel_checkpoint(request.kernel_basis.as_ref(), deadline, evidence)?;
     let pid = unsafe { libc::fork() };
     if pid < 0 {
@@ -1454,8 +1659,22 @@ fn observe_inner(
         }
         evidence.exec_maps = read_proc(pid, "maps", MAP_CAP)?;
         let maps = parse_maps(&evidence.exec_maps)?;
-        check_object(&child, &request.main, &maps, 0, false)?;
-        check_object(&child, &request.loader, &maps, loader_bias, false)?;
+        check_object(
+            &child,
+            &request.main,
+            &maps,
+            0,
+            false,
+            &mapping_identities[0],
+        )?;
+        check_object(
+            &child,
+            &request.loader,
+            &maps,
+            loader_bias,
+            false,
+            &mapping_identities[1],
+        )?;
         if child.memory(entry, request.entry_bytes.len())? != request.entry_bytes {
             return Err(Error::Entry);
         }
@@ -1512,12 +1731,46 @@ fn observe_inner(
             stack_args(&child, regs.rsp, &main, &dataset)?;
             evidence.entry_maps = read_proc(pid, "maps", MAP_CAP)?;
             let maps = parse_maps(&evidence.entry_maps)?;
-            check_object(&child, &request.main, &maps, 0, true)?;
-            check_object(&child, &request.loader, &maps, loader_bias, true)?;
-            let bootstrap_bias = object_bias(&request.bootstrap, &maps)?;
-            check_object(&child, &request.bootstrap, &maps, bootstrap_bias, true)?;
-            for object in &request.dependencies {
-                check_object(&child, object, &maps, object_bias(object, &maps)?, true)?;
+            check_object(
+                &child,
+                &request.main,
+                &maps,
+                0,
+                true,
+                &mapping_identities[0],
+            )?;
+            check_object(
+                &child,
+                &request.loader,
+                &maps,
+                loader_bias,
+                true,
+                &mapping_identities[1],
+            )?;
+            let bootstrap_bias =
+                object_bias(&request.bootstrap, &maps, &mapping_identities[2], |row| {
+                    mapping_target(child.pid, row)
+                })?;
+            check_object(
+                &child,
+                &request.bootstrap,
+                &maps,
+                bootstrap_bias,
+                true,
+                &mapping_identities[2],
+            )?;
+            for (index, object) in request.dependencies.iter().enumerate() {
+                let identity = &mapping_identities[index + 3];
+                check_object(
+                    &child,
+                    object,
+                    &maps,
+                    object_bias(object, &maps, identity, |row| {
+                        mapping_target(child.pid, row)
+                    })?,
+                    true,
+                    identity,
+                )?;
             }
             let status_address = bootstrap_bias
                 .checked_add(request.completion_relative)

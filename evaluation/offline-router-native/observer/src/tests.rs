@@ -668,3 +668,362 @@ fn controlled_signals_still_reject_each_reserved_bit_and_malformed_population() 
         assert_eq!(controlled_signal_status(raw), Err(Error::Entry));
     }
 }
+
+fn mapped_pin_fixture() -> FilePin {
+    FilePin {
+        path: PathBuf::from("/fixture/subvolume-a/object"),
+        sha256: [7; 32],
+        device: 48,
+        inode: 71,
+        mode: 0o100400,
+        bytes: 4096,
+        mtime_ns: 3,
+        ctime_ns: 4,
+    }
+}
+fn probe_map_fixture(address: u64) -> Mapping {
+    Mapping {
+        start: address,
+        end: address + 4096,
+        offset: 0,
+        device: 42,
+        inode: 71,
+        permissions: *b"r--p",
+    }
+}
+fn mapped_identity_fixture() -> MappedFileIdentity {
+    calibrated_identity(
+        &mapped_pin_fixture(),
+        0x10000,
+        &[probe_map_fixture(0x10000)],
+        b"/fixture/subvolume-a/object",
+    )
+    .unwrap()
+}
+fn mapped_object_fixture() -> Object {
+    Object {
+        file: mapped_pin_fixture(),
+        pages: vec![Page {
+            relative: 0x1000,
+            file_offset: 0,
+            permissions_at_exec: *b"r--p",
+            permissions_at_entry: *b"r--p",
+            file_backed: true,
+            bytes: None,
+        }],
+    }
+}
+
+#[test]
+fn calibrated_proc_device_does_not_overwrite_or_relax_the_stat_pin() {
+    let identity = mapped_identity_fixture();
+    assert_eq!(identity.pin, mapped_pin_fixture());
+    assert_eq!(identity.pin.device, 48);
+    assert_eq!(identity.device, 42);
+    let mut row = probe_map_fixture(0x40000);
+    assert_eq!(
+        identity.check_target(&row, b"/fixture/subvolume-a/object"),
+        Ok(())
+    );
+    // The stat device is not an alternative acceptable maps device.
+    row.device = identity.pin.device;
+    assert_eq!(
+        identity.check_target(&row, b"/fixture/subvolume-a/object"),
+        Err(Error::Custody)
+    );
+}
+
+#[test]
+fn calibration_requires_exact_owned_page_offset_inode_and_readonly_permissions() {
+    for fault in 0..8 {
+        let mut row = probe_map_fixture(0x10000);
+        match fault {
+            0 => row.start -= 4096,
+            1 => row.end += 4096,
+            2 => row.start += 4096,
+            3 => row.offset = 4096,
+            4 => row.inode += 1,
+            5 => row.permissions = *b"rw-p",
+            6 => row.permissions = *b"r-xp",
+            _ => row.permissions = *b"r--s",
+        }
+        assert_eq!(
+            calibrated_identity(
+                &mapped_pin_fixture(),
+                0x10000,
+                &[row],
+                b"/fixture/subvolume-a/object"
+            ),
+            Err(Error::Custody)
+        );
+    }
+    assert_eq!(
+        calibrated_identity(&mapped_pin_fixture(), u64::MAX, &[], b"x"),
+        Err(Error::Shape)
+    );
+}
+
+#[test]
+fn missing_or_ambiguous_calibration_mapping_refuses() {
+    let pin = mapped_pin_fixture();
+    assert_eq!(
+        calibrated_identity(&pin, 0x10000, &[], b"/fixture/subvolume-a/object"),
+        Err(Error::Custody)
+    );
+    assert_eq!(
+        calibrated_identity(
+            &pin,
+            0x10000,
+            &[probe_map_fixture(0x10000), probe_map_fixture(0x10000)],
+            b"/fixture/subvolume-a/object"
+        ),
+        Err(Error::Custody)
+    );
+}
+
+#[test]
+fn calibration_and_child_mapping_reject_same_numeric_identity_on_other_paths() {
+    let pin = mapped_pin_fixture();
+    let identity = mapped_identity_fixture();
+    for target in [
+        b"/fixture/subvolume-b/object".as_slice(),
+        b"/fixture/subvolume-a/object (deleted)",
+        b"/fixture/subvolume-a/alias",
+        b"/fixture/subvolume-a/./object",
+        b"object",
+        b"",
+    ] {
+        assert_eq!(
+            calibrated_identity(&pin, 0x10000, &[probe_map_fixture(0x10000)], target),
+            Err(Error::Custody)
+        );
+        assert_eq!(
+            identity.check_target(&probe_map_fixture(0x40000), target),
+            Err(Error::Custody)
+        );
+    }
+}
+
+#[test]
+fn mapped_witness_binds_every_retained_pin_member() {
+    let identity = mapped_identity_fixture();
+    assert_eq!(identity.check_pin(&mapped_pin_fixture()), Ok(()));
+    for fault in 0..9 {
+        let mut pin = mapped_pin_fixture();
+        match fault {
+            0 => pin.path = PathBuf::from("/fixture/subvolume-b/object"),
+            1 => pin.sha256[0] ^= 1,
+            2 => pin.device += 1,
+            3 => pin.inode += 1,
+            4 => pin.mode ^= 1,
+            5 => pin.bytes += 1,
+            6 => pin.mtime_ns += 1,
+            7 => pin.ctime_ns += 1,
+            _ => {
+                pin.device = 42;
+                pin.path = PathBuf::from("/fixture/subvolume-c/object");
+            }
+        }
+        assert_eq!(identity.check_pin(&pin), Err(Error::Custody));
+    }
+}
+
+#[test]
+fn ordinary_equal_stat_and_maps_device_still_needs_the_exact_path_and_inode() {
+    let mut pin = mapped_pin_fixture();
+    pin.device = 42;
+    let identity = calibrated_identity(
+        &pin,
+        0x10000,
+        &[probe_map_fixture(0x10000)],
+        b"/fixture/subvolume-a/object",
+    )
+    .unwrap();
+    assert_eq!(
+        identity.check_target(&probe_map_fixture(0x40000), b"/fixture/subvolume-a/object"),
+        Ok(())
+    );
+    let mut row = probe_map_fixture(0x40000);
+    row.inode += 1;
+    assert_eq!(
+        identity.check_target(&row, b"/fixture/subvolume-a/object"),
+        Err(Error::Custody)
+    );
+    assert_eq!(
+        identity.check_target(&probe_map_fixture(0x40000), b"/fixture/subvolume-b/object"),
+        Err(Error::Custody)
+    );
+}
+
+#[test]
+fn bias_joins_the_actual_vma_path_before_returning_any_address() {
+    let object = mapped_object_fixture();
+    let identity = mapped_identity_fixture();
+    let rows = [probe_map_fixture(0x10000)];
+    let mut ranges = Vec::new();
+    let bias = object_bias(&object, &rows, &identity, |row| {
+        ranges.push((row.start, row.end));
+        Ok(b"/fixture/subvolume-a/object".to_vec())
+    })
+    .unwrap();
+    assert_eq!(bias, 0xf000);
+    assert_eq!(ranges, [(0x10000, 0x11000)]);
+    assert_eq!(
+        object_bias(&object, &rows, &identity, |_| Ok(
+            b"/fixture/subvolume-b/object".to_vec()
+        )),
+        Err(Error::Custody)
+    );
+    assert_eq!(
+        object_bias(&object, &rows, &identity, |_| Err(Error::Io(libc::EPERM))),
+        Err(Error::Io(libc::EPERM))
+    );
+}
+
+#[test]
+fn two_coherent_vmas_with_same_proc_identity_are_not_silently_selected() {
+    let object = mapped_object_fixture();
+    let identity = mapped_identity_fixture();
+    let rows = [probe_map_fixture(0x10000), probe_map_fixture(0x20000)];
+    let mut calls = 0;
+    assert_eq!(
+        object_bias(&object, &rows, &identity, |row| {
+            calls += 1;
+            Ok(if row.start == 0x10000 {
+                b"/fixture/subvolume-a/object".to_vec()
+            } else {
+                b"/fixture/subvolume-b/object".to_vec()
+            })
+        }),
+        Err(Error::Custody)
+    );
+    assert_eq!(calls, 0);
+}
+
+#[test]
+fn map_link_read_errors_empty_and_truncated_targets_remain_failures() {
+    for error in [libc::EPERM, libc::EACCES, libc::ENOENT, libc::ESRCH] {
+        assert_eq!(
+            map_target_with(|_| Err(Error::Io(error))),
+            Err(Error::Io(error))
+        );
+    }
+    for size in [0, 4096, 4097] {
+        assert_eq!(map_target_with(|_| Ok(size)), Err(Error::Custody));
+    }
+    let actual = map_target_with(|buffer| {
+        let raw = b"/fixture/subvolume-a/object";
+        buffer[..raw.len()].copy_from_slice(raw);
+        Ok(raw.len())
+    })
+    .unwrap();
+    assert_eq!(
+        mapped_path_matches(&actual, &mapped_pin_fixture().path),
+        Ok(())
+    );
+    assert_eq!(
+        mapped_path_matches(&actual[..actual.len() - 1], &mapped_pin_fixture().path),
+        Err(Error::Custody)
+    );
+}
+
+#[test]
+fn exact_owned_reservation_release_consumes_only_its_own_token() {
+    for address in [0, 0x70000000] {
+        let mut owner = Some(address);
+        let mut calls = Vec::new();
+        assert_eq!(
+            release_probe_with(&mut owner, |base, bytes| {
+                calls.push((base, bytes));
+                Ok(())
+            }),
+            Ok(())
+        );
+        assert_eq!(owner, None);
+        assert_eq!(calls, [(address, 3 * 4096)]);
+        assert_eq!(
+            release_probe_with(&mut owner, |_, _| panic!("already released")),
+            Ok(())
+        );
+    }
+}
+
+#[test]
+fn failed_unmap_retains_the_exact_owner_and_cannot_grant_fork_success() {
+    let mut owner = Some(0x70000000);
+    assert_eq!(
+        release_probe_with(&mut owner, |base, bytes| {
+            assert_eq!((base, bytes), (0x70000000, 3 * 4096));
+            Err(Error::Cleanup)
+        }),
+        Err(Error::Cleanup)
+    );
+    assert_eq!(owner, Some(0x70000000));
+    assert_eq!(
+        release_probe_with(&mut owner, |base, bytes| {
+            assert_eq!((base, bytes), (0x70000000, 3 * 4096));
+            Ok(())
+        }),
+        Ok(())
+    );
+    assert_eq!(owner, None);
+}
+
+#[test]
+fn real_retained_file_calibration_releases_its_own_mapping_identity() {
+    use std::io::Write;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    struct OwnedPath(PathBuf);
+    impl Drop for OwnedPath {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+    let mut created = None;
+    for _ in 0..128 {
+        let path = std::env::temp_dir().join(format!(
+            "li2-observer-map-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        match OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(file) => {
+                created = Some((OwnedPath(path), file));
+                break;
+            }
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(error) => panic!("owned fixture: {error}"),
+        }
+    }
+    let (path, mut writer) = created.expect("unique owned fixture");
+    let bytes = [0x5a; 4096];
+    writer.write_all(&bytes).unwrap();
+    drop(writer);
+    let meta = std::fs::metadata(&path.0).unwrap();
+    let pin = FilePin {
+        path: std::fs::canonicalize(&path.0).unwrap(),
+        sha256: Sha256::digest(bytes).into(),
+        device: meta.dev(),
+        inode: meta.ino(),
+        mode: meta.mode(),
+        bytes: meta.len(),
+        mtime_ns: i128::from(meta.mtime()) * 1_000_000_000 + i128::from(meta.mtime_nsec()),
+        ctime_ns: i128::from(meta.ctime()) * 1_000_000_000 + i128::from(meta.ctime_nsec()),
+    };
+    let held = pin.open().unwrap();
+    assert_eq!(pin.contents(&held).unwrap(), bytes);
+    let identity = calibrate_file(&pin, &held, Instant::now() + Duration::from_secs(15)).unwrap();
+    assert_eq!(identity.pin, pin);
+    assert_eq!(pin.contents(&held).unwrap(), bytes);
+    let pid = std::process::id() as libc::pid_t;
+    let maps = parse_maps(&read_proc(pid, "maps", MAP_CAP).unwrap()).unwrap();
+    // Concurrent tests may reuse the released address. Identify only this
+    // exclusively created file; no assertion requires an address to stay empty.
+    for row in maps.iter().filter(|row| identity.matches(row)) {
+        assert_ne!(
+            mapping_target(pid, row).unwrap(),
+            pin.path.as_os_str().as_encoded_bytes()
+        );
+    }
+}
