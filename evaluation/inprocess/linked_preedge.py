@@ -208,7 +208,9 @@ def metadata(builder,products,private,pin,binary,aliases,run,r):
          'actual exact metadata compiler and feature tuple')
     state=r['preedge_metadata']=dict(status='failed',planned=1,launched=False,expected_exit=0,bounds=BOUNDS['finite'],recipe=fact(script),archive=fact(archive),argv=argv)
     headers('preedge-metadata-headers',argv,units,archive,builder,pin,aliases,run,state)
-    need({str((SELECTED/x).resolve())for x in('linked_plan.h','region_plan.h','region_decode.h','decoder.h','event_profile.h','linked_preedge_plan.h')}<=set(state['headers']),
+    # This exact metadata recipe has no event/cost/native-pair observer profile.
+    need({str((SELECTED/x).resolve())for x in('linked_plan.h','region_plan.h','region_decode.h','decoder.h','linked_preedge_plan.h')}<=set(state['headers'])and
+         str((SELECTED/'event_profile.h').resolve())not in state['headers'],
          'complete actual typed-v2 planner metadata header closure')
     run('preedge-metadata-link',argv,profile='release_build',env=builder.environment)
     exe=binary(exe);data,head,segments=elf(exe)
