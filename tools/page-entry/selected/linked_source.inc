@@ -19,6 +19,9 @@ int li2_lifecycle_link_initialize(void) {
     linked_registered=1;return 0;
 }
 int li2_lifecycle_link_interlock(void) {
+#ifdef LI2_LINKED_PREEDGE
+    if(li2_lifecycle_preedge_interlock())return 1;
+#endif
     unsigned p=linked_epoch.p.phase;
     return p!=LI2_LINK_IDLE && p!=LI2_LINK_RELEASED;
 }
@@ -125,3 +128,6 @@ int li2_lifecycle_link_release(const struct li2_link_epoch_token *token,const st
     if(result)return link_bad((unsigned)result,405);
     linked_epoch.p.release_complete=1;linked_epoch.p.phase=LI2_LINK_RELEASED;return 0;
 }
+#ifdef LI2_LINKED_PREEDGE
+#include "linked_preedge_source.inc"
+#endif
