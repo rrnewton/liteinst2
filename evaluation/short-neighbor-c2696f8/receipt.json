@@ -1,0 +1,522 @@
+{
+  "schema": 1,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "source_revision": "c2696f85fe36d343bf66375bfbd7253a5134e172",
+  "execution_source_binding": "Runs preceded this commit; recorded base revisions and exact working/test source hashes identify their trees. Native source hashes equal this commit.",
+  "claim": 4,
+  "new_native_tests_passed": 19,
+  "new_population_heads": 1102,
+  "seeds": [
+    "0x1234567887654320",
+    "0xfedcba9801234567"
+  ],
+  "installed_comparisons": 2204,
+  "retired_comparisons": 2204,
+  "mismatches": 0,
+  "additional_calibration_and_hostile_checks_not_in_population": true,
+  "per_comparison_seconds": 15,
+  "max_native_steps": 20000,
+  "cleanup_seconds": 2,
+  "complete_workspace_qualified": false,
+  "complete_program_rewriter_uses_short_tactic": false,
+  "performance_claim": false,
+  "results": [
+    {
+      "name": "neighbor-short-core-controls-v1",
+      "base_revision": "c76839e49a11169edc48d6b724adf35081f01b84",
+      "source_sha256": {
+        "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+        "src/neighbor_short/tests.rs": "deca1ca2c491f6f0ff5a45b6a11fa336288bbd931a5d732ab2b28fd7fd90e17f",
+        "evaluation/admission/core_813_inventory.json": "86ce01ed2cde4f1d057db3581802b184e065ce9779ebf9909d46309dfc13d98e",
+        "evaluation/admission/core_813_inventory.py": "2c071651419bedf30fdce127f46e82971ffcd7ed879097a859cd5fc9340b0911",
+        "evaluation/admission/core_cc846_inventory.py": "244bbf2e47b3d04701673e8d751fc9c8d896c1cfdb9e825e757f31d2da432ef0",
+        "evaluation/admission/corpus.json": "8830e5926f08504d68a8b6aa5d105995ee109dbd64cc7ac7a817d7647269bcc1",
+        "evaluation/admission/parsing.py": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956",
+        "evaluation/admission/test_main813_inventory.py": "6ec487b3b4ab758d162d1910e62d465be3f20a5753d593e785f855c2ca240a84",
+        "src/neighbor.rs": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib"
+      ],
+      "cpus": [
+        75,
+        85,
+        98,
+        101
+      ],
+      "load_before": [
+        "32.18",
+        "35.74",
+        "42.24"
+      ],
+      "load_after": null,
+      "wall_limit_seconds": 180,
+      "outer": {
+        "start_utc": "2026-10-29T22:36:17.070473+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 0.0889416360296309,
+        "private_log_sha256": "4f5d6a24b33e8e41247abf34bd29cc5a64baf73260b53b7f248820f2241bf5bd",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": null,
+      "owner_receipt_sha256": "f1caabd8d0658ff564ff9e5ba5901193a75cbf979f4d4ac788650edd1ba30df5",
+      "status": "SETUP_FAILED_NO_CARGO_LAUNCH"
+    },
+    {
+      "name": "neighbor-short-core-controls-v2",
+      "base_revision": "c76839e49a11169edc48d6b724adf35081f01b84",
+      "source_sha256": {
+        "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+        "src/neighbor_short/tests.rs": "deca1ca2c491f6f0ff5a45b6a11fa336288bbd931a5d732ab2b28fd7fd90e17f",
+        "evaluation/admission/core_813_inventory.json": "86ce01ed2cde4f1d057db3581802b184e065ce9779ebf9909d46309dfc13d98e",
+        "evaluation/admission/core_813_inventory.py": "2c071651419bedf30fdce127f46e82971ffcd7ed879097a859cd5fc9340b0911",
+        "evaluation/admission/core_cc846_inventory.py": "244bbf2e47b3d04701673e8d751fc9c8d896c1cfdb9e825e757f31d2da432ef0",
+        "evaluation/admission/corpus.json": "8830e5926f08504d68a8b6aa5d105995ee109dbd64cc7ac7a817d7647269bcc1",
+        "evaluation/admission/parsing.py": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956",
+        "evaluation/admission/test_main813_inventory.py": "6ec487b3b4ab758d162d1910e62d465be3f20a5753d593e785f855c2ca240a84",
+        "src/neighbor.rs": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib"
+      ],
+      "cpus": [
+        3,
+        17,
+        33,
+        85
+      ],
+      "load_before": [
+        "35.72",
+        "36.38",
+        "42.31"
+      ],
+      "load_after": [
+        "35.16",
+        "36.24",
+        "42.14"
+      ],
+      "wall_limit_seconds": 180,
+      "outer": {
+        "start_utc": "2026-10-29T22:36:40.638784+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 20.402734619099647,
+        "private_log_sha256": "a098c7e2e71d54d31a550af0453bcfe66406dcb1dc7d964e95ccba6f07952673",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": {
+        "start_utc": "2026-10-29T22:36:40.697504+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 20.29394349292852,
+        "private_log_sha256": "eb1abebafcde4d8a3434006c0424a97c9f5e06914ead259969b8de4e509e668e",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "owner_receipt_sha256": "8ff256daab7f82c8c108aec6fa8f23a9c287d15eaccf0f35c3810f2581e68a29",
+      "status": "PASS_277_1_IGNORE"
+    },
+    {
+      "name": "neighbor-short-contract-controls-v1",
+      "base_revision": "c76839e49a11169edc48d6b724adf35081f01b84",
+      "source_sha256": {
+        "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+        "src/neighbor_short/tests.rs": "deca1ca2c491f6f0ff5a45b6a11fa336288bbd931a5d732ab2b28fd7fd90e17f",
+        "evaluation/admission/core_813_inventory.json": "86ce01ed2cde4f1d057db3581802b184e065ce9779ebf9909d46309dfc13d98e",
+        "evaluation/admission/core_813_inventory.py": "66e2f3807475904080d1a77e8f96810fffb29837f3a5411634f1257e6aa85ec3",
+        "evaluation/admission/core_cc846_inventory.py": "244bbf2e47b3d04701673e8d751fc9c8d896c1cfdb9e825e757f31d2da432ef0",
+        "evaluation/admission/corpus.json": "8830e5926f08504d68a8b6aa5d105995ee109dbd64cc7ac7a817d7647269bcc1",
+        "evaluation/admission/parsing.py": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956",
+        "evaluation/admission/test_main813_inventory.py": "6ec487b3b4ab758d162d1910e62d465be3f20a5753d593e785f855c2ca240a84",
+        "src/neighbor.rs": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "neighbor_eviction_contract"
+      ],
+      "cpus": [
+        1,
+        64,
+        67,
+        75
+      ],
+      "load_before": [
+        "34.04",
+        "34.84",
+        "40.99"
+      ],
+      "load_after": [
+        "33.31",
+        "34.67",
+        "40.90"
+      ],
+      "wall_limit_seconds": 180,
+      "outer": {
+        "start_utc": "2026-10-29T22:38:38.670716+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 7.005633993074298,
+        "private_log_sha256": "73b93ab2f363383d740763ea0557b79cd8e05f04691caa6bfdc54f5db4c40b69",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": {
+        "start_utc": "2026-10-29T22:38:38.714532+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 6.915502517018467,
+        "private_log_sha256": "946e2aad5cf8f98ffcf5daf6425adb03f8f7de72a47ccf08ddc1eb611837245b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "owner_receipt_sha256": "67e6eb60cd20903f9e75ddce401d3666221391b110d673f9167885f2bbab4bc9",
+      "status": "PASS_1"
+    },
+    {
+      "name": "neighbor-short-inventory-controls-v1",
+      "base_revision": "c76839e49a11169edc48d6b724adf35081f01b84",
+      "source_sha256": {
+        "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
+        "src/neighbor_short/tests.rs": "deca1ca2c491f6f0ff5a45b6a11fa336288bbd931a5d732ab2b28fd7fd90e17f",
+        "evaluation/admission/core_813_inventory.json": "86ce01ed2cde4f1d057db3581802b184e065ce9779ebf9909d46309dfc13d98e",
+        "evaluation/admission/core_813_inventory.py": "66e2f3807475904080d1a77e8f96810fffb29837f3a5411634f1257e6aa85ec3",
+        "evaluation/admission/core_cc846_inventory.py": "244bbf2e47b3d04701673e8d751fc9c8d896c1cfdb9e825e757f31d2da432ef0",
+        "evaluation/admission/corpus.json": "8830e5926f08504d68a8b6aa5d105995ee109dbd64cc7ac7a817d7647269bcc1",
+        "evaluation/admission/parsing.py": "b673c86f520d3ec653af7a526e42ff5d3823c77cb34d20f0ab7da8dfd4711956",
+        "evaluation/admission/test_main813_inventory.py": "6ec487b3b4ab758d162d1910e62d465be3f20a5753d593e785f855c2ca240a84",
+        "src/neighbor.rs": "22a3224331c46f162487ef60fb219c05f3667a3a8b06ccfde43a812bd69b63bc"
+      },
+      "command": [
+        "${PYTHON}",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission"
+      ],
+      "cpus": [
+        30,
+        162,
+        183,
+        225
+      ],
+      "load_before": [
+        "39.30",
+        "36.21",
+        "40.95"
+      ],
+      "load_after": [
+        "36.05",
+        "36.02",
+        "40.02"
+      ],
+      "wall_limit_seconds": 180,
+      "outer": {
+        "start_utc": "2026-10-29T22:39:59.377945+00:00",
+        "exit_code": 1,
+        "termination": null,
+        "seconds": 180.16548595996574,
+        "private_log_sha256": "ca67250dd6ce509f985773291ebdb377b3ed36dd8aa3d122869aa962105ba0e7",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": {
+        "start_utc": "2026-10-29T22:39:59.439205+00:00",
+        "exit_code": -9,
+        "termination": "timeout",
+        "seconds": 180.0629665569868,
+        "private_log_sha256": "5d3b9b220615da522f3b7c9076f4582fa89c3a7a40f27c35358d44bd31af03f6",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "owner_receipt_sha256": "2054a40a291a2b6d93465e9504beb520d234293fe67c64ca65a65fb3b1160265",
+      "status": "TIMEOUT_309_COMPLETED_DOTS"
+    },
+    {
+      "name": "neighbor-short-native-compile-v1",
+      "base_revision": "f2aa72189583fc8914998884ee84e09d81ace942",
+      "source_sha256": {
+        "evaluation/whole-authored-broad-f2aa721/README.md": "3dcb4a8ce1fda34000e01f1fff0594a4cc6146b6e283fd3e973d39ab70440bc5",
+        "evaluation/whole-authored-broad-f2aa721/receipt.json": "88564f95282d8b483d7663da708572d11681c223e4c10a748bb3471f45583f5a",
+        "evaluation/whole-authored-broad-f2aa721/sites.csv": "9f37e412a3535775dd7c579bf0549456b3c13c8806ce34cac58debdf41e94a85",
+        "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f",
+        "evaluation/offline-corpus/WHOLE-PLACEMENT.md": "be64aad91137cf53d5d9159cd83dfa6b1152984b7f50920903515ec9d6d24f12",
+        "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "neighbor_eviction_oracle",
+        "--no-run"
+      ],
+      "cpus": [
+        34,
+        44,
+        101,
+        164
+      ],
+      "load_before": [
+        "35.11",
+        "33.12",
+        "36.41"
+      ],
+      "load_after": [
+        "35.58",
+        "33.26",
+        "36.44"
+      ],
+      "wall_limit_seconds": 180,
+      "outer": {
+        "start_utc": "2026-10-29T22:54:45.603076+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 4.363128134980798,
+        "private_log_sha256": "ff0d33ff1550480c57803dcf2f9ef56f7cfba95458c18a1f9ae19ef065c00a9c",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": {
+        "start_utc": "2026-10-29T22:54:45.648006+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 4.279462187085301,
+        "private_log_sha256": "1f02e8209037bb804a827d0dd1f1e9067429f04e2ed09dbb7a2912a156e7033c",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "owner_receipt_sha256": "34a0dc75995b778106974a2581c3b2904de92651efbfeb56f9fd886ed1ae376d",
+      "explicit_test_source_sha256": {
+        "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a",
+        "tests/neighbor_eviction_oracle.rs": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc",
+        "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f"
+      },
+      "status": "PASS_COMPILE_ONLY"
+    },
+    {
+      "name": "neighbor-short-native-controls-v1",
+      "base_revision": "f2aa72189583fc8914998884ee84e09d81ace942",
+      "source_sha256": {
+        "evaluation/whole-authored-broad-f2aa721/README.md": "370cf161d2e0ee0eaa31462af7366113cbe4b49e92ab754e19cfc967e7d7bb12",
+        "evaluation/whole-authored-broad-f2aa721/receipt.json": "88564f95282d8b483d7663da708572d11681c223e4c10a748bb3471f45583f5a",
+        "evaluation/whole-authored-broad-f2aa721/sites.csv": "9f37e412a3535775dd7c579bf0549456b3c13c8806ce34cac58debdf41e94a85",
+        "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f",
+        "evaluation/offline-corpus/WHOLE-PLACEMENT.md": "be64aad91137cf53d5d9159cd83dfa6b1152984b7f50920903515ec9d6d24f12",
+        "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "neighbor_eviction_oracle",
+        "neighbor_short_eviction_oracle::"
+      ],
+      "cpus": [
+        62,
+        141,
+        151,
+        164
+      ],
+      "load_before": [
+        "32.10",
+        "32.66",
+        "36.12"
+      ],
+      "load_after": [
+        "32.10",
+        "32.66",
+        "36.12"
+      ],
+      "wall_limit_seconds": 360,
+      "outer": {
+        "start_utc": "2026-10-29T22:55:25.204010+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.11970892082899809,
+        "private_log_sha256": "97b8662c28eb268e8bcd18479d657cfc949f28446cd9cfca9d1604cea88e2acf",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": {
+        "start_utc": "2026-10-29T22:55:25.249627+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.02670025499537587,
+        "private_log_sha256": "7dac19eccab35609019248fa18e32e261ce43b294a6bab8ca0f39b7232132dfe",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "owner_receipt_sha256": "6ef59fbb9482c355db5d8889a973dc6b03d4c750b00f34de200164c2e50aa590",
+      "explicit_test_source_sha256": {
+        "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a",
+        "tests/neighbor_eviction_oracle.rs": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc",
+        "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f"
+      },
+      "status": "UNRUN_ZERO_SELECTED_TESTS"
+    },
+    {
+      "name": "neighbor-short-native-controls-v2",
+      "base_revision": "f2aa72189583fc8914998884ee84e09d81ace942",
+      "source_sha256": {
+        "evaluation/whole-authored-broad-f2aa721/README.md": "370cf161d2e0ee0eaa31462af7366113cbe4b49e92ab754e19cfc967e7d7bb12",
+        "evaluation/whole-authored-broad-f2aa721/receipt.json": "88564f95282d8b483d7663da708572d11681c223e4c10a748bb3471f45583f5a",
+        "evaluation/whole-authored-broad-f2aa721/sites.csv": "9f37e412a3535775dd7c579bf0549456b3c13c8806ce34cac58debdf41e94a85",
+        "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f",
+        "evaluation/offline-corpus/WHOLE-PLACEMENT.md": "be64aad91137cf53d5d9159cd83dfa6b1152984b7f50920903515ec9d6d24f12",
+        "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a"
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "neighbor_eviction_oracle",
+        "short_neighbor::"
+      ],
+      "cpus": [
+        44,
+        121,
+        211,
+        247
+      ],
+      "load_before": [
+        "31.97",
+        "32.59",
+        "36.04"
+      ],
+      "load_after": [
+        "34.82",
+        "33.22",
+        "35.79"
+      ],
+      "wall_limit_seconds": 360,
+      "outer": {
+        "start_utc": "2026-10-29T22:55:39.059790+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 133.3109688027762,
+        "private_log_sha256": "1db2e36e34f1eed6458da70c0ae8c0239a92dc3c81767c884e1fe6ca28d75541",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": {
+        "start_utc": "2026-10-29T22:55:39.106757+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 133.2157499480527,
+        "private_log_sha256": "496387181d11ba8d3cd35c66cd8bc62b6800043144def3096e676338ea49ce9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "owner_receipt_sha256": "908375cd04e903793cd6da857d4974c8f9ca818d1974b1063d046dd1571c1a5a",
+      "explicit_test_source_sha256": {
+        "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a",
+        "tests/neighbor_eviction_oracle.rs": "fc8cf59c12dfb5835187c2553a8cf95ee1dc082c6da6b82b058e12d53281dedc",
+        "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f"
+      },
+      "status": "PASS_19"
+    },
+    {
+      "name": "neighbor-short-native-inventory-controls-v1",
+      "base_revision": "f2aa72189583fc8914998884ee84e09d81ace942",
+      "source_sha256": {
+        "evaluation/whole-authored-broad-f2aa721/README.md": "370cf161d2e0ee0eaa31462af7366113cbe4b49e92ab754e19cfc967e7d7bb12",
+        "evaluation/whole-authored-broad-f2aa721/receipt.json": "88564f95282d8b483d7663da708572d11681c223e4c10a748bb3471f45583f5a",
+        "evaluation/whole-authored-broad-f2aa721/sites.csv": "9f37e412a3535775dd7c579bf0549456b3c13c8806ce34cac58debdf41e94a85",
+        "tests/support/neighbor_short_eviction_oracle.rs": "d8a4f9b05c7c41a615992a3717e6d00db809977db0256bdf17297634fd06529f",
+        "evaluation/admission/core_813_inventory.json": "4e193eb7e723dc042d1e6bc96fdf7885bd59f7e673928ede5eeb667caedf2d9f",
+        "evaluation/admission/core_813_inventory.py": "28fcd2c9027629a4034941b1e65d5632c722559a342516f2ef90b254844d06bc",
+        "evaluation/admission/core_cc846_inventory.py": "08ed29e3d101be3396981d80bdacf9a05f3425e133495daf044f159faff90071",
+        "evaluation/admission/corpus.json": "51eaa38b143e1c106a5227d2f0352951ad72a9241801869f93d793b62be16f93",
+        "evaluation/admission/test_main813_inventory.py": "68bbe68223a2d26196b4d7ef6c59cdd6a2624c74a02d139b4f71cf81237322a0",
+        "evaluation/offline-corpus/WHOLE-PLACEMENT.md": "be64aad91137cf53d5d9159cd83dfa6b1152984b7f50920903515ec9d6d24f12",
+        "tests/support/quiescent_oracle.rs": "c4077046cac26101b4526ed285ec94cdf416b35d3acc6a9773285a84496aac3a"
+      },
+      "command": [
+        "${PYTHON}",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_main813_inventory.py",
+        "-v"
+      ],
+      "cpus": [
+        25,
+        40,
+        72,
+        130
+      ],
+      "load_before": [
+        "30.67",
+        "32.51",
+        "35.38"
+      ],
+      "load_after": [
+        "32.18",
+        "32.61",
+        "35.19"
+      ],
+      "wall_limit_seconds": 180,
+      "outer": {
+        "start_utc": "2026-10-29T22:59:01.322588+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 71.07763061486185,
+        "private_log_sha256": "ef824313584da04ea60a966636dde1a795ed905a1d30b2a7d1473597ad0ca3f7",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "result": {
+        "start_utc": "2026-10-29T22:59:01.363895+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 70.98498289193958,
+        "private_log_sha256": "01a66c4589d949dec9695dcd0b11743254f7ffb5b2c6ad30864da776f7eddf8d",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "owner_receipt_sha256": "de4d9e1262868c68b277098e56291cb8ce9c6cc7ddb3c63c2ed26f46fbe7eda0",
+      "status": "PASS_5"
+    }
+  ]
+}

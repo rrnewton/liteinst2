@@ -78,6 +78,33 @@ impl Composition {
         &self.locks
     }
 
+    /// Requires covered, still-unclaimed source ranges without changing ownership.
+    ///
+    /// Ranges must be in ascending, non-overlapping order; adjacency and an empty
+    /// slice are valid. Checked AddressRange values are already nonempty. Shape
+    /// is checked first, then complete immutable-snapshot coverage, then actual
+    /// persistent locks. Identical stores and preserved suffix bytes still own
+    /// their ranges. This is not an instruction/selection-completeness proof.
+    pub fn require_unclaimed_ranges(&self, ranges: &[AddressRange]) -> Result<(), Refusal> {
+        for pair in ranges.windows(2) {
+            if pair[0].end() > pair[1].start() {
+                return Err(Refusal::InvalidRange);
+            }
+        }
+        for &range in ranges {
+            if !covered(&self.originals, range)? {
+                return Err(Refusal::DependencyNotHeld);
+            }
+        }
+        if ranges
+            .iter()
+            .any(|range| self.locks.iter().any(|held| held.overlaps(*range)))
+        {
+            return Err(Refusal::OwnershipConflict);
+        }
+        Ok(())
+    }
+
     /// Mapping incarnation and generation shared by every accepted step.
     pub const fn identity(&self) -> CodeIdentity {
         self.identity

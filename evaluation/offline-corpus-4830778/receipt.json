@@ -1,0 +1,311 @@
+{
+  "schema": 1,
+  "revision": "4830778b02296e5870a8018a82da2c2ba4979142",
+  "status": "PASS",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "supports_claims": [
+    4
+  ],
+  "profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "3",
+    "overflow_checks": true,
+    "test": false
+  },
+  "attempts": 1,
+  "programs": 2,
+  "datasets_per_program": 10,
+  "lanes": 4,
+  "comparisons": {
+    "FAILED": 0,
+    "PASS": 80,
+    "UNRUN": 0,
+    "UNSUPPORTED": 0
+  },
+  "commands_passed": 99,
+  "cpus": [
+    17,
+    19,
+    30,
+    83
+  ],
+  "load_before": [
+    "34.89",
+    "44.15",
+    "52.81"
+  ],
+  "load_after": [
+    "32.39",
+    "41.97",
+    "51.60"
+  ],
+  "phases": [
+    {
+      "name": "build-core",
+      "seconds": 0.4859767658635974,
+      "argv": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "--package",
+        "liteinst-rewrite",
+        "--bin",
+        "liteinst-rewrite",
+        "--message-format=json"
+      ],
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_CACHE}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+        "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${REPO}/ignored/a3/offline-current-v1/build-core/tmp"
+      },
+      "limits": {
+        "cpu_seconds": 120,
+        "wall_seconds": 180,
+        "file_bytes": 134217728
+      },
+      "receipt_sha256": "bc588c7839504d6f71d206e53b50d4fa69d52a26167e03cdd9c175e2349ea42c"
+    },
+    {
+      "name": "build-target",
+      "seconds": 0.15694696200080216,
+      "argv": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "--package",
+        "liteinst2",
+        "--bin",
+        "elf-exec-oracle",
+        "--message-format=json"
+      ],
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_CACHE}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+        "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${REPO}/ignored/a3/offline-current-v1/build-target/tmp"
+      },
+      "limits": {
+        "cpu_seconds": 120,
+        "wall_seconds": 180,
+        "file_bytes": 134217728
+      },
+      "receipt_sha256": "fd905f20f9dd7542cde7ea0ffdeff89a5fb6a9b209afd780b8ea7479ebfcb2eb"
+    },
+    {
+      "name": "target",
+      "seconds": 0.12578303995542228,
+      "argv": [
+        "${REPO}/target/release/elf-exec-oracle",
+        "target"
+      ],
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "TMPDIR": "${REPO}/ignored/a3/offline-current-v1/target/tmp"
+      },
+      "limits": {
+        "cpu_seconds": 20,
+        "wall_seconds": 30,
+        "file_bytes": 16777216
+      },
+      "receipt_sha256": "2070d6d0013409a27a34adcf286f7630396d2e34e3d9bba412df0915cbe55b6c"
+    },
+    {
+      "name": "compare",
+      "seconds": 37.19487633998506,
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/offline-corpus/compare.py",
+        "--repo",
+        "${REPO}",
+        "--inputs",
+        "${REPO}/ignored/a3/offline-current-v1/inputs.json",
+        "--inputs-sha256",
+        "5da79eeaa840dc1de45de17a7639c9bd06eaded41114ea9639d1ad42c33d02bf",
+        "--out",
+        "${REPO}/ignored/a3/offline-current-v1/comparison"
+      ],
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${REPO}/ignored/a3/offline-current-v1/compare/tmp"
+      },
+      "limits": {
+        "cpu_seconds": 120,
+        "wall_seconds": 180,
+        "file_bytes": 268435456
+      },
+      "receipt_sha256": "6b12e82209703df333c81d92dead999b8b7282a1f8118648a661548c5b0b48ab"
+    }
+  ],
+  "source_sha256": {
+    "tools/elf-rewrite/e9-sites.py": "1f9509c29444e057d8421ea04030bf175076ce3a3ffe3f937fafd5e80d12294c",
+    "evaluation/offline-corpus/compare.py": "1fa50991916fc6912b632cbbac9dd29517c40e9a9c3d8cd51344c9e2673769dc",
+    "evaluation/offline-corpus/reproduce.py": "7b0843690e459eb1c488d33508b586766434c42ac44c46c247ad4b69723074d8",
+    "evaluation/offline-corpus/controls.py": "0304cf33ae73835fc2da3b8abb714a537e540421bad58e2beb002d46221e344c",
+    "evaluation/offline-corpus/adapter.py": "db7d33395fa0af59eaffaa648039e28bc0e42f68461f2902f1fec1dc582dbb30",
+    "evaluation/offline-corpus/corpus.py": "007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07"
+  },
+  "source_review_sha256": "baa887e04e9f94be928d732de9f903455fe21cce1fcd3fd6c32d8d31ce5f1c9d",
+  "controls": {
+    "completed": true,
+    "controls_source_sha256": "0304cf33ae73835fc2da3b8abb714a537e540421bad58e2beb002d46221e344c",
+    "corpus_sha256": "007e529b3716061d8b7f11f3e33541ee80292027165703663db2f72a81e35b07",
+    "expected_refusals": 68,
+    "historical_adapter_revision": "2cf9a6eed125b509cf59083c335cc17c434c5716",
+    "historical_adapter_sha256": "9dc7a95f01f47a73e88fcdf8604eed05c9e49bdaa76948163bccbc1a99421b4c",
+    "legacy_gap_acceptances": 20,
+    "meaning": "saved-copy witness controls only; original 80 output outcomes are not changed",
+    "native_execution": false,
+    "positive_checks": 8,
+    "revision": "4830778b02296e5870a8018a82da2c2ba4979142",
+    "saved_metadata_digest": "48191dab8653661abe85d63eb5f56abf01664160ac5e4d84295fdc4b8e6988cf",
+    "saved_metadata_files": 905,
+    "schema": 1,
+    "strengthened_adapter_sha256": "db7d33395fa0af59eaffaa648039e28bc0e42f68461f2902f1fec1dc582dbb30"
+  },
+  "outer": {
+    "start_utc": "2026-10-30T02:10:50.374996+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 49.41498058405705,
+    "private_log_sha256": "79589501abf925c911b2396424e0ad63d9b883358ab85b1b61c88276cd901794",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "reproduction": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/evaluation/offline-corpus/reproduce.py",
+      "--repo",
+      "${REPO}",
+      "--raw",
+      "${REPO}/ignored/a3/offline-current-v1",
+      "--toolchain",
+      "${TOOLCHAIN}",
+      "--user-home",
+      "${USER_HOME}",
+      "--cargo-home",
+      "${CARGO_CACHE}",
+      "--e9-stock-dir",
+      "${REPO}/ignored/a3/upstream/e9patch-pldi2020",
+      "--e9-transport",
+      "${REPO}/ignored/a3/e9-common-calibration/compat-build-v1/artifacts/e9tool-json-output",
+      "--e9-abi-dir",
+      "${REPO}/ignored/a3/e9-bootstrap-abi-build-v4/tree"
+    ],
+    "env": {
+      "PATH": "/usr/bin:/bin",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "source_sha256": "7b0843690e459eb1c488d33508b586766434c42ac44c46c247ad4b69723074d8",
+    "parent_wall_seconds": 750
+  },
+  "control_request": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/evaluation/offline-corpus/controls.py",
+      "--repo",
+      "${REPO}",
+      "--raw",
+      "${REPO}/ignored/a3/offline-current-v1",
+      "--out",
+      "${REPO}/ignored/a3/offline-current-controls-v1"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "PATH": "/usr/bin:/bin",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "TMPDIR": "${REPO}/ignored/a3/offline-current-launch-v1/controls/tmp"
+    },
+    "cpu_seconds": 10,
+    "wall_seconds": 15,
+    "file_bytes": 16777216,
+    "stdout": "${REPO}/ignored/a3/offline-current-launch-v1/controls/stdout.txt",
+    "stderr": "${REPO}/ignored/a3/offline-current-launch-v1/controls/stderr.txt"
+  },
+  "control_parent": {
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "25s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${REPO}/ignored/a3/offline-current-launch-v1/controls/request.json",
+      "--receipt",
+      "${REPO}/ignored/a3/offline-current-launch-v1/controls/receipt.json"
+    ],
+    "env": {
+      "PATH": "/usr/bin:/bin",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 40
+  },
+  "configuration_observations_unchanged": true,
+  "configuration_denied_reads": 2,
+  "qualification_complete": false,
+  "full_a3": false,
+  "native_full_state": false,
+  "performance_claim": false,
+  "scope": "Legacy finite kernel selections and complete ordinary output; no pending-profile execution or arbitrary ELF qualification",
+  "retained_pending_results": "evaluation/pending-selected-eff2f47/receipt.json",
+  "retained_common_results": "evaluation/e9-common-e8a8b6d/README.md",
+  "source_files_authenticated": 5389,
+  "closed_artifact_sha256": {
+    "source_catalog": "22590afb3c6e8d39f2cf4e45e01850ca78a580e6f7a00ea7fb001dfc3e8976d5",
+    "comparison_summary": "dd8f15a19b7d3e5f03eb6f76f9701ee3eabf4e67ff90a78da539b6280034d984",
+    "cases_json": "5feb2880c1dcc5e1193b582a85c0ac35df9ea1b54f7f2c9929b3f67dc8343bdc",
+    "controls_results": "d2fc07032d07bfbef4ffe6beec2b0bca5bec75bd7ec9d54e6b4102b8b5bf3cb3",
+    "outer_receipt": "ca1ffc98c7b23621bcdb83f30fced64d870b2ebf145bcc23327c6959d2e84532"
+  },
+  "public_tables_sha256": {
+    "cases.csv": "e817962a40b3cbb972e663e3a3b2ac2d2b69af98e1cacc098f5a4358d96b318d",
+    "controls.csv": "b6c039dd2fbc2fba49d38233be6170326fb6d8034a80b6692ba66efcc6926bc6",
+    "commands.csv": "c5582e68e19d02ec3d27290810d08148ad9ab6ad0cb915ec7f4eef8b0c5016fa"
+  }
+}

@@ -1,0 +1,301 @@
+{
+  "schema": 1,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "claim": 4,
+  "scope": "Parallel correctness validation; not a throughput or latency qualification.",
+  "tested_revision": "32e97673211de73c70ef6f6ae5fa631a11b9b55a",
+  "merged_main": "44fab71b0f60927c3070b16af9f56a1d879154de",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "profile": {
+    "opt_level": 0,
+    "debug": 0,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "incremental": false,
+    "cargo_build_jobs": 4,
+    "workspace_build_jobs": 16,
+    "test_threads": 316
+  },
+  "environment": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "LITEINST_EVALUATION": "1"
+  },
+  "runs": [
+    {
+      "revision": "92fff00c68f1e766b3fad54043657c0ea51a8041",
+      "reserved_cpus": [
+        20,
+        43,
+        54,
+        72,
+        74,
+        118,
+        189,
+        199,
+        219,
+        229,
+        247,
+        250,
+        261,
+        266,
+        283,
+        305
+      ],
+      "test_threads": 316,
+      "load_at_start": [
+        "121.04",
+        "102.46",
+        "71.21"
+      ],
+      "limits": {
+        "fmt": 180,
+        "clippy": 180,
+        "check": 180,
+        "workspace": 900,
+        "serial-launch": 180
+      },
+      "outcome": "FAILED"
+    },
+    {
+      "revision": "e63a4ebbde721dbc471cddff1ab4c93911be7839",
+      "reserved_cpus": [
+        6,
+        10,
+        13,
+        15,
+        52,
+        120,
+        123,
+        126,
+        156,
+        161,
+        173,
+        179,
+        214,
+        247,
+        256,
+        268
+      ],
+      "test_threads": 316,
+      "load_at_start": [
+        "49.02",
+        "53.72",
+        "61.81"
+      ],
+      "limits": {
+        "fmt": 180,
+        "clippy": 180,
+        "check": 180,
+        "workspace": 900,
+        "serial-launch": 180
+      },
+      "outcome": "FAILED"
+    },
+    {
+      "revision": "739932cf5c49bceb06409281427221ed09a7fd19",
+      "reserved_cpus": [
+        35,
+        43,
+        45,
+        112,
+        146,
+        147,
+        161,
+        167,
+        168,
+        217,
+        218,
+        231,
+        241,
+        305,
+        310,
+        313
+      ],
+      "test_threads": 316,
+      "load_at_start": [
+        "48.62",
+        "45.00",
+        "47.63"
+      ],
+      "limits": {
+        "fmt": 180,
+        "clippy": 180,
+        "check": 180,
+        "workspace": 900,
+        "serial-launch": 180
+      },
+      "outcome": "FAILED"
+    },
+    {
+      "revision": "32e97673211de73c70ef6f6ae5fa631a11b9b55a",
+      "reserved_cpus": [
+        3,
+        20,
+        27,
+        112,
+        146,
+        157,
+        162,
+        167,
+        171,
+        205,
+        230,
+        259,
+        275,
+        276,
+        284,
+        307
+      ],
+      "test_threads": 316,
+      "load_at_start": [
+        "49.86",
+        "45.66",
+        "47.18"
+      ],
+      "limits": {
+        "fmt": 180,
+        "clippy": 180,
+        "check": 180,
+        "workspace": 900,
+        "serial-launch": 180
+      },
+      "outcome": "PASS"
+    }
+  ],
+  "totals": {
+    "workspace": {
+      "passed": 3613,
+      "failed": 0,
+      "ignored": 37,
+      "measured": 0,
+      "filtered_out": 0
+    },
+    "serial-launch": {
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered_out": 0
+    }
+  },
+  "nested_summaries_excluded": [
+    {
+      "phase": "workspace",
+      "harness": "Running unittests src/lib.rs (target/debug/deps/liteinst2-83d4a5a71495ab5e)",
+      "passed": 1,
+      "filtered_out": 298
+    },
+    {
+      "phase": "workspace",
+      "harness": "Running unittests src/lib.rs (target/debug/deps/liteinst2-83d4a5a71495ab5e)",
+      "passed": 1,
+      "filtered_out": 298
+    },
+    {
+      "phase": "workspace",
+      "harness": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-7dedb04ff1de5526)",
+      "passed": 1,
+      "filtered_out": 35
+    },
+    {
+      "phase": "workspace",
+      "harness": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-7dedb04ff1de5526)",
+      "passed": 1,
+      "filtered_out": 35
+    },
+    {
+      "phase": "workspace",
+      "harness": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-7dedb04ff1de5526)",
+      "passed": 1,
+      "filtered_out": 35
+    }
+  ],
+  "custom_harnesses": [
+    {
+      "phase": "workspace",
+      "harness": "Running tests/exec_backing_cleanup.rs (target/debug/deps/exec_backing_cleanup-8c8c6c54d4b0997e)",
+      "outcome": "completed with enclosing Cargo command",
+      "included_in_rust_test_total": false
+    },
+    {
+      "phase": "workspace",
+      "harness": "Running tests/precontext_native.rs (target/debug/deps/precontext_native-cd6529dd36997652)",
+      "outcome": "completed with enclosing Cargo command",
+      "included_in_rust_test_total": false
+    },
+    {
+      "phase": "serial-launch",
+      "harness": "Running tests/exec_backing_cleanup.rs (target/debug/deps/exec_backing_cleanup-8c8c6c54d4b0997e)",
+      "outcome": "completed with enclosing Cargo command",
+      "included_in_rust_test_total": false
+    }
+  ],
+  "source_sha256": {
+    "tests/neighbor_eviction_oracle.rs": "553f4bda0a64bd55c03ba145487e57be7acce9a7fef6a83d0f64b0b94f5ecc23",
+    "tests/support/neighbor_fixture_arena.rs": "a4d18c3bbfbe0d17f48362a4172771d7c2f2cfcf2d6d0dc7f7480949bacda19a",
+    "tests/support/neighbor_short_eviction_oracle.rs": "89b55d484d6b440a658bbce64bb09bd561ce29e9eebf2b0753c5964fab3ff5c1",
+    "tests/support/quiescent_oracle.rs": "60bf5f36692677f03e62211a9f12542c945310cbd6c1c942d613f5c56a689f3a",
+    "evaluation/short-neighbor-parallel/validate.py": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd",
+    "evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+  },
+  "review": {
+    "base": "95b9cfc700def3b08f85e600fa96649e2ffc54ed",
+    "head": "32e97673211de73c70ef6f6ae5fa631a11b9b55a",
+    "verdict": "APPROVE_SOURCE",
+    "commit_binding_sha256": "6660a3b85630875521271c0a98df3185c145f11777efe2123fdaee9e6ea01390",
+    "runtime_outcomes_supplied_to_reviewer": false
+  },
+  "diagnostic": {
+    "revision": "95b9cfc700def3b08f85e600fa96649e2ffc54ed",
+    "stage": "SelectedPlacement",
+    "refusal": "AllocationUnavailable",
+    "source_base": "0x7f4c3cc13000",
+    "selected_target": "0x7f4bcd51c0ba",
+    "occupied_start": "0x7f4bcc053000",
+    "occupied_end": "0x7f4bd0000000",
+    "permissions": "---p",
+    "neighbor_tests": {
+      "passed": 81,
+      "failed": 19
+    },
+    "reserved_cpus": [
+      17,
+      35,
+      50,
+      110,
+      128,
+      141,
+      160,
+      161,
+      166,
+      167,
+      170,
+      181,
+      186,
+      192,
+      199,
+      211
+    ],
+    "load_average": null
+  },
+  "limitations": [
+    "Released production image slots still rely on ordinary high top-down mapping placement; exact-address collisions remain hard failures.",
+    "Prescribed low-canonical reservations must be vacant and fit virtual address limits.",
+    "Raw logs and captures are retained only in ignored/."
+  ],
+  "artifacts": {
+    "checks.csv": "72c951eb8c33273ae34317b4dd22760b16ad45936b21f6bf83c0ffb062c223d1",
+    "harnesses.csv": "dbefb545a0ef7502eb82a20a7056df342dce48faccdf6912d9da9b1ae5855d51",
+    "short-tests.csv": "296e71021dea5679ff94a0b99b166903a9423b65bc8ea3ca1c9311f99bd3acb6"
+  },
+  "python_language_version": "3.12.15"
+}

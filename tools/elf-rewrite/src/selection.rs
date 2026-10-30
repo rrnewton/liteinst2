@@ -298,6 +298,135 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
         sites,
     })
 }
+/// Exact sealed-importer projection, not a public legacy-parser fallback.
+/// The full input (including the family row) remains the selection identity.
+pub(crate) fn parse_short_neighbor_projection(bytes: &[u8]) -> Result<Selection, Error> {
+    if bytes.len() > 1024 * 1024 {
+        return Err(bad("manifest exceeds 1 MiB"));
+    }
+    let text = std::str::from_utf8(bytes).map_err(|e| bad(e.to_string()))?;
+    let mut rows = text.split_inclusive('\n');
+    let header = rows.next().ok_or_else(|| bad("short projection header"))?;
+    let original = rows
+        .next()
+        .ok_or_else(|| bad("short projection original"))?;
+    let family = rows.next().ok_or_else(|| bad("short projection family"))?;
+    if header != "LI2TOOL 1\n"
+        || !original.starts_with("original ")
+        || !original.ends_with('\n')
+        || family != "neighbor-victims short-only\n"
+    {
+        return Err(bad("short projection family/order"));
+    }
+    let mut legacy = String::with_capacity(bytes.len() - family.len());
+    legacy.push_str(header);
+    legacy.push_str(original);
+    for row in rows {
+        if row.split_whitespace().next() == Some("neighbor-victims") {
+            return Err(bad("duplicate short projection family"));
+        }
+        legacy.push_str(row);
+    }
+    let mut selection = parse(legacy.as_bytes())?;
+    selection.manifest = bytes.to_vec();
+    Ok(selection)
+}
+
+/// Version-three sealed projection. Both mode rows count toward the full bound
+/// and remain in the identity; no public legacy replay or ownership callback.
+pub(crate) fn parse_short_t3_ownership_projection(bytes: &[u8]) -> Result<Selection, Error> {
+    if bytes.len() > 1024 * 1024 {
+        return Err(bad("manifest exceeds 1 MiB"));
+    }
+    let text = std::str::from_utf8(bytes).map_err(|e| bad(e.to_string()))?;
+    let mut rows = text.split_inclusive('\n');
+    let header = rows
+        .next()
+        .ok_or_else(|| bad("owned short projection header"))?;
+    let original = rows
+        .next()
+        .ok_or_else(|| bad("owned short projection original"))?;
+    let family = rows
+        .next()
+        .ok_or_else(|| bad("owned short projection family"))?;
+    let ownership = rows
+        .next()
+        .ok_or_else(|| bad("owned short projection ownership"))?;
+    if header != "LI2TOOL 1\n"
+        || !original.starts_with("original ")
+        || !original.ends_with('\n')
+        || family != "neighbor-victims short-only\n"
+        || ownership != "neighbor-ownership inherited-t3\n"
+    {
+        return Err(bad("owned short projection mode/order"));
+    }
+    let mut legacy = String::with_capacity(bytes.len() - family.len() - ownership.len());
+    legacy.push_str(header);
+    legacy.push_str(original);
+    for row in rows {
+        if matches!(
+            row.split_whitespace().next(),
+            Some("neighbor-victims" | "neighbor-ownership")
+        ) {
+            return Err(bad("duplicate owned short projection mode"));
+        }
+        legacy.push_str(row);
+    }
+    let mut selection = parse(legacy.as_bytes())?;
+    selection.manifest = bytes.to_vec();
+    Ok(selection)
+}
+
+/// Version-four sealed projection. All three exact mode rows count toward the
+/// full bound and identity; the private legacy view grants no replay authority.
+pub(crate) fn parse_short_t3_pending_projection(bytes: &[u8]) -> Result<Selection, Error> {
+    if bytes.len() > 1024 * 1024 {
+        return Err(bad("manifest exceeds 1 MiB"));
+    }
+    let text = std::str::from_utf8(bytes).map_err(|e| bad(e.to_string()))?;
+    let mut rows = text.split_inclusive('\n');
+    let header = rows
+        .next()
+        .ok_or_else(|| bad("pending projection header"))?;
+    let original = rows
+        .next()
+        .ok_or_else(|| bad("pending projection original"))?;
+    let family = rows
+        .next()
+        .ok_or_else(|| bad("pending projection family"))?;
+    let ownership = rows
+        .next()
+        .ok_or_else(|| bad("pending projection ownership"))?;
+    let pending = rows
+        .next()
+        .ok_or_else(|| bad("pending projection selection"))?;
+    if header != "LI2TOOL 1\n"
+        || !original.starts_with("original ")
+        || !original.ends_with('\n')
+        || family != "neighbor-victims short-only\n"
+        || ownership != "neighbor-ownership inherited-t3\n"
+        || pending != "pending-selected full-instruction-ownership\n"
+    {
+        return Err(bad("pending projection mode/order"));
+    }
+    let mut legacy =
+        String::with_capacity(bytes.len() - family.len() - ownership.len() - pending.len());
+    legacy.push_str(header);
+    legacy.push_str(original);
+    for row in rows {
+        if matches!(
+            row.split_whitespace().next(),
+            Some("neighbor-victims" | "neighbor-ownership" | "pending-selected")
+        ) {
+            return Err(bad("duplicate pending projection mode"));
+        }
+        legacy.push_str(row);
+    }
+    let mut selection = parse(legacy.as_bytes())?;
+    selection.manifest = bytes.to_vec();
+    Ok(selection)
+}
+
 fn bad(message: impl Into<String>) -> Error {
     Error {
         stage: "selection",

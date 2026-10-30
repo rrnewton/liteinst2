@@ -75,3 +75,141 @@ rejected('exact selection bytes remain bound',selection=manifest.replace(('a'*64
 assert len(added_positive)==2 and len(added_negative)==19
 assert len(set(added_positive+added_negative))==21
 print('comparison calibrations: original one/five retained; total three positives and 24 required refusals')
+
+
+# Supplied full-mode projections exercise the unchanged comparator. Mode grammar
+# admission belongs to the explicit adapter, never to a comparison result.
+def owned_projection_comparison_controls():
+    lines = manifest.split(b'\n')
+    lines[2:2] = [b'neighbor-victims short-only', b'neighbor-ownership inherited-t3']
+    owned = b'\n'.join(lines)
+    full_sha, stripped_sha = m.sha(owned), m.sha(manifest)
+    assert full_sha != stripped_sha
+    tool = report.replace(stripped_sha, full_sha)
+    prior = e9.replace(stripped_sha, full_sha)
+    record = dict(policy_record, selection_sha256=full_sha)
+    encoded = json.dumps(record, sort_keys=True).encode()
+    expected_sha = m.sha(encoded)
+    observed = m.compare(owned, tool, prior, encoded, expected_sha)
+    assert observed['selection_sha256'] == full_sha
+    assert observed['comparison_policy_sha256'] == expected_sha
+    assert observed['comparison_policy'] == record
+    assert observed['selected_sites'] == 2
+    assert observed['lost_e9_trampoline_sites'] == [1] and observed['e9_trap_sites'] == [2]
+    assert not observed['qualification_complete'] and observed['scope'] == 'STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY'
+    assert [r['site'] for r in observed['sites']] == [1, 2]
+    assert all(not r['candidate_emitted'] for r in observed['sites'])
+    complete = tool.replace('candidate_complete\tfalse', 'candidate_complete\ttrue')
+    complete = complete.replace('B1\tfalse\t10003\tatomic-selection\t61', 'B1\ttrue\tnone\tnone\t61')
+    complete = complete.replace('none\tfalse\t9\tcore\t62', 'T3\ttrue\tnone\tnone\t62')
+    retained = m.compare(owned, complete, prior, encoded, expected_sha)
+    assert retained['retained_e9_trampoline_sites'] == 1 and retained['lost_e9_trampoline_sites'] == []
+    assert retained['e9_trap_sites'] == [2] and all(r['candidate_emitted'] for r in retained['sites'])
+    assert not retained['qualification_complete']
+    refused_prior = prior.replace('2\t4101\t4101\t1\ttrap\t63', '2\t4101\t4101\t1\trefused\t63')
+    refused = m.compare(owned, tool, refused_prior, encoded, expected_sha)
+    assert refused['lost_e9_trampoline_sites'] == [1] and refused['e9_trap_sites'] == []
+    assert [r['e9'] for r in refused['sites']] == ['trampoline', 'refused']
+    negatives = []
+    def reject(name, selection=owned, tool_report=tool, e9_report=prior, policy_bytes=encoded, policy_pin=expected_sha):
+        try:
+            m.compare(selection, tool_report, e9_report, policy_bytes, policy_pin)
+        except AssertionError:
+            negatives.append(name)
+        else:
+            raise AssertionError('owned projection comparison accepted: ' + name)
+    reject('tool uses stripped identity', tool_report=report)
+    reject('E9 uses stripped identity', e9_report=e9)
+    reject('policy uses stripped identity', policy_bytes=policy, policy_pin=policy_sha)
+    reject('all reports use stripped identity', tool_report=report, e9_report=e9, policy_bytes=policy, policy_pin=policy_sha)
+    reject('stripped manifest with full reports', selection=manifest)
+    reject('stale independently trusted policy digest', policy_pin=policy_sha)
+    reject('missing tool site', tool_report=tool.replace(tool.splitlines()[-1] + '\n', ''))
+    reject('extra tool site', tool_report=tool + tool.splitlines()[-1].replace('2\t4101', '3\t4101', 1) + '\n')
+    reject('duplicate tool site', tool_report=tool + tool.splitlines()[-1] + '\n')
+    reject('missing E9 site', e9_report=prior.replace(prior.splitlines()[-1] + '\n', ''))
+    reject('extra E9 site', e9_report=prior + prior.splitlines()[-1].replace('2\t4101', '3\t4101', 1) + '\n')
+    reject('duplicate E9 site', e9_report=prior + prior.splitlines()[-1] + '\n')
+    reject('tool geometry changed', tool_report=tool.replace('4096\t4096\t5', '4097\t4096\t5'))
+    reject('E9 geometry changed', e9_report=prior.replace('4096\t4096\t5', '4097\t4096\t5'))
+    reject('partial candidate mixture', tool_report=tool.replace('B1\tfalse\t10003\tatomic-selection\t61', 'B1\ttrue\tnone\tnone\t61'))
+    reject('qualification promotion', tool_report=tool.replace('qualification_complete\tfalse', 'qualification_complete\ttrue'))
+    reject('E9 fact schema remains five keys', e9_report=prior.replace('LI2E9SITES\t1\n', 'LI2E9SITES\t1\nselection_profile\telf-disassembly-null-jumps-short-t3-ownership-v1\n'))
+    assert len(negatives) == len(set(negatives)) == 17
+    print('owned projection comparison controls: supplied complete/refused/trap structure and 17 exact refusals; no mode admission or runtime credit')
+
+
+owned_projection_comparison_controls()
+# The pending projection keeps all three mode rows in the identity passed to
+# the unchanged comparator. Its results do not establish mode or producer trust.
+def pending_projection_comparison_controls():
+    lines = manifest.split(b'\n')
+    lines[2:2] = [b'neighbor-victims short-only', b'neighbor-ownership inherited-t3',
+                  b'pending-selected full-instruction-ownership']
+    pending = b'\n'.join(lines)
+    owned = pending.replace(b'pending-selected full-instruction-ownership\n', b'')
+    full_sha = m.sha(pending)
+    assert len({full_sha, m.sha(owned), m.sha(manifest)}) == 3
+    tool = report.replace(m.sha(manifest), full_sha)
+    prior = e9.replace(m.sha(manifest), full_sha)
+    record = dict(policy_record, selection_sha256=full_sha)
+    encoded = json.dumps(record, sort_keys=True).encode()
+    expected_sha = m.sha(encoded)
+    observed = m.compare(pending, tool, prior, encoded, expected_sha)
+    assert observed['selection_sha256'] == full_sha
+    assert observed['comparison_policy_sha256'] == expected_sha
+    assert observed['comparison_policy'] == record and observed['selected_sites'] == 2
+    assert observed['lost_e9_trampoline_sites'] == [1] and observed['e9_trap_sites'] == [2]
+    assert not observed['qualification_complete'] and observed['scope'] == 'STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY'
+    assert [r['site'] for r in observed['sites']] == [1, 2]
+    assert all(not r['candidate_emitted'] for r in observed['sites'])
+    complete = tool.replace('candidate_complete\tfalse', 'candidate_complete\ttrue')
+    complete = complete.replace('B1\tfalse\t10003\tatomic-selection\t61', 'B1\ttrue\tnone\tnone\t61')
+    complete = complete.replace('none\tfalse\t9\tcore\t62', 'T3\ttrue\tnone\tnone\t62')
+    retained = m.compare(pending, complete, prior, encoded, expected_sha)
+    assert retained['retained_e9_trampoline_sites'] == 1 and retained['lost_e9_trampoline_sites'] == []
+    assert retained['e9_trap_sites'] == [2] and all(r['candidate_emitted'] for r in retained['sites'])
+    assert not retained['qualification_complete']
+    refused_prior = prior.replace('2\t4101\t4101\t1\ttrap\t63', '2\t4101\t4101\t1\trefused\t63')
+    refused = m.compare(pending, tool, refused_prior, encoded, expected_sha)
+    assert refused['lost_e9_trampoline_sites'] == [1] and refused['e9_trap_sites'] == []
+    assert [r['e9'] for r in refused['sites']] == ['trampoline', 'refused']
+    negatives = []
+    def reject(name, selection=pending, tool_report=tool, e9_report=prior, policy_bytes=encoded, policy_pin=expected_sha):
+        try:
+            m.compare(selection, tool_report, e9_report, policy_bytes, policy_pin)
+        except AssertionError:
+            negatives.append(name)
+        else:
+            raise AssertionError('pending projection comparison accepted: ' + name)
+    for label, stripped in [('legacy', manifest), ('owned', owned)]:
+        stripped_sha = m.sha(stripped)
+        stripped_tool = tool.replace(full_sha, stripped_sha)
+        stripped_e9 = prior.replace(full_sha, stripped_sha)
+        stripped_record = dict(record, selection_sha256=stripped_sha)
+        stripped_policy = json.dumps(stripped_record, sort_keys=True).encode()
+        stripped_pin = m.sha(stripped_policy)
+        assert stripped_pin != expected_sha
+        reject(label + ' tool identity', tool_report=stripped_tool)
+        reject(label + ' E9 identity', e9_report=stripped_e9)
+        reject(label + ' policy identity', policy_bytes=stripped_policy, policy_pin=stripped_pin)
+        reject(label + ' all reports stripped', tool_report=stripped_tool, e9_report=stripped_e9,
+               policy_bytes=stripped_policy, policy_pin=stripped_pin)
+        reject(label + ' manifest stripped', selection=stripped)
+        reject(label + ' stale independent policy pin', policy_pin=stripped_pin)
+    reject('missing tool site', tool_report=tool.replace(tool.splitlines()[-1] + '\n', ''))
+    reject('extra tool site', tool_report=tool + tool.splitlines()[-1].replace('2\t4101', '3\t4101', 1) + '\n')
+    reject('duplicate tool site', tool_report=tool + tool.splitlines()[-1] + '\n')
+    reject('missing E9 site', e9_report=prior.replace(prior.splitlines()[-1] + '\n', ''))
+    reject('extra E9 site', e9_report=prior + prior.splitlines()[-1].replace('2\t4101', '3\t4101', 1) + '\n')
+    reject('duplicate E9 site', e9_report=prior + prior.splitlines()[-1] + '\n')
+    reject('tool geometry changed', tool_report=tool.replace('4096\t4096\t5', '4097\t4096\t5'))
+    reject('E9 geometry changed', e9_report=prior.replace('4096\t4096\t5', '4097\t4096\t5'))
+    reject('partial candidate mixture', tool_report=tool.replace('B1\tfalse\t10003\tatomic-selection\t61', 'B1\ttrue\tnone\tnone\t61'))
+    reject('qualification promotion', tool_report=tool.replace('qualification_complete\tfalse', 'qualification_complete\ttrue'))
+    reject('E9 fact schema remains five keys', e9_report=prior.replace('LI2E9SITES\t1\n', 'LI2E9SITES\t1\nselection_profile\telf-disassembly-null-jumps-short-t3-pending-v1\n'))
+    assert len(negatives) == len(set(negatives)) == 23
+    print('pending projection comparison controls: supplied complete/refused/trap structure and 23 exact refusals; no mode admission or runtime credit')
+
+
+pending_projection_comparison_controls()

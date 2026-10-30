@@ -5,6 +5,7 @@
 //! both immutable images and every source dependency are published as a bundle.
 
 use crate::bundle::{BundleBudget, PlannedBundle};
+use crate::composition::Composition;
 use crate::contracts::*;
 use crate::emission::{ArtifactMetrics, ArtifactPlan, ArtifactRequest, PlanningRequest};
 use crate::eviction::{
@@ -50,7 +51,7 @@ pub struct NeighborGeometry {
     pub selected_len: usize,
     /// Original victim instruction head.
     pub victim: u64,
-    /// Whole original victim instruction length, 10..=15.
+    /// Whole original victim length: 10..=15, or 6..=9 via the short-only API.
     pub victim_len: usize,
     /// Exact second E9 address, victim + 5.
     pub relay: u64,
@@ -209,6 +210,99 @@ pub(crate) fn plan_neighbor_core(
     search: NeighborSearch,
     budget: BundleBudget,
 ) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode(request, victim_allocation, search, budget, false)
+}
+
+pub(crate) fn plan_neighbor_short_core(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode(request, victim_allocation, search, budget, true)
+}
+
+pub(crate) fn plan_neighbor_short_after_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_inherited(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        true,
+        Some(predecessor),
+    )
+}
+
+fn plan_neighbor_mode(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    short_victims: bool,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_inherited(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        short_victims,
+        None,
+    )
+}
+
+pub(crate) fn plan_neighbor_short_pending_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        true,
+        Some(predecessor),
+        Some(pending),
+    )
+}
+
+fn plan_neighbor_mode_with_inherited(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    short_victims: bool,
+    inherited: Option<&Composition>,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        short_victims,
+        inherited,
+        None,
+    )
+}
+
+fn plan_neighbor_mode_with_pending(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    short_victims: bool,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+) -> Result<PlannedNeighbor, NeighborFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
@@ -272,6 +366,18 @@ pub(crate) fn plan_neighbor_core(
                     return Err(Refusal::NotInstructionHead);
                 }
             }
+        } else if short_victims {
+            scan.instructions()
+                .iter()
+                .rev()
+                .filter(|item| {
+                    (6..=9).contains(&item.len())
+                        && AddressRange::new(item.address(), item.len()).is_ok_and(|range| {
+                            !range.overlaps(selected_range) && request.function.covers(range)
+                        })
+                        && short_redirect(selected.address(), item.address()).is_ok()
+                })
+                .collect()
         } else {
             scan.instructions()
                 .iter()
@@ -319,14 +425,26 @@ pub(crate) fn plan_neighbor_core(
                 ..SearchScope::default()
             };
             let qualification = (|| {
-                let victim_range = qualify_victim_core(request, &scan, victim, 10)?;
+                let victim_range = if short_victims {
+                    if !(6..=9).contains(&victim.len()) {
+                        return Err(Refusal::NoPatchWindow);
+                    }
+                    qualify_victim_core(request, &scan, victim, 6)?
+                } else {
+                    qualify_victim_core(request, &scan, victim, 10)?
+                };
                 if victim_range.overlaps(selected_range) {
                     return Err(Refusal::NoPatchWindow);
                 }
                 let (relay, rel8, patch) = short_redirect(selected.address(), victim.address())?;
-                Ok((victim_range, relay, rel8, patch))
+                let short_relay = if short_victims {
+                    Some(short::Relay::new(request, source, victim_range, patch)?)
+                } else {
+                    None
+                };
+                Ok((victim_range, relay, rel8, patch, short_relay))
             })();
-            let (victim_range, relay, rel8, selected_patch) = match qualification {
+            let (victim_range, relay, rel8, selected_patch, short_relay) = match qualification {
                 Ok(value) => value,
                 Err(reason) => {
                     search_evidence.qualification(victim_scope, &reason);
@@ -390,7 +508,19 @@ pub(crate) fn plan_neighbor_core(
                     request.allocation.max_candidates,
                     None,
                 );
-                for selected_candidate in 0..request.allocation.max_candidates {
+                let short_candidates = short_relay
+                    .as_ref()
+                    .map(|relay| quiescent::pun_candidates(relay.window(), request.allocation));
+                let selected_slots = short_candidates
+                    .as_ref()
+                    .map_or(request.allocation.max_candidates, |c| c.addresses.len());
+                if short_candidates
+                    .as_ref()
+                    .is_some_and(|c| c.addresses.is_empty())
+                {
+                    last_error = Refusal::AllocationUnavailable;
+                }
+                for selected_candidate in 0..selected_slots {
                     if pairs_examined == search.max_pairs {
                         // This entered loop has one current, unexamined pair.
                         search_evidence.known_limit_hit(pair_search, 1);
@@ -401,12 +531,16 @@ pub(crate) fn plan_neighbor_core(
                     search_evidence.visit(selected_images);
                     // This E9 starts at V+5: candidate_target adds five to that
                     // actual origin, not to the selected original instruction.
-                    let selected_target = quiescent::candidate_target(
-                        relay,
-                        [false; 4],
-                        request.allocation.preferred_address,
-                        selected_candidate,
-                    );
+                    let selected_target = if let Some(candidates) = &short_candidates {
+                        Some(candidates.addresses[selected_candidate])
+                    } else {
+                        quiescent::candidate_target(
+                            relay,
+                            [false; 4],
+                            request.allocation.preferred_address,
+                            selected_candidate,
+                        )
+                    };
                     let placed = place_image(
                         request.emission,
                         &selected_plan,
@@ -448,7 +582,22 @@ pub(crate) fn plan_neighbor_core(
                             candidate: victim_candidate,
                         },
                         budget,
+                        short_relay.as_ref(),
                     );
+                    // Inherited refusal consumes this already charged pair. Check
+                    // every step before recording success, without mutating prior state.
+                    let composed = composed.and_then(|bundle| {
+                        if let Some(predecessor) = inherited {
+                            let mut current = predecessor.clone();
+                            for step in bundle.plan().steps() {
+                                current.append(step)?;
+                            }
+                            if let Some(pending) = pending {
+                                current.require_unclaimed_ranges(pending)?;
+                            }
+                        }
+                        Ok(bundle)
+                    });
                     attempts.push(NeighborAttempt {
                         victim: victim.address(),
                         stage: NeighborAttemptStage::Composition,
@@ -488,12 +637,16 @@ pub(crate) fn plan_neighbor_core(
                 }
                 search_evidence.finish_candidates(
                     selected_images,
-                    quiescent::candidate_target_proof(
-                        relay,
-                        [false; 4],
-                        request.allocation.preferred_address,
-                        request.allocation.max_candidates,
-                    ),
+                    if let Some(candidates) = short_candidates {
+                        candidates.proof
+                    } else {
+                        quiescent::candidate_target_proof(
+                            relay,
+                            [false; 4],
+                            request.allocation.preferred_address,
+                            request.allocation.max_candidates,
+                        )
+                    },
                 );
             }
             search_evidence.finish_candidates(
@@ -617,6 +770,7 @@ fn compose_pair(
     selected: PlacedInstruction,
     victim: PlacedInstruction,
     budget: BundleBudget,
+    short_relay: Option<&short::Relay>,
 ) -> Result<PlannedBundle, Refusal> {
     let relay = victim
         .displaced
@@ -625,12 +779,18 @@ fn compose_pair(
         .ok_or(Refusal::InvalidRange)?;
     let mut victim_patch = near_redirect(victim.displaced.start(), victim.image.address())?;
     victim_patch.extend_from_slice(&near_redirect(relay, selected.image.address())?);
+    if let Some(short) = short_relay {
+        short.check_patch(&victim_patch, selected.image.address())?;
+    }
     let mut source_members = [(selected, selected_patch.to_vec()), (victim, victim_patch)];
     source_members.sort_unstable_by_key(|member| std::cmp::Reverse(member.0.displaced.start()));
     let mut overlay = request.code.to_vec();
     let mut members = Vec::with_capacity(2);
     for (placed, patch) in source_members {
         let overlaid = request.with_code(&overlay);
+        if let Some(short) = short_relay.filter(|r| r.victim() == placed.displaced.start()) {
+            short.check_current(&overlaid, source, &patch)?;
+        }
         let member = instruction_member_core(
             &overlaid,
             source,
@@ -657,6 +817,13 @@ fn compose_pair(
         budget,
     )
 }
+
+// Explicit short-only same-function authority; no engine or cross-function widening.
+#[path = "neighbor_short.rs"]
+mod short;
+pub use short::{
+    plan_neighbor_short, plan_neighbor_short_detailed, plan_neighbor_short_with_emission,
+};
 
 // Explicit second-function artifact authority; existing same-function paths stay separate.
 #[path = "neighbor_cross_function.rs"]

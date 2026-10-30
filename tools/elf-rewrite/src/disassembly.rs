@@ -12,6 +12,41 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 pub const PROFILE: &str = "elf-disassembly-null-jumps-v1";
+/// Explicit same-region short-only neighbor family; never long+short union.
+pub const SHORT_ONLY_PROFILE: &str = "elf-disassembly-null-jumps-short-only-v1";
+/// Explicit inherited admission for complete short-neighbor T3 pairs only.
+pub const SHORT_T3_OWNERSHIP_PROFILE: &str = "elf-disassembly-null-jumps-short-t3-ownership-v1";
+/// Explicit complete pending-instruction ownership during short T3 admission.
+pub const SHORT_T3_PENDING_PROFILE: &str = "elf-disassembly-null-jumps-short-t3-pending-v1";
+const SHORT_PENDING: &str = "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\n";
+const SHORT_FAMILY: &str = "neighbor_victims\tshort-only\n";
+const SHORT_OWNERSHIP: &str = "neighbor_victims\tshort-only\nneighbor_ownership\tinherited-t3\n";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum NeighborMode {
+    LongOnly,
+    ShortOnly,
+    ShortT3Ownership,
+    ShortT3Pending,
+}
+impl NeighborMode {
+    fn profile(self) -> &'static str {
+        match self {
+            Self::LongOnly => PROFILE,
+            Self::ShortOnly => SHORT_ONLY_PROFILE,
+            Self::ShortT3Ownership => SHORT_T3_OWNERSHIP_PROFILE,
+            Self::ShortT3Pending => SHORT_T3_PENDING_PROFILE,
+        }
+    }
+    fn metadata(self) -> &'static str {
+        match self {
+            Self::LongOnly => "",
+            Self::ShortOnly => SHORT_FAMILY,
+            Self::ShortT3Ownership => SHORT_OWNERSHIP,
+            Self::ShortT3Pending => SHORT_PENDING,
+        }
+    }
+}
 pub const TEXT_LIMIT: usize = 1024 * 1024;
 pub const INPUT_LIMIT: usize = 256 * 1024 * 1024;
 
@@ -47,8 +82,32 @@ impl Disassembly {
         &self.jumps
     }
     pub fn inventory(&self) -> Vec<u8> {
+        self.inventory_mode(false)
+    }
+    /// Same complete verified denominator, explicitly labeled for ShortOnly.
+    pub fn inventory_short_neighbors(&self) -> Vec<u8> {
+        self.inventory_mode(true)
+    }
+    /// Complete verified denominator, labeled for inherited short T3 admission.
+    pub fn inventory_short_t3_ownership(&self) -> Vec<u8> {
+        self.inventory_with_mode(NeighborMode::ShortT3Ownership)
+    }
+    /// Complete verified denominator, labeled before pending-mode binding.
+    pub fn inventory_short_t3_pending(&self) -> Vec<u8> {
+        self.inventory_with_mode(NeighborMode::ShortT3Pending)
+    }
+    fn inventory_mode(&self, short_only: bool) -> Vec<u8> {
+        self.inventory_with_mode(if short_only {
+            NeighborMode::ShortOnly
+        } else {
+            NeighborMode::LongOnly
+        })
+    }
+    fn inventory_with_mode(&self, mode: NeighborMode) -> Vec<u8> {
+        let profile = mode.profile();
+        let family = mode.metadata();
         let mut out = format!(
-            "LI2DISASSEMBLY-INVENTORY\t1\nprofile\t{PROFILE}\noriginal_sha256\t{}\nledger_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\nid\tpc\tlength\tfile_offset\tregion_pc\tregion_length\tblock_pc\tblock_length\n",
+            "LI2DISASSEMBLY-INVENTORY\t1\nprofile\t{profile}\n{family}original_sha256\t{}\nledger_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\nid\tpc\tlength\tfile_offset\tregion_pc\tregion_length\tblock_pc\tblock_length\n",
             ledger::hex(&self.original.0),
             ledger::hex(&ContentId::of(&self.ledger).0),
             self.jumps.len()
@@ -79,14 +138,103 @@ impl Disassembly {
         policy: &[u8],
         expected_policy: ContentId,
     ) -> Result<DisassemblySelection, Error> {
+        self.bind_mode(policy, expected_policy, false)
+    }
+
+    /// Bind the explicit version-two ShortOnly policy and its complete digest.
+    /// The generated family row is retained in the selection identity; ordinary
+    /// selection replay refuses it instead of silently selecting another family.
+    pub fn bind_short_neighbors(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+    ) -> Result<DisassemblySelection, Error> {
+        self.bind_mode(policy, expected_policy, true)
+    }
+
+    /// Bind version three with short victims and inherited T3 admission sealed.
+    /// Only neighboring-instruction eviction checks inherited ownership during
+    /// search. Generalized pun, ordinary relocation, prefixed pun and successor
+    /// eviction retain their first local success and possible final append refusal.
+    /// Complete population, final append, hook, aggregate and carrier checks remain.
+    pub fn bind_short_t3_ownership(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+    ) -> Result<DisassemblySelection, Error> {
+        self.bind_with_mode(policy, expected_policy, NeighborMode::ShortT3Ownership)
+    }
+
+    /// Bind version four and the complete outstanding original instruction set.
+    /// Short neighboring-instruction eviction admits a complete pair only while
+    /// every other pending instruction remains unclaimed. Generalized pun,
+    /// ordinary relocation, prefixed pun and successor eviction retain local
+    /// success; their final pending conflict refuses without another tactic try.
+    /// Final append, hook, dependency, aggregate and carrier checks remain required.
+    pub fn bind_short_t3_pending(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+    ) -> Result<DisassemblySelection, Error> {
+        self.bind_with_mode(policy, expected_policy, NeighborMode::ShortT3Pending)
+    }
+
+    fn bind_mode(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+        short_only: bool,
+    ) -> Result<DisassemblySelection, Error> {
+        self.bind_with_mode(
+            policy,
+            expected_policy,
+            if short_only {
+                NeighborMode::ShortOnly
+            } else {
+                NeighborMode::LongOnly
+            },
+        )
+    }
+
+    fn bind_with_mode(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+        mode: NeighborMode,
+    ) -> Result<DisassemblySelection, Error> {
         check(policy.len() <= TEXT_LIMIT, "policy size")?;
         check(ContentId::of(policy) == expected_policy, "policy digest")?;
         let rows = rows(policy)?;
         let ledger_id = ContentId::of(&self.ledger);
+        let (shift, header) = match mode {
+            NeighborMode::LongOnly => (0, "LI2DISASM-POLICY 1"),
+            NeighborMode::ShortOnly => (1, "LI2DISASM-POLICY 2"),
+            NeighborMode::ShortT3Ownership => (2, "LI2DISASM-POLICY 3"),
+            NeighborMode::ShortT3Pending => (3, "LI2DISASM-POLICY 4"),
+        };
         check(
-            rows.len() >= 8 && rows[0] == "LI2DISASM-POLICY 1",
+            rows.len() >= 8 + shift && rows[0] == header,
             "policy header",
         )?;
+        if mode != NeighborMode::LongOnly {
+            check(rows[3] == "neighbor-victims short-only", "neighbor family")?;
+        }
+        if mode == NeighborMode::ShortT3Ownership {
+            check(
+                rows[4] == "neighbor-ownership inherited-t3",
+                "neighbor ownership",
+            )?;
+        }
+        if mode == NeighborMode::ShortT3Pending {
+            check(
+                rows[4] == "neighbor-ownership inherited-t3",
+                "neighbor ownership",
+            )?;
+            check(
+                rows[5] == "pending-selected full-instruction-ownership",
+                "pending selected ownership",
+            )?;
+        }
         check(
             rows[1] == format!("original {}", ledger::hex(&self.original.0)),
             "policy original",
@@ -95,13 +243,13 @@ impl Disassembly {
             rows[2] == format!("ledger {}", ledger::hex(&ledger_id.0)),
             "policy ledger",
         )?;
-        for (row, tag) in rows[3..7]
+        for (row, tag) in rows[3 + shift..7 + shift]
             .iter()
             .zip(["target", "domain", "carrier", "limits"])
         {
             check(row.starts_with(&format!("{tag} ")), "policy order")?;
         }
-        let hook = fields(rows[7], "null-hook", 2)?;
+        let hook = fields(rows[7 + shift], "null-hook", 2)?;
         let hook = selection::num(hook[1])?;
         check(
             self.regions
@@ -110,13 +258,23 @@ impl Disassembly {
                 .any(|i| i.ip() == hook && i.code() == Code::Retnq && i.len() == 1),
             "null hook is not an original C3 head",
         )?;
+        let projection_family = match mode {
+            NeighborMode::LongOnly => "",
+            NeighborMode::ShortOnly => "neighbor-victims short-only\n",
+            NeighborMode::ShortT3Ownership => {
+                "neighbor-victims short-only\nneighbor-ownership inherited-t3\n"
+            }
+            NeighborMode::ShortT3Pending => {
+                "neighbor-victims short-only\nneighbor-ownership inherited-t3\npending-selected full-instruction-ownership\n"
+            }
+        };
         let mut manifest = format!(
-            "LI2TOOL 1\n{}\n{}\n{}\n{}\n{}\nhook 1 {hook} 1 {}\n",
+            "LI2TOOL 1\n{}\n{projection_family}{}\n{}\n{}\n{}\nhook 1 {hook} 1 {}\n",
             rows[1],
-            rows[3],
-            rows[4],
-            rows[5],
-            rows[6],
+            rows[3 + shift],
+            rows[4 + shift],
+            rows[5 + shift],
+            rows[6 + shift],
             ledger::hex(&ContentId::of(&[0xc3]).0)
         );
         for site in &self.jumps {
@@ -149,7 +307,7 @@ impl Disassembly {
             }
             append(&mut manifest, &format!("\nresumes {} none\n", site.id))?;
         }
-        for row in &rows[8..] {
+        for row in &rows[8 + shift..] {
             check(
                 row.starts_with("search ") || row.starts_with("allocation "),
                 "policy record",
@@ -159,7 +317,18 @@ impl Disassembly {
         }
         // Inherit every old numeric ceiling, exact record cardinality and permit
         // check. No zero-site success or overflowing whole-program batching.
-        let mut selection = selection::parse(manifest.as_bytes())?;
+        let mut selection = match mode {
+            NeighborMode::LongOnly => selection::parse(manifest.as_bytes())?,
+            NeighborMode::ShortOnly => {
+                selection::parse_short_neighbor_projection(manifest.as_bytes())?
+            }
+            NeighborMode::ShortT3Ownership => {
+                selection::parse_short_t3_ownership_projection(manifest.as_bytes())?
+            }
+            NeighborMode::ShortT3Pending => {
+                selection::parse_short_t3_pending_projection(manifest.as_bytes())?
+            }
+        };
         check(
             selection.sites.len() == self.jumps.len(),
             "selection denominator",
@@ -169,8 +338,10 @@ impl Disassembly {
             // verified head is conservatively legal in this artifact region.
             site.completeness = EntryCompleteness::AllInstructionHeads;
         }
+        let profile_name = mode.profile();
+        let family = mode.metadata();
         let profile = format!(
-            "LI2PLANNING\t1\nprofile\t{PROFILE}\nscope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\n",
+            "LI2PLANNING\t1\nprofile\t{profile_name}\n{family}scope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\n",
             ledger::hex(&self.original.0),
             ledger::hex(&ledger_id.0),
             ledger::hex(&expected_policy.0),
@@ -178,12 +349,16 @@ impl Disassembly {
             self.jumps.len()
         );
         Ok(DisassemblySelection {
+            mode,
             selection,
             files: BTreeMap::from([
                 ("planning-profile.tsv".into(), profile.into_bytes()),
                 ("disassembly.txt".into(), self.ledger.clone()),
                 ("disassembly-policy.txt".into(), policy.to_vec()),
-                ("disassembly-inventory.tsv".into(), self.inventory()),
+                (
+                    "disassembly-inventory.tsv".into(),
+                    self.inventory_with_mode(mode),
+                ),
             ]),
         })
     }
@@ -193,11 +368,17 @@ impl Disassembly {
 /// selection, InstallRequest, recovered-function or owned-neighbor conversion.
 #[derive(Clone, Debug)]
 pub struct DisassemblySelection {
+    pub(crate) mode: NeighborMode,
     pub(crate) selection: Selection,
     pub(crate) files: BTreeMap<String, Vec<u8>>,
 }
 impl DisassemblySelection {
-    /// Canonical LI2TOOL projection for the existing site comparator. Its legacy
+    /// Bound planning profile, never a runtime qualification result.
+    pub fn profile(&self) -> &'static str {
+        self.mode.profile()
+    }
+    /// Canonical projection bound to this profile. ShortOnly includes an explicit
+    /// family row that legacy selection/comparator readers must reject. The
     /// `function` columns mean code regions only under the bound profile file.
     pub fn manifest(&self) -> &[u8] {
         &self.selection.manifest

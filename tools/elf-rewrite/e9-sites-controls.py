@@ -313,3 +313,493 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# Additive owned-short adapter controls. These reuse supplied synthetic bytes;
+# they are not pinned producer captures or an importer/native witness.
+def owned_rebind(f, raw):
+    f = dict(f)
+    f['selection'] = raw
+    policy = json.loads(f['policy'])
+    policy['selection_sha256'] = a.sha(raw)
+    f['policy'] = json.dumps(policy).encode()
+    return f
+
+
+def owned_adapt(f):
+    lines = f['selection'].split(b'\n')
+    lines[2:2] = [b'neighbor-victims short-only', b'neighbor-ownership inherited-t3']
+    return owned_rebind(f, b'\n'.join(lines))
+
+
+def owned_case(f):
+    raw = f['selection']
+    sites, policy = a.selection_short_t3_ownership(raw, f['original'], f['policy'])
+    assert policy == json.loads(f['policy']) and policy['selection_sha256'] == a.sha(raw)
+    intent = a.rpc(f['rpc'], f['original'], sites, '/fixture/original', policy, None, None, False)
+    outcomes, maps, bypass = a.debug(f['stderr'], sites)
+    saved = a.PRODUCERS
+    try:
+        ownership = synthetic_artifact(f, intent, outcomes, maps, bypass)
+    finally:
+        assert a.PRODUCERS is saved, 'synthetic lane restored on success or refusal'
+    a.statistics(f['stdout'], outcomes, ownership, '/fixture/original')
+    wire = a.wire(sites, policy, outcomes, intent['trap'])
+    assert f['selection'] == raw
+    return sites, policy, wire
+
+
+def owned_reject(name, action, reason=None):
+    try:
+        action()
+    except AssertionError as error:
+        if reason is not None:
+            assert str(error) == reason, (name, reason, str(error))
+    else:
+        raise AssertionError('owned-short negative accepted: ' + name)
+
+
+def owned_selection_controls():
+    mode = b'neighbor-victims short-only\nneighbor-ownership inherited-t3\n'
+    for failed, trap, expected in [
+        (False, False, ['trampoline', 'trampoline']),
+        (True, False, ['trampoline', 'refused']),
+        (False, True, ['trap', 'trap']),
+    ]:
+        legacy = fixture(failed, trap)
+        f = owned_adapt(legacy)
+        sites, policy, wire = owned_case(f)
+        rows = wire.decode().splitlines()
+        assert rows[7:] == run_case(legacy)
+        assert [r.split('\t')[4] for r in rows[7:]] == expected
+        assert sites == [dict(site=101, pc=0x400200, length=5, file_offset=512),
+                         dict(site=202, pc=0x400210, length=5, file_offset=528)]
+        assert rows[2] == 'selection_sha256\t' + a.sha(f['selection'])
+        assert a.sha(f['selection']) != a.sha(legacy['selection'])
+        assert set(r.split('\t')[0] for r in rows[1:6]) == {
+            'original_sha256', 'selection_sha256', 'e9_revision', 'instrumentation', 'selection_style'}
+        assert len(rows) == 9 and 'selection_profile' not in wire.decode()
+        assert policy == json.loads(f['policy'])
+        owned_reject('legacy route refuses mode rows', lambda: a.selection(f['selection'], f['original'], f['policy']), 'unknown/short selection record')
+        owned_reject('new route refuses legacy', lambda: a.selection_short_t3_ownership(legacy['selection'], legacy['original'], legacy['policy']), 'owned selection prefix')
+    f = owned_adapt(fixture())
+    raw = f['selection']
+    family, ownership = mode.splitlines(keepends=True)
+    hostile = [
+        ('missing family', raw.replace(family, b'')),
+        ('missing ownership', raw.replace(ownership, b'')),
+        ('duplicate family', raw.replace(family, family + family)),
+        ('duplicate ownership', raw.replace(ownership, ownership + ownership)),
+        ('reordered modes', raw.replace(mode, ownership + family)),
+        ('relocated family', raw.replace(family, b'') + family),
+        ('relocated ownership', raw.replace(ownership, b'') + ownership),
+        ('late duplicate family', raw + family),
+        ('late duplicate ownership', raw + ownership),
+        ('wrong family', raw.replace(family, b'neighbor-victims long-only\n')),
+        ('wrong ownership', raw.replace(ownership, b'neighbor-ownership local-only\n')),
+        ('extra mode token', raw.replace(ownership, b'neighbor-ownership inherited-t3 extra\n')),
+        ('leading mode space', raw.replace(family, b' ' + family)),
+        ('trailing mode space', raw.replace(family, family[:-1] + b' \n')),
+        ('CRLF', raw.replace(b'\n', b'\r\n')),
+        ('noncanonical original', raw.replace(b'original ', b'original\t', 1)),
+        ('noncanonical header', raw.replace(b'LI2TOOL 1\n', b'LI2TOOL 1 \n', 1)),
+    ]
+    for name, changed in hostile:
+        bad = owned_rebind(f, changed)
+        assert json.loads(bad['policy'])['selection_sha256'] == a.sha(changed)
+        owned_reject(name, lambda bad=bad: a.selection_short_t3_ownership(bad['selection'], bad['original'], bad['policy']))
+    for name, changed in [
+        ('duplicate site ID', raw.replace(b'site 202 ', b'site 101 ')),
+        ('duplicate PC', raw.replace(b'0x400210', b'0x400200')),
+        ('duplicate file offset', raw.replace(b'5 528 ', b'5 512 ')),
+        ('no sites', b'\n'.join(line for line in raw.split(b'\n') if not line.startswith(b'site '))),
+    ]:
+        bad = owned_rebind(f, changed)
+        owned_reject(name, lambda bad=bad: owned_case(bad))
+    for name, changed in [
+        ('missing site against full RPC', b'\n'.join(line for line in raw.split(b'\n') if not line.startswith(b'site 202 '))),
+        ('extra site against full RPC', raw + b'site 303 0x400220 5 544 0 0 0 0 0 0 0 0 0\n'),
+    ]:
+        bad = owned_rebind(f, changed)
+        owned_reject(name, lambda bad=bad: owned_case(bad), 'complete descending patch list')
+    changed = dict(f, selection=raw.replace(b'site 101 ', b'site 103 '))
+    owned_reject('stale full selection identity', lambda: owned_case(changed))
+    original = bytearray(f['original']); original[512] ^= 1
+    changed = dict(f, original=bytes(original))
+    owned_reject('stale original identity', lambda: owned_case(changed))
+    for name, change in [
+        ('stripped-view policy identity', dict(selection_sha256=a.sha(raw.replace(mode, b'')))),
+        ('wrong policy original', dict(original_sha256='0' * 64)),
+        ('wrong policy producer', dict(e9_revision='0' * 40)),
+        ('extra policy key', dict(selection_profile=a.SHORT_T3_OWNERSHIP_PROFILE)),
+        ('wrong policy schema', dict(schema=True)),
+    ]:
+        policy = json.loads(f['policy']); policy.update(change)
+        bad = dict(f, policy=json.dumps(policy).encode())
+        owned_reject(name, lambda bad=bad: owned_case(bad))
+    cap = 1024 * 1024
+    exact = owned_rebind(f, raw + b'\n' * (cap - len(raw)))
+    sites, policy = a.selection_short_t3_ownership(exact['selection'], exact['original'], exact['policy'])
+    assert len(sites) == 2 and policy['selection_sha256'] == a.sha(exact['selection'])
+    oversized = owned_rebind(f, exact['selection'] + b'\n')
+    assert len(oversized['selection']) == cap + 1 and len(oversized['selection']) - len(mode) < cap
+    owned_reject('full cap precedes private view', lambda: a.selection_short_t3_ownership(oversized['selection'], oversized['original'], oversized['policy']), 'selection length/newline')
+    print('owned selection controls: full-mode structural fixtures, exact identity/cap and required refusals; synthetic only')
+
+
+def owned_producer_scope_controls():
+    saved = a.PRODUCERS
+    f = owned_adapt(fixture())
+    owned_case(f)
+    assert a.PRODUCERS is saved
+    gateway = bytearray(f['candidate']); gateway[513] ^= 1
+    owned_reject('gateway target', lambda: owned_case(dict(f, candidate=bytes(gateway))), 'source gateway reaches reported emitted trampoline')
+    loader = bytearray(f['candidate']); loader[-1] ^= 1
+    owned_reject('whole loader bytes', lambda: owned_case(dict(f, candidate=bytes(loader))), 'whole pinned loader/mmap/old-entry bytes')
+    gap = owned_adapt(fragment_fixture(change=lambda maps: maps[1].__setitem__('va', 0x602000)))
+    owned_reject('mapping extent owner', lambda: owned_case(gap), 'actual executable trampoline extent owner')
+    uncovered = owned_adapt(fragment_fixture(change=lambda maps: maps[1].__setitem__('offset', 4096)))
+    owned_reject('complete backing ownership', lambda: owned_case(uncovered), 'complete appended backing ownership')
+    trap = owned_adapt(fixture(False, True)); candidate = bytearray(trap['candidate']); candidate[4096] = 0x90
+    owned_reject('trap cannot become trampoline', lambda: owned_case(dict(trap, candidate=bytes(candidate))), 'trap cannot be relabelled as trampoline')
+    lines = f['stderr'].splitlines(keepends=True)
+    owned_reject('subset debug outcomes', lambda: owned_case(dict(f, stderr=b''.join(lines[1:]))), 'exact per-site debug outcomes')
+    owned_reject('empty debug outcomes', lambda: owned_case(dict(f, stderr=b''.join(lines[2:]))), 'exact per-site debug outcomes')
+    assert a.PRODUCERS is saved, 'synthetic substitutions restore exact producer object after refusals'
+    # No synthetic producer digest or successful production envelope is installed.
+    roles = {'original', 'selection', 'policy', 'candidate', 'frontend', 'backend', 'loader', 'transport_frontend', 'helper'} | {p + '_' + r for p in ('transport', 'producer') for r in ('request', 'receipt', 'stdout', 'stderr')}
+    for lane in saved:
+        envelope = dict(schema=1, lane=lane, reference_commit=a.REVISION, reference_tree=a.TREE,
+                        archive_sha256=a.ARCHIVE, capstone_revision=a.CAPSTONE, abi_delta_patch_sha256=a.ABI_PATCH,
+                        common_argv=[], hook=None, files=dict.fromkeys(roles, {}))
+        blobs = dict.fromkeys(roles, b'not-a-pinned-tool')
+        blobs.update({key: f[key] for key in ('original', 'selection', 'policy', 'candidate')})
+        owned_reject('new route retains producer guard ' + lane,
+                     lambda: a._validate(envelope, blobs, a.SHORT_T3_OWNERSHIP_PROFILE), 'pinned producer lane')
+    assert a.PRODUCERS is saved
+    # Receipt syntax alone is not producer evidence. These supplied values never
+    # enter validate() and never stand in for actual captured execution outcomes.
+    request = json.dumps(dict(wall_seconds=1)).encode()
+    helper, stdout, stderr = a.sha(b'synthetic-helper'), b'synthetic-stdout', b'synthetic-stderr'
+    record = dict(request_sha256=a.sha(request), helper_sha256=helper, exit=0, wall_timeout=False,
+                  unexpected_descendants=[], absence_proof='ECHILD', stdout_sha256=a.sha(stdout),
+                  stderr_sha256=a.sha(stderr), elapsed_seconds=0, cleanup_events=[], cleanup_error=None,
+                  aborted=None, inputs_unchanged=True)
+    assert a.receipt(json.dumps(record).encode(), request, helper, stdout, stderr) == dict(wall_seconds=1)
+    for name, change in [
+        ('abnormal exit', dict(exit=1)), ('boolean exit', dict(exit=False)),
+        ('timeout', dict(wall_timeout=True)), ('descendants', dict(unexpected_descendants=[1])),
+        ('cleanup events', dict(cleanup_events=['synthetic'])), ('cleanup error', dict(cleanup_error='synthetic')),
+        ('abort', dict(aborted='synthetic')), ('changed inputs', dict(inputs_unchanged=False)),
+        ('changed request hash', dict(request_sha256='0' * 64)), ('changed helper hash', dict(helper_sha256='0' * 64)),
+        ('changed stdout hash', dict(stdout_sha256='0' * 64)), ('changed stderr hash', dict(stderr_sha256='0' * 64)),
+        ('missing absence proof', dict(absence_proof='none')), ('elapsed bound', dict(elapsed_seconds=2)),
+    ]:
+        encoded = json.dumps(dict(record, **change)).encode()
+        owned_reject(name, lambda encoded=encoded: a.receipt(encoded, request, helper, stdout, stderr))
+    print('owned producer scope controls: unchanged guards and structural helper refusals; no pinned producer acceptance')
+
+
+def owned_cli_controls():
+    argv = ['/fixture/envelope', '/fixture/new-output', '--envelope-sha256', 'a' * 64]
+    legacy = a.arguments(argv)
+    assert legacy.envelope == Path(argv[0]) and legacy.new_output == Path(argv[1])
+    assert legacy.envelope_sha256 == 'a' * 64 and legacy.selection_profile is None
+    supplied = a.arguments(argv + ['--selection-profile', a.SHORT_T3_OWNERSHIP_PROFILE])
+    assert supplied.selection_profile == a.SHORT_T3_OWNERSHIP_PROFILE
+    equals = a.arguments(argv + ['--selection-profile=' + a.SHORT_T3_OWNERSHIP_PROFILE])
+    assert equals.selection_profile == supplied.selection_profile
+    # Existing abbreviated envelope option and flag-shaped paths after -- stay legacy.
+    assert a.arguments(['/fixture/e', '/fixture/o', '--envelope-sha', 'a' * 64]).selection_profile is None
+    paths = a.arguments(['--envelope-sha256', 'a' * 64, '--', '--selection-profile', '/fixture/o'])
+    assert paths.envelope == Path('--selection-profile') and paths.selection_profile is None
+    for extra, expected_exception in [
+        (['--selection-profile', a.SHORT_T3_OWNERSHIP_PROFILE] * 2, AssertionError),
+        (['--selection-profile=unknown'], SystemExit),
+        (['--selection-profile'], SystemExit),
+        (['--selection-p', a.SHORT_T3_OWNERSHIP_PROFILE], AssertionError),
+    ]:
+        try:
+            a.arguments(argv + extra)
+        except expected_exception as error:
+            if isinstance(error, SystemExit):
+                assert error.code == 2
+        else:
+            raise AssertionError('invalid actual CLI arguments accepted: ' + str(extra))
+    f = owned_adapt(fixture())
+    sites, policy = a._selection_for_profile(f['selection'], f['original'], f['policy'], supplied.selection_profile)
+    assert len(sites) == 2 and policy['selection_sha256'] == a.sha(f['selection'])
+    owned_reject('omitted flag never infers ownership', lambda: a._selection_for_profile(f['selection'], f['original'], f['policy'], legacy.selection_profile), 'unknown/short selection record')
+    original = fixture()
+    assert a._selection_for_profile(original['selection'], original['original'], original['policy'], None) == a.selection(original['selection'], original['original'], original['policy'])
+    owned_reject('explicit mode never falls back', lambda: a._selection_for_profile(original['selection'], original['original'], original['policy'], supplied.selection_profile), 'owned selection prefix')
+    owned_reject('closed dispatch vocabulary', lambda: a._selection_for_profile(f['selection'], f['original'], f['policy'], 'unknown'), 'selection profile')
+    seed = dict(scope='STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY')
+    assert a._selection_binding(dict(seed), None) == seed
+    assert a._selection_binding(dict(seed), supplied.selection_profile) == dict(seed, selection_profile=a.SHORT_T3_OWNERSHIP_PROFILE)
+    owned_reject('private binding has closed mode', lambda: a._selection_binding(dict(seed), 'unknown'), 'selection profile')
+    owned_reject('private binding cannot relabel', lambda: a._selection_binding(dict(seed, selection_profile='legacy'), supplied.selection_profile), 'duplicate selection profile binding')
+    print('owned CLI controls: actual argument/dispatch/binding helpers and full raw selection identity')
+
+
+if __name__ == '__main__':
+    owned_selection_controls()
+    owned_producer_scope_controls()
+    owned_cli_controls()
+
+
+# Pending-mode structural controls are additive to every owned/legacy control.
+# Their supplied forced-puzzle bytes are not sealed importer or producer evidence.
+def pending_adapt(f):
+    lines = f['selection'].split(b'\n')
+    lines[2:2] = [b'neighbor-victims short-only', b'neighbor-ownership inherited-t3',
+                  b'pending-selected full-instruction-ownership']
+    return owned_rebind(f, b'\n'.join(lines))
+
+
+def pending_case(f):
+    raw = f['selection']
+    sites, policy = a.selection_short_t3_pending(raw, f['original'], f['policy'])
+    assert policy == json.loads(f['policy']) and policy['selection_sha256'] == a.sha(raw)
+    intent = a.rpc(f['rpc'], f['original'], sites, '/fixture/original', policy, None, None, False)
+    outcomes, maps, bypass = a.debug(f['stderr'], sites)
+    saved = a.PRODUCERS
+    try:
+        ownership = synthetic_artifact(f, intent, outcomes, maps, bypass)
+    finally:
+        assert a.PRODUCERS is saved, 'synthetic lane restored on success or refusal'
+    a.statistics(f['stdout'], outcomes, ownership, '/fixture/original')
+    wire = a.wire(sites, policy, outcomes, intent['trap'])
+    assert f['selection'] == raw
+    return sites, policy, wire
+
+
+def pending_reject(name, action, reason=None):
+    try:
+        action()
+    except AssertionError as error:
+        if reason is not None:
+            assert str(error) == reason, (name, reason, str(error))
+    else:
+        raise AssertionError('pending-short negative accepted: ' + name)
+
+
+def pending_selection_controls():
+    mode = (b'neighbor-victims short-only\nneighbor-ownership inherited-t3\n'
+            b'pending-selected full-instruction-ownership\n')
+    for failed, trap, expected in [
+        (False, False, ['trampoline', 'trampoline']),
+        (True, False, ['trampoline', 'refused']),
+        (False, True, ['trap', 'trap']),
+    ]:
+        legacy = fixture(failed, trap)
+        owned = owned_adapt(legacy)
+        f = pending_adapt(legacy)
+        sites, policy, wire = pending_case(f)
+        rows = wire.decode().splitlines()
+        assert rows[7:] == run_case(legacy) == owned_case(owned)[2].decode().splitlines()[7:]
+        assert [r.split('\t')[4] for r in rows[7:]] == expected
+        assert sites == [dict(site=101, pc=0x400200, length=5, file_offset=512),
+                         dict(site=202, pc=0x400210, length=5, file_offset=528)]
+        assert rows[2] == 'selection_sha256\t' + a.sha(f['selection'])
+        assert len({a.sha(x['selection']) for x in (legacy, owned, f)}) == 3
+        assert set(r.split('\t')[0] for r in rows[1:6]) == {
+            'original_sha256', 'selection_sha256', 'e9_revision', 'instrumentation', 'selection_style'}
+        assert len(rows) == 9 and 'selection_profile' not in wire.decode()
+        assert policy == json.loads(f['policy']) and f['selection'].count(mode) == 1
+        pending_reject('legacy refuses pending projection',
+                       lambda: a.selection(f['selection'], f['original'], f['policy']),
+                       'unknown/short selection record')
+        pending_reject('owned refuses pending projection',
+                       lambda: a.selection_short_t3_ownership(f['selection'], f['original'], f['policy']),
+                       'unknown/short selection record')
+        single_family = owned_rebind(owned, owned['selection'].replace(
+            b'neighbor-ownership inherited-t3\n', b''))
+        for prior in (legacy, owned, single_family):
+            pending_reject('pending refuses incomplete mode',
+                           lambda prior=prior: a.selection_short_t3_pending(prior['selection'], prior['original'], prior['policy']),
+                           'pending selection prefix')
+    f = pending_adapt(fixture())
+    raw = f['selection']
+    modes = mode.splitlines(keepends=True)
+    for index, row in enumerate(modes):
+        key = row.split()[0]
+        hostile = [
+            ('missing', raw.replace(row, b'')),
+            ('duplicate prefix', raw.replace(row, row + row)),
+            ('duplicate late', raw + row),
+            ('relocated after sites', raw.replace(row, b'') + row),
+            ('relocated after globals', raw.replace(row, b'').replace(b'site 101 ', row + b'site 101 ', 1)),
+            ('wrong value', raw.replace(row, key + b' wrong-mode\n')),
+            ('extra token', raw.replace(row, row[:-1] + b' extra\n')),
+            ('leading whitespace', raw.replace(row, b' ' + row)),
+            ('trailing whitespace', raw.replace(row, row[:-1] + b' \n')),
+        ]
+        for other in range(len(modes)):
+            if other != index:
+                changed = list(modes); changed[index], changed[other] = changed[other], changed[index]
+                hostile.append(('reordered ' + str(other), raw.replace(mode, b''.join(changed))))
+        for name, changed in hostile:
+            bad = owned_rebind(f, changed)
+            assert json.loads(bad['policy'])['selection_sha256'] == a.sha(changed)
+            pending_reject(key.decode() + ' ' + name,
+                           lambda bad=bad: a.selection_short_t3_pending(bad['selection'], bad['original'], bad['policy']))
+    for name, changed in [
+        ('CRLF', raw.replace(b'\n', b'\r\n')),
+        ('noncanonical header', raw.replace(b'LI2TOOL 1\n', b'LI2TOOL 1 \n', 1)),
+        ('noncanonical original', raw.replace(b'original ', b'original\t', 1)),
+        ('late mode with whitespace', raw + b'\tpending-selected full-instruction-ownership\n'),
+    ]:
+        bad = owned_rebind(f, changed)
+        pending_reject(name, lambda bad=bad: a.selection_short_t3_pending(bad['selection'], bad['original'], bad['policy']))
+    for name, changed in [
+        ('duplicate site ID', raw.replace(b'site 202 ', b'site 101 ')),
+        ('duplicate PC', raw.replace(b'0x400210', b'0x400200')),
+        ('duplicate file offset', raw.replace(b'5 528 ', b'5 512 ')),
+        ('no sites', b'\n'.join(line for line in raw.split(b'\n') if not line.startswith(b'site '))),
+    ]:
+        bad = owned_rebind(f, changed)
+        pending_reject(name, lambda bad=bad: pending_case(bad))
+    for name, changed in [
+        ('missing site against full RPC', b'\n'.join(line for line in raw.split(b'\n') if not line.startswith(b'site 202 '))),
+        ('extra site against full RPC', raw + b'site 303 0x400220 5 544 0 0 0 0 0 0 0 0 0\n'),
+    ]:
+        bad = owned_rebind(f, changed)
+        pending_reject(name, lambda bad=bad: pending_case(bad), 'complete descending patch list')
+    pending_reject('stale full selection identity',
+                   lambda: pending_case(dict(f, selection=raw.replace(b'site 101 ', b'site 103 '))))
+    original = bytearray(f['original']); original[512] ^= 1
+    pending_reject('stale original identity', lambda: pending_case(dict(f, original=bytes(original))))
+    stripped_legacy = raw.replace(mode, b'')
+    stripped_owned = raw.replace(modes[2], b'')
+    for name, change in [
+        ('stripped legacy identity', dict(selection_sha256=a.sha(stripped_legacy))),
+        ('stripped owned identity', dict(selection_sha256=a.sha(stripped_owned))),
+        ('wrong policy original', dict(original_sha256='0' * 64)),
+        ('wrong producer revision', dict(e9_revision='0' * 40)),
+        ('unknown instrumentation', dict(instrumentation='unknown')),
+        ('unknown selection style', dict(selection_style='unknown')),
+        ('extra policy mode key', dict(selection_profile=a.SHORT_T3_PENDING_PROFILE)),
+        ('boolean policy schema', dict(schema=True)),
+    ]:
+        policy = json.loads(f['policy']); policy.update(change)
+        bad = dict(f, policy=json.dumps(policy).encode())
+        pending_reject(name, lambda bad=bad: pending_case(bad))
+    cap = 1024 * 1024
+    exact = owned_rebind(f, raw + b'\n' * (cap - len(raw)))
+    assert len(exact['selection']) == cap
+    sites, policy = a.selection_short_t3_pending(exact['selection'], exact['original'], exact['policy'])
+    assert len(sites) == 2 and policy['selection_sha256'] == a.sha(exact['selection'])
+    oversized = owned_rebind(f, exact['selection'] + b'\n')
+    assert len(oversized['selection']) == cap + 1 and len(oversized['selection']) - len(mode) < cap
+    pending_reject('full cap before private view',
+                   lambda: a.selection_short_t3_pending(oversized['selection'], oversized['original'], oversized['policy']),
+                   'selection length/newline')
+    print('pending selection controls: three-row identity, complete structural outcomes and exact-cap refusals; synthetic only')
+
+
+def pending_producer_scope_controls():
+    saved = a.PRODUCERS
+    f = pending_adapt(fixture())
+    pending_case(f)
+    assert a.PRODUCERS is saved
+    gateway = bytearray(f['candidate']); gateway[513] ^= 1
+    pending_reject('gateway target', lambda: pending_case(dict(f, candidate=bytes(gateway))), 'source gateway reaches reported emitted trampoline')
+    loader = bytearray(f['candidate']); loader[-1] ^= 1
+    pending_reject('whole loader bytes', lambda: pending_case(dict(f, candidate=bytes(loader))), 'whole pinned loader/mmap/old-entry bytes')
+    gap = pending_adapt(fragment_fixture(change=lambda maps: maps[1].__setitem__('va', 0x602000)))
+    pending_reject('mapping extent owner', lambda: pending_case(gap), 'actual executable trampoline extent owner')
+    uncovered = pending_adapt(fragment_fixture(change=lambda maps: maps[1].__setitem__('offset', 4096)))
+    pending_reject('complete backing ownership', lambda: pending_case(uncovered), 'complete appended backing ownership')
+    trap = pending_adapt(fixture(False, True)); candidate = bytearray(trap['candidate']); candidate[4096] = 0x90
+    pending_reject('trap classification', lambda: pending_case(dict(trap, candidate=bytes(candidate))), 'trap cannot be relabelled as trampoline')
+    lines = f['stderr'].splitlines(keepends=True)
+    pending_reject('subset debug outcomes', lambda: pending_case(dict(f, stderr=b''.join(lines[1:]))), 'exact per-site debug outcomes')
+    pending_reject('empty debug outcomes', lambda: pending_case(dict(f, stderr=b''.join(lines[2:]))), 'exact per-site debug outcomes')
+    assert a.PRODUCERS is saved, 'synthetic substitutions restored after all refusals'
+    # Actual production validation must refuse the synthetic tool tuples in both
+    # lanes. Never install fake producer authority to reach the transport guard.
+    roles = {'original', 'selection', 'policy', 'candidate', 'frontend', 'backend', 'loader', 'transport_frontend', 'helper'} | {p + '_' + r for p in ('transport', 'producer') for r in ('request', 'receipt', 'stdout', 'stderr')}
+    for lane in saved:
+        envelope = dict(schema=1, lane=lane, reference_commit=a.REVISION, reference_tree=a.TREE,
+                        archive_sha256=a.ARCHIVE, capstone_revision=a.CAPSTONE, abi_delta_patch_sha256=a.ABI_PATCH,
+                        common_argv=[], hook=None, files=dict.fromkeys(roles, {}))
+        blobs = dict.fromkeys(roles, b'not-a-pinned-tool')
+        blobs.update({key: f[key] for key in ('original', 'selection', 'policy', 'candidate')})
+        pending_reject('pending real producer guard ' + lane,
+                       lambda: a._validate(envelope, blobs, a.SHORT_T3_PENDING_PROFILE), 'pinned producer lane')
+    assert a.PRODUCERS is saved
+    # Supplied receipt syntax is checked directly, never used as actual closure.
+    request = json.dumps(dict(wall_seconds=1)).encode()
+    helper, stdout, stderr = a.sha(b'synthetic-helper'), b'synthetic-stdout', b'synthetic-stderr'
+    record = dict(request_sha256=a.sha(request), helper_sha256=helper, exit=0, wall_timeout=False,
+                  unexpected_descendants=[], absence_proof='ECHILD', stdout_sha256=a.sha(stdout),
+                  stderr_sha256=a.sha(stderr), elapsed_seconds=0, cleanup_events=[], cleanup_error=None,
+                  aborted=None, inputs_unchanged=True)
+    assert a.receipt(json.dumps(record).encode(), request, helper, stdout, stderr) == dict(wall_seconds=1)
+    for name, change in [
+        ('nonzero exit', dict(exit=1)), ('bool exit', dict(exit=False)),
+        ('timeout', dict(wall_timeout=True)), ('descendants', dict(unexpected_descendants=[1])),
+        ('cleanup events', dict(cleanup_events=['synthetic'])), ('cleanup error', dict(cleanup_error='synthetic')),
+        ('abort', dict(aborted='synthetic')), ('changed inputs', dict(inputs_unchanged=False)),
+        ('request hash', dict(request_sha256='0' * 64)), ('helper hash', dict(helper_sha256='0' * 64)),
+        ('stdout hash', dict(stdout_sha256='0' * 64)), ('stderr hash', dict(stderr_sha256='0' * 64)),
+        ('missing ECHILD', dict(absence_proof='none')), ('elapsed overflow', dict(elapsed_seconds=2)),
+    ]:
+        encoded = json.dumps(dict(record, **change)).encode()
+        pending_reject(name, lambda encoded=encoded: a.receipt(encoded, request, helper, stdout, stderr))
+    print('pending producer controls: original guards and actual helper refusals; no pinned producer acceptance')
+
+
+def pending_cli_controls():
+    argv = ['/fixture/envelope', '/fixture/new-output', '--envelope-sha256', 'a' * 64]
+    legacy = a.arguments(argv)
+    assert legacy.envelope == Path(argv[0]) and legacy.new_output == Path(argv[1])
+    assert legacy.envelope_sha256 == 'a' * 64 and legacy.selection_profile is None
+    for profile in (a.SHORT_T3_OWNERSHIP_PROFILE, a.SHORT_T3_PENDING_PROFILE):
+        supplied = a.arguments(argv + ['--selection-profile', profile])
+        assert supplied.selection_profile == profile
+        assert a.arguments(argv + ['--selection-profile=' + profile]).selection_profile == profile
+    assert a.arguments(['/fixture/e', '/fixture/o', '--envelope-sha', 'a' * 64]).selection_profile is None
+    paths = a.arguments(['--envelope-sha256', 'a' * 64, '--', '--selection-profile', '/fixture/o'])
+    assert paths.envelope == Path('--selection-profile') and paths.selection_profile is None
+    pending = a.SHORT_T3_PENDING_PROFILE
+    for extra, exception in [
+        (['--selection-profile', pending] * 2, AssertionError),
+        (['--selection-profile=' + pending] * 2, AssertionError),
+        (['--selection-profile', a.SHORT_T3_OWNERSHIP_PROFILE, '--selection-profile', pending], AssertionError),
+        (['--selection-profile', pending, '--selection-profile=' + a.SHORT_T3_OWNERSHIP_PROFILE], AssertionError),
+        (['--selection-profile=unknown'], SystemExit),
+        (['--selection-profile'], SystemExit),
+        (['--selection-p', pending], AssertionError),
+    ]:
+        try:
+            a.arguments(argv + extra)
+        except exception as error:
+            if isinstance(error, SystemExit):
+                assert error.code == 2
+        else:
+            raise AssertionError('invalid pending CLI arguments accepted: ' + str(extra))
+    base = fixture(); owned = owned_adapt(base); f = pending_adapt(base)
+    assert a._selection_for_profile(base['selection'], base['original'], base['policy'], None) == a.selection(base['selection'], base['original'], base['policy'])
+    assert a._selection_for_profile(owned['selection'], owned['original'], owned['policy'], a.SHORT_T3_OWNERSHIP_PROFILE) == a.selection_short_t3_ownership(owned['selection'], owned['original'], owned['policy'])
+    sites, policy = a._selection_for_profile(f['selection'], f['original'], f['policy'], pending)
+    assert sites == a.selection_short_t3_pending(f['selection'], f['original'], f['policy'])[0]
+    assert len(sites) == 2 and policy['selection_sha256'] == a.sha(f['selection'])
+    for wrong in (None, a.SHORT_T3_OWNERSHIP_PROFILE):
+        pending_reject('no inferred pending mode', lambda wrong=wrong: a._selection_for_profile(f['selection'], f['original'], f['policy'], wrong), 'unknown/short selection record')
+    for old in (base, owned):
+        pending_reject('pending never falls back', lambda old=old: a._selection_for_profile(old['selection'], old['original'], old['policy'], pending), 'pending selection prefix')
+    pending_reject('closed dispatch vocabulary', lambda: a._selection_for_profile(f['selection'], f['original'], f['policy'], 'unknown'), 'selection profile')
+    seed = dict(scope='STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY')
+    assert a._selection_binding(dict(seed), None) == seed
+    for profile in (a.SHORT_T3_OWNERSHIP_PROFILE, pending):
+        assert a._selection_binding(dict(seed), profile) == dict(seed, selection_profile=profile)
+    pending_reject('closed private binding', lambda: a._selection_binding(dict(seed), 'unknown'), 'selection profile')
+    pending_reject('no private relabel', lambda: a._selection_binding(dict(seed, selection_profile=a.SHORT_T3_OWNERSHIP_PROFILE), pending), 'duplicate selection profile binding')
+    print('pending CLI controls: explicit route, unchanged legacy/owned behavior and full-identity private binding')
+
+
+if __name__ == '__main__':
+    pending_selection_controls()
+    pending_producer_scope_controls()
+    pending_cli_controls()

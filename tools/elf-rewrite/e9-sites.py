@@ -42,6 +42,8 @@ RESTORE_SUFFIX = {
 }
 ADDRESS = r'(?:\[absolute\] )?-?0x[0-9a-f]+'
 LOADER_ADDRESS = 0x20FEDC000
+SHORT_T3_OWNERSHIP_PROFILE = 'elf-disassembly-null-jumps-short-t3-ownership-v1'
+SHORT_T3_PENDING_PROFILE = 'elf-disassembly-null-jumps-short-t3-pending-v1'
 
 
 def sha(data):
@@ -165,6 +167,19 @@ def executable_page_owner(image, pc, length, file_length):
 
 
 def selection(raw, original, policy_raw):
+    return _selection(raw, original, policy_raw, None)
+
+
+def selection_short_t3_ownership(raw, original, policy_raw):
+    return _selection(raw, original, policy_raw, SHORT_T3_OWNERSHIP_PROFILE)
+
+
+def selection_short_t3_pending(raw, original, policy_raw):
+    return _selection(raw, original, policy_raw, SHORT_T3_PENDING_PROFILE)
+
+
+def _selection(raw, original, policy_raw, selection_profile):
+    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'
     assert 0 < len(raw) <= 1024 * 1024 and raw.endswith(b'\n'), 'selection length/newline'
     policy = loads(policy_raw)
     assert policy.keys() == {'schema', 'original_sha256', 'selection_sha256', 'e9_revision', 'instrumentation', 'selection_style'}
@@ -174,6 +189,28 @@ def selection(raw, original, policy_raw):
     assert policy['instrumentation'] in ('null', 'real-hook')
     assert policy['selection_style'] in ('jump-site', 'heap-write', 'forced-puzzle')
     lines = raw.decode().splitlines()
+    if selection_profile == SHORT_T3_PENDING_PROFILE:
+        prefix = ['LI2TOOL 1', 'original ' + sha(original),
+                  'neighbor-victims short-only', 'neighbor-ownership inherited-t3',
+                  'pending-selected full-instruction-ownership']
+        assert b'\r' not in raw and raw.startswith(('\n'.join(prefix) + '\n').encode()), 'pending selection prefix'
+        assert lines[:5] == prefix, 'pending selection prefix'
+        for line in lines[5:]:
+            fields = line.split()
+            assert not fields or fields[0] not in ('neighbor-victims', 'neighbor-ownership', 'pending-selected'), 'duplicate/misplaced pending selection mode'
+        # Full raw bytes and the authenticated policy remain the public identity.
+        lines = lines[:2] + lines[5:]
+    elif selection_profile is not None:
+        prefix = ['LI2TOOL 1', 'original ' + sha(original),
+                  'neighbor-victims short-only', 'neighbor-ownership inherited-t3']
+        assert b'\r' not in raw and raw.startswith(('\n'.join(prefix) + '\n').encode()), 'owned selection prefix'
+        assert lines[:4] == prefix, 'owned selection prefix'
+        for line in lines[4:]:
+            fields = line.split()
+            assert not fields or fields[0] not in ('neighbor-victims', 'neighbor-ownership'), 'duplicate/misplaced selection mode'
+        # Only this private line view changes. Full raw identity and policy above
+        # remain authoritative; the stripped view is never returned or rehashed.
+        lines = lines[:2] + lines[4:]
     assert lines[0] == 'LI2TOOL 1'
     globals_, records, sites = {}, set(), []
     allowed = {'hook', 'site', 'entries', 'resumes', 'search', 'allocation'}
@@ -561,7 +598,29 @@ def read_bound(row):
     return data, [before.st_dev, before.st_ino, before.st_mode, before.st_size, before.st_mtime_ns, before.st_ctime_ns]
 
 
+def _selection_for_profile(raw, original, policy_raw, selection_profile):
+    if selection_profile is None:
+        return selection(raw, original, policy_raw)
+    if selection_profile == SHORT_T3_PENDING_PROFILE:
+        return selection_short_t3_pending(raw, original, policy_raw)
+    assert selection_profile == SHORT_T3_OWNERSHIP_PROFILE, 'selection profile'
+    return selection_short_t3_ownership(raw, original, policy_raw)
+
+
+def _selection_binding(result, selection_profile):
+    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'
+    assert 'selection_profile' not in result, 'duplicate selection profile binding'
+    if selection_profile is not None:
+        result['selection_profile'] = selection_profile
+    return result
+
+
 def validate(envelope, blobs):
+    return _validate(envelope, blobs, None)
+
+
+def _validate(envelope, blobs, selection_profile):
+    assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), 'selection profile'
     assert envelope.keys() == {'schema', 'lane', 'reference_commit', 'reference_tree', 'archive_sha256', 'capstone_revision', 'abi_delta_patch_sha256', 'common_argv', 'hook', 'files'}
     assert type(envelope['schema']) is int and envelope['schema'] == 1
     assert (envelope['reference_commit'], envelope['reference_tree'], envelope['archive_sha256'], envelope['capstone_revision'], envelope['abi_delta_patch_sha256']) == (REVISION, TREE, ARCHIVE, CAPSTONE, ABI_PATCH)
@@ -571,7 +630,7 @@ def validate(envelope, blobs):
     assert files.keys() == roles | ({'hook_elf'} if envelope['hook'] is not None else set())
     assert tuple(sha(blobs[r]) for r in ('frontend', 'backend', 'loader')) == PRODUCERS[lane], 'pinned producer lane'
     assert sha(blobs['transport_frontend']) == TRANSPORT
-    sites, policy = selection(blobs['selection'], blobs['original'], blobs['policy'])
+    sites, policy = _selection_for_profile(blobs['selection'], blobs['original'], blobs['policy'], selection_profile)
     common = envelope['common_argv']
     assert type(common) is list and all(type(v) is str and '\0' not in v for v in common)
     singles, actions = set(), []
@@ -614,20 +673,34 @@ def validate(envelope, blobs):
     ownership = artifact(blobs['original'], blobs['candidate'], blobs['loader'], intent, outcomes, maps, bypass, lane=lane)
     stats = statistics(blobs['producer_stdout'], outcomes, ownership, files['original']['path'])
     tsv = wire(sites, policy, outcomes, intent['trap'])
-    return tsv, dict(schema=1, scope='STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY', lane=lane,
+    result = dict(schema=1, scope='STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY', lane=lane,
         policy=policy, selected_sites=len(sites), outcomes=outcomes, rpc_messages=intent['messages'],
         rpc_instruction_records=len(intent['instructions']), producer_statistics=stats, ownership=ownership,
         site_inventory_sha256=sha(tsv), candidate_sha256=sha(blobs['candidate']),
         qualification_complete=False, runtime_executed_by_adapter=False,
         architectural_equivalence_proved=False, transport_witness_is_patch_success=False)
+    return tsv, _selection_binding(result, selection_profile)
 
 
-def main():
+def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('envelope', type=Path)
     parser.add_argument('new_output', type=Path)
     parser.add_argument('--envelope-sha256', required=True)
-    args = parser.parse_args()
+    parser.add_argument('--selection-profile', choices=(SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE), action='append')
+    values = list(sys.argv[1:] if argv is None else argv)
+    args = parser.parse_args(values)
+    if args.selection_profile is not None:
+        options = values[:values.index('--')] if '--' in values else values
+        assert len(args.selection_profile) == 1 and sum(
+            value.split('=', 1)[0] == '--selection-profile' for value in options
+        ) == 1, 'one exact selection-profile option required'
+        args.selection_profile = args.selection_profile[0]
+    return args
+
+
+def main():
+    args = arguments()
     assert args.envelope.is_file() and not args.envelope.is_symlink()
     raw = args.envelope.read_bytes()
     assert 0 < len(raw) <= MAX_FILE and sha(raw) == digest(args.envelope_sha256)
@@ -635,7 +708,7 @@ def main():
     blobs, owners = {}, {}
     for role, row in envelope['files'].items():
         blobs[role], owners[role] = read_bound(row)
-    tsv, result = validate(envelope, blobs)
+    tsv, result = _validate(envelope, blobs, args.selection_profile)
     for role, row in envelope['files'].items():
         current, identity = read_bound(row)
         assert current == blobs[role] and identity == owners[role], 'inputs changed during adapter read'
