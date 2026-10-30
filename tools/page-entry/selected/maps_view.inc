@@ -38,6 +38,47 @@ static void mv_invalidate(void) {
     (void)mv_inc(&maps_stats.mutation_epoch);
     (void)mv_inc(&mv.invalidations);
 }
+#ifdef LI2_MAPS_DIFFERENTIAL
+/* A differential hit observes private maps scratch only. Authenticate the
+   complete open/read/close transaction so the extra observer does not discard
+   a retained source-custody proof. Ordinary fresh acquisitions still use their
+   old gateway effects, as do all unrelated RAW calls. */
+static unsigned mv_compare_io,mv_observer_active,mv_observer_phase;
+static long mv_observer_fd,mv_observer_call[7];
+static size_t mv_observer_offset;
+static int mv_observer_matches(long n,long a,long b,long c,long d,long e,long f) {
+    if(!MV_LOAD(&mv_observer_active))return 0;
+    const long call[7]={n,a,b,c,d,e,f};
+    for(unsigned i=0;i<7;i++)if(call[i]!=mv_observer_call[i])return 0;
+    return 1;
+}
+static long mv_observer_raw(long n,long a,long b,long c,long d,long e,long f) {
+    if(!MV_LOAD(&mv_compare_io))return RAW(n,a,b,c,d,e,f);
+    unsigned phase=MV_LOAD(&mv_observer_phase);int allowed=0;
+    if(n==SYS_openat)allowed=!phase && a==AT_FDCWD && (uintptr_t)b==(uintptr_t)mv_maps_path &&
+        c==(O_RDONLY|O_CLOEXEC) && !d && !e && !f;
+    else if(n==SYS_read)allowed=phase==1 && a==mv_observer_fd && mv_observer_offset<MAP_BYTES &&
+        (uintptr_t)b==(uintptr_t)maps_bytes+mv_observer_offset &&
+        c==(long)(MAP_BYTES-mv_observer_offset) && !d && !e && !f;
+    else if(n==SYS_close)allowed=(phase==1 || phase==2) && a==mv_observer_fd &&
+        !b && !c && !d && !e && !f;
+    if(!allowed || MV_LOAD(&mv_observer_active) || MV_LOAD(&mv_depth)) {
+        mv_poison();return -EINVAL;
+    }
+    const long call[7]={n,a,b,c,d,e,f};
+    for(unsigned i=0;i<7;i++)mv_observer_call[i]=call[i];
+    MV_STORE(&mv_observer_active,1);
+    long result=RAW(n,a,b,c,d,e,f);
+    MV_STORE(&mv_observer_active,0);
+    if(n==SYS_openat && result>=0) {
+        mv_observer_fd=result;mv_observer_offset=0;MV_STORE(&mv_observer_phase,1);
+    } else if(n==SYS_read && result>=0) {
+        if((unsigned long)result>MAP_BYTES-mv_observer_offset)mv_poison();
+        else {mv_observer_offset+=(size_t)result;if(!result)MV_STORE(&mv_observer_phase,2);}
+    } else if(n==SYS_close && !result)MV_STORE(&mv_observer_phase,phase==2?3:4);
+    return result;
+}
+#endif
 void li2_maps_view_stack(uintptr_t anchor) {
     if(!anchor || mv_stack_anchor || MV_LOAD(&mv.enabled)){mv_poison();return;}
     mv_stack_anchor=anchor;
@@ -113,6 +154,9 @@ int li2_maps_clock_observer_register(const void *buffer,size_t bytes) {
    stack observer below. Other nonmapping syscalls can still write
    application/source/custody bytes. */
 static __attribute__((unused)) int maps_nonmutating(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_MAPS_DIFFERENTIAL
+    if(mv_observer_matches(n,a,b,c,d,e,f))return 1;
+#endif
     /* Exact private write destination and current stack-boundary query. This
        observer neither accesses application bytes nor changes the mapping. */
     if(n==SYS_mincore && mv_stack_first>=PAGE && (uintptr_t)a==mv_stack_first-PAGE &&
@@ -316,7 +360,17 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
         size_t count=row_count;
         for(size_t i=0;i<count;i++)mv_scratch[i]=rows[i];
         if(!mv_inc(&mv.comparisons))return check_error(e,LI2_FETCH_STATE,0);
-        int result=mv_fresh(e,p);if(result){mv_poison();return result;}
+        if(MV_LOAD(&mv_compare_io) || MV_LOAD(&mv_observer_active)) {
+            mv_poison();return check_error(e,LI2_FETCH_STATE,0);
+        }
+        mv_observer_fd=-1;mv_observer_offset=0;MV_STORE(&mv_observer_phase,0);
+        MV_STORE(&mv_compare_io,1);
+        int result=mv_fresh(e,p);
+        MV_STORE(&mv_compare_io,0);
+        if(result){mv_poison();return result;}
+        if(MV_LOAD(&mv_observer_active) || MV_LOAD(&mv_observer_phase)!=3) {
+            mv_poison();return check_error(e,LI2_FETCH_STATE,0);
+        }
         unsigned same=count==row_count;
         for(size_t i=0;same && i<count;i++)same=mv_same(&mv_scratch[i],&rows[i]);
         if(!same){(void)mv_inc(&mv.mismatches);mv_poison();return check_error(e,LI2_FETCH_STATE,0);}

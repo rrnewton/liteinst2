@@ -15,10 +15,15 @@ static unsigned mode,cases,partial_errno,alias_refusals,nested_updates,stack_gro
 static unsigned syscall_stack_growth,stack_split_retired,mismatch_refusal,poison_refusal,cleanup_maps,cleanup_fds;
 static unsigned disabled_refusal,anchor_fallback,persona_control,persona_calls;
 static struct li2_maps_view_stats final;
-static long kernel(long n,long a,long b,long c,long d,long e,long f) {
+static void observer_check(long,long,long,long,long,long,long);
+static long kernel_body(long n,long a,long b,long c,long d,long e,long f) {
     /* Named supplied-return control only; never attributed to the kernel. */
     if(persona_control && n==SYS_personality) {++persona_calls;return READ_IMPLIES_EXEC;}
     errno=0;long r=syscall(n,a,b,c,d,e,f);return r==-1?-errno:r;
+}
+static long kernel(long n,long a,long b,long c,long d,long e,long f) {
+    observer_check(n,a,b,c,d,e,f);
+    return kernel_body(n,a,b,c,d,e,f);
 }
 static long tracked(long n,long a,long b,long c,long d,long e,long f) {
     return li2_maps_raw(kernel,n,a,b,c,d,e,f);
@@ -29,13 +34,29 @@ static long nested(long n,long a,long b,long c,long d,long e,long f) {
 static void cleanup(void) {
     /* Real terminal cleanup, including poisoned prefixes; no resumed query. */
     for(unsigned i=0;i<4;i++)if(ranges[i]) {
-        if(kernel(SYS_munmap,(long)ranges[i],(long)extents[i],0,0,0,0))_Exit(124);
+        if(kernel_body(SYS_munmap,(long)ranges[i],(long)extents[i],0,0,0,0))_Exit(124);
         ranges[i]=0;++cleanup_maps;
     }
-    if(file>=0) {if(kernel(SYS_close,file,0,0,0,0,0))_Exit(124);file=-1;++cleanup_fds;}
+    if(file>=0) {if(kernel_body(SYS_close,file,0,0,0,0,0))_Exit(124);file=-1;++cleanup_fds;}
 }
 static void need(int yes,unsigned code) {
     if(!yes){cleanup();fprintf(stderr,"maps-view fixture failure %u mode %u\n",code,mode);_Exit(124);}
+}
+/* The actual kernel boundary observes every qualified private-I/O call.
+   Every single-argument mutation must lose the exemption; the predicate has
+   no authority after the transaction returns. These controls perform no I/O. */
+static void observer_check(long n,long a,long b,long c,long d,long e,long f) {
+    if(!__atomic_load_n(&mv_observer_active,__ATOMIC_ACQUIRE))return;
+    long args[7]={n,a,b,c,d,e,f};
+    need(__atomic_load_n(&mv_compare_io,__ATOMIC_ACQUIRE)==1 &&
+         (n==SYS_openat || n==SYS_read || n==SYS_close) &&
+         maps_nonmutating(n,a,b,c,d,e,f)==1,30);
+    for(unsigned i=0;i<7;i++) {
+        args[i]^=1;
+        need(!mv_observer_matches(args[0],args[1],args[2],args[3],args[4],args[5],args[6]) &&
+             !maps_nonmutating(args[0],args[1],args[2],args[3],args[4],args[5],args[6]),31+i);
+        args[i]^=1;
+    }
 }
 static _Noreturn void fatal(unsigned code,long detail) {
     (void)detail;need(0,10000+code);__builtin_unreachable();
@@ -47,6 +68,10 @@ static struct li2_maps_view_stats stats(void) {
 static struct li2_maps_view_stats query(unsigned code) {
     struct check_error e={0};struct li2_fetch_map_progress p;
     need(!read_maps_checked(&e,&p) && !e.code && !e.detail && row_count && row_count<=MAP_ROWS,code);
+    need(!__atomic_load_n(&mv_observer_active,__ATOMIC_ACQUIRE) &&
+         !__atomic_load_n(&mv_compare_io,__ATOMIC_ACQUIRE) &&
+         !maps_nonmutating(mv_observer_call[0],mv_observer_call[1],mv_observer_call[2],
+             mv_observer_call[3],mv_observer_call[4],mv_observer_call[5],mv_observer_call[6]),code+5);
     struct li2_maps_view_stats s=stats();
     need(s.enabled==1 && s.differential==1 && !s.poisoned && !s.reserved && !s.mismatches &&
          p.fd>=0 && p.opened==1 && p.closed==1 && p.close_started==1 &&

@@ -150,13 +150,24 @@ static void spaces(size_t *at,size_t end) {
 #define read_maps_fresh read_maps_event_body
 #endif
 #endif
+#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+static const char mv_maps_path[]="/proc/self/maps";
+static long mv_observer_raw(long,long,long,long,long,long,long);
+#define MAPS_READ_RAW(n,a,b,c,d,e,f) mv_observer_raw((n),(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
+#else
+#define MAPS_READ_RAW RAW
+#endif
 static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress *p) {
     *p=(struct li2_fetch_map_progress){.fd=-1};
-    const char path[]="/proc/self/maps";
-#ifdef LI2_EVENT_PROFILE
-    long fd=LI2_EVENT_MAPS_VALUE(LI2_EV_OPEN,RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0));
+#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+    const char *path=mv_maps_path;
 #else
-    long fd=RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0);
+    const char path[]="/proc/self/maps";
+#endif
+#ifdef LI2_EVENT_PROFILE
+    long fd=LI2_EVENT_MAPS_VALUE(LI2_EV_OPEN,MAPS_READ_RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0));
+#else
+    long fd=MAPS_READ_RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0);
 #endif
     if (fd<0) return check_error(e,104,fd);
     p->fd=fd; p->opened=1;
@@ -164,9 +175,9 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
     for (;;) {
         if (length==MAP_BYTES) { check_error(e,105,0); break; }
 #ifdef LI2_EVENT_PROFILE
-        long got=LI2_EVENT_MAPS_VALUE(LI2_EV_READ,RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0));
+        long got=LI2_EVENT_MAPS_VALUE(LI2_EV_READ,MAPS_READ_RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0));
 #else
-        long got=RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0);
+        long got=MAPS_READ_RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0);
 #endif
         p->last_read=got;
         if (got<0) { check_error(e,106,got); break; }
@@ -175,9 +186,9 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
     }
     p->close_started=1;
 #ifdef LI2_EVENT_PROFILE
-    p->close_result=LI2_EVENT_MAPS_VALUE(LI2_EV_CLOSE,RAW(SYS_close,fd,0,0,0,0,0));
+    p->close_result=LI2_EVENT_MAPS_VALUE(LI2_EV_CLOSE,MAPS_READ_RAW(SYS_close,fd,0,0,0,0,0));
 #else
-    p->close_result=RAW(SYS_close,fd,0,0,0,0,0);
+    p->close_result=MAPS_READ_RAW(SYS_close,fd,0,0,0,0,0);
 #endif
     if (!p->close_result) p->closed=1;
     else check_error(e,107,p->close_result);
@@ -220,6 +231,7 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
     }
     return 0;
 }
+#undef MAPS_READ_RAW
 #ifdef LI2_MAPS_PHASE_REUSE
 #ifdef LI2_EVENT_PROFILE
 #undef read_maps_fresh
