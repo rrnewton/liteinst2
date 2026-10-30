@@ -516,6 +516,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
         else chain_need(c,a->policy==1,LI2_CHAIN_DECODE,5);
     }
     if(s->fallback) {
+#ifdef LI2_EVENT_PROFILE
+        li2_event_site(&s->fetch.pages[0],s->decoded.pc,s->decoded.code,s->fallback);
+#endif
         chain_invalidate(c);chain_release(c,s,&s->release);
         chain_need(c,chain_frame_equal(&p->owner.step.after,uc,1),LI2_CHAIN_FRAME,6);
         s->phase=LI2_CHAIN_FALLBACK;chain_count(c,&c->fallbacks);c->pending=0;c->in_handler=0;

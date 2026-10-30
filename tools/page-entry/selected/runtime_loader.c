@@ -25,6 +25,11 @@
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.h"
+static void event_seal(void);
+static void event_report(void);
+#endif
 #ifdef LI2_ENTRY_TIMING
 #include "entry_timing.h"
 #endif
@@ -197,6 +202,21 @@ static void selected_repeat_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
+#ifdef LI2_EVENT_PROFILE
+    event_seal();
+#endif
+#ifdef LI2_MAPS_MAINTAINED
+    struct li2_maps_view_stats view;li2_maps_view_snapshot(&view);
+    struct writer view_writer={.used=0};
+    text(&view_writer,"LI2_MAPS_VIEW {\"version\":1");
+#define VIEW_FIELD(name) text(&view_writer,",\"" #name "\":");number(&view_writer,view.name)
+    VIEW_FIELD(queries);VIEW_FIELD(hits);VIEW_FIELD(refreshes);VIEW_FIELD(updates);
+    VIEW_FIELD(invalidations);VIEW_FIELD(comparisons);VIEW_FIELD(mismatches);
+    VIEW_FIELD(unexplained);VIEW_FIELD(stack_probes);VIEW_FIELD(enabled);
+    VIEW_FIELD(differential);VIEW_FIELD(poisoned);VIEW_FIELD(reserved);
+#undef VIEW_FIELD
+    text(&view_writer,"}\n");
+#endif
 #ifdef LI2_COST_PROFILE
     struct li2_native_pair_cost cost;struct li2_maps_stats cost_maps;
     li2_lifecycle_pair_cost_snapshot(&cost);li2_maps_stats_read(&cost_maps);
@@ -254,7 +274,17 @@ static void report(unsigned status,unsigned code,long detail) {
 #else
     selected_report(&w);
 #endif
-    text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+    text(&w,"}\n");
+#ifdef LI2_MAPS_MAINTAINED
+    /* Preserve the old snapshot point and exactly one first-report RAW write.
+       In particular, do not discard custody before selected_report observes it. */
+    char joined[sizeof view_writer.bytes+sizeof w.bytes];
+    copy(joined,view_writer.bytes,view_writer.used);
+    copy(joined+view_writer.used,w.bytes,w.used);
+    (void)raw(SYS_write,report_fd<0?2:report_fd,(long)joined,view_writer.used+w.used,0,0,0);
+#else
+    (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+#endif
 #ifdef LI2_NATIVE_PAGES
 #ifdef LI2_NATIVE_PAIR
     selected_native_pair_report(status,code,detail);
@@ -327,6 +357,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_COST_PROFILE
     selected_cost_report(status,code,detail,&cost,&cost_maps);
+#endif
+#ifdef LI2_EVENT_PROFILE
+    event_report();
 #endif
 }
 static void fail(unsigned code,long detail) {
@@ -617,6 +650,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_ENTRY_TIMING
 #include "entry_timing.inc"
 #endif
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.inc"
+#endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_NATIVE_PAIR
     li2_native_pair_preentry();
@@ -693,6 +729,16 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
     }
     checked(!handling && si && ptr,218,sig); handling=1;
+#ifdef LI2_MAPS_MAINTAINED
+    if(sig==SIGSEGV) {
+        const ucontext_t *uc=ptr;const greg_t *g=uc->uc_mcontext.gregs;
+        if(si->si_code!=SEGV_ACCERR || g[REG_TRAPNO]!=14 || g[REG_ERR]!=21 ||
+           (uintptr_t)si->si_addr!=(uintptr_t)g[REG_RIP])li2_maps_view_unexplained();
+    }
+#endif
+#ifdef LI2_EVENT_PROFILE
+    event_handler_begin(sig,(unsigned)selected_pending_route);
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     /* This scopes routing only. The route still authenticates its actual frame,
        session and query ownership before using any observations. */
@@ -749,6 +795,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_end(); /* Before sigreturn, hence before generated/app execution. */
+#endif
+#ifdef LI2_EVENT_PROFILE
+    event_handler_end(0);
 #endif
     handling=0;
 }
@@ -847,5 +896,11 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     native_error=li2_native_pair_initialize(&selected_session);
     checked(!native_error,(unsigned)native_error,1);
 #endif
+#endif
+#ifdef LI2_EVENT_PROFILE
+    event_initialize();
+#endif
+#ifdef LI2_MAPS_MAINTAINED
+    checked(!li2_maps_view_enable(),770,1);
 #endif
 }

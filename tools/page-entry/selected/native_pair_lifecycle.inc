@@ -148,6 +148,9 @@ static int np_life_validate_live(void) {
     return 0;
 }
 int li2_lifecycle_pair_prepare(const struct li2_native_pair_owner *o,uintptr_t pc,int *eligible) {
+#ifdef LI2_EVENT_PROFILE
+    LI2_EVENT_SCOPE(event_prepare,LI2_EV_PREPARE);
+#endif
     unsigned phase=np_life.live?LI2_NP_EXTENDING:LI2_NP_SEEDING;
     if(!eligible || !np_life_owner(o,phase) || np_life.busy || np_life.live>=2 ||
        !active || tx.guard || li2_lifecycle_fetch_interlock())return np_life_bad(LI2_NP_STATE,3);
@@ -189,13 +192,20 @@ int li2_lifecycle_pair_prepare(const struct li2_native_pair_owner *o,uintptr_t p
     if(np_life_copy(s,p,address,PAGE,s->window_before,1))return (int)np_life.first_error;
     if(after && np_life_copy(s,current(address+PAGE),address+PAGE,14,s->window_before+PAGE,0))
         return (int)np_life.first_error;
+#ifdef LI2_EVENT_PROFILE
+    s->policy=LI2_EVENT_VALUE(LI2_EV_POLICY,li2_native_policy(s->window,s->window_bytes));
+#else
     s->policy=li2_native_policy(s->window,s->window_bytes);
+#endif
     np_life.candidate_policy=s->policy;native_counts.last_block=s->policy;
     if(s->policy){native_increment(&native_counts.blocked);np_life.busy=0;return 0;}
     if(!np_life_epoch())return np_life_bad(LI2_NP_STALE,4);
     np_original[np_life.live]=*p;s->prepared=1;np_life.candidate_eligible=1;*eligible=1;return 0;
 }
 int li2_lifecycle_pair_publish(const struct li2_native_pair_owner *o,uintptr_t pc) {
+#ifdef LI2_EVENT_PROFILE
+    LI2_EVENT_SCOPE(event_publish,LI2_EV_PUBLISH);
+#endif
     unsigned phase=np_life.live?LI2_NP_EXTENDING:LI2_NP_SEEDING;
     if(!np_life_owner(o,phase) || np_life.busy!=1 || np_life.opening ||
        np_life.candidate!=pc || np_life.candidate_eligible!=1 || np_life.live>=2 ||
@@ -231,6 +241,9 @@ int li2_lifecycle_pair_publish(const struct li2_native_pair_owner *o,uintptr_t p
     np_life.post_verified=1;np_life.opening=0;np_life.busy=0;return 0;
 }
 int li2_lifecycle_pair_close(const struct li2_native_pair_owner *o) {
+#ifdef LI2_EVENT_PROFILE
+    LI2_EVENT_SCOPE(event_close,LI2_EV_NATIVE_CLOSE);
+#endif
     if((!np_life_owner(o,LI2_NP_CLOSING) && !np_life_owner(o,LI2_NP_REFAULTING)) ||
        np_life.busy || np_life.opening || np_life.close_calls==UINT64_MAX ||
        np_life.closed_pages>UINT64_MAX-np_life.live)return np_life_bad(LI2_NP_STATE,6);

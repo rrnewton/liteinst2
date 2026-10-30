@@ -14,7 +14,7 @@ import inventory_splice
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(inventory_digest.hexdigest(RAW) == 'a034a8076ce6dc2ab841102db71ac18e66f33787c80a570f6923b20bb64ff740', 'main813_inventory_data_differs')
+require(inventory_digest.hexdigest(RAW) == '7121a8574d54c064343d0e716b1c55a9ff31f3623d3d9e05d2f69a9f4df0b64b', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -76,7 +76,9 @@ CURRENTSHORTENGINE = MAINSHORTENGINE['current_corpus_sha256']
 MAINSHORTOWNERSHIP = DATA['neighbor_short_ownership']
 CURRENTSHORTOWNERSHIP = MAINSHORTOWNERSHIP['current_corpus_sha256']
 MAINSHORTPENDING = DATA['neighbor_short_pending']
-LATEST = MAINSHORTPENDING['current_corpus_sha256']
+CURRENTSHORTPENDING = MAINSHORTPENDING['current_corpus_sha256']
+MAINADJACENT = DATA['adjacent_b2']
+LATEST = MAINADJACENT['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -91,7 +93,7 @@ def precheck_current_sources(error):
     """Reject changed current blobs early; never replace historical validation."""
     layers = (DATA, MAIN690, MAINC0, MAINC1, MAINE797, MAINF0EF,
               MAIN7CDC, MAIN43D7, MAIN0DF8, MAIN0A8, MAIN09FE, MAIN727,
-              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING)
+              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT)
     expected = {}
     for layer in layers:
         # Non-plain metadata stays on the original path, without new callbacks
@@ -112,8 +114,57 @@ def precheck_current_sources(error):
         require(inventory_digest.hexdigest(raw) == value, error)
 
 
+def source_before_adjacent(path, data, error):
+    """Authenticate the whole adjacent API module before the exact older image."""
+    if path not in MAINADJACENT['projections']:
+        return data
+    row = MAINADJACENT['projections'][path]
+    require(type(data) is bytes and inventory_digest.hexdigest(data) == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = inventory_splice.splice(data, start, end, old)
+        last = start
+    require(inventory_digest.hexdigest(data) == row['previous_sha256'], error)
+    return data
+
+
+def require_adjacent_sources(error='adjacent_b2_source_inventory_differs'):
+    for path, expected in MAINADJACENT['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(inventory_digest.hexdigest(raw) == expected, error)
+        if path in MAINADJACENT['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAINADJACENT['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+        if path in MAINADJACENT['module_chains']:
+            require(all(raw.decode().count(literal) == 1 for literal in MAINADJACENT['module_chains'][path]), error)
+
+
+def before_adjacent(declared, error='adjacent_b2_inventory_differs', source_error='adjacent_b2_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_adjacent_sources(source_error)
+    old = inventory_copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAINADJACENT['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        rows[name] = inventory_copy.deepcopy(change['previous'])
+    require(digest(old) == MAINADJACENT['previous_corpus_sha256'] == CURRENTSHORTPENDING, error)
+    return old
+
+
+def peel_adjacent(declared, error, source_error):
+    return before_adjacent(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_short_pending(path, data, error):
     """Authenticate the complete pending image before its exact prior image."""
+    data = source_before_adjacent(path, data, error)
     if path not in MAINSHORTPENDING['projections']:
         return data
     row = MAINSHORTPENDING['projections'][path]
@@ -160,11 +211,13 @@ def require_short_pending_sources(error='neighbor_short_pending_source_inventory
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_adjacent(path, raw, error)
         _require_short_pending_blob(path, raw, expected, error)
 
 
 def before_short_pending(declared, error='neighbor_short_pending_inventory_differs', source_error='neighbor_short_pending_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_adjacent(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTSHORTPENDING, error)
     require_short_pending_sources(source_error)
     old = inventory_copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -176,7 +229,8 @@ def before_short_pending(declared, error='neighbor_short_pending_inventory_diffe
 
 
 def peel_short_pending(declared, error, source_error):
-    return before_short_pending(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_adjacent(declared, error, source_error)
+    return before_short_pending(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTSHORTPENDING else declared
 
 
 def source_before_short_ownership(path, data, error):

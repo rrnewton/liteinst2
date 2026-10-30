@@ -275,6 +275,9 @@ int li2_repeat_custody_seed(struct li2_repeat_lease_owner *o,const struct li2_fe
     if((e=rep_phase(LI2_REP_CUSTODY_BOUND,LI2_REP_CUSTODY_SEEDING)))return e;
     /* A new actual RX acquisition, never a reused R/NX or historical receipt. */
     li2_maps_phase_end();
+#ifdef LI2_MAPS_MAINTAINED
+    li2_maps_view_require_fresh();
+#endif
     if((e=li2_maps_phase_begin()) || (e=li2_lifecycle_fetch_validate(ref,0,PROT_READ|PROT_EXEC)))
         return rep_bad((unsigned)e,16);
     const struct owned_page *p=current(rep_custody.original.address);

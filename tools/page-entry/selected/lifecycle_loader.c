@@ -8,6 +8,9 @@ static int np_life_admission_guard(uintptr_t);
 #include "repeat_custody.h"
 #endif
 #include "bridge.h"
+#ifdef LI2_EVENT_PROFILE
+#include "event_profile.h"
+#endif
 #include <errno.h>
 #include <elf.h>
 #include <fcntl.h>
@@ -143,27 +146,56 @@ static void spaces(size_t *at,size_t end) {
 }
 #ifdef LI2_MAPS_PHASE_REUSE
 #define read_maps_checked read_maps_fresh
+#ifdef LI2_EVENT_PROFILE
+#define read_maps_fresh read_maps_event_body
+#endif
+#endif
+#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+static const char mv_maps_path[]="/proc/self/maps";
+static long mv_observer_raw(long,long,long,long,long,long,long);
+#define MAPS_READ_RAW(n,a,b,c,d,e,f) mv_observer_raw((n),(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
+#else
+#define MAPS_READ_RAW RAW
 #endif
 static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress *p) {
     *p=(struct li2_fetch_map_progress){.fd=-1};
+#if defined(LI2_MAPS_MAINTAINED) && defined(LI2_MAPS_DIFFERENTIAL)
+    const char *path=mv_maps_path;
+#else
     const char path[]="/proc/self/maps";
-    long fd=RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0);
+#endif
+#ifdef LI2_EVENT_PROFILE
+    long fd=LI2_EVENT_MAPS_VALUE(LI2_EV_OPEN,MAPS_READ_RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0));
+#else
+    long fd=MAPS_READ_RAW(SYS_openat,AT_FDCWD,path,O_RDONLY|O_CLOEXEC,0,0,0);
+#endif
     if (fd<0) return check_error(e,104,fd);
     p->fd=fd; p->opened=1;
     size_t length=0;
     for (;;) {
         if (length==MAP_BYTES) { check_error(e,105,0); break; }
-        long got=RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0);
+#ifdef LI2_EVENT_PROFILE
+        long got=LI2_EVENT_MAPS_VALUE(LI2_EV_READ,MAPS_READ_RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0));
+#else
+        long got=MAPS_READ_RAW(SYS_read,fd,maps_bytes+length,MAP_BYTES-length,0,0,0);
+#endif
         p->last_read=got;
         if (got<0) { check_error(e,106,got); break; }
         if (!got) break;
         length+=(size_t)got; p->bytes=length;
     }
     p->close_started=1;
-    p->close_result=RAW(SYS_close,fd,0,0,0,0,0);
+#ifdef LI2_EVENT_PROFILE
+    p->close_result=LI2_EVENT_MAPS_VALUE(LI2_EV_CLOSE,MAPS_READ_RAW(SYS_close,fd,0,0,0,0,0));
+#else
+    p->close_result=MAPS_READ_RAW(SYS_close,fd,0,0,0,0,0);
+#endif
     if (!p->close_result) p->closed=1;
     else check_error(e,107,p->close_result);
     if (e->code) return (int)e->code;
+#ifdef LI2_EVENT_PROFILE
+    LI2_EVENT_SCOPE(event_parse,LI2_EV_PARSE);
+#endif
     row_count=0; size_t at=0;
     while (at<length) {
         size_t end=at;
@@ -199,7 +231,16 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
     }
     return 0;
 }
+#undef MAPS_READ_RAW
 #ifdef LI2_MAPS_PHASE_REUSE
+#ifdef LI2_EVENT_PROFILE
+#undef read_maps_fresh
+static int read_maps_fresh(struct check_error *e,struct li2_fetch_map_progress *p) {
+    LI2_EVENT_SCOPE(event_maps,LI2_EV_MAPS);
+    int result=read_maps_event_body(e,p);
+    li2_event_maps_result(result,p->bytes,p->rows);return result;
+}
+#endif
 #undef read_maps_checked
 #include "maps_phase.inc"
 #endif
@@ -295,7 +336,7 @@ static int alias_segment_checked(const struct map_row *r,uintptr_t first,uintptr
          ((prot&PROT_WRITE) && (r->prot&PROT_EXEC)))) return check_error(e,119,0);
     return 0;
 }
-#ifdef LI2_MAPS_PHASE_REUSE
+#if defined(LI2_MAPS_PHASE_REUSE) && !defined(LI2_MAPS_MAINTAINED)
 #define alias_check_checked alias_check_direct
 #endif
 static int alias_check_checked(unsigned object,uint64_t offset,size_t bytes,unsigned prot,
@@ -324,7 +365,7 @@ static int alias_check_checked(unsigned object,uint64_t offset,size_t bytes,unsi
     }
     return 0;
 }
-#ifdef LI2_MAPS_PHASE_REUSE
+#if defined(LI2_MAPS_PHASE_REUSE) && !defined(LI2_MAPS_MAINTAINED)
 #undef alias_check_checked
 /* A memo of one pure, successful RX alias predicate over one complete maps
    acquisition. No VMA, owner, source-byte or backing observation is cached.

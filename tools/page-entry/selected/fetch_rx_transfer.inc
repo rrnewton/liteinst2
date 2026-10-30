@@ -21,6 +21,9 @@ int li2_lifecycle_fetch_rx_stage(const struct li2_fetch_ref *ref,uintptr_t pc,
         .before_sequence=ref->sequence,.pc=pc,.length=bytes};
     /* Explicit fresh acquisition; no map image crosses application execution. */
     li2_maps_phase_end();
+#ifdef LI2_MAPS_MAINTAINED
+    li2_maps_view_require_fresh();
+#endif
     if((e=li2_maps_phase_begin()))return rx_error(fetch_error((unsigned)e,0));
     if((e=li2_lifecycle_fetch_validate(ref,0,PROT_READ|PROT_EXEC)))return rx_error(e);
     const struct owned_page *p=current(page);const struct map_row *r=mapping(page);

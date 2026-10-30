@@ -33,11 +33,16 @@ static int os_reusable_renew(struct li2_oneshot_lifecycle *s,unsigned i,
     if(li2_page_custody_snapshot()->phase!=LI2_CUSTODY_EMPTY)
         return os_error(s,LI2_ONESHOT_GENERATION,64);
     li2_maps_phase_end();
+#ifdef LI2_MAPS_MAINTAINED
+    li2_maps_view_require_fresh();
+#endif
     struct li2_maps_stats maps;
     li2_maps_stats_read(&maps);
     if(maps.active || maps.valid || maps.poisoned)
         return os_error(s,LI2_ONESHOT_GENERATION,65);
+#ifndef LI2_MAPS_MAINTAINED
     __atomic_store_n(&alias_query_memo.valid,0,__ATOMIC_RELEASE);
+#endif
     native_blocked[(size_t)(p-records)]=0;
     atomic_signal_fence(memory_order_seq_cst);
     /* Allocation and record location remain fixed, but no old generation can

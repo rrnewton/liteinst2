@@ -106,6 +106,9 @@ static int os_fresh(struct li2_oneshot_lifecycle *s) {
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_end();
 #endif
+#ifdef LI2_MAPS_MAINTAINED
+    li2_maps_view_require_fresh();
+#endif
     s->progress.maps_started=i+1;atomic_signal_fence(memory_order_seq_cst);
     struct check_error e={0};int result=read_maps_checked(&e,&s->progress.maps[i]);
     atomic_signal_fence(memory_order_seq_cst);s->progress.maps_returned=i+1;
