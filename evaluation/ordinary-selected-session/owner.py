@@ -23,28 +23,34 @@ BUILD=('build','build-sha','build-owner','build-owner-sha')
 TEST=('test-product','test-product-sha','test-owner','test-owner-sha')
 CONTROLS=('controls','controls-sha','controls-owner','controls-owner-sha','geometry','geometry-sha')
 EXTRAS={'products':(),'tests':BUILD,'controls':BUILD+TEST,'campaign':BUILD+CONTROLS}
+PROFILES=('selected-session-functional-v1','selected-session-whole-functional-v1')
 
 
 def commands(options,python,script):
     """A finite argv grammar; no arbitrary executable or shell command input."""
     phase=options['phase'];assert phase in EXTRAS
-    assert set(options)==set(COMMON+EXTRAS[phase])
+    selected=('profile',) if 'profile' in options else ()
+    if selected:
+        assert phase in ('controls','campaign') and options['profile'] in PROFILES
+    keys=COMMON+EXTRAS[phase]+selected
+    assert set(options)==set(keys)
     assert all(type(v) is str and v for v in options.values())
     assert re.fullmatch('[0-9a-f]{40}',options['revision'])
     assert re.fullmatch('[A-Za-z0-9_.-]{1,128}',options['reservation-tag'])
     assert 1<=len(options['hardware'])<=160 and options['hardware'].isascii() and all(32<=ord(c)<127 for c in options['hardware'])
     assert script in ('evaluation/ordinary-selected-session/owner.py',str(HERE/'owner.py'))
-    for key in COMMON+EXTRAS[phase]:
+    for key in keys:
         if key.endswith('-sha'): assert re.fullmatch('[0-9a-f]{64}',options[key])
-        elif key not in ('phase','revision','reservation-tag','hardware'):
+        elif key not in ('phase','revision','reservation-tag','hardware','profile'):
             assert Path(options[key]).is_absolute()
-    invocation=[python,'-B',script]+[word for key in COMMON+EXTRAS[phase] for word in ('--'+key,options[key])]
+    invocation=[python,'-B',script]+[word for key in keys for word in ('--'+key,options[key])]
     if phase in ('products','tests'):
         target=HERE/'build.py'
         child_keys=('phase','revision','reservation-tag','raw','toolchain','user-home','cargo-home','hardware')+EXTRAS[phase]
     else:
         target=HERE/'reproduce.py'
         child_keys=('phase','revision','reservation-tag','raw','toolchain','user-home','cargo-home')+EXTRAS[phase]
+    child_keys+=selected
     child=[python,'-B',str(target)]+[word for key in child_keys for word in ('--'+key,options[key])]
     return invocation,child
 
@@ -103,10 +109,14 @@ def own_command(process_owner,recipe,command,env,capture,archive):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--phase',choices=tuple(EXTRAS),required=True)
+    parser.add_argument('--profile',choices=PROFILES)
     for name in COMMON[1:]: parser.add_argument('--'+name,required=True)
     for name in dict.fromkeys(BUILD+TEST+CONTROLS): parser.add_argument('--'+name)
     args=parser.parse_args();phase=args.phase
     permitted=COMMON+EXTRAS[phase]
+    if args.profile is not None:
+        assert phase in ('controls','campaign')
+        permitted+=('profile',)
     assert all(getattr(args,key.replace('-','_')) is None for key in set(BUILD+TEST+CONTROLS)-set(EXTRAS[phase]))
     options={key:getattr(args,key.replace('-','_')) for key in permitted}
     python=str(Path(sys.executable).resolve(strict=True))

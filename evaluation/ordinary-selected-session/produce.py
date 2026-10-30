@@ -20,6 +20,7 @@ import time
 
 CAP = 4 * 1024 * 1024
 PROFILE = 'selected-session-functional-v1'
+WHOLE_PROFILE = 'selected-session-whole-functional-v1'
 CELLS = (('unstripped', 10), ('unstripped', 1000), ('stripped', 10), ('stripped', 1000))
 
 
@@ -44,7 +45,8 @@ def pins_unchanged(pins):
 
 
 def plan_arguments(plan, oracle, checker):
-    assert plan['profile'] == PROFILE
+    profile = plan['profile']
+    assert type(profile) is str and profile in (PROFILE, WHOLE_PROFILE)
     assert type(plan['revision']) is str and len(plan['revision']) == 40
     assert all(c in '0123456789abcdef' for c in plan['revision'])
     assert type(plan['index']) is int and 0 <= plan['index'] < len(CELLS)
@@ -64,9 +66,14 @@ def plan_arguments(plan, oracle, checker):
     assert type(cpus) is list and len(cpus) == 3 and cpus == sorted(set(cpus))
     assert all(type(cpu) is int and 0 <= cpu < 1024 for cpu in cpus)
     table = tuple(dict(leaf, returns=tuple(leaf['returns'])) for leaf in plan['table'])
-    checker.geometry(table, plan['caller'], tuple(cpus[:2]))
-    assert [(leaf['function_id'], leaf['operation'], leaf['policy']) for leaf in table] == [
-        (101, 'first_equal', 'certified'), (202, 'uppercase_count', 'certified')]
+    if profile == PROFILE:
+        checker.geometry(table, plan['caller'], tuple(cpus[:2]))
+        assert [(leaf['function_id'], leaf['operation'], leaf['policy']) for leaf in table] == [
+            (101, 'first_equal', 'certified'), (202, 'uppercase_count', 'certified')]
+    else:
+        checker.geometry(table, plan['caller'], tuple(cpus[:2]), profile=profile)
+        assert [(leaf['function_id'], leaf['operation'], leaf['policy']) for leaf in table] == [
+            (101, 'first_equal', 'whole'), (202, 'uppercase_count', 'whole')]
     if plan['leg'] == 'installed':
         argv = [plan['binary'], 'normal-selected-session', plan['candidate'], plan['trusted'],
                 plan['expected_table'], str(k), '520', '2']
@@ -78,8 +85,11 @@ def plan_arguments(plan, oracle, checker):
                 plan['reference_dso'], str(len(records))]
     assert plan['argv'] == argv
     case = dict(name=name, records=records, data=data, close=True, outcome='eof', input_error='none')
-    return case, dict(records=records, table=table, caller=plan['caller'], k=k, epochs=520,
-                      outcome='eof', input_error='none', cpus=tuple(cpus[:2]))
+    checked = dict(records=records, table=table, caller=plan['caller'], k=k, epochs=520,
+                   outcome='eof', input_error='none', cpus=tuple(cpus[:2]))
+    if profile != PROFILE:
+        checked['profile'] = profile
+    return case, checked
 
 
 def ready_row(raw, pid, checker):
@@ -136,7 +146,7 @@ def main():
     rescue = False
     normal_reaps = 0
     failure = None
-    result = dict(status='FAILED', profile=PROFILE, revision=plan['revision'], leg=plan['leg'],
+    result = dict(status='FAILED', profile=plan['profile'], revision=plan['revision'], leg=plan['leg'],
                   variant=plan['variant'], index=plan['index'], name=case['name'], n=plan['n'], k=plan['k'])
     deadline = time.monotonic() + 15
     child = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

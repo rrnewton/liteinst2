@@ -25,16 +25,23 @@ _shared = _load('_selected_session_shared_wire',
 _oracle = _load('_selected_session_wire_oracle', _HERE / 'oracle.py')
 OPERATIONS = ('first_equal', 'uppercase_count')
 FUNCTIONS = (101, 202)
+PROFILE = 'selected-session-functional-v1'
+WHOLE_PROFILE = 'selected-session-whole-functional-v1'
 CAP = _shared.CAP
 LINE = _shared.LINE
 uint = _shared.uint
 
 
-def geometry(table, caller, cpus):
+def geometry(table, caller, cpus, *, profile=PROFILE):
+    assert type(profile) is str and profile in (PROFILE, WHOLE_PROFILE)
     assert type(table) is tuple and len(table) == 2
     _shared._geometry(table, caller, cpus, OPERATIONS)
-    assert tuple((leaf['function_id'], leaf['operation'], leaf['policy']) for leaf in table) == (
-        (101, 'first_equal', 'certified'), (202, 'uppercase_count', 'certified'))
+    if profile == PROFILE:
+        assert tuple((leaf['function_id'], leaf['operation'], leaf['policy']) for leaf in table) == (
+            (101, 'first_equal', 'certified'), (202, 'uppercase_count', 'certified'))
+    else:
+        assert tuple((leaf['function_id'], leaf['operation'], leaf['policy']) for leaf in table) == (
+            (101, 'first_equal', 'whole'), (202, 'uppercase_count', 'whole'))
 
 
 def _semantic_rows(records):
@@ -49,8 +56,9 @@ def _semantic_rows(records):
     return tuple(rows)
 
 
-def check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_error, cpus):
-    geometry(table, caller, cpus)
+def check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_error, cpus,
+          profile=PROFILE):
+    geometry(table, caller, cpus, profile=profile)
     assert type(records) is tuple and records == _oracle.records(k)
     assert type(epochs) is int and epochs == 520
     assert outcome == 'eof' and input_error == 'none'

@@ -517,3 +517,6 @@ fn whole_actual_image_validator_refuses_branch_ret_maps_and_control_mutations() 
         Err(Refusal::InvalidPlan)
     );
 }
+
+#[path = "adc_tests.rs"]
+mod adc_tests;

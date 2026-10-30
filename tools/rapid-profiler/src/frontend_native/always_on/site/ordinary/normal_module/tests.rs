@@ -380,3 +380,147 @@ fn module_reaches_derived_ten_group_cap_without_larger_leaf_windows() {
     assert!(replace_projection(&mut gap, PAGE + 4094, &[3; 4]).is_err());
     assert_eq!(gap, before);
 }
+
+#[test]
+fn module_actual_selected_adc_bodies_have_explicit_whole_plans_on_the_shared_page() {
+    // Exact final GCC bodies, at their actual relative ELF page positions.
+    const FIRST: &[u8] = &[
+        0x48, 0x89, 0xf0, 0x48, 0x85, 0xf6, 0x74, 0x1a, 0x31, 0xd2, 0xeb, 0x0d, 0x0f, 0x1f, 0x40,
+        0x00, 0x48, 0x83, 0xc2, 0x01, 0x48, 0x39, 0xd0, 0x74, 0x0f, 0x80, 0x3c, 0x17, 0x3d, 0x75,
+        0xf1, 0x48, 0x89, 0xd0, 0xc3, 0x0f, 0x1f, 0x44, 0x00, 0x00, 0xc3,
+    ];
+    const UPPER: &[u8] = &[
+        0x48, 0x85, 0xf6, 0x74, 0x2b, 0x48, 0x01, 0xfe, 0x45, 0x31, 0xc0, 0x0f, 0x1f, 0x44, 0x00,
+        0x00, 0x0f, 0xb6, 0x07, 0x83, 0xe8, 0x41, 0x3c, 0x1a, 0x49, 0x83, 0xd0, 0x00, 0x48, 0x83,
+        0xc7, 0x01, 0x48, 0x39, 0xf7, 0x75, 0xeb, 0x4c, 0x89, 0xc0, 0xc3, 0x0f, 0x1f, 0x80, 0x00,
+        0x00, 0x00, 0x00, 0x45, 0x31, 0xc0, 0x4c, 0x89, 0xc0, 0xc3,
+    ];
+    let entries = [PAGE, PAGE + 48];
+    let codes = [FIRST, UPPER];
+    let certificates = [
+        admit_for_planner_test(FIRST, entries[0]).unwrap(),
+        admit_for_planner_test(UPPER, entries[1]).unwrap(),
+    ];
+    assert_eq!(certificates[0].returns(), [PAGE + 34, PAGE + 40]);
+    assert_eq!(certificates[1].returns(), [PAGE + 88, PAGE + 102]);
+    // Both certified refusals stay exact; no implicit route selection occurs.
+    for c in &certificates {
+        assert!(matches!(
+            groups(c.entry(), c.returns(), c.blocks(), c.edges()),
+            Err(SiteError::Core(Refusal::NoPatchWindow))
+        ));
+    }
+    let mut bytes = vec![0xa5; 4096];
+    bytes[..41].copy_from_slice(FIRST);
+    bytes[48..103].copy_from_slice(UPPER);
+    let originals = vec![ExpectedBytes {
+        address: PAGE,
+        bytes,
+    }];
+    let functions = [0, 1].map(|n| ModuleFunctionSource {
+        code: codes[n],
+        certificate: &certificates[n],
+        source_range: (PAGE, PAGE + 4096),
+    });
+    let identity = CodeIdentity {
+        source: SourceIdentity([182; 32]),
+        mapping: PAGE,
+        generation: 1,
+    };
+    let (bundle, site) = prepare_module(
+        functions,
+        &originals,
+        identity,
+        [PreparationPolicy::WholeFunction; 2],
+    )
+    .unwrap();
+    assert_eq!(bundle.images().len(), 2);
+    assert_eq!(bundle.plan().steps().len(), 2);
+    assert_eq!(bundle.plan().originals(), originals);
+    assert_eq!(site.functions()[0].range(), (PAGE, PAGE + 41));
+    assert_eq!(site.functions()[1].range(), (PAGE + 48, PAGE + 103));
+    assert_eq!(
+        site.roles()
+            .map(|r| (r.function_index, r.kind, r.pc))
+            .collect::<Vec<_>>(),
+        [
+            (0, NormalModuleRoleKind::Entry, PAGE),
+            (0, NormalModuleRoleKind::Return, PAGE + 34),
+            (0, NormalModuleRoleKind::Return, PAGE + 40),
+            (1, NormalModuleRoleKind::Entry, PAGE + 48),
+            (1, NormalModuleRoleKind::Return, PAGE + 88),
+            (1, NormalModuleRoleKind::Return, PAGE + 102),
+        ]
+    );
+    let mut independent = originals[0].bytes.clone();
+    let mut owned = vec![AddressRange::new(PAGE, 4096).unwrap()];
+    for (n, (step, image)) in bundle
+        .plan()
+        .steps()
+        .iter()
+        .zip(bundle.images())
+        .enumerate()
+    {
+        let parts = step.parts();
+        let scope = AddressRange::new(entries[n], codes[n].len()).unwrap();
+        assert_eq!(parts.displaced, scope);
+        assert_eq!(
+            parts.reads,
+            [ExpectedBytes {
+                address: entries[n],
+                bytes: codes[n].to_vec()
+            }]
+        );
+        assert_eq!(parts.entries.scope, scope);
+        assert_eq!(parts.entries.resumes, ResumeObligation::NoneExist);
+        assert_eq!(parts.allocations.len(), 1);
+        assert_eq!(image.controls().len(), 3);
+        assert_eq!(
+            image.layout().observation_stack_profile,
+            ObservationStackProfile::Legacy128
+        );
+        assert_eq!(
+            image
+                .instruction_boundaries()
+                .iter()
+                .map(|&(pc, _)| pc)
+                .collect::<Vec<_>>(),
+            certificates[n].heads()
+        );
+        assert_eq!(
+            image
+                .entry_routes()
+                .iter()
+                .map(|&(pc, _)| pc)
+                .collect::<Vec<_>>(),
+            certificates[n].heads()
+        );
+        for allocation in &parts.allocations {
+            assert!(allocation.range.len() <= 8192);
+            assert!(owned.iter().all(|prior| !prior.overlaps(allocation.range)));
+            owned.push(allocation.range);
+        }
+        assert_eq!(parts.writes.len(), 1);
+        assert_eq!(parts.writes[0].address, entries[n]);
+        assert_eq!(parts.writes[0].bytes.len(), codes[n].len());
+        for edit in &parts.writes {
+            let at = (edit.address - PAGE) as usize;
+            independent[at..at + edit.bytes.len()].copy_from_slice(&edit.bytes);
+        }
+    }
+    assert_eq!(
+        bundle.plan().final_bytes(),
+        [ExpectedBytes {
+            address: PAGE,
+            bytes: independent
+        }]
+    );
+    assert_eq!(
+        &bundle.plan().final_bytes()[0].bytes[41..48],
+        &originals[0].bytes[41..48]
+    );
+    assert_eq!(
+        &bundle.plan().final_bytes()[0].bytes[103..],
+        &originals[0].bytes[103..]
+    );
+}

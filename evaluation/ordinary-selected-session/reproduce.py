@@ -23,6 +23,8 @@ ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 MIB = 1048576
 PROFILE = 'selected-session-functional-v1'
+WHOLE_PROFILE = 'selected-session-whole-functional-v1'
+PROFILES = (PROFILE, WHOLE_PROFILE)
 RECIPE = 'evaluation/ordinary-module-session/reproduce.py'
 RECIPE_SHA = '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'
 BUILD_ROOTS = ('.cargo', 'src', 'crates', 'tools', 'Cargo.toml', 'Cargo.lock', 'build.rs',
@@ -54,6 +56,19 @@ def load(name, path):
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def selected_profile(arguments):
+    # Public products/tests have no profile selector; the historical default is
+    # exact. A campaign's profile never comes from observed output or fallback.
+    value = getattr(arguments, 'profile', PROFILE)
+    assert type(value) is str and value in PROFILES
+    return value
+
+
+def profile_record(record, expected, field='profile'):
+    assert type(expected) is str and expected in PROFILES
+    assert type(record[field]) is str and record[field] == expected, 'selected profile mismatch'
 
 
 def revision(value):
@@ -285,7 +300,8 @@ def accept_geometry(run,recipe,new,build,build_path,path,digest):
     assert accepted['build_result_sha256'] == run.retained[str(build_path)]['sha256']
     assert accepted['build_revision'] == build['revision'] and accepted['products'] == build['products']
     assert accepted['status'] == 'INDEPENDENTLY_ACCEPTED_FOR_FIXED_SCALAR_EXECUTION'
-    assert accepted['scope'] == PROFILE and accepted['native_state'] == 'UNRUN_SEPARATE_REQUIRED'
+    profile_record(accepted, selected_profile(run.a), 'scope')
+    assert accepted['native_state'] == 'UNRUN_SEPARATE_REQUIRED'
     required = ('complete_symbol_extents','complete_cfg_and_all_returns','complete_elf_and_source_pages',
                 'strip_preserves_selected_bytes_and_pages','ordinary_rust_and_reference_callers',
                 'immutable_path_and_object_lifetime','scalar_sysv_abi_and_readable_inputs',
@@ -298,7 +314,7 @@ def accept_geometry(run,recipe,new,build,build_path,path,digest):
     definitions=new['geometry'].preserved(symbol_suffix(recipe.read(d/'leaves.so-elf/stdout',4*MIB)),
                                            symbol_suffix(recipe.read(d/'leaves-stripped.so-elf/stdout',4*MIB)))
     table=tuple(dict(row,returns=tuple(row['returns'])) for row in accepted['table'])
-    new['output'].geometry(table,accepted['caller'],tuple(run.cpus[:2]))
+    new['output'].geometry(table,accepted['caller'],tuple(run.cpus[:2]),profile=selected_profile(run.a))
     assert len(definitions)==len(table)==2
     for definition,row in zip(definitions,table):
         assert (definition['name'],definition['elf_va'],definition['extent']) == (row['operation'],row['elf_va'],row['extent'])
@@ -335,7 +351,7 @@ def freeze_cells(run,recipe,new,build,build_path,table,caller):
         write_blob(run,recipe,plans/f'k{k}.txt',new['oracle'].table(k))
     for row in run.result['cells']:
         k=row['k'];copy=copies[row['variant']]
-        plan=dict(row,profile=PROFILE,revision=run.a.revision,cpus=run.cpus,table=list(table),caller=caller,
+        plan=dict(row,profile=selected_profile(run.a),revision=run.a.revision,cpus=run.cpus,table=list(table),caller=caller,
                   binary=str(source/'ordinary-interval'),reference_binary=str(source/'reference'),
                   candidate=copy['candidate'],trusted=copy['trusted'],reference_dso=copy['reference'],
                   stdin_file=str(plans/f'k{k}.csv'),expected_table=str(plans/f'k{k}.txt'),taskset=str(run.tools['taskset']))
@@ -468,6 +484,19 @@ DRIVER_CONTROLS = (
     'test_copy_source_substitution_refuses_before_identity_or_copy',
 )
 
+PROFILE_CONTROLS = (
+    'test_explicit_owner_profile_forwards_only_controls_and_campaign',
+    'test_old_default_and_unknown_profile_dispatch_stay_strict',
+    'test_whole_profile_binds_all_eight_plans_and_exact_whole_argv',
+    'test_profile_policy_and_mixed_tables_cannot_cross',
+    'test_whole_geometry_retains_exact_extent_return_and_identity_bounds',
+    'test_whole_wire_checks_both_complete_populations_without_projection',
+    'test_whole_wire_keeps_every_row_family_and_scalar_join',
+    'test_cross_profile_child_receipts_refuse_before_safe_release',
+    'test_geometry_and_controls_scope_must_match_selected_profile',
+    'test_profile_control_inventory_only_appends_to_unchanged_default',
+)
+
 CONTROL_STAGE_LABELS = (
     'controls-rust-list', 'controls-rust',
     'controls-python-module', 'controls-python-leaf-wire',
@@ -477,6 +506,16 @@ CONTROL_STAGE_LABELS = (
     'controls-python-selected-runner', 'controls-python-selected-geometry',
     'controls-python-selected-driver',
 )
+
+
+def control_stage_labels(profile=PROFILE):
+    assert type(profile) is str and profile in PROFILES
+    return CONTROL_STAGE_LABELS + (() if profile == PROFILE else ('controls-python-selected-profile',))
+
+
+def python_control_count(profile=PROFILE):
+    assert type(profile) is str and profile in PROFILES
+    return 94 if profile == PROFILE else 104
 
 
 def selected_inventory(inventory, leaf, recipe, modules):
@@ -490,7 +529,7 @@ def selected_inventory(inventory, leaf, recipe, modules):
     return expected
 
 
-def python_suites(leaf, recipe):
+def python_suites(leaf, recipe, profile=PROFILE):
     """Literal new names plus the unchanged, separately pinned old inventories."""
     rows = (
         ('controls-python-module', 'evaluation/ordinary-module-session/controls.py',
@@ -518,6 +557,13 @@ def python_suites(leaf, recipe):
     assert sum(row[3] for row in rows) == 94
     for _, _, names, count, _ in rows:
         assert len(names) == len(set(names)) == count
+    assert type(profile) is str and profile in PROFILES
+    if profile == WHOLE_PROFILE:
+        assert len(PROFILE_CONTROLS) == len(set(PROFILE_CONTROLS)) == 10
+        rows += (('controls-python-selected-profile', 'evaluation/ordinary-selected-session/profile_controls.py',
+                  PROFILE_CONTROLS, 10, 'owners.reuse_python_controls'),)
+    assert tuple(row[0] for row in rows) == control_stage_labels(profile)[2:]
+    assert sum(row[3] for row in rows) == python_control_count(profile)
     return tuple(dict(name=name, path=path, expected=names, count=count, verifier=verifier)
                  for name, path, names, count, verifier in rows)
 
@@ -554,7 +600,7 @@ def run_controls(run, recipe, leaf, owners, new, test_binary):
     stdout, stderr = stage('controls-rust', [test_binary, *expected, '--exact', '--test-threads=1'],
                            'census.controls', expected)
     rust = census.controls(stdout, stderr, expected, inventory)
-    for suite in python_suites(leaf, recipe):
+    for suite in python_suites(leaf, recipe, selected_profile(run.a)):
         argv = [run.tools['python'], '-B', recipe.ROOT / suite['path'], '-v']
         stdout, stderr = stage(suite['name'], argv, suite['verifier'], suite['expected'])
         if suite['verifier'] == 'recipe.python_controls':
@@ -564,10 +610,10 @@ def run_controls(run, recipe, leaf, owners, new, test_binary):
             owners.reuse_python_controls(stdout, stderr, suite['expected'])
         python_results.append(dict(name=suite['name'], status='PASS', count=suite['count'],
                                    expected=list(suite['expected'])))
-    assert tuple(spec['name'] for spec in specs) == CONTROL_STAGE_LABELS
-    assert sum(row['count'] for row in python_results) == 94
+    assert tuple(spec['name'] for spec in specs) == control_stage_labels(selected_profile(run.a))
+    assert sum(row['count'] for row in python_results) == python_control_count(selected_profile(run.a))
     return dict(stage_specs=specs, inventory=list(inventory), rust=rust,
-                python=python_results, rust_count=92, python_count=94)
+                python=python_results, rust_count=92, python_count=python_control_count(selected_profile(run.a)))
 
 
 def accept_test_product(run,recipe,path,digest,owner_path,owner_digest,build,build_path,git):
@@ -613,7 +659,8 @@ def accept_test_product(run,recipe,path,digest,owner_path,owner_digest,build,bui
 
 def replay_controls(run,recipe,leaf,owners,path,digest,owner_path,owner_digest,build,build_path,git):
     result=read_json(run,recipe,path,digest,32*MIB);directory=Path(path).parent
-    assert result['profile']==PROFILE and result['phase']=='controls' and result['status']=='SELECTED_CONTROLS_PASS'
+    profile_record(result, selected_profile(run.a))
+    assert result['phase']=='controls' and result['status']=='SELECTED_CONTROLS_PASS'
     assert result['execution_revision']==run.a.revision
     assert result['custody_closed'] is True and result['retention_verified'] is True
     owner=read_json(run,recipe,owner_path,owner_digest);recipe.normal_closed(owner['closed'])
@@ -631,9 +678,9 @@ def replay_controls(run,recipe,leaf,owners,path,digest,owner_path,owner_digest,b
         if name in run.tool_pins: assert run.tool_pins[name]==pin
         else: run.tool_pins[name]=pin
     actual=result['controls'];specs=actual['stage_specs']
-    assert tuple(spec['name'] for spec in specs)==CONTROL_STAGE_LABELS
-    assert tuple(row['name'] for row in result['stages'])==CONTROL_STAGE_LABELS
-    assert actual['rust_count']==92 and actual['python_count']==94
+    assert tuple(spec['name'] for spec in specs)==control_stage_labels(selected_profile(run.a))
+    assert tuple(row['name'] for row in result['stages'])==control_stage_labels(selected_profile(run.a))
+    assert actual['rust_count']==92 and actual['python_count']==python_control_count(selected_profile(run.a))
     observed=[]
     for spec,row in zip(specs,result['stages']):
         name=spec['name'];d=directory/(name+'-io');outer=directory/name
@@ -670,7 +717,7 @@ def replay_controls(run,recipe,leaf,owners,path,digest,owner_path,owner_digest,b
     assert specs[1]['verifier']=='census.controls' and specs[1]['expected']==list(expected)
     assert run.m['census'].controls(*observed[1],expected,inventory)==actual['rust']
     assert list(inventory)==actual['inventory']
-    suites=python_suites(leaf,recipe)
+    suites=python_suites(leaf,recipe,selected_profile(run.a))
     assert actual['python']==[dict(name=suite['name'],status='PASS',count=suite['count'],expected=list(suite['expected'])) for suite in suites]
     for suite,spec,(out,err) in zip(suites,specs[2:],observed[2:]):
         assert spec['argv']==[str(run.tools['python']),'-B',str(ROOT/suite['path']),'-v']
@@ -719,7 +766,7 @@ def bootstrap(a,started):
     selected_required={str((HERE/name).relative_to(ROOT)) for name in (
         'README.md','leaves.c','reference.c','oracle.py','controls.py','output.py','wire_controls.py',
         'produce.py','closure.py','runner_controls.py','geometry.py','geometry_controls.py',
-        'reproduce.py','driver_controls.py','build.py','build_controls.py','owner.py','BUILD.md')}
+        'reproduce.py','driver_controls.py','build.py','build_controls.py','owner.py','BUILD.md','profile_controls.py')}
     # Exact inherited requirements stay mandatory even if an untracked file with
     # the same name happens to exist after a tracked source was removed.
     inherited_required={'evaluation/ordinary-leaf-set-session/reproduce.py',
@@ -752,18 +799,18 @@ def bootstrap(a,started):
     pins={str(path):recipe.pin(recipe.read(path,512*MIB)) for path in tools.values()}
     a.raw.mkdir(mode=0o700);(a.raw/'tmp').mkdir()
     run=recipe.Run(a,a.raw,tools,env,sources,modules,started,pins)
-    run.result.update(profile=PROFILE,phase=a.phase,execution_revision=a.revision,build_revision=None,
+    run.result.update(profile=selected_profile(a),phase=a.phase,execution_revision=a.revision,build_revision=None,
         status='FAILED',cells=initial_rows(),population_counts_are_expected=True,scope=SCOPE,native_state='UNRUN_SEPARATE_REQUIRED',performance='UNRUN',
         environment=env,controls=None,invocation=[str(tools['python']),'-B',sys.argv[0],*sys.argv[1:]])
     run.freeze(a.raw/'sources-before.json',sources,16*MIB)
-    run.freeze(a.raw/'initial-plan.json',dict(profile=PROFILE,phase=a.phase,execution_revision=a.revision,
-        cells=initial_rows(),control_stages=CONTROL_STAGE_LABELS,scope=SCOPE,cpus=run.cpus,
+    run.freeze(a.raw/'initial-plan.json',dict(profile=selected_profile(a),phase=a.phase,execution_revision=a.revision,
+        cells=initial_rows(),control_stages=control_stage_labels(selected_profile(a)),scope=SCOPE,cpus=run.cpus,
         owner_seconds=7200,cpu_seconds=20,wall_seconds=30,producer_seconds=15,retries=0))
     return run,recipe,new,leaf,owners,git
 
 
 def summary(result):
-    return dict(status=result['status'],profile=PROFILE,phase=result['phase'],
+    return dict(status=result['status'],profile=result['profile'],phase=result['phase'],
         build_revision=result['build_revision'],execution_revision=result['execution_revision'],
         cells=[dict({key:row.get(key) for key in ('name','status','attempts','child_exit','normal_reaps')},
                     expected_records=row['records'],expected_calls=row['calls']) for row in result['cells']],
@@ -774,6 +821,7 @@ def main():
     started=time.monotonic()
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--phase',choices=('controls','campaign'),required=True)
+    parser.add_argument('--profile',choices=PROFILES,default=PROFILE)
     for name in ('revision','reservation-tag'): parser.add_argument('--'+name,required=True)
     for name in ('raw','toolchain','user-home','cargo-home','build','build-owner'):
         parser.add_argument('--'+name,type=Path,required=True)
