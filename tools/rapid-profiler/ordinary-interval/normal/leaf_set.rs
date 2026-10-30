@@ -13,6 +13,7 @@ use shared::io::Io;
 use shared::{Application as ApplicationTrait, failure};
 use std::sync::OnceLock;
 mod check;
+mod counter;
 mod expectation;
 mod selected;
 #[cfg(test)]
@@ -281,6 +282,9 @@ pub(in crate::normal) struct Application<const N: usize> {
     cpus: [usize; 2],
     k: usize,
     epochs: u32,
+    accuracy: Option<Policy>,
+    arm_observations: Vec<shared::ArmObservation>,
+    counter: Option<counter::Evidence>,
 }
 impl<const N: usize> Application<N> {
     fn ready(&mut self, tid: u64, io: &mut Io) -> Result<(), String> {
@@ -294,10 +298,13 @@ impl<const N: usize> Application<N> {
         emit(
             io,
             format!(
-                "READY,{},{},{},10,2,64,{},{},1,{},{},{},{},{},{},{},{},{}\n",
-                self.ledger.expectations.wire_version(),
-                self.k,
-                self.epochs,
+                "{}{},{},1,{},{},{},{},{},{},{},{},{}\n",
+                ready_header(
+                    self.ledger.expectations.wire_version(),
+                    self.k,
+                    self.epochs,
+                    self.accuracy
+                ),
                 record_cap(N),
                 N,
                 INSTALL,
@@ -331,6 +338,9 @@ impl<const N: usize> Application<N> {
                 emit(io, format!("RET,{i},{}\n", pc - self.entries[i]))?;
             }
         }
+        if let Some(counter) = &mut self.counter {
+            counter.ready(id, io)?;
+        }
         Ok(())
     }
 }
@@ -338,8 +348,26 @@ impl<const N: usize> ApplicationTrait for Application<N> {
     type Controller = Controller<N>;
     type Command = input::Command;
     type Call = worker::Call;
-    type Batch = NormalLeafSetBatch;
+    type Batch = counter::Batch;
     type Completion = Result<(), input::InputCompletion>;
+    fn observe_arms(&self) -> bool {
+        self.accuracy.is_some()
+    }
+    fn arm_observation(
+        &mut self,
+        observation: shared::ArmObservation,
+        io: &mut Io,
+    ) -> Result<(), String> {
+        let policy = self.accuracy.expect("only accuracy observes arms");
+        assert_eq!(observation.number as usize, self.arm_observations.len() + 1);
+        assert!(observation.number <= policy.epoch_limit());
+        assert_eq!(observation.due, policy.period() * (observation.number - 1));
+        assert!(
+            observation.started >= observation.due && observation.completed >= observation.started
+        );
+        self.arm_observations.push(observation);
+        emit(io, arm_line(observation))
+    }
     fn accepted_len(&self) -> usize {
         self.ledger.population.accepted.len()
     }
@@ -356,11 +384,26 @@ impl<const N: usize> ApplicationTrait for Application<N> {
     fn batch(
         &mut self,
         calls: Vec<worker::Call>,
-        batch: NormalLeafSetBatch,
+        batch: counter::Batch,
         history: &[NormalLeafSetHistoryBatch],
         io: &mut Io,
     ) -> Result<(), String> {
-        self.ledger.batch(calls, batch, history, io)
+        match batch.sidecars {
+            None => {
+                assert!(self.accuracy.is_none() && self.counter.is_none());
+                self.ledger.batch(calls, batch.normal, history, io)
+            }
+            Some(sidecars) => {
+                assert!(self.accuracy.is_some());
+                let counter = self
+                    .counter
+                    .as_mut()
+                    .expect("complete accuracy evidence owner");
+                let range = counter.retain(&batch.normal, sidecars.rows, sidecars.acquisition);
+                self.ledger.batch(calls, batch.normal, history, io)?;
+                counter.emit_rows(range, &self.leaves.map(|leaf| leaf.function), io)
+            }
+        }
     }
     fn flushed(&mut self, _id: u64, _totals: NormalTotals, _io: &mut Io) -> Result<(), String> {
         Err("CSV input has no Flush command".into())
@@ -373,7 +416,11 @@ impl<const N: usize> ApplicationTrait for Application<N> {
         io: &mut Io,
     ) -> Result<(), String> {
         self.ledger.history_reports(history, reports);
-        self.ledger.finish(totals, reports, io)
+        self.ledger.finish(totals, reports, io)?;
+        if let Some(counter) = &mut self.counter {
+            counter.finish(totals, io)?;
+        }
+        Ok(())
     }
     fn final_checks(&self) -> Result<(), String> {
         assert_eq!(
@@ -526,6 +573,7 @@ fn run_selected<const N: usize>(
         epochs,
         leaves.map(Selection::from),
         Expectations::Builtin(leaves.map(|leaf| leaf.operation)),
+        None,
     )
 }
 
@@ -558,7 +606,81 @@ fn run_frozen<const N: usize>(
 ) -> Result<(), String> {
     let leaves: [Selection; N] = leaves.try_into().unwrap();
     let expectations = Expectations::frozen(table, leaves.map(|leaf| leaf.function));
-    run_common(args, k, epochs, leaves, expectations)
+    run_common(args, k, epochs, leaves, expectations, None)
+}
+/// Same complete selected table and native ownership path, with an explicit
+/// accuracy matrix policy. No PMU, accuracy or cadence qualification is implied.
+pub(crate) fn run_selected_accuracy_session(args: &[std::ffi::OsString]) {
+    let outcome = (|| -> Result<(), String> {
+        let (policy, leaves, table) = selected::accuracy_arguments(args)?;
+        match leaves.len() {
+            1 => run_accuracy::<1>(args, policy, leaves, table),
+            2 => run_accuracy::<2>(args, policy, leaves, table),
+            3 => run_accuracy::<3>(args, policy, leaves, table),
+            4 => run_accuracy::<4>(args, policy, leaves, table),
+            _ => unreachable!(),
+        }
+    })();
+    if let Err(error) = outcome {
+        eprintln!("normal-selected-accuracy-session FAILED: {error}");
+        std::process::exit(1);
+    }
+}
+fn run_accuracy<const N: usize>(
+    args: &[std::ffi::OsString],
+    policy: Policy,
+    leaves: Vec<Selection>,
+    table: Arc<selected::Table>,
+) -> Result<(), String> {
+    let leaves: [Selection; N] = leaves.try_into().unwrap();
+    let expectations = Expectations::frozen(table, leaves.map(|leaf| leaf.function));
+    run_common(
+        args,
+        policy.retained(),
+        policy.epoch_limit(),
+        leaves,
+        expectations,
+        Some(policy),
+    )
+}
+fn schedule_policy(k: usize, epochs: u32, accuracy: Option<Policy>) -> Result<Policy, String> {
+    match accuracy {
+        None => Policy::ten_ms(k, epochs, 4096).map_err(failure),
+        Some(policy)
+            if policy.is_accuracy()
+                && policy.retained() == k
+                && policy.epoch_limit() == epochs
+                && policy.call_limit() == 4096
+                && !policy.worker_backpressure()
+                && !policy.sink_backpressure() =>
+        {
+            Ok(policy)
+        }
+        Some(_) => Err("selected accuracy policy binding mismatch".into()),
+    }
+}
+fn arm_line(a: shared::ArmObservation) -> String {
+    format!(
+        "ARM,{},{},{},{},{},{}\n",
+        a.number,
+        a.generation,
+        a.due.as_nanos(),
+        a.started.as_nanos(),
+        a.completed.as_nanos(),
+        u8::from(a.accepted)
+    )
+}
+fn ready_header(version: &str, k: usize, epochs: u32, accuracy: Option<Policy>) -> String {
+    let policy = schedule_policy(k, epochs, accuracy).expect("validated session policy");
+    let version = if accuracy.is_some() {
+        "selected-accuracy-session-v1"
+    } else {
+        version
+    };
+    format!(
+        "READY,{version},{k},{epochs},{},2,64,",
+        policy.period().as_millis()
+    )
 }
 fn run_common<const N: usize>(
     args: &[std::ffi::OsString],
@@ -566,12 +688,17 @@ fn run_common<const N: usize>(
     epochs: u32,
     leaves: [Selection; N],
     expectations: Expectations<N>,
+    accuracy: Option<Policy>,
 ) -> Result<(), String> {
-    let command = expectations.command();
+    let command = if accuracy.is_some() {
+        "normal-selected-accuracy-session"
+    } else {
+        expectations.command()
+    };
     single_main();
     let cpus = shared::cpus();
     assert!(cpus.iter().all(|&cpu| cpu < 1024));
-    let policy = Policy::ten_ms(k, epochs, 4096).map_err(failure)?;
+    let policy = schedule_policy(k, epochs, accuracy)?;
     let candidate = Path::new(&args[0]);
     let trusted = Path::new(&args[1]);
     let bytes = expected_file(candidate, trusted);
@@ -669,12 +796,18 @@ fn run_common<const N: usize>(
     custody.files_and_code();
     let custody = Arc::new(custody);
     let functions = leaves.map(|leaf| leaf.function);
-    let mut prepared = PreparedNormalLeafSetSessionController::new(site, INSTALL, &functions, k)
-        .map_err(failure)?;
+    let mut prepared = match accuracy {
+        None => PreparedNormalLeafSetSessionController::new(site, INSTALL, &functions, k),
+        Some(policy) => {
+            PreparedNormalLeafSetSessionController::new_accuracy(site, INSTALL, &functions, policy)
+        }
+    }
+    .map_err(failure)?;
     let banks = prepared.prepare_epoch_storage().map_err(failure)?;
     assert_eq!(banks.len(), 3);
     // SAFETY: pristine exact prepared E3 set, one future controlled worker, no main calls.
     let (inner, client) = unsafe { prepared.activate_concurrent() }.map_err(failure)?;
+    assert_eq!(client.accuracy_policy(), accuracy);
     let stream = inner.history_window().map_err(failure)?.stream().clone();
     let mut engine = shared::engine::Engine {
         controller: Controller { inner, functions },
@@ -688,15 +821,25 @@ fn run_common<const N: usize>(
     };
     let ready = Arc::new(OnceLock::new());
     let mut application = Application {
-        ledger: check::Ledger::new(
-            stream,
-            (leaves, expectations.clone()),
-            entries,
-            ends,
-            returns.clone(),
-            k,
-            epochs as usize,
-        ),
+        ledger: match accuracy {
+            None => check::Ledger::new(
+                stream,
+                (leaves, expectations.clone()),
+                entries,
+                ends,
+                returns.clone(),
+                k,
+                epochs as usize,
+            ),
+            Some(policy) => check::Ledger::new_accuracy(
+                stream,
+                (leaves, expectations.clone()),
+                entries,
+                ends,
+                returns.clone(),
+                policy,
+            ),
+        },
         input: input::Input::default(),
         custody: Arc::clone(&custody),
         leaves,
@@ -707,17 +850,29 @@ fn run_common<const N: usize>(
         cpus,
         k,
         epochs,
+        accuracy,
+        arm_observations: Vec::with_capacity(if accuracy.is_some() {
+            epochs as usize
+        } else {
+            0
+        }),
+        counter: accuracy.map(|_| counter::Evidence::new(record_cap(N) * N)),
     };
-    let mut io = Io::new()?;
+    let mut io = if accuracy.is_some() {
+        Io::new_accuracy()?
+    } else {
+        Io::new()?
+    };
     let (tx, rx) = mpsc::sync_channel(4);
     let (events, replies) = mpsc::sync_channel(1);
     let worker_custody = Arc::clone(&custody);
+    let worker_counter = application.counter.as_ref().map(|c| Arc::clone(&c.custody));
     let mut handle = Some(joined_task::spawn(move || {
         worker::run::<N>(
             (entries, expectations),
             client,
             worker_custody,
-            ready,
+            (ready, worker_counter),
             rx,
             events,
             cpus[1],
@@ -965,3 +1120,6 @@ mod tests {
         b.check();
     }
 }
+
+#[cfg(test)]
+mod accuracy_tests;

@@ -66,9 +66,16 @@ impl From<BridgeError> for Error {
     }
 }
 
-/// Explicit finite policy. No adaptive deadline extension or catch-up arms.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PolicyProfile {
+    TenMs,
+    Accuracy { epoch_ms: u32 },
+}
+
+/// Explicit finite policy. No adaptive deadline extension or retry of refused arms.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Policy {
+    profile: PolicyProfile,
     k: usize,
     epochs: u32,
     calls: u64,
@@ -87,12 +94,39 @@ impl Policy {
             return Err(Error::Policy);
         }
         Ok(Self {
+            profile: PolicyProfile::TenMs,
             k,
             epochs,
             calls,
             worker_backpressure: false,
             sink_backpressure: false,
         })
+    }
+    /// Opt-in accuracy matrix: K={1,10,100,1000}, period={1,10,100}ms.
+    /// The finite epoch/call caps, fixed 2ms arm lateness and 2s shutdown are
+    /// unchanged. Periods name original scheduled dues, not realized cadence.
+    /// At 1ms, 2ms due windows overlap: consecutive original dues may be granted
+    /// late within their own windows. No due is shifted or failed arm retried.
+    pub fn accuracy(k: usize, epoch_ms: u32, epochs: u32, calls: u64) -> Result<Self, Error> {
+        if !matches!(k, 1 | 10 | 100 | 1000)
+            || !matches!(epoch_ms, 1 | 10 | 100)
+            || !(1..=4096).contains(&epochs)
+            || !(1..=1_000_000).contains(&calls)
+        {
+            return Err(Error::Policy);
+        }
+        Ok(Self {
+            profile: PolicyProfile::Accuracy { epoch_ms },
+            k,
+            epochs,
+            calls,
+            worker_backpressure: false,
+            sink_backpressure: false,
+        })
+    }
+    /// Constructor identity, not an accuracy or deadline qualification.
+    pub fn is_accuracy(&self) -> bool {
+        matches!(self.profile, PolicyProfile::Accuracy { .. })
     }
     /// Opt in to waiting only for a full worker-to-controller queue, after a
     /// completed native drain. The original absolute end+shutdown is the cap;
@@ -126,13 +160,23 @@ impl Policy {
         self.calls
     }
     pub fn period(&self) -> Duration {
-        Duration::from_millis(10)
+        match self.profile {
+            PolicyProfile::TenMs => Duration::from_millis(10),
+            PolicyProfile::Accuracy { epoch_ms } => Duration::from_millis(u64::from(epoch_ms)),
+        }
     }
     pub fn lateness(&self) -> Duration {
         Duration::from_millis(2)
     }
     pub fn shutdown(&self) -> Duration {
         Duration::from_secs(2)
+    }
+    fn require_legacy_driver(self) -> Result<(), Error> {
+        if self.is_accuracy() {
+            Err(Error::Policy)
+        } else {
+            Ok(())
+        }
     }
     fn config(self) -> Config {
         Config {
@@ -221,6 +265,7 @@ pub unsafe fn prepare(
     function: FunctionId,
     policy: Policy,
 ) -> Result<Prepared, Error> {
+    policy.require_legacy_driver()?;
     let prepared = PreparedIntervalController::new_streaming_history(
         site,
         install,
@@ -389,3 +434,6 @@ fn advance(
 }
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod accuracy_tests;

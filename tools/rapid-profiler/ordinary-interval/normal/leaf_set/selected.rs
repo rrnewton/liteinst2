@@ -3,7 +3,7 @@
 //! These bytes describe expected scalar results, not authority to invoke native
 //! code. Complete-function, ABI, readable-input and lifetime premises remain the
 //! caller's independent obligation under the unchanged module contract.
-use super::{FunctionId, Preparation, Selection, failure, input, number, record_cap};
+use super::{FunctionId, Policy, Preparation, Selection, failure, input, number, record_cap};
 use std::ffi::{OsStr, OsString};
 use std::fs::{Metadata, OpenOptions};
 use std::io::Read;
@@ -215,8 +215,40 @@ fn arguments_with(
     {
         return Err("closed selected session profile".into());
     }
+    let (selections, table) = selection_table(&args[6..], &args[2], n, load)?;
+    Ok((k, epochs, selections, table))
+}
+
+type AccuracyArguments = (Policy, Vec<Selection>, Arc<Table>);
+pub(super) fn accuracy_arguments(args: &[OsString]) -> Result<AccuracyArguments, String> {
+    accuracy_arguments_with(args, read_table)
+}
+fn accuracy_arguments_with(
+    args: &[OsString],
+    load: impl FnOnce(&Path, &[FunctionId]) -> Result<Table, String>,
+) -> Result<AccuracyArguments, String> {
+    if args.len() < 7 {
+        return Err("normal-selected-accuracy-session CANDIDATE TRUSTED_FINAL TABLE K EPOCH_MS EPOCHS N (ID LABEL ELF_VA EXTENT POLICY){N}".into());
+    }
+    let k = usize::try_from(number(&args[3])?).map_err(failure)?;
+    let epoch_ms = u32::try_from(number(&args[4])?).map_err(failure)?;
+    let epochs = u32::try_from(number(&args[5])?).map_err(failure)?;
+    let n = usize::try_from(number(&args[6])?).map_err(failure)?;
+    if !(1..=520).contains(&epochs) || !(1..=4).contains(&n) || args.len() != 7 + 5 * n {
+        return Err("closed selected accuracy session profile".into());
+    }
+    let policy = Policy::accuracy(k, epoch_ms, epochs, 4096).map_err(failure)?;
+    let (selections, table) = selection_table(&args[7..], &args[2], n, load)?;
+    Ok((policy, selections, table))
+}
+fn selection_table(
+    rows: &[OsString],
+    path: &std::ffi::OsStr,
+    n: usize,
+    load: impl FnOnce(&Path, &[FunctionId]) -> Result<Table, String>,
+) -> Result<(Vec<Selection>, Arc<Table>), String> {
     let mut selections: Vec<Selection> = Vec::with_capacity(n);
-    for row in args[6..].chunks_exact(5) {
+    for row in rows.chunks_exact(5) {
         let selection = Selection {
             function: FunctionId(number(&row[0])?),
             label: Label::new(row[1].to_str().ok_or("ASCII selected label required")?)?,
@@ -243,8 +275,8 @@ fn arguments_with(
         selections.push(selection);
     }
     let functions: Vec<_> = selections.iter().map(|s| s.function).collect();
-    let table = load(Path::new(&args[2]), &functions)?;
-    Ok((k, epochs, selections, Arc::new(table)))
+    let table = load(Path::new(path), &functions)?;
+    Ok((selections, Arc::new(table)))
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -329,3 +361,6 @@ fn read_table(path: &Path, functions: &[FunctionId]) -> Result<Table, String> {
 #[cfg(test)]
 #[path = "selected_tests.rs"]
 pub(in crate::normal) mod controls;
+
+#[cfg(test)]
+mod accuracy_tests;

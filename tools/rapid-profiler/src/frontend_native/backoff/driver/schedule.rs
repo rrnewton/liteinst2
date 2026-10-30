@@ -12,7 +12,9 @@ pub enum ScheduleDecision {
     Wait,
 }
 
-/// Fixed K10/K1000, 10ms/2ms scheduling policy shared with the existing drivers.
+/// Original absolute dues and fixed 2ms arm budget shared with existing drivers.
+/// Policy::ten_ms retains K10/K1000 and 10ms; Policy::accuracy opts into its
+/// explicit finite matrix without changing this state machine.
 ///
 /// This owns only clock/accounting state. It does not publish, drain, invoke,
 /// stop, detach or join anything. It accepts observations from Instant::now;
@@ -366,3 +368,6 @@ mod tests {
         assert_eq!(s.check_completion(end + p.shutdown()), Err(Error::Deadline));
     }
 }
+
+#[cfg(test)]
+mod accuracy_tests;

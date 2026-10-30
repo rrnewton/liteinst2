@@ -129,3 +129,48 @@ The report does not turn dropped records into unsampled calls.
 These profiles retain the bounded read-only leaf, complete-function, ordinary
 CALL/RET, no-reentry and no-unload requirements above. They do not add recursive
 calls, arbitrary worker counts or general shared-library instrumentation.
+
+## Raw counters for selected sessions
+
+The explicit `normal-selected-accuracy-session` command accepts this grammar:
+
+```
+normal-selected-accuracy-session CANDIDATE TRUSTED_FINAL TABLE K EPOCH_MS EPOCHS N (ID LABEL ELF_VA EXTENT POLICY){N}
+```
+
+It uses the existing selected-function loader, complete `LI2SELECTED 1` input
+table, worker, publication, banks and history. K is one of 1, 10, 100 or 1000;
+the epoch period is 1, 10 or 100 ms. It admits one to four functions, at most
+520 epochs and 4,096 physical calls. The old selected command keeps its original
+K10/K1000 and 10 ms profile. The new READY version is
+`selected-accuracy-session-v1`; old wire readers must refuse it.
+
+Each invocation, including unsampled work, retains two raw counter endpoint
+records for a pinned, non-inherited, current-thread `instructions:u` event.
+Acquisition records keep
+the requested and kernel-returned attribute bytes, event ID and enable result.
+Endpoints keep the full initialized read buffer, actual return value and errno,
+PID/TID, event-ID match and fenced TSC/AUX observations before and after the
+read. Explicit detach returns disable and close results. A failed open or read
+does not skip application work or become a zero event count. These counter
+windows differ from the existing callback timestamp windows and include
+instrumentation. Neither window establishes original-body cost.
+
+The SDK entrypoints are `Policy::accuracy`,
+`PreparedNormalLeafSetSessionController::new_accuracy`, and the separate unsafe
+`NormalLeafSetClient::attach_accuracy`. Accuracy attachment requires the strict
+AMD reference-clock profile in addition to the ordinary source, ABI, thread,
+stack and return contracts. Its completed batches transfer normal records,
+counter records and acquisition evidence together. Native state validation is
+required before measurement of this new callback path.
+
+ARM rows retain each original due time, actual arm start and completion after
+publication/history. The lateness limit remains 2 ms. At a 1 ms cadence these
+windows overlap; actual timing is reported and no deadline is renewed. Only
+this version has an 8 MiB output buffer, bounded by 20,018 rows of at most 350
+bytes; old commands retain 4 MiB. Output failure is terminal.
+
+The [accuracy evaluation](../../../evaluation/ordinary-accuracy/README.md)
+prepares independent complete populations. These APIs collect evidence; their
+names do not imply calibrated interval accuracy, unbiased population estimates,
+realized phase locking or a performance result.

@@ -10,12 +10,16 @@ pub(in crate::normal) enum Frame {
     ExtraByte,
 }
 const OUTPUT: usize = 4 * 1024 * 1024;
+// Accuracy alone adds two lossless PMU rows/call, 520 arm rows and 10
+// acquisition/close rows. Worst complete roster: 20,018 rows *350 =7,006,300.
+const ACCURACY_OUTPUT: usize = 8 * 1024 * 1024;
 pub(in crate::normal) struct Io {
     fds: [i32; 2],
     flags: [i32; 2],
     input: Vec<u8>,
     eof: bool,
     output: Vec<u8>,
+    output_limit: usize,
     written: usize,
     write_blocked: u64,
 }
@@ -23,9 +27,16 @@ impl Io {
     pub(in crate::normal) fn new() -> Result<Self, String> {
         Self::open([0, 1])
     }
+    pub(in crate::normal) fn new_accuracy() -> Result<Self, String> {
+        Self::open_with_limit([0, 1], ACCURACY_OUTPUT)
+    }
     // Descriptor owners outlive this flag-restoring transport. Tests use
     // independent sockets without replacing the harness's standard descriptors.
     fn open(fds: [i32; 2]) -> Result<Self, String> {
+        Self::open_with_limit(fds, OUTPUT)
+    }
+    fn open_with_limit(fds: [i32; 2], output_limit: usize) -> Result<Self, String> {
+        assert!(matches!(output_limit, OUTPUT | ACCURACY_OUTPUT));
         let mut flags = [0; 2];
         for (i, &fd) in fds.iter().enumerate() {
             // SAFETY: standalone process standard descriptors; no concurrent I/O.
@@ -40,7 +51,8 @@ impl Io {
             flags,
             input: Vec::with_capacity(protocol::LINE + 1),
             eof: false,
-            output: Vec::with_capacity(OUTPUT),
+            output: Vec::with_capacity(output_limit),
+            output_limit,
             written: 0,
             write_blocked: 0,
         };
@@ -160,7 +172,7 @@ impl Io {
             .output
             .len()
             .checked_add(line.len())
-            .is_none_or(|n| n > OUTPUT)
+            .is_none_or(|n| n > self.output_limit)
         {
             return Err("session output capacity".into());
         }
@@ -489,3 +501,6 @@ mod history_tests {
         assert_eq!((io.written, io.write_blocked), (13, 9));
     }
 }
+
+#[cfg(test)]
+mod accuracy_tests;

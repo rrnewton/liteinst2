@@ -21,8 +21,44 @@ impl<const N: usize> Ledger<N> {
         k: usize,
         epochs: usize,
     ) -> Self {
-        let (leaves, expectations) = selection;
         assert!((1..=4).contains(&N) && matches!(k, 10 | 1000) && (1..=520).contains(&epochs));
+        assert_eq!(stream.accuracy_policy(), None);
+        Self::prepare(stream, selection, entries, ends, returns, k, epochs)
+    }
+    pub(super) fn new_accuracy(
+        stream: NormalLeafSetHistoryStream,
+        selection: ([Selection; N], Expectations<N>),
+        entries: [u64; N],
+        ends: [u64; N],
+        returns: [Vec<u64>; N],
+        policy: Policy,
+    ) -> Self {
+        assert!((1..=4).contains(&N) && (1..=520).contains(&policy.epoch_limit()));
+        assert_eq!(
+            schedule_policy(policy.retained(), policy.epoch_limit(), Some(policy)).unwrap(),
+            policy
+        );
+        assert_eq!(stream.accuracy_policy(), Some(policy));
+        Self::prepare(
+            stream,
+            selection,
+            entries,
+            ends,
+            returns,
+            policy.retained(),
+            policy.epoch_limit() as usize,
+        )
+    }
+    fn prepare(
+        stream: NormalLeafSetHistoryStream,
+        selection: ([Selection; N], Expectations<N>),
+        entries: [u64; N],
+        ends: [u64; N],
+        returns: [Vec<u64>; N],
+        k: usize,
+        epochs: usize,
+    ) -> Self {
+        let (leaves, expectations) = selection;
         assert_eq!(stream.functions(), &leaves.map(|l| l.function));
         assert_eq!(stream.entries(), &entries);
         assert_eq!(stream.identity(), identity(entries[0]));

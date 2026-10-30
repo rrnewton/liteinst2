@@ -129,7 +129,10 @@ pub use module::ordinary::{
 };
 
 pub use always_on::normal::{
-    NormalAcknowledgement, NormalBatch, NormalClient, NormalLeafSetBatch, NormalLeafSetClient,
+    NormalAccuracyDetached, NormalAccuracyRecord, NormalAcknowledgement, NormalBatch, NormalClient,
+    NormalCounterAcquisition, NormalCounterClose, NormalCounterEndpoint, NormalCounterIdentity,
+    NormalCounterOperation, NormalCounterRead, NormalCounterSyscall, NormalLeafSetAccuracyBatch,
+    NormalLeafSetAccuracyThread, NormalLeafSetBatch, NormalLeafSetClient,
     NormalLeafSetHistoryBatch, NormalLeafSetHistoryStream, NormalLeafSetHistoryWindow,
     NormalLeafSetSessionController, NormalLeafSetThread, NormalModuleBatch, NormalModuleClient,
     NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,

@@ -60,6 +60,7 @@ pub unsafe fn prepare_optional(
     function: FunctionId,
     policy: Policy,
 ) -> Result<OptionalPrepared, Error> {
+    policy.require_legacy_driver()?;
     let prepared = PreparedOptionalController::new_streaming_history(
         site,
         install,

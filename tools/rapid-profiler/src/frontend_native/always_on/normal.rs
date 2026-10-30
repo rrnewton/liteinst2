@@ -3,6 +3,12 @@
 //! caller checkpoint acknowledges return. Neither acknowledgement observes C3
 //! execution or grants executable reclamation. All code owners are process-lived.
 use super::*;
+mod accuracy;
+pub use accuracy::{
+    NormalAccuracyDetached, NormalAccuracyRecord, NormalCounterAcquisition, NormalCounterClose,
+    NormalCounterEndpoint, NormalCounterIdentity, NormalCounterOperation, NormalCounterRead,
+    NormalCounterSyscall, NormalLeafSetAccuracyBatch, NormalLeafSetAccuracyThread,
+};
 pub(super) mod call_pair;
 pub(super) mod leaf_set;
 pub use call_pair::{
@@ -174,6 +180,13 @@ trait TransferOutput {
         Self: Sized;
     fn capacity(&self) -> bool;
     fn identity(&self, state: &NormalState) -> Result<Self::Identity, BridgeError>;
+    fn capture_accuracy(&mut self, state: &NormalState) -> Result<(), BridgeError> {
+        if state.accuracy.is_some() {
+            Err(error(Cause::Attachment))
+        } else {
+            Ok(())
+        }
+    }
     fn push(&mut self, record: NormalRecord, selected: SelectedFunction);
     fn finish(
         self,
@@ -392,6 +405,7 @@ struct Pending {
     returned: Option<RawInterval>,
 }
 struct NormalState {
+    accuracy: Option<Box<accuracy::State>>,
     call_pair: Option<Box<call_pair::runtime::State>>,
     binding: Arc<Binding>,
     actual_thread: ThreadId,
@@ -485,6 +499,16 @@ fn attach_profile(
     journal: IntervalJournal,
     call_pair: Option<Box<call_pair::runtime::State>>,
 ) -> Result<NormalThread, BridgeError> {
+    attach_profile_accuracy(binding, registration, stack, journal, call_pair, false)
+}
+fn attach_profile_accuracy(
+    binding: &Arc<Binding>,
+    registration: u64,
+    stack: ReadableStack,
+    journal: IntervalJournal,
+    call_pair: Option<Box<call_pair::runtime::State>>,
+    capture_accuracy: bool,
+) -> Result<NormalThread, BridgeError> {
     NORMAL
         .try_with(|cell| {
             if NORMAL_POISON.get() {
@@ -511,6 +535,9 @@ fn attach_profile(
                 model,
             ));
             state.call_pair = call_pair;
+            // Acquire only after every fallible attachment/registration gate.
+            // Ordinary PMU refusal is retained inside the committed TLS state.
+            state.accuracy = capture_accuracy.then(|| Box::new(accuracy::State::open()));
             state.journal.header(tid, 0);
             storage.0 = Some(state);
             Ok(NormalThread {
@@ -707,6 +734,7 @@ impl NormalState {
         model: ThreadModel,
     ) -> Self {
         Self {
+            accuracy: None,
             call_pair: None,
             binding,
             actual_thread: thread::current().id(),
@@ -770,6 +798,9 @@ impl NormalState {
             || self.functions[self.len..].iter().any(Option::is_some)
         {
             return Err(error(Cause::Invariant));
+        }
+        if let Some(accuracy) = &self.accuracy {
+            accuracy.shape(self)?;
         }
         Ok(())
     }
@@ -849,6 +880,9 @@ impl NormalState {
             .entered
             .checked_add(1)
             .ok_or(error(Cause::Capacity))?;
+        if let Some(accuracy) = &mut self.accuracy {
+            accuracy.begin(self.len, selected, self.next)?;
+        }
         let mut slot = ModelReturnSlot {
             identity: self.next,
             word: TOKEN,
@@ -930,6 +964,9 @@ impl NormalState {
             .ok_or(error(Cause::Capacity))?;
         if self.journal.used() >= EVENTS || self.len >= CALLS {
             return Err(error(Cause::Capacity));
+        }
+        if let Some(accuracy) = &mut self.accuracy {
+            accuracy.end(self.len, selected, p.ordinal)?;
         }
         let raw = RawInterval {
             ordinal: p.ordinal,
@@ -1131,6 +1168,7 @@ impl NormalState {
         }
         let (totals, count, number) = self.transfer_check()?;
         let identity = output.identity(self)?;
+        output.capture_accuracy(self)?;
         if count == 0 {
             return Ok(None);
         }
@@ -1170,6 +1208,9 @@ impl NormalState {
             after,
             next: self.next,
         };
+        if let Some(accuracy) = &mut self.accuracy {
+            accuracy.transferred();
+        }
         self.records = [None; CALLS];
         self.functions = [None; CALLS];
         self.len = 0;
@@ -1297,7 +1338,11 @@ impl NormalThread {
                 }
                 state.health()?;
                 state.shape()?;
-                if state.pending.is_some() || state.len != 0 || state.journal.used() != 0 {
+                if state.accuracy.is_some()
+                    || state.pending.is_some()
+                    || state.len != 0
+                    || state.journal.used() != 0
+                {
                     return Err(error(Cause::Outstanding));
                 }
                 let totals = state.totals;

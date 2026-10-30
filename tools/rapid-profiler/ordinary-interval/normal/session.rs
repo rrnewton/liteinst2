@@ -262,12 +262,33 @@ mod application_sealed {
     impl Sealed for crate::normal::module::session::Application {}
     impl<const N: usize> Sealed for crate::normal::leaf_set::Application<N> {}
 }
+/// Actual arm/history operation observations, relative to the one original start.
+/// `accepted` is only the Schedule acknowledgement, never a cadence guarantee.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::normal) struct ArmObservation {
+    pub number: u32,
+    pub generation: u64,
+    pub due: Duration,
+    pub started: Duration,
+    pub completed: Duration,
+    pub accepted: bool,
+}
 pub(in crate::normal) trait Application: application_sealed::Sealed {
     type Controller: engine::Controller;
     type Command: worker::Work;
     type Call;
     type Batch;
     type Completion;
+    fn observe_arms(&self) -> bool {
+        false
+    }
+    fn arm_observation(
+        &mut self,
+        _observation: ArmObservation,
+        _io: &mut Io,
+    ) -> Result<(), String> {
+        Ok(())
+    }
     fn accepted_len(&self) -> usize;
     fn input(&mut self, io: &mut Io) -> Result<Option<Self::Command>, String>;
     fn accept(&mut self, command: &Self::Command) -> Result<(), String>;
@@ -480,8 +501,9 @@ pub(in crate::normal) fn drive<A: Application>(
             },
         );
         match decision {
-            ScheduleDecision::Arm { .. } => {
+            ScheduleDecision::Arm { due } => {
                 loop_trace.decision("arm");
+                let arm_started = app.observe_arms().then(Instant::now);
                 if let Err(error) = engine.arm(io) {
                     return Err(format!(
                         "arm/history failed: committed={} completed={} {error}",
@@ -489,9 +511,51 @@ pub(in crate::normal) fn drive<A: Application>(
                         schedule.armed()
                     ));
                 }
-                schedule.arm_completed(Instant::now()).map_err(|e| {
-                    clock_failure(e, "arm-completed", engine.committed_arms, &schedule)
+                let completed = Instant::now();
+                let acknowledged = schedule.arm_completed(completed);
+                let observation = if let Some(arm_started) = arm_started {
+                    let generation = engine
+                        .history
+                        .last()
+                        .unwrap()
+                        .actions()
+                        .last()
+                        .unwrap()
+                        .generation
+                        .get();
+                    app.arm_observation(
+                        ArmObservation {
+                            number: schedule.armed(),
+                            generation,
+                            due: due.duration_since(started),
+                            started: arm_started.duration_since(started),
+                            completed: completed.duration_since(started),
+                            accepted: acknowledged.is_ok(),
+                        },
+                        io,
+                    )
+                } else {
+                    Ok(())
+                };
+                // Keep the original clock refusal primary, even if diagnostic
+                // output also refuses. The app retains the observation first.
+                acknowledged.map_err(|e| {
+                    let error = clock_failure(e, "arm-completed", engine.committed_arms, &schedule);
+                    if let Some(arm_started) = arm_started {
+                        // The normal stdout buffer may remain unwritten on fatal
+                        // refusal. Keep these actual observations in the retained
+                        // terminal error too; do not block to flush or renew time.
+                        format!(
+                            "{error} due_ns={} arm_started_ns={} arm_completed_ns={}",
+                            due.duration_since(started).as_nanos(),
+                            arm_started.duration_since(started).as_nanos(),
+                            completed.duration_since(started).as_nanos()
+                        )
+                    } else {
+                        error
+                    }
                 })?;
+                observation?;
                 progress = true;
             }
             ScheduleDecision::Stop => {

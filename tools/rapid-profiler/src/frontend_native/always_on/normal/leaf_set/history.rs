@@ -10,6 +10,7 @@ pub struct NormalLeafSetHistoryStream {
     pid: u32,
     install: u64,
     identity: CodeIdentity,
+    accuracy: Option<Policy>,
     pub(super) functions: LeafFunctions,
     pub(super) entries: [u64; 4],
 }
@@ -19,12 +20,17 @@ impl PartialEq for NormalLeafSetHistoryStream {
             && self.pid == other.pid
             && self.install == other.install
             && self.identity == other.identity
+            && self.accuracy == other.accuracy
             && self.functions == other.functions
             && self.entries == other.entries
     }
 }
 impl Eq for NormalLeafSetHistoryStream {}
 impl NormalLeafSetHistoryStream {
+    /// Exact constructor policy carried by this opaque stream; no clock authority.
+    pub fn accuracy_policy(&self) -> Option<Policy> {
+        self.accuracy
+    }
     pub fn pid(&self) -> u32 {
         self.pid
     }
@@ -48,7 +54,12 @@ pub(super) fn stream_for(binding: &Binding) -> Option<NormalLeafSetHistoryStream
     if !binding_matches(binding) {
         return None;
     }
-    let BindingProfile::LeafSet { site, functions } = &binding.profile else {
+    let BindingProfile::LeafSet {
+        site,
+        functions,
+        accuracy,
+    } = &binding.profile
+    else {
         return None;
     };
     let mut entries = [0; 4];
@@ -60,6 +71,7 @@ pub(super) fn stream_for(binding: &Binding) -> Option<NormalLeafSetHistoryStream
         pid: binding.pid,
         install: binding.install,
         identity: site.identity(),
+        accuracy: *accuracy,
         functions: *functions,
         entries,
     })
