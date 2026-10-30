@@ -389,8 +389,11 @@ def check_material(program, result, material, original):
              'material', 'unchanged singleton search')
         for row, role in zip(rows[at + 1:at + 3], ('selected', 'victim')):
             cells = row.split(' ')
-            need(len(cells) == 7 and cells[:3] == ['allocation', str(sid), role] and
-                 cells[4:6] == ['1', '4096'], 'material', 'unchanged cap-1 allocation')
+            # The unchanged broad profile has both gaps around its reserved carrier.
+            need(len(cells) == 8 and cells[:3] == ['allocation', str(sid), role] and
+                 cells[4:6] == ['1', '4096'] and
+                 cells[6:] == ['4546560:172032', '4726784:2146951168'],
+                 'material', 'unchanged cap-1 allocation and broad permits')
     return selected_rows(program, material)
 
 

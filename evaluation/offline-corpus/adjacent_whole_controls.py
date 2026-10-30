@@ -14,10 +14,10 @@ assert not sys.flags.optimize, 'assertions required'
 path = Path(__file__).resolve().with_name('reproduce_whole.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
-assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == '68ad7eaf3ac2a4febe8232d2de13a822ef8b293ebbb04e793051c3232d315dfc'
+assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c'
 R = types.ModuleType('authenticated_d01_reproducer'); R.__file__ = str(path)
 exec(compile(raw, str(path), 'exec'), R.__dict__)
-A = R.load('adjacent_whole.py', 'b2621c7a796c7dde74c6fa1ae299d8a886c34c61d106d2a95c6f393c92634c95')
+A = R.load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
 B = R.load('build_adjacent_whole.py', '0def6474c15584dd168b74c2338311caa53d1864ab01d5805cb3a05c62960592')
 COUNTS = {'checksum': (80, 16), 'rle-roundtrip': (107, 26)}
 IMPORTER = 'elf-disassembly-null-jumps-adjacent-b2-short-t3-pending-v1'
@@ -60,8 +60,8 @@ def fixture(program, complete=True, preparation=None):
         'limits 1048576 32 32 131072 128 2097152 1048576 128 2147483648', 'null-hook 4206592']
     for sid in range(1, count + 1):
         policy.extend([f'search {sid} preferred 64 256 64 none 256 4096',
-            f'allocation {sid} selected 5242880 1 4096 5242880:4096',
-            f'allocation {sid} victim 6291456 1 4096 6291456:4096'])
+            f'allocation {sid} selected 5242880 1 4096 4546560:172032 4726784:2146951168',
+            f'allocation {sid} victim 6291456 1 4096 4546560:172032 4726784:2146951168'])
     material['policy.txt'] = ('\n'.join(policy) + '\n').encode()
     manifest = ['LI2TOOL 1', 'original ' + digest(original), 'neighbor-victims short-only',
         'neighbor-ownership inherited-t3', 'pending-selected full-instruction-ownership',
@@ -412,6 +412,35 @@ def initially_incomplete_run_frame(root, kind, mutate_retained=None):
         return retained_run_frame(root)
 
 class DiagnosticControls(unittest.TestCase):
+    def test_d01_material_accepts_exact_existing_broad_permits_and_rejects_mutants(self):
+        source = R.load('disassembly_controls.py', 'f0d7f5572017fcc8a8f14c59e2980e97e50359e7d165c2b748de99439d93346d')
+        for short in (False, True):
+            for program, counts in COUNTS.items():
+                inputs = source.fixture(program, short_jumps=short)
+                result = R.D.attempt_adjacent_b2(program, inputs,
+                    {key: digest(value) for key, value in inputs.items()}, upper=2, lower=1, joint=2)
+                self.assertEqual(result['status'], 'MATERIALS_READY')
+                selected = A.check_material(program, result, result['files'], inputs['original'])
+                self.assertEqual(len(selected), counts[1])
+                policy = result['files']['policy.txt'].decode('ascii').splitlines()
+                for index, row in enumerate(policy):
+                    if not row.startswith('allocation '):
+                        continue
+                    cells = row.split(' ')
+                    self.assertEqual(cells[4:], ['1', '4096', '4546560:172032', '4726784:2146951168'])
+                    alternatives = [cells[:6] + [cells[6]], cells + [cells[7]],
+                        cells[:6] + list(reversed(cells[6:])),
+                        cells[:6] + ['4546560:176128', cells[7]],
+                        cells[:6] + [cells[6], '4722688:2146955264'],
+                        cells[:4] + ['2'] + cells[5:],
+                        cells[:5] + ['8192'] + cells[6:]]
+                    for changed in alternatives:
+                        bad = list(policy); bad[index] = ' '.join(changed)
+                        material = dict(result['files'], **{'policy.txt': ('\n'.join(bad) + '\n').encode()})
+                        with self.assertRaises(A.Failure) as failure:
+                            A.check_material(program, result, material, inputs['original'])
+                        self.assertEqual(failure.exception.stage, 'material')
+
     def test_d01_root_membership_rechecks_have_independent_directory_offsets(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -499,7 +528,7 @@ class DiagnosticControls(unittest.TestCase):
             for raw in (b'raise RuntimeError("must not execute")\n', b'x' * (1048576 + 1)):
                 path.write_bytes(raw)
                 with mock.patch.object(R, 'compile', create=True) as compile_source, self.assertRaises(AssertionError):
-                    R.load('adjacent_whole.py', 'b2621c7a796c7dde74c6fa1ae299d8a886c34c61d106d2a95c6f393c92634c95')
+                    R.load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
                 compile_source.assert_not_called()
 
     def test_d01_c04_complete_input_roster_population(self):

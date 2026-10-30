@@ -231,7 +231,7 @@ def material_attempt(program, inputs, expected, profile):
 
 def adjacent_diagnostic(args):
     assert args.placement_profile == D.ADJACENT_B2_PROFILE, 'explicit adjacent diagnostic profile'
-    module = load('adjacent_whole.py', 'b2621c7a796c7dde74c6fa1ae299d8a886c34c61d106d2a95c6f393c92634c95')
+    module = load('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
     context = types.SimpleNamespace(B=B, H=H, D=D, ROOT=ROOT, HERE=HERE, PINS=PINS,
                                     read=read, closed=closed, load=load, reproducer_file=__file__)
     return module.run(args, context)

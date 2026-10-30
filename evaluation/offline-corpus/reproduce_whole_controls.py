@@ -14,7 +14,7 @@ if sys.flags.optimize:
 path = Path(__file__).resolve().with_name('reproduce_whole.py')
 with path.open('rb') as stream:
     raw = stream.read(1048577)
-assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == '68ad7eaf3ac2a4febe8232d2de13a822ef8b293ebbb04e793051c3232d315dfc'
+assert len(raw) <= 1048576 and hashlib.sha256(raw).hexdigest() == 'cb88ef6a05e1a353e78a59c2a264c7a08bfdbe516c1f6982a43973125cc9d92c'
 R = types.ModuleType('authenticated_whole_reproducer')
 R.__file__ = str(path)
 exec(compile(raw, str(path), 'exec'), R.__dict__)
@@ -576,7 +576,7 @@ class WholeReproducerControls(unittest.TestCase):
         helper = types.SimpleNamespace(run=mock.Mock(return_value=1))
         with mock.patch.object(R, 'load', return_value=helper) as load:
             self.assertEqual(R.adjacent_diagnostic(args), 1)
-        load.assert_called_once_with('adjacent_whole.py', 'b2621c7a796c7dde74c6fa1ae299d8a886c34c61d106d2a95c6f393c92634c95')
+        load.assert_called_once_with('adjacent_whole.py', 'a0da09ee3a65668a08e3dc0421dab36bfba4ae6a081f90318d736955680f081e')
         helper.run.assert_called_once()
         actual_args, context = helper.run.call_args.args
         self.assertIs(actual_args, args)
