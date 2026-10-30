@@ -6129,6 +6129,10 @@
         "ignored": 0,
         "tests": 49
       },
+      "test/adc_state_oracle": {
+        "ignored": 0,
+        "tests": 40
+      },
       "test/arena_fork": {
         "ignored": 0,
         "tests": 6
@@ -6176,6 +6180,10 @@
       "test/coalesced_composition": {
         "ignored": 0,
         "tests": 3
+      },
+      "test/compiled_selected_state_oracle": {
+        "ignored": 0,
+        "tests": 54
       },
       "test/concurrent_control": {
         "ignored": 0,
@@ -6453,6 +6461,10 @@
         "ignored": 0,
         "tests": 16
       },
+      "test/whole_adc_state_oracle": {
+        "ignored": 0,
+        "tests": 39
+      },
       "unit/adjacent_b2_disassembly_sites/adjacent_b2_disassembly_sites": {
         "ignored": 0,
         "tests": 3
@@ -6471,7 +6483,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 399
+        "tests": 406
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6507,11 +6519,11 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,
-        "tests": 433
+        "tests": 457
       },
       "unit/rapid_profiler/lib": {
         "ignored": 31,
-        "tests": 529
+        "tests": 537
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
@@ -7590,6 +7602,6 @@
       }
     ]
   },
-  "recorder_tests": 357,
+  "recorder_tests": 358,
   "schema_version": 1
 }

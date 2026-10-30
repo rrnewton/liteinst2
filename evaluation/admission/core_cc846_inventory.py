@@ -22,8 +22,8 @@ CURRENT = DATA['current_corpus_sha256']
 AC0963 = DATA['ac0963']
 LIVE = AC0963['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
-RECORDER_TESTS = main367.mainc712.main0fb574.RECORDER_TESTS
-PYTHON_CURRENT = main367.mainc712.main0fb574.PYTHON_CURRENT
+RECORDER_TESTS = main367.mainc712.main0fb574.mainaf81.RECORDER_TESTS
+PYTHON_CURRENT = main367.mainc712.main0fb574.mainaf81.PYTHON_CURRENT
 PYTHON_PRE_5CDA = '462da94e73e635ac5c3b46192cba7b991de92b72ec871853204e45d529943b3f'
 PYTHON_PREVIOUS = 'fb8adb475b7ecbafb984dfa99c674f8a60fdb59fbb5adeb5754482e1136bb3bc'
 PYTHON_MODULE = 'test_main_query_inventory'
@@ -205,8 +205,15 @@ def require_historical356(declared):
     require_historical355(old)
 
 
-def require_current(declared):
+def require_historical357(declared):
     """Only the exact native-startup357 corpus enters live qualification."""
     old = main367.mainc712.main0fb574.before_current(declared, 'ac0963_inventory_differs',
                                                     'ac0963_source_inventory_differs')
     require_historical356(old)
+
+
+def require_current(declared):
+    """Only the exact ADC/compiled358 corpus enters live qualification."""
+    old = main367.mainc712.main0fb574.mainaf81.before_current(declared, 'ac0963_inventory_differs',
+                                                            'ac0963_source_inventory_differs')
+    require_historical357(old)

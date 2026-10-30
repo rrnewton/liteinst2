@@ -1,0 +1,1855 @@
+{
+  "added_default_methods": {
+    "src/quiescent/whole_function/adc_tests.rs": [
+      "whole_adc_actual_compiled_bodies_keep_every_head_return_and_exact_byte",
+      "whole_adc_all_31_forms_and_186_operand_fixtures_use_exact_scalar_guard",
+      "whole_adc_rejects_callee_saved_stack_segment_and_nonlocal_address_forms",
+      "whole_adc_rejects_writes_prefixes_adx_and_control_transfers",
+      "whole_adc_keeps_reachability_complete_roles_and_boundaries_mandatory",
+      "whole_adc_preserves_80_byte_and_allocation_caps_and_exact_overlay",
+      "whole_adc_malformed_encoding_refuses_before_any_image_attempt"
+    ],
+    "tests/adc_state_oracle.rs": [
+      "adc_arithmetic_answers_have_independent_literal_calibration",
+      "native_adc_8_bit_state_and_carry_survive_the_hook",
+      "native_adc_16_bit_state_and_carry_survive_the_hook",
+      "native_adc_32_bit_state_and_carry_survive_the_hook",
+      "native_adc_64_bit_state_and_carry_survive_the_hook"
+    ],
+    "tests/compiled_selected_state_oracle.rs": [
+      "distinct_managed_roles_reject_duplicate_owner_wrong_pc_and_event",
+      "mapping_roles_reject_swapped_sharing_writes_and_missing_execute"
+    ],
+    "tests/support/compiled_selected_fixtures.rs": [
+      "literal_answers_and_complete_reachable_population_are_frozen"
+    ],
+    "tests/whole_adc_state_oracle.rs": [
+      "native_whole_adc_8_bit_state_and_carry_survive_the_hook",
+      "native_whole_adc_16_bit_state_and_carry_survive_the_hook",
+      "native_whole_adc_32_bit_state_and_carry_survive_the_hook",
+      "native_whole_adc_64_bit_state_and_carry_survive_the_hook"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": [
+      "module_actual_selected_adc_bodies_have_explicit_whole_plans_on_the_shared_page"
+    ],
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg_adc_tests.rs": [
+      "exact_compiled_adc_body_has_complete_heads_edges_padding_and_two_returns",
+      "every_scalar_adc_encoding_family_keeps_the_same_single_return_cfg",
+      "adc_never_admits_callee_saved_stack_segment_or_nonlocal_addresses",
+      "adc_never_admits_memory_writes_lock_rep_or_other_control_forms",
+      "adc_does_not_turn_truncation_dead_code_or_bad_edges_into_coverage",
+      "both_complete_selected_bodies_pass_preflight_with_known_function_metadata",
+      "both_complete_selected_bodies_pass_stripped_preflight_without_symbol_fallback"
+    ]
+  },
+  "base_revision": "215c03999a5ea98bea193bd24c2faea42eda1f95",
+  "current_corpus_sha256": "0b0bf15923877e7b5391d14d807162428c5b59071ef77f5c44d3efdca0d8fefa",
+  "default_harness_changes": 3,
+  "default_ignore_changes": 0,
+  "default_test_additions": 172,
+  "evaluation_projections": {
+    "evaluation/admission/core_0fb574_inventory.py": {
+      "current_sha256": "8e9369dfc0021cfdc55576e02a4e215b107e141079809fdb63fac354cb7db0c4",
+      "edits": [
+        [
+          186,
+          225,
+          ""
+        ],
+        [
+          1610,
+          1661,
+          ""
+        ],
+        [
+          1769,
+          1831,
+          ""
+        ],
+        [
+          2135,
+          2279,
+          ""
+        ],
+        [
+          2959,
+          3060,
+          "        source_before(path, raw, error)\n        source_before_evaluation(path, raw, error)\n"
+        ],
+        [
+          3828,
+          3896,
+          ""
+        ],
+        [
+          4587,
+          4644,
+          ""
+        ]
+      ],
+      "previous_sha256": "7811bb7d620b7b1564dfc2fd8eeecedcdec2a8c36c1a9d36f2c1fef44f9816be"
+    },
+    "evaluation/admission/core_813_inventory.py": {
+      "current_sha256": "dbbb13c36c53b02631a2aecc453d29c5219246aadd291a216b521206aee438f9",
+      "edits": [
+        [
+          4806,
+          5231,
+          "              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091, main367.DATA, main367.mainc712.DATA, main367.mainc712.main0fb574.DATA)\n"
+        ]
+      ],
+      "previous_sha256": "edb64b725e2f340a4d808ad692a47eeb243716a8b853612ff71b9e60381db4ca"
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "current_sha256": "ea923ada7544e7ce23965b17988ec79cbec9e8f45dffc2a5559c925eec86c5a8",
+      "edits": [
+        [
+          820,
+          958,
+          "RECORDER_TESTS = main367.mainc712.main0fb574.RECORDER_TESTS\nPYTHON_CURRENT = main367.mainc712.main0fb574.PYTHON_CURRENT\n"
+        ],
+        [
+          11615,
+          11652,
+          "def require_current(declared):\n"
+        ],
+        [
+          11938,
+          12272,
+          ""
+        ]
+      ],
+      "previous_sha256": "dc546f03b47470c32878ce800457ff2d802179cbafd65649c8e345cab768460e"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "current_sha256": "0a35aa1ad5155796769eee7e3093ad3b2712735045a2e5319651c1ae1f84c8ef",
+      "edits": [
+        [
+          1392,
+          1469,
+          "    require(type(count) is int and count == 357 and len(identities) == count\n"
+        ],
+        [
+          2220,
+          2366,
+          ""
+        ],
+        [
+          2813,
+          2881,
+          "    # Actual workers authenticate all357 and allfour in discover().\n"
+        ]
+      ],
+      "previous_sha256": "e932991d805f483bc3313a8ddbf21b249560d7020a3b3233ab35d155ef4f2596"
+    },
+    "evaluation/admission/test_main0fb574_inventory.py": {
+      "current_sha256": "0b28f45eba8aba558240818174c8918b8e04b9208949202b00c6e726347ac0dc",
+      "edits": [
+        [
+          494,
+          609,
+          "        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())\n"
+        ],
+        [
+          1568,
+          1639,
+          "            self.assertIsNone(inventory.require_current(actual))\n"
+        ],
+        [
+          1842,
+          1897,
+          "                inventory.require_current(wrong)\n"
+        ],
+        [
+          2822,
+          2927,
+          "        identities = historical.python_identities(Path(__file__).parent)\n"
+        ]
+      ],
+      "previous_sha256": "a6fe029b80f825353143f09bda0c20b95e834523081863aa7fed4a7d10ff2cbd"
+    },
+    "evaluation/admission/test_main367_inventory.py": {
+      "current_sha256": "14780e34698e97121f2051496e6230a3348727caaab18f595815c6e20d55cdc0",
+      "edits": [
+        [
+          494,
+          706,
+          "        actual = current.mainc712.before_current(current.mainc712.main0fb574.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))\n"
+        ],
+        [
+          2849,
+          3049,
+          "        identities = current.mainc712.before_python(current.mainc712.main0fb574.before_python(historical.python_identities(Path(__file__).parent)))\n"
+        ]
+      ],
+      "previous_sha256": "acf5d4549050b46238d7d0167fe26003b6fb4579e4abfad25217978ce8ad2417"
+    },
+    "evaluation/admission/test_mainc712_inventory.py": {
+      "current_sha256": "2b11a5e60d2424b144ef01b108297bb9a3318e5aa921a4ce303191eb1f4037cb",
+      "edits": [
+        [
+          486,
+          647,
+          "        actual = current.main0fb574.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))\n"
+        ],
+        [
+          3114,
+          3264,
+          "        identities = current.main0fb574.before_python(historical.python_identities(Path(__file__).parent))\n"
+        ]
+      ],
+      "previous_sha256": "a2b1133af957b90cc33a03a2055a6766614a91c82c82ab313990bb7aba6ea13a"
+    }
+  },
+  "excluded_custom_harness": {
+    "harness": false,
+    "name": "precontext_native",
+    "previous": true
+  },
+  "expanded_controls": {
+    "expected_controls": [
+      "builtin_models_protocol_and_completion_stay_exact",
+      "frozen_witnesses_bind_complete_row_function_and_dimension",
+      "frozen_witnesses_retain_oracle_and_reject_early_completion"
+    ],
+    "selected_controls": [
+      "labels_are_fixed_copyable_csv_safe_identifiers",
+      "labels_refuse_framing_injection_non_ascii_and_excess",
+      "frozen_rows_keep_exact_raw_csv_bytes_and_full_u64_values",
+      "returned_row_owns_its_frozen_inputs_after_table_retirement",
+      "table_framing_requires_exact_version_spaces_lf_and_terminal_end",
+      "all_cardinalities_preserve_exact_record_and_call_caps",
+      "dimensions_reject_zero_overflow_and_disagreement",
+      "function_rows_are_complete_unique_and_ordered",
+      "record_rows_refuse_missing_duplicate_extra_or_reordered_ids",
+      "value_columns_refuse_missing_extra_noncanonical_or_overflowed_values",
+      "payloads_preserve_existing_printable_csv_grammar_and_64_byte_bound",
+      "row_lookup_binds_input_id_bytes_and_complete_population",
+      "returned_row_rechecks_input_and_column_before_exposing_expected_value",
+      "completion_refuses_early_eof_and_excess_even_with_valid_prefix",
+      "argument_loading_uses_exact_selected_functions_and_separate_table_path",
+      "argument_limits_and_canonical_numbers_remain_closed",
+      "selections_reject_duplicate_ids_labels_overlap_order_and_extent_overflow",
+      "preparation_policies_keep_exact_extent_bounds",
+      "complete_table_load_failure_cannot_fall_back_to_derived_operations"
+    ],
+    "selected_output_controls": [
+      "selected_full_u64_wire_keeps_old_bounds_and_old_refusal"
+    ],
+    "selected_worker_controls": [
+      "selected_guarded_returns_reject_each_value_and_guard_drift"
+    ]
+  },
+  "expanded_macro_counts": {
+    "compiled_selected_native": 16,
+    "selected_session_controls": 24
+  },
+  "macro_targets": {
+    "expected_controls": "tools/rapid-profiler/ordinary-interval/normal/leaf_set/expectation.rs",
+    "selected_controls": "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected_tests.rs",
+    "selected_output_controls": "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs",
+    "selected_worker_controls": "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs"
+  },
+  "main_revision": "af81a7e678e75ea2535b1b25e43053f1d8186d2d",
+  "methods": {
+    "src/lib.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent.rs": {
+      "all": [
+        "unmappable_last_cache_line_refuses_without_address_overflow",
+        "indexed_endpoint_preserves_invalid_prefix_and_eager_default",
+        "invalid_choice_is_not_permanent_end_and_unproved_tail_stays_unknown",
+        "all_masks_keep_their_original_slots_and_prove_permanent_upper_end",
+        "pun_duplicate_preference_ranges_and_both_caps_have_exact_evidence",
+        "exact_five_mandatory_prefix_forms_require_admission",
+        "nearby_simd_string_address_and_extra_prefix_forms_stay_refused",
+        "exact_codes_do_not_bypass_register_or_memory_operand_checks",
+        "existing_gpr_and_refused_special_forms_keep_their_outcomes"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/whole_function.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/whole_function/adc_tests.rs": {
+      "all": [
+        "whole_adc_actual_compiled_bodies_keep_every_head_return_and_exact_byte",
+        "whole_adc_all_31_forms_and_186_operand_fixtures_use_exact_scalar_guard",
+        "whole_adc_rejects_callee_saved_stack_segment_and_nonlocal_address_forms",
+        "whole_adc_rejects_writes_prefixes_adx_and_control_transfers",
+        "whole_adc_keeps_reachability_complete_roles_and_boundaries_mandatory",
+        "whole_adc_preserves_80_byte_and_allocation_caps_and_exact_overlay",
+        "whole_adc_malformed_encoding_refuses_before_any_image_attempt"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/whole_function/tests.rs": {
+      "all": [
+        "whole_two_short_returns_keep_nops_controls_and_composition",
+        "whole_final_branch_after_last_action_forces_full_end",
+        "whole_first_five_head_routes_and_legacy_short_ret_refusal",
+        "whole_cfg_refuses_escape_falloff_entry_reentry_and_non_scalar_shapes",
+        "whole_entry_roles_and_finite_bounds_are_exact",
+        "whole_overlay_authentication_precedes_image_search",
+        "whole_actual_image_validator_refuses_branch_ret_maps_and_control_mutations"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/adc_state_oracle.rs": {
+      "all": [
+        "adc_arithmetic_answers_have_independent_literal_calibration",
+        "native_adc_8_bit_state_and_carry_survive_the_hook",
+        "native_adc_16_bit_state_and_carry_survive_the_hook",
+        "native_adc_32_bit_state_and_carry_survive_the_hook",
+        "native_adc_64_bit_state_and_carry_survive_the_hook"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/compiled_selected_state_oracle.rs": {
+      "all": [
+        "distinct_managed_roles_reject_duplicate_owner_wrong_pc_and_event",
+        "mapping_roles_reject_swapped_sharing_writes_and_missing_execute"
+      ],
+      "ignored": [],
+      "macro_calls": [
+        [
+          "native_case!\\((\\w+), ([01]), ([0-7])\\);",
+          [
+            [
+              "first_equal_mask_0",
+              "0",
+              "0"
+            ],
+            [
+              "first_equal_mask_1",
+              "0",
+              "1"
+            ],
+            [
+              "first_equal_mask_2",
+              "0",
+              "2"
+            ],
+            [
+              "first_equal_mask_3",
+              "0",
+              "3"
+            ],
+            [
+              "first_equal_mask_4",
+              "0",
+              "4"
+            ],
+            [
+              "first_equal_mask_5",
+              "0",
+              "5"
+            ],
+            [
+              "first_equal_mask_6",
+              "0",
+              "6"
+            ],
+            [
+              "first_equal_mask_7",
+              "0",
+              "7"
+            ],
+            [
+              "uppercase_count_mask_0",
+              "1",
+              "0"
+            ],
+            [
+              "uppercase_count_mask_1",
+              "1",
+              "1"
+            ],
+            [
+              "uppercase_count_mask_2",
+              "1",
+              "2"
+            ],
+            [
+              "uppercase_count_mask_3",
+              "1",
+              "3"
+            ],
+            [
+              "uppercase_count_mask_4",
+              "1",
+              "4"
+            ],
+            [
+              "uppercase_count_mask_5",
+              "1",
+              "5"
+            ],
+            [
+              "uppercase_count_mask_6",
+              "1",
+              "6"
+            ],
+            [
+              "uppercase_count_mask_7",
+              "1",
+              "7"
+            ]
+          ]
+        ]
+      ],
+      "templates": [
+        "macro_rules! native_case {\n    ($name:ident, $selected:expr, $mask:expr) => {\n        #[test]\n        fn $name() {\n            isolated_native_test::run(\n                stringify!($name),\n                \"LITEINST2_COMPILED_SELECTED_ORACLE\",\n                || run($selected, $mask),\n            );\n        }\n    };\n}"
+      ]
+    },
+    "tests/support/adc_fixtures.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/adc_state.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/adjacent_b2_fixture.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/adjacent_b2_native.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/boundary_signal.rs": {
+      "all": [
+        "repeated_boundaries_keep_order_and_physical_identity",
+        "rejects_missing_terminal_roundtrip",
+        "rejects_duplicate_roundtrip",
+        "rejects_wrong_logical_pc",
+        "rejects_wrong_physical_pc",
+        "rejects_uncompleted_roundtrip"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/bounded_proc_stat.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/compiled_selected_fixtures.rs": {
+      "all": [
+        "literal_answers_and_complete_reachable_population_are_frozen"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/compiled_selected_state.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_app.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_app_data.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_core.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_core_pages.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_e9.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_image.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_planning_profile.rs": {
+      "all": [
+        "exact_caller_profile_and_whole_marker_must_agree"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_recording.rs": {
+      "all": [
+        "exact_trailing_profile_preserves_legacy_arguments_and_rejects_aliases",
+        "entire_journal_append_and_unselected_state_are_exact",
+        "journal_owner_header_tail_and_existing_record_mutations_refuse",
+        "clean_call_stack_words_have_independent_offsets_and_full_tail",
+        "exact_clean_template_encodes_logical_argument_call_and_return",
+        "complete_hook_symbol_extent_and_load_bytes_are_exact"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_recording_native.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_router_contract.rs": {
+      "all": [
+        "exact_legacy_and_invalid_evex_markers",
+        "route_identity_and_explicit_opt_in"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_router_controls.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_router_native.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_seed.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/elf_exec_oracle.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/elf_exec_provider.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/elf_exec_tactics.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/elf_exec_tactics_contract.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/entry_signal.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/isolated_native_test.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/neighbor_fixture_arena.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/parked_signal.rs": {
+      "all": [
+        "rejects_frame_mutation",
+        "rejects_old_source_after_publication",
+        "rejects_extra_source_write",
+        "rejects_wrong_receipt_identity",
+        "rejects_failed_publication_status"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/process_text.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/quiescent_oracle.rs": {
+      "all": [
+        "campaign_initializer_keeps_default_memory_and_flags_exact",
+        "campaign_initializer_matches_independent_memory_vectors_and_flags",
+        "rejects_fault_address_corruption",
+        "rejects_gpr_corruption",
+        "rejects_defined_flag_corruption",
+        "rejects_simd_corruption",
+        "rejects_application_memory_corruption",
+        "rejects_redzone_corruption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/routed_jmp_artifact.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/routed_jmp_fixture.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/routed_jmp_native.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/word_sync.rs": {
+      "all": [
+        "accepts_exact_child_publication_record",
+        "rejects_wrong_child_process",
+        "rejects_wrong_transition_direction",
+        "rejects_failed_publication_status",
+        "rejects_missing_synchronization",
+        "rejects_wrong_bound_patch_identity",
+        "rejects_trailing_receipt_field"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/word_trace_method.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/whole_adc_state_oracle.rs": {
+      "all": [
+        "native_whole_adc_8_bit_state_and_carry_survive_the_hook",
+        "native_whole_adc_16_bit_state_and_carry_survive_the_hook",
+        "native_whole_adc_32_bit_state_and_carry_survive_the_hook",
+        "native_whole_adc_64_bit_state_and_carry_survive_the_hook"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/normal-work/reference_bytes.rs": {
+      "all": [
+        "normal_reference_body_every_opcode_bit_and_extent",
+        "normal_reference_labels_require_exact_addresses_and_no_wrap",
+        "normal_reference_reader_boundaries_and_cell_isolation",
+        "normal_reference_fresh_identity_phase_stack_result_and_canary",
+        "normal_reference_endpoint_high_words_aux_and_regression",
+        "normal_reference_zero_and_full_width_endpoints_are_retained",
+        "returned_view_requires_exact_identity_phase_value_and_cell_words",
+        "returned_view_checks_whole_stack_range_without_wrap_or_holes",
+        "returned_view_retains_zero_full_width_and_refuses_reversed_endpoints"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/joined_task.rs": {
+      "all": [
+        "captured_kernel_tid_survives_success_and_panic",
+        "complete_census_refuses_malformed_duplicate_or_missing_main",
+        "retirement_preserves_result_until_exact_tid_absence",
+        "exclusive_retirement_refuses_unknown_tasks_and_waits_for_both",
+        "retirement_uses_one_absolute_deadline_and_checks_after_observation"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/main.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": {
+      "all": [
+        "canonical_table_cli_keeps_all_functions_and_refuses_invalid_last",
+        "operations_match_accepted_encoded_bytes_without_calling_targets",
+        "typed_completion_and_wire_bounds_keep_all_outcomes",
+        "accepted_pending_leaf_record_survives_full_queue_and_disconnect"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": {
+      "all": [
+        "ordered_population_n1_through_n4_keeps_global_and_local_coordinates",
+        "population_refuses_full_table_identity_and_each_journal_word",
+        "mixed_history_and_full_budget_keep_one_based_call_and_zero_based_sample",
+        "report_payload_and_wire_refuse_shift_missing_duplicate_and_unavailable_corruption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/expectation.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected_tests.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": {
+      "all": [
+        "command_flush_boundary_is_exact_for_each_cardinality_and_old_default",
+        "guarded_return_checks_all_operations_and_owner_retention"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/selected_session_controls.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [
+        [
+          "controls! \\{ (\\w+):\\s*([\\s\\S]*?)\\n\\}",
+          [
+            [
+              "selected_controls",
+              "labels_are_fixed_copyable_csv_safe_identifiers,\n   labels_refuse_framing_injection_non_ascii_and_excess,\n   frozen_rows_keep_exact_raw_csv_bytes_and_full_u64_values,\n   returned_row_owns_its_frozen_inputs_after_table_retirement,\n   table_framing_requires_exact_version_spaces_lf_and_terminal_end,\n   all_cardinalities_preserve_exact_record_and_call_caps,\n   dimensions_reject_zero_overflow_and_disagreement,\n   function_rows_are_complete_unique_and_ordered,\n   record_rows_refuse_missing_duplicate_extra_or_reordered_ids,\n   value_columns_refuse_missing_extra_noncanonical_or_overflowed_values,\n   payloads_preserve_existing_printable_csv_grammar_and_64_byte_bound,\n   row_lookup_binds_input_id_bytes_and_complete_population,\n   returned_row_rechecks_input_and_column_before_exposing_expected_value,\n   completion_refuses_early_eof_and_excess_even_with_valid_prefix,\n   argument_loading_uses_exact_selected_functions_and_separate_table_path,\n   argument_limits_and_canonical_numbers_remain_closed,\n   selections_reject_duplicate_ids_labels_overlap_order_and_extent_overflow,\n   preparation_policies_keep_exact_extent_bounds,\n   complete_table_load_failure_cannot_fall_back_to_derived_operations,"
+            ],
+            [
+              "expected_controls",
+              "builtin_models_protocol_and_completion_stay_exact,\n    frozen_witnesses_bind_complete_row_function_and_dimension,\n    frozen_witnesses_retain_oracle_and_reject_early_completion,"
+            ],
+            [
+              "selected_worker_controls",
+              "selected_guarded_returns_reject_each_value_and_guard_drift,"
+            ],
+            [
+              "selected_output_controls",
+              "selected_full_u64_wire_keeps_old_bounds_and_old_refusal,"
+            ]
+          ]
+        ]
+      ],
+      "templates": [
+        "macro_rules! controls {\n    ($module:ident: $($name:ident),+ $(,)?) => {$(\n        #[test]\n        fn $name() { super::leaf_set::$module::$name(); }\n    )+};\n}"
+      ]
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+      "all": [
+        "guarded_wait_preserves_original_due_end_and_shutdown_boundaries",
+        "accepted_full_queue_retains_pending_before_stop_and_disconnect"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": {
+      "all": [
+        "failed_poll_retains_last_complete_and_distinguishes_partial_phase_coverage",
+        "accounting_units_unavailable_and_regression_never_become_off_cpu_claims"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/counter_probe.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+      "all": [
+        "every_ret_is_grouped_and_same_block_entry_ret_is_coalesced",
+        "short_or_missing_ret_block_refuses_without_padding_or_omission",
+        "internal_entry_backedge_and_overlapping_blocks_refuse",
+        "source_and_prior_mapping_exclusion_preserves_every_other_byte"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": {
+      "all": [
+        "module_composes_shared_page_two_scopes_all_roles_and_excluded_allocations",
+        "module_refuses_wrong_identity_source_or_unpatchable_second_function",
+        "module_role_table_keeps_each_function_and_mandatory_control_distinct",
+        "module_reaches_derived_ten_group_cap_without_larger_leaf_windows",
+        "module_actual_selected_adc_bodies_have_explicit_whole_plans_on_the_shared_page"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/timing.rs": {
+      "all": [
+        "raw_endpoints_preserve_clock_failures_without_a_fabricated_duration",
+        "reserve_includes_pending_returns_before_admitting_another_entry"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/mod.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/module.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg_adc_tests.rs": {
+      "all": [
+        "exact_compiled_adc_body_has_complete_heads_edges_padding_and_two_returns",
+        "every_scalar_adc_encoding_family_keeps_the_same_single_return_cfg",
+        "adc_never_admits_callee_saved_stack_segment_or_nonlocal_addresses",
+        "adc_never_admits_memory_writes_lock_rep_or_other_control_forms",
+        "adc_does_not_turn_truncation_dead_code_or_bad_edges_into_coverage",
+        "both_complete_selected_bodies_pass_preflight_with_known_function_metadata",
+        "both_complete_selected_bodies_pass_stripped_preflight_without_symbol_fallback"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/lib.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    }
+  },
+  "module_chains": {
+    "Cargo.toml": [
+      "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]",
+      "[[test]]\nname = \"precontext_native\"\npath = \"tests/precontext_native.rs\"\nharness = false"
+    ],
+    "src/lib.rs": [
+      "pub mod quiescent;"
+    ],
+    "src/quiescent.rs": [
+      "mod whole_function;"
+    ],
+    "src/quiescent/whole_function.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "src/quiescent/whole_function/tests.rs": [
+      "#[path = \"adc_tests.rs\"]\nmod adc_tests;"
+    ],
+    "tests/adc_state_oracle.rs": [
+      "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+      "#[path = \"support/isolated_native_test.rs\"]\nmod isolated_native_test;",
+      "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;",
+      "#[path = \"support/adc_fixtures.rs\"]\nmod adc;"
+    ],
+    "tests/compiled_selected_state_oracle.rs": [
+      "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+      "#[path = \"support/isolated_native_test.rs\"]\nmod isolated_native_test;",
+      "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;",
+      "#[path = \"support/compiled_selected_fixtures.rs\"]\nmod fixture;"
+    ],
+    "tests/support/adjacent_b2_native.rs": [
+      "#[path = \"adjacent_b2_fixture.rs\"]\npub mod fixture;"
+    ],
+    "tests/support/e9_common_app.rs": [
+      "#[path = \"e9_common_app_data.rs\"]\nmod data;"
+    ],
+    "tests/support/e9_common_core.rs": [
+      "#[path = \"e9_common_planning_profile.rs\"]\nmod planning_profile;",
+      "#[path = \"e9_common_router_contract.rs\"]\nmod router_contract;",
+      "#[path = \"e9_common_router_native.rs\"]\nmod router_native;",
+      "#[path = \"e9_common_router_controls.rs\"]\nmod router_controls;"
+    ],
+    "tests/support/e9_common_image.rs": [
+      "#[path = \"e9_common_seed.rs\"]\nmod seed;",
+      "#[path = \"e9_common_recording.rs\"]\nmod recording;",
+      "#[path = \"e9_common_recording_native.rs\"]\nmod recording_native;",
+      "#[path = \"e9_common_core.rs\"]\npub mod core_pair;",
+      "#[path = \"e9_common_e9.rs\"]\npub mod e9_pair;",
+      "#[path = \"e9_common_core_pages.rs\"]\nmod core_pages;"
+    ],
+    "tests/support/elf_exec_oracle.rs": [
+      "#[path = \"elf_exec_tactics.rs\"]\npub mod tactics;",
+      "#[path = \"e9_common_app.rs\"]\npub mod common_app;",
+      "#[path = \"e9_common_image.rs\"]\n// This shared support module also compiles in workspace test crates without\n// their own MSRV; keep Clippy's syntax suggestions within the root crate's 1.85.\n#[clippy::msrv = \"1.85\"]\npub mod common_image;",
+      "#[path = \"elf_exec_provider.rs\"]\nmod provider;",
+      "#[path = \"adjacent_b2_native.rs\"]\npub mod adjacent_b2;"
+    ],
+    "tests/support/elf_exec_tactics.rs": [
+      "#[path = \"elf_exec_tactics_contract.rs\"]\nmod contract;"
+    ],
+    "tests/support/isolated_native_test.rs": [
+      "#[path = \"bounded_proc_stat.rs\"]\nmod bounded_proc_stat;"
+    ],
+    "tests/support/quiescent_oracle.rs": [
+      "include!(\"entry_signal.rs\");",
+      "include!(\"parked_signal.rs\");",
+      "include!(\"boundary_signal.rs\");",
+      "include!(\"word_sync.rs\");",
+      "include!(\"word_trace_method.rs\");",
+      "include!(\"routed_jmp_native.rs\");",
+      "include!(\"adc_state.rs\");",
+      "include!(\"compiled_selected_state.rs\");",
+      "#[path = \"process_text.rs\"]\npub mod process_text;",
+      "#[path = \"elf_exec_oracle.rs\"]\npub mod elf_exec_oracle;",
+      "#[path = \"neighbor_fixture_arena.rs\"]\npub(crate) mod neighbor_fixture_arena;"
+    ],
+    "tests/support/routed_jmp_native.rs": [
+      "include!(\"routed_jmp_fixture.rs\");",
+      "include!(\"routed_jmp_artifact.rs\");"
+    ],
+    "tests/whole_adc_state_oracle.rs": [
+      "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+      "#[path = \"support/isolated_native_test.rs\"]\nmod isolated_native_test;",
+      "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;",
+      "#[path = \"support/adc_fixtures.rs\"]\nmod adc;"
+    ],
+    "tools/rapid-profiler/Cargo.toml": [
+      "[[bin]]\nname = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true\nbench = false"
+    ],
+    "tools/rapid-profiler/ordinary-interval/main.rs": [
+      "mod normal;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal.rs": [
+      "pub(super) mod leaf_set;",
+      "#[cfg(test)]\n#[path = \"normal/selected_session_controls.rs\"]\nmod selected_session_controls;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": [
+      "mod check;",
+      "mod expectation;",
+      "mod selected;",
+      "mod worker;",
+      "#[cfg(test)]\npub(in crate::normal) use check::selected_controls as selected_output_controls;",
+      "#[cfg(test)]\npub(in crate::normal) use expectation::controls as expected_controls;",
+      "#[cfg(test)]\npub(in crate::normal) use selected::controls as selected_controls;",
+      "#[cfg(test)]\npub(in crate::normal) use worker::selected_controls as selected_worker_controls;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": [
+      "#[cfg(test)]\n#[path = \"selected_tests.rs\"]\npub(in crate::normal) mod controls;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on.rs": [
+      "pub(super) mod site;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/site.rs": [
+      "pub mod ordinary;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": [
+      "mod normal_module;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/mod.rs": [
+      "mod module;",
+      "mod always_on;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/module.rs": [
+      "#[path = \"ordinary/mod.rs\"]\npub(super) mod ordinary;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": [
+      "#[cfg(test)]\n#[path = \"cfg_adc_tests.rs\"]\nmod adc_tests;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": [
+      "mod cfg;"
+    ],
+    "tools/rapid-profiler/src/lib.rs": [
+      "pub mod frontend_native;"
+    ]
+  },
+  "new_harness_counts": {
+    "test/adc_state_oracle": 40,
+    "test/compiled_selected_state_oracle": 54,
+    "test/whole_adc_state_oracle": 39
+  },
+  "oracle_module_closure": {
+    "tests/support/adc_fixtures.rs": [],
+    "tests/support/adc_state.rs": [],
+    "tests/support/adjacent_b2_fixture.rs": [],
+    "tests/support/adjacent_b2_native.rs": [
+      "tests/support/adjacent_b2_fixture.rs"
+    ],
+    "tests/support/boundary_signal.rs": [],
+    "tests/support/bounded_proc_stat.rs": [],
+    "tests/support/compiled_selected_fixtures.rs": [],
+    "tests/support/compiled_selected_state.rs": [],
+    "tests/support/e9_common_app.rs": [
+      "tests/support/e9_common_app_data.rs"
+    ],
+    "tests/support/e9_common_app_data.rs": [],
+    "tests/support/e9_common_core.rs": [
+      "tests/support/e9_common_planning_profile.rs",
+      "tests/support/e9_common_router_contract.rs",
+      "tests/support/e9_common_router_native.rs",
+      "tests/support/e9_common_router_controls.rs"
+    ],
+    "tests/support/e9_common_core_pages.rs": [],
+    "tests/support/e9_common_e9.rs": [],
+    "tests/support/e9_common_image.rs": [
+      "tests/support/e9_common_seed.rs",
+      "tests/support/e9_common_recording.rs",
+      "tests/support/e9_common_recording_native.rs",
+      "tests/support/e9_common_core.rs",
+      "tests/support/e9_common_e9.rs",
+      "tests/support/e9_common_core_pages.rs"
+    ],
+    "tests/support/e9_common_planning_profile.rs": [],
+    "tests/support/e9_common_recording.rs": [],
+    "tests/support/e9_common_recording_native.rs": [],
+    "tests/support/e9_common_router_contract.rs": [],
+    "tests/support/e9_common_router_controls.rs": [],
+    "tests/support/e9_common_router_native.rs": [],
+    "tests/support/e9_common_seed.rs": [],
+    "tests/support/elf_exec_oracle.rs": [
+      "tests/support/elf_exec_tactics.rs",
+      "tests/support/e9_common_app.rs",
+      "tests/support/e9_common_image.rs",
+      "tests/support/elf_exec_provider.rs",
+      "tests/support/adjacent_b2_native.rs"
+    ],
+    "tests/support/elf_exec_provider.rs": [],
+    "tests/support/elf_exec_tactics.rs": [
+      "tests/support/elf_exec_tactics_contract.rs"
+    ],
+    "tests/support/elf_exec_tactics_contract.rs": [],
+    "tests/support/entry_signal.rs": [],
+    "tests/support/isolated_native_test.rs": [
+      "tests/support/bounded_proc_stat.rs"
+    ],
+    "tests/support/neighbor_fixture_arena.rs": [],
+    "tests/support/parked_signal.rs": [],
+    "tests/support/process_text.rs": [],
+    "tests/support/quiescent_oracle.rs": [
+      "tests/support/entry_signal.rs",
+      "tests/support/parked_signal.rs",
+      "tests/support/boundary_signal.rs",
+      "tests/support/word_sync.rs",
+      "tests/support/word_trace_method.rs",
+      "tests/support/routed_jmp_native.rs",
+      "tests/support/adc_state.rs",
+      "tests/support/compiled_selected_state.rs",
+      "tests/support/process_text.rs",
+      "tests/support/elf_exec_oracle.rs",
+      "tests/support/neighbor_fixture_arena.rs"
+    ],
+    "tests/support/routed_jmp_artifact.rs": [],
+    "tests/support/routed_jmp_fixture.rs": [],
+    "tests/support/routed_jmp_native.rs": [
+      "tests/support/routed_jmp_fixture.rs",
+      "tests/support/routed_jmp_artifact.rs"
+    ],
+    "tests/support/word_sync.rs": [],
+    "tests/support/word_trace_method.rs": []
+  },
+  "previous_corpus_sha256": "d5fb9d5c1f8cd82ab1055bff5c4e9af710c55dcb7cb7a1348833e5830630cb0c",
+  "projections": {
+    "evaluation/ordinary-call-pair-session/original_controls.py": {
+      "current_sha256": "318bf680f009b4184635e5acd8329d99559114579fc7225d1e3d606453d7de01",
+      "edits": [
+        [
+          355,
+          508,
+          "assert not PARSER.is_symlink() and hashlib.sha256(PARSER.read_bytes()).hexdigest() == '9933fe3c83356ce876971313a65132cb0b0b5916b866974ffa8110c73ff13f12'\n"
+        ],
+        [
+          8526,
+          8636,
+          "        altered = source.replace('83f12525c59f6ad31736d82db545ddc15a3c8682c1c66b30982ed4c627c8fa67','0'*64,1)\n"
+        ]
+      ],
+      "previous_sha256": "e9532c2827782ff396ee0cfb2548b15dc14dd4fe2dcecd8973a35383f9e48169"
+    },
+    "evaluation/ordinary-call-pair-session/original_output.py": {
+      "current_sha256": "3a2b1dc5c9ca7a802751e2826ad4fe809bce720c51b3ccf81c9cd6012f4894b8",
+      "edits": [
+        [
+          425,
+          555,
+          "assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == '83f12525c59f6ad31736d82db545ddc15a3c8682c1c66b30982ed4c627c8fa67'\n"
+        ]
+      ],
+      "previous_sha256": "9933fe3c83356ce876971313a65132cb0b0b5916b866974ffa8110c73ff13f12"
+    },
+    "evaluation/ordinary-leaf-set-session/original_controls.py": {
+      "current_sha256": "f024bf571f3f57d524c424826ebbee04ee852f8837dd7c9deb157cc33f648b0c",
+      "edits": [
+        [
+          389,
+          514,
+          "assert hashlib.sha256(SOURCE.read_bytes()).hexdigest() == '303946e4122ca625cf0a2a3d14a38eaedcb62b0ed1d2cc36aab8d44030cd4ea4'\n"
+        ]
+      ],
+      "previous_sha256": "24ef1d110390e3c4ed23e574d36d5d0304500b6fa864fd622a0becd70e5e0733"
+    },
+    "evaluation/ordinary-leaf-set-session/original_output.py": {
+      "current_sha256": "daeed0309f62ac4fadc69afdd2c26ba758063d5c5599a148a831bf37972fa8aa",
+      "edits": [
+        [
+          310,
+          440,
+          "assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == '83f12525c59f6ad31736d82db545ddc15a3c8682c1c66b30982ed4c627c8fa67'\n"
+        ]
+      ],
+      "previous_sha256": "303946e4122ca625cf0a2a3d14a38eaedcb62b0ed1d2cc36aab8d44030cd4ea4"
+    },
+    "evaluation/ordinary-leaf-set-session/output.py": {
+      "current_sha256": "f8f60977519304a9ae615c44b4e193a7b5f663885b07074d4b30b6106498f3fe",
+      "edits": [
+        [
+          3864,
+          3969,
+          ""
+        ],
+        [
+          4375,
+          4481,
+          "        assert type(operation) is str and operation in OPS and operation not in operations\n"
+        ],
+        [
+          5895,
+          6601,
+          "    geometry(table, caller, cpus)\n"
+        ],
+        [
+          6866,
+          7300,
+          ""
+        ],
+        [
+          7662,
+          7756,
+          "        expected_stderr = ('normal-leaf-set-session INPUT_REFUSED: ' + input_error + '\\n').encode('ascii')\n"
+        ],
+        [
+          7796,
+          7872,
+          "        expected_stderr = b'normal-leaf-set-session INPUT_INCOMPLETE\\n'\n"
+        ],
+        [
+          8194,
+          8305,
+          ""
+        ],
+        [
+          8613,
+          8658,
+          "            choices = WORDS.get((tag, name))\n"
+        ],
+        [
+          18323,
+          18396,
+          "    return dict(status='LEAF_SET_WIRE_PASS', outcome=outcome, input_error=input_error,\n"
+        ]
+      ],
+      "previous_sha256": "83f12525c59f6ad31736d82db545ddc15a3c8682c1c66b30982ed4c627c8fa67"
+    },
+    "src/quiescent/whole_function.rs": {
+      "current_sha256": "ccf5d4f17bb3ce47d7721ccefb029c81d8f4d018b140c4e84b179ee2fd6744c9",
+      "edits": [
+        [
+          9082,
+          9110,
+          ""
+        ]
+      ],
+      "previous_sha256": "182ef53798dfe4bcbcc93f1ebc3595530307499da6a7f6f90faa169fee108408"
+    },
+    "src/quiescent/whole_function/tests.rs": {
+      "current_sha256": "6b430cfe89223e875c11993332370e6326763525d655469a4f7972777f874c6f",
+      "edits": [
+        [
+          16917,
+          16958,
+          ""
+        ]
+      ],
+      "previous_sha256": "a9d594f674664504d2131e854392d5fa963eedcd4e9ed167f536263f579825f3"
+    },
+    "tests/support/quiescent_oracle.rs": {
+      "current_sha256": "fe0396c4f94a1efdab3b66771edcc20702590c2c31fdc74bc0310ae60c2a15c4",
+      "edits": [
+        [
+          30308,
+          30461,
+          ""
+        ]
+      ],
+      "previous_sha256": "cf4cf98e6dcfc1eddd2753922e4c68aa78233dd68ed3313a455b1747b8ea586f"
+    },
+    "tools/rapid-profiler/README.md": {
+      "current_sha256": "691f7fa697f7ca713c0538cab01cf39b57e8a817f0b59d6c0ac60869fda6d948",
+      "edits": [
+        [
+          1758,
+          2217,
+          ""
+        ]
+      ],
+      "previous_sha256": "ae1539ffeb618373e45f4079c1fce9c258aa651bfb48ed3dc1c165340c303435"
+    },
+    "tools/rapid-profiler/normal-work/reference_bytes.rs": {
+      "current_sha256": "3f95f804ae98d02ef069c49b138c6f9a84f171082b5dcfcaf3c1454a987a2c98",
+      "edits": [
+        [
+          26763,
+          26975,
+          "        let start = p.checked_sub(136).ok_or(Error::Range)?;\n        let end = p.checked_add(48).ok_or(Error::Range)?;\n"
+        ]
+      ],
+      "previous_sha256": "17fc025fbb8b95b69345389be3a8770cfae01add4836ad10b6a99826d7defccc"
+    },
+    "tools/rapid-profiler/ordinary-interval/joined_task.rs": {
+      "current_sha256": "30406c4adc4abc19689cf4c1745fcf9822dee4a216c918e0fa9d2ee060680c9f",
+      "edits": [
+        [
+          6537,
+          6689,
+          "    if exclusive && let Some(tid) = census.tids.difference(&expected).next() {\n        return Err(Error::UnexpectedTask(*tid));\n"
+        ]
+      ],
+      "previous_sha256": "c6fccf57a295ff04b4ccedee384eb257a4da7bcfc377c3a6d3f3b24515bbda04"
+    },
+    "tools/rapid-profiler/ordinary-interval/main.rs": {
+      "current_sha256": "ba6b74c124c445dac5d7dcdc27f335c5cb04f79dc06a19f1593e90da5882e52e",
+      "edits": [
+        [
+          14590,
+          14753,
+          ""
+        ]
+      ],
+      "previous_sha256": "a075f9cc44787b49b4c7d41571323e487a53da41b0dd778aa9390f4c9b474de9"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal.rs": {
+      "current_sha256": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
+      "edits": [
+        [
+          1072,
+          1164,
+          ""
+        ]
+      ],
+      "previous_sha256": "228d8aee63c9dc1ac8e67444617738647ec838a27325d6bfb0d196929ce1ff34"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": {
+      "current_sha256": "b026f9e2c6dc76c271512ba4a7cabc074eb071024b537368003358477dfb8ee3",
+      "edits": [
+        [
+          780,
+          1207,
+          ""
+        ],
+        [
+          3265,
+          3982,
+          ""
+        ],
+        [
+          10136,
+          10164,
+          "    leaves: [Leaf; N],\n"
+        ],
+        [
+          10819,
+          10955,
+          "                \"READY,leaf-set-session-v1,{},{},10,2,64,{},{},1,{},{},{},{},{},{},{},{},{}\\n\",\n"
+        ],
+        [
+          11610,
+          11651,
+          "                    leaf.operation.label(),\n"
+        ],
+        [
+          12777,
+          12812,
+          "        self.ledger.accept(record);\n        Ok(())\n"
+        ],
+        [
+          13738,
+          13801,
+          "        Ok(())\n"
+        ],
+        [
+          18302,
+          20057,
+          ""
+        ],
+        [
+          20429,
+          20522,
+          "            TrustedFunctionSelection::new(&bytes, leaf.va, leaf.extent, leaf.operation.label())\n"
+        ],
+        [
+          24607,
+          24651,
+          "            leaves,\n"
+        ],
+        [
+          25250,
+          25287,
+          "            std::array::from_fn(|i| (entries[i], leaves[i].operation)),\n"
+        ],
+        [
+          26681,
+          26754,
+          "            eprintln!(\"normal-leaf-set-session FAILED: {error}{details}{retirement}\");\n"
+        ],
+        [
+          26832,
+          27151,
+          "            eprint!(\"{}\", completion_stderr(completion));\n"
+        ]
+      ],
+      "previous_sha256": "f29387c74da6d33c85e63a0828769a060d491110f000404cf4aaede2158ab635"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": {
+      "current_sha256": "edccf49f83fd161898da8ff8536b5417017413e637f5a92e55ac1c353e867628",
+      "edits": [
+        [
+          353,
+          427,
+          "    leaves: [Leaf; N],\n"
+        ],
+        [
+          590,
+          644,
+          "        leaves: [Leaf; N],\n"
+        ],
+        [
+          784,
+          832,
+          ""
+        ],
+        [
+          1730,
+          1756,
+          ""
+        ],
+        [
+          2039,
+          2249,
+          "    pub(super) fn accept(&mut self, record: &Arc<input::Record>) {\n"
+        ],
+        [
+          2315,
+          2330,
+          ""
+        ],
+        [
+          4572,
+          4669,
+          "                self.leaves[ordinal % N].operation.value(accepted)\n"
+        ],
+        [
+          5534,
+          5564,
+          "            result_line(\n"
+        ],
+        [
+          5738,
+          6050,
+          ""
+        ],
+        [
+          11952,
+          12234,
+          ""
+        ],
+        [
+          31446,
+          32926,
+          ""
+        ]
+      ],
+      "previous_sha256": "7fca986bc1934de1ab6e7e175a89836cca94a24d348ad59d5b8824d5606b020b"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": {
+      "current_sha256": "06695c88f12e54f5831849fd0d99219ec33cbf643d4f4e2a7bd1d5b9954c04dc",
+      "edits": [
+        [
+          287,
+          317,
+          "    operation: Operation,\n"
+        ],
+        [
+          374,
+          532,
+          "        self.inner\n            .check_expected(n, self.operation.value(&self.inner.record));\n"
+        ],
+        [
+          844,
+          879,
+          "    operations: [Operation; N],\n"
+        ],
+        [
+          1310,
+          1349,
+          "        operations: [Operation; N],\n"
+        ],
+        [
+          2577,
+          2603,
+          "            operations,\n"
+        ],
+        [
+          3195,
+          3487,
+          "        for function in 0..N {\n"
+        ],
+        [
+          3865,
+          3923,
+          "            self.calls.push(Call {\n                inner,\n                operation: self.operations[function],\n            });\n"
+        ],
+        [
+          5617,
+          5659,
+          "    targets: [(u64, Operation); N],\n"
+        ],
+        [
+          5900,
+          5977,
+          "    let worker = Worker::attach(\n        targets.map(|t| t.0),\n        targets.map(|t| t.1),\n        client,\n        custody,\n        cpu,\n    );\n"
+        ],
+        [
+          8020,
+          8082,
+          "                operation,\n"
+        ],
+        [
+          8307,
+          8369,
+          "                operation,\n"
+        ],
+        [
+          8591,
+          8657,
+          "                    operation,\n"
+        ],
+        [
+          8901,
+          8964,
+          "            operation: Operation::Csv,\n"
+        ],
+        [
+          9091,
+          11588,
+          ""
+        ]
+      ],
+      "previous_sha256": "9e843ed552e1113b8fc3eca98126dd9a394aa751eba22827a307b1b8825b3b19"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+      "current_sha256": "ad75e7954f83013c9cb4a39e49a7f93e6b15e6056c2767f7de25636273db8386",
+      "edits": [
+        [
+          19717,
+          20380,
+          "        if !state.final_output\n            && let Some(totals) = state.finished\n        {\n            if joined.is_none() && handle.as_ref().is_some_and(|h| h.is_finished()) {\n                assert!(schedule.is_stopping() && state.stop_sent && state.pending.is_none());\n                *joined = Some(handle.take().unwrap().join());\n                let captured = joined.as_ref().unwrap().tid();\n                if u64::from(captured) != tid {\n                    return Err(format!(\n                        \"joined task identity captured_tids=[{captured}] Ready={tid} observed_tasks=None\"\n                    ));\n"
+        ],
+        [
+          20398,
+          22774,
+          "            }\n            // One complete observation per loop. The original Schedule\n            // still bounds shutdown; unrelated tasks refuse immediately.\n            let retired = match joined.as_mut() {\n                Some(task) => joined_task::poll_exclusive(&mut [task], || {\n                    schedule\n                        .wait_bound(Instant::now())\n                        .map(|_| ())\n                        .map_err(|error| {\n                            joined_task::Error::Clock(clock_failure(\n                                error,\n                                \"task-retirement\",\n                                engine.committed_arms,\n                                &schedule,\n                            ))\n                        })\n                })\n                .map_err(|error| error.to_string())?,\n                None => false,\n            };\n            if retired {\n                joined\n                    .as_ref()\n                    .unwrap()\n                    .result()\n                    .as_ref()\n                    .map_err(|_| \"worker panic\")?;\n                engine.retire(io)?;\n                engine.history(io)?;\n                assert!(engine.epochs.iter().all(Option::is_none));\n                assert_eq!(engine.banks.len(), 3);\n                assert_eq!(engine.reports.len(), schedule.armed() as usize);\n                assert_eq!(engine.committed_arms, schedule.armed());\n                assert_eq!(\n                    engine.history.last().unwrap().range().end,\n                    u64::from(schedule.armed()) + 1\n                );\n                engine.final_check()?;\n                app.finish(totals, &engine.reports, &engine.history, io)?;\n                app.final_checks()?;\n                single_main();\n                unsafe { immutable(spans) };\n                app.final_custody()?;\n                io.emit(format!(\"IO,{}\\n\", io.write_blocked()))?;\n                app.terminal(\n                    &schedule,\n                    engine.history.last().unwrap().range().end,\n                    totals,\n                    io,\n                )?;\n                state.final_output = true;\n"
+        ]
+      ],
+      "previous_sha256": "5d2678e5c52aad4d4fa6e7d14532ea76ea40ced8e42aa48449400aa863d33950"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": {
+      "current_sha256": "5568ad857d6259c5ab0d989ab675190a2f9a5040fc8b8164f93c7f585e471a9a",
+      "edits": [
+        [
+          11124,
+          11231,
+          "        if self.after.is_none()\n            && let Some((index, at)) = self.marks[..Phase::End as usize]\n"
+        ],
+        [
+          11365,
+          11751,
+          "        {\n            let tail = self\n                .last\n                .and_then(|last| last.after.checked_duration_since(at))\n                .map(|d| d.as_nanos());\n            write!(\n                f,\n                \" unfinished_from={} unfinished_through_error_ns={tail:?}\",\n                NAMES[index]\n            )?;\n"
+        ]
+      ],
+      "previous_sha256": "f84f6463e6d77ce3adaf47c4e6f6824a5dc65b33ddadd48fbd8c906de5106b42"
+    },
+    "tools/rapid-profiler/src/counter_probe.rs": {
+      "current_sha256": "de94d8b47d14bc50e0803043c6d54d011be1ef1138bd0b00b3902e61f5fe7365",
+      "edits": [
+        [
+          6232,
+          6445,
+          "        let zero = std::arch::x86_64::__cpuid(0);\n"
+        ],
+        [
+          6666,
+          6888,
+          "        let signature = std::arch::x86_64::__cpuid(1).eax;\n"
+        ]
+      ],
+      "previous_sha256": "6354c3094884405395e309382a96a7865dd2ab74c4f697f25749dcb48a9217c6"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": {
+      "current_sha256": "cd00fb4abff0dba99b2de59736d3da74b424bc0b4cf4df2a95190c161112e4a6",
+      "edits": [
+        [
+          12667,
+          17970,
+          ""
+        ]
+      ],
+      "previous_sha256": "c08707bdfcc16fcd25be20042b541fef65045561747896a4a4a5e48701f4df16"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/timing.rs": {
+      "current_sha256": "a2051a85f2dbe5ec374a0ecc1d37bb5d05377347d4bce2d24bc2a5091e7fd943",
+      "edits": [
+        [
+          2803,
+          2877,
+          ""
+        ],
+        [
+          2913,
+          3141,
+          "    std::arch::x86_64::__cpuid(0x8000_0000).eax >= 0x8000_0001\n        && std::arch::x86_64::__cpuid(0x8000_0001).edx & (1 << 27) != 0\n"
+        ]
+      ],
+      "previous_sha256": "57f12f1ba89d597a934ec40139d4481c016138f9923f72fc6c79e90b92af3d15"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": {
+      "current_sha256": "445304f174d5f228bff0f418a0ec4f277ad3571d68632af6f13e4589be2b263c",
+      "edits": [
+        [
+          1092,
+          1120,
+          ""
+        ],
+        [
+          7920,
+          7978,
+          ""
+        ]
+      ],
+      "previous_sha256": "a986f89e31eff1b9b57fe63d43ed1f88cd42bf7b26b9bab76c25e7bcab2c598e"
+    }
+  },
+  "python_current_sha256": "75706dabd26115ea7a043c300318f73a3983c9c86055a5f565f342be12bf5d01",
+  "python_previous_sha256": "b92e0d06aed4f61143a888cfc562e3133d10f872a4b2c95c3c5ba5045b23befd",
+  "schema": 1,
+  "shared_oracle_sources": [
+    "tests/support/adc_state.rs",
+    "tests/support/adjacent_b2_fixture.rs",
+    "tests/support/adjacent_b2_native.rs",
+    "tests/support/boundary_signal.rs",
+    "tests/support/compiled_selected_state.rs",
+    "tests/support/e9_common_app.rs",
+    "tests/support/e9_common_app_data.rs",
+    "tests/support/e9_common_core.rs",
+    "tests/support/e9_common_core_pages.rs",
+    "tests/support/e9_common_e9.rs",
+    "tests/support/e9_common_image.rs",
+    "tests/support/e9_common_planning_profile.rs",
+    "tests/support/e9_common_recording.rs",
+    "tests/support/e9_common_recording_native.rs",
+    "tests/support/e9_common_router_contract.rs",
+    "tests/support/e9_common_router_controls.rs",
+    "tests/support/e9_common_router_native.rs",
+    "tests/support/e9_common_seed.rs",
+    "tests/support/elf_exec_oracle.rs",
+    "tests/support/elf_exec_provider.rs",
+    "tests/support/elf_exec_tactics.rs",
+    "tests/support/elf_exec_tactics_contract.rs",
+    "tests/support/entry_signal.rs",
+    "tests/support/neighbor_fixture_arena.rs",
+    "tests/support/parked_signal.rs",
+    "tests/support/process_text.rs",
+    "tests/support/quiescent_oracle.rs",
+    "tests/support/routed_jmp_artifact.rs",
+    "tests/support/routed_jmp_fixture.rs",
+    "tests/support/routed_jmp_native.rs",
+    "tests/support/word_sync.rs",
+    "tests/support/word_trace_method.rs"
+  ],
+  "shared_oracle_tests": 35,
+  "sources": {
+    "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
+    "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+    "evaluation/admission/core_0fb574_inventory.py": "8e9369dfc0021cfdc55576e02a4e215b107e141079809fdb63fac354cb7db0c4",
+    "evaluation/admission/core_813_inventory.py": "dbbb13c36c53b02631a2aecc453d29c5219246aadd291a216b521206aee438f9",
+    "evaluation/admission/core_cc846_inventory.py": "ea923ada7544e7ce23965b17988ec79cbec9e8f45dffc2a5559c925eec86c5a8",
+    "evaluation/admission/recorder_parallel.py": "0a35aa1ad5155796769eee7e3093ad3b2712735045a2e5319651c1ae1f84c8ef",
+    "evaluation/admission/test_main0fb574_inventory.py": "0b28f45eba8aba558240818174c8918b8e04b9208949202b00c6e726347ac0dc",
+    "evaluation/admission/test_main367_inventory.py": "14780e34698e97121f2051496e6230a3348727caaab18f595815c6e20d55cdc0",
+    "evaluation/admission/test_mainaf81_inventory.py": "c006b20735fd039704aa810da6dc049178f90b1b4344d575b1262e7a2137bcbe",
+    "evaluation/admission/test_mainc712_inventory.py": "2b11a5e60d2424b144ef01b108297bb9a3318e5aa921a4ce303191eb1f4037cb",
+    "evaluation/ordinary-call-pair-session/original_controls.py": "318bf680f009b4184635e5acd8329d99559114579fc7225d1e3d606453d7de01",
+    "evaluation/ordinary-call-pair-session/original_output.py": "3a2b1dc5c9ca7a802751e2826ad4fe809bce720c51b3ccf81c9cd6012f4894b8",
+    "evaluation/ordinary-leaf-set-session/original_controls.py": "f024bf571f3f57d524c424826ebbee04ee852f8837dd7c9deb157cc33f648b0c",
+    "evaluation/ordinary-leaf-set-session/original_output.py": "daeed0309f62ac4fadc69afdd2c26ba758063d5c5599a148a831bf37972fa8aa",
+    "evaluation/ordinary-leaf-set-session/output.py": "f8f60977519304a9ae615c44b4e193a7b5f663885b07074d4b30b6106498f3fe",
+    "evaluation/ordinary-selected-results/adc-certified-43c9/README.md": "64ba8d8256166396df14e4d963bd447ec7ef2df5f4b2c1e5faf8667e81d539cd",
+    "evaluation/ordinary-selected-results/adc-certified-43c9/cells.csv": "a10c3fb202425a0a0fd728849b2e0d1d9bc810863cbaf8be5c5028f240ce80d5",
+    "evaluation/ordinary-selected-results/adc-certified-43c9/receipt.json": "7dbafbfd6bd94c9f305c48409cebf3322eccc4852bd1f38f3dadf0da054656b2",
+    "evaluation/ordinary-selected-results/compiled-df4/README.md": "8e0da1fb246746311ba3b874a67e2af121104e2378c881496ae0f7defc782652",
+    "evaluation/ordinary-selected-results/compiled-df4/cells.csv": "9a6cc028e812d2ab74f1d97588bb7e13eeddc27b1b419fc596ce92f0ce9ba6e2",
+    "evaluation/ordinary-selected-results/compiled-df4/receipt.json": "2bd689d8d2d30339ec95e3b6335f5479f5f05e59bbb8861bc1c0b68ea25b59c8",
+    "evaluation/ordinary-selected-results/compiled-df4/validation.json": "a7493514b6477a1b41ecbadbebf445b6643a3412337fc07044e83b247a5612f0",
+    "evaluation/ordinary-selected-results/initial-50e9/README.md": "05d7b1c49917645fd59bf99c3228db1fabf45bf495ce4ba44e907622ccd59661",
+    "evaluation/ordinary-selected-results/initial-50e9/cells.csv": "091c3035aa0861b5e16ef01b901605a36e34a397beb2558606f9f9156a342904",
+    "evaluation/ordinary-selected-results/initial-50e9/receipt.json": "f4df83d4b40bc411baab33205b8e3f0f7b8f000c97a3cf0c00c2a272a78abeb3",
+    "evaluation/ordinary-selected-results/summarize_initial.py": "b8317591182ce4c1c828dd8802998fcdcb24a4659a108f21a3ab3b20609c7fac",
+    "evaluation/ordinary-selected-results/whole-d696/README.md": "653fefed5004d51dc5c2f2f3ed4cae412e71d86196958ede682768a53dc815ae",
+    "evaluation/ordinary-selected-results/whole-d696/cells.csv": "cdad2432e8aec72a511f36cf5957d155dda7200a325afeedfe33f16e6e31b6e1",
+    "evaluation/ordinary-selected-results/whole-d696/receipt.json": "54c735e4b8f6b374ea5eb09bcbacbad22e04f374afcd3c81753e426c4023f50a",
+    "evaluation/ordinary-selected-results/whole-d696/validation.json": "42fe440ad0378994b7e18908d954981b31e2b67c3383975870c32ea02cd3019b",
+    "evaluation/ordinary-selected-session/BUILD.md": "ad5d347de6f0199e6976ef873422750ad9d3db0c170b816828e37f39a7de8be0",
+    "evaluation/ordinary-selected-session/README.md": "a2d599743e91844043d798bb12e4d09a9e073e2db34e560a91832a00a0d93012",
+    "evaluation/ordinary-selected-session/STATE.md": "2d974ce1ef0c701f5671e00df135b6e45aa61e27c54a1ab715340da52da71c27",
+    "evaluation/ordinary-selected-session/build.py": "864f03a50dc8cbb87c2b9e94badfc41ef6e6fb4453f55d7c790356065762d1ce",
+    "evaluation/ordinary-selected-session/build_controls.py": "0b80f2063359072ed58ca40784c0b2b251377f53331da7a9a784393202cdd591",
+    "evaluation/ordinary-selected-session/closure.py": "719448779a95412cb2976526db47731191def2832371a67591a0e47b96b22bea",
+    "evaluation/ordinary-selected-session/controls.py": "31333bbbc68487282c53f386d031d59dfe94cf2e69a4ed3748b010b57f3ee45b",
+    "evaluation/ordinary-selected-session/driver_controls.py": "e5132940abcea65efcc93a7ae3e8751f6e569104a8bdcf9925bbe10c8c9b69de",
+    "evaluation/ordinary-selected-session/geometry.py": "b9ab5aa3b3ba195b41aa9e3d472bf6a4e09a273d9c6b3ef3e4b5e2ee8a3f384c",
+    "evaluation/ordinary-selected-session/geometry_controls.py": "df30e2ab078643b0ce39b44943559c7f18f3dfedfdf87cdd36973e8a5e1e6d02",
+    "evaluation/ordinary-selected-session/leaves.c": "3fd21a4ea2f8f98f4cb41d8991ee238bd7f4e6620aad7c158b8a9e75f9cc089d",
+    "evaluation/ordinary-selected-session/oracle.py": "4c2c9bfaf1bd08cc3a96fdbab4e64a075aa658a9bb1338aa68117f8892021aa7",
+    "evaluation/ordinary-selected-session/output.py": "fb516cc696e4d383dad231d99c05ae67ca44ce4ae084bb65e2d893223a4a99d6",
+    "evaluation/ordinary-selected-session/owner.py": "27859e980455e320984084af64224ae52e1c0ad97f8a6b642ee5b36939b8e53d",
+    "evaluation/ordinary-selected-session/produce.py": "1641ace4503e1822eba688c7a013f355baa53bef0b6f519a4633285309a20813",
+    "evaluation/ordinary-selected-session/profile_controls.py": "b595490147353c5e5641bbe7786937ae6760df2b4d65e524c1818872942c3632",
+    "evaluation/ordinary-selected-session/reference.c": "d8daa83197d754c193d324c45aad44f8bf8bb393c0b82df22ae9fa4f52084432",
+    "evaluation/ordinary-selected-session/reproduce.py": "c33f91c4837d857866b841f498b97e73e747d25a8d48e90195f0b2f9b51ee37c",
+    "evaluation/ordinary-selected-session/runner_controls.py": "c8d939c74b4c2758f6697da883b8b67d55bcab867b765450558fff31b32b2080",
+    "evaluation/ordinary-selected-session/wire_controls.py": "10f8fdab7091b046bcd290291e6d0fccc57153641926f8cc16ee699b86b59c26",
+    "src/lib.rs": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a",
+    "src/quiescent.rs": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d",
+    "src/quiescent/whole_function.rs": "ccf5d4f17bb3ce47d7721ccefb029c81d8f4d018b140c4e84b179ee2fd6744c9",
+    "src/quiescent/whole_function/adc_tests.rs": "450afd0968132ad9584ca7cdad7c6710fe8dbb91a4cbbec0c00ab7eea3d6ad01",
+    "src/quiescent/whole_function/tests.rs": "6b430cfe89223e875c11993332370e6326763525d655469a4f7972777f874c6f",
+    "tests/adc_state_oracle.rs": "a7eb68d5f13ecd767ad3c9366c835ad9cc9c5b94554a4c7a2ad49a18484da388",
+    "tests/compiled_selected_state_oracle.rs": "d37f4c237c1dde37e3bf3fa809f0eca9958cd9d3bdbe58cff2bb7dc7b007a513",
+    "tests/support/adc_fixtures.rs": "6909e0230baf2a75f4a869e2aee6d936aef6eafcc040c8a10e6430b8e9a5c2bd",
+    "tests/support/adc_state.rs": "6210f02e2d4d1906fadecf2eadd876b02d0154ceb330c467e15817ed33e54ec0",
+    "tests/support/adjacent_b2_fixture.rs": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0",
+    "tests/support/adjacent_b2_native.rs": "2ea1625733ccf5a1f9b87db1ac480bc00421eca7b54a63f9b6dc19ceec7e1771",
+    "tests/support/boundary_signal.rs": "949ccf6ee19949cdc1f16305dfb6d161f313df5536ec509968572afc21727a60",
+    "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
+    "tests/support/compiled_selected_fixtures.rs": "38fcc521c9f1ad553c1ad588292357c975321e0b0291bbcd55b54ad71c7a23ba",
+    "tests/support/compiled_selected_state.rs": "3451cc5f88607a83adc8b4f95aaeab59661ae9a295c70e5482f3db25581d5691",
+    "tests/support/e9_common_app.rs": "faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae",
+    "tests/support/e9_common_app_data.rs": "92bca80e47c0d20825a4ec278f0de47a178dd1f11b0062bf01b2bbfa12659bf4",
+    "tests/support/e9_common_core.rs": "0feda92bd5c0d5f0ae5cfb151fe39899f1afc3996ba9511fed99ed8526be3c32",
+    "tests/support/e9_common_core_pages.rs": "a23d6e230831f5ff54d19b95394ac21c5c0a5cd4dd083a62ad1416f3c44c620e",
+    "tests/support/e9_common_e9.rs": "92712fecdfbb2a0f7d77cd86b4ae2b5f451e17eea2c87ac096ad64ed0673eae5",
+    "tests/support/e9_common_image.rs": "f112e774d705838c74fe51d7636140c8c4805830f1fb3a78c5007846f8c8e66e",
+    "tests/support/e9_common_planning_profile.rs": "873bfbd50f2878e37bbef91193db4726faed18af5dacf395b1726882e637dcf5",
+    "tests/support/e9_common_recording.rs": "d0419f184093a5c1ef658028c7a8a2869dea8c849a5da44cd1f191c3b5085bc7",
+    "tests/support/e9_common_recording_native.rs": "a3e8d4e326bada12b9c77c4770cfab6d44dbb59a6eb82d4a5517542602d8d129",
+    "tests/support/e9_common_router_contract.rs": "117e56b69a8f6020e8a9eadcf0802dbf5ab0fd2a84893be4dbbf3a7d8a582cfb",
+    "tests/support/e9_common_router_controls.rs": "4104cce63784b34d4a572799da60f80d824a75aaf50394138596a59185ce1d1d",
+    "tests/support/e9_common_router_native.rs": "4e793a2f48588060fb827807a882461e7f23a3dcd81d86d568facec08c5108d8",
+    "tests/support/e9_common_seed.rs": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3",
+    "tests/support/elf_exec_oracle.rs": "b595b7d5cd19e72c4754a60f5fe3b4a359772334f9dda6f9526882fbe4358f04",
+    "tests/support/elf_exec_provider.rs": "9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730",
+    "tests/support/elf_exec_tactics.rs": "c0910c4d918a5b34e6af1933fe9490b973e767a9ebc5a890cb62484b3a2a5c61",
+    "tests/support/elf_exec_tactics_contract.rs": "caca8169432f466dc00967304eacd187c7bc2915b5f73add9f6edce491af768e",
+    "tests/support/entry_signal.rs": "44d22039625dcc98dbef1877c3c904c939708e0d0be90e91ae106a80ffdb41b9",
+    "tests/support/isolated_native_test.rs": "66ccab461fa755676a55fe6398bd9a1e3afa2dd7ed3208611350c371263406a6",
+    "tests/support/neighbor_fixture_arena.rs": "a4d18c3bbfbe0d17f48362a4172771d7c2f2cfcf2d6d0dc7f7480949bacda19a",
+    "tests/support/parked_signal.rs": "9554d55be8397a500005f3a5f4f3e73c5bf647900b0d013646fcc7f8b8b2e355",
+    "tests/support/process_text.rs": "ab415bb64e48a78700ac3fe6648eedf76644a533c2de3380f592e6ce260644f1",
+    "tests/support/quiescent_oracle.rs": "fe0396c4f94a1efdab3b66771edcc20702590c2c31fdc74bc0310ae60c2a15c4",
+    "tests/support/routed_jmp_artifact.rs": "f9f37eeb884a3004328478129790a6b98305e5af70c31e2ce267346c7e123735",
+    "tests/support/routed_jmp_fixture.rs": "9edb02b399e0d7c330c53eedefbad3d5c0b82876ac758f693f758ccdd5d77241",
+    "tests/support/routed_jmp_native.rs": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b",
+    "tests/support/word_sync.rs": "8d7a590a68378251dfce241481f9549e38332f54e28201e41c7b011284448786",
+    "tests/support/word_trace_method.rs": "04d38273f303f5d9211ac42751e96f04cd7a5db7ce9f3ba1bce4416bf66106b0",
+    "tests/whole_adc_state_oracle.rs": "0043d83137445f644785bfd9996337964a997dd96cac6a8d0b5a7c0c877fae7e",
+    "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+    "tools/rapid-profiler/README.md": "691f7fa697f7ca713c0538cab01cf39b57e8a817f0b59d6c0ac60869fda6d948",
+    "tools/rapid-profiler/normal-work/reference_bytes.rs": "3f95f804ae98d02ef069c49b138c6f9a84f171082b5dcfcaf3c1454a987a2c98",
+    "tools/rapid-profiler/ordinary-interval/joined_task.rs": "30406c4adc4abc19689cf4c1745fcf9822dee4a216c918e0fa9d2ee060680c9f",
+    "tools/rapid-profiler/ordinary-interval/main.rs": "ba6b74c124c445dac5d7dcdc27f335c5cb04f79dc06a19f1593e90da5882e52e",
+    "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": "b026f9e2c6dc76c271512ba4a7cabc074eb071024b537368003358477dfb8ee3",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": "edccf49f83fd161898da8ff8536b5417017413e637f5a92e55ac1c353e867628",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/expectation.rs": "597083259395621c39775bb1fb821e323e4cd50eaaca9b9cefd467e58ade5a64",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": "9e1b6f2e824da1688804db217ff253a5584f61cacca3fe05fc33f0a16d243b24",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected_tests.rs": "a837055aac6edbee1856cc9940acb1a955932982ac46bf53a3cbb2040e84e9d3",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": "06695c88f12e54f5831849fd0d99219ec33cbf643d4f4e2a7bd1d5b9954c04dc",
+    "tools/rapid-profiler/ordinary-interval/normal/selected_session_controls.rs": "774063a3cc840a3f9ebaf84c270ab24eb45309d026932f134d1167fa34e7440c",
+    "tools/rapid-profiler/ordinary-interval/normal/session.rs": "ad75e7954f83013c9cb4a39e49a7f93e6b15e6056c2767f7de25636273db8386",
+    "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": "5568ad857d6259c5ab0d989ab675190a2f9a5040fc8b8164f93c7f585e471a9a",
+    "tools/rapid-profiler/src/counter_probe.rs": "de94d8b47d14bc50e0803043c6d54d011be1ef1138bd0b00b3902e61f5fe7365",
+    "tools/rapid-profiler/src/frontend_native/always_on.rs": "b1b6ec0e7bfd2450d175f11f060307a581a6734a1bff2f2dc68a413d50ce1d01",
+    "tools/rapid-profiler/src/frontend_native/always_on/site.rs": "5f0679a8a29ae8c3c047fc905c705075005eeee9989f0a88419263cc67d9906c",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "8d3ce6320f578907a7c9d3809d4089edd57d7792f450efcf69bf850b915b75a9",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": "f9c2a90bb50664234ba1e61acdb730e694b443caf4de16c1b1012fd7c9b9af07",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/tests.rs": "cd00fb4abff0dba99b2de59736d3da74b424bc0b4cf4df2a95190c161112e4a6",
+    "tools/rapid-profiler/src/frontend_native/always_on/timing.rs": "a2051a85f2dbe5ec374a0ecc1d37bb5d05377347d4bce2d24bc2a5091e7fd943",
+    "tools/rapid-profiler/src/frontend_native/mod.rs": "dd160a4ccdab500a53cc523e32515989d28624bda34b95432015024d23ccbbad",
+    "tools/rapid-profiler/src/frontend_native/module.rs": "f893147ba9e48bfe23570cb66c9f26470505da8b9ebf9bd3377ae2c0ac613eff",
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": "445304f174d5f228bff0f418a0ec4f277ad3571d68632af6f13e4589be2b263c",
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg_adc_tests.rs": "d2e933120b4de80ffeee4e2f2721fe4656b813f87ffe21c0799aea633eabc212",
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "84c7afb822f946e7e531026671a2920b89ed983e254bd21c19c6220a1e76e1a8",
+    "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01"
+  },
+  "workspace_changes": {
+    "test/adc_state_oracle": {
+      "current": {
+        "ignored": 0,
+        "tests": 40
+      },
+      "previous": null
+    },
+    "test/compiled_selected_state_oracle": {
+      "current": {
+        "ignored": 0,
+        "tests": 54
+      },
+      "previous": null
+    },
+    "test/whole_adc_state_oracle": {
+      "current": {
+        "ignored": 0,
+        "tests": 39
+      },
+      "previous": null
+    },
+    "unit/liteinst2/lib": {
+      "current": {
+        "ignored": 1,
+        "tests": 406
+      },
+      "previous": {
+        "ignored": 1,
+        "tests": 399
+      }
+    },
+    "unit/ordinary_interval/main": {
+      "current": {
+        "ignored": 1,
+        "tests": 457
+      },
+      "previous": {
+        "ignored": 1,
+        "tests": 433
+      }
+    },
+    "unit/rapid_profiler/lib": {
+      "current": {
+        "ignored": 31,
+        "tests": 537
+      },
+      "previous": {
+        "ignored": 31,
+        "tests": 529
+      }
+    }
+  }
+}
