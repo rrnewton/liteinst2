@@ -136,6 +136,7 @@ pub(super) fn inspect<'a>(
     let mut symbol_table = None;
     let mut versions = None;
     let mut authoritative: Option<u64> = None;
+    let mut unhashed_prefix: Option<u64> = None;
     if let Some(&address) = tags.get(&HASH) {
         let header = checked(input, address, 8, out, &mut work)?;
         let buckets = u64::from(u32_at(header, 0));
@@ -215,7 +216,18 @@ pub(super) fn inspect<'a>(
         if authoritative.is_some_and(|count| symbols > count) {
             return Err(Error::InvalidMetadata { tag: GNU_HASH });
         }
-        authoritative = authoritative.or(Some(symbols));
+        if symbols > first {
+            authoritative = authoritative.or(Some(symbols));
+        } else {
+            // An all-zero GNU bucket array has no hashed suffix. In an
+            // import-only object, first need not count all undefined symbols.
+            // Retain its checked prefix without inventing a total-table count.
+            // Keep the old zero-count refusal without independent authority.
+            if first == 0 && authoritative.is_none() {
+                return Err(Error::InvalidMetadata { tag: 6 });
+            }
+            unhashed_prefix = Some(first);
+        }
     }
     let referenced = out
         .symbol_references
@@ -226,7 +238,7 @@ pub(super) fn inspect<'a>(
     if authoritative.is_some_and(|count| referenced >= count) {
         return Err(Error::InvalidMetadata { tag: 6 });
     }
-    let symbols = authoritative.unwrap_or(plus(referenced, 1)?);
+    let symbols = authoritative.unwrap_or(plus(referenced, 1)?.max(unhashed_prefix.unwrap_or(0)));
     let strings = if let (Some(&address), Some(&length)) = (tags.get(&5), tags.get(&10)) {
         if length == 0 {
             None
@@ -263,6 +275,7 @@ pub(super) fn inspect<'a>(
             hash_authoritative: authoritative.is_some(),
         });
     } else if authoritative.is_some()
+        || unhashed_prefix.is_some()
         || referenced != 0
         || tags.contains_key(&VERSYM)
         || tags.contains_key(&34)

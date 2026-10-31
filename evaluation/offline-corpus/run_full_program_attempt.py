@@ -4,6 +4,8 @@
 Use Python -I -B from the clean exact repository revision under one externally
 reserved CPU. The caller binds the two release binaries to that revision using
 the supplied, separately reviewed build receipt. This script does not build.
+Use --li2-only to request materials and both LI2 spans; the backend remains
+explicitly NOT_REQUESTED and no full tool-parity result is implied.
 """
 import argparse
 import hashlib
@@ -33,6 +35,8 @@ for name in ("revision", "bridge-sha256", "planner-sha256", "build-receipt-sha25
     p.add_argument("--" + name, required=True)
 for name in ("out", "bridge", "planner", "build-receipt", "original", "csv", "policy-16m", "policy-2g"):
     p.add_argument("--" + name, type=Path, required=True)
+p.add_argument("--li2-only", action="store_true",
+               help="Request materials and both LI2 spans only; do not run the backend")
 a = p.parse_args()
 for name in ("bridge", "planner", "build_receipt", "original", "csv", "policy_16m", "policy_2g"):
     setattr(a, name, getattr(a, name).resolve(strict=True))
@@ -44,8 +48,13 @@ out.mkdir(mode=0o700, parents=True)
 (out / "e9").mkdir()
 rows = [dict(name=n, attempts=0, status="UNRUN")
         for n in ("materials", "li2-16m", "li2-2g", "e9-backend")]
+if a.li2_only:
+    rows[-1]["status"] = "NOT_REQUESTED"
+requested_rows = rows[:-1] if a.li2_only else rows
 record = dict(status="INCOMPLETE", stages=rows, native_attempts=0,
-              qualification_complete=False, execution_revision=a.revision)
+              qualification_complete=False, execution_revision=a.revision,
+              requested_tool_set="li2-only" if a.li2_only else "li2-and-e9-backend",
+              requested_tools=[row["name"] for row in requested_rows])
 
 def save():
     with (out / "receipt.tmp").open("w") as f:
@@ -110,7 +119,7 @@ try:
         trusted_premises=["Caller-reviewed exact-revision build/toolchain receipt; a receipt hash is provenance only",
             "Trusted complete-code/no-overlap/no-code-as-data/private-image premise, including the two RX gaps"],
         limits=dict(post_stage_workspace_bytes=2048 * MIB, per_file_bytes=512 * MIB,
-                    capture_and_rpc_bytes=16 * MIB, concurrent_children=1),
+                    log_capture_bytes=8 * MIB, rpc_bytes=16 * MIB, concurrent_children=1),
         denominator=dict(heads=13143, selected_jumps=2053, rpc_messages=14997),
         policy_profiles=["full-e9patch-packed-source-whole-resources-16m-v1",
                          "full-e9patch-packed-source-whole-resources-2g-v1"],
@@ -130,11 +139,13 @@ try:
         commands.append((180, 240, 3 * 1024**3, root,
             [planner, "--whole-program-4096", original, str(materials / "ledger.txt"), LEDGER,
              str(policy.resolve()), digest, str(out / name)]))
-    commands.append((60, 90, 1024**3, out / "e9",
-                     [str(chdir_tool), "--chdir=" + str(out / "e9"), "--",
-                      original, "--debug", "--input", str(materials / "request.jsonl")]))
+    if not a.li2_only:
+        commands.append((60, 90, 1024**3, out / "e9",
+                         [str(chdir_tool), "--chdir=" + str(out / "e9"), "--",
+                          original, "--debug", "--input", str(materials / "request.jsonl")]))
+    assert len(commands) == len(requested_rows)
     record["environment"] = env
-    for row, (cpu, wall, memory, cwd, argv) in zip(rows, commands):
+    for row, (cpu, wall, memory, cwd, argv) in zip(requested_rows, commands):
         unchanged()
         row.update(status="DISPATCHED_UNRESOLVED", attempts=1, cwd=str(cwd),
             cpu_seconds=cpu, wall_seconds=wall, address_space_bytes=memory,
@@ -168,7 +179,10 @@ try:
             record["materials"] = {x.name: pin(x) for x in sorted(materials.iterdir())}
             frozen.update({str(x.resolve()): pin(x) for x in materials.iterdir()})
             save()
-    record["status"] = "ALL_TOOLS_EXITED_ZERO_UNQUALIFIED" if all(r["status"] == "EXIT_ZERO_UNQUALIFIED" for r in rows) else "FAILED_OR_REFUSED_OUTCOMES_RETAINED"
+    if a.li2_only:
+        record["status"] = "REQUESTED_LI2_TOOLS_EXITED_ZERO_UNQUALIFIED" if all(r["status"] == "EXIT_ZERO_UNQUALIFIED" for r in requested_rows) else "FAILED_OR_REFUSED_OUTCOMES_RETAINED"
+    else:
+        record["status"] = "ALL_TOOLS_EXITED_ZERO_UNQUALIFIED" if all(r["status"] == "EXIT_ZERO_UNQUALIFIED" for r in rows) else "FAILED_OR_REFUSED_OUTCOMES_RETAINED"
 except BaseException as error:
     record.update(status="FAILED", failure=dict(type=type(error).__name__, message=str(error)))
     save(); raise

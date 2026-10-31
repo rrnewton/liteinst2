@@ -1876,3 +1876,267 @@ fn interleaved_above_only_output_is_byte_identical_to_legacy_append_profile() {
         )
     );
 }
+
+// Import-only GNU hashes may have no hashed suffix even when many undefined
+// symbols are referenced. These are ownership fixtures, not loader execution.
+fn import_only_empty_gnu_hash(first: u32, reference: u32, sysv: Option<u32>) -> Vec<u8> {
+    let mut tags = vec![
+        (0x6fff_fef5, 0x660),
+        (6, 0x800),
+        (11, 24),
+        (5, 0x700),
+        (10, 8),
+        (7, 0x600),
+        (8, 24),
+        (9, 24),
+        (0x6fff_fff0, 0x2600),
+        (0x6fff_fffe, 0x2800),
+        (0x6fff_ffff, 1),
+    ];
+    if sysv.is_some() {
+        tags.push((4, 0x2900));
+    }
+    let mut bytes = fixture(3, 0, false, &tags);
+    for (at, value) in [(0x660, 1), (0x664, first), (0x668, 1)] {
+        put32(&mut bytes, at, value);
+    }
+    bytes[0x700..0x708].copy_from_slice(b"\0x\0v\0f\0\0");
+    for index in 1..78 {
+        put32(&mut bytes, 0x800 + index * 24, 1);
+        bytes[0x800 + index * 24 + 4] = 0x12; // GLOBAL/FUNC, SHN_UNDEF
+        put16(&mut bytes, 0x2600 + index * 2, 2);
+    }
+    put16(&mut bytes, 0x2800, 1);
+    put16(&mut bytes, 0x2802, 1);
+    put32(&mut bytes, 0x2804, 5); // library "f"
+    put32(&mut bytes, 0x2808, 16);
+    put16(&mut bytes, 0x2816, 2);
+    put32(&mut bytes, 0x2818, 3); // version "v"
+    if let Some(count) = sysv {
+        put32(&mut bytes, 0x2900, 1);
+        put32(&mut bytes, 0x2904, count);
+    }
+    rela(&mut bytes, 0x600, 0x2f00, 6, reference);
+    bytes
+}
+
+#[test]
+fn empty_gnu_hash_bounds_imports_without_claiming_complete_symbol_count() {
+    for (first, reference, expected) in [(1, 77, 78), (1, 1, 2), (78, 1, 78)] {
+        let bytes = import_only_empty_gnu_hash(first, reference, None);
+        let saved = bytes.clone();
+        let inventory = inspect(&bytes).unwrap();
+        let extent = inventory.symbol_extent.unwrap();
+        assert_eq!((extent.count, extent.hash_authoritative), (expected, false));
+        assert_eq!(
+            extent.file,
+            FileRange::checked(FileOffset(0x800), expected * 24).unwrap()
+        );
+        assert_eq!(
+            extent.virtual_range,
+            elf64::VirtualRange::checked(ElfVaddr(0x800), expected * 24).unwrap()
+        );
+        assert_eq!(inventory.relocation_records, 1);
+        assert_eq!(inventory.symbol_references[0].symbol, reference);
+        assert_eq!(inventory.writes.len(), 1);
+        // The reference-bound extent need not include every unreferenced import.
+        // The entire original owner remains protected, including that tail.
+        assert!(matches!(
+            inventory.check_source_ranges(&[
+                FileRange::checked(FileOffset(0x800 + 77 * 24), 24).unwrap()
+            ]),
+            Err(dynamic::Error::SourceMetadata { dependency: 0 })
+        ));
+        let output = append(
+            &bytes,
+            0,
+            &images(0),
+            &[edit(&bytes)],
+            &[dependency()],
+            policy(),
+        )
+        .unwrap();
+        assert_eq!(output.dynamic.symbol_extent, Some(extent));
+        assert_eq!(
+            output.dynamic.symbol_references,
+            inventory.symbol_references
+        );
+        assert_eq!(bytes, saved);
+    }
+}
+
+#[test]
+fn empty_gnu_hash_keeps_name_version_ownership_and_work_refusals() {
+    let original = import_only_empty_gnu_hash(1, 77, None);
+    let mut bad = original.clone();
+    put32(&mut bad, 0x800 + 77 * 24, 8); // Last referenced name is out of STRTAB.
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 6 })
+    ));
+    let mut bad = import_only_empty_gnu_hash(78, 1, None);
+    put32(&mut bad, 0x800 + 77 * 24, 8); // The unhashed prefix is still checked.
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 6 })
+    ));
+    let mut bad = original.clone();
+    put16(&mut bad, 0x2800, 2); // Invalid VERNEED header version.
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 0x6fff_fffe })
+    ));
+    let mut bad = original.clone();
+    put32(&mut bad, 0x2818, 8); // Invalid version name.
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 0x6fff_fffe })
+    ));
+    let mut bad = original.clone();
+    put32(&mut bad, 0x281c, 16); // Last auxiliary link must terminate.
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 0x6fff_fffe })
+    ));
+    let mut bad = original.clone();
+    put64(&mut bad, 0x2208 + 8 * 16, 0xffe); // Full VERSYM crosses R into RX.
+    assert!(matches!(inspect(&bad), Err(dynamic::Error::Elf(_))));
+    for address in [0x900, 0x1000, 0x3000] {
+        let mut bad = original.clone();
+        put64(&mut bad, 0x2208 + 16, address);
+        match address {
+            0x900 => assert!(matches!(inspect(&bad), Err(dynamic::Error::Elf(_)))),
+            0x1000 => assert!(matches!(
+                inspect(&bad),
+                Err(dynamic::Error::MetadataInExecutableLoad { index: 2 })
+            )),
+            _ => assert!(matches!(
+                inspect(&bad),
+                Err(dynamic::Error::MetadataNotFileBacked)
+            )),
+        }
+    }
+    let exact = dynamic::Limits {
+        metadata_records: 160,
+        metadata_bytes: 2140,
+        ..dynamic::Limits::default()
+    };
+    assert!(dynamic::inspect(&parse(&original), exact).is_ok());
+    for (records, bytes, resource, limit) in [
+        (159, 2140, "metadata records", 159),
+        (160, 2139, "metadata bytes", 2139),
+    ] {
+        assert_eq!(
+            dynamic::inspect(
+                &parse(&original),
+                dynamic::Limits {
+                    metadata_records: records,
+                    metadata_bytes: bytes,
+                    ..exact
+                }
+            )
+            .unwrap_err(),
+            dynamic::Error::Budget { resource, limit }
+        );
+    }
+    let bad = import_only_empty_gnu_hash(1, u32::MAX, None);
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::Budget {
+            resource: "metadata records",
+            ..
+        })
+    ));
+    let bad = import_only_empty_gnu_hash(u32::MAX, 1, None);
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::Budget {
+            resource: "metadata records",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn empty_gnu_hash_preserves_sysv_and_nonempty_hash_count_authority() {
+    for (first, count) in [(0, 78), (1, 78), (1, 79)] {
+        let bytes = import_only_empty_gnu_hash(first, 77, Some(count));
+        let extent = inspect(&bytes).unwrap().symbol_extent.unwrap();
+        assert_eq!(
+            (extent.count, extent.hash_authoritative),
+            (u64::from(count), true)
+        );
+    }
+    let bad = import_only_empty_gnu_hash(1, 77, Some(77));
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 6 })
+    ));
+    let bad = import_only_empty_gnu_hash(79, 1, Some(78));
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 0x6fff_fef5 })
+    ));
+    let bad = import_only_empty_gnu_hash(1, 1, Some(0));
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 4 })
+    ));
+    let bad = import_only_empty_gnu_hash(0, 77, None);
+    assert!(matches!(
+        inspect(&bad),
+        Err(dynamic::Error::InvalidMetadata { tag: 6 })
+    ));
+    for at in [0x660, 0x668] {
+        let mut bad = import_only_empty_gnu_hash(1, 77, None);
+        put32(&mut bad, at, 0); // Keep zero bucket/bloom refusal.
+        assert!(matches!(
+            inspect(&bad),
+            Err(dynamic::Error::InvalidMetadata { tag: 0x6fff_fef5 })
+        ));
+    }
+    let mut hashed = import_only_empty_gnu_hash(77, 77, None);
+    put32(&mut hashed, 0x678, 77);
+    put32(&mut hashed, 0x67c, 1);
+    let extent = inspect(&hashed).unwrap().symbol_extent.unwrap();
+    assert_eq!((extent.count, extent.hash_authoritative), (78, true));
+    put32(&mut hashed, 0x664, 76);
+    put32(&mut hashed, 0x678, 76); // Chain ends at76: reference77 must still fail.
+    assert!(matches!(
+        inspect(&hashed),
+        Err(dynamic::Error::InvalidMetadata { tag: 6 })
+    ));
+    let mut missing = fixture(3, 0, false, &[(0x6fff_fef5, 0x660)]);
+    for at in [0x660, 0x664, 0x668] {
+        put32(&mut missing, at, 1);
+    }
+    assert!(matches!(
+        inspect(&missing),
+        Err(dynamic::Error::InvalidMetadata { tag: 6 })
+    ));
+}
+
+#[test]
+fn empty_gnu_hash_zero_write_references_still_bound_symbols() {
+    let mut bytes = import_only_empty_gnu_hash(1, 77, None);
+    rela(&mut bytes, 0x600, u64::MAX, 0, 77);
+    let inventory = inspect(&bytes).unwrap();
+    assert_eq!(inventory.relocation_records, 1);
+    assert!(inventory.writes.is_empty());
+    assert_eq!(
+        inventory.symbol_references,
+        vec![dynamic::SymbolReference {
+            table: dynamic::TableKind::Rela,
+            record: 0,
+            kind: 0,
+            symbol: 77
+        }]
+    );
+    let extent = inventory.symbol_extent.unwrap();
+    assert_eq!((extent.count, extent.hash_authoritative), (78, false));
+    put32(&mut bytes, 0x800 + 77 * 24, 8);
+    assert!(matches!(
+        inspect(&bytes),
+        Err(dynamic::Error::InvalidMetadata { tag: 6 })
+    ));
+}

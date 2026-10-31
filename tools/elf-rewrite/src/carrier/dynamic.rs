@@ -135,8 +135,9 @@ pub struct SymbolExtent {
     pub file: FileRange,
     pub virtual_range: VirtualRange,
     pub count: u64,
-    /// True only when DT_HASH or DT_GNU_HASH supplied the parser's count.
-    /// False denotes the existing maximum-relocation-reference fallback.
+    /// True only when DT_HASH or a nonempty DT_GNU_HASH supplied the count.
+    /// False denotes a relocation-reference bound, including any unhashed GNU
+    /// prefix; this checked extent does not establish the total symbol count.
     pub hash_authoritative: bool,
 }
 
