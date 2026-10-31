@@ -183,9 +183,17 @@ int li2_pg_source_validate(const struct li2_pg_token *t,const struct li2_pg_comp
        (pg_source.p.phase!=LI2_PGS_HELD && pg_source.p.phase!=LI2_PGS_RX && pg_source.p.phase!=LI2_PGS_CLOSED) ||
        !p || p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
        p->reserved || p->reserved2 || p->entry!=s->key.entry ||
-       !equal(&p->layout,&pg_source.p.layout,sizeof p->layout) || p->heads<=64 || p->heads>128 ||
+       !equal(&p->layout,&pg_source.p.layout,sizeof p->layout) ||
+#ifdef LI2_PERSISTENT_DISPATCH
+       !p->heads || p->heads>128 ||
+       p->member_heads[0]!=(p->heads<64?p->heads:64) ||
+       p->member_heads[1]!=(p->heads>64?p->heads-64:0) ||
+       !p->exits || p->exits>8 || p->links>8 || p->links+p->exits>8)
+#else
+       p->heads<=64 || p->heads>128 ||
        p->member_heads[0]!=64 || p->member_heads[1]!=p->heads-64 ||
        !p->exits || p->exits>8 || !p->links || p->links>8 || p->links+p->exits>8)
+#endif
         return pgs_bad(LI2_FETCH_SOURCE,30);
     for(unsigned i=0;i<2;i++)if(p->page[i]!=s->key.page[i].identity.address ||
         !equal(p->source[i],s->key.page[i].bytes,PAGE))return pgs_bad(LI2_FETCH_SOURCE,31+i);
