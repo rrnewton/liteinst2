@@ -85,6 +85,27 @@ class Check(old.Check):
                 need(len(matches)==1,'initial protection exception names one original executable load')
             return ranges,kinds[:count]
 
+    def startup_registry(self):
+        """Keep loader setup and the full generated-epoch interval distinct."""
+        t='peo_registry';w='peo_wire'
+        startup=self.f(self.b,w,'startup_registry');initial=self.f(self.b,w,'initial_registry')
+        a,n=self.i(startup,t,'count'),self.i(initial,t,'count')
+        need(0<a<=n<=128,'startup registry population is an exact predecessor')
+        need(all(self.f(startup,t,k)==self.f(initial,t,k)for k in('complete','table','bridge','ph')),
+             'startup registry keeps exact table, bridge and program headers')
+        before=self.f(startup,t,'ranges');after=self.f(initial,t,'ranges')
+        before_kinds=self.f(startup,t,'initial_code');after_kinds=self.f(initial,t,'initial_code')
+        need(before[:a*16]==after[:a*16]and before_kinds[:a]==after_kinds[:a],
+             'startup registry retains every original range and classification')
+        # These are actual strict protected pages, not a claim about which
+        # lifecycle owner allocated them. No page is added during the epoch.
+        rows=[self.v(row,'li2_fork_range','first end')for row in self.r.items(initial,t,'ranges','li2_fork_range')[:n]]
+        for i,(first,end)in enumerate(rows[a:],a):
+            need(first%PAGE==0 and end-first==PAGE and after_kinds[i]==0 and
+                 all(end<=x or y<=first for x,y in rows[:i]),
+                 'startup additions are distinct strict PAGE intervals')
+        self.registry(startup)
+
     def progress(self,b,sequence,held,validated=True):
             t='li2_fetch_progress';self.eq(b,t,held=int(held),complete=1,first_error=0,identity_observed=1,first_detail=0,pages_copied=1,bytes_copied=15,sequence=sequence,last_backing_page=0,last_backing_observed=int(validated))
             self.maps(self.f(b,t,'preparation'))
@@ -323,7 +344,7 @@ class Check(old.Check):
         h=self.h;r=self.r;t='peo_wire';mode=self.app['mode'];failed=mode!=0
         code,detail=(3304,11 if mode==1 else 4)if failed else(0,0)
         need(type(status)is int and status==(125 if failed else 0),'actual required process outcome')
-        need(h[:9]==(0x314f455049324c,1,r.types[t]['bytes'],r.types['li2_pe_epoch']['bytes'],r.types['pe_payload']['bytes'],192512,32768,968,128),'exact actual capture version and extents')
+        need(h[:9]==(0x314f455049324c,2,r.types[t]['bytes'],r.types['li2_pe_epoch']['bytes'],r.types['pe_payload']['bytes'],192512,32768,968,128),'exact actual capture version and extents')
         need(canonical(self.bias)and self.bias%PAGE==0 and h[9:12]==tuple(self.symbol(n)for n in('li2_raw6','li2_gateway_start','li2_gateway_end'))and h[10]<=h[9]<h[11],'actual compiled gateway/bias')
         need(h[12]%PAGE==0 and h[13]==524288 and h[14:16]==(1,0)and h[16]&(3|0x400|0x800)==1 and h[17:20]==(0,1,mode),'actual stack/FD3/source mode')
         need(h[20:26]==(self.symbol('pe'),self.symbol('peo_wire'),self.symbol('pe_source'),self.symbol('pe_rseq'),self.symbol('selected_chain'),self.symbol('span_progress')),'actual runtime protected singleton addresses')
@@ -336,7 +357,7 @@ class Check(old.Check):
         for k in('sink_initial','sink_terminal'):
             b=self.f(self.b,t,k);st=self.stat(b);need(st['mode']&0xffff==0x8180 and st['size']==0,'actual empty regular0600 sink');self.eq(b,'stat',st_nlink=1,st_uid=self.image['uid'])
         self.r.change(self.f(self.b,t,'sink_initial'),self.f(self.b,t,'sink_terminal'),'stat',observed=('st_atim','st_mtim','st_ctim'))
-        footer=q(r.data[-64:]);need(footer[:4]==(0x3146455049324c,1,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'complete actual write footer')
+        footer=q(r.data[-64:]);need(footer[:4]==(0x3146455049324c,2,len(self.b),len(self.b))and 1<=footer[4]<=64 and 0<footer[5]<=len(self.b)and footer[6:]==(status,code),'complete actual write footer')
         if footer[4]==1:need(footer[5]==len(self.b),'single complete actual wire write')
         hardware=self.f(self.b,t,'hardware');self.eq(hardware,'li2_selected_hardware',abi_version=1,reserved=0)
         for i,key in enumerate(('leaf0','leaf1','leaf7')):
@@ -345,6 +366,7 @@ class Check(old.Check):
         self.eq(self.f(self.b,t,'session'),'li2_step_session',pid=self.pid,tid=self.pid,sync_register=0,application_mask=MASK,initialized=1,self_test_complete=1)
         need(self.i(self.f(self.b,t,'session'),'li2_step_session','sync_query')&96==96,'actual registered membarrier support')
         need(self.f(self.b,t,'initial_registry')==self.f(self.b,t,'terminal_registry'),'entire protected range registry unchanged')
+        self.startup_registry()
         self.ranges,kinds=self.registry(self.f(self.b,t,'initial_registry'))
         for a,z in((self.generated,self.spill+4096),(self.proof,self.proof+192512)):
             need(self.ranges.count((a,z))==1 and kinds[self.ranges.index((a,z))]==0,'actual strict dynamic code/spill/proof registration')
@@ -506,4 +528,31 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
         refused.append('coherent_static_descriptor')
     else:raise ValueError('coherent descriptor corruption accepted')
     need(len(refused)==CONTROL_COUNTS[mode],'all twenty persistent owner controls')
+    return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=mode)
+
+
+REGISTRY_CONTROL_COUNTS={0:6,1:6,2:6}
+
+def registry_controls(data,layout,image,app,pid,cpu,exit_status):
+    """Six separately counted causal controls; the original twenty stay exact."""
+    read(data,layout,image,app,pid,cpu,exit_status);types=layout['types'];mode=app['mode']
+    def at(t,k,base=0):return base+types[t]['fields'][k]['offset']
+    w='peo_wire';t='peo_registry';startup=at(w,'startup_registry');terminal=at(w,'terminal_registry')
+    tests=[
+        ('startup_population',at(t,'count',startup),'startup registry population is an exact predecessor',True),
+        ('startup_table_headers',at(t,'ph',startup),'startup registry keeps exact table, bridge and program headers',False),
+        ('startup_range_prefix',at(t,'ranges',startup),'startup registry retains every original range and classification',False),
+        ('startup_classification_prefix',at(t,'initial_code',startup),'startup registry retains every original range and classification',False),
+        ('epoch_terminal_population',at(t,'count',terminal),'entire protected range registry unchanged',False),
+        ('epoch_owner_population',at('li2_pe_epoch','registry_count',at(w,'owner')),'actual table source population',False)]
+    refused=[]
+    for name,offset,message,clear in tests:
+        mutant=bytearray(data)
+        if clear:mutant[offset:offset+4]=bytes(4)
+        else:mutant[offset]^=1
+        try:read(bytes(mutant),layout,image,app,pid,cpu,exit_status)
+        except ValueError as error:
+            need(str(error)==message,'exact registry-boundary control refusal '+name);refused.append(name)
+        else:raise ValueError('registry-boundary corruption accepted '+name)
+    need(len(refused)==REGISTRY_CONTROL_COUNTS[mode],'all six separate registry-boundary controls')
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=mode)

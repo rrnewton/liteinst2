@@ -25,9 +25,10 @@ MASK=((1<<64)-1)^sum(1<<(s-1)for s in(4,5,9,11,19,31))
 H=lambda b:hashlib.sha256(b).hexdigest()
 ORDER=(('native',0,0),('native',1,0),('gated',0,0),('gated',1,0),('gated',2,0))
 APP_COUNTS={0:16,1:16};OWNER_COUNTS={0:20,1:20,2:20};PAIR_COUNTS={0:4,1:4}
+REGISTRY_COUNTS={0:6,1:6,2:6}
 TERMINAL_COUNTS={(m,0):34 for m in range(3)}
 CASE_FIELDS=('label','lane','mode','control','expected_exit','status','launched','exit','whole_process_ns','timed_out','captures','pair','owner_summary','error_type')
-CSV_FIELDS=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count','pair_control_count')
+CSV_FIELDS=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count','pair_control_count','registry_control_count')
 EXPECTED_STATUS={('native',0):'qualified_native_success',('native',1):'qualified_native_late_fault',
     ('gated',0):'qualified_generated_success',('gated',1):'qualified_generated_late_fault',('gated',2):'qualified_protected_word_rejection'}
 LOADED=[]
@@ -48,7 +49,7 @@ def digest(value):return H(json.dumps(value,sort_keys=True,separators=(',',':'))
 
 def public_case(c):
     value={k:c[k]for k in CASE_FIELDS if k in c}
-    for prefix,key in(('terminal','terminal_controls'),('owner','owner_reader_controls'),('pair','pair_controls')):
+    for prefix,key in(('terminal','terminal_controls'),('owner','owner_reader_controls'),('pair','pair_controls'),('registry','registry_controls')):
         value[prefix+'_control_count']=len(c.get(key,{}).get('refusals',[]))
         value[prefix+'_controls_sha256']=digest(c.get(key,{}))
     value['application_control_count']=len(c.get('application_controls',{}).get('refusals',[]))
@@ -343,6 +344,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     need(digest(counts(reader.APP_CONTROL_COUNTS))==digest(counts(APP_COUNTS))and
          digest(counts(reader.PAIR_CONTROL_COUNTS))==digest(counts(PAIR_COUNTS))and
          digest(counts(owner_reader.CONTROL_COUNTS))==digest(counts(OWNER_COUNTS))and
+         digest(counts(owner_reader.REGISTRY_CONTROL_COUNTS))==digest(counts(REGISTRY_COUNTS))and
          digest(control_table(reports.CONTROL_COUNTS))==digest(control_table(TERMINAL_COUNTS)),
          'literal complete native-app, protected-owner, pair and terminal refusal populations')
     for c in r['cases']:
@@ -390,6 +392,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 else:need('pair'not in c,'protected-word rejection has no fabricated native counterpart')
                 c['owner_reader_controls']=owner_reader.controls(*owner_args)
                 named(c['owner_reader_controls'],OWNER_COUNTS[mode],H(record))
+                c['registry_controls']=owner_reader.registry_controls(*owner_args)
+                named(c['registry_controls'],REGISTRY_COUNTS[mode],H(record))
             c['status']=EXPECTED_STATUS[lane,mode]
         except Exception as error:
             c.update(status='failed',error_type=type(error).__name__,error=type(error).__name__+': '+str(error))
@@ -401,6 +405,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     need(sum(c.get('pair',{}).get('qualified_pair',0)for c in r['cases'])==2 and
          sum(len(c.get('application_controls',{}).get('refusals',[]))for c in r['cases'])==32 and
          sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==60 and
+         sum(len(c.get('registry_controls',{}).get('refusals',[]))for c in r['cases'])==18 and
          sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases'])==8 and
          sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==102,
          'two native full-state pairs, one independent protected-word rejection and exact controls')
@@ -566,6 +571,7 @@ def main():
             application_reader_refusals=sum(len(c.get('application_controls',{}).get('refusals',[]))for c in r['cases']),
             terminal_reader_refusals=sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases']),
             owner_reader_refusals=sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases']),
+            registry_reader_refusals=sum(len(c.get('registry_controls',{}).get('refusals',[]))for c in r['cases']),
             pair_reader_refusals=sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases']))
         save(private/'receipt.json',r)
         hw=dict(r['hardware']);flags=hw.pop('isa_flags');hw.update(isa_flags_count=len(flags),isa_flags_sha256=digest(flags))

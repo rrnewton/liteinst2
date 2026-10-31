@@ -646,6 +646,7 @@ GROUPS={'Elf64_Phdr': ((('p_type p_flags', 4, 4), ('p_offset p_vaddr p_paddr p_f
                ('interpreter', 'image', 8),
                ('hardware', 'li2_selected_hardware', 4),
                ('session', 'li2_step_session', 8),
+               ('startup_registry', 'peo_registry', 8),
                ('initial_registry', 'peo_registry', 8),
                ('terminal_registry', 'peo_registry', 8),
                ('predecessor', 'li2_tf_chain', 64),

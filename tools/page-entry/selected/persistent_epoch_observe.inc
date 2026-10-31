@@ -20,7 +20,7 @@ struct peo_wire {
     struct image main,interpreter;
     __typeof__(selected_hardware) hardware;
     struct li2_step_session session;
-    struct peo_registry initial_registry,terminal_registry;
+    struct peo_registry startup_registry,initial_registry,terminal_registry;
     struct li2_tf_chain predecessor,closed_chain;
     struct le_frame returned,terminal_frame;
     struct li2_pe_progress entered_progress;
@@ -61,7 +61,7 @@ static void peo_initialize(void) {
     __asm__ volatile(""::"r"(&peo_step_frame_fp_alignment):"memory");
     pe_need(!peo_ready && !peo_finished && !pe.p.serial,PE_STATE,102);
     uint64_t *h=peo_wire.h;
-    h[0]=PEO_MAGIC;h[1]=1;h[2]=sizeof peo_wire;h[3]=sizeof pe;
+    h[0]=PEO_MAGIC;h[1]=2;h[2]=sizeof peo_wire;h[3]=sizeof pe;
     h[4]=sizeof(struct pe_payload);h[5]=PE_PROOF_BYTES;h[6]=PE_CODE_BYTES;
     h[7]=sizeof(ucontext_t);h[8]=sizeof(siginfo_t);h[9]=(uintptr_t)li2_raw6;
     h[10]=(uintptr_t)li2_gateway_start;h[11]=(uintptr_t)li2_gateway_end;
@@ -83,7 +83,7 @@ static void peo_initialize(void) {
     h[23]=(uintptr_t)li2_pe_rseq_progress();h[24]=(uintptr_t)&selected_chain;
     h[25]=(uintptr_t)li2_tf_chain_span_progress();h[26]=pe.generation.generated;
     h[27]=pe.generation.proof;h[28]=pe.generation.spill;
-    peo_registry(&peo_wire.initial_registry);peo_ready=1;
+    peo_registry(&peo_wire.startup_registry);peo_ready=1;
 }
 static void peo_ingress(int sig) {
     if(!peo_ready)return;
@@ -99,6 +99,9 @@ static void peo_ingress(int sig) {
 }
 static void peo_begin(void) {
     pe_need(peo_ready && !peo_wire.h[29] && !peo_capturing,PE_STATE,106);
+    /* Lazy protected landing pages may be registered during guest startup.
+       The immutable epoch begins here, before closing its real predecessor. */
+    peo_registry(&peo_wire.initial_registry);
     peo_wire.h[29]=1;peo_wire.h[30]=peo_wire.raw_ingress[0];
     peo_copy(&peo_wire.predecessor,&selected_chain,sizeof selected_chain);
 }
@@ -166,7 +169,7 @@ static void peo_finish(unsigned status,unsigned code,long detail) {
         at+=(size_t)result;
     }
     if(at!=sizeof peo_wire)return;
-    const uint64_t footer[]={PEO_FOOTER,1,sizeof peo_wire,at,calls,(uint64_t)result,status,code};
+    const uint64_t footer[]={PEO_FOOTER,2,sizeof peo_wire,at,calls,(uint64_t)result,status,code};
     at=0;calls=0;
     while(at<sizeof footer && calls<64) {
         ++calls;result=raw(SYS_write,3,(long)((const unsigned char *)footer+at),sizeof footer-at,0,0,0);
