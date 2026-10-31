@@ -13,6 +13,7 @@ static unsigned char source[2][4096];
 static const uintptr_t pages[2]={0x400000,0x401000};
 static uintptr_t code,spill;
 static unsigned inject,positive,classified,terminal,corruptions;
+static unsigned placement_cases,placement_ready;
 uint32_t __real_li2_decoder_span_describe(uint64_t,const unsigned char *,size_t,struct li2_span_decoded *);
 uint32_t __wrap_li2_decoder_span_describe(uint64_t pc,const unsigned char *b,size_t n,struct li2_span_decoded *d) {
     uint32_t r=__real_li2_decoder_span_describe(pc,b,n,d);
@@ -52,6 +53,7 @@ static void compare(uintptr_t entry,unsigned reason,int status) {
     if(!status) {
         const struct li2_pe_dynamic_miss zero={.version=1};assert(!memcmp(&miss,&zero,sizeof miss));
         assert(actual.ready==1 && !li2_pe_plan_validate(&actual,&scratch) && !memcmp(&actual,&scratch,sizeof actual));++positive;
+        assert(li2_pe_dynamic_placement(entry,code)==1);++placement_cases;++placement_ready;
     } else if(reason) {
         assert(!actual.ready && li2_pe_dynamic_miss_valid(&actual,&miss,status));++classified;
         struct li2_pe_dynamic_miss bad=miss;bad.version^=1;assert(!li2_pe_dynamic_miss_valid(&actual,&bad,status));++corruptions;
@@ -62,6 +64,102 @@ static void compare(uintptr_t entry,unsigned reason,int status) {
         const struct li2_pe_dynamic_miss zero={.version=1,.status=(unsigned)status};assert(!memcmp(&miss,&zero,sizeof miss));++terminal;
     }
     if(!reason)assert(!li2_pe_dynamic_miss_valid(&actual,&miss,status));
+}
+/* Literal aligned geometry cases, separate from the actual emitter cases
+   below. The interval is deliberately conservative: overlap is possible,
+   not admission; image end is an instruction-end bound, not a readable PC. */
+static void placement_geometry(void) {
+    static const struct {uintptr_t entry,generated;int expected;} cases[]={
+        {0x400100,0x10000000,1}, {0x400000,0x401000,1},
+        {0x400ff1,0x10000000,1}, {0x400ff2,0x10000000,-1},
+        {0,0x10000000,-1}, {0xfff,0x10000000,-1},
+        {0x1000,0x1000,1}, {0x400100,0,-1},
+        {0x400100,0x10000001,-1}, {0x400100,UINTPTR_MAX,-1},
+        {UINTPTR_MAX,0x10000000,-1},
+        {UINT64_C(0x800000000000),0x10000000,-1},
+        {0x400100,UINT64_C(0x800000000000),-1},
+        {UINT64_C(0x7ffffffff000),0x10000000,-1},
+        {UINT64_C(0x7fffffffeff1),UINT64_C(0x7fffffff8000),1},
+        {UINT64_C(0x7fffffffeff2),UINT64_C(0x7fffffff8000),-1},
+        {0x400100,UINT64_C(0x7fffffff9000),-1},
+        /* Closest aligned gaps straddling the negative signed boundary. */
+        {0x400100,0x80401000,1}, {0x400100,0x80402000,0},
+        /* Positive reach uses image END, with its asymmetric signed limit. */
+        {0x90007100,0x10000000,1}, {0x90008100,0x10000000,0},
+        {0x10008100,0x10000000,1}, {0x10009100,0x10000000,1},
+        /* The real helper region versus low/high/near hypothetical banks. */
+        {UINT64_C(0x200001010),0x413ca000,0},
+        {UINT64_C(0x200001010),UINT64_C(0x7f7d68a71000),0},
+        {UINT64_C(0x200001010),UINT64_C(0x200010000),1}
+    };
+    for(unsigned i=0;i<sizeof cases/sizeof cases[0];i++) {
+        assert(li2_pe_dynamic_placement(cases[i].entry,cases[i].generated)==cases[i].expected);
+        ++placement_cases;
+    }
+}
+/* These are actual unchanged old and classified planner calls. No generated
+   instruction executes. Every ready image still round-trips the old full
+   validator; exact reach is established by emitted target/next-PC geometry. */
+static void placement_plan(const uintptr_t pair[2],uintptr_t entry,int status,int possible) {
+    int a=li2_pe_plan_pages_dynamic(pair,source,entry,code,spill,&table,&actual,&miss);
+    int b=li2_pe_plan_pages(pair,source,entry,code,spill,&table,&old);
+    assert(a==status && b==status && !memcmp(&actual,&old,sizeof actual));
+    assert(li2_pe_dynamic_placement(entry,code)==possible);++placement_cases;
+    if(!status) {
+        const struct li2_pe_dynamic_miss zero={.version=1};
+        assert(possible==1 && actual.ready==1 && !memcmp(&miss,&zero,sizeof miss));
+        assert(!li2_pe_plan_validate(&actual,&scratch) && !memcmp(&actual,&scratch,sizeof actual));
+        ++placement_ready;
+    } else assert(!actual.ready && li2_pe_dynamic_miss_valid(&actual,&miss,status));
+}
+static void placement_jump(uintptr_t first,uintptr_t generated,unsigned frontier,int status,int possible,int64_t delta) {
+    empty();const uintptr_t pair[2]={first,first+4096};code=generated;spill=code+LI2_PE_IMAGE_BYTES;
+    source[0][0x100]=0xe9;put32(source[0]+0x101,(int64_t)frontier-0x105);
+    source[frontier/4096][frontier%4096]=0xc3;
+    assert((int64_t)(first+frontier)-(int64_t)(code+5)==delta);
+    placement_plan(pair,first+0x100,status,possible);
+    assert(actual.heads==1 && actual.exits==1 && actual.exit_pc[0]==first+frontier);
+    if(!status)assert(actual.head[0].generated_length==5 && actual.image[0]==0xe9);
+    else assert(miss.reason==LI2_PED_BRANCH_REACH);
+}
+static void placement_emit_edges(void) {
+    /* Real JMP disp32 endpoints and the immediately adjacent bytes. */
+    placement_jump(0x400000,0x80400000,4,LI2_PE_RELOCATION,1,INT64_C(-2147483649));
+    placement_jump(0x400000,0x80400000,5,0,1,INT64_C(-2147483648));
+    placement_jump(0x400000,0x80400000,6,0,1,INT64_C(-2147483647));
+    placement_jump(0x90000000,0x10000000,3,0,1,INT64_C(2147483646));
+    placement_jump(0x90000000,0x10000000,4,0,1,INT64_C(2147483647));
+    placement_jump(0x90000000,0x10000000,5,LI2_PE_RELOCATION,1,INT64_C(2147483648));
+    /* Actual last pair byte, both sides of the aligned interval threshold. */
+    placement_jump(0x400000,0x80401000,8191,0,1,INT64_C(-2147479558));
+    placement_jump(0x400000,0x80402000,8191,LI2_PE_RELOCATION,0,INT64_C(-2147483654));
+    /* First-head emission can still fail when the whole-image bound permits. */
+    placement_jump(0x90007000,0x10000000,5,LI2_PE_RELOCATION,1,INT64_C(2147512320));
+    placement_jump(0x90008000,0x10000000,5,LI2_PE_RELOCATION,0,INT64_C(2147516416));
+    /* Low M remains a real post-close root miss, not a placement decline. */
+    empty();source[0][0x100]=0x41;source[0][0x101]=0xff;source[0][0x102]=0xe1;
+    placement_plan(pages,pages[0]+0x100,LI2_PE_MISS,1);
+    assert(miss.reason==LI2_PED_ROOT_UNSUPPORTED);
+}
+static void placement_old_positives(void) {
+    /* Same three source fixtures, registry, code and spill as the independent
+       persistent_plan component; its original assertions remain untouched. */
+    const uintptr_t old_spill=0x10010000,table_at=0x10012000;
+    const struct li2_mg_range ranges[]={
+        {pages[0],pages[1]+4096},{0x10000000,0x10000000+LI2_PE_IMAGE_BYTES},
+        {old_spill,old_spill+4096},{table_at,table_at+8192},{0x70000008,0x70000010}};
+    assert(!li2_mg_table_build(ranges,sizeof ranges/sizeof ranges[0],table_at,&table));
+    loop();spill=old_spill;placement_plan(pages,pages[0]+0x100,0,1);
+    assert(actual.heads==6 && actual.stores==1 && actual.source_bytes==25 && actual.exits==1);
+    static const unsigned char first32[]={0x89,0x07,0x48,0x83,0xc0,1,
+        0x48,0x39,0xc8,0x0f,0x82,0,0,0,0,0xc3};
+    memcpy(source[0]+0x100,first32,sizeof first32);rel(0x109,6,2,pages[1]+0x100);
+    placement_plan(pages,pages[0]+0x100,0,1);
+    assert(actual.heads==6 && actual.stores==1 && actual.source_bytes==24 && actual.exits==1 && actual.store_original[0].width_bytes==4);
+    empty();spill=old_spill;source[0][0xff0]=0xe9;rel(0xff0,5,1,pages[0]+0xffe);
+    source[0][0xffe]=0x48;source[0][0xfff]=0x89;source[1][0]=0x47;source[1][1]=8;source[1][2]=0xc3;
+    placement_plan(pages,pages[0]+0xff0,0,1);
+    assert(actual.heads==2 && actual.stores==1 && actual.source_bytes==9 && actual.exits==1 && actual.source_mask==3);
 }
 int main(void) {
     struct li2_decoder_stats before,after;assert(!li2_decoder_initialize(arena,sizeof arena,&before) && before.phase==2 && !before.first_fatal_reason);
@@ -102,8 +200,10 @@ int main(void) {
     add_ret();inject=8;compare(pages[0]+0x100,0,LI2_PE_MISS);
     loop();spill=UINT64_C(0x200000000);compare(pages[0]+0x100,0,LI2_PE_RELOCATION);
     loop();spill=code+16;compare(pages[0]+0x100,0,LI2_PE_ARGUMENT);
+    placement_geometry();placement_emit_edges();placement_old_positives();
+    assert(placement_cases==42 && placement_ready==10);
     assert(!li2_decoder_stats(&after) && !memcmp(&before,&after,sizeof before));
     assert(positive==2 && classified==14 && terminal==10 && corruptions==56);
-    printf("{\"schema\":1,\"positives\":2,\"classified\":14,\"terminal\":10,\"corruptions\":56,\"whole_old_plans_equal\":26,\"postseal_equal\":1,\"emitted_execution\":0}\n");
+    printf("{\"schema\":1,\"positives\":2,\"classified\":14,\"terminal\":10,\"corruptions\":56,\"whole_old_plans_equal\":26,\"postseal_equal\":1,\"emitted_execution\":0,\"placement_cases\":42,\"placement_ready\":10}\n");
     return 0;
 }

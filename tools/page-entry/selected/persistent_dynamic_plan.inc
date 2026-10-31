@@ -284,3 +284,21 @@ int li2_pe_dynamic_miss_valid(const struct li2_pe_plan *p,const struct li2_pe_dy
     }
     return 0;
 }
+
+/* Every ready plan has a reached original frontier inside its two-page
+   source set. All exits (Jcc, JMP, NEXT and MOV-guard follow) use rel32;
+   their instruction ends lie in this conservative closed image interval.
+   Passing only keeps the exact old planner eligible to decide. */
+int li2_pe_dynamic_placement(uintptr_t entry,uintptr_t generated) {
+    const uintptr_t limit=UINT64_C(1)<<47;
+    const uintptr_t page=entry&~(uintptr_t)(LI2_REGION_PAGE-1U);
+    if(entry>=limit || page<LI2_REGION_PAGE ||
+       entry-page>LI2_REGION_PAGE-15U || page>limit-2U*LI2_REGION_PAGE ||
+       generated<LI2_REGION_PAGE || (generated&(LI2_REGION_PAGE-1U)) ||
+       generated>limit-LI2_PE_IMAGE_BYTES)return -1;
+    const uintptr_t last=page+2U*LI2_REGION_PAGE-1U;
+    const uintptr_t end=generated+LI2_PE_IMAGE_BYTES;
+    if(last<generated)return generated-last<=UINT32_C(0x80000000);
+    if(page>end)return page-end<=UINT32_C(0x7fffffff);
+    return 1;
+}

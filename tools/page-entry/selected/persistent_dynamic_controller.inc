@@ -644,10 +644,20 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     const struct li2_rseq_state *r=li2_rseq_snapshot();
     if((pc&~(PAGE-1))<PAGE || r->registered!=1 || r->phase!=LI2_RSEQ_ACTIVE ||
        !li2_pe_source_pair_advisory(pc))return 0;
+    /* Pure necessary placement before any offer, capture, reset or real
+       TRACE close. A decline leaves the original dispatch path intact. */
+    const unsigned bank_index=ped_bank_for(pc);
+    const struct ped_bank *bank=&pe.banks[bank_index];
+    const int placement=li2_pe_dynamic_placement(pc,bank->generated);
+    pe_need(placement>=0 && bank->allocated==1 && bank->registered==1 &&
+        bank->generated<(UINT64_C(1)<<47)-PE_ALLOC_BYTES &&
+        bank->spill==bank->generated+PE_CODE_BYTES && protected_count<=RANGES &&
+        selected_run_protect_contains(0,bank->generated,PE_ALLOC_BYTES)==1,PE_STATE,31);
+    if(!placement)return 0;
 #ifdef LI2_PERSISTENT_DYNAMIC_CAPTURE
     pdo_begin(sig,si,uc);
 #endif
-    ped_reset_attempt();pe.selected_bank=ped_bank_for(pc);
+    ped_reset_attempt();pe.selected_bank=bank_index;
     pe_closing=1;pe_busy=1;ped_count(&pe.offers);__asm__ volatile("":::"memory");
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);

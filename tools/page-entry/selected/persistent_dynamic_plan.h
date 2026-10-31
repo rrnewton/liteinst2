@@ -35,6 +35,12 @@ int li2_pe_plan_pages_dynamic(const uintptr_t[LI2_PE_SOURCES],
    No re-decode, mapped-source read, RAW, permission or execution credit.
    Returns1 only for a classified non-ready refusal, never for success. */
 int li2_pe_dynamic_miss_valid(const struct li2_pe_plan *,const struct li2_pe_dynamic_miss *,int);
+/* Necessary placement advisory only: -1 malformed geometry, 0 no possible
+   original rel32 exit, 1 not ruled out. Entry has the existing 15-byte first-
+   page window; its adjacent two-page pair and the page-aligned 32768-byte
+   image must fit lower canonical addresses. No memory read, permission,
+   source identity, decoder, signal, ownership or admission authority. */
+int li2_pe_dynamic_placement(uintptr_t entry,uintptr_t generated);
 _Static_assert(sizeof(struct li2_pe_dynamic_miss)==32,"separate bounded diagnosis");
 _Static_assert(LI2_PED_REASON_COUNT==15,"fixed reason0 plus14 refusal classes");
 #endif
