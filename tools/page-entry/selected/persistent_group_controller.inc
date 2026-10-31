@@ -27,6 +27,9 @@
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
 #include "persistent_direct_frontier_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+#include "persistent_cold_admission_observe.h"
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.h"
 #endif
@@ -1270,13 +1273,29 @@ static int pe_cross_page_trace_coarse(int sig,const siginfo_t *si,const ucontext
     return li2_tf_chain_span_cross_page_eligible(&selected_chain,sig,si,uc);
 }
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+static int pe_direct_trace_coarse(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    if(selected_selftesting || !selected_linked_epoch.initialized ||
+       selected_linked_epoch_active || selected_linked_epoch_busy || selected_linked_epoch.first_error ||
+       selected_pending_route!=SELECTED_GENERIC_TF || selected_step_pending!=1 ||
+       handling!=1 || !si || !uc || selected_chain.active<0 || selected_chain.active>=2 ||
+       !selected_chain.pending || selected_chain.in_handler || selected_chain.first_error)return 0;
+    return li2_tf_chain_span_direct_eligible(&selected_chain,sig,si,uc);
+}
+#endif
 static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_CROSS_PAIR
     if(!pe.initialized || pe_busy || pe_active || !ped_capacity())return 0;
     unsigned cross_page=0;
     if(!le_trace_coarse(sig,si,uc)) {
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(pe_cross_page_trace_coarse(sig,si,uc))cross_page=1;
+        else if(pe_direct_trace_coarse(sig,si,uc))cross_page=2;
+        else return 0;
+#else
         if(!pe_cross_page_trace_coarse(sig,si,uc))return 0;
         cross_page=1;
+#endif
     }
 #else
     if(!pe.initialized || pe_busy || pe_active || !ped_capacity() || !le_trace_coarse(sig,si,uc))return 0;
@@ -1336,6 +1355,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     pdo_begin(sig,si,uc,slot_index);
 #endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_begin(sig,si,uc,slot_index);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_begin(sig,si,uc,slot_index);
 #endif
@@ -1356,8 +1378,14 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
 #ifdef LI2_PERSISTENT_CROSS_PAIR
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    int e=cross_page==2?li2_tf_chain_span_close_direct(&selected_chain,sig,si,uc,&pe.ticket):
+        cross_page==1?li2_tf_chain_span_close_cross_page(&selected_chain,sig,si,uc,&pe.ticket):
+        li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#else
     int e=cross_page?li2_tf_chain_span_close_cross_page(&selected_chain,sig,si,uc,&pe.ticket):
         li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#endif
 #else
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
 #endif
@@ -1385,6 +1413,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     pdo_closed();
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_closed();
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_closed();
@@ -1441,6 +1472,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     pdo_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_entered(sig,si,uc);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_entered(sig,si,uc);
@@ -1503,6 +1537,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     pdo_terminal(0);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_terminal(0);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_terminal(0);
@@ -1621,6 +1658,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
 #include "persistent_direct_frontier_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+#include "persistent_cold_admission_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.inc"

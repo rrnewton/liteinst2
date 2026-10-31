@@ -32,6 +32,7 @@ ACTIVE_PROVIDERS = tuple('li2_pgd_source_release' if name == 'li2_pg_source_rele
     'li2_pgs_head_lookup','li2_pgs_entry_source','li2_pgs_entry_value','li2_pgs_owner_entry',
     'li2_lifecycle_initialize_empty',
     'li2_tf_chain_span_cross_page_eligible','li2_tf_chain_span_close_cross_page',
+    'li2_tf_chain_span_direct_eligible','li2_tf_chain_span_close_direct',
     'li2_pgx_owner_offer','li2_pgx_source_prepare','li2_pgx_guard_union','li2_pgx_source_value',
     'li2_dd_span','li2_dd_describe','li2_dd_arm','li2_dd_emit','li2_dd_validate','li2_dd_recover',
     'li2_pg_compact_direct','li2_pg_compact_exit',

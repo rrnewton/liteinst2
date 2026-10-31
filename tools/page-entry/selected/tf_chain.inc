@@ -17,6 +17,9 @@ extern void li2_pso_trace_closed(const struct li2_tf_chain *,const struct li2_tf
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
 extern void li2_pdo_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
 #endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+extern void li2_pco_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 extern void li2_pxo_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
 #endif
@@ -553,6 +556,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     li2_pdo_trace_closed(c,p);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    li2_pco_trace_closed(c,p);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     li2_pxo_trace_closed(c,p);
