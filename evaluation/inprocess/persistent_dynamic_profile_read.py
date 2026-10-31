@@ -5,8 +5,87 @@ pinned perf/libdw unwinder. Every script header must join one raw sample. Only
 actual bridge mappings resolve to function intervals; other frames stay unknown.
 """
 import collections,csv,hashlib,json,re,struct
+from bisect import bisect_left,bisect_right
 from pathlib import Path
 from page_cost_profile_read import need,elf,same_bridge
+
+
+class ActiveMaps:
+    """Disjoint working view; each fragment retains its full original record."""
+    def __init__(self):
+        self.starts=[];self.intervals=[]
+
+    def update(self,m):
+        lo=m['address'];hi=lo+m['bytes']
+        need(0<=lo<hi<1<<64,'complete active mapping interval')
+        i=bisect_left(self.starts,lo)
+        if i and self.intervals[i-1][1]>lo:i-=1
+        j=bisect_left(self.starts,hi);part=[]
+        if i<j and self.intervals[i][0]<lo:
+            a,_,old=self.intervals[i];part.append((a,lo,old))
+        part.append((lo,hi,m))
+        if i<j and self.intervals[j-1][1]>hi:
+            _,z,old=self.intervals[j-1];part.append((hi,z,old))
+        need(all(a<b for a,b,_ in part)and all(part[k-1][1]<=part[k][0]for k in range(1,len(part)))and
+             (not i or self.intervals[i-1][1]<=part[0][0])and
+             (j==len(self.intervals)or part[-1][1]<=self.intervals[j][0]),'nonoverlapping actual mapping view')
+        self.intervals[i:j]=part;self.starts[i:j]=[x[0]for x in part]
+        need(len(self.intervals)<=65536,'bounded actual mapping interval population')
+
+    def find(self,ip):
+        i=bisect_right(self.starts,ip)-1
+        return self.intervals[i][2]if i>=0 and ip<self.intervals[i][1]else None
+
+
+def mapping_index_check():
+    """Pure oracle against append-only latest-covering history, not runtime credit."""
+    high=(1<<64)-0x10000
+    cases=[
+        ('adjacent_and_holes',[(1,100,20,1000),(1,140,20,2000),(1,120,20,3000)]),
+        ('split_and_nested',[(1,100,100,500),(1,120,60,900),(1,130,10,1700),(1,135,20,2100)]),
+        ('replace_many',[(1,100,20,0),(1,130,20,100),(1,160,20,200),(1,90,100,400),(1,90,100,800)]),
+        ('partial_left_right',[(1,100,100,1000),(1,90,40,2000),(1,175,40,3000),(1,125,55,4000)]),
+        ('same_boundaries',[(1,100,100,0),(1,100,60,1000),(1,140,60,2000),(1,100,100,3000)]),
+        ('high_addresses',[(1,high,0x1000,0x7000),(1,high+3,0x800,0x9000),(1,high+0xfff,0x1000,0xb000)]),
+        ('comm_exec_pid_scope',[(1,100,100,0),(2,100,100,1000),(1,None),(1,130,20,2000),(2,None),(1,None),(2,100,100,4000)]),
+        ('bounded_replacement_history',[(1,4096,4096,i*4096)for i in range(256)]),
+    ]
+    operations=queries=splits=0
+    for name,events in cases:
+        indices={1:ActiveMaps(),2:ActiveMaps()};history={1:[],2:[]};probes={0,(1<<64)-1}
+        for serial,event in enumerate(events):
+            pid=event[0];operations+=1
+            if event[1]is None:
+                indices[pid]=ActiveMaps();history[pid]=[]
+            else:
+                _,lo,n,offset=event;m=dict(address=lo,bytes=n,offset=offset,pid=pid,serial=serial)
+                history[pid].append(m);indices[pid].update(m)
+                for x in (lo-1,lo,lo+1,lo+n//2,lo+n-1,lo+n,lo+n+1):
+                    if 0<=x<1<<64:probes.add(x)
+            for who in (1,2):
+                index=indices[who];last=0
+                need(len(index.starts)==len(index.intervals),'oracle parallel index population')
+                for k,(lo,hi,m)in enumerate(index.intervals):
+                    need(last<=lo<hi and index.starts[k]==lo and m['address']<=lo and
+                         hi<=m['address']+m['bytes'],'oracle ordered disjoint original fragments')
+                    last=hi;splits+=int(lo!=m['address']or hi!=m['address']+m['bytes'])
+                for ip in sorted(probes):
+                    want=next((m for m in reversed(history[who])if m['address']<=ip<m['address']+m['bytes']),None)
+                    got=index.find(ip);queries+=1
+                    need(got is want,'oracle exact latest original record '+name)
+                    if got is not None:
+                        need(got['offset']+ip-got['address']==want['offset']+ip-want['address'],
+                             'oracle original file offset survives clipping')
+    # Independent explicit split expectation catches accidental rebasing even
+    # if a reference implementation were changed with the working index.
+    x=ActiveMaps();a=dict(address=100,bytes=100,offset=1000);b=dict(address=130,bytes=20,offset=9000)
+    x.update(a);x.update(b)
+    need(x.intervals==[(100,130,a),(130,150,b),(150,200,a)]and
+         x.find(150)is a and x.find(199)is a and x.find(200)is None and
+         x.find(150)['offset']+150-x.find(150)['address']==1050,'explicit split keeps source offset')
+    need(splits>0 and queries>0,'nonempty split and lookup oracle')
+    return dict(status='passed',cases=len(cases),operations=operations,queries=queries,
+        observed_fragments=splits,explicit_split_cases=1,native_operations=0)
 
 
 def mode_user(misc):
@@ -184,14 +263,15 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
                     z=b[40];need(1<=z<=20 and b[41:44]==bytes(3) and b[44+z:64]==bytes(20-z),'MMAP2 complete build-id extent/reserved bytes');m['build_id']=b[44:44+z].hex()
                 else:
                     major,minor,inode=struct.unpack_from('<IIQ',b,40);m.update(device=[major,minor],inode=inode)
-            maps.setdefault(pid,[]).append(m);mappings.append(m)
+            if pid not in maps:maps[pid]=ActiveMaps()
+            maps[pid].update(m);mappings.append(m)
         elif kind==3:
             sid,end=event_identity(b,kind,misc);string(b,16,end,'complete COMM name')
             pid,tid=struct.unpack_from('<II',b,8)
             need(sid['tid']==(0,0) or pid==tid==target_pid and sid['tid']==(pid,tid),
                  'runtime COMM body joins attached thread and sideband identity')
             if misc&(1<<13):
-                maps[pid]=[]
+                maps[pid]=ActiveMaps()
                 mappings.append(dict(reset_pid=pid,time_ns=sid['time'][0],record_offset=at-length))
                 if pid==tid==target_pid:
                     need(sid['tid']==(pid,tid),'COMM_EXEC actual target identity');execs.append(sid['time'][0])
@@ -232,7 +312,7 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             need(stamp>=last_time and stamp>=last_event_time and mode_user(misc),
                  'ordered user-only single-CPU samples');last_time=last_event_time=stamp
             reason='other_pid'if pid!=target_pid else'kernel'if mode==1 else'no_recorded_mapping'if mode==2 else'other_cpumode'
-            m=next((m for m in reversed(maps.get(pid,[]))if m['address']<=ip<m['address']+m['bytes']),None)
+            m=maps[pid].find(ip)if pid in maps else None
             symbol='';fileoff=None;value=None;candidate=False;candidate_fileoff=None
             if pid==target_pid and mode==2 and m:
                 reason='other_mapping'
@@ -315,29 +395,20 @@ def attribute(directory,bridge,script_output,target_pid):
     rows=json.loads((directory/'samples.json').read_bytes())
     mappings=json.loads((directory/'maps.json').read_bytes())
     chains=stacks(script_output,rows);obj=elf(bridge)
-    active=[];cursor=0;functions=collections.Counter();paths=collections.Counter()
+    active=ActiveMaps();cursor=0;functions=collections.Counter();paths=collections.Counter()
     function_n=collections.Counter();path_n=collections.Counter();states=collections.Counter()
     total=weight=unknown=unknown_weight=0;details=[]
     def update(m):
         nonlocal active
         if 'reset_pid'in m:
-            if m['reset_pid']==target_pid:active=[]
+            if m['reset_pid']==target_pid:active=ActiveMaps()
             return
         if m['pid']!=target_pid:return
-        lo,hi=m['address'],m['address']+m['bytes'];retained=[]
-        # Keep the original mapping origin/file offset when clipping intervals.
-        for a,z,old in active:
-            if z<=lo or hi<=a:retained.append((a,z,old));continue
-            if a<lo:retained.append((a,lo,old))
-            if hi<z:retained.append((hi,z,old))
-        retained.append((lo,hi,m));active=sorted(retained,key=lambda x:x[0])
-        need(len(active)<=65536,'bounded actual mapping interval population')
+        active.update(m)
     def resolve(ip):
         if not 0<ip<1<<47:return 'unknown:non_user_address'
-        matches=[m for a,z,m in active if a<=ip<z]
-        need(len(matches)<=1,'nonoverlapping actual mapping view')
-        if not matches:return 'unknown:no_recorded_mapping'
-        m=matches[0]
+        m=active.find(ip)
+        if m is None:return 'unknown:no_recorded_mapping'
         if m['name']!=obj['path']:return 'unknown:other_mapping'
         if m['prot']is None or not m['prot']&4:return 'unknown:nonexecutable_bridge_mapping'
         identified=(m['build_id']in obj['build_ids']if m['build_id']is not None else

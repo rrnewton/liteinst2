@@ -9,14 +9,15 @@ from linked_frontier_census import need,fact,git,git_bytes,source_paths,H,D
 from page_selected import save
 from page_selected_process import invoke
 from page_cost_profile import PERF,TARGET
-from persistent_dynamic_profile_read import summarize,script_argv,attribute
+from persistent_dynamic_profile_read import summarize,script_argv,attribute,mapping_index_check
 from run import hardware
 
 
 def child(action,context):
     c=json.loads(Path(context).read_bytes());o=c['owner'];dest=Path(c['analysis']);bridge=Path(c['bridge'])
     try:
-        if action=='summarize':
+        if action=='map-index':value=mapping_index_check()
+        elif action=='summarize':
             value=summarize(Path(c['raw']),bridge,o['target']['pid'],o['cpu'],dest,
                 o['release_ns'],o['target_exit_ready_ns'],bridge_identity=o['bridge_identity_before'])
         else:
@@ -125,6 +126,10 @@ def main():
             result=json.loads(stdout);need(row['exit']==0 and not stderr and result=={'status':'passed'},
                 'bounded '+action+' reader: '+str(result))
             p=pin(analysis/(action+'.json'));return json.loads(p.read_bytes())
+        r['map_index_check']=read('map-index')
+        need(r['map_index_check']['cases']==8 and r['map_index_check']['operations']==286 and
+             r['map_index_check']['explicit_split_cases']==1 and r['map_index_check']['native_operations']==0,
+             'complete bounded independent mapping-history oracle')
         r['sampling']=read('summarize')
         for name in ('samples.json','maps.json','samples.csv'):pin(analysis/name)
         need(r['sampling']['full_exec_exit_envelope']and r['sampling']['loss_free'],'complete loss-free captured envelope')
@@ -163,7 +168,7 @@ def publish(out,r):
         samples=ranking.get('samples'),sampled_period=ranking.get('period'),unknown_leaf_samples=ranking.get('unknown_leaf_samples'),
         unknown_leaf_period=ranking.get('unknown_leaf_period'),unwind_states=ranking.get('unwind_states'),unwind_complete=False,
         all_recorded_samples=sample.get('samples'),all_recorded_period=sample.get('sampled_period_total'),
-        replay_python=r.get('replay_python'),receipt=fact(out/'receipt.json'),reproduce=['python3','-B',SCRIPT,'--receipt','${CLOSED_PROFILE_RECEIPT}',
+        map_index_check=r.get('map_index_check'),replay_python=r.get('replay_python'),receipt=fact(out/'receipt.json'),reproduce=['python3','-B',SCRIPT,'--receipt','${CLOSED_PROFILE_RECEIPT}',
             '--expect-revision',r['source_revision'],'--output','${FRESH_PRIVATE_OUTPUT}'],
         scope='Reader replay only. Original target outcome and failed producer receipt are unchanged. First same-PID exec through exit includes carrier startup. Period-weighted user samples include unknowns; no complete-stack, wall-time, qualification or speedup claim.')
     value['commands']=[]
