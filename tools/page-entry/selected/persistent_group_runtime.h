@@ -6,10 +6,15 @@
 #if LI2_PERSISTENT_UNREGISTERED != 1 || !defined(LI2_PERSISTENT_ACTIVE_DOMAIN) || LI2_PERSISTENT_ACTIVE_DOMAIN != 1
 #error "unregistered compiled lifetime requires its distinct active-domain opt-in"
 #endif
-#if defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE) || defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE)
+#if defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE) || (defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) && !defined(LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE))
 #error "unregistered lifetime cannot use an older registered-only capture schema"
 #endif
 enum li2_pgu_lifetime { LI2_PGU_REGISTERED=1,LI2_PGU_UNREGISTERED=2 };
+#endif
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+#if LI2_PERSISTENT_JOINT_STARTUP_CAPTURE != 1 || LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE != 1 || LI2_PERSISTENT_SUBENTRY != 1 || !defined(LI2_PERSISTENT_UNREGISTERED) || !defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE != 1 || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
+#error "joint startup capture requires its distinct unregistered-enabled profile"
+#endif
 #endif
 #ifdef LI2_RSEQ_CURRENT_DATA
 #if !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1

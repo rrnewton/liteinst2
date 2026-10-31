@@ -2,12 +2,24 @@
    Two shared immutable certificate literals are checked by complete byte scans
    at each captured activation/checkpoint; no digest replaces those bytes. */
 #include "persistent_active_domain_observe_memory.h"
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+#include "persistent_joint_startup_capture_config.h"
+#if LI2_PERSISTENT_JOINT_STARTUP_CAPTURE != 1 || LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE != 1 || LI2_PERSISTENT_SUBENTRY != 1 || LI2_PERSISTENT_UNREGISTERED != 1 || LI2_PDA_CAPTURE_VERSION != 8 || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
+#error "distinct startup-enabled joint capture version"
+#endif
+#else
 #include "persistent_active_domain_capture_config.h"
-#if LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE != 1 || LI2_PERSISTENT_ACTIVE_DOMAIN != 1 || LI2_PDA_CAPTURE_VERSION != 4 || LI2_PERSISTENT_DISPATCH != 1 || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || defined(LI2_PERSISTENT_GROUP_CAPTURE)
+#endif
+#if LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE != 1 || LI2_PERSISTENT_ACTIVE_DOMAIN != 1 || (!defined(LI2_PERSISTENT_JOINT_STARTUP_CAPTURE) && LI2_PDA_CAPTURE_VERSION != 4) || LI2_PERSISTENT_DISPATCH != 1 || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || defined(LI2_PERSISTENT_GROUP_CAPTURE)
 #error "actual active-domain capture profile"
 #endif
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+#define PDAO_MAGIC UINT64_C(0x384f41445049324c)
+#define PDAO_FOOTER UINT64_C(0x384641445049324c)
+#else
 #define PDAO_MAGIC UINT64_C(0x344f41445049324c)
 #define PDAO_FOOTER UINT64_C(0x344641445049324c)
+#endif
 struct pdao_registry {
     unsigned complete,count;
     uintptr_t table;
@@ -20,6 +32,9 @@ struct pdao_counts {
     uint64_t next_serial,next_generation,offers,publications,hits,cold_attempts;
     uint64_t cancelled,retirements,permit_claims,entries,completed,unexpected;
     uint64_t misses[LI2_PGD_REASON_COUNT];
+#ifdef LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE
+    uint64_t subentry_selections,subentry_hits,subentry_entries,subentry_completed;
+#endif
 };
 /* Complete bounded comparison evidence against one literal certificate. */
 struct pdao_scan {
@@ -64,6 +79,9 @@ struct pdao_domain_checkpoint {
 };
 struct pdao_stage {
     struct li2_pg_progress progress;
+#ifdef LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE
+    struct li2_pgs_entry entry;
+#endif
     struct pdao_counts counts;
     struct pdao_slots slots;
     struct li2_span_transfer_progress transfer;
@@ -153,17 +171,29 @@ struct pdao_wire {
     struct pdao_counts final_counts;
     struct li2_pg_progress final_progress;
     uint64_t final_row[39];
+#ifdef LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE
+    uint64_t final_subentry[15];
+#endif
 };
 static struct pdao_wire pdao_wire;
 static unsigned pdao_ready,pdao_finished,pdao_capturing,pdao_kind,pdao_index,pdao_epochs;
 static const uint64_t pdao_step_frame_fp_alignment __attribute__((used))=__alignof__(((struct li2_step_frame *)0)->fp);
 _Static_assert(sizeof(struct pdao_wire)+64<4U*1024U*1024U,"shared immutable active-domain evidence within original4MiB record bound");
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+_Static_assert(sizeof(struct pdao_wire)==4181824 && sizeof(struct pdao_epoch)==958400 &&
+    sizeof(struct pdao_certificate)==434240 && sizeof(struct pdao_stage)==104120 &&
+    sizeof(struct pdao_domain_checkpoint)==11792 && sizeof(struct pda_state)==164080 &&
+    sizeof(struct pda_completion)==50784 && sizeof(struct pda_work)==11312 &&
+    sizeof(struct pdao_next)==267968 && sizeof(struct pdao_epoch_info)==15176,
+    "exact joint startup source arithmetic; actual compiler/DWARF still mandatory");
+#else
 _Static_assert(sizeof(struct pdao_wire)==4161664 && sizeof(struct pdao_epoch)==952448 &&
     sizeof(struct pdao_certificate)==434240 && sizeof(struct pdao_stage)==102504 &&
     sizeof(struct pdao_domain_checkpoint)==11288 && sizeof(struct pda_state)==161896 &&
     sizeof(struct pda_completion)==50224 && sizeof(struct pda_work)==10808 &&
     sizeof(struct pdao_next)==267968 && sizeof(struct pdao_epoch_info)==15176,
     "exact active-domain source arithmetic; actual compiler/DWARF still mandatory");
+#endif
 static void pdao_copy(void *to,const void *from,size_t n) {
     unsigned char *d=to;const volatile unsigned char *s=from;
     for(size_t i=0;i<n;i++)d[i]=s[i];
@@ -172,6 +202,9 @@ static void pdao_counts(struct pdao_counts *o) {
 #define C(n) o->n=pe.n
     C(next_serial);C(next_generation);C(offers);C(publications);C(hits);C(cold_attempts);
     C(cancelled);C(retirements);C(permit_claims);C(entries);C(completed);C(unexpected);
+#ifdef LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE
+    C(subentry_selections);C(subentry_hits);C(subentry_entries);C(subentry_completed);
+#endif
 #undef C
     pdao_copy(o->misses,pe.misses,sizeof o->misses);
 }
@@ -279,6 +312,9 @@ static void pdao_mutable(unsigned char slots[LI2_PGD_MEMBERS][PAGE],
     pdao_copy(directory,(const void *)v->directory,LI2_JD_DOMAIN_BYTES);
 }
 static void pdao_stage(struct pdao_stage *o,const struct pda_state *previous) {
+#ifdef LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE
+    pdao_copy(&o->entry,&pe.entry,sizeof o->entry);
+#endif
     pdao_copy(&o->progress,&pe.p,sizeof o->progress);pdao_counts(&o->counts);pdao_slots(&o->slots);
     pdao_copy(&o->transfer,&pe.transfer,sizeof o->transfer);
     pdao_copy(&o->source,li2_pg_source_progress(),sizeof o->source);
@@ -326,7 +362,11 @@ static void pdao_initialize(void) {
     __asm__ volatile(""::"r"(&pdao_step_frame_fp_alignment):"memory");
     pe_need(!pdao_ready && !pdao_finished && !pe.p.serial,PE_STATE,102);
     uint64_t *h=pdao_wire.h;
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+    h[0]=PDAO_MAGIC;h[1]=8;h[2]=sizeof pdao_wire;h[3]=sizeof pe;
+#else
     h[0]=PDAO_MAGIC;h[1]=4;h[2]=sizeof pdao_wire;h[3]=sizeof pe;
+#endif
     h[4]=sizeof(struct pe_payload);h[5]=PE_PROOF_BYTES;h[6]=PE_CODE_BYTES;
     h[7]=sizeof(ucontext_t);h[8]=sizeof(siginfo_t);h[9]=(uintptr_t)li2_raw6;
     h[10]=(uintptr_t)li2_gateway_start;h[11]=(uintptr_t)li2_gateway_end;
@@ -396,6 +436,12 @@ static void pdao_entered(int sig,siginfo_t *si,ucontext_t *uc) {
     pe_need(!le_capture(&o->returned,sig,si,uc),PE_FRAME,103);pe_tls(&o->returned);
     pdao_certificate();pdao_stage(&o->entered,pdao_previous_domain());
     pdao_mutable(o->initial_slots,o->initial_spill,o->initial_directory);
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+    const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
+    pe_need(r && li2_pgu_progress_valid(r) && r->lifetime_mode==LI2_PGU_REGISTERED &&
+        r->registration_epoch==1 && r->registration_calls==1 && r->word_observed==1 &&
+        r->tls_complete==1,PE_STATE,124);
+#endif
     o->h[7]=*(const volatile uint64_t *)(li2_pg_rseq_progress()->address+8);o->h[8]=1;pdao_capturing=0;
 }
 static void pdao_terminal(unsigned failed) {
@@ -410,6 +456,12 @@ static void pdao_terminal(unsigned failed) {
     pdao_copy(&o->terminal_domain,&pe.domain,sizeof o->terminal_domain);
     pdao_stage(&o->terminal,&o->terminal_domain);pdao_info(&o->info);
     pdao_mutable(o->terminal_slots,o->terminal_spill,o->terminal_directory);
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+    const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
+    pe_need(r && li2_pgu_progress_valid(r) && r->lifetime_mode==LI2_PGU_REGISTERED &&
+        r->registration_epoch==1 && r->registration_calls==1 && r->word_observed==1 &&
+        r->tls_complete==1,PE_STATE,124);
+#endif
     o->h[13]=*(const volatile uint64_t *)(li2_pg_rseq_progress()->address+8);pdao_registry(&o->terminal_registry);
     o->h[14]=1;
     if(pdao_index==2) {
@@ -422,7 +474,11 @@ static void pdao_finish(unsigned status,unsigned code,long detail) {
     if(!pdao_ready || pdao_finished)return;
     pdao_finished=1;pdao_wire.h[47]=1;pdao_wire.h[48]=status;pdao_wire.h[49]=code;pdao_wire.h[50]=(uint64_t)detail;
     pdao_counts(&pdao_wire.final_counts);pdao_copy(&pdao_wire.final_progress,&pe.p,sizeof pe.p);
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+    uint64_t row[]={1,status,code,detail<0?0ULL-(uint64_t)detail:(uint64_t)detail,detail<0,
+#else
     uint64_t row[]={4,status,code,detail<0?0ULL-(uint64_t)detail:(uint64_t)detail,detail<0,
+#endif
         pe.p.phase,pe.p.serial,pe.selected_slot<2?PE_SLOT(generation).generation:0,pe.selected_slot<2?PE_SLOT(generation).build_serial:0,
         pe.offers,pe.cold_attempts,pe.publications,pe.hits,pe.cancelled,pe.retirements,pe.permit_claims,
         pe.entries,pe.completed,pe.unexpected,pe.selected_slot<2?PE_SLOT(claim).valid:0,pe.p.opened_pages,pe.p.closed_pages,
@@ -434,6 +490,13 @@ static void pdao_finish(unsigned status,unsigned code,long detail) {
         pe.domain.work.view.count,pe.domain.dual_entries,pe.domain.dual_completed};
     _Static_assert(sizeof row==39*8,"exact active-domain terminal scalar row");
     pdao_copy(pdao_wire.final_row,row,sizeof row);pdao_wire.h[35]=pdao_epochs;pdao_wire.h[36]=pe.domain.dual_entries;pdao_wire.h[37]=pe.domain.next_id;
+#ifdef LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE
+    const uint64_t sub[]={1,status,code,pe.subentry_selections,pe.subentry_hits,
+        pe.subentry_entries,pe.subentry_completed,pe.entry.token.serial,pe.entry.generation,
+        pe.entry.target.root,pe.entry.target.pc,pe.entry.target.head,pe.entry.slot,pe.entry.bank,pe.entry.complete};
+    _Static_assert(sizeof sub==15*8,"exact separate subentry terminal row");
+    pdao_copy(pdao_wire.final_subentry,sub,sizeof sub);
+#endif
     pdao_wire.h[38]=pdao_kind;pdao_wire.h[40]=pe.domain.directory;
     long flags=raw(SYS_fcntl,3,F_GETFL,0,0,0,0);
     long result=raw(SYS_fstat,3,(long)&pdao_wire.sink_terminal,0,0,0,0);
@@ -449,7 +512,11 @@ static void pdao_finish(unsigned status,unsigned code,long detail) {
         at+=(size_t)result;
     }
     if(at!=sizeof pdao_wire)return;
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+    const uint64_t footer[]={PDAO_FOOTER,8,sizeof pdao_wire,at,calls,(uint64_t)result,status,code};
+#else
     const uint64_t footer[]={PDAO_FOOTER,4,sizeof pdao_wire,at,calls,(uint64_t)result,status,code};
+#endif
     at=0;calls=0;
     while(at<sizeof footer && calls<64) {
         ++calls;result=raw(SYS_write,3,(long)((const unsigned char *)footer+at),sizeof footer-at,0,0,0);

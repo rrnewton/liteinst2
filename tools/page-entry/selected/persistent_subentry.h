@@ -7,9 +7,14 @@
 #error "distinct active-domain subentry profile required"
 #endif
 #if defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || \
-    defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE) || defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || \
+    defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE) || (defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) && !defined(LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE)) || \
     defined(LI2_PERSISTENT_STARTUP_CAPTURE)
 #error "subentry requires a distinct actual-entry capture contract"
+#endif
+#ifdef LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE
+#if LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE != 1 || LI2_PERSISTENT_JOINT_STARTUP_CAPTURE != 1 || LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE != 1 || defined(LI2_PERSISTENT_SUBENTRY_CAPTURE)
+#error "distinct complete joint-subentry capture required"
+#endif
 #endif
 /* Descriptive exact head, never authority without the actual owner/source
    and complete immutable-generation checks. Compiled root never changes. */
