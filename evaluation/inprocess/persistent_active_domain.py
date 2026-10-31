@@ -59,6 +59,11 @@ PROBE_INPUTS={'tests/linked_native_probe/oracle.c': {'bytes': 16859, 'sha256': '
 PROBE_STDOUT=b'{"version":1,"component_only":1,"current_controls":25,"policy_controls":5,"refault_controls":6,"outcome_controls":27,"lifetime_cases":5,"terminal_controls":6,"actual_in_place_renewal":1,"raw_calls":0}\n'
 PROBE_COUNTS={'version': 1, 'component_only': 1, 'current_controls': 25, 'policy_controls': 5, 'refault_controls': 6, 'outcome_controls': 27, 'lifetime_cases': 5, 'terminal_controls': 6, 'actual_in_place_renewal': 1, 'raw_calls': 0}
 PROBE_PUBLIC_FIELDS=('status','launched','expected_exit','bounds','recipe','artifact','exit','duration_ns','timed_out','captures','counts','emitted_instruction_execution','hardware_subjects','performance_credit')
+MAPS_PARSE_INPUTS = {'tests/maps_parse_memo/oracle.c': {'bytes': 11808, 'sha256': 'bf5df0a14673c7e0a6c0af6896d8935657b147ace9039d53e79f4a139eefdf71'}, 'tests/maps_parse_memo/build.sh': {'bytes': 848, 'sha256': '8e11ad01d85b8de4ef28dd36f706a6030d6036aa2fde24533bc01250481a6aca'}}
+MAPS_PARSE_STDOUT = b'{"version":1,"cases":72,"byte_changes":52,"io_failures":3,"state_controls":5,"differential_controls":4}\n'
+MAPS_PARSE_COUNTS = {'version': 1, 'cases': 72, 'byte_changes': 52, 'io_failures': 3, 'state_controls': 5, 'differential_controls': 4}
+MAPS_PARSE_MACROS = ('LI2_MAPS_PHASE_REUSE=1','LI2_MAPS_MAINTAINED=1','LI2_MAPS_DIFFERENTIAL=1','LI2_MAPS_PARSE_MEMO=1','LI2_MAPS_PARSE_MEMO_TEST=1')
+
 
 
 
@@ -517,6 +522,64 @@ def native_probe_component(builder,private,pin,binary,run,r):
     state.update(status='passed',counts=PROBE_COUNTS)
 
 
+def maps_parse_component(builder,private,pin,binary,run,r):
+    """Actual lifecycle TU with scripted RAW acquisitions; no guest execution."""
+    state=r['maps_parse_component'];state['status']='failed'
+    fixture=SELECTED/'tests/maps_parse_memo';script=pin(fixture/'build.sh')
+    for name,want in MAPS_PARSE_INPUTS.items():
+        need(digest(fact(pin(SELECTED/name)))==digest(want),'exact maps-parse-memo component source '+name)
+    output=private/'maps-parse-memo-component';output.mkdir();exe=output/'maps-parse-memo'
+    rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one actual maps-parse-memo one-TU recipe')
+    argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$selected_dir':SELECTED,
+        '$parent_dir':SELECTED.parent,'$fixture_dir':fixture,'$output_dir':output})
+    units=[str(pin(fixture/'oracle.c'))]
+    need(argv[-2:]==['-o',str(exe)]and[x for x in argv if x.endswith('.c')]==units and
+         [x for x in argv if x.startswith('-D')]==['-D'+value for value in MAPS_PARSE_MACROS] and
+         not any(x.endswith('.a')for x in argv)and '-DNDEBUG'not in argv and all(x in argv for x in
+         ('-std=gnu11','-O2','-g','-fno-builtin','-mgeneral-regs-only','-Wall','-Wextra','-Werror','-fno-stack-protector',
+          '-fno-tree-loop-distribute-patterns','-fno-tree-vectorize','-fno-asynchronous-unwind-tables',
+          '-ffunction-sections','-fdata-sections','-Wl,--gc-sections,-z,noexecstack,--build-id=none')),
+         'exact assertion-enabled actual maps parser component, no decoder archive')
+    flags=[x for x in argv[1:-2]if x not in units and not x.startswith('-Wl,')]
+    _,out,err=run('maps-parse-memo-headers',[builder.tools['cc'],*flags,'-M','-MT','li2_maps_parse',*units],
+        profile='finite',env=builder.environment)
+    lines=out.decode().replace('\\\n',' ').splitlines()
+    need(not err and len(lines)==1 and all(x.startswith('li2_maps_parse: ')for x in lines),
+         'complete actual one-TU maps-parse-memo dependency rule')
+    includes={str(pin(name)):fact(pin(name))for line in lines for name in shlex.split(line.split(':',1)[1])}
+    need(set(units)|{str(SELECTED/n)for n in('lifecycle_loader.c','maps_parse_memo.inc','maps_view.inc')}<=set(includes),
+         'whole actual parser/memo/maintained-view implementation in compiler closure')
+    state.update(recipe=fact(script),argv=argv,headers=includes)
+    run('maps-parse-memo-build',argv,profile='finite',env=builder.environment)
+    exe=binary(exe);data,head,segments=elf(exe)
+    need(head[1]in(2,3)and head[2:4]==(62,1)and
+         all(s[2]+s[5]<=len(data)and s[5]<=s[6]and s[1]&3!=3 for s in segments if s[0]==1),
+         'complete maps-parse-memo executable without WX loads')
+    loader=pin(interpreter(exe));state['runtime_libraries']={}
+    _,out,err=run('maps-parse-memo-libraries',[loader,'--list',exe],profile='finite',env=builder.environment)
+    need(not err,'actual maps-parse-memo loader listing')
+    for line in out.decode().splitlines():
+        if re.fullmatch(r'\s*linux-vdso.so.1 \(0x[0-9a-f]+\)',line):continue
+        match=re.fullmatch(r'\s*(?:\S+ => )?(/\S+) \(0x[0-9a-f]+\)',line)
+        need(match is not None,'one resolved actual maps-parse-memo library')
+        path=pin(match[1]);need(path.name not in state['runtime_libraries'],'unique maps-parse-memo library basename')
+        state['runtime_libraries'][path.name]=dict(path=str(path),**fact(path))
+    need(any(v['path']==str(loader)for v in state['runtime_libraries'].values()),
+         'actual interpreter in complete maps-parse-memo runtime closure')
+    state['artifact']=fact(exe)
+    try:row,out,err=run('maps-parse-memo-run',[exe],profile='finite',env=builder.environment)
+    finally:
+        actual=r['commands'][-1]
+        if actual['name']=='maps-parse-memo-run':
+            state.update(exit=actual.get('exit'),duration_ns=actual.get('duration_ns'),timed_out=actual.get('timed_out'),
+                launched=type(actual.get('pid'))is int,captures={k:{n:v[n]for n in('bytes','sha256')}
+                for k,v in actual.get('captures',{}).items()})
+    need(row['exit']==0 and out==MAPS_PARSE_STDOUT and err==b'','whole exact actual maps-parse-memo component population')
+    need(all(fact(name)==value for name,value in includes.items()),'whole maps-parse-memo component inputs unchanged')
+    state.update(status='passed',counts=MAPS_PARSE_COUNTS)
+
+
+
 def repeat_setup_completed(stderr,image,summary,application,protected_tls):
     """Exact positive fixture site and observed-TLS identity; no row rewriting."""
     parsed={}
@@ -548,6 +611,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
     authority_component(builder,products,private,pin,binary,aliases,run,r)
     dispatch_component(builder,products,private,pin,binary,aliases,run,r)
     native_probe_component(builder,private,pin,binary,run,r)
+    maps_parse_component(builder,private,pin,binary,run,r)
     reader,owner_reader,native_policy=reader_support(builder,private,pin,binary,run,r)
     original=compile_subject(builder,private,pin,binary,run,r)
     app_layout=reader.elf(original.read_bytes(),native_policy)
@@ -568,7 +632,9 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
              holder['release_build']['profile']=='persistent-active-domain-'+('differential'if lane=='differential'else'capture')+'-v4'and
              holder['release_build']['active_domain']['differential']==(lane=='differential')and
              holder['release_build']['active_domain']['native_probe']is True and
-             holder['release_build']['persistent_binding']['native_probe']is True,
+             holder['release_build']['persistent_binding']['native_probe']is True and
+             holder['release_build']['active_domain']['parse_memo']is True and
+             holder['release_build']['persistent_binding']['parse_memo']is True,
              'separate exact maintained/differential actual builds')
     need(digest(r['lanes']['maintained']['subject_artifacts']['original'])==
          digest(r['lanes']['differential']['subject_artifacts']['original'])==digest(fact(original)),
@@ -675,6 +741,8 @@ def main():
         hardware=hardware(cpu),commands=[],cases=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control),lane=lane,mode=mode,control=control,
         expected_exit=0,status='unexecuted',launched=False)for lane,mode,control in ORDER],
         namespace_aliases={},terminal_reports={},lanes={},bounds=BOUNDS,error=None,final_errors=[],
+        maps_parse_component=dict(status='unexecuted',launched=False,expected_exit=0,bounds=BOUNDS['finite'],
+            emitted_instruction_execution=0,hardware_subjects=0,performance_credit=False),
         native_probe_component=dict(status='unexecuted',launched=False,expected_exit=0,bounds=BOUNDS['finite'],
             emitted_instruction_execution=0,hardware_subjects=0,performance_credit=False),
         component_oracles=[dict(name=n,status='unexecuted',launched=False,expected_exit=0,bounds=BOUNDS['finite'],
@@ -773,6 +841,8 @@ def main():
             ('span_fast_bytes.h','tests/span_fast_bytes/oracle.c','tests/span_fast_bytes/build.sh')}
         required|={str((SELECTED/name).relative_to(ROOT))for name in COMPONENT_INPUTS}
         required|={str((SELECTED/name).relative_to(ROOT))for name in PROBE_INPUTS}
+        required|={str((SELECTED/name).relative_to(ROOT))for name in MAPS_PARSE_INPUTS}
+        required.add('tools/page-entry/selected/maps_parse_memo.inc')
         required|={'evaluation/inprocess/linked_native_probe_reports.py',
             'tools/page-entry/selected/linked_native_probe_report.inc'}
         need(required<=tracked,'all application/owner/build/reader sources committed')
@@ -801,6 +871,7 @@ def main():
              'both active components mandatory independently of the three hardware subjects')
         need(r['seed_prerequisite']['status']=='passed','independent seed prerequisite remains separately mandatory')
         need(r['native_probe_component']['status']=='passed','actual probe component mandatory before any hardware')
+        need(r['maps_parse_component']['status']=='passed','actual maps parser component mandatory before any hardware')
         r['status']='passed'
     except BaseException as error:
         if r['error']is None:r['error']=type(error).__name__+': '+str(error)
@@ -866,6 +937,7 @@ def main():
             ('name','status','launched','expected_exit','bounds','emitted_instruction_execution','hardware_subjects','performance_credit',
              'recipe','archive','features','artifact','exit','duration_ns','timed_out','captures','summaries')}for s in r['component_oracles']]
         public['native_probe_component']={k:v for k,v in r['native_probe_component'].items()if k in PROBE_PUBLIC_FIELDS}
+        public['maps_parse_component']={k:v for k,v in r['maps_parse_component'].items()if k in PROBE_PUBLIC_FIELDS}
         public['copy_oracle']={k:v for k,v in r.get('application_build',{}).get('copy_oracle',{}).items()if k in ('status','expected_counts','counts','recipe','artifact','body','exit','duration_ns','bounds','captures','qualification_credit','performance_credit')}
         public['cases']=[public_case(c)for c in r['cases']]
         public['rseq_mapping']={c['lane']:c.get('rseq_mapping')for c in r['cases']if c['lane']!='native'}

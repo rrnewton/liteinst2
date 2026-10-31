@@ -156,6 +156,9 @@ static int number_checked(size_t *at,size_t end,unsigned base,char separator,
 static void spaces(size_t *at,size_t end) {
     while (*at<end && maps_bytes[*at]==' ') ++*at;
 }
+#ifdef LI2_MAPS_PARSE_MEMO
+#include "maps_parse_memo.inc"
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
 #define read_maps_checked read_maps_fresh
 #ifdef LI2_EVENT_PROFILE
@@ -208,6 +211,11 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
 #ifdef LI2_EVENT_PROFILE
     LI2_EVENT_SCOPE(event_parse,LI2_EV_PARSE);
 #endif
+#ifdef LI2_MAPS_PARSE_MEMO
+    struct maps_parse_scope parse_scope __attribute__((cleanup(maps_parse_end)))={0};
+    int memo=maps_parse_begin(&parse_scope,length,p,e);
+    if(memo)return memo<0?-memo:0;
+#endif
     row_count=0; size_t at=0;
     while (at<length) {
         size_t end=at;
@@ -241,6 +249,9 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
         if (at==start || (row_count>1 && rows[row_count-2].end>r->first)) return check_error(e,112,0);
         at=end+1; p->rows=row_count;
     }
+#ifdef LI2_MAPS_PARSE_MEMO
+    maps_parse_save(length);
+#endif
     return 0;
 }
 #undef MAPS_READ_RAW

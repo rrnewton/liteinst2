@@ -168,9 +168,9 @@ def active_prerequisite(path,r,pin,binary,archive,active):
              build['capture']is True and build['profile']=='persistent-active-domain-'+mode+'-v4'and
              build['persistent_binding']['profile']=='persistent-active-domain-'+mode+'-v4'and
              type(build['persistent_binding']['version'])is int and build['persistent_binding']['version']==4 and
-             build['persistent_binding']['native_probe']is True and
+             build['persistent_binding']['native_probe']is True and build['persistent_binding']['parse_memo']is True and
              digest(build['active_domain'])==digest(dict(version=4,slots=2,same_source_pair=True,
-                 joint_receipts=3,directory_heads=256,maintained_rseq=True,differential=lane=='differential',native_probe=True,
+                 joint_receipts=3,directory_heads=256,maintained_rseq=True,differential=lane=='differential',native_probe=True,parse_memo=True,
                  immutable_reconstruction='two-shared-certificates')),
              'same archive, distinct version4 policy and exact independent lane build')
         need(D(build['capture_extents'])==D(dict(build['capture_extents'],
@@ -336,6 +336,20 @@ def active_prerequisite(path,r,pin,binary,archive,active):
          'separate actual native-probe component and unchanged finite bounds; no native authority credit')
     need(digest(public['native_probe_component'])==digest({k:v for k,v in state.items()if k in active.PROBE_PUBLIC_FIELDS}),
          'whole actual public native-probe component projection')
+    state=a['maps_parse_component'];row=commands['maps-parse-memo-run']
+    need(state['status']=='passed'and state['launched']is True and
+         digest([state['exit'],state['expected_exit'],row['exit'],row['expected_exit']])==digest([0]*4)and
+         row['profile']=='finite'and digest(row['bounds'])==digest(state['bounds'])==digest(BOUNDS['finite'])and
+         state['timed_out']is False and state['duration_ns']==row['duration_ns']and
+         digest(state['counts'])==digest(active.MAPS_PARSE_COUNTS)and
+         digest(state['captures'])==digest({k:{n:v[n]for n in('bytes','sha256')}for k,v in row['captures'].items()})and
+         binary(private/row['captures']['stdout']['file']).read_bytes()==active.MAPS_PARSE_STDOUT and
+         binary(private/row['captures']['stderr']['file']).read_bytes()==b''and
+         row['argv']==[state['argv'][-1]]and digest(fact(binary(state['argv'][-1])))==digest(state['artifact'])and
+         state['emitted_instruction_execution']==state['hardware_subjects']==0 and state['performance_credit']is False,
+         'separate actual maps-parser component and unchanged finite bounds; no guest or parser speedup credit')
+    need(digest(public['maps_parse_component'])==digest({k:v for k,v in state.items()if k in active.PROBE_PUBLIC_FIELDS}),
+         'whole actual public maps-parser component projection')
     seed=a['seed_prerequisite']
     need(seed['status']=='passed'and seed['launched']is True and digest([seed['exit'],seed['expected_exit']])==digest([0,0])and
          digest(seed['bounds'])==digest(BOUNDS['seed'])and
@@ -390,7 +404,10 @@ def main():
         'tools/page-entry/selected/persistent_retained_two_counter_binding.py','tools/page-entry/selected/build-persistent-retained-two-counters.sh',
         'evaluation/inprocess/persistent_active_domain.py','evaluation/inprocess/persistent_active_domain_build.py',
         'tools/page-entry/selected/persistent_active_domain_binding.py','tools/page-entry/selected/build-persistent-active-domain-counters.sh',
-        'tools/page-entry/selected/persistent_active_domain.inc','tools/page-entry/selected/rseq_current_data.inc')
+        'tools/page-entry/selected/persistent_active_domain.inc','tools/page-entry/selected/rseq_current_data.inc',
+        'tools/page-entry/selected/maps_parse_memo.inc',
+        'tools/page-entry/selected/tests/maps_parse_memo/oracle.c',
+        'tools/page-entry/selected/tests/maps_parse_memo/build.sh')
     need(set(required) <= set(current), 'complete committed resident/runtime/build source population')
     need(all((ROOT/p).read_bytes()==b for p,b in actual.items()),'all whole committed local source/data')
     need((ROOT/SCRIPT).read_bytes()==actual[SCRIPT],'whole committed collector identity')
@@ -526,10 +543,11 @@ def main():
                  shared_boundaries=8,code_pages=17,emitter_slot_bytes=512,emitter_boundaries=64)) and
              r['release_build'].get('counters') is True and r['release_build'].get('retained_counters') is True and
              D(r['release_build'].get('active_domain'))==D(dict(version=4,slots=2,same_source_pair=True,joint_receipts=3,
-                 directory_heads=256,maintained_rseq=True,differential=False,native_probe=True,immutable_reconstruction=None))and
+                 directory_heads=256,maintained_rseq=True,differential=False,native_probe=True,parse_memo=True,immutable_reconstruction=None))and
              D(r['release_build']['counter_schema'])==D(dict(version=2,bytes=752,page=4096,initial_seals=6,final_seals=23))and
              r['release_build']['persistent_binding']['profile']=='persistent-active-domain-counters-v4'and
              r['release_build']['persistent_binding']['native_probe']is True and
+             r['release_build']['persistent_binding']['parse_memo']is True and
              type(r['release_build']['persistent_binding']['version'])is int and
              r['release_build']['persistent_binding']['version']==4,
              'actual distinct active-domain-v4 release and authoritative counter ABI; no capture')
