@@ -1,0 +1,1743 @@
+{
+  "executed_private_collectors": true,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 3,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "loaded_miss_resumption": false,
+  "observations": {
+    "component": {
+      "bounds": {
+        "build": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "component": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_closure": {
+        "all_capture_facts_authenticated": true,
+        "all_exit_zero": true,
+        "all_no_timeout": true,
+        "all_reaped": true,
+        "count": 35,
+        "schedule": [
+          "resolve-cc1",
+          "resolve-collect2",
+          "resolve-as",
+          "resolve-ld",
+          "version-cc",
+          "version-python3",
+          "version-as",
+          "version-ld",
+          "version-nm",
+          "link-input-crt1.o",
+          "link-input-Scrt1.o",
+          "link-input-crti.o",
+          "link-input-crtn.o",
+          "link-input-crtbegin.o",
+          "link-input-crtbeginS.o",
+          "link-input-crtend.o",
+          "link-input-crtendS.o",
+          "link-input-libgcc.a",
+          "link-input-libgcc_eh.a",
+          "link-input-libgcc_s.so",
+          "link-input-libgcc_s.so.1",
+          "link-input-libc.so",
+          "link-input-libc_nonshared.a",
+          "link-input-libc.so.6",
+          "link-input-libdl.a",
+          "link-input-libpthread.a",
+          "link-input-libm.so",
+          "link-input-libm.so.6",
+          "link-input-libmvec.so.1",
+          "compiler-specs",
+          "retained-archive-exports",
+          "headers",
+          "build",
+          "runtime-dependencies",
+          "component"
+        ],
+        "whole_projected_rows_sha256": "03dde6b45d3d8eae31c449a93c78aa198538c2567df2c814cddf2212c203dd1f"
+      },
+      "commands": [
+        {
+          "argv_sha256": "a8c5170e861815ee1fde516f6f40fa82cd867d910f116b92913a1da211c841ae",
+          "bounds": [
+            30,
+            536870912,
+            16777216,
+            60
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 1873,
+              "sha256": "e449cea1dea329cd408d51ed6bb2369b3a54633ea4b46dbb32d4fc5823602eaf"
+            }
+          },
+          "duration_ns": 709282783,
+          "exit": 0,
+          "name": "build"
+        },
+        {
+          "argv_sha256": "8c501a8e511ac182aed11ad5a7c349434354989b180152863786156b792b0149",
+          "bounds": [
+            5,
+            536870912,
+            16777216,
+            15
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 146,
+              "sha256": "461acd0b02ace14fc85215a661e35b5db2e4aedfd4556f28bd802f2c1a031495"
+            }
+          },
+          "duration_ns": 40570242,
+          "exit": 0,
+          "name": "component"
+        }
+      ],
+      "cpu": 3,
+      "inputs_unchanged": true,
+      "inventories": {
+        "aliases": {
+          "count": 215,
+          "sha256": "594d7e01e827e6c5a5efa9de6c6f8fc2127ef2a7f0692ed410c18d8d4811b617"
+        },
+        "artifacts": {
+          "count": 122,
+          "sha256": "5f22e4c987b23ef34f9341e45ef65b5dd2e4665cb1d1a3e70c325bcfc24881a9"
+        },
+        "inputs": {
+          "count": 180,
+          "sha256": "96a62ee1c3ac5a18f73c9a7afa6b57e555e44190712996afab429c564b1cdeb8"
+        }
+      },
+      "receipt": {
+        "bytes": 196807,
+        "mode": "0644",
+        "sha256": "cf64c6a93c523be8eb6b8435a9d99783190f21bf36f2c889e3b90e1980ad2e85"
+      },
+      "result": {
+        "arguments": 6,
+        "bindings": 16,
+        "corruptions": 20,
+        "decoded": 795,
+        "descriptors": 15,
+        "forms": 512,
+        "geometry": 4,
+        "interiors": 459,
+        "models": 671,
+        "recovery_controls": 16
+      },
+      "source": {
+        "head_sources_match": true,
+        "revision": "ca7cf1336c18c7eefd786efc65683252faf681ab",
+        "source_manifest_sha256": "1dda92c0401b3fa3a5736dd8c4d681c1fa42a9b57f8dee33041ea6a2f6e4429b",
+        "tracked_clean": true,
+        "tree": "5ed0be3728b84c31ffe76148aadaa0d155333c28"
+      },
+      "source_unchanged": true,
+      "status": "passed"
+    },
+    "native": {
+      "bounds": {
+        "build": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_closure": {
+        "all_capture_facts_authenticated": true,
+        "all_exit_zero": true,
+        "all_no_timeout": true,
+        "all_reaped": true,
+        "count": 39,
+        "schedule": [
+          "resolve-cc1",
+          "resolve-collect2",
+          "resolve-as",
+          "resolve-ld",
+          "version-cc",
+          "version-as",
+          "version-ld",
+          "version-nm",
+          "link-input-crt1.o",
+          "link-input-Scrt1.o",
+          "link-input-crti.o",
+          "link-input-crtn.o",
+          "link-input-crtbegin.o",
+          "link-input-crtbeginS.o",
+          "link-input-crtend.o",
+          "link-input-crtendS.o",
+          "link-input-libgcc.a",
+          "link-input-libgcc_eh.a",
+          "link-input-libgcc_s.so",
+          "link-input-libgcc_s.so.1",
+          "link-input-libc.so",
+          "link-input-libc_nonshared.a",
+          "link-input-libc.so.6",
+          "link-input-libdl.a",
+          "link-input-libpthread.a",
+          "link-input-libm.so",
+          "link-input-libm.so.6",
+          "link-input-libmvec.so.1",
+          "compiler-specs",
+          "retained-archive-exports",
+          "headers-0",
+          "headers-1",
+          "headers-2",
+          "headers-3",
+          "build",
+          "emitted-inspection",
+          "runtime-dependencies",
+          "native-0",
+          "read-native"
+        ],
+        "whole_projected_rows_sha256": "680fb639fd153dea486a1ee8797293d1a3c60fe3c6ee2a87800598bda85cae53"
+      },
+      "commands": [
+        {
+          "argv_sha256": "dd936d36252f143f42ecbe17094f0afdcba6b61e86a05a84d5b6deac552eb811",
+          "bounds": [
+            30,
+            536870912,
+            16777216,
+            60
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "duration_ns": 534053179,
+          "exit": 0,
+          "name": "build"
+        },
+        {
+          "argv_sha256": "d5c024f91e0433bbab9f89a786f4cdd2b32a7aa59bb62add22da0bf2b85f9700",
+          "bounds": [
+            5,
+            536870912,
+            16777216,
+            15
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 8845632,
+              "sha256": "05a21bfa5f20e031efb197e90dfade412aa623097cc8d2149691ba117c58693b"
+            }
+          },
+          "duration_ns": 13913099,
+          "exit": 0,
+          "name": "native-0"
+        },
+        {
+          "argv_sha256": "52f40de8a57c01b765348705ebc76f4f4af758702676d00fef21d46687a1f86e",
+          "bounds": [
+            5,
+            536870912,
+            16777216,
+            15
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 14249,
+              "sha256": "cf4f0a48f2a3e269c95845b1c8b93edd3b12a3d5bbf0c3dab5926064409e488f"
+            }
+          },
+          "duration_ns": 158593340,
+          "exit": 0,
+          "name": "read-native"
+        }
+      ],
+      "cpu": 3,
+      "inputs_unchanged": true,
+      "inventories": {
+        "aliases": {
+          "count": 674,
+          "sha256": "3001e9e1c345f88615bb93b2f0727852e336979e5ca0d5c168ac74d20d613038"
+        },
+        "artifacts": {
+          "count": 121,
+          "sha256": "ad4e3cc18b303b774d17b061e73639c47d5e244ac16ceb70aa0c8b7ef4222b40"
+        },
+        "inputs": {
+          "count": 619,
+          "sha256": "c13d455f16e78f8bbdbcd9f2210cdc886ef43ab2582b18cdeb6e18a9e892d405"
+        }
+      },
+      "raw_capture": {
+        "bytes": 8845632,
+        "sha256": "05a21bfa5f20e031efb197e90dfade412aa623097cc8d2149691ba117c58693b"
+      },
+      "receipt": {
+        "bytes": 459503,
+        "mode": "0644",
+        "sha256": "cd5f226965dfe2b9ec09ce76ada8a49b9bbbf06215692dccf78fdf4df5eb6290"
+      },
+      "result": {
+        "before_load_misses": 2,
+        "cases": 16,
+        "component_all53_boundaries_separate": true,
+        "loaded_miss_resumption": false,
+        "matched_hit_pairs": 6,
+        "matched_load_fault_pairs": 2,
+        "native_lanes": 24,
+        "observations": [
+          {
+            "id": 0,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "0333ccb6c7e0bfeea012dba39af1a1fb7b8dce9c3509ca2c71c676b7bc61c4a5",
+            "row": 0,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 0
+          },
+          {
+            "id": 0,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "b9d1bc0caa08a5d4a1be3346a4bf6e02da5e72c1c2a0ab00ceefc77d923360ed",
+            "row": 0,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 1,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "5c9f73d4c345d11726b5bce4bb325eccff667fbea99f539e9e32e01276767d6b",
+            "row": 1,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 0
+          },
+          {
+            "id": 1,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "2cffff7e1aaed185658dc2f4edfc38dc414698803302031a69f0b342eef8bb11",
+            "row": 1,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 2,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "12d670bf256133135909e6d2fd43b80b68ec2cc240265a9eaeeb9cb502da1522",
+            "row": 2,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 0
+          },
+          {
+            "id": 2,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "f46221ca1a7a34032e1c2a8fafc3120910aa09c71b107237747ead085cfca319",
+            "row": 2,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 3,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "5a3eea55ee3156b0e6b00da5fbd7882c6873a00c4b581b46e9cd5f0ed0857ddc",
+            "row": 0,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 0
+          },
+          {
+            "id": 3,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "ab4e5e3e2af7aa342bf490d9e0d8f9e1930c3d2c5b0a492cd8fee041a4970c1a",
+            "row": 0,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 4,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "535f04c5f710a04084b1fe0e7a9e13b1f975f56e3d4305ad463064aec6ee098b",
+            "row": 1,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 0
+          },
+          {
+            "id": 4,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "7d6414d9861b732e0f56e22c669c4980210c1cebb506fe41b1e44c4b08576667",
+            "row": 1,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 5,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "99adcb2a3662619ea0b3b73d6905566c18790ad9651d67226274045457bae275",
+            "row": 2,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 0
+          },
+          {
+            "id": 5,
+            "kind": 0,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "11a95273f07b8fb2562a6a51886857d6098f5e254ddac284ed358d2b75a11948",
+            "row": 2,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 6,
+            "kind": 1,
+            "loaded_miss": true,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "310c566f969100309317fdd34d851490b804bc36c5784c784ee6e76c171239be",
+            "row": 0,
+            "rsp_delta": 0,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 7,
+            "kind": 1,
+            "loaded_miss": true,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "0c3cc11e2bf3c679500419024282931995fee90e4d7e80b320cb759fa3386f7a",
+            "row": 1,
+            "rsp_delta": 0,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 8,
+            "kind": 1,
+            "loaded_miss": true,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "c83cc127009978cc9b9f5508c4be351f865a0619b905eca0f9c0e7e6b5b1ce71",
+            "row": 2,
+            "rsp_delta": 0,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 9,
+            "kind": 1,
+            "loaded_miss": true,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "148171d7d200cd2c6ed6e7ee2cb84ce91096c23ea82568eff54a71f1e203a974",
+            "row": 0,
+            "rsp_delta": 0,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 10,
+            "kind": 2,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "b721f140bc388ce5088c1eb2d513978d134d1c8f5c2e18745316e07ccd050a3c",
+            "row": 1,
+            "rsp_delta": 0,
+            "target_valid": false,
+            "which": 1
+          },
+          {
+            "id": 11,
+            "kind": 2,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "e321b70923808414c643221e6e2b9035b82a540ea46cc56fda9961a30a49ec9d",
+            "row": 2,
+            "rsp_delta": 0,
+            "target_valid": false,
+            "which": 1
+          },
+          {
+            "id": 12,
+            "kind": 3,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "982b7ad1706c65251831c00340450c46ee5bb7571cda41f75eb0720809ff36d4",
+            "row": 0,
+            "rsp_delta": 0,
+            "target_valid": false,
+            "which": 0
+          },
+          {
+            "id": 12,
+            "kind": 3,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "90339dcbbaa7ff9dd5195a952de779b12006ff03e8d0db218666afbf65f4703e",
+            "row": 0,
+            "rsp_delta": 0,
+            "target_valid": false,
+            "which": 1
+          },
+          {
+            "id": 13,
+            "kind": 3,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "64224d38c911ef146cb867fcac330e8aec3d4fe17348b21cd4d93f9bf7d4f2e9",
+            "row": 1,
+            "rsp_delta": 0,
+            "target_valid": false,
+            "which": 0
+          },
+          {
+            "id": 13,
+            "kind": 3,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 0,
+            "observed_trace_events": 0,
+            "observed_unique_boundaries": 0,
+            "raw_sha256": "9d5337824477f056926a135d07d2f589dd40cfee20677c8605ca1c34ecaacdb1",
+            "row": 1,
+            "rsp_delta": 0,
+            "target_valid": false,
+            "which": 1
+          },
+          {
+            "id": 14,
+            "kind": 4,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 1,
+            "observed_trace_events": 45,
+            "observed_unique_boundaries": 38,
+            "raw_sha256": "92db44ea5f1b142e271e251b79c5320c6740ff8953cecc501e02c2331e343497",
+            "row": 2,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          },
+          {
+            "id": 15,
+            "kind": 4,
+            "loaded_miss": false,
+            "observed_boundary_offsets_index": 2,
+            "observed_trace_events": 35,
+            "observed_unique_boundaries": 35,
+            "raw_sha256": "6bc0034e161701008b16326fb3838f3a438a2edc9ba14e26d848fb4204b663fe",
+            "row": 0,
+            "rsp_delta": 8,
+            "target_valid": true,
+            "which": 1
+          }
+        ],
+        "observed_boundary_offset_lists": [
+          [],
+          [
+            7,
+            14,
+            21,
+            28,
+            29,
+            32,
+            42,
+            46,
+            49,
+            55,
+            59,
+            62,
+            68,
+            72,
+            79,
+            89,
+            93,
+            100,
+            106,
+            113,
+            119,
+            126,
+            130,
+            133,
+            137,
+            143,
+            150,
+            153,
+            231,
+            235,
+            242,
+            244,
+            245,
+            252,
+            259,
+            266,
+            273,
+            278
+          ],
+          [
+            7,
+            14,
+            21,
+            28,
+            29,
+            32,
+            42,
+            46,
+            49,
+            55,
+            59,
+            62,
+            68,
+            72,
+            79,
+            89,
+            93,
+            100,
+            106,
+            113,
+            119,
+            126,
+            130,
+            133,
+            137,
+            231,
+            235,
+            242,
+            244,
+            245,
+            252,
+            259,
+            266,
+            273,
+            278
+          ]
+        ],
+        "observed_boundary_union": [
+          7,
+          14,
+          21,
+          28,
+          29,
+          32,
+          42,
+          46,
+          49,
+          55,
+          59,
+          62,
+          68,
+          72,
+          79,
+          89,
+          93,
+          100,
+          106,
+          113,
+          119,
+          126,
+          130,
+          133,
+          137,
+          143,
+          150,
+          153,
+          231,
+          235,
+          242,
+          244,
+          245,
+          252,
+          259,
+          266,
+          273,
+          278
+        ],
+        "observed_trace_events": [
+          45,
+          35
+        ],
+        "observed_unique_boundaries": [
+          38,
+          35
+        ],
+        "old_RET32_replaced": false,
+        "old_component671_replaced": false,
+        "pairs": [
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 1,
+            "id": 0,
+            "kind": "hit",
+            "original_observation_index": 0
+          },
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 3,
+            "id": 1,
+            "kind": "hit",
+            "original_observation_index": 2
+          },
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 5,
+            "id": 2,
+            "kind": "hit",
+            "original_observation_index": 4
+          },
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 7,
+            "id": 3,
+            "kind": "hit",
+            "original_observation_index": 6
+          },
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 9,
+            "id": 4,
+            "kind": "hit",
+            "original_observation_index": 8
+          },
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 11,
+            "id": 5,
+            "kind": "hit",
+            "original_observation_index": 10
+          },
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 19,
+            "id": 12,
+            "kind": "load_fault",
+            "original_observation_index": 18
+          },
+          {
+            "full_state_stack_equal": true,
+            "generated_observation_index": 21,
+            "id": 13,
+            "kind": "load_fault",
+            "original_observation_index": 20
+          }
+        ],
+        "performance_credit": false,
+        "post_load_mutations": 2,
+        "production_owner_authority": false,
+        "qualification_credit": false,
+        "schema": 1,
+        "scope": "Actual typed RET hits, load faults and stopped loaded misses; no generic RET continuation equivalence.",
+        "source": {
+          "bytes": 8845632,
+          "cpu": 3,
+          "pid": 2973944,
+          "sha256": "05a21bfa5f20e031efb197e90dfade412aa623097cc8d2149691ba117c58693b"
+        },
+        "status": "finite_ret_adapter_observed",
+        "typed_loaded_misses": 4
+      },
+      "source": {
+        "head_sources_match": true,
+        "revision": "6bae78dc85d2a90c085e85fee89a0b21f2cfab49",
+        "source_manifest_sha256": "2dfbf11b1a26164a122d5d8e14cc478416393531d5f8d2d81fbb35ff3ac337c0",
+        "tracked_clean": true,
+        "tree": "f537a12ad3117180497ef94bdffbeea49cdb5325"
+      },
+      "source_unchanged": true,
+      "status": "passed"
+    },
+    "ret32": {
+      "bounds": {
+        "build": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "command_closure": {
+        "all_capture_facts_authenticated": true,
+        "all_exit_zero": true,
+        "all_no_timeout": true,
+        "all_reaped": true,
+        "count": 29,
+        "schedule": [
+          "resolve-cc1",
+          "resolve-collect2",
+          "resolve-as",
+          "resolve-ld",
+          "version-cc",
+          "version-as",
+          "version-ld",
+          "link-input-crt1.o",
+          "link-input-Scrt1.o",
+          "link-input-crti.o",
+          "link-input-crtn.o",
+          "link-input-crtbegin.o",
+          "link-input-crtbeginS.o",
+          "link-input-crtend.o",
+          "link-input-crtendS.o",
+          "link-input-libgcc.a",
+          "link-input-libgcc_s.so",
+          "link-input-libc.so",
+          "link-input-libc_nonshared.a",
+          "link-input-libc.so.6",
+          "link-input-libgcc_s.so.1",
+          "compiler-specs",
+          "headers-0",
+          "headers-1",
+          "build",
+          "emitted-inspection",
+          "runtime-dependencies",
+          "native-0",
+          "read-ret32"
+        ],
+        "whole_projected_rows_sha256": "93aefead901f9eb567aad5499624a0df144636f2c21a8a957d9a97e0b14b2a3c"
+      },
+      "commands": [
+        {
+          "argv_sha256": "bcf2ffc66ef2ac989e9a223b0259df7d8874b4b16fa72d406750a47caf20d51c",
+          "bounds": [
+            30,
+            536870912,
+            16777216,
+            60
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          },
+          "duration_ns": 188573595,
+          "exit": 0,
+          "name": "build"
+        },
+        {
+          "argv_sha256": "de0cedc6145b3f3597b51c03e23a781ed7fc222f0853ac2fe48222a32dffbcf6",
+          "bounds": [
+            5,
+            536870912,
+            16777216,
+            15
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 5879872,
+              "sha256": "782b5cd64726fbd17250c444a0de56ebdf84ec3cab512fb4df3acf5020d5599b"
+            }
+          },
+          "duration_ns": 6635262,
+          "exit": 0,
+          "name": "native-0"
+        },
+        {
+          "argv_sha256": "57987aee610db163042d59a1b7d6da04c66af5b1b705a8dab3c678ca281e99df",
+          "bounds": [
+            5,
+            536870912,
+            16777216,
+            15
+          ],
+          "captures": {
+            "stderr": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stdout": {
+              "bytes": 81397,
+              "sha256": "d38c182d699fa9ffd2e4a613581e2ace25630d3f90451efcd06fdb8a1d146e4b"
+            }
+          },
+          "duration_ns": 132683659,
+          "exit": 0,
+          "name": "read-ret32"
+        }
+      ],
+      "cpu": 3,
+      "inputs_unchanged": true,
+      "inventories": {
+        "aliases": {
+          "count": 340,
+          "sha256": "f2efe022c2a1f8699b1db93deffebb343fc9694e406d2e21e48f7860a69b4747"
+        },
+        "artifacts": {
+          "count": 88,
+          "sha256": "3553ed7d95bface62b8f5a0ee295c2cf8a23fdd88b7f5a9df3b52c6af106c5db"
+        },
+        "inputs": {
+          "count": 328,
+          "sha256": "8ede3fc9b0904b96d71eba796ff4aa5a4c6cbc5683ed0356a0ef41b63a22ae1d"
+        }
+      },
+      "receipt": {
+        "bytes": 213676,
+        "mode": "0644",
+        "sha256": "4cf42676a9aabbaa5c8fbe246b37faa4a0948ea202eb125ecaa6535e012d5f50"
+      },
+      "result": {
+        "groups": [
+          {
+            "cases": 20,
+            "group": 0,
+            "rsp_commitment": {
+              "plus8": 10,
+              "unchanged": 10
+            },
+            "signals": {
+              "11:128": 10,
+              "11:2": 5,
+              "5:128": 5
+            }
+          },
+          {
+            "cases": 4,
+            "group": 1,
+            "rsp_commitment": {
+              "plus8": 2,
+              "unchanged": 2
+            },
+            "signals": {
+              "11:128": 2,
+              "11:2": 1,
+              "5:128": 1
+            }
+          },
+          {
+            "cases": 6,
+            "group": 2,
+            "rsp_commitment": {
+              "unchanged": 6
+            },
+            "signals": {
+              "11:2": 6
+            }
+          },
+          {
+            "cases": 2,
+            "group": 3,
+            "rsp_commitment": {
+              "unchanged": 2
+            },
+            "signals": {
+              "7:128": 2
+            }
+          }
+        ],
+        "native_cases": 32,
+        "native_lanes": 32,
+        "observations": [
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 0,
+            "id": 0,
+            "input_rflags": 514,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "5b3edf3729bf00020929cf2aecd079ace7a5c89fbc0ecabda7754f4c3be90049",
+            "rsp_delta_mod64": 8,
+            "si_code": 128,
+            "signal": 5,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "224f016dcdb25918a23a39d61e394f33e5b6b6d9365f0fa1b252baba36062649",
+            "trapno": 3
+          },
+          {
+            "error_code": 21,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 1,
+            "id": 1,
+            "input_rflags": 1559,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "1fda1ee3c678704391b44ce5a98ac56b3882daea419eb5697b5cdd54981a6eb0",
+            "rsp_delta_mod64": 8,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "63ab8cb0ff87108a536ba3058b7ae572860bd737a6aed57890a7e9f32c61ca54",
+            "trapno": 14
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 2,
+            "id": 2,
+            "input_rflags": 598,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "14aeda60616ba51e215be67b52ab9fd4ed27ec68eecb8d78741c1c6142d95a52",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "71defdbf4824dafbe5718ba12aa0fc822aefa35736926241822e4b0781a9ecde",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 3,
+            "id": 3,
+            "input_rflags": 1683,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "7eabf8c7388fde911e88faaa8fdfe0b70267465fbec0d4d5df83480405388a97",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "cb9d2e9a73f17ea2f3a4c96d82de1117805f47ea50315d08f87f1cd4bcfb1467",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 4,
+            "id": 4,
+            "input_rflags": 722,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "063775aa7d84dbaa666d2f95a42967cf8f8e1b5d9b6e74987d15474ee07e5d44",
+            "rsp_delta_mod64": 8,
+            "si_code": 128,
+            "signal": 5,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "6a1c6b2d657a10e73d61754a9532cc39a2f5b47a9c642422b1cb5524b0cc7691",
+            "trapno": 3
+          },
+          {
+            "error_code": 21,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 5,
+            "id": 5,
+            "input_rflags": 3591,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "4c909f76d042e9344c4b6c0a8db1240397c0e21344068ff729a6a78fae56daf0",
+            "rsp_delta_mod64": 8,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "83bce8eb61af236d1dd59a37b9adf479dccfa12a5fef9cd991c06d657f267d47",
+            "trapno": 14
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 6,
+            "id": 6,
+            "input_rflags": 2630,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "e96c44c5684f1efafa7efaf269d1a425377d16f05dc76bd078d7fc932d5a6e7e",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "c4fbac93dcc8df448ce872dae22141409b613ccf309678b47bfefa42b1230e9e",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 7,
+            "id": 7,
+            "input_rflags": 3715,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "2e5cf767267d7f29d6c5256df4fabf93cce6bec8e9e99b3cd23703831edc5d89",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "b943c0062942d88039819ce19928028bab8a3a3a7fecbf6e60a29e686b5cf281",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 8,
+            "id": 8,
+            "input_rflags": 2754,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "976cf16bfd62fcc9565ce72de1f1682f3a66b2a7019783a5b5f56cd2eb89fd02",
+            "rsp_delta_mod64": 8,
+            "si_code": 128,
+            "signal": 5,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "71c71f2e302512d73243f62f6131cc48dd35f2ea8b1f50d636098a972cdc58c6",
+            "trapno": 3
+          },
+          {
+            "error_code": 21,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 9,
+            "id": 9,
+            "input_rflags": 3799,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "7e02ee1a459b49ac20c832b8b94b8075e3e05175352c9fa36fd618fe6dca097b",
+            "rsp_delta_mod64": 8,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "40724c09dc34ecb6dc10e347c11734c6e8058ce49d5e54bfa12d0de15eb26cec",
+            "trapno": 14
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 10,
+            "id": 10,
+            "input_rflags": 534,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "3d499279453392855c6d10ccabbf594e6d3b90e0c251852948537a8eed764d84",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "d879d6b84c0a40970802626b3cf9e19ccfb2c8dd7b45777f9c58902a2e44fe95",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 11,
+            "id": 11,
+            "input_rflags": 1619,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "824b3529ba5b75d8bca97a3ba14dabbefb950e69c0eb1c70430efbe857a74e44",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "b3505c570bbb96f4527d2c6ca13343f45d716f6169e343421e4cc6c1aec6f7d9",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 12,
+            "id": 12,
+            "input_rflags": 658,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "063ba703469cce8db921425e1f145e1abbf9f5e72d323736c49b4613e7d6902f",
+            "rsp_delta_mod64": 8,
+            "si_code": 128,
+            "signal": 5,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "b5d3684c28e188f70265e99ae56ae09f7d5c628991916575b878284ccc3c73d7",
+            "trapno": 3
+          },
+          {
+            "error_code": 21,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 13,
+            "id": 13,
+            "input_rflags": 1735,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "21c33752526bfa0ff2af44c734d274e1693591b2aa1af63b7aa73544cef140a0",
+            "rsp_delta_mod64": 8,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "21049b129fffb08731de578fefb1ab13f3210942d67444fed4631bfa37e290a9",
+            "trapno": 14
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 14,
+            "id": 14,
+            "input_rflags": 2566,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "13de4d2fc3a1e534a9e87745174754c822187ef9ff4f6d04894963b6c2ec2d7b",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "ef888d66b535ea5ba4d46e302ed91bb8bbb9e0669e212771e01d410040dd22ea",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 15,
+            "id": 15,
+            "input_rflags": 3651,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "99a0f5cd6666a3e16218bcb9a6a970c482416e35f3cc3ba01594c1d8ea125b29",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "2e06e6118f7edf03ced4e9ebe29d5402f63af08a0463586c01fa4d8bca128442",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 16,
+            "id": 16,
+            "input_rflags": 2690,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "7a6355bf2e8f14d53e756812c6e185082a14bcab13a3054c1eb05cde0d36ef6e",
+            "rsp_delta_mod64": 8,
+            "si_code": 128,
+            "signal": 5,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "82074cb7e9ffef5af283c52ad6222184e8b04e326d939f837f0ab6cb0b86739c",
+            "trapno": 3
+          },
+          {
+            "error_code": 21,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 17,
+            "id": 17,
+            "input_rflags": 3735,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "d32ab80959b5f7ef981c60c521992ef9cfc991ab42c08d2cfe7af859d0b9ea69",
+            "rsp_delta_mod64": 8,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "a2a9e483d9bef250b982b669bfc583f3c4e56d8d0f660353e226377db257767d",
+            "trapno": 14
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 18,
+            "id": 18,
+            "input_rflags": 2774,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "1e99ee8506a2d0be3006a269547b8cae5535a248a92de7464fd5cd9abd584eb5",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "622c67c76485b82c17c41f5909d705ad34c059ba9c03609746a8de76ad7f8c1f",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 0,
+            "group_case": 19,
+            "id": 19,
+            "input_rflags": 1555,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "d705f05d0e205cb6c1993136f8b0831c077d8d33c4a43eaa4e876580d3b43f09",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "960fad7452d073e810fcb938a8c9400352e83b1c6869bd071974bf58db424035",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 1,
+            "group_case": 0,
+            "id": 20,
+            "input_rflags": 594,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "cb27acbb5a43049a151b25f0c527ab059add6be98af4f44bf8b7ec320ffcccd4",
+            "rsp_delta_mod64": 8,
+            "si_code": 128,
+            "signal": 5,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "1482590916e4f8ff7029a3a889a06399b580c26076b90f57ad8c3f7ce003e082",
+            "trapno": 3
+          },
+          {
+            "error_code": 21,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 1,
+            "group_case": 1,
+            "id": 21,
+            "input_rflags": 1671,
+            "observed_rsp_commitment": "plus8",
+            "raw_record_sha256": "9fc60ab5965f60ab9daf2d3d5349b27ae68a7571e2fa10c83c50bca97994eefd",
+            "rsp_delta_mod64": 8,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "d471d79addc930699343cb1eeab0648dc3baa0bcff968b50a0a2e0e94ad4c4f7",
+            "trapno": 14
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 1,
+            "group_case": 2,
+            "id": 22,
+            "input_rflags": 710,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "b77913fe740fb0ebd85edbe7b94b1331b9e78ab112f3160a57bd5f2f8afcdba2",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "42a52883a91b09d43d535f4675f1e9f20e55c00d0d234dc4f51ea9c9275e851c",
+            "trapno": 13
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 1,
+            "group_case": 3,
+            "id": 23,
+            "input_rflags": 3587,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "1e261242275cdafcb55bbf4ed0c6e72e9cb1bf4cabc17341f099941ea012db4f",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "9526f704eed6f94f02768814caede4359e7a85573685c7739863bf9871a36db5",
+            "trapno": 13
+          },
+          {
+            "error_code": 4,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 2,
+            "group_case": 0,
+            "id": 24,
+            "input_rflags": 2626,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "bed6584c9e6381cb024c5a16f181bc1fa37e43d5ac59c8a3668ee777db181c3e",
+            "rsp_delta_mod64": 0,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "6f6ff41ecdd71a4e1e76a4bad2e7d5e275d43b390688deb38a17e45f4fd9d74d",
+            "trapno": 14
+          },
+          {
+            "error_code": 4,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 2,
+            "group_case": 1,
+            "id": 25,
+            "input_rflags": 3671,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "de1446b8bd50c72fecc5f758e0a1a5b39f8e1385d645f49a4a1c1640eba98a1b",
+            "rsp_delta_mod64": 0,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "c46bbdf1fd7af64e44f74ac777dd6e3eadadaaf21cf8c873fe7ddfa2b33d394c",
+            "trapno": 14
+          },
+          {
+            "error_code": 4,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 2,
+            "group_case": 2,
+            "id": 26,
+            "input_rflags": 2710,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "ce3884314a4f4b00a543f0626eb66a9e311ea7ef6344e74ed18ae7eb155e4445",
+            "rsp_delta_mod64": 0,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "80fa3d302372eab4151f3d16087f1bddfddf0c1de3aad669d8bef6031172cbe4",
+            "trapno": 14
+          },
+          {
+            "error_code": 4,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 2,
+            "group_case": 3,
+            "id": 27,
+            "input_rflags": 3795,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "af298a28e77e7132024b7b5bf9cfc772f5a6123d7d2843303b6c29cc32cd43b7",
+            "rsp_delta_mod64": 0,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "460ab05c97c6f286dac23a9d753f79cdf37587e7f0a74e7d0c7cefc2e0d409a1",
+            "trapno": 14
+          },
+          {
+            "error_code": 4,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 2,
+            "group_case": 4,
+            "id": 28,
+            "input_rflags": 530,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "cf8fa1b706b25610daed53bd7026056fce6fbe70b2d111d9b8b852c1432c6244",
+            "rsp_delta_mod64": 0,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "08b3b7c2223a8c80db7ba7a958c86bf1b35331352fe492053584a80947360172",
+            "trapno": 14
+          },
+          {
+            "error_code": 4,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 2,
+            "group_case": 5,
+            "id": 29,
+            "input_rflags": 1607,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "79ebd74d2531b8e7dd9f21025d5551f74b2649cdd4cd0fdacf44ab7258e52583",
+            "rsp_delta_mod64": 0,
+            "si_code": 2,
+            "signal": 11,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": true,
+            "stack_sha256": "15c2b98d8501a911e952d81e475a3bbf8c33716a78bac133182ef92621c087c9",
+            "trapno": 14
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 3,
+            "group_case": 0,
+            "id": 30,
+            "input_rflags": 646,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "c4be3d5852acc89db34ae06bf31ed129a9c1b59c59cac1cddb3acb8dea44570b",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 7,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": false,
+            "stack_sha256": "02320a928c21089f9990ec77b4aea33c5e21e523b078c30dc454edccc00d00a1",
+            "trapno": 12
+          },
+          {
+            "error_code": 0,
+            "fp_sha256": "93ef9cdffadcb72131f83ad97cb7465fa8a91301ff0d3e1015d891d401b6616d",
+            "fp_storage_unchanged": true,
+            "fs_gs_unchanged": true,
+            "group": 3,
+            "group_case": 1,
+            "id": 31,
+            "input_rflags": 1731,
+            "observed_rsp_commitment": "unchanged",
+            "raw_record_sha256": "2ad4514f1852e06d90caec5aa3079d26777b3bfb745da83b09dafcfbc0e37033",
+            "rsp_delta_mod64": 0,
+            "si_code": 128,
+            "signal": 7,
+            "source_sha256": "af21a75d9494ec249dceccff54b6d467df8cc8af1e4566e8d879af47de3175cb",
+            "stack_bytes_unchanged": true,
+            "stack_operand_present": false,
+            "stack_sha256": "e83988192092ca0bf7f2271f5a7ef0e3569fc0ee31a4299a51f80a2d3efff35a",
+            "trapno": 12
+          }
+        ],
+        "owner_credit": false,
+        "performance_credit": false,
+        "production_admission_credit": false,
+        "qualification_credit": false,
+        "raw_source": {
+          "bytes": 5879872,
+          "pid": 947792,
+          "sha256": "782b5cd64726fbd17250c444a0de56ebdf84ec3cab512fb4df3acf5020d5599b"
+        },
+        "ret_continuation_safe": null,
+        "scope": "Actual unstepped C3 endpoint/fault observations; no generated replacement, owner or timing credit.",
+        "status": "observed_unqualified"
+      },
+      "source": {
+        "head_sources_match": true,
+        "revision": "e316a014eee2ce30bb1301490395763aedcfde8b",
+        "source_manifest_sha256": "4c63aaf65ce122e336a7ffc5537ea8fe57c6ccd1732d7521d37ad02e34e77311",
+        "tracked_clean": true,
+        "tree": "715bb1e23c313ccad92c38feb750e1a5264db0f1"
+      },
+      "source_unchanged": true,
+      "status": "observed_unqualified"
+    }
+  },
+  "observed_source_packets": {
+    "ret_component": "c8c8d7ef7390c89245421199d8f38da0d8eba59f3079fded8467e4f71da071d2",
+    "ret_native": "b7c02f98ce4f32f891f438c321c0ff3198ba748a5da2c1c8d301a40e3ec5c30a",
+    "ret_native_collector": "6a7094761be63f3ff5c48a7b4d7a0b97f5de9704e2b7b5d79788ac7e89ae7540"
+  },
+  "original_392_522_gates_changed": false,
+  "original_RET32_replaced": false,
+  "original_component671_replaced": false,
+  "owner_credit": false,
+  "performance_credit": false,
+  "production_enabled": false,
+  "profile": "experimental-ret-observations-through-6bae-v1",
+  "public_reproducer_executed": false,
+  "qualification_credit": false,
+  "schema": 1,
+  "scope": "Separate historical RET32, RET671 component and actual RET16/24 observations; no production RET owner or resumed loaded miss."
+}
