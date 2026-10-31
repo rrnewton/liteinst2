@@ -1,0 +1,1019 @@
+{
+ "actions": [
+  {
+   "accepted": {
+    "bytes": 1248,
+    "sha256": "a21af401d8961ec1a8a26d441c427db68f8666917de17007c75690e6a9e389b0"
+   },
+   "action": "compile_probe",
+   "attempt": 1,
+   "bounds": {
+    "cpu_seconds": 60,
+    "file_bytes": 134217728,
+    "wall_seconds": 90
+   },
+   "campaign": "execution-v1",
+   "cleanup_complete": true,
+   "cpu": 19,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "CUSTODY_PROBE_EXPECTED": "${PROBE_EXPECTED}",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "helper_elapsed_seconds": 0.8167767210397869,
+   "helper_receipt": {
+    "bytes": 588,
+    "sha256": "c74da5f54dd2cf45f2a72e5eaa511e6b6074067c7b981fdda3ea4e77c72dc1f8"
+   },
+   "intent": {
+    "bytes": 316,
+    "sha256": "9a2d2a6b97260271f3f35439d1486c9912fd37b57a4a04dc56256a9bc61059a5"
+   },
+   "load_at_intent": [
+    116.57,
+    75.57,
+    63.85
+   ],
+   "normal_owner_termination": true,
+   "outcome": "COMPILED_WITH_EXACT_RETAINED_FILENAME_WARNING",
+   "owner": {
+    "bytes": 429,
+    "sha256": "3de25c022ca85129b74bb3ab28a69de82d73ba30a73fc6ccaefc7dd949f4b26b"
+   },
+   "owner_exit": 0,
+   "owner_log": {
+    "bytes": 97,
+    "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+   },
+   "owner_seconds": 0.8932203359436244,
+   "payload_argv": [
+    "${PROBE_RUSTC}",
+    "--edition=2024",
+    "--crate-name",
+    "custody_file_read_probe",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "codegen-units=1",
+    "evaluation/custody-file-read-probe/probe.rs",
+    "--emit=link,dep-info",
+    "-o",
+    "target/evaluation/custody-file-read-probe-v1/probe"
+   ],
+   "payload_argv_sha256": "1b30f56aa6c7537900b691d32d6eb2b7372bb9bdf6f41991ed49c9249b0aa666",
+   "payload_exit": 0,
+   "request": {
+    "bytes": 1126,
+    "sha256": "866369d30770c25c079514fa5b2ad3072954695fa080dfc6c5c98c8a52f8f990"
+   },
+   "rescues": 0,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T17:57:58.285313+00:00",
+   "stderr": {
+    "bytes": 157,
+    "sha256": "7ebd0827d0286054d2208a1a2e21ca7982daa14cd4d7d95f6caaa68e8894e272"
+   },
+   "stdout": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "wrapper": "processes.run_command -> bounded_command.py request; separate regular stdout/stderr files"
+  },
+  {
+   "accepted": {
+    "bytes": 1257,
+    "sha256": "ca7e693adaf25f408753de71b6d16de6d013df9a6e1b74fe09bb2755fbcaabb1"
+   },
+   "action": "compile_controls",
+   "attempt": 1,
+   "bounds": {
+    "cpu_seconds": 60,
+    "file_bytes": 134217728,
+    "wall_seconds": 90
+   },
+   "campaign": "execution-v1",
+   "cleanup_complete": true,
+   "cpu": 19,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "CUSTODY_PROBE_EXPECTED": "${PROBE_EXPECTED}",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "helper_elapsed_seconds": 0.7068148988764733,
+   "helper_receipt": {
+    "bytes": 588,
+    "sha256": "feb851f9779a30f2dae6297e2b259ca02d7032a53007110b7e73b68a3193d33f"
+   },
+   "intent": {
+    "bytes": 318,
+    "sha256": "c7a2815c908c54edbe3b584c3ca88e0ef98c0fa480688b91891e4f8fe84682c7"
+   },
+   "load_at_intent": [
+    86.32,
+    76.62,
+    65.26
+   ],
+   "normal_owner_termination": true,
+   "outcome": "COMPILED_WITH_EXACT_RETAINED_FILENAME_WARNING",
+   "owner": {
+    "bytes": 429,
+    "sha256": "6b698714a5a731d9169af41231f0f38d43110f8bedb62a23ae03006284ceafe8"
+   },
+   "owner_exit": 0,
+   "owner_log": {
+    "bytes": 97,
+    "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+   },
+   "owner_seconds": 0.7628029079642147,
+   "payload_argv": [
+    "${PROBE_RUSTC}",
+    "--edition=2024",
+    "--crate-name",
+    "custody_file_read_probe",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "codegen-units=1",
+    "--test",
+    "evaluation/custody-file-read-probe/probe.rs",
+    "--emit=link,dep-info",
+    "-o",
+    "target/evaluation/custody-file-read-probe-v1/controls"
+   ],
+   "payload_argv_sha256": "c458904aeca627338c7ad2a47efa208ad171a9830fc47573d55473629abf2861",
+   "payload_exit": 0,
+   "request": {
+    "bytes": 1149,
+    "sha256": "0dd6bfeacc3a6c6b36b4a01945dea4d542a697fb49615249b1a6db2f9ea9f33e"
+   },
+   "rescues": 0,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T17:59:20.425895+00:00",
+   "stderr": {
+    "bytes": 157,
+    "sha256": "7ebd0827d0286054d2208a1a2e21ca7982daa14cd4d7d95f6caaa68e8894e272"
+   },
+   "stdout": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "wrapper": "processes.run_command -> bounded_command.py request; separate regular stdout/stderr files"
+  },
+  {
+   "action": "controls",
+   "attempt": 1,
+   "bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 524288,
+    "wall_seconds": 30
+   },
+   "campaign": "execution-v1",
+   "cleanup_complete": true,
+   "controls_passed_terminals": 2,
+   "controls_planned": 9,
+   "cpu": 19,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "helper_elapsed_seconds": 0.8570584561675787,
+   "helper_receipt": {
+    "bytes": 590,
+    "sha256": "b64f850c867b25f75e17b317ce63f7937a72cbd4ee21c0e8b3820ff2a3266be6"
+   },
+   "intent": {
+    "bytes": 310,
+    "sha256": "1731ab7179b50514c9246fa2ac8871586f5ba16e7b7e3a02c7b14b6f4070823e"
+   },
+   "interrupted_tests": 1,
+   "load_at_intent": [
+    86.32,
+    76.62,
+    65.26
+   ],
+   "normal_owner_termination": true,
+   "outcome": "FAILED_SIGXFSZ",
+   "owner": {
+    "bytes": 429,
+    "sha256": "cdecd62790d3b4afcdf5fe8e47704837dceba9ef091800363c0dffb031321f64"
+   },
+   "owner_exit": 1,
+   "owner_log": {
+    "bytes": 100,
+    "sha256": "394f3841c062fb94a0638d338062e760f39915308eee1937faee4b40569edb42"
+   },
+   "owner_seconds": 0.9344996009021997,
+   "payload_argv": [
+    "target/evaluation/custody-file-read-probe-v1/controls",
+    "--test-threads=1",
+    "--nocapture"
+   ],
+   "payload_argv_sha256": "49b6c50d1a29f70b89919ba110c490e1ebfab10ffc33fd5769a51adb3378acdb",
+   "payload_exit": -25,
+   "request": {
+    "bytes": 679,
+    "sha256": "b2e3c9c7025074d4bbc23ef11bb892b155cadeb53de6fc1594217ff1e4fe1c37"
+   },
+   "rescues": 0,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T17:59:22.402861+00:00",
+   "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "stdout": {
+    "bytes": 164,
+    "sha256": "78782f6f80932e4470168ab55c02339fc81ac67fc79a80f44a359da699b00bd7"
+   },
+   "suite_summary": false,
+   "wrapper": "processes.run_command -> bounded_command.py request; separate regular stdout/stderr files"
+  },
+  {
+   "accepted": {
+    "bytes": 183,
+    "sha256": "a52c7392099957b46a69cee425e39676e6d45906232beb211bd86455c511f72f"
+   },
+   "action": "controls",
+   "attempt": 1,
+   "bounds": {
+    "combined_output_bytes": 1048576,
+    "core_bytes": 0,
+    "cpu_seconds": 20,
+    "file_bytes": 2097152,
+    "wall_seconds": 30
+   },
+   "campaign": "execution-v2",
+   "cleanup_complete": true,
+   "combined_log": {
+    "bytes": 492,
+    "sha256": "74f88e073583d7e6482d8b2621a4b7097dfc8273b02fcbccc0a959f85262c306"
+   },
+   "controls": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 9
+   },
+   "cpu": 37,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "intent": {
+    "bytes": 310,
+    "sha256": "81bad0268b807047cbff56e25908dfe3c0ad97ccf60be4712a6b2aa4df26be56"
+   },
+   "load_at_intent": [
+    54.76,
+    68.74,
+    64.01
+   ],
+   "normal_owner_termination": true,
+   "outcome": "PASS_DIAGNOSTIC_ONLY",
+   "owner": {
+    "bytes": 430,
+    "sha256": "3561413f6bef1daea425e9150bafec971aaed69a1c3baaa9a5a09295637e49f0"
+   },
+   "owner_exit": 0,
+   "owner_seconds": 0.00912131299264729,
+   "payload_argv": [
+    "/usr/bin/prlimit",
+    "--core=0",
+    "--cpu=20",
+    "--fsize=2097152",
+    "--",
+    "target/evaluation/custody-file-read-probe-v1/controls",
+    "--test-threads=1",
+    "--nocapture"
+   ],
+   "payload_argv_sha256": "a85b277ddb9e325e5e67dc3c87517ab34e1d19cb39d7dcecf90d7f031227ccda",
+   "request": {
+    "bytes": 517,
+    "sha256": "0607949c78b91f40a61fc073357b2b70a9a0be44b7ade3f2e9225a9fe23884ef"
+   },
+   "rescues": 0,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T18:01:39.830068+00:00",
+   "wrapper": "processes.run_command -> prlimit directly; combined stdout/stderr pipe"
+  },
+  {
+   "accepted": {
+    "bytes": 266,
+    "sha256": "5d2faa9f6600a35799bf33df4c6b31f7a3193874df387fb24ae964cd401cfcf6"
+   },
+   "action": "repetition1",
+   "attempt": 1,
+   "bounds": {
+    "combined_output_bytes": 1048576,
+    "core_bytes": 0,
+    "cpu_seconds": 20,
+    "file_bytes": 2097152,
+    "wall_seconds": 30
+   },
+   "campaign": "execution-v2",
+   "cleanup_complete": true,
+   "combined_log": {
+    "bytes": 42778,
+    "sha256": "7b110b873dc71dbfbd66239c0a0c5467db137a8c7deb81508ed4456838600835"
+   },
+   "cpu": 37,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "intent": {
+    "bytes": 313,
+    "sha256": "7a79b356682af5abb6b77765155112ab3193c4621645f67398026b44f42932bc"
+   },
+   "load_at_intent": [
+    58.47,
+    69.28,
+    64.21
+   ],
+   "measured_rows": 512,
+   "normal_owner_termination": true,
+   "outcome": "PASS_DIAGNOSTIC_ONLY",
+   "owner": {
+    "bytes": 430,
+    "sha256": "7e16d9f3ea38cc7fd6df6d9544f7524ebb7b07ec336062ff75bd772b6215f0a5"
+   },
+   "owner_exit": 0,
+   "owner_seconds": 0.05842632381245494,
+   "payload_argv": [
+    "/usr/bin/prlimit",
+    "--core=0",
+    "--cpu=20",
+    "--fsize=2097152",
+    "--",
+    "target/evaluation/custody-file-read-probe-v1/probe",
+    "1",
+    "${PROBE_CANDIDATE}",
+    "${PROBE_TRUSTED}",
+    "${PROBE_CANDIDATE_STAMP}",
+    "${PROBE_TRUSTED_STAMP}"
+   ],
+   "payload_argv_sha256": "edf5d8a8b6aab1aeac4a3282cbe1a2069f1e827c966c8dc5fadd6e1202e66f58",
+   "raw_csv": {
+    "bytes": 42713,
+    "sha256": "9a0b5127ac88833218a027d9920845c5598f30578c215caa95e29059aab742a3"
+   },
+   "request": {
+    "bytes": 958,
+    "sha256": "617f9fecb8b1e944b01b6b8e8b164ade9629d7fb6083ee5bf96d3f3c699039e7"
+   },
+   "rescues": 0,
+   "rows": 640,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T18:01:42.980791+00:00",
+   "warmup_rows": 128,
+   "wrapper": "processes.run_command -> prlimit directly; combined stdout/stderr pipe"
+  },
+  {
+   "accepted": {
+    "bytes": 266,
+    "sha256": "2481d272aabb82f815ccd839dfb12d67a57f9b6ca7e493aee28c74cb728dba9a"
+   },
+   "action": "repetition2",
+   "attempt": 1,
+   "bounds": {
+    "combined_output_bytes": 1048576,
+    "core_bytes": 0,
+    "cpu_seconds": 20,
+    "file_bytes": 2097152,
+    "wall_seconds": 30
+   },
+   "campaign": "execution-v2",
+   "cleanup_complete": true,
+   "combined_log": {
+    "bytes": 42864,
+    "sha256": "8518123cec00bac780a3313ce36d9cfeb6f5ac72ec28201befb4c1380b371a11"
+   },
+   "cpu": 37,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "intent": {
+    "bytes": 313,
+    "sha256": "45d5d9ddf2d2868c992723bd457f5d98b2794880265689962daeeda2ed548b68"
+   },
+   "load_at_intent": [
+    58.47,
+    69.28,
+    64.21
+   ],
+   "measured_rows": 512,
+   "normal_owner_termination": true,
+   "outcome": "PASS_DIAGNOSTIC_ONLY",
+   "owner": {
+    "bytes": 430,
+    "sha256": "f069f901d5404414812bd600e76b1e4bf4407178d268589e273e670d61f62df9"
+   },
+   "owner_exit": 0,
+   "owner_seconds": 0.08624279499053955,
+   "payload_argv": [
+    "/usr/bin/prlimit",
+    "--core=0",
+    "--cpu=20",
+    "--fsize=2097152",
+    "--",
+    "target/evaluation/custody-file-read-probe-v1/probe",
+    "2",
+    "${PROBE_CANDIDATE}",
+    "${PROBE_TRUSTED}",
+    "${PROBE_CANDIDATE_STAMP}",
+    "${PROBE_TRUSTED_STAMP}"
+   ],
+   "payload_argv_sha256": "d8ce20486c2c1084e1a083bf0e98c26d353ecc45234aaf00a532a996c9fa52f9",
+   "raw_csv": {
+    "bytes": 42799,
+    "sha256": "3f2d138f267c5a7c0d781d4362b3dda0f396303a921dc82f7f30cc25a223709a"
+   },
+   "request": {
+    "bytes": 958,
+    "sha256": "2338c6975f56ceecf956bc4e96ea1f6bd76c00f3e13a82b39375a99abdf7659c"
+   },
+   "rescues": 0,
+   "rows": 640,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T18:01:45.100415+00:00",
+   "warmup_rows": 128,
+   "wrapper": "processes.run_command -> prlimit directly; combined stdout/stderr pipe"
+  },
+  {
+   "accepted": {
+    "bytes": 266,
+    "sha256": "6dc4e1127ea6d6210d0f270fee5ad5a5cfbe30900683cc3bd15a6612caf8ba37"
+   },
+   "action": "repetition3",
+   "attempt": 1,
+   "bounds": {
+    "combined_output_bytes": 1048576,
+    "core_bytes": 0,
+    "cpu_seconds": 20,
+    "file_bytes": 2097152,
+    "wall_seconds": 30
+   },
+   "campaign": "execution-v2",
+   "cleanup_complete": true,
+   "combined_log": {
+    "bytes": 43010,
+    "sha256": "6e36b6067068babb48a2eef6671e0e2c4f924faa93abfffe490da59906bdd7a1"
+   },
+   "cpu": 37,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "intent": {
+    "bytes": 313,
+    "sha256": "7f9f22be461db2a14a57d145a2826fdbe46d2b3f747183ff7e2f38129e8e3d7e"
+   },
+   "load_at_intent": [
+    58.47,
+    69.28,
+    64.21
+   ],
+   "measured_rows": 512,
+   "normal_owner_termination": true,
+   "outcome": "PASS_DIAGNOSTIC_ONLY",
+   "owner": {
+    "bytes": 430,
+    "sha256": "890f5b624d37604fa889ea29ed3321415f3685c213497e45ba136afecae89e60"
+   },
+   "owner_exit": 0,
+   "owner_seconds": 0.10397913912311196,
+   "payload_argv": [
+    "/usr/bin/prlimit",
+    "--core=0",
+    "--cpu=20",
+    "--fsize=2097152",
+    "--",
+    "target/evaluation/custody-file-read-probe-v1/probe",
+    "3",
+    "${PROBE_CANDIDATE}",
+    "${PROBE_TRUSTED}",
+    "${PROBE_CANDIDATE_STAMP}",
+    "${PROBE_TRUSTED_STAMP}"
+   ],
+   "payload_argv_sha256": "c8b106b32cfaa8ead922ac5d6f61fd3efbcd159d38b06322d2adb4f05b588b2d",
+   "raw_csv": {
+    "bytes": 42945,
+    "sha256": "c1d6fa33ff81efca0cc45379dda45cc64072ec1d9d4cac52d9ec4662788284b6"
+   },
+   "request": {
+    "bytes": 958,
+    "sha256": "2bc0374c876ffbe24a9df9d02c10ee055cf358d6b5df2970ff0de93484f565ac"
+   },
+   "rescues": 0,
+   "rows": 640,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T18:01:46.972614+00:00",
+   "warmup_rows": 128,
+   "wrapper": "processes.run_command -> prlimit directly; combined stdout/stderr pipe"
+  },
+  {
+   "accepted": {
+    "bytes": 266,
+    "sha256": "bf7926f5b5e9301558f9a33e4cd46f0f531f1a76ebca6517e47ed2f9b110f243"
+   },
+   "action": "repetition4",
+   "attempt": 1,
+   "bounds": {
+    "combined_output_bytes": 1048576,
+    "core_bytes": 0,
+    "cpu_seconds": 20,
+    "file_bytes": 2097152,
+    "wall_seconds": 30
+   },
+   "campaign": "execution-v2",
+   "cleanup_complete": true,
+   "combined_log": {
+    "bytes": 42965,
+    "sha256": "c230573c6a9b2960f5e800988d89cbd55560d4e8ddf72592463f76cb0d31671a"
+   },
+   "cpu": 37,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "intent": {
+    "bytes": 313,
+    "sha256": "ecaf84c7da87aa09ddc2f7abbcd6ec141c7d7059877a5e160300c9d1ef030348"
+   },
+   "load_at_intent": [
+    62.75,
+    69.99,
+    64.47
+   ],
+   "measured_rows": 512,
+   "normal_owner_termination": true,
+   "outcome": "PASS_DIAGNOSTIC_ONLY",
+   "owner": {
+    "bytes": 430,
+    "sha256": "ee04712c3f9a6d00fe6337395462aaec35767bdee37eaaf2b67c643c1eb1f5b3"
+   },
+   "owner_exit": 0,
+   "owner_seconds": 0.10382594913244247,
+   "payload_argv": [
+    "/usr/bin/prlimit",
+    "--core=0",
+    "--cpu=20",
+    "--fsize=2097152",
+    "--",
+    "target/evaluation/custody-file-read-probe-v1/probe",
+    "4",
+    "${PROBE_CANDIDATE}",
+    "${PROBE_TRUSTED}",
+    "${PROBE_CANDIDATE_STAMP}",
+    "${PROBE_TRUSTED_STAMP}"
+   ],
+   "payload_argv_sha256": "ef858fd232b693c24280023384e91539c9dd5b9886f1c0df1285945b8305a664",
+   "raw_csv": {
+    "bytes": 42900,
+    "sha256": "8c614e5bb3c454101b2998b901b76b8de2bd326333f0de336007212d01d0ef4d"
+   },
+   "request": {
+    "bytes": 958,
+    "sha256": "2bebe10a431234cdeb85844d74bf6029ea4c2617cd83210080ae08ba6cb627a8"
+   },
+   "rescues": 0,
+   "rows": 640,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T18:01:49.269839+00:00",
+   "warmup_rows": 128,
+   "wrapper": "processes.run_command -> prlimit directly; combined stdout/stderr pipe"
+  },
+  {
+   "accepted": {
+    "bytes": 266,
+    "sha256": "b7d8183aa5e942c67ddda7ac53ed2ffe62b2831cfccb61f9dde7fba9c7228c5f"
+   },
+   "action": "repetition5",
+   "attempt": 1,
+   "bounds": {
+    "combined_output_bytes": 1048576,
+    "core_bytes": 0,
+    "cpu_seconds": 20,
+    "file_bytes": 2097152,
+    "wall_seconds": 30
+   },
+   "campaign": "execution-v2",
+   "cleanup_complete": true,
+   "combined_log": {
+    "bytes": 43292,
+    "sha256": "55abdff2c7bf3de0f0db2bf09e237e450d519989ecb36df52eaa35e845bb170a"
+   },
+   "cpu": 37,
+   "cwd": "${REPOSITORY_ROOT}",
+   "environment": {
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+   },
+   "intent": {
+    "bytes": 313,
+    "sha256": "d7a5594367d13f251c70a23782acfee87eefd8229b36a137bd2668d063893a1e"
+   },
+   "load_at_intent": [
+    62.75,
+    69.99,
+    64.47
+   ],
+   "measured_rows": 512,
+   "normal_owner_termination": true,
+   "outcome": "PASS_DIAGNOSTIC_ONLY",
+   "owner": {
+    "bytes": 430,
+    "sha256": "b149db0f51241a9e17b28b61c2036d6b5dc9b3d0b1b13261deae20737147cc44"
+   },
+   "owner_exit": 0,
+   "owner_seconds": 0.15852559893392026,
+   "payload_argv": [
+    "/usr/bin/prlimit",
+    "--core=0",
+    "--cpu=20",
+    "--fsize=2097152",
+    "--",
+    "target/evaluation/custody-file-read-probe-v1/probe",
+    "5",
+    "${PROBE_CANDIDATE}",
+    "${PROBE_TRUSTED}",
+    "${PROBE_CANDIDATE_STAMP}",
+    "${PROBE_TRUSTED_STAMP}"
+   ],
+   "payload_argv_sha256": "ff46f2f87ea67013b63f4244664edf4dfdc78ca67b3d203acdce59a7d7c983bc",
+   "raw_csv": {
+    "bytes": 43227,
+    "sha256": "3a2a275f1a451f83242eaa88dbfec36efc3b0dd716545df37200ec5fd5d18ac1"
+   },
+   "request": {
+    "bytes": 958,
+    "sha256": "0158d3237a2f4fca9f18ef826c7f3c8f943046318e78773fc7a28d6c15d29a6a"
+   },
+   "rescues": 0,
+   "rows": 640,
+   "source_unchanged": true,
+   "start_utc": "2026-10-31T18:01:51.208169+00:00",
+   "warmup_rows": 128,
+   "wrapper": "processes.run_command -> prlimit directly; combined stdout/stderr pipe"
+  }
+ ],
+ "argv_scope": "Each action gives the recorded payload request argv after literal placeholder substitution; its SHA256 binds the private exact compact JSON token list. Wrapper descriptions are separate. No additional dispatcher is supplied.",
+ "binary_products_reused_in_v2": {
+  "controls": {
+   "binary_bytes": 7025944,
+   "binary_sha256": "a1d2a1d2041b50266de8c7f2a78dea26d3d3ebe0130dfa8384a99008b5e5834e",
+   "dep_info_sha256": "8952a893ba88e64eb4c57be6f496d427a18d01347eb35d9cb24d9d0df05493ce"
+  },
+  "probe": {
+   "binary_bytes": 4410784,
+   "binary_sha256": "1865e5bae9d5bd9ae9755abb8898be744b3a391d71b5407fde87604110a5b7f1",
+   "dep_info_sha256": "6136eb8021d70840ed41c97d15b1696eb9c3b3b4b669f89b2602c10c55673ce8"
+  }
+ },
+ "campaigns": {
+  "v1": {
+   "cause": "The output budget was mistakenly translated to RLIMIT_FSIZE=524288, which also limited the mandatory1048578-byte beyond-cap fixture.",
+   "compile_controls": "PASS_WITH_RETAINED_WARNING",
+   "compile_probe": "PASS_WITH_RETAINED_WARNING",
+   "controls": {
+    "exit": -25,
+    "interrupted": 1,
+    "passed_terminals": 2,
+    "planned": 9,
+    "unstarted": 6
+   },
+   "lease": {
+    "bytes": 1235,
+    "sha256": "8d83f4a41946b9bf0d7e8733d924d21b0324a02de47424cd7e15badce76857b8"
+   },
+   "lease_load": [
+    111.81,
+    71.85,
+    62.42
+   ],
+   "lease_start_utc": "2026-10-31T17:57:40.953096+00:00",
+   "measurements": [
+    "UNRUN",
+    "UNRUN",
+    "UNRUN",
+    "UNRUN",
+    "UNRUN"
+   ],
+   "outcome": "FAILED_CONTROLS_SIGXFSZ",
+   "outcome_receipt": {
+    "bytes": 785,
+    "sha256": "9c4b6ddd54eba0f1b6a9fcc4d9ac6c91bbf230cd7afc6a5b20059e67c2c4419f"
+   },
+   "release": {
+    "load": [
+     71.75,
+     74.2,
+     65.29
+    ],
+    "parent_exit": 0,
+    "receipt": {
+     "bytes": 163,
+     "sha256": "b70cfb5377fb8762490bf4bd379f9e9231ffff4e2c7a8ac02296df442da5a808"
+    },
+    "shell_allocator_scope_and_tag_absent": true,
+    "utc": "2026-10-31T18:00:33.285570+00:00"
+   },
+   "replacement_attempts": 0
+  },
+  "v2": {
+   "all_rows": 3200,
+   "attempts_each": 1,
+   "bounds": {
+    "combined_output_bytes": 1048576,
+    "core_bytes": 0,
+    "cpu_seconds": 20,
+    "file_bytes": 2097152,
+    "wall_seconds": 30
+   },
+   "change": "A distinct corrected campaign reused the same two compiled binaries. All six v2 payloads use direct processes.run_command/prlimit,2MiB regular-file ceiling, independent1MiB combined pipe cap, CPU20/core0/wall30. V1 is not relabelled.",
+   "controls": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 9
+   },
+   "fixed_file_order": [
+    "candidate",
+    "trusted"
+   ],
+   "lease": {
+    "bytes": 1050,
+    "sha256": "cbe41f4b9c1dd3d6b6916c0a08c8ac45c2400468c68d5d4ff30128570e8c3285"
+   },
+   "lease_load": [
+    58.2,
+    70.35,
+    64.41
+   ],
+   "lease_start_utc": "2026-10-31T18:01:18.769862+00:00",
+   "measured_pairs_each": 256,
+   "measured_rows": 2560,
+   "measurement_processes": 5,
+   "outcome": "COMPLETED_DIAGNOSTIC_ONLY",
+   "plan": {
+    "bytes": 1634,
+    "sha256": "7adea05a1470c255dbbfe5146e6971480c440a4865425a1e2dbe5624e9ce909e"
+   },
+   "release": {
+    "load": [
+     71.79,
+     71.64,
+     65.09
+    ],
+    "parent_exit": 0,
+    "receipt": {
+     "bytes": 164,
+     "sha256": "726070c7da17308cdff751245bd549963d97cf69e24d1129b4e275b4777598f6"
+    },
+    "shell_allocator_scope_and_tag_absent": true,
+    "utc": "2026-10-31T18:02:05.685856+00:00"
+   },
+   "retry_limit": 0,
+   "rows_each": 640,
+   "warmup_pairs_each": 64,
+   "warmup_rows": 640
+  }
+ },
+ "compiler_reader_history": {
+  "actual_compiler_outcome": "Both compilations completed once normally0. No compile rerun.",
+  "correction_review": {
+   "bytes": 3571,
+   "sha256": "a075479c7e79f523a37f6b0d5e93f5df0344fccb2b360885e8d439070e0b5f31"
+  },
+  "exact_warning": "warning: due to multiple output types requested, the explicitly specified output file name will be adapted for each output type\n\nwarning: 1 warning emitted\n\n",
+  "initial_reader_refusal": {
+   "bytes": 525,
+   "sha256": "f2d8106ce189e5167b1c1039c0996b6b147124962e17ca570b5b2b21028348c7"
+  },
+  "original_condition": "Fresh root reader required empty compiler stderr; this was not in the frozen plan.",
+  "scope": "Exact filename-adaptation warning retained; no blanket warning allowance or compiler failure promotion.",
+  "warning_sha256": "7ebd0827d0286054d2208a1a2e21ca7982daa14cd4d7d95f6caaa68e8894e272"
+ },
+ "containment_history": {
+  "abandoned_fixture_preserved": {
+   "bytes": 524288,
+   "sha256": "8177a48dec4f443c9992baabbdcb30009e376af5c3fd520bcb4960f70f1ad9de"
+  },
+  "correction_review": {
+   "bytes": 5784,
+   "sha256": "f5fb4f278583a8b35a005b392601599241d3234366989d7d9db8f5619c44f62a"
+  },
+  "scope": "Failed closed fixture was preserved then retired by exact owned identity before original create_new controls ran in the distinct v2 campaign; no case or assertion removed."
+ },
+ "execution_revision": "e42f503f6243accc268cc8780824845f87b7655f",
+ "execution_tree": "cb400ddfe61a4b3f49ea11ba854ba5d9a80aaacc",
+ "hardware": {
+  "label": "AMD EPYC Zen 5 dev host",
+  "load_scope": "Recorded host 1/5/15-minute load averages, not process CPU-time or idle-capacity measurements.",
+  "v1_hard_cpu": 19,
+  "v2_hard_cpu": 37
+ },
+ "inputs": {
+  "assembly_recipe": {
+   "bytes": 36379,
+   "path": "evaluation/ordinary-selected-session/accuracy_functional.py",
+   "sha256": "7dda267f2de970f2ab107c29e6375ae6884cf4beeeebbaa4b730f0576271dcaf"
+  },
+  "bytes_each": 13360,
+  "distinct_objects": 2,
+  "fixture_source": {
+   "bytes": 1399,
+   "path": "tools/rapid-profiler/exact-work/exact_work.S",
+   "sha256": "301286c614dc174c604bcbe6b0010b56f633fa28e9193cfb21749cfe3a42ee06"
+  },
+  "private_campaign_companion": {
+   "bytes": 8924,
+   "sha256": "290971e05a38c487b58820a7dfdf4bcd5c99d81923f54bc9ce08813f025f2673"
+  },
+  "private_input_manifest": {
+   "bytes": 1468,
+   "sha256": "598e671f7f811f78c53827bcfb0671e7616472dff14c5216b0d7ca9b1efdce33"
+  },
+  "scope": "Both file bytes and independently frozen eight-field pathname stamps must match. PROBE_EXPECTED may name the same verified trusted bytes at compile time; measured reads never supply expected stamps.",
+  "stamp_order": [
+   "dev",
+   "ino",
+   "mode",
+   "len",
+   "mtime",
+   "mtime_ns",
+   "ctime",
+   "ctime_ns"
+  ],
+  "whole_sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+ },
+ "limits": [
+  "All values are wall spans including clocks, adapter work and possible preemption; not exclusive CPU costs or syscall counts.",
+  "Read interval includes open-result handling, Take construction and remaining-limit query. Drop does not expose close errors. Stamps/reserve/byte comparison/reporting are outside component intervals.",
+  "Cache state is uncontrolled; metadata preflight may warm files. Candidate-first order is fixed and is not a matched file-order experiment.",
+  "This isolated probe does not run the profiler or its maps/tasks/live-code checks. No prediction of whole-profiler speedup or short2048/520ms completion follows.",
+  "The coordinate01ca campaign remains FAILED1342/2048 short, long structural-only; all43,200-cell denominator,2ms gates and prior failures remain.",
+  "Public raw rows are the exact retained CSV byte lines, concatenated in original repetition order with one shared header. Parent release is closure only."
+ ],
+ "numeric_data": {
+  "absent_os_errno": -1,
+  "aggregation": "Per repetition/file/phase/component, exact integer count/sum/min/max; median is the mean of the middle two sorted observations. No trimming, outlier deletion, deduplication or warmup suppression.",
+  "conservation": "Every row has open_ns+read_ns+drop_ns=total_ns, read_result=observed_bytes=13360, take_remaining=1035217, capacity_before=capacity_after=13360.",
+  "file": {
+   "0": "candidate",
+   "1": "trusted"
+  },
+  "phase": {
+   "0": "warmup",
+   "1": "measured"
+  },
+  "pooled_measured_descriptive_only": {
+   "drop_ns": {
+    "count": 2560,
+    "max_ns": 6580,
+    "median_ns": "451",
+    "min_ns": 431,
+    "sum_ns": 1254409
+   },
+   "open_ns": {
+    "count": 2560,
+    "max_ns": 3739357,
+    "median_ns": "25839",
+    "min_ns": 3305,
+    "sum_ns": 326128338
+   },
+   "read_ns": {
+    "count": 2560,
+    "max_ns": 62063,
+    "median_ns": "632",
+    "min_ns": 581,
+    "sum_ns": 1853920
+   },
+   "total_ns": {
+    "count": 2560,
+    "max_ns": 3741961,
+    "median_ns": "26945.5",
+    "min_ns": 4377,
+    "sum_ns": 329236667
+   }
+  },
+  "results": "results.csv",
+  "rows": 3200,
+  "status": {
+   "1": "byte/stamp/time checks completed"
+  },
+  "summary": "summary.csv",
+  "summary_rows": 80
+ },
+ "privacy": "Private home paths, usernames, FQDNs, inode stamps and raw logs remain private. Exact private argv hashes and retained input/log pins are public.",
+ "qualifications": {
+  "accuracy": false,
+  "native_state": false,
+  "performance": false,
+  "profiler_completion": false,
+  "speedup": false
+ },
+ "schema": "fresh-file-read-probe-closed-public-v1",
+ "source": {
+  "bytes": 13504,
+  "path": "probe.rs",
+  "sha256": "2c06cf7d7c36509c78ba5cc0e7916cc856d147164870478f6cfb887b1bbde166"
+ },
+ "tools": {
+  "preflight": {
+   "bytes": 32920,
+   "sha256": "3c08f5ab8b2122cbf13f8350bf20d7c04d55c516ff756ce2a9adafe90c9ec9dd"
+  },
+  "preflight_load": [
+   69.01,
+   58.13,
+   57.72
+  ],
+  "preflight_records": 60,
+  "preflight_utc": "2026-10-31T17:56:29.911541+00:00",
+  "scope": "Pinned installed compiler/sysroot/linker/owner/input identities. No newly measured tool version or std syscall implementation claim.",
+  "selected_tool_source_pins": {
+   "allocator_python": {
+    "bytes": 27602536,
+    "sha256": "ef3abbc980a3e35cfe7e06c015fa322ea8b3732b3c21233f85a0f8f4425e12cc"
+   },
+   "as": {
+    "bytes": 727360,
+    "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+   },
+   "cc1": {
+    "bytes": 28991152,
+    "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+   },
+   "collect2": {
+    "bytes": 349536,
+    "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+   },
+   "evaluation/admission/processes.py": {
+    "bytes": 15760,
+    "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+   },
+   "gcc": {
+    "bytes": 1093144,
+    "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+   },
+   "ld": {
+    "bytes": 1791600,
+    "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+   },
+   "libstd": {
+    "bytes": 11667026,
+    "sha256": "96c3ac946bdb5c09c8eb7036e495e89d2d773b30b2606b6c0323944cd9e858fe"
+   },
+   "libtest": {
+    "bytes": 7212084,
+    "sha256": "433155307ffc6cd553781ed6dbe38684e23db55cf3a65e6774a08757e0f179cb"
+   },
+   "prlimit": {
+    "bytes": 28416,
+    "sha256": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933"
+   },
+   "python": {
+    "bytes": 15448,
+    "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+   },
+   "rustc": {
+    "bytes": 645000,
+    "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+   },
+   "tools/unwind-oracle/bounded_command.py": {
+    "bytes": 7710,
+    "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+   }
+  }
+ }
+}
