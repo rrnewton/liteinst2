@@ -203,6 +203,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
                 named(c['repeat_tls_controls'],reports.REPEAT_TLS_CONTROLS,H(stderr),hash_key='original_stderr_sha256')
                 c['native_probe_controls']=reports.probe_controls(stderr,terminal)
                 named(c['native_probe_controls'],reports.probe.CONTROL_COUNT,H(stderr),hash_key='original_stderr_sha256')
+                c['effect_controls']=reports.effect_controls(stderr,terminal)
+                named(c['effect_controls'],reports.EFFECT_CONTROL_COUNT,H(stderr),hash_key='original_stderr_sha256')
                 c['terminal_controls']=reports.controls(stderr,*terminal_args,lane=lane,application=parsed)
                 named(c['terminal_controls'],TERMINAL_COUNTS[mode,0],H(stderr),hash_key='original_stderr_sha256')
                 c['subentry_controls']=reports.subentry_controls(stderr,actual_owner,owner_reader)
@@ -242,6 +244,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
          reports.REPEAT_TLS_CONTROLS==31,'both separate exact observed-TLS REP reader populations')
     need(sum(len(c.get('subentry_controls',{}).get('refusals',[]))for c in r['cases'])==38 and
          reports.SUBENTRY_CONTROL_COUNT==19,'both separate exact actual-entry terminal reader populations')
+    need(sum(len(c.get('effect_controls',{}).get('refusals',[]))for c in r['cases'])==24 and
+         reports.EFFECT_CONTROL_COUNT==12,'both separate exact tiny-fixture effect populations')
 
 
 def prepare_inputs(original,bridge,builder,private,pin,binary,run,r,application):

@@ -8,13 +8,115 @@ import copy,json,hashlib
 import linked_native_probe_reports as probe
 from page_selected import need
 from persistent_dynamic_reports import (prior,old,reuse,unrolled,current,maps_view,H,
-    registration_completed,repeat_completed,_repeat_completed_positive,effect_exit,gate_prefix)
+    registration_completed,repeat_completed,_repeat_completed_positive,effect_exit as legacy_effect_exit,gate_prefix)
 PREFIX=b'LI2_PERSISTENT_UNREGISTERED '
 SCALARS='version status failure_code detail_abs detail_negative phase serial generation build_serial offers cold_attempts publications hits cancelled retirements permit_claims entries completed unexpected permit opened_pages closed_pages anchor_released registration_rechecked guest_data_fault recovery_complete first_error active busy selected_slot slot0_generation slot1_generation slot0_permit slot1_permit slot0_completed_serial slot1_completed_serial domain_members dual_entries dual_completed'.split()
 KEYS=SCALARS+['misses']
 CONTROL_COUNTS={(0,0):73}
 REPEAT_TLS_CONTROLS=31
 REPEAT_TLS_SCOPE='before_first_registration_after_tls_observation'
+
+
+def effect_exit(p):
+    # Gated source census (main.c): identity3 + hardware2 + prefix-machine3 +
+    # mappings5 + prefix-write1 + pre-entry-machine3 + post-entry-machine3 +
+    # getcpu1 + rseq2 + munmap3 + suffix-write1 + entry.S exit_group1 = 28.
+    # hardware() issues exactly67 CPUIDs; the40-byte interpreter issues one.
+    # This exact fixture contract rejects extra/partial-write effect paths.
+    calls=3+2+3+5+1+3+3+1+2+3+1+1
+    l,e,o,cp=(p[k]for k in('loader','effect','oneshot','cpuid_nx'))
+    need(l['last_syscall']==231 and l['source_syscalls']==l['syscalls']==l['forwarded']==calls,'exact tiny fixture successful exit syscall path')
+    need(all(e[k]==v for k,v in dict(first_error=0,stage=4,busy=1,finished=0,kind=7,action=1,phase=5,error=0,
+        callback_entered=0,callback_returned=0,native_entered=1,native_returned=0,exit_entered=1,
+        post_guards_complete=0,post_callback_entered=0,post_callback_returned=0,committed=0,
+        random_backend_returned=0,random_backend_status=0,fp_after_initialized=0,raw_entered=0,raw_returned=0).items()),
+        'literal report-before-raw nonreturning exit prefix; never completed')
+    need(0<e['pc']<=(1<<64)-3 and e['next_pc']==e['pc']+2 and
+         512<=e['fp_bytes']==e['fp_before_initialized']<=65536 and
+         e['sequence']==e['attempts']==e['completed']+1 and e['completed']==e['commits']==e['native_completed']and
+         e['scripted_completed']==0 and e['classes']==[l['cpuid'],l['rdrand'],l['rdseed'],l['rdpid'],l['rdtsc'],l['rdtscp'],l['syscalls']-1]and
+         sum(e['classes'])==e['completed'],'every returning Native class accounted separately from final exit')
+    need(o['published']==1 and o['attempted']==o['published']==o['restored']==o['effect_started']==o['backend_prepared']==l['source_patches']and
+         o['completed']==o['retired']==o['effect_returned']==o['backend_completed']==o['last_completed_sequence']==o['published'] and
+         o['refused']==o['resetting']==o['last_refused_sequence']==o['rseq_error']==0 and o['active_phase']==0 and
+         o['rseq_phase']==0 and o['rseq_attempts']==o['published']and o['rseq_retired']==o['retired'],
+         'sole interpreter CPUID patch restored completed and retired before direct exit')
+    need([o['cpuid_patches']+67,o['syscall_patches']+calls,o['rdtsc_patches']]==[l['cpuid'],l['syscalls'],l['rdtsc']]and
+         o['published']==o['cpuid_patches']+o['syscall_patches']+o['rdtsc_patches']and
+         o['generations']==l['generations']and o['retained_records']>0 and
+         [o[k]for k in('cpuid_patches','syscall_patches','rdtsc_patches')]==[1,0,0]and
+         all(l[k]==0 for k in('rdrand','rdseed','rdpid','rdtsc','rdtscp')),
+         'exact tiny fixture publication and unpatched class accounting')
+    need(e['attempts']==o['published']+67+calls,
+         'complete fixed application direct-effect partition')
+    # Retain the original general generation bound, then bind this one-page
+    # interpreter-entry CPUID (first two bytes, no page straddle).
+    generation_delta=l['generations']-o['retained_records']
+    need(generation_delta%2==0 and 2*o['published']<=generation_delta<=4*o['published'],
+         'two in-place generation advances per restored one-or-two-page publication')
+    need(generation_delta==2,'exact one-page interpreter CPUID generation advances')
+    need(cp['hardware_entered']==cp['hardware_returned']==1 and cp['phase']==3 and
+         cp['attempts']==cp['samples']==cp['commits']==l['cpuid']>0 and cp['next_pc']==cp['pc']+2 and
+         cp['raw']==cp['result'],'real complete unmodified hardware CPUID path')
+
+EFFECT_CONTROL_COUNT=12
+
+def effect_controls(stderr,p):
+    """Separate tiny-fixture controls; the original73 terminal controls remain."""
+    effect_exit(p);refused=[]
+    def changed(name,value,error):
+        try:effect_exit(value)
+        except ValueError as actual:
+            need(str(actual)==error,'exact causal tiny effect refusal '+name);refused.append(name)
+        else:raise ValueError('accepted changed tiny fixture effect partition '+name)
+    publication='sole interpreter CPUID patch restored completed and retired before direct exit'
+    census='exact tiny fixture publication and unpatched class accounting'
+    calls='exact tiny fixture successful exit syscall path'
+    value=copy.deepcopy(p);o=value['oneshot']
+    for key in('completed','retired','effect_returned','backend_completed','last_completed_sequence','rseq_retired'):o[key]=0
+    o['active_phase']=7;o['rseq_phase']=6
+    changed('old_patched_final_exit_is_not_this_fixture',value,publication)
+    for count in(0,2):
+        value=copy.deepcopy(p);o=value['oneshot'];l=value['loader'];e=value['effect'];cp=value['cpuid_nx']
+        for key in('attempted','published','restored','effect_started','backend_prepared','completed','retired',
+                   'effect_returned','backend_completed','last_completed_sequence','rseq_attempts','rseq_retired','cpuid_patches'):o[key]=count
+        l['source_patches']=count;l['cpuid']=cp['attempts']=cp['samples']=cp['commits']=67+count
+        e['sequence']=e['attempts']=95+count
+        e['completed']=e['commits']=e['native_completed']=94+count;e['classes'][0]=67+count
+        changed('coherent_interpreter_publications_'+str(count),value,publication)
+    value=copy.deepcopy(p);value['oneshot']['cpuid_patches']=0;value['oneshot']['syscall_patches']=1
+    changed('wrong_published_effect_kind',value,census)
+    value=copy.deepcopy(p);l=value['loader'];e=value['effect']
+    for key in('source_syscalls','syscalls','forwarded'):l[key]+=1
+    for key in('sequence','attempts','completed','commits','native_completed'):e[key]+=1
+    e['classes'][6]+=1
+    changed('coherent_extra_direct_syscall',value,calls)
+    value=copy.deepcopy(p);l=value['loader'];e=value['effect'];cp=value['cpuid_nx']
+    l['cpuid']-=1
+    for key in('attempts','samples','commits'):cp[key]-=1
+    for key in('sequence','attempts','completed','commits','native_completed'):e[key]-=1
+    e['classes'][0]-=1
+    changed('coherent_missing_direct_cpuid',value,census)
+    value=copy.deepcopy(p);value['effect']['raw_entered']=1
+    changed('exit_raw_claimed_before_report',value,'literal report-before-raw nonreturning exit prefix; never completed')
+    value=copy.deepcopy(p);value['loader']['rdseed']=1;e=value['effect'];e['classes'][2]=1
+    for key in('sequence','attempts','completed','commits','native_completed'):e[key]+=1
+    changed('coherent_extra_random_effect',value,census)
+    value=copy.deepcopy(p)
+    for name in('loader','oneshot'):value[name]['generations']+=2
+    changed('coherent_two_page_generation_claim',value,'exact one-page interpreter CPUID generation advances')
+    value=copy.deepcopy(p);value['loader']['last_syscall']=60
+    changed('different_exit_syscall',value,calls)
+    value=copy.deepcopy(p);value['oneshot']['active_phase']=7
+    changed('completed_patch_still_active',value,publication)
+    try:legacy_effect_exit(p)
+    except ValueError as error:
+        need(str(error)=='all temporary patches restored; only final exit remains unreturned and unretired',
+             'original libc-cohort effect reader remains unchanged')
+        refused.append('original_effect_scope_remains_distinct')
+    else:raise ValueError('old effect reader accepted tiny fixture partition')
+    need(len(refused)==len(set(refused))==EFFECT_CONTROL_COUNT,'all12 separate exact tiny effect controls')
+    return dict(refusals=refused,native_operations=0,original_stderr_sha256=H(stderr))
 
 
 def repeat_observed_identity(p,pid,application,protected_tls):

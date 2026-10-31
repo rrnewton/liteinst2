@@ -150,7 +150,7 @@ def main():
             compact['controls']={name:dict(count=len(actual[name]['refusals']),
                 sha256=hashlib.sha256(json.dumps(actual[name],sort_keys=True,separators=(',',':')).encode()).hexdigest())
                 for name in ('application_controls','owner_reader_controls','pair_controls',
-                             'terminal_controls','repeat_tls_controls','native_probe_controls','subentry_controls') if name in actual}
+                             'terminal_controls','repeat_tls_controls','native_probe_controls','subentry_controls','effect_controls') if name in actual}
         summary['subentry_component']={k:r.get('subentry_component',{}).get(k)
             for k in ('status','counts','exit','duration_ns','native_operations','qualification_credit')}
         summary['empty_namespace_component']={k:r.get('empty_namespace_component',{}).get(k)
