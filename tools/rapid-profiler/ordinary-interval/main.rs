@@ -416,6 +416,10 @@ fn main() {
         normal::call_pair::run(&args[2..]);
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-selected-accuracy-phase-session") {
+        normal::leaf_set::run_selected_accuracy_phase_session(&args[2..]);
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-selected-accuracy-session") {
         normal::leaf_set::run_selected_accuracy_session(&args[2..]);
         return;

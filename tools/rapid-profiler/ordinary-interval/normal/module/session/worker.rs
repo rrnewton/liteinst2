@@ -162,6 +162,32 @@ impl Call {
         call
     }
 
+    // Same unsafe target/ABI/owner contract as invoke. Allocate and check the
+    // guarded return owner BEFORE gating; keep the unchanged CALL/store body.
+    pub(in crate::normal) unsafe fn invoke_phase(
+        record: Arc<input::Record>,
+        function: usize,
+        target: csv::Csv,
+        phase: &mut shared::phase::Worker,
+    ) -> Result<(Self, Instant), &'static str> {
+        let mut call = Call {
+            record,
+            function,
+            stored: Box::new(Stored {
+                before: [0xa7a7; 2],
+                value: u64::MAX,
+                after: [0x5a5a; 2],
+            }),
+        };
+        assert_eq!(call.stored.value, u64::MAX);
+        phase.before(call.record.id, function)?;
+        // SAFETY: same actual selected target and retained guarded owners.
+        unsafe { csv::invoke(target, call.record.bytes(), &mut call.stored.value) };
+        let observed = shared::phase::now();
+        // No fallible time check here: caller retains call before validating it.
+        Ok((call, observed))
+    }
+
     pub(in crate::normal) fn value(&self) -> u64 {
         self.stored.value
     }

@@ -170,12 +170,17 @@ class Controls(unittest.TestCase):
         for prefix in {n.split('::tests::')[0] for n in runner.SDK_CONTROLS}:
             self.refuses(lambda prefix=prefix:runner.sdk_inventory(list(runner.SDK_CONTROLS)+[prefix+'::tests::extra']))
 
-        self.assertEqual(len(runner.APP_CONTROLS), 27)
-        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),79)
+        self.assertEqual(len(runner.APP_CONTROLS[:27]), 27)
+        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),88)
         self.assertEqual(len(runner.SDK_CONTROLS),45)
         self.assertEqual(len(runner.ACCURACY_CONTROLS),11)
         self.assertEqual(len(runner.SDK_ACCURACY_CONTROLS),27)
-        self.assertEqual(runner.APP_CONTROLS[16:],runner.ACCURACY_CONTROLS)
+        self.assertEqual(runner.APP_CONTROLS[16:27],runner.ACCURACY_CONTROLS)
+        self.assertEqual(len(runner.PHASE_CONTROLS),9)
+        self.assertEqual(runner.APP_CONTROLS[27:],runner.PHASE_CONTROLS)
+        self.refuses(lambda:runner.ordinary_inventory(list(old+runner.APP_CONTROLS[:27]),recipe,single,module))
+        for prefix in runner.PHASE_PREFIXES:
+            self.refuses(lambda prefix=prefix:runner.ordinary_inventory(inventory+[prefix+'unregistered'],recipe,single,module))
         self.assertEqual(runner.SDK_CONTROLS[18:],runner.SDK_ACCURACY_CONTROLS)
         self.assertEqual(runner.SDK_LEGACY_PREFIXES,tuple(sorted({n.split('::tests::')[0]+'::' for n in runner.SDK_CONTROLS[:18]})))
         for name in old+runner.APP_CONTROLS:

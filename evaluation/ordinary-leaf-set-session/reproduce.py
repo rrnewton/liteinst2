@@ -59,6 +59,19 @@ ACCURACY_CONTROLS = (
     'normal::session::io::accuracy_tests::both_caps_refuse_one_byte_over_without_discarding_pending_output',
 )
 APP_CONTROLS += ACCURACY_CONTROLS
+PHASE_PREFIXES = ('normal::leaf_set::selected::phase_tests::', 'normal::session::phase::tests::')
+PHASE_CONTROLS = (
+    'normal::leaf_set::selected::phase_tests::phase_cli_is_explicit_and_mutually_refuses_legacy_grammars',
+    'normal::leaf_set::selected::phase_tests::phase_parser_requires_every_nonempty_frozen_input_without_changing_old_table',
+    'normal::session::phase::tests::request_is_separate_and_never_changes_the_accuracy_policy',
+    'normal::session::phase::tests::origin_first_arm_and_clock_failures_are_terminal',
+    'normal::session::phase::tests::zero_and_random_gate_are_once_only_and_keep_whole_period_lateness',
+    'normal::session::phase::tests::return_clock_refusal_keeps_release_and_never_invents_timing',
+    'normal::session::phase::tests::all_2048_rows_join_exact_identity_without_duplicate_or_missing_credit',
+    'normal::session::phase::tests::observations_preserve_actual_thread_errno',
+    'normal::session::phase::tests::phase_wire_fits_old_8mib_and_exact_geometry_rejects_every_changed_byte',
+)
+APP_CONTROLS += PHASE_CONTROLS
 
 SDK_CONTROLS = ('frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_selection_count_order_and_source_are_exact', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_page_union_refuses_conflicts_gaps_and_third_page', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_overlay_retains_every_unselected_byte', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_last_selection_refuses_before_loader', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_roles_and_policies_cover_all_members', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_budget_refuses_aggregate_overflow', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_identity_and_complete_union_are_required', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_control_lookup_keeps_exact_function', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_profile_requires_exact_count_k_history_and_mode', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_banks_prepare_once_and_preserve_refused_identity', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_runtime_keeps_saved_function_and_closed_receipt', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_validates_every_row_and_journal_word', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_refusals_leave_receipt_and_cursors_unchanged', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_output_captures_complete_identity_before_consumption', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_reclaim_preserves_shared_owners_and_fresh_generation', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_handles_refuse_all_old_profiles', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_full_identity_and_replay_are_exact', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_streams_do_not_retain_epochs')
 # Derive the old broad ownership prefixes from the unchanged eighteen names
@@ -129,14 +142,16 @@ def ordinary_inventory(inventory, recipe, single, module):
     assert len(inventory) == len(set(inventory))
     assert len(ACCURACY_CONTROLS) == len(set(ACCURACY_CONTROLS)) == 11
     assert set(n for n in inventory if n.startswith(ACCURACY_PREFIXES)) == set(ACCURACY_CONTROLS)
+    assert len(PHASE_CONTROLS) == len(set(PHASE_CONTROLS)) == 9
+    assert set(n for n in inventory if n.startswith(PHASE_PREFIXES)) == set(PHASE_CONTROLS)
     prefixes = ('normal::leaf_set::', 'normal::module::session::input::leaf_set_tests::',
-                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES
+                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES + PHASE_PREFIXES
     assert set(n for n in inventory if n.startswith(prefixes)) == set(APP_CONTROLS)
     prior = recipe.ordinary_inventory([n for n in inventory if n not in APP_CONTROLS],
                                      single, module, recipe.OWNER_CONTROLS)
-    assert len(prior) == 52 and len(APP_CONTROLS) == 27
+    assert len(prior) == 52 and len(APP_CONTROLS[:27]) == 27 and len(APP_CONTROLS) == 36
     wanted = tuple(prior) + APP_CONTROLS
-    assert len(wanted) == len(set(wanted)) == 79
+    assert len(wanted) == len(set(wanted)) == 88
     return wanted
 
 

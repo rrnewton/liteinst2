@@ -1,0 +1,3 @@
+phase,records,calls,call_timing_rows,sampled,unsampled,arm_rows,arm_limit_ns,arm_max_complete_minus_due_ns,requested_first_delay_ns,first_gate_enter_ns,first_release_ns,first_release_lateness_ns,first_gate_already_due,first_before_invoke_ns,last_after_return_ns,last_before_epoch_index,calls_enclosing_due,arm_overlap_events,full_running_windows,successful_32byte_pmu_reads,pmu_read_errors,phase_realization,hardware_status
+locked,2048,2048,2048,1437,611,147,2000000,28283,0,1293742,1293742,1293742,True,1295165,1465006799,146,1,0,2048,4096,0,UNRESOLVED,UNRESOLVED
+random,2048,2048,2048,1510,538,155,2000000,76038,581334,1329035,1329035,747701,True,1330587,1546025956,154,1,2,2048,4096,0,UNRESOLVED,UNRESOLVED

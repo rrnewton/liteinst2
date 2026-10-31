@@ -23,6 +23,7 @@ struct Worker<const N: usize> {
     fail_stop: csv::FailStop,
     attached: Option<counter::Thread>,
     counter: Option<Arc<counter::Custody>>,
+    phase: Option<phase::Worker>,
     calls: Vec<Call>,
     targets: [csv::Csv; N],
     expectations: Expectations<N>,
@@ -48,6 +49,7 @@ impl<const N: usize> Worker<N> {
         custody: Arc<pair_worker::Custody>,
         cpu: usize,
         counter: Option<Arc<counter::Custody>>,
+        phase: Option<Arc<phase::Shared>>,
     ) -> Self {
         assert!((1..=4).contains(&N));
         let mut fail_stop = csv::FailStop(true);
@@ -69,6 +71,7 @@ impl<const N: usize> Worker<N> {
             fail_stop: csv::FailStop(true),
             attached: Some(attached),
             counter,
+            phase: phase.map(phase::Worker::new),
             calls: Vec::with_capacity(4),
             targets: entries
                 .map(|entry| unsafe { std::mem::transmute::<usize, csv::Csv>(entry as usize) }),
@@ -103,10 +106,25 @@ impl<const N: usize> Runtime for Worker<N> {
             record.check();
             // SAFETY: independently selected actual scalar target, live original input
             // and guarded output; this calls the shared, unchanged csv::invoke body.
-            let inner = unsafe {
-                pair_worker::Call::invoke(Arc::clone(&record), function, self.targets[function])
-            };
-            self.calls.push(Call { inner, expectation });
+            if let Some(phase) = &mut self.phase {
+                let (inner, observed) = unsafe {
+                    pair_worker::Call::invoke_phase(
+                        Arc::clone(&record),
+                        function,
+                        self.targets[function],
+                        phase,
+                    )
+                }
+                .unwrap();
+                self.calls.push(Call { inner, expectation });
+                // Actual return owner precedes every fallible post-clock check.
+                phase.returned(observed).unwrap();
+            } else {
+                let inner = unsafe {
+                    pair_worker::Call::invoke(Arc::clone(&record), function, self.targets[function])
+                };
+                self.calls.push(Call { inner, expectation });
+            }
             // Returned owners are already retained before fallible postflight.
             self.postflight();
         }
@@ -154,6 +172,7 @@ impl<const N: usize> Runtime for Worker<N> {
 type WorkerEvidence = (
     Arc<OnceLock<pair_worker::Identity>>,
     Option<Arc<counter::Custody>>,
+    Option<Arc<phase::Shared>>,
 );
 pub(super) fn run<const N: usize>(
     targets: ([u64; N], Expectations<N>),
@@ -164,8 +183,8 @@ pub(super) fn run<const N: usize>(
     tx: mpsc::SyncSender<Event<Call, counter::Batch>>,
     cpu: usize,
 ) {
-    let (ready, counter) = evidence;
-    let worker = Worker::attach(targets.0, targets.1, client, custody, cpu, counter);
+    let (ready, counter, phase) = evidence;
+    let worker = Worker::attach(targets.0, targets.1, client, custody, cpu, counter, phase);
     let id = worker.identity;
     ready.set(id).unwrap();
     tx.send(Event::Ready { tid: id.tid }).unwrap();

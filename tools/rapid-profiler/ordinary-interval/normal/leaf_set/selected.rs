@@ -358,9 +358,157 @@ fn read_table(path: &Path, functions: &[FunctionId]) -> Result<Table, String> {
     Table::parse(&raw, functions)
 }
 
+// A separate literal grammar. The old selected/accuracy entrypoints above do
+// not accept PHASE/DELAY_NS or inherit this initial one-function restriction.
+type PhaseArguments = (super::phase::Request, Vec<Selection>, Arc<Table>);
+pub(super) fn phase_arguments(args: &[OsString]) -> Result<PhaseArguments, String> {
+    phase_arguments_with(args, read_table)
+}
+fn phase_arguments_with(
+    args: &[OsString],
+    load: impl FnOnce(&Path, &[FunctionId]) -> Result<Table, String>,
+) -> Result<PhaseArguments, String> {
+    if args.len() != 14 {
+        return Err("normal-selected-accuracy-phase-session CANDIDATE TRUSTED_FINAL TABLE K EPOCH_MS EPOCHS PHASE DELAY_NS 1 41 exact_work_nonempty ELF_VA 37 whole".into());
+    }
+    let k = usize::try_from(number(&args[3])?).map_err(failure)?;
+    let ms = u32::try_from(number(&args[4])?).map_err(failure)?;
+    let epochs = u32::try_from(number(&args[5])?).map_err(failure)?;
+    if !(1..=520).contains(&epochs)
+        || number(&args[8])? != 1
+        || number(&args[9])? != super::phase::FUNCTION
+        || args[10].to_str() != Some("exact_work_nonempty")
+        || number(&args[12])? != 37
+        || args[13].to_str() != Some("whole")
+    {
+        return Err("phase requires exactly the whole nonempty Exact37 selection".into());
+    }
+    let policy = Policy::accuracy(k, ms, epochs, 4096).map_err(failure)?;
+    let request = super::phase::Request::new(
+        args[6].to_str().ok_or("ASCII phase required")?,
+        number(&args[7])?,
+        policy,
+    )
+    .map_err(failure)?;
+    let (leaves, table) = selection_table(&args[9..], &args[2], 1, load)?;
+    if table.count() != super::phase::CALLS
+        || table
+            .rows
+            .iter()
+            .any(|row| !(1..=64).contains(&row.record.length))
+    {
+        return Err("phase requires all2048 nonempty 1..64-byte frozen inputs".into());
+    }
+    Ok((request, leaves, table))
+}
+
 #[cfg(test)]
 #[path = "selected_tests.rs"]
 pub(in crate::normal) mod controls;
 
 #[cfg(test)]
 mod accuracy_tests;
+
+#[cfg(test)]
+mod phase_tests {
+    use super::*;
+    fn args() -> Vec<OsString> {
+        [
+            "candidate",
+            "trusted",
+            "table",
+            "10",
+            "10",
+            "520",
+            "locked",
+            "0",
+            "1",
+            "41",
+            "exact_work_nonempty",
+            "4096",
+            "37",
+            "whole",
+        ]
+        .into_iter()
+        .map(Into::into)
+        .collect()
+    }
+    fn table(functions: &[FunctionId], count: usize, first: &str) -> Result<Table, String> {
+        let mut raw = format!("LI2SELECTED 1 1 {count}\nfunctions 41\n");
+        for id in 1..=count {
+            raw.push_str(&format!(
+                "record {id} {} 0\n",
+                if id == 1 { first } else { "41" }
+            ));
+        }
+        raw.push_str("END\n");
+        Table::parse(raw.as_bytes(), functions)
+    }
+    #[test]
+    fn phase_cli_is_explicit_and_mutually_refuses_legacy_grammars() {
+        let original = args();
+        let (request, leaves, values) =
+            phase_arguments_with(&original, |_, f| table(f, 2048, "41")).unwrap();
+        assert_eq!(
+            request.policy(),
+            Policy::accuracy(10, 10, 520, 4096).unwrap()
+        );
+        assert_eq!(leaves.len(), 1);
+        assert_eq!(values.count(), 2048);
+        assert!(
+            arguments_with(&original, |_, _| panic!("legacy must refuse before load")).is_err()
+        );
+        assert!(
+            accuracy_arguments_with(&original, |_, _| panic!("legacy must refuse before load"))
+                .is_err()
+        );
+        let mut old = original.clone();
+        old.drain(6..8);
+        assert!(accuracy_arguments_with(&old, |_, f| table(f, 2048, "41")).is_ok());
+        assert!(
+            phase_arguments_with(&old, |_, _| panic!("phase must refuse legacy grammar")).is_err()
+        );
+        for (column, value) in [
+            (3, "2"),
+            (4, "2"),
+            (5, "0"),
+            (5, "521"),
+            (6, "other"),
+            (7, "1"),
+            (7, "-1"),
+            (7, "00"),
+            (8, "2"),
+            (9, "42"),
+            (10, "other"),
+            (11, "0"),
+            (12, "36"),
+            (13, "certified"),
+        ] {
+            let mut changed = original.clone();
+            changed[column] = value.into();
+            assert!(phase_arguments_with(&changed, |_, f| table(f, 2048, "41")).is_err());
+        }
+        let mut extra = original.clone();
+        extra.push("extra".into());
+        assert!(phase_arguments_with(&extra, |_, _| panic!("extra CLI field")).is_err());
+        let mut random = original.clone();
+        random[6] = "random".into();
+        for delay in [0, 9_999_999] {
+            random[7] = delay.to_string().into();
+            assert!(phase_arguments_with(&random, |_, f| table(f, 2048, "41")).is_ok());
+        }
+        random[7] = "10000000".into();
+        assert!(phase_arguments_with(&random, |_, f| table(f, 2048, "41")).is_err());
+    }
+    #[test]
+    fn phase_parser_requires_every_nonempty_frozen_input_without_changing_old_table() {
+        for count in [1, 2047] {
+            assert!(phase_arguments_with(&args(), |_, f| table(f, count, "41")).is_err());
+        }
+        // Empty input is legal in the old selected table, never in Exact37.
+        assert!(table(&[FunctionId(41)], 2048, "-").is_ok());
+        assert!(phase_arguments_with(&args(), |_, f| table(f, 2048, "-")).is_err());
+        assert!(phase_arguments_with(&args(), |_, f| table(f, 2048, &"41".repeat(64))).is_ok());
+        assert!(phase_arguments_with(&args(), |_, f| table(f, 2048, &"41".repeat(65))).is_err());
+    }
+}

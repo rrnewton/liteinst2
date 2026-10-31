@@ -10,6 +10,7 @@ use rapid_profiler::frontend_native::{
     NormalModulePreparationPolicy, PreparedNormalLeafSetSessionController,
 };
 use shared::io::Io;
+use shared::phase;
 use shared::{Application as ApplicationTrait, failure};
 use std::sync::OnceLock;
 mod check;
@@ -285,6 +286,8 @@ pub(in crate::normal) struct Application<const N: usize> {
     accuracy: Option<Policy>,
     arm_observations: Vec<shared::ArmObservation>,
     counter: Option<counter::Evidence>,
+    phase: Option<Arc<phase::Shared>>,
+    phase_emitted: usize,
 }
 impl<const N: usize> Application<N> {
     fn ready(&mut self, tid: u64, io: &mut Io) -> Result<(), String> {
@@ -299,11 +302,14 @@ impl<const N: usize> Application<N> {
             io,
             format!(
                 "{}{},{},1,{},{},{},{},{},{},{},{},{}\n",
-                ready_header(
-                    self.ledger.expectations.wire_version(),
-                    self.k,
-                    self.epochs,
-                    self.accuracy
+                self.phase.as_ref().map_or_else(
+                    || ready_header(
+                        self.ledger.expectations.wire_version(),
+                        self.k,
+                        self.epochs,
+                        self.accuracy
+                    ),
+                    |phase| phase.request().ready(),
                 ),
                 record_cap(N),
                 N,
@@ -338,6 +344,9 @@ impl<const N: usize> Application<N> {
                 emit(io, format!("RET,{i},{}\n", pc - self.entries[i]))?;
             }
         }
+        if let Some(phase) = &self.phase {
+            emit(io, phase.request().header())?;
+        }
         if let Some(counter) = &mut self.counter {
             counter.ready(id, io)?;
         }
@@ -350,6 +359,12 @@ impl<const N: usize> ApplicationTrait for Application<N> {
     type Call = worker::Call;
     type Batch = counter::Batch;
     type Completion = Result<(), input::InputCompletion>;
+    fn start_clock(&mut self, origin: Instant, policy: Policy) -> Result<(), String> {
+        if let Some(phase) = &self.phase {
+            phase.start(origin, policy).map_err(failure)?;
+        }
+        Ok(())
+    }
     fn observe_arms(&self) -> bool {
         self.accuracy.is_some()
     }
@@ -366,6 +381,11 @@ impl<const N: usize> ApplicationTrait for Application<N> {
             observation.started >= observation.due && observation.completed >= observation.started
         );
         self.arm_observations.push(observation);
+        if observation.number == 1 && observation.accepted {
+            if let Some(phase) = &self.phase {
+                phase.first_arm(observation.completed).map_err(failure)?;
+            }
+        }
         emit(io, arm_line(observation))
     }
     fn accepted_len(&self) -> usize {
@@ -388,6 +408,26 @@ impl<const N: usize> ApplicationTrait for Application<N> {
         history: &[NormalLeafSetHistoryBatch],
         io: &mut Io,
     ) -> Result<(), String> {
+        // Observe the actual retained call and NORMAL identity before either is moved.
+        let timing = if let Some(phase) = &self.phase {
+            assert_eq!(N, 1);
+            assert_eq!(calls.len(), 1);
+            assert_eq!(batch.normal.records().len(), 1);
+            assert_eq!(calls[0].inner.function, 0);
+            let record = &batch.normal.records()[0];
+            assert_eq!(record.record.raw.ordinal, self.phase_emitted as u64 + 1);
+            Some(
+                phase
+                    .row(
+                        record.record.raw.ordinal,
+                        calls[0].inner.record.id,
+                        record.function.0,
+                    )
+                    .map_err(failure)?,
+            )
+        } else {
+            None
+        };
         match batch.sidecars {
             None => {
                 assert!(self.accuracy.is_none() && self.counter.is_none());
@@ -401,7 +441,16 @@ impl<const N: usize> ApplicationTrait for Application<N> {
                     .expect("complete accuracy evidence owner");
                 let range = counter.retain(&batch.normal, sidecars.rows, sidecars.acquisition);
                 self.ledger.batch(calls, batch.normal, history, io)?;
-                counter.emit_rows(range, &self.leaves.map(|leaf| leaf.function), io)
+                counter.emit_rows(range, &self.leaves.map(|leaf| leaf.function), io)?;
+                if let Some(timing) = timing {
+                    let phase = self.phase.as_ref().expect("phase timing owner");
+                    if self.phase_emitted == 0 {
+                        emit(io, phase.release().map_err(failure)?.line())?;
+                    }
+                    emit(io, timing.line())?;
+                    self.phase_emitted += 1;
+                }
+                Ok(())
             }
         }
     }
@@ -427,7 +476,11 @@ impl<const N: usize> ApplicationTrait for Application<N> {
             self.ledger.population.rows.len(),
             self.ledger.population.accepted.len() * N
         );
-        self.ledger.expectations.complete(self.accepted_len())
+        self.ledger.expectations.complete(self.accepted_len())?;
+        if let Some(phase) = &self.phase {
+            phase.complete(self.phase_emitted).map_err(failure)?;
+        }
+        Ok(())
     }
     fn final_custody(&self) -> Result<(), String> {
         pair_worker::cpu_is(self.cpus[0]);
@@ -626,6 +679,29 @@ pub(crate) fn run_selected_accuracy_session(args: &[std::ffi::OsString]) {
         std::process::exit(1);
     }
 }
+/// Opt-in phase evidence over exactly one whole Exact37 function and full table.
+/// Independent complete ELF/caller/ABI/lifetime authority is still required.
+pub(crate) fn run_selected_accuracy_phase_session(args: &[std::ffi::OsString]) {
+    let outcome = (|| -> Result<(), String> {
+        let (request, leaves, table) = selected::phase_arguments(args)?;
+        let leaves: [Selection; 1] = leaves.try_into().unwrap();
+        let expectations = Expectations::frozen(table, leaves.map(|leaf| leaf.function));
+        let policy = request.policy();
+        run_common_profile(
+            args,
+            policy.retained(),
+            policy.epoch_limit(),
+            leaves,
+            expectations,
+            Some(policy),
+            Some(request),
+        )
+    })();
+    if let Err(error) = outcome {
+        eprintln!("{} FAILED: {error}", phase::COMMAND);
+        std::process::exit(1);
+    }
+}
 fn run_accuracy<const N: usize>(
     args: &[std::ffi::OsString],
     policy: Policy,
@@ -690,7 +766,20 @@ fn run_common<const N: usize>(
     expectations: Expectations<N>,
     accuracy: Option<Policy>,
 ) -> Result<(), String> {
-    let command = if accuracy.is_some() {
+    run_common_profile(args, k, epochs, leaves, expectations, accuracy, None)
+}
+fn run_common_profile<const N: usize>(
+    args: &[std::ffi::OsString],
+    k: usize,
+    epochs: u32,
+    leaves: [Selection; N],
+    expectations: Expectations<N>,
+    accuracy: Option<Policy>,
+    phase_request: Option<phase::Request>,
+) -> Result<(), String> {
+    let command = if phase_request.is_some() {
+        phase::COMMAND
+    } else if accuracy.is_some() {
         "normal-selected-accuracy-session"
     } else {
         expectations.command()
@@ -699,6 +788,11 @@ fn run_common<const N: usize>(
     let cpus = shared::cpus();
     assert!(cpus.iter().all(|&cpu| cpu < 1024));
     let policy = schedule_policy(k, epochs, accuracy)?;
+    if let Some(request) = phase_request {
+        assert_eq!(N, 1);
+        assert_eq!(request.policy(), policy);
+        assert_eq!(accuracy, Some(policy));
+    }
     let candidate = Path::new(&args[0]);
     let trusted = Path::new(&args[1]);
     let bytes = expected_file(candidate, trusted);
@@ -746,6 +840,9 @@ fn run_common<const N: usize>(
             owner.functions()[i].certificate().range(),
             (entries[i], ends[i])
         );
+    }
+    if phase_request.is_some() {
+        phase::exact37(entries[0], &returns[0], &source_pages).map_err(failure)?;
     }
     let mut custody = pair_worker::Custody::new(candidate, trusted, bytes.clone());
     let mut fail_stop = csv::FailStop(true);
@@ -857,6 +954,8 @@ fn run_common<const N: usize>(
             0
         }),
         counter: accuracy.map(|_| counter::Evidence::new(record_cap(N) * N)),
+        phase: phase_request.map(phase::Shared::new),
+        phase_emitted: 0,
     };
     let mut io = if accuracy.is_some() {
         Io::new_accuracy()?
@@ -867,12 +966,13 @@ fn run_common<const N: usize>(
     let (events, replies) = mpsc::sync_channel(1);
     let worker_custody = Arc::clone(&custody);
     let worker_counter = application.counter.as_ref().map(|c| Arc::clone(&c.custody));
+    let worker_phase = application.phase.as_ref().map(Arc::clone);
     let mut handle = Some(joined_task::spawn(move || {
         worker::run::<N>(
             (entries, expectations),
             client,
             worker_custody,
-            (ready, worker_counter),
+            (ready, worker_counter, worker_phase),
             rx,
             events,
             cpus[1],

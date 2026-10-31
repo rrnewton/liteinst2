@@ -181,11 +181,11 @@ class Controls(unittest.TestCase):
         wanted = inherited + R.APP_CONTROLS
         inventory = list(wanted) + ['unrelated::test']
         self.assertEqual(len(prior), 52)
-        self.assertEqual(len(inherited), 79)
+        self.assertEqual(len(inherited), 88)
         self.assertEqual(len(leaf.ACCURACY_CONTROLS), 11)
-        self.assertEqual(leaf.APP_CONTROLS[16:], leaf.ACCURACY_CONTROLS)
+        self.assertEqual(leaf.APP_CONTROLS[16:27], leaf.ACCURACY_CONTROLS)
         self.assertEqual(len(R.APP_CONTROLS), 12)
-        self.assertEqual(len(wanted), 91)
+        self.assertEqual(len(wanted), 100)
         with patch.object(leaf, 'ordinary_inventory', wraps=leaf.ordinary_inventory) as shared:
             self.assertEqual(R.ordinary_inventory(inventory, leaf, recipe, modules), wanted)
             shared.assert_called_once_with(
@@ -198,10 +198,14 @@ class Controls(unittest.TestCase):
         self.assertEqual(len(old), 80)
         with self.assertRaises(AssertionError):
             R.ordinary_inventory(list(old), leaf, recipe, modules)
-        for prefix in (*leaf.ACCURACY_PREFIXES, 'normal::call_pair::tests::',
+        for prefix in (*leaf.ACCURACY_PREFIXES, *leaf.PHASE_PREFIXES, 'normal::call_pair::tests::',
                        'normal::leaf_set::tests::', 'normal::session::io::tests::'):
             with self.assertRaises(AssertionError, msg=prefix):
                 R.ordinary_inventory(inventory + [prefix + 'unregistered'], leaf, recipe, modules)
+        self.assertEqual(len(leaf.PHASE_CONTROLS),9)
+        self.assertEqual(leaf.APP_CONTROLS[27:],leaf.PHASE_CONTROLS)
+        with self.assertRaises(AssertionError):
+            R.ordinary_inventory(list(prior+leaf.APP_CONTROLS[:27]+R.APP_CONTROLS),leaf,recipe,modules)
         for name in leaf.ACCURACY_CONTROLS:
             changed = [n if n != name else name.rsplit('::', 1)[0] + '::unregistered' for n in inventory]
             with self.assertRaises(AssertionError, msg=name):

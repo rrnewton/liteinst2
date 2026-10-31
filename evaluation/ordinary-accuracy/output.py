@@ -294,7 +294,7 @@ def check(stdout, stderr, *, manifest_bytes, input_bytes, selected_bytes, truth_
 
     table/caller/abi must be separately admitted against actual immutable ELF,
     caller instructions, ownership and execution premises. Body equality here is
-    only one join and cannot create that authority. No campaign feeder exists.
+    only one join and cannot create that authority. This decoder executes no feeder.
     """
     try:
         return _check(stdout, stderr, manifest_bytes, input_bytes, selected_bytes, truth_bytes,
@@ -305,12 +305,23 @@ def check(stdout, stderr, *, manifest_bytes, input_bytes, selected_bytes, truth_
 
 def _check(stdout, stderr, manifest_bytes, input_bytes, selected_bytes, truth_bytes,
            table, caller, body_bytes, abi, policy, cpus):
+    rows = framing(stdout, stderr, policy['epochs'])
+    return _check_rows(stdout, stderr, manifest_bytes, input_bytes, selected_bytes, truth_bytes,
+        table, caller, body_bytes, abi, policy, cpus, rows, VERSION)
+
+
+def _check_rows(stdout, stderr, manifest_bytes, input_bytes, selected_bytes, truth_bytes,
+                table, caller, body_bytes, abi, policy, cpus, rows, version):
+    # Only these two source-defined adapters share the numeric/PMU/history gates.
+    # The old public wrapper always frames and admits VERSION, never a selector.
+    commands = {VERSION: 'normal-selected-accuracy-session',
+        'selected-accuracy-phase-session-v1': 'normal-selected-accuracy-phase-session'}
+    need(type(version) is str and version in commands, 'closed accuracy profile')
     manifest, originals, records, semantics = authority(manifest_bytes, input_bytes, selected_bytes,
         truth_bytes, table, caller, body_bytes, abi, policy, cpus)
-    rows = framing(stdout, stderr, policy['epochs'])
     # Header/geometry stays byte-for-byte observed. The shared checker rechecks
     # every cell after the additional evidence families have been joined below.
-    need(len(rows) >= 3 and rows[0][:2] == ['READY', VERSION] and rows[1][0] == 'LEAF'
+    need(len(rows) >= 3 and rows[0][:2] == ['READY', version] and rows[1][0] == 'LEAF'
          and rows[2] == ['RET', '0', '36'], 'initial selected header')
     need(len(rows[0]) == 19, 'READY width')
     ready = dict(pid=uint(rows[0][11], U32), worker_tid=uint(rows[0][13]))
@@ -362,8 +373,8 @@ def _check(stdout, stderr, manifest_bytes, input_bytes, selected_bytes, truth_by
     base_bytes = ('\n'.join(','.join(row) for row in base) + '\n').encode('ascii')
     numeric = shared._check(base_bytes, stderr, records=records, table=table, caller=caller,
         k=policy['k'], epochs=policy['epochs'], outcome='eof', input_error='none', cpus=cpus,
-        operations=(OPERATION,), version=VERSION, semantic_rows=semantics,
-        command='normal-selected-accuracy-session', status='STRUCTURALLY_COMPLETE',
+        operations=(OPERATION,), version=version, semantic_rows=semantics,
+        command=commands[version], status='STRUCTURALLY_COMPLETE',
         accuracy_policy={k: policy[k] for k in ('k', 'period_ms', 'epochs')})
     need(numeric['totals']['epochs'] == len(arms), 'complete ARM denominator')
     joined = []

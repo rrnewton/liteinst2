@@ -1,0 +1,502 @@
+{
+ "evidence": {
+  "approved_auditor": {
+   "bytes": 18232,
+   "sha256": "21483374bfc39f604bd578645ff7f4c791332a4fb1fd3068994e2828770a1604"
+  },
+  "audit_executions": 1,
+  "audit_findings": [],
+  "audit_log": {
+   "bytes": 684,
+   "sha256": "4e645d1644ede92232a79d9e819190b5fb4b7b702e5e90b4c9b28993aaec7649"
+  },
+  "audit_verdict": "APPROVE_CLOSED_VALIDATION_EVIDENCE",
+  "child_plan": {
+   "bytes": 1362,
+   "sha256": "2e0c1b6c1b7b862792d7dc7a43cf8969d674c838d8af3074856f8fd08e85d7e9"
+  },
+  "closed_audit_binding": {
+   "bytes": 2939,
+   "sha256": "fba5713de3d52432287d33673b199be2e2e46886aa2efad30637128ce99d7624"
+  },
+  "closed_owner": {
+   "bytes": 2542,
+   "sha256": "324c7d417488d987efab5aab7d4e40e4986d04cc50ed161da1eb72a42996aa2f"
+  },
+  "closed_result": {
+   "bytes": 5383,
+   "sha256": "ddb536f37c5b3596299c3456e5a0c5a00fd344d0dc3302bff8cbfa78a3fcee86"
+  },
+  "detailed_private_audit": {
+   "bytes": 236569,
+   "sha256": "61123cd57f76a35edaf6a934a7288d690cb7f4767b16ea7ccd88c53c66d115c0"
+  },
+  "owner_before_plan": {
+   "bytes": 2078,
+   "sha256": "0c14d278cd5d6c35648d5f0552e52319381061f26fae3df160fe2250a352ae12"
+  },
+  "owner_log": {
+   "bytes": 2638,
+   "sha256": "644c59ffb1f3279ca1292fc9e6341d97ec6b873ef2b937e38e6ba7756b839d5c"
+  }
+ },
+ "executed_revision": "071783b9a3c27ae26c439c7c5b7ac599cfeb7245",
+ "machine": {
+  "default_cargo_build_jobs": 4,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "reserved_cpu_count": 16,
+  "reserved_cpus": [
+   37,
+   60,
+   75,
+   90,
+   101,
+   141,
+   159,
+   164,
+   187,
+   225,
+   235,
+   249,
+   256,
+   261,
+   290,
+   295
+  ],
+  "rust_test_threads": 316,
+  "tool_custody": "This generic validation pipeline records configured stable-toolchain paths and environment, not contemporaneous compiler/interpreter binary hashes or fresh versions. No other pipeline hashes are borrowed.",
+  "workspace_cargo_jobs": 16
+ },
+ "outer": {
+  "attempts": 1,
+  "child_environment_overrides": {
+   "RUST_TEST_THREADS": "316"
+  },
+  "command": [
+   "/usr/bin/python3.9",
+   "-B",
+   "evaluation/short-neighbor-parallel/validate.py",
+   "--revision",
+   "071783b9a3c27ae26c439c7c5b7ac599cfeb7245",
+   "--output",
+   "${RUN}"
+  ],
+  "environment": {
+   "CARGO_BUILD_JOBS": "4",
+   "CARGO_HOME": "${CARGO_HOME}",
+   "CARGO_INCREMENTAL": "0",
+   "CARGO_NET_OFFLINE": "true",
+   "CARGO_PROFILE_DEV_DEBUG": "0",
+   "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+   "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+   "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+   "CARGO_PROFILE_TEST_DEBUG": "0",
+   "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+   "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+   "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+   "CARGO_TARGET_DIR": "${ROOT}/target",
+   "CARGO_TERM_COLOR": "never",
+   "HOME": "${USER_HOME}",
+   "LANG": "C.UTF-8",
+   "LC_ALL": "C.UTF-8",
+   "LITEINST_EVALUATION": "1",
+   "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "RUSTC": "${TOOLCHAIN}/bin/rustc",
+   "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+   "TEMP": "${RUN_TMP}",
+   "TMP": "${RUN_TMP}",
+   "TMPDIR": "${RUN_TMP}"
+  },
+  "load_after": [
+   "51.80",
+   "64.38",
+   "73.21"
+  ],
+  "load_before": [
+   "142.32",
+   "97.74",
+   "74.54"
+  ],
+  "outcome": {
+   "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+   "cleanup_complete": true,
+   "exit_code": 0,
+   "private_log_sha256": "644c59ffb1f3279ca1292fc9e6341d97ec6b873ef2b937e38e6ba7756b839d5c",
+   "reaped_descendants": 0,
+   "seconds": 1002.4084483650513,
+   "start_utc": "2026-10-31T01:02:25.953995+00:00",
+   "termination": null
+  },
+  "output_limit_bytes": 8388608,
+  "planned_attempts": 1,
+  "private_log_bytes": 2638,
+  "separate_cleanup_budget_seconds": 3,
+  "wall_limit_seconds": 1200
+ },
+ "phases": [
+  {
+   "attempts": 1,
+   "command": [
+    "cargo",
+    "fmt",
+    "--check"
+   ],
+   "load_after": [
+    "142.90",
+    "99.32",
+    "75.31"
+   ],
+   "load_before": [
+    "142.32",
+    "97.74",
+    "74.54"
+   ],
+   "name": "fmt",
+   "outcome": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reaped_descendants": 0,
+    "seconds": 12.924333242932335,
+    "start_utc": "2026-10-31T01:02:26.037773+00:00",
+    "termination": null
+   },
+   "output_limit_bytes": 8388608,
+   "planned_attempts": 1,
+   "private_log_bytes": 0,
+   "wall_limit_seconds": 180
+  },
+  {
+   "attempts": 1,
+   "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--all-features",
+    "--",
+    "-D",
+    "warnings"
+   ],
+   "load_after": [
+    "138.80",
+    "101.22",
+    "76.44"
+   ],
+   "load_before": [
+    "142.90",
+    "99.32",
+    "75.31"
+   ],
+   "name": "clippy",
+   "outcome": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "9865872fa55205625d9c106dd90fa4596433e1b7514000bf43f9778bbfdd190e",
+    "reaped_descendants": 0,
+    "seconds": 17.32090646913275,
+    "start_utc": "2026-10-31T01:02:38.963497+00:00",
+    "termination": null
+   },
+   "output_limit_bytes": 8388608,
+   "planned_attempts": 1,
+   "private_log_bytes": 181,
+   "wall_limit_seconds": 180
+  },
+  {
+   "attempts": 1,
+   "command": [
+    "cargo",
+    "check",
+    "--workspace",
+    "--all-features",
+    "--all-targets"
+   ],
+   "load_after": [
+    "132.68",
+    "101.16",
+    "76.69"
+   ],
+   "load_before": [
+    "138.80",
+    "101.22",
+    "76.44"
+   ],
+   "name": "check",
+   "outcome": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "b5231de6fa7901e07540ba99018c6929fc4d78aebe9bc456605690ba6b596226",
+    "reaped_descendants": 0,
+    "seconds": 9.757937177084386,
+    "start_utc": "2026-10-31T01:02:56.285353+00:00",
+    "termination": null
+   },
+   "output_limit_bytes": 8388608,
+   "planned_attempts": 1,
+   "private_log_bytes": 180,
+   "wall_limit_seconds": 180
+  },
+  {
+   "attempts": 1,
+   "command": [
+    "cargo",
+    "test",
+    "-j",
+    "16",
+    "--workspace",
+    "--no-fail-fast"
+   ],
+   "load_after": [
+    "66.67",
+    "69.93",
+    "75.94"
+   ],
+   "load_before": [
+    "132.68",
+    "101.16",
+    "76.69"
+   ],
+   "name": "workspace",
+   "outcome": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "127826ed147c86133653e1a2f9cb39ef8afa691bbcf451f75d5ebaa8fb91aaf9",
+    "reaped_descendants": 0,
+    "seconds": 832.6493735630065,
+    "start_utc": "2026-10-31T01:03:06.044057+00:00",
+    "termination": null
+   },
+   "output_limit_bytes": 8388608,
+   "planned_attempts": 1,
+   "private_log_bytes": 488681,
+   "wall_limit_seconds": 900
+  },
+  {
+   "attempts": 1,
+   "command": [
+    "cargo",
+    "test",
+    "-p",
+    "liteinst-launch",
+    "--tests",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+   ],
+   "load_after": [
+    "51.80",
+    "64.38",
+    "73.21"
+   ],
+   "load_before": [
+    "66.67",
+    "69.93",
+    "75.94"
+   ],
+   "name": "serial-launch",
+   "outcome": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "ce60626849d4c45abf69f9aaa67b45d535cd04af13f0b0929c12a9c8402cf120",
+    "reaped_descendants": 0,
+    "seconds": 129.64596518105827,
+    "start_utc": "2026-10-31T01:16:58.696157+00:00",
+    "termination": null
+   },
+   "output_limit_bytes": 8388608,
+   "planned_attempts": 1,
+   "private_log_bytes": 1404576,
+   "wall_limit_seconds": 180
+  }
+ ],
+ "prior_history": {
+  "failed_review": {
+   "bytes": 2074,
+   "sha256": "32b452575a6461fe9e95d189583eda371c29084d4581c131fb24fa0d2a90344d"
+  },
+  "failed_revision": "bf4c7f7cb71fb1af57c306d73d9ce5af6d8ca0b6",
+  "failure_unchanged": "Formatting exit 1; workspace hit the unchanged 900 s bound with nine rescued descendants and complete cleanup. Original audit refusal, partial census and later failure-only audit remain retained, never relabeled.",
+  "history_relabelled": false,
+  "public_receipt": "../workspace-78b/receipt.json",
+  "receipt": {
+   "bytes": 20208,
+   "sha256": "81ab90afdc8b6ab25a55bd7ddcda09b8a5f4813d9b57a8f13a36f9b7b6e14fd4"
+  },
+  "successful_revision": "78bdf7137e4dfd017553b8af0028108910fba2df",
+  "successful_workspace": {
+   "failed": 0,
+   "filtered_out": 0,
+   "ignored": 37,
+   "measured": 0,
+   "passed": 4062
+  }
+ },
+ "qualification": {
+  "cadence": false,
+  "complete_a5_matrix": false,
+  "correctness": "PASS",
+  "full_matrix_denominator": 43200,
+  "new_msrv_credit": false,
+  "performance": false,
+  "phase_realization": false,
+  "pmu_accuracy": false,
+  "release_native_execution_from_this_validation": false,
+  "scope": "Five fixed debug correctness commands only. Durations are operational; no performance or causal-speedup claim. Release-native phase observations are separate; both requested phase positions remain UNRESOLVED.",
+  "strict_two_ms": false
+ },
+ "requested_tree": "4f14e4d780ef73d9dbabe8d85e570a39649ba3fa",
+ "schema": "phase-workspace-public-validation-v1",
+ "source": {
+  "approved_plan_review": {
+   "bytes": 3841,
+   "sha256": "ecfa5a113b075d9927f5b8821f1262e9f7d7adf648390c943434d9551077f041"
+  },
+  "audited_source_pins": {
+   "encoding": "SHA256 of UTF-8 JSON mapping relative paths to bytes/SHA256 objects; sorted keys, comma/colon separators, no newline.",
+   "files": 66,
+   "scope": "28 inherited regression sources and 38 approved phase/source-authority additions, independently authenticated against exact Git revision.",
+   "sha256": "df5d59c4580b418a85406119c737ac99b0362ea104aaccfaaa1878a24defcc77"
+  },
+  "custody_scope": "Generic owner records its source roster and empty working overlay; unchanged through closure. Exact 66-file audit is separate from that roster. No claim that every ignored or unrelated file is absent.",
+  "parent_revision": "20cbe068487f10b47c08b02505ba0dcda7248f54",
+  "prospective_plan": {
+   "bytes": 5005,
+   "sha256": "52348dd39635199b11f219501057d2d55816c610a98a7c78f4044cd1e0f370e0"
+  },
+  "reproduction_sources": {
+   "evaluation/admission/processes.py": {
+    "bytes": 15760,
+    "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+   },
+   "evaluation/short-neighbor-parallel/validate.py": {
+    "bytes": 3717,
+    "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+   }
+  },
+  "unchanged_at_close": true,
+  "working_overlay": {}
+ },
+ "status": "PASS",
+ "tests": {
+  "ignored": {
+   "complete_census": "Retained in the authenticated private audit; no census exemptions.",
+   "expected_distinct_names": 36,
+   "expected_outcomes": 37,
+   "observed": 37,
+   "unchanged_name_reason_multiplicity": true
+  },
+  "nested": {
+   "child_failures_still_fail": true,
+   "counting": "Every unfiltered summary occurrence is counted once, including distinct doctest groups. Only the three source-declared controlled_oracle child summaries are excluded. All filtered summaries/failures and all test outcome lines remain independently visible.",
+   "expected_children": 3,
+   "expected_each": {
+    "failed": 0,
+    "filtered_out": 35,
+    "ignored": 0,
+    "measured": 0,
+    "passed": 1
+   },
+   "modes": [
+    "emitter",
+    "single",
+    "grouped"
+   ],
+   "source": "tests/controlled_oracle.rs",
+   "test": "runtime_control_oracle_modes"
+  },
+  "required_regressions": {
+   "absent_or_nonpassing": [],
+   "added_phase": 9,
+   "exact_names": {
+    "bytes": 10973,
+    "sha256": "8b48ccbd5f7cc1e365ef62b8ff472c6ff88ced0de00303a77107fc830b2d4e1a"
+   },
+   "expected_total": 139,
+   "groups": {
+    "b3_exec": 2,
+    "exact37_pure": 8,
+    "exec_source": 3,
+    "gap_carrier": 9,
+    "observing_control": 8,
+    "phase_pure": 9,
+    "prefixed_pun": 1,
+    "quiescent_oracle": 4,
+    "rapid_rejection": 2,
+    "routed_jmp_frontend": 17,
+    "routed_jmp_native": 34,
+    "routed_jmp_publication": 3,
+    "short_neighbor": 21,
+    "staged_image_drop": 1,
+    "startup_carrier": 9,
+    "startup_catalog": 8
+   },
+   "inherited": 130,
+   "inherited_basis": {
+    "bytes": 48892,
+    "sha256": "d85e91676ebed8306d2725724e8b7bdb34d35c67b4f81954807e66f9063000fc"
+   },
+   "passed": 139,
+   "passing_occurrences": 145,
+   "prospective_basis": {
+    "bytes": 15953,
+    "sha256": "1e0a5c50ecca049420df9fa6ef2a6454d989c2ed225016db2a6801103d9fa078"
+   }
+  },
+  "serial_launch": {
+   "overlaps_workspace": true,
+   "summary_count": 27,
+   "totals": {
+    "failed": 0,
+    "filtered_out": 0,
+    "ignored": 0,
+    "measured": 0,
+    "passed": 1039
+   }
+  },
+  "workspace": {
+   "nested_children_excluded_only_from_totals": 3,
+   "ordinary_interval": {
+    "failed": 0,
+    "filtered_out": 0,
+    "ignored": 1,
+    "measured": 0,
+    "passed": 488
+   },
+   "rapid_profiler_doctest_groups": [
+    {
+     "failed": 0,
+     "ignored": 0,
+     "passed": 2
+    },
+    {
+     "failed": 0,
+     "ignored": 0,
+     "passed": 45
+    }
+   ],
+   "raw_summary_count": 113,
+   "raw_totals": {
+    "failed": 0,
+    "filtered_out": 105,
+    "ignored": 37,
+    "measured": 0,
+    "passed": 4074
+   },
+   "totals": {
+    "failed": 0,
+    "filtered_out": 0,
+    "ignored": 37,
+    "measured": 0,
+    "passed": 4071
+   },
+   "unfiltered_summary_count": 110
+  }
+ }
+}

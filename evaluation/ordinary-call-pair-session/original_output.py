@@ -10,7 +10,7 @@ import re
 
 _DEPENDENCY = Path(__file__).resolve().parents[1] / 'ordinary-leaf-set-session/output.py'
 assert not _DEPENDENCY.is_symlink() and _DEPENDENCY.is_file()
-assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == 'c804a953b97494d7ec4ff3cc94ff23a69b1a34d010bd332030ca938db97681b4'
+assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == '9686ecdb63cd5228954bb8724856195eb64c2c2d8b54465ec3f3e91649cba4ae'
 _spec = importlib.util.spec_from_file_location('_call_pair_original_truth', _DEPENDENCY)
 _truth = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_truth)
