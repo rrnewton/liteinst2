@@ -53,6 +53,14 @@
 #error "the old event route table has no scalar-region row"
 #endif
 _Static_assert(__atomic_always_lock_free(sizeof(uint64_t),0),"no external event counter gateway");
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#include "persistent_group_counters.h"
+#define PGC_EVENT_REF (&li2_pgc_current->ingress.events)
+#define PGC_SIGNAL_REF(i) (&li2_pgc_current->ingress.signals[i])
+#else
+#define PGC_EVENT_REF (&selected_linked_epoch.events)
+#define PGC_SIGNAL_REF(i) (&selected_linked_epoch.signals[i])
+#endif
 #define LE_PAGES 64U
 #define LE_BYTES (LE_PAGES*PAGE)
 enum le_error { LE_STATE=3100,LE_FRAME,LE_SOURCE,LE_PUBLICATION,LE_EVENT,
@@ -471,9 +479,9 @@ static int le_exit_index(const struct li2_link_plan *p,uintptr_t pc) {
 /* Runs after the unchanged pure native/rseq guards and BEFORE returning RAW,
    map/event callbacks or any old pending-owner route. */
 static void selected_linked_epoch_preentry(int sig,siginfo_t *si,ucontext_t *uc) {
-    le_event_count(&selected_linked_epoch.events);
+    le_event_count(PGC_EVENT_REF);
     unsigned kind=sig==SIGSEGV?0:sig==SIGTRAP?1:sig==SIGILL?2:sig==SIGSYS?3:4;
-    le_event_count(&selected_linked_epoch.signals[kind]);
+    le_event_count(PGC_SIGNAL_REF(kind));
     int routed=selected_pending_route==SELECTED_LINKED_EPOCH;
     if(!selected_linked_epoch_active && !selected_linked_epoch_busy &&
        !selected_linked_epoch_closing && !selected_linked_epoch_resuming && !routed)return;
@@ -1166,7 +1174,13 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
     LE_FIELD(resumed);LE_FIELD(refaults);LE_FIELD(hash_misses);LE_FIELD(candidates);LE_FIELD(source_misses);
 #endif
     LE_FIELD(plan_misses);LE_FIELD(capacity_misses);LE_FIELD(publications);LE_FIELD(hits);LE_FIELD(entries);
-    LE_FIELD(completed);LE_FIELD(unexpected);LE_FIELD(events);LE_FIELD(plan_checks);LE_FIELD(rseq_checks);LE_FIELD(live_checks);LE_FIELD(proof_checks);
+    LE_FIELD(completed);LE_FIELD(unexpected);
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+    field(&w,",\"events\":",__atomic_load_n(PGC_EVENT_REF,__ATOMIC_ACQUIRE));
+#else
+    LE_FIELD(events);
+#endif
+    LE_FIELD(plan_checks);LE_FIELD(rseq_checks);LE_FIELD(live_checks);LE_FIELD(proof_checks);
 #ifdef LI2_LINKED_PREEDGE
     LE_FIELD(cut_exits);
 #endif
@@ -1182,7 +1196,12 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
         t->first_detail<0?0ULL-(uint64_t)t->first_detail:(uint64_t)t->first_detail,t->first_detail<0,
         t->refault_attempted,t->refaulted};
     selected_repeat_array(&w,",\"transfer\":",origin,sizeof origin/sizeof origin[0]);
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+    uint64_t final_signals[5];for(unsigned i=0;i<5;i++)final_signals[i]=__atomic_load_n(PGC_SIGNAL_REF(i),__ATOMIC_ACQUIRE);
+    selected_repeat_array(&w,",\"signals\":",final_signals,5);
+#else
     selected_repeat_array(&w,",\"signals\":",selected_linked_epoch.signals,5);
+#endif
     selected_repeat_array(&w,",\"refusals\":",selected_linked_epoch.refusals,4);
     selected_repeat_array(&w,",\"exit_indices\":",selected_linked_epoch.exit_counts,LI2_REGION_EXITS);
     const struct le_record *r=&selected_linked_epoch.current;

@@ -11,14 +11,33 @@ _Static_assert(__atomic_always_lock_free(4,0),"signal-safe maps flags");
 _Static_assert(__atomic_always_lock_free(8,0),"signal-safe maps counters");
 #define MV_LOAD(p) __atomic_load_n((p),__ATOMIC_ACQUIRE)
 #define MV_STORE(p,v) __atomic_store_n((p),(v),__ATOMIC_RELEASE)
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#include "persistent_group_counters.h"
+static struct li2_maps_stats pgc_initial_maps;
+static struct li2_maps_view_stats pgc_initial_view;
+static struct li2_maps_stats *pgc_maps=&pgc_initial_maps;
+static struct li2_maps_view_stats *pgc_view=&pgc_initial_view;
+#define maps_stats (*pgc_maps)
+#define mv (*pgc_view)
+#else
 static struct li2_maps_stats maps_stats;
 static struct li2_maps_view_stats mv;
+#endif
 static struct li2_fetch_map_progress mv_receipt;
 static struct map_row mv_scratch[MAP_ROWS];
 static uintptr_t mv_stack_anchor,mv_stack_first,mv_stack_end;
 static unsigned mv_stack_pending,mv_stack_retired,mv_depth,mv_saved;
 static long mv_call[7];
 static unsigned char mv_residency;
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+int li2_pgc_bind_maps(struct li2_maps_stats *m,struct li2_maps_view_stats *v) {
+    if(!m || !v || pgc_maps!=&pgc_initial_maps || pgc_view!=&pgc_initial_view ||
+       active || mv_depth || MV_LOAD(&maps_stats.active) || MV_LOAD(&mv.enabled))return 0;
+    /* Bootstrap singleton, before handlers: preserve every actual prefix cell.
+       There is no syscall or concurrent writer between copying and rebinding. */
+    *m=maps_stats;*v=mv;pgc_maps=m;pgc_view=v;return 1;
+}
+#endif
 #ifdef LI2_MAPS_CURRENT_TF
 #include "maps_current_ticket.h"
 static struct li2_fetch_map_progress mct_physical_receipt;

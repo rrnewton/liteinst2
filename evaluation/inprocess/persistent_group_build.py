@@ -42,9 +42,11 @@ PROVIDERS = ('li2_decoder_link_none', 'li2_link_plan_page', 'li2_link_plan_valid
              'li2_pg_source_key_equal', 'li2_pg_rseq_begin', 'li2_pg_rseq_close', 'li2_pg_rseq_cancel')
 
 
-def binding_config(builder, archive, image, output, pin, binary, run):
+def binding_config(builder, archive, image, output, pin, binary, run, *, counters=False):
     image = pin(binary(image)); original = dynamic_original_image(image); values = []
-    for name in POLICY_INPUTS:
+    policy_inputs = POLICY_INPUTS + (('persistent_group_counters.h', 'persistent_group_counters.inc',
+                    'build-persistent-group-counters.sh', 'persistent_group_counter_binding.py') if counters else ())
+    for name in policy_inputs:
         path = pin(SELECTED/name); value = fact(path)
         if name in FIXED_DOMAIN:
             size, sha = FIXED_DOMAIN[name]
@@ -68,14 +70,14 @@ def binding_config(builder, archive, image, output, pin, binary, run):
     manifest = output/'persistent_group_binding.json'
     need(not manifest.exists() and not any((output/n).exists() for n in expected), 'fresh binding outputs')
     _, out, err = run('persistent-group-policy-binding', [builder.tools['python'], '-B',
-                     SELECTED/'persistent_group_binding.py', SELECTED, archive, image, output], env=builder.environment)
+                     SELECTED/('persistent_group_counter_binding.py' if counters else 'persistent_group_binding.py'), SELECTED, archive, image, output], env=builder.environment)
     need(out == err == b'', 'source-owned persistent binder has no diagnostics')
     header_facts = {}
     for name, data in expected.items():
         path = pin(binary(output/name))
         need(path.read_bytes() == data, 'whole independent archive/policy/image header')
         header_facts[name] = dict(path=str(path), **fact(path))
-    record = dict(version=1, profile='persistent-group-two-image-v1', archive=archive_fact,
+    record = dict(version=1, profile='persistent-group-final-counters-v1' if counters else 'persistent-group-two-image-v1', archive=archive_fact,
                   policy_sha256=policy, original=original, sources=values,
                   headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
     manifest = pin(binary(manifest))
@@ -203,8 +205,9 @@ def capture_extents(builder, bridge, symbols, pin, run, state):
     state['capture_extents'].update(footer=64, stream=sizes[0]+64, record_limit=4*1024*1024)
 
 
-def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False):
+def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False, counters=False):
     need(type(capture) is bool, 'explicit separate group capture selector')
+    need(type(counters) is bool and not (capture and counters), 'separate release-only final-counter selector')
     need(builder.mov_guard is True and builder.linked_epoch is True and builder.scalar_span is True and
          builder.extra_decoder_sources == ('region.rs', 'mov_guard.rs') and
          builder.decoder_features == FEATURES and builder.record.get('decoder_features') == list(FEATURES) and
@@ -219,10 +222,10 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
          ('li2_decoder_region_describe', 'li2_decoder_span_describe', 'li2_decoder_link_none',
           'li2_decoder_mov_store', 'li2_decoder_tf_classify', 'li2_decoder_write_footprint')),
          'every actual descriptor/NONE provider is present exactly once')
-    output = private/('persistent-group-capture' if capture else 'persistent-group-release'); output.mkdir()
-    binding = binding_config(builder, archive, image, output, pin, binary, run)
+    output = private/('persistent-group-counters' if counters else 'persistent-group-capture' if capture else 'persistent-group-release'); output.mkdir()
+    binding = binding_config(builder, archive, image, output, pin, binary, run, counters=counters)
     observation = capture_config(builder, image, output, pin, binary, run) if capture else None
-    script = pin(SELECTED/('build-persistent-group-capture.sh' if capture else 'build-persistent-group.sh')); rows = recipe(script, '"$cc_bin"')
+    script = pin(SELECTED/('build-persistent-group-counters.sh' if counters else 'build-persistent-group-capture.sh' if capture else 'build-persistent-group.sh')); rows = recipe(script, '"$cc_bin"')
     need(len(rows) == 1, 'one source-owned persistent compiler recipe')
     argv = expand(rows[0], {'$cc_bin': builder.tools['cc'], '$selected_dir': SELECTED,
                   '$parent_dir': SELECTED.parent, '$archive': archive, '$output': output})
@@ -234,14 +237,16 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
               'INITIAL_CODE_PROTECTION', 'UNROLLED_HASH', 'MAPS_MAINTAINED')+MACROS
     if capture:
         macros = ('PERSISTENT_GROUP_CAPTURE',)+macros
-    name = 'bridge-persistent-group-capture.so' if capture else 'bridge-persistent-group.so'
+    if counters:
+        macros = ('PERSISTENT_GROUP_COUNTERS',)+macros
+    name = 'bridge-persistent-group-counters.so' if counters else 'bridge-persistent-group-capture.so' if capture else 'bridge-persistent-group.so'
     need(argv[-2:] == ['-o', str(output/name)] and
          [x for x in argv if x.endswith(('.c', '.S'))] == units and
          [x for x in argv if x.startswith('-DLI2_')] == ['-DLI2_'+n+'=1' for n in macros] and
          all(x in argv for x in ('-O2', '-g', '-nostdlib', '-shared', '-fPIC', '-fvisibility=hidden',
              '-mgeneral-regs-only', '-fno-builtin', '-fno-tree-loop-distribute-patterns',
              '-fno-tree-vectorize', '-Wall', '-Wextra', '-Werror')), 'exact24-TU group-only no-FP release recipe')
-    state = record['release_build'] = dict(status='failed', profile='persistent-group-loop-capture-v1' if capture else 'persistent-group-two-image-v1',
+    state = record['release_build'] = dict(status='failed', profile='persistent-group-final-counters-v1' if counters else 'persistent-group-loop-capture-v1' if capture else 'persistent-group-two-image-v1',
               recipe=fact(script), archive=fact(archive), argv=argv, persistent_binding=binding,
               capture=capture, qualification_credit=False)
     if capture:
@@ -270,6 +275,9 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
                  'persistent_dynamic_plan.h', 'persistent_dynamic_plan.inc',
                  'persistent_epoch_config.h', 'persistent_dynamic_capture_config.h',
                  'selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h'}
+    counter_names = {'persistent_group_counters.h', 'persistent_group_counters.inc'}
+    need(names.intersection(counter_names) == (counter_names if counters else set()),
+         'exact counter bootstrap/header compiler closure only in explicit release diagnostic')
     observation_names = {'persistent_group_observe.h', 'persistent_group_observe.inc',
                          'persistent_group_observe_memory.h', 'persistent_group_observe_memory.inc'}
     if capture:
@@ -299,6 +307,13 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(not err, 'actual reset disassembly')
     state['reset'] = hidden_memset(bridge, body_check(bridge, symbols, assembly, 'fast', symbol_name='memset'))
     protected_extents(builder, bridge, symbols, pin, run, state)
+    if counters:
+        for wanted, extent in ((b'pgc_bootstrap', 552), (b'li2_pgc_current', 8)):
+            rows = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [wanted]]
+            need(len(rows) == 1 and len(rows[0]) == 4 and rows[0][2] in (b'b', b'B', b'd', b'D') and
+                 int(rows[0][1], 16) == extent, 'actual final-counter storage/type extent')
+        state['counter_schema'] = dict(version=1, bytes=552, page=4096, initial_seals=6, final_seals=23)
+        state['counters'] = True
     if capture:
         capture_extents(builder, bridge, symbols, pin, run, state)
     fast_bytes(builder, output, pin, binary, aliases, run, state)

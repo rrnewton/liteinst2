@@ -382,14 +382,31 @@ static int pe_ready(void) {
         p->header.rseq_address==r->address && p->header.rseq_length==r->length &&
         p->header.rseq_signature==r->signature;
 }
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#include "persistent_group_counters.h"
+_Static_assert(LI2_PGD_REASON_COUNT==18,"complete actual group miss census");
+#define PGC_REF(n) (&li2_pgc_current->group.n)
+#define PGC_VALUE(n) __atomic_load_n(PGC_REF(n),__ATOMIC_ACQUIRE)
+#define PGC_MISS_REF(i) (&li2_pgc_current->misses[i])
+#define PGC_MISS_VALUE(i) __atomic_load_n(PGC_MISS_REF(i),__ATOMIC_ACQUIRE)
+static void ped_count(uint64_t *v) {
+    uint64_t old=__atomic_load_n(v,__ATOMIC_ACQUIRE);
+    pe_need(old!=UINT64_MAX,PE_OVERFLOW,0);__atomic_store_n(v,old+1,__ATOMIC_RELEASE);
+}
+#else
+#define PGC_REF(n) (&pe.n)
+#define PGC_VALUE(n) (pe.n)
+#define PGC_MISS_REF(i) (&pe.misses[i])
+#define PGC_MISS_VALUE(i) (pe.misses[i])
 static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
+#endif
 static unsigned ped_bank_for(uintptr_t pc) {return pc<(UINT64_C(1)<<31)?0:1;}
 static int ped_capacity(void) {
-    if(pe.next_serial==UINT64_MAX || pe.next_generation>=UINT64_MAX/2 || pe.offers==UINT64_MAX ||
-       pe.publications==UINT64_MAX || pe.hits==UINT64_MAX || pe.cold_attempts==UINT64_MAX ||
-       pe.cancelled==UINT64_MAX || pe.retirements==UINT64_MAX || pe.permit_claims==UINT64_MAX ||
-       pe.entries==UINT64_MAX || pe.completed==UINT64_MAX)return 0;
-    for(unsigned i=0;i<LI2_PGD_REASON_COUNT;i++)if(pe.misses[i]==UINT64_MAX)return 0;
+    if(pe.next_serial==UINT64_MAX || pe.next_generation>=UINT64_MAX/2 || PGC_VALUE(offers)==UINT64_MAX ||
+       PGC_VALUE(publications)==UINT64_MAX || PGC_VALUE(hits)==UINT64_MAX || PGC_VALUE(cold_attempts)==UINT64_MAX ||
+       PGC_VALUE(cancelled)==UINT64_MAX || PGC_VALUE(retirements)==UINT64_MAX || PGC_VALUE(permit_claims)==UINT64_MAX ||
+       PGC_VALUE(entries)==UINT64_MAX || PGC_VALUE(completed)==UINT64_MAX)return 0;
+    for(unsigned i=0;i<LI2_PGD_REASON_COUNT;i++)if(PGC_MISS_VALUE(i)==UINT64_MAX)return 0;
     return 1;
 }
 int li2_pg_owner_cancel_prot(const struct li2_pg_token *t,unsigned extent) {
@@ -441,7 +458,7 @@ static void ped_claim(void) {
         !pg_proof_query(pe.generation.proof,PROT_READ,&pe.claim_proof) &&
         !pe_query(pe.generation.spill,PAGE,PROT_READ|PROT_WRITE,&pe.claim_spill) &&
         !pe_query(pe.generation.layout.slots,PAGE,PROT_READ,&pe.claim_slots),PE_RELEASE,11);
-    pe.permit.valid=0;ped_count(&pe.permit_claims);__asm__ volatile("":::"memory");
+    pe.permit.valid=0;ped_count(PGC_REF(permit_claims));__asm__ volatile("":::"memory");
 }
 static void ped_reset_attempt(void) {
     pe_need(!pe_busy && !pe_active && !pe.resuming &&
@@ -555,14 +572,14 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe_need(!li2_mg_table_build(pe.exclusions,n,pe.p.table,&pe.candidate.plan.table),PE_PLAN,0);
         uintptr_t pages[2]={pe.p.source[0],pe.p.source[1]};
         for(unsigned i=0;i<2;i++)copy(pe.candidate.plan.source[i],s->key.page[i].bytes,PAGE);
-        pe.build_started=1;pe_decoding=1;ped_count(&pe.cold_attempts);__asm__ volatile("":::"memory");
+        pe.build_started=1;pe_decoding=1;ped_count(PGC_REF(cold_attempts));__asm__ volatile("":::"memory");
         pe.build_result=li2_pg_plan_pages(pages,pe.candidate.plan.source,s->key.entry,
             &pe.p.layout,&pe.candidate.plan.table,&pe.cold,&pe.miss);
         pe.build_returned=1;
         if(pe.build_result) {
             pe_need(li2_pg_miss_valid(&pe.cold,&pe.miss,pe.build_result) &&
                 pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
-            ped_count(&pe.misses[pe.miss.reason]);pe_decoding=0;selected_initialized();return 0;
+            ped_count(PGC_MISS_REF(pe.miss.reason));pe_decoding=0;selected_initialized();return 0;
         }
         pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==1 &&
             !pe.miss.status && !pe.miss.reason && !pe.miss.site && !pe.miss.pc && !pe.miss.detail,
@@ -599,13 +616,13 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
         ped_claim();
         le_zero(g->open,sizeof g->open);le_zero(g->close,sizeof g->close);le_zero(g->cleanup,sizeof g->cleanup);
         le_zero(&g->slots[1],2U*sizeof g->slots[1]);
-        pe.p.generation=g->generation;pe.p.publication=1;pe.p.phase=LI2_PG_BOUND;ped_count(&pe.hits);
+        pe.p.generation=g->generation;pe.p.publication=1;pe.p.phase=LI2_PG_BOUND;ped_count(PGC_REF(hits));
         return pe_ready()?0:PE_PUBLICATION;
     }
     if(pe.plan_proofs!=2 || pe.none_proofs!=1 || pe.candidate.plan.ready!=1 ||
        pe.candidate.plan.result || pe.next_generation>=UINT64_MAX/2)return PE_STATE;
     if(g->installed) {
-        ped_claim();g->ready_generation=0;__asm__ volatile("":::"memory");ped_count(&pe.retirements);
+        ped_claim();g->ready_generation=0;__asm__ volatile("":::"memory");ped_count(PGC_REF(retirements));
     } else if(pe.next_generation || pe.permit.valid)return PE_STATE;
     const struct ped_bank *b=&pe.banks[pe.selected_bank];
     if((b->virgin?b->prot!=(PROT_READ|PROT_WRITE):b->prot!=PROT_READ) ||
@@ -647,7 +664,7 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
         if(proof_bytes[i]!=(i<sizeof pe.publication?src[i]:0))return PE_PUBLICATION;
         g->proof_verified=i+1;
     }
-    g->proof_complete=1;g->complete=1;pe.p.publication=1;ped_count(&pe.publications);
+    g->proof_complete=1;g->complete=1;pe.p.publication=1;ped_count(PGC_REF(publications));
     __asm__ volatile("":::"memory");g->ready_generation=g->generation;pe.p.phase=LI2_PG_BOUND;
     if((e=pg_link_data(0)))return e;
     return pe_ready()?0:PE_PUBLICATION;
@@ -667,7 +684,7 @@ int li2_pg_epoch_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,
     if(!pe_identity() || !le_quiet(&pe.ref) || !pe_ready() || pe_bytes() ||
        !le_unchanged(&pe.before,si,uc) || sig!=SIGTRAP)return PE_FRAME;
     /* The actual logical frame remains unchanged except its entry RIP. */
-    pe.p.phase=LI2_PG_EXECUTING;pe.redirected=1;ped_count(&pe.entries);
+    pe.p.phase=LI2_PG_EXECUTING;pe.redirected=1;ped_count(PGC_REF(entries));
     selected_step_pending=1;selected_pending_route=SELECTED_PERSISTENT_EPOCH;pe_active=1;
     __asm__ volatile("":::"memory");uc->uc_mcontext.gregs[REG_RIP]=(greg_t)p->plan.layout.generated[0];
     return 0;
@@ -696,7 +713,11 @@ int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
        pe.after.frame.mask==pe.session.application_mask) {
         pe.exit_seen=1;pe.exit_index=(unsigned)exit;pe.recovery_complete=1;return 0;
     }
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+    (void)__atomic_fetch_add(PGC_REF(unexpected),1,__ATOMIC_ACQ_REL);
+#else
     ++pe.unexpected;
+#endif
     uint64_t raw[16];for(unsigned i=0;i<16;i++)raw[i]=(uint64_t)g[pe_greg[i]];
     /* Recovery owns this exact protected scratch before materialization.
        Donor recovery reads only initialized dirty spills; no blanket spill
@@ -780,7 +801,7 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     if((uint64_t)uc->uc_mcontext.gregs[REG_EFL]!=expected)return PE_FRAME;
     selected_step_pending=*result==LI2_CHAIN_RUNNING;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
-    pe.p.phase=LI2_PG_CANCELLED;pe.ticket=0;selected_initialized();ped_count(&pe.cancelled);
+    pe.p.phase=LI2_PG_CANCELLED;pe.ticket=0;selected_initialized();ped_count(PGC_REF(cancelled));
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_cancelled(sig,si,uc,*result);
 #endif
@@ -849,7 +870,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     pgo_begin(sig,si,uc);
 #endif
     ped_reset_attempt();pe.selected_bank=bank_index;
-    pe_closing=1;pe_busy=1;ped_count(&pe.offers);__asm__ volatile("":::"memory");
+    pe_closing=1;pe_busy=1;ped_count(PGC_REF(offers));__asm__ volatile("":::"memory");
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
     pe_need(!e && pe.ticket,PE_EVENT,e);pe.transfer=*li2_tf_chain_span_progress();
@@ -904,7 +925,7 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
         !li2_pg_rseq_live(&pe.token,uc,&pe.live[2]),PE_RSEQ,3);
     pe_need(!li2_pg_epoch_drain(&pe.token) && le_unchanged(&pe.after,si,uc) &&
         le_quiet(0) && pe_registry(),PE_RELEASE,0);
-    ped_count(&pe.completed);pe.p.completion_permit=1;
+    ped_count(PGC_REF(completed));pe.p.completion_permit=1;
     pe_need(!pe.permit.valid,PE_RELEASE,12);
     pe.permit=(struct ped_permit){.valid=1,.serial=pe.p.serial,.generation=pe.generation.generation,
         .ref_sequence=pe.ref.sequence,.generated=pe.generation.generated,.proof=pe.generation.proof,
@@ -929,17 +950,17 @@ static void selected_persistent_report(unsigned status,unsigned code,long detail
     field(&w,",\"detail_negative\":",detail<0);
     field(&w,",\"phase\":",pe.p.phase);field(&w,",\"serial\":",pe.p.serial);
     field(&w,",\"generation\":",pe.generation.generation);field(&w,",\"build_serial\":",pe.generation.build_serial);
-    field(&w,",\"offers\":",pe.offers);field(&w,",\"cold_attempts\":",pe.cold_attempts);
-    field(&w,",\"publications\":",pe.publications);field(&w,",\"hits\":",pe.hits);
-    field(&w,",\"cancelled\":",pe.cancelled);field(&w,",\"retirements\":",pe.retirements);
-    field(&w,",\"permit_claims\":",pe.permit_claims);field(&w,",\"entries\":",pe.entries);
-    field(&w,",\"completed\":",pe.completed);field(&w,",\"unexpected\":",pe.unexpected);
+    field(&w,",\"offers\":",PGC_VALUE(offers));field(&w,",\"cold_attempts\":",PGC_VALUE(cold_attempts));
+    field(&w,",\"publications\":",PGC_VALUE(publications));field(&w,",\"hits\":",PGC_VALUE(hits));
+    field(&w,",\"cancelled\":",PGC_VALUE(cancelled));field(&w,",\"retirements\":",PGC_VALUE(retirements));
+    field(&w,",\"permit_claims\":",PGC_VALUE(permit_claims));field(&w,",\"entries\":",PGC_VALUE(entries));
+    field(&w,",\"completed\":",PGC_VALUE(completed));field(&w,",\"unexpected\":",PGC_VALUE(unexpected));
     field(&w,",\"permit\":",pe.permit.valid);field(&w,",\"opened_pages\":",pe.p.opened_pages);
     field(&w,",\"closed_pages\":",pe.p.closed_pages);field(&w,",\"anchor_released\":",pe.p.anchor_released);
     field(&w,",\"registration_rechecked\":",pe.p.registration_rechecked);
     field(&w,",\"guest_data_fault\":",pe.guest_data_fault);field(&w,",\"recovery_complete\":",pe.recovery_complete);
     field(&w,",\"first_error\":",pe.p.first_error);field(&w,",\"active\":",pe_active);field(&w,",\"busy\":",pe_busy);
-    text(&w,",\"misses\":[");for(unsigned i=0;i<LI2_PGD_REASON_COUNT;i++){if(i)text(&w,",");number(&w,pe.misses[i]);}
+    text(&w,",\"misses\":[");for(unsigned i=0;i<LI2_PGD_REASON_COUNT;i++){if(i)text(&w,",");number(&w,PGC_MISS_VALUE(i));}
     text(&w,"]}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }
 _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct group report");

@@ -9,7 +9,12 @@
 #include "rseq_guard.h"
 #endif
 #define NATIVE_LOW_LIMIT UINT64_C(0x200000000)
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#include "persistent_group_counters.h"
+#define native_counts (li2_pgc_current->native)
+#else
 static struct li2_native_counts native_counts;
+#endif
 static uintptr_t native_timed_page;
 static uint64_t native_timed_allocation,native_timed_generation;
 static uint64_t native_clock(void) {
@@ -24,10 +29,18 @@ static uint64_t native_clock(void) {
 static unsigned char native_blocked[RECORDS];
 static unsigned char native_window[PAGE+28],native_backing[PAGE+28];
 const struct li2_native_counts *li2_lifecycle_native_counts(void) { return &native_counts; }
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+static void native_increment(uint64_t *count) {
+    uint64_t value=__atomic_load_n(count,__ATOMIC_ACQUIRE);
+    if(value==UINT64_MAX)DIE(1430,0);
+    __atomic_store_n(count,value+1,__ATOMIC_RELEASE);
+}
+#else
 static void native_increment(uint64_t *count) {
     if(*count==UINT64_MAX)DIE(1430,0);
     ++*count;
 }
+#endif
 
 static void native_copy(const struct owned_page *p,uintptr_t first,size_t length,
                         size_t destination) {
@@ -245,7 +258,11 @@ static int native_close_all(void) {
        native_close.pages!=native_close.closed || native_close.pages!=native_close.verified)
         return native_close_error(LI2_NATIVE_STATE,1,0);
     for(size_t i=0;i<used;i++)if(records[i].live && records[i].admitted) {
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+        records[i].actual=PROT_READ;records[i].admitted=0;native_increment(&native_counts.closed);
+#else
         records[i].actual=PROT_READ;records[i].admitted=0;++native_counts.closed;
+#endif
     }
     if(native_close.pages)++counts.sync_core;
     native_close.complete=1;native_close.busy=0;

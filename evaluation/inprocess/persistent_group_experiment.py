@@ -106,6 +106,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--revision',required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--final-counters',action='store_true',help='separate kill-surviving diagnostic counter backing; no timing credit')
     a=parser.parse_args()
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1,'assertions and exactly one externally reserved CPU')
     need(Path(__file__).resolve()==ROOT/SCRIPT and re.fullmatch('[0-9a-f]{40}',a.revision)is not None and
@@ -114,11 +115,16 @@ def main():
              'evaluation/admission','evaluation/precontext/verify.py')==b'','no tracked source edits')
     code,compiled=source_paths(a.revision);actual=git_bytes(a.revision,code|compiled)
     current={p:dict(bytes=len(b),sha256=H(b))for p,b in actual.items()}
-    need(set(REQUIRED) <= set(current), 'complete committed group/runtime/build source population')
+    required=REQUIRED+(('evaluation/inprocess/persistent_group_counter_process.py',
+        'evaluation/inprocess/persistent_group_counter_protocol.py',
+        'tools/page-entry/selected/persistent_group_counters.h','tools/page-entry/selected/persistent_group_counters.inc',
+        'tools/page-entry/selected/build-persistent-group-counters.sh',
+        'tools/page-entry/selected/persistent_group_counter_binding.py') if a.final_counters else ())
+    need(set(required) <= set(current), 'complete committed group/runtime/build source population')
     need(all((ROOT/p).read_bytes()==b for p,b in actual.items()),'all whole committed local source/data')
     need((ROOT/SCRIPT).read_bytes()==actual[SCRIPT],'whole committed collector identity')
     manifest=dict(driver=current[SCRIPT],revision=a.revision,code={p:current[p]for p in code},
-                  compiled={p:current[p]for p in compiled},required={p:current[p]for p in REQUIRED})
+                  compiled={p:current[p]for p in compiled},required={p:current[p]for p in required})
     out=a.output.resolve();out.relative_to(ROOT/'target/page-region-next');out.mkdir(mode=0o700)
     cpu=next(iter(os.sched_getaffinity(0)))
     sys.path[:0]=[str(ROOT/'evaluation/inprocess'),str(ROOT/'tools/page-entry')]
@@ -130,8 +136,11 @@ def main():
     import page_native_pair_performance as pair
     import persistent_group_build as persistent_build
     import namespace
+    if a.final_counters:
+        import persistent_group_counter_process as counter_process
+        program_invoke=counter_process.program_invoke
     from run import hardware
-    r=dict(schema=1,scope='UNQUALIFIED_GROUP_PERSISTENT_LS_ONLY',qualification_credit=False,
+    r=dict(schema=1,scope='UNQUALIFIED_GROUP_FINAL_COUNTER_PREFIX' if a.final_counters else 'UNQUALIFIED_GROUP_PERSISTENT_LS_ONLY',qualification_credit=False,
         timing_credit=False,aggregate_credit=False,source_revision=a.revision,cpu=cpu,hardware=hardware(cpu),
         bounds=dict(PROFILES,metadata=PROGRAM,build_metadata=PROFILES['metadata'],program=PROGRAM,
                     release_build=PROGRAM,finite=SHORT),commands=[],inputs={},artifacts={},aliases={},namespace_aliases={},
@@ -205,13 +214,33 @@ def main():
     try:
         pin(ROOT/SCRIPT);save(out/'source-manifest.json',manifest);binary(out/'source-manifest.json')
         for path in current:pin(ROOT/path)
+        if a.final_counters:
+            _, protocol_out, protocol_err=run('counter-protocol',
+                [sys.executable,'-B',ROOT/'evaluation/inprocess/persistent_group_counter_protocol.py'],profile='finite')
+            protocol=json.loads(protocol_out)
+            expected_refusals=['truncated','extended']+['header_'+str(i) for i in range(16)]+[
+                'tail','wrong_seals','typed_pid','native_padding','nonce','parent','cloexec','read_only',
+                'write_seal_with_writer','already_sealed','pwrite_sealed','new_shared_writer',
+                'read_only_writer','grow','shrink','add_after_seal']
+            expected_prefix=dict(events=9,signals=[2,3,1,0,0],
+                group=dict(zip(counter_process.GROUP_NAMES,(5,2,1,4,1,1,2,2,1,0),strict=True)),
+                misses=[0,3]+[0]*16,maps={k:0 for k in counter_process.MAP_NAMES},
+                view={k:0 for k in counter_process.VIEW_NAMES},
+                native=dict(attempts=101,admissions=5,closed=4,blocked=89,low_address_refusals=7))
+            expected_protocol=dict(scope='counter_protocol_only',guest_executions=0,parser_prefix=expected_prefix,
+                refusal_count=34,refusals=expected_refusals)
+            need(protocol_err==b'' and len(expected_refusals)==34 and
+                 D(protocol)==D(expected_protocol) and
+                 protocol_out==(json.dumps(expected_protocol,sort_keys=True)+'\n').encode(),
+                 'complete exact parser and real memfd protocol output before any build/guest')
+            r['counter_protocol']=expected_protocol
         products=builder.prepare()
         need(builder.decoder_features==('scalar-region','scalar-span','linked-epoch','mov-guard'), 'fresh exact registered persistent archive')
         archive=binary(products['archive']);r['archive']=fact(archive)
         original=pin('/bin/ls')
         bridge=persistent_build.build_bridge(builder,products,out,pin,binary,r['aliases'],run,r,
-                                             original,capture=False)
-        need(r['release_build']['profile']=='persistent-group-two-image-v1' and r['release_build'].get('capture') is False,
+                                             original,capture=False,counters=a.final_counters)
+        need(r['release_build']['profile']==('persistent-group-final-counters-v1' if a.final_counters else 'persistent-group-two-image-v1') and r['release_build'].get('capture') is False,
              'actual distinct group release build; no fixed entry or capture')
         (out/'external-inputs').mkdir()
         state=pair.prepare_workload('group-ls','/bin/ls',['-d','.'],bridge,builder,out,pin,binary,run,r,namespace)
@@ -220,14 +249,25 @@ def main():
         ns=out/'group-ls-namespace';tools=builder.tools
         argv=[tools['python'],'-B',state['carrier_tool'],'exec-loader','--library-root','/usr/lib64',
               '--namespace',ns,state['carrier'],state['original'],'--',*state['argv']]
+        if a.final_counters:
+            argv[4:4]=['--counter-fd','{counter_fd}','--counter-nonce','{counter_nonce}']
         case=r['case'];case['status']='failed';start=len(r['commands'])
         try:
             row,stdout,stderr=run('group-ls',argv,profile='program',expected=None,env=pair.PROGRAM_ENV)
             case['raw_counters']=raw=counters(stderr)
             need(row['exit']==0,'actual diagnostic subject must exit zero')
             need(stdout==b'.\n','exact full LS stdout')
-            pair.namespace_join(state,ns,binary,r,namespace)
+            if not a.final_counters:
+                pair.namespace_join(state,ns,binary,r,namespace)
             completed(raw)
+            if a.final_counters:
+                observed=row['counter_observation'];need(observed['usable'] is True,'actual final backing is available')
+                need(observed['events']==raw['LI2_LINKED_EPOCH']['events'] and
+                     observed['signals']==raw['LI2_LINKED_EPOCH']['signals'] and
+                     observed['group']=={k:raw['LI2_PERSISTENT_GROUP'][k] for k in counter_process.GROUP_NAMES} and
+                     observed['misses']==raw['LI2_PERSISTENT_GROUP']['misses'] and
+                     observed['native']=={k:raw['LI2_NATIVE'][k] for k in counter_process.NATIVE_NAMES},
+                     'successful terminal ingress/group/native reports read the same authoritative cells')
             case.update(status='observed_unqualified')
         except Exception as error:case['error']=type(error).__name__+': '+str(error)
         finally:
@@ -235,6 +275,15 @@ def main():
                 row=r['commands'][start]
                 case.update({k:row.get(k)for k in ('pid','exit','process_ns','duration_ns','timed_out','reaped')})
                 case['captures']=row.get('captures',{})
+                if a.final_counters:
+                    case['final_counter_prefix']=row.get('counter_observation')
+                    # Authenticate actual preparation even when SIGKILL prevented reports.
+                    try:
+                        need((ns/'namespace.json').is_file() and (ns/'launch.json').is_file(),
+                             'actual counter subject namespace preparation retained')
+                        counter_process.namespace_join(state,ns,binary,r,namespace,row['counter_input'])
+                    except Exception as error:
+                        case['status']='failed';case['counter_preparation_error']=type(error).__name__+': '+str(error)
             save(out/'receipt.json',r)
     except BaseException as error:r['error']=type(error).__name__+': '+str(error)
     finally:
@@ -281,6 +330,12 @@ def main():
             command_count=len(r['commands']),commands_sha256=D(r['commands']),cleanup_complete=r['cleanup_complete'],
             source_unchanged=r['source_unchanged'],receipt=fact(out/'receipt.json'),
             count_scope='Actual two-member group chosen epochs only; cancelled means full unentered source/rseq release plus ordinary resume. Signals are actual inherited ingress buckets after early owner guards. Failure may retain partial rows. Zero-use is recorded, never qualification. process_ns is Popen-to-reap wall time; whole_capture_ns includes capture closure. No baseline, aggregate, opcode coverage, saved-event or speedup credit.')
+        if a.final_counters:
+            prefix=c.get('final_counter_prefix')
+            summary['final_counter_prefix']=prefix
+            summary['counter_capture']=c.get('captures',{}).get('counters')
+            summary['reproduction_argv'].append('--final-counters')
+            summary['counter_scope']='Authoritative per-cell values after actual reap, including split transactions; never a completed terminal row or qualification. Terminal row fields remain null if no report was emitted.'
         text=json.dumps(summary,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
         stream=io.StringIO();writer=csv.DictWriter(stream,fieldnames=list(row),lineterminator='\n');writer.writeheader();writer.writerow(row)
         need(len(text.encode())<=32<<10 and len(stream.getvalue().encode())<=8<<10 and
