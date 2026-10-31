@@ -72,6 +72,16 @@ arbitrary-program support or full A3 qualification. The newer
 retains all 187 instruction heads and 42 jumps but refuses both candidates;
 those startup-inclusive failures do not replace the successful kernel cohorts.
 
+The later [full-program startup run](../offline-router-corpus/runtime-6ed5f2d/)
+at `6ed5f2d24293d414169ff4e7688671b230a35775` executes both complete programs
+through the production bootstrap and router. All 40 original/candidate
+invocations passed over the ten datasets. Its [matched E9 comparison](../offline-router-corpus/e9-6ed5f2d/)
+passed all 80 application rows across the four lanes, retaining all 187 original
+heads and 42 selected jumps, with zero lost E9 trampoline sites and zero traps.
+This adds full-output correctness for these two authored programs; dynamic
+route coverage, full architectural-state/ABI/unwind equivalence and complete
+A3 qualification remain open. Earlier refused attempts remain separate.
+
 The newer upstream tree at `5e098f7920b5b5535f553de599c94ee980e97e29`
 also has `test/regtest` and a ten-action two-program `test/stresstest`.
 It is a different E9 version and is not silently substituted for the pinned
