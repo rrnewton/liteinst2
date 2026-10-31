@@ -1,7 +1,39 @@
 //! Private leaf-set adapter; shared receive/idle/Stop loop and actual invoke body.
 use super::*;
 use rapid_profiler::frontend_native::NormalLeafSetClient;
+use shared::phase_totals::{WorkerPhase, WorkerSnapshot, WorkerTrace};
 use shared::worker::{Event, Runtime};
+
+// Written once, only after real detach and final custody. The controller may
+// inspect it only after its existing Finished/join/TID/task-retirement checks.
+pub(super) struct CompletedTrace {
+    identity: pair_worker::Identity,
+    totals: NormalTotals,
+    snapshot: WorkerSnapshot,
+}
+pub(super) type TracePublication = Arc<OnceLock<CompletedTrace>>;
+
+pub(super) fn trace_diagnostic(
+    publication: &TracePublication,
+    ready: Option<pair_worker::Identity>,
+    retired: Option<(u64, NormalTotals)>,
+) -> String {
+    let (Some(ready), Some((tid, totals))) = (ready, retired) else {
+        return "worker_phase_v1 status=UNAVAILABLE reason=completion_not_authenticated\n".into();
+    };
+    let Some(completed) = publication.get() else {
+        return "worker_phase_v1 status=UNAVAILABLE reason=no_completed_snapshot\n".into();
+    };
+    if completed.identity != ready || ready.tid != tid || completed.totals != totals {
+        return "worker_phase_v1 status=INVALID reason=completion_identity_or_totals\n".into();
+    }
+    format!(
+        "worker_phase_v1 diagnostic_only=true pid={} tid={} terminal_totals={totals:?}\n\
+         worker_scope=after_ready_send_through_detach_postflight spans_not_operations=true \
+         wall_includes_observer_and_scheduler_cost=true\n{}",
+        ready.pid, ready.tid, completed.snapshot
+    )
+}
 pub(in crate::normal) struct Call {
     pub inner: pair_worker::Call,
     expectation: Expectation,
@@ -31,6 +63,7 @@ struct Worker<const N: usize> {
     expectations: Expectations<N>,
     custody: Arc<pair_worker::Custody>,
     identity: pair_worker::Identity,
+    trace: Option<(TracePublication, WorkerTrace)>,
 }
 fn complete_record(pending: usize, n: usize) -> bool {
     assert!((1..=4).contains(&n));
@@ -86,6 +119,7 @@ impl<const N: usize> Worker<N> {
             expectations,
             custody,
             identity,
+            trace: None,
         };
         fail_stop.0 = false;
         worker
@@ -107,12 +141,20 @@ impl<const N: usize> Runtime for Worker<N> {
     fn deferred(&self) -> bool {
         self.prepared.is_some()
     }
+    fn trace_phase(&mut self, phase: WorkerPhase) {
+        if let Some((_, trace)) = &mut self.trace {
+            trace.mark(phase, Instant::now());
+        }
+    }
     fn poll_deferred(&mut self) {
+        self.trace_phase(WorkerPhase::Setup);
         let gate = Arc::clone(self.gate.as_ref().expect("prepared profile"));
         if !gate.poll(self.phase.as_mut().unwrap()).unwrap() {
             return;
         }
+        self.trace_phase(WorkerPhase::BeforeCustody);
         self.postflight();
+        self.trace_phase(WorkerPhase::Invoke);
         self.prepared.as_ref().unwrap().0.check();
         // A final fresh sample after custody must precede original end.
         // Arbitrary later preemption can still delay physical native entry.
@@ -126,10 +168,13 @@ impl<const N: usize> Runtime for Worker<N> {
         self.calls.push(Call { inner, expectation });
         gate.returned().unwrap();
         self.phase.as_mut().unwrap().returned(observed).unwrap();
+        self.trace_phase(WorkerPhase::AfterCustody);
         self.postflight();
+        self.trace_phase(WorkerPhase::Dispatch);
         assert!(complete_record(self.calls.len(), N));
     }
     fn cancel_deferred(&mut self) {
+        self.trace_phase(WorkerPhase::Cleanup);
         if self.prepared.is_some() {
             self.postflight();
             assert!(self.calls.is_empty());
@@ -141,6 +186,7 @@ impl<const N: usize> Runtime for Worker<N> {
         }
     }
     fn call(&mut self, command: input::Command) {
+        self.trace_phase(WorkerPhase::Input);
         let input::Command::Record(record) = command else {
             unreachable!()
         };
@@ -148,8 +194,9 @@ impl<const N: usize> Runtime for Worker<N> {
         // Independently authenticate the complete frozen row before the first
         // actual invocation; no value is learned from target output.
         let witnesses = self.expectations.record(&record).unwrap();
-        if let Some(gate) = &self.gate {
+        if self.gate.is_some() {
             if record.id == 1 {
+                self.trace_phase(WorkerPhase::Setup);
                 assert_eq!(N, 1);
                 assert!(self.prepared.is_none());
                 self.postflight();
@@ -158,13 +205,15 @@ impl<const N: usize> Runtime for Worker<N> {
                     witnesses.into_iter().next().unwrap(),
                 ));
                 self.prepared.as_ref().unwrap().0.check();
-                gate.prepared(phase::now()).unwrap();
+                self.gate.as_ref().unwrap().prepared(phase::now()).unwrap();
                 return;
             }
-            assert!(!gate.hold_input());
+            assert!(!self.gate.as_ref().unwrap().hold_input());
         }
         for (function, expectation) in witnesses.into_iter().enumerate() {
+            self.trace_phase(WorkerPhase::BeforeCustody);
             self.postflight();
+            self.trace_phase(WorkerPhase::Invoke);
             record.check();
             // SAFETY: independently selected actual scalar target, live original input
             // and guarded output; this calls the shared, unchanged csv::invoke body.
@@ -188,18 +237,23 @@ impl<const N: usize> Runtime for Worker<N> {
                 self.calls.push(Call { inner, expectation });
             }
             // Returned owners are already retained before fallible postflight.
+            self.trace_phase(WorkerPhase::AfterCustody);
             self.postflight();
+            self.trace_phase(WorkerPhase::Dispatch);
         }
         assert!(complete_record(self.calls.len(), N));
     }
     fn flush(&mut self, tx: &mpsc::SyncSender<Event<Call, counter::Batch>>) {
+        self.trace_phase(WorkerPhase::CheckpointCustody);
         self.postflight();
+        self.trace_phase(WorkerPhase::Checkpoint);
         // SAFETY: every actual call returned through CALL/store, with complete
         // input/output/source/caller/thread/stack custody checked above.
         let batch = unsafe { self.attached.as_mut().unwrap().checkpoint() };
         if let Some(native) = batch {
             assert_eq!(native.normal().records().len(), N);
             assert_eq!(native.normal().records().len(), self.calls.len());
+            self.trace_phase(WorkerPhase::Reply);
             let calls = std::mem::replace(&mut self.calls, Vec::with_capacity(4));
             if let Err(error) = tx.send(Event::Batch {
                 calls,
@@ -211,11 +265,13 @@ impl<const N: usize> Runtime for Worker<N> {
         } else {
             assert!(self.calls.is_empty());
         }
+        self.trace_phase(WorkerPhase::Dispatch);
     }
     fn totals(&self) -> NormalTotals {
         self.attached.as_ref().unwrap().totals()
     }
     fn finish(mut self) -> NormalTotals {
+        self.trace_phase(WorkerPhase::Cleanup);
         assert!(self.prepared.is_none());
         self.postflight();
         assert!(unsafe { self.attached.as_mut().unwrap().checkpoint() }.is_none());
@@ -228,6 +284,15 @@ impl<const N: usize> Runtime for Worker<N> {
             totals
         );
         self.postflight();
+        if let Some((publication, trace)) = self.trace.take() {
+            // No live reads, extra detach, drain or checkpoint for diagnostics.
+            // Finished send still follows the consuming finish() in the driver.
+            let _ = publication.set(CompletedTrace {
+                identity: self.identity,
+                totals,
+                snapshot: trace.finish(Instant::now()),
+            });
+        }
         self.fail_stop.0 = false;
         totals
     }
@@ -237,6 +302,7 @@ type WorkerEvidence = (
     Option<Arc<counter::Custody>>,
     Option<Arc<phase::Shared>>,
     Option<Arc<phase::prepared::Shared>>,
+    Option<TracePublication>,
 );
 pub(super) fn run<const N: usize>(
     targets: ([u64; N], Expectations<N>),
@@ -247,8 +313,8 @@ pub(super) fn run<const N: usize>(
     tx: mpsc::SyncSender<Event<Call, counter::Batch>>,
     cpu: usize,
 ) {
-    let (ready, counter, phase, gate) = evidence;
-    let worker = Worker::attach(
+    let (ready, counter, phase, gate, publication) = evidence;
+    let mut worker = Worker::attach(
         targets.0,
         targets.1,
         client,
@@ -259,13 +325,123 @@ pub(super) fn run<const N: usize>(
     );
     let id = worker.identity;
     ready.set(id).unwrap();
+    worker.trace = publication.map(|publication| (publication, WorkerTrace::new()));
     tx.send(Event::Ready { tid: id.tid }).unwrap();
+    if let Some((_, trace)) = &mut worker.trace {
+        trace.start(Instant::now());
+    }
     shared::worker::drive(worker, rx, tx);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn worker_trace_export_requires_retirement_identity_and_totals() {
+        let publication = Arc::new(OnceLock::new());
+        let id = pair_worker::Identity {
+            pid: 7,
+            tid: 8,
+            cpu: 9,
+            stack: (10, 20),
+            caller: (30, 40),
+        };
+        let totals = NormalTotals::default();
+        assert!(
+            trace_diagnostic(&publication, Some(id), Some((id.tid, totals)))
+                .contains("UNAVAILABLE reason=no_completed_snapshot")
+        );
+        let start = Instant::now();
+        let mut trace = WorkerTrace::new();
+        trace.start(start);
+        let snapshot = trace.finish(start + Duration::from_nanos(3));
+        assert!(
+            publication
+                .set(CompletedTrace {
+                    identity: id,
+                    totals,
+                    snapshot
+                })
+                .is_ok()
+        );
+        // Publication alone cannot license a read; neither can a Ready identity
+        // without Finished/join/retirement, or a retirement with no Ready.
+        for (ready, retired) in [
+            (None, None),
+            (Some(id), None),
+            (None, Some((id.tid, totals))),
+        ] {
+            assert_eq!(
+                trace_diagnostic(&publication, ready, retired),
+                "worker_phase_v1 status=UNAVAILABLE reason=completion_not_authenticated\n"
+            );
+        }
+        for changed in [
+            pair_worker::Identity { pid: 17, ..id },
+            pair_worker::Identity { tid: 18, ..id },
+            pair_worker::Identity { cpu: 19, ..id },
+            pair_worker::Identity {
+                stack: (10, 21),
+                ..id
+            },
+            pair_worker::Identity {
+                caller: (30, 41),
+                ..id
+            },
+        ] {
+            assert!(
+                trace_diagnostic(&publication, Some(changed), Some((id.tid, totals)))
+                    .contains("INVALID reason=completion_identity_or_totals")
+            );
+        }
+        for (tid, changed) in [
+            (18, totals),
+            (
+                id.tid,
+                NormalTotals {
+                    entered: 1,
+                    ..totals
+                },
+            ),
+            (
+                id.tid,
+                NormalTotals {
+                    ret_observed: 1,
+                    ..totals
+                },
+            ),
+            (
+                id.tid,
+                NormalTotals {
+                    confirmed: 1,
+                    ..totals
+                },
+            ),
+            (
+                id.tid,
+                NormalTotals {
+                    completed: 1,
+                    ..totals
+                },
+            ),
+            (
+                id.tid,
+                NormalTotals {
+                    unsampled: 1,
+                    ..totals
+                },
+            ),
+        ] {
+            assert!(
+                trace_diagnostic(&publication, Some(id), Some((tid, changed)))
+                    .contains("INVALID reason=completion_identity_or_totals")
+            );
+        }
+        let exported = trace_diagnostic(&publication, Some(id), Some((id.tid, totals)));
+        assert!(exported.starts_with("worker_phase_v1 diagnostic_only=true pid=7 tid=8 "));
+        assert!(exported.len() < 9 * 1024);
+        assert!(exported.contains(&format!("terminal_totals={totals:?}")));
+    }
     fn refuse(f: impl FnOnce()) {
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err());
     }

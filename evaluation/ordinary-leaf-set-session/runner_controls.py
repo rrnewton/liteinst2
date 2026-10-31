@@ -171,7 +171,7 @@ class Controls(unittest.TestCase):
             self.refuses(lambda prefix=prefix:runner.sdk_inventory(list(runner.SDK_CONTROLS)+[prefix+'::tests::extra']))
 
         self.assertEqual(len(runner.APP_CONTROLS[:27]), 27)
-        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),106)
+        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),117)
         self.assertEqual(len(runner.SDK_CONTROLS),45)
         self.assertEqual(len(runner.ACCURACY_CONTROLS),11)
         self.assertEqual(len(runner.SDK_ACCURACY_CONTROLS),27)
@@ -179,8 +179,30 @@ class Controls(unittest.TestCase):
         self.assertEqual(len(runner.PHASE_CONTROLS),9)
         self.assertEqual(runner.APP_CONTROLS[27:36],runner.PHASE_CONTROLS)
         self.assertEqual(len(runner.PREPARED_CONTROLS),18)
-        self.assertEqual(len(runner.APP_CONTROLS),54)
-        self.assertEqual(runner.APP_CONTROLS[36:],runner.PREPARED_CONTROLS)
+        self.assertEqual(len(runner.APP_CONTROLS),65)
+        self.assertEqual(runner.APP_CONTROLS[36:54],runner.PREPARED_CONTROLS)
+        diagnostic = (
+            'normal::leaf_set::worker::tests::worker_trace_export_requires_retirement_identity_and_totals',
+            'normal::session::loop_trace::tests::controller_aggregate_counts_completed_iterations_and_partial_failure_once',
+            'normal::session::loop_trace::tests::controller_aggregate_format_is_fixed_and_missing_terminal_time_is_unavailable',
+            'normal::session::loop_trace::tests::controller_aggregate_refuses_clock_holes_regression_and_counter_overflow',
+            'normal::session::phase_totals::tests::bucket_distinguishes_empty_zero_and_exact_extrema',
+            'normal::session::phase_totals::tests::bucket_missing_and_overflow_latch_without_replacing_statistics',
+            'normal::session::phase_totals::tests::worker_formatter_has_fixed_numeric_and_line_bounds',
+            'normal::session::phase_totals::tests::worker_missing_or_repeated_start_never_resets_a_trace',
+            'normal::session::phase_totals::tests::worker_partition_conserves_all_phases_and_repeated_marks',
+            'normal::session::phase_totals::tests::worker_regression_and_bucket_overflow_keep_only_valid_prefix',
+            'normal::session::phase_totals::tests::worker_zero_window_is_observed_and_finish_consumes_the_active_trace',
+        )
+        self.assertEqual(runner.DIAGNOSTIC_CONTROLS,diagnostic)
+        self.assertEqual(len(diagnostic),11)
+        self.assertEqual(runner.APP_CONTROLS[54:],diagnostic)
+        self.refuses(lambda:runner.ordinary_inventory(list(old+runner.APP_CONTROLS[:54]),recipe,single,module))
+        for prefix in runner.DIAGNOSTIC_PREFIXES + (single.TRACE_PREFIX,):
+            self.refuses(lambda prefix=prefix:runner.ordinary_inventory(inventory+[prefix+'unregistered'],recipe,single,module))
+        for name in diagnostic + tuple(single.TRACE):
+            changed=[n if n!=name else name.rsplit('::',1)[0]+'::unregistered' for n in inventory]
+            self.refuses(lambda changed=changed:runner.ordinary_inventory(changed,recipe,single,module))
         self.refuses(lambda:runner.ordinary_inventory(list(old+runner.APP_CONTROLS[:36]),recipe,single,module))
         for prefix in runner.PREPARED_PREFIXES:
             self.refuses(lambda prefix=prefix:runner.ordinary_inventory(inventory+[prefix+'unregistered'],recipe,single,module))

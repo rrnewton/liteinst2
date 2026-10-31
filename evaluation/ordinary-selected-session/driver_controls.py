@@ -262,8 +262,8 @@ class Controls(unittest.TestCase):
         with patch.object(leaf, 'ordinary_inventory', wraps=leaf.ordinary_inventory) as inherited:
             self.assertEqual(driver.selected_inventory(inventory, leaf, recipe, modules), wanted)
             inherited.assert_called_once_with(inventory, recipe, single, module)
-        self.assertEqual(len(wanted), 130)
-        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy + leaf.PHASE_CONTROLS + leaf.PREPARED_CONTROLS))
+        self.assertEqual(len(wanted), 141)
+        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy + leaf.PHASE_CONTROLS + leaf.PREPARED_CONTROLS + leaf.DIAGNOSTIC_CONTROLS))
         for name in wanted:
             for changed in ([n for n in inventory if n != name], inventory + [name]):
                 with self.assertRaises(AssertionError, msg=name):
@@ -294,12 +294,16 @@ class Controls(unittest.TestCase):
         )
         self.assertEqual(leaf.PREPARED_CONTROLS,prepared)
         self.assertEqual(len(prepared),18)
-        self.assertEqual(leaf.APP_CONTROLS[36:],prepared)
+        self.assertEqual(leaf.APP_CONTROLS[36:54],prepared)
+        self.assertEqual(len(leaf.DIAGNOSTIC_CONTROLS),11)
+        self.assertEqual(leaf.APP_CONTROLS[54:],leaf.DIAGNOSTIC_CONTROLS)
+        with self.assertRaises(AssertionError):
+            driver.selected_inventory(list(prior+leaf.APP_CONTROLS[:54]+driver.SELECTED_RUST),leaf,recipe,modules)
         with self.assertRaises(AssertionError):
             driver.selected_inventory(list(old+driver.SELECTED_RUST+accuracy+leaf.PHASE_CONTROLS),leaf,recipe,modules)
         with self.assertRaises(AssertionError):
             driver.selected_inventory(list(old+driver.SELECTED_RUST+accuracy),leaf,recipe,modules)
-        prefixes = leaf.PHASE_PREFIXES + leaf.PREPARED_PREFIXES + ('normal::leaf_set::accuracy_tests::',
+        prefixes = leaf.PHASE_PREFIXES + leaf.PREPARED_PREFIXES + leaf.DIAGNOSTIC_PREFIXES + (single.TRACE_PREFIX, 'normal::leaf_set::accuracy_tests::',
                     'normal::leaf_set::selected::accuracy_tests::',
                     'normal::leaf_set::counter::tests::',
                     'normal::session::io::accuracy_tests::',
@@ -308,7 +312,7 @@ class Controls(unittest.TestCase):
         for prefix in prefixes:
             with self.assertRaises(AssertionError, msg=prefix):
                 driver.selected_inventory(inventory + [prefix + 'unregistered'], leaf, recipe, modules)
-        for name in accuracy + prepared:
+        for name in accuracy + prepared + leaf.DIAGNOSTIC_CONTROLS:
             changed = [n if n != name else name.rsplit('::', 1)[0] + '::unregistered' for n in inventory]
             with self.assertRaises(AssertionError, msg=name):
                 driver.selected_inventory(changed, leaf, recipe, modules)
