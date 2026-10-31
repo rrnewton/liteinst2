@@ -1,0 +1,1694 @@
+{
+  "schema": "indexed-dso-native-results-v1",
+  "scope": "Closed source-owned synchronous compiled C fixture, two literal input cases, one rewritten NOP5 path, lookup-only original-index-only negative",
+  "revision": "a306d916315a9bb9acc112fe306e1371d929ea1a",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+  "performance_result": false,
+  "qualification": {
+    "fixed_fixture": true,
+    "arbitrary_dso": false,
+    "exceptions": false,
+    "asynchronous": false,
+    "a3_complete": false,
+    "a5_accuracy": false
+  },
+  "commands_encoding": {
+    "@ROOT@": "checkout root",
+    "@RUST_TOOLCHAIN@": "caller supplied pinned Rust toolchain"
+  },
+  "validation": [
+    {
+      "name": "indexed-chain-controls-v1",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "38b9ca029a2cb4d6f0e5a80a1b38da0fb97f1b3a759c4f5b5c8b7a8f4b7b50bd",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--test",
+        "indexed_dso_source"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T07:58:37.709669+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 2.6348775669466704,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        16,
+        20,
+        25,
+        37
+      ],
+      "load_before": [
+        "130.48",
+        "95.50",
+        "76.94"
+      ],
+      "load_after": [
+        "129.56",
+        "95.89",
+        "77.16"
+      ],
+      "private_log_sha256": "3d8bba20d13171caf260f2332a01486115932b05d303bf56c49c536a228edf7c"
+    },
+    {
+      "name": "indexed-native-build-v1",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "38b9ca029a2cb4d6f0e5a80a1b38da0fb97f1b3a759c4f5b5c8b7a8f4b7b50bd",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "indexed_dso_native"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T07:58:54.830786+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 3.507228149101138,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        25,
+        167,
+        214,
+        293
+      ],
+      "load_before": [
+        "161.53",
+        "103.60",
+        "79.86"
+      ],
+      "load_after": [
+        "159.97",
+        "104.24",
+        "80.19"
+      ],
+      "private_log_sha256": "5db8baeeba37b94ca8cb870cb7c383015282fd5adcd386a7c501fedcd58268e7"
+    },
+    {
+      "name": "indexed-chain-controls-v2",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "895ded79791f7d18d348b2b04f9b90b556f340de4a5872a4c620df608383e53b",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--test",
+        "indexed_dso_source"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:03:53.757984+00:00",
+      "exit": 101,
+      "termination": null,
+      "seconds": 1.7390545210801065,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        54,
+        70,
+        164,
+        186
+      ],
+      "load_before": [
+        "78.37",
+        "102.72",
+        "88.19"
+      ],
+      "load_after": [
+        "81.87",
+        "103.04",
+        "88.37"
+      ],
+      "private_log_sha256": "1baecc0ae37634b23816cafdb72c4edeb7be4e2474c8d14af481526fa2f01857"
+    },
+    {
+      "name": "indexed-chain-controls-v3",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "2a54b4698096602bd561d5cf9f56e5b431c96ba3d1dc896fea2fef129213e8e5",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--test",
+        "indexed_dso_source"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:04:12.163080+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 3.129456229042262,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        41,
+        65,
+        120,
+        130
+      ],
+      "load_before": [
+        "89.89",
+        "103.79",
+        "88.85"
+      ],
+      "load_after": [
+        "91.98",
+        "104.00",
+        "89.00"
+      ],
+      "private_log_sha256": "ba0cc145c60bb7dbb3bd2e2c1766a1b2989a6bed599e440659e29112d4b6e543"
+    },
+    {
+      "name": "indexed-native-clippy-v1",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "2a54b4698096602bd561d5cf9f56e5b431c96ba3d1dc896fea2fef129213e8e5",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--test",
+        "indexed_dso_source",
+        "--example",
+        "indexed_dso_native",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:04:22.958418+00:00",
+      "exit": 101,
+      "termination": null,
+      "seconds": 1.833730231039226,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        75,
+        185,
+        231,
+        235
+      ],
+      "load_before": [
+        "93.10",
+        "104.03",
+        "89.09"
+      ],
+      "load_after": [
+        "93.10",
+        "104.03",
+        "89.09"
+      ],
+      "private_log_sha256": "1dc99b0aac2ae2973881ba2225a466c01832c4287a163036e76c3b426830da87"
+    },
+    {
+      "name": "indexed-native-clippy-v2",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "cd1966f98aeeb6b9dea10ac57e9ecc78e68e66838bbb513d65303efb5e05e5b6",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--test",
+        "indexed_dso_source",
+        "--example",
+        "indexed_dso_native",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:05:08.951873+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 2.141762181883678,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        3,
+        85,
+        208,
+        245
+      ],
+      "load_before": [
+        "127.63",
+        "111.58",
+        "92.35"
+      ],
+      "load_after": [
+        "128.62",
+        "112.05",
+        "92.61"
+      ],
+      "private_log_sha256": "a4fe301597b7c251d347f65a9728a0f91cec590ca88f8b1c8be2727cdd96fd79"
+    },
+    {
+      "name": "indexed-native-build-v2",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "cd1966f98aeeb6b9dea10ac57e9ecc78e68e66838bbb513d65303efb5e05e5b6",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "indexed_dso_native"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:05:18.108713+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 1.9250446520745754,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        44,
+        91,
+        147,
+        189
+      ],
+      "load_before": [
+        "129.61",
+        "112.53",
+        "92.87"
+      ],
+      "load_after": [
+        "129.61",
+        "112.53",
+        "92.87"
+      ],
+      "private_log_sha256": "61353f5875433de3a8fc2ec5e3ccb193a2ad855165c0290f0fed37ecd735c6a4"
+    },
+    {
+      "name": "indexed-native-build-v3",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "b1f1ddafb922a5a05fc0c6ccfd42e8a2cac24be43510f9a4e4070a5f8a09543f",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "indexed_dso_native"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:07:19.798622+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 1.7986485010478646,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        20,
+        25,
+        27,
+        37
+      ],
+      "load_before": [
+        "90.54",
+        "105.06",
+        "92.64"
+      ],
+      "load_after": [
+        "89.53",
+        "104.61",
+        "92.57"
+      ],
+      "private_log_sha256": "7d6cac5c77eb64e56f3fccec5f5588a9545d9f2845470e5f732df63ebfff254d"
+    },
+    {
+      "name": "indexed-data-inspect-v1",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "b1f1ddafb922a5a05fc0c6ccfd42e8a2cac24be43510f9a4e4070a5f8a09543f",
+      "command": [
+        "@ROOT@/target/debug/examples/indexed_dso_native",
+        "inspect",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/libli2_uw_subject.so",
+        "15f8823d0173857242759da31995c262c82ad23a88185ff9931e248581822866",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/libli2_uw_caller.so",
+        "fbe1cb75071d0bd1da939dc1e450bce31a6a5d10af2e5e0e74e94bc6bfd18bf0",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/manifest.json",
+        "61044b9c83aa0f06e15e6e1c0e3ed3a86c308540f9d47124d16a5d6f666f18a1",
+        "/usr/lib64/libgcc_s-11-20240719.so.1",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/inputs/3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed",
+        "@ROOT@/ignored/a3/indexed-dso-native-admission-v1"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:08:07.290645+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 0.023227027151733637,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        1,
+        8,
+        10,
+        30
+      ],
+      "load_before": [
+        "77.17",
+        "99.28",
+        "91.34"
+      ],
+      "load_after": [
+        "77.17",
+        "99.28",
+        "91.34"
+      ],
+      "private_log_sha256": "75c1152f6bd31eb547e44aba57d1b6ff9c5b5583d62555e345fcddddb33cdead"
+    },
+    {
+      "name": "indexed-native-diagnostics-v1",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "b1f1ddafb922a5a05fc0c6ccfd42e8a2cac24be43510f9a4e4070a5f8a09543f",
+      "command": [
+        "timeout",
+        "60",
+        "python3",
+        "-B",
+        "ignored/a3/indexed-dso-native-recipe-v3/diagnostics_controls.py"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:13:13.599892+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 0.07732802303507924,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        6
+      ],
+      "load_before": [
+        "58.33",
+        "69.35",
+        "80.40"
+      ],
+      "load_after": [
+        "58.33",
+        "69.35",
+        "80.40"
+      ],
+      "private_log_sha256": "065c7d15facfd20f14fb9182747be315f3349fa1d5e1a0e966047509f4bfa9b1"
+    },
+    {
+      "name": "indexed-dso-native-v1",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "b1f1ddafb922a5a05fc0c6ccfd42e8a2cac24be43510f9a4e4070a5f8a09543f",
+      "command": [
+        "python3",
+        "-B",
+        "ignored/a3/indexed-dso-native-recipe-v3/run.py",
+        "--admission",
+        "@ROOT@/ignored/a3/indexed-dso-native-admission-v1/admission.json",
+        "--admission-sha256",
+        "32d07aa7f1268354f610448169665ea4f59088d3b511cd6023fdfcacbb01040e",
+        "--out",
+        "@ROOT@/ignored/a3/indexed-dso-native-v1"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:14:30.014883+00:00",
+      "exit": 1,
+      "termination": null,
+      "seconds": 2.63020663196221,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        55
+      ],
+      "load_before": [
+        "49.41",
+        "64.21",
+        "77.75"
+      ],
+      "load_after": [
+        "50.98",
+        "64.29",
+        "77.70"
+      ],
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "indexed-native-build-v4",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "516389704faaed30a9c1df8d7ac69a9165275d7bb8901d6bfcb512c61452d742",
+      "command": [
+        "cargo",
+        "build",
+        "--offline",
+        "-j",
+        "4",
+        "-p",
+        "liteinst-elf-rewrite",
+        "--example",
+        "indexed_dso_native"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:18:53.786755+00:00",
+      "exit": 101,
+      "termination": null,
+      "seconds": 0.036897990852594376,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        8,
+        10,
+        32,
+        34
+      ],
+      "load_before": [
+        "62.89",
+        "63.59",
+        "74.05"
+      ],
+      "load_after": [
+        "62.89",
+        "63.59",
+        "74.05"
+      ],
+      "private_log_sha256": "12a037ba49a5f7f3eff1df716a9a399eb0a4586003f7879bad91d45234287ae0"
+    },
+    {
+      "name": "indexed-native-build-v5",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "516389704faaed30a9c1df8d7ac69a9165275d7bb8901d6bfcb512c61452d742",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "indexed_dso_native"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:19:04.185125+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 1.7069766151253134,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        19,
+        55,
+        64,
+        75
+      ],
+      "load_before": [
+        "63.34",
+        "63.67",
+        "73.96"
+      ],
+      "load_after": [
+        "62.35",
+        "63.46",
+        "73.84"
+      ],
+      "private_log_sha256": "086a02f7782d349cabc2411e6aa2df9fce0d794b97025f3a140e31b049571528"
+    },
+    {
+      "name": "indexed-runtime-diagnostic-v1",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "516389704faaed30a9c1df8d7ac69a9165275d7bb8901d6bfcb512c61452d742",
+      "command": [
+        "python3",
+        "ignored/a3/indexed-dso-runtime-diagnostic-v1/run.py"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:19:30.433787+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 1.3812632800545543,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        37
+      ],
+      "load_before": [
+        "66.07",
+        "64.19",
+        "73.85"
+      ],
+      "load_after": [
+        "65.50",
+        "64.10",
+        "73.77"
+      ],
+      "private_log_sha256": "0a2cbb0b39990b667f4524c2673c9d2145f7658ca0613531706a7584c37a3a84"
+    },
+    {
+      "name": "indexed-chain-controls-v4",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "9181c047020a329f228bded7309c51b91b0f2d2f4cb0beff0173de11cffedb50",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--test",
+        "indexed_dso_source"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:20:20.290726+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 2.295211163116619,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        17,
+        19,
+        33,
+        65
+      ],
+      "load_before": [
+        "57.37",
+        "62.13",
+        "72.65"
+      ],
+      "load_after": [
+        "57.82",
+        "62.14",
+        "72.60"
+      ],
+      "private_log_sha256": "63e38f7fda2ecf4231839236dc664129a37fdb6d53387685fe806bbfac6643af"
+    },
+    {
+      "name": "indexed-native-clippy-v3",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "9181c047020a329f228bded7309c51b91b0f2d2f4cb0beff0173de11cffedb50",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--test",
+        "indexed_dso_source",
+        "--example",
+        "indexed_dso_native",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:20:25.702891+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 1.5786225160118192,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        10,
+        15,
+        17,
+        20
+      ],
+      "load_before": [
+        "56.72",
+        "61.84",
+        "72.44"
+      ],
+      "load_after": [
+        "56.72",
+        "61.84",
+        "72.44"
+      ],
+      "private_log_sha256": "13761511e734f17895487183e5850d8d87061d711d38996dc73ee4507af57fba"
+    },
+    {
+      "name": "indexed-native-build-v6",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "9181c047020a329f228bded7309c51b91b0f2d2f4cb0beff0173de11cffedb50",
+      "command": [
+        "timeout",
+        "180",
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "indexed_dso_native"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:20:29.169609+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 1.4105221899226308,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        1,
+        3,
+        7,
+        8
+      ],
+      "load_before": [
+        "56.72",
+        "61.84",
+        "72.44"
+      ],
+      "load_after": [
+        "56.98",
+        "61.81",
+        "72.37"
+      ],
+      "private_log_sha256": "28051f7525536ed3c95dc7018a658dca0ea159579152ab2b7f415661558db737"
+    },
+    {
+      "name": "indexed-data-inspect-v2",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "9181c047020a329f228bded7309c51b91b0f2d2f4cb0beff0173de11cffedb50",
+      "command": [
+        "@ROOT@/target/debug/examples/indexed_dso_native",
+        "inspect",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/libli2_uw_subject.so",
+        "15f8823d0173857242759da31995c262c82ad23a88185ff9931e248581822866",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/libli2_uw_caller.so",
+        "fbe1cb75071d0bd1da939dc1e450bce31a6a5d10af2e5e0e74e94bc6bfd18bf0",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/manifest.json",
+        "61044b9c83aa0f06e15e6e1c0e3ed3a86c308540f9d47124d16a5d6f666f18a1",
+        "/usr/lib64/libgcc_s-11-20240719.so.1",
+        "@ROOT@/ignored/a3/indexed-dso-data-build-v1/build/inputs/3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed",
+        "@ROOT@/ignored/a3/indexed-dso-native-admission-v2"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:20:50.353674+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 0.029365058057010174,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        120,
+        203,
+        213,
+        298
+      ],
+      "load_before": [
+        "56.65",
+        "61.54",
+        "72.12"
+      ],
+      "load_after": [
+        "56.65",
+        "61.54",
+        "72.12"
+      ],
+      "private_log_sha256": "75c1152f6bd31eb547e44aba57d1b6ff9c5b5583d62555e345fcddddb33cdead"
+    },
+    {
+      "name": "indexed-dso-native-v2",
+      "base_revision": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+      "source_overlay_sha256": "9181c047020a329f228bded7309c51b91b0f2d2f4cb0beff0173de11cffedb50",
+      "command": [
+        "python3",
+        "ignored/a3/indexed-dso-native-recipe-v3/run.py",
+        "--admission",
+        "@ROOT@/ignored/a3/indexed-dso-native-admission-v2/admission.json",
+        "--admission-sha256",
+        "86f36e5c5c5ddbfeb24c164fdbe300997f9fd99c8131b9aa309cb86d1ef965d7",
+        "--out",
+        "ignored/a3/indexed-dso-native-v2"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:24:17.551731+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 2.849710099864751,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        1
+      ],
+      "load_before": [
+        "40.86",
+        "57.55",
+        "68.85"
+      ],
+      "load_after": [
+        "40.86",
+        "57.55",
+        "68.85"
+      ],
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "indexed-native-full-a306d91",
+      "base_revision": "a306d916315a9bb9acc112fe306e1371d929ea1a",
+      "source_overlay_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/short-neighbor-parallel/validate.py",
+        "--revision",
+        "a306d916315a9bb9acc112fe306e1371d929ea1a",
+        "--output",
+        "ignored/a3/indexed-native-full-a306d91"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:25:29.713574+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 985.3811567160301,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        1,
+        3,
+        6,
+        13,
+        15,
+        17,
+        19,
+        34,
+        37,
+        43,
+        44,
+        52,
+        56,
+        62,
+        64,
+        65
+      ],
+      "load_before": [
+        "39.62",
+        "53.88",
+        "66.77"
+      ],
+      "load_after": [
+        "58.28",
+        "55.62",
+        "57.91"
+      ],
+      "private_log_sha256": "5a2bfceca60644e762f66ad27c5cfdc3fff43d8779ad86ce7a9867d1b2bed092"
+    },
+    {
+      "name": "indexed-public-a306-v1",
+      "base_revision": "a306d916315a9bb9acc112fe306e1371d929ea1a",
+      "source_overlay_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "ignored/a3/indexed-dso-public-repro-v2/after/evaluation/artifact-unwind-results/indexed-native/reproduce.py",
+        "--recipe",
+        "ignored/a3/indexed-dso-public-repro-v2/after/tools/unwind-oracle/indexed_dso/native_recipe.py",
+        "--out",
+        "ignored/a3/indexed-dso-public-reproduction-a306-v1",
+        "--toolchain",
+        "evaluation/artifact-unwind-results/indexed-5f5caa0/toolchain.json",
+        "--profile",
+        "ignored/a3/indexed-dso-public-admission-v1/profile.json",
+        "--profile-sha256",
+        "d2126bed76402e94f3c58d273611768ae09144aa2a49911135bdaf531e915373"
+      ],
+      "attempts": 1,
+      "start_utc": "2026-10-31T08:42:05.716512+00:00",
+      "exit": 0,
+      "termination": null,
+      "seconds": 13.216426947154105,
+      "cleanup_complete": true,
+      "rescued_descendants": 0,
+      "source_unchanged": true,
+      "cpus": [
+        1
+      ],
+      "load_before": [
+        "56.86",
+        "55.40",
+        "57.81"
+      ],
+      "load_after": [
+        "57.37",
+        "55.56",
+        "57.83"
+      ],
+      "private_log_sha256": "12244e2e1ed4ab95db6d3bd72f964bbdc658d6cbf4739f3827305e87315307df"
+    }
+  ],
+  "source_carry": {
+    "native_v2_executed_base": "cb1a9257ee2da8fa389efc533f24b80fbb93d808",
+    "native_v2_source_overlay_sha256": "6a2c8a3c283aa318305fd18848fd42a1782a25981e0a330fa8660b8e835e1b14",
+    "exact_13_files_equal_committed_revision": true
+  },
+  "full_workspace": {
+    "revision": "a306d916315a9bb9acc112fe306e1371d929ea1a",
+    "commands": [
+      [
+        "fmt",
+        [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        180
+      ],
+      [
+        "clippy",
+        [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        180
+      ],
+      [
+        "check",
+        [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        180
+      ],
+      [
+        "workspace",
+        [
+          "cargo",
+          "test",
+          "-j",
+          "16",
+          "--workspace",
+          "--no-fail-fast"
+        ],
+        900
+      ],
+      [
+        "serial-launch",
+        [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        180
+      ]
+    ],
+    "test_threads": 316,
+    "cpus": [
+      1,
+      3,
+      6,
+      13,
+      15,
+      17,
+      19,
+      34,
+      37,
+      43,
+      44,
+      52,
+      56,
+      62,
+      64,
+      65
+    ],
+    "limits_unchanged": true,
+    "output_limit_bytes": 8388608,
+    "results": [
+      {
+        "name": "fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "result": {
+          "start_utc": "2026-10-31T08:25:29.760686+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 10.108382842037827,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_before": [
+          "39.62",
+          "53.88",
+          "66.77"
+        ],
+        "load_after": [
+          "37.86",
+          "53.03",
+          "66.35"
+        ]
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "result": {
+          "start_utc": "2026-10-31T08:25:39.869666+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 1.633703064871952,
+          "private_log_sha256": "3cf1ad2414314ae3d65f0ac913b92e3bdc17f4ab701fe6eab8376a410630b720",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_before": [
+          "37.86",
+          "53.03",
+          "66.35"
+        ],
+        "load_after": [
+          "38.03",
+          "52.81",
+          "66.21"
+        ]
+      },
+      {
+        "name": "check",
+        "command": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "result": {
+          "start_utc": "2026-10-31T08:25:41.503985+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 1.1174089899286628,
+          "private_log_sha256": "400443909dc64007f788a075cb8b53af28ee307df03c39d453a57ede319f765a",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_before": [
+          "38.03",
+          "52.81",
+          "66.21"
+        ],
+        "load_after": [
+          "38.03",
+          "52.81",
+          "66.21"
+        ]
+      },
+      {
+        "name": "workspace",
+        "command": [
+          "cargo",
+          "test",
+          "-j",
+          "16",
+          "--workspace",
+          "--no-fail-fast"
+        ],
+        "result": {
+          "start_utc": "2026-10-31T08:25:42.621984+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 840.3090601789299,
+          "private_log_sha256": "faed3d554a5a1aa8d260f936126874aff0f50dfbdc2ecbd23f40d1cd9ee26d06",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_before": [
+          "38.03",
+          "52.81",
+          "66.21"
+        ],
+        "load_after": [
+          "56.90",
+          "55.36",
+          "58.24"
+        ]
+      },
+      {
+        "name": "serial-launch",
+        "command": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "result": {
+          "start_utc": "2026-10-31T08:39:42.933106+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 132.13889643084258,
+          "private_log_sha256": "9d8f49909f64d22345e58d6b266dad64919e5329e00807dd6235ef780248eb78",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_before": [
+          "56.90",
+          "55.36",
+          "58.24"
+        ],
+        "load_after": [
+          "58.28",
+          "55.62",
+          "57.91"
+        ]
+      }
+    ],
+    "raw_passes": 4221,
+    "controlled_child_passes_counted_once": 3,
+    "passes": 4218,
+    "failures": 0,
+    "ignored": 37,
+    "serial_passes": 1039,
+    "serial_failures": 0,
+    "serial_ignored": 0,
+    "new_tests": 58
+  },
+  "reproduction": {
+    "status": "PASS_FINITE_CHECKS",
+    "attempts": 1,
+    "revision": "a306d916315a9bb9acc112fe306e1371d929ea1a",
+    "adapter_sha256": "5fc3d77cb56f7a13fa54bf9eea0510741c14c108792d615e73b6a05aadf7d8a2",
+    "recipe_sha256": "0ae50d24d6ae80dfe355cf71528f2c4e1a1970c11d98411af172df6ca1ec1c3a",
+    "profile_sha256": "d2126bed76402e94f3c58d273611768ae09144aa2a49911135bdaf531e915373",
+    "stages": [
+      {
+        "attempts": 1,
+        "command_sha256": "c13844ff3de37f228ad980da71bf4de3115d8a4ace41692017e4b673b38aed7b",
+        "exit": 0,
+        "load_after": [
+          "56.79",
+          "55.42",
+          "57.79"
+        ],
+        "load_before": [
+          "55.99",
+          "55.24",
+          "57.75"
+        ],
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "c-build",
+        "seconds": 6.393517608055845,
+        "status": "PASS"
+      },
+      {
+        "attempts": 1,
+        "command_sha256": "a5081244d2dbb7278776865b8390a94aacfacdc9441b9114c429617edd706b4f",
+        "exit": 0,
+        "load_after": [
+          "56.79",
+          "55.42",
+          "57.79"
+        ],
+        "load_before": [
+          "56.79",
+          "55.42",
+          "57.79"
+        ],
+        "log_sha256": "47d1ebe904a90b00c5b9e4f31a52db52e92ee8caeaa47e1a29a4a65b6baf0c9d",
+        "name": "rust-build",
+        "seconds": 0.05167506309226155,
+        "status": "PASS"
+      },
+      {
+        "attempts": 1,
+        "command_sha256": "737e41fabbe3e27b8f4a0695b12786152efe6f40f3023b7b8c0f264c2113f042",
+        "exit": 0,
+        "load_after": [
+          "56.79",
+          "55.42",
+          "57.79"
+        ],
+        "load_before": [
+          "56.79",
+          "55.42",
+          "57.79"
+        ],
+        "log_sha256": "75c1152f6bd31eb547e44aba57d1b6ff9c5b5583d62555e345fcddddb33cdead",
+        "name": "inspect",
+        "seconds": 0.022877293871715665,
+        "status": "PASS"
+      },
+      {
+        "attempts": 1,
+        "command_sha256": "8cae1e6940ae5c0c8a394d2c175473f0a8a3f5d4c1214c8d33add997ff56e760",
+        "exit": 0,
+        "load_after": [
+          "57.37",
+          "55.56",
+          "57.83"
+        ],
+        "load_before": [
+          "56.79",
+          "55.42",
+          "57.79"
+        ],
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "name": "native",
+        "seconds": 3.222010215977207,
+        "status": "PASS"
+      }
+    ],
+    "cells": [
+      {
+        "attempts": 1,
+        "calls": 4,
+        "consumer_backing_rows": 33,
+        "consumer_executable_segments": 1,
+        "consumer_exported_symbols": 5,
+        "consumer_identity_rows": 11,
+        "consumer_revalidations": 11,
+        "cpu": 1,
+        "exit": 0,
+        "frames": 8,
+        "load_after": [
+          "57.37",
+          "55.56",
+          "57.83"
+        ],
+        "load_before": [
+          "56.79",
+          "55.42",
+          "57.79"
+        ],
+        "lookups": 38,
+        "mode": "original",
+        "native_exit": 0,
+        "seconds": 0.39637433597818017,
+        "status": "PASS_FINITE_CHECKS",
+        "stderr_sha256": "0a297beaf9d4e7017c06085ee4c5c86299b7926cf6614313daa0789755cc4a6c",
+        "stdout_sha256": "c58c97ff8605e19ac5564e0bc1258ae8eb6f1277c35a54c6aec589b668ec873f",
+        "wall_timeout": false
+      },
+      {
+        "attempts": 1,
+        "calls": 4,
+        "consumer_backing_rows": 33,
+        "consumer_executable_segments": 1,
+        "consumer_exported_symbols": 5,
+        "consumer_identity_rows": 11,
+        "consumer_revalidations": 11,
+        "cpu": 1,
+        "exit": 0,
+        "frames": 16,
+        "load_after": [
+          "57.37",
+          "55.56",
+          "57.83"
+        ],
+        "load_before": [
+          "57.37",
+          "55.56",
+          "57.83"
+        ],
+        "lookups": 44,
+        "mode": "intact",
+        "native_exit": 0,
+        "seconds": 0.3987205389421433,
+        "status": "PASS_FINITE_CHECKS",
+        "stderr_sha256": "f14a4afec96309596ec2441d35dbe8fc7de73f2a5fbfc81cd91185ab6785e389",
+        "stdout_sha256": "07c99d01e566f47fb1cc31a5cd2988d5a1264e3cb4e39e60ca1c78e331677874",
+        "wall_timeout": false
+      },
+      {
+        "attempts": 1,
+        "calls": 0,
+        "consumer_backing_rows": 6,
+        "consumer_executable_segments": 1,
+        "consumer_exported_symbols": 5,
+        "consumer_identity_rows": 2,
+        "consumer_revalidations": 2,
+        "cpu": 1,
+        "exit": 0,
+        "frames": 0,
+        "load_after": [
+          "57.37",
+          "55.56",
+          "57.83"
+        ],
+        "load_before": [
+          "57.37",
+          "55.56",
+          "57.83"
+        ],
+        "lookups": 44,
+        "mode": "lookup-negative",
+        "native_exit": 0,
+        "seconds": 0.2959703430533409,
+        "status": "PASS_FINITE_CHECKS",
+        "stderr_sha256": "bb3811a60b5973bdc7e19257779e5321eea03bdc1d8ec06ff3554f7f0e55ae0b",
+        "stdout_sha256": "d9e1b5bb3bd96f0a1694415fb0d71104017e2356ab6917558417e2c04bb60c4a",
+        "wall_timeout": false
+      }
+    ],
+    "binary_sha256": "266530499b00b78c025b2409e0b06d0a6dcb1b8ea6002425df1fea10660080f2",
+    "subject_sha256": "89005e6929b6d1a99e95cc4af0fdad0a090763a4611c204baa69e3a4b2372cc9",
+    "caller_sha256": "441b9eac44ccb45d48488d8d338373eb8042f4e8970b6849103a9c5114cc35ca",
+    "build_manifest_sha256": "924228097b59d0e028506181af26d28e2e175aae3b804a819cc6d70a85d7d529",
+    "lease_released": true,
+    "scope_absent": true,
+    "outer": {
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reaped_descendants": 0,
+      "seconds": 12.632398911053315,
+      "termination": null
+    }
+  },
+  "toolchain": {
+    "c_inventory_template": "profile-template.json",
+    "rust_tools": {
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "rustdoc": {
+        "bytes": 13680928,
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      }
+    },
+    "python": {
+      "path": "/usr/bin/python3.9",
+      "bytes": 15448,
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "timeout": {
+      "path": "/usr/bin/timeout",
+      "bytes": 36848,
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    },
+    "git": {
+      "path": "/usr/bin/git",
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "consumer_sha256": "3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed"
+  },
+  "retained_development_failures": {
+    "indexed-chain-controls-v2": "Compilation refused a mistaken Storage variant; corrected to existing FileBacked, no tests ran in failed attempt.",
+    "indexed-native-clippy-v1": "Unused unit and identity operation lint failures; equivalent repairs, no gate change.",
+    "indexed-native-build-v4": "Mistyped Cargo package name refused before compilation.",
+    "native-v1": "Two uninstrumented stack admission refusals; intact passed. Historical per-predicate cause remains unknown.",
+    "runtime-diagnostic-v1": "All five separately fixed processes refused old whole-VMA containment; none relabelled as pass.",
+    "raw-cell-model": "Initial anonymous-BSS raw cells did not meet the strict file-owner model; explicit initialized file-backed data satisfies unchanged ownership checks.",
+    "data-build-wrapper-v1": "Root wrapper refused a log outside its required target/evaluation root before any C stage; retained privately, then corrected."
+  },
+  "c_build": {
+    "stages": [
+      {
+        "name": "gcc-version",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.17694227094762027
+      },
+      {
+        "name": "assembler-version",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.17964649014174938
+      },
+      {
+        "name": "linker-version",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.18001289991661906
+      },
+      {
+        "name": "resolve-cc1",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.13058537105098367
+      },
+      {
+        "name": "resolve-assembler",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.12947643594816327
+      },
+      {
+        "name": "resolve-collect2",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.13055516593158245
+      },
+      {
+        "name": "resolve-linker",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.1336460958700627
+      },
+      {
+        "name": "resolve-libgcc",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.13579388987272978
+      },
+      {
+        "name": "compile-subject",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.16732169804163277
+      },
+      {
+        "name": "compile-collector",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.2484694749582559
+      },
+      {
+        "name": "compile-caller",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.2521579519379884
+      },
+      {
+        "name": "link-subject",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.1486230380833149
+      },
+      {
+        "name": "link-caller",
+        "attempts": 1,
+        "status": "PASS",
+        "exit": 0,
+        "seconds": 0.15127228596247733
+      }
+    ],
+    "commands": [
+      {
+        "name": "gcc-version",
+        "argv": [
+          "/usr/bin/gcc",
+          "--version"
+        ]
+      },
+      {
+        "name": "assembler-version",
+        "argv": [
+          "/usr/bin/as",
+          "--version"
+        ]
+      },
+      {
+        "name": "linker-version",
+        "argv": [
+          "/usr/bin/ld.bfd",
+          "--version"
+        ]
+      },
+      {
+        "name": "resolve-cc1",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-print-prog-name=cc1"
+        ]
+      },
+      {
+        "name": "resolve-assembler",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-print-prog-name=as"
+        ]
+      },
+      {
+        "name": "resolve-collect2",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-print-prog-name=collect2"
+        ]
+      },
+      {
+        "name": "resolve-linker",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-print-prog-name=ld.bfd"
+        ]
+      },
+      {
+        "name": "resolve-libgcc",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-print-file-name=libgcc_s.so.1"
+        ]
+      },
+      {
+        "name": "compile-subject",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-std=gnu11",
+          "-O2",
+          "-g",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fPIC",
+          "-fomit-frame-pointer",
+          "-fno-lto",
+          "-fno-optimize-sibling-calls",
+          "-fcf-protection=none",
+          "-fno-stack-protector",
+          "-fvisibility=hidden",
+          "-fasynchronous-unwind-tables",
+          "-v",
+          "-MD",
+          "-MF",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/subject.d",
+          "-MT",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/subject.o",
+          "-c",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/sources/subject.c",
+          "-o",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/subject.o"
+        ]
+      },
+      {
+        "name": "compile-collector",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-std=gnu11",
+          "-O2",
+          "-g",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fPIC",
+          "-fomit-frame-pointer",
+          "-fno-lto",
+          "-fno-optimize-sibling-calls",
+          "-fcf-protection=none",
+          "-fno-stack-protector",
+          "-fvisibility=hidden",
+          "-fasynchronous-unwind-tables",
+          "-v",
+          "-MD",
+          "-MF",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/collector.d",
+          "-MT",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/collector.o",
+          "-c",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/sources/collector.c",
+          "-o",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/collector.o"
+        ]
+      },
+      {
+        "name": "compile-caller",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-std=gnu11",
+          "-O2",
+          "-g",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fPIC",
+          "-fomit-frame-pointer",
+          "-fno-lto",
+          "-fno-optimize-sibling-calls",
+          "-fcf-protection=none",
+          "-fno-stack-protector",
+          "-fvisibility=hidden",
+          "-fasynchronous-unwind-tables",
+          "-v",
+          "-MD",
+          "-MF",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/caller.d",
+          "-MT",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/caller.o",
+          "-c",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/sources/caller.c",
+          "-o",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/caller.o"
+        ]
+      },
+      {
+        "name": "link-subject",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-v",
+          "-shared",
+          "-shared-libgcc",
+          "-fno-lto",
+          "-Wl,--eh-frame-hdr",
+          "-Wl,--hash-style=both",
+          "-Wl,-e,0",
+          "-Wl,-z,now",
+          "-Wl,-z,noexecstack",
+          "-Wl,-z,defs",
+          "-Wl,-t",
+          "-Wl,-Map,@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/subject.map",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/subject.o",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/collector.o",
+          "-Wl,--no-as-needed",
+          "/usr/lib64/libgcc_s-11-20240719.so.1",
+          "-Wl,--as-needed",
+          "-o",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/libli2_uw_subject.so"
+        ]
+      },
+      {
+        "name": "link-caller",
+        "argv": [
+          "/usr/bin/gcc",
+          "-fuse-ld=bfd",
+          "-v",
+          "-shared",
+          "-shared-libgcc",
+          "-fno-lto",
+          "-Wl,--eh-frame-hdr",
+          "-Wl,--hash-style=both",
+          "-Wl,-e,0",
+          "-Wl,-z,now",
+          "-Wl,-z,noexecstack",
+          "-Wl,-z,defs",
+          "-Wl,-t",
+          "-Wl,-Map,@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/caller.map",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/caller.o",
+          "-Wl,--no-as-needed",
+          "/usr/lib64/libgcc_s-11-20240719.so.1",
+          "-Wl,--as-needed",
+          "-o",
+          "@ROOT@/ignored/a3/indexed-dso-public-reproduction-a306-v1/build/libli2_uw_caller.so"
+        ]
+      }
+    ]
+  }
+}
