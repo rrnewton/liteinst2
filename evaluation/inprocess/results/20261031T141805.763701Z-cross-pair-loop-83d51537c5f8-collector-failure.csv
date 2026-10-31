@@ -1,0 +1,4 @@
+revision,lane,collector_status,process_exit,wrapper_command_interval_ns,reaped,timed_out,stdout_bytes,stderr_bytes,record_bytes,qualification,aggregate_closure
+83d51537c5f812255dffaf7c55bc041078c87337,native,failed,0,150005646,true,false,858480,0,unavailable,unqualified,unavailable
+83d51537c5f812255dffaf7c55bc041078c87337,maintained,failed,0,1930577452,true,false,858480,14816,216094,unqualified,unavailable
+83d51537c5f812255dffaf7c55bc041078c87337,differential,failed,0,3133890880,true,false,858480,14837,215633,unqualified,unavailable

@@ -37,6 +37,18 @@ struct li2_span_transfer_progress {
    cleanup and genuine TRACE validation remain the actual chain's operations. */
 int li2_tf_chain_span_close(struct li2_tf_chain *,int,siginfo_t *,ucontext_t *,
                            const struct li2_tf_span_transfer **);
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+/* Pure necessary eligibility for a completed canonical register-JMP TRACE to
+   another page. No query, release, permission change or ticket is performed.
+   The target's complete owned source pair and placement remain caller gates. */
+int li2_tf_chain_span_cross_page_eligible(const struct li2_tf_chain *,int,
+                                        const siginfo_t *,const ucontext_t *);
+/* Separate opt-in route: preserves the original close API's same-page rule.
+   The actual old TRACE closes and queries its real target before release;
+   unchanged fresh/consume/resume logic binds that independently queried page. */
+int li2_tf_chain_span_close_cross_page(struct li2_tf_chain *,int,siginfo_t *,ucontext_t *,
+                                      const struct li2_tf_span_transfer **);
+#endif
 int li2_tf_chain_span_quiet(const struct li2_tf_span_transfer *);
 /* Binds current actual held fetch to the exact real closed frame. Does not
    edit it, publish code, change permissions, or authorize an old plan cast. */

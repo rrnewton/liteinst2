@@ -1,0 +1,201 @@
+{
+  "artifact_closure": null,
+  "cases": [
+    {
+      "app_validation": null,
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "file": "subject-native-0-0.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "file": "subject-native-0-0.stdout",
+          "sha256": "fd6d18ff4ccc8211fee936a73d495bd16014c58a33a825f791368c429d1a1892"
+        }
+      },
+      "cleanup_errors": [],
+      "command_error": null,
+      "command_record": {
+        "bytes": 3329,
+        "name": "subject-native-0-0.json",
+        "sha256": "efc6dd9b17a989d243f7bfbf566c84de85009574fb3bf0bf4ca8570a6e68166a"
+      },
+      "control": 0,
+      "control_results": null,
+      "duration_kind": "wrapper_command_interval",
+      "duration_ns": 150005646,
+      "exit": 0,
+      "lane": "native",
+      "mode": 0,
+      "owner_validation": null,
+      "pair_validation": null,
+      "qualified": false,
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "app_validation": null,
+      "captures": {
+        "record": {
+          "bytes": 216094,
+          "file": "subject-maintained-0-0.record",
+          "sha256": "2ee9bcabb40d77e5f9eceb1d4fd0d0b478cd7d047a9db172c654d5c130fd800f"
+        },
+        "stderr": {
+          "bytes": 14816,
+          "file": "subject-maintained-0-0.stderr",
+          "sha256": "49716e3edb7e7b2fac43d21aae568816efcdf476dd4032227b5d03da88e16c2b"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "file": "subject-maintained-0-0.stdout",
+          "sha256": "af35679984f1f585a0760cd445c204dab214f08099a03e945068176844ec807a"
+        }
+      },
+      "cleanup_errors": [],
+      "command_error": null,
+      "command_record": {
+        "bytes": 4020,
+        "name": "subject-maintained-0-0.json",
+        "sha256": "98f3f706f76d836d127f235a231e63a6a4b7448f54577b17296916eb9cf68c78"
+      },
+      "control": 0,
+      "control_results": null,
+      "duration_kind": "wrapper_command_interval",
+      "duration_ns": 1930577452,
+      "exit": 0,
+      "lane": "maintained",
+      "mode": 0,
+      "owner_validation": null,
+      "pair_validation": null,
+      "qualified": false,
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "app_validation": null,
+      "captures": {
+        "record": {
+          "bytes": 215633,
+          "file": "subject-differential-0-0.record",
+          "sha256": "43056e27f9fba576e082fff8babce5e6150549666615e8f77930c3502864b533"
+        },
+        "stderr": {
+          "bytes": 14837,
+          "file": "subject-differential-0-0.stderr",
+          "sha256": "35f0a22b36b0c30690e1f16b06e0978a77d5e8f976e60149b5f2fe1013a16c2b"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "file": "subject-differential-0-0.stdout",
+          "sha256": "e5c8f9774fc93457b487d2a074e7503759de2f09c656b25427bf1f902da6f65b"
+        }
+      },
+      "cleanup_errors": [],
+      "command_error": null,
+      "command_record": {
+        "bytes": 4034,
+        "name": "subject-differential-0-0.json",
+        "sha256": "1bdcc4b24d1afa582210cd833800cb89d1ced8a60c21eaeccdd9319705f04564"
+      },
+      "control": 0,
+      "control_results": null,
+      "duration_kind": "wrapper_command_interval",
+      "duration_ns": 3133890880,
+      "exit": 0,
+      "lane": "differential",
+      "mode": 0,
+      "owner_validation": null,
+      "pair_validation": null,
+      "qualified": false,
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "cleanup_complete": null,
+  "collector_failure": {
+    "collector_exit": 1,
+    "error_type": "TypeError",
+    "message": "Object of type bytes is not JSON serializable",
+    "provenance": "root observed collector exit and final traceback; no aggregate receipt was saved",
+    "stage": "final_receipt_serialization"
+  },
+  "configuration_closure": null,
+  "durable_command_observations": {
+    "capture_bytes": 4440633,
+    "capture_files": 262,
+    "command_rows": 130,
+    "exit_zero_rows": 130,
+    "reaped_rows": 130,
+    "recorded_cleanup_errors": 0,
+    "recorded_command_errors": 0,
+    "recorded_descriptors_closed": true,
+    "row_facts_encoding": "SHA256 of UTF-8 compact sorted-key JSON array of {name,bytes,sha256}, sorted by durable command filename; each hash covers complete original command JSON bytes",
+    "row_facts_sha256": "1608dca401cdc738a0baed3a6bdbe48bdd69c07bb256124a5c9837cb49d1550d",
+    "scope": "Per-command records and their complete saved captures authenticated; no aggregate finalizer or source closure claim",
+    "timed_out_rows": 0
+  },
+  "evidence_kind": "collector_failure_with_durable_command_records",
+  "final_errors": null,
+  "finite_qualified": false,
+  "git_tree": "ea336d97d12209a6aa50f393f295d063bfcb2705",
+  "hardware": null,
+  "hardware_reference": {
+    "fields": {
+      "architecture": "x86_64",
+      "cpu family": "26",
+      "kernel_version": "7.1.3",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "provenance": "previous independently authenticated check receipt; static host description only, not current-run hardware or isolation closure",
+    "receipt": {
+      "bytes": 11147,
+      "name": "20261031T135429.169023Z-checks-52828462b212.json",
+      "sha256": "b1783d077b647a89a1b54f46bc21a9c7ba6d3edb476640d13f2c8e9a7f4f261e"
+    }
+  },
+  "interval_scope": "duration_ns is the saved wrapper/command interval, not target CPU time or a speed comparison",
+  "performance_credit": false,
+  "receipt": null,
+  "receipt_present": false,
+  "reproduce": [
+    "cpuset-alloc",
+    "run",
+    "--cores",
+    "1",
+    "--",
+    "python3",
+    "-B",
+    "evaluation/inprocess/cross_pair_loop.py",
+    "--expect-revision",
+    "83d51537c5f812255dffaf7c55bc041078c87337"
+  ],
+  "reservation": {
+    "cpu": 3,
+    "provenance": "root reported reserved CPU for this launch; aggregate affinity receipt unavailable"
+  },
+  "revision": "83d51537c5f812255dffaf7c55bc041078c87337",
+  "runner": {
+    "bytes": 11013,
+    "path": "evaluation/inprocess/cross_pair_loop.py",
+    "sha256": "0867d08215e8e6bed1b219e5f420d47fc54c2896b53b5ab3114b1e79bccb65a1"
+  },
+  "schema": 1,
+  "scope": "Diagnostic failure evidence only. Durable process exit and capture facts do not establish app, owner, pair or control qualification. Original392 qualification remains mandatory.",
+  "source_unchanged": null,
+  "status": "failed",
+  "subject_bounds": {
+    "capture_limit_bytes": 16777216,
+    "cpu_seconds": 30,
+    "file_bytes": 16777216,
+    "memory_bytes": 536870912,
+    "wall_seconds": 60
+  },
+  "whole_profile_qualified": false
+}

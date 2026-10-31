@@ -24,6 +24,9 @@
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+#include "persistent_cross_pair_observe.h"
+#endif
 #if defined(LI2_PERSISTENT_ACTIVE_DOMAIN)
 #if LI2_PERSISTENT_ACTIVE_DOMAIN != 1 || !defined(LI2_PERSISTENT_RETAINED_TWO) || LI2_PERSISTENT_RETAINED_TWO != 1 || !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1 || LI2_PG_BINDING_VERSION != 1 || LI2_PG_GROUP_BINDING_VERSION != 4
 #error "distinct active-domain version4 policy required"
@@ -1210,8 +1213,29 @@ static _Noreturn void selected_persistent_abort(unsigned code,long detail) {
     report(125,pe.p.first_error,pe.p.first_detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+static int pe_cross_page_trace_coarse(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    /* Keep the old linked coarse gate literal. This separate branch-target
+       route changes no old eligibility and performs no RAW or source read. */
+    if(selected_selftesting || !selected_linked_epoch.initialized ||
+       selected_linked_epoch_active || selected_linked_epoch_busy || selected_linked_epoch.first_error ||
+       selected_pending_route!=SELECTED_GENERIC_TF || selected_step_pending!=1 ||
+       handling!=1 || !si || !uc || selected_chain.active<0 || selected_chain.active>=2 ||
+       !selected_chain.pending || selected_chain.in_handler || selected_chain.first_error)return 0;
+    return li2_tf_chain_span_cross_page_eligible(&selected_chain,sig,si,uc);
+}
+#endif
 static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(!pe.initialized || pe_busy || pe_active || !ped_capacity())return 0;
+    unsigned cross_page=0;
+    if(!le_trace_coarse(sig,si,uc)) {
+        if(!pe_cross_page_trace_coarse(sig,si,uc))return 0;
+        cross_page=1;
+    }
+#else
     if(!pe.initialized || pe_busy || pe_active || !ped_capacity() || !le_trace_coarse(sig,si,uc))return 0;
+#endif
     uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
     const struct li2_rseq_state *r=li2_rseq_snapshot();
 #ifdef LI2_PERSISTENT_UNREGISTERED
@@ -1264,6 +1288,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_begin(sig,si,uc,slot_index);
 #endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_begin(sig,si,uc,slot_index);
+#endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     ped_reset_attempt();pe.previous_selection=pe.selection;pe.selected_slot=slot_index;
     pe.selection=pe.retained[slot_index].identity;pe.selected_bank=bank_index;
@@ -1277,7 +1304,12 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
     pe_closing=1;pe_busy=1;ped_count(PGC_REF(offers));__asm__ volatile("":::"memory");
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    int e=cross_page?li2_tf_chain_span_close_cross_page(&selected_chain,sig,si,uc,&pe.ticket):
+        li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#else
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#endif
     pe_need(!e && pe.ticket,PE_EVENT,e);pe.transfer=*li2_tf_chain_span_progress();
     pe_need(pe.transfer.phase==LI2_ST_CLOSED && pe.transfer.issued==1 &&
         pe.transfer.event==selected_chain.event_id && pe.transfer.pc==pc &&
@@ -1299,6 +1331,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_closed();
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_closed();
 #endif
     pe_need(!li2_pg_epoch_begin(pe.ticket,pe.transfer.serial,&selected_session,sig,si,uc,&pe.token),PE_RSEQ,2);
     le_zero(&selected_borrow,sizeof selected_borrow);le_zero(&selected_view,sizeof selected_view);
@@ -1346,6 +1381,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_entered(sig,si,uc);
 #endif
     selected_initialized();__asm__ volatile("":::"memory");pe_busy=0;return 1;
 }
@@ -1399,6 +1437,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_terminal(0);
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_terminal(0);
 #endif
     selected_logical_flags=(uint64_t)pe.after.frame.greg[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
     pe_active=0;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
@@ -1511,4 +1552,7 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+#include "persistent_cross_pair_observe.inc"
 #endif

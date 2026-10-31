@@ -8,6 +8,10 @@ static struct {
     struct li2_pg_source_progress previous;
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     struct li2_pgd_source_progress domain,domain_previous;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    struct li2_pgx_source peer_candidate;
+    struct owned_page peer_original[2];
+#endif
 #endif
 } pg_source;
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
@@ -113,6 +117,11 @@ int li2_pg_source_begin(const struct li2_pg_token *t,const struct li2_pg_layout 
     } else if(pg_source.p.phase!=LI2_PGS_IDLE || pg_source.token.owner || pg_source.token.serial ||
               r->token.owner || r->token.serial || r->seed_complete || r->entry_complete ||
               r->close_complete || r->cancel_started || r->cancel_complete)return LI2_FETCH_STATE;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    volatile unsigned char *peer=(void *)&pg_source.peer_candidate;
+    for(size_t i=0;i<sizeof pg_source.peer_candidate;i++)peer[i]=0;
+    peer=(void *)pg_source.peer_original;for(size_t i=0;i<sizeof pg_source.peer_original;i++)peer[i]=0;
+#endif
     pg_source.token=*t;pg_source.p.serial=t->serial;pg_source.p.layout=*layout;
     pg_source.p.phase=LI2_PGS_SEEDING;return 0;
 }
@@ -390,9 +399,15 @@ int li2_pgd_source_pair_equal(const struct li2_pg_source_key *a,const struct li2
            !equal(a->page[i].bytes,b->page[i].bytes,LI2_REGION_PAGE))return 0;
     return 1;
 }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+#include "persistent_cross_pair_source.inc"
+#endif
 static int pgsd_member(const struct li2_pgd_member *m,const struct li2_pg_sources *s,uintptr_t directory) {
     const struct li2_pgd_ref *r=&m->identity;
     const struct li2_pg_compact *p=m->plan;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(!s || !s->complete || !pgx_geometry(m->key))return 0;
+#endif
     if(!p || !m->key || !r->generation || r->slot>=LI2_PGD_MEMBERS || r->bank>=2 ||
        !r->proof || (r->proof&(PAGE-1)) || r->proof>=(UINT64_C(1)<<47) ||
        !r->root || r->root!=m->key->entry || r->root!=p->entry ||
@@ -402,12 +417,21 @@ static int pgsd_member(const struct li2_pgd_member *m,const struct li2_pg_source
        p->reserved || p->reserved2 || !p->heads || p->heads>LI2_PG_HEADS ||
        p->member_heads[0]!=(p->heads<64?p->heads:64) ||
        p->member_heads[1]!=(p->heads>64?p->heads-64:0) ||
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+       !p->exits || p->exits>8 || p->links>8 || p->links+p->exits>8)return 0;
+#else
        !p->exits || p->exits>8 || p->links>8 || p->links+p->exits>8 ||
        !li2_pgd_source_pair_equal(m->key,&s->key))return 0;
+#endif
     unsigned root=0;
     for(unsigned i=0;i<LI2_PE_SOURCES;i++) {
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+        if(p->page[i]!=m->key->page[i].identity.address ||
+           !equal(p->source[i],m->key->page[i].bytes,PAGE))return 0;
+#else
         if(p->page[i]!=s->key.page[i].identity.address ||
            !equal(p->source[i],s->key.page[i].bytes,PAGE))return 0;
+#endif
         if(r->root>=p->page[i] && r->root-p->page[i]<PAGE)root=1;
     }
     return root;
@@ -441,6 +465,11 @@ static const struct li2_pgd_view *pgsd_view(const struct li2_pg_token *t,unsigne
        !v->member[0].key || v->member[0].key->entry!=s->key.entry ||
 #endif
        d->first_error)return 0;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(!li2_pgd_source_pair_equal(v->member[0].key,&s->key) ||
+       (v->count==2 && !li2_pgx_guard_union(v->member[0].plan,v->member[1].plan)))return 0;
+    if(bound && !pgx_bound(v,d->peer.checks))return 0;
+#endif
     if(bound && (d->bound!=1 || d->token.owner!=t->owner || d->token.serial!=t->serial ||
        d->count!=v->count))return 0;
     for(unsigned i=0;i<v->count;i++) {
@@ -471,6 +500,12 @@ static int pgsd_terminal_record(void) {
        d->entry.token.owner!=d->token.owner || d->entry.token.serial!=d->token.serial ||
        d->entry.slot!=d->ref[0].slot || d->entry.bank!=d->ref[0].bank ||
        d->entry.generation!=d->ref[0].generation)return 0;
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(d->peer.started) {
+        if(d->count!=2 || !li2_pgx_source_value(&d->peer,&p->source,&d->token,
+            &d->ref[1],&d->peer.key,LI2_PGX_CHECKS))return 0;
+    } else if(!pgsd_zero(&d->peer,sizeof d->peer))return 0;
 #endif
     for(unsigned i=0;i<d->count;i++)for(unsigned j=0;j<3;j++)
         if(!pgs_query_done(&d->ref[i].layout,j,PROT_READ|PROT_EXEC,&d->open[i][j]) ||
@@ -505,6 +540,9 @@ int li2_pgd_source_bind(const struct li2_pg_token *t) {
        pg_source.p.opened_extents || pg_source.p.closed_extents || pg_source.p.release_started ||
        pg_source.p.cancel_started || !pgsd_zero(d,sizeof *d))return pgsd_bad(LI2_FETCH_STATE,83);
     int e=li2_pg_source_validate(t,v->member[0].plan);if(e)return pgsd_bad((unsigned)e,84);
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    e=pgx_bind(t,v);if(e)return e;
+#endif
     d->token=*t;d->count=v->count;
 #ifdef LI2_PERSISTENT_SUBENTRY
     d->entry=v->entry;
@@ -524,6 +562,9 @@ int li2_pgd_source_opened(const struct li2_pg_token *t) {
         if(e || !pgs_query_done(&d->ref[i].layout,j,PROT_READ|PROT_EXEC,&d->open[i][j]))
             return pgsd_bad(LI2_FETCH_PAGE,86+(long)(3*i+j));
     }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    int peer_error=pgx_live(t,v,LI2_PGX_OPEN);if(peer_error)return peer_error;
+#endif
     int e=li2_pg_source_opened(t,v->member[0].plan);if(e)return pgsd_bad((unsigned)e,92);
     for(unsigned j=0;j<3;j++)d->open[0][j]=pg_source.p.opened[j];
     d->opened=1;return 0;
@@ -539,6 +580,9 @@ int li2_pgd_source_release(const struct li2_pg_token *t) {
         if(e || !pgs_query_done(&d->ref[i].layout,j,PROT_READ,&d->close[i][j]))
             return pgsd_bad(LI2_FETCH_PAGE,94+(long)(3*i+j));
     }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    int peer_error=pgx_live(t,v,LI2_PGX_CLOSE);if(peer_error)return peer_error;
+#endif
     int e=li2_pg_source_release(t,v->member[0].plan);if(e)return pgsd_bad((unsigned)e,100);
     for(unsigned j=0;j<3;j++)d->close[0][j]=pg_source.p.closed[j];
     d->closed=1;d->released=1;return 0;
