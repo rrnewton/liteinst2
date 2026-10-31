@@ -1,0 +1,3 @@
+profile,revision,sites,locally_planned_withheld,primary_refusals,B1,B2,T1,T2,T3,NoPatchWindow,ExpectedBytesChanged,AllocationUnavailable,OwnershipConflict,candidate_complete,qualification_complete,planner_exit,owner_wall_seconds
+prior-source-policy-2g,3c1972d634428f7f73cd3ca0ac8cc8ec247481b6,2053,2014,39,1519,329,111,23,32,21,9,5,4,false,false,2,18.56739286496304
+owned-placement-2g-v1,4451a77540526c382f5fd82bd3674c4fddc4878e,2053,1982,71,1542,285,67,26,62,36,32,2,1,false,false,2,18.110431045060977

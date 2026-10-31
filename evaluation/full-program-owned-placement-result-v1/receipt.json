@@ -1,0 +1,541 @@
+{
+  "schema": "full-program-owned-placement-negative-result-v1",
+  "status": "FAILED_COMPLETE_PROGRAM_REFUSAL",
+  "revision": "4451a77540526c382f5fd82bd3674c4fddc4878e",
+  "parent_revision": "5d35c62c63e086b4a7156b487c0edd63e9b413a9",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "source_change": "Exactly two additive Python files: the separately named policy generator and its pure controls. Rust, C, Cargo inputs, old generator and old policy bytes unchanged.",
+  "population": {
+    "instruction_heads": 13143,
+    "selected_sites": 2053,
+    "identity_fields": [
+      "site",
+      "pc",
+      "file_offset",
+      "length"
+    ],
+    "all_identities_equal_to_prior_2g": true,
+    "selection_sha256": "901c9e30f73f6db5a1897f564ef65b616b3a5d8e097e088d0a57e771da28c0cc"
+  },
+  "policy": {
+    "profile": "full-e9patch-owned-placement-2g-v1",
+    "bytes": 345675,
+    "sha256": "e2cec9db2100a39966f883efdea2fbb4f01d38aefd20e6a494c97ebc755e18f5",
+    "resource_fields": [
+      "input_bytes",
+      "sites",
+      "images",
+      "image_bytes",
+      "new_load_pages",
+      "output_bytes",
+      "added_file_bytes",
+      "program_headers",
+      "virtual_span"
+    ],
+    "resources": [
+      1048576,
+      4096,
+      2896,
+      11862016,
+      2936,
+      12120064,
+      12026544,
+      2910,
+      2147483648
+    ],
+    "search": "preferred 64 256 64 none 256 4096",
+    "per_role": {
+      "max_candidates": 1,
+      "mapped_bytes": 4096,
+      "max_permits": 16
+    },
+    "target_text": "target xsave64 743 4:576:256 32:832:64 64:896:512 128:1408:1024 512:2432:8\n"
+  },
+  "comparison": {
+    "prior_receipt": "../full-program-jrcxz-result-v1/receipt.json",
+    "prior_receipt_sha256": "a1a1f67df9732681d1ecbbc14f0ceb3183e5daa14293c0859fe08b7dbe1d2797",
+    "prior_revision": "3c1972d634428f7f73cd3ca0ac8cc8ec247481b6",
+    "prior_2g_policy_sha256": "ef09bcd4c78949ff4b93a928c59e04b545081f9e56c2056f2cfcdfe068604cce",
+    "prior": {
+      "locally_planned_but_withheld": 2014,
+      "primary_refusals": {
+        "AllocationUnavailable": 5,
+        "ExpectedBytesChanged": 9,
+        "NoPatchWindow": 21,
+        "OwnershipConflict": 4
+      },
+      "withheld_tactics": {
+        "B1": 1519,
+        "B2": 329,
+        "T1": 111,
+        "T2": 23,
+        "T3": 32
+      },
+      "report": {
+        "bytes": 364154,
+        "sha256": "94e4e8e237b6e1e853386352e944a52d3b9c338add0716274a674ac91fcba87e"
+      }
+    },
+    "current": {
+      "locally_planned_but_withheld": 1982,
+      "primary_refusals": {
+        "AllocationUnavailable": 2,
+        "ExpectedBytesChanged": 32,
+        "NoPatchWindow": 36,
+        "OwnershipConflict": 1
+      },
+      "withheld_tactics": {
+        "B1": 1542,
+        "B2": 285,
+        "T1": 67,
+        "T2": 26,
+        "T3": 62
+      },
+      "report": {
+        "bytes": 360686,
+        "sha256": "5973da8b52b0f6e30cb97275739646ba243a9a288b7478f33a9ef1101e1456de"
+      }
+    },
+    "newly_refused_sites": [
+      215,
+      219,
+      255,
+      282,
+      370,
+      382,
+      403,
+      417,
+      527,
+      546,
+      572,
+      796,
+      868,
+      870,
+      879,
+      904,
+      963,
+      1103,
+      1108,
+      1249,
+      1251,
+      1306,
+      1318,
+      1405,
+      1406,
+      1417,
+      1421,
+      1604,
+      1605,
+      1667,
+      1805,
+      1852,
+      1871,
+      1879,
+      1891,
+      1896,
+      1913,
+      1915,
+      2027,
+      2045
+    ],
+    "new_local_plans_at_previously_refused_sites": [
+      104,
+      148,
+      337,
+      707,
+      997,
+      1255,
+      1257,
+      1392
+    ],
+    "net_local_plan_change": -32,
+    "candidate_complete": false,
+    "qualification_complete": false
+  },
+  "controls": {
+    "argv": [
+      "/usr/bin/prlimit",
+      "--cpu=45",
+      "--as=536870912",
+      "--fsize=16777216",
+      "--core=0",
+      "--",
+      "/usr/bin/python3.9",
+      "-I",
+      "-B",
+      "evaluation/offline-corpus/full_program_owned_policy_controls.py",
+      "--original",
+      "${ORIGINAL}",
+      "--ledger",
+      "${LEDGER}",
+      "--inventory",
+      "${SITES}",
+      "--target",
+      "${TARGET}",
+      "-v"
+    ],
+    "environment": {
+      "PATH": "/usr/bin:/bin",
+      "LANG": "C",
+      "LC_ALL": "C",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "cpus": [
+      3
+    ],
+    "load_before": [
+      45.9,
+      48.94,
+      45.19
+    ],
+    "load_after": [
+      45.9,
+      48.94,
+      45.19
+    ],
+    "wall_seconds": 60,
+    "log_bytes": 1048576,
+    "result": {
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 0.2040196938905865,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "private_log_sha256": "c2fd67ceb84b9f5db2f2e6cecddfb778dcdb2bb55abbfa24a94473255d6812ee"
+    },
+    "source_unchanged": true,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "test_ids": [
+      "test_complete_roster_overlap_and_missing_site_refuse",
+      "test_full_pinned_source_policy_roster_and_unchanged_caps",
+      "test_ordinal_zero_mask_projection_and_collision",
+      "test_permits_keep_priority_and_existing_range_cap",
+      "test_physical_domain_order_and_mask_uses_all_heads",
+      "test_preferred_and_ordered_permit_are_not_rescue_search",
+      "test_t2_overlay_permit_and_independent_aligned_preference",
+      "test_tail_and_window_refusals_are_not_hidden_by_other_pages",
+      "test_u64_signed32_boundaries_and_negative_projection"
+    ],
+    "cargo_test_credit": false
+  },
+  "build": {
+    "argv": [
+      "/usr/bin/prlimit",
+      "--cpu=240",
+      "--as=4294967296",
+      "--fsize=134217728",
+      "--core=0",
+      "--",
+      "cargo",
+      "build",
+      "--offline",
+      "--locked",
+      "--release",
+      "-j1",
+      "-p",
+      "liteinst-rewrite",
+      "--example",
+      "full_program_bridge",
+      "--example",
+      "disassembly_sites"
+    ],
+    "environment": {
+      "PATH": "${STABLE_TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "1",
+      "RUST_TEST_THREADS": "1",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+      "CARGO_PROFILE_RELEASE_DEBUG": "0",
+      "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "cpus": [
+      13
+    ],
+    "load_before": [
+      65.9,
+      55.22,
+      47.82
+    ],
+    "load_after": [
+      65.9,
+      55.22,
+      47.82
+    ],
+    "wall_seconds": 300,
+    "log_bytes": 8388608,
+    "result": {
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 0.035378240048885345,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "private_log_sha256": "222a02ed477d249a21359df8cae975864a62d848f4739cadc5b00b6190a963c6"
+    },
+    "source_unchanged": true,
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "products": {
+      "full_program_bridge": {
+        "bytes": 2240176,
+        "sha256": "19b722c14e697872da17179c8bd25b231358466a8aa7ba02b594c1d2a97f1975"
+      },
+      "disassembly_sites": {
+        "bytes": 4484944,
+        "sha256": "d0be30ac0fc9572acfafc5c860c81a6b36a187359bf6f855a4518c5a4e02b492"
+      }
+    },
+    "note": "Cached release build validation; 0.035s owner duration is not fresh compilation time."
+  },
+  "actual_private_controller": {
+    "argv": [
+      "/usr/bin/prlimit",
+      "--cpu=300",
+      "--as=4294967296",
+      "--fsize=536870912",
+      "--core=0",
+      "--",
+      "/usr/bin/python3.9",
+      "-I",
+      "-B",
+      "${PRIVATE_CONTROLLER}",
+      "--cpu",
+      "3",
+      "--build-receipt-sha256",
+      "c7570f2406fe11bb2f70a3ff0835a586b47dec75977bf47aca919b2f7ad7ab2b"
+    ],
+    "environment": {
+      "PATH": "/usr/bin:/bin",
+      "LANG": "C",
+      "LC_ALL": "C",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "cpus": [
+      3
+    ],
+    "load_before": [
+      45.93,
+      40.88,
+      43.1
+    ],
+    "load_after": [
+      43.84,
+      40.75,
+      43.01
+    ],
+    "wall_seconds": 420,
+    "log_bytes": 8388608,
+    "result": {
+      "exit_code": 2,
+      "termination": null,
+      "seconds": 19.36558233993128,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "private_log_sha256": "a13f99c32379a9261e2dc701ab008834e7b50fef5d6d31c5bcafd960d9d2a320"
+    },
+    "source_unchanged": true,
+    "receipt_sha256": "20653c9c5f87770397aff088f8d95d27353b03c045202b7d05044f924f933b76",
+    "controller_sha256": "4347e0cf77c2ddddf96a244c653c89f065426e982287a55e6018de95de522ba1",
+    "note": "Historical private owner argv is normalized, not supplied as a public script. Public reproduction uses the tracked generator and exact planner argv below; equivalent wall/log/custody bounds use evaluation/admission/processes.py."
+  },
+  "execution": {
+    "cpus": [
+      3
+    ],
+    "environment": {
+      "LANG": "C",
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "TMPDIR": "${OUT}/tmp"
+    },
+    "source_unchanged": true,
+    "stages": [
+      {
+        "name": "policy",
+        "argv": [
+          "/usr/bin/prlimit",
+          "--cpu=45",
+          "--as=536870912",
+          "--fsize=16777216",
+          "--core=0",
+          "--",
+          "/usr/bin/python3.9",
+          "-I",
+          "-B",
+          "${ROOT}/evaluation/offline-corpus/full_program_owned_policy.py",
+          "--original",
+          "${ORIGINAL}",
+          "--ledger",
+          "${LEDGER}",
+          "--inventory",
+          "${SITES}",
+          "--target",
+          "${TARGET}",
+          "--out",
+          "${OUT}/policy"
+        ],
+        "attempts": 1,
+        "cpu_seconds": 45,
+        "address_space_bytes": 536870912,
+        "file_bytes": 16777216,
+        "wall_seconds": 60,
+        "log_cap_bytes": 1048576,
+        "load_before": [
+          45.93,
+          40.88,
+          43.1
+        ],
+        "load_after": [
+          45.93,
+          40.88,
+          43.1
+        ],
+        "owner": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "fe5057c80d523dac3bda7ee104f56942bab11e988ba2651a200b82d3ee26b9b8",
+          "reaped_descendants": 0,
+          "seconds": 0.1714927100110799,
+          "start_utc": "2026-10-31T22:19:55.268373+00:00",
+          "termination": null
+        },
+        "status": "EXIT_ZERO_UNQUALIFIED"
+      },
+      {
+        "name": "li2-owned-2g",
+        "argv": [
+          "/usr/bin/prlimit",
+          "--cpu=180",
+          "--as=3221225472",
+          "--fsize=536870912",
+          "--core=0",
+          "--",
+          "${ROOT}/target/release/examples/disassembly_sites",
+          "--whole-program-4096",
+          "${ORIGINAL}",
+          "${LEDGER}",
+          "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d",
+          "${OUT}/policy/policy-owned-2g-v1.txt",
+          "e2cec9db2100a39966f883efdea2fbb4f01d38aefd20e6a494c97ebc755e18f5",
+          "${OUT}/li2-owned-2g"
+        ],
+        "attempts": 1,
+        "cpu_seconds": 180,
+        "address_space_bytes": 3221225472,
+        "file_bytes": 536870912,
+        "wall_seconds": 240,
+        "log_cap_bytes": 8388608,
+        "load_before": [
+          45.93,
+          40.88,
+          43.1
+        ],
+        "load_after": [
+          43.84,
+          40.75,
+          43.01
+        ],
+        "owner": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 2,
+          "private_log_sha256": "be5f1611525a7a30775f55b912795eb2960131a75f761f58a3a66d8cc12b2a36",
+          "reaped_descendants": 0,
+          "seconds": 18.110431045060977,
+          "start_utc": "2026-10-31T22:19:55.516390+00:00",
+          "termination": null
+        },
+        "status": "FAILED_OR_REFUSED"
+      }
+    ],
+    "output_limits": {
+      "per_file_bytes": 536870912,
+      "post_stage_bytes": 2147483648
+    },
+    "retained_output": {
+      "allocated": 438329344,
+      "apparent": 424755791,
+      "files": 4140
+    },
+    "complete_manifest": {
+      "bytes": 391856,
+      "sha256": "79cb104535b4e445181ea082f87427004f31d57bd1964457dc1f34a4356b333f"
+    },
+    "child_receipt_sha256": "0793b754acb577515bbea9e45e8d805eab66e42596459be1c16908a21819cb5a",
+    "native_attempts": 0,
+    "backend_attempts": 0,
+    "qualification_complete": false
+  },
+  "inputs_and_selected_tools": {
+    "${ROOT}/evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "${ROOT}/evaluation/offline-corpus/full_program_owned_policy.py": {
+      "bytes": 15851,
+      "sha256": "2cb4c74073f95fb4dafed0a6c7a6290c6a7bdeca530bc61c414d1219677a4ef2"
+    },
+    "${LEDGER}": {
+      "bytes": 264399,
+      "sha256": "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d"
+    },
+    "${SITES}": {
+      "bytes": 77822,
+      "sha256": "7d3e1d485fad55ed75139a40fc456374f9fcdbda101096a5d137d1df758b4f5f"
+    },
+    "${TARGET}": {
+      "bytes": 75,
+      "sha256": "6ac466f4721cc43cbecd450cd3f37cb75cfc8d372e22f1295ae6d2ba2182788c"
+    },
+    "${ORIGINAL}": {
+      "bytes": 93520,
+      "sha256": "890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb"
+    },
+    "${ROOT}/target/release/examples/disassembly_sites": {
+      "bytes": 4484944,
+      "sha256": "d0be30ac0fc9572acfafc5c860c81a6b36a187359bf6f855a4518c5a4e02b492"
+    },
+    "/usr/bin/git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "/usr/bin/prlimit": {
+      "bytes": 28416,
+      "sha256": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933"
+    },
+    "/usr/bin/python3.9": {
+      "bytes": 15448,
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "${ROOT}/evaluation/offline-corpus/full_program_owned_policy_controls.py": {
+      "bytes": 7462,
+      "sha256": "4c1e115f336060f77efae5f9a7514fe16cba35d4b8a557206fb1feee7c6e8015"
+    }
+  },
+  "reproduction_inputs": {
+    "original_source": "E9Patch 0d5d36e4c4edcac37ca2499694d64302a391136f; Capstone e3f106739a6ae78d47772dff31062d644ea21078; historical make -j4 tool release; require exact original hash, never substitute a changed build.",
+    "provider_source": "5e098f7920b5b5535f553de599c94ee980e97e29",
+    "provider_csv": {
+      "bytes": 210187,
+      "sha256": "591845048470e947952fe064286d61f4a06413e5d01ae80c8504597e6c089562"
+    },
+    "recipe_references": [
+      "../full-program-provider/README.md",
+      "../full-program-provider/result-v1/receipt.json",
+      "../full-program-whole-result-v1/README.md",
+      "../e9-upstream-corpus-c66ea06/README.md"
+    ]
+  },
+  "limits": [
+    "All2053 sites are retained; local plans are withheld, not successful rewrites. No complete candidate was emitted or executed.",
+    "The old16MiB and2GiB policies were not rerun; their failures and all earlier refusals remain.",
+    "This receipt covers the controls, release build and planner; the workspace gate is recorded separately. Nine pure Python controls are separate from Cargo/native validation.",
+    "Shared-host owner durations include processing/I/O/scheduling and are not a performance comparison.",
+    "Complete-code and non-code RX-gap premises remain caller supplied. No PIE startup, runtime parity or A5 qualification; the strict1342/2048 profiler failure remains unchanged."
+  ]
+}
