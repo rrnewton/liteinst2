@@ -17,6 +17,17 @@ POLICY_INPUTS = tuple({'build-persistent-resident.sh':'build-persistent-active-d
     'persistent_active_domain.h','persistent_active_domain_types.inc','persistent_active_domain.inc',
     'rseq_current_data.h','rseq_current_data.inc')
 
+
+# The active owner drains through the domain wrapper; the linked image keeps
+# the singleton release body only as an internal compiler clone.
+# Preserve every other donor provider and require the shared-domain seams.
+ACTIVE_PROVIDERS = tuple('li2_pgd_source_release' if name == 'li2_pg_source_release' else name
+                         for name in PROVIDERS) + DISPATCH_PROVIDERS + (
+    'li2_pgd_owner_view', 'li2_pgd_source_bind', 'li2_pgd_source_opened',
+    'li2_pgd_source_pair_equal', 'li2_pgd_source_progress', 'li2_pgd_source_terminal',
+    'li2_pgd_rseq_bind', 'li2_lifecycle_rseq_data_current',
+)
+
 def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
     need(mode in ('release','capture','differential','counters'), 'explicit domain mode')
     image = pin(binary(image))
@@ -122,7 +133,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(out == err == b'', 'persistent bridge has no unresolved imports')
     _, symbols, err = run('persistent-group-release-symbols', [builder.tools['nm'], '-S', '--defined-only', bridge], profile='inspect', env=builder.environment)
     need(not err, 'complete actual persistent symbol census')
-    for name in PROVIDERS + DISPATCH_PROVIDERS + (('li2_pdao_trace_closed',) if capture else ()):
+    for name in ACTIVE_PROVIDERS + (('li2_pdao_trace_closed',) if capture else ()):
         found = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [name.encode()]]
         need(len(found) == 1 and len(found[0]) == 4 and (found[0][2] in (b't', b'T')) and (int(found[0][1], 16) > 0), 'actual nonempty persistent proof/owner provider ' + name)
     objdump = pin(shutil.which('objdump', path=ENV['PATH']))
