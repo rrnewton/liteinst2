@@ -12,7 +12,14 @@
 #define LI2_PG_COMPACT_VERSION 2U
 #endif
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+#undef LI2_PG_COMPACT_VERSION
+#define LI2_PG_COMPACT_VERSION 5U
+#endif
 union li2_pg_guard_record { struct li2_pe_guard_record mov;struct li2_jd_record dispatch;
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    struct li2_dd_record direct;
+#endif
 #ifdef LI2_ADD_GUARD
     struct li2_ag_record add;
 #endif
@@ -53,6 +60,12 @@ int li2_pg_compact_guard(const struct li2_pg_compact *,unsigned member,unsigned 
 /* Materialize only an authenticated DISPATCH head into protected scratch.
    The full slot tail is zero, the retained code tail is CC, and the original
    descriptor/common row binding remain typed. No decoder or cell read. */
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+int li2_pg_compact_direct(const struct li2_pg_compact *,unsigned,unsigned,struct li2_dd_plan *);
+/* Exact selected ordinary exit; -1 absent, -2 malformed/ambiguous. Both
+   typed external arms at one original PC remain distinct tokens. */
+int li2_pg_compact_exit(const struct li2_pg_compact *,uintptr_t,uint64_t);
+#endif
 int li2_pg_compact_dispatch(const struct li2_pg_compact *,unsigned,unsigned,struct li2_jd_plan *);
 #ifdef LI2_ADD_GUARD
 int li2_pg_compact_add(const struct li2_pg_compact *,unsigned,unsigned,struct li2_ag_plan *);

@@ -351,6 +351,15 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             if(p->exits==LI2_PG_BOUNDARIES) {pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;}
             unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=q[at].pc;q[at].token=LI2_PG_HEADS+x;continue;
         }
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        unsigned external=0;
+        if(kind==LI2_PE_NONE && (d.flow==LI2_REGION_JMP || d.flow==LI2_REGION_JCC)) {
+            unsigned page,offset;
+            if(!location(p,d.target,&page,&offset))external|=1;
+            if(d.flow==LI2_REGION_JCC && !location(p,d.decoded.next_pc,&page,&offset))external|=2;
+            if(external)kind=LI2_PG_DIRECT;
+        }
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(kind==LI2_PG_DISPATCH && p->exits==LI2_PG_BOUNDARIES) {
             pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;
@@ -376,12 +385,35 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #else
         if(kind==LI2_PE_MOV) { p->store_original[i]=s;++p->stores; }
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(kind==LI2_PG_DIRECT) {
+            p->decoder_result=(unsigned)li2_dd_describe(d.decoded.pc,bytes,count,external,&p->instruction[i].direct);
+            if(p->decoder_result)return LI2_PG_DECODER;
+            const unsigned arms=d.flow==LI2_REGION_JCC?2:1;
+            for(unsigned arm=0;arm<arms;arm++)if(external&(1U<<arm)) {
+                if(p->exits==LI2_PG_BOUNDARIES) {
+                    pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;
+                }
+                /* Arm identity is (this head, this ordinal, this token).
+                   Equal targets must not collapse two conditional arms. */
+                unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=d.decoded.pc;
+                h->successors[arm]=LI2_PG_HEADS+x;
+            }
+        }
+#endif
         unsigned flow=guarded_write(kind)?LI2_REGION_NEXT:d.flow;
         if(flow==LI2_REGION_NEXT) {
             if(enqueue(p,q,&n,d.decoded.next_pc)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);return LI2_PG_GRAPH;}
         } else if(flow==LI2_REGION_JCC || flow==LI2_REGION_JMP) {
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+            if(!(external&1U) && enqueue(p,q,&n,d.target)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.target,miss);return LI2_PG_GRAPH;}
+            if(flow==LI2_REGION_JCC && !(external&2U) && enqueue(p,q,&n,d.decoded.next_pc)<0) {
+                pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);return LI2_PG_GRAPH;
+            }
+#else
             if(enqueue(p,q,&n,d.target)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.target,miss);return LI2_PG_GRAPH;}
             if(flow==LI2_REGION_JCC && enqueue(p,q,&n,d.decoded.next_pc)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);return LI2_PG_GRAPH;}
+#endif
         } else return LI2_PG_DECODER;
     }
     if(!p->heads || !p->exits) {
@@ -392,6 +424,21 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         struct li2_pe_head *h=&p->head[i];const struct li2_span_decoded *d=&p->original[i];
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(h->kind==LI2_PG_DISPATCH)continue;
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(h->kind==LI2_PG_DIRECT) {
+            const struct li2_dd_descriptor *a=&p->instruction[i].direct;
+            h->successor_count=d->flow==LI2_REGION_JCC?2:1;
+            for(unsigned arm=0;arm<h->successor_count;arm++) {
+                if(a->external_mask&(1U<<arm)) {
+                    unsigned k=h->successors[arm];
+                    if(k<LI2_PG_HEADS || k-LI2_PG_HEADS>=p->exits ||
+                       p->exit_pc[k-LI2_PG_HEADS]!=d->decoded.pc ||
+                       !equal(&p->frontier[k-LI2_PG_HEADS],d,sizeof *d))return LI2_PG_GRAPH;
+                } else if(!resolve(q,n,a->target[arm],&h->successors[arm]))return LI2_PG_GRAPH;
+            }
+            continue;
+        }
 #endif
         unsigned flow=guarded_write(h->kind)?LI2_REGION_NEXT:d->flow;
         h->successor_count=flow==LI2_REGION_JCC?2:1;
@@ -459,6 +506,26 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     for(unsigned i=0;i<p->heads;i++) {
         struct li2_pe_head *h=&p->head[i];const struct li2_span_decoded *d=&p->original[i];
         uintptr_t generated=head_generated(p,i);unsigned char *out=head_image(p,i);
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(h->kind==LI2_PG_DIRECT) {
+            struct li2_jd_binding binding;uintptr_t internal[2]={0};
+            const struct li2_dd_descriptor *a=&p->instruction[i].direct;
+            if(li2_pg_dispatch_binding(p->page,&p->layout,p->table.address,p->heads,i,&binding))return LI2_PG_CORRUPT;
+            for(unsigned arm=0;arm<h->successor_count;arm++)if(!(a->external_mask&(1U<<arm))) {
+                internal[arm]=destination(p,i,arm);if(!internal[arm])return LI2_PG_CORRUPT;
+            }
+            unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
+            struct li2_dd_plan *g=&p->guard[i].direct;
+            p->guard_result=(unsigned)li2_dd_emit(d->decoded.pc,bytes,n,a->external_mask,
+                generated,p->layout.spill,&binding,internal,g);
+            if(p->guard_result)return p->guard_result==LI2_DD_RELOCATION?LI2_PG_RELOCATION:LI2_PG_DECODER;
+            if(!equal(&g->original,a,sizeof *a) || !equal(&g->binding,&binding,sizeof binding) ||
+               !equal(g->internal,internal,sizeof internal) || g->record.ready!=1 ||
+               !g->record.image_bytes || g->record.image_bytes>LI2_PE_SLOT_BYTES ||
+               g->generated!=generated || g->spill!=p->layout.spill)return LI2_PG_DECODER;
+            h->generated_length=g->record.image_bytes;copy(out,g->image,h->generated_length);continue;
+        }
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(h->kind==LI2_PG_DISPATCH) {
             struct li2_jd_binding binding;

@@ -24,6 +24,9 @@
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#include "persistent_direct_frontier_observe.h"
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.h"
 #endif
@@ -902,7 +905,11 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         equal(pe.candidate_registry,protected,protected_count*sizeof *protected) && pe_identity() &&
         le_quiet(&pe.ref) && !li2_pg_rseq_live(&pe.token,uc,&pe.live[0]) &&
         le_unchanged(&pe.before,si,uc),PE_SOURCE,1);
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    for(unsigned i=0;i<plan->heads;i++)if(plan->head[i].kind==LI2_PE_NONE || plan->head[i].kind==LI2_PG_DIRECT) {
+#else
     for(unsigned i=0;i<plan->heads;i++)if(plan->head[i].kind==LI2_PE_NONE) {
+#endif
         const struct li2_span_decoded *d=&plan->original[i];
         pe.gpr_written|=d->gpr_write;
         pe.flags_written|=d->flags_written|d->flags_set|d->flags_cleared|d->flags_undefined;
@@ -1049,12 +1056,19 @@ int li2_pg_epoch_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,
     return 0;
 }
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+static int pe_exit_index(uintptr_t pc,uint64_t flags) {
+    if(!pe_ready())return -2;
+    return li2_pg_compact_exit(&pe_payload()->plan,pc,flags);
+}
+#else
 static int pe_exit_index(uintptr_t pc) {
     if(!pe_ready())return -1;
     const struct li2_pg_compact *p=&pe_payload()->plan;
     for(unsigned i=0;i<p->exits;i++)if(p->exit_pc[i]==pc)return (int)i;
     return -1;
 }
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     return pda_preentry(sig,si,uc);
@@ -1319,6 +1333,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_begin(sig,si,uc,slot_index);
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_begin(sig,si,uc,slot_index);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_begin(sig,si,uc,slot_index);
 #endif
@@ -1365,6 +1382,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_closed();
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_closed();
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_closed();
@@ -1418,6 +1438,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_entered(sig,si,uc);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_entered(sig,si,uc);
@@ -1477,6 +1500,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_terminal(0);
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_terminal(0);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_terminal(0);
@@ -1592,6 +1618,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#include "persistent_direct_frontier_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.inc"

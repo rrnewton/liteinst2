@@ -1,6 +1,9 @@
 #ifndef LI2_PERSISTENT_GROUP_PLAN_H
 #define LI2_PERSISTENT_GROUP_PLAN_H
 #include "persistent_plan.h"
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+#include "linked_direct_dispatch.h"
+#endif
 #if !defined(LI2_PERSISTENT_GROUP) || LI2_PERSISTENT_GROUP != 1
 #error "distinct two-member persistent group required"
 #endif
@@ -19,13 +22,23 @@
 #define LI2_PG_VERSION 2U
 #endif
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+#undef LI2_PG_VERSION
+#define LI2_PG_VERSION 5U
+#endif
 /* New profile semantics; old group and persistent kinds remain unchanged. */
 enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    ,LI2_PG_DIRECT=5
+#endif
 #ifdef LI2_ADD_GUARD
     ,LI2_PG_ADD=4
 #endif
 };
 union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor dispatch;
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    struct li2_dd_descriptor direct;
+#endif
 #ifdef LI2_ADD_GUARD
     struct li2_ag_descriptor add;
 #endif
@@ -33,6 +46,9 @@ union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor disp
 union li2_pg_guard {
     struct li2_mg_plan mov;
     struct li2_jd_plan dispatch;
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    struct li2_dd_plan direct;
+#endif
 #ifdef LI2_ADD_GUARD
     struct li2_ag_plan add;
 #endif
@@ -61,6 +77,9 @@ enum li2_pg_status { LI2_PG_OK=0,LI2_PG_MISS=1,LI2_PG_ARGUMENT=2800,
 enum li2_pg_edge_kind { LI2_PG_CAPACITY_LINK=1 };
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK,LI2_PG_DISPATCH_MAP
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    ,LI2_PG_DIRECT_MAP=8
+#endif
 #ifdef LI2_ADD_GUARD
     ,LI2_PG_ADD_GUARD
 #endif

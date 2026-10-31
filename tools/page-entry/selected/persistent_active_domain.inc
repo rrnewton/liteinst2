@@ -25,9 +25,64 @@ static int pda_zero(const void *value,size_t bytes) {
     for(size_t i=0;i<bytes;i++)if(b[i])return 0;
     return 1;
 }
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+static int pda_direct_exit_value(const struct pda_completion *c) {
+    const struct pda_direct_exit *e=&c->direct_exit;
+    if(!e->complete)return pda_zero(e,sizeof *e);
+    if(e->complete!=1 || e->reserved || e->member>=c->count || e->member>=LI2_PGD_MEMBERS ||
+       !e->heads || e->heads>LI2_PG_HEADS || e->head>=e->heads ||
+       !e->exits || e->exits>LI2_PG_BOUNDARIES || e->index>=e->exits || e->arm>1 ||
+       (e->flags&(SELECTED_TF|SELECTED_RF))!=SELECTED_RF)return 0;
+    const struct li2_pg_source_key *s=&c->member[e->member].source;
+    if(s->page[0].identity.address>=s->page[1].identity.address)return 0;
+    for(unsigned i=0;i<2;i++)if((s->page[i].identity.address&(PAGE-1)) ||
+        s->page[i].identity.address>(UINT64_C(1)<<47)-PAGE)return 0;
+    const struct li2_pe_head *h=&e->row;const struct li2_span_decoded *d=&e->original;
+    const struct li2_dd_descriptor *a=&e->direct;struct li2_dd_descriptor expected;
+    if(h->kind!=LI2_PG_DIRECT || h->source_page>=2 || h->source_offset>=PAGE ||
+       !h->source_length || h->source_length>15 || d->decoded.length!=h->source_length ||
+       d->decoded.pc!=s->page[h->source_page].identity.address+h->source_offset ||
+       (e->head==0?d->decoded.pc!=s->entry:d->decoded.pc==s->entry) ||
+       !h->generated_length || h->generated_length>LI2_PE_SLOT_BYTES ||
+       li2_dd_span(d,a->external_mask,&expected) || !equal(a,&expected,sizeof *a) ||
+       h->successor_count!=(a->flow==LI2_REGION_JCC?2U:1U) || e->arm>=h->successor_count ||
+       (h->successor_count==1 && h->successors[1]) || li2_dd_arm(a,e->flags)!=(int)e->arm ||
+       !(a->external_mask&(1U<<e->arm)) || h->successors[e->arm]!=LI2_PG_HEADS+e->index)return 0;
+    unsigned external=0;
+    for(unsigned arm=0;arm<h->successor_count;arm++) {
+        unsigned in_pair=0;for(unsigned page=0;page<2;page++) {
+            uintptr_t at=s->page[page].identity.address;
+            if(a->target[arm]>=at && a->target[arm]-at<PAGE)++in_pair;
+        }
+        if(in_pair>1)return 0;
+        if(!in_pair)external|=1U<<arm;
+        unsigned k=h->successors[arm];
+        if(k>=e->heads && (k<LI2_PG_HEADS || k-LI2_PG_HEADS>=e->exits))return 0;
+        if((a->external_mask&(1U<<arm)) && k<LI2_PG_HEADS)return 0;
+    }
+    if(external!=a->external_mask || (external==3 && h->successors[0]==h->successors[1]))return 0;
+    unsigned n=0;
+    for(;n<15;n++) {
+        uintptr_t pc=d->decoded.pc+n;unsigned found=0;
+        for(unsigned page=0;page<2;page++) {
+            uintptr_t at=s->page[page].identity.address;
+            if(pc>=at && pc-at<PAGE) {
+                if(d->decoded.bytes[n]!=s->page[page].bytes[pc-at])return 0;
+                ++found;
+            }
+        }
+        if(found>1)return 0;
+        if(!found)break;
+    }
+    return n==d->decoded.available;
+}
+#endif
 static int pda_receipt(const struct pda_completion *c) {
     if(!c || !c->id || c->id>pe.domain.next_id || !c->serial || c->serial>pe.next_serial ||
        c->complete!=1 || !c->count || c->count>LI2_PGD_MEMBERS)return 0;
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    if(!pda_direct_exit_value(c))return 0;
+#endif
     const struct li2_pg_source_progress *s=&c->source;
     const struct li2_pgd_source_progress *d=&c->domain_source;
     const struct li2_pg_rseq_progress *r=&c->rseq;
@@ -347,7 +402,11 @@ static int pda_bind(const ucontext_t *uc) {
         pda_select(m->identity.slot,m->identity.bank);
         if(pe_bytes())return PE_PUBLICATION;
         g->domain_refs=1;
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        for(unsigned j=0;j<m->plan->heads;j++)if(m->plan->head[j].kind==LI2_PE_NONE || m->plan->head[j].kind==LI2_PG_DIRECT) {
+#else
         for(unsigned j=0;j<m->plan->heads;j++)if(m->plan->head[j].kind==LI2_PE_NONE) {
+#endif
             const struct li2_span_decoded *d=&m->plan->original[j];
             pe.gpr_written|=d->gpr_write;
             pe.flags_written|=d->flags_written|d->flags_set|d->flags_cleared|d->flags_undefined;
@@ -433,12 +492,26 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     pe_busy=1;pe.p.phase=LI2_PG_RECOVERING;pe.recovery_started=1;__asm__ volatile("":::"memory");
     if(le_capture(&pe.after,sig,si,uc))return PE_FRAME;
     const greg_t *g=pe.after.frame.greg;uintptr_t pc=(uintptr_t)g[REG_RIP];
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    int exit=pe_exit_index(pc,(uint64_t)g[REG_EFL]);
+    if(exit< -1)return PE_PUBLICATION;
+    unsigned member=exit>=0?0:LI2_PGD_MEMBERS;
+    for(unsigned i=1;i<w->view.count;i++) {
+        int candidate=li2_pg_compact_exit(w->view.member[i].plan,pc,(uint64_t)g[REG_EFL]);
+        if(candidate< -1)return PE_PUBLICATION;
+        if(candidate>=0) {
+            if(member!=LI2_PGD_MEMBERS)return PE_PUBLICATION;
+            member=i;exit=candidate;
+        }
+    }
+#else
     int exit=pe_exit_index(pc);unsigned member=exit>=0?0:LI2_PGD_MEMBERS;
     for(unsigned i=1;i<w->view.count;i++)for(unsigned j=0;j<w->view.member[i].plan->exits;j++)
         if(w->view.member[i].plan->exit_pc[j]==pc) {
             if(member!=LI2_PGD_MEMBERS)return PE_PUBLICATION;
             member=i;exit=(int)j;
         }
+#endif
     if(member<w->view.count && sig==SIGSEGV && si->si_signo==SIGSEGV && si->si_code==SEGV_ACCERR &&
        !si->si_errno && g[REG_TRAPNO]==14 && g[REG_ERR]==21 && (uintptr_t)si->si_addr==pc &&
        (uintptr_t)g[REG_CR2]==pc && ((uint64_t)g[REG_EFL]&(SELECTED_TF|SELECTED_RF))==SELECTED_RF &&
@@ -521,6 +594,22 @@ static void pda_complete(void) {
         c->member[i]=(struct pda_member_completion){.identity=m->identity,.header=s->publication.header,
             .source=s->publication.source,.generation=s->generation,.proof=w->proof_exit[i]};
     }
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    pe_need(pe.exit_seen && w->exit_member<w->view.count,PE_RELEASE,115);
+    const struct li2_pg_compact *closed=w->view.member[w->exit_member].plan;
+    const uintptr_t exit_pc=(uintptr_t)pe.after.frame.greg[REG_RIP];
+    const uint64_t exit_flags=(uint64_t)pe.after.frame.greg[REG_EFL];
+    pe_need(li2_pg_compact_exit(closed,exit_pc,exit_flags)==(int)pe.exit_index,PE_RELEASE,116);
+    for(unsigned i=0;i<closed->heads;i++)if(closed->head[i].kind==LI2_PG_DIRECT &&
+        closed->original[i].decoded.pc==exit_pc) {
+        pe_need(!c->direct_exit.complete,PE_RELEASE,117);
+        int arm=li2_dd_arm(&closed->instruction[i].direct,exit_flags);
+        pe_need(arm>=0,PE_RELEASE,118);
+        c->direct_exit=(struct pda_direct_exit){.complete=1,.member=w->exit_member,
+            .heads=closed->heads,.head=i,.exits=closed->exits,.index=pe.exit_index,.arm=(unsigned)arm,
+            .flags=exit_flags,.row=closed->head[i],.original=closed->original[i],.direct=closed->instruction[i].direct};
+    }
+#endif
     c->complete=1;pe.domain.claimed[w->receipt]=0;
     pe_need(pda_receipt(c),PE_RELEASE,88);
     for(unsigned i=0;i<c->count;i++) {
@@ -558,6 +647,9 @@ static _Noreturn void pda_abort(unsigned code,long detail) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_terminal(1);
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_terminal(1);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_terminal(1);

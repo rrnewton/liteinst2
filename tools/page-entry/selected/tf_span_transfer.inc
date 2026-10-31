@@ -215,6 +215,9 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     li2_pso_trace_closed(c,p);
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    li2_pdo_trace_closed(c,p);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     li2_pxo_trace_closed(c,p);
 #endif

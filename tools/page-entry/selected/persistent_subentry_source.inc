@@ -56,6 +56,9 @@ int li2_pgs_entry_source(const struct li2_pgs_entry *e,uintptr_t root,
        d->next_pc!=t->pc+h->source_length || d->length!=h->source_length || d->available!=15 ||
        t->pc!=t->page[t->source_page]+h->source_offset ||
        (h->kind!=LI2_PE_NONE && h->kind!=LI2_PE_MOV && h->kind!=LI2_PG_DISPATCH
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        && h->kind!=LI2_PG_DIRECT
+#endif
 #ifdef LI2_ADD_GUARD
         && h->kind!=LI2_PG_ADD
 #endif
