@@ -114,8 +114,15 @@ def dwarf_payload(b,pos,mode,mask):
         raw_callchain=list(words),unwind_complete=False)
 
 
-def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_ns, *, bridge_identity=None):
+def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_ns, *, bridge_identity=None, per_thread=False, online_range=None):
     """Whole exec-to-exit envelope; event loss or truncation never hidden."""
+    need(type(per_thread)is bool,'explicit per-thread raw observer profile')
+    if per_thread:
+        need(type(online_range)is tuple and len(online_range)==2 and
+             all(type(x)is int for x in online_range)and 0<=online_range[0]<=cpu<=online_range[1]<65536 and
+             online_range[0]<online_range[1],'independently bound actual online CPU range')
+        pmu_updates=set()
+    else:need(online_range is None,'old profile has no per-thread CPU-map input')
     data=path.read_bytes(); need(104<=len(data)<=128<<20,'bounded retained perf file')
     need(data[:8]==b'PERFILE2','native little-endian perf.data header')
     header,entry,attrs,attr_bytes,start,size=struct.unpack_from('<6Q',data,8)
@@ -142,15 +149,25 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             # Bit22 suppresses redundant kernel-collected user FP chains; it
             # cannot suppress the separately required REG_USER/STACK_USER data.
             # Both states are fully parsed; neither changes the user denominator.
-            need(sample_type==0x131a7 and flags&~(1<<22)==0x2240463 and
-                 regs==0xff0fff and stack==4096,
-                 'user-only 4096-byte DWARF/IP/TID/time/CPU/period/identifier sample with BP/SP/IP')
+            if per_thread:
+                need(sample_type==0x131a7 and flags&~(1<<22)==0x2240461 and
+                     regs==0xff0fff and stack==4096,
+                     'exact no-inherit user-only 4096-byte DWARF event')
+            else:
+                need(sample_type==0x131a7 and flags&~(1<<22)==0x2240463 and
+                     regs==0xff0fff and stack==4096,
+                     'user-only 4096-byte DWARF/IP/TID/time/CPU/period/identifier sample with BP/SP/IP')
         else:
-            need(sample_type==0x10187 and regs==stack==0 and flags==0x463963763,
-                 'exact non-DWARF DUMMY sideband with data MMAP2 and COMM_EXEC')
+            if per_thread:
+                need(sample_type==0x10187 and regs==stack==0 and flags==0x463963761,
+                     'exact no-inherit DUMMY retains task/MMAP2/COMM_EXEC child tracking')
+            else:
+                need(sample_type==0x10187 and regs==stack==0 and flags==0x463963763,
+                     'exact non-DWARF DUMMY sideband with data MMAP2 and COMM_EXEC')
         off,n=struct.unpack_from('<QQ',data,at+entry-16)
         need(header<=off<=attrs and 0<n<=attrs-off and n%8==0 and
              all(off+n<=lo or hi<=off for lo,hi in ranges), 'bounded disjoint event ID sections')
+        if per_thread:need(n==8,'exact one attached any-CPU event ID per attribute')
         values=struct.unpack_from('<'+'Q'*(n//8),data,off);ranges.append((off,off+n))
         need(all(v>0 and v not in ids for v in values) and len(set(values))==len(values),
              'nonzero unique IDs within and across the exact event attributes')
@@ -185,8 +202,13 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
         event_id=sid['identifier'][0]
         need(event_id in ids,'DWARF sideband IDENTIFIER belongs to a declared event')
         if kind in(1,3,4,7,10,17):need(ids[event_id]==1,'runtime sideband belongs only to exact non-callchain DUMMY')
-        need(event_id in indexed and sid['cpu']==(indexed[event_id][1],0),
-             'sideband CPU agrees with complete actual ID_INDEX')
+        if per_thread:
+            need(event_id in indexed and indexed[event_id][1:]==((1<<64)-1,target_pid)and
+                 sid['cpu']==(cpu,0)and sid['tid']==(target_pid,target_pid),
+                 'runtime sideband is actual reserved CPU/target despite any-CPU event sentinel')
+        else:
+            need(event_id in indexed and sid['cpu']==(indexed[event_id][1],0),
+                 'sideband CPU agrees with complete actual ID_INDEX')
         need(sid['time'][0]>=last_event_time,'ordered runtime sideband within the one-CPU stream')
         last_event_time=sid['time'][0]
         need(sid['cpu'][1]==0, 'zero reserved sideband CPU word')
@@ -196,7 +218,16 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
         tail=b[first:end];stop=tail.index(0)
         need(tail[stop:]==bytes(len(tail)-stop), 'complete zero padding after metadata string')
         return tail[:stop].decode('utf-8','surrogateescape')
-    def cpu_map(b):
+    def cpu_map(b,pmu=False):
+        if per_thread:
+            if pmu:
+                need(b==b'\x02\0\0\0'+struct.pack('<HH',*online_range),
+                     'PMU event-update map equals independently bound online CPUs')
+            else:
+                need(b==b'\0\0\x01\0\xff\xff\0\0'and len(indexed)==2 and
+                     {v[1]for v in indexed.values()}=={(1<<64)-1},
+                     'exact one any-CPU sentinel map for the attached-thread event pair')
+            return
         need(len(b)==8 and b[:4]==b'\x02\0\0\0', 'exact bounded range CPU-map encoding')
         first,last=struct.unpack_from('<HH',b,4)
         need(first<=last and cpu in range(first,last+1), 'reserved CPU is in actual recorded CPU range')
@@ -212,8 +243,13 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             need(n==len(ids) and len(b)==16+32*n, 'complete ID_INDEX population')
             for at in range(16,len(b),32):
                 ident,index,processor,tid=struct.unpack_from('<4Q',b,at)
-                need(ident in ids and ident not in indexed and index==id_positions[ident] and
-                     processor<1<<31 and tid==target_pid, 'each ID_INDEX entry joins actual event, CPU and attached thread')
+                if per_thread:
+                    need(ident in ids and ident not in indexed and index==id_positions[ident]==0 and
+                         processor==(1<<64)-1 and tid==target_pid,
+                         'each no-inherit ID_INDEX binds one actual event/any-CPU/attached thread')
+                else:
+                    need(ident in ids and ident not in indexed and index==id_positions[ident] and
+                         processor<1<<31 and tid==target_pid, 'each ID_INDEX entry joins actual event, CPU and attached thread')
                 indexed[ident]=(ids[ident],processor,tid)
             need(len(set(indexed.values()))==len(indexed), 'one event ID per actual event/CPU/thread')
         elif kind==73:
@@ -231,10 +267,17 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             elif typ==1:
                 need(ids[ident]==0 and len(b)==48 and struct.unpack_from('<d',b,24)[0]==1e-6 and b[32:]==bytes(16),
                      'exact CPU_CLOCK display scale, not a sample weight conversion')
-            elif typ==3:need(len(b)==32,'complete event CPU map');cpu_map(b[24:])
+            elif typ==3:
+                need(len(b)==32,'complete event CPU map');cpu_map(b[24:],pmu=True)
+                if per_thread:
+                    need(ident not in pmu_updates,'one actual PMU map update per event')
+                    pmu_updates.add(ident)
             else:need(False,'unsupported event update type')
         elif kind==82:
             need(initial and len(b)==8 and (not paired or len(indexed)==len(ids)), 'one complete initial metadata boundary')
+            if per_thread:
+                need(metadata['69']==metadata['73']==metadata['74']==1 and pmu_updates==set(ids),
+                     'complete single-thread/sentinel/PMU metadata before any execution samples')
             initial=False
         else:need(kind==68 and len(b)==8, 'complete FINISHED_ROUND marker')
     obj=elf(bridge)
@@ -303,8 +346,12 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
             need(pos==len(b) and v['cpu']==(cpu,0),'complete sample on reserved CPU')
             ident=v['identifier'][0]
             need(ident in ids and ids[ident]==0,'DWARF sample IDENTIFIER belongs only to CPU_CLOCK')
-            need(ident in indexed and indexed[ident][1]==cpu and not initial,
-                 'DWARF sample joins complete ID_INDEX and initial boundary')
+            if per_thread:
+                need(ident in indexed and indexed[ident][1]==(1<<64)-1 and not initial,
+                     'DWARF sample joins exact attached any-CPU ID_INDEX and initial boundary')
+            else:
+                need(ident in indexed and indexed[ident][1]==cpu and not initial,
+                     'DWARF sample joins complete ID_INDEX and initial boundary')
             need(v['tid']==(target_pid,target_pid) and indexed[ident][2]==target_pid,
                  'DWARF sample PID/TID equals the actual attached ID_INDEX thread')
             need(v['period'][0]>0, 'positive actual CPU_CLOCK period')

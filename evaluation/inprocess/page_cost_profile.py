@@ -55,7 +55,7 @@ def child(config, ready, release):
     os.execve(c['argv'][0], c['argv'], c['environment'])
 
 
-def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False, user_dwarf=False, resident_counters=False):
+def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False, user_dwarf=False, resident_counters=False, resident_per_thread=False):
     """One fresh exact launch. Caller still validates source/namespace/terminal reports."""
     import page_default_ls_release_provenance as provenance
     observe, same = provenance.observe, provenance.same
@@ -65,6 +65,8 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
          'distinct explicit user-DWARF profile')
     need(type(resident_counters)is bool and (not resident_counters or user_dwarf and not kernel_callchains),
          'distinct resident counter observation requires the original user-DWARF profile')
+    need(type(resident_per_thread)is bool and (not resident_per_thread or resident_counters),
+         'explicit resident-only per-thread observer profile')
     if user_dwarf:
         from persistent_dynamic_profile_read import summarize
     if resident_counters:
@@ -96,6 +98,16 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
     if resident_counters:
         reader=Path(__file__).with_name('persistent_group_counter_process.py')
         before[str(reader.resolve())]=identity(reader)
+    if resident_per_thread:
+        need(os.sysconf('SC_PAGE_SIZE')==4096,'exact 4096-page 16MiB observer ring')
+        online=Path('/sys/devices/system/cpu/online')
+        before[str(online.resolve())]=identity(online)
+        text=online.read_text(encoding='ascii');fields=text.strip().split('-')
+        need(len(fields)==2 and all(x.isdecimal()for x in fields),'one actual contiguous online CPU range')
+        online_range=tuple(map(int,fields))
+        need(text==str(online_range[0])+'-'+str(online_range[1])+'\n' and
+             0<=online_range[0]<=cpu<=online_range[1]<65536 and online_range[0]<online_range[1] and
+             identity(online)==before[str(online.resolve())],'complete unchanged actual online CPU range')
     need(all(before[str(Path(bridge).resolve())][k] == bridge_fact[k] for k in ('bytes', 'sha256')),
          'independently supplied actual bridge fact')
     bridge_identity_before = bridge_file(bridge)[2]
@@ -111,6 +123,10 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         result.update(format='persistent-resident-user-dwarf-counters-v2',resident_counters=True,
                       counter_descriptors=counter_states)
         row['counter_observation']=dict(usable=False,scope='final per-cell prefix after actual reap; no terminal or qualification claim')
+    if resident_per_thread:
+        result.update(format='persistent-resident-per-thread-user-dwarf-counters-v3',
+                      resident_per_thread=True,online_cpu_range=list(online_range),
+                      ring_bytes=16<<20,inheritance=False,child_scope='every recorded FORK is rejected')
     row.update(pid=None, exit=None, reaped=False, timed_out=False, error=None, cleanup_errors=[])
 
     def pipe():
@@ -210,6 +226,9 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
             perf_argv[2:2] = ['--call-graph', 'dwarf,4096', '--user-callchains',
                              '--no-buildid', '--no-buildid-cache']
             perf_argv[perf_argv.index('--mmap-pages=256')] = '--mmap-pages=64'
+        if resident_per_thread:
+            perf_argv[2:2]=['--per-thread']
+            perf_argv[perf_argv.index('--mmap-pages=64')]='--mmap-pages=4096'
         env = dict(row['environment'], PERF_CONFIG='/dev/null')
         if user_dwarf:
             env.update(PERF_CONFIG_NOSYSTEM='1', PERF_CONFIG_NOGLOBAL='1', DEBUGINFOD_URLS='')
@@ -351,7 +370,8 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         result['sampling'] = summarize(directory/'perf.data', Path(bridge), row['pid'], cpu, directory,
                                        result['release_ns'], result['target_exit_ready_ns'],
                                        bridge_identity=result['bridge_identity_after'],
-                                       **({'kernel_callchains':True} if kernel_callchains else {}))
+                                       **({'kernel_callchains':True} if kernel_callchains else {}),
+                                       **({'per_thread':True,'online_range':online_range}if resident_per_thread else{}))
         need(all(result['sampling']['bridge'][k] == bridge_fact[k] for k in ('bytes', 'sha256')),
              'sample symbol ELF equals independently bound actual bridge')
     except BaseException as exc:

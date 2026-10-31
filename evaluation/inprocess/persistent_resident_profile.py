@@ -125,7 +125,7 @@ def main():
          'canonical committed profiler and exact revision')
     out=a.output.resolve();out.relative_to(ROOT/'target/page-region-next');out.mkdir(mode=0o700)
     cpu=next(iter(os.sched_getaffinity(0)))
-    r=dict(schema=1,profile='persistent-resident-user-dwarf-counters-v2',status='failed',qualification=False,
+    r=dict(schema=1,profile='persistent-resident-per-thread-user-dwarf-counters-v3',status='failed',qualification=False,
         performance_credit=False,source_revision=a.expect_revision,cpu=cpu,hardware=hardware(cpu),
         bounds=dict(target=list(TARGET),profiler=list(PERF),unwinder=list(PERF)),
         commands=[],inputs={},aliases={},artifacts={},namespace_aliases={},error=None,final_errors=[],
@@ -307,7 +307,7 @@ def main():
             '--library-root','/usr/lib64','--namespace',str(ns),str(carrier),str(original),'--',str(original),'-d','.']
         row=dict(name='resident-ls-profile',argv=argv,environment=dict(PROGRAM_ENV),cwd=str(bd),bounds=list(TARGET),capture_limit=16<<20)
         r.update(target=row,bridge=fact(bridge),archive=fact(archive),carrier=fact(carrier),policy_sha256=rb['persistent_binding']['policy_sha256'])
-        stable();stdout,stderr,owned=profile(row,out/'capture',cpu,bridge,rb['bridge'],perf=str(perf),user_dwarf=True,resident_counters=True)
+        stable();stdout,stderr,owned=profile(row,out/'capture',cpu,bridge,rb['bridge'],perf=str(perf),user_dwarf=True,resident_counters=True,resident_per_thread=True)
         r['diagnostic']=owned
         owner_path=binary(out/'capture/owner.json')
         need(D(json.loads(owner_path.read_bytes()))==D(owned), 'whole closed owner receipt equals returned observation')
