@@ -503,7 +503,7 @@ def main():
             input_manifest_sha256=digest(pins),artifact_manifest_sha256=digest(artifacts),command_count=len(r['commands']),commands_sha256=digest(r['commands']),
             failure_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
             performance_credit=False,whole_ls_eligibility_credit=False,group_fault_qualification=False,
-            scope='Distinct joint-subentry finite proof with unchanged original comparisons: native392 with12 whole-state checkpoints; separate maintained and differential A cold/B cold/A joint lifetimes. Each pair models127 internal transfers and measures zero interior signals; no per-hit counter is invented. Five old prerequisites and all controls remain mandatory. No asynchronous fault, whole-LS or performance qualification.')
+            scope='Distinct joint-subentry finite proof with unchanged original comparisons: native392 with12 whole-state checkpoints; separate maintained and differential A cold/B cold/A joint lifetimes. A qualified pair must model127 internal transfers and measure zero interior signals; failed lanes provide no generated-state counts. No per-hit counter is invented. Five old prerequisites and all controls remain mandatory. No asynchronous fault, whole-LS or performance qualification.')
         raw=csv_projection(public['cases'])
         public_csv=HERE/'results'/(stem+'.csv');public_json=HERE/'results'/(stem+'.json')
         need(len(raw)<=8192,'three compact actual active-domain CSV rows')
