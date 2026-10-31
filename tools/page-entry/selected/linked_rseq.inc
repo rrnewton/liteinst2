@@ -53,3 +53,6 @@ int li2_rseq_link_live(const ucontext_t *uc,struct li2_link_rseq_live *out) {
     if(word_zero())return out->result=(int)state.first_error;
     out->complete=1;return 0;
 }
+#ifdef LI2_LINKED_PREEDGE
+#include "linked_preedge_rseq.inc"
+#endif

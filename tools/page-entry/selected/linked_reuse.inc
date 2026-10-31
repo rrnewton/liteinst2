@@ -59,6 +59,34 @@ static int ler_permitted(size_t slot) {
         ler_identity(slot,p->generation),LE_STATE,304);
     return 1;
 }
+#ifdef LI2_LINKED_PREEDGE
+/* Compare exact age/head ratios without overflow, floating point, or a
+   permanent size priority. Callers authenticate positive heads and age. */
+static int ler_age_greater(uint64_t age,unsigned heads,uint64_t previous_age,unsigned previous_heads) {
+    uint64_t quotient=age/heads,previous_quotient=previous_age/previous_heads;
+    if(quotient!=previous_quotient)return quotient>previous_quotient;
+    return (age%heads)*previous_heads>(previous_age%previous_heads)*heads;
+}
+static size_t ler_choose(void) {
+    le_need(selected_linked_epoch.used==LE_PAGES && !ler.pending && !ler.retiring &&
+        le_quiet(&selected_borrow),LE_STATE,305);
+    size_t chosen=LE_PAGES;uint64_t chosen_age=0;unsigned chosen_heads=0;
+    for(size_t n=0;n<LE_PAGES;n++) {
+        size_t slot=(ler.cursor+n)%LE_PAGES;
+        if(ler_permitted(slot)) {
+            /* Every timestamp is the actual most recent successful completion
+               of this permitted generation, including genuine cache hits. */
+            unsigned heads=le_plan(&selected_linked_epoch.slots[slot])->heads;
+            le_need(heads && heads<=LI2_PREEDGE_HEADS,LE_STATE,317);
+            uint64_t age=selected_linked_epoch.completed-ler.permits[slot].completion+1;
+            if(chosen==LE_PAGES || ler_age_greater(age,heads,chosen_age,chosen_heads)) {
+                chosen=slot;chosen_age=age;chosen_heads=heads;
+            }
+        }
+    }
+    return chosen; /* Equal ratios retain cyclic scan-hand order; no permit is MISS. */
+}
+#else
 static size_t ler_choose(void) {
     le_need(selected_linked_epoch.used==LE_PAGES && !ler.pending && !ler.retiring &&
         le_quiet(&selected_borrow),LE_STATE,305);
@@ -68,6 +96,7 @@ static size_t ler_choose(void) {
     }
     return LE_PAGES; /* No completed generation: original clean capacity MISS. */
 }
+#endif
 static int ler_permission(uintptr_t entry,int prot,struct le_permission *p) {
     if(p->started)return LE_STATE;
     p->prot=prot;p->started=1;__asm__ volatile("":::"memory");
@@ -114,7 +143,11 @@ static void ler_prepare(size_t slot,uintptr_t target,const siginfo_t *si,const u
            when it is virgin RW; no retained opposite-arena page stays RX. */
         le_need(!ler_permission(target,PROT_READ,&t->target_closed),LE_PUBLICATION,302);
         le_need(!ler_permission(target,PROT_READ|PROT_WRITE,&t->writable),LE_PUBLICATION,303);
+#ifdef LI2_LINKED_PREEDGE
+        le_need(!li2_lifecycle_preedge_validate(&selected_borrow,&r->source,&selected_linked_epoch.scratch) &&
+#else
         le_need(!li2_lifecycle_link_validate(&selected_borrow,&r->source,&selected_linked_epoch.scratch) &&
+#endif
             le_quiet(&selected_borrow) && le_unchanged(&r->before,si,uc),LE_SOURCE,300);
         t->target_ready=1;ler.predecessor[slot]=t->old_generation;
         le_proof_writable(slot);le_zero(s,sizeof *s);
@@ -132,7 +165,13 @@ static void ler_published(size_t slot) {
         struct ler_retirement *t=&ler.retirement;
         le_need(t->started && t->consumed && t->target_ready && !t->replaced &&
             t->slot==slot && t->new_generation==ler.generation,LE_STATE,310);
+#ifdef LI2_LINKED_PREEDGE
+        /* The aging-policy hand advances once per completed retirement; it is
+           only a tie-order origin, not the selected victim's successor. */
+        t->replaced=1;le_count(&ler.retirements);ler.cursor=(ler.cursor+1)%LE_PAGES;ler.retiring=0;
+#else
         t->replaced=1;le_count(&ler.retirements);ler.cursor=(slot+1)%LE_PAGES;ler.retiring=0;
+#endif
     }
 }
 static void ler_claim(size_t slot,int hit) {
@@ -162,7 +201,11 @@ static void ler_quiesce(int sig,const siginfo_t *si,const ucontext_t *uc) {
         selected_pending_route==SELECTED_NO_STEP && !li2_lifecycle_fetch_interlock() &&
         selected_linked_epoch.entries==selected_linked_epoch.completed && r->completed==1 &&
         r->release_complete==1 && !r->release_result && r->close.complete==1 &&
+#ifdef LI2_LINKED_PREEDGE
+        r->closed_bytes==PAGE && r->epoch_final.phase==LI2_PREEDGE_RELEASED &&
+#else
         r->closed_bytes==PAGE && r->epoch_final.phase==LI2_LINK_RELEASED &&
+#endif
         r->epoch_final.release_complete==1 && !li2_lifecycle_link_interlock() && f && !f->held && f->complete && !f->first_error &&
         equal(f,&r->final_fetch,sizeof *f) && equal(r,&selected_linked_epoch.last,sizeof *r) &&
         sig==r->after.sig && le_identity() && le_quiet(0) && le_unchanged(&r->after,si,uc),LE_STATE,314);
@@ -188,7 +231,11 @@ static void ler_abort(void) {
        receive a completion permit or be dispatched/recycled. */
 }
 static void ler_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_LINKED_PREEDGE
+    struct writer w={.used=0};text(&w,"LI2_LINKED_PREEDGE_REUSE {\"version\":2");
+#else
     struct writer w={.used=0};text(&w,"LI2_LINKED_EPOCH_REUSE {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);

@@ -270,3 +270,7 @@ pub unsafe extern "C" fn li2_decoder_region_describe(
         Err(error) => error,
     }
 }
+
+// Distinct descriptive four-Code guarded-store profile; old APIs stay exact.
+#[cfg(feature = "mov-guard")]
+mod mov_guard;

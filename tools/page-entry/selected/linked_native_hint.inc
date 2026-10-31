@@ -105,7 +105,7 @@ int li2_lifecycle_link_native_hint_choose(const struct li2_span_source *s,uint64
     lnh.outcome_complete=0;lnh.outcome_result=0;*publication=lnh.selected_publication;
     __asm__ volatile("":::"memory");lnh.pending=1;return 1;
 }
-#if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
+#if (defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)) || defined(LI2_LINKED_PREEDGE_FULL_CAPTURE)
 /* Deliberate qualification-only corruption of the actual advisory receipt.
    A nonmatching candidate is untouched. Once the complete unmodified pure
    predicates hold, the caller must terminate after the real lookup; it may

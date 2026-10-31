@@ -255,6 +255,18 @@ static void selected_scalar_region_report(unsigned,unsigned,long);
 #error "linked epoch has distinct immutable proof and future capture contracts"
 #endif
 #include "linked_source.h"
+#ifdef LI2_PERSISTENT_EPOCH
+static volatile sig_atomic_t pe_busy,pe_active;
+static void selected_persistent_initialize(void);
+static int selected_persistent_trace_try(int,siginfo_t *,ucontext_t *);
+static void selected_persistent_preentry(int,siginfo_t *,ucontext_t *);
+static void selected_persistent_exit(int,siginfo_t *,ucontext_t *);
+static _Noreturn void selected_persistent_abort(unsigned,long);
+static void selected_persistent_report(unsigned,unsigned,long);
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+#include "persistent_epoch_observe.h"
+#endif
+#endif
 static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
 static void selected_linked_epoch_initialize(void);
 static int selected_linked_epoch_trace_try(int,siginfo_t *,ucontext_t *);
@@ -507,6 +519,12 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH
     selected_linked_epoch_report(status,code,detail);
+#ifdef LI2_PERSISTENT_EPOCH
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    peo_finish(status,code,detail);
+#endif
+    selected_persistent_report(status,code,detail);
+#endif
 #else
     selected_scalar_span_report(status,code,detail);
 #endif
@@ -516,6 +534,10 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_EPOCH
+    if(pe_busy || pe_active || selected_pending_route==SELECTED_PERSISTENT_EPOCH)
+        selected_persistent_abort(code,detail);
+#endif
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH
     if(selected_linked_epoch_active || selected_linked_epoch_busy || selected_pending_route==SELECTED_LINKED_EPOCH)
@@ -646,8 +668,20 @@ static int ordinary(long n) {
     default: return 0;
     }
 }
+#ifdef LI2_LINKED_PREEDGE_CAPTURE
+static void lpeo_fd_guard(long,const long[6]);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+static void lpec_fd_guard(long,const long[6]);
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+static void lpero_fd_guard(long,const long[6]);
+#endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 static void leto_fd_guard(long,const long[6]);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+static void lpef_fd_guard(long,const long[6]);
 #endif
 static void dispatch_operation(long n,ucontext_t *context) {
 #ifdef LI2_LINKED_EPOCH
@@ -695,6 +729,18 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_fd_guard(n,a);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_fd_guard(n,a);
+#endif
+#ifdef LI2_LINKED_PREEDGE_CAPTURE
+    lpeo_fd_guard(n,a);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_fd_guard(n,a);
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_fd_guard(n,a);
 #endif
     if(n==SYS_exit || n==SYS_exit_group) {
 #ifdef LI2_EFFECT_PROVIDER
@@ -858,6 +904,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH
 #include "linked_controller.inc"
+#ifdef LI2_PERSISTENT_EPOCH
+#include "persistent_controller.inc"
+#endif
 #else
 #include "selected_scalar_span.inc"
 #endif
@@ -873,6 +922,18 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "event_profile.inc"
 #endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    peo_ingress(sig);
+#endif
+#ifdef LI2_LINKED_PREEDGE_CAPTURE
+    lpeo_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_LINKED_PREEDGE_REUSE_CAPTURE
+    lpero_ingress(sig);
+#endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
     leto_ingress(sig);
 #ifndef LI2_LINKED_EPOCH_REUSE_CAPTURE
@@ -881,6 +942,16 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     leto_hint_ingress(sig,si,ptr);
 #endif
 #endif
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_ingress(sig);
+    lpef_refault_ingress(sig,si,ptr);
+#ifdef LI2_LINKED_NATIVE_HINT
+    lpef_hint_ingress(sig,si,ptr);
+#endif
+#endif
+#ifdef LI2_PERSISTENT_EPOCH
+    selected_persistent_preentry(sig,si,ptr);
 #endif
 #ifdef LI2_NATIVE_PAIR
     li2_native_pair_preentry();
@@ -995,6 +1066,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_CURRENT_TF_CAPTURE
     cto_begin(sig,si,ptr);
 #endif
+#ifdef LI2_PERSISTENT_EPOCH
+    if(selected_pending_route==SELECTED_PERSISTENT_EPOCH) {
+        selected_persistent_exit(sig,si,ptr);
+    } else
+#endif
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH
     if(selected_pending_route==SELECTED_LINKED_EPOCH) {
@@ -1050,6 +1126,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
         leto_hint_native();
 #endif
         if(!native_admitted)
+#elif defined(LI2_LINKED_PREEDGE_FULL_CAPTURE)
+        int native_admitted=selected_native_fetch(sig,si,ptr);
+        lpef_refault_native();
+        lpef_hint_native();
+        if(!native_admitted)
 #else
         if(!selected_native_fetch(sig,si,ptr))
 #endif
@@ -1064,10 +1145,22 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_TF_HANDOFF
     li2_tf_chain_handler_end(&selected_chain);
 #endif
+#ifdef LI2_LINKED_PREEDGE_CAPTURE
+    lpeo_end(sig,si,ptr);
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+    lpec_end(sig,si,ptr);
+#endif
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
     leto_refault_end(sig,si,ptr);
 #ifdef LI2_LINKED_NATIVE_HINT
     leto_hint_end(sig,si,ptr);
+#endif
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+    lpef_refault_end(sig,si,ptr);
+#ifdef LI2_LINKED_NATIVE_HINT
+    lpef_hint_end(sig,si,ptr);
 #endif
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
@@ -1199,6 +1292,12 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH
     selected_linked_epoch_initialize();
+#ifdef LI2_PERSISTENT_EPOCH
+    selected_persistent_initialize();
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    peo_initialize();
+#endif
+#endif
 #else
     selected_scalar_span_initialize();
 #endif
