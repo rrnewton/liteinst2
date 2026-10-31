@@ -14,6 +14,8 @@ pub mod call_pair;
 mod copied_capture;
 #[path = "native_copied_rust.rs"]
 pub mod copied_rust;
+#[path = "native_exact_accuracy.rs"]
+pub mod exact_accuracy;
 #[path = "native_leaf_set_copied.rs"]
 pub mod leaf_set_copied;
 #[path = "native_normal_reference.rs"]
@@ -102,7 +104,9 @@ impl CallerProfile<'_> {
             Self::CopiedRust(_) => {
                 if matches!(
                     ready,
-                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)
+                    WalkReady::LeafSetCopied(_)
+                        | WalkReady::SelectedLeafSet(_)
+                        | WalkReady::ExactAccuracy(_)
                 ) {
                     copied_rust::call_before_view(r, ready.copied_view(), index, rsp, data, bound)
                 } else {
@@ -127,7 +131,9 @@ impl CallerProfile<'_> {
             Self::CopiedRust(_) => {
                 if matches!(
                     ready,
-                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)
+                    WalkReady::LeafSetCopied(_)
+                        | WalkReady::SelectedLeafSet(_)
+                        | WalkReady::ExactAccuracy(_)
                 ) {
                     copied_rust::call_after_view(r, ready.copied_view(), index, rsp, word)
                 } else {
@@ -153,7 +159,9 @@ impl CallerProfile<'_> {
             Self::CopiedRust(_) => {
                 if matches!(
                     ready,
-                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)
+                    WalkReady::LeafSetCopied(_)
+                        | WalkReady::SelectedLeafSet(_)
+                        | WalkReady::ExactAccuracy(_)
                 ) {
                     copied_rust::ret_before_view(r, ready.copied_view(), index, rsp, value, word)
                 } else {
@@ -179,7 +187,9 @@ impl CallerProfile<'_> {
             Self::CopiedRust(_) => {
                 if matches!(
                     ready,
-                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)
+                    WalkReady::LeafSetCopied(_)
+                        | WalkReady::SelectedLeafSet(_)
+                        | WalkReady::ExactAccuracy(_)
                 ) {
                     copied_rust::ret_after_view(r, ready.copied_view(), index, rsp, value, word)
                 } else {
@@ -204,7 +214,9 @@ impl CallerProfile<'_> {
             Self::CopiedRust(_) => {
                 if matches!(
                     ready,
-                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)
+                    WalkReady::LeafSetCopied(_)
+                        | WalkReady::SelectedLeafSet(_)
+                        | WalkReady::ExactAccuracy(_)
                 ) {
                     copied_rust::journal_words_view(ready.copied_view(), pid, rsp, returns, true)
                 } else {
@@ -266,6 +278,7 @@ impl ExactCase {
 }
 #[derive(Clone, Copy)]
 enum Body {
+    ExactAccuracy(exact_accuracy::Case),
     SelectedLeafSet(selected_leaf_set::Case),
     Strnlen(Case),
     Exact(ExactCase),
@@ -283,6 +296,7 @@ impl Body {
             Self::Csv(case) => case.input(),
             Self::Scanner(_, case) => case.input(),
             Self::SelectedLeafSet(case) => case.input(),
+            Self::ExactAccuracy(case) => case.input(),
         }
     }
     fn bound(self) -> usize {
@@ -292,6 +306,7 @@ impl Body {
             Self::Csv(case) => case.length(),
             Self::Scanner(_, case) => case.bound(),
             Self::SelectedLeafSet(case) => case.bound(),
+            Self::ExactAccuracy(case) => case.bound(),
         }
     }
     fn scalar(self) -> u64 {
@@ -301,6 +316,7 @@ impl Body {
             Self::Csv(case) => case.expected(),
             Self::Scanner(operation, case) => case.expected(operation),
             Self::SelectedLeafSet(case) => case.value(),
+            Self::ExactAccuracy(case) => case.value(),
         }
     }
     fn strnlen(self) -> Case {
@@ -310,6 +326,7 @@ impl Body {
             Self::Csv(_) => panic!("not a strnlen case"),
             Self::Scanner(..) => panic!("not a strnlen case"),
             Self::SelectedLeafSet(_) => panic!("not a strnlen case"),
+            Self::ExactAccuracy(_) => panic!("not a strnlen case"),
         }
     }
 }
@@ -810,6 +827,7 @@ pub struct NormalOracle {
     copied_rust: Option<copied_rust::Profile>,
     leaf_set_copied: Option<leaf_set_copied::Profile>,
     selected_leaf_set: Option<selected_leaf_set::Profile>,
+    exact_accuracy: Option<exact_accuracy::Profile>,
     call_pair: Option<call_pair::Profile>,
 }
 pub struct NormalContext<'a> {
@@ -854,6 +872,7 @@ impl NormalContext<'_> {
             Body::Csv(_) => None,
             Body::Scanner(..) => None,
             Body::SelectedLeafSet(_) => None,
+            Body::ExactAccuracy(_) => None,
         }
     }
     pub fn csv_case(&self) -> Option<csv::Case> {
@@ -892,6 +911,7 @@ impl NormalContext<'_> {
     }
     pub fn ready(self, ready: &NormalReady) {
         assert!(self.oracle.selected_leaf_set.is_none());
+        assert!(self.oracle.exact_accuracy.is_none());
         assert!(self.oracle.leaf_set_copied.is_none());
         assert!(self.oracle.copied_rust.is_none());
         assert!(self.oracle.module.is_none());
@@ -944,6 +964,19 @@ impl NormalOracle {
         oracle
     }
     fn profile(&self) -> CallerProfile<'_> {
+        if let Some(profile) = &self.exact_accuracy {
+            assert!(
+                self.selected_leaf_set.is_none()
+                    && self.call_pair.is_none()
+                    && self.leaf_set_copied.is_none()
+                    && self.copied_rust.is_none()
+                    && self.module.is_none()
+                    && self.reference.is_none()
+            );
+            assert_eq!(self.mode, Mode::Stable);
+            profile.case.assert_valid();
+            return CallerProfile::CopiedRust(&profile.plan);
+        }
         if let Some(profile) = &self.selected_leaf_set {
             assert!(
                 self.call_pair.is_none()
@@ -995,6 +1028,7 @@ impl NormalOracle {
         self.copied_rust.is_some()
             || self.leaf_set_copied.is_some()
             || self.selected_leaf_set.is_some()
+            || self.exact_accuracy.is_some()
     }
     fn new_body(seed: u64, body: Body, extent: usize, deadline: Deadline, mode: Mode) -> Self {
         let data = Mapping::new(PAGE);
@@ -1039,6 +1073,7 @@ impl NormalOracle {
             copied_rust: None,
             leaf_set_copied: None,
             selected_leaf_set: None,
+            exact_accuracy: None,
             call_pair: None,
         }
     }
@@ -1152,7 +1187,10 @@ impl NormalOracle {
                 ready.call_pair().view(),
                 self.data.address(),
             );
-        } else if self.selected_leaf_set.is_some() || self.leaf_set_copied.is_some() {
+        } else if self.exact_accuracy.is_some()
+            || self.selected_leaf_set.is_some()
+            || self.leaf_set_copied.is_some()
+        {
             copied_rust::entry_arguments_view(&after, ready.copied_view(), self.data.address());
         } else if self.copied_rust.is_some() {
             copied_rust::entry_arguments(&after, ready.copied_rust(), self.data.address());
@@ -1483,6 +1521,7 @@ impl NormalOracle {
         O: FnOnce(&NormalReady, &[Snapshot]) -> (T, [usize; 2]),
     {
         assert!(self.selected_leaf_set.is_none());
+        assert!(self.exact_accuracy.is_none());
         assert!(self.leaf_set_copied.is_none());
         assert!(self.copied_rust.is_none());
         assert!(self.module.is_none());
@@ -1673,6 +1712,12 @@ impl NormalOracle {
             let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);
             if let Some(expected) = &self.call_pair {
                 WalkReady::CallPair(call_pair::Ready::decode(&wire, expected))
+            } else if let Some(expected) = &self.exact_accuracy {
+                WalkReady::ExactAccuracy(exact_accuracy::Ready::decode(
+                    &wire,
+                    expected.case,
+                    &expected.plan,
+                ))
             } else if let Some(expected) = &self.selected_leaf_set {
                 WalkReady::SelectedLeafSet(selected_leaf_set::Ready::decode(
                     &wire,
@@ -1714,6 +1759,11 @@ impl NormalOracle {
             [
                 ready[0].call_pair().validate(false, expected),
                 ready[1].call_pair().validate(true, expected),
+            ]
+        } else if let Some(expected) = &self.exact_accuracy {
+            [
+                ready[0].exact_accuracy().validate(false, expected),
+                ready[1].exact_accuracy().validate(true, expected),
             ]
         } else if let Some(expected) = &self.selected_leaf_set {
             [
@@ -2178,7 +2228,10 @@ impl NormalOracle {
                 self.data.address(),
                 self.stack_start(),
             );
-        } else if self.selected_leaf_set.is_some() || self.leaf_set_copied.is_some() {
+        } else if self.exact_accuracy.is_some()
+            || self.selected_leaf_set.is_some()
+            || self.leaf_set_copied.is_some()
+        {
             copied_rust::caller_effects_view(
                 &points,
                 ready[0].copied_view(),
@@ -2207,6 +2260,11 @@ impl NormalOracle {
                         profile.case.fields()
                     }
                 }),
+                points.last().unwrap().registers.rax,
+            )
+        } else if let Some(profile) = &self.exact_accuracy {
+            (
+                [profile.case.value(); N],
                 points.last().unwrap().registers.rax,
             )
         } else if let Some(profile) = &self.selected_leaf_set {

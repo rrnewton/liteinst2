@@ -158,7 +158,9 @@ def main():
 def _run_owner(args,options,invocation,command,checked,owner_name,owner_schema):
     # Only fixed entrypoint wrappers call this; process supervision remains unchanged.
     assert (owner_name,owner_schema) in (('owner.py','selected-session-public-owner-v1'),
-        ('accuracy_owner.py','selected-sdk-accuracy-public-owner-v1'))
+        ('accuracy_owner.py','selected-sdk-accuracy-public-owner-v1'),
+        ('accuracy_functional_owner.py','selected-accuracy-functional-public-owner-v1'),
+        ('exact_state_owner.py','exact37-accuracy-native-public-owner-v1'))
     phase=args.phase
     os.chdir(ROOT)
     for name in checked:
@@ -170,7 +172,9 @@ def _run_owner(args,options,invocation,command,checked,owner_name,owner_schema):
     assert spec is not None and spec.loader is not None
     builder=importlib.util.module_from_spec(spec);sys.modules[spec.name]=builder;spec.loader.exec_module(builder)
     driver=builder.load_driver(args.revision)
-    before=builder.outer_source_inventory(driver,args.revision)
+    inventory=(builder.outer_accuracy_source_inventory
+        if owner_schema=='selected-accuracy-functional-public-owner-v1' else builder.outer_source_inventory)
+    before=inventory(driver,args.revision)
     recipe_path=ROOT/driver.RECIPE
     assert hashlib.sha256(recipe_path.read_bytes()).hexdigest()==driver.RECIPE_SHA
     recipe=driver.load('public_outer_recipe',recipe_path)
@@ -197,7 +201,7 @@ def _run_owner(args,options,invocation,command,checked,owner_name,owner_schema):
     result.update(capture_log=str(capture),load_after=list(os.getloadavg()))
     closed=result['closed']
     if closed is not None and closed['cleanup_complete'] is True and result['log_archived'] is True:
-        try: result['source_unchanged']=builder.outer_source_inventory(driver,args.revision)==before
+        try: result['source_unchanged']=inventory(driver,args.revision)==before
         except BaseException as error: result['source_error']=type(error).__name__+': '+str(error)
     with output.open('x') as stream: json.dump(result,stream,sort_keys=True,indent=2);stream.write('\n')
     print(json.dumps(dict(owner=str(output),exit_code=None if closed is None else closed['exit_code'],

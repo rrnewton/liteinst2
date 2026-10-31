@@ -1001,6 +1001,35 @@ fn main() {
         }
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("exact37-accuracy-copied-state-v1") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            11,
+            "exact37-accuracy-copied-state-v1 DSO_CANDIDATE DSO_TRUSTED APP_CANDIDATE APP_TRUSTED OUTPUT SEED LENGTH ELF_VA EXTENT"
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let app = PathBuf::from(&args[4]).canonicalize().unwrap();
+        let app_expected = PathBuf::from(&args[5]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[6]);
+        let words: Vec<_> = args[7..].iter().map(|a| a.to_str().unwrap()).collect();
+        let case = oracle::native_ordinary::normal_caller::exact_accuracy::Case::parse(&words);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::selected_leaf_set::exact::run(
+            &subject,
+            &expected,
+            &app,
+            &app_expected,
+            &output,
+            case,
+            deadline,
+        );
+        return;
+    }
     if matches!(
         args.get(1).and_then(|s| s.to_str()),
         Some("selected-leaf-set-copied-state-v1" | "selected-leaf-set-accuracy-state-v1")

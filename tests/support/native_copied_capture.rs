@@ -157,7 +157,10 @@ pub(super) fn snapshot(
 ) -> Snapshot {
     assert!(matches!(
         ready,
-        WalkReady::CopiedRust(_) | WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)
+        WalkReady::CopiedRust(_)
+            | WalkReady::LeafSetCopied(_)
+            | WalkReady::SelectedLeafSet(_)
+            | WalkReady::ExactAccuracy(_)
     ));
     let stack_len = usize::try_from(oracle.stack_below().checked_add(8).unwrap()).unwrap();
     assert!(stack_len <= MAX_STACK);
