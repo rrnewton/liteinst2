@@ -17,6 +17,7 @@ default = []
 scalar-region = ["iced-x86/instr_info"]
 scalar-span = ["scalar-region"]
 linked-epoch = ["scalar-span"]
+mov-guard = []
 
 [profile.release]
 opt-level = 2
