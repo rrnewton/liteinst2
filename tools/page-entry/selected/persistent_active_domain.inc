@@ -279,6 +279,14 @@ static int pda_bind(const ucontext_t *uc) {
             const struct li2_span_decoded *d=&m->plan->original[j];
             pe.gpr_written|=d->gpr_write;
             pe.flags_written|=d->flags_written|d->flags_set|d->flags_cleared|d->flags_undefined;
+#ifdef LI2_ADD_GUARD
+        } else if(m->plan->head[j].kind==LI2_PG_ADD) {
+            const struct li2_ag_descriptor *a=&m->plan->instruction[j].add;
+            if(a->version!=LI2_AG_VERSION || a->ready!=1 || a->refusal ||
+               a->flags_written!=LI2_AG_STATUS || a->memory_access!=LI2_AG_READ_WRITE ||
+               a->width_bytes!=8)return PE_PLAN;
+            pe.flags_written|=a->flags_written;
+#endif
         }
     }
     pda_select(w->primary,w->primary_bank);
@@ -383,6 +391,9 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
             (si->si_code==SEGV_MAPERR || si->si_code==SEGV_ACCERR) && g[REG_TRAPNO]==14 &&
             !(g[REG_ERR]&16) && (uintptr_t)si->si_addr==(uintptr_t)g[REG_CR2] &&
             ((pe.recovered.kind==LI2_PG_GUARD && pe.recovered.phase==LI2_MG_STORE) ||
+#ifdef LI2_ADD_GUARD
+             (pe.recovered.kind==LI2_PG_ADD_GUARD && pe.recovered.phase==LI2_AG_RMW) ||
+#endif
              (pe.recovered.kind==LI2_PG_COPIED && pe.recovered.phase==LI2_MG_BEFORE));
     }
     return PE_EVENT;

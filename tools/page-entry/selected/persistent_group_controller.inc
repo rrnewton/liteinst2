@@ -816,6 +816,14 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         const struct li2_span_decoded *d=&plan->original[i];
         pe.gpr_written|=d->gpr_write;
         pe.flags_written|=d->flags_written|d->flags_set|d->flags_cleared|d->flags_undefined;
+#ifdef LI2_ADD_GUARD
+    } else if(plan->head[i].kind==LI2_PG_ADD) {
+        const struct li2_ag_descriptor *a=&plan->instruction[i].add;
+        pe_need(a->version==LI2_AG_VERSION && a->ready==1 && !a->refusal &&
+            a->flags_written==LI2_AG_STATUS && a->memory_access==LI2_AG_READ_WRITE &&
+            a->width_bytes==8,PE_PLAN,4);
+        pe.flags_written|=a->flags_written;
+#endif
     }
     pe_need(!(pe.gpr_written&~UINT64_C(0xffff)) && !(pe.gpr_written&(UINT64_C(1)<<4)) &&
         !(pe.flags_written&~UINT64_C(0x8d5)),PE_PLAN,3);

@@ -231,6 +231,25 @@ int li2_pgd_rseq_bind(const struct li2_pg_token *t,const ucontext_t *uc) {
     __asm__ volatile("":::"memory");pg_rseq.domain_bound=1;return 0;
 }
 #endif
+#ifdef LI2_ADD_GUARD
+/* This joins the independent write classifier to the current register EA.
+   It does not grant a future EA: the emitted guard checks every execution. */
+static int pgr_add_footprint(const struct li2_ag_descriptor *a,const ucontext_t *uc) {
+    struct li2_write_registers regs;registers(uc,&regs);
+    struct li2_write_footprint actual={0},expected={.pc=a->tf.pc,.next_pc=a->tf.next_pc,
+        .abi_version=1,.code=a->tf.code,.length=a->tf.length};
+    uint64_t first=a->rip_relative?a->rip_target:a->displacement;
+    if(!a->rip_relative) {
+        if(a->base<16)first+=regs.gpr[a->base];
+        if(a->index<16)first+=regs.gpr[a->index]*a->scale;
+    }
+    if(first<=UINT64_MAX-8) {
+        expected.policy=LI2_WRITE_RANGE;expected.first=first;expected.end=first+8;
+    }
+    return li2_decoder_write_footprint(a->tf.pc,a->bytes,a->available,&regs,&actual) ||
+        !region_rseq_equal(&actual,&expected,sizeof expected);
+}
+#endif
 int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,const ucontext_t *uc) {
     if(!pgr_token(t) || pg_rseq.first_error || !pg_rseq.seed_complete || !region_rseq_current(uc) ||
        !p || p->version!=LI2_PG_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
@@ -290,6 +309,23 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
 #endif
                 return pgr_bad(LI2_RSEQ_PLAN,505);
             ++stores;
+#ifdef LI2_ADD_GUARD
+        } else if(h->kind==LI2_PG_ADD) {
+            struct li2_ag_descriptor descriptor={0};
+            const struct li2_ag_plan *guard=&p->guard[i].add;
+            if(actual.ready || actual.refusal!=LI2_REGION_OPERANDS ||
+               li2_decoder_add_rmw(d->decoded.pc,window,n,&descriptor) ||
+               descriptor.ready!=1 || descriptor.refusal || descriptor.flags_written!=LI2_AG_STATUS ||
+               descriptor.width_bytes!=8 || descriptor.memory_access!=LI2_AG_READ_WRITE ||
+               !region_rseq_equal(&descriptor,&p->instruction[i].add,sizeof descriptor) ||
+               !region_rseq_equal(&descriptor,&guard->original,sizeof descriptor) ||
+               !region_rseq_equal(&guard->table,&p->table,sizeof p->table) ||
+               guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
+               guard->spill!=p->layout.spill || guard->image_bytes!=h->generated_length ||
+               li2_ag_validate(guard) || pgr_add_footprint(&descriptor,uc))
+                return pgr_bad(LI2_RSEQ_PLAN,530);
+            ++stores;
+#endif
 #ifdef LI2_PERSISTENT_DISPATCH
         } else if(h->kind==LI2_PG_DISPATCH) {
             struct li2_jd_descriptor descriptor={0};

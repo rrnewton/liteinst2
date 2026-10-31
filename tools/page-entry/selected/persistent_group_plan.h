@@ -6,17 +6,36 @@
 #endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 #include "linked_jmp_dispatch.h"
+#ifdef LI2_ADD_GUARD
+#if LI2_ADD_GUARD != 1 || !defined(LI2_PERSISTENT_ACTIVE_DOMAIN)
+#error "guarded ADD requires the explicit active-domain profile"
+#endif
+#include "linked_add_guard.h"
+#define LI2_PG_VERSION 4U
+#else
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #define LI2_PG_VERSION 3U
 #else
 #define LI2_PG_VERSION 2U
 #endif
+#endif
 /* New profile semantics; old group and persistent kinds remain unchanged. */
-enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3 };
-union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor dispatch; };
+enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3
+#ifdef LI2_ADD_GUARD
+    ,LI2_PG_ADD=4
+#endif
+};
+union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor dispatch;
+#ifdef LI2_ADD_GUARD
+    struct li2_ag_descriptor add;
+#endif
+};
 union li2_pg_guard {
     struct li2_mg_plan mov;
     struct li2_jd_plan dispatch;
+#ifdef LI2_ADD_GUARD
+    struct li2_ag_plan add;
+#endif
     unsigned char bytes[sizeof(struct li2_mg_plan)];
 };
 _Static_assert(sizeof(union li2_pg_instruction)==sizeof(struct li2_mg_store),"typed original width");
@@ -41,7 +60,11 @@ enum li2_pg_status { LI2_PG_OK=0,LI2_PG_MISS=1,LI2_PG_ARGUMENT=2800,
     LI2_PG_DECODER,LI2_PG_BOUNDARY,LI2_PG_GRAPH,LI2_PG_RELOCATION,LI2_PG_CORRUPT };
 enum li2_pg_edge_kind { LI2_PG_CAPACITY_LINK=1 };
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
-enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK,LI2_PG_DISPATCH_MAP };
+enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK,LI2_PG_DISPATCH_MAP
+#ifdef LI2_ADD_GUARD
+    ,LI2_PG_ADD_GUARD
+#endif
+};
 #else
 enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK };
 #endif
