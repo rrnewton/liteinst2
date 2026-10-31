@@ -13,6 +13,20 @@ static int address(uintptr_t p,size_t n) { return n && p<UINT64_C(0x800000000000
 static int token_valid(const struct li2_pg_compact *p,unsigned k) {
     return k<p->heads || (k>=LI2_PG_HEADS && k-LI2_PG_HEADS<p->exits);
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+static int layout_valid(const struct li2_pg_layout *l) {
+    uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
+    size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
+    for(unsigned i=0;i<5;i++) {
+        if(a[i]<LI2_REGION_PAGE || (a[i]&4095U) || !address(a[i],n[i]))return 0;
+        for(unsigned j=0;j<i;j++)if(overlap(a[i],n[i],a[j],n[j]))return 0;
+    }
+    if(l->directory<LI2_REGION_PAGE || (l->directory&4095U) ||
+       !address(l->directory,LI2_JD_DOMAIN_BYTES))return 0;
+    for(unsigned i=0;i<5;i++)if(overlap(l->directory,LI2_JD_DOMAIN_BYTES,a[i],n[i]))return 0;
+    return 1;
+}
+#else
 static int layout_valid(const struct li2_pg_layout *l) {
     uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
     size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
@@ -22,6 +36,7 @@ static int layout_valid(const struct li2_pg_layout *l) {
     }
     return 1;
 }
+#endif
 static uintptr_t head_generated(const struct li2_pg_compact *p,unsigned i) {
     return p->layout.generated[i/LI2_PE_HEADS]+(uintptr_t)(i%LI2_PE_HEADS)*LI2_PE_SLOT_BYTES;
 }

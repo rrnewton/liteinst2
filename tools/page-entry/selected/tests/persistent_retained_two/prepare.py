@@ -65,7 +65,17 @@ for name in ('static uintptr_t pg_extent(','static size_t pg_extent_bytes(','sta
              'static unsigned char pg_code_byte(',
              'static int pe_registered_storage(','static const struct pe_payload *pe_payload(',
              'static int pe_bytes('):
-    result+=body(controller,name)
+    if name=='static struct li2_pg_layout pg_layout(':
+        marker='#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN\n'
+        assert controller.count(marker+name)==1,'one explicit active-domain layout alternative'
+        first=controller.index(marker+name)
+        last=controller.index('\n#endif\n',first)+len('\n#endif\n')
+        guarded=controller[first:last]
+        active,original=guarded[len(marker):-len('#endif\n')].split('#else\n')
+        assert body(active,name)==active and body(original,name)==original
+        result+=guarded
+    else:
+        result+=body(controller,name)
 for name in ('static int span_source_page_equal(','static int span_source_backing_equal('):result+=body(span,name)
 result+=body(read('persistent_group_source.inc'),'int li2_pg_source_key_equal(')
 result+='#include "persistent_retained_two.inc"\n'

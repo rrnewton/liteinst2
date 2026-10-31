@@ -3,7 +3,11 @@
 #include "persistent_group_plan.h"
 #include "persistent_compact.h"
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#define LI2_PG_COMPACT_VERSION 3U
+#else
 #define LI2_PG_COMPACT_VERSION 2U
+#endif
 union li2_pg_guard_record { struct li2_pe_guard_record mov;struct li2_jd_record dispatch; };
 _Static_assert(sizeof(union li2_pg_guard_record)==sizeof(struct li2_pe_guard_record),"typed compact recovery width");
 _Static_assert(_Alignof(union li2_pg_guard_record)==_Alignof(struct li2_pe_guard_record),"typed compact recovery alignment");
@@ -57,6 +61,10 @@ int li2_pg_compact_recover(const struct li2_pg_compact *,uintptr_t,const uint64_
 int li2_pg_compact_recover(const struct li2_pg_compact *,uintptr_t,const uint64_t[16],uint64_t,
     const uint64_t[4],struct li2_mg_plan *,struct li2_pg_recovered *);
 #endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+_Static_assert(sizeof(struct li2_pg_compact)==353608,"exact domain-aware compact primary");
+#else
 _Static_assert(sizeof(struct li2_pg_compact)==353600,"exact shared group image/source/table primary");
+#endif
 _Static_assert(sizeof(struct li2_pg_compact)<96U*LI2_REGION_PAGE,"bounded shared immutable group primary");
 #endif

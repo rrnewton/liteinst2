@@ -978,6 +978,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #include "private_code_query.inc"
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_data.inc"
+#ifdef LI2_RSEQ_CURRENT_DATA
+#include "rseq_current_data.inc"
+#endif
 #endif
 
 #ifdef LI2_NATIVE_PAGES
@@ -1055,4 +1058,7 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
 #include "persistent_retained_two_observe_memory.inc"
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#include "persistent_active_domain_observe_memory.inc"
 #endif

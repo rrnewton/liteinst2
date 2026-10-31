@@ -14,6 +14,30 @@ static int disp(uint64_t next,uint64_t target,uint32_t *out) {
     else { uint64_t n=next-target;if(n>UINT32_C(0x80000000))return 0;*out=0U-(uint32_t)n; }
     return 1;
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+static int describe(uintptr_t pc,const unsigned char *bytes,size_t n,struct li2_jd_descriptor *out) {
+    if(!bytes || !n || n>15 || !address(pc,n))return LI2_JD_ARGUMENT;
+    out->version=LI2_JD_VERSION;out->available=(uint32_t)n;
+    unsigned prefix=bytes[0]==0x41?1U:0U,length=prefix+2U;
+    if(n<length || bytes[prefix]!=0xff || bytes[prefix+1]<0xe0 || bytes[prefix+1]>0xe7)return LI2_JD_FORM;
+    unsigned target=(bytes[prefix+1]&7U)+8U*prefix;
+    struct li2_decoded expected={.pc=pc,.next_pc=pc+length,.abi_version=1,
+        .decode_status=LI2_VALID,.code=765,.kind=LI2_NONE,.destination=16,
+        .step_disposition=LI2_STEP_UNSUPPORTED,.available=(uint32_t)n,.length=length};
+    copy(expected.bytes,bytes,n);
+    struct li2_tf_classification tf={.pc=pc,.next_pc=pc+length,.abi_version=1,
+        .policy=1,.code=765,.length=length,.flow=LI2_TF_NEAR_FLOW,.family=LI2_TF_BRANCH};
+    struct li2_write_registers regs={0};
+    struct li2_write_footprint actual={0},wanted={.pc=pc,.next_pc=pc+length,
+        .abi_version=1,.policy=LI2_WRITE_NONE,.code=765,.length=length};
+    if(li2_decoder_decode(pc,bytes,n,&out->decoded) ||
+       li2_decoder_tf_classify(pc,bytes,n,&out->tf) ||
+       li2_decoder_write_footprint(pc,bytes,n,&regs,&actual))return LI2_JD_DECODER;
+    if(!same(&expected,&out->decoded,sizeof expected) || !same(&tf,&out->tf,sizeof tf) ||
+       !same(&actual,&wanted,sizeof actual))return LI2_JD_FORM;
+    out->target=target;return 0;
+}
+#else
 static int describe(uintptr_t pc,const unsigned char *bytes,size_t n,struct li2_jd_descriptor *out) {
     if(!bytes || !n || n>15 || !address(pc,n))return LI2_JD_ARGUMENT;
     out->version=1;out->available=(uint32_t)n;
@@ -36,6 +60,7 @@ static int describe(uintptr_t pc,const unsigned char *bytes,size_t n,struct li2_
        !same(&actual,&wanted,sizeof actual))return LI2_JD_FORM;
     out->target=target;return 0;
 }
+#endif
 int li2_jd_describe(uintptr_t pc,const unsigned char *bytes,size_t n,struct li2_jd_descriptor *out) {
     if(!out)return LI2_JD_ARGUMENT;
     zero(out,sizeof *out);int e=describe(pc,bytes,n,out);out->refusal=(uint32_t)e;out->ready=e==0;return e;
@@ -86,6 +111,27 @@ static void restore(struct writer *w) {
     for(unsigned i=1;i<4;i++)spill(w,i,1);
     spill(w,0,1);
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+static int binding(uintptr_t pc,size_t n,uintptr_t generated,uintptr_t spill_at,const struct li2_jd_binding *b) {
+    if(!b || !b->heads || b->heads>LI2_JD_HEADS || b->head>=b->heads ||
+       (b->rows&7) || (b->image[0]&4095) || (b->image[1]&4095) || (spill_at&7) ||
+       !address(b->rows,(size_t)b->heads*sizeof(struct li2_span_decoded)) ||
+       !address(b->image[0],LI2_JD_IMAGE_BYTES) || !address(b->image[1],LI2_JD_IMAGE_BYTES) ||
+       !address(spill_at,40) || !address(pc,n) ||
+       generated!=b->image[b->head/64]+(uintptr_t)(b->head%64)*512)return 0;
+    size_t rows=(size_t)b->heads*sizeof(struct li2_span_decoded);
+    if(!apart(b->image[0],LI2_JD_IMAGE_BYTES,b->image[1],LI2_JD_IMAGE_BYTES) ||
+       !apart(b->rows,rows,spill_at,40) || !apart(pc,n,spill_at,40) || !apart(pc,n,b->rows,rows))return 0;
+    for(unsigned i=0;i<2;i++)if(!apart(b->image[i],LI2_JD_IMAGE_BYTES,b->rows,rows) ||
+        !apart(b->image[i],LI2_JD_IMAGE_BYTES,spill_at,40) || !apart(b->image[i],LI2_JD_IMAGE_BYTES,pc,n))return 0;
+    if((b->directory&4095U) || !address(b->directory,LI2_JD_DOMAIN_BYTES) ||
+       !apart(b->directory,LI2_JD_DOMAIN_BYTES,b->rows,rows) ||
+       !apart(b->directory,LI2_JD_DOMAIN_BYTES,spill_at,40) ||
+       !apart(b->directory,LI2_JD_DOMAIN_BYTES,pc,n))return 0;
+    for(unsigned i=0;i<2;i++)if(!apart(b->directory,LI2_JD_DOMAIN_BYTES,b->image[i],LI2_JD_IMAGE_BYTES))return 0;
+    return 1;
+}
+#else
 static int binding(uintptr_t pc,size_t n,uintptr_t generated,uintptr_t spill_at,const struct li2_jd_binding *b) {
     if(!b || !b->heads || b->heads>LI2_JD_HEADS || b->head>=b->heads ||
        (b->rows&7) || (b->image[0]&4095) || (b->image[1]&4095) || (spill_at&7) ||
@@ -100,6 +146,10 @@ static int binding(uintptr_t pc,size_t n,uintptr_t generated,uintptr_t spill_at,
         !apart(b->image[i],LI2_JD_IMAGE_BYTES,spill_at,40) || !apart(b->image[i],LI2_JD_IMAGE_BYTES,pc,n))return 0;
     return 1;
 }
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#include "linked_jmp_domain_emit.inc"
+#else
 static int build(uintptr_t pc,const unsigned char *bytes,size_t n,uintptr_t generated,uintptr_t spill_at,
                  const struct li2_jd_binding *b,struct li2_jd_plan *p) {
     if(!binding(pc,n,generated,spill_at,b))return LI2_JD_ARGUMENT;
@@ -154,12 +204,22 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t n,uintptr_t gene
     }
     p->record.ready=1;return 0;
 }
+#endif
 int li2_jd_emit(uintptr_t pc,const unsigned char *bytes,size_t n,uintptr_t generated,uintptr_t spill_at,
                 const struct li2_jd_binding *b,struct li2_jd_plan *out) {
     if(!out)return LI2_JD_ARGUMENT;
     zero(out,sizeof *out);int e=build(pc,bytes,n,generated,spill_at,b,out);
     out->record.result=(uint32_t)e;if(e)out->record.ready=0;return e;
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+int li2_jd_validate(const struct li2_jd_plan *p) {
+    if(!p || p->record.version!=LI2_JD_VERSION || p->record.ready!=1 || p->record.result || p->record.reserved)return LI2_JD_CORRUPT;
+    struct li2_jd_plan expected;
+    int e=li2_jd_emit(p->original.decoded.pc,p->original.decoded.bytes,p->original.available,
+        p->generated,p->spill,&p->binding,&expected);
+    return e || !same(p,&expected,sizeof *p)?LI2_JD_CORRUPT:0;
+}
+#else
 int li2_jd_validate(const struct li2_jd_plan *p) {
     if(!p || p->record.version!=1 || p->record.ready!=1 || p->record.result || p->record.reserved)return LI2_JD_CORRUPT;
     struct li2_jd_plan expected;
@@ -167,6 +227,38 @@ int li2_jd_validate(const struct li2_jd_plan *p) {
         p->generated,p->spill,&p->binding,&expected);
     return e || !same(p,&expected,sizeof *p)?LI2_JD_CORRUPT:0;
 }
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+int li2_jd_recover(const struct li2_jd_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,
+                   const uint64_t spill_words[4],struct li2_jd_recovered *out) {
+    if(!out)return LI2_JD_ARGUMENT;
+    zero(out,sizeof *out);
+    if(!p || !raw || !spill_words || p->record.version!=LI2_JD_VERSION || p->record.ready!=1 || p->record.result ||
+       !p->record.boundaries || p->record.boundaries>LI2_JD_BOUNDARIES || pc<p->generated)return LI2_JD_ARGUMENT;
+    const struct li2_mg_boundary *m=0;
+    for(unsigned i=0;i<p->record.boundaries;i++)if(pc-p->generated==p->record.boundary[i].offset) {
+        if(m)return LI2_JD_CORRUPT;
+        m=&p->record.boundary[i];
+    }
+    if(!m || m->spill_valid&~15U || m->dirty&~m->spill_valid || m->flags>LI2_MG_AH_AL ||
+       m->phase>LI2_JD_CELL_READY || p->record.scratch_regs[0]!=0)return LI2_JD_CORRUPT;
+    unsigned seen=0;
+    for(unsigned i=0;i<4;i++) {
+        unsigned reg=p->record.scratch_regs[i];
+        if(reg>=16 || reg==4 || seen&(1U<<reg))return LI2_JD_CORRUPT;
+        seen|=1U<<reg;
+    }
+    copy(out->gpr,raw,sizeof out->gpr);out->flags=flags;
+    if(m->flags) {
+        if(!(m->dirty&1))return LI2_JD_CORRUPT;
+        uint64_t of=flags&UINT64_C(0x800);
+        if(m->flags==LI2_MG_AH_AL) { if((raw[0]&255)>1)return LI2_JD_CORRUPT;of=(raw[0]&1)<<11; }
+        out->flags=(flags&~LI2_MG_STATUS)|((raw[0]>>8)&UINT64_C(0xd5))|of;
+    }
+    for(unsigned i=0;i<4;i++)if(m->dirty&(1U<<i))out->gpr[p->record.scratch_regs[i]]=spill_words[i];
+    out->phase=LI2_JD_BEFORE;out->original_pc=p->original.decoded.pc;out->complete=1;return 0;
+}
+#else
 int li2_jd_recover(const struct li2_jd_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,
                    const uint64_t spill_words[4],struct li2_jd_recovered *out) {
     if(!out)return LI2_JD_ARGUMENT;
@@ -196,3 +288,4 @@ int li2_jd_recover(const struct li2_jd_plan *p,uintptr_t pc,const uint64_t raw[1
     for(unsigned i=0;i<4;i++)if(m->dirty&(1U<<i))out->gpr[p->record.scratch_regs[i]]=spill_words[i];
     out->phase=LI2_JD_BEFORE;out->original_pc=p->original.decoded.pc;out->complete=1;return 0;
 }
+#endif

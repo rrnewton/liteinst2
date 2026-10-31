@@ -73,6 +73,20 @@ static int resolve(const struct node *q,unsigned n,uintptr_t pc,unsigned *token)
 static int token_valid(const struct li2_pg_plan *p,unsigned k) {
     return k<p->heads || (k>=LI2_PG_HEADS && k-LI2_PG_HEADS<p->exits);
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+static int layout_valid(const struct li2_pg_layout *l) {
+    uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
+    size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
+    for(unsigned i=0;i<5;i++) {
+        if(a[i]<LI2_REGION_PAGE || (a[i]&4095U) || !address(a[i],n[i]))return 0;
+        for(unsigned j=0;j<i;j++)if(overlap(a[i],n[i],a[j],n[j]))return 0;
+    }
+    if(l->directory<LI2_REGION_PAGE || (l->directory&4095U) ||
+       !address(l->directory,LI2_JD_DOMAIN_BYTES))return 0;
+    for(unsigned i=0;i<5;i++)if(overlap(l->directory,LI2_JD_DOMAIN_BYTES,a[i],n[i]))return 0;
+    return 1;
+}
+#else
 static int layout_valid(const struct li2_pg_layout *l) {
     uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
     size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
@@ -82,6 +96,7 @@ static int layout_valid(const struct li2_pg_layout *l) {
     }
     return 1;
 }
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 int li2_pg_dispatch_binding(const uintptr_t pages[2],const struct li2_pg_layout *layout,
     uintptr_t table,unsigned heads,unsigned head,struct li2_jd_binding *out) {
@@ -108,7 +123,13 @@ int li2_pg_dispatch_binding(const uintptr_t pages[2],const struct li2_pg_layout 
         LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
     if(!address(rows,bytes))return LI2_PG_ARGUMENT;
     for(unsigned i=0;i<7;i++)if(overlap(rows,bytes,at[i],extents[i]))return LI2_PG_ARGUMENT;
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,base,table_offset+sizeof(struct li2_mg_table)))return LI2_PG_ARGUMENT;
+    for(unsigned i=0;i<2;i++)if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,pages[i],LI2_REGION_PAGE))return LI2_PG_ARGUMENT;
+    *out=(struct li2_jd_binding){rows,{layout->generated[0],layout->generated[1]},heads,head,layout->directory};
+#else
     *out=(struct li2_jd_binding){rows,{layout->generated[0],layout->generated[1]},heads,head};
+#endif
     return 0;
 }
 static int dispatch_form(const unsigned char *bytes,size_t n) {
@@ -510,6 +531,9 @@ int li2_pg_plan_pages(const uintptr_t pages[2],const unsigned char source[2][LI2
         if(!address(at[i],bytes[i]) || (i<2 && (at[i]&4095U)))goto done;
         for(unsigned j=0;j<i;j++)if(overlap(at[i],bytes[i],at[j],bytes[j]))goto done;
     }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    for(unsigned i=0;i<8;i++)if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,at[i],bytes[i]))goto done;
+#endif
     copy(out->page,pages,sizeof out->page);copy(out->source,source,sizeof out->source);
     out->entry=entry;out->layout=*layout;copy(&out->table,table,sizeof *table);
     unsigned page,offset;if(!location(out,entry,&page,&offset))goto done;

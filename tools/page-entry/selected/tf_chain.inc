@@ -8,6 +8,9 @@ extern void li2_pro_trace_closed(const struct li2_tf_chain *,const struct li2_tf
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
 extern void li2_ptr2o_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
 #endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+extern void li2_pdao_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
+#endif
 #ifdef LI2_CURRENT_TF_CAPTURE
 #include "current_tf_observe.h"
 #endif
@@ -532,6 +535,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     li2_ptr2o_trace_closed(c,p);
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+    li2_pdao_trace_closed(c,p);
 #endif
     chain_count(c,&c->steps);c->pending=0;
     struct li2_tf_chain_slot *s=chain_next(c,previous^1);s->origin=2;

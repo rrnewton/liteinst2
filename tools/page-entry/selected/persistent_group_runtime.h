@@ -2,6 +2,15 @@
 #define LI2_PERSISTENT_GROUP_RUNTIME_H
 #include "persistent_group_lifetime.h"
 #include "linked_rseq.h"
+#ifdef LI2_RSEQ_CURRENT_DATA
+#if !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1
+#error "maintained rseq data is a distinct resident dispatch profile"
+#endif
+#include "rseq_current_data.h"
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#include "persistent_active_domain.h"
+#endif
 #if !defined(LI2_PERSISTENT_GROUP) || LI2_PERSISTENT_GROUP != 1 || \
     !defined(LI2_PERSISTENT_EPOCH) || LI2_PERSISTENT_EPOCH != 1 || \
     !defined(LI2_LINKED_EPOCH) || LI2_LINKED_EPOCH != 1 || \
@@ -59,6 +68,13 @@ struct li2_pg_rseq_progress {
     uint16_t fs_selector,gs_selector;
     struct li2_rseq_data before,observed,after;
     unsigned cancel_started,cancel_complete;
+#ifdef LI2_RSEQ_CURRENT_DATA
+    struct li2_rseq_current_data current_observed,current_after;
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    unsigned domain_bound,domain_count;
+    struct li2_pgd_ref domain_ref[LI2_PGD_MEMBERS];
+#endif
 };
 int li2_pg_rseq_begin(const struct li2_pg_token *,const struct li2_step_session *,const ucontext_t *);
 int li2_pg_rseq_cold(const struct li2_pg_token *,const struct li2_pg_plan *,const ucontext_t *);

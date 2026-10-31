@@ -12,6 +12,11 @@ static int ptr_storage(void) {
        pe.selected_bank>1 || protected_count>RANGES ||
        selected_run_protect_contains(0,(uintptr_t)&pe,sizeof pe)!=1)return 0;
     uintptr_t first[3U*LI2_PTR_SLOTS],end[3U*LI2_PTR_SLOTS];unsigned used=0;
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    if(pe.domain.allocated!=1 || pe.domain.registered!=1 || !pe.domain.directory ||
+       (pe.domain.directory&(PAGE-1)) || pe.domain.directory>=(UINT64_C(1)<<47)-LI2_JD_DOMAIN_BYTES ||
+       selected_run_protect_contains(0,pe.domain.directory,LI2_JD_DOMAIN_BYTES)!=1)return 0;
+#endif
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
         const struct li2_ptr_slot *s=&pe.retained[i];
         if(s->identity.owner!=&pe || s->identity.index!=i || s->identity.reserved ||
@@ -37,6 +42,9 @@ static int ptr_storage(void) {
         if(pe.retained[i].identity.generation &&
            pe.retained[i].identity.generation==pe.retained[j].identity.generation)return 0;
     for(unsigned i=0;i<used;i++) {
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+        if(first[i]<pe.domain.directory+LI2_JD_DOMAIN_BYTES && pe.domain.directory<end[i])return 0;
+#endif
         if(first[i]<(uintptr_t)&pe+sizeof pe && (uintptr_t)&pe<end[i])return 0;
         for(unsigned j=0;j<i;j++)if(first[i]<end[j] && first[j]<end[i])return 0;
     }
@@ -105,6 +113,9 @@ static int ptr_stored(unsigned index) {
         p->plan.links && p->plan.exits && p->plan.links+p->plan.exits<=LI2_PG_BOUNDARIES;
 #endif
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+static int ptr_permitted(unsigned index) { return pda_permitted(index); }
+#else
 static int ptr_permitted(unsigned index) {
     if(index>=LI2_PTR_SLOTS)return 0;
     const struct li2_ptr_slot *slot=&pe.retained[index];
@@ -152,6 +163,7 @@ static int ptr_permitted(unsigned index) {
 #endif
     return 1;
 }
+#endif
 
 /* Admission order is advisory. No certificate is claimed, reopened or
    relabelled here; a hit still needs fresh whole source/registration equality.
@@ -165,6 +177,9 @@ static unsigned ptr_choose(uintptr_t pc) {
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
         const struct li2_ptr_slot *s=&pe.retained[i];const struct li2_pg_generation *g=&s->generation;
         if(!g->installed) {
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+            pe_need(!s->claim.valid && !s->claim.id && !g->domain_refs,PE_STATE,73);
+#endif
             pe_need(!s->identity.generation && !g->generation && !g->ready_generation &&
                 !g->complete && !g->proof_complete && !g->build_serial &&
                 !s->permit.valid && !s->permit.serial && !s->last_completed,
