@@ -6,6 +6,9 @@
 #include "persistent_group_plan.h"
 #include "persistent_group_runtime.h"
 #include "persistent_group_config.h"
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+#include "persistent_group_observe.h"
+#endif
 #if LI2_PG_BINDING_VERSION != 1 || LI2_PG_GROUP_BINDING_VERSION != 1 || LI2_PERSISTENT_EPOCH != 1
 #error "exact group archive, policy and whole-image configuration required"
 #endif
@@ -726,6 +729,9 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     selected_step_pending=*result==LI2_CHAIN_RUNNING;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
     pe.p.phase=LI2_PG_CANCELLED;pe.ticket=0;selected_initialized();ped_count(&pe.cancelled);
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_cancelled(sig,si,uc,*result);
+#endif
     __asm__ volatile("":::"memory");pe_busy=0;pe.resuming=0;
 #if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
     if(*result==LI2_CHAIN_NX_FALLBACK && selected_chain.slots[selected_chain.active].fallback==LI2_CHAIN_OLD_STEP)
@@ -765,6 +771,9 @@ static _Noreturn void selected_persistent_abort(unsigned code,long detail) {
         }
     }
     const struct li2_fetch_progress *f=li2_lifecycle_fetch_progress();if(f)pe.final_fetch=*f;
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_terminal(1);
+#endif
     report(125,pe.p.first_error,pe.p.first_detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
@@ -784,6 +793,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
         bank->spill==bank->generated+PE_CODE_BYTES+PAGE && protected_count<=RANGES &&
         selected_run_protect_contains(0,bank->generated,PE_ALLOC_BYTES)==1,PE_STATE,31);
     if(!placement)return 0;
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_begin(sig,si,uc);
+#endif
     ped_reset_attempt();pe.selected_bank=bank_index;
     pe_closing=1;pe_busy=1;ped_count(&pe.offers);__asm__ volatile("":::"memory");
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
@@ -795,6 +807,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     pe.close_complete=1;pe_closing=0;pe.flags=pe.transfer.flags;
     selected_logical_flags=pe.flags;selected_flags_known=1;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     pe_need(!le_capture(&pe.before,sig,si,uc),PE_FRAME,1);
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_closed();
+#endif
     pe_need(!li2_pg_epoch_begin(pe.ticket,pe.transfer.serial,&selected_session,sig,si,uc,&pe.token),PE_RSEQ,2);
     le_zero(&selected_borrow,sizeof selected_borrow);le_zero(&selected_view,sizeof selected_view);
     pe.prepare_started=1;e=li2_lifecycle_fetch_prepare(pc,15,&selected_borrow);
@@ -806,11 +821,17 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     pe_need(page>=PAGE && page<=(UINT64_C(1)<<47)-2*PAGE && pc-page<=PAGE-15,PE_SOURCE,3);
     pe_need(!li2_pg_epoch_sources(&pe.token,&selected_borrow,pages),PE_SOURCE,4);
     if(!pe_build(sig,si,uc)) {
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_miss_held();
+#endif
         enum li2_chain_result result;
         pe_need(!li2_pg_epoch_cancel(&pe.token,sig,si,uc,&result),PE_EVENT,3);return 1;
     }
     pe_need(!li2_pg_epoch_bind(&pe.token,&pe.generation),PE_PUBLICATION,2);
     pe_need(!li2_pg_epoch_enter(&pe.token,sig,si,uc),PE_PUBLICATION,3);
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_entered(sig,si,uc);
+#endif
     selected_initialized();__asm__ volatile("":::"memory");pe_busy=0;return 1;
 }
 static void selected_persistent_preentry(int sig,siginfo_t *si,ucontext_t *uc) {
@@ -842,6 +863,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     copy(pe.permit.close,pe.generation.close,sizeof pe.permit.close);
     copy(pe.permit.member_generation,pe.generation.member_generation,sizeof pe.permit.member_generation);
     pe_need(ped_permitted(),PE_RELEASE,13);
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_terminal(0);
+#endif
     selected_logical_flags=(uint64_t)pe.after.frame.greg[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
     pe_active=0;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     __asm__ volatile("":::"memory");pe_busy=0;selected_fetch(sig,si,uc);
@@ -867,3 +891,6 @@ static void selected_persistent_report(unsigned status,unsigned code,long detail
     text(&w,"]}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }
 _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct group report");
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+#include "persistent_group_observe.inc"
+#endif
