@@ -35,6 +35,9 @@ struct li2_lifecycle_page_view {
 };
 int li2_lifecycle_query(uintptr_t address,struct li2_lifecycle_page_view *out);
 void li2_lifecycle_initialize(const int *fds,size_t count,const struct li2_lifecycle_hooks *hooks);
+/* Separate zero-dependency route; both original source tables are re-proved. */
+struct image;
+void li2_lifecycle_initialize_empty(const struct image *,const struct image *,const struct li2_lifecycle_hooks *);
 /* Candidate-only preactivation fault control, never armed by the default mode. */
 void li2_lifecycle_fault_control(unsigned enabled);
 int li2_lifecycle_enabled(void);

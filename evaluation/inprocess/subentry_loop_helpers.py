@@ -121,6 +121,7 @@ def repeat_setup_completed(stderr,image,summary,application,protected_tls):
 
 
 def cohort(builder,products,private,pin,binary,aliases,run,r,original):
+    empty_namespace_component(builder,private,pin,binary,run,r)
     subentry_component(builder,private,pin,binary,run,r)
     component.authority_component(builder,products,private,pin,binary,aliases,run,r)
     component.dispatch_component(builder,products,private,pin,binary,aliases,run,r)
@@ -310,5 +311,43 @@ def subentry_component(builder,private,pin,binary,run,r):
     row,out,err=run('subentry-authority-run',[executable],profile='finite',env=builder.environment)
     need(row['exit']==0 and out==expected and err==b'','all236 actual-predicate controls complete')
     state.update(status='passed',counts=dict(lookup=112,selection=33,entry=47,lifetime=19,history=25),
+        exit=row['exit'],duration_ns=row['duration_ns'],bounds=row['bounds'],
+        captures={k:{j:v[j]for j in('bytes','sha256')}for k,v in row['captures'].items()})
+
+
+def empty_namespace_component(builder,private,pin,binary,run,r):
+    fixture=SELECTED/'tests/empty_namespace'
+    script=pin(fixture/'build.sh');prepare=pin(fixture/'prepare.py');unit=pin(fixture/'oracle.c')
+    output=private/'empty-namespace'
+    expected=b'empty-namespace images=74 pairs=4 parser=18 callers=10 synthetic_initialization=1 native_credit=0\n'
+    state=r['empty_namespace_component']=dict(status='failed',expected_stdout=expected.decode(),qualification_credit=False,
+        recipe=fact(script),prepare=fact(prepare),source=fact(unit),native_operations=0)
+    extracted=('lifecycle_loader.c','runtime_loader.c')
+    state['extraction_inputs']={n:fact(pin(SELECTED/n))for n in extracted}
+    rows=recipe(script,'"$python_bin"');ccrows=recipe(script,'"$cc_bin"')
+    need(len(rows)==len(ccrows)==1,'one source extraction and one actual predicate component compile')
+    values={'$python_bin':builder.tools['python'],'$cc_bin':builder.tools['cc'],
+        '$selected':SELECTED,'$output':output,'$fixture':fixture}
+    argv=expand(rows[0],values)
+    _,out,err=run('empty-namespace-prepare',argv,profile='finite',env=builder.environment)
+    need(out==err==b'','exact actual-predicate extraction diagnostics empty')
+    generated=pin(binary(str(output)+'.c'))
+    argv=expand(ccrows[0],values)
+    need(argv[-2:]==['-o',str(output)]and str(generated)in argv and '-DNDEBUG'not in argv and
+         all(x in argv for x in ('-O2','-g','-Wall','-Wextra','-Werror','-mgeneral-regs-only')),
+         'strict actual predicate compiler recipe with assertions retained')
+    flags=[x for x in argv[1:-2]if x!=str(generated)and not x.startswith('-Wl,')]
+    _,out,err=run('empty-namespace-headers',[builder.tools['cc'],*flags,'-M','-MT','li2_empty_namespace',generated],profile='finite',env=builder.environment)
+    lines=out.decode().replace('\\\n',' ').splitlines()
+    need(not err and len(lines)==1 and lines[0].startswith('li2_empty_namespace: '),'whole actual predicate include closure')
+    includes={str(pin(n)):fact(pin(n))for n in shlex.split(lines[0].split(':',1)[1])}
+    need(str(generated)in includes,'actual extracted component translation unit')
+    state['headers']=includes;state['argv']=argv
+    _,out,err=run('empty-namespace-link',argv,profile='finite',env=builder.environment)
+    need(out==err==b'','strict actual predicate compile')
+    executable=binary(output);state['artifact']=fact(executable)
+    row,out,err=run('empty-namespace-run',[executable],profile='finite',env=builder.environment)
+    need(row['exit']==0 and out==expected and err==b'','all106 actual empty-namespace predicates and callers complete')
+    state.update(status='passed',counts=dict(images=74,pairs=4,parser=18,callers=10),
         exit=row['exit'],duration_ns=row['duration_ns'],bounds=row['bounds'],
         captures={k:{j:v[j]for j in('bytes','sha256')}for k,v in row['captures'].items()})

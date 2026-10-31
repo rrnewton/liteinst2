@@ -30,6 +30,7 @@ ACTIVE_PROVIDERS = tuple('li2_pgd_source_release' if name == 'li2_pg_source_rele
     'li2_lifecycle_link_native_probe_outcome',
     'li2_lifecycle_link_native_probe_progress',
     'li2_pgs_head_lookup','li2_pgs_entry_source','li2_pgs_entry_value','li2_pgs_owner_entry',
+    'li2_lifecycle_initialize_empty',
 )
 
 def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
