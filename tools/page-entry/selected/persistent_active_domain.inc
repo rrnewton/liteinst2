@@ -36,7 +36,14 @@ static int pda_receipt(const struct pda_completion *c) {
        s->release_complete!=1 || s->opened_extents!=3 || s->opened_pages!=17 ||
        s->closed_extents!=3 || s->closed_pages!=17 || s->cancel_started || s->cancel_complete ||
        !pg_layout_equal(&s->layout,&c->member[0].identity.layout) ||
+#ifdef LI2_PERSISTENT_SUBENTRY
+       !li2_pgs_entry_value(&d->entry,&c->member[0].source,&s->source,&c->member[0].identity.layout) ||
+       d->entry.token.owner!=&pe || d->entry.slot!=c->member[0].identity.slot ||
+       d->entry.bank!=c->member[0].identity.bank || d->entry.generation!=c->member[0].identity.generation ||
+       d->entry.build_serial!=c->member[0].generation.build_serial ||
+#else
        !li2_pg_source_key_equal(&s->source.key,&c->member[0].source) ||
+#endif
        d->token.owner!=&pe || d->token.serial!=c->serial || d->count!=c->count ||
        d->bound!=1 || d->opened!=1 || d->closed!=1 || d->released!=1 || d->first_error || d->first_detail ||
        r->token.owner!=&pe || r->token.serial!=c->serial || r->active || r->checking ||
@@ -199,6 +206,10 @@ const struct li2_pgd_view *li2_pgd_owner_view(const struct li2_pg_token *t) {
        !equal(t,&v->token,sizeof *t) || v->directory!=pe.domain.directory ||
        w->primary>=LI2_PTR_SLOTS || v->member[0].identity.slot!=w->primary ||
        !pg_layout_equal(&v->member[0].identity.layout,&pe.p.layout))return 0;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    const struct li2_pgs_entry *entry=li2_pgs_owner_entry(t);
+    if(!entry || !equal(entry,&v->entry,sizeof *entry))return 0;
+#endif
     for(unsigned i=0;i<v->count;i++)if(!pda_member_live(&v->member[i]) ||
         (i && (v->member[i].identity.slot==v->member[0].identity.slot ||
                v->member[i].identity.generation==v->member[0].identity.generation)))return 0;
@@ -251,6 +262,10 @@ static int pda_bind(const ucontext_t *uc) {
     if(w->bound || pe.p.phase!=LI2_PG_BOUND || !pe_busy || pe_active || !pe_ready())return PE_STATE;
     w->primary=pe.selected_slot;w->primary_bank=pe.selected_bank;
     w->view.token=pe.token;w->view.directory=pe.domain.directory;w->view.count=1;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    const struct li2_pgs_entry *entry=li2_pgs_owner_entry(&pe.token);if(!entry)return PE_SOURCE;
+    w->view.entry=*entry;
+#endif
     pda_member(0,w->primary);
     if(pe.warm && w->peer<LI2_PTR_SLOTS) {
         unsigned peer=w->peer;pe_need(peer!=w->primary && pda_permitted(peer),PE_RELEASE,83);
@@ -352,7 +367,12 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
     pe.p.phase=LI2_PG_EXECUTING;pe.redirected=1;ped_count(PGC_REF(entries));
     if(w->view.count==2)ped_count(&pe.domain.dual_entries);
     selected_step_pending=1;selected_pending_route=SELECTED_PERSISTENT_EPOCH;pe_active=1;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    if(w->view.entry.target.pc!=w->view.entry.target.root)ped_count(&pe.subentry_entries);
+    __asm__ volatile("":::"memory");uc->uc_mcontext.gregs[REG_RIP]=(greg_t)w->view.entry.target.generated;
+#else
     __asm__ volatile("":::"memory");uc->uc_mcontext.gregs[REG_RIP]=(greg_t)w->view.member[0].plan->layout.generated[0];
+#endif
     return 0;
 }
 static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
@@ -462,6 +482,9 @@ static void pda_complete(void) {
         pe_need(pda_permitted(c->member[i].identity.slot),PE_RELEASE,89);
     }
     if(c->count==2)ped_count(&pe.domain.dual_completed);
+#ifdef LI2_PERSISTENT_SUBENTRY
+    if(w->view.entry.target.pc!=w->view.entry.target.root)ped_count(&pe.subentry_completed);
+#endif
     w->completion=1;ped_count(PGC_REF(completed));pe.p.completion_permit=1;
 }
 static _Noreturn void pda_abort(unsigned code,long detail) {

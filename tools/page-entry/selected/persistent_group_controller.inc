@@ -189,6 +189,11 @@ struct li2_ptr_slot {
 #endif
 struct li2_pg_epoch {
     struct li2_pg_progress p,last_terminal;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    struct li2_pgs_entry entry;
+    unsigned subentry_selected;
+    uint64_t subentry_selections,subentry_hits,subentry_entries,subentry_completed;
+#endif
     uint64_t next_serial,next_generation,offers,publications,hits,cold_attempts,cancelled,retirements,permit_claims;
     uint64_t misses[LI2_PGD_REASON_COUNT];
     unsigned selected_bank,resuming,warm;
@@ -557,6 +562,10 @@ static int ped_stored(void) {
 #endif
 #endif
 }
+#ifdef LI2_PERSISTENT_SUBENTRY
+static unsigned ped_bank_for(uintptr_t);
+#include "persistent_subentry.inc"
+#endif
 static int pe_ready(void) {
     if(!ped_stored() || !pe_token(&pe.token) || !pe_registry() || !pe.consumed ||
        pe.p.generation!=PE_SLOT(generation).generation || pe.p.publication!=1 ||
@@ -565,7 +574,11 @@ static int pe_ready(void) {
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
     const struct pe_payload *p=pe_payload();
     return s && s->complete==1 && !s->reserved && s->serial==pe.p.serial &&
+#ifdef LI2_PERSISTENT_SUBENTRY
+        pe_sub_source_matches(s,p) && r && r->active && r->seed_complete &&
+#else
         li2_pg_source_key_equal(&p->source,&s->key) && r && r->active && r->seed_complete &&
+#endif
 #ifdef LI2_PERSISTENT_UNREGISTERED
         pe_lifetime_matches(&p->header,r) &&
 #endif
@@ -593,6 +606,10 @@ static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
 #endif
 static unsigned ped_bank_for(uintptr_t pc) {return pc<(UINT64_C(1)<<31)?0:1;}
 static int ped_capacity(void) {
+#ifdef LI2_PERSISTENT_SUBENTRY
+    if(pe.subentry_selections==UINT64_MAX || pe.subentry_hits==UINT64_MAX ||
+       pe.subentry_entries==UINT64_MAX || pe.subentry_completed==UINT64_MAX)return 0;
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     if(pe.domain.next_id==UINT64_MAX || pe.domain.dual_entries==UINT64_MAX || pe.domain.dual_completed==UINT64_MAX ||
        PGC_VALUE(permit_claims)>UINT64_MAX-2)return 0;
@@ -678,6 +695,9 @@ static void ped_reset_attempt(void) {
         (pe.p.phase==LI2_PG_IDLE || pe.p.phase==LI2_PG_CLOSED || pe.p.phase==LI2_PG_CANCELLED) &&
         !pe.p.first_error && (!PE_SLOT(generation).installed || ped_permitted()),PE_STATE,30);
     pe.last_terminal=pe.p;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    le_zero(&pe.entry,sizeof pe.entry);pe.subentry_selected=0;
+#endif
     le_zero(&pe.p,sizeof pe.p);le_zero(&pe.ingress,sizeof pe.ingress);le_zero(&pe.before,sizeof pe.before);
     le_zero(&pe.after,sizeof pe.after);le_zero(&pe.unexpected_frame,sizeof pe.unexpected_frame);
     le_zero(&pe.live,sizeof pe.live);le_zero(&pe.recovered,sizeof pe.recovered);
@@ -789,7 +809,11 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
     copy(pe.candidate_registry,protected,protected_count*sizeof *protected);
     if(PE_SLOT(generation).installed && ped_stored() && pe_registry() &&
        PE_SLOT(generation).generated==pe.p.generated &&
+#ifdef LI2_PERSISTENT_SUBENTRY
+       pe_sub_candidate(s,pe_payload()) &&
+#else
        li2_pg_source_key_equal(&PE_SLOT(publication).source,&s->key) &&
+#endif
 #ifdef LI2_PERSISTENT_UNREGISTERED
        pe_lifetime_matches(&PE_SLOT(publication).header,r) &&
 #endif
@@ -797,6 +821,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
        PE_SLOT(publication).header.rseq_address==r->address &&
        PE_SLOT(publication).header.rseq_length==r->length && PE_SLOT(publication).header.rseq_signature==r->signature) {
         pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);pe.warm=1;
+#ifdef LI2_PERSISTENT_SUBENTRY
+        pe_need(!pe_sub_fill(),PE_SOURCE,110);
+#endif
     } else {
         le_zero(&pe.candidate,sizeof pe.candidate);
         size_t n=0;for(size_t i=0;i<protected_count;i++)
@@ -873,7 +900,13 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #ifdef LI2_PERSISTENT_DISPATCH
         le_zero(&g->cell[1],2U*sizeof g->cell[1]);
 #endif
+#ifdef LI2_PERSISTENT_SUBENTRY
+        pe.p.generation=g->generation;pe.p.publication=1;pe.p.phase=LI2_PG_BOUND;
+        if(pe.entry.target.pc!=pe.entry.target.root)ped_count(&pe.subentry_hits);
+        else ped_count(PGC_REF(hits));
+#else
         pe.p.generation=g->generation;pe.p.publication=1;pe.p.phase=LI2_PG_BOUND;ped_count(PGC_REF(hits));
+#endif
         return pe_ready()?0:PE_PUBLICATION;
     }
     if(pe.plan_proofs!=2 || pe.none_proofs!=1 || pe.candidate.plan.ready!=1 ||
@@ -945,6 +978,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #endif
     __asm__ volatile("":::"memory");g->ready_generation=g->generation;pe.p.phase=LI2_PG_BOUND;
     if((e=pg_link_data(0)))return e;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    if((e=pe_sub_fill()))return e;
+#endif
     return pe_ready()?0:PE_PUBLICATION;
 }
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
@@ -1174,7 +1210,11 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
         if(!r->initialized || r->first_error || r->held || r->phase!=LI2_RSEQ_IDLE ||
            r->pid<=0 || r->pid!=r->tid)return 0;
     } else if(r->registered!=1 || r->phase!=LI2_RSEQ_ACTIVE)return 0;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    if((pc&~(PAGE-1))<PAGE)return 0;
+#else
     if((pc&~(PAGE-1))<PAGE || !li2_pg_source_pair_advisory(pc))return 0;
+#endif
 #else
     if((pc&~(PAGE-1))<PAGE || r->registered!=1 || r->phase!=LI2_RSEQ_ACTIVE ||
        !li2_pg_source_pair_advisory(pc))return 0;
@@ -1182,8 +1222,13 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     /* Pure necessary placement before any offer, capture, reset or real
        TRACE close. A decline leaves the original dispatch path intact. */
 #ifdef LI2_PERSISTENT_RETAINED_TWO
+#ifdef LI2_PERSISTENT_SUBENTRY
+    struct pe_sub_choice choice;if(!pe_sub_choose(pc,&choice))return 0;
+    const unsigned bank_index=choice.bank,slot_index=choice.slot;
+#else
     const unsigned bank_index=ped_bank_for(pc);
     const unsigned slot_index=ptr_choose(pc);
+#endif
     const struct ped_bank *bank=&pe.retained[slot_index].banks[bank_index];
 #else
     const unsigned bank_index=ped_bank_for(pc);
@@ -1211,6 +1256,10 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     ped_reset_attempt();pe.previous_selection=pe.selection;pe.selected_slot=slot_index;
     pe.selection=pe.retained[slot_index].identity;pe.selected_bank=bank_index;
     pe_need(ptr_selected(),PE_STATE,41);
+#ifdef LI2_PERSISTENT_SUBENTRY
+    pe.subentry_selected=choice.subentry;
+    if(choice.subentry)ped_count(&pe.subentry_selections);
+#endif
 #else
     ped_reset_attempt();pe.selected_bank=bank_index;
 #endif
@@ -1243,7 +1292,11 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     pe_need(!e && selected_view.pc==pc && selected_view.length==15 && selected_view.page_count==1 &&
         selected_view.identity_observed && selected_view.pid==pe.session.pid && selected_view.tid==pe.session.tid,PE_SOURCE,e);
     pe.prepare_complete=1;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    uintptr_t page=pc&~(PAGE-1),pages[2]={choice.page[0],choice.page[1]};
+#else
     uintptr_t page=pc&~(PAGE-1),pages[2]={page,page+PAGE};
+#endif
     pe_need(page>=PAGE && page<=(UINT64_C(1)<<47)-2*PAGE && pc-page<=PAGE-15,PE_SOURCE,3);
     pe_need(!li2_pg_epoch_sources(&pe.token,&selected_borrow,pages),PE_SOURCE,4);
     if(!pe_build(sig,si,uc)) {
@@ -1331,6 +1384,19 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     __asm__ volatile("":::"memory");pe_busy=0;selected_fetch(sig,si,uc);
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_SUBENTRY
+    {
+        struct writer sub={.used=0};text(&sub,"LI2_PERSISTENT_SUBENTRY {\"version\":1");
+        field(&sub,",\"status\":",status);field(&sub,",\"failure_code\":",code);
+        field(&sub,",\"selections\":",pe.subentry_selections);field(&sub,",\"hits\":",pe.subentry_hits);
+        field(&sub,",\"entries\":",pe.subentry_entries);field(&sub,",\"completed\":",pe.subentry_completed);
+        field(&sub,",\"serial\":",pe.entry.token.serial);field(&sub,",\"generation\":",pe.entry.generation);
+        field(&sub,",\"root\":",pe.entry.target.root);field(&sub,",\"pc\":",pe.entry.target.pc);
+        field(&sub,",\"head\":",pe.entry.target.head);field(&sub,",\"slot\":",pe.entry.slot);
+        field(&sub,",\"bank\":",pe.entry.bank);field(&sub,",\"complete\":",pe.entry.complete);
+        text(&sub,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)sub.bytes,sub.used,0,0,0);
+    }
+#endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     if(pe.selected_slot>=LI2_PTR_SLOTS) {
         (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();

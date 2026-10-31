@@ -197,12 +197,26 @@ static int pgs_live(const struct li2_pg_token *t) {
     }
     ++pg_source.p.validations;return 0;
 }
+#ifdef LI2_PERSISTENT_SUBENTRY
+static int pgs_subentry_plan(const struct li2_pg_token *t,const struct li2_pg_compact *p) {
+    const struct li2_pgs_entry *e=li2_pgs_owner_entry(t);struct li2_pgs_target target;
+    return e && p->entry==e->target.root &&
+        li2_pgs_head_lookup(p,e->target.pc,&target)==1 &&
+        equal(&target,&e->target,sizeof target) &&
+        equal(&p->head[target.head],&e->row,sizeof e->row) &&
+        equal(&p->original[target.head],&e->original,sizeof e->original);
+}
+#endif
 int li2_pg_source_validate(const struct li2_pg_token *t,const struct li2_pg_compact *p) {
     const struct li2_pg_sources *s=&pg_source.p.source;
     if(!pgs_token(t) || pg_source.p.first_error ||
        (pg_source.p.phase!=LI2_PGS_HELD && pg_source.p.phase!=LI2_PGS_RX && pg_source.p.phase!=LI2_PGS_CLOSED) ||
        !p || p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#ifdef LI2_PERSISTENT_SUBENTRY
+       p->reserved || p->reserved2 || (p->entry!=s->key.entry && !pgs_subentry_plan(t,p)) ||
+#else
        p->reserved || p->reserved2 || p->entry!=s->key.entry ||
+#endif
        !equal(&p->layout,&pg_source.p.layout,sizeof p->layout) ||
 #ifdef LI2_PERSISTENT_DISPATCH
        !p->heads || p->heads>128 ||
@@ -420,7 +434,12 @@ static const struct li2_pgd_view *pgsd_view(const struct li2_pg_token *t,unsigne
        !v->directory || (v->directory&(PAGE-1)) ||
        v->directory>(UINT64_C(1)<<47)-LI2_JD_DOMAIN_BYTES ||
        !equal(&v->member[0].identity.layout,&pg_source.p.layout,sizeof pg_source.p.layout) ||
+#ifdef LI2_PERSISTENT_SUBENTRY
+       !v->member[0].key || !li2_pgs_entry_value(&v->entry,v->member[0].key,s,&pg_source.p.layout) ||
+       (bound && !equal(&v->entry,&d->entry,sizeof v->entry)) ||
+#else
        !v->member[0].key || v->member[0].key->entry!=s->key.entry ||
+#endif
        d->first_error)return 0;
     if(bound && (d->bound!=1 || d->token.owner!=t->owner || d->token.serial!=t->serial ||
        d->count!=v->count))return 0;
@@ -447,6 +466,12 @@ static int pgsd_terminal_record(void) {
        !equal(&d->ref[0].layout,&p->layout,sizeof p->layout) ||
        !equal(d->open[0],p->opened,sizeof p->opened) ||
        !equal(d->close[0],p->closed,sizeof p->closed))return 0;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    if(!li2_pgs_entry_source(&d->entry,d->ref[0].root,&p->source,&p->layout) ||
+       d->entry.token.owner!=d->token.owner || d->entry.token.serial!=d->token.serial ||
+       d->entry.slot!=d->ref[0].slot || d->entry.bank!=d->ref[0].bank ||
+       d->entry.generation!=d->ref[0].generation)return 0;
+#endif
     for(unsigned i=0;i<d->count;i++)for(unsigned j=0;j<3;j++)
         if(!pgs_query_done(&d->ref[i].layout,j,PROT_READ|PROT_EXEC,&d->open[i][j]) ||
            !pgs_query_done(&d->ref[i].layout,j,PROT_READ,&d->close[i][j]))return 0;
@@ -481,6 +506,9 @@ int li2_pgd_source_bind(const struct li2_pg_token *t) {
        pg_source.p.cancel_started || !pgsd_zero(d,sizeof *d))return pgsd_bad(LI2_FETCH_STATE,83);
     int e=li2_pg_source_validate(t,v->member[0].plan);if(e)return pgsd_bad((unsigned)e,84);
     d->token=*t;d->count=v->count;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    d->entry=v->entry;
+#endif
     for(unsigned i=0;i<v->count;i++)d->ref[i]=v->member[i].identity;
     __asm__ volatile("":::"memory");d->bound=1;return 0;
 }
@@ -518,4 +546,7 @@ int li2_pgd_source_release(const struct li2_pg_token *t) {
 int li2_pgd_source_terminal(const struct li2_pg_token *t) {
     return pgsd_view(t,1) && pgsd_terminal_record();
 }
+#endif
+#ifdef LI2_PERSISTENT_SUBENTRY
+#include "persistent_subentry_source.inc"
 #endif
