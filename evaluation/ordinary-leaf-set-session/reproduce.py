@@ -72,6 +72,36 @@ PHASE_CONTROLS = (
     'normal::session::phase::tests::phase_wire_fits_old_8mib_and_exact_geometry_rejects_every_changed_byte',
 )
 APP_CONTROLS += PHASE_CONTROLS
+# Complete prepared modules and the exact additions within old namespaces.
+# PHASE_CONTROLS remains the original nine; none is exempted or replaced.
+PREPARED_PREFIXES = (
+    'normal::leaf_set::prepared::tests::',
+    'normal::module::session::worker::prepared_owner_tests::',
+    'normal::session::io::prepared_input_tests::',
+    'normal::session::phase::prepared::tests::',
+    'normal::session::worker::prepared_tests::',
+)
+PREPARED_CONTROLS = (
+    'normal::leaf_set::check::tests::cancelled_first_keeps_accepted_owner_and_refuses_any_native_or_extra_population',
+    'normal::leaf_set::prepared::tests::prepared_setup_uses_one_absolute_deadline_without_input_or_owner_extension',
+    'normal::leaf_set::selected::phase_tests::prepared_cli_is_disjoint_and_requires_fixed_j_inside_original_epochs',
+    'normal::leaf_set::selected::phase_tests::prepared_cli_retains_complete_2048_nonempty_population_and_original_delay',
+    'normal::module::session::worker::prepared_owner_tests::prepared_guard_is_owned_before_call_and_unused_drop_retains_controller_record',
+    'normal::module::session::worker::prepared_owner_tests::prepared_guard_refuses_corruption_and_wrong_initial_record',
+    'normal::session::io::prepared_input_tests::prepared_pause_does_not_accept_prefetched_rows_or_promise_early_eof',
+    'normal::session::phase::prepared::tests::prepared_request_is_fixed_j_no_extra_epoch_and_original_profiles_unchanged',
+    'normal::session::phase::prepared::tests::prepared_barrier_precedes_one_origin_and_records_actual_ready_lead',
+    'normal::session::phase::prepared::tests::prepared_requires_actual_accepted_arm2_and_keeps_generation_not_epoch_arithmetic',
+    'normal::session::phase::prepared::tests::prepared_gate_checks_target_edges_whole_period_misses_end_and_clock_regression',
+    'normal::session::phase::prepared::tests::prepared_cancel_never_fabricates_release_return_or_full_population',
+    'normal::session::phase::prepared::tests::prepared_real_phase_clock_requires_all2048_and_keeps_shared_monotonicity',
+    'normal::session::phase::prepared::tests::prepared_final_admission_refuses_end_after_custody_without_fabricated_timing',
+    'normal::session::phase::prepared::tests::prepared_poll_acquires_origin_before_sampling_and_keeps_real_regressions',
+    'normal::session::worker::prepared_tests::prepared_queued_stop_wins_before_poll_and_only_idle_checkpoint_detaches',
+    'normal::session::worker::prepared_tests::prepared_wait_does_not_block_internal_stop_or_invent_return',
+    'normal::session::worker::prepared_tests::prepared_stop_after_release_waits_for_actual_return_and_flush_before_detach',
+)
+APP_CONTROLS += PREPARED_CONTROLS
 
 SDK_CONTROLS = ('frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_selection_count_order_and_source_are_exact', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_page_union_refuses_conflicts_gaps_and_third_page', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_overlay_retains_every_unselected_byte', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_last_selection_refuses_before_loader', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_roles_and_policies_cover_all_members', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_budget_refuses_aggregate_overflow', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_identity_and_complete_union_are_required', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_control_lookup_keeps_exact_function', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_profile_requires_exact_count_k_history_and_mode', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_banks_prepare_once_and_preserve_refused_identity', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_runtime_keeps_saved_function_and_closed_receipt', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_validates_every_row_and_journal_word', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_refusals_leave_receipt_and_cursors_unchanged', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_output_captures_complete_identity_before_consumption', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_reclaim_preserves_shared_owners_and_fresh_generation', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_handles_refuse_all_old_profiles', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_full_identity_and_replay_are_exact', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_streams_do_not_retain_epochs')
 # Derive the old broad ownership prefixes from the unchanged eighteen names
@@ -143,15 +173,22 @@ def ordinary_inventory(inventory, recipe, single, module):
     assert len(ACCURACY_CONTROLS) == len(set(ACCURACY_CONTROLS)) == 11
     assert set(n for n in inventory if n.startswith(ACCURACY_PREFIXES)) == set(ACCURACY_CONTROLS)
     assert len(PHASE_CONTROLS) == len(set(PHASE_CONTROLS)) == 9
-    assert set(n for n in inventory if n.startswith(PHASE_PREFIXES)) == set(PHASE_CONTROLS)
+    assert len(PREPARED_CONTROLS) == len(set(PREPARED_CONTROLS)) == 18
+    prepared_phase = tuple(n for n in PREPARED_CONTROLS if n.startswith(PHASE_PREFIXES))
+    assert len(prepared_phase) == 2
+    assert set(n for n in inventory if n.startswith(PHASE_PREFIXES)) == set(PHASE_CONTROLS + prepared_phase)
+    prepared_modules = tuple(n for n in PREPARED_CONTROLS if n.startswith(PREPARED_PREFIXES))
+    assert len(prepared_modules) == 15
+    assert set(n for n in inventory if n.startswith(PREPARED_PREFIXES)) == set(prepared_modules)
     prefixes = ('normal::leaf_set::', 'normal::module::session::input::leaf_set_tests::',
-                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES + PHASE_PREFIXES
+                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES + PHASE_PREFIXES + PREPARED_PREFIXES
     assert set(n for n in inventory if n.startswith(prefixes)) == set(APP_CONTROLS)
     prior = recipe.ordinary_inventory([n for n in inventory if n not in APP_CONTROLS],
                                      single, module, recipe.OWNER_CONTROLS)
-    assert len(prior) == 52 and len(APP_CONTROLS[:27]) == 27 and len(APP_CONTROLS) == 36
+    assert len(prior) == 52 and len(APP_CONTROLS[:27]) == 27 and len(APP_CONTROLS) == 54
+    assert APP_CONTROLS[27:36] == PHASE_CONTROLS and APP_CONTROLS[36:] == PREPARED_CONTROLS
     wanted = tuple(prior) + APP_CONTROLS
-    assert len(wanted) == len(set(wanted)) == 88
+    assert len(wanted) == len(set(wanted)) == 106
     return wanted
 
 

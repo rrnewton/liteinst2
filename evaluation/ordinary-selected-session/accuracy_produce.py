@@ -17,6 +17,7 @@ import time
 CAP, CHUNK, LINE = 8 * 1024 * 1024, 8192, 350
 PROFILE = 'selected-accuracy-functional-first-v1'
 PHASE_PROFILE = 'selected-accuracy-phase-functional-first-v1'
+PREPARED_PHASE_PROFILE = 'selected-accuracy-prepared-phase-functional-first-v1'
 MASTER = '16b3b34b02c2f1054381195ee3d0767b493b427ad041bbfd8924e630d0f369b1'
 POLICY = dict(k=10, period_ms=10, epochs=520, phase='locked', delay_ns=0)
 BODY = bytes.fromhex('31c04c8d04370fb60f83f15a4801c848ffc74c39c772ef48ba157c4a7fb979379e4831d0c3')
@@ -76,9 +77,25 @@ def phase_arguments(plan, checker):
     return _arguments(plan, checker, plan['policy']['phase'])
 
 
-def _arguments(plan, checker, epoch_phase):
+def prepared_target(policy):
+    assert set(policy) == {'k', 'period_ms', 'epochs', 'phase', 'delay_ns'}
+    assert type(policy['k']) is int and policy['k'] in (1, 10, 100, 1000)
+    assert type(policy['phase']) is str and policy['phase'] in ('locked', 'random')
+    assert type(policy['epochs']) is int and 2 <= policy['epochs'] <= 520
+    assert type(policy['period_ms']) is int and policy['period_ms'] in (1, 10, 100)
+    assert type(policy['delay_ns']) is int and 0 <= policy['delay_ns'] < policy['period_ms'] * 1000000
+    return dict(target_epoch=1, arm_number=2, target_ns=policy['period_ms'] * 1000000 + policy['delay_ns'])
+
+
+def prepared_phase_arguments(plan, checker):
+    assert checker.VERSION == 'selected-accuracy-prepared-phase-session-v1'
+    return _arguments(plan, checker, plan['policy']['phase'], prepared=True)
+
+
+def _arguments(plan, checker, epoch_phase, *, prepared=False):
+    assert type(prepared) is bool and (not prepared or epoch_phase is not None)
     policy = POLICY if epoch_phase is None else phase_policy(checker, epoch_phase)
-    profile = PROFILE if epoch_phase is None else PHASE_PROFILE
+    profile = PREPARED_PHASE_PROFILE if prepared else (PROFILE if epoch_phase is None else PHASE_PROFILE)
     assert plan['profile'] == profile and plan['attempt'] == 1
     assert type(plan['revision']) is str and len(plan['revision']) == 40 and all(c in '0123456789abcdef' for c in plan['revision'])
     assert plan['policy'] == policy and all(type(plan['policy'][k]) is type(v) for k, v in policy.items())
@@ -95,10 +112,14 @@ def _arguments(plan, checker, epoch_phase):
     assert str(gate_path) in plan['pins']
     gate = load('_accuracy_functional_geometry_gate', gate_path)
     geometry = json.loads(read(Path(plan['geometry']), 1024 * 1024))
-    gate.accept_geometry(geometry, plan['facts'], plan['preparation_sha256'], plan['revision'], epoch_phase=epoch_phase)
+    gate.accept_geometry(geometry, plan['facts'], plan['preparation_sha256'], plan['revision'], epoch_phase=epoch_phase, prepared=prepared)
     assert plan['pins'][plan['preparation']]['sha256'] == plan['preparation_sha256']
     facts = plan['facts']
     assert facts['table'] == plan['table'] and facts['caller'] == plan['caller'] and facts['policy'] == policy
+    if prepared:
+        target = prepared_target(policy)
+        assert plan['prepared_phase'] == facts['prepared_phase'] == target
+        assert all(type(plan['prepared_phase'][k]) is type(facts['prepared_phase'][k]) is int for k in target)
     assert facts['abi'] == ABI and facts['revision'] == plan['revision'] and facts['profile'] == profile
     for key in ('binary','candidate','trusted'):
         assert facts[key] == dict(path=plan[key], **plan['pins'][plan[key]])
@@ -122,6 +143,9 @@ def _arguments(plan, checker, epoch_phase):
     if epoch_phase is not None:
         argv[1] = 'normal-selected-accuracy-phase-session'
         argv[8:8] = [policy['phase'], str(policy['delay_ns'])]
+    if prepared:
+        argv[1] = 'normal-selected-accuracy-prepared-phase-session'
+        argv[10:10] = ['1']
     assert plan['argv'] == argv
     return checked
 
@@ -175,9 +199,15 @@ def phase_exchange(plan, checked, checker):
     return _exchange(plan, checked, checker, phase_profile=True)
 
 
-def _exchange(plan, checked, checker, *, phase_profile):
+def prepared_phase_exchange(plan, checked, checker):
+    assert plan['profile'] == PREPARED_PHASE_PROFILE and checker.VERSION == 'selected-accuracy-prepared-phase-session-v1'
+    return _exchange(plan, checked, checker, phase_profile=True, prepared=True)
+
+
+def _exchange(plan, checked, checker, *, phase_profile, prepared=False):
+    assert type(prepared) is bool and (not prepared or phase_profile)
     transcript, errors, buffer, outgoing = bytearray(), bytearray(), bytearray(), bytearray()
-    result = dict(status='FAILED', profile=PHASE_PROFILE if phase_profile else PROFILE, revision=plan['revision'], attempt=1,
+    result = dict(status='FAILED', profile=PREPARED_PHASE_PROFILE if prepared else (PHASE_PROFILE if phase_profile else PROFILE), revision=plan['revision'], attempt=1,
         hardware_status='UNRESOLVED', requested_phase_status='UNRESOLVED', metric_qualified=False,
         native_state_qualified=False, performance_qualified=False, writes=[], ready_receipt_ns=None, eof_close_ns=None)
     sent, phase, lines, normal_reaps = 0, 0, 0, 0
@@ -224,7 +254,7 @@ def _exchange(plan, checked, checker, *, phase_profile):
                         buffer = bytearray(rest)
                         assert 0 < len(raw) + 1 <= LINE and b'\r' not in raw
                         lines += 1
-                        assert lines <= (checker.row_limit(520) if phase_profile else 11820)
+                        assert lines <= (checker.envelope_limit(520) if prepared else (checker.row_limit(520) if phase_profile else 11820))
                         if phase == 0:
                             ready_row(bytes(raw), child.pid, plan['cpus'], checker)
                             result['ready_receipt_ns'] = time.monotonic_ns()
@@ -280,7 +310,7 @@ def main():
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--plan-sha', required=True)
     parser.add_argument('--raw', type=Path, required=True)
-    parser.add_argument('--profile', choices=(PROFILE, PHASE_PROFILE), default=PROFILE)
+    parser.add_argument('--profile', choices=(PROFILE, PHASE_PROFILE, PREPARED_PHASE_PROFILE), default=PROFILE)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     assert args.raw.is_absolute() and args.raw.is_relative_to(repo / 'ignored') and not os.path.lexists(args.raw)
@@ -293,14 +323,17 @@ def main():
     required = (own, repo/'evaluation/ordinary-accuracy/output.py', repo/'evaluation/ordinary-accuracy/truth.py',
         repo/'evaluation/ordinary-leaf-set-session/output.py')
     assert all(str(path) in plan['pins'] for path in required)
-    phase_profile = args.profile == PHASE_PROFILE
-    reader = repo/'evaluation/ordinary-accuracy/phase_output.py' if phase_profile else required[1]
+    prepared = args.profile == PREPARED_PHASE_PROFILE
+    phase_profile = args.profile in (PHASE_PROFILE, PREPARED_PHASE_PROFILE)
+    reader = repo/'evaluation/ordinary-accuracy'/('prepared_phase_output.py' if prepared else 'phase_output.py') if phase_profile else required[1]
+    if prepared:
+        assert str(repo/'evaluation/ordinary-accuracy/phase_output.py') in plan['pins']
     assert str(reader) in plan['pins']
     checker = load('_functional_accuracy_output', reader)
-    checked = phase_arguments(plan, checker) if phase_profile else arguments(plan, checker)
+    checked = prepared_phase_arguments(plan, checker) if prepared else (phase_arguments(plan, checker) if phase_profile else arguments(plan, checker))
     assert os.sched_getaffinity(0) == set(plan['cpus'])
     args.raw.mkdir(mode=0o700)
-    result, out, err, overflow, deadline = (phase_exchange if phase_profile else exchange)(plan, checked, checker)
+    result, out, err, overflow, deadline = (prepared_phase_exchange if prepared else (phase_exchange if phase_profile else exchange))(plan, checked, checker)
     try:
         assert read(args.plan, 1024 * 1024) == raw_plan
     except BaseException as error:

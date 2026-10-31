@@ -312,10 +312,11 @@ def _check(stdout, stderr, manifest_bytes, input_bytes, selected_bytes, truth_by
 
 def _check_rows(stdout, stderr, manifest_bytes, input_bytes, selected_bytes, truth_bytes,
                 table, caller, body_bytes, abi, policy, cpus, rows, version):
-    # Only these two source-defined adapters share the numeric/PMU/history gates.
+    # Only these source-defined adapters share the numeric/PMU/history gates.
     # The old public wrapper always frames and admits VERSION, never a selector.
     commands = {VERSION: 'normal-selected-accuracy-session',
-        'selected-accuracy-phase-session-v1': 'normal-selected-accuracy-phase-session'}
+        'selected-accuracy-phase-session-v1': 'normal-selected-accuracy-phase-session',
+        'selected-accuracy-prepared-phase-session-v1': 'normal-selected-accuracy-prepared-phase-session'}
     need(type(version) is str and version in commands, 'closed accuracy profile')
     manifest, originals, records, semantics = authority(manifest_bytes, input_bytes, selected_bytes,
         truth_bytes, table, caller, body_bytes, abi, policy, cpus)

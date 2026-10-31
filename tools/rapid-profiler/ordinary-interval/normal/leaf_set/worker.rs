@@ -24,6 +24,8 @@ struct Worker<const N: usize> {
     attached: Option<counter::Thread>,
     counter: Option<Arc<counter::Custody>>,
     phase: Option<phase::Worker>,
+    gate: Option<Arc<phase::prepared::Shared>>,
+    prepared: Option<(pair_worker::PreparedCall, Expectation)>,
     calls: Vec<Call>,
     targets: [csv::Csv; N],
     expectations: Expectations<N>,
@@ -49,8 +51,12 @@ impl<const N: usize> Worker<N> {
         custody: Arc<pair_worker::Custody>,
         cpu: usize,
         counter: Option<Arc<counter::Custody>>,
-        phase: Option<Arc<phase::Shared>>,
+        timing: (
+            Option<Arc<phase::Shared>>,
+            Option<Arc<phase::prepared::Shared>>,
+        ),
     ) -> Self {
+        let (phase, gate) = timing;
         assert!((1..=4).contains(&N));
         let mut fail_stop = csv::FailStop(true);
         pin(Some(cpu));
@@ -72,6 +78,8 @@ impl<const N: usize> Worker<N> {
             attached: Some(attached),
             counter,
             phase: phase.map(phase::Worker::new),
+            gate,
+            prepared: None,
             calls: Vec::with_capacity(4),
             targets: entries
                 .map(|entry| unsafe { std::mem::transmute::<usize, csv::Csv>(entry as usize) }),
@@ -91,7 +99,46 @@ impl<const N: usize> Runtime for Worker<N> {
         self.calls.len()
     }
     fn flush_after_command(&self) -> bool {
+        if self.prepared.is_some() {
+            return false;
+        }
         complete_record(self.calls.len(), N)
+    }
+    fn deferred(&self) -> bool {
+        self.prepared.is_some()
+    }
+    fn poll_deferred(&mut self) {
+        let gate = Arc::clone(self.gate.as_ref().expect("prepared profile"));
+        if !gate.poll(self.phase.as_mut().unwrap()).unwrap() {
+            return;
+        }
+        self.postflight();
+        self.prepared.as_ref().unwrap().0.check();
+        // A final fresh sample after custody must precede original end.
+        // Arbitrary later preemption can still delay physical native entry.
+        // On a miss the unused owner stays here for actual receive-loop Stop.
+        if !gate.begin(self.phase.as_mut().unwrap()).unwrap() {
+            return;
+        }
+        let (prepared, expectation) = self.prepared.take().unwrap();
+        // SAFETY: same selected target and actual CALL/store owner contract.
+        let (inner, observed) = unsafe { prepared.invoke(self.targets[0]) };
+        self.calls.push(Call { inner, expectation });
+        gate.returned().unwrap();
+        self.phase.as_mut().unwrap().returned(observed).unwrap();
+        self.postflight();
+        assert!(complete_record(self.calls.len(), N));
+    }
+    fn cancel_deferred(&mut self) {
+        if self.prepared.is_some() {
+            self.postflight();
+            assert!(self.calls.is_empty());
+            assert_eq!(self.totals(), NormalTotals::default());
+            self.prepared.as_ref().unwrap().0.check();
+            self.gate.as_ref().unwrap().cancel().unwrap();
+            // Controller still retains the exact accepted record; no fake return.
+            drop(self.prepared.take().unwrap());
+        }
     }
     fn call(&mut self, command: input::Command) {
         let input::Command::Record(record) = command else {
@@ -101,6 +148,21 @@ impl<const N: usize> Runtime for Worker<N> {
         // Independently authenticate the complete frozen row before the first
         // actual invocation; no value is learned from target output.
         let witnesses = self.expectations.record(&record).unwrap();
+        if let Some(gate) = &self.gate {
+            if record.id == 1 {
+                assert_eq!(N, 1);
+                assert!(self.prepared.is_none());
+                self.postflight();
+                self.prepared = Some((
+                    pair_worker::PreparedCall::new(record),
+                    witnesses.into_iter().next().unwrap(),
+                ));
+                self.prepared.as_ref().unwrap().0.check();
+                gate.prepared(phase::now()).unwrap();
+                return;
+            }
+            assert!(!gate.hold_input());
+        }
         for (function, expectation) in witnesses.into_iter().enumerate() {
             self.postflight();
             record.check();
@@ -154,6 +216,7 @@ impl<const N: usize> Runtime for Worker<N> {
         self.attached.as_ref().unwrap().totals()
     }
     fn finish(mut self) -> NormalTotals {
+        assert!(self.prepared.is_none());
         self.postflight();
         assert!(unsafe { self.attached.as_mut().unwrap().checkpoint() }.is_none());
         let totals = self.attached.as_ref().unwrap().totals();
@@ -173,6 +236,7 @@ type WorkerEvidence = (
     Arc<OnceLock<pair_worker::Identity>>,
     Option<Arc<counter::Custody>>,
     Option<Arc<phase::Shared>>,
+    Option<Arc<phase::prepared::Shared>>,
 );
 pub(super) fn run<const N: usize>(
     targets: ([u64; N], Expectations<N>),
@@ -183,8 +247,16 @@ pub(super) fn run<const N: usize>(
     tx: mpsc::SyncSender<Event<Call, counter::Batch>>,
     cpu: usize,
 ) {
-    let (ready, counter, phase) = evidence;
-    let worker = Worker::attach(targets.0, targets.1, client, custody, cpu, counter, phase);
+    let (ready, counter, phase, gate) = evidence;
+    let worker = Worker::attach(
+        targets.0,
+        targets.1,
+        client,
+        custody,
+        cpu,
+        counter,
+        (phase, gate),
+    );
     let id = worker.identity;
     ready.set(id).unwrap();
     tx.send(Event::Ready { tid: id.tid }).unwrap();

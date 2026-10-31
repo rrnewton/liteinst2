@@ -262,8 +262,8 @@ class Controls(unittest.TestCase):
         with patch.object(leaf, 'ordinary_inventory', wraps=leaf.ordinary_inventory) as inherited:
             self.assertEqual(driver.selected_inventory(inventory, leaf, recipe, modules), wanted)
             inherited.assert_called_once_with(inventory, recipe, single, module)
-        self.assertEqual(len(wanted), 112)
-        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy + leaf.PHASE_CONTROLS))
+        self.assertEqual(len(wanted), 130)
+        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy + leaf.PHASE_CONTROLS + leaf.PREPARED_CONTROLS))
         for name in wanted:
             for changed in ([n for n in inventory if n != name], inventory + [name]):
                 with self.assertRaises(AssertionError, msg=name):
@@ -271,10 +271,35 @@ class Controls(unittest.TestCase):
         with self.assertRaises(AssertionError):
             driver.selected_inventory(list(old + driver.SELECTED_RUST), leaf, recipe, modules)
         self.assertEqual(len(leaf.PHASE_CONTROLS),9)
-        self.assertEqual(leaf.APP_CONTROLS[27:],leaf.PHASE_CONTROLS)
+        self.assertEqual(leaf.APP_CONTROLS[27:36],leaf.PHASE_CONTROLS)
+        prepared = (
+            'normal::leaf_set::check::tests::cancelled_first_keeps_accepted_owner_and_refuses_any_native_or_extra_population',
+            'normal::leaf_set::prepared::tests::prepared_setup_uses_one_absolute_deadline_without_input_or_owner_extension',
+            'normal::leaf_set::selected::phase_tests::prepared_cli_is_disjoint_and_requires_fixed_j_inside_original_epochs',
+            'normal::leaf_set::selected::phase_tests::prepared_cli_retains_complete_2048_nonempty_population_and_original_delay',
+            'normal::module::session::worker::prepared_owner_tests::prepared_guard_is_owned_before_call_and_unused_drop_retains_controller_record',
+            'normal::module::session::worker::prepared_owner_tests::prepared_guard_refuses_corruption_and_wrong_initial_record',
+            'normal::session::io::prepared_input_tests::prepared_pause_does_not_accept_prefetched_rows_or_promise_early_eof',
+            'normal::session::phase::prepared::tests::prepared_request_is_fixed_j_no_extra_epoch_and_original_profiles_unchanged',
+            'normal::session::phase::prepared::tests::prepared_barrier_precedes_one_origin_and_records_actual_ready_lead',
+            'normal::session::phase::prepared::tests::prepared_requires_actual_accepted_arm2_and_keeps_generation_not_epoch_arithmetic',
+            'normal::session::phase::prepared::tests::prepared_gate_checks_target_edges_whole_period_misses_end_and_clock_regression',
+            'normal::session::phase::prepared::tests::prepared_cancel_never_fabricates_release_return_or_full_population',
+            'normal::session::phase::prepared::tests::prepared_real_phase_clock_requires_all2048_and_keeps_shared_monotonicity',
+            'normal::session::phase::prepared::tests::prepared_final_admission_refuses_end_after_custody_without_fabricated_timing',
+            'normal::session::phase::prepared::tests::prepared_poll_acquires_origin_before_sampling_and_keeps_real_regressions',
+            'normal::session::worker::prepared_tests::prepared_queued_stop_wins_before_poll_and_only_idle_checkpoint_detaches',
+            'normal::session::worker::prepared_tests::prepared_wait_does_not_block_internal_stop_or_invent_return',
+            'normal::session::worker::prepared_tests::prepared_stop_after_release_waits_for_actual_return_and_flush_before_detach',
+        )
+        self.assertEqual(leaf.PREPARED_CONTROLS,prepared)
+        self.assertEqual(len(prepared),18)
+        self.assertEqual(leaf.APP_CONTROLS[36:],prepared)
+        with self.assertRaises(AssertionError):
+            driver.selected_inventory(list(old+driver.SELECTED_RUST+accuracy+leaf.PHASE_CONTROLS),leaf,recipe,modules)
         with self.assertRaises(AssertionError):
             driver.selected_inventory(list(old+driver.SELECTED_RUST+accuracy),leaf,recipe,modules)
-        prefixes = leaf.PHASE_PREFIXES + ('normal::leaf_set::accuracy_tests::',
+        prefixes = leaf.PHASE_PREFIXES + leaf.PREPARED_PREFIXES + ('normal::leaf_set::accuracy_tests::',
                     'normal::leaf_set::selected::accuracy_tests::',
                     'normal::leaf_set::counter::tests::',
                     'normal::session::io::accuracy_tests::',
@@ -283,7 +308,7 @@ class Controls(unittest.TestCase):
         for prefix in prefixes:
             with self.assertRaises(AssertionError, msg=prefix):
                 driver.selected_inventory(inventory + [prefix + 'unregistered'], leaf, recipe, modules)
-        for name in accuracy:
+        for name in accuracy + prepared:
             changed = [n if n != name else name.rsplit('::', 1)[0] + '::unregistered' for n in inventory]
             with self.assertRaises(AssertionError, msg=name):
                 driver.selected_inventory(changed, leaf, recipe, modules)

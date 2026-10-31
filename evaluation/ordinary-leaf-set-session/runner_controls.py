@@ -171,13 +171,22 @@ class Controls(unittest.TestCase):
             self.refuses(lambda prefix=prefix:runner.sdk_inventory(list(runner.SDK_CONTROLS)+[prefix+'::tests::extra']))
 
         self.assertEqual(len(runner.APP_CONTROLS[:27]), 27)
-        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),88)
+        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),106)
         self.assertEqual(len(runner.SDK_CONTROLS),45)
         self.assertEqual(len(runner.ACCURACY_CONTROLS),11)
         self.assertEqual(len(runner.SDK_ACCURACY_CONTROLS),27)
         self.assertEqual(runner.APP_CONTROLS[16:27],runner.ACCURACY_CONTROLS)
         self.assertEqual(len(runner.PHASE_CONTROLS),9)
-        self.assertEqual(runner.APP_CONTROLS[27:],runner.PHASE_CONTROLS)
+        self.assertEqual(runner.APP_CONTROLS[27:36],runner.PHASE_CONTROLS)
+        self.assertEqual(len(runner.PREPARED_CONTROLS),18)
+        self.assertEqual(len(runner.APP_CONTROLS),54)
+        self.assertEqual(runner.APP_CONTROLS[36:],runner.PREPARED_CONTROLS)
+        self.refuses(lambda:runner.ordinary_inventory(list(old+runner.APP_CONTROLS[:36]),recipe,single,module))
+        for prefix in runner.PREPARED_PREFIXES:
+            self.refuses(lambda prefix=prefix:runner.ordinary_inventory(inventory+[prefix+'unregistered'],recipe,single,module))
+        for name in runner.PREPARED_CONTROLS:
+            changed=[n if n!=name else name.rsplit('::',1)[0]+'::unregistered' for n in inventory]
+            self.refuses(lambda changed=changed:runner.ordinary_inventory(changed,recipe,single,module))
         self.refuses(lambda:runner.ordinary_inventory(list(old+runner.APP_CONTROLS[:27]),recipe,single,module))
         for prefix in runner.PHASE_PREFIXES:
             self.refuses(lambda prefix=prefix:runner.ordinary_inventory(inventory+[prefix+'unregistered'],recipe,single,module))

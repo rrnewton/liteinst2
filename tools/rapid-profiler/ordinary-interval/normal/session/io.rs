@@ -504,3 +504,66 @@ mod history_tests {
 
 #[cfg(test)]
 mod accuracy_tests;
+
+#[cfg(test)]
+mod prepared_input_tests {
+    use super::*;
+    use crate::normal::module::session::input::{Command, Input};
+    use crate::normal::session::{ArmObservation, phase};
+    use rapid_profiler::frontend_native::backoff::Policy;
+    use std::io::Write;
+    use std::net::Shutdown;
+    use std::os::{fd::AsRawFd, unix::net::UnixStream};
+    use std::sync::Arc;
+    use std::time::{Duration, Instant};
+    #[test]
+    fn prepared_pause_does_not_accept_prefetched_rows_or_promise_early_eof() {
+        let (local, mut peer) = UnixStream::pair().unwrap();
+        let mut io = Io::open([local.as_raw_fd(); 2]).unwrap();
+        peer.write_all(b"A\nB\n").unwrap();
+        peer.shutdown(Shutdown::Write).unwrap();
+        let mut input = Input::default();
+        assert!(
+            matches!(input.poll_with_limit(&mut io,0,2048).unwrap(),Some(Command::Record(r)) if r.id==1)
+        );
+        let p = Policy::accuracy(10, 10, 3, 4096).unwrap();
+        let old = phase::Request::new("locked", 0, p).unwrap();
+        let shared = phase::Shared::new(old);
+        let gate = phase::prepared::Shared::new(
+            phase::prepared::Request::new(old, 1).unwrap(),
+            Arc::clone(&shared),
+        );
+        let mut worker = phase::Worker::new(Arc::clone(&shared));
+        let t = Instant::now();
+        gate.prepared(t).unwrap();
+        gate.start(t, p).unwrap();
+        shared.first_arm(Duration::ZERO).unwrap();
+        // Same predicate used by Application::input_enabled: do not poll even
+        // when the pipe already contains another record and a writer EOF.
+        assert!(gate.hold_input());
+        assert!(!input.eof);
+        gate.target_arm(ArmObservation {
+            number: 2,
+            generation: 71,
+            due: p.period(),
+            started: p.period(),
+            completed: p.period(),
+            accepted: true,
+        })
+        .unwrap();
+        assert!(gate.poll_at_for_test(&mut worker, t + p.period()).unwrap());
+        assert!(gate.begin_at_for_test(&mut worker, t + p.period()).unwrap());
+        assert!(gate.hold_input());
+        assert!(!input.eof);
+        gate.returned().unwrap();
+        assert!(!gate.hold_input());
+        assert!(
+            matches!(input.poll_with_limit(&mut io,1,2048).unwrap(),Some(Command::Record(r)) if r.id==2)
+        );
+        assert!(matches!(
+            input.poll_with_limit(&mut io, 2, 2048).unwrap(),
+            Some(Command::Stop)
+        ));
+        assert!(input.eof);
+    }
+}
