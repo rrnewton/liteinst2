@@ -62,7 +62,47 @@ def main():
         repeat_exact_publications=1,recompiled_after_recorded_eviction=1,internal_hits=1,
         cold_on_selected_root=1,peer_touches=1)
     assert r['distinct_successful_key_distance']=={'0-1':3,'2-7':2}
-    assert r['eight']['status']=='unknown'and r['eight']['first_unknown']['attempt']==5
+    unknown=dict(status='unknown',first_unknown=dict(attempt=4,
+        reason='unobserved alternative source/placement/root or completion state; all later LRU unknown'),
+        admission_prediction=False,future_state_known=False)
+    assert r['eight']==unknown
+    # Selection precedes the plan outcome. After A/B publications and A's
+    # hit, actual LRU selects B(slot1,last2) for C at4; eight slots select
+    # empty slot2. A refusal at4 cannot prove that alternative placement's
+    # outcome, nor may it retire or touch B. Unknown starts at4, not bind5.
+    known=dict(status='prefix_identical_only',first_unknown=None,
+        admission_prediction=False,future_state_known=True)
+    prefix_cases=(
+        ((2,1,1,1,1),dict(selected=1,cold_valid=1,publications=1,completed=1)),
+        ((4,2,2,1,2),dict(selected=2,cold_valid=2,publications=2,completed=2)),
+        ((4,2,2,1,3),dict(selected=3,cold_valid=2,publications=2,completed=3,root_hits=1)),
+        ((6,3,2,1,4),dict(selected=4,cold_valid=2,publications=2,completed=3,root_hits=1,
+            cold_refusals=1,repeat_exact_refusals=0,cancelled=1)),
+        ((6,3,3,1,5),dict(selected=5,cold_valid=3,publications=3,completed=4,root_hits=1,
+            cold_refusals=1,repeat_exact_refusals=0,cancelled=1,retirements=1)))
+    for sizes,events in prefix_cases:
+        x=bytearray(b);struct.pack_into('<5Q',x,17*8,*sizes);setq(x,23*8,sizes[4])
+        # Remove every not-yet-published dictionary/attempt byte as well as
+        # its header count; each prefix is a complete standalone input.
+        for offset,size,capacity,count in zip(C.OFFSETS,C.SIZES,C.CAPS,sizes,strict=True):
+            x[offset+size*count:offset+size*capacity]=bytes(size*(capacity-count))
+        value=parse(x)
+        assert value['complete_census']and value['finished']==sizes[4]
+        assert value['actual_two_replay']=='exact_committed_prefix'and value['events']==events
+        assert value['eight']==(known if sizes[4]<=3 else unknown)
+    # The last prefix retains B's whole observed slot identity at5. These
+    # coherent hypothetical effects of the prior refusal must both fail at
+    # the actual two-slot history join, without weakening other row checks.
+    for changed in('refusal_retired_B','refusal_touched_B'):
+        y=bytearray(x)
+        if changed=='refusal_retired_B':
+            for word in(5,6,7,24,25):setq(y,attempt(5,word),0)
+            setq(y,attempt(5,21),1);setq(y,attempt(5,22),0)
+        else:setq(y,attempt(5,7),4)
+        try:parse(y)
+        except ValueError as e:
+            assert str(e)=='replayed selected graph and actual last completion',(changed,str(e))
+        else:raise AssertionError(changed)
     negatives=[]
     def reject(name,change,error):
         x=bytearray(b);change(x)
