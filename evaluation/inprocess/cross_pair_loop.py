@@ -157,6 +157,8 @@ def main():
             for k in ('status','counts','exit','duration_ns','native_operations','qualification_credit')}
         summary['empty_namespace_component']={k:r.get('empty_namespace_component',{}).get(k)
             for k in ('status','counts','exit','duration_ns','native_operations','qualification_credit')}
+        summary['cross_page_handoff_component']={k:r.get('cross_page_handoff_component',{}).get(k)
+            for k in ('status','counts','exit','duration_ns','native_operations','qualification_credit')}
         summary['copy_oracle']={k:r.get('application_build',{}).get('copy_oracle',{}).get(k)
             for k in ('status','counts','body','exit','duration_ns')}
         summary['closure']=dict(inputs=len(pins),artifacts=len(artifacts),commands=len(r['commands']),

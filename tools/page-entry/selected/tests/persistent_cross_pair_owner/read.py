@@ -74,7 +74,7 @@ class Check(old.Check):
         for i in range(3):self.permission(b[i*n:(i+1)*n],self.geometry[i],prot,8 if i<2 else 1)
 
 
-    def source(self,b,serial,entry,key,ref,terminal=False,cancel=False):
+    def source(self,b,serial,entry,key,ref,terminal=False,cancel=False,distinct_peer=False):
         t='li2_pg_source_progress';phase=(8 if cancel else 6)if terminal else(3 if cancel else 4)
         self.eq(b,t,initialized=1,phase=phase,first_error=0,pages_copied=2,release_started=int(terminal),release_complete=int(terminal),aborted=0,first_detail=0,serial=serial,
                 opened_extents=0 if cancel else 3,opened_pages=0 if cancel else 17,closed_extents=3 if terminal and not cancel else 0,closed_pages=17 if terminal and not cancel else 0,
@@ -94,7 +94,9 @@ class Check(old.Check):
             else:
                 for k in('validation','cancel_expected_prot','cancel_code','cancelled_fetch'):zero(self.f(b,t,k),'no premature group cancel evidence')
         else:
-            self.eq(b,t,validations=4 if terminal else 3);self.maps(self.f(b,t,'validation'));self.query3(self.f(b,t,'opened'),5)
+            # A distinct peer is prepared only for the authenticated warm epoch.
+            # Its prepare call performs one additional complete primary pgs_live.
+            self.eq(b,t,validations=(4 if terminal else 3)+int(distinct_peer));self.maps(self.f(b,t,'validation'));self.query3(self.f(b,t,'opened'),5)
             if terminal:self.query3(self.f(b,t,'closed'),1)
             else:zero(self.f(b,t,'closed'),'no premature group close')
             for k in('cancel_expected_prot','cancel_code','cancelled_fetch'):zero(self.f(b,t,k),'accepted group has no cancellation')
@@ -910,7 +912,7 @@ class Check(old.Check):
         predecessor_pc=self.page+(0x1fe if index==0 else 0x207 if index==1 else 0x2411);predecessor,_=self.predecessor(slot,predecessor_pc,ingress);self.eq(slot,'li2_tf_chain_slot',origin=1)
         ref=self.f(info,it,'ref');seq=self.i(ref,'li2_fetch_ref','sequence');tr=self.f(entered,st,'transfer');self.transfer(tr,slot,ingress,before,ref)
         need(tr==self.f(end,st,'transfer')and self.i(tr,'li2_span_transfer_progress','event')==h[17]and self.i(tr,'li2_span_transfer_progress','serial')==self.i(p,pt,'transfer_serial'),'whole actual consumed domain transfer')
-        es=self.f(entered,st,'source');zs=self.f(end,st,'source');self.source(es,serial,entry,key,ref);self.source(zs,serial,entry,key,ref,terminal=True);need(self.f(es,'li2_pg_source_progress','source')==self.f(zs,'li2_pg_source_progress','source'),'one complete source anchor held through all internal transfers')
+        es=self.f(entered,st,'source');zs=self.f(end,st,'source');self.source(es,serial,entry,key,ref,distinct_peer=warm);self.source(zs,serial,entry,key,ref,terminal=True,distinct_peer=warm);need(self.f(es,'li2_pg_source_progress','source')==self.f(zs,'li2_pg_source_progress','source'),'one complete source anchor held through all internal transfers')
         self.domain_source(self.f(entered,st,'domain_source'),refs,serial,False,es);self.domain_source(self.f(end,st,'domain_source'),refs,serial,True,zs)
         er=self.f(entered,st,'rseq');zr=self.f(end,st,'rseq');estate=self.f(entered,st,'state');zstate=self.f(end,st,'state');a=self.pin(er,estate,serial,0 if warm else heads,refs);z=self.pin(zr,zstate,serial,0 if warm else heads,refs,terminal=True);need(z>a and estate==zstate,'actual observed-unregistered pin and complete state unchanged throughout shared lifetime')
         lastpc=self.page+(0x207 if index==0 else 0x240e if index==1 else 0x2411);code,length=(282,3)if index==1 else(765,2)
@@ -1398,7 +1400,7 @@ def entry_controls(data,layout,image,app,pid,cpu,exit_status):
 
 
 
-CONTROL_COUNTS={0:292}
+CONTROL_COUNTS={0:304}
 
 def controls(data,layout,image,app,pid,cpu,exit_status):
     """Full semantic mutations are encoded again and pass the actual transport.
@@ -1447,5 +1449,18 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
     reject('peer_complete_second_source_page',mutant)
     for name,offset in(('header_schema',16),('header_raw_extent',24),('header_payload',32),('header_reserved',56),('footer_version',len(data)-56),('footer_written',len(data)-40),('footer_status',len(data)-16),('footer_code',len(data)-8)):
         mutant=bytearray(data);mutant[offset]^=1;reject('transport_'+name,mutant,encoded=True)
+    # The fixture fixes cold A, cold B, then warm A with the distinct B peer.
+    # Expected counts come from that independently authenticated chronology,
+    # never from the observed count or whether a corrupted peer says started.
+    for index in range(3):
+        epoch=at('pxo_wire','epochs',index=index,child='pxo_epoch')
+        for stage,base_count in(('entered',3),('terminal',4)):
+            expected=base_count+int(index==2)
+            source=at('pxo_stage','source',at('pxo_epoch',stage,epoch))
+            offset=at('li2_pg_source_progress','validations',source)
+            for suffix,delta in(('missing',-1),('extra',1)):
+                mutant=bytearray(raw);struct.pack_into('<Q',mutant,offset,expected+delta)
+                reject('source_validations_'+str(index)+'_'+stage+'_'+suffix,mutant,
+                       'exact li2_pg_source_progress.validations')
     need(len(refused)==len(set(refused))==CONTROL_COUNTS[0],'all exact cross-pair semantic and transport control cases')
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=0)

@@ -139,13 +139,21 @@ def main():
              'same actual fresh archive in original392 and cross-pair cohorts')
         need(cpublic['cases']==cross.public_cases(c['cases'])and cpublic['command_count']==len(c['commands'])and
              cpublic['commands_sha256']==digest(c['commands']),'whole compact cross-pair case and command projection')
-        crows=commands(c,cdir);cases(c,crows,cross.PAIR_EXPECTED,cross.EXPECTED_STATUS,36,292,24,33,True)
+        crows=commands(c,cdir);cases(c,crows,cross.PAIR_EXPECTED,cross.EXPECTED_STATUS,36,304,24,33,True)
         need(all(c[k]['status']=='passed'for k in('capture_codec_component','empty_namespace_component',
             'subentry_component','native_probe_component','maps_parse_component','seed_prerequisite'))and
             c['application_build']['copy_oracle']['status']=='passed'and
             [s['name']for s in c['component_oracles']]==list(joint.COMPONENT_ORDER)and
             all(s['status']=='passed'and s['summaries']==[joint.COMPONENT_SUMMARIES[s['name']]]for s in c['component_oracles']),
             'all cross-pair transport, authority, dispatch, copy, seed and namespace gates passed')
+        handoff=c['cross_page_handoff_component']
+        need(handoff['status']=='passed'and handoff['counts']==
+             dict(eligibility=64,refusals=71,close=34,fresh=29,consume=18,total=216)and
+             handoff['exit']==0 and handoff['native_operations']==0 and
+             handoff['qualification_credit']is False and handoff['bounds']==BOUNDS['finite']and
+             cpublic['cross_page_handoff_component']=={k:handoff[k]for k in
+                 ('status','counts','exit','duration_ns','native_operations','qualification_credit')},
+             'mandatory actual cross-page close predicates remain separate from native qualification')
         import io
         stream=io.StringIO();writer=csv.writer(stream,lineterminator='\n')
         writer.writerow(('revision','command','exit','duration_ns','status'))
