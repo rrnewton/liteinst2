@@ -51,8 +51,12 @@ def elf_symbols(data):
             need(0<=name<len(names)and end>=name,'complete symbol name')
             text=names[name:end].decode('utf-8');target=sections[index]
             if not text or not target[2]&2:continue # actual allocated object/function
-            need(target[3]<=address and address+size<=target[3]+target[5],
-                 'complete symbol within its actual allocated section')
+            # Zero-sized linker labels have no readable extent (for example
+            # __TMC_END__ can follow its empty table). Named owner bindings
+            # still require their exact positive size; PC intervals stay empty.
+            if size:
+                need(target[3]<=address and address+size<=target[3]+target[5],
+                     'complete symbol within its actual allocated section')
             result.setdefault(text,[]).append(dict(address=address,bytes=size,kind=info&15))
     need(tables==1,'one complete independent static symbol table')
     return result
