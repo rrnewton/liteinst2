@@ -942,6 +942,12 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     for(unsigned i=0;i<3;i++)g->code_writable[i]=pe.reopen_code[i].query;
     g->proof_writable=pe.reopen_proof.query;
     if(pe_query(g->spill,PAGE,PROT_READ|PROT_WRITE,&g->spill_query))return PE_PUBLICATION;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    /* A replacement generation starts with fresh private scratch after the
+       prior permit has been claimed and drained. Warm entries retain theirs. */
+    volatile unsigned char *spill=(void *)g->spill;
+    for(size_t i=0;i<PAGE;i++)spill[i]=0;
+#endif
     g->installed=1;g->generation=++pe.next_generation;g->build_serial=pe.p.serial;
     g->member_generation[0]=2*g->generation;g->member_generation[1]=2*g->generation+1;
     g->plan_proofs=pe.plan_proofs;g->none_proofs=pe.none_proofs;
