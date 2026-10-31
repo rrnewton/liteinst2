@@ -536,7 +536,9 @@ class Check(old.Check):
         source=self.f(held,'pdo_stage','source');src=self.f(source,'li2_pe_source_progress','source');key=self.f(src,'li2_pe_sources','key');ref=self.f(src,'li2_pe_sources','anchor')
         self.source(source,serial,entry,key,ref,cancel=True);self.source(self.f(end,'pdo_stage','source'),serial,entry,key,ref,terminal=True,cancel=True)
         es=self.f(held,'pdo_stage','state');zs=self.f(end,'pdo_stage','state');a=self.pin(self.f(held,'pdo_stage','rseq'),es,serial,0,0,cancel=True);z=self.pin(self.f(end,'pdo_stage','rseq'),zs,serial,0,0,True,cancel=True);need(z>a,'actual registered cancel checks before ordinary successor')
-        self.r.change(es,zs,'li2_rseq_state',observed=('last_first','last_end','last_pc','last_code','last_policy','last_footprint'))
+        instruction_checks=self.i(es,'li2_rseq_state','instruction_checks')
+        need(instruction_checks<U64,'ordinary resumed instruction check increment cannot wrap')
+        self.r.change(es,zs,'li2_rseq_state',values={'instruction_checks':instruction_checks+1},observed=('last_first','last_end','last_pc','last_code','last_policy','last_footprint'))
         self.eq(zs,'li2_rseq_state',last_first=0,last_end=0,last_pc=entry,last_code=765,last_policy=1)
         self.eq(self.f(zs,'li2_rseq_state','last_footprint'),'li2_write_footprint',pc=entry,next_pc=entry+3,first=0,end=0,abi_version=1,policy=1,code=765,length=3)
         chain=self.f(b,t,'resumed_chain');ct='li2_tf_chain';self.eq(chain,ct,session=self.symbol('selected_session'),initialized=1,first_error=0,first_detail=0,active=h[3]^1,pending=1,in_handler=0,event_id=h[14],sequence=h[15]+1,unexpected_events=0)
@@ -624,7 +626,7 @@ def terminal(parsed,owner):
     return dict(fields=len(expected),protected_dynamic_row=1,inherited_row_protection=0)
 
 
-CONTROL_COUNTS={0:51,1:30,2:30}
+CONTROL_COUNTS={0:54,1:30,2:30}
 
 def controls(data,layout,image,app,pid,cpu,exit_status):
     """Supplied mutations of actual finite records, never native evidence."""
@@ -705,5 +707,24 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
     except ValueError as error:
         need(str(error)=='whole independent336-byte descriptors: code/operands/flags/GPR/static-NONE and refusals','exact coherent static-proof refusal');refused.append('coherent_static_descriptor')
     else:raise ValueError('coherent dynamic descriptor corruption accepted')
+    if mode==0:
+        # The actual registered ordinary successor checks M exactly once after
+        # the held capture. Other old-rseq counters remain byte-identical.
+        m=at(w,'miss');held_state=at(st,'state',at('pdo_miss','held',m))
+        resumed_state=at(st,'state',at('pdo_miss','resumed',m))
+        before_checks=struct.unpack_from('<Q',data,at('li2_rseq_state','instruction_checks',held_state))[0]
+        resumed_checks=at('li2_rseq_state','instruction_checks',resumed_state)
+        unrelated=at('li2_rseq_state','range_checks',resumed_state)
+        range_checks=struct.unpack_from('<Q',data,unrelated)[0]
+        for name,offset,value in (
+            ('miss_ordinary_check_omitted',resumed_checks,before_checks),
+            ('miss_ordinary_check_doubled',resumed_checks,(before_checks+2)&U64),
+            ('miss_unrelated_range_check',unrelated,(range_checks+1)&U64)):
+            mutant=bytearray(data);struct.pack_into('<Q',mutant,offset,value)
+            try:read(bytes(mutant),layout,image,app,pid,cpu,exit_status)
+            except ValueError as error:
+                need(str(error)=='complete exact transition li2_rseq_state','exact ordinary-resume counter control refusal '+name)
+                refused.append(name)
+            else:raise ValueError('supplied ordinary-resume counter corruption accepted '+name)
     need(len(refused)==CONTROL_COUNTS[mode],'all exact separately counted dynamic owner controls')
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=mode)
