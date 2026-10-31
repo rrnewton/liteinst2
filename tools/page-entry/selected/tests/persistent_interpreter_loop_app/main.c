@@ -194,9 +194,13 @@ static void collect(void){
  need(same(expected_data,observation->data,UA_DATA)&&same(expected_stack,observation->stack,UA_STACK),94);
  for(unsigned i=0;i<16;i++) {
   uint64_t expected=ua_input.g[i];
-  if(i==0)expected=0;if(i==2)expected=DATA_BASE+0x808;
-  if(i==3)expected=restored[0];if(i==4)expected=frame_base()+16;if(i==5)expected=restored[5];
-  if(i==11)expected=0;if(i>=12)expected=restored[i-11];
+  if(i==0)expected=0;
+  if(i==2)expected=DATA_BASE+0x808;
+  if(i==3)expected=restored[0];
+  if(i==4)expected=frame_base()+16;
+  if(i==5)expected=restored[5];
+  if(i==11)expected=0;
+  if(i>=12)expected=restored[i-11];
   need(ua_after.g[i]==expected,155+i);
  }
  need(ua_after.flags==UINT64_C(0x246),180);
