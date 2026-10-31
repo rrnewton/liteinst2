@@ -2,6 +2,7 @@
 """Distinct generation-certificate build binding; no qualification authority."""
 import json,shutil,struct
 from pathlib import Path
+from linked_epoch_build import fixed_domain_source
 from maps_view import (need,fact,SELECTED,UNITS,MACROS,recipe,expand,headers,bridge_check,
     ENV,hidden_memset,body_check)
 
@@ -26,7 +27,7 @@ def binding_config(builder,archive,output,pin,binary):
     for name in POLICY_INPUTS:
         path=pin(SELECTED/name);value=fact(path)
         if name in FIXED_DOMAIN:
-            size,sha=FIXED_DOMAIN[name]
+            size,sha=fixed_domain_source(name,path)
             need(value==dict(bytes=size,sha256=sha),'exact reviewed47-form and old NONE policy '+name)
         if name.endswith('.rs'):
             key='tools/page-entry/selected/'+name

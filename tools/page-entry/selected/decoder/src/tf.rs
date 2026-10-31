@@ -350,7 +350,12 @@ fn classify(
     let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
     let instruction = decoder.decode();
     if let Some(output) = instruction_out { *output = instruction; }
-    if instruction.code() == Code::Endbr64 {
+    if instruction.code() == Code::Lodsq_RAX_m64 {
+        // One original-PC load into RAX and DF-directed RSI +/-8. The CPU
+        // owns the read/fault; flags and every other register are unchanged.
+        // No REP, ignored REX, segment/address override or narrower LODS.
+        if source[..instruction.len()] != [0x48, 0xad] { return Ok(out); }
+    } else if instruction.code() == Code::Endbr64 {
         // Existing no-CET profile only: one canonical instruction, no added
         // or ignored prefix. Other Code values retain the old prefix policy.
         if source[..instruction.len()] != [0xf3, 0x0f, 0x1e, 0xfa] { return Ok(out); }
@@ -459,7 +464,7 @@ fn classify(
     let (flow, family) = match instruction.code() {
         Code::VEX_Bzhi_r64_rm64_r64 | Code::VEX_Blsmsk_r64_rm64 | Code::VEX_Andn_r64_r64_rm64 | Code::Rdsspq_r64 | Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
         | Code::Nop_rm16 | Code::Nop_rm32 | Code::Nop_rm64
-        | Code::Mov_rm16_Sreg
+        | Code::Mov_rm16_Sreg | Code::Lodsq_RAX_m64
         | Code::Mov_rm8_r8 | Code::Mov_rm16_r16 | Code::Mov_rm32_r32
         | Code::Mov_rm64_r64 | Code::Mov_r8_rm8 | Code::Mov_r16_rm16
         | Code::Mov_r32_rm32 | Code::Mov_r64_rm64 | Code::Mov_AL_moffs8

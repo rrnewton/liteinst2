@@ -13,7 +13,7 @@ import struct
 
 from maps_view import (need, fact, SELECTED, UNITS, MACROS, recipe, expand, headers,
                        bridge_check, ENV, hidden_memset, body_check, digest, H)
-from linked_epoch_build import FIXED_DOMAIN
+from linked_epoch_build import FIXED_DOMAIN, fixed_domain_source
 from scalar_span_trace_build import fast_bytes
 
 FEATURES = ('scalar-region', 'scalar-span', 'linked-epoch', 'mov-guard')
@@ -105,7 +105,7 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, dynamic
     for name in (DYNAMIC_POLICY_INPUTS if dynamic else POLICY_INPUTS):
         path = pin(SELECTED/name); value = fact(path)
         if name in FIXED_DOMAIN:
-            size, sha = FIXED_DOMAIN[name]
+            size, sha = fixed_domain_source(name,path)
             need(digest(value) == digest(dict(bytes=size, sha256=sha)), 'unchanged reviewed scalar/NONE decoder domain')
         if name.endswith('.rs'):
             need(digest(builder.record['dep_info'].get('tools/page-entry/selected/'+name)) == digest(value),
