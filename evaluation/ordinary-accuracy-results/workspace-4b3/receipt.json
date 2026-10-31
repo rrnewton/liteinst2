@@ -1,0 +1,470 @@
+{
+  "census": {
+    "ignored": {
+      "canonical_census": {
+        "bytes": 7105,
+        "sha256": "57c184f4d35e03c84a4dc65fab5fab775b8dabf8d9dbc72d6ea832e5ca09c7c0"
+      },
+      "canonical_encoding": "UTF-8 JSON with sorted keys, compact separators, default ASCII escaping and one final LF.",
+      "distinct_name_reason_rows": 36,
+      "outcomes": 37,
+      "scope": "Exact original names, reasons and multiplicities retained in the closed audit; no new ignore or exemption.",
+      "unchanged": true
+    },
+    "nested_exclusions": {
+      "count": 3,
+      "each": {
+        "failed": 0,
+        "filtered_out": 35,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "executable": "tests/controlled_oracle.rs",
+      "scope": "Excluded only from aggregate totals; exact parent context/order and all raw outcomes remain checked. No other filtered summary is excluded."
+    },
+    "ordinary_interval": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 1,
+      "measured": 0,
+      "passed": 506
+    },
+    "rapid_profiler_doctest_groups": [
+      2,
+      45
+    ],
+    "required_composition": {
+      "prepared_phase": 18,
+      "prior": 139,
+      "sdk_pure_prerequisites": 45
+    },
+    "required_groups": {
+      "b3_exec": 2,
+      "exact37_pure": 8,
+      "exec_source": 3,
+      "gap_carrier": 9,
+      "observing_control": 8,
+      "phase_pure": 9,
+      "prefixed_pun": 1,
+      "prepared_phase_pure": 18,
+      "quiescent_oracle": 4,
+      "rapid_rejection": 2,
+      "routed_jmp_frontend": 17,
+      "routed_jmp_native": 34,
+      "routed_jmp_publication": 3,
+      "sdk_native_prerequisite_pure": 45,
+      "short_neighbor": 21,
+      "staged_image_drop": 1,
+      "startup_carrier": 9,
+      "startup_catalog": 8
+    },
+    "required_missing_or_nonpassing": 0,
+    "required_names": 202,
+    "required_names_manifest": {
+      "bytes": 18423,
+      "sha256": "3c8b218f3be98e91ba5ac28cf24f89a4224fd6f3484ccd709614cdad72b16fdd"
+    },
+    "required_passed": 202,
+    "required_passing_occurrences": 208,
+    "scope": "Every unfiltered summary occurrence counts once. Custom harnesses receive no invented counts. Serial launch overlaps workspace and is not additive unique coverage.",
+    "serial_launch": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1039,
+      "summary_occurrences": 27
+    },
+    "workspace": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 37,
+      "measured": 0,
+      "passed": 4089,
+      "unfiltered_summary_occurrences": 110
+    },
+    "workspace_raw": {
+      "failed": 0,
+      "filtered_out": 105,
+      "ignored": 37,
+      "measured": 0,
+      "passed": 4092,
+      "summary_occurrences": 113
+    }
+  },
+  "evidence": {
+    "audit_execution": "Executed by root once; this draft does not claim an independent publication review.",
+    "audit_findings": [],
+    "audit_plan_binding": {
+      "bytes": 2913,
+      "sha256": "8ebfd34424ad28310611adc75a1cad3052f893468a635090933b6babd935df13"
+    },
+    "audit_source": {
+      "bytes": 11416,
+      "sha256": "390f5333ccdd7f09663c9ae493d7fe744622f4dfff38d46cdb80deeeb4f53cd9"
+    },
+    "audit_status": "CLOSED_AUDIT_PASS",
+    "child_closed": {
+      "bytes": 5386,
+      "sha256": "39fa6d29bdcd94513af8b2f8ad90ee63d549daefe313221a8a725e4f4862e656"
+    },
+    "child_plan": {
+      "bytes": 1361,
+      "sha256": "d1bc2d640ea923fac5b24dafbf00698793cc8d9d26cbb4feadce4c28dd9bf818"
+    },
+    "closed_data_audit": {
+      "bytes": 296201,
+      "sha256": "1c1e7ea449fefe5b41d02b302e00364579bc8c68ab3413bd8cbda726738869a3"
+    },
+    "outer_plan": {
+      "bytes": 2097,
+      "sha256": "9aac64020713675d6f68036fd42e9c68a19a2998b6e4d20549af0adff3d8a54f"
+    },
+    "outer_receipt": {
+      "bytes": 2564,
+      "sha256": "93262b587f50c0a378a2e2199e57e9b8b763362638c12f9491938b4205d1aae5"
+    }
+  },
+  "execution_settings": {
+    "debug_assertions": true,
+    "dev_test_debug_information": 0,
+    "dev_test_opt_level": 0,
+    "incremental": false,
+    "offline": true,
+    "other_cargo_build_jobs_environment": 4,
+    "overflow_checks": true,
+    "parallel_test_threads": 316,
+    "per_stage_attempts": 1,
+    "serial_test_threads_explicit_argv": 1,
+    "stages": 5,
+    "tool_custody": "The generic owner records stable-toolchain command paths. This suite did not capture fresh compiler/interpreter versions or binary hashes.",
+    "workspace_jobs_explicit_argv": 16
+  },
+  "history": {
+    "other_prior_failures": "Existing focused/native/phase receipts retain their own revision, outcomes and limitations. No previous execution is reattributed to merged 4b3.",
+    "premerge_workspace": {
+      "public_receipt": {
+        "bytes": 12921,
+        "sha256": "7530504c85fb6fb13f61c63aa0973c8e3ac867f76cea8feed37b00e5856ad629"
+      },
+      "reference": "../workspace-27e/receipt.json",
+      "result": "PASS_FIXED_FIVE_COMMAND_CORRECTNESS_SUITE",
+      "revision": "27e57a250104f0b0e55e9ac441e0b96217ec010d",
+      "scope": "Separate earlier five-command execution; its elapsed times and loads are not substituted or pooled."
+    },
+    "prepared_native_scope": "Prepared-profile native campaign evidence is attributed only to its executed 27e revision. This merged debug workspace suite does not rerun or requalify that release profile.",
+    "prior_failed_workspace": {
+      "reference": "../workspace-78b/receipt.json",
+      "result": "FAILED",
+      "revision": "bf4c7f7cb71fb1af57c306d73d9ce5af6d8ca0b6",
+      "scope": "Formatting failure, 900-second workspace timeout and nine rescued descendants remain failed history; no missing/unstarted outcome is promoted."
+    },
+    "prior_success_reference": "../workspace-78b/receipt.json"
+  },
+  "outer": {
+    "attempts": 1,
+    "closure": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "reaped_descendants": 0,
+      "seconds": 1033.7283006461803,
+      "start_utc": "2026-10-31T02:29:10.210431+00:00",
+      "termination": null
+    },
+    "command": [
+      "/usr/bin/python3.9",
+      "-B",
+      "evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "4b37934180971dfd437aaef59d2275836c5fec7e",
+      "--output",
+      "${RUN}"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_TERM_COLOR": "never",
+      "HOME": "${USER_HOME}",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "LITEINST_EVALUATION": "1",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "TEMP": "${RUN_TMP}",
+      "TMP": "${RUN_TMP}",
+      "TMPDIR": "${RUN_TMP}"
+    },
+    "environment_normalization": "Only path values use the defined reproduction variables; fixed values are literal. This JSON command is a path-normalized rendering, not the original byte string.",
+    "hardware": "AMD EPYC Zen 5 dev host",
+    "helper_cleanup_seconds": 3,
+    "load_after": [
+      "285.10",
+      "346.32",
+      "263.84"
+    ],
+    "load_before": [
+      "120.40",
+      "88.78",
+      "76.22"
+    ],
+    "output_limit_bytes": 8388608,
+    "raw_log": {
+      "bytes": 2642,
+      "sha256": "18c8a05bb2c50937b063501091681e4c1e99edbca3d081057bf9e9975c116cc8"
+    },
+    "reserved_cpus": [
+      27,
+      30,
+      65,
+      70,
+      92,
+      128,
+      131,
+      148,
+      229,
+      241,
+      247,
+      287,
+      297,
+      300,
+      309,
+      314
+    ],
+    "wall_limit_seconds": 1200
+  },
+  "qualification": {
+    "cadence": false,
+    "causal_speedup": false,
+    "fresh_sdk_pure_control_census": true,
+    "full_A5_matrix": false,
+    "msrv": false,
+    "new_release_native_profile": false,
+    "parallel_debug_correctness_suite": true,
+    "performance": false,
+    "phase_realization": false,
+    "pmu_accuracy": false,
+    "strict_2ms_runtime": false
+  },
+  "result": "PASS_FIXED_FIVE_COMMAND_CORRECTNESS_SUITE",
+  "schema": "prepared-merged-workspace-validation-evidence-v1",
+  "source": {
+    "audit_source_file_count": 85,
+    "audit_source_manifest": {
+      "bytes": 14271,
+      "sha256": "55d65caf7d9f3773b64204a8104ca49e1c19de4721a20a4b1d7acedb67f8249e"
+    },
+    "merge_parents": [
+      "27e57a250104f0b0e55e9ac441e0b96217ec010d",
+      "acc2474c696b8c745c0bb819e04aa2282c6cc0c5"
+    ],
+    "merge_scope": "Direct merge of pre-merge 27e and main acc2474c; all 85 declared audit source pins and root workspace Cargo inputs are unchanged. A standalone page-entry decoder workspace changed separately; no whole-tree equality is claimed.",
+    "owner_source_unchanged": true,
+    "owner_working_overlay": {},
+    "premerge_revision": "27e57a250104f0b0e55e9ac441e0b96217ec010d",
+    "reproduction_sources": {
+      "evaluation/admission/processes.py": {
+        "bytes": 15760,
+        "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+      },
+      "evaluation/short-neighbor-parallel/validate.py": {
+        "bytes": 3717,
+        "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+      }
+    },
+    "revision": "4b37934180971dfd437aaef59d2275836c5fec7e",
+    "scope": "Owner recorded an empty working overlay and unchanged source; the audit matched 85 declared files to this exact Git revision. This is not a fresh compiler/interpreter binary attestation.",
+    "tree": "e44320c593ea8110e3b2be6197ffa85f1b269ad4"
+  },
+  "stages": [
+    {
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "reaped_descendants": 0,
+        "seconds": 15.6133491108194,
+        "start_utc": "2026-10-31T02:29:10.286702+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "load_after": [
+        "122.70",
+        "90.82",
+        "77.08"
+      ],
+      "load_before": [
+        "120.40",
+        "88.78",
+        "76.22"
+      ],
+      "name": "fmt",
+      "raw_log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "reaped_descendants": 0,
+        "seconds": 0.25513417692855,
+        "start_utc": "2026-10-31T02:29:25.901087+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "load_after": [
+        "122.70",
+        "90.82",
+        "77.08"
+      ],
+      "load_before": [
+        "122.70",
+        "90.82",
+        "77.08"
+      ],
+      "name": "clippy",
+      "raw_log": {
+        "bytes": 60,
+        "sha256": "4b395c9c76c7f7fb5221d30df7320c7a2387ff3842c426dbee6a59a54b5cffab"
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "reaped_descendants": 0,
+        "seconds": 0.21248594298958778,
+        "start_utc": "2026-10-31T02:29:26.157209+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "load_after": [
+        "122.70",
+        "90.82",
+        "77.08"
+      ],
+      "load_before": [
+        "122.70",
+        "90.82",
+        "77.08"
+      ],
+      "name": "check",
+      "raw_log": {
+        "bytes": 60,
+        "sha256": "4b395c9c76c7f7fb5221d30df7320c7a2387ff3842c426dbee6a59a54b5cffab"
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "reaped_descendants": 0,
+        "seconds": 869.9250131999142,
+        "start_utc": "2026-10-31T02:29:26.370429+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "load_after": [
+        "390.43",
+        "369.92",
+        "254.66"
+      ],
+      "load_before": [
+        "122.70",
+        "90.82",
+        "77.08"
+      ],
+      "name": "workspace",
+      "raw_log": {
+        "bytes": 490834,
+        "sha256": "b80385f4a1ddd2bdefd159075678a57229c967952978bc78a8acbdca77937ca8"
+      },
+      "wall_limit_seconds": 900
+    },
+    {
+      "closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "reaped_descendants": 0,
+        "seconds": 147.39509935118258,
+        "start_utc": "2026-10-31T02:43:56.303389+00:00",
+        "termination": null
+      },
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "load_after": [
+        "285.10",
+        "346.32",
+        "263.84"
+      ],
+      "load_before": [
+        "390.43",
+        "369.92",
+        "254.66"
+      ],
+      "name": "serial-launch",
+      "raw_log": {
+        "bytes": 1403215,
+        "sha256": "187d42128318446aa2debaf750b86050a25004edf0ead2f063deb08b2d2abb94"
+      },
+      "wall_limit_seconds": 180
+    }
+  ]
+}
