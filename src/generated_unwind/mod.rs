@@ -1,5 +1,6 @@
 //! Opt-in, source-certified normal backtracing; no exception or signal admission.
 
+pub mod artifact;
 mod cfi;
 mod parser;
 

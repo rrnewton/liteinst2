@@ -583,6 +583,7 @@ fn invalid_producer_rows_and_uncovered_bytes_are_explicit_metadata_failures() {
     assert!(!emitted.trace().unwrap().matches_image(&other));
 }
 
+mod artifact;
 mod call_pair_stack;
 mod memory;
 mod stack_profile;

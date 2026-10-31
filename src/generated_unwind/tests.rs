@@ -149,7 +149,7 @@ fn malformed_and_unmodelled_source_records_refuse() {
 
 // Independent evaluator for the small GENERATED expression grammar. This
 // interprets encoded bytes, never calls the production composition functions.
-fn signed(bytes: &[u8], at: &mut usize) -> i64 {
+pub(super) fn signed(bytes: &[u8], at: &mut usize) -> i64 {
     let mut value = 0_u64;
     let mut shift = 0;
     loop {
@@ -166,7 +166,7 @@ fn signed(bytes: &[u8], at: &mut usize) -> i64 {
         assert!(shift < 64);
     }
 }
-fn unsigned(bytes: &[u8], at: &mut usize) -> usize {
+pub(super) fn unsigned(bytes: &[u8], at: &mut usize) -> usize {
     let mut value = 0;
     let mut shift = 0;
     loop {
@@ -207,7 +207,7 @@ fn expression(bytes: &[u8], regs: &[u64; 16], memory: &BTreeMap<u64, u64>) -> u6
     assert_eq!(stack.len(), 1);
     stack[0]
 }
-fn interpret(
+pub(super) fn interpret(
     bytes: &[u8],
     regs: &[u64; 16],
     memory: &BTreeMap<u64, u64>,

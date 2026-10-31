@@ -7,6 +7,8 @@
 use crate::trampoline::{ObservationStackProfile, TrampolineImage};
 use iced_x86::{BlockEncoderResult, Instruction, Register};
 
+mod artifact;
+
 /// Stack origin selected by the emitter constructor.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FrameEntryOrigin {
@@ -287,7 +289,9 @@ impl HelperFrame {
     pub const fn stage(&self) -> FrameStage {
         self.stage
     }
-    /// Returns the source assembler instruction, before final encoding.
+    /// Returns the source assembler instruction for ordinary helpers. For a
+    /// linked artifact fragment this is its byte-authenticated final instruction,
+    /// including the actual module-coordinate CALL target and instruction PC.
     pub const fn instruction(&self) -> &Instruction {
         &self.instruction
     }
@@ -401,6 +405,9 @@ pub struct FrameTrace {
 }
 
 impl FrameTrace {
+    pub(crate) const fn exact_image(&self) -> &TrampolineImage {
+        &self.identity
+    }
     /// Explicit producer stack origin.
     pub const fn origin(&self) -> FrameEntryOrigin {
         self.origin
@@ -507,6 +514,7 @@ pub(crate) struct HelperFrames {
     effects: Vec<(usize, FrameEffect)>,
     call: Option<(usize, FrameCallKind)>,
     result: Option<Result<HelperImage, FrameTraceRefusal>>,
+    artifact: Option<artifact::ArtifactHelper>,
 }
 
 struct HelperImage {
@@ -523,6 +531,7 @@ impl HelperFrames {
             effects: Vec::new(),
             call: None,
             result: None,
+            artifact: None,
         }
     }
     pub(crate) fn with_profile(stage: FrameStage, profile: ObservationStackProfile) -> Self {
@@ -539,6 +548,17 @@ impl HelperFrames {
     }
     pub(crate) fn finish(&mut self, source: &[Instruction], encoded: &BlockEncoderResult) {
         self.result = Some(self.resolve(source, encoded));
+    }
+    pub(crate) fn finish_artifact(
+        &mut self,
+        source: &[Instruction],
+        encoded: &BlockEncoderResult,
+        fragments: &[(usize, crate::artifact_fragments::Fragment)],
+        domain: u64,
+    ) {
+        self.artifact = Some(artifact::ArtifactHelper::new(
+            source, encoded, fragments, domain,
+        ));
     }
     // Tree annotations must describe the actual producer instructions, not
     // merely a plausible 320-byte final offset. Legacy metadata is unchanged.
@@ -673,6 +693,14 @@ impl HelperFrames {
         source: &[Instruction],
         encoded: &BlockEncoderResult,
     ) -> Result<HelperImage, FrameTraceRefusal> {
+        self.resolve_with_call(source, encoded, None)
+    }
+    fn resolve_with_call(
+        &self,
+        source: &[Instruction],
+        encoded: &BlockEncoderResult,
+        direct_target: Option<u64>,
+    ) -> Result<HelperImage, FrameTraceRefusal> {
         let offsets = &encoded.new_instruction_offsets;
         if offsets.len() != source.len()
             || offsets.first() != Some(&0)
@@ -729,7 +757,13 @@ impl HelperFrames {
             if let Some((call_index, kind)) = self.call {
                 if index == call_index {
                     if instruction.mnemonic() != iced_x86::Mnemonic::Call
-                        || instruction.op0_register() != Register::RAX
+                        || match direct_target {
+                            None => instruction.op0_register() != Register::RAX,
+                            Some(target) => {
+                                instruction.code() != iced_x86::Code::Call_rel32_64
+                                    || instruction.near_branch_target() != target
+                            }
+                        }
                     {
                         return Err(FrameTraceRefusal::InvalidProducerAnnotation);
                     }
@@ -831,9 +865,12 @@ impl FrameRecorder {
             self.refuse(FrameTraceRefusal::InvalidProducerAnnotation);
             return;
         }
-        let result = frames
-            .result
-            .unwrap_or(Err(FrameTraceRefusal::InvalidProducerAnnotation));
+        let result = match &frames.artifact {
+            Some(artifact) => artifact.resolve(&frames, address, bytes),
+            None => frames
+                .result
+                .unwrap_or(Err(FrameTraceRefusal::InvalidProducerAnnotation)),
+        };
         let helper = match result {
             Ok(helper) => helper,
             Err(error) => {
