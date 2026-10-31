@@ -30,3 +30,9 @@ write/resize/seal/shared-writer refusal, missing seals and changed/truncated/ext
 bytes, independent copies, both public loader constructors, contract refusals,
 and complete loaded device/inode/offset/permission joins. Existing path-loader,
 parser, publication and session controls remain required.
+
+Seals protect the backing bytes and extent, not its metadata timestamps. Linux
+shmem may update mtime/ctime even when `pwrite` fails with `EPERM`. The descriptor
+is private and no writer is exposed; provenance checks continue to reject any
+change to the retained full stamp, including either timestamp. Kernel refusal
+controls check unchanged bytes, seals and non-time identity separately.

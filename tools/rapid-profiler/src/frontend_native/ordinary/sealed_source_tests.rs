@@ -76,7 +76,14 @@ fn sealed_copy_kernel_refuses_write_resize_new_seals_and_shared_writer() {
     }
     assert_eq!(pointer, libc::MAP_FAILED);
     assert_eq!(errno, Some(libc::EPERM));
-    assert!(sealed_source_stamp(&mut file, &expected).unwrap() == original);
+    // A rejected pwrite can still update shmem mtime/ctime before the seal
+    // check. Seals guarantee content/extent, not timestamp immutability. Keep
+    // the complete byte/seal checks and compare every non-time identity field.
+    let after = sealed_source_stamp(&mut file, &expected).unwrap();
+    assert_eq!(
+        (after.device, after.inode, after.size, after.mode),
+        (original.device, original.inode, original.size, original.mode)
+    );
 }
 
 #[test]
@@ -219,6 +226,20 @@ fn sealed_loader_mapping_identity_offsets_permissions_and_full_loads_remain_requ
         Err(SetupRefusal::SourceBytes)
     );
     owner.original = original;
+    // The production owner still refuses *any* recorded timestamp mismatch;
+    // the kernel mutation-refusal control above must not relax this guard.
+    for field in [0, 1] {
+        if field == 0 {
+            owner.original.modified.1 ^= 1;
+        } else {
+            owner.original.changed.1 ^= 1;
+        }
+        assert_eq!(
+            verify_source_provenance(owner, &parsed[0], entry, source, 28),
+            Err(SetupRefusal::SourceBytes)
+        );
+        owner.original = original;
+    }
     let device = owner.device;
     owner.device.1 ^= 1;
     assert_eq!(
