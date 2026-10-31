@@ -188,7 +188,7 @@ def main():
         need(len(payload) <= 32768 and b'/home/' not in payload, 'compact public receipt without host paths')
         public.write_bytes(payload)
         with public.with_suffix('.csv').open('w', newline='') as f:
-            w = csv.writer(f)
+            w = csv.writer(f, lineterminator='\n')
             w.writerow(('revision', 'command', 'exit', 'duration_ns', 'status'))
             for c in r['commands']:
                 w.writerow((args.expect_revision, c['name'], c.get('exit'), c.get('duration_ns'), r['status']))
