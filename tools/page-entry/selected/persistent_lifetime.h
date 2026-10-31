@@ -4,9 +4,9 @@
 #include "tf_span_transfer.h"
 #include "rseq_guard.h"
 #include "private_code_query.h"
-/* Typed integration contract ONLY: this packet defines no function below and
-   no runtime includes this header. It deliberately cannot supply execution
-   authority from a standalone planner result or caller-owned description. */
+/* Actual private single-generation primitive contract. The runtime source
+   successor implements these operations over its own protected singleton; a
+   standalone planner result or caller-owned description grants no authority. */
 struct li2_pe_epoch;
 struct li2_pe_generation;
 struct li2_pe_token { const struct li2_pe_epoch *owner;uint64_t serial; };
@@ -46,8 +46,8 @@ struct li2_pe_progress {
 /* Require a genuine same-event CLOSED TRACE ticket and the actual retained
    serial. Install SEEDING/cleanup ownership before the first rseq mapping/TLS
    query, while NO fresh fetch is held. Neither consumes the transfer nor edits
-   the kernel frame. Registered ACTIVE and unregistered IDLE are distinct exact
-   cases; they are derived from actual protected state, never a selector. */
+   the kernel frame. This first executable primitive requires actual registered
+   ACTIVE state; unregistered/default owners retain their unchanged paths. */
 int li2_pe_epoch_begin(const struct li2_tf_span_transfer *,uint64_t,
     struct li2_step_session *,int,const siginfo_t *,const ucontext_t *,
     struct li2_pe_token *);
@@ -67,8 +67,10 @@ const struct li2_pe_sources *li2_pe_epoch_sources_view(const struct li2_pe_token
    registry generation and current rseq pin. No decoder on warm entry.
    The resident primary is the ready-only li2_pe_compact, with one common
    actual table/image/source pair. Full li2_pe_plan objects are cold protected
-   scratch, not resident authority. Seal all45 proof pages R/NX only after
-   whole compact reconstruction; authenticate the unused slot tail as zero.
+   scratch, not resident authority. The compact plan itself fits45 pages. This
+   single-generation owner additionally seals its exact source key and header
+   in the same page-rounded immutable payload (bounded to64 pages); authenticate
+   the unused tail as zero after whole compact reconstruction.
    Earliest recovery owns a separate6488-byte donor materialization buffer;
    it cannot alias the active primary, raw frame, spill or output. */
 int li2_pe_epoch_bind(const struct li2_pe_token *,const struct li2_pe_generation *);
@@ -88,9 +90,10 @@ int li2_pe_epoch_preentry(int,const siginfo_t *,const ucontext_t *);
    closures can issue a completion permit. Fault/reject/nested/partial errors
    retain first error, truthful held ranges and NO completed permit. */
 int li2_pe_epoch_drain(const struct li2_pe_token *);
-/* Only the never-consumed HELD miss: verify/release the new anchor, retain
-   RESUMING cleanup owner, then unchanged genuine span_resume. No post-redirect
-   descriptive miss or restoration of a destroyed old owner. */
+/* Reserved cancellation seam. This first fixed-entry primitive returns STATE
+   without mutation for every call: selected post-close misses are fail-stop
+   under the actual new owner. No claimed resume, restored predecessor or
+   completion permit is manufactured. */
 int li2_pe_epoch_cancel(const struct li2_pe_token *,int,siginfo_t *,ucontext_t *,
     enum li2_chain_result *);
 int li2_pe_epoch_interlock(void);

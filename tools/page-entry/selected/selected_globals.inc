@@ -41,6 +41,9 @@ static struct li2_step_owner selected_step;
 /* The old pending bit continues to guard every existing dispatch boundary.
    This tag chooses the sole cleanup owner; it is never execution authority. */
 enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENERIC_TF, SELECTED_REPEAT
+#ifdef LI2_PERSISTENT_EPOCH
+    , SELECTED_PERSISTENT_EPOCH
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     , SELECTED_ONESHOT
 #endif
