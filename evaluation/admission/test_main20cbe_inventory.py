@@ -12,11 +12,12 @@ import core_dd75_inventory as selected
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_acc247_inventory as incoming
 
 
 class Main20cbeInventoryTests(unittest.TestCase):
     def test_exact37_sources_instances_catalog_and_causal_refusals(self):
-        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        actual = incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (109, 4099, 37))
@@ -30,11 +31,11 @@ class Main20cbeInventoryTests(unittest.TestCase):
         self.assertEqual((len(actual['harness_test_counts']['serial_launch']),
                           sum(x['tests'] for x in actual['harness_test_counts']['serial_launch'].values())), (27, 1039))
         with patch.object(inventory, 'require_historical360') as earlier:
-            self.assertIsNone(inventory.require_current(actual))
+            self.assertIsNone(inventory.require_historical361(actual))
             earlier.assert_called_once_with(old)
         for wrong in (old, previous.before_current(old)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(wrong)
+                inventory.require_historical361(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main981419_inventory_differs$'):
             previous.before_current(actual)
         self.assertEqual(previous.peel_current(actual, 'catalog_control', 'source_control'), previous.before_current(old))
@@ -48,7 +49,7 @@ class Main20cbeInventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main20cbe_inventory_differs$'):
                         current.before_current(wrong)
-        identities = historical.python_identities(Path(__file__).parent)
+        identities = incoming.before_python(historical.python_identities(Path(__file__).parent))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (361, 360))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)

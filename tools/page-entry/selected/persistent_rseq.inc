@@ -3,6 +3,9 @@
    not broaden the old NONE domain or the old unregistered/default paths. */
 #include "persistent_runtime.h"
 static struct li2_pe_rseq_progress pe_rseq;
+#ifdef LI2_PERSISTENT_DYNAMIC
+static struct li2_pe_rseq_progress pe_rseq_previous;
+#endif
 const struct li2_pe_rseq_progress *li2_pe_rseq_progress(void) {return &pe_rseq;}
 static int per_bad(unsigned code,long detail) {
     if(!pe_rseq.first_error) {pe_rseq.first_error=code;pe_rseq.first_detail=detail;}
@@ -55,10 +58,34 @@ static int per_tls(void) {
     return 0;
 }
 int li2_pe_rseq_begin(const struct li2_pe_token *t,const struct li2_step_session *session,const ucontext_t *uc) {
+#ifdef LI2_PERSISTENT_DYNAMIC
+    if(!t || !t->serial || li2_pe_owner_phase(t)!=LI2_PE_SEEDING || pe_rseq.active ||
+       pe_rseq.checking || pe_rseq.first_error || pe_rseq.unsafe_terminal ||
+       t->serial<=pe_rseq.token.serial || !session || session!=li2_native_pair_progress()->session ||
+       li2_lifecycle_fetch_interlock() || !private_range)return per_bad(LI2_RN_STATE,500);
+    const struct li2_pe_source_progress *source=li2_pe_source_progress();
+    if(!source || source->phase!=LI2_PES_SEEDING || source->serial!=t->serial ||
+       !source->initialized || source->first_error || source->aborted || source->source.complete)
+        return per_bad(LI2_RN_STATE,509);
+    for(size_t i=0;i<sizeof pe_rseq;i++)
+        if(!private_range((uintptr_t)&pe_rseq+i,1))return per_bad(LI2_RN_STATE,501);
+    if(pe_rseq.token.serial) {
+        if(pe_rseq.token.owner!=t->owner || !pe_rseq.seed_complete ||
+           !((pe_rseq.close_complete==1 && !pe_rseq.cancel_started && !pe_rseq.cancel_complete) ||
+             (!pe_rseq.close_complete && pe_rseq.cancel_started==1 && pe_rseq.cancel_complete==1)))
+            return per_bad(LI2_RN_STATE,505);
+        for(size_t i=0;i<sizeof pe_rseq_previous;i++)
+            if(!private_range((uintptr_t)&pe_rseq_previous+i,1))return per_bad(LI2_RN_STATE,506);
+        pe_rseq_previous=pe_rseq;
+        volatile unsigned char *b=(void *)&pe_rseq;for(size_t i=0;i<sizeof pe_rseq;i++)b[i]=0;
+    } else if(pe_rseq.token.owner || pe_rseq.seed_complete || pe_rseq.close_complete ||
+              pe_rseq.cancel_started || pe_rseq.cancel_complete)return per_bad(LI2_RN_STATE,507);
+#else
     if(!t || li2_pe_owner_phase(t)!=LI2_PE_SEEDING || pe_rseq.active || pe_rseq.token.owner ||
        !session || session!=li2_native_pair_progress()->session ||
        li2_lifecycle_fetch_interlock() || !private_range)
         return per_bad(LI2_RN_STATE,500);
+#endif
     /* The selected registered entry cannot return through cleanup RAW if its
        actual registration pin is already contradictory. */
     if(!native_pin() || !region_rseq_current(uc))per_unsafe(LI2_RN_PIN,501);
@@ -136,3 +163,30 @@ int li2_pe_rseq_close(const struct li2_pe_token *t,const ucontext_t *uc) {
     per_zero(&pe_rseq.word_after);pe_rseq.close_complete=1;
     __asm__ volatile("":::"memory");pe_rseq.active=0;return 0;
 }
+#ifdef LI2_PERSISTENT_DYNAMIC
+int li2_pe_rseq_cancel(const struct li2_pe_token *t,const ucontext_t *uc) {
+    if(!per_token(t) || li2_pe_owner_phase(t)!=LI2_PE_CANCELLING || pe_rseq.first_error ||
+       !pe_rseq.seed_complete || pe_rseq.close_complete || pe_rseq.cancel_started ||
+       pe_rseq.cancel_complete || li2_lifecycle_fetch_interlock() || !region_rseq_current(uc))
+        return per_bad(LI2_RN_STATE,508);
+    const struct li2_pe_source_progress *source=li2_pe_source_progress();
+    if(!source || source->phase!=LI2_PES_CANCELLED || source->serial!=t->serial ||
+       source->source.serial!=t->serial || source->source.complete!=1 ||
+       source->first_error || source->aborted || source->cancel_started!=1 ||
+       source->cancel_complete!=1 || source->release_started!=1 || source->release_complete!=1 ||
+       source->cancel_code.complete!=1 || source->cancel_code.result ||
+       source->cancel_code.pages_checked!=8 ||
+       source->cancel_code.actual_prot!=source->cancel_expected_prot ||
+       (source->cancel_expected_prot!=PROT_READ && source->cancel_expected_prot!=(PROT_READ|PROT_WRITE)) ||
+       source->cancelled_fetch.complete!=1 || source->cancelled_fetch.progress.held ||
+       source->cancelled_fetch.ref.owner!=source->source.anchor.owner ||
+       source->cancelled_fetch.ref.sequence!=source->source.anchor.sequence)
+        return per_bad(LI2_RN_STATE,510);
+    pe_rseq.cancel_started=1;per_zero(&pe_rseq.word_after);li2_maps_phase_end();
+    int e=li2_lifecycle_rseq_data(state.address,&pe_rseq.after);
+    if(e || !same_data(&pe_rseq.before,&pe_rseq.after))return per_bad(LI2_RN_PIN,e?e:508);
+    if((e=per_tls()))return e;
+    per_zero(&pe_rseq.word_after);pe_rseq.cancel_complete=1;
+    __asm__ volatile("":::"memory");pe_rseq.active=0;return 0;
+}
+#endif

@@ -33,6 +33,9 @@ enum li2_pe_phase {
     LI2_PE_CONSUMED,LI2_PE_PUBLISHING,LI2_PE_BOUND,LI2_PE_OPENING,
     LI2_PE_EXECUTING,LI2_PE_RECOVERING,LI2_PE_CLOSING,LI2_PE_RELEASING,
     LI2_PE_CLOSED,LI2_PE_CANCELLED,LI2_PE_FAILED
+#ifdef LI2_PERSISTENT_DYNAMIC
+    ,LI2_PE_CANCELLING
+#endif
 };
 /* Stable cleanup addresses exist BEFORE the corresponding first RAW. Failure
    records retain their actual phase/prefix; FAILED does not mean drained. */
@@ -90,10 +93,17 @@ int li2_pe_epoch_preentry(int,const siginfo_t *,const ucontext_t *);
    closures can issue a completion permit. Fault/reject/nested/partial errors
    retain first error, truthful held ranges and NO completed permit. */
 int li2_pe_epoch_drain(const struct li2_pe_token *);
+#ifdef LI2_PERSISTENT_DYNAMIC
+/* Dynamic cancellation is a distinct pre-consume, unentered HELD path. It
+   requires actual whole-bank NX, complete source release and seeded rseq
+   closure before handing the unchanged CLOSED transfer to ordinary resume.
+   No executed completion or generation-retirement permit is manufactured. */
+#else
 /* Reserved cancellation seam. This first fixed-entry primitive returns STATE
    without mutation for every call: selected post-close misses are fail-stop
    under the actual new owner. No claimed resume, restored predecessor or
    completion permit is manufactured. */
+#endif
 int li2_pe_epoch_cancel(const struct li2_pe_token *,int,siginfo_t *,ucontext_t *,
     enum li2_chain_result *);
 int li2_pe_epoch_interlock(void);
