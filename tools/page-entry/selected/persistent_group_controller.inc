@@ -24,6 +24,9 @@
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+#include "persistent_cross_pair_observe.h"
+#endif
 #if defined(LI2_PERSISTENT_ACTIVE_DOMAIN)
 #if LI2_PERSISTENT_ACTIVE_DOMAIN != 1 || !defined(LI2_PERSISTENT_RETAINED_TWO) || LI2_PERSISTENT_RETAINED_TWO != 1 || !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1 || LI2_PG_BINDING_VERSION != 1 || LI2_PG_GROUP_BINDING_VERSION != 4
 #error "distinct active-domain version4 policy required"
@@ -1264,6 +1267,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_begin(sig,si,uc,slot_index);
 #endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_begin(sig,si,uc,slot_index);
+#endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     ped_reset_attempt();pe.previous_selection=pe.selection;pe.selected_slot=slot_index;
     pe.selection=pe.retained[slot_index].identity;pe.selected_bank=bank_index;
@@ -1299,6 +1305,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_closed();
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_closed();
 #endif
     pe_need(!li2_pg_epoch_begin(pe.ticket,pe.transfer.serial,&selected_session,sig,si,uc,&pe.token),PE_RSEQ,2);
     le_zero(&selected_borrow,sizeof selected_borrow);le_zero(&selected_view,sizeof selected_view);
@@ -1346,6 +1355,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_entered(sig,si,uc);
 #endif
     selected_initialized();__asm__ volatile("":::"memory");pe_busy=0;return 1;
 }
@@ -1399,6 +1411,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_terminal(0);
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_terminal(0);
 #endif
     selected_logical_flags=(uint64_t)pe.after.frame.greg[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
     pe_active=0;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
@@ -1511,4 +1526,7 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+#include "persistent_cross_pair_observe.inc"
 #endif

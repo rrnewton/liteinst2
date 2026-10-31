@@ -66,7 +66,14 @@ static int pda_receipt(const struct pda_completion *c) {
            v->generation!=g->generation || v->proof!=g->proof || v->root!=m->source.entry ||
            !pg_layout_equal(&v->layout,&g->layout) || v->layout.directory!=pe.domain.directory ||
            !equal(v,&d->ref[i],sizeof *v) || !equal(v,&r->domain_ref[i],sizeof *v) ||
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+           ((!i || !d->peer.started)?!li2_pgd_source_pair_equal(&s->source.key,&m->source):
+               (!li2_pgx_source_value(&d->peer,&s->source,&d->token,v,&m->source,LI2_PGX_CHECKS) ||
+                d->peer.table[0].address!=c->member[0].header.table ||
+                d->peer.table[1].address!=m->header.table)) ||
+#else
            !li2_pgd_source_pair_equal(&s->source.key,&m->source) ||
+#endif
            m->header.version!=1 || m->header.generation!=v->generation || m->header.serial!=g->build_serial ||
            m->header.registry!=(uintptr_t)&pe || m->header.generated!=g->generated ||
            m->header.spill!=g->spill || !pg_layout_equal(&m->header.layout,&g->layout) ||
@@ -97,6 +104,11 @@ static int pda_receipt(const struct pda_completion *c) {
             g->open[j].result || g->open[j].sync_result ||
             !pda_query(&g->open[j].query,&v->layout,j,PROT_READ|PROT_EXEC))return 0;
     }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(c->count==1 || li2_pgd_source_pair_equal(&c->member[0].source,&c->member[1].source)) {
+        if(!pda_zero(&d->peer,sizeof d->peer))return 0;
+    } else if(d->peer.started!=1)return 0;
+#endif
     for(unsigned i=c->count;i<LI2_PGD_MEMBERS;i++)if(!pda_zero(&c->member[i],sizeof c->member[i]) ||
         !pda_zero(&d->ref[i],sizeof d->ref[i]) || !pda_zero(d->open[i],sizeof d->open[i]) ||
         !pda_zero(d->close[i],sizeof d->close[i]) || !pda_zero(&r->domain_ref[i],sizeof r->domain_ref[i]))return 0;
@@ -185,7 +197,11 @@ static void pda_offer_peer(void) {
     pe_need(pda_permitted(peer),PE_RELEASE,82);
     const struct pe_payload *p=(const void *)s->proof;
     if(!pda_registry(peer) || !pda_registration(p) ||
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+       !li2_pgx_guard_union(&pe_payload()->plan,&p->plan) ||
+#else
        !li2_pgd_source_pair_equal(&p->source,&pe_payload()->source) ||
+#endif
        !pda_disjoint(&pe_payload()->plan,&p->plan))return;
     pe.domain.work.peer=peer;
 }
@@ -213,8 +229,30 @@ const struct li2_pgd_view *li2_pgd_owner_view(const struct li2_pg_token *t) {
     for(unsigned i=0;i<v->count;i++)if(!pda_member_live(&v->member[i]) ||
         (i && (v->member[i].identity.slot==v->member[0].identity.slot ||
                v->member[i].identity.generation==v->member[0].identity.generation)))return 0;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(v->count==2 && !li2_pgx_guard_union(v->member[0].plan,v->member[1].plan))return 0;
+#endif
     return v;
 }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+const struct li2_pgd_view *li2_pgx_owner_offer(const struct li2_pg_token *t) {
+    const struct pda_work *w=&pe.domain.work;const struct li2_pgd_view *v=&w->view;
+    if(!pe_token(t) || pe.p.phase!=LI2_PG_BOUND || !pe_busy || pe_active || !pe.warm ||
+       w->bound || w->peer>=LI2_PTR_SLOTS || w->primary>=LI2_PTR_SLOTS || w->peer==w->primary ||
+       w->primary!=pe.selected_slot || w->primary_bank!=pe.selected_bank ||
+       v->count!=1 || v->reserved || !equal(&v->token,t,sizeof *t) || v->directory!=pe.domain.directory ||
+       v->member[0].identity.slot!=w->primary || v->member[1].identity.slot!=w->peer ||
+       !pg_layout_equal(&v->member[0].identity.layout,&pe.p.layout) ||
+       !pda_permitted(w->peer) || !pda_member_live(&v->member[0]) || !pda_member_live(&v->member[1]) ||
+       !pda_disjoint(v->member[0].plan,v->member[1].plan) ||
+       !li2_pgx_guard_union(v->member[0].plan,v->member[1].plan))return 0;
+#ifdef LI2_PERSISTENT_SUBENTRY
+    const struct li2_pgs_entry *entry=li2_pgs_owner_entry(t);
+    if(!entry || !equal(entry,&v->entry,sizeof *entry))return 0;
+#endif
+    return v;
+}
+#endif
 static void pda_member(unsigned at,unsigned slot) {
     struct pda_work *w=&pe.domain.work;unsigned bank=pda_bank(slot);
     pe_need(at<LI2_PGD_MEMBERS && slot<LI2_PTR_SLOTS && bank<2,PE_STATE,86);
@@ -267,6 +305,16 @@ static int pda_bind(const ucontext_t *uc) {
     w->view.entry=*entry;
 #endif
     pda_member(0,w->primary);
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(pe.warm && w->peer<LI2_PTR_SLOTS) {
+        pda_member(1,w->peer);
+        if(!li2_pgd_source_pair_equal(w->view.member[0].key,w->view.member[1].key)) {
+            unsigned accepted=0;int e=li2_pgx_source_prepare(&pe.token,&accepted);
+            if(e)return e;
+            if(!accepted) {w->peer=LI2_PTR_SLOTS;le_zero(&w->view.member[1],sizeof w->view.member[1]);}
+        }
+    }
+#endif
     if(pe.warm && w->peer<LI2_PTR_SLOTS) {
         unsigned peer=w->peer;pe_need(peer!=w->primary && pda_permitted(peer),PE_RELEASE,83);
         pda_select(peer,pda_bank(peer));
@@ -510,6 +558,9 @@ static _Noreturn void pda_abort(unsigned code,long detail) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_terminal(1);
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_terminal(1);
 #endif
     report(125,pe.p.first_error,pe.p.first_detail);
     (void)li2_raw6(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();

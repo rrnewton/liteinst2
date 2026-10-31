@@ -290,6 +290,9 @@ static void selected_persistent_report(unsigned,unsigned,long);
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+#include "persistent_cross_pair_observe.h"
+#endif
 #endif
 static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
 static void selected_linked_epoch_initialize(void);
@@ -567,6 +570,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_finish(status,code,detail);
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_finish(status,code,detail);
 #endif
 #ifdef LI2_LINKED_NATIVE_PROBE
     selected_link_native_probe_report(status,code,detail);
@@ -1000,6 +1006,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_ingress(sig,si,ptr);
 #endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_ingress(sig,si,ptr);
 #endif
@@ -1397,6 +1406,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_initialize();
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    pxo_initialize();
 #endif
 #endif
 #else

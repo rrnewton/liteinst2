@@ -14,6 +14,9 @@ extern void li2_pdao_trace_closed(const struct li2_tf_chain *,const struct li2_t
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 extern void li2_pso_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
 #endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+extern void li2_pxo_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
+#endif
 #ifdef LI2_CURRENT_TF_CAPTURE
 #include "current_tf_observe.h"
 #endif
@@ -544,6 +547,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     li2_pso_trace_closed(c,p);
+#endif
+#ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
+    li2_pxo_trace_closed(c,p);
 #endif
     chain_count(c,&c->steps);c->pending=0;
     struct li2_tf_chain_slot *s=chain_next(c,previous^1);s->origin=2;
