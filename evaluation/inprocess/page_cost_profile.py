@@ -1,5 +1,5 @@
 """Separate diagnostic owner; no baseline timing or qualification credit."""
-import ctypes, errno, hashlib, json, os, resource, select, signal, subprocess, sys, time
+import ctypes, errno, fcntl, hashlib, json, os, resource, select, signal, stat, struct, subprocess, sys, time
 from pathlib import Path
 
 TARGET = (30, 512 << 20, 16 << 20, 60)
@@ -27,6 +27,23 @@ def child(config, ready, release):
     observed = dict(pid=os.getpid(), parent=os.getppid(), group=os.getpgrp(),
         stdout=[s.st_dev, s.st_ino, s.st_mode], argv=c['argv'], environment=dict(os.environ),
         cpu=sorted(os.sched_getaffinity(0)), ready_ns=time.monotonic_ns())
+    if 'counter' in c:
+        counter=c['counter'];fd=counter['fd'];initial=counter['initial']
+        need(type(fd)is int and fd>2 and fd not in (ready,release) and
+             type(initial)is list and len(initial)==8 and all(type(x)is int for x in initial) and
+             initial[:4]==[0x31434f554e544750,2,752,4096] and initial[4]>0 and initial[5]==os.getppid(),
+             'actual held-target counter protocol and long-lived parent')
+        cs=os.fstat(fd)
+        need(stat.S_ISREG(cs.st_mode) and cs.st_mode&0o7777==0o600 and cs.st_nlink==0 and
+             [cs.st_dev,cs.st_ino,cs.st_size]==[initial[6],initial[7],4096] and
+             fcntl.fcntl(fd,fcntl.F_GETFL)&os.O_ACCMODE==os.O_RDWR and
+             fcntl.fcntl(fd,fcntl.F_GETFD)==0 and fcntl.fcntl(fd,fcntl.F_GET_SEALS)==6 and
+             os.pread(fd,4097,0)==struct.pack('<8Q',*initial)+bytes(4096-64) and
+             c['argv'].count('--counter-fd')==c['argv'].count('--counter-nonce')==1 and
+             c['argv'][c['argv'].index('--counter-fd')+1]==str(fd) and
+             c['argv'][c['argv'].index('--counter-nonce')+1]==str(initial[4]),
+             'exact sole authorized inherited counter descriptor before exec')
+        observed['counter']=dict(fd=fd,initial=initial,access=os.O_RDWR,seals=6,cloexec=False)
     data = json.dumps(observed, sort_keys=True).encode()+b'\n'
     need(len(data) < 65536 and os.write(ready, data) == len(data), 'complete ready identity')
     os.close(ready)
@@ -38,7 +55,7 @@ def child(config, ready, release):
     os.execve(c['argv'][0], c['argv'], c['environment'])
 
 
-def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False, user_dwarf=False):
+def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False, user_dwarf=False, resident_counters=False):
     """One fresh exact launch. Caller still validates source/namespace/terminal reports."""
     import page_default_ls_release_provenance as provenance
     observe, same = provenance.observe, provenance.same
@@ -46,8 +63,12 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
     need(type(kernel_callchains) is bool, 'explicit scalar or kernel-callchain profile')
     need(type(user_dwarf) is bool and not (kernel_callchains and user_dwarf),
          'distinct explicit user-DWARF profile')
+    need(type(resident_counters)is bool and (not resident_counters or user_dwarf and not kernel_callchains),
+         'distinct resident counter observation requires the original user-DWARF profile')
     if user_dwarf:
         from persistent_dynamic_profile_read import summarize
+    if resident_counters:
+        from persistent_group_counter_process import final_counter_prefix
     directory = Path(directory).resolve(); directory.mkdir(exist_ok=False)
     python = str(Path(sys.executable).resolve()); perf = str(Path(perf).resolve()); bridge = Path(bridge).resolve()
     need(tuple(row['bounds']) == TARGET and row['capture_limit'] == 16 << 20,
@@ -66,11 +87,15 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
     libc = ctypes.CDLL(None, use_errno=True); old = ctypes.c_int()
     need(libc.prctl(37, ctypes.byref(old), 0, 0, 0) == 0 and old.value == 0, 'standalone prior subreaper state')
     procs = {}; pidfds = {}; fds = set(); streams = {}; error = None
+    counter_rw=counter_ro=None;counter_initial=None;counter_states=[]
     before = {str(Path(p).resolve()): identity(p) for p in
               (perf, python, __file__, Path(__file__).with_name('page_cost_profile_read.py'), provenance.__file__, bridge)}
     if user_dwarf:
         reader = Path(__file__).with_name('persistent_dynamic_profile_read.py')
         before[str(reader.resolve())] = identity(reader)
+    if resident_counters:
+        reader=Path(__file__).with_name('persistent_group_counter_process.py')
+        before[str(reader.resolve())]=identity(reader)
     need(all(before[str(Path(bridge).resolve())][k] == bridge_fact[k] for k in ('bytes', 'sha256')),
          'independently supplied actual bridge fact')
     bridge_identity_before = bridge_file(bridge)[2]
@@ -82,6 +107,10 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         adopted=[], children_before='ECHILD', children_after=None, target_bounds=list(TARGET), cpu=cpu, owner_pid=os.getpid())
     if kernel_callchains: result.update(format='page-cost-kernel-callchains-v1', kernel_callchains=True)
     if user_dwarf: result.update(format='persistent-dynamic-user-dwarf-v1', user_dwarf=True)
+    if resident_counters:
+        result.update(format='persistent-resident-user-dwarf-counters-v2',resident_counters=True,
+                      counter_descriptors=counter_states)
+        row['counter_observation']=dict(usable=False,scope='final per-cell prefix after actual reap; no terminal or qualification claim')
     row.update(pid=None, exit=None, reaped=False, timed_out=False, error=None, cleanup_errors=[])
 
     def pipe():
@@ -121,7 +150,32 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
     try:
         need(libc.prctl(36, 1, 0, 0, 0) == 0, 'exclusive subreaper ownership')
         config = directory/'launch.json'
-        config.write_text(json.dumps(dict(argv=row['argv'], environment=row['environment'], cpu=cpu), sort_keys=True)+'\n')
+        if resident_counters:
+            need(row['argv'].count('{counter_fd}')==row['argv'].count('{counter_nonce}')==1,
+                 'one fresh explicit counter FD and nonce placeholder')
+            counter_rw=os.memfd_create('li2-group-final-counters',os.MFD_CLOEXEC|os.MFD_ALLOW_SEALING)
+            fds.add(counter_rw);counter_states.append(dict(name='counter_rw',fd=counter_rw,closed=False))
+            os.ftruncate(counter_rw,4096);os.fchmod(counter_rw,0o600)
+            cs=os.fstat(counter_rw);nonce=int.from_bytes(os.urandom(8),'little') or 1
+            counter_initial=(0x31434f554e544750,2,752,4096,nonce,os.getpid(),cs.st_dev,cs.st_ino)
+            need(os.pwrite(counter_rw,struct.pack('<8Q',*counter_initial)+bytes(4096-64),0)==4096,
+                 'complete actual initial counter backing')
+            fcntl.fcntl(counter_rw,fcntl.F_ADD_SEALS,6)
+            need(fcntl.fcntl(counter_rw,fcntl.F_GET_SEALS)==6,'exact initial grow/shrink seals')
+            counter_ro=os.open('/proc/self/fd/'+str(counter_rw),os.O_RDONLY|os.O_CLOEXEC)
+            fds.add(counter_ro);counter_states.append(dict(name='counter_ro',fd=counter_ro,closed=False))
+            rs=os.fstat(counter_ro)
+            need((rs.st_dev,rs.st_ino,rs.st_size)==(cs.st_dev,cs.st_ino,4096) and
+                 fcntl.fcntl(counter_ro,fcntl.F_GETFL)&os.O_ACCMODE==os.O_RDONLY,
+                 'same backing through genuine parent read-only description')
+            row['counter_input']=dict(bytes=4096,logical_bytes=752,nonce=nonce,parent=os.getpid(),
+                device=cs.st_dev,inode=cs.st_ino,initial_seals=6,child_fd=counter_rw)
+            row['argv']=[str(counter_rw)if x=='{counter_fd}'else str(nonce)if x=='{counter_nonce}'else x for x in row['argv']]
+            configuration=dict(argv=row['argv'],environment=row['environment'],cpu=cpu,
+                counter=dict(fd=counter_rw,initial=list(counter_initial)))
+            config.write_text(json.dumps(configuration,sort_keys=True)+'\n')
+        else:
+            config.write_text(json.dumps(dict(argv=row['argv'], environment=row['environment'], cpu=cpu), sort_keys=True)+'\n')
         rr, rw = pipe(); gr, gw = pipe(); cr, cw = pipe(); ar, aw = pipe()
         # Parent owns the exact normal-open stdout descriptor consumed by the old reader.
         streams['target'] = tuple((directory/('target.'+k)).open('xb') for k in ('stdout', 'stderr'))
@@ -130,8 +184,11 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         result['wrapper_argv'] = [python, '-I', str(Path(__file__).resolve()), '--child', str(config), str(rw), str(gr)]
         target = subprocess.Popen(result['wrapper_argv'], cwd=row['cwd'], env=row['environment'],
             stdout=streams['target'][0], stderr=streams['target'][1],
-            pass_fds=(rw, gr), start_new_session=True, preexec_fn=lambda: prepare(TARGET))
+            pass_fds=(rw, gr, counter_rw)if resident_counters else(rw,gr),
+            start_new_session=True, preexec_fn=lambda: prepare(TARGET))
         procs['target'] = target; pidfds['target'] = os.pidfd_open(target.pid); row['pid'] = target.pid
+        if resident_counters:
+            closing=counter_rw;counter_rw=None;close(closing);counter_states[0]['closed']=True
         close(rw); close(gr)
         ready_bytes = line(rr, start+8); close(rr); ready = json.loads(ready_bytes)
         (directory/'ready.json').write_bytes(ready_bytes); result['ready'] = ready
@@ -139,6 +196,10 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         need(ready['pid'] == ready['group'] == target.pid and ready['parent'] == os.getpid() and
              ready['stdout'] == [pre[0], pre[1], pre[5]] and ready['argv'] == row['argv'] and
              ready['environment'] == row['environment'] and ready['cpu'] == [cpu], 'actual same-PID/stdout launch identity')
+        if resident_counters:
+            need(ready.get('counter')==dict(fd=configuration['counter']['fd'],initial=list(counter_initial),
+                 access=os.O_RDWR,seals=6,cloexec=False) and counter_states[0]['closed']is True,
+                 'actual held PID/parent counter authority; no parent writer before perf spawn')
         perf_argv = [str(perf), 'record', '-e', 'cpu-clock', '-F', '99', '--strict-freq',
             '--mmap-pages=256', '--timestamp', '--sample-cpu', '--period', '--clockid=mono',
             '--delay=-1', '--control=fd:'+str(cr)+','+str(aw), '--pid', str(target.pid),
@@ -233,6 +294,31 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
                         except (FileNotFoundError, ProcessLookupError, ChildProcessError, PermissionError): continue
                 time.sleep(.01)
         except BaseException as exc: result['cleanup_errors'].append('adopted cleanup: '+repr(exc))
+        if resident_counters:
+            if counter_rw is not None:
+                closing=counter_rw;counter_rw=None
+                try:close(closing);counter_states[0]['closed']=True
+                except BaseException as exc:result['cleanup_errors'].append('counter RW close: '+repr(exc))
+            if counter_ro is not None:
+                try:
+                    need(row['reaped']is True and result['children_after']=='ECHILD' and not result['cleanup_errors'],
+                         'final authoritative read follows actual target/group/adopted-child cleanup')
+                    rs=os.fstat(counter_ro)
+                    need(counter_initial is not None and (rs.st_dev,rs.st_ino,rs.st_size)==
+                         (counter_initial[6],counter_initial[7],4096) and
+                         fcntl.fcntl(counter_ro,fcntl.F_GETFL)&os.O_ACCMODE==os.O_RDONLY,
+                         'final actual read-only backing identity')
+                    data=os.pread(counter_ro,4097,0);destination=directory/'target.counters'
+                    with destination.open('xb')as stream:stream.write(data)
+                    seals=fcntl.fcntl(counter_ro,fcntl.F_GET_SEALS)
+                    row['counter_observation'].update(final_seals=seals,raw={k:identity(destination)[k]for k in('bytes','sha256')})
+                    value=final_counter_prefix(data,counter_initial,row['pid'],seals)
+                    row['counter_observation'].update(usable=True,**value)
+                except BaseException as exc:row['counter_observation']['error']=type(exc).__name__+': '+str(exc)
+                finally:
+                    closing=counter_ro;counter_ro=None
+                    try:close(closing);counter_states[-1]['closed']=True
+                    except BaseException as exc:result['cleanup_errors'].append('counter RO close: '+repr(exc))
         for fd in list(fds)+list(pidfds.values()):
             try: os.close(fd)
             except OSError as exc: result['cleanup_errors'].append('fd close: '+repr(exc))
