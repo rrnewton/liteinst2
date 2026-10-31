@@ -107,6 +107,40 @@ pub fn prepare_disassembly_whole(
     Ok(product)
 }
 
+/// Opt-in B1/B2/T1 placement from current composition and declared ranges.
+///
+/// Uses the same typed complete selection and exact policy bytes. Selected
+/// allocation must declare one candidate, one mapping, 4096 bytes and 1..=16
+/// page-aligned ranges. Original LOAD pages, the reserved carrier and committed
+/// image allocations are supplied through the existing ArtifactEmission occupancy.
+/// A geometrically available seed is retained; actual image-fit failure does
+/// not trigger a second emission. T2/T3 retain their policies and inherited
+/// long-T3 pair admission. Final atomic composition and every cap still apply.
+/// This is artifact construction only, with no qualification or runtime claim.
+pub fn prepare_disassembly_whole_current_placement(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeCurrentPlacement,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.files.clone());
+    product
+        .files
+        .get_mut("planning-profile.tsv")
+        .expect("typed whole-program selection retains its profile")
+        .extend_from_slice(disassembly::whole::CURRENT_PLACEMENT_METADATA.as_bytes());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
     prepare_selection_mode(original, selection, owned_neighbors, false)
@@ -721,7 +755,14 @@ fn attempt_singleton(
                 max_virtual_span: s.limits.virtual_span,
             },
         };
-        let result = if mode == disassembly::NeighborMode::WholeLongT3Ownership {
+        let result = if mode == disassembly::NeighborMode::WholeCurrentPlacement {
+            engine::plan_with_emission_after_and_current_placement(
+                &request,
+                composition,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeLongT3Ownership {
             engine::plan_with_emission_after_and_long_t3_ownership(
                 &request,
                 composition,

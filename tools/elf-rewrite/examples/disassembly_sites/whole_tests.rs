@@ -263,3 +263,115 @@ fn whole_cli_uses_shared_prepare_and_keeps_full_inventory_on_policy_refusal() {
     assert_eq!(legacy["disassembly-inventory.tsv"], imported.inventory());
     assert!(!legacy.contains_key("selection.txt"));
 }
+
+#[test]
+fn whole_current_placement_cli_is_explicit_and_preserves_every_legacy_form() {
+    let base = args();
+    let flag = "--whole-program-current-placement-4096";
+    for position in 1..base.len() {
+        let mut positional = base.clone();
+        positional[position] = flag.into();
+        assert_eq!(
+            arguments_with_current_placement(&positional),
+            arguments_with_whole(&positional)
+        );
+    }
+    for old in [
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+        "--whole-program-4096",
+    ] {
+        let mut input = base.clone();
+        input.insert(1, old.into());
+        for position in 2..input.len() {
+            let mut positional = input.clone();
+            positional[position] = flag.into();
+            assert_eq!(
+                arguments_with_current_placement(&positional),
+                arguments_with_whole(&positional)
+            );
+        }
+    }
+    let mut new = base.clone();
+    new.insert(1, flag.into());
+    assert_eq!(
+        arguments_with_current_placement(&new).unwrap(),
+        (&base[1..], Mode::WholeCurrentPlacement4096)
+    );
+    let (profile, family, stdout) = labels_with_ownership(Mode::WholeCurrentPlacement4096);
+    assert_eq!(profile, disassembly::whole::PROFILE);
+    assert_eq!(family, disassembly::whole::CURRENT_PLACEMENT_METADATA);
+    assert!(stdout.contains("artifact_placement=current-composition-single-candidate-v1"));
+    assert!(stdout.contains("paired_ownership=inherited-long-T3"));
+    for mixed in [
+        flag,
+        "--whole-program-4096",
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+    ] {
+        for position in 2..new.len() {
+            let mut bad = new.clone();
+            bad[position] = mixed.into();
+            assert!(arguments_with_current_placement(&bad).is_err());
+        }
+    }
+    assert_eq!(
+        arguments_with_current_placement(&new[..7]),
+        arguments_with_whole(&new[..7])
+    );
+    let mut extra = new;
+    extra.push("extra".into());
+    assert!(arguments_with_current_placement(&extra).is_err());
+}
+
+#[test]
+fn whole_current_placement_cli_retains_mode_and_denominator_on_refusal() {
+    let (original, ledger, policy) = fixture();
+    let inventory = disassembly::import(&original, &ledger, ContentId::of(&ledger))
+        .unwrap()
+        .inventory_whole_program();
+    let mut files = BTreeMap::new();
+    // This original fixture explicitly requests 256 candidates/8192 bytes. The
+    // opt-in mode must refuse it, not silently narrow or expand either policy.
+    let product = prepare_inputs(
+        &original,
+        &ledger,
+        ContentId::of(&ledger),
+        &policy,
+        ContentId::of(&policy),
+        Mode::WholeCurrentPlacement4096,
+        &mut files,
+    )
+    .unwrap();
+    assert_eq!(product.reports().len(), 2);
+    assert!(product.reports().iter().all(|r| r.refusal_code == Some(1)));
+    assert!(!product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert_eq!(files["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-policy.txt"], policy);
+    assert!(
+        product.files()["planning-profile.tsv"]
+            .ends_with(disassembly::whole::CURRENT_PLACEMENT_METADATA.as_bytes())
+    );
+    let mut failed = BTreeMap::new();
+    assert!(
+        prepare_inputs(
+            &original,
+            &ledger,
+            ContentId::of(&ledger),
+            &policy,
+            ContentId([0; 32]),
+            Mode::WholeCurrentPlacement4096,
+            &mut failed,
+        )
+        .is_err()
+    );
+    assert_eq!(failed.len(), 1);
+    assert_eq!(failed["disassembly-inventory.tsv"], inventory);
+    let (_, family, _) = labels_with_ownership(Mode::WholeCurrentPlacement4096);
+    assert_eq!(family, disassembly::whole::CURRENT_PLACEMENT_METADATA);
+}

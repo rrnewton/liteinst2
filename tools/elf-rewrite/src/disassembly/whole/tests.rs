@@ -440,3 +440,136 @@ fn whole_long_t3_ownership_keeps_denominator_and_finds_alternate_victim() {
             .contains("OwnershipConflict")
     );
 }
+
+// Two independent near JMPs, one shared original snapshot and one declared
+// two-page arena. No bytes are mapped or executed by these artifact controls.
+fn current_placement_fixture(pages: usize) -> (Vec<u8>, String, String) {
+    let (mut original, _) = fixture(2, 0);
+    let chunks: [&[u8]; 5] = [
+        &[0xf3, 0x0f, 0x1e, 0xfa],
+        &[0xe9, 0, 0, 0, 0],
+        &[0xc3],
+        &[0xe9, 0, 0, 0, 0],
+        &[0xc3],
+    ];
+    let code: Vec<_> = chunks.iter().flat_map(|c| c.iter().copied()).collect();
+    original[0x1100..0x1100 + code.len()].copy_from_slice(&code);
+    let mut text = format!(
+        "LI2DISASM 1\noriginal {}\ncontract complete-code no-overlap no-code-as-data private-image\nregion {PC} 4352 {}\n",
+        digest(&original),
+        code.len()
+    );
+    let mut pc = PC;
+    for chunk in chunks {
+        writeln!(text, "head {pc} {}", ledger::hex(chunk)).unwrap();
+        pc += chunk.len() as u64;
+    }
+    writeln!(text, "region {HOOK} 73472 1\nhead {HOOK} c3").unwrap();
+    let mut p = policy(&original, &text, 0);
+    let seed = PC & !4095;
+    let free = BASE + 0x40000;
+    for id in 1..=2 {
+        writeln!(p, "search {id} B1 0 80 1 none 64 256\nallocation {id} selected {seed} 1 4096 {seed}:4096 {free}:{}\nallocation {id} victim {free} 1 4096 {free}:{}", pages * 4096, pages * 4096).unwrap();
+    }
+    (original, text, p)
+}
+
+#[test]
+fn whole_current_placement_uses_declared_arena_and_committed_image_occupancy() {
+    let (original, text, p) = current_placement_fixture(2);
+    let selected = bind(&original, &text, &p).unwrap();
+    let manifest = selected.manifest().to_vec();
+    let prior = crate::prepare_disassembly_whole(&original, &selected).unwrap();
+    assert!(!prior.candidate_complete());
+    assert!(!prior.files().contains_key("candidate.elf"));
+    let product = crate::prepare_disassembly_whole_current_placement(&original, &selected).unwrap();
+    assert!(product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal.is_none() && r.candidate_emitted)
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.core_tactic == Some(li2core::engine::Tactic::Relocation))
+    );
+    let plan = std::str::from_utf8(&product.files()["plan-ledger.tsv"]).unwrap();
+    let allocations: Vec<_> = plan
+        .lines()
+        .filter(|l| l.starts_with("allocation\t"))
+        .collect();
+    let free = BASE + 0x40000;
+    assert_eq!(
+        allocations,
+        [
+            format!("allocation\t2\t0\t{free}\t{}\t4096", free + 4096),
+            format!("allocation\t1\t0\t{}\t{}\t4096", free + 4096, free + 8192),
+        ]
+    );
+    assert_eq!(selected.manifest(), manifest);
+    assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+    assert_eq!(
+        product.files()["disassembly-inventory.tsv"],
+        selected.files["disassembly-inventory.tsv"]
+    );
+    let profile = &product.files()["planning-profile.tsv"];
+    assert!(profile.starts_with(&selected.files["planning-profile.tsv"]));
+    assert!(profile.ends_with(CURRENT_PLACEMENT_METADATA.as_bytes()));
+    assert!(
+        std::str::from_utf8(profile)
+            .unwrap()
+            .contains(NEIGHBOR_METADATA)
+    );
+    assert_eq!(&product.files()["candidate.elf"][0x11f00..0x11f01], &[0xc3]);
+}
+
+#[test]
+fn whole_current_placement_exhaustion_keeps_full_atomic_refusal_and_one_candidate_cap() {
+    let (original, text, p) = current_placement_fixture(1);
+    let selected = bind(&original, &text, &p).unwrap();
+    let product = crate::prepare_disassembly_whole_current_placement(&original, &selected).unwrap();
+    assert!(!product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal.is_some() && !r.candidate_emitted)
+    );
+    assert!(product.reports().iter().any(|r| r.refusal_code == Some(11)));
+    assert_eq!(
+        product
+            .files()
+            .keys()
+            .filter(|n| n.starts_with("image-"))
+            .count(),
+        1
+    );
+    assert_eq!(
+        product.files()["disassembly-inventory.tsv"],
+        selected.files["disassembly-inventory.tsv"]
+    );
+    assert!(
+        product.files()["planning-profile.tsv"].ends_with(CURRENT_PLACEMENT_METADATA.as_bytes())
+    );
+    let widened = p.replace(" 1 4096 ", " 2 4096 ");
+    let invalid = bind(&original, &text, &widened).unwrap();
+    let refused = crate::prepare_disassembly_whole_current_placement(&original, &invalid).unwrap();
+    assert_eq!(refused.reports().len(), 2);
+    assert!(refused.reports().iter().all(|r| r.refusal_code == Some(1)));
+    assert!(!refused.files().contains_key("candidate.elf"));
+    assert!(!refused.files().keys().any(|n| n.starts_with("image-")));
+}

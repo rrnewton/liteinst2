@@ -7,6 +7,8 @@ use std::sync::Arc;
 pub const PROFILE: &str = "elf-disassembly-null-jumps-shared-4096-v1";
 pub(super) const NEIGHBOR_METADATA: &str =
     "neighbor_victims\tlong-only\nneighbor_ownership\tinherited-t3\n";
+/// Additive mode identity; the complete whole-program profile is unchanged.
+pub const CURRENT_PLACEMENT_METADATA: &str = "artifact_placement\tcurrent-composition-single-candidate-v1\nselected_placement_tactics\tB1,B2,T1\npaired_placement_tactics\tlegacy-T2,T3\npaired_ownership\tinherited-long-T3\n";
 pub const MATERIAL_PROFILE: &str = "e9patch-full-sections-null-jumps-4096-v1";
 pub const SITE_LIMIT: usize = 4096;
 pub const HEAD_LIMIT: usize = 16384;
