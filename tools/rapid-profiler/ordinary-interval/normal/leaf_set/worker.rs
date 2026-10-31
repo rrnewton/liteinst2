@@ -64,6 +64,8 @@ struct Worker<const N: usize> {
     custody: Arc<pair_worker::Custody>,
     identity: pair_worker::Identity,
     trace: Option<(TracePublication, WorkerTrace)>,
+    // Last field: preserve FailStop and every existing owner's drop order.
+    scratch: pair_worker::WorkerScratch,
 }
 fn complete_record(pending: usize, n: usize) -> bool {
     assert!((1..=4).contains(&n));
@@ -71,8 +73,8 @@ fn complete_record(pending: usize, n: usize) -> bool {
     true
 }
 impl<const N: usize> Worker<N> {
-    fn postflight(&self) {
-        self.custody.worker(self.identity);
+    fn postflight(&mut self) {
+        self.custody.worker_with(self.identity, &mut self.scratch);
         for call in &self.calls {
             call.check(N);
         }
@@ -101,7 +103,8 @@ impl<const N: usize> Worker<N> {
             stack: csv::stack_bounds(),
             caller: csv::mapping(csv::invoke as *const () as usize as u64, "r-xp"),
         };
-        custody.worker(identity);
+        let mut scratch = pair_worker::WorkerScratch::default();
+        custody.worker_with(identity, &mut scratch);
         // SAFETY: sole actual caller, retained immutable complete leaf set, no signals,
         // reentry/nonlocal exits or stack substitution; main is independent controller.
         let attached = unsafe { counter::Thread::attach(&client, readable, counter.as_deref()) };
@@ -120,6 +123,7 @@ impl<const N: usize> Worker<N> {
             custody,
             identity,
             trace: None,
+            scratch,
         };
         fail_stop.0 = false;
         worker

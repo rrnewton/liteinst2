@@ -39,6 +39,33 @@ impl Stamp {
         }
     }
 }
+// Exclusively borrowed by one worker/pass; Custody itself remains immutable.
+// A pass retains no captured answer: only these allocations may survive it.
+#[derive(Default)]
+pub(in crate::normal) struct WorkerScratch {
+    maps: csv::MappingScratch,
+    actual: Vec<u8>,
+    tasks: Vec<u64>,
+}
+impl WorkerScratch {
+    fn clear(&mut self) {
+        self.maps.clear();
+        self.actual.clear();
+        self.tasks.clear();
+    }
+    fn pass(&mut self) -> ScratchPass<'_> {
+        self.clear();
+        ScratchPass(self)
+    }
+}
+// A caught test panic must not leave nonempty logical state for another pass.
+// In production, clearing storage does not recover from the existing FailStop.
+struct ScratchPass<'a>(&'a mut WorkerScratch);
+impl Drop for ScratchPass<'_> {
+    fn drop(&mut self) {
+        self.0.clear();
+    }
+}
 pub(in crate::normal) struct Custody {
     paths: [PathBuf; 2],
     stamps: [Stamp; 2],
@@ -65,22 +92,27 @@ impl Custody {
         }
     }
     pub(in crate::normal) fn files_and_code(&self) {
-        self.files_and_code_with(&mut csv::MappingScratch::default());
+        let mut scratch = WorkerScratch::default();
+        let pass = scratch.pass();
+        let WorkerScratch { maps, actual, .. } = &mut *pass.0;
+        self.files_and_code_with(maps, actual);
     }
-    fn files_and_code_with(&self, maps: &mut csv::MappingScratch) {
+    fn files_and_code_with(&self, maps: &mut csv::MappingScratch, actual: &mut Vec<u8>) {
         assert_eq!(std::process::id(), self.pid);
-        let mut actual = Vec::new();
+        // The pass cleared the logical length. Reserve is only an allocation
+        // hint; the unchanged bounded full read still detects trailing bytes.
+        actual.reserve(self.bytes.len().min(1024 * 1024 + 1));
         for i in 0..2 {
             assert_eq!(Stamp::read(&self.paths[i]), self.stamps[i]);
-            // Retain capacity only inside this pass. Each file is opened and
-            // read in full again; no prior bytes or stamp replace that read.
+            // Reuse only empty capacity. Each file is opened and read in full
+            // again; no prior bytes or stamp replace that read.
             actual.clear();
             File::open(&self.paths[i])
                 .unwrap()
                 .take(1024 * 1024 + 1)
-                .read_to_end(&mut actual)
+                .read_to_end(actual)
                 .unwrap();
-            assert_eq!(actual, self.bytes);
+            assert_eq!(*actual, self.bytes);
             assert_eq!(Stamp::read(&self.paths[i]), self.stamps[i]);
         }
         // Fresh only after both complete file/stamp checks. The loader's
@@ -104,13 +136,21 @@ impl Custody {
         });
     }
     pub(in crate::normal) fn worker(&self, expected: Identity) {
+        self.worker_with(expected, &mut WorkerScratch::default());
+    }
+    pub(in crate::normal) fn worker_with(&self, expected: Identity, scratch: &mut WorkerScratch) {
+        let pass = scratch.pass();
+        let WorkerScratch {
+            maps,
+            actual,
+            tasks,
+        } = &mut *pass.0;
         assert_eq!(std::process::id(), expected.pid);
         assert_eq!(
             unsafe { libc::syscall(libc::SYS_gettid) } as u64,
             expected.tid
         );
         cpu_is(expected.cpu);
-        let mut maps = csv::MappingScratch::default();
         // Touch the actual worker's marker before reading its containing VMA.
         // This snapshot dies before the unchanged task and whole-file checks.
         let mut marker = 0_u64;
@@ -125,18 +165,23 @@ impl Custody {
                 expected.caller
             );
         });
-        let mut tasks: Vec<u64> = std::fs::read_dir("/proc/self/task")
-            .unwrap()
-            .map(|e| e.unwrap().file_name().to_str().unwrap().parse().unwrap())
-            .collect();
+        tasks.clear();
+        tasks.extend(std::fs::read_dir("/proc/self/task").unwrap().map(|e| {
+            e.unwrap()
+                .file_name()
+                .to_str()
+                .unwrap()
+                .parse::<u64>()
+                .unwrap()
+        }));
         tasks.sort_unstable();
         let mut expected_tasks = [u64::from(expected.pid), expected.tid];
         expected_tasks.sort_unstable();
         assert_ne!(expected.tid, u64::from(expected.pid));
-        assert_eq!(tasks, expected_tasks);
-        // Reuse only scratch capacity. The second capture still occurs after
-        // both complete file/stamp checks; nothing is retained across passes.
-        self.files_and_code_with(&mut maps);
+        assert_eq!(*tasks, expected_tasks);
+        // The second fresh capture still follows both complete file/stamp
+        // checks. The pass guard clears all logical state before returning.
+        self.files_and_code_with(maps, actual);
     }
 }
 pub(in crate::normal) fn cpu_is(cpu: usize) {
@@ -459,6 +504,30 @@ mod prepared_owner_tests {
             drop(owner); // no csv::invoke, no Call, no NORMAL acknowledgement
             assert_eq!(Arc::strong_count(&record), 1);
             record.check();
+        }
+        // Successful and unwound custody scopes retain only capacities. A
+        // partial file read/task scan must not survive a caught test refusal.
+        let mut scratch = WorkerScratch::default();
+        scratch.actual.reserve(64);
+        scratch.tasks.reserve(2);
+        let capacities = (scratch.actual.capacity(), scratch.tasks.capacity());
+        for refuse in [false, true] {
+            // Also challenge defensive entry clearing of stale logical state.
+            scratch.actual.extend_from_slice(b"stale");
+            scratch.tasks.push(17);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let pass = scratch.pass();
+                assert!(pass.0.actual.is_empty() && pass.0.tasks.is_empty());
+                pass.0.actual.extend_from_slice(b"partial fresh read");
+                pass.0.tasks.extend([7, 8]);
+                assert!(!refuse, "forced custody refusal after partial capture");
+            }));
+            assert_eq!(result.is_err(), refuse);
+            assert!(scratch.actual.is_empty() && scratch.tasks.is_empty());
+            assert_eq!(
+                (scratch.actual.capacity(), scratch.tasks.capacity()),
+                capacities
+            );
         }
     }
     #[test]
