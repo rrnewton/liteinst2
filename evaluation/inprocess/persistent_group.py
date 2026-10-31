@@ -206,9 +206,28 @@ def component_oracles(builder,products,private,pin,binary,aliases,run,r):
          archive==builder.paths['archive']==builder.retained/'decoder.a'and str(archive)==retained['path']and
          digest(fact(archive))==digest({k:retained[k]for k in('bytes','sha256')}),
          'group pure component consume the fresh retained actual archive')
+    # Generic Build's summary omits decode. Authenticate its actual text
+    # definition from the same already-retained complete archive inspection.
+    inspections=[c for c in r['commands']if c['name']=='archive-text-exports']
+    need(len(inspections)==1,'one actual retained archive provider inspection')
+    inspection=inspections[0]
+    need(inspection['argv']==list(map(str,(builder.tools['nm'],'-g','--defined-only',archive)))and
+         inspection['profile']=='inspect'and digest(inspection['bounds'])==digest(BOUNDS['inspect'])and
+         type(inspection['exit'])is int and inspection['exit']==inspection['expected_exit']==0 and
+         inspection['reaped']is True and inspection['timed_out']is False and not inspection.get('error')and
+         inspection['cleanup_errors']==[]and all(d['closed']is True for d in inspection['descriptors']),
+         'same actual tool/archive, original bounds and completed provider inspection')
+    streams={}
+    for key in('stdout','stderr'):
+        capture=inspection['captures'][key];path=binary(private/capture['file'])
+        need(fact(path)=={k:capture[k]for k in('bytes','sha256')},'whole retained provider inspection '+key)
+        streams[key]=path.read_bytes()
+    decode=[line.split()for line in streams['stdout'].splitlines()if line.split()[-1:]==[b'li2_decoder_decode']]
+    need(streams['stderr']==b''and len(decode)==1 and decode[0][-2:]==[b'T',b'li2_decoder_decode'],
+         'one actual decoder decode text definition in the same complete archive')
     need(all(type(builder.record['archive_text_exports'].get(n))is int and
          builder.record['archive_text_exports'][n]==1 for n in
-         ('li2_decoder_decode','li2_decoder_region_describe','li2_decoder_span_describe','li2_decoder_link_none',
+         ('li2_decoder_region_describe','li2_decoder_span_describe','li2_decoder_link_none',
           'li2_decoder_mov_store','li2_decoder_tf_classify','li2_decoder_write_footprint')),
          'all actual pure-component decoder providers present exactly once')
     for name,expected in COMPONENT_INPUTS.items():
