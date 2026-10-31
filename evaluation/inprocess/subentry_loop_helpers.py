@@ -280,6 +280,7 @@ def subentry_component(builder,private,pin,binary,run,r):
     script=pin(fixture/'build.sh');prepare=pin(fixture/'prepare.py');unit=pin(fixture/'oracle.c')
     output=private/'subentry-authority'
     expected=b'subentry-authority lookup=112 selection=33 entry=47 lifetime=19 history=25 synthetic_observations=1 native_credit=0\n'
+    expected+=b'registered-address cases=6 controls=118 synthetic_observations=1 native_credit=0\n'
     state=r['subentry_component']=dict(status='failed',expected_stdout=expected.decode(),qualification_credit=False,
         recipe=fact(script),prepare=fact(prepare),source=fact(unit),native_operations=0)
     extracted=('persistent_group_controller.inc','persistent_active_domain.inc',
@@ -309,10 +310,11 @@ def subentry_component(builder,private,pin,binary,run,r):
     need(out==err==b'','strict actual predicate compile')
     executable=binary(output);state['artifact']=fact(executable)
     row,out,err=run('subentry-authority-run',[executable],profile='finite',env=builder.environment)
-    need(row['exit']==0 and out==expected and err==b'','all236 actual-predicate controls complete')
+    need(row['exit']==0 and out==expected and err==b'','all236 original plus118 registered-address controls complete')
     state.update(status='passed',counts=dict(lookup=112,selection=33,entry=47,lifetime=19,history=25),
         exit=row['exit'],duration_ns=row['duration_ns'],bounds=row['bounds'],
         captures={k:{j:v[j]for j in('bytes','sha256')}for k,v in row['captures'].items()})
+    state['counts']['registered_address']=118
 
 
 def empty_namespace_component(builder,private,pin,binary,run,r):

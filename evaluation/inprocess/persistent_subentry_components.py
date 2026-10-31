@@ -28,9 +28,11 @@ NATIVE_EXPECTED = dict(schema=1, heads=68, source_pages=2, members=2,
     poisoned_spill_recoveries=4352, emitted_execution=1, owner_qualification=0)
 
 AUTHORITY_EXPECTED = dict(lookup=112, selection=33, entry=47, lifetime=19,
-                         history=25, synthetic_observations=1, native_credit=0)
+                         history=25, registered_address=118,
+                         synthetic_observations=1, native_credit=0)
 AUTHORITY_STDOUT = (b'subentry-authority lookup=112 selection=33 entry=47 lifetime=19 '
-                    b'history=25 synthetic_observations=1 native_credit=0\n')
+                    b'history=25 synthetic_observations=1 native_credit=0\n'
+                    b'registered-address cases=6 controls=118 synthetic_observations=1 native_credit=0\n')
 EXTRACT_INPUTS = ('persistent_group_controller.inc','persistent_active_domain.inc',
     'persistent_group_source.inc','lifecycle_loader.c','linked_controller.inc',
     'span_source.inc','selected_register_run.inc','persistent_group_rseq.inc')

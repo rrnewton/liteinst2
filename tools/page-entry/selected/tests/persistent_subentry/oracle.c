@@ -375,10 +375,50 @@ static void history_cases(void) {
     REFUSE(HISTORY,pe.retained[1].claim.id,2,pda_permitted(1));
     pda_claim(1);CHECK(HISTORY,pe.domain.claimed[0]==3 && !pda_permitted(1));
 }
+static void registered_address_cases(void) {
+    /* Literal expected pages keep this oracle independent of the production
+       mask. These are descriptive synthetic receipts, not registration proof. */
+    static const uint64_t rows[][2]={
+        {UINT64_C(0x700080),UINT64_C(0x700000)},
+        {UINT64_C(0xffffffe0),UINT64_C(0xfffff000)},
+        {UINT64_C(0x100000000),UINT64_C(0x100000000)},
+        {UINT64_C(0x500000200000),UINT64_C(0x500000200000)},
+        {UINT64_C(0x500000200080),UINT64_C(0x500000200000)},
+        {UINT64_C(0x7fffffffefe0),UINT64_C(0x7fffffffe000)}
+    };
+    unsigned count=0;
+#define ADDRESS_CHECK(x) do {assert(x);++count;} while(0)
+#define ADDRESS_REFUSE(field,value) do {__auto_type old=(field);(field)=(value); \
+    ADDRESS_CHECK(!li2_pgu_progress_valid(&r));(field)=old;assert(li2_pgu_progress_valid(&r));} while(0)
+    for(unsigned i=0;i<sizeof rows/sizeof *rows;i++) {
+        struct li2_pg_rseq_progress r=unregistered();
+        r.close_complete=0;r.lifetime_mode=LI2_PGU_REGISTERED;r.word_observed=1;
+        r.registration_epoch=7;r.address=rows[i][0];r.page=rows[i][1];r.length=32;
+        r.before.complete=r.observed.complete=1;
+        ADDRESS_CHECK(li2_pgu_progress_valid(&r));
+        ADDRESS_REFUSE(r.page,rows[i][1]+4096);ADDRESS_REFUSE(r.page,rows[i][1]+1);
+        ADDRESS_REFUSE(r.address,rows[i][0]+1);ADDRESS_REFUSE(r.length,31);
+        ADDRESS_REFUSE(r.registration_epoch,0);ADDRESS_REFUSE(r.word_observed,0);
+        ADDRESS_REFUSE(r.before.complete,0);ADDRESS_REFUSE(r.observed.complete,0);
+        ADDRESS_REFUSE(r.word_before,1);ADDRESS_REFUSE(r.word_entry,1);ADDRESS_REFUSE(r.word_after,1);
+        ADDRESS_REFUSE(r.tls_complete,0);ADDRESS_REFUSE(r.fs_result,1);ADDRESS_REFUSE(r.gs_result,1);
+        if(i>=2)ADDRESS_REFUSE(r.page,(uint32_t)rows[i][1]);
+        r.close_complete=1;ADDRESS_CHECK(!li2_pgu_progress_valid(&r));
+        r.after.complete=1;ADDRESS_CHECK(li2_pgu_progress_valid(&r));
+        r.close_complete=0;r.cancel_complete=1;r.after.complete=0;
+        ADDRESS_CHECK(!li2_pgu_progress_valid(&r));
+        r.after.complete=1;ADDRESS_CHECK(li2_pgu_progress_valid(&r));
+    }
+#undef ADDRESS_REFUSE
+#undef ADDRESS_CHECK
+    assert(count==118);
+    printf("registered-address cases=6 controls=%u synthetic_observations=1 native_credit=0\n",count);
+}
 int main(void) {
     lookup_cases();selection_cases();entry_cases();lifetime_cases();history_cases();
     assert(checks[LOOKUP]==112 && checks[SELECT]==33 && checks[ENTRY]==47 && checks[LIFETIME]==19 && checks[HISTORY]==25);
     printf("subentry-authority lookup=%u selection=%u entry=%u lifetime=%u history=%u synthetic_observations=1 native_credit=0\n",
         checks[LOOKUP],checks[SELECT],checks[ENTRY],checks[LIFETIME],checks[HISTORY]);
+    registered_address_cases();
     return 0;
 }

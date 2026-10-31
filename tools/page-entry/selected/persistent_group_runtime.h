@@ -104,7 +104,7 @@ static inline int li2_pgu_progress_valid(const struct li2_pg_rseq_progress *r) {
     if(r->lifetime_mode==LI2_PGU_REGISTERED)
         return r->word_observed==1 && r->registration_epoch && r->length==32 &&
             !(r->address&31) && r->address<=UINTPTR_MAX-32 &&
-            r->page==(r->address&~(LI2_REGION_PAGE-1U)) && r->before.complete==1 &&
+            r->page==(r->address&~((uint64_t)LI2_REGION_PAGE-1U)) && r->before.complete==1 &&
             r->observed.complete==1 &&
             (!(r->close_complete || r->cancel_complete) || r->after.complete==1);
     if(r->lifetime_mode!=LI2_PGU_UNREGISTERED || r->word_observed ||
