@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Actual archive/image/build closure for one registered persistent primitive.
 
-This helper has no capture or qualification mode. Its caller owns unchanged
-source/process bounds, input/artifact rehashing, and the generic Build finalizer.
+The default remains the release helper. The explicit capture branch adds only
+the persistent observer; its caller owns qualification, unchanged process bounds,
+input/artifact rehashing, and the generic Build finalizer.
 """
 import json
 from pathlib import Path
@@ -137,7 +138,8 @@ def protected_extents(builder, bridge, symbols, pin, run, state):
                                      compact=compact, code=code, spill=4096, recovery=recovery)
 
 
-def build_bridge(builder, products, private, pin, binary, aliases, run, record, image):
+def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False):
+    need(type(capture) is bool, 'explicit persistent capture selector')
     need(builder.mov_guard is True and builder.linked_epoch is True and builder.scalar_span is True and
          builder.extra_decoder_sources == ('region.rs', 'mov_guard.rs') and
          builder.decoder_features == FEATURES and builder.record.get('decoder_features') == list(FEATURES) and
@@ -152,9 +154,9 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
          ('li2_decoder_region_describe', 'li2_decoder_span_describe', 'li2_decoder_link_none',
           'li2_decoder_mov_store', 'li2_decoder_tf_classify', 'li2_decoder_write_footprint')),
          'every actual descriptor/NONE provider is present exactly once')
-    output = private/'persistent-release'; output.mkdir()
+    output = private/('persistent-capture' if capture else 'persistent-release'); output.mkdir()
     binding = binding_config(builder, archive, image, output, pin, binary, run)
-    script = pin(SELECTED/'build-persistent-epoch.sh'); rows = recipe(script, '"$cc_bin"')
+    script = pin(SELECTED/('build-persistent-epoch-capture.sh' if capture else 'build-persistent-epoch.sh')); rows = recipe(script, '"$cc_bin"')
     need(len(rows) == 1, 'one source-owned persistent compiler recipe')
     argv = expand(rows[0], {'$cc_bin': builder.tools['cc'], '$selected_dir': SELECTED,
                   '$parent_dir': SELECTED.parent, '$archive': archive, '$output': output})
@@ -164,7 +166,9 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     macros = ('PERSISTENT_EPOCH', 'MOV_GUARD', 'LINKED_EPOCH', 'SCALAR_SPAN', 'SCALAR_SPAN_TRACE',
               'SPAN_FAST_BYTES', 'MAPS_CURRENT_TF', 'SCALAR_REGION', 'SCALAR_REGION_REUSE',
               'INITIAL_CODE_PROTECTION', 'UNROLLED_HASH', 'MAPS_MAINTAINED')+MACROS
-    need(argv[-2:] == ['-o', str(output/'bridge-persistent-epoch.so')] and
+    if capture:macros = ('PERSISTENT_EPOCH_CAPTURE',)+macros
+    name = 'bridge-persistent-epoch-capture.so' if capture else 'bridge-persistent-epoch.so'
+    need(argv[-2:] == ['-o', str(output/name)] and
          [x for x in argv if x.endswith(('.c', '.S'))] == units and
          [x for x in argv if x.startswith('-DLI2_')] == ['-DLI2_'+n+'=1' for n in macros] and
          all(x in argv for x in ('-O2', '-g', '-nostdlib', '-shared', '-fPIC', '-fvisibility=hidden',
@@ -172,7 +176,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
              '-fno-tree-vectorize', '-Wall', '-Wextra', '-Werror')), 'exact24-TU persistent-only no-FP release recipe')
     state = record['release_build'] = dict(status='failed', profile='persistent-registered-two-page-v1',
               recipe=fact(script), archive=fact(archive), argv=argv, persistent_binding=binding,
-              capture=False, qualification_credit=False)
+              capture=capture, qualification_credit=False)
     headers('persistent-release-headers', argv, units, archive, builder, pin, aliases, run, state)
     for value in binding['sources']:
         if value['path'].endswith(('.c', '.h', '.inc')):
@@ -186,9 +190,14 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
                 'selected_scalar_reuse.inc', 'tf_span_transfer.h', 'span_fetch.h', 'span_source.h',
                 'rseq_span.inc', 'fetch_current_custody.h', 'fetch_current_custody.inc', 'maps_current_ticket.h')
     need(all(str((SELECTED/n).resolve()) in state['headers'] for n in required), 'whole inherited map/custody/owner source closure')
-    need(not any('observe' in Path(n).name or Path(n).name.startswith(('linked_preedge_', 'linked_native_hint'))
-                 or Path(n).name in ('selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h')
-                 for n in state['headers']), 'persistent primitive has no preedge, hint, observer or legacy capture closure')
+    capture_names = {'persistent_epoch_observe.h', 'persistent_epoch_observe.inc',
+                     'persistent_epoch_observe_memory.h', 'persistent_epoch_observe_memory.inc'}
+    actual_capture = {Path(n).name for n in state['headers'] if 'observe' in Path(n).name}
+    need(actual_capture == (capture_names if capture else set()) and
+         all(str((SELECTED/n).resolve()) in state['headers'] for n in (capture_names if capture else ())) and
+         not any(Path(n).name.startswith(('linked_preedge_', 'linked_native_hint')) or
+                 Path(n).name in ('selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h')
+                 for n in state['headers']), 'only the exact selected persistent capture closure; no old observer or wire alias')
     bridge = Path(argv[-1]); run('persistent-release-link', argv, profile='release_build', env=builder.environment)
     state['bridge'] = fact(binary(bridge)); state['elf'] = bridge_check(bridge)
     _, out, err = run('persistent-release-undefined', [builder.tools['nm'], '-u', bridge], profile='inspect', env=builder.environment)
