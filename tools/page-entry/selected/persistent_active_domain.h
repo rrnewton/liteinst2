@@ -38,6 +38,9 @@ struct li2_pgd_claim {
     uint64_t id;
     uint32_t cell,member,valid,reserved;
 };
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+#include "persistent_cross_pair.h"
+#endif
 /* A real primary source observation plus independently observed additional
    code extents. Each raw query remains literal; no fabricated 34-page row. */
 struct li2_pgd_source_progress {
@@ -47,6 +50,9 @@ struct li2_pgd_source_progress {
     struct li2_pgd_ref ref[LI2_PGD_MEMBERS];
     struct li2_private_code_query open[LI2_PGD_MEMBERS][3];
     struct li2_private_code_query close[LI2_PGD_MEMBERS][3];
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    struct li2_pgx_source peer;
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     struct li2_pgs_entry entry;
 #endif
