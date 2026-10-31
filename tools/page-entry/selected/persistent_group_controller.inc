@@ -27,6 +27,9 @@
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
 #include "persistent_direct_frontier_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
+#include "persistent_call_owner_observe.h"
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
 #include "persistent_cold_admission_observe.h"
 #endif
@@ -284,6 +287,9 @@ static unsigned ptr_choose(uintptr_t);
 #else
 #define PE_SLOT(field) pe.field
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+static uintptr_t pcw_address(void);
+#endif
 static volatile sig_atomic_t pe_busy,pe_active,pe_failing,pe_closing,pe_decoding,pe_terminal_ingress;
 static const unsigned char pe_archive[32]=LI2_PG_ARCHIVE_SHA256;
 static const unsigned char pe_policy[32]=LI2_PG_POLICY_SHA256;
@@ -380,7 +386,11 @@ static size_t pg_extent_bytes(unsigned i) {return i<2?LI2_PE_IMAGE_BYTES:PAGE;}
 static struct li2_pg_layout pg_layout(uintptr_t base) {
     return (struct li2_pg_layout){.generated={base,base+LI2_PE_IMAGE_BYTES},
         .stubs=base+2U*LI2_PE_IMAGE_BYTES,.slots=base+PE_CODE_BYTES,
-        .spill=base+PE_CODE_BYTES+PAGE,.directory=pe.domain.directory};
+        .spill=base+PE_CODE_BYTES+PAGE,.directory=pe.domain.directory
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        ,.window=pcw_address()
+#endif
+    };
 }
 #else
 static struct li2_pg_layout pg_layout(uintptr_t base) {
@@ -413,6 +423,9 @@ static int pg_query_complete(const struct li2_private_code_query *q,uintptr_t a,
     return q->attempted==1 && q->complete==1 && !q->result && q->first==a &&
         q->end==a+n && q->pages_checked==n/PAGE && q->expected_prot==prot && q->actual_prot==prot;
 }
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+#include "persistent_call_window.inc"
+#endif
 static int pg_proof_query_complete(const struct pg_proof_query *q,uintptr_t address,int prot) {
     return q && address && !(address&(PAGE-1)) && address<=UINTPTR_MAX-PE_PROOF_BYTES &&
         pg_query_complete(&q->part[0],address,PG_PROOF_FIRST_BYTES,prot) &&
@@ -744,6 +757,9 @@ static void ped_reset_attempt(void) {
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pda_reset();
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    pcw_reset();
+#endif
 }
 static void pe_tls(struct le_frame *f) {
     f->fs_result=raw(SYS_arch_prctl,ARCH_GET_FS,(long)&f->fs,0,0,0,0);
@@ -757,6 +773,9 @@ static void selected_persistent_initialize(void) {
     pe.registered=1;pe.session=selected_session;
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pda_initialize();
+#endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    pcw_initialize();
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     pe_need(protected_count<=RANGES-3U*LI2_PTR_SLOTS,PE_STATE,40);
@@ -1337,6 +1356,10 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
         bank->spill==bank->generated+PE_CODE_BYTES+PAGE && protected_count<=RANGES &&
         selected_run_protect_contains(0,bank->generated,PE_ALLOC_BYTES)==1,PE_STATE,31);
     if(!placement)return 0;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    struct pcw_seed call_seed;
+    if(!pcw_coarse(uc,choice.page,&call_seed))return 0;
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_begin(sig,si,uc);
 #endif
@@ -1354,6 +1377,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     pdo_begin(sig,si,uc,slot_index);
+#endif
+#ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
+    pclo_begin(sig,si,uc,slot_index);
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_begin(sig,si,uc,slot_index);
@@ -1434,7 +1460,13 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
     pe_need(page>=PAGE && page<=(UINT64_C(1)<<47)-2*PAGE && pc-page<=PAGE-15,PE_SOURCE,3);
     pe_need(!li2_pg_epoch_sources(&pe.token,&selected_borrow,pages),PE_SOURCE,4);
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    pe_need(!pcw_prepare(&call_seed),PE_SOURCE,130);
+#endif
     if(!pe_build(sig,si,uc)) {
+#ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
+        pclo_miss();
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_miss_held();
 #endif
@@ -1472,6 +1504,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     pdo_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
+    pclo_entered();
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_entered(sig,si,uc);
@@ -1537,6 +1572,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
     pdo_terminal(0);
+#endif
+#ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
+    pclo_terminal();
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_terminal(0);
@@ -1658,6 +1696,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
 #include "persistent_direct_frontier_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
+#include "persistent_call_owner_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
 #include "persistent_cold_admission_observe.inc"

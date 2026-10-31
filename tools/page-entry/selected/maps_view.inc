@@ -29,6 +29,9 @@ static uintptr_t mv_stack_anchor,mv_stack_first,mv_stack_end;
 static unsigned mv_stack_pending,mv_stack_retired,mv_depth,mv_saved;
 static long mv_call[7];
 static unsigned char mv_residency;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+static int mcs_initialize(void);
+#endif
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
 int li2_pgc_bind_maps(struct li2_maps_stats *m,struct li2_maps_view_stats *v) {
     if(!m || !v || pgc_maps!=&pgc_initial_maps || pgc_view!=&pgc_initial_view ||
@@ -139,7 +142,12 @@ int li2_maps_view_enable(void) {
 #ifdef LI2_MAPS_DIFFERENTIAL
     MV_STORE(&mv.differential,1);
 #endif
-    MV_STORE(&mv_stack_pending,1);mv_invalidate();return 0;
+    MV_STORE(&mv_stack_pending,1);mv_invalidate();
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    return mcs_initialize();
+#else
+    return 0;
+#endif
 }
 void li2_maps_view_unexplained(void) {
     (void)mv_inc(&mv.unexplained);mv_invalidate();
@@ -467,6 +475,9 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
 }
 #ifdef LI2_MAPS_CURRENT_TF
 #include "maps_current_ticket.inc"
+#endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+#include "maps_call_stack.inc"
 #endif
 #undef MV_LOAD
 #undef MV_STORE
