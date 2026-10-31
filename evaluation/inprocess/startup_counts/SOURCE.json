@@ -1,0 +1,112 @@
+{
+  "baseline_revision": "a9505880906016ca98956074e589623e9972eb01",
+  "contracts": {
+    "build_profile": "persistent-startup-counters-v1",
+    "capture": false,
+    "counter_abi": [
+      2,
+      752,
+      4096,
+      6,
+      23
+    ],
+    "counter_parser_unchanged": true,
+    "differential": false,
+    "qualification": false,
+    "subentry_opportunities": null,
+    "target_bounds": [
+      30,
+      536870912,
+      16777216,
+      60
+    ]
+  },
+  "files": {
+    "counts.py": {
+      "bytes": 25344,
+      "sha256": "19bafb939f154e0570beff0ad38cd928e117bdb251d7f2dbbea245b291583b05"
+    },
+    "launch_counts.py": {
+      "bytes": 8175,
+      "sha256": "259e8e189f2b5b73bd2c2257ddffc8fe9387543b804e64ef4a405670418fbd0d"
+    }
+  },
+  "inputs": {
+    "evaluation/inprocess/linked_frontier_census.py": {
+      "bytes": 28149,
+      "sha256": "1094ffcf0492c55e67794ea227653cb670d91f664e3efb4b4c9205e21254cb67"
+    },
+    "evaluation/inprocess/page_selected_process.py": {
+      "bytes": 7089,
+      "sha256": "71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773"
+    },
+    "evaluation/inprocess/persistent_dynamic.py": {
+      "bytes": 58402,
+      "sha256": "b3499632b0c6f11039c63582cf273c3f895875d67b60a8d72afa31173e25a1ca"
+    },
+    "evaluation/inprocess/persistent_epoch_build.py": {
+      "bytes": 25800,
+      "sha256": "eb8fe037c143820c34b7952e022f1996f4d882277c12b9ff1a2b507dc9519da8"
+    },
+    "evaluation/inprocess/persistent_group_counter_process.py": {
+      "bytes": 16372,
+      "sha256": "5030b0c0f6d4f96f0fe4cf8485ad02345ed43f3979e8179bcea32e9ef6e8039a"
+    },
+    "evaluation/inprocess/persistent_group_counter_protocol.py": {
+      "bytes": 6266,
+      "sha256": "f2284ae12801454bbdececbfbb19dcafa48c0ca3d29caeaea99899ec167fbaa8"
+    },
+    "evaluation/inprocess/persistent_startup_build.py": {
+      "bytes": 26883,
+      "sha256": "0853054158bf17aa0d07b45ead4dfdcb5f53e6c6fc485204b805f20e31bda50c"
+    },
+    "evaluation/inprocess/scalar_span_trace_build.py": {
+      "bytes": 13086,
+      "sha256": "71f44262038c3530751a70940ecb1b0c35972a51dfcecdfe3c38282857c73c95"
+    },
+    "evaluation/inprocess/unrolled_hash_owner.py": {
+      "bytes": 54567,
+      "sha256": "8c856ea895fee4267c28e4729c02678a87bd0704faa6a6c5a49d0c8c9b948b7a"
+    },
+    "tools/page-entry/carrier.py": {
+      "bytes": 13001,
+      "sha256": "71a967495e86c32cacdad45f8739ece08bb6c4fc51c0797a6ddda7d9013bcdd3"
+    },
+    "tools/page-entry/namespace.py": {
+      "bytes": 12816,
+      "sha256": "cfd4bb628584b1ad718705015bbd6b85f8ef41cd12005e0bb93402f2d0352cfa"
+    },
+    "tools/page-entry/selected/build-persistent-startup-counters.sh": {
+      "bytes": 4276,
+      "sha256": "1dac765e9e8f5295b5c491444f1e569af50128ce0054cd5e2334dcdb11c080a8"
+    },
+    "tools/page-entry/selected/persistent_group_counters.h": {
+      "bytes": 3676,
+      "sha256": "dcc8ffa2ffe7176edcdf6085a3190983f7ad02f07aa116676a31611ddc9436ae"
+    },
+    "tools/page-entry/selected/persistent_group_counters.inc": {
+      "bytes": 3402,
+      "sha256": "9e6e1d4133b4ed2c1c3d663066ecf50b2476881430f4fdef5c8dad388b0a93f4"
+    },
+    "tools/page-entry/selected/persistent_startup_binding.py": {
+      "bytes": 3362,
+      "sha256": "1d32e42094c4eb526db35e2a9676bbfb34eb36b50ae53d4afa8d7c54d4d94860"
+    },
+    "tools/page-entry/selected/tests/persistent_interpreter_loop_app/launch.py": {
+      "bytes": 8849,
+      "sha256": "9789b50fa83de8f5a3db1e72aefdd11f99a72a41c75f2bacd920a72116abe9eb"
+    }
+  },
+  "launch_patch": {
+    "bytes": 8602,
+    "sha256": "4afc0e11de54ebc74ecb0efe39129a07f343ada07771be465001fa5440d28d01"
+  },
+  "origin": {
+    "bytes": 1045309,
+    "path": "target/evaluation/inprocess/20261031T114933.681207Z-startup-loop-3ce8218f1f73/receipt.json",
+    "sha256": "d30ba4f0f241e62071d6432c5ce1ee1e97aae709d8356d6d3921fc8bc33be820"
+  },
+  "schema": 1,
+  "scope": "source-only startup final counter diagnostic; no execution or qualification",
+  "source_revision_reviewed": "d0980342fa97e23dd31479ee318b67c97ff3b342"
+}
