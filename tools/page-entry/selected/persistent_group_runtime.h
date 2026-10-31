@@ -2,6 +2,29 @@
 #define LI2_PERSISTENT_GROUP_RUNTIME_H
 #include "persistent_group_lifetime.h"
 #include "linked_rseq.h"
+#ifdef LI2_PERSISTENT_UNREGISTERED
+#if LI2_PERSISTENT_UNREGISTERED != 1 || !defined(LI2_PERSISTENT_ACTIVE_DOMAIN) || LI2_PERSISTENT_ACTIVE_DOMAIN != 1
+#error "unregistered compiled lifetime requires its distinct active-domain opt-in"
+#endif
+#if defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE) || (defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) && !defined(LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE))
+#error "unregistered lifetime cannot use an older registered-only capture schema"
+#endif
+enum li2_pgu_lifetime { LI2_PGU_REGISTERED=1,LI2_PGU_UNREGISTERED=2 };
+#endif
+#ifdef LI2_PERSISTENT_JOINT_STARTUP_CAPTURE
+#if LI2_PERSISTENT_JOINT_STARTUP_CAPTURE != 1 || LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE != 1 || LI2_PERSISTENT_SUBENTRY != 1 || !defined(LI2_PERSISTENT_UNREGISTERED) || !defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE != 1 || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
+#error "joint startup capture requires its distinct unregistered-enabled profile"
+#endif
+#endif
+#ifdef LI2_RSEQ_CURRENT_DATA
+#if !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1
+#error "maintained rseq data is a distinct resident dispatch profile"
+#endif
+#include "rseq_current_data.h"
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#include "persistent_active_domain.h"
+#endif
 #if !defined(LI2_PERSISTENT_GROUP) || LI2_PERSISTENT_GROUP != 1 || \
     !defined(LI2_PERSISTENT_EPOCH) || LI2_PERSISTENT_EPOCH != 1 || \
     !defined(LI2_LINKED_EPOCH) || LI2_LINKED_EPOCH != 1 || \
@@ -59,7 +82,48 @@ struct li2_pg_rseq_progress {
     uint16_t fs_selector,gs_selector;
     struct li2_rseq_data before,observed,after;
     unsigned cancel_started,cancel_complete;
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    unsigned lifetime_mode,word_observed,tls_complete;
+    uint64_t registration_calls;
+#endif
+#ifdef LI2_RSEQ_CURRENT_DATA
+    struct li2_rseq_current_data current_observed,current_after;
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    unsigned domain_bound,domain_count;
+    struct li2_pgd_ref domain_ref[LI2_PGD_MEMBERS];
+#endif
 };
+#ifdef LI2_PERSISTENT_UNREGISTERED
+/* Descriptive validation only; authority still requires the protected token,
+   actual owner/session and all original source/permission/receipt predicates.
+   Unregistered zero storage means unavailable, never a zero-word observation. */
+static inline int li2_pgu_zero(const void *value,size_t bytes) {
+    const unsigned char *b=value;
+    for(size_t i=0;i<bytes;i++)if(b[i])return 0;
+    return 1;
+}
+static inline int li2_pgu_progress_valid(const struct li2_pg_rseq_progress *r) {
+    if(!r || !r->session || r->pid<=0 || r->pid!=r->tid || r->tls_complete!=1 ||
+       r->fs_result || r->gs_result || r->word_before || r->word_entry || r->word_after)return 0;
+    if(r->lifetime_mode==LI2_PGU_REGISTERED)
+        return r->word_observed==1 && r->registration_epoch && r->length==32 &&
+            !(r->address&31) && r->address<=UINTPTR_MAX-32 &&
+            r->page==(r->address&~((uint64_t)LI2_REGION_PAGE-1U)) && r->before.complete==1 &&
+            r->observed.complete==1 &&
+            (!(r->close_complete || r->cancel_complete) || r->after.complete==1);
+    if(r->lifetime_mode!=LI2_PGU_UNREGISTERED || r->word_observed ||
+       r->address || r->page || r->length || r->signature ||
+       !li2_pgu_zero(&r->before,sizeof r->before) ||
+       !li2_pgu_zero(&r->observed,sizeof r->observed) ||
+       !li2_pgu_zero(&r->after,sizeof r->after))return 0;
+#ifdef LI2_RSEQ_CURRENT_DATA
+    if(!li2_pgu_zero(&r->current_observed,sizeof r->current_observed) ||
+       !li2_pgu_zero(&r->current_after,sizeof r->current_after))return 0;
+#endif
+    return 1;
+}
+#endif
 int li2_pg_rseq_begin(const struct li2_pg_token *,const struct li2_step_session *,const ucontext_t *);
 int li2_pg_rseq_cold(const struct li2_pg_token *,const struct li2_pg_plan *,const ucontext_t *);
 int li2_pg_rseq_live(const struct li2_pg_token *,const ucontext_t *,struct li2_link_rseq_live *);

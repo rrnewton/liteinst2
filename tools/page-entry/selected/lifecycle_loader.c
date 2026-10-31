@@ -156,6 +156,9 @@ static int number_checked(size_t *at,size_t end,unsigned base,char separator,
 static void spaces(size_t *at,size_t end) {
     while (*at<end && maps_bytes[*at]==' ') ++*at;
 }
+#ifdef LI2_MAPS_PARSE_MEMO
+#include "maps_parse_memo.inc"
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
 #define read_maps_checked read_maps_fresh
 #ifdef LI2_EVENT_PROFILE
@@ -208,6 +211,11 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
 #ifdef LI2_EVENT_PROFILE
     LI2_EVENT_SCOPE(event_parse,LI2_EV_PARSE);
 #endif
+#ifdef LI2_MAPS_PARSE_MEMO
+    struct maps_parse_scope parse_scope __attribute__((cleanup(maps_parse_end)))={0};
+    int memo=maps_parse_begin(&parse_scope,length,p,e);
+    if(memo)return memo<0?-memo:0;
+#endif
     row_count=0; size_t at=0;
     while (at<length) {
         size_t end=at;
@@ -241,6 +249,9 @@ static int read_maps_checked(struct check_error *e,struct li2_fetch_map_progress
         if (at==start || (row_count>1 && rows[row_count-2].end>r->first)) return check_error(e,112,0);
         at=end+1; p->rows=row_count;
     }
+#ifdef LI2_MAPS_PARSE_MEMO
+    maps_parse_save(length);
+#endif
     return 0;
 }
 #undef MAPS_READ_RAW
@@ -506,12 +517,92 @@ void li2_lifecycle_snapshot(struct li2_lifecycle_counts *out) {
     }
 }
 
-void li2_lifecycle_initialize(const int *fds,size_t n,const struct li2_lifecycle_hooks *supplied) {
-    hooks=*supplied;
-#ifdef LI2_INITIAL_CODE_PROTECTION
-    if (!hooks.protected_mprotect) DIE(183,-1);
-#endif
-    if (active || !n || n>32) DIE(183,n);
+/* Empty dependency namespace: descriptive proof over both authenticated,
+   protected original source buffers, never a permission or synthetic FD. */
+static void empty_copy(void *to,const void *from,size_t n) {
+    unsigned char *d=to;const unsigned char *s=from;
+    for(size_t i=0;i<n;i++)d[i]=s[i];
+}
+static Elf64_Phdr empty_ph(const struct image *image,size_t index) {
+    Elf64_Phdr p;empty_copy(&p,(const unsigned char *)image->ph+index*sizeof p,sizeof p);return p;
+}
+static int empty_name(const unsigned char *strings,size_t size,uint64_t offset) {
+    if(offset>=size)return 0;
+    size_t n=0;
+    while(offset+n<size && strings[offset+n]) {
+        unsigned char c=strings[offset+n];
+        if(++n>255 || !((c>='a' && c<='z') || (c>='A' && c<='Z') ||
+           (c>='0' && c<='9') || c=='.' || c=='_' || c=='+' || c=='-'))return 0;
+    }
+    return n && offset+n<size && !(n==1 && strings[offset]=='.') &&
+        !(n==2 && strings[offset]=='.' && strings[offset+1]=='.');
+}
+static int empty_namespace_image(const struct image *image,unsigned kind) {
+    const size_t limit=16U*1024U*1024U;
+    if(!image || image->kind!=kind || (kind!=IMAGE_MAIN && kind!=IMAGE_INTERPRETER) ||
+       !image->source || image->backing_fd<0 || image->source_size<sizeof(Elf64_Ehdr) ||
+       image->source_size>limit || (uintptr_t)image->source>UINTPTR_MAX-image->source_size)return 0;
+    Elf64_Ehdr h;empty_copy(&h,image->source,sizeof h);
+    const unsigned char ident[7]={0x7f,'E','L','F',ELFCLASS64,ELFDATA2LSB,EV_CURRENT};
+    for(size_t i=0;i<sizeof ident;i++)if(h.e_ident[i]!=ident[i])return 0;
+    if((h.e_type!=ET_EXEC && h.e_type!=ET_DYN) || (kind==IMAGE_INTERPRETER && h.e_type!=ET_DYN) ||
+       h.e_machine!=EM_X86_64 || h.e_version!=EV_CURRENT || h.e_ehsize!=sizeof h ||
+       h.e_phentsize!=sizeof(Elf64_Phdr) || !h.e_phnum || h.e_phnum>32 ||
+       h.e_phoff>image->source_size || h.e_phnum*sizeof(Elf64_Phdr)>image->source_size-h.e_phoff ||
+       image->n!=h.e_phnum || (const unsigned char *)image->ph!=image->source+h.e_phoff ||
+       image->bias>UINTPTR_MAX-h.e_entry || image->entry!=image->bias+h.e_entry)return 0;
+    Elf64_Phdr dynamic={0};unsigned dynamics=0,interps=0;
+    for(size_t i=0;i<image->n;i++) {
+        Elf64_Phdr p=empty_ph(image,i);
+        if(p.p_offset>image->source_size || p.p_filesz>image->source_size-p.p_offset ||
+           p.p_filesz>p.p_memsz || p.p_vaddr>UINT64_MAX-p.p_memsz)return 0;
+        if(p.p_type==PT_DYNAMIC){if(++dynamics!=1)return 0;dynamic=p;}
+        if(p.p_type==PT_INTERP) {
+            if(++interps!=1 || kind!=IMAGE_MAIN || p.p_filesz<2 || p.p_filesz>4096)return 0;
+            const unsigned char *s=image->source+p.p_offset;
+            if(s[0]!='/' || s[p.p_filesz-1])return 0;
+            for(size_t j=0;j+1<p.p_filesz;j++)if(!s[j])return 0;
+        }
+    }
+    if(dynamics!=1 || (kind==IMAGE_MAIN && interps!=1) || !dynamic.p_filesz ||
+       dynamic.p_filesz%sizeof(Elf64_Dyn) || dynamic.p_filesz/sizeof(Elf64_Dyn)>4096)return 0;
+    unsigned owners=0;
+    for(size_t i=0;i<image->n;i++) {
+        Elf64_Phdr p=empty_ph(image,i);
+        if(p.p_type==PT_LOAD && dynamic.p_vaddr>=p.p_vaddr &&
+           dynamic.p_vaddr-p.p_vaddr<=p.p_filesz &&
+           dynamic.p_filesz<=p.p_filesz-(dynamic.p_vaddr-p.p_vaddr) &&
+           dynamic.p_offset==p.p_offset+(dynamic.p_vaddr-p.p_vaddr))++owners;
+    }
+    if(owners!=1)return 0;
+    uint64_t address=0,size=0,soname=0;unsigned addresses=0,sizes=0,sonames=0,terminated=0;
+    for(size_t i=0;i<dynamic.p_filesz/sizeof(Elf64_Dyn);i++) {
+        Elf64_Dyn d;empty_copy(&d,image->source+dynamic.p_offset+i*sizeof d,sizeof d);
+        if(d.d_tag==DT_NULL){terminated=1;break;}
+        if(d.d_tag==DT_NEEDED || d.d_tag==DT_RPATH || d.d_tag==DT_RUNPATH ||
+           d.d_tag==DT_AUDIT || d.d_tag==DT_DEPAUDIT || d.d_tag==DT_FILTER ||
+           d.d_tag==DT_AUXILIARY)return 0;
+        if(d.d_tag==DT_STRTAB){if(++addresses!=1)return 0;address=d.d_un.d_ptr;}
+        if(d.d_tag==DT_STRSZ){if(++sizes!=1)return 0;size=d.d_un.d_val;}
+        if(d.d_tag==DT_SONAME){if(++sonames!=1)return 0;soname=d.d_un.d_val;}
+    }
+    if(!terminated || addresses!=1 || sizes!=1 || !size || size>limit)return 0;
+    owners=0;const unsigned char *strings=0;
+    for(size_t i=0;i<image->n;i++) {
+        Elf64_Phdr p=empty_ph(image,i);
+        if(p.p_type==PT_LOAD && address>=p.p_vaddr && address-p.p_vaddr<=p.p_filesz &&
+           size<=p.p_filesz-(address-p.p_vaddr)) {
+            ++owners;strings=image->source+p.p_offset+(address-p.p_vaddr);
+        }
+    }
+    return owners==1 && (!sonames || empty_name(strings,(size_t)size,soname));
+}
+static int empty_namespace_pair(const struct image *main,const struct image *interp) {
+    return empty_namespace_image(main,IMAGE_MAIN) && empty_namespace_image(interp,IMAGE_INTERPRETER);
+}
+/* End empty dependency source proof. */
+
+static void lifecycle_initialize_objects(const int *fds,size_t n) {
     for (size_t index=0;index<n;index++) {
         struct object *o=&objects[index]; o->original_fd=fds[index];
         long fd=RAW(SYS_fcntl,fds[index],F_DUPFD_CLOEXEC,200,0,0,0);
@@ -539,6 +630,25 @@ void li2_lifecycle_initialize(const int *fds,size_t n,const struct li2_lifecycle
     long registered=RAW(SYS_membarrier,MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE,0,0,0,0,0);
     if (registered) DIE(130,registered);
     active=1; counts.enabled=1;
+}
+
+void li2_lifecycle_initialize(const int *fds,size_t n,const struct li2_lifecycle_hooks *supplied) {
+    hooks=*supplied;
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    if (!hooks.protected_mprotect) DIE(183,-1);
+#endif
+    if (active || !n || n>32) DIE(183,n);
+    lifecycle_initialize_objects(fds,n);
+}
+
+void li2_lifecycle_initialize_empty(const struct image *main,const struct image *interp,
+    const struct li2_lifecycle_hooks *supplied) {
+    hooks=*supplied;
+#ifdef LI2_INITIAL_CODE_PROTECTION
+    if (!hooks.protected_mprotect) DIE(183,-1);
+#endif
+    if(active || !empty_namespace_pair(main,interp))DIE(183,-2);
+    lifecycle_initialize_objects(0,0);
 }
 
 void li2_lifecycle_register_initial(const struct image *image) {
@@ -978,6 +1088,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #include "private_code_query.inc"
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_data.inc"
+#ifdef LI2_RSEQ_CURRENT_DATA
+#include "rseq_current_data.inc"
+#endif
 #endif
 
 #ifdef LI2_NATIVE_PAGES
@@ -1009,6 +1122,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #endif
 #ifdef LI2_LINKED_NATIVE_HINT
 #include "linked_native_hint.inc"
+#endif
+#ifdef LI2_LINKED_NATIVE_PROBE
+#include "linked_native_probe.inc"
 #endif
 #endif
 #ifdef LI2_SCALAR_SPAN_CAPTURE
@@ -1055,4 +1171,13 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
 #include "persistent_retained_two_observe_memory.inc"
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#include "persistent_active_domain_observe_memory.inc"
+#endif
+#ifdef LI2_PERSISTENT_STARTUP_CAPTURE
+#include "persistent_startup_observe_memory.inc"
+#endif
+#ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
+#include "persistent_subentry_observe_memory.inc"
 #endif

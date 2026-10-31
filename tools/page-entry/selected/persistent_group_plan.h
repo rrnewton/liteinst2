@@ -6,13 +6,36 @@
 #endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 #include "linked_jmp_dispatch.h"
+#ifdef LI2_ADD_GUARD
+#if LI2_ADD_GUARD != 1 || !defined(LI2_PERSISTENT_ACTIVE_DOMAIN)
+#error "guarded ADD requires the explicit active-domain profile"
+#endif
+#include "linked_add_guard.h"
+#define LI2_PG_VERSION 4U
+#else
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#define LI2_PG_VERSION 3U
+#else
 #define LI2_PG_VERSION 2U
+#endif
+#endif
 /* New profile semantics; old group and persistent kinds remain unchanged. */
-enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3 };
-union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor dispatch; };
+enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3
+#ifdef LI2_ADD_GUARD
+    ,LI2_PG_ADD=4
+#endif
+};
+union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor dispatch;
+#ifdef LI2_ADD_GUARD
+    struct li2_ag_descriptor add;
+#endif
+};
 union li2_pg_guard {
     struct li2_mg_plan mov;
     struct li2_jd_plan dispatch;
+#ifdef LI2_ADD_GUARD
+    struct li2_ag_plan add;
+#endif
     unsigned char bytes[sizeof(struct li2_mg_plan)];
 };
 _Static_assert(sizeof(union li2_pg_instruction)==sizeof(struct li2_mg_store),"typed original width");
@@ -37,12 +60,20 @@ enum li2_pg_status { LI2_PG_OK=0,LI2_PG_MISS=1,LI2_PG_ARGUMENT=2800,
     LI2_PG_DECODER,LI2_PG_BOUNDARY,LI2_PG_GRAPH,LI2_PG_RELOCATION,LI2_PG_CORRUPT };
 enum li2_pg_edge_kind { LI2_PG_CAPACITY_LINK=1 };
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
-enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK,LI2_PG_DISPATCH_MAP };
+enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK,LI2_PG_DISPATCH_MAP
+#ifdef LI2_ADD_GUARD
+    ,LI2_PG_ADD_GUARD
+#endif
+};
 #else
 enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK };
 #endif
 #define LI2_PG_COMMITTED_EDGE 4U
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill,directory; };
+#else
 struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill; };
+#endif
 struct li2_pg_edge {
     uint32_t kind,source_head,successor,target_head;
     uintptr_t original_target,generated_target,stub,slot;
@@ -121,11 +152,19 @@ int li2_pg_miss_valid(const struct li2_pg_plan *,const struct li2_pg_miss *,int)
 /* -1 malformed geometry,0 impossible original rel32 exit,1 not ruled out.
    Pure necessary-only advisory; no mapped memory or authority. */
 int li2_pg_placement(uintptr_t,const struct li2_pg_layout *);
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+_Static_assert(sizeof(struct li2_pg_layout)==48,"three code extents plus sealed domain directory");
+#else
 _Static_assert(sizeof(struct li2_pg_layout)==40,"three code extents and private data");
+#endif
 _Static_assert(sizeof(struct li2_pg_edge)==48,"exact directed original edge");
 _Static_assert(sizeof(struct li2_pg_miss)==32,"separate protected diagnosis");
 _Static_assert(sizeof(struct li2_pg_recovered)==168,"member or committed edge recovery");
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+_Static_assert(sizeof(struct li2_pg_plan)==981320,"exact domain-aware full description");
+#else
 _Static_assert(sizeof(struct li2_pg_plan)==981312,"exact separate two-member full description");
+#endif
 _Static_assert(sizeof(struct li2_pg_plan)<1024U*1024U,"bounded two-member cold scratch");
 _Static_assert(LI2_PG_CODE_PAGES==2U*(LI2_PE_IMAGE_BYTES/LI2_REGION_PAGE)+1U,"17 code pages");
 #endif

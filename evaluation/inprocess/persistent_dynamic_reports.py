@@ -97,7 +97,7 @@ def registration_completed(loader,r,pid,mode):
         need(t[6:] == [0,0] and r['before'] == r['after'] == [0]*28,
              'existing-registration or unregister transaction has no fabricated fresh mapping observation')
 
-def repeat_completed(p,pid,images,image_bytes,carrier,carrier_bytes,mode):
+def _repeat_completed_positive(p,pid,images,image_bytes,carrier,carrier_bytes,mode):
     need(p['repeat_lease']['version']==1,'exact REP lease version')
     need(p['repeat']is None,'finite TRACE has no separate old-cycle REP observation')
     binding=external_source(p,images,image_bytes,carrier,carrier_bytes)
@@ -147,16 +147,22 @@ def repeat_completed(p,pid,images,image_bytes,carrier,carrier_bytes,mode):
     need(b[0]<=0x7fffffff and b[1]==0 and b[2]&15==15 and b[3:8]==[0,0,0,1,1] and
          b[8]==backing_bytes>0 and b[9]==0 and b[10]&0o170000==0o100000,
          'actual retained sealed regular-file stat/FD proof matches exact main carrier or original dependency extent')
-    owner=p['rseq']['owner'];tls=p['rseq']['tls'];registration=r['registration']
+    return dict(attempts=r['attempts'],completed=r['completed'],traces=r['traces'],retained=r['retained'],
+        closes=r['closes'],releases=r['releases'],queries=r['queries'],last_code=r['request'][2],
+        last_initial_count=n,last_traces=traces,last_guard_checks=checks,source_module=binding['module'],
+        source_file_offset=binding['file_offset'],custody_epoch=c[8],custody_invalidations=c[16],registration_scope='before_first_registration',source_binding=binding)
+
+
+def repeat_completed(p,pid,images,image_bytes,carrier,carrier_bytes,mode):
+    """Original positive REP contract: TLS has not yet been observed by rseq."""
+    result=_repeat_completed_positive(p,pid,images,image_bytes,carrier,carrier_bytes,mode)
+    r=p['repeat_lease'];owner=p['rseq']['owner'];tls=p['rseq']['tls'];registration=r['registration']
     need(registration==[1,0,0,0,pid,pid]+[0]*8 and
          owner[:4]==([1,0,0,0]if mode==0 else[1,1,1,3]) and owner[7:9]==[pid,pid] and
          owner[13]==p['rseq']['counts'][1]==1 and p['rseq']['counts'][2]==int(mode==0) and
          p['rseq']['counts'][6]==0,
          'actual prior REP has whole unregistered identity; final persistent registration is source-exact')
-    return dict(attempts=r['attempts'],completed=r['completed'],traces=r['traces'],retained=r['retained'],
-        closes=r['closes'],releases=r['releases'],queries=r['queries'],last_code=r['request'][2],
-        last_initial_count=n,last_traces=traces,last_guard_checks=checks,source_module=binding['module'],
-        source_file_offset=binding['file_offset'],custody_epoch=c[8],custody_invalidations=c[16],registration_scope='before_first_registration',source_binding=binding)
+    return result
 
 def effect_exit(p):
     calls=27

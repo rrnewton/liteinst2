@@ -15,6 +15,9 @@
 #ifdef LI2_LINKED_NATIVE_HINT
 #include "linked_native_hint.h"
 #endif
+#ifdef LI2_LINKED_NATIVE_PROBE
+#include "linked_native_probe.h"
+#endif
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 #ifdef LI2_LINKED_EPOCH_REUSE_CAPTURE
 #include "linked_epoch_reuse_observe.h"
@@ -834,7 +837,7 @@ static int le_trace_coarse(int sig,const siginfo_t *si,const ucontext_t *uc) {
 static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
     struct le_record *r=&selected_linked_epoch.current;
     if(!r->build_started || !r->build_returned ||
-#ifdef LI2_LINKED_NATIVE_HINT
+#if defined(LI2_LINKED_NATIVE_HINT) || defined(LI2_LINKED_NATIVE_PROBE)
        (r->build_result!=LI2_REGION_PLAN_RELOCATION && r->build_result!=LI2_REGION_PLAN_GRAPH) ||
 #else
        r->build_result!=LI2_REGION_PLAN_RELOCATION ||
@@ -859,6 +862,10 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
         if(!r->hint_hit)return 0;
     }
+#endif
+#ifdef LI2_LINKED_NATIVE_PROBE
+    if(r->build_result==LI2_REGION_PLAN_GRAPH &&
+       !li2_lifecycle_link_native_probe_choose(&r->source,r->transfer.serial))return 0;
 #endif
     le_need(selected_linked_epoch_busy && !selected_linked_epoch_active &&
         !selected_linked_epoch_closing && !selected_linked_epoch_resuming &&
@@ -893,7 +900,15 @@ static int le_closed_nx_retry(int sig,siginfo_t *si,ucontext_t *uc) {
     if(r->build_result==LI2_REGION_PLAN_GRAPH)le_count(&selected_linked_epoch.graph_refaults);
     else le_count(&selected_linked_epoch.refaults);
 #else
+#ifdef LI2_LINKED_NATIVE_PROBE
+    r->refault_complete=1;
+    if(r->build_result==LI2_REGION_PLAN_GRAPH) {
+        int probe_result=li2_lifecycle_link_native_probe_refault(r->transfer.serial);
+        le_need(!probe_result,LE_STATE,probe_result);
+    } else le_count(&selected_linked_epoch.refaults);
+#else
     r->refault_complete=1;le_count(&selected_linked_epoch.refaults);
+#endif
 #endif
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
     leto_refault_after(sig,si,uc);

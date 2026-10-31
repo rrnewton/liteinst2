@@ -11,6 +11,8 @@ import core_af81_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_97ab_inventory as native_indexed
+import core_f353_inventory as indexed
 import core_d8d85_inventory as artifact
 import core_34c47_inventory as prepared
 import core_acc247_inventory as incoming
@@ -20,7 +22,7 @@ import core_981419_inventory as latest
 
 class MainDd75InventoryTests(unittest.TestCase):
     def test_exact_selected_sdk_sources_and_strict_historical_refusals(self):
-        actual = latest.before_current(newest.before_current(incoming.before_current(prepared.before_current(artifact.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))
+        actual = latest.before_current(newest.before_current(incoming.before_current(prepared.before_current(artifact.before_current(indexed.before_current(native_indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))))
         old = current.before_current(actual)
         self.assertEqual(current.digest(old), previous.CURRENT)
         self.assertEqual((actual['recorder_tests'], old['recorder_tests']), (359, 358))
@@ -44,7 +46,7 @@ class MainDd75InventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^maindd75_inventory_differs$'):
                         current.before_current(wrong)
-        identities = latest.before_python(newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(historical.python_identities(Path(__file__).parent))))))
+        identities = latest.before_python(newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(indexed.before_python(native_indexed.before_python(historical.python_identities(Path(__file__).parent))))))))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (359, 358))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)

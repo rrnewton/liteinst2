@@ -11,12 +11,14 @@ import core_acc247_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_97ab_inventory as native_indexed
+import core_f353_inventory as indexed
 import core_d8d85_inventory as artifact
 
 
 class Main34c47InventoryTests(unittest.TestCase):
     def test_exact_prepared_sources_instances_and_causal_history_refusals(self):
-        actual = artifact.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
+        actual = artifact.before_current(indexed.before_current(native_indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (109, 4126, 37))
@@ -48,7 +50,7 @@ class Main34c47InventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main34c47_inventory_differs$'):
                         current.before_current(wrong)
-        identities = artifact.before_python(historical.python_identities(Path(__file__).parent))
+        identities = artifact.before_python(indexed.before_python(native_indexed.before_python(historical.python_identities(Path(__file__).parent))))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (363, 362))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)
@@ -86,9 +88,30 @@ class Main34c47InventoryTests(unittest.TestCase):
                    for p, names in current.DATA['added_default_methods'].items()]
         stimuli += [(p, literals[0], '') for p, literals in current.DATA['module_chains'].items()]
         for path, before, after in stimuli:
-            target = current.ROOT / path; raw = read(target)
+            target = current.ROOT / path; observed = read(target)
+            raw = native_indexed.source_before(path, observed, 'snapshot_outer_declaration_inverse')
+            changed_observed = observed.replace(before.encode(), after.encode())
             changed_raw = raw.replace(before.encode(), after.encode())
             self.assertNotEqual(changed_raw, raw)
+            # Transport the identical declaration mutation through the outer
+            # source layer before exercising the original23d6 declaration gate.
+            outer = {}
+            if path in native_indexed.DATA['projections']:
+                outer_row = copy.deepcopy(native_indexed.DATA['projections'][path])
+                outer_row['current_sha256'] = hashlib.sha256(changed_observed).hexdigest()
+                outer_row['previous_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                # The original stimuli may change length or remove a module
+                # edge. Shift only their supplied inverse spans by that same
+                # literal edit, then require the whole mutated prior below.
+                outer_row['edits'] = [
+                    [len(observed[:first].replace(before.encode(), after.encode())),
+                     len(observed[:end].replace(before.encode(), after.encode())),
+                     old.replace(before, after)]
+                    for first, end, old in outer_row['edits']]
+                outer[path] = outer_row
+            with patch.dict(native_indexed.DATA['projections'], outer):
+                self.assertEqual(native_indexed.source_before(path, changed_observed,
+                    'snapshot_outer_declaration_inverse'), changed_raw)
             # Preserve the same declaration stimulus through the new exact
             # current-to34c source inverse, then repair only its upstream facts.
             upstream = copy.deepcopy(current.DATA['source_projections_23d6'])
@@ -101,8 +124,9 @@ class Main34c47InventoryTests(unittest.TestCase):
                 self.assertEqual(current.source_before23d6(path, changed_raw,
                     'snapshot_declaration_inverse'), changed_prior)
             def changed(candidate):
-                return changed_raw if candidate == target else read(candidate)
-            with patch.dict(current.DATA['source_projections_23d6'], upstream), \
+                return changed_observed if candidate == target else read(candidate)
+            with patch.dict(native_indexed.DATA['projections'], outer), \
+                 patch.dict(current.DATA['source_projections_23d6'], upstream), \
                  patch.object(Path, 'read_bytes', changed), \
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
@@ -149,7 +173,9 @@ class Main34c47InventoryTests(unittest.TestCase):
             'tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs',
         })
         for path, row in current.DATA['source_projections_23d6'].items():
-            target = current.ROOT / path; raw = read(target)
+            target = current.ROOT / path; observed = read(target)
+            raw = native_indexed.source_before(path, observed, 'snapshot_outer_inverse_control')
+            self.assertEqual(hashlib.sha256(observed).hexdigest(), native_indexed.DATA['sources'][path])
             restored = current.source_before23d6(path, raw, 'snapshot_inverse_control')
             self.assertEqual(hashlib.sha256(raw).hexdigest(), row['current_sha256'])
             self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])

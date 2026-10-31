@@ -67,6 +67,8 @@ pub unsafe extern "C" fn li2_decoder_initialize(
     decode::warm_tables();
     #[cfg(feature = "scalar-region")]
     region::initialize();
+    #[cfg(feature = "add-guard")]
+    add_guard::initialize();
     arena::seal();
     // SAFETY: same retained output header; all table ownership is now sealed.
     unsafe {
@@ -274,3 +276,7 @@ pub unsafe extern "C" fn li2_decoder_region_describe(
 // Distinct descriptive four-Code guarded-store profile; old APIs stay exact.
 #[cfg(feature = "mov-guard")]
 mod mov_guard;
+
+// Distinct one-Code RMW descriptor. Old NONE/MOV classification stays exact.
+#[cfg(feature = "add-guard")]
+mod add_guard;

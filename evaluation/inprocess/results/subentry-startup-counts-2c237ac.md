@@ -1,0 +1,3 @@
+The diagnostic completed its collection and cleanup, but the target was killed at the unchanged 30 CPU-second bound. It has no completion, qualification or speedup credit. Subentry counts and planner-return successes remain unavailable. Target wall time excludes the counter wrapper overhead.
+
+The JSON preserves the exact command, revision, hardware and private receipt hash. Its reproduction command currently depends on a retained origin receipt and an untracked private adapter; it is not yet a portable paper reproducer. A fresh-source tracked runner is required before using this result as published performance evidence.

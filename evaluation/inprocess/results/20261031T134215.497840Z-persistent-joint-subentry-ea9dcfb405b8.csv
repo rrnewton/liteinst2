@@ -1,0 +1,4 @@
+lane,mode,control,status,expected_exit,exit,whole_process_ns,application_control_count,terminal_control_count,owner_control_count,pair_control_count
+native,0,0,observed_native_active_domain,0,0,159811267,24,0,0,0
+maintained,0,0,failed,0,-9,30206809628,0,0,0,0
+differential,0,0,failed,0,-9,30207457553,0,0,0,0

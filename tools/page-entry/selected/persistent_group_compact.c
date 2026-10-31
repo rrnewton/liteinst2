@@ -13,6 +13,20 @@ static int address(uintptr_t p,size_t n) { return n && p<UINT64_C(0x800000000000
 static int token_valid(const struct li2_pg_compact *p,unsigned k) {
     return k<p->heads || (k>=LI2_PG_HEADS && k-LI2_PG_HEADS<p->exits);
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+static int layout_valid(const struct li2_pg_layout *l) {
+    uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
+    size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
+    for(unsigned i=0;i<5;i++) {
+        if(a[i]<LI2_REGION_PAGE || (a[i]&4095U) || !address(a[i],n[i]))return 0;
+        for(unsigned j=0;j<i;j++)if(overlap(a[i],n[i],a[j],n[j]))return 0;
+    }
+    if(l->directory<LI2_REGION_PAGE || (l->directory&4095U) ||
+       !address(l->directory,LI2_JD_DOMAIN_BYTES))return 0;
+    for(unsigned i=0;i<5;i++)if(overlap(l->directory,LI2_JD_DOMAIN_BYTES,a[i],n[i]))return 0;
+    return 1;
+}
+#else
 static int layout_valid(const struct li2_pg_layout *l) {
     uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
     size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
@@ -22,6 +36,7 @@ static int layout_valid(const struct li2_pg_layout *l) {
     }
     return 1;
 }
+#endif
 static uintptr_t head_generated(const struct li2_pg_compact *p,unsigned i) {
     return p->layout.generated[i/LI2_PE_HEADS]+(uintptr_t)(i%LI2_PE_HEADS)*LI2_PE_SLOT_BYTES;
 }
@@ -109,6 +124,35 @@ static int materialize(const struct li2_pg_compact *p,unsigned i,struct li2_mg_p
     copy(out->image,head_image(p,i),g->image_bytes);
     return 0;
 }
+#ifdef LI2_ADD_GUARD
+static int materialize_add(const struct li2_pg_compact *p,unsigned i,struct li2_ag_plan *out) {
+    if(i>=p->heads || i>=LI2_PG_HEADS)return LI2_PG_CORRUPT;
+    const struct li2_pe_head *h=&p->head[i];const struct li2_ag_record *g=&p->guard[i].add;
+    const struct li2_ag_descriptor *a=&p->instruction[i].add;
+    const struct li2_span_decoded *d=&p->original[i];
+    if(h->kind!=LI2_PG_ADD || h->successor_count!=1 || h->successors[1] ||
+       !token_valid(p,h->successors[0]) || !h->generated_length ||
+       h->generated_length>LI2_PE_SLOT_BYTES || g->image_bytes!=h->generated_length ||
+       g->version!=LI2_AG_VERSION || g->ready!=1 || g->result || g->reserved ||
+       !g->boundaries || g->boundaries>LI2_AG_BOUNDARIES ||
+       a->version!=LI2_AG_VERSION || a->ready!=1 || a->refusal || a->reserved ||
+       a->flags_written!=LI2_AG_STATUS || a->width_bytes!=8 || a->memory_access!=3 ||
+       a->tf.code!=8 || a->tf.pc!=d->decoded.pc || a->tf.next_pc!=d->decoded.next_pc ||
+       a->tf.length!=h->source_length || d->ready || d->refusal!=LI2_REGION_OPERANDS)
+        return LI2_PG_CORRUPT;
+    zero(out,sizeof *out);
+    out->version=g->version;out->ready=g->ready;out->result=g->result;
+    out->image_bytes=g->image_bytes;out->boundaries=g->boundaries;
+    out->rmw_offset=g->rmw_offset;out->reject_offset=g->reject_offset;out->reserved=g->reserved;
+    out->generated=head_generated(p,i);out->spill=p->layout.spill;
+    out->successor=destination(p,i,0);if(!out->successor)return LI2_PG_CORRUPT;
+    copy(out->scratch_regs,g->scratch_regs,sizeof out->scratch_regs);
+    copy(&out->original,a,sizeof *a);copy(&out->table,&p->table,sizeof out->table);
+    copy(out->boundary,g->boundary,sizeof out->boundary);
+    copy(out->image,head_image(p,i),g->image_bytes);
+    return 0;
+}
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 /* The unknown target is not a static graph successor. Its one retained exit
    is the original JMP itself, reached before that instruction has any effect. */
@@ -171,6 +215,18 @@ static int project(const struct li2_pg_plan *p,struct li2_pg_compact *out) {
             if(materialize_dispatch(out,i,&actual.dispatch) || !equal(whole,&actual,sizeof actual))goto corrupt;
             continue;
         }
+#ifdef LI2_ADD_GUARD
+        if(i<p->heads && p->head[i].kind==LI2_PG_ADD) {
+            const struct li2_ag_plan *g=&whole->add;struct li2_ag_record *r=&out->guard[i].add;
+            r->version=g->version;r->ready=g->ready;r->result=g->result;r->image_bytes=g->image_bytes;
+            r->boundaries=g->boundaries;r->rmw_offset=g->rmw_offset;
+            r->reject_offset=g->reject_offset;r->reserved=g->reserved;
+            copy(r->scratch_regs,g->scratch_regs,sizeof r->scratch_regs);
+            copy(r->boundary,g->boundary,sizeof r->boundary);
+            if(materialize_add(out,i,&actual.add) || !equal(whole,&actual,sizeof actual))goto corrupt;
+            continue;
+        }
+#endif
         const struct li2_mg_plan *g=&whole->mov;struct li2_pe_guard_record *r=&out->guard[i].mov;
         if(i>=p->heads || p->head[i].kind!=LI2_PE_MOV) {
             if(!all_zero(whole,sizeof *whole))goto corrupt;
@@ -230,6 +286,15 @@ int li2_pg_compact_guard(const struct li2_pg_compact *p,unsigned member,unsigned
     zero(out,sizeof *out);
     return header(p) && member<2 && head<p->member_heads[member]?materialize(p,member*LI2_PE_HEADS+head,out):LI2_PG_CORRUPT;
 }
+#ifdef LI2_ADD_GUARD
+int li2_pg_compact_add(const struct li2_pg_compact *p,unsigned member,unsigned head,struct li2_ag_plan *out) {
+    if(!storage(p,sizeof *p) || !storage(out,sizeof *out) ||
+       (uintptr_t)p%_Alignof(struct li2_pg_compact) || (uintptr_t)out%_Alignof(struct li2_ag_plan) ||
+       overlap((uintptr_t)p,sizeof *p,(uintptr_t)out,sizeof *out))return LI2_PG_ARGUMENT;
+    zero(out,sizeof *out);
+    return header(p) && member<2 && head<p->member_heads[member]?materialize_add(p,member*LI2_PE_HEADS+head,out):LI2_PG_CORRUPT;
+}
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 int li2_pg_compact_dispatch(const struct li2_pg_compact *p,unsigned member,unsigned head,struct li2_jd_plan *out) {
     if(!storage(p,sizeof *p) || !storage(out,sizeof *out) ||
@@ -296,7 +361,11 @@ int li2_pg_compact_recover(const struct li2_pg_compact *p,uintptr_t pc,const uin
         out->kind=LI2_PG_DISPATCH_MAP;out->phase=LI2_JD_BEFORE;out->complete=1;return 0;
     }
 #endif
-    unsigned flow=h->kind==LI2_PE_MOV?LI2_REGION_NEXT:d->flow;
+    unsigned write=h->kind==LI2_PE_MOV;
+#ifdef LI2_ADD_GUARD
+    write|=h->kind==LI2_PG_ADD;
+#endif
+    unsigned flow=write?LI2_REGION_NEXT:d->flow;
     if(h->source_page>=LI2_PE_SOURCES || h->source_offset>=LI2_REGION_PAGE ||
        !h->source_length || h->source_length>15 || d->decoded.length!=h->source_length ||
        d->decoded.pc!=p->page[h->source_page]+h->source_offset ||
@@ -328,6 +397,25 @@ int li2_pg_compact_recover(const struct li2_pg_compact *p,uintptr_t pc,const uin
         if(e || value.complete!=1)return LI2_PG_CORRUPT;
         copy(out->gpr,value.gpr,sizeof out->gpr);out->flags=value.flags;out->original_pc=value.original_pc;
         out->phase=value.phase;out->kind=LI2_PG_GUARD;
+#ifdef LI2_ADD_GUARD
+    } else if(h->kind==LI2_PG_ADD) {
+        zero(guard_scratch,sizeof *guard_scratch);
+        if(li2_pg_compact_add(p,member,local,&guard_scratch->add))return LI2_PG_CORRUPT;
+        const struct li2_ag_plan *g=&guard_scratch->add;struct li2_ag_recovered value;
+        if(g->generated!=head_generated(p,i) || g->spill!=p->layout.spill ||
+           g->successor!=destination(p,i,0) || g->image_bytes!=h->generated_length ||
+           !g->boundaries || g->boundaries>LI2_AG_BOUNDARIES ||
+           g->original.tf.pc!=d->decoded.pc || g->original.tf.next_pc!=d->decoded.next_pc)
+            return LI2_PG_CORRUPT;
+        unsigned found=0;
+        for(unsigned j=0;j<g->boundaries;j++)if(g->boundary[j].offset==offset)++found;
+        if(!found)return LI2_PG_MISS;
+        if(found!=1)return LI2_PG_CORRUPT;
+        int e=li2_ag_recover(g,pc,raw,flags,spill,&value);
+        if(e || value.complete!=1)return LI2_PG_CORRUPT;
+        copy(out->gpr,value.gpr,sizeof out->gpr);out->flags=value.flags;out->original_pc=value.original_pc;
+        out->phase=value.phase;out->kind=LI2_PG_ADD_GUARD;
+#endif
     } else if(h->kind==LI2_PE_NONE) {
         unsigned length=d->flow==LI2_REGION_NEXT?h->source_length:d->flow==LI2_REGION_JCC?6:5;
         if(h->generated_length!=length+(flow==LI2_REGION_JMP?0U:5U))return LI2_PG_CORRUPT;

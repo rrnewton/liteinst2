@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+name = "li2-lodsq-classification-tests"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[[test]]
+name = "classification"
+path = "classification.rs"
+
+[dependencies]
+iced-x86 = { version = "=1.21.0", default-features = false, features = ["std", "decoder", "instr_info"] }
+
+[features]
+default = ["scalar-span", "linked-epoch"]
+scalar-span = []
+linked-epoch = ["scalar-span"]
