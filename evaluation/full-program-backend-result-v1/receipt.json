@@ -1,0 +1,21 @@
+{
+ "actual_scope": {"cpu":3,"cpu_max":"100000 100000","inherited_as":[-1,-1],"load_after":[39.79,40.89,46.34],"load_before":[39.79,40.89,46.34],"memory_events_before_and_after":{"high":0,"low":0,"max":0,"oom":0,"oom_group_kill":0,"oom_kill":0,"sock_throttled":0},"memory_peak_bytes":15515648},
+ "backend_argv": ["/usr/bin/prlimit","--cpu=60","--as=38654705664","--fsize=536870912","--core=0","--","/usr/bin/env","--chdir=${OUT}/e9","--","${ORIGINAL}","--debug","--input","${RPC}"],
+ "backend_attempts": 1,
+ "backend_environment": {"LANG":"C","LC_ALL":"C","PATH":"/usr/bin:/bin","PYTHONDONTWRITEBYTECODE":"1","TMPDIR":"${OUT}/tmp"},
+ "backend_reported_elapsed_ms": 20,
+ "bounds": {"allocator_outer_wall_seconds":120,"as_bytes":38654705664,"cpu_quota_percent":100,"cpu_seconds":60,"file_bytes":536870912,"log_bytes":8388608,"memory_bytes":1073741824,"scope_outer_wall_seconds":110,"swap_bytes":0,"tasks":64,"wall_seconds":90},
+ "candidate_executions": 0,
+ "execution_revision": "8d3d1be99b7f62eec41dafe13d2f4427a0f35ba7",
+ "hardware": "AMD EPYC Zen 5 dev host",
+ "history": {"metadata_setup":{"backend_attempts":0,"cause":"Wrong Python3.9 for allocator help; installed launcher later authorized","exit_code":1,"status":"METADATA_PREFLIGHT_REFUSED_NO_DISPATCH"},"original_as_1g":{"exit_code":1,"failed_reservation_bytes":34359831888,"result":"Initial VMA reservation failure","revision":"0bf01dd405fb5d7761b368edd9e76fe29d3f5436","seconds":0.004414388909935951}},
+ "inputs": {"measured_rpc":{"bytes":1544550,"sha256":"30c5237ccaceb9a08a3fe12381b3b480c210ebfb0dc108d3ee39cdd6361245fd"},"original":{"bytes":93520,"sha256":"890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb"},"portable_rpc_sha256":"d717bf1bc9536c21b9cf079bd05e952c3d6ca10330d4f0134a827134654b8eeb"},
+ "output": {"bytes":282324,"sha256":"eabf1d463a75d5644ec114bed7b66ace8c7a00f6a64892a4600e8a5661547afc"},
+ "owners": {"allocator_outer":{"seconds":1.1649110110010952,"start_utc":"2026-10-31T20:35:32.115400+00:00"},"backend":{"seconds":0.037244732957333326,"start_utc":"2026-10-31T20:35:33.140876+00:00"},"scope_outer":{"seconds":0.1618399580474943,"start_utc":"2026-10-31T20:35:33.045017+00:00"},"all":{"exit_code":0,"termination":null,"cleanup_complete":true,"reaped_descendants":0}},
+ "population": {"debug_addresses_equal_complete_request":true,"distinct_debug_patches":2053,"heads":13143,"requested_patches":2053,"rpc_messages":14997,"tactics":{"B1":1210,"B2":841,"T1":0,"T2":0,"T3":2}},
+ "portable_script_state": "Later unexecuted filename-only port; its --revision is distinct from measured execution_revision.",
+ "provenance": {"backend_log_sha256":"97abcd15aefa83ec2f0640c4f347fd726032f8bdd9cfdac0b69ced42c379bc37","closed_binding_sha256":"8d950b72860255e0bc40aa968ede1aea7b5a6da58768dcb13e31d64ec8f42f9e","closed_result_sha256":"e47159fc0a2b4fa3b635affefcbfa200e3a3c3c63323990d3f8d5b85ae8ce5bc","executed_script_sha256":"d163618926e4c1117b570f5ff5d29e5d6e69590df893e53a07e1555c609b01c4","portable_script_sha256":"ce03d240becf918b06bfb5b97677228f287b0b16d90cd10798c87ecc1901a43a"},
+ "qualification_complete": false,
+ "release": {"both_scope_paths_absent":true,"lease_released":true,"reported_release_sha256":"95d6ebe044bffcfac5b55878807e59e3171dbec21490997d331eea82be6ef8ea","source_unchanged":true},
+ "status": "EXIT_ZERO_UNQUALIFIED"
+}
