@@ -139,21 +139,103 @@ fn mapping_in(maps: &str, address: u64, permissions: &str) -> Option<(u64, u64)>
 // that occurs after the read. It must not be reused across custody passes.
 pub(super) struct MappingSnapshot<'maps> {
     maps: &'maps str,
+    rows: &'maps [MappingRow],
 }
 impl MappingSnapshot<'_> {
     pub(super) fn mapping(&self, address: u64, permissions: &str) -> (u64, u64) {
-        mapping_in(self.maps, address, permissions).expect("exact owned mapping class")
+        self.lookup(address, permissions)
+            .expect("exact owned mapping class")
+    }
+    fn lookup(&self, address: u64, permissions: &str) -> Option<(u64, u64)> {
+        let mut found = None;
+        for row in self.rows {
+            if row.start <= address && address < row.end {
+                // Any second containing row refuses, even with another mode.
+                if found.is_some() {
+                    return None;
+                }
+                found = Some(row);
+            }
+        }
+        let row = found?;
+        (self.maps[row.permissions.clone()] == *permissions).then_some((row.start, row.end))
     }
 }
-pub(super) fn with_mapping_snapshot(check: impl for<'maps> FnOnce(MappingSnapshot<'maps>)) {
-    with_mapping_snapshot_from(|| std::fs::read_to_string("/proc/self/maps"), check);
+struct MappingRow {
+    start: u64,
+    end: u64,
+    permissions: std::ops::Range<usize>,
 }
+// Capacity is local to one custody pass; no captured answer is retained.
+// Every use clears both logical lengths before opening a fresh maps file.
+#[derive(Default)]
+pub(super) struct MappingScratch {
+    maps: String,
+    rows: Vec<MappingRow>,
+}
+impl MappingScratch {
+    pub(super) fn with_snapshot(&mut self, check: impl for<'maps> FnOnce(MappingSnapshot<'maps>)) {
+        self.with_snapshot_from(
+            |maps| {
+                File::open("/proc/self/maps")?
+                    .read_to_string(maps)
+                    .map(|_| ())
+            },
+            check,
+        );
+    }
+    fn with_snapshot_from(
+        &mut self,
+        read: impl FnOnce(&mut String) -> std::io::Result<()>,
+        check: impl for<'maps> FnOnce(MappingSnapshot<'maps>),
+    ) {
+        self.maps.clear();
+        self.rows.clear();
+        let result = read(&mut self.maps);
+        if result.is_err() {
+            // A partial read never becomes a snapshot, including after reuse.
+            self.maps.clear();
+        }
+        result.unwrap();
+        let maps = self.maps.as_str();
+        self.rows.extend(maps.lines().filter_map(|line| {
+            let mut fields = line.split_whitespace();
+            let (a, b) = fields.next()?.split_once('-')?;
+            let (start, end) = (
+                u64::from_str_radix(a, 16).ok()?,
+                u64::from_str_radix(b, 16).ok()?,
+            );
+            let mode = fields.next()?;
+            // mode is a slice returned from this String: these safe numeric
+            // offsets delimit its exact UTF-8 token, without normalizing it.
+            let offset = (mode.as_ptr() as usize)
+                .checked_sub(maps.as_ptr() as usize)
+                .unwrap();
+            let limit = offset.checked_add(mode.len()).unwrap();
+            assert!(limit <= maps.len());
+            Some(MappingRow {
+                start,
+                end,
+                permissions: offset..limit,
+            })
+        }));
+        check(MappingSnapshot {
+            maps: &self.maps,
+            rows: &self.rows,
+        });
+        self.rows.clear();
+        self.maps.clear();
+        // If check unwinds, the next invocation still clears before reading;
+        // the higher-ranked borrowed view cannot escape that failed check.
+    }
+}
+#[cfg(test)]
 fn with_mapping_snapshot_from(
     read: impl FnOnce() -> std::io::Result<String>,
     check: impl for<'maps> FnOnce(MappingSnapshot<'maps>),
 ) {
-    let maps = read().unwrap();
-    check(MappingSnapshot { maps: &maps });
+    MappingScratch::default()
+        .with_snapshot_from(|maps| read().map(|text| maps.push_str(&text)), check);
 }
 pub(super) fn stack_bounds() -> (u64, u64) {
     let mut marker = 0_u64;
