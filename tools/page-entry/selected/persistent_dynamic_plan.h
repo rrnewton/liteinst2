@@ -10,7 +10,7 @@ enum li2_pe_dynamic_reason {
     LI2_PED_SOURCE_TRUNCATED, LI2_PED_SOURCE_OVERLAP, LI2_PED_OUTSIDE_PAIR,
     LI2_PED_HEAD_LIMIT, LI2_PED_EXIT_LIMIT, LI2_PED_QUEUE_LIMIT, LI2_PED_NO_EXIT,
     LI2_PED_RIP_REACH, LI2_PED_BRANCH_REACH, LI2_PED_FALLTHROUGH_REACH,
-    LI2_PED_GUARD_RIP_REACH, LI2_PED_GUARD_FOLLOW_REACH,
+    LI2_PED_GUARD_RIP_REACH, LI2_PED_GUARD_FOLLOW_REACH, LI2_PED_ROOT_SELECTED,
     LI2_PED_REASON_COUNT
 };
 enum li2_pe_dynamic_site { LI2_PED_NO_SITE=0, LI2_PED_SOURCE=1, LI2_PED_EMIT=2 };
@@ -24,6 +24,10 @@ struct li2_pe_dynamic_miss {
    Every old result/partial plan byte is retained. Success and unclassified
    terminal errors have reason/site/pc/detail zero, version1/status=result.
    Only precisely marked source/placement refusals can pass miss_valid().
+   ROOT_SELECTED is marked only for known kinds CPUID..SYSCALL after a second
+   complete decode of the same held private bytes and whole span/MOV refusal
+   equality. It preserves the old partial plan/result. miss_valid consumes
+   immediate protected outputs; it is not an independent kind/source proof.
    Generated re-decode, malformed metadata, unresolved targets, arguments,
    static-NONE and guard-internal/spill errors remain terminal.
    Actual HELD source/rseq cancellation, complete release and unchanged
@@ -42,5 +46,5 @@ int li2_pe_dynamic_miss_valid(const struct li2_pe_plan *,const struct li2_pe_dyn
    source identity, decoder, signal, ownership or admission authority. */
 int li2_pe_dynamic_placement(uintptr_t entry,uintptr_t generated);
 _Static_assert(sizeof(struct li2_pe_dynamic_miss)==32,"separate bounded diagnosis");
-_Static_assert(LI2_PED_REASON_COUNT==15,"fixed reason0 plus14 refusal classes");
+_Static_assert(LI2_PED_ROOT_SELECTED==15 && LI2_PED_REASON_COUNT==16,"append selected root without renumbering old reasons");
 #endif

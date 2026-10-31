@@ -70,6 +70,26 @@ static int ped_guard_reach(const struct li2_pe_plan *p,unsigned i,struct li2_pe_
     return 0;
 }
 
+/* A selected effect is outside both generated inventories. Authenticate the
+   complete original decoder row independently, then require both descriptive
+   refusals literally. A failed extra API call or any mismatch leaves the old
+   LI2_PE_MISS and all old plan bytes untouched; it grants no cancellation. */
+static int ped_root_selected(const struct li2_span_decoded *d,const struct li2_mg_store *s,
+                             const unsigned char *bytes,size_t count) {
+    if(d->decoded.kind<LI2_CPUID || d->decoded.kind>LI2_SYSCALL)return 0;
+    struct li2_decoded decoded={0};
+    const uint32_t result=li2_decoder_decode(d->decoded.pc,bytes,count,&decoded);
+    if(result || !equal(&decoded,&d->decoded,sizeof decoded))return 0;
+    struct li2_span_decoded span={0};
+    span.decoded=decoded;span.version=1;span.refusal=LI2_REGION_EFFECTS;
+    if(!equal(d,&span,sizeof span))return 0;
+    struct li2_mg_store store={0};
+    store.tf.pc=decoded.pc;store.tf.next_pc=decoded.next_pc;store.tf.abi_version=1;
+    store.tf.code=decoded.code;store.tf.length=decoded.length;
+    copy(store.bytes,decoded.bytes,sizeof store.bytes);
+    store.version=1;store.refusal=1;store.available=(uint32_t)count;
+    return equal(s,&store,sizeof store);
+}
 static int ped_graph(struct li2_pe_plan *p,struct li2_pe_dynamic_miss *miss) {
     struct node q[LI2_PE_HEADS+LI2_PE_EXITS]={0};unsigned n=0;
     unsigned char occupied[LI2_PE_SOURCES][LI2_REGION_PAGE]={{0}};
@@ -92,7 +112,10 @@ static int ped_graph(struct li2_pe_plan *p,struct li2_pe_dynamic_miss *miss) {
         q[at].decoded=1;
         if(!kind) {
             if(!at) {
-                if(d.refusal==LI2_REGION_UNSUPPORTED || d.refusal==LI2_REGION_PREFIX || d.refusal==LI2_REGION_OPERANDS)
+                if(d.decoded.kind!=LI2_NONE) {
+                    if(ped_root_selected(&d,&s,bytes,count))
+                        ped_mark(miss,LI2_PED_ROOT_SELECTED,LI2_PED_SOURCE,q[at].pc,d.decoded.kind);
+                } else if(d.refusal==LI2_REGION_UNSUPPORTED || d.refusal==LI2_REGION_PREFIX || d.refusal==LI2_REGION_OPERANDS)
                     ped_mark(miss,LI2_PED_ROOT_UNSUPPORTED,LI2_PED_SOURCE,q[at].pc,d.refusal);
                 return LI2_PE_MISS;
             }
@@ -225,6 +248,10 @@ int li2_pe_dynamic_miss_valid(const struct li2_pe_plan *p,const struct li2_pe_dy
        (p->generated&4095U) || !address(p->generated,LI2_PE_IMAGE_BYTES))return 0;
     unsigned page,offset;
     if(!location(p,p->entry,&page,&offset) || !location(p,m->pc,&page,&offset))return 0;
+    if(m->reason==LI2_PED_ROOT_SELECTED)
+        return result==LI2_PE_MISS && m->site==LI2_PED_SOURCE && m->pc==p->entry &&
+            m->detail>=LI2_CPUID && m->detail<=LI2_SYSCALL && !p->heads && !p->exits &&
+            !p->stores && !p->source_bytes && !p->guard_result;
     if(m->reason<=LI2_PED_NO_EXIT) {
         if(m->site!=LI2_PED_SOURCE || p->guard_result)return 0;
         switch(m->reason) {

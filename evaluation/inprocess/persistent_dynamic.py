@@ -27,7 +27,7 @@ ORDER=(('native',0,0),('native',1,0),('gated',0,0),('gated',1,0),('gated',2,0))
 APP_COUNTS={0:16,1:16};OWNER_COUNTS={0:55,1:30,2:30};PAIR_COUNTS={0:4,1:4}
 TERMINAL_COUNTS={(m,0):60 for m in range(3)}
 CASE_FIELDS=('label','lane','mode','control','expected_exit','status','launched','exit','whole_process_ns','timed_out','captures','pair','owner_summary','error_type')
-CSV_FIELDS=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count','pair_control_count')
+CSV_FIELDS=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count','pair_control_count','selected_reason_control_count')
 EXPECTED_STATUS={('native',0):'qualified_native_success',('native',1):'qualified_native_late_fault',
     ('gated',0):'qualified_generated_success',('gated',1):'qualified_generated_late_fault',('gated',2):'qualified_protected_word_rejection'}
 LOADED=[]
@@ -35,9 +35,9 @@ LOADED=[]
 # These pure oracles are prerequisites, never additional hardware subjects.
 COMPONENT_ORDER=('mov_guard','persistent_plan_compact','dynamic_classifier')
 COMPONENT_INPUTS={'tests/linked_mov_guard/build.sh': {'bytes': 705, 'sha256': 'defbb2795ac7d941bd65338ddf83b06f83f29e6f0b9a34cf8fcb0330a3d37a5d'}, 'tests/linked_mov_guard/metadata.c': {'bytes': 12126, 'sha256': '9b076910e6a3f9da7d7d0d8a60d421d1c6027e8b5b2dc8701a91fd4e01141484'}, 'tests/linked_mov_guard/model.c': {'bytes': 6081, 'sha256': 'cac232356cd6eabb4f1c81dda3ce496d318372b39c87e6a0835387cc170d17cc'}, 'tests/linked_mov_guard/model.h': {'bytes': 349, 'sha256': 'abc0641bdf3306548c7c48f133b4c7593b0c28ba9847ad057b906977eaf09370'}, 'tests/persistent_plan/build.sh': {'bytes': 873, 'sha256': '8757042e90d0994206a7b542e117f0f8fb240fa9cc9dc3f28f0ea5ef0f3d9206'}, 'tests/persistent_plan/metadata.c': {'bytes': 15765, 'sha256': 'f5740b30ef7d07e3f3cfef1aeb6a57eb285b7865de0d7de09c8d104cd390ba6c'}}
-COMPONENT_INPUTS.update({'tests/persistent_dynamic_plan/build.sh': {'bytes': 924, 'sha256': 'cea7fa297296f1219bd75f8ae2941569c274efd90a8229121a3d0122c8ee8337'}, 'tests/persistent_dynamic_plan/metadata.c': {'bytes': 15285, 'sha256': '22d2c39a520cf7f6adf9530ff6e7a52115fc5a10f48036173bc74f75faaf4557'}})
+COMPONENT_INPUTS.update({'tests/persistent_dynamic_plan/build.sh': {'bytes': 987, 'sha256': 'd5270acb3c3006e774a7ddad263d7ab7ab6d6f338f5f6f4485498192e1a5f34a'}, 'tests/persistent_dynamic_plan/metadata.c': {'bytes': 21818, 'sha256': '5a2229a7b6368197929936298b030bbb0f4effe272b7d9867c311445fe61d54e'}})
 COMPONENT_STDOUT={
-    'dynamic_classifier':b'{"schema":1,"positives":2,"classified":14,"terminal":10,"corruptions":56,"whole_old_plans_equal":26,"postseal_equal":1,"emitted_execution":0,"placement_cases":42,"placement_ready":10}\n',
+    'dynamic_classifier':b'{"schema":1,"positives":2,"classified":14,"terminal":10,"corruptions":56,"whole_old_plans_equal":26,"postseal_equal":1,"emitted_execution":0,"placement_cases":42,"placement_ready":10,"selected_cases":116,"selected_terminals":19,"selected_corruptions":13}\n',
     'mov_guard':b'{"schema":1,"store_codes":4,"descriptors":704,"byte_models":3272,"refusals":15,"corruptions":19,"interval_edges":465,"max_tree_height":8,"postseal_equal":1,"emitted_instruction_execution":0}\n',
     'persistent_plan_compact':b'{"schema":1,"positives":3,"refusals":19,"corruptions":12,"recoveries":46,"postseal_equal":1}\n'
         b'{"compact_schema":1,"positives":3,"whole_guards":3,"recoveries":46,"refusals":13,"corruptions":12,"primary_bytes":182168}\n'}
@@ -50,7 +50,7 @@ def digest(value):return H(json.dumps(value,sort_keys=True,separators=(',',':'))
 
 def public_case(c):
     value={k:c[k]for k in CASE_FIELDS if k in c}
-    for prefix,key in(('terminal','terminal_controls'),('owner','owner_reader_controls'),('pair','pair_controls')):
+    for prefix,key in(('terminal','terminal_controls'),('owner','owner_reader_controls'),('pair','pair_controls'),('selected_reason','selected_reason_controls')):
         value[prefix+'_control_count']=len(c.get(key,{}).get('refusals',[]))
         value[prefix+'_controls_sha256']=digest(c.get(key,{}))
     value['application_control_count']=len(c.get('application_controls',{}).get('refusals',[]))
@@ -471,6 +471,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 terminal,c['terminal']=reports.check(stderr,*terminal_args);r['terminal_reports'][label]=terminal
                 c['terminal_controls']=reports.controls(stderr,*terminal_args)
                 named(c['terminal_controls'],TERMINAL_COUNTS[mode,0],H(stderr),hash_key='original_stderr_sha256')
+                c['selected_reason_controls']=reports.selected_reason_controls(stderr,*terminal_args)
+                named(c['selected_reason_controls'],1,H(stderr),hash_key='original_stderr_sha256')
                 c['owner_summary']={k:actual_owner[k]for k in('mode','classified_misses','cold_publications','warm_entries','replacements','permit_claims','interior_signals','word','code','detail','status')}
                 need(all(type(v)is int and 0<=v<1<<64 for v in c['owner_summary'].values()),'only actual bounded owner counters')
                 if mode in(0,1):
@@ -499,7 +501,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
          sum(len(c.get('application_controls',{}).get('refusals',[]))for c in r['cases'])==32 and
          sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==115 and
          sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases'])==8 and
-         sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==180,
+         sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==180 and
+         sum(len(c.get('selected_reason_controls',{}).get('refusals',[]))for c in r['cases'])==3,
          'two native full-state pairs, one independent protected-word rejection and exact controls')
 
 
@@ -668,6 +671,7 @@ def main():
             qualified_pairs=sum(c.get('pair',{}).get('qualified_pair',0)for c in r['cases']if c['status']in('qualified_generated_success','qualified_generated_late_fault')),
             application_reader_refusals=sum(len(c.get('application_controls',{}).get('refusals',[]))for c in r['cases']),
             terminal_reader_refusals=sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases']),
+            selected_reason_reader_refusals=sum(len(c.get('selected_reason_controls',{}).get('refusals',[]))for c in r['cases']),
             owner_reader_refusals=sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases']),
             pair_reader_refusals=sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases']),
             classified_misses=sum(c.get('owner_summary',{}).get('classified_misses',0)for c in r['cases']),

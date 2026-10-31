@@ -26,7 +26,7 @@ def split(stderr):
          len(lines[-1])<=4096 and b'\r'not in lines[-1],'one bounded final persistent row')
     row=maps_view.pair.pair_reports.rseq.decode(lines[-1][len(PREFIX):])
     need(type(row)is dict and list(row)==KEYS and all(type(row[k])is int and 0<=row[k]<1<<64 for k in SCALARS)and
-         type(row['misses'])is list and len(row['misses'])==15 and
+         type(row['misses'])is list and len(row['misses'])==16 and
          all(type(n)is int and 0<=n<1<<64 for n in row['misses']),
          'complete ordered exact-int persistent row')
     need(row['version']==1 and PREFIX+json.dumps(row,separators=(',',':'),allow_nan=False).encode()==lines[-1],
@@ -329,3 +329,15 @@ def controls(stderr,*args):
         else:raise ValueError('accepted malformed persistent terminal stream')
     need(len(refused)==len(set(refused))==CONTROL_COUNTS[mode,0],'all60 distinct dynamic terminal refusals')
     return dict(refusals=refused,native_operations=0,original_stderr_sha256=H(stderr))
+
+
+def selected_reason_controls(stderr,*args):
+    """One additive strict join for the appended bucket; old60 stay exact."""
+    parsed,_=check(stderr,*args);owner,owner_reader,_=args[-3:]
+    value=copy.deepcopy(parsed['dynamic']);value['misses'][15]^=1
+    try:owner_reader.terminal(value,owner)
+    except ValueError as error:
+        need(str(error)=='whole actual protected dynamic terminal row',
+             'exact isolated selected-root protected counter refusal')
+    else:raise ValueError('accepted changed actual selected-root counter')
+    return dict(refusals=['protected_misses_15'],native_operations=0,original_stderr_sha256=H(stderr))

@@ -14,6 +14,7 @@ static const uintptr_t pages[2]={0x400000,0x401000};
 static uintptr_t code,spill;
 static unsigned inject,positive,classified,terminal,corruptions;
 static unsigned placement_cases,placement_ready;
+static unsigned selected_cases,selected_terminals,selected_corruptions;
 uint32_t __real_li2_decoder_span_describe(uint64_t,const unsigned char *,size_t,struct li2_span_decoded *);
 uint32_t __wrap_li2_decoder_span_describe(uint64_t pc,const unsigned char *b,size_t n,struct li2_span_decoded *d) {
     uint32_t r=__real_li2_decoder_span_describe(pc,b,n,d);
@@ -26,6 +27,35 @@ uint32_t __wrap_li2_decoder_span_describe(uint64_t pc,const unsigned char *b,siz
     if(inject==5 && emitted) {d->ready=0;d->refusal=LI2_REGION_UNSUPPORTED;}
     if(inject==7 && !emitted && d->decoded.decode_status!=LI2_VALID)d->refusal=LI2_REGION_EFFECTS;
     if(inject==8 && !emitted) {struct li2_decoded original=d->decoded;memset(d,0,sizeof *d);d->decoded=original;d->version=1;d->refusal=LI2_REGION_EFFECTS;}
+    if(inject==9 && !emitted)d->flags_written=1;
+    if(inject==10 && !emitted)d->decoded.kind=LI2_NONE;
+    if(inject==11 && !emitted)d->decoded.kind=LI2_CPUID;
+    if(inject==12 && !emitted)d->decoded.kind=LI2_SYSENTER;
+    if(inject==13 && !emitted)d->decoded.kind=UINT32_MAX;
+    if(inject==14 && !emitted)d->decoded.width_bits=64;
+    if(inject==15 && !emitted)d->decoded.step_disposition=LI2_STEP_CANDIDATE;
+    if(inject==16 && !emitted)d->refusal=LI2_REGION_UNSUPPORTED;
+    return 0;
+}
+uint32_t __real_li2_decoder_mov_store(uint64_t,const unsigned char *,size_t,struct li2_mg_store *);
+uint32_t __wrap_li2_decoder_mov_store(uint64_t pc,const unsigned char *b,size_t n,struct li2_mg_store *s) {
+    uint32_t r=__real_li2_decoder_mov_store(pc,b,n,s);
+    if(r)return r;
+    if(inject==20)s->tf.policy=1;
+    if(inject==21)s->tf.flow=1;
+    if(inject==22)s->tf.family=1;
+    if(inject==23)s->displacement=1;
+    if(inject==24)s->width_bytes=8;
+    if(inject==25)s->source_reg=4;
+    return 0;
+}
+uint32_t __real_li2_decoder_decode(uint64_t,const unsigned char *,size_t,struct li2_decoded *);
+uint32_t __wrap_li2_decoder_decode(uint64_t pc,const unsigned char *b,size_t n,struct li2_decoded *d) {
+    uint32_t r=__real_li2_decoder_decode(pc,b,n,d);
+    if(r)return r;
+    if(inject==30)return LI2_BUSY;
+    if(inject==31)d->code^=1;
+    if(inject==32)d->bytes[14]^=1;
     return 0;
 }
 int __real_li2_mg_emit(uintptr_t,const unsigned char *,size_t,uintptr_t,uintptr_t,uintptr_t,const struct li2_mg_table *,struct li2_mg_plan *);
@@ -161,6 +191,88 @@ static void placement_old_positives(void) {
     placement_plan(pages,pages[0]+0xff0,0,1);
     assert(actual.heads==2 && actual.stores==1 && actual.source_bytes==9 && actual.exits==1 && actual.source_mask==3);
 }
+/* Selected roots retain the whole old unready plan. This is descriptive
+   selected-route classification, not selected effect execution authority. */
+static void selected_case(const unsigned char *bytes,size_t n,unsigned kind,int classified_here) {
+    empty();memcpy(source[0]+0x100,bytes,n);
+    int a=li2_pe_plan_pages_dynamic(pages,source,pages[0]+0x100,code,spill,&table,&actual,&miss);
+    int b=li2_pe_plan_pages(pages,source,pages[0]+0x100,code,spill,&table,&old);
+    assert(a==LI2_PE_MISS && b==a && !memcmp(&actual,&old,sizeof actual));
+    assert(!actual.ready && !actual.heads && !actual.exits && !actual.stores && !actual.source_bytes);
+    if(classified_here) {
+        const struct li2_pe_dynamic_miss want={.version=1,.status=LI2_PE_MISS,
+            .reason=LI2_PED_ROOT_SELECTED,.site=LI2_PED_SOURCE,.pc=pages[0]+0x100,.detail=kind};
+        assert(!memcmp(&miss,&want,sizeof miss) && li2_pe_dynamic_miss_valid(&actual,&miss,a));
+        ++selected_cases;
+    } else {
+        const struct li2_pe_dynamic_miss want={.version=1,.status=LI2_PE_MISS};
+        assert(!memcmp(&miss,&want,sizeof miss) && !li2_pe_dynamic_miss_valid(&actual,&miss,a));
+        ++selected_terminals;
+    }
+}
+static void selected_roots(void) {
+    static const unsigned char cpuid[]={0x0f,0xa2},rdtsc[]={0x0f,0x31},rdtscp[]={0x0f,0x01,0xf9},syscall[]={0x0f,0x05};
+    selected_case(cpuid,sizeof cpuid,LI2_CPUID,1);
+    selected_case(rdtsc,sizeof rdtsc,LI2_RDTSC,1);
+    selected_case(rdtscp,sizeof rdtscp,LI2_RDTSCP,1);
+    selected_case(syscall,sizeof syscall,LI2_SYSCALL,1);
+    /* All16 physical registers and all three widths for both random Codes.
+       RSP remains selected metadata; the unchanged effect owner decides it. */
+    for(unsigned seed=0;seed<2;seed++)for(unsigned width=0;width<3;width++)for(unsigned reg=0;reg<16;reg++) {
+        unsigned char bytes[5];size_t n=0;
+        if(width==0)bytes[n++]=0x66;
+        if(width==2 || reg>=8)bytes[n++]=(unsigned char)(0x40|(width==2?8:0)|(reg>=8?1:0));
+        bytes[n++]=0x0f;bytes[n++]=0xc7;bytes[n++]=(unsigned char)((seed?0xf8:0xf0)|(reg&7));
+        selected_case(bytes,n,seed?LI2_RDSEED:LI2_RDRAND,1);
+    }
+    for(unsigned reg=0;reg<16;reg++) {
+        unsigned char bytes[5];size_t n=0;bytes[n++]=0xf3;
+        if(reg>=8)bytes[n++]=0x41;
+        bytes[n++]=0x0f;bytes[n++]=0xc7;bytes[n++]=(unsigned char)(0xf8|(reg&7));
+        selected_case(bytes,n,LI2_RDPID,1);
+    }
+    static const unsigned char sysenter[]={0x0f,0x34},int80[]={0xcd,0x80};
+    selected_case(sysenter,sizeof sysenter,LI2_SYSENTER,0);
+    selected_case(int80,sizeof int80,LI2_INT80,0);
+    /* Corrupt actual selected refusal outputs, keeping the old planner result
+       byte-identical. Source metadata, complete MOV refusal and the independent
+       decode each have their own causal rejection, not a relaxed fallback. */
+    static const unsigned faults[]={9,10,11,12,13,14,15,16,20,21,22,23,24,25,30,31,32};
+    for(unsigned i=0;i<sizeof faults/sizeof faults[0];i++) {
+        empty();memcpy(source[0]+0x100,rdtsc,sizeof rdtsc);inject=faults[i];
+        int a=li2_pe_plan_pages_dynamic(pages,source,pages[0]+0x100,code,spill,&table,&actual,&miss);
+        int b=li2_pe_plan_pages(pages,source,pages[0]+0x100,code,spill,&table,&old);
+        const struct li2_pe_dynamic_miss want={.version=1,.status=LI2_PE_MISS};
+        assert(a==LI2_PE_MISS && b==a && !memcmp(&actual,&old,sizeof actual));
+        assert(!memcmp(&miss,&want,sizeof miss) && !li2_pe_dynamic_miss_valid(&actual,&miss,a));
+        ++selected_terminals;
+    }
+    /* Immediate protected-output validator rejects invalid kinds/counts.
+       A different valid kind is not independently re-decoded here. */
+    empty();memcpy(source[0]+0x100,rdtsc,sizeof rdtsc);
+    assert(li2_pe_plan_pages_dynamic(pages,source,pages[0]+0x100,code,spill,&table,&actual,&miss)==LI2_PE_MISS);
+    assert(miss.reason==LI2_PED_ROOT_SELECTED && li2_pe_dynamic_miss_valid(&actual,&miss,LI2_PE_MISS));
+    const struct li2_pe_dynamic_miss saved=miss;
+    for(unsigned i=0;i<7;i++) {
+        miss=saved;
+        switch(i) {
+        case 0:miss.detail=LI2_NONE;break;case 1:miss.detail=LI2_SYSENTER;break;
+        case 2:miss.detail=LI2_INT80;break;case 3:miss.detail=UINT64_MAX;break;
+        case 4:miss.site=LI2_PED_EMIT;break;case 5:miss.pc++;break;case 6:miss.status=LI2_PE_GRAPH;break;
+        }
+        assert(!li2_pe_dynamic_miss_valid(&actual,&miss,LI2_PE_MISS));++selected_corruptions;
+    }
+    miss=saved;
+    for(unsigned i=0;i<6;i++) {
+        scratch=actual;
+        switch(i) {
+        case 0:scratch.heads=1;break;case 1:scratch.exits=1;break;case 2:scratch.stores=1;break;
+        case 3:scratch.source_bytes=1;break;case 4:scratch.decoder_result=1;break;case 5:scratch.guard_result=1;break;
+        }
+        assert(!li2_pe_dynamic_miss_valid(&scratch,&miss,LI2_PE_MISS));++selected_corruptions;
+    }
+    assert(selected_cases==116 && selected_terminals==19 && selected_corruptions==13);
+}
 int main(void) {
     struct li2_decoder_stats before,after;assert(!li2_decoder_initialize(arena,sizeof arena,&before) && before.phase==2 && !before.first_fatal_reason);
     const struct li2_mg_range range={0x70000008,0x70000010};assert(!li2_mg_table_build(&range,1,0x70002000,&table));
@@ -202,8 +314,9 @@ int main(void) {
     loop();spill=code+16;compare(pages[0]+0x100,0,LI2_PE_ARGUMENT);
     placement_geometry();placement_emit_edges();placement_old_positives();
     assert(placement_cases==42 && placement_ready==10);
+    selected_roots();
     assert(!li2_decoder_stats(&after) && !memcmp(&before,&after,sizeof before));
     assert(positive==2 && classified==14 && terminal==10 && corruptions==56);
-    printf("{\"schema\":1,\"positives\":2,\"classified\":14,\"terminal\":10,\"corruptions\":56,\"whole_old_plans_equal\":26,\"postseal_equal\":1,\"emitted_execution\":0,\"placement_cases\":42,\"placement_ready\":10}\n");
+    printf("{\"schema\":1,\"positives\":2,\"classified\":14,\"terminal\":10,\"corruptions\":56,\"whole_old_plans_equal\":26,\"postseal_equal\":1,\"emitted_execution\":0,\"placement_cases\":42,\"placement_ready\":10,\"selected_cases\":116,\"selected_terminals\":19,\"selected_corruptions\":13}\n");
     return 0;
 }

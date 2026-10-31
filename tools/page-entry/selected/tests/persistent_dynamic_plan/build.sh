@@ -17,4 +17,5 @@ cc_bin=${LI2_CC:-cc}
   -I"$selected" "$fixture/metadata.c" "$selected/persistent_plan.c" \
   "$selected/tests/decoder/support.c" "$selected/linked_mov_guard.c" "$archive" \
   -Wl,--wrap=li2_decoder_span_describe,--wrap=li2_mg_emit \
+  -Wl,--wrap=li2_decoder_decode,--wrap=li2_decoder_mov_store \
   -Wl,-z,now,-z,relro,--no-undefined -ldl -lpthread -lm -o "$output"

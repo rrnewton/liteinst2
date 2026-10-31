@@ -202,7 +202,7 @@ class Check(old.Check):
 
     def counts(self,b):
         t='pdo_counts';names='next_serial next_generation offers publications hits cold_attempts cancelled retirements permit_claims entries completed unexpected'.split()
-        d={k:self.i(b,t,k)for k in names};d['misses']=q(self.f(b,t,'misses'));need(len(d['misses'])==15 and d['misses'][0]==0,'exact fifteen descriptive reason buckets')
+        d={k:self.i(b,t,k)for k in names};d['misses']=q(self.f(b,t,'misses'));need(len(d['misses'])==16 and d['misses'][0]==0,'exact sixteen descriptive reason buckets')
         need(all(0<=x<U64 for x in d.values()if type(x)is int)and all(0<=x<U64 for x in d['misses']),'bounded exact dynamic counters')
         return d
 

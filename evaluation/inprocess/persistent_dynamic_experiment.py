@@ -28,7 +28,7 @@ REQUIRED=(SCRIPT,'evaluation/inprocess/linked_frontier_census.py',
     'tools/page-entry/selected/persistent_lifetime.h')
 MISS_REASONS=('none','root_unsupported','source_invalid','source_truncated','source_overlap',
     'outside_pair','head_limit','exit_limit','queue_limit','no_exit','rip_reach',
-    'branch_reach','fallthrough_reach','guard_rip_reach','guard_follow_reach')
+    'branch_reach','fallthrough_reach','guard_rip_reach','guard_follow_reach','root_selected')
 DYNAMIC_KEYS=('version','status','failure_code','detail_abs','detail_negative','phase','serial',
     'generation','build_serial','offers','cold_attempts','publications','hits','cancelled','retirements',
     'permit_claims','entries','completed','unexpected','permit','opened_pages','closed_pages',

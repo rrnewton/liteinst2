@@ -562,7 +562,7 @@ GROUPS={'Elf64_Phdr': ((('p_type p_flags', 4, 4), ('p_offset p_vaddr p_paddr p_f
                   'permit_claims entries completed unexpected',
                   8,
                   8),
-                 ('misses', 120, 8)),
+                 ('misses', 128, 8)),
                 8),
  'pdo_epoch': ((('h', 192, 8),
                 ('prior_counts', 'pdo_counts', 8),
