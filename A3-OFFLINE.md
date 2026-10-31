@@ -92,6 +92,29 @@ entry routes, PC mappings, limits and outstanding requirements. The symbolic
 emitter uses target coordinates and a same-module hook; it does not serialize
 build-process callback pointers or copy a live trampoline into the file.
 
+## Artifact frame records
+
+`ArtifactPlan::frame_trace_nop5` prepares frame records for a single same-site
+five-byte NOP relocation with a symbolic observer. It authenticates the source
+expectations, reconstructs the producer and requires the complete emitted image
+to match. Fixed logical-PC and direct-call fragments are checked after linking;
+their frame records describe the actual linked instructions. Other shapes
+remain unsupported by this additional API, without changing ordinary planning.
+
+`generated_unwind::artifact::PreparedArtifactUnwind::prepare` combines that trace
+with separately certified original CFI and a frame-preserving symbolic hook. It
+emits `.eh_frame` at an explicit module coordinate using signed32 PC-relative
+locations. Source identity, load-bias domain, callback identity and exact point
+authority must match. Caller recovery keeps original stack slots distinct from
+saved instrumentation context. Missing caller rules and out-of-range fields
+refuse; the existing live registration path remains separate.
+
+These are offline byte products. The ELF frontend does not yet place or index
+them. A loader-visible index preserving every original FDE, actual unwinder
+qualification, and source/hook lifetime checks are still required. The API
+retains `GeneratedUnwindInformation` and every other artifact requirement.
+It does not qualify exception propagation, LSDA handling or asynchronous walks.
+
 ## Static executable startup profile
 
 The optional `offline-router` feature adds a bounded producer for the authored

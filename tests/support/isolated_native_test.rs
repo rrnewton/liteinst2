@@ -3,12 +3,18 @@
 //! Callers bind their exact libtest name, private selector, and unchanged body.
 //! Only the selected child invokes the body; normal return must produce the
 //! sentinel after every assertion and local destructor has completed.
+//! Bodies/descendants are fixed fixtures that inherit the group and neither
+//! change/escape it nor join another campaign's group. This is not a supervisor
+//! for arbitrary group-changing programs.
 
 #[path = "bounded_proc_stat.rs"]
 mod bounded_proc_stat;
+#[path = "owned_group_candidate.rs"]
+mod owned_group_candidate;
 
 pub(super) fn run(name: &str, selector: &str, body: fn()) {
     use self::bounded_proc_stat::read_bounded_stat;
+    use self::owned_group_candidate::{Inventory, owned_group_candidate};
     use std::os::unix::process::CommandExt;
     use std::process::{Child, Command, Stdio};
     use std::time::{Duration, Instant};
@@ -68,11 +74,10 @@ pub(super) fn run(name: &str, selector: &str, body: fn()) {
     // The optional /proc/PID/task/TID/children interface is not available here.
     fn owned_group(group: i32, deadline: Instant) -> Result<Vec<i32>, String> {
         let mut result = Vec::new();
+        let mut inventory = Inventory::default();
         let entries = std::fs::read_dir("/proc").map_err(|e| e.to_string())?;
-        for (index, entry) in entries.enumerate() {
-            if index >= 65536 || Instant::now() >= deadline {
-                return Err("bounded process inventory exhausted".into());
-            }
+        for entry in entries {
+            inventory.entry(Instant::now() >= deadline)?;
             let entry = entry.map_err(|e| e.to_string())?;
             let name = entry.file_name();
             let Some(name) = name.to_str() else {
@@ -81,45 +86,47 @@ pub(super) fn run(name: &str, selector: &str, body: fn()) {
             if name.is_empty() || !name.bytes().all(|byte| byte.is_ascii_digit()) {
                 continue;
             }
+            inventory.numeric += 1;
             let pid: i32 = name.parse().map_err(|_| "invalid numeric process ID")?;
-            let file = match std::fs::File::open(entry.path().join("stat")) {
-                Ok(file) => file,
-                Err(error) if matches!(error.raw_os_error(), Some(libc::ENOENT | libc::ESRCH)) => {
-                    continue;
-                }
-                Err(error) => return Err(error.to_string()),
-            };
-            let Some(bytes) = read_bounded_stat(file)
-                .map_err(|error| format!("read /proc/{pid}/stat: {error}"))?
-            else {
-                continue;
-            };
-            if bytes.len() > 4096 || Instant::now() >= deadline {
-                return Err("bounded process stat read exhausted".into());
-            }
-            if !bytes.starts_with(format!("{pid} (").as_bytes()) {
-                return Err("process stat identity mismatch".into());
-            }
-            // comm may contain arbitrary non-UTF8 bytes and parentheses. Only
-            // the numeric fields after its final delimiter are ASCII-parsed.
-            let close = bytes
-                .windows(2)
-                .rposition(|pair| pair == b") ")
-                .ok_or("malformed process stat")?;
-            let suffix = std::str::from_utf8(&bytes[close + 2..])
-                .map_err(|_| "non-ASCII numeric process fields")?;
-            let fields: Vec<_> = suffix.split_whitespace().collect();
-            if fields.len() < 3 {
-                return Err("short process stat".into());
-            }
-            let parent: u32 = fields[1].parse().map_err(|_| "invalid parent PID")?;
-            let pgrp: i32 = fields[2].parse().map_err(|_| "invalid process group")?;
-            if parent == std::process::id() && pgrp == group {
+            if owned_group_candidate(
+                pid,
+                std::process::id(),
+                group,
+                || Instant::now() >= deadline,
+                |pid| {
+                    // SAFETY: read-only kernel membership query for a positive
+                    // PID. This filters candidates; it never grants signal or
+                    // reap authority. The unreaped leader pins the target PGID.
+                    let found = unsafe { libc::getpgid(pid) };
+                    if found == -1 {
+                        Err(std::io::Error::last_os_error())
+                    } else {
+                        inventory.same_group += usize::from(found == group);
+                        Ok(found)
+                    }
+                },
+                || {
+                    inventory.stat_open_attempts += 1;
+                    let file = match std::fs::File::open(entry.path().join("stat")) {
+                        Ok(file) => file,
+                        Err(error)
+                            if matches!(error.raw_os_error(), Some(libc::ENOENT | libc::ESRCH)) =>
+                        {
+                            return Ok(None);
+                        }
+                        Err(error) => return Err(error),
+                    };
+                    inventory.stat_reads += 1;
+                    read_bounded_stat(file)
+                },
+            )
+            .map_err(|error| inventory.error(&error))?
+            {
                 result.push(pid);
             }
         }
         if Instant::now() >= deadline {
-            return Err("bounded process inventory deadline".into());
+            return Err(inventory.error("bounded process inventory deadline"));
         }
         result.sort_unstable();
         Ok(result)

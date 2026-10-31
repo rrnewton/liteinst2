@@ -230,14 +230,53 @@ fn record(body: &[u8], output: &mut Vec<u8>) -> Result<usize, Refusal> {
 type EncodedFrameRecords = (Vec<u8>, Vec<(u64, u64, usize)>);
 
 pub(super) fn encode(rows: &[Row], limits: Limits) -> Result<EncodedFrameRecords, Refusal> {
+    encode_records(rows, None, limits)
+}
+
+/// ELF-coordinate encoding: every initial-location field is pcrel/sdata4.
+/// A common load bias leaves both the pointer and the CFI expressions unchanged.
+pub(super) fn encode_relative(
+    rows: &[Row],
+    address: u64,
+    limits: Limits,
+) -> Result<EncodedFrameRecords, Refusal> {
+    if rows
+        .iter()
+        .any(|row| row.start >= row.end || row.end - row.start > 15)
+    {
+        return Err(Refusal::FrameShape);
+    }
+    encode_records(rows, Some(address), limits)
+}
+
+fn encode_records(
+    rows: &[Row],
+    address: Option<u64>,
+    limits: Limits,
+) -> Result<EncodedFrameRecords, Refusal> {
     if rows.is_empty() || rows.len() > limits.rows {
         return Err(Refusal::Limit);
     }
     let mut output = Vec::new();
     // Actual .eh_frame CIE: ID=0, v1, zR, code-align1, data-align-8,
-    // RA=16, augmentation length1, absolute eight-byte address encoding.
+    // RA=16, augmentation length1. Live records retain absolute eight-byte
+    // locations; artifact records use signed four-byte PC-relative locations.
     record(
-        &[0, 0, 0, 0, 1, b'z', b'R', 0, 1, 0x78, 16, 1, 0],
+        &[
+            0,
+            0,
+            0,
+            0,
+            1,
+            b'z',
+            b'R',
+            0,
+            1,
+            0x78,
+            16,
+            1,
+            if address.is_some() { 0x1b } else { 0 },
+        ],
         &mut output,
     )?;
     let mut fdes = Vec::new();
@@ -264,8 +303,21 @@ pub(super) fn encode(rows: &[Row], limits: Limits) -> Result<EncodedFrameRecords
                 .map_err(|_| Refusal::Arithmetic)?
                 .to_le_bytes(),
         );
-        body.extend_from_slice(&start.to_le_bytes());
-        body.extend_from_slice(&(end - start).to_le_bytes());
+        if let Some(address) = address {
+            let field = address
+                .checked_add(u64::try_from(fde).map_err(|_| Refusal::Arithmetic)?)
+                .and_then(|at| at.checked_add(8))
+                .ok_or(Refusal::Arithmetic)?;
+            let delta = i32::try_from(i128::from(start) - i128::from(field))
+                .map_err(|_| Refusal::Arithmetic)?;
+            let extent = end.checked_sub(start).ok_or(Refusal::Arithmetic)?;
+            let extent = i32::try_from(extent).map_err(|_| Refusal::Arithmetic)?;
+            body.extend_from_slice(&delta.to_le_bytes());
+            body.extend_from_slice(&extent.to_le_bytes());
+        } else {
+            body.extend_from_slice(&start.to_le_bytes());
+            body.extend_from_slice(&(end - start).to_le_bytes());
+        }
         body.push(0); // zero-length FDE augmentation
         let mut current = start;
         for row in &rows[begin..index] {
@@ -290,5 +342,10 @@ pub(super) fn encode(rows: &[Row], limits: Limits) -> Result<EncodedFrameRecords
         }
     }
     output.extend_from_slice(&[0; 4]);
+    if let Some(address) = address {
+        address
+            .checked_add(u64::try_from(output.len()).map_err(|_| Refusal::Arithmetic)?)
+            .ok_or(Refusal::Arithmetic)?;
+    }
     Ok((output, fdes))
 }

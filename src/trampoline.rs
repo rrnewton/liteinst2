@@ -2235,6 +2235,40 @@ impl TrampolinePlan {
         }
     }
 
+    // Metadata is optional and independent of the ordinary artifact image.
+    // Only the opaque NOP5 artifact API exposes this re-emission path.
+    pub(crate) fn emit_artifact_with_frame_trace_at(
+        &self,
+        address: u64,
+        input: &ArtifactEmission,
+        limits: FrameTraceLimits,
+    ) -> Result<FrameEmission, TrampolineError> {
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = (address, input, limits);
+            Err(TrampolineError::UnsupportedPlatform)
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            if self.ptrace_stops
+                || self.clock.is_some()
+                || !self.controls.is_empty()
+                || self.kind != TrampolineKind::PatchWindow
+            {
+                return Err(artifact_error("unsupported artifact frame constructor"));
+            }
+            let origin = FrameEntryOrigin::ApplicationStack;
+            let mut frames =
+                FrameRecorder::with_profile(origin, limits, self.observation_stack_profile);
+            if self.relocated_start != self.logical_index {
+                frames.refuse(FrameTraceRefusal::ReplacementRequiresFrameContract);
+            }
+            let image = self.emit_ordered_at(address, Some(input), Some(&mut frames))?;
+            let trace = frames.finish(&image);
+            Ok(FrameEmission::new(origin, image, trace))
+        }
+    }
+
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     fn emit_ordered_at(
         &self,
@@ -2623,64 +2657,6 @@ impl TrampolinePlan {
             saved_extended_state: extended_state,
             ..TrampolineLayout::default()
         };
-        if let Some(frames) = frames {
-            if block.terminal_jump_offset.is_some()
-                || !block.branch_relays.is_empty()
-                || block.encoded.new_instruction_offsets.contains(&u32::MAX)
-            {
-                frames.refuse(FrameTraceRefusal::ExpandedRelocation);
-            }
-            for (
-                entry,
-                pc,
-                instrumentation_len,
-                restore_len,
-                instrumentation_frames,
-                restore_frames,
-            ) in helper_frames
-            {
-                let helper_offset = match offset(entry) {
-                    Ok(offset) => offset,
-                    Err(_) => {
-                        frames.refuse(FrameTraceRefusal::InvalidProducerAnnotation);
-                        continue;
-                    }
-                };
-                let restore_offset = helper_offset.checked_add(instrumentation_len);
-                let helper_end = restore_offset.and_then(|value| value.checked_add(restore_len));
-                if let (Some(restore_offset), Some(helper_end)) = (restore_offset, helper_end) {
-                    if let (Some(instrumentation), Some(restore), Ok(start), Ok(restored)) = (
-                        block.encoded.code_buffer.get(helper_offset..restore_offset),
-                        block.encoded.code_buffer.get(restore_offset..helper_end),
-                        generated(helper_offset),
-                        generated(restore_offset),
-                    ) {
-                        frames.helper(pc, start, instrumentation, instrumentation_frames);
-                        frames.helper(pc, restored, restore, restore_frames);
-                    } else {
-                        frames.refuse(FrameTraceRefusal::IncompleteByteOwnership);
-                    }
-                } else {
-                    frames.refuse(FrameTraceRefusal::ArithmeticOverflow);
-                }
-            }
-            for (index, &(_, _, body, replaced)) in heads.iter().enumerate() {
-                if !replaced {
-                    let start = offset(body).and_then(generated);
-                    let end = heads
-                        .get(index + 1)
-                        .map_or(Ok(executable_end), |next| offset(next.1))
-                        .and_then(generated);
-                    match (start, end) {
-                        (Ok(start), Ok(end)) => {
-                            frames.relocated(self.instructions[index], start, end)
-                        }
-                        _ => frames.refuse(FrameTraceRefusal::InvalidProducerAnnotation),
-                    }
-                }
-            }
-            frames.return_jump(return_start, return_jump.len(), self.return_address);
-        }
         let mut fields = Vec::new();
         if let Some(input) = artifact {
             for (entry, fragment) in &fragments {
@@ -2739,6 +2715,66 @@ impl TrampolinePlan {
         } else {
             None
         };
+        // Frame facts must authenticate the final linked bytes. Artifact
+        // helper directives contain fields changed by link_bias_invariant.
+        if let Some(frames) = frames {
+            if block.terminal_jump_offset.is_some()
+                || !block.branch_relays.is_empty()
+                || block.encoded.new_instruction_offsets.contains(&u32::MAX)
+            {
+                frames.refuse(FrameTraceRefusal::ExpandedRelocation);
+            }
+            for (
+                entry,
+                pc,
+                instrumentation_len,
+                restore_len,
+                instrumentation_frames,
+                restore_frames,
+            ) in helper_frames
+            {
+                let helper_offset = match offset(entry) {
+                    Ok(offset) => offset,
+                    Err(_) => {
+                        frames.refuse(FrameTraceRefusal::InvalidProducerAnnotation);
+                        continue;
+                    }
+                };
+                let restore_offset = helper_offset.checked_add(instrumentation_len);
+                let helper_end = restore_offset.and_then(|value| value.checked_add(restore_len));
+                if let (Some(restore_offset), Some(helper_end)) = (restore_offset, helper_end) {
+                    if let (Some(instrumentation), Some(restore), Ok(start), Ok(restored)) = (
+                        bytes.get(helper_offset..restore_offset),
+                        bytes.get(restore_offset..helper_end),
+                        generated(helper_offset),
+                        generated(restore_offset),
+                    ) {
+                        frames.helper(pc, start, instrumentation, instrumentation_frames);
+                        frames.helper(pc, restored, restore, restore_frames);
+                    } else {
+                        frames.refuse(FrameTraceRefusal::IncompleteByteOwnership);
+                    }
+                } else {
+                    frames.refuse(FrameTraceRefusal::ArithmeticOverflow);
+                }
+            }
+            for (index, &(_, _, body, replaced)) in heads.iter().enumerate() {
+                if !replaced {
+                    let start = offset(body).and_then(generated);
+                    let end = heads
+                        .get(index + 1)
+                        .map_or(Ok(executable_end), |next| offset(next.1))
+                        .and_then(generated);
+                    match (start, end) {
+                        (Ok(start), Ok(end)) => {
+                            frames.relocated(self.instructions[index], start, end)
+                        }
+                        _ => frames.refuse(FrameTraceRefusal::InvalidProducerAnnotation),
+                    }
+                }
+            }
+            frames.return_jump(return_start, return_jump.len(), self.return_address);
+        }
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
         Ok(TrampolineImage {
             clock: self.clock.as_ref().map(|action| action.clock.clone()),
@@ -2932,6 +2968,17 @@ impl TrampolinePlan {
             .assemble_options(address, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
             .map_err(encoding_error)?
             .inner;
+        if let Some(frames) = frames {
+            frames.finish_artifact(
+                assembler.instructions(),
+                &encoded,
+                &fragments,
+                artifact
+                    .expect("artifact helper branch")
+                    .profile()
+                    .bias_domain(),
+            );
+        }
         let mut fields = Vec::new();
         for (index, fragment) in fragments {
             let offset = encoded

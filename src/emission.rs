@@ -4,6 +4,7 @@
 //! publication method. Structural planning is not CPU, loader or ABI admission.
 
 use crate::contracts::{AddressRange, CodeIdentity, LegalEntrySet, PatchPlan, Refusal};
+use crate::frame_trace::{FrameTrace, FrameTraceLimits, FrameTraceRefusal};
 use crate::planner::HookSemantics;
 use crate::quiescent::{AllocationPolicy, InstallRequest, PlannedInstall, SearchPolicy};
 use crate::scanner::ScanResult;
@@ -367,6 +368,68 @@ impl ArtifactImageMetadata {
 pub struct ArtifactImageView<'a> {
     image: &'a TrampolineImage,
 }
+
+/// Independent refusal of optional artifact frame metadata.
+/// The ordinary artifact plan and every outstanding qualification survive it.
+#[derive(Debug)]
+pub enum ArtifactFrameTraceRefusal {
+    /// The plan is outside the single, observing, route-free NOP5 envelope.
+    UnsupportedPlan,
+    /// Exact source read expectations do not authenticate the literal NOP5.
+    SourceSnapshot,
+    /// The symbolic constructor could not reproduce an ordinary image.
+    Reemission(TrampolineError),
+    /// Producer metadata failed its independent shape or resource checks.
+    Metadata(FrameTraceRefusal),
+    /// Re-emitted bytes, maps, state profile or artifact bindings differ.
+    ImageMismatch,
+}
+
+/// Producer frame facts for one exact opaque artifact image.
+///
+/// This value has no live conversion, registration or publication capability.
+/// Original CFI, a frame-preserving symbolic hook, loader/consumer behavior and
+/// all other artifact qualifications remain owed.
+#[derive(Clone, Debug)]
+pub struct ArtifactFrameTrace {
+    source_step: PatchPlan,
+    hook: SymbolicHook,
+    bias_domain: u64,
+    trace: FrameTrace,
+}
+
+impl ArtifactFrameTrace {
+    /// Exact original source generation from the retained patch contract.
+    pub const fn identity(&self) -> CodeIdentity {
+        self.source_step.parts().identity
+    }
+    /// Complete original read expectations and source obligations, retained
+    /// even after the ordinary ArtifactPlan owner is dropped.
+    pub const fn source_step(&self) -> &PatchPlan {
+        &self.source_step
+    }
+    /// Exact symbolic observer identity and resolved same-module coordinate.
+    pub const fn symbolic_hook(&self) -> SymbolicHook {
+        self.hook
+    }
+    /// Common-bias namespace used by the final linked image.
+    pub const fn bias_domain(&self) -> u64 {
+        self.bias_domain
+    }
+    /// Immutable producer facts; these do not certify source CFI or the hook.
+    pub const fn trace(&self) -> &FrameTrace {
+        &self.trace
+    }
+    /// Read-only final image; no live image ownership can be extracted.
+    pub fn image(&self) -> ArtifactImageView<'_> {
+        ArtifactImageView {
+            image: self.exact_image(),
+        }
+    }
+    pub(crate) const fn exact_image(&self) -> &TrampolineImage {
+        self.trace.exact_image()
+    }
+}
 impl ArtifactImageView<'_> {
     /// Planning coordinate of the first image byte.
     pub fn address(&self) -> u64 {
@@ -425,6 +488,90 @@ pub enum ArtifactMetrics {
 }
 
 impl ArtifactPlan {
+    /// Reconstructs the single observing NOP5 producer and authenticates its
+    /// complete final image before returning optional frame facts.
+    ///
+    /// Only a Legacy128 relocation at the logical head, with no interior-entry
+    /// router, is admitted. Supplied target/hook inputs must reproduce every
+    /// byte, layout, map and artifact field/requirement. No host CPU, mapping,
+    /// callback pointer or original-CFI authority is inferred. Failure leaves
+    /// this ordinary artifact plan unchanged.
+    pub fn frame_trace_nop5(
+        &self,
+        emission: &ArtifactEmission,
+        limits: FrameTraceLimits,
+    ) -> Result<ArtifactFrameTrace, ArtifactFrameTraceRefusal> {
+        use crate::contracts::PlanKind;
+        use crate::trampoline::ObservationStackProfile;
+        use ArtifactFrameTraceRefusal as Failure;
+
+        let ([step], [image]) = (self.steps.as_slice(), self.images.as_slice()) else {
+            return Err(Failure::UnsupportedPlan);
+        };
+        let parts = step.parts();
+        if parts.kind != PlanKind::Relocation
+            || parts.physical_pc != parts.logical_pc
+            || parts.displaced.start() != parts.logical_pc
+            || parts.displaced.len() != 5
+            || parts.requirements.sigill_router
+            || image.layout().observation_stack_profile != ObservationStackProfile::Legacy128
+            || image.artifact_metadata().is_none_or(|metadata| {
+                metadata
+                    .requirements()
+                    .contains(&ArtifactRequirement::EntryRouterBootstrap)
+            })
+        {
+            return Err(Failure::UnsupportedPlan);
+        }
+        const NOP5: [u8; 5] = [0x0f, 0x1f, 0x44, 0, 0];
+        let mut covered = false;
+        for read in &parts.reads {
+            let end = read
+                .address
+                .checked_add(read.bytes.len() as u64)
+                .ok_or(Failure::SourceSnapshot)?;
+            let start = read.address.max(parts.logical_pc);
+            let until = end.min(parts.displaced.end());
+            if start < until {
+                let at =
+                    usize::try_from(start - read.address).map_err(|_| Failure::SourceSnapshot)?;
+                let offset = usize::try_from(start - parts.logical_pc)
+                    .map_err(|_| Failure::SourceSnapshot)?;
+                let len = usize::try_from(until - start).map_err(|_| Failure::SourceSnapshot)?;
+                if read.bytes.get(at..at + len) != NOP5.get(offset..offset + len) {
+                    return Err(Failure::SourceSnapshot);
+                }
+            }
+            covered |= read.address <= parts.logical_pc && end >= parts.displaced.end();
+        }
+        if !covered {
+            return Err(Failure::SourceSnapshot);
+        }
+        let scan = crate::scanner::InstructionScanner::default()
+            .scan(&NOP5, parts.logical_pc)
+            .map_err(|_| Failure::SourceSnapshot)?;
+        let producer = TrampolinePlan::from_symbolic_window(
+            &scan,
+            parts.logical_pc,
+            parts.logical_pc,
+            parts.displaced.end(),
+            false,
+        )
+        .map_err(Failure::Reemission)?;
+        let emitted = producer
+            .emit_artifact_with_frame_trace_at(image.address(), emission, limits)
+            .map_err(Failure::Reemission)?;
+        if emitted.image() != image {
+            return Err(Failure::ImageMismatch);
+        }
+        let trace = emitted.trace().map_err(Failure::Metadata)?.clone();
+        Ok(ArtifactFrameTrace {
+            source_step: step.clone(),
+            hook: emission.hook(),
+            bias_domain: emission.profile().bias_domain(),
+            trace,
+        })
+    }
     pub(crate) fn single(member: PlannedInstall) -> Self {
         let mut result = Self {
             steps: vec![member.plan],
@@ -477,3 +624,6 @@ impl ArtifactPlan {
         false
     }
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(crate) mod artifact_frame_tests;
