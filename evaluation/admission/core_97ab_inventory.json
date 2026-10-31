@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "26a3c9f458ef8fa8e8c8fccc5dfc346cd1afb2a3957392ac902b24b81a335d5f",
+  "current_corpus_sha256": "6d4075e9f559eabda13f7597fbab83a32c8e00b485f0a92efee730a06bee2d42",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -96,6 +96,12 @@
     ]
   },
   "default_test_additions": 58,
+  "doctests": {
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+      "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedNormalModuleThread;\n/// fn send<T: Send>() {}\n/// send::<OwnedNormalModuleThread>();\n/// ```",
+      "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedNormalModuleThread;\n/// fn sync<T: Sync>() {}\n/// sync::<OwnedNormalModuleThread>();\n/// ```"
+    ]
+  },
   "evaluation_projections": {
     "evaluation/admission/core_813_inventory.py": {
       "current_sha256": "99073f490c5d9d0ea96bacb676d437658407d8c63d3f3d7ebb17e7c98d710407",
@@ -305,8 +311,29 @@
       ],
       "previous_sha256": "154ea2ceef91052ff23126b4ca54e0fbcf9b511340f4805d80cc82b2128f929e"
     },
+    "evaluation/admission/test_main813_inventory.py": {
+      "current_sha256": "abac893aa10682c757a9bacb12a5c4be6f68ccc32e2d741de265852725060a87",
+      "edits": [
+        [
+          388,
+          433,
+          ""
+        ],
+        [
+          236416,
+          236538,
+          ""
+        ],
+        [
+          236621,
+          236781,
+          "             patch.dict(artifact_layer.DATA, projections=artifact_projections):\n"
+        ]
+      ],
+      "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
+    },
     "evaluation/admission/test_main981419_inventory.py": {
-      "current_sha256": "59790f2e9295aa2df94bff7f29c69e36b33eeb6e352c9062e95692922fd91ec1",
+      "current_sha256": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
       "edits": [
         [
           373,
@@ -324,18 +351,33 @@
           "        identities = newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(indexed.before_python(historical.python_identities(Path(__file__).parent))))))\n"
         ],
         [
-          9928,
-          10757,
+          6373,
+          7585,
           ""
         ],
         [
-          11085,
-          11168,
-          "                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
+          7700,
+          7946,
+          "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n"
+        ],
+        [
+          8118,
+          8441,
+          ""
+        ],
+        [
+          11542,
+          12371,
+          ""
         ],
         [
           12699,
-          12855,
+          12782,
+          "                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
+        ],
+        [
+          14313,
+          14469,
           "            with patch.dict(prepared.DATA['projections'], newest_outer), \\\n"
         ]
       ],
@@ -378,7 +420,7 @@
       "previous_sha256": "c8b2d6c0b859e6d757fcf9c9c5f6a43c75edcd594863e819c131dd37849e189b"
     },
     "evaluation/admission/test_mainaf81_inventory.py": {
-      "current_sha256": "850fd3bed368aff660e8920d106545d81c63148e7f46cfd013d928a19e83a42e",
+      "current_sha256": "da0d6e46e1bce60e05bd28bd1effcf6bf487f3921c0ac3e08c691a9258480d6a",
       "edits": [
         [
           371,
@@ -397,12 +439,12 @@
         ],
         [
           8610,
-          10250,
+          10504,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n"
         ],
         [
-          10422,
-          10674,
+          10676,
+          11184,
           ""
         ]
       ],
@@ -430,7 +472,7 @@
       "previous_sha256": "b3b0c8d33e580affbd078b283fd13c3cdbf44d4855397aac694f4385880bdd1c"
     },
     "evaluation/admission/test_maind8d85_inventory.py": {
-      "current_sha256": "071adbafb484a29578c0b156f292b593cb48cd0d161027ee2c4cf4b00c63a5d4",
+      "current_sha256": "c8ac5fce31e6f3be8cd6a759d4ea24551dea6f4cb7a4b51cd55b487efcc88a97",
       "edits": [
         [
           383,
@@ -446,6 +488,26 @@
           3035,
           3161,
           "        identities = indexed.before_python(historical.python_identities(Path(__file__).parent))\n"
+        ],
+        [
+          5620,
+          6478,
+          ""
+        ],
+        [
+          6729,
+          6820,
+          "                at = raw.index(before.encode()); stop = at + len(before.encode())\n"
+        ],
+        [
+          7176,
+          7271,
+          "                upstream[path].update(current_sha256=hashlib.sha256(wrong).hexdigest(),\n"
+        ],
+        [
+          7456,
+          7748,
+          "            with patch.dict(indexed.DATA['projections'], upstream):\n"
         ]
       ],
       "previous_sha256": "aaf9d75d9f5219ae37b802e56627ad22d4f2960ef3e48d1115ccd259ced1badc"
@@ -515,6 +577,256 @@
   },
   "main_revision": "97ab5f4c085b7b831942a8c1ddae985d86f883eb",
   "methods": {
+    "src/artifact_emission_tests.rs": {
+      "all": [
+        "declared_target_state_checks_shape_but_never_claims_runtime_readiness",
+        "five_forced_tactics_keep_symbolic_binding_and_checked_source_geometry",
+        "callback_free_self_branch_targets_its_own_generated_entry",
+        "rip_displacement_uses_next_instruction_after_trailing_immediate",
+        "symbolic_replace_has_hook_entry_without_original_execution_boundary",
+        "unresolved_far_and_absolute_operands_fail_without_fabricating_binding",
+        "baseless_indexed_absolute_memory_requires_a_runtime_fixup",
+        "indexed_and_truncated_address_shapes_keep_exact_refusals_and_positive_control",
+        "jrcxz_artifact_bridge_has_complete_fields_paths_and_pc_ownership",
+        "jrcxz_artifact_bridge_routes_internal_entries_and_keeps_finite_refusals",
+        "jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/artifact_fixups.rs": {
+      "all": [
+        "exact_rel8_and_rel32_endpoints_do_not_widen",
+        "rip_operand_base_includes_a_trailing_immediate",
+        "logical_delta64_keeps_two_biases_exact_without_an_absolute_slot",
+        "fragments_rebase_both_field_and_rip_origin",
+        "field_bounds_templates_overlap_and_origins_are_checked",
+        "equal_numeric_bias_does_not_authorize_cross_module_binding",
+        "exact_image_targets_use_their_own_placement_and_identity",
+        "later_failure_leaves_original_template_unchanged"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/neighbor.rs": {
+      "all": [
+        "short_redirect_has_exact_signed_endpoints_without_wrapping"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/neighbor_long_ownership_tests.rs": {
+      "all": [
+        "long_t3_ownership_continues_past_consumed_suffix_and_keeps_exact_pair",
+        "long_t3_ownership_conflicting_victims_and_existing_caps_still_refuse",
+        "long_t3_ownership_checks_selected_member_and_original_authority"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/trampoline.rs": {
+      "all": [
+        "open_result_reports_numeric_errno_without_reading",
+        "read_error_reports_numeric_errno",
+        "read_error_retains_kind_without_display_or_debug_of_its_payload",
+        "open_result_delegates_success_to_the_bounded_reader",
+        "process_maps_reader_accepts_the_exact_cap_and_rejects_one_extra_byte",
+        "arena_seals_preserve_existing_writer_and_close_external_mutation_paths",
+        "exhausted_arena_reservation_cannot_wrap_and_reuse_storage",
+        "failed_emission_consumes_its_slot_without_overwriting_published_bytes",
+        "reachable_mapping_order_preserves_upward_heap_growth",
+        "total_length_includes_every_section",
+        "total_length_rejects_overflow",
+        "relocates_multiple_short_instructions_as_one_patch_window",
+        "short_instruction_constructor_rejects_nonheads_and_long_instructions",
+        "short_instruction_emission_maps_exact_entry_and_original_end",
+        "short_instruction_native_observe_and_replace_resume_at_original_successor",
+        "validates_exact_instruction_and_ordered_action_boundaries",
+        "callback_free_lengths_and_far_branch_maps_are_exact",
+        "native_instructions_actions_and_backedges",
+        "window_emission_separates_entry_routes_from_architectural_boundaries",
+        "window_constructor_requires_complete_physical_logical_and_end_boundaries",
+        "same_site_window_emits_identical_legacy_bytes_and_layout",
+        "staged_image_rejects_wrong_address_without_mapping",
+        "upstream_entries_execute_the_required_prefix_hook_and_suffix",
+        "dropping_staged_image_releases_its_exact_mapping",
+        "rejects_a_short_region_without_five_complete_bytes",
+        "out_of_range_return_uses_cet_notrack_indirect_jump",
+        "replace_first_omits_a_two_byte_syscall_but_relocates_its_tail",
+        "ptrace_stops_restore_saved_state_but_leave_rsp_at_owned_top",
+        "emits_checked_layouts_for_five_seven_and_ten_byte_instructions",
+        "preserves_memory_targets_for_all_operand_classes",
+        "preserves_eip_wrap_and_high_ip_external_targets",
+        "keeps_entry_branches_and_memory_at_application_address",
+        "retained_interior_branches_still_follow_their_relocated_instruction",
+        "observing_entry_targets_stay_external_for_direct_control_flow",
+        "maps_consecutive_far_entry_backedges_to_their_original_pcs",
+        "far_entry_relay_preserves_all_direct_transfer_kinds_and_fallthrough",
+        "far_external_direct_branch_uses_cet_relay",
+        "far_external_relays_cover_all_direct_forms_and_plan_modes",
+        "branch_relay_grouping_is_deterministic_for_shared_and_mixed_targets",
+        "mixed_short_jcc_and_call_get_distinct_relays_in_public_plans",
+        "near_entry_backedges_do_not_add_relay_or_change_encoding",
+        "near_external_branches_keep_iced_bytes_and_offsets_in_all_plan_modes",
+        "relay_selection_uses_relocations_not_equal_immediates_or_continuation_identity",
+        "far_branch_relays_preserve_entry_and_external_destinations",
+        "preserves_replace_first_omitted_and_retained_targets",
+        "preserves_memory_and_pc_mappings_with_far_branch_literals",
+        "refuses_unreachable_original_memory_instead_of_rebinding_it",
+        "normalization_preserves_direct_branch_operand_widths",
+        "reencodes_rip_relative_memory_for_the_trampoline_address",
+        "relocates_relative_calls_and_expands_out_of_range_branches",
+        "maps_each_consecutive_expanded_branch_to_its_original_pc",
+        "far_tail_code_and_data_have_distinct_pc_mappings",
+        "terminal_instruction_does_not_capture_low_application_targets",
+        "branch_relay_rejects_malformed_final_offset64_slots",
+        "branch_relay_layout_refuses_length_address_and_rel32_overflow",
+        "hook_fires_preserves_result_and_toggles_idempotently",
+        "arena_hook_replaces_a_short_first_instruction_and_runs_the_tail",
+        "ptrace_stopped_hook_leaves_global_pc_publication_explicit",
+        "ptrace_stopped_hook_executes_on_owned_stack",
+        "quiescent_arena_hook_patches_a_cache_line_straddler",
+        "relocates_rip_relative_load_and_returns_to_original_code",
+        "relocates_relative_call_and_resumes_after_its_return",
+        "preserves_live_flags_and_the_system_v_red_zone",
+        "preserves_xmm_argument_across_a_clobbering_callback",
+        "preserves_avx_upper_lane_across_a_clobbering_callback",
+        "concurrent_execution_survives_rapid_hook_toggling",
+        "observing_control_plans_and_images_release_unused_references",
+        "observing_control_refusals_leave_no_hidden_control_owner",
+        "observing_control_changes_leave_all_emitted_bytes_and_maps_identical",
+        "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+        "observing_control_grouped_rollback_releases_its_clones",
+        "observing_control_executable_drop_keeps_code_dependencies_alive",
+        "observing_control_arena_refusal_preserves_slots_bytes_and_static_support",
+        "observing_control_native_subsets_and_retained_dispatch_after_handle_drop"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/trampoline/artifact_jrcxz.rs": {
+      "all": [
+        "fixed_jrcxz_bridge_rejects_template_index_and_field_corruption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/neighbor_eviction_oracle.rs": {
+      "all": [
+        "native_neighbor_endpoint_inventory_is_the_complete_frozen_cohort",
+        "native_neighbor_endpoint_backward_l2_m10_all_124_heads",
+        "native_neighbor_endpoint_backward_l3_m12_all_122_heads",
+        "native_neighbor_endpoint_backward_l4_m15_all_119_heads",
+        "native_neighbor_endpoint_forward_l2_m10_all_125_heads",
+        "native_neighbor_endpoint_forward_l3_m12_all_124_heads",
+        "native_neighbor_endpoint_forward_l4_m15_all_123_heads",
+        "independent_native_relay_self_calibration",
+        "rejects_unrecorded_internal_source_relay",
+        "rejects_duplicate_source_relay_record",
+        "rejects_original_head_inside_source_relay",
+        "rejects_restored_boundary_inside_source_relay",
+        "existing_gateway_rule_still_rejects_internal_source_relay",
+        "rejects_wrong_source_relay_offset",
+        "rejects_foreign_native_victim_witness",
+        "rejects_nonqualified_native_victim_witness",
+        "rejects_wrong_selected_relay_opcode",
+        "rejects_wrong_selected_relay_target",
+        "rejects_wrong_relay_e9_target",
+        "rejects_relay_target_inside_image_instead_of_entry",
+        "rejects_relay_image_owning_wrong_original_instruction",
+        "rejects_changed_gpr_at_source_relay",
+        "rejects_application_side_effect_at_source_relay",
+        "rejects_redzone_side_effect_at_source_relay",
+        "rejects_extra_hook_event_before_source_relay",
+        "rejects_unexpected_source_relay_visit",
+        "rejects_missing_required_source_relay_visit",
+        "rejects_malformed_relay_image_range",
+        "rejects_wrong_relay_e9_opcode",
+        "refuses_neighbor_relay_just_outside_both_signed_endpoints",
+        "native_neighbor_loop_seed_derivation_is_reproducible",
+        "native_neighbor_selected_loop_all_33_heads",
+        "native_neighbor_victim_loop_m10_all_25_heads",
+        "native_neighbor_victim_loop_m15_all_20_heads",
+        "native_neighbor_jnz_m10_all_32_heads",
+        "native_neighbor_jnz_m15_all_32_heads",
+        "native_neighbor_rip_load_m10_all_34_heads",
+        "native_neighbor_rip_load_m15_all_34_heads",
+        "native_neighbor_moffs_fault_m10_all_33_heads",
+        "native_neighbor_moffs_fault_m15_all_33_heads",
+        "independent_native_self_loop_relay_calibration",
+        "rejects_loop_witness_with_three_native_visits",
+        "rejects_loop_lookalike_whose_target_coincides_with_native_fallthrough",
+        "rejects_jz_lookalike_whose_target_coincides_with_native_fallthrough"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/jrcxz_artifact_oracle.rs": {
+      "all": [
+        "native_jrcxz_artifact_preserves_integer_flags_and_stack"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/quiescent_oracle.rs": {
+      "all": [
+        "campaign_initializer_keeps_default_memory_and_flags_exact",
+        "campaign_initializer_matches_independent_memory_vectors_and_flags",
+        "rejects_fault_address_corruption",
+        "rejects_gpr_corruption",
+        "rejects_defined_flag_corruption",
+        "rejects_simd_corruption",
+        "rejects_application_memory_corruption",
+        "rejects_redzone_corruption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/examples/disassembly_sites.rs": {
+      "all": [
+        "short_profile_cli_labels_mode_before_policy_binding",
+        "owned_short_cli_preserves_positional_paths_and_exact_prebind_labels",
+        "pending_short_cli_preserves_legacy_paths_and_exact_prebind_labels"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": {
+      "all": [
+        "whole_cli_preserves_legacy_positional_paths_and_selects_only_complete_leading_form",
+        "whole_cli_uses_shared_prepare_and_keeps_full_inventory_on_policy_refusal"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/examples/full_program_bridge/tests.rs": {
+      "all": [
+        "full_program_sections_and_iced_roster_feed_exact_legacy_order",
+        "full_program_csv_omissions_duplicates_overlap_order_and_grammar_refuse",
+        "full_program_elf_section_metadata_and_all_permission_aliases_refuse",
+        "full_program_independent_importer_refuses_false_heads_and_unlisted_targets",
+        "full_program_context_boundary_and_emitted_bits_match_legacy_window",
+        "full_program_caps_preserve_complete_site_denominator_and_refuse_without_subset",
+        "full_program_rpc_numbers_paths_and_byte_caps_are_explicit",
+        "full_program_whole_profile_keeps_2053_sites_and_old_default_refusal",
+        "full_program_whole_transport_preserves_complete_roster_and_all_caps",
+        "full_program_whole_profile_requires_explicit_cli_and_complete_import"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/elf-rewrite/examples/indexed_dso_native.rs": {
       "all": [],
       "ignored": [],
@@ -653,9 +965,184 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/elf-rewrite/examples/support/common_core_foreign.rs": {
+      "all": [
+        "two_declared_owners_keep_current_reads_and_callback_free_id57",
+        "missing_conflicting_or_incomplete_owner_cannot_supply_a_victim",
+        "full_current_reads_cannot_shrink_or_revert_inherited_edits",
+        "changed_original_in_either_displaced_interval_refuses_before_pair_writes",
+        "entry_dependency_role_and_original_boundary_mutations_refuse",
+        "selected_relay_and_both_e9_targets_are_exact",
+        "auxiliary_hook_operation_bytes_and_continuation_are_not_exempted"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": {
+      "all": [
+        "rj01_full_independent_binding_and_strict_versions",
+        "rj02_rj03_real_primary_predecessor_and_routes",
+        "rj06_rj07_original_dispatch_exclusions_never_retry_another_family",
+        "rj08_rj09_pending_and_original_identity_are_not_discharged",
+        "rj10_rj11_independent_budgets_and_original_upper_prefix",
+        "rj04_unchanged_forward_jcc_geometry_uses_only_original_api",
+        "rj05_exact_no_fallback_all_files_and_mutants",
+        "rj12_public_resources_include_real_predecessor_pair_and_carrier",
+        "rj13_atomic_stages_use_real_pair_and_restore_every_field",
+        "rj14_fatal_serialization_has_no_product_and_carrier_failure_keeps_roster",
+        "rj15_scalars_family_tactics_and_offsets_are_exact",
+        "rj17_real_importer_full_rosters_never_reduce_selected_denominator",
+        "rj14_later_selected_failure_keeps_actual_pair_but_no_subset_candidate",
+        "rj15_one_immutable_selection_contains_both_real_families",
+        "rj07_rj08_complete_original_domain_and_head_mutants_refuse",
+        "rj14_real_loader_write_over_suffix_refuses_after_core_acceptance",
+        "rj06_original_greedy_chains_preserve_groups_and_one_family_calls"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+      "all": [
+        "f02_f03_f08_primary_full_candidate_and_literal_cap1_baseline",
+        "f04_f08_real_predecessor_retains_every_association",
+        "f06_first_upper_fit_refusal_is_retained",
+        "f07_frontend_aggregate_recovery_has_its_own_complete_envelope",
+        "f09_independent_zeros_and_exact_boundaries_do_not_retry",
+        "f07_cumulative_lower_work_uses_real_selected_predecessor",
+        "f10_public_limits_include_predecessor_and_carrier_page",
+        "f11_whole_generated_hull_and_carrier_hull_are_terminal",
+        "f17_f18_full_draft_rollback_after_actual_pair_stages",
+        "f19_later_selected_failure_discards_whole_artifact",
+        "f21_f25_member_bindings_and_remaining_authority_are_exact",
+        "f05_exact_no_fallback_comparator",
+        "f28_comparator_rejects_every_identity_and_nonidentity_mutation",
+        "f12_failed_pending_rows_and_full_intervals_remain_owned",
+        "f13_original_bytes_and_identity_are_never_current_substitutes",
+        "f14_f15_static_exclusions_keep_every_selected_row_and_old_search",
+        "f16_original_data_carrier_and_prior_allocations_stay_occupied",
+        "f22_full_new_identity_strict_markers_and_real_bounds",
+        "f23_chains_fixed_edges_and_every_baseline_attempt",
+        "f27_independent_internal_accounting_caps_are_not_public_policy_knobs",
+        "f20_actual_final_carrier_limits_and_construction_failures_do_not_dispatch",
+        "f14_prefix_fetch_cache_line_and_unverified_targets_keep_denominator",
+        "f20_real_loader_dependency_refusal_after_core_pair_success"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/carrier/image_fixtures.rs": {
+      "all": [
+        "additive_exec_pie_and_dso_profiles_preserve_old_records_and_exact_rx_images",
+        "rela_rel_relr_and_jmprel_have_exact_widths_counts_and_zero_fill_ownership",
+        "every_supported_loader_write_width_is_exact_and_copy_is_not_guessed",
+        "relocation_in_unchanged_successor_or_padding_is_a_dependency_refusal",
+        "duplicate_or_partially_overlapping_loader_writes_refuse",
+        "unmapped_cross_boundary_and_overflowing_loader_fields_refuse",
+        "relr_bitmap_anchor_alignment_order_overflow_and_expansion_are_checked",
+        "dynamic_tag_shapes_termination_and_unknown_formats_fail_closed",
+        "dynamic_metadata_cannot_hide_in_executable_or_zero_fill_storage",
+        "dynamic_entry_and_record_limits_are_prospective",
+        "images_cannot_overlap_original_bss_other_images_or_ro_carrier",
+        "image_page_count_and_file_span_budgets_are_exact",
+        "interpreter_shape_order_and_gnu_property_remain_explicit_requirements",
+        "appended_image_pages_cannot_cover_original_declared_metadata_memory",
+        "dynamic_string_and_symbol_metadata_is_explicit_and_bounded",
+        "loader_symbol_record_cannot_hide_across_ro_rx_owner_boundary",
+        "sysv_hash_buckets_and_chains_cannot_cross_into_executable_source",
+        "gnu_hash_bloom_buckets_and_chains_cannot_cross_into_executable_source",
+        "versym_full_symbol_inventory_cannot_cross_into_executable_source",
+        "verdef_auxiliary_chain_cannot_hide_in_executable_source",
+        "verneed_auxiliary_chain_cannot_hide_in_executable_source",
+        "complete_hash_symbol_and_version_extents_retain_a_real_positive",
+        "metadata_work_is_aggregate_across_repeated_hash_bucket_walks",
+        "zero_write_relocation_cannot_hide_version_read_in_executable_source",
+        "zero_write_all_formats_preserve_bounded_symbol_references_and_valid_ownership",
+        "zero_write_symbol_indices_cannot_expand_complete_hash_or_evade_metadata_budget",
+        "mixed_relocation_reference_inventory_is_ordered_and_distinct_from_writes",
+        "interleaved_exec_low_gap_high_preserve_header_mapping_order_and_image_identity",
+        "interleaved_empty_load_ties_keep_original_first_and_phdr_interpreter_precedence",
+        "interleaved_all_original_pages_bss_crossings_and_new_load_overlaps_refuse",
+        "interleaved_metadata_and_original_header_ownership_are_not_exemptions",
+        "interleaved_union_span_and_all_allocation_budgets_have_exact_edges",
+        "interleaved_profile_is_explicit_exec_only_and_legacy_low_image_refusal_remains",
+        "interleaved_above_only_output_is_byte_identical_to_legacy_append_profile",
+        "empty_gnu_hash_bounds_imports_without_claiming_complete_symbol_count",
+        "empty_gnu_hash_keeps_name_version_ownership_and_work_refusals",
+        "empty_gnu_hash_preserves_sysv_and_nonempty_hash_count_authority",
+        "empty_gnu_hash_zero_write_references_still_bound_symbols"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/disassembly/tests.rs": {
+      "all": [
+        "complete_jump_denominator_ignores_names_reachability_and_call_cycles",
+        "whole_hash_and_each_head_byte_length_and_location_are_independent_gates",
+        "complete_ledger_checks_rx_inverse_owner_and_known_entry_contradictions",
+        "policy_cannot_omit_add_select_replace_or_increase_existing_caps",
+        "null_hook_must_be_original_single_c3_and_endbr_heads_stay_marked",
+        "shared_prepare_retains_every_refusal_and_never_emits_partial_candidate",
+        "one_original_jump_uses_shared_carrier_and_hook_guard_without_live_authority",
+        "bounded_text_and_whole_program_projection_refuse_without_splitting",
+        "short_only_policy_is_explicit_digest_bound_and_not_legacy",
+        "short_only_disassembly_forced_t3_preserves_all_heads_and_bytes",
+        "short_only_disassembly_refusal_retains_the_complete_denominator",
+        "short_only_projection_and_search_caps_are_not_widened",
+        "short_t3_ownership_policy_and_projection_bind_both_modes",
+        "short_t3_ownership_actual_preceding_jump_admits_second_victim",
+        "short_t3_ownership_conflicts_and_pair_cap_keep_every_report",
+        "short_t3_ownership_full_projection_bound_and_resource_refusals",
+        "pending_selected_victim_is_preserved_for_its_later_hook",
+        "pending_selected_unchanged_suffix_is_not_available_for_borrowing",
+        "pending_selected_budget_and_forced_refusals_are_exact",
+        "pending_selected_all_conflicts_keep_both_rows_and_complete_reports",
+        "pending_selected_guard_reads_actual_transactional_coverage_and_locks",
+        "pending_selected_failed_site_stays_pending_and_first_four_do_not_restart",
+        "pending_selected_mode_identity_and_complete_denominator_are_explicit",
+        "pending_selected_full_mode_bytes_count_toward_bounds_and_old_caps"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/disassembly/whole/tests.rs": {
+      "all": [
+        "whole_shared_roundtrip_keeps_complete_heads_and_actual_prepare_path",
+        "whole_shared_projection_refuses_head_reference_order_and_provenance_changes",
+        "whole_shared_complete_population_caps_and_policy_guards_are_not_subsets",
+        "whole_long_t3_ownership_keeps_denominator_and_finds_alternate_victim"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/neighbor_catalogue.rs": {
+      "all": [
+        "conditional_targets_and_fallthrough_bound_the_actual_blocks",
+        "foreign_interior_and_unowned_successors_are_refused",
+        "direct_calls_split_blocks_without_granting_callee_ownership"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/elf-rewrite/tests/indexed_dso_source.rs": {
       "all": [
         "snapshot_refuses_a_fifo_without_waiting_for_a_writer"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/tests/support/composition_overlay.rs": {
+      "all": [
+        "independent_original_mov_probes_compose_current_full_reads_and_original_sparse_edits",
+        "overlapping_later_original_window_refuses_complete_selection_and_keeps_first_step",
+        "predecessor_authentication_requires_exact_identity_originals_and_complete_coverage"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -776,6 +1263,83 @@
       "ignored": [],
       "macro_calls": [],
       "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": {
+      "all": [
+        "owned_batch_inputs_enforce_complete_domain_before_any_entry",
+        "owned_transfer_allocation_refusal_retains_pending_receipt_and_poisons_lease",
+        "owned_close_linearizes_against_active_batch_and_never_acks_from_drop"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": {
+      "all": [
+        "owned_module_native_four_call_batches_epochs_and_close"
+      ],
+      "ignored": [
+        "owned_module_native_four_call_batches_epochs_and_close"
+      ],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": {
+      "all": [
+        "owned_module_native_fixed_work_batch_cost"
+      ],
+      "ignored": [
+        "owned_module_native_fixed_work_batch_cost"
+      ],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
+      "all": [
+        "module_profile_and_config_keep_old_profiles_separate",
+        "module_k1_cross_function_confirmation_keeps_global_slots_and_local_budgets",
+        "module_k16_full_batch_joins_both_functions_all_payloads_and_512_words",
+        "module_wrong_legal_return_and_function_closed_reason_preserve_receipt",
+        "module_transfer_checks_every_word_and_final_function_tag_before_finish",
+        "module_allocation_and_output_refusal_retain_function_closed_owner",
+        "module_completed_function_check_is_stronger_than_summary_equality",
+        "module_role_metadata_and_old_handle_checks_never_alias_functions",
+        "owned_batch_census_requires_four_real_observations_in_semantic_order",
+        "owned_batch_rejects_missing_return_extra_call_and_nonempty_drain_without_consuming"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": {
+      "all": [
+        "owned_caller_preserves_complete_native_oracle_and_refuses_every_byte_mutation"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller_format_tests.rs": {
+      "all": [
+        "owned_caller_symbolic_policy_is_separate_and_retains_all_dynamic_refusals",
+        "owned_caller_full_selection_keeps_code_and_empty_load_ownership_checks"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/sealed_source_tests.rs": {
+      "all": [
+        "sealed_copy_kernel_refuses_write_resize_new_seals_and_shared_writer",
+        "sealed_copy_requires_every_seal_and_exact_complete_bytes",
+        "sealed_copy_retains_independent_bytes_and_distinct_inode",
+        "sealed_leaf_set_loader_authenticates_actual_dso_without_calling_it",
+        "sealed_pair_loader_preserves_complete_union_and_contract_refusals",
+        "sealed_loader_mapping_identity_offsets_permissions_and_full_loads_remain_required"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
     }
   },
   "module_chains": {
@@ -783,10 +1347,34 @@
       "\"tools/elf-rewrite\",",
       "\"tools/rapid-profiler\""
     ],
+    "src/lib.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_emission_tests;",
+      "pub mod neighbor;",
+      "pub mod trampoline;"
+    ],
+    "src/neighbor.rs": [
+      "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;"
+    ],
+    "src/trampoline.rs": [
+      "#[path = \"trampoline/artifact_jrcxz.rs\"]\nmod artifact_jrcxz;"
+    ],
+    "tests/neighbor_eviction_oracle.rs": [
+      "#[path = \"support/jrcxz_artifact_oracle.rs\"]\nmod jrcxz_artifact_native;"
+    ],
+    "tests/support/quiescent_oracle.rs": [
+      "include!(\"jrcxz_state.rs\");"
+    ],
     "tools/elf-rewrite/Cargo.toml": [
       "[[example]]\nname = \"indexed_dso_native\"\npath = \"examples/indexed_dso_native.rs\"\ntest = false\nbench = false",
       "[package]\nname = \"liteinst-rewrite\"",
-      "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\""
+      "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\"",
+      "[[example]]\nname = \"full_program_bridge\"\npath = \"examples/full_program_bridge.rs\"\ntest = true\nbench = false"
+    ],
+    "tools/elf-rewrite/examples/disassembly_sites.rs": [
+      "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;"
+    ],
+    "tools/elf-rewrite/examples/full_program_bridge.rs": [
+      "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;"
     ],
     "tools/elf-rewrite/examples/indexed_dso_support/caller_dataflow.rs": [
       "#[cfg(test)]\nmod tests {"
@@ -808,6 +1396,19 @@
     ],
     "tools/elf-rewrite/examples/indexed_dso_support/runtime.rs": [
       "#[cfg(test)]\nmod tests {"
+    ],
+    "tools/elf-rewrite/src/carrier/mod.rs": [
+      "#[cfg(test)]\n#[path = \"image_fixtures.rs\"]\nmod image_fixtures;"
+    ],
+    "tools/elf-rewrite/src/disassembly.rs": [
+      "pub mod whole;"
+    ],
+    "tools/elf-rewrite/src/disassembly/whole.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "tools/elf-rewrite/src/lib.rs": [
+      "pub mod carrier;",
+      "pub mod disassembly;"
     ],
     "tools/elf-rewrite/tests/indexed_dso_source.rs": [
       "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
@@ -843,6 +1444,37 @@
     ],
     "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": [
       "#[cfg(test)]\nmod tests {"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on.rs": [
+      "mod normal;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": [
+      "mod module;",
+      "OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": [
+      "mod owned;",
+      "pub use owned::{\n    NormalModuleClose, NormalModuleCloseState, NormalModuleInputs, OwnedNormalModuleResult,\n    OwnedNormalModuleThread,\n};"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+      "#[cfg(test)]\nmod native;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": [
+      "#[path = \"performance.rs\"]\nmod performance;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/mod.rs": [
+      "mod always_on;",
+      "OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedNormalController,"
+    ],
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": [
+      "mod module_caller;",
+      "#[cfg(test)]\nmod sealed_source_tests;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": [
+      "#[cfg(test)]\n#[path = \"module_caller_format_tests.rs\"]\nmod format_tests;"
+    ],
+    "tools/rapid-profiler/src/lib.rs": [
+      "pub mod frontend_native;"
     ]
   },
   "native_example": {
@@ -1094,16 +1726,284 @@
       ],
       "previous_sha256": "dd357db7b22e234e74d655dd75ab157989aa70be8094b728482166b2cf271bd3"
     },
+    "src/engine.rs": {
+      "current_sha256": "25714218bfabb26d996810367ae38b827fb2ad43189d083a82fe33c18ef4ad83",
+      "edits": [
+        [
+          8198,
+          9858,
+          ""
+        ],
+        [
+          23264,
+          23570,
+          ""
+        ]
+      ],
+      "previous_sha256": "aff42d9d036cfcaa982f0d4ba9be4bb42e23bd15b926968c4d1ea2fd610369ee"
+    },
+    "src/neighbor.rs": {
+      "current_sha256": "6d88028f75906c100aa6498c3446f421b5194ee6119bdeebf17b87c3b23114a5",
+      "edits": [
+        [
+          8409,
+          8830,
+          ""
+        ],
+        [
+          34424,
+          34509,
+          ""
+        ]
+      ],
+      "previous_sha256": "8d82e0b6ecb0cb3d6b49a835bd3ca4c8a2cdbd7c624d36cc219ea5d313b7f0fb"
+    },
+    "src/trampoline.rs": {
+      "current_sha256": "b162de653668983c108e1edd8968916ceb97409315717324337dff80322a87d6",
+      "edits": [
+        [
+          93410,
+          93454,
+          ""
+        ],
+        [
+          101793,
+          102336,
+          "                original_operands.push((encoded_instructions.len(), *original));\n"
+        ],
+        [
+          110262,
+          110493,
+          ""
+        ],
+        [
+          148207,
+          148269,
+          ""
+        ]
+      ],
+      "previous_sha256": "fb6ab2f7de7768c60ae04cf0f7c1aef52ad9c5eeca4976ae869c4195df11f48a"
+    },
+    "tests/neighbor_eviction_oracle.rs": {
+      "current_sha256": "b3063d615123f065dfa2c8b701a73d8c780865ccf7d8cfeb996f579314f800e5",
+      "edits": [
+        [
+          65010,
+          65164,
+          ""
+        ]
+      ],
+      "previous_sha256": "6e9d19dec269a0ed57a8186e6b9ab364721f53fa34bbedb7d3e9f7fab37a43e5"
+    },
+    "tests/support/quiescent_oracle.rs": {
+      "current_sha256": "68d6b455d00b58773619ade413ce69a55986da23f9b5d564b9d592ae306c847e",
+      "edits": [
+        [
+          30461,
+          30493,
+          ""
+        ]
+      ],
+      "previous_sha256": "fe0396c4f94a1efdab3b66771edcc20702590c2c31fdc74bc0310ae60c2a15c4"
+    },
     "tools/elf-rewrite/Cargo.toml": {
-      "current_sha256": "f07369b4c8061bf1e1b71b0006b8b37301682c2455e7d5da1d358077bb7af393",
+      "current_sha256": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
       "edits": [
         [
           1945,
-          2127,
+          2307,
           ""
         ]
       ],
       "previous_sha256": "790a22c58abf857e64caa643563e476981488aa1145b9c97b08f417838f1f810"
+    },
+    "tools/elf-rewrite/e9-sites-controls.py": {
+      "current_sha256": "f90efe8819b3e0c06749906b2115cc224fd415d3d3662bef72931bb31f71d7be",
+      "edits": [
+        [
+          60194,
+          74868,
+          ""
+        ]
+      ],
+      "previous_sha256": "3a010c0271d8e7bf4c2c2d36d7c744666cc5237d49031f7c409418980cecbced"
+    },
+    "tools/elf-rewrite/e9-sites.py": {
+      "current_sha256": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
+      "edits": [
+        [
+          2037,
+          2172,
+          ""
+        ],
+        [
+          5099,
+          8030,
+          ""
+        ],
+        [
+          10512,
+          10782,
+          "def _selection(raw, original, policy_raw, selection_profile):\n"
+        ],
+        [
+          11446,
+          11554,
+          ""
+        ],
+        [
+          15897,
+          16131,
+          "        assert owner(elf(original, 2), p['pc'], p['length'], True) == p['file_offset']\n"
+        ],
+        [
+          16695,
+          17033,
+          "def rpc(raw, original, sites, original_path, policy, hook, hook_bytes, trap_all):\n"
+        ],
+        [
+          17665,
+          17775,
+          "    image = elf(original, 2)\n"
+        ],
+        [
+          24518,
+          24631,
+          "def extent_fragments(image, maps, pc, size, file_length, executable=True, mapped_only=False):\n"
+        ],
+        [
+          24930,
+          25123,
+          "    assert (pc & U64) <= U64 - size, 'view address overflow'\n"
+        ],
+        [
+          26267,
+          26454,
+          "def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lane):\n"
+        ],
+        [
+          26543,
+          27540,
+          "    old, new = elf(original, 2), elf(candidate, 2)\n"
+        ],
+        [
+          27835,
+          27994,
+          ""
+        ],
+        [
+          28798,
+          29064,
+          "        assert (row['va'] & U64) <= U64 - row['length'], 'mapping address overflow'\n"
+        ],
+        [
+          29140,
+          29313,
+          "        encoded, previous = loader_mmap(row, previous)\n"
+        ],
+        [
+          29339,
+          29466,
+          "        extra = len(encoded) - 18\n"
+        ],
+        [
+          29772,
+          29893,
+          ""
+        ],
+        [
+          31644,
+          31890,
+          "        fragments = extent_fragments(new, maps, pc, size, len(candidate), executable)\n"
+        ],
+        [
+          33052,
+          33338,
+          "        fragments = extent_fragments(new, trampolines, low, high - low, len(candidate), mapped_only=True)\n"
+        ],
+        [
+          41745,
+          42124,
+          "def _validate(envelope, blobs, selection_profile):\n"
+        ],
+        [
+          43314,
+          43611,
+          "    sites, policy = _selection_for_profile(blobs['selection'], blobs['original'], blobs['policy'], selection_profile)\n"
+        ],
+        [
+          46305,
+          46731,
+          "    intent = rpc(blobs['transport_stdout'], blobs['original'], sites, files['original']['path'], policy, envelope['hook'], blobs.get('hook_elf'), '--trap-all' in common)\n"
+        ],
+        [
+          46896,
+          47378,
+          "    outcomes, maps, bypass = debug(blobs['producer_stderr'], sites)\n    ownership = artifact(blobs['original'], blobs['candidate'], blobs['loader'], intent, outcomes, maps, bypass, lane=lane)\n"
+        ],
+        [
+          48076,
+          48719,
+          ""
+        ],
+        [
+          49177,
+          49273,
+          ""
+        ],
+        [
+          49746,
+          50201,
+          ""
+        ],
+        [
+          50595,
+          50768,
+          "    tsv, result = _validate(envelope, blobs, args.selection_profile)\n"
+        ]
+      ],
+      "previous_sha256": "c53543d226f89437c8dc8912c55f67b604486683a09eed923a25f723f83e8db9"
+    },
+    "tools/elf-rewrite/examples/disassembly_sites.rs": {
+      "current_sha256": "db553f5f3aef29602f1010bdec73ea61a5fe58d265c8e620aa3ca736d9baecec",
+      "edits": [
+        [
+          2184,
+          2199,
+          ""
+        ],
+        [
+          3721,
+          4568,
+          ""
+        ],
+        [
+          4670,
+          4736,
+          ""
+        ],
+        [
+          5425,
+          7221,
+          ""
+        ],
+        [
+          7311,
+          7368,
+          "    let (args, mode) = arguments_with_pending(&raw_args)?;\n"
+        ],
+        [
+          7975,
+          8154,
+          "    let prepared = (|| {\n        let imported = disassembly::import(&original, &ledger, expected_ledger)?;\n        // This denominator is retained even if policy/placement/loader refuses.\n        files.insert(\n            \"disassembly-inventory.tsv\".into(),\n            match mode {\n                Mode::LongOnly => imported.inventory(),\n                Mode::ShortOnly => imported.inventory_short_neighbors(),\n                Mode::ShortT3Ownership => imported.inventory_short_t3_ownership(),\n                Mode::ShortT3Pending => imported.inventory_short_t3_pending(),\n            },\n        );\n        let selected = match mode {\n            Mode::LongOnly => imported.bind(&policy, expected_policy)?,\n            Mode::ShortOnly => imported.bind_short_neighbors(&policy, expected_policy)?,\n            Mode::ShortT3Ownership => imported.bind_short_t3_ownership(&policy, expected_policy)?,\n            Mode::ShortT3Pending => imported.bind_short_t3_pending(&policy, expected_policy)?,\n        };\n        assert_eq!(selected.profile(), profile);\n        files.insert(\"selection.txt\".into(), selected.manifest().to_vec());\n        prepare_disassembly(&original, &selected)\n    })();\n"
+        ],
+        [
+          18997,
+          19073,
+          ""
+        ]
+      ],
+      "previous_sha256": "83b1832d2e56d84e05036db7812c94a4ddd107e8be1ad4b56deb09a495355371"
     },
     "tools/elf-rewrite/examples/indexed_dso_support/caller_image.rs": {
       "current_sha256": "bc4008fa7ac9fd9e8f617004ea3278a9b00910815a897fb92345c6d6af264291",
@@ -1173,6 +2073,266 @@
       ],
       "previous_sha256": "4a99698d911fe9a1b3c8246f29726814d4da41f5227d07ff42232803a44fa1cf"
     },
+    "tools/elf-rewrite/src/adjacent_b2_frontend.rs": {
+      "current_sha256": "c2ea2ccd923a8ed5cc0bc83beb604f90503ab34b33fef120a6bd7a26bcd67a90",
+      "edits": [
+        [
+          8842,
+          8885,
+          "        entries: s.heads.clone(),\n"
+        ]
+      ],
+      "previous_sha256": "f328aba37b8e386c7dc73cda2dc3130b57c933d97ff19a4d10d8f8351b4ca0d5"
+    },
+    "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": {
+      "current_sha256": "dc910457536b6c637377bf39c1f1c4599dd70aaeaa19759510ac9e0674edccb7",
+      "edits": [
+        [
+          16844,
+          16941,
+          "            3 => changed.sites[0].heads[0].requires_endbr = true,\n"
+        ],
+        [
+          49727,
+          49817,
+          "                    site.heads.retain(|h| h.address != F);\n"
+        ],
+        [
+          49917,
+          50007,
+          "                    site.heads.retain(|h| h.address != E);\n"
+        ],
+        [
+          50108,
+          50205,
+          "                    site.heads.retain(|h| h.address != 0x401bbe);\n"
+        ],
+        [
+          50306,
+          50403,
+          "                    site.heads.retain(|h| h.address != 0x401c45);\n"
+        ]
+      ],
+      "previous_sha256": "8d1accf2078eefd77160f9d0d95b10554aeb1c4a4822e917e61d20a4061400cc"
+    },
+    "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+      "current_sha256": "fc7eb3d28777c24a3902c61514115fc99913cc2b33764eb3f7dd976f1a1aa25c",
+      "edits": [
+        [
+          66402,
+          66487,
+          "                lower.heads[0].requires_endbr = true;\n"
+        ],
+        [
+          66649,
+          66715,
+          "                lower.heads.pop();\n"
+        ]
+      ],
+      "previous_sha256": "59ec3d07190419104372f76ffc5e32f507aae1e7e30a688f058df802d086282e"
+    },
+    "tools/elf-rewrite/src/carrier/dynamic.rs": {
+      "current_sha256": "e8894421db22dbd4bc07728abdfc7409688e120fb3ba8536547dcaad4e354ba0",
+      "edits": [
+        [
+          3888,
+          4123,
+          "    /// True only when DT_HASH or DT_GNU_HASH supplied the parser's count.\n    /// False denotes the existing maximum-relocation-reference fallback.\n"
+        ]
+      ],
+      "previous_sha256": "fd6ec9cc61f76369007a02e2c941982f05f0babd26a8ca731c6de819158abf66"
+    },
+    "tools/elf-rewrite/src/carrier/dynamic_metadata.rs": {
+      "current_sha256": "8315e03c460d0bd92a37f88b87b6c75d16694b1a8a4614d4b67f83febd627ea6",
+      "edits": [
+        [
+          4568,
+          4617,
+          ""
+        ],
+        [
+          7859,
+          8460,
+          "        authoritative = authoritative.or(Some(symbols));\n"
+        ],
+        [
+          8751,
+          8850,
+          "    let symbols = authoritative.unwrap_or(plus(referenced, 1)?);\n"
+        ],
+        [
+          10402,
+          10439,
+          ""
+        ]
+      ],
+      "previous_sha256": "a3603519a9d1add7f45be86bce4806c4b1adaf7a80007fc1b72251c82ae36a4c"
+    },
+    "tools/elf-rewrite/src/carrier/image_fixtures.rs": {
+      "current_sha256": "8b4aded6f525d066cc6f6b6f85b6b9932052515313d9b0b3199e767815f1f41f",
+      "edits": [
+        [
+          57652,
+          66949,
+          ""
+        ]
+      ],
+      "previous_sha256": "357886c161da1742937f054817d140b2161e9a3b103e43a0186ed92dee417be9"
+    },
+    "tools/elf-rewrite/src/disassembly.rs": {
+      "current_sha256": "03a7ef9a8d8957217964d8b97aa1bcfeb3a8c346341d5ef21811f780c6bf97f3",
+      "edits": [
+        [
+          1601,
+          1703,
+          ""
+        ],
+        [
+          1881,
+          1939,
+          ""
+        ],
+        [
+          2229,
+          2297,
+          ""
+        ],
+        [
+          9022,
+          9243,
+          ""
+        ],
+        [
+          11203,
+          11424,
+          ""
+        ],
+        [
+          14423,
+          14644,
+          ""
+        ],
+        [
+          25130,
+          25145,
+          ""
+        ]
+      ],
+      "previous_sha256": "653a31cf28074449a5a75c2653f76782590cc2440723f4337953ef4b081295f1"
+    },
+    "tools/elf-rewrite/src/disassembly/tests.rs": {
+      "current_sha256": "6774aa69aec5c0081a83ce9e24eea21e4819f1f1832dfeb10d53caa810847f40",
+      "edits": [
+        [
+          44733,
+          44779,
+          "        entries: site.heads.clone(),\n"
+        ],
+        [
+          68489,
+          68535,
+          "        entries: site.heads.clone(),\n"
+        ]
+      ],
+      "previous_sha256": "4b0075db07f5902442c9e7ede7133ac41081de041fd03fa04967c613884ee56f"
+    },
+    "tools/elf-rewrite/src/lib.rs": {
+      "current_sha256": "cfe27c9869df5f68787b23d58af21910d6f364e2c110a38d2c92045e11cb62df",
+      "edits": [
+        [
+          3120,
+          3991,
+          ""
+        ],
+        [
+          24117,
+          24167,
+          "            entries: site.heads.clone(),\n"
+        ],
+        [
+          25937,
+          26291,
+          "        let result = if mode == disassembly::NeighborMode::ShortT3Pending {\n"
+        ]
+      ],
+      "previous_sha256": "2320f63f707dd2f0ec51a2a10e12525926737043c0c0829c2e23c6ae62678ed7"
+    },
+    "tools/elf-rewrite/src/selection.rs": {
+      "current_sha256": "00fe05a29ad200761b45dbc73de567e0730b20bd4ad19dd08b89b6113688a191",
+      "edits": [
+        [
+          449,
+          934,
+          ""
+        ],
+        [
+          1084,
+          2324,
+          ""
+        ],
+        [
+          2434,
+          2586,
+          "    if lines.next() != Some(\"LI2TOOL 1\") {\n"
+        ],
+        [
+          2775,
+          2813,
+          ""
+        ],
+        [
+          3069,
+          3742,
+          ""
+        ],
+        [
+          4757,
+          6326,
+          ""
+        ],
+        [
+          6825,
+          6980,
+          "    if limits.sites > 1024\n"
+        ],
+        [
+          8398,
+          8723,
+          ""
+        ],
+        [
+          8837,
+          9512,
+          ""
+        ],
+        [
+          9928,
+          11029,
+          "        let e = lookup(\"entries\", None)?;\n        if e.len() < 5 {\n            return Err(bad(\"entries require provenance and at least one head\"));\n        }\n        let completeness = match e[2] {\n            \"complete\" => EntryCompleteness::Complete,\n            \"unknown\" => EntryCompleteness::Incomplete,\n            _ => return Err(bad(\"entry completeness\")),\n        };\n        let mut heads = Vec::new();\n        for head in &e[4..] {\n            let p: Vec<_> = head.split(':').collect();\n            exact(&p, 2)?;\n            let requires_endbr = match p[1] {\n                \"0\" => false,\n                \"1\" => true,\n                _ => return Err(bad(\"ENDBR flag\")),\n"
+        ],
+        [
+          11044,
+          11742,
+          "            heads.push(LegalEntry {\n                address: num(p[0])?,\n                requires_endbr,\n            });\n        }\n        if !heads.windows(2).all(|w| w[0].address < w[1].address) {\n            return Err(bad(\"head ordering\"));\n        }\n"
+        ],
+        [
+          12254,
+          12405,
+          ""
+        ],
+        [
+          14988,
+          15151,
+          "            provenance: id(e[3])?,\n"
+        ],
+        [
+          15464,
+          15602,
+          ""
+        ]
+      ],
+      "previous_sha256": "9695fabb911f8acc662a5840667aed9b9e1d315402da1a6a3d2f084de03c4b0e"
+    },
     "tools/elf-rewrite/tests/indexed_dso_source.rs": {
       "current_sha256": "90589c35c4239473ab84bb3c11a65f017c83b78080a957544f64c08a88038dcf",
       "edits": [
@@ -1195,7 +2355,7 @@
       "previous_sha256": "97d2f87f6c1ab6a517232a0d815211ed1146e0fff3cb814ade3bb536966b2e32"
     },
     "tools/rapid-profiler/ordinary-interval/normal/csv.rs": {
-      "current_sha256": "2174bed0316f7dd0b08532f64b0e5a2c6387d1c8f36a547ea35f1d47a7887d22",
+      "current_sha256": "dec72317a616660dca1dd673f0ee0075361fcb7503537b930902da579a3d8aae",
       "edits": [
         [
           5040,
@@ -1214,12 +2374,12 @@
         ],
         [
           5922,
-          8532,
+          10034,
           ""
         ],
         [
-          8678,
-          8792,
+          10180,
+          10294,
           "    let maps = read().unwrap();\n    check(MappingSnapshot { maps: &maps });\n"
         ]
       ],
@@ -1349,171 +2509,176 @@
       "previous_sha256": "c1e247f2a2c139945efcbe0419419fe3d1a912fe18cf610c4879602ba92f58c2"
     },
     "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": {
-      "current_sha256": "852319da6f8a2e361483889c923e68ba686828fa1aa0a76f0c75847032d924e7",
+      "current_sha256": "722f86b148bbfff86c6116deaccf53e1aef352132c793fd28a84bbb9697008e9",
       "edits": [
         [
           156,
-          226,
+          265,
           ""
         ],
         [
-          264,
-          1612,
+          303,
+          1702,
           ""
         ],
         [
-          2537,
-          2706,
+          2627,
+          2811,
           ""
         ],
         [
-          2870,
-          2969,
+          2975,
+          3399,
           "    fn postflight(&self) {\n        self.custody.worker(self.identity);\n"
         ],
         [
-          3895,
-          4013,
+          3460,
+          3549,
+          ""
+        ],
+        [
+          4414,
+          4532,
           "        custody.worker(identity);\n"
         ],
         [
-          4817,
-          4863,
+          5336,
+          5382,
           ""
         ],
         [
-          5364,
-          5531,
+          5883,
+          6142,
           ""
         ],
         [
-          5565,
-          5611,
+          6176,
+          6222,
           ""
         ],
         [
-          5782,
-          5836,
+          6393,
+          6447,
           ""
         ],
         [
-          5863,
-          5910,
+          6474,
+          6521,
           ""
         ],
         [
-          6662,
-          6715,
+          7273,
+          7326,
           ""
         ],
         [
-          6742,
-          6791,
+          7353,
+          7402,
           ""
         ],
         [
-          6888,
-          6936,
+          7499,
+          7547,
           ""
         ],
         [
-          7424,
-          7470,
+          8035,
+          8081,
           ""
         ],
         [
-          7825,
-          7858,
+          8436,
+          8469,
           "        if let Some(gate) = &self.gate {\n"
         ],
         [
-          7890,
-          7944,
+          8501,
+          8555,
           ""
         ],
         [
-          8300,
-          8377,
+          8911,
+          8988,
           "                gate.prepared(phase::now()).unwrap();\n"
         ],
         [
-          8415,
-          8479,
+          9026,
+          9090,
           "            assert!(!gate.hold_input());\n"
         ],
         [
-          8564,
-          8622,
+          9175,
+          9233,
           ""
         ],
         [
-          8653,
-          8704,
+          9264,
+          9315,
           ""
         ],
         [
-          9812,
-          9869,
+          10423,
+          10480,
           ""
         ],
         [
-          9900,
-          9953,
+          10511,
+          10564,
           ""
         ],
         [
-          10102,
-          10160,
+          10713,
+          10771,
           ""
         ],
         [
-          10187,
-          10238,
+          10798,
+          10849,
           ""
         ],
         [
-          10642,
-          10692,
+          11253,
+          11303,
           ""
         ],
         [
-          11077,
-          11126,
+          11688,
+          11737,
           ""
         ],
         [
-          11268,
-          11316,
+          11879,
+          11927,
           ""
         ],
         [
-          11735,
-          12161,
+          12346,
+          12886,
           ""
         ],
         [
-          12393,
-          12423,
+          13118,
+          13148,
           ""
         ],
         [
-          12721,
-          12821,
+          13446,
+          13546,
           "    let (ready, counter, phase, gate) = evidence;\n    let worker = Worker::attach(\n"
         ],
         [
-          13010,
-          13095,
+          13735,
+          13854,
           ""
         ],
         [
-          13147,
-          13240,
+          13906,
+          14002,
           ""
         ],
         [
-          13329,
-          16795,
+          14091,
+          17867,
           ""
         ]
       ],
@@ -1531,66 +2696,91 @@
       "previous_sha256": "84ed5b196027715843c4da834740ce9defa29195bf8c5824bdb60c61728344c0"
     },
     "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": {
-      "current_sha256": "e4da79d4c6d2c673db29b14543711ad23b8184dbfc3163d03ed49b819f9027d0",
+      "current_sha256": "380aeab1ad38299f3be676b249ae3a10af288afc62a7d582f993ffae178f661e",
       "edits": [
         [
-          1030,
-          1856,
+          159,
+          228,
           ""
         ],
         [
-          2666,
-          2960,
+          1099,
+          1925,
           ""
         ],
         [
-          3010,
-          3230,
+          2735,
+          3115,
           ""
         ],
         [
-          3323,
-          3495,
+          3165,
+          3385,
+          ""
+        ],
+        [
+          3409,
+          3468,
+          ""
+        ],
+        [
+          3537,
+          3771,
           "            let mut actual = Vec::new();\n"
         ],
         [
-          3599,
-          3636,
+          3875,
+          3912,
           "                .read_to_end(&mut actual)\n"
         ],
         [
-          3663,
-          3708,
+          3939,
+          4108,
           "            assert_eq!(actual, self.bytes);\n"
         ],
         [
-          4019,
-          4055,
+          4419,
+          4480,
           "        csv::with_mapping_snapshot(|maps| {\n"
         ],
         [
-          4834,
-          5152,
+          4567,
+          4632,
           ""
         ],
         [
-          5588,
-          5624,
+          5182,
+          5249,
+          ""
+        ],
+        [
+          5308,
+          5371,
+          ""
+        ],
+        [
+          5454,
+          6020,
+          ""
+        ],
+        [
+          6456,
+          6529,
           "        csv::with_mapping_snapshot(|maps| {\n"
         ],
         [
-          5940,
-          6215,
+          6845,
+          7175,
           "        let mut tasks: Vec<u64> = std::fs::read_dir(\"/proc/self/task\")\n            .unwrap()\n            .map(|e| e.unwrap().file_name().to_str().unwrap().parse().unwrap())\n            .collect();\n"
         ],
         [
-          6419,
-          6663,
+          7379,
+          7689,
           "        assert_eq!(tasks, expected_tasks);\n        self.files_and_code();\n"
         ],
         [
-          18214,
-          19472,
+          19240,
+          20498,
           ""
         ]
       ],
@@ -1673,6 +2863,42 @@
       ],
       "previous_sha256": "5568ad857d6259c5ab0d989ab675190a2f9a5040fc8b8164f93c7f585e471a9a"
     },
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": {
+      "current_sha256": "d153c4cb2b476b135ce28382848fe5d0e53e6558bbc048268cc36a2a64eccb24",
+      "edits": [
+        [
+          71,
+          227,
+          "//! The caller supplies every sample. This module takes no clock samples and\n//! performs no allocation, I/O, locking or worker-lifecycle observation.\n"
+        ],
+        [
+          8321,
+          16263,
+          ""
+        ],
+        [
+          17037,
+          22361,
+          ""
+        ],
+        [
+          25564,
+          25604,
+          ""
+        ],
+        [
+          28734,
+          28772,
+          ""
+        ],
+        [
+          30681,
+          31547,
+          ""
+        ]
+      ],
+      "previous_sha256": "161f3b729d93e45822ccda16ae6a97bc7619184e32cfa63fb09dd5905e5d51d2"
+    },
     "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": {
       "current_sha256": "1020f86b074c2348d9fd1bb492793bd1d55e17439ea43d82936f00ec91f80cfa",
       "edits": [
@@ -1713,6 +2939,190 @@
         ]
       ],
       "previous_sha256": "5f675202b4517ff6a461e739d1bd6cb884db84c24644132557a0ef48bba3fdcb"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+      "current_sha256": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944",
+      "edits": [
+        [
+          1334,
+          1752,
+          "    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleHistoryBatch,\n    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleRecord,\n    NormalModuleSessionController, NormalModuleThread, PreparedNormalModuleController,\n    PreparedNormalModuleSessionController,\n"
+        ]
+      ],
+      "previous_sha256": "b236181608ea5b965bbd7c7a9f37c00422505e55513161bdba6ff3f3ba979b17"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": {
+      "current_sha256": "32e55a90906a1c023ba7a444fbfc51c7db3fd5f1da7fec545fbdeed818aa2740",
+      "edits": [
+        [
+          207,
+          359,
+          ""
+        ]
+      ],
+      "previous_sha256": "963de617df6022e7d7535fbc0b1a3b5a6cecfa97103bea8e46d66e0908fba154"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
+      "current_sha256": "e2a5be581c256b29ae5608a6d5e4abd0224dce6dc8076a3bad040e50ae08eb25",
+      "edits": [
+        [
+          21638,
+          24842,
+          ""
+        ]
+      ],
+      "previous_sha256": "1172b71c18b95cef986b447f13d81560b25266beb1f42fcf41985722718400a6"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": {
+      "current_sha256": "fbccec0f9b001f5e4c43c33a2e6d4e6b443851845c7ab00afb4b98738b71468f",
+      "edits": [
+        [
+          1708,
+          1801,
+          ""
+        ],
+        [
+          1821,
+          1938,
+          ""
+        ],
+        [
+          5246,
+          5280,
+          ""
+        ],
+        [
+          8551,
+          8601,
+          "        let (planned, site) = prepare_module(\n"
+        ],
+        [
+          8820,
+          8955,
+          ""
+        ],
+        [
+          12956,
+          12990,
+          ""
+        ]
+      ],
+      "previous_sha256": "f9c2a90bb50664234ba1e61acdb730e694b443caf4de16c1b1012fd7c9b9af07"
+    },
+    "tools/rapid-profiler/src/frontend_native/mod.rs": {
+      "current_sha256": "786dbf59f8fd071b60cdb5c5c825cae9622fae2eaf0ddf5d0838337ffdb3dc32",
+      "edits": [
+        [
+          5300,
+          5425,
+          "pub use module::ordinary::{LoadedNormalModule, NormalModuleContract, NormalModuleFunction};\n"
+        ],
+        [
+          6295,
+          6667,
+          "    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,\n    NormalModuleHistoryWindow, NormalModuleRecord, NormalModuleSessionController,\n    NormalModuleThread, NormalRecord, NormalThread, NormalTotals, PreparedNormalController,\n"
+        ]
+      ],
+      "previous_sha256": "3cb25c24bf70fc25e8c72af6c51a81a59fc80a0ec0735c7473f57b6f108c5c0b"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+      "current_sha256": "14931190161ed220a35d62b5ebde0161f3ffcef0f5e7ba0b5987a0572af6e387",
+      "edits": [
+        [
+          455,
+          514,
+          "use std::os::fd::AsRawFd;\n"
+        ],
+        [
+          926,
+          945,
+          ""
+        ],
+        [
+          985,
+          1034,
+          ""
+        ],
+        [
+          6562,
+          7148,
+          ""
+        ],
+        [
+          12251,
+          12270,
+          "    dynamic(\n"
+        ],
+        [
+          17538,
+          20048,
+          ""
+        ],
+        [
+          20681,
+          21719,
+          ""
+        ],
+        [
+          22797,
+          22813,
+          ""
+        ],
+        [
+          29250,
+          29301,
+          "        || mount_device(owner.file.as_raw_fd())? != owner.device\n"
+        ],
+        [
+          32977,
+          33015,
+          ""
+        ]
+      ],
+      "previous_sha256": "84c7afb822f946e7e531026671a2920b89ed983e254bd21c19c6220a1e76e1a8"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/normal_leaf_set.rs": {
+      "current_sha256": "2ade00c29a9f50e1273923eb96025e6f1dc5f8e7b2de7f7d7e9081753a85e3e1",
+      "edits": [
+        [
+          2082,
+          3290,
+          ""
+        ]
+      ],
+      "previous_sha256": "b6608054d76439a3f0b2fdbd985b649bdb355b8c80d7f0fa37b91b6561be803a"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/normal_module.rs": {
+      "current_sha256": "ca9144163957c131dd30e9a5794ac049ec94bb411515e3251064d7bbccb868f5",
+      "edits": [
+        [
+          185,
+          283,
+          "    retain_loader, selection, verify_live_source, verify_source_provenance,\n"
+        ],
+        [
+          4476,
+          6208,
+          ""
+        ],
+        [
+          8606,
+          9277,
+          ""
+        ]
+      ],
+      "previous_sha256": "4ed364b5b516a36e347774a28379917b5fcebaa381c5e09fb2015f32dbf9f6c3"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs": {
+      "current_sha256": "45f907db6ce481af48165a36b92ba142f34dd16a9e2004f260f922d50ce1d4dc",
+      "edits": [
+        [
+          3146,
+          3716,
+          ""
+        ]
+      ],
+      "previous_sha256": "fd7af907c87a346589f9fe2af3bbf28df5dedb08e1760b926ee9347223399ad8"
     },
     "tools/unwind-oracle/indexed_dso/caller.c": {
       "current_sha256": "4c9ad23c28e98e72faccc09a492142700b56dd6426e6f001ed6ebea5040527cf",
@@ -1879,6 +3289,360 @@
     ],
     "python_control_identity_changes": 0
   },
+  "source_successor_96378": {
+    "added_default_methods": {
+      "src/artifact_emission_tests.rs": [
+        "jrcxz_artifact_bridge_has_complete_fields_paths_and_pc_ownership",
+        "jrcxz_artifact_bridge_routes_internal_entries_and_keeps_finite_refusals",
+        "jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority"
+      ],
+      "src/neighbor_long_ownership_tests.rs": [
+        "long_t3_ownership_continues_past_consumed_suffix_and_keeps_exact_pair",
+        "long_t3_ownership_conflicting_victims_and_existing_caps_still_refuse",
+        "long_t3_ownership_checks_selected_member_and_original_authority"
+      ],
+      "src/trampoline/artifact_jrcxz.rs": [
+        "fixed_jrcxz_bridge_rejects_template_index_and_field_corruption"
+      ],
+      "tests/support/jrcxz_artifact_oracle.rs": [
+        "native_jrcxz_artifact_preserves_integer_flags_and_stack"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": [
+        "whole_cli_preserves_legacy_positional_paths_and_selects_only_complete_leading_form",
+        "whole_cli_uses_shared_prepare_and_keeps_full_inventory_on_policy_refusal"
+      ],
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs": [
+        "full_program_sections_and_iced_roster_feed_exact_legacy_order",
+        "full_program_csv_omissions_duplicates_overlap_order_and_grammar_refuse",
+        "full_program_elf_section_metadata_and_all_permission_aliases_refuse",
+        "full_program_independent_importer_refuses_false_heads_and_unlisted_targets",
+        "full_program_context_boundary_and_emitted_bits_match_legacy_window",
+        "full_program_caps_preserve_complete_site_denominator_and_refuse_without_subset",
+        "full_program_rpc_numbers_paths_and_byte_caps_are_explicit",
+        "full_program_whole_profile_keeps_2053_sites_and_old_default_refusal",
+        "full_program_whole_transport_preserves_complete_roster_and_all_caps",
+        "full_program_whole_profile_requires_explicit_cli_and_complete_import"
+      ],
+      "tools/elf-rewrite/src/carrier/image_fixtures.rs": [
+        "empty_gnu_hash_bounds_imports_without_claiming_complete_symbol_count",
+        "empty_gnu_hash_keeps_name_version_ownership_and_work_refusals",
+        "empty_gnu_hash_preserves_sysv_and_nonempty_hash_count_authority",
+        "empty_gnu_hash_zero_write_references_still_bound_symbols"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": [
+        "whole_shared_roundtrip_keeps_complete_heads_and_actual_prepare_path",
+        "whole_shared_projection_refuses_head_reference_order_and_provenance_changes",
+        "whole_shared_complete_population_caps_and_policy_guards_are_not_subsets",
+        "whole_long_t3_ownership_keeps_denominator_and_finds_alternate_victim"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+        "owned_batch_inputs_enforce_complete_domain_before_any_entry",
+        "owned_transfer_allocation_refusal_retains_pending_receipt_and_poisons_lease",
+        "owned_close_linearizes_against_active_batch_and_never_acks_from_drop"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": [
+        "owned_module_native_four_call_batches_epochs_and_close"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": [
+        "owned_module_native_fixed_work_batch_cost"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": [
+        "owned_batch_census_requires_four_real_observations_in_semantic_order",
+        "owned_batch_rejects_missing_return_extra_call_and_nonempty_drain_without_consuming"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": [
+        "owned_caller_preserves_complete_native_oracle_and_refuses_every_byte_mutation"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller_format_tests.rs": [
+        "owned_caller_symbolic_policy_is_separate_and_retains_all_dynamic_refusals",
+        "owned_caller_full_selection_keeps_code_and_empty_load_ownership_checks"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/sealed_source_tests.rs": [
+        "sealed_copy_kernel_refuses_write_resize_new_seals_and_shared_writer",
+        "sealed_copy_requires_every_seal_and_exact_complete_bytes",
+        "sealed_copy_retains_independent_bytes_and_distinct_inode",
+        "sealed_leaf_set_loader_authenticates_actual_dso_without_calling_it",
+        "sealed_pair_loader_preserves_complete_union_and_contract_refusals",
+        "sealed_loader_mapping_identity_offsets_permissions_and_full_loads_remain_required"
+      ]
+    },
+    "added_ignored_methods": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": [
+        "owned_module_native_four_call_batches_epochs_and_close"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": [
+        "owned_module_native_fixed_work_batch_cost"
+      ]
+    },
+    "base_revision": "6bae78dc85d2a90c085e85fee89a0b21f2cfab49",
+    "current_corpus_sha256": "6d4075e9f559eabda13f7597fbab83a32c8e00b485f0a92efee730a06bee2d42",
+    "default_doctest_additions": 2,
+    "default_harness_changes": 1,
+    "default_ignore_changes": 2,
+    "default_method_additions": 44,
+    "default_method_instances": {
+      "src/artifact_emission_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/neighbor_long_ownership_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/trampoline/artifact_jrcxz.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tests/support/jrcxz_artifact_oracle.rs": [
+        "test/neighbor_eviction_oracle"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": [
+        "unit/disassembly_sites/disassembly_sites"
+      ],
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs": [
+        "unit/full_program_bridge/full_program_bridge"
+      ],
+      "tools/elf-rewrite/src/carrier/image_fixtures.rs": [
+        "unit/liteinst_rewrite/lib"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller_format_tests.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/sealed_source_tests.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "doctests": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+        "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedNormalModuleThread;\n/// fn send<T: Send>() {}\n/// send::<OwnedNormalModuleThread>();\n/// ```",
+        "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedNormalModuleThread;\n/// fn sync<T: Sync>() {}\n/// sync::<OwnedNormalModuleThread>();\n/// ```"
+      ]
+    },
+    "excluded_standalone": {
+      "default_test_harness": false,
+      "path": "evaluation/custody-file-read-probe/probe.rs",
+      "reason": "No Cargo target or module includes this standalone diagnostic."
+    },
+    "main_revision": "96378d9f7784b59df43b31baeec2c440c578e6a4",
+    "module_chains": {
+      "src/lib.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_emission_tests;",
+        "pub mod neighbor;",
+        "pub mod trampoline;"
+      ],
+      "src/neighbor.rs": [
+        "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;"
+      ],
+      "src/trampoline.rs": [
+        "#[path = \"trampoline/artifact_jrcxz.rs\"]\nmod artifact_jrcxz;"
+      ],
+      "tests/neighbor_eviction_oracle.rs": [
+        "#[path = \"support/jrcxz_artifact_oracle.rs\"]\nmod jrcxz_artifact_native;"
+      ],
+      "tests/support/quiescent_oracle.rs": [
+        "include!(\"jrcxz_state.rs\");"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[[example]]\nname = \"full_program_bridge\"\npath = \"examples/full_program_bridge.rs\"\ntest = true\nbench = false"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;"
+      ],
+      "tools/elf-rewrite/examples/full_program_bridge.rs": [
+        "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/carrier/mod.rs": [
+        "#[cfg(test)]\n#[path = \"image_fixtures.rs\"]\nmod image_fixtures;"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "pub mod whole;"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod carrier;",
+        "pub mod disassembly;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": [
+        "mod normal;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": [
+        "mod module;",
+        "OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": [
+        "mod owned;",
+        "pub use owned::{\n    NormalModuleClose, NormalModuleCloseState, NormalModuleInputs, OwnedNormalModuleResult,\n    OwnedNormalModuleThread,\n};"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+        "#[cfg(test)]\nmod native;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": [
+        "#[path = \"performance.rs\"]\nmod performance;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/mod.rs": [
+        "mod always_on;",
+        "OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedNormalController,"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": [
+        "mod module_caller;",
+        "#[cfg(test)]\nmod sealed_source_tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": [
+        "#[cfg(test)]\n#[path = \"module_caller_format_tests.rs\"]\nmod format_tests;"
+      ],
+      "tools/rapid-profiler/src/lib.rs": [
+        "pub mod frontend_native;"
+      ]
+    },
+    "previous_corpus_sha256": "26a3c9f458ef8fa8e8c8fccc5dfc346cd1afb2a3957392ac902b24b81a335d5f",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "src/artifact_emission_tests.rs",
+      "src/artifact_fixups.rs",
+      "src/engine.rs",
+      "src/lib.rs",
+      "src/neighbor.rs",
+      "src/neighbor_long_ownership_tests.rs",
+      "src/trampoline.rs",
+      "src/trampoline/artifact_jrcxz.rs",
+      "tests/neighbor_eviction_oracle.rs",
+      "tests/support/jrcxz_artifact_oracle.rs",
+      "tests/support/jrcxz_state.rs",
+      "tests/support/quiescent_oracle.rs",
+      "tools/elf-rewrite/Cargo.toml",
+      "tools/elf-rewrite/e9-sites-controls.py",
+      "tools/elf-rewrite/e9-sites.py",
+      "tools/elf-rewrite/examples/disassembly_sites.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs",
+      "tools/elf-rewrite/examples/full_program_bridge.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs",
+      "tools/elf-rewrite/examples/support/common_core_foreign.rs",
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs",
+      "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs",
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs",
+      "tools/elf-rewrite/src/carrier/dynamic.rs",
+      "tools/elf-rewrite/src/carrier/dynamic_metadata.rs",
+      "tools/elf-rewrite/src/carrier/image_fixtures.rs",
+      "tools/elf-rewrite/src/carrier/mod.rs",
+      "tools/elf-rewrite/src/disassembly.rs",
+      "tools/elf-rewrite/src/disassembly/tests.rs",
+      "tools/elf-rewrite/src/disassembly/whole.rs",
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs",
+      "tools/elf-rewrite/src/lib.rs",
+      "tools/elf-rewrite/src/model.rs",
+      "tools/elf-rewrite/src/neighbor_catalogue.rs",
+      "tools/elf-rewrite/src/selection.rs",
+      "tools/elf-rewrite/tests/support/composition_overlay.rs",
+      "tools/rapid-profiler/ordinary-interval/normal/csv.rs",
+      "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs",
+      "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs",
+      "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs",
+      "tools/rapid-profiler/src/frontend_native/mod.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller_format_tests.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_leaf_set.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/normal_module.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/sealed_source_tests.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs",
+      "tools/rapid-profiler/src/lib.rs"
+    ],
+    "workspace_changes": {
+      "doc/rapid_profiler": {
+        "current": {
+          "ignored": 0,
+          "tests": 49
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 47
+        }
+      },
+      "test/neighbor_eviction_oracle": {
+        "current": {
+          "ignored": 0,
+          "tests": 102
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 101
+        }
+      },
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 5
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 3
+        }
+      },
+      "unit/full_program_bridge/full_program_bridge": {
+        "current": {
+          "ignored": 0,
+          "tests": 10
+        },
+        "previous": null
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 425
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 418
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 173
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 165
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 33,
+          "tests": 580
+        },
+        "previous": {
+          "ignored": 31,
+          "tests": 564
+        }
+      }
+    }
+  },
   "source_successor_b077d": {
     "base_revision": "45e09214bb46e924f88161769ba867a2013a6c28",
     "default_harness_changes": 0,
@@ -1909,12 +3673,13 @@
     "evaluation/admission/test_main20cbe_inventory.py": "1f04fe519f0382997dc2c15ce4c0bd9b6f47c4597adb05b0282afdd8650255eb",
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
-    "evaluation/admission/test_main97ab_inventory.py": "83c81aef0b3ab4b7f1e22389dc42833ec6193acd74acb64dfca1d3637917d7ac",
-    "evaluation/admission/test_main981419_inventory.py": "59790f2e9295aa2df94bff7f29c69e36b33eeb6e352c9062e95692922fd91ec1",
+    "evaluation/admission/test_main813_inventory.py": "abac893aa10682c757a9bacb12a5c4be6f68ccc32e2d741de265852725060a87",
+    "evaluation/admission/test_main97ab_inventory.py": "38ef311a913378156e14974c4fd36cddb1503cdaa9393cdabb436bf319ccb047",
+    "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
-    "evaluation/admission/test_mainaf81_inventory.py": "850fd3bed368aff660e8920d106545d81c63148e7f46cfd013d928a19e83a42e",
+    "evaluation/admission/test_mainaf81_inventory.py": "da0d6e46e1bce60e05bd28bd1effcf6bf487f3921c0ac3e08c691a9258480d6a",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
-    "evaluation/admission/test_maind8d85_inventory.py": "071adbafb484a29578c0b156f292b593cb48cd0d161027ee2c4cf4b00c63a5d4",
+    "evaluation/admission/test_maind8d85_inventory.py": "c8ac5fce31e6f3be8cd6a759d4ea24551dea6f4cb7a4b51cd55b487efcc88a97",
     "evaluation/admission/test_maindd75_inventory.py": "852a822559e51563e9c1dab2f231c7025adf443a572f4943417f9edd391adc06",
     "evaluation/admission/test_mainf353_inventory.py": "b69dbba9015db200385f8f1e178cce1d3d34df86a0530feb5d9b3a6c79b68c86",
     "evaluation/ordinary-call-pair-session/freeze.py": "8c2c36d3f921e75ee5735133e44a1828ff0a5ba6c1d3d1483d09aca469412b89",
@@ -1928,7 +3693,25 @@
     "evaluation/ordinary-selected-session/coordinate_controls.py": "0f10ef52165b2252b4120f8a19b84558db018df64986036ab7cd12af8857127a",
     "evaluation/ordinary-selected-session/driver_controls.py": "c366723d09e76e1f0670f313df881d6513be8fe4226079fabf7c1d77570dc67e",
     "evaluation/ordinary-selected-session/reproduce.py": "933e1be206412e7021fab10d13af7a8f8e114471e1420fd1fe05383ac546c67d",
-    "tools/elf-rewrite/Cargo.toml": "f07369b4c8061bf1e1b71b0006b8b37301682c2455e7d5da1d358077bb7af393",
+    "src/artifact_emission_tests.rs": "3d99c55494ae2816bfbc75f5ff8ffdbf56ef2a4634c283e8e6d8ecb435831ead",
+    "src/artifact_fixups.rs": "89ab9983e8c20649470a46e874d3ec0c81a9133d8ad19c58c43c150f7325e58b",
+    "src/engine.rs": "25714218bfabb26d996810367ae38b827fb2ad43189d083a82fe33c18ef4ad83",
+    "src/lib.rs": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a",
+    "src/neighbor.rs": "6d88028f75906c100aa6498c3446f421b5194ee6119bdeebf17b87c3b23114a5",
+    "src/neighbor_long_ownership_tests.rs": "992e8a3ea1d7cca8ed93641e189ed9600583667b909e67e9baee7f161f868fcd",
+    "src/trampoline.rs": "b162de653668983c108e1edd8968916ceb97409315717324337dff80322a87d6",
+    "src/trampoline/artifact_jrcxz.rs": "89b78a5c4ff7668ec09b61d7dfcf1bcb5630adfaae57053efa54a710fbc0d713",
+    "tests/neighbor_eviction_oracle.rs": "b3063d615123f065dfa2c8b701a73d8c780865ccf7d8cfeb996f579314f800e5",
+    "tests/support/jrcxz_artifact_oracle.rs": "f6f6302bcc16f4a405b03a7e8afcf79212f568b93c24253468f183ed93257a83",
+    "tests/support/jrcxz_state.rs": "ea3f380a179470e12264258e5a01bfefebaaebb7b0654b2354b81a9b4f5eb55f",
+    "tests/support/quiescent_oracle.rs": "68d6b455d00b58773619ade413ce69a55986da23f9b5d564b9d592ae306c847e",
+    "tools/elf-rewrite/Cargo.toml": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
+    "tools/elf-rewrite/e9-sites-controls.py": "f90efe8819b3e0c06749906b2115cc224fd415d3d3662bef72931bb31f71d7be",
+    "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "db553f5f3aef29602f1010bdec73ea61a5fe58d265c8e620aa3ca736d9baecec",
+    "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": "82210abb9f8ef74302c894e9f2d4b848238608be7f3ff1702dcd56a15b38247e",
+    "tools/elf-rewrite/examples/full_program_bridge.rs": "21686fccf07c625a6220c30d7c6664e7608546e5e4d3b18d3da127911810773f",
+    "tools/elf-rewrite/examples/full_program_bridge/tests.rs": "e5dc04d32b521685b08550d1e2eb55c5665be73153b948ae7c35ba6214023268",
     "tools/elf-rewrite/examples/indexed_dso_native.rs": "8fde58161eb6117c9ac2fc19caf2564da503494489da967fbb7174d48d9d2e7f",
     "tools/elf-rewrite/examples/indexed_dso_support/caller_dataflow.rs": "bd99e6d4c8d76d6d5c4757d481eb475b3e692b04813e24d797196548a87176df",
     "tools/elf-rewrite/examples/indexed_dso_support/caller_image.rs": "bc4008fa7ac9fd9e8f617004ea3278a9b00910815a897fb92345c6d6af264291",
@@ -1938,21 +3721,55 @@
     "tools/elf-rewrite/examples/indexed_dso_support/loaded.rs": "3deaf6ffed37e2735d3d4c3561e3c3d8a1e91aaa18a681758bf8148023629275",
     "tools/elf-rewrite/examples/indexed_dso_support/observations.rs": "1537cb75de246ab20a00616fc61b2acb85706f5326ea1e34a5fa93841e566c28",
     "tools/elf-rewrite/examples/indexed_dso_support/runtime.rs": "08278f2d4b5cb044b4ed0442f9e2bf113eb24f6d68b59e61b042cc7e3530a5bc",
+    "tools/elf-rewrite/examples/support/common_core_foreign.rs": "d0363b0c396aff6d16258948e5c81ff201e3dbcb165d380c363ddba2066b0891",
+    "tools/elf-rewrite/src/adjacent_b2_frontend.rs": "c2ea2ccd923a8ed5cc0bc83beb604f90503ab34b33fef120a6bd7a26bcd67a90",
+    "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": "dc910457536b6c637377bf39c1f1c4599dd70aaeaa19759510ac9e0674edccb7",
+    "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": "fc7eb3d28777c24a3902c61514115fc99913cc2b33764eb3f7dd976f1a1aa25c",
+    "tools/elf-rewrite/src/carrier/dynamic.rs": "e8894421db22dbd4bc07728abdfc7409688e120fb3ba8536547dcaad4e354ba0",
+    "tools/elf-rewrite/src/carrier/dynamic_metadata.rs": "8315e03c460d0bd92a37f88b87b6c75d16694b1a8a4614d4b67f83febd627ea6",
+    "tools/elf-rewrite/src/carrier/image_fixtures.rs": "8b4aded6f525d066cc6f6b6f85b6b9932052515313d9b0b3199e767815f1f41f",
+    "tools/elf-rewrite/src/carrier/mod.rs": "a6b99b00be9e1b8cbda0c1f10baf032157c4a06026e35d5192f6fbea67c26898",
+    "tools/elf-rewrite/src/disassembly.rs": "03a7ef9a8d8957217964d8b97aa1bcfeb3a8c346341d5ef21811f780c6bf97f3",
+    "tools/elf-rewrite/src/disassembly/tests.rs": "6774aa69aec5c0081a83ce9e24eea21e4819f1f1832dfeb10d53caa810847f40",
+    "tools/elf-rewrite/src/disassembly/whole.rs": "4e4e3f4d692548095898e3baf95fb3a0e70a711c1c83567620fde17c29377518",
+    "tools/elf-rewrite/src/disassembly/whole/tests.rs": "f0bd8144f9596c5fe72beb2c4c386249e9eb9e71efc68a50a7fd66b3bb6ae804",
+    "tools/elf-rewrite/src/lib.rs": "cfe27c9869df5f68787b23d58af21910d6f364e2c110a38d2c92045e11cb62df",
+    "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
+    "tools/elf-rewrite/src/neighbor_catalogue.rs": "98547f49cbd1571cbe7e3e79b7fcb3b873e8c8f2c3eba28326614fce78a5abf2",
+    "tools/elf-rewrite/src/selection.rs": "00fe05a29ad200761b45dbc73de567e0730b20bd4ad19dd08b89b6113688a191",
     "tools/elf-rewrite/tests/indexed_dso_source.rs": "90589c35c4239473ab84bb3c11a65f017c83b78080a957544f64c08a88038dcf",
+    "tools/elf-rewrite/tests/support/composition_overlay.rs": "957573fdf12f81f63e302a761f298001a241e728d8251d65e5a85608c1fccf2b",
     "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
     "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
-    "tools/rapid-profiler/ordinary-interval/normal/csv.rs": "2174bed0316f7dd0b08532f64b0e5a2c6387d1c8f36a547ea35f1d47a7887d22",
+    "tools/rapid-profiler/ordinary-interval/normal/csv.rs": "dec72317a616660dca1dd673f0ee0075361fcb7503537b930902da579a3d8aae",
     "tools/rapid-profiler/ordinary-interval/normal/csv/tests.rs": "64d0609d565a5a1ff68f76adf512c1ae2333be7555a7c169a6db627af43bd012",
     "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": "b93e6614b4aaff4fba5b73d9603c593718e026f215af976ad13a15eed78ebbc0",
     "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": "e4432ff14fde094eec477b7ae5ea758c032004e8342df46a1934544c0725c1b6",
-    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": "852319da6f8a2e361483889c923e68ba686828fa1aa0a76f0c75847032d924e7",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": "722f86b148bbfff86c6116deaccf53e1aef352132c793fd28a84bbb9697008e9",
     "tools/rapid-profiler/ordinary-interval/normal/module/session/check.rs": "ce3b34d6584ef9116bed0800b84d575ee97b522ae0354b7b239dfc902a5c5d3b",
-    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": "e4da79d4c6d2c673db29b14543711ad23b8184dbfc3163d03ed49b819f9027d0",
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": "380aeab1ad38299f3be676b249ae3a10af288afc62a7d582f993ffae178f661e",
     "tools/rapid-profiler/ordinary-interval/normal/session.rs": "43be025751574e2e21310740cdd66c274363ead9b68c181dc2f67060c2e30255",
     "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": "9083a2501d1fff1d9702c6dfa46125df625969c3622dc250eb04e8e6d16c0459",
-    "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": "161f3b729d93e45822ccda16ae6a97bc7619184e32cfa63fb09dd5905e5d51d2",
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": "d153c4cb2b476b135ce28382848fe5d0e53e6558bbc048268cc36a2a64eccb24",
     "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": "1020f86b074c2348d9fd1bb492793bd1d55e17439ea43d82936f00ec91f80cfa",
+    "tools/rapid-profiler/src/frontend_native/always_on.rs": "3f49eaca5cd65646dfda745ac7e75efc2d5466deeeaa4fd646de0e04d2e26423",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "32e55a90906a1c023ba7a444fbfc51c7db3fd5f1da7fec545fbdeed818aa2740",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "a556f01a775d39ce5563cb5631505388a71140b86fdd8d025650261c87189aef",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": "1a314f3aed3aa6932876390c734336237a0ec28ffe1130bfbc73fc942c33f85b",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": "ba8215d7d38b2a70def2e7899d17437f159af915552e244d97b43ff88c1e5a01",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": "e2a5be581c256b29ae5608a6d5e4abd0224dce6dc8076a3bad040e50ae08eb25",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": "fbccec0f9b001f5e4c43c33a2e6d4e6b443851845c7ab00afb4b98738b71468f",
+    "tools/rapid-profiler/src/frontend_native/mod.rs": "786dbf59f8fd071b60cdb5c5c825cae9622fae2eaf0ddf5d0838337ffdb3dc32",
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "14931190161ed220a35d62b5ebde0161f3ffcef0f5e7ba0b5987a0572af6e387",
+    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": "ee5fce93db7d70a66d103d9613d4883fd93a8357ed4b612275bb5f39c6b7ae09",
+    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller_format_tests.rs": "dc81d94fba2f45b64b6ef3d6b4bb6b5cf195ab98a8abaa90d4dffb084fe05cbc",
+    "tools/rapid-profiler/src/frontend_native/ordinary/normal_leaf_set.rs": "2ade00c29a9f50e1273923eb96025e6f1dc5f8e7b2de7f7d7e9081753a85e3e1",
+    "tools/rapid-profiler/src/frontend_native/ordinary/normal_module.rs": "ca9144163957c131dd30e9a5794ac049ec94bb411515e3251064d7bbccb868f5",
+    "tools/rapid-profiler/src/frontend_native/ordinary/sealed_source_tests.rs": "60ac1a2003543e6737a51cd96eb5e2d3d6d879ec5dc45f85cc58b5e7e52687a9",
+    "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs": "45f907db6ce481af48165a36b92ba142f34dd16a9e2004f260f922d50ce1d4dc",
+    "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
     "tools/unwind-oracle/indexed_dso/caller.c": "4c9ad23c28e98e72faccc09a492142700b56dd6426e6f001ed6ebea5040527cf",
     "tools/unwind-oracle/indexed_dso/caller.h": "792e1d088f9c063709d753de0b00b7220198400ff7b8eee8d41d73f5856da5cb",
     "tools/unwind-oracle/indexed_dso/native_recipe.py": "0ae50d24d6ae80dfe355cf71528f2c4e1a1970c11d98411af172df6ca1ec1c3a"

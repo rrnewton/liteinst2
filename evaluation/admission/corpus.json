@@ -6123,7 +6123,7 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 47
+        "tests": 49
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6355,7 +6355,7 @@
       },
       "test/neighbor_eviction_oracle": {
         "ignored": 0,
-        "tests": 101
+        "tests": 102
       },
       "test/oracle": {
         "ignored": 0,
@@ -6491,11 +6491,15 @@
       },
       "unit/disassembly_sites/disassembly_sites": {
         "ignored": 0,
-        "tests": 3
+        "tests": 5
+      },
+      "unit/full_program_bridge/full_program_bridge": {
+        "ignored": 0,
+        "tests": 10
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 418
+        "tests": 425
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6523,7 +6527,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 165
+        "tests": 173
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
@@ -6534,8 +6538,8 @@
         "tests": 518
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 31,
-        "tests": 564
+        "ignored": 33,
+        "tests": 580
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

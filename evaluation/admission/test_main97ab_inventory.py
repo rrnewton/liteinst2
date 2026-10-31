@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -21,7 +22,8 @@ class Main97abInventoryTests(unittest.TestCase):
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (112, 4255, 37))
         self.assertEqual(current.digest(native_indexed), current.NATIVE_INDEXED_CURRENT)
-        rows = actual['harness_test_counts']['workspace_tests']
+        phase_catalog = current.before_96378(actual)
+        rows = phase_catalog['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (112, 4266, 37))
         self.assertEqual(current.DATA['default_test_additions'], 58)
@@ -174,6 +176,72 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                     current.require_sources()
         for path in phase['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+
+        # This exact catalog is a new boundary. Neither historical complete
+        # catalog, missing harness, changed count/type nor old ignore census
+        # may substitute for the actual current workspace.
+        incoming = current.DATA['source_successor_96378']
+        live_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(live_rows), sum(x['tests'] for x in live_rows.values()),
+                          sum(x['ignored'] for x in live_rows.values())), (113, 4312, 39))
+        self.assertEqual(current.digest(phase_catalog), current.PHASE_CURRENT)
+        self.assertEqual((incoming['default_method_additions'], incoming['default_doctest_additions'],
+                          incoming['default_method_removals'], incoming['default_harness_changes'],
+                          incoming['default_ignore_changes'], incoming['recorder_identity_changes']),
+                         (44, 2, 0, 1, 2, 0))
+        self.assertEqual(sum(len(names) * len(incoming['default_method_instances'][path])
+                             for path, names in incoming['added_default_methods'].items()), 44)
+        self.assertEqual(sum(len(names) for names in incoming['added_ignored_methods'].values()), 2)
+        self.assertEqual(sum(len(rows) for rows in incoming['doctests'].values()), 2)
+        self.assertEqual(incoming['excluded_standalone'], dict(
+            path='evaluation/custody-file-read-probe/probe.rs', default_test_harness=False,
+            reason='No Cargo target or module includes this standalone diagnostic.'))
+        for wrong in (phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_96378(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in incoming['workspace_changes'].items():
+            self.assertEqual(live_rows[name], change['current'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_96378(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_96378(wrong)
+        incoming_stimuli = [(path, name, name + '_wrong')
+            for path, names in incoming['added_default_methods'].items() for name in names]
+        incoming_stimuli += [(path, literal, '')
+            for path, literals in incoming['module_chains'].items() for literal in literals]
+        incoming_stimuli += [(path, block, replacement)
+            for path, blocks in incoming['doctests'].items() for block in blocks
+            for replacement in ('', block + '\n' + block, block.replace('compile_fail,E0277', 'ignore'))]
+        incoming_stimuli += [(path, literal, literal.replace('#[ignore', '#[cfg'))
+            for path in incoming['added_ignored_methods']
+            for literal in re.findall(r'#\[ignore[^\n]*', (current.ROOT / path).read_text())]
+        for path, literal, replacement in incoming_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('incoming declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in incoming['source_paths']:
             target = current.ROOT / path; raw = read(target)
             for missing in (False, True):
                 def changed(candidate):

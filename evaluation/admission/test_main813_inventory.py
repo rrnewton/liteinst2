@@ -11,6 +11,7 @@ import core_5cda_inventory as main5c
 import core_cc846_inventory as inventory
 import recorder_shards_inventory as shards
 import core_367_inventory as main367
+import core_97ab_inventory as native_indexed
 import precontext_native as protocol
 import parsing
 import run
@@ -3567,8 +3568,11 @@ class Main813InventoryTests(unittest.TestCase):
         artifact_layer = main813.main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.main34c47.maind8d85
         artifact_projections = dict(artifact_layer.DATA['projections'])
         del artifact_projections['src/trampoline.rs']
+        native_projections = dict(native_indexed.DATA['projections'])
+        del native_projections['src/trampoline.rs']
         with patch.dict(main813.MAINROUTED, projections=historical_projections), \
-             patch.dict(artifact_layer.DATA, projections=artifact_projections):
+             patch.dict(artifact_layer.DATA, projections=artifact_projections), \
+             patch.dict(native_indexed.DATA, projections=native_projections):
             self.assertIs(main813.source_before_short_pending('src/trampoline.rs', pending_unchanged, 'changed'),
                           pending_unchanged)
         # Bad old tables must fail after a valid pending source/inverse, not before it.

@@ -122,12 +122,15 @@ class MainAf81InventoryTests(unittest.TestCase):
             self.assertNotEqual(changed_raw, raw)
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            # The phase-diagnostics successor now owns this source's outer
+            # The phase and main successors now own these sources' outer
             # projection. Transport this original declaration mutation through
             # it, so the historical declaration gate still rejects it first.
             upstream = copy.deepcopy(native_indexed.DATA['projections'])
             changed_prior = changed_raw
-            if path == 'tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs':
+            if path in ('tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
+                        'tests/support/quiescent_oracle.rs',
+                        'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
+                        'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs'):
                 prior = native_indexed.source_before(path, raw, 'adc_outer_inverse_control')
                 self.assertEqual(hashlib.sha256(prior).hexdigest(), current.DATA['sources'][path])
                 self.assertEqual((raw.count(old_text.encode()), prior.count(old_text.encode())), (1, 1))
@@ -145,7 +148,10 @@ class MainAf81InventoryTests(unittest.TestCase):
                  patch.object(Path, 'read_bytes', changed), \
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
-                if path == 'tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs':
+                if path in ('tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
+                        'tests/support/quiescent_oracle.rs',
+                        'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
+                        'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs'):
                     self.assertEqual(native_indexed.source_before(path, changed_raw,
                         'adc_outer_inverse_control'), changed_prior)
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):
